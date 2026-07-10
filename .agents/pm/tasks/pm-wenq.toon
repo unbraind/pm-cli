@@ -1,0 +1,17 @@
+id: pm-wenq
+title: Close-time completeness signal for structured resolution fields (resolution/expected/actual) — config-gated warn or require
+description: ""
+type: Task
+status: open
+priority: 3
+tags[4]: agent-ux,cli,governance,quality
+created_at: "2026-07-10T10:34:42.049Z"
+updated_at: "2026-07-10T10:34:59.899Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: Advisory line on close when resolution/expected/actual missing; require mode exits non-zero with recovery bundle; e2e fixture proves drift stops under warn/require; zero output change when fields provided
+risk: low
+confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-e9zh,related,"2026-07-10T10:34:42.049Z",null,null
+body: "## Problem\n`validate_resolution_missing_fields` keeps creeping (269 → 272 across 2026-07-09→10) even though `close_reason` is enforced: agents close items with a reason but skip the structured triple `resolution` / `expected_result` / `actual_result` (set via `pm close --resolution/--expected/--actual` or `pm update`). pm-e9zh backfills the pre-enforcement legacy set, but nothing stops NEW closes from adding to the worklist, so the backfill target moves.\n\n## Proposal\n1. Emit a completeness line in the `pm close` envelope when any of the three structured fields is absent (always on, one short line — token-cheap, mirrors the existing next_transition hint pattern).\n2. Add a governance settings key (e.g. `close.require_resolution_fields: off | warn | require`, default `warn`) so strict workspaces can hard-gate like `require_close_reason` already does.\n3. Contract + docs + completion wiring per the new-flag checklist; validate check text should point at the setting.\n\n## Acceptance criteria\n- Closing without the triple prints exactly one advisory line naming the missing fields and the flags to set them; with `require`, close exits non-zero with the same recovery bundle shape as close_reason_required.\n- `validate_resolution_missing_fields` stops growing on workspaces with warn/require enabled (verified in e2e fixture).\n- No output change when all three fields are provided.\n\n## Relation\nrelated pm-e9zh (legacy backfill) — this item is the faucet, e9zh is the mop."

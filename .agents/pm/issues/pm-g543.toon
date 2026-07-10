@@ -1,0 +1,17 @@
+id: pm-g543
+title: "GH-490: unknown-command suggester ranks substring hits over synonyms/edit distance — pm log suggests 'extension catalog'"
+description: ""
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,cli,errors,gh-issue
+created_at: "2026-07-10T10:32:36.607Z"
+updated_at: "2026-07-10T10:36:33.591Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: pm log suggests history/comments/notes ahead of catalog commands; suggester ranks synonym table then edit distance then substring; unit tests cover top-10 verb synonyms; unknown-command JSON contract shape unchanged
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-gdi7,related,"2026-07-10T10:32:36.607Z",null,null
+body: "## Source\nGitHub issue #490 (version 2026.7.9).\n\n## Reproduction\n```bash\npm log some-id \"a note\"\n# Error: Unknown command log\n# Next steps: Did you mean: extension catalog, package catalog?\n```\n\n## Problem\nThe suggester ranks by substring containment (\"log\" ⊂ \"cataLOG\"), so both catalog subcommands outrank the commands an agent actually means — `history`, `comments`, `notes`. An agent following the hint is misdirected to the extension catalog instead of the item-history surface.\n\n## Proposed ranking\n1. Alias/synonym table for the top verbs agents guess (log→history/comments/notes, ls→list, rm→delete, …)\n2. Edit distance on the command token\n3. Substring hits last\n\nEven a small hardcoded synonym table removes most misdirection. The rest of the unknown-command error contract (structured JSON, recovery bundle, exit 2) is good — only the ranking misleads.\n\n## Why it matters for agents\nStateless agents guess verbs constantly; suggestion quality determines whether recovery costs one retry or a full `pm --help` roundtrip (96 lines) plus re-orientation. Related: pm-gdi7 covers the unknown-OPTION flag-suggestion gap; this covers unknown-COMMAND ranking."
