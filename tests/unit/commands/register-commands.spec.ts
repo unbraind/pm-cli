@@ -2410,6 +2410,8 @@ describe("setup command actions", () => {
       "agile",
       "--with-packages",
       "--force",
+      "--workspace",
+      "./workspace",
     );
     expect(vi.mocked(runInit)).toHaveBeenLastCalledWith(
       "demo",
@@ -2421,6 +2423,7 @@ describe("setup command actions", () => {
         typePreset: "agile",
         withPackages: true,
         force: true,
+        workspace: "./workspace",
       }),
     );
   });
@@ -2738,6 +2741,14 @@ describe("setup command actions", () => {
       .mockResolvedValueOnce({
         ok: false,
         action: "install",
+        details: {
+          extension: { name: "pkg-soft" },
+          activated: false,
+          runtime_activation_status: "failed",
+          activation_diagnostics: { failed_count: 1 },
+          command_discovery: { extension_name: "pkg-soft" },
+          verification: { status: "degraded" },
+        },
       } as never)
       .mockRejectedValueOnce(
         new PmCliError("registry unavailable", EXIT_CODE.NOT_FOUND, {
@@ -2790,6 +2801,12 @@ describe("setup command actions", () => {
         {
           target: "pkg-soft",
           ok: false,
+          extension: { name: "pkg-soft" },
+          activated: false,
+          runtime_activation_status: "failed",
+          activation_diagnostics: { failed_count: 1 },
+          command_discovery: { extension_name: "pkg-soft" },
+          verification: { status: "degraded" },
           warnings: [],
           error: {
             message: "Extension install returned ok=false without throwing an error.",
@@ -2860,6 +2877,16 @@ describe("setup command actions", () => {
   });
 
   it("escalates doctor warnings and failed upgrades through exit codes", async () => {
+    vi.mocked(runExtension).mockResolvedValue({
+      ok: false,
+      action: "install",
+      details: {},
+      warnings: [],
+    } as never);
+    await runCli("extension", "--install", "broken-package");
+    expect(process.exitCode).toBe(EXIT_CODE.GENERIC_FAILURE);
+    process.exitCode = undefined;
+
     vi.mocked(runExtension).mockResolvedValue({
       action: "doctor",
       details: { summary: { status: "warn" } },

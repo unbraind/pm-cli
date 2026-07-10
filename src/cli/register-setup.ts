@@ -213,6 +213,9 @@ async function executeExtensionCommand(
     printResult(result, globalOptions);
   }
   applyExtensionDoctorStrictExit(result, normalizedOptions);
+  if (result.ok === false) {
+    process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+  }
   if (globalOptions.profile) {
     printError(`profile:command=extension took_ms=${Date.now() - startedAt}`);
   }
@@ -290,6 +293,10 @@ async function executeExtensionInstallCommand(
         settings_changed: details.settings_changed,
         command_paths: details.command_paths,
         action_paths: details.action_paths,
+        runtime_activation_status: details.runtime_activation_status,
+        activation_diagnostics: details.activation_diagnostics,
+        command_discovery: details.command_discovery,
+        verification: details.verification,
         warnings: targetWarnings,
         ...(targetOk
           ? {}
@@ -575,6 +582,7 @@ async function runInitCommandAction(
       typePreset: typeof options.typePreset === "string" ? options.typePreset : undefined,
       withPackages: options.withPackages === true,
       force: options.force === true,
+      workspace: typeof options.workspace === "string" ? options.workspace : undefined,
     },
   );
   const verbose = options.verbose === true;
@@ -661,6 +669,7 @@ export function registerSetupCommands(program: Command): void {
     .option("--agent-guidance <mode>", "Agent guidance mode: ask|add|skip|status")
     .option("--type-preset <name>", "Register domain item types during init: agile|ops|research")
     .option("--with-packages", "Install all bundled first-party packages during initialization")
+    .option("--workspace <dir>", "Initialize repository-local tracker storage at <dir>/.agents/pm")
     .option("--force", "Allow initializing tracker files directly in a directory that looks like a workspace root")
     .option("--verbose", "Include the full resolved settings tree in the output (default output is a concise summary)")
     .description("Initialize pm storage and defaults for the current workspace or a path-like tracker target.")

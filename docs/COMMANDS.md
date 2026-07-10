@@ -50,6 +50,8 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 ```bash
 pm init
 pm init --defaults --with-packages
+pm init --workspace ./new-project --defaults
+pm init ./sandbox-tracker --defaults
 pm init --agent-guidance status
 pm init --agent-guidance add
 pm config project list
@@ -58,6 +60,7 @@ pm telemetry status
 ```
 
 `pm init` creates `.agents/pm`. `pm health --check-only --summary --json` gives the smallest machine-readable health gate without refreshing optional search artifacts.
+Use `pm init --workspace <dir>` when `<dir>` is a project root; it creates `<dir>/.agents/pm`. A path-like positional remains the advanced tracker-root form and writes tracker files directly at that path. Both explicit target forms return `target.mode`, `target.tracker_root`, and tracker-scoped executable `next_steps` so agents can run the suggestions from any working directory.
 `pm init --agent-guidance ask` is the default behavior: prompt in TTY only when AGENTS/CLAUDE guidance is missing and no decline is recorded.
 Use `--agent-guidance add` to write guidance, `--agent-guidance skip` to persist a decline without writing, and `--agent-guidance status` to inspect guidance state.
 Use `--with-packages` for one-step agent setup when bundled package commands should be active immediately.
@@ -78,6 +81,7 @@ pm upgrade --cli-only --repair
 ```
 
 `pm install` and `pm package` are the preferred package-first workflow. `pm package` and `pm extension` bare invocations default to `--explore` so agents can list installed packages without remembering an action flag. `pm install '*'`, shell-expanded `pm install *`, and `pm install all` install bundled first-party packages. `pm extension` remains as a compatibility command for direct extension lifecycle operations.
+Install output includes a light `verification` summary with target tracker root, activation state, registered commands/actions/item types, and an `ok|degraded` health verdict. Runtime activation failure sets the command result and process exit status to failure; inspect `activation_diagnostics` and `command_discovery.next_steps` for the exact recovery path.
 When package-owned commands are unavailable, usage guidance includes an install-ready retry (for example `pm install calendar`, `pm install search-advanced`, `pm install governance-audit`, or `pm install guide-shell`).
 
 ## Triage

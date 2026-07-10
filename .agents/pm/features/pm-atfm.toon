@@ -2,11 +2,11 @@ id: pm-atfm
 title: "Context relevance evaluation harness: graded golden-workspace judgments for pm context/next quality"
 description: "Evaluation harness for context quality: graded workspaces and continuity scenarios that measure whether pm context/next return the right items under explicit token budgets."
 type: Feature
-status: in_progress
+status: open
 priority: 1
 tags[4]: context,quality-gate,relevance,scale
 created_at: "2026-07-06T23:25:57.317Z"
-updated_at: "2026-07-09T23:53:31.600Z"
+updated_at: "2026-07-10T05:53:52.126Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: Golden corpus (one real-shaped and one synthetic pm-mi2x workspace) with graded judgments versioned in-repo; offline runner scores pm context and pm next with rank-aware quality metrics; baseline of the current structural assembler recorded before pm-4k6b lands; CI gate fails on quality regression beyond a documented threshold; harness consumes only public SDK read primitives; documented workflow for adding new judgment cases
@@ -17,17 +17,29 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-4k6b,related,"2026-07-06T23:25:57.317Z",null,null
   pm-mi2x,related,"2026-07-06T23:25:57.317Z",null,null
   pm-oslr,related,"2026-07-06T23:25:57.317Z",null,null
-comments[4]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-06T23:51:08.193Z",codex-agent,"Planning evidence 2026-07-07: pm-atfm remains the canonical quality harness for context/next relevance. Added non-duplicate child slices pm-lixy (graded scenario corpus across scratch, real-shaped, scale, and returning-agent continuity cases) and pm-xmp5 (offline runner + CI gate). Done definition should mirror search-eval rigor but score context assembly: rank-aware quality, required-item recall, continuity-delta coverage, and token-budget adherence. This keeps pm-4k6b weight tuning evidence-driven instead of aesthetic.\n"
   "2026-07-09T19:10:26.051Z",codex-root-20260709,"Progress evidence: context/next evaluation harness now has public SDK runner contracts, reviewable golden workspaces, committed baseline, required CI gate, and documented intentional-update workflow."
   "2026-07-09T19:50:43.336Z",codex-root-20260709,"Verification: public SDK evaluation scenario/corpus APIs execute context and next through real PmClient readers with attribution and threshold/baseline regression reporting. Four committed scenarios and installed-package consumer pass; thresholds remain explicit and token budgets measured from compact payloads."
   "2026-07-09T23:53:29.316Z",codex-root-20260709,"Handoff after PR #487: the typed relevance evaluator, scenario-level regression gate, SDK/package exports, CLI explainability, docs, and exact 100% coverage are merged and green on e953bdcb. Item remains in_progress because the explicitly scoped 10k/100k representative corpus and performance study are not yet complete."
-files[3]{path,scope,note}:
+  "2026-07-10T00:03:04.613Z",codex-root-20260709,"Post-merge Gemini review follow-up: validate every required corpus threshold as a finite number before executing the external JSON evaluation gate. Review thread: discussion_r3555533556."
+  "2026-07-10T00:16:51.550Z",codex-root-20260709,"Review-fix evidence: the external corpus reader now rejects missing, null, NaN/non-finite required thresholds with metric-specific errors before workspace setup. Focused gate tests and the real committed corpus pass; full suite remains exact 100% coverage."
+  "2026-07-10T05:53:29.680Z",codex-root-20260709,"Verification evidence 2026-07-10: full sandbox suite passed 270 files / 5,505 tests with exact 100% statements, branches, functions, and lines. pm test-all over the seven active items passed 8 linked commands with 0 failures and 1 duplicate-safe skip. pnpm typecheck, contracts:check, lint (ESLint + 0 jscpd clones + static quality/token budget), docs-skills, context-eval, security scan, and audit all passed. Live CodeFactor reports A+ and 0 issues. Fresh packed npm install at /tmp/pm-cli-sdk-path-proof-XIsSsh activated 11 bundled packages in a path-target tracker, left caller extension files at zero, and passed CLI/SDK context plus isolated doctor with zero blocking failures. pm health is clean and history drift is zero."
+files[4]{path,scope,note}:
   scripts/release/context-eval-gate.mjs,project,Offline isolated evaluation runner
   tests/context-eval/baseline.json,project,Accepted structural and scorer quality baseline
   tests/context-eval/golden-scenarios.json,project,Golden context/next quality scenarios
-tests[1]{command,scope,timeout_seconds}:
-  "pnpm quality:context-eval",project,240
+  tests/unit/scripts/release/context-eval-gate.spec.ts,project,Missing and non-finite threshold regressions
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/context-eval-gate.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: External corpus validation gate
+  - command: "pnpm quality:context-eval"
+    scope: project
+    timeout_seconds: 240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mreilef6-55k1ab,test-all,passed,"2026-07-10T05:48:11.158Z","2026-07-10T05:50:22.807Z","2026-07-10T05:50:22.807Z",1,0,1,1,2
 docs[1]{path,scope,note}:
   docs/TESTING.md,project,Context evaluation workflow
 body: "pm eval measures SEARCH ranking quality (nDCG/MRR golden queries, shipped via pm-u8n5/pm-22x2) but nothing measures whether pm context / pm next assemble the RIGHT working set — the core promise of 'project management = context management'. The adaptive relevance engine (pm-4k6b) will change assembly behavior; without a quality harness we cannot prove it is an improvement, tune signal weights, or catch regressions.\n\nProposal: extend the eval pattern from search to context assembly.\n- Golden workspaces: a small real-shaped snapshot plus pm-mi2x synthetic workspaces at 10k/100k scale.\n- Graded judgments: given agent state (focus item, active claim, plan step, query), the ideal context set with per-item relevance grades.\n- Rank-aware scoring (nDCG-style) over the assembled context and next ordering, plus token-budget adherence checks.\n- Phase 1 (now): baseline today's structural assembler — same before/after role pm-a22j plays for token cost.\n- Phase 2 (with pm-4k6b): per-signal attribution in eval output so weight tuning is evidence-driven; gate in CI like the search eval.\n\nSDK-first: the runner consumes only public SDK read primitives (pm-rjqr), so custom scorers from extensions are evaluable with the same harness."

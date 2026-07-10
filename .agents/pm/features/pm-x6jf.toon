@@ -2,12 +2,11 @@ id: pm-x6jf
 title: "Promote package & extension lifecycle primitives to the public SDK: install, upgrade, extension list/enable/disable, managed-package state"
 description: "Promote package and extension lifecycle operations into the public SDK so custom PM tools can install, upgrade, activate, deactivate, inspect, and manage packages without shelling out to CLI-only internals."
 type: Feature
-status: in_progress
+status: open
 priority: 2
 tags[3]: architecture,"area:extensions","area:sdk"
 created_at: "2026-07-06T21:58:30.613Z"
-updated_at: "2026-07-08T06:06:37.974Z"
-assignee: codex-agent
+updated_at: "2026-07-10T05:12:49.787Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "SDK exports typed primitives for package install/upgrade and extension lifecycle (list, enable/disable, managed-extensions state) returning the same structured results the CLI renders; pm install/upgrade/extension/package commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (install/extension specs green)"

@@ -56,7 +56,10 @@ describe("runInit", () => {
     expect(initInternals.resolveInitInvocation("/repo", {}, "./sandbox")).toEqual({
       pmRoot: path.resolve("/repo", "sandbox"),
       prefixArg: undefined,
-      positional_target: path.resolve("/repo", "sandbox"),
+      target: {
+        mode: "tracker-path",
+        tracker_root: path.resolve("/repo", "sandbox"),
+      },
     });
     expect(initInternals.resolveInitInvocation("/repo", { path: "/repo/.agents/pm" }, "./sandbox")).toEqual({
       // resolvePmRoot delegates to path.resolve(cwd, explicitPath), so the
@@ -65,7 +68,61 @@ describe("runInit", () => {
       // literal that only matches on POSIX nightly runners (pm-i84i).
       pmRoot: path.resolve("/repo", "/repo/.agents/pm"),
       prefixArg: "./sandbox",
+      target: {
+        mode: "tracker-path",
+        tracker_root: path.resolve("/repo", "/repo/.agents/pm"),
+      },
     });
+    const discoveryInvocation = initInternals.resolveInitInvocation("/repo", {}, "acme");
+    expect(discoveryInvocation).toMatchObject({
+      prefixArg: "acme",
+      target: { mode: "workspace-discovery", workspace_root: "/repo" },
+    });
+    expect(discoveryInvocation.target.tracker_root).toBe(discoveryInvocation.pmRoot);
+    expect(initInternals.resolveInitInvocation("/repo", {}, "acme", "./workspace")).toEqual({
+      pmRoot: path.resolve("/repo/workspace/.agents/pm"),
+      prefixArg: "acme",
+      target: {
+        mode: "workspace-path",
+        tracker_root: path.resolve("/repo/workspace/.agents/pm"),
+        workspace_root: path.resolve("/repo/workspace"),
+      },
+    });
+    expect(() => initInternals.resolveInitInvocation("/repo", {}, undefined, " ")).toThrow("--workspace must not be empty");
+    expect(() => initInternals.resolveInitInvocation("/repo", { path: "/tmp/pm" }, undefined, "./workspace")).toThrow(
+      "cannot be combined",
+    );
+    expect(() => initInternals.resolveInitInvocation("/repo", {}, "./tracker", "./workspace")).toThrow("cannot be combined");
+
+    const discoverySteps = initInternals.buildInitNextSteps({
+      installBundledPackages: false,
+      registeredTypePreset: undefined,
+      agentGuidanceNextSteps: ["Run pm context before editing."],
+      target: {
+        mode: "workspace-discovery",
+        tracker_root: path.resolve("/repo/.agents/pm"),
+        workspace_root: "/repo",
+      },
+    });
+    expect(discoverySteps).toContain("Run pm context before editing.");
+    const scopedSteps = initInternals.buildInitNextSteps({
+      installBundledPackages: true,
+      registeredTypePreset: { preset: "agile", registered: [], updated: ["Story"] },
+      agentGuidanceNextSteps: ["Run pm context before editing.", "Run pm context before editing."],
+      target: { mode: "tracker-path", tracker_root: path.resolve("/tmp/tracker") },
+    });
+    expect(scopedSteps).toContain(`Run pm --pm-path ${path.resolve("/tmp/tracker")} context before editing.`);
+    expect(scopedSteps.filter((step) => step.includes("context before editing"))).toHaveLength(1);
+    expect(scopedSteps).toContain(
+      `Inspect registered preset types: pm --pm-path ${path.resolve("/tmp/tracker")} schema list, pm --pm-path ${path.resolve("/tmp/tracker")} schema show Story`,
+    );
+    const replacementSensitivePath = path.resolve("/tmp/tracker$&cash$$tail");
+    expect(initInternals.buildInitNextSteps({
+      installBundledPackages: true,
+      registeredTypePreset: undefined,
+      agentGuidanceNextSteps: ["Run pm context before editing."],
+      target: { mode: "tracker-path", tracker_root: replacementSensitivePath },
+    })).toContain(`Run pm --pm-path "${replacementSensitivePath.replaceAll("$", "\\$")}" context before editing.`);
 
     expect(initInternals.normalizeInitAgentGuidanceMode(undefined)).toBe("ask");
     expect(initInternals.normalizeInitAgentGuidanceMode("status")).toBe("status");
@@ -118,6 +175,7 @@ describe("runInit", () => {
           packages: [
             { alias: "calendar", ok: true },
             { alias: "guide", ok: false },
+            { alias: 42, ok: false },
             null,
             [{ alias: "array-package", ok: true }],
           ],
@@ -129,6 +187,7 @@ describe("runInit", () => {
       packages: [
         { alias: "calendar", ok: true },
         { alias: "guide", ok: false },
+        { alias: "", ok: false },
       ],
     });
 
@@ -145,13 +204,13 @@ describe("runInit", () => {
       expect(await initInternals.isLikelyWorkspaceRoot(tempRoot)).toBe(false);
       await writeFile(path.join(tempRoot, "package.json"), "{}\n", "utf8");
       expect(await initInternals.isLikelyWorkspaceRoot(tempRoot)).toBe(true);
-      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, { path: tempRoot }, false)).rejects.toHaveProperty(
+      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, true, false)).rejects.toHaveProperty(
         "context.code",
         "workspace_root_pm_path",
       );
-      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, { path: tempRoot }, true)).resolves.toBeUndefined();
+      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, true, true)).resolves.toBeUndefined();
       await runInit("pm", { path: tempRoot }, { defaults: true, force: true });
-      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, { path: tempRoot }, false)).resolves.toBeUndefined();
+      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, true, false)).resolves.toBeUndefined();
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
@@ -434,7 +493,9 @@ describe("runInit", () => {
         prompted: false,
         applied: false,
       });
-      expect(result.next_steps).toContain("Add workflow guidance later: pm init --agent-guidance add");
+      expect(result.next_steps).toContain(
+        `Add workflow guidance later: pm --pm-path ${tempRoot} init --agent-guidance add`,
+      );
 
       for (const subdir of PM_REQUIRED_SUBDIRS) {
         const expectedPath = subdir ? path.join(tempRoot, subdir) : tempRoot;
@@ -459,6 +520,7 @@ describe("runInit", () => {
       expect(summary).not.toHaveProperty("settings");
       expect(summary.ok).toBe(true);
       expect(summary.path).toBe(tempRoot);
+      expect(summary.target).toEqual(result.target);
       expect(summary.id_prefix).toBe("acme-");
       expect(summary.governance_preset).toBe(result.governance_preset);
       expect(summary.telemetry).toEqual({
@@ -502,7 +564,9 @@ describe("runInit", () => {
         updated: [],
       });
       expect(result.warnings).toContain("registered_type_preset:agile");
-      expect(result.next_steps).toContain("Inspect registered preset types: pm schema list, pm schema show Story");
+      expect(result.next_steps).toContain(
+        `Inspect registered preset types: pm --pm-path ${tempRoot} schema list, pm --pm-path ${tempRoot} schema show Story`,
+      );
       expect((await stat(path.join(tempRoot, "stories"))).isDirectory()).toBe(true);
       expect((await stat(path.join(tempRoot, "spikes"))).isDirectory()).toBe(true);
 
@@ -652,7 +716,9 @@ describe("runInit", () => {
         present: false,
       });
       expect(statusMissing.warnings).toContain("agent_guidance:missing");
-      expect(statusMissing.next_steps).toContain("Add workflow guidance later: pm init --agent-guidance add");
+      expect(statusMissing.next_steps).toContain(
+        `Add workflow guidance later: pm --pm-path ${tempRoot} init --agent-guidance add`,
+      );
 
       const skipped = await runInit("pm", { path: tempRoot }, { defaults: true, agentGuidance: "skip" });
       const declinedAt = skipped.settings.agent_guidance.declined_at;
@@ -829,7 +895,7 @@ describe("runInit", () => {
       details: {
         installed_all: false,
         installed_count: 1,
-        packages: [{ alias: 42, ok: false }],
+        packages: [{ alias: "calendar", ok: false }],
       },
       warnings: [],
     }));
@@ -851,10 +917,29 @@ describe("runInit", () => {
           initModule.runInit("pm", { path: tempRoot }, { defaults: true, withPackages: true, agentGuidance: "skip" }),
         ).rejects.toMatchObject({
           exitCode: EXIT_CODE.GENERIC_FAILURE,
-          message: "pm init --with-packages did not install all bundled packages successfully.",
+          message: expect.stringContaining("pm init --with-packages did not install all bundled packages successfully: calendar"),
         });
       } finally {
         await rm(tempRoot, { recursive: true, force: true });
+      }
+
+      runExtensionMock.mockResolvedValue({
+        action: "extension",
+        status: "ok",
+        scope: "project",
+        details: { installed_all: false, installed_count: 0, packages: [] },
+        warnings: [],
+      });
+      const emptyFailureRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-with-packages-empty-fail-"));
+      try {
+        await expect(
+          initModule.runInit("pm", { path: emptyFailureRoot }, { defaults: true, withPackages: true, agentGuidance: "skip" }),
+        ).rejects.toMatchObject({
+          exitCode: EXIT_CODE.GENERIC_FAILURE,
+          message: expect.stringMatching(/successfully\.$/),
+        });
+      } finally {
+        await rm(emptyFailureRoot, { recursive: true, force: true });
       }
     } finally {
       vi.doUnmock("../../../src/cli/commands/extension.js");

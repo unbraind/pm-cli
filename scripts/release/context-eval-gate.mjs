@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  CONTEXT_EVALUATION_METRIC_NAMES,
   PmClient,
   runContextEvaluationScenario,
   summarizeContextEvaluationReports,
@@ -28,7 +29,12 @@ function readCorpus(corpusPath) {
   if (corpus.version !== 1 || !Array.isArray(corpus.scenarios) || corpus.scenarios.length === 0) {
     fail("Context evaluation corpus requires version 1 and a non-empty scenarios array");
   }
-  requiredObject(corpus.thresholds, "thresholds");
+  const thresholds = requiredObject(corpus.thresholds, "thresholds");
+  for (const metric of CONTEXT_EVALUATION_METRIC_NAMES) {
+    if (!Number.isFinite(thresholds[metric])) {
+      fail(`Context evaluation threshold ${metric} must be a finite number`);
+    }
+  }
   return corpus;
 }
 

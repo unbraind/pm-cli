@@ -336,6 +336,16 @@ describe("extension command runtime", () => {
       action_paths: ["b"],
       help_commands: ["pm z --help", "pm a --help"],
     });
+    const missingSdkDiscovery = extensionCommandTestOnly.buildInstallCommandDiscovery(
+      "fallback",
+      { kind: "local", input: "./ext", location: "/tmp/ext" },
+      { command_paths: ["fallback ping"], action_paths: ["fallback-ping"] },
+      { layer: "project", name: "fallback", entry_path: "/tmp/ext/index.js", error: "Cannot find @unbrained/pm-cli" },
+    );
+    expect(missingSdkDiscovery).toMatchObject({
+      help_commands: ["pm fallback ping --help"],
+      next_steps: [expect.stringContaining("Install @unbrained/pm-cli"), "pm fallback ping --help"],
+    });
     expect(
       extensionCommandTestOnly.collectGlobalOutputOverrideDoctorWarnings({
         services: { overrides: [{ service: "output_format", layer: "project", name: "svc" }, { service: "other" }] },
@@ -2142,7 +2152,6 @@ describe("extension command runtime", () => {
         target_path: scaffoldPath,
         created_directory: true,
       });
-
       // The default export wires both lifecycle hooks emitted by the starter.
       const entry = await expectScaffoldedStrictManifestAndTypedEntry(scaffoldPath, { name: "starter-ext" });
       expect(entry).toContain("  deactivate,");
@@ -2370,6 +2379,9 @@ describe("extension command runtime", () => {
         },
         created_directory: true,
       });
+      expect(scaffold.details.next_steps).toEqual(
+        expect.arrayContaining([expect.stringContaining("target workspace can resolve @unbrained/pm-cli")]),
+      );
 
       // The declarative entrypoint is the composeExtension blueprint loop.
       const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
@@ -6325,9 +6337,17 @@ describe("extension command runtime", () => {
       );
 
       const install = await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+      expect(install.ok).toBe(false);
       expect(install.warnings).toEqual(expect.arrayContaining(["extension_activate_failed:project:activation-diag-ext"]));
       expect(install.details).toMatchObject({
+        activated: false,
         runtime_activation_status: "failed",
+        verification: {
+          status: "degraded",
+          target_pm_root: context.pmPath,
+          activated: false,
+          health: { status: "degraded", blocking_failure_count: 1 },
+        },
         activation_diagnostics: {
           failed_count: 1,
           installed_extension_failed: expect.objectContaining({
@@ -6368,6 +6388,40 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("reports an unresolvable declarative SDK import as a failed install with recovery", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "missing-sdk-source");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(path.join(sourceDir, "manifest.json"), JSON.stringify({
+        name: "missing-sdk-ext",
+        version: "1.0.0",
+        entry: "index.js",
+        capabilities: ["commands"],
+      }), "utf8");
+      await writeFile(
+        path.join(sourceDir, "index.js"),
+        'throw new Error("Cannot find package \'@unbrained/pm-cli\' imported from extension");\n',
+        "utf8",
+      );
+
+      const install = await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+
+      expect(install.ok).toBe(false);
+      expect(install.details).toMatchObject({
+        activated: false,
+        runtime_activation_status: "failed",
+        command_discovery: {
+          sdk_dependency_status: "missing",
+          next_steps: expect.arrayContaining([expect.stringContaining("Install @unbrained/pm-cli")]),
+        },
+        activation_diagnostics: {
+          failed_count: 1,
+          installed_extension_failed: expect.objectContaining({ name: "missing-sdk-ext" }),
+        },
+      });
+    });
+  });
+
   it("reports install runtime activation status from scoped runtime probe", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "runtime-status-source");
@@ -6398,8 +6452,14 @@ describe("extension command runtime", () => {
       );
 
       const install = await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath, noExtensions: true });
+      expect(install.ok).toBe(false);
       expect(install.details).toMatchObject({
+        activated: false,
         runtime_activation_status: "not_loaded",
+        verification: {
+          status: "degraded",
+          health: { status: "degraded", blocking_failure_count: 1 },
+        },
       });
     });
   });

@@ -2,18 +2,32 @@ id: pm-b3e9
 title: Pre-install package-owned command names should hint the owning package install command
 description: "2026-07-04 sandbox review: in a fresh workspace, pm completion/guide/templates fail with generic unknown-command guidance (examples: pm --help, pm activity --help). These names are known package-owned surfaces (pm-guide-shell, pm-templates); unknown-command guidance should map known first-party package command roots to a hint like: install with pm install guide-shell --project. Keeps never-block promise for the pre-install experience."
 type: Task
-status: open
+status: closed
 priority: 3
 tags[3]: agent-ux,audit-followup,extensions
 created_at: "2026-07-04T06:30:00.437Z"
-updated_at: "2026-07-07T14:17:56.410Z"
+updated_at: "2026-07-10T05:53:48.678Z"
+closed_at: "2026-07-10T05:53:47.207Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Every package-owned command root (completion*, shell, guide, templates, calendar/cal, comments-audit, dedupe-audit, dedupe-merge, normalize, reindex, search-advanced, test-runs) yields an install hint naming the owning package pre-install."
 parent: pm-mpbb
 risk: low
 confidence: medium
+resolution: Verified package-owned command guidance maps unavailable first-party commands to their install commands.
+expected_result: Pre-install unknown commands identify the owning package and recovery command.
+actual_result: Focused error-guidance linked tests pass in the full active-item verification bundle.
+comments[1]{created_at,author,text}:
+  "2026-07-10T05:53:27.341Z",codex-root-20260709,"Verification evidence 2026-07-10: full sandbox suite passed 270 files / 5,505 tests with exact 100% statements, branches, functions, and lines. pm test-all over the seven active items passed 8 linked commands with 0 failures and 1 duplicate-safe skip. pnpm typecheck, contracts:check, lint (ESLint + 0 jscpd clones + static quality/token budget), docs-skills, context-eval, security scan, and audit all passed. Live CodeFactor reports A+ and 0 issues. Fresh packed npm install at /tmp/pm-cli-sdk-path-proof-XIsSsh activated 11 bundled packages in a path-target tracker, left caller extension files at zero, and passed CLI/SDK context plus isolated doctor with zero blocking failures. pm health is clean and history drift is zero."
 notes[2]{created_at,author,text}:
   "2026-07-04T06:44:03.343Z",maintainer-agent,"Fixed same session: KNOWN_PACKAGE_COMMAND_HINTS extended from 4 entries (guide/templates/calendar/cal) to all package-owned command roots — completion + completion-statuses/tags/types + shell (guide-shell), comments-audit/dedupe-audit/dedupe-merge/normalize (governance-audit), reindex/search-advanced (search-advanced), test-runs (linked-test-adapters). Aliases verified against packages/*/package.json pm.aliases."
   "2026-07-04T07:09:09.322Z",maintainer-agent,"2026-07-04 verified live in fresh workspace: guide/shell/completion/templates/calendar/reindex/test-runs/dedupe-audit/normalize all yield owning-package install hints pre-install. Also deduped the doubled install step (commander-usage generic hint vs specific hint) in buildKnownPackageCommandGuidance."
+files[2]{path,scope,note}:
+  src/cli/error-guidance.ts,project,Canonical package-owned command install hints
+  tests/unit/cli/error-guidance.spec.ts,project,Package command hint coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts,project,300,Known package command recovery proof
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mreilef6-55k1ab,test-all,passed,"2026-07-10T05:48:11.158Z","2026-07-10T05:50:40.347Z","2026-07-10T05:50:40.347Z",1,0,0,1,1
+close_reason: "Implementation, docs, contracts, exact coverage, linked tests, and packed installed-package proof complete."
 body: "## Context\n2026-07-04 sandbox review: in a fresh workspace, `pm completion`, `pm guide`, `pm templates` fail with generic unknown-command guidance (suggesting pm --help / pm activity --help) even though these are known first-party package-owned command roots (pm-guide-shell, pm-templates). Pre-install UX breaks the never-block promise.\n\n## Approach\nMaintain a static map of first-party package-owned command roots → owning package alias (derivable from the bundled catalog, same source as pm-jqd2's alias matching). When unknown-command dispatch misses, check the map first and emit: \"command 'guide' is provided by the guide-shell package — install with: pm install guide-shell --project\".\n\n## Definition of done\nFresh workspace: every bundled package-owned root command name yields the owning install hint; unknown non-package names keep the current did-you-mean; hint catalog covered by spec (install-hint catalog was 4→16 in the 2026-07-04 review — reuse it)."

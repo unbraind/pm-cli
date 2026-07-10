@@ -2,11 +2,11 @@ id: pm-n7rr
 title: "CLI surface simplification: noun-verb consolidation to a minimal agent-first command grammar (zero feature loss)"
 description: "Consolidate the ~60 top-level pm commands into a minimal, predictable noun-verb grammar so agents can operate the full surface from a small command set. Every existing feature and flag survives; removed spellings live on as hidden back-compat aliases. Duplicate check: searched simplify/consolidation/tiered-help/alias items — only closed historical polish (pm-5k2w, pm-rnpb) matched; no open overlap."
 type: Epic
-status: in_progress
+status: open
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",refactor,simplification
 created_at: "2026-07-05T04:51:21.783Z"
-updated_at: "2026-07-08T20:07:39.770Z"
+updated_at: "2026-07-10T05:12:39.592Z"
 author: maintainer-agent
 estimated_minutes: 2400
 acceptance_criteria: Top-level command list fits one help screen (~15 nouns); every pre-existing command spelling still works (hidden alias shims + deprecation notice); contracts/MCP/completions/docs regenerated with zero feature regression; agent token cost of 'pm --help' + contracts measurably reduced; all existing tests pass unchanged (aliases keep old spellings valid)

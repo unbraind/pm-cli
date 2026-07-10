@@ -260,6 +260,16 @@ describe("context evaluation gate", () => {
         rationale: "Empty workspace fallback",
       }],
     };
+    await writeFile(corpusPath, JSON.stringify({
+      ...corpus,
+      thresholds: { ...corpus.thresholds, ndcg: null },
+    }));
+    await expect(gate.main(["--corpus", corpusPath])).rejects.toThrow("EXIT:1");
+    const incompleteThresholds = Object.fromEntries(
+      Object.entries(corpus.thresholds).filter(([metric]) => metric !== "reciprocal_rank"),
+    );
+    await writeFile(corpusPath, JSON.stringify({ ...corpus, thresholds: incompleteThresholds }));
+    await expect(gate.main(["--corpus", corpusPath])).rejects.toThrow("EXIT:1");
     await writeFile(corpusPath, JSON.stringify(corpus));
     await expect(gate.main(["--corpus", corpusPath, "--baseline", baselinePath])).rejects.toThrow("EXIT:1");
     await gate.main(["--corpus", corpusPath, "--baseline", baselinePath, "--update"]);

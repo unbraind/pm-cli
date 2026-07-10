@@ -122,7 +122,9 @@ function resolveWeights(
 ): Record<ContextRelevanceSignalName, number> {
   const weights = { ...DEFAULT_CONTEXT_RELEVANCE_WEIGHTS };
   for (const [signal, weight] of Object.entries(overrides ?? {})) {
-    if (weight !== undefined) weights[signal as ContextRelevanceSignalName] = weight;
+    if (weight !== undefined && CONTEXT_RELEVANCE_SIGNAL_NAMES.includes(signal as ContextRelevanceSignalName)) {
+      weights[signal as ContextRelevanceSignalName] = weight;
+    }
   }
   for (const [signal, weight] of Object.entries(weights)) {
     if (!Number.isFinite(weight) || weight < 0) {
@@ -348,6 +350,15 @@ export interface ContextEvaluationThresholds {
   token_budget_adherence: number;
 }
 
+/** Canonical aggregate metrics required by every context evaluation corpus. */
+export const CONTEXT_EVALUATION_METRIC_NAMES = [
+  "ndcg",
+  "reciprocal_rank",
+  "required_recall",
+  "continuity_coverage",
+  "token_budget_adherence",
+] as const satisfies readonly (keyof ContextEvaluationThresholds)[];
+
 /** Aggregate context evaluation report suitable for a CI quality gate. */
 export interface ContextEvaluationCorpusReport {
   scenario_count: number;
@@ -455,7 +466,12 @@ export function summarizeContextEvaluationReports(
   if (reports.length === 0) {
     throw new TypeError("Context evaluation requires at least one scenario report");
   }
-  const metrics = Object.keys(thresholds) as Array<keyof ContextEvaluationThresholds>;
+  const metrics = CONTEXT_EVALUATION_METRIC_NAMES;
+  for (const metric of metrics) {
+    if (!Number.isFinite(thresholds[metric])) {
+      throw new TypeError(`Context evaluation threshold ${metric} must be a finite number`);
+    }
+  }
   const aggregate = Object.fromEntries(
     metrics.map((metric) => [
       metric,

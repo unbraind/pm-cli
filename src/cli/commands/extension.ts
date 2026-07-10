@@ -7,8 +7,9 @@ import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { activateExtensions, loadExtensions, nextExtensionReloadToken } from "../../core/extensions/index.js";
+import { activateExtensions, createSerialQueue, loadExtensions, nextExtensionReloadToken } from "../../core/extensions/index.js";
 import { resolveExtensionRoots } from "../../core/extensions/loader.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
@@ -1025,6 +1026,8 @@ interface GithubUpdateStatus {
 }
 type ActivationFailureEntry = Awaited<ReturnType<typeof activateExtensions>>["failed"][number];
 
+const extensionRuntimeProbeQueue = createSerialQueue();
+
 interface ActivationFailureDiagnostic {
   layer: string;
   name: string;
@@ -1069,18 +1072,26 @@ function buildInstallCommandDiscovery(
   extensionName: string,
   source: ManagedExtensionSource,
   commandSummary: { command_paths: string[]; action_paths: string[] },
+  activationFailure?: ActivationFailureDiagnostic,
 ): Record<string, unknown> {
   const helpCommands = commandSummary.command_paths.map((commandPath) => `pm ${commandPath} --help`);
+  const sdkDependencyMissing = activationFailure?.error.toLowerCase().includes("@unbrained/pm-cli") === true;
+  const nextSteps = commandSummary.command_paths.length > 0
+    ? [...helpCommands]
+    : ["Run pm package doctor --project --detail deep if expected package commands are missing."];
+  if (sdkDependencyMissing) {
+    nextSteps.unshift(
+      "Install @unbrained/pm-cli in the target workspace so declarative package runtime imports resolve, then reinstall the package.",
+    );
+  }
   return {
     package_name: resolveCommandDiscoveryPackageName(extensionName, source),
     extension_name: extensionName,
     command_paths: commandSummary.command_paths,
     action_paths: commandSummary.action_paths,
     help_commands: helpCommands,
-    next_steps:
-      commandSummary.command_paths.length > 0
-        ? helpCommands
-        : ["Run pm package doctor --project --detail deep if expected package commands are missing."],
+    next_steps: nextSteps,
+    ...(sdkDependencyMissing ? { sdk_dependency_status: "missing" } : {}),
   };
 }
 
@@ -1148,26 +1159,49 @@ async function probeRuntimeCommandPathsForInstall(
   installed: ManagedExtensionSummary[];
   warnings: string[];
   activation_failures: ActivationFailureDiagnostic[];
+  extensions_disabled: boolean;
   item_type_registrations: Awaited<ReturnType<typeof activateExtensions>>["registrations"]["item_types"];
 }> {
-  const loadResult = await loadExtensions({
-    pmRoot,
-    settings,
-    cwd: process.cwd(),
-    noExtensions: global.noExtensions === true,
-    reload_token: nextExtensionReloadToken(),
-    cache_bust: true,
+  return extensionRuntimeProbeQueue.enqueue(async () => {
+    const originalPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    process.env.PM_CLI_PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+    try {
+      const loadResult = await loadExtensions({
+        pmRoot,
+        settings,
+        cwd: process.cwd(),
+        noExtensions: global.noExtensions === true,
+        reload_token: nextExtensionReloadToken(),
+        cache_bust: true,
+      });
+      const activationResult = await activateExtensions({
+        ...loadResult,
+        loaded: loadResult.loaded,
+      });
+      const runtimeFailures = [
+        ...loadResult.failed.map((failure) => ({
+          layer: failure.layer,
+          name: failure.name,
+          entry_path: failure.entry_path,
+          error: failure.error,
+        })),
+        ...collectActivationFailureDiagnostics(activationResult.failed),
+      ];
+      return {
+        installed: applyDoctorRuntimeActivationState(refreshedInstalled, loadResult, activationResult),
+        warnings: [...loadResult.warnings, ...activationResult.warnings],
+        activation_failures: runtimeFailures,
+        extensions_disabled: loadResult.disabled_by_flag,
+        item_type_registrations: activationResult.registrations.item_types,
+      };
+    } finally {
+      if (originalPackageRoot === undefined) {
+        delete process.env.PM_CLI_PACKAGE_ROOT;
+      } else {
+        process.env.PM_CLI_PACKAGE_ROOT = originalPackageRoot;
+      }
+    }
   });
-  const activationResult = await activateExtensions({
-    ...loadResult,
-    loaded: loadResult.loaded,
-  });
-  return {
-    installed: applyDoctorRuntimeActivationState(refreshedInstalled, loadResult, activationResult),
-    warnings: [...loadResult.warnings, ...activationResult.warnings],
-    activation_failures: collectActivationFailureDiagnostics(activationResult.failed),
-    item_type_registrations: activationResult.registrations.item_types,
-  };
 }
 
 async function checkGithubUpdate(
@@ -1449,7 +1483,7 @@ interface ExtensionActionContext {
   warnings: string[];
   options: ExtensionCommandOptions;
   global: GlobalOptions;
-  withResult: (details: Record<string, unknown>) => ExtensionCommandResult;
+  withResult: (details: Record<string, unknown>, ok?: boolean) => ExtensionCommandResult;
 }
 
 /**
@@ -1556,9 +1590,9 @@ export async function runExtension(
   const scope = resolveScope(options);
   const resolvedRoots = resolveExtensionRootsForScope(scope, global);
   const warnings: string[] = [];
-  const withResult = (details: Record<string, unknown>): ExtensionCommandResult => {
+  const withResult = (details: Record<string, unknown>, ok = true): ExtensionCommandResult => {
     const result: ExtensionCommandResult = {
-      ok: true,
+      ok,
       action,
       scope,
       roots: action === "catalog" && typeof options.fields === "string" && options.fields.trim().length > 0
@@ -1638,6 +1672,9 @@ async function runExtensionInitAction(ctx: ExtensionActionContext): Promise<Exte
         : [
             `Install type-check dependencies: cd ${quotedShellTargetPath}, then run "npm install -D typescript @types/node @unbrained/pm-cli"`,
           ]),
+      ...(options.vocabulary === "package" && options.declarative === true
+        ? ["Ensure the target workspace can resolve @unbrained/pm-cli before installing this declarative package."]
+        : []),
       `Install the scaffold: ${options.vocabulary === "package" ? "pm install --project" : "pm extension --install --project"} ${quotedTargetPath}`,
       `Smoke-test command path: pm ${scaffold.command_name}`,
       ...(options.vocabulary === "package"
@@ -1853,6 +1890,25 @@ async function performExtensionInstallUnderLock(
     runtimeProbe.installed,
     installActivationFailure,
   );
+  const activated =
+    !runtimeProbe.extensions_disabled &&
+    runtimeActivationStatus !== "failed";
+  if (!activated) {
+    warnings.push(`extension_install_activation_failed:${scope}:${validated.manifest.name}:${runtimeActivationStatus}`);
+  }
+  const verification = {
+    status: activated ? "ok" : "degraded",
+    target_pm_root: resolvedRoots.pm_root,
+    activation_status: runtimeActivationStatus,
+    activated,
+    registered_commands: commandSummary.command_paths,
+    registered_actions: commandSummary.action_paths,
+    registered_item_types: installedItemTypeDefinitions,
+    health: {
+      status: activated ? "ok" : "degraded",
+      blocking_failure_count: activated ? 0 : 1,
+    },
+  };
 
   return withResult({
     extension: {
@@ -1866,18 +1922,24 @@ async function performExtensionInstallUnderLock(
     destination_path: destinationDirectory,
     overwritten: destinationExists && !installInPlace,
     installed_in_place: installInPlace,
-    activated: true,
+    activated,
     settings_changed: activationChanged,
     runtime_activation_status: runtimeActivationStatus,
     command_paths: commandSummary.command_paths,
     action_paths: commandSummary.action_paths,
-    command_discovery: buildInstallCommandDiscovery(validated.manifest.name, sourceRecord, commandSummary),
+    command_discovery: buildInstallCommandDiscovery(
+      validated.manifest.name,
+      sourceRecord,
+      commandSummary,
+      installActivationFailure,
+    ),
+    verification,
     activation_diagnostics: {
       failed_count: runtimeProbe.activation_failures.length,
       failed: runtimeProbe.activation_failures,
       installed_extension_failed: installActivationFailure ?? null,
     },
-  });
+  }, activated);
 }
 
 async function runExtensionInstallAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
@@ -1899,9 +1961,11 @@ async function runExtensionInstallAction(ctx: ExtensionActionContext): Promise<E
     for (const entry of packages) {
       warnings.push(...entry.result.warnings);
     }
+    const installedAll = packages.every((entry) => entry.result.ok);
     return withResult({
-      installed_all: true,
-      installed_count: packages.length,
+      installed_all: installedAll,
+      installed_count: packages.filter((entry) => entry.result.ok).length,
+      failed_count: packages.filter((entry) => !entry.result.ok).length,
       packages: packages.map((entry) => ({
         alias: entry.alias,
         ok: entry.result.ok,
@@ -1913,9 +1977,12 @@ async function runExtensionInstallAction(ctx: ExtensionActionContext): Promise<E
         command_paths: (entry.result.details as { command_paths?: unknown }).command_paths,
         action_paths: (entry.result.details as { action_paths?: unknown }).action_paths,
         command_discovery: (entry.result.details as { command_discovery?: unknown }).command_discovery,
+        verification: (entry.result.details as { verification?: unknown }).verification,
+        runtime_activation_status: (entry.result.details as { runtime_activation_status?: unknown }).runtime_activation_status,
+        activation_diagnostics: (entry.result.details as { activation_diagnostics?: unknown }).activation_diagnostics,
         warnings: entry.result.warnings,
       })),
-    });
+    }, installedAll);
   }
   /* c8 ignore start -- github/local alias-source split is exercised in install-action integration tests */
   const bundledAliasSource =

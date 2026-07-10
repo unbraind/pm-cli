@@ -34,6 +34,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings, writeSettings } from "../../core/store/settings.js";
 import type { GovernancePreset, PmSettings } from "../../types/index.js";
+import { renderPmCommand } from "../argv-utils.js";
 import { runExtension, type ExtensionCommandResult } from "./extension.js";
 import {
   INIT_AGENT_GUIDANCE_MODE_VALUES,
@@ -74,12 +75,20 @@ export interface InitRegisteredTypePresetSummary {
  */
 export type InitAgentGuidanceResult = InitAgentGuidanceSummary & { next_steps: string[] };
 
+/** Describes how init resolved the tracker and optional workspace target. */
+export interface InitTargetResolution {
+  mode: "workspace-discovery" | "tracker-path" | "workspace-path";
+  tracker_root: string;
+  workspace_root?: string;
+}
+
 /**
  * Documents the init result payload exchanged by command, SDK, and package integrations.
  */
 export interface InitResult {
   ok: boolean;
   path: string;
+  target: InitTargetResolution;
   settings: PmSettings;
   created_dirs: string[];
   warnings: string[];
@@ -102,6 +111,7 @@ export interface InitCommandOptions {
   agentGuidance?: string;
   typePreset?: string;
   force?: boolean;
+  workspace?: string;
 }
 
 /**
@@ -115,6 +125,7 @@ export interface InitCommandOptions {
 export interface InitConciseResult {
   ok: boolean;
   path: string;
+  target: InitTargetResolution;
   id_prefix: string;
   governance_preset: GovernancePreset;
   telemetry: {
@@ -140,6 +151,7 @@ export function summarizeInitResult(result: InitResult): InitConciseResult {
   return {
     ok: result.ok,
     path: result.path,
+    target: result.target,
     id_prefix: result.settings.id_prefix,
     governance_preset: result.governance_preset,
     telemetry: {
@@ -171,6 +183,7 @@ export const _testOnly = {
   runInitWizard,
   setInitReadlineFactoryForTests,
   summarizeInstalledPackages,
+  buildInitNextSteps,
   registerInitTypePreset,
   assertExplicitTrackerPathIsNotWorkspaceRoot,
   isLikelyWorkspaceRoot,
@@ -271,18 +284,42 @@ function resolveInitInvocation(
   cwd: string,
   global: GlobalOptions,
   prefixArg: string | undefined,
-): { pmRoot: string; prefixArg: string | undefined; positional_target?: string } {
+  workspaceArg?: string,
+): { pmRoot: string; prefixArg: string | undefined; target: InitTargetResolution } {
+  const normalizedWorkspace = workspaceArg?.trim();
+  if (workspaceArg !== undefined && normalizedWorkspace?.length === 0) {
+    throw new PmCliError("--workspace must not be empty", EXIT_CODE.USAGE);
+  }
+  if (normalizedWorkspace !== undefined) {
+    if (global.path !== undefined || isPathLikeInitTarget(prefixArg)) {
+      throw new PmCliError(
+        "--workspace cannot be combined with --pm-path/--path or a path-like positional target.",
+        EXIT_CODE.USAGE,
+      );
+    }
+    const workspaceRoot = path.resolve(cwd, normalizedWorkspace);
+    const pmRoot = path.join(workspaceRoot, ".agents", "pm");
+    return {
+      pmRoot,
+      prefixArg,
+      target: { mode: "workspace-path", tracker_root: pmRoot, workspace_root: workspaceRoot },
+    };
+  }
   if (global.path === undefined && isPathLikeInitTarget(prefixArg)) {
     const positionalTarget = path.resolve(cwd, prefixArg!.trim());
     return {
       pmRoot: positionalTarget,
       prefixArg: undefined,
-      positional_target: positionalTarget,
+      target: { mode: "tracker-path", tracker_root: positionalTarget },
     };
   }
+  const pmRoot = resolvePmRoot(cwd, global.path);
   return {
-    pmRoot: resolvePmRoot(cwd, global.path),
+    pmRoot,
     prefixArg,
+    target: global.path === undefined
+      ? { mode: "workspace-discovery", tracker_root: pmRoot, workspace_root: cwd }
+      : { mode: "tracker-path", tracker_root: pmRoot },
   };
 }
 
@@ -393,8 +430,8 @@ async function isLikelyWorkspaceRoot(candidate: string): Promise<boolean> {
   return false;
 }
 
-async function assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot: string, global: GlobalOptions, force: boolean): Promise<void> {
-  if (global.path === undefined || force) {
+async function assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot: string, explicitTrackerTarget: boolean, force: boolean): Promise<void> {
+  if (!explicitTrackerTarget || force) {
     return;
   }
   if (await pathExists(path.join(pmRoot, "settings.json"))) {
@@ -410,7 +447,7 @@ async function assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot: string, globa
     {
       code: "workspace_root_pm_path",
       type: "urn:pm-cli:error:workspace_root_pm_path",
-      why: "--pm-path/--path points at the tracker storage directory itself, not the repository workspace. Point it at .agents/pm or pass --force if you intentionally want root-level tracker files.",
+      why: "Path-like init targets and --pm-path/--path point at the tracker storage directory itself, not the repository workspace. Point at .agents/pm, use --workspace, or pass --force if you intentionally want root-level tracker files.",
       examples: [
         `pm --pm-path ${nestedTracker} init --yes`,
         "pm init --yes",
@@ -771,16 +808,21 @@ async function ensureInitTypeDirectories(params: {
 async function maybeInstallInitBundledPackages(
   installBundledPackages: boolean,
   global: GlobalOptions,
+  pmRoot: string,
   warnings: string[],
 ): Promise<InitInstalledPackagesSummary | undefined> {
   if (!installBundledPackages) {
     return undefined;
   }
-  const packageInstallResult = await runExtension("all", { install: true, project: true }, global);
+  const packageInstallResult = await runExtension("all", { install: true, project: true }, { ...global, path: pmRoot });
   warnings.push(...packageInstallResult.warnings);
   const installedPackages = summarizeInstalledPackages(packageInstallResult);
-  if (!installedPackages.installed_all || installedPackages.packages.some((entry) => !entry.ok)) {
-    throw new PmCliError("pm init --with-packages did not install all bundled packages successfully.", EXIT_CODE.GENERIC_FAILURE);
+  const failedAliases = installedPackages.packages.filter((entry) => !entry.ok).map((entry) => entry.alias);
+  if (!installedPackages.installed_all || failedAliases.length > 0) {
+    throw new PmCliError(
+      `pm init --with-packages did not install all bundled packages successfully${failedAliases.length > 0 ? `: ${failedAliases.join(", ")}` : "."}`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
   }
   return installedPackages;
 }
@@ -789,27 +831,37 @@ function buildInitNextSteps(params: {
   installBundledPackages: boolean;
   registeredTypePreset: InitRegisteredTypePresetSummary | undefined;
   agentGuidanceNextSteps: string[];
+  target: InitTargetResolution;
 }): string[] {
+  const pmCommand = (args: string[]): string => renderPmCommand([
+    ...(params.target.mode === "workspace-discovery" ? [] : ["--pm-path", params.target.tracker_root]),
+    ...args,
+  ]);
   const nextSteps: string[] = [
-    'Create your first item: pm create --type Task --title "<title>"',
-    'List active items: pm list',
-    'Get agent-friendly project context: pm context',
+    `Create your first item: ${pmCommand(["create", "--type", "Task", "--title", "<title>"])}`,
+    `List active items: ${pmCommand(["list"])}`,
+    `Get agent-friendly project context: ${pmCommand(["context"])}`,
   ];
   if (!params.installBundledPackages) {
     nextSteps.push(
-      "Add optional packages for richer workflows: pm install calendar --project, pm install templates --project, pm install guide-shell --project",
+      `Add optional packages for richer workflows: ${pmCommand(["install", "calendar", "--project"])}, ${pmCommand(["install", "templates", "--project"])}, ${pmCommand(["install", "guide-shell", "--project"])}`,
     );
-    nextSteps.push("Or install everything bundled: pm init --with-packages (idempotent on re-run)");
+    nextSteps.push(`Or install everything bundled: ${pmCommand(["init", "--with-packages"])} (idempotent on re-run)`);
   } else {
-    nextSteps.push("Explore newly-available commands: pm cal, pm templates, pm guide");
+    nextSteps.push(`Explore newly-available commands: ${pmCommand(["cal"])}, ${pmCommand(["templates"])}, ${pmCommand(["guide"])}`);
   }
   if (params.registeredTypePreset) {
-    nextSteps.push(`Inspect registered preset types: pm schema list, pm schema show ${params.registeredTypePreset.registered[0] ?? params.registeredTypePreset.updated[0]}`);
+    nextSteps.push(
+      `Inspect registered preset types: ${pmCommand(["schema", "list"])}, ${pmCommand(["schema", "show", params.registeredTypePreset.registered[0] ?? params.registeredTypePreset.updated[0]])}`,
+    );
   }
   nextSteps.push("Set PM_AUTHOR=<your-agent-id> so mutations attribute to the right caller.");
   for (const guidanceNextStep of params.agentGuidanceNextSteps) {
-    if (!nextSteps.includes(guidanceNextStep)) {
-      nextSteps.push(guidanceNextStep);
+    const scopedGuidance = params.target.mode === "workspace-discovery"
+      ? guidanceNextStep
+      : guidanceNextStep.replace(/\bpm (?=[a-z])/g, () => `${pmCommand([])} `);
+    if (!nextSteps.includes(scopedGuidance)) {
+      nextSteps.push(scopedGuidance);
     }
   }
   return nextSteps;
@@ -824,10 +876,10 @@ export async function runInit(
   options: InitCommandOptions = {},
 ): Promise<InitResult> {
   const cwd = process.cwd();
-  const invocation = resolveInitInvocation(cwd, global, prefixArg);
+  const invocation = resolveInitInvocation(cwd, global, prefixArg, options.workspace);
   const pmRoot = invocation.pmRoot;
   prefixArg = invocation.prefixArg;
-  await assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot, global, options.force === true);
+  await assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot, invocation.target.mode === "tracker-path", options.force === true);
   const createdDirs: string[] = [];
   const warnings: string[] = [];
   const baseDirs = await ensureInitDirectories(pmRoot, PM_REQUIRED_SUBDIRS);
@@ -872,17 +924,24 @@ export async function runInit(
   }
 
   await ensureInitTypeDirectories({ pmRoot, settings, createdDirs, warnings });
-  const installedPackages = await maybeInstallInitBundledPackages(normalizedOptions.installBundledPackages, global, warnings);
+  const installedPackages = await maybeInstallInitBundledPackages(
+    normalizedOptions.installBundledPackages,
+    global,
+    pmRoot,
+    warnings,
+  );
 
   const nextSteps = buildInitNextSteps({
     installBundledPackages: normalizedOptions.installBundledPackages,
     registeredTypePreset,
     agentGuidanceNextSteps: agentGuidance.next_steps,
+    target: invocation.target,
   });
 
   return {
     ok: true,
     path: pmRoot,
+    target: invocation.target,
     settings,
     created_dirs: createdDirs,
     warnings,
