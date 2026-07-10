@@ -1,0 +1,18 @@
+id: pm-z32q
+title: "GH-498: pm comments rejects --body — accept it as an alias for --add and hint on unknown options"
+description: "Upstream GH-498 (filed 2026-07-10). Agents trained on gh/glab reach for 'pm comments <id> --body ...' and hit 'Unknown option --body', costing a failed call plus a --help round-trip per fresh session on one of the highest-frequency write paths."
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,cli,gh-issue,token-efficiency
+created_at: "2026-07-10T16:20:02.384Z"
+updated_at: "2026-07-10T16:22:00.814Z"
+author: maintainer-agent
+estimated_minutes: 45
+acceptance_criteria: "pm comments <id> --body <text> behaves exactly like --add <text> (hidden alias, help stays lean); unknown-option errors on comments suggest the nearest valid flag (e.g. --body -> --add); contract/completion/docs sites updated per the new-flag wiring checklist; regression test covers alias and suggestion; GH-498 closed with a comment linking the fix"
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-g543,related,"2026-07-10T16:20:02.384Z",null,null
+  pm-gdi7,related,"2026-07-10T16:22:00.795Z",null,null
+body: "## Problem\n`pm comments <id> --body \"...\"` fails with `Unknown option --body`. gh/glab muscle memory makes --body the reflexive flag for comment text; every fresh agent session pays ~2 wasted tool calls + a few hundred tokens rediscovering --add. Observed in a real session 2026-07-10 (vanilla @unbrained/pm-cli 2026.7.10).\n\n## Proposed fix\n1. Accept `--body <text>` as a hidden alias for `--add <text>` on `pm comments` (and mirror for `--edit` replacement text if cheap).\n2. Extend the unknown-option error path to suggest the nearest valid flag — the unknown-COMMAND suggester exists; unknown-OPTION suggestions are the gap (ranking defect on the command side is pm-g543 / GH-490, related edge).\n\n## Scope guard\nAlias only — no behavior change to --add; help output must not grow (hidden alias) per token-efficiency goals.\n\n## Source\nhttps://github.com/unbraind/pm-cli/issues/498"
