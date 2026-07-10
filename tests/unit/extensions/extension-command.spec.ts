@@ -1254,6 +1254,9 @@ describe("extension command runtime", () => {
     ]);
     expect(coerceLooseCommandOptionsWithFlagDefinitions({ tag: undefined, t: "two" }, definitions).tag).toEqual(["two"]);
     expect(coerceLooseCommandOptionsWithFlagDefinitions({ tag: "one", t: null }, definitions).tag).toEqual(["one"]);
+    const scalarAlias = coerceLooseCommandOptionsWithFlagDefinitions({ count: "3", c: "4" }, definitions);
+    expect(scalarAlias.count).toBe(3);
+    expect(scalarAlias).not.toHaveProperty("c");
 
     expect(
       stripLooseCommandOptionTokens(

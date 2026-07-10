@@ -122,7 +122,6 @@ describe("cli extension loose option parser", () => {
     });
     expect(coerceLooseCommandOptionsWithFlagDefinitions({ dryRun: false, d: true }, definitions)).toEqual({
       dryRun: false,
-      d: true,
     });
   });
 

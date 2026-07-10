@@ -608,6 +608,19 @@ describe("sdk lintExtensionBlueprint", () => {
 
   it("rejects reserved item-field collisions from the shared runtime list", () => {
     expect(RESERVED_ITEM_FIELD_NAMES.has("severity")).toBe(true);
+    expect((RESERVED_ITEM_FIELD_NAMES as { add?: unknown }).add).toBeUndefined();
+    const reservedValues = [...RESERVED_ITEM_FIELD_NAMES];
+    expect(RESERVED_ITEM_FIELD_NAMES.size).toBe(reservedValues.length);
+    expect([...RESERVED_ITEM_FIELD_NAMES.keys()]).toEqual(reservedValues);
+    expect([...RESERVED_ITEM_FIELD_NAMES.values()]).toEqual(reservedValues);
+    expect([...RESERVED_ITEM_FIELD_NAMES.entries()]).toEqual(reservedValues.map((value) => [value, value]));
+    const visited: string[] = [];
+    RESERVED_ITEM_FIELD_NAMES.forEach((value, duplicate, set) => {
+      expect(duplicate).toBe(value);
+      expect(set).toBe(RESERVED_ITEM_FIELD_NAMES);
+      visited.push(value);
+    });
+    expect(visited).toEqual(reservedValues);
     const result = lintExtensionBlueprint({ itemFields: [{ name: "severity", type: "string" }] });
     expect(result.ok).toBe(false);
     expect(result.findings).toContainEqual(expect.objectContaining({

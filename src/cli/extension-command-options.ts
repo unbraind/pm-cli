@@ -188,7 +188,9 @@ export function validateLooseCommandOptionsWithFlagDefinitions(
   for (const definition of definitions) {
     const keys = collectLooseOptionKeys(definition);
     const normalizedLabel = formatLooseOptionLabel(definition);
-    labels.push(...[normalizedLabel].filter((value): value is string => value !== null));
+    if (normalizedLabel !== null) {
+      labels.push(normalizedLabel);
+    }
     for (const key of keys) {
       allowed.add(key);
       if (definition.enabled === false) {
@@ -338,6 +340,7 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
       }
       if (Object.hasOwn(coerced, canonical)) {
         if (!isListFlag) {
+          delete coerced[key];
           continue;
         }
         const canonicalValue = coerced[canonical];
