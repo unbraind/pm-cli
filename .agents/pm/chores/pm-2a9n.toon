@@ -1,0 +1,37 @@
+id: pm-2a9n
+title: Refresh CodeQL Actions and reject incompatible Node 26 type-contract bump
+description: "Update both CodeQL action steps in lockstep to v4.37.0 at the official immutable commit SHA, take the safe @types/node 22.20.1 patch, and reject Dependabot PR #462 Node 26 declarations because the runtime contract remains Node >=22.18.0. Verify workflow, type, coverage, security, and package gates."
+type: Chore
+status: closed
+priority: 2
+tags[4]: codeql,dependencies,github-actions,typescript
+created_at: "2026-07-10T09:40:10.713Z"
+updated_at: "2026-07-10T10:14:23.217Z"
+closed_at: "2026-07-10T10:14:21.780Z"
+author: codex-root
+resolution: completed
+expected_result: "Keep CodeQL init/analyze pinned in lockstep to official v4.37.0, retain type-level enforcement of the Node 22 minimum runtime, and pass every required quality gate."
+actual_result: CodeQL v4.37.0 resolves to commit 99df26d4f13ea111d4ec1a7dddef6063f76b97e9; @types/node updates safely from 22.20.0 to 22.20.1 while the incompatible 26.x major is rejected. Typecheck and workflow contracts pass after the correction.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2czc,related_to,"2026-07-10T09:40:20.682Z",codex-root,canonical_lineage
+comments[3]{created_at,author,text}:
+  "2026-07-10T09:40:10.713Z",codex-root,"Duplicate check: pm search --status all for @types/node 26.1.0/26.1.1, CodeQL 4.37.0, Dependabot #462/#465 found canonical historical unblocking lineage pm-2czc but no item for the current version refresh. This concrete batch links to that closed precedent and supersedes the two stale bot branches."
+  "2026-07-10T09:58:01.513Z",codex-root,"Evidence: npm registry latest @types/node is 26.1.1 and lockfile integrity matches the registry. Official github/codeql-action v4.37.0 annotated tag peels to immutable commit 99df26d4f13ea111d4ec1a7dddef6063f76b97e9. Frozen install, TypeScript 6 typecheck, CI workflow contract suite, production audit, contract snapshot, ESLint, jscpd 0 clones, static/docstring gate, token budget, docs/skills, secret scan, and 88-command package-first dogfood all pass. Full coverage: 270 files, 5,506 tests, statements 34380/34380, branches 24588/24588, functions 6882/6882, lines 33039/33039."
+  "2026-07-10T10:07:14.948Z",codex-root,"Pre-push review correction: Greptile c3c227b6-2938-4f6a-b779-27fe90419cdc correctly identified that @types/node 26 would weaken the Node >=22.18.0 compile-time compatibility guard. Accepted: moved to current Node-22 patch 22.20.1 instead, retained engines.node, re-ran typecheck and workflow contracts, and removed the security tag so pm-changelog routes the maintenance entry accurately."
+notes[1]{created_at,author,text}:
+  "2026-07-10T09:58:02.248Z",codex-root,"GitHub consolidation: this batch supersedes stale Dependabot PR #462 (@types/node 26.1.0, while registry latest is 26.1.1) and behind-main PR #465 (CodeQL v4.37.0). Close both only after this combined current-version PR merges."
+learnings[1]{created_at,author,text}:
+  "2026-07-10T09:58:02.982Z",codex-root,"Dependency-bot PRs can become obsolete between rebase and review. Re-read the live registry and upstream annotated tag, peel the tag to its commit, and validate the combined graph instead of merging individually green but stale branches."
+files[3]{path,scope,note}:
+  .github/workflows/codeql.yml,project,Keep CodeQL init and analyze in lockstep on official v4.37.0 immutable commit SHA
+  package.json,project,Stay on Node 22 declaration line and take safe 22.20.1 patch instead of incompatible Node 26 major
+  pnpm-lock.yaml,project,Regenerate graph for @types/node 22.20.1 while preserving Node 22 runtime guardrail
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,900
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,240
+  pnpm typecheck,project,240
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrerjxv2-kq12zz,test,passed,"2026-07-10T09:58:41.764Z","2026-07-10T09:58:59.630Z","2026-07-10T09:58:59.630Z",1,0,0
+  test-local-mrerkdgb-9kbmdi,test,passed,"2026-07-10T09:59:00.138Z","2026-07-10T09:59:19.835Z","2026-07-10T09:59:19.835Z",1,0,0
+close_reason: "Updated CodeQL to v4.37.0 and @types/node to compatible 22.20.1; rejected Node 26, preserved Node 22 type safety, and removed duplicate tracker evidence identified in review."
+body: ""
