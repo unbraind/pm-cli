@@ -814,7 +814,7 @@ function extractCommandScopedOptions(
       }
     }
     validateLooseCommandOptionsWithFlagDefinitions(optionsToValidate, extensionFlagDefinitions, getCommandPath(command));
-    return coerceLooseCommandOptionsWithFlagDefinitions(scoped, extensionFlagDefinitions);
+    return coerceLooseCommandOptionsWithFlagDefinitions(scoped, extensionFlagDefinitions, looseOptions);
   }
   return scoped;
 }
@@ -1926,28 +1926,22 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
   activeRuntimeExtensionCommandDescriptors = new Map(snapshot.commandDescriptors);
   await maybeAttachCreateUpdatePolicyHelpText(rootProgram, pmRoot, invocationArgv, snapshot.registrations, snapshot.settings);
 
-  const commandPaths = [...new Set([...snapshot.commandHandlers, ...snapshot.commandDescriptors.keys()])].sort((left, right) =>
-    left.localeCompare(right),
-  );
-  for (const commandPath of commandPaths) {
+  const commandPaths = [...new Set([...snapshot.commandHandlers, ...snapshot.commandDescriptors.keys()])]
+    .filter((commandPath) => commandPath.trim().length > 0)
+    .sort((left, right) => left.localeCompare(right));
+  const registerCommandPath = (commandPath: string): void => {
     const pathParts = commandPath.split(" ").filter((part) => part.length > 0);
-    if (pathParts.length === 0) {
-      continue;
-    }
     const descriptor = snapshot.commandDescriptors.get(commandPath);
     const existingCommand = findCommandByPath(rootProgram, pathParts);
     const flagHelp = snapshot.commandFlagHelp.get(commandPath);
     const metadataHelp = descriptor ? buildDynamicExtensionCommandMetadataHelp(descriptor) : null;
     if (existingCommand) {
       attachDynamicExtensionHelp(existingCommand, descriptor, flagHelp, metadataHelp);
-      continue;
+      return;
     }
 
-    const dynamicCommand = ensureCommandPath(rootProgram, pathParts);
-    /* c8 ignore next */
-    if (!dynamicCommand) {
-      continue;
-    }
+    // Empty command paths were removed above, so ensureCommandPath cannot return null.
+    const dynamicCommand = ensureCommandPath(rootProgram, pathParts) as Command;
     if (descriptor?.description) {
       dynamicCommand.description(descriptor.description);
     }
@@ -1998,6 +1992,9 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
           printError(`profile:command=${commandPath} took_ms=${Date.now() - startedAt}`);
         }
       });
+  };
+  for (const commandPath of commandPaths) {
+    registerCommandPath(commandPath);
   }
 }
 /* c8 ignore stop */

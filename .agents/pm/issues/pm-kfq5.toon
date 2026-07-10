@@ -2,11 +2,12 @@ id: pm-kfq5
 title: "GH-496: extension flags declared list:true don't accumulate repeated occurrences — host maps to scalar, Commander last-wins drops values"
 description: "pm ops scan --repos a --repos b silently scans only b; --repos a,b works. The extension declares list:true in its flag contract and documents 'comma-separated or repeatable', but the host's option mapping registers a scalar option, so Commander's default last-wins overwrites earlier occurrences. Every extension advertising a repeatable flag inherits silent data loss — the worst failure mode for agents composing flags incrementally. Fix: when the declared FlagDefinition has list:true, register a collect-style reducer accumulating repeats into an array (merging with comma-splitting like core comma-list flags), or reject repeated occurrences with a clear error. Repro 100% in GH-496 (pm-ops 2026.7.10, but host-side). Related: pm-ltbr added the list field to FlagDefinition; pm-cf1u was the same last-wins trap for core --tag."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,extensions,gh-issue,sdk
 created_at: "2026-07-10T12:15:30.786Z"
-updated_at: "2026-07-10T12:15:30.786Z"
+updated_at: "2026-07-10T15:56:42.931Z"
+closed_at: "2026-07-10T15:56:42.255Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "Repeated occurrences of an extension flag declared list:true accumulate into an array (parity with core comma-list flags, comma form still works); regression test covers repeated+comma+mixed forms; contract docs state the repeatable behavior; GH-496 closed"
@@ -15,4 +16,18 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-cf1u,related,"2026-07-10T12:15:30.786Z",null,null
   pm-ltbr,related,"2026-07-10T12:15:30.786Z",null,null
+comments[5]{created_at,author,text}:
+  "2026-07-10T12:21:45.023Z",codex-root,"Implementation start: selected after live all-status duplicate/lineage review and full metadata inspection. This item is actively implemented in the broad schema-driven input fidelity bundle with pm-kfq5, pm-l6rz, pm-zazb, pm-b84u, and pm-ghf1; shared verification will include focused tests, 100/100/100/100 coverage, strict quality gates, and installed-package temporary-project proof."
+  "2026-07-10T13:18:53.622Z",codex-root,"Implementation evidence: broad schema-driven input fidelity bundle completed. Focused suite passed 445 tests; final repository coverage passed 270 files / 5514 tests at Statements 100%, Branches 100%, Functions 100%, Lines 100%; pnpm typecheck, lint (ESLint + zero jscpd clones + strict static/docstring/import-boundary/token gates), docs/skills, contracts snapshot, audit, secret scan, health, and history-drift checks passed. Installed-package proof from packed tarball in /tmp/pm-proof.rzTX77 verified repeated --ac stores 'first; second', malformed related:pm-abcd fails before graph mutation, and public SDK RESERVED_ITEM_FIELD_NAMES/lintExtensionBlueprint rejects severity collisions. Sentry telemetry is healthy (0.28% finish error rate); two external pm-starter package handled errors PM-CLI-1Y/1Z remain visible and are not caused by this change set."
+  "2026-07-10T13:55:17.959Z",codex-root,"Review evidence: accepted Gemini nullish-alias finding. Mixed list-alias accumulation now filters nullish runtime values while retaining canonical ordering and CSV coercion; regressions cover undefined canonical and null alias values. Full suite passed 5514 tests at 100/100/100/100 coverage; full strict lint, typecheck, and contracts check passed."
+  "2026-07-10T14:11:53.272Z",codex-root,"Final review evidence: scalar aliases are deleted when a canonical scalar is already present, while the canonical value retains precedence; both focused and repo-wide regressions pass. The fallback-label suggestion was reviewed and declined because collectLooseOptionKeys and formatLooseOptionLabel use the same long/short validity predicates, so keys cannot exist without a formatted label. Final full suite: 5514/5514 tests, 100/100/100/100 coverage; strict lint/type/contracts green."
+  "2026-07-10T15:56:41.401Z",codex-root,"Final Greptile alias-order evidence: parseLooseCommandOptions now records non-enumerable per-occurrence provenance and extension list coercion consumes that sequence, preserving interleaved canonical/short argv order before CSV flattening. Regression verifies -t alpha,beta, --tag gamma, -t delta becomes alpha,beta,gamma,delta. Dynamic registration complexity was reduced below the mandatory CodeFactor threshold without suppressions. Focused 133 tests, strict lint/type/static gates, and full 5514-test coverage pass at 100/100/100/100."
+files[1]{path,scope,note}:
+  src/cli/extension-command-options.ts,project,Accumulate mixed repeated long/short list flag occurrences before CSV coercion
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,240
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,CLI behavior and validation guidance
+  docs/SDK.md,project,SDK/package-author contract guidance
+close_reason: Extension list aliases preserve exact argv order through coercion; full gates pass.
 body: ""

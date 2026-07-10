@@ -8,7 +8,32 @@ import { normalizeItemFieldType, type KnownItemFieldType } from "./item-field-ty
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 
-const RESERVED_ITEM_FIELD_NAMES = new Set(FRONT_MATTER_KEY_ORDER);
+const reservedItemFieldNames = new Set(FRONT_MATTER_KEY_ORDER);
+
+/** Item metadata keys extension-provided fields may never shadow, exposed without mutation methods. */
+export const RESERVED_ITEM_FIELD_NAMES: ReadonlySet<string> = Object.freeze({
+  get size(): number {
+    return reservedItemFieldNames.size;
+  },
+  has(value: string): boolean {
+    return reservedItemFieldNames.has(value);
+  },
+  entries(): IterableIterator<[string, string]> {
+    return reservedItemFieldNames.entries();
+  },
+  keys(): IterableIterator<string> {
+    return reservedItemFieldNames.keys();
+  },
+  values(): IterableIterator<string> {
+    return reservedItemFieldNames.values();
+  },
+  forEach(callback: (value: string, value2: string, set: ReadonlySet<string>) => void, thisArg?: unknown): void {
+    reservedItemFieldNames.forEach((value) => callback.call(thisArg, value, value, RESERVED_ITEM_FIELD_NAMES));
+  },
+  [Symbol.iterator](): IterableIterator<string> {
+    return reservedItemFieldNames.values();
+  },
+});
 
 function normalizeFieldName(value: unknown): string | null {
   if (typeof value !== "string") {

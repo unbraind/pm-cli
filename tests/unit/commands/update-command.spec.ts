@@ -22,6 +22,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+it("rejects malformed dependency shorthand before prefix normalization", () => {
+  expect(() => _testOnlyUpdateCommand.parseDependencyAdditions(["related:pm-abcd"], "pm-", new Date().toISOString())).toThrow(
+    /id=<id>,kind=<kind>/,
+  );
+});
+
 // Optional scalar fields shared by the full-update and cancel-and-clear specs'
 // changed_fields assertions.
 const OPTIONAL_UPDATE_CHANGED_FIELDS = [

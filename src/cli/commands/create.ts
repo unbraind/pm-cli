@@ -111,6 +111,7 @@ import type {
   SharedLinkedResourceOptions,
 } from "./mutation-command-options.js";
 import { ensureEnumValue } from "./recurrence-parsers.js";
+import { assertValidBareDependencyFlagValue } from "../../sdk/dependency-flag-validation.js";
 import {
   parseEventEntries,
   parseReminderEntries,
@@ -348,6 +349,7 @@ function parseDependencies(
   const values: Dependency[] = raw.map((entry) => {
     const trimmedEntry = entry.trim();
     const isStructured = looksLikeStructuredEntry(trimmedEntry, DEP_SEED_KEYS);
+    assertValidBareDependencyFlagValue(trimmedEntry, isStructured);
     const kv = isStructured ? parseCsvKv(entry, "--dep") : { id: trimmedEntry, kind: "related" };
     if (isStructured) {
       assertNoUnknownCsvKeys(kv, "--dep", DEP_SEED_KEYS);
@@ -1012,7 +1014,7 @@ function ensurePriority(rawPriority: string | number): 0 | 1 | 2 | 3 | 4 {
 }
 
 function mergeCreateOptionsWithTemplate(
-  templateOptions: Record<string, string | string[]>,
+  templateOptions: Record<string, unknown>,
   explicitOptions: CreateCommandOptions,
 ): CreateCommandOptions {
   const merged: Record<string, unknown> = {};
@@ -1046,7 +1048,10 @@ function hasTemplatesShowHandler(): boolean {
   });
 }
 
-function readTemplateOptionsFromRuntimeResult(result: unknown, templateName: string): Record<string, string | string[]> {
+function readTemplateOptionsFromRuntimeResult(
+  result: unknown,
+  templateName: string,
+): Record<string, string | string[] | number | boolean> {
   if (typeof result !== "object" || result === null || !("options" in result)) {
     throw new PmCliError(
       `Templates package returned invalid payload for template "${templateName}". Expected an options object.`,
@@ -1060,9 +1065,9 @@ function readTemplateOptionsFromRuntimeResult(result: unknown, templateName: str
       EXIT_CODE.GENERIC_FAILURE,
     );
   }
-  const normalized: Record<string, string | string[]> = {};
+  const normalized: Record<string, string | string[] | number | boolean> = {};
   for (const [key, value] of Object.entries(options as Record<string, unknown>)) {
-    if (typeof value === "string") {
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
       normalized[key] = value;
       continue;
     }
@@ -1082,7 +1087,7 @@ async function loadCreateTemplateOptionsFromRuntime(
   templateName: string,
   global: GlobalOptions,
   pmRoot: string,
-): Promise<Record<string, string | string[]>> {
+): Promise<Record<string, string | string[] | number | boolean>> {
   if (!hasTemplatesShowHandler()) {
     throw new PmCliError(
       `--template requires the templates package. Install it first (for example: pm install templates --project).`,
@@ -1386,6 +1391,32 @@ function applyCreateDefaultType(
 }
 
 /**
+ * Select template-provided custom type options that can enter the scalar
+ * `--type-option` pipeline, protecting core create fields and rejecting
+ * non-scalar custom defaults instead of silently dropping them.
+ */
+function collectTemplateCustomTypeOptions(
+  typeDefinition: ResolvedItemTypeDefinition,
+  resolvedOptions: CreateCommandOptions,
+): ResolvedItemTypeDefinition["options"] {
+  return typeDefinition.options
+    .filter((option) => canonicalizeCommandOptionKey("create", option.key) === undefined)
+    .flatMap((option) => {
+      const value = resolvedOptions[option.key];
+      if (value === undefined) {
+        return [];
+      }
+      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        return [option];
+      }
+      throw new PmCliError(
+        `Template custom type option "${option.key}" must be a string, number, or boolean value`,
+        EXIT_CODE.USAGE,
+      );
+    });
+}
+
+/**
  * Resolve the target item type and creation mode for `pm create`: merge any
  * `--template` options, apply the governance default-type fallback, map a
  * near-miss `--type` to its canonical synonym (never blocking), and derive the
@@ -1451,6 +1482,15 @@ async function resolveCreateTypeSelection(
   }
   /* c8 ignore stop */
   const type = typeDefinition.name;
+  const matchedTemplateTypeOptions = collectTemplateCustomTypeOptions(typeDefinition, resolvedOptions);
+  const templateTypeOptions = matchedTemplateTypeOptions
+    .map((option) => `${option.key}=${String(resolvedOptions[option.key])}`);
+  if (templateTypeOptions.length > 0) {
+    resolvedOptions.typeOption = [...templateTypeOptions, ...(resolvedOptions.typeOption ?? [])];
+    for (const option of matchedTemplateTypeOptions) {
+      delete resolvedOptions[option.key];
+    }
+  }
   const schedulePreset = resolveScheduleCreatePreset(resolvedOptions.schedulePreset);
   /* c8 ignore next -- schedule preset/type compatibility conflicts are validated in scheduler integration tests. */
   if (schedulePreset !== undefined && !SCHEDULE_CREATE_PRESET_TYPES.has(type)) {
@@ -2157,6 +2197,7 @@ export const _testOnlyCreateCommand = {
   mergeCreateOptionsWithTemplate,
   normalizeCreatePolicyOptionKey,
   normalizeDependencyKindInput,
+  parseDependencies,
   normalizeExtensionCommandPath,
   parseCreateUnsetTargets,
   requireStringOption,

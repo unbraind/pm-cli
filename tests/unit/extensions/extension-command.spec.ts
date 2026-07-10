@@ -1212,6 +1212,8 @@ describe("extension command runtime", () => {
       "-t=alpha,beta",
       "--tag",
       "gamma",
+      "-t",
+      "delta",
       "--no-enabled",
       "-x",
       "5",
@@ -1224,7 +1226,7 @@ describe("extension command runtime", () => {
     expect(parsed).toMatchObject({
       count: "2",
       tag: "gamma",
-      t: "alpha,beta",
+      t: ["alpha,beta", "delta"],
       enabled: false,
       x: "5",
       label: "positional",
@@ -1236,7 +1238,7 @@ describe("extension command runtime", () => {
       count: 2,
       enabled: false,
       label: "positional",
-      tag: ["gamma"],
+      tag: ["alpha", "beta", "gamma", "delta"],
       x: 5,
     });
 
@@ -1248,6 +1250,15 @@ describe("extension command runtime", () => {
       tag: ["one", "two", "three"],
     });
     expect(Object.hasOwn(defaulted, "t")).toBe(false);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ tag: ["one"], t: ["two"] }, definitions).tag).toEqual([
+      "one",
+      "two",
+    ]);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ tag: undefined, t: "two" }, definitions).tag).toEqual(["two"]);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ tag: "one", t: null }, definitions).tag).toEqual(["one"]);
+    const scalarAlias = coerceLooseCommandOptionsWithFlagDefinitions({ count: "3", c: "4" }, definitions);
+    expect(scalarAlias.count).toBe(3);
+    expect(scalarAlias).not.toHaveProperty("c");
 
     expect(
       stripLooseCommandOptionTokens(

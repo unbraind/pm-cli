@@ -3326,10 +3326,10 @@ describe("create command helper coverage", () => {
   it("reads template options from runtime payloads and rejects invalid payload shapes", () => {
     expect(
       _testOnlyCreateCommand.readTemplateOptionsFromRuntimeResult(
-        { options: { title: "From template", tags: ["alpha", "beta"] } },
+        { options: { title: "From template", tags: ["alpha", "beta"], count: 2, enabled: true } },
         "sample",
       ),
-    ).toEqual({ title: "From template", tags: ["alpha", "beta"] });
+    ).toEqual({ title: "From template", tags: ["alpha", "beta"], count: 2, enabled: true });
 
     for (const payload of [null, {}, { options: null }, { options: [] }, { options: { tags: ["ok", 1] } }]) {
       expect(() => _testOnlyCreateCommand.readTemplateOptionsFromRuntimeResult(payload, "sample")).toThrow(
@@ -3419,6 +3419,10 @@ describe("create command helper coverage", () => {
       tags: ["explicit"],
     });
     expect(merged.tags).not.toBe(["template"]);
+  });
+
+  it("rejects malformed dependency shorthand before prefix normalization", () => {
+    expect(() => _testOnlyCreateCommand.parseDependencies?.(["related:pm-abcd"], new Date().toISOString(), "pm-")).toThrow();
   });
 
   it("detects active templates show handlers by action or normalized command path", () => {
@@ -3773,6 +3777,67 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
       );
       expect(result.item.description).toBe("from template");
       expect(result.item.tags).toEqual(["template-tag"]);
+    });
+  });
+
+  it("maps template-declared custom type options through the validated type-option pipeline", async () => {
+    await withTempPmPath(async (context) => {
+      await writeItemTypeDefinitions(context.pmPath, [{
+        name: "Asset",
+        folder: "assets",
+        options: [
+          { key: "category", values: ["feature", "maintenance"] },
+          { key: "count", values: ["42"] },
+          { key: "active", values: ["true"] },
+          { key: "optional", values: ["x"] },
+          { key: "title", values: ["template-title"] },
+        ],
+      }]);
+      setActiveExtensionRegistrations({
+        commands: [{ layer: "project", name: "templates", command: "templates show", action: "templates-show" }],
+        flags: [], hooks: [], importers: [], exporters: [], item_fields: [], item_types: [],
+      });
+      setActiveExtensionCommands({
+        overrides: [],
+        handlers: [{
+          layer: "project",
+          name: "templates",
+          command: "templates show",
+          run: () => ({ options: { type: "Asset", title: "template-title", category: "feature", count: 42, active: true } }),
+        }],
+      });
+
+      const result = await runCreate(
+        {
+          title: "templated-asset",
+          template: "asset",
+          createMode: "progressive",
+          typeOption: ["category=maintenance"],
+        },
+        { path: context.pmPath },
+      );
+      expect(result.item.type_options).toEqual({ category: "maintenance", count: "42", active: "true" });
+      expect(result.item.title).toBe("templated-asset");
+
+      const defaultsOnly = await runCreate(
+        { title: "templated-asset-defaults", template: "asset", createMode: "progressive" },
+        { path: context.pmPath },
+      );
+      expect(defaultsOnly.item.type_options).toEqual({ category: "feature", count: "42", active: "true" });
+
+      setActiveExtensionCommands({
+        overrides: [],
+        handlers: [{
+          layer: "project",
+          name: "templates",
+          command: "templates show",
+          run: () => ({ options: { type: "Asset", category: ["feature", "maintenance"] } }),
+        }],
+      });
+      await expect(runCreate(
+        { title: "templated-asset-array", template: "asset", createMode: "progressive" },
+        { path: context.pmPath },
+      )).rejects.toThrow('Template custom type option "category" must be a string, number, or boolean value');
     });
   });
 

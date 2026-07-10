@@ -48,6 +48,36 @@ export {
   writeStdout,
 };
 
+function readJoinedRepeatedOption(
+  options: Record<string, unknown>,
+  contract: CommanderOptionAliasContract,
+): string | undefined {
+  const values: string[] = [];
+  const observedArrays = new Set<unknown[]>();
+  for (const key of contract.keys) {
+    if (!Object.hasOwn(options, key)) {
+      continue;
+    }
+    const value = options[key];
+    if (value == null) {
+      continue;
+    }
+    if (typeof value === "string") {
+      values.push(value);
+      continue;
+    }
+    if (!Array.isArray(value) || !value.every((entry) => typeof entry === "string")) {
+      return undefined;
+    }
+    if (observedArrays.has(value)) {
+      continue;
+    }
+    observedArrays.add(value);
+    values.push(...value);
+  }
+  return values.length > 0 ? values.join("; ") : undefined;
+}
+
 const RESOLVED_GLOBAL_OPTIONS = Symbol("pm.resolvedGlobalOptions");
 
 type CommandWithResolvedGlobals = Command & {
@@ -329,7 +359,10 @@ export function normalizeCreateOptions(
     body: readCreateString("body"),
     deadline: readCreateString("deadline"),
     estimatedMinutes: readCreateString("estimatedMinutes"),
-    acceptanceCriteria: readCreateString("acceptanceCriteria"),
+    acceptanceCriteria: readJoinedRepeatedOption(
+      commandOptions,
+      resolveCommanderContract(CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, "acceptanceCriteria"),
+    ),
     definitionOfReady: readCreateString("definitionOfReady"),
     order: readCreateString("order"),
     rank: readCreateString("rank"),
@@ -419,7 +452,10 @@ export function normalizeUpdateOptions(commandOptions: Record<string, unknown>):
     removeTags: readUpdateList("removeTags"),
     deadline: readUpdateString("deadline"),
     estimatedMinutes: readUpdateString("estimatedMinutes"),
-    acceptanceCriteria: readUpdateString("acceptanceCriteria"),
+    acceptanceCriteria: readJoinedRepeatedOption(
+      commandOptions,
+      resolveCommanderContract(UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, "acceptanceCriteria"),
+    ),
     definitionOfReady: readUpdateString("definitionOfReady"),
     order: readUpdateString("order"),
     rank: readUpdateString("rank"),

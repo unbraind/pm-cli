@@ -59,7 +59,8 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
     target: "acceptanceCriteria",
     keys: ["acceptanceCriteria", "acceptance_criteria", "ac"],
     option: "--acceptance-criteria <value>",
-    description: "Acceptance criteria (allow empty string)",
+    description: "Acceptance criteria (repeatable; values join with '; '; allow empty string)",
+    repeatable: true,
     aliasOptions: [
       { option: "--acceptance_criteria <value>", description: "Alias for --acceptance-criteria" },
       { option: "--ac <value>", description: "Alias for --acceptance-criteria" },
@@ -321,7 +322,8 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
     target: "acceptanceCriteria",
     keys: ["acceptanceCriteria", "acceptance_criteria", "ac"],
     option: "--acceptance-criteria <value>",
-    description: "Set acceptance criteria",
+    description: "Set acceptance criteria (repeatable; values join with '; ')",
+    repeatable: true,
     aliasOptions: [
       { option: "--acceptance_criteria <value>", description: "Alias for --acceptance-criteria" },
       { option: "--ac <value>", description: "Alias for --acceptance-criteria" },

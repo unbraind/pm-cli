@@ -7021,6 +7021,14 @@
       },
       {
         "keys": [
+          "acceptanceCriteria",
+          "acceptance_criteria",
+          "ac"
+        ],
+        "target": "acceptanceCriteria"
+      },
+      {
+        "keys": [
           "dep"
         ],
         "target": "dep"
@@ -7175,14 +7183,6 @@
           "estimated_minutes"
         ],
         "target": "estimatedMinutes"
-      },
-      {
-        "keys": [
-          "acceptanceCriteria",
-          "acceptance_criteria",
-          "ac"
-        ],
-        "target": "acceptanceCriteria"
       },
       {
         "keys": [
@@ -7683,6 +7683,14 @@
       },
       {
         "keys": [
+          "acceptanceCriteria",
+          "acceptance_criteria",
+          "ac"
+        ],
+        "target": "acceptanceCriteria"
+      },
+      {
+        "keys": [
           "dep"
         ],
         "target": "dep"
@@ -7825,14 +7833,6 @@
           "estimated_minutes"
         ],
         "target": "estimatedMinutes"
-      },
-      {
-        "keys": [
-          "acceptanceCriteria",
-          "acceptance_criteria",
-          "ac"
-        ],
-        "target": "acceptanceCriteria"
       },
       {
         "keys": [

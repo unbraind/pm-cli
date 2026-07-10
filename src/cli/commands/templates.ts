@@ -19,7 +19,9 @@ const TEMPLATE_DIRECTORY_NAME = "templates";
 const TEMPLATE_FILE_EXTENSION = ".json";
 const TEMPLATE_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 
-const TEMPLATE_OPTION_REPEATABLE_KEYS = CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS.map((entry) => entry.target);
+const TEMPLATE_OPTION_REPEATABLE_KEYS = CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS
+  .map((entry) => entry.target)
+  .filter((target) => target !== "acceptanceCriteria");
 const TEMPLATE_OPTION_REPEATABLE_KEY_SET = new Set<string>(TEMPLATE_OPTION_REPEATABLE_KEYS);
 
 type TemplateOptionValue = string | string[];
