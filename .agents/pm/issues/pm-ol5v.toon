@@ -1,0 +1,17 @@
+id: pm-ol5v
+title: "Dangling dependency references: accepted at create/update, skipped by validate, and treated as satisfied by pm next (silent unblock)"
+description: ""
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-10T17:24:09.633Z"
+updated_at: "2026-07-10T17:24:09.633Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "pm validate emits a dedicated warning (with item ids and the dangling dep ids) for structured dependency edges whose id resolves to no item; a typo'd blocker id can never again yield an actionable pm next candidate without a diagnostic surfacing somewhere; mutation-time behavior for nonexistent dep ids is decided (warn vs reject vs --strict flag) and documented; tests cover create, update, validate, and next paths; remediation hint tells users to repair with --replace-deps"
+risk: medium
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-l0bu,related,"2026-07-10T17:24:09.633Z",null,null
+body: "## Defect\nStructured dependency edges whose `id` resolves to no existing item are invisible to every layer of the system, and the net effect is a SILENT UNBLOCK of work the author intended to be blocked.\n\nVerified in a clean sandbox on v2026.7.10:\n1. `pm create task \"dep to ghost\" --dep \"id=pm-zzzz,kind=blocked_by\"` — accepted, edge stored, no warning.\n2. `pm validate --json` — ok:true, zero referential warnings. Root cause: both graph builders silently drop unresolvable ids — `src/cli/commands/validate.ts:1189` (`!activeItemIds.has(dependencyId) → continue`) for the dependency-cycle graph, and the `canonicalIdByLowercase.get(...)` miss in `buildLifecycleParentGraph` for parents.\n3. `pm next --json` — the ghost-blocked item is counted `ready` and offered as a candidate (summary ready:2 for 2 items). The nonexistent blocker is treated as satisfied.\n\n## Why it matters\n- The pre-PR#499 colon-shorthand bug (pm-zazb) historically wrote malformed `pm-related:*` dep ids in the wild; repos carrying that era's data have exactly these edges, and today nothing will ever tell them.\n- A single-character typo in `--dep id=` inverts the semantics of `blocked_by`: instead of blocking, it releases the item into the actionable pool. For multi-agent fleets picking work via pm next, this dispatches work whose preconditions are unmet — the opposite of the graph's contract, with no error at write time, no warning at validate time, and no trace at read time.\n- Contrast: parent references ARE fail-fast at mutation time (`pm update --parent <nonexistent>` is rejected, pm-z9e9), so deps are the inconsistent surface. A validator-side parent-drift check (stale parent pointing at a since-deleted id) can ride along in the same warning family for symmetry, though the current live graph has zero instances (full-store sweep 2026-07-10: 1708 items, all parent pointers and all structured dep ids resolve except prose mentions).\n\n## Design note for the mutation side\nHard-rejecting nonexistent dep ids at create/update would break legitimate forward-referencing in scripted flows (creating a graph in reverse order). Options: (a) warn on stderr + accept, (b) `--strict-deps` opt-in rejection, (c) accept + rely on validate. The validator warning is the non-negotiable half; the mutation-side choice is the implementer's, but it must be an explicit decision recorded on this item."
