@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: adr,architecture,"area:storage",performance,scale
 created_at: "2026-07-06T21:23:34.365Z"
-updated_at: "2026-07-06T21:23:34.365Z"
+updated_at: "2026-07-10T21:41:16.024Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "ADR records the decision for: (1) persistent read-index format + invalidation, (2) item-directory fan-out scheme + format_version migration path, (3) bounded-output/cursor-pagination contract, (4) claim/lock scaling approach, (5) git-repo growth policy (packing, history compaction cadence); status accepted (item closed) before dependent implementation tasks start"
@@ -17,4 +17,6 @@ why_now: Product goal explicitly targets workspaces of hundreds of thousands to 
 parent: pm-m2u1
 risk: high
 confidence: medium
+notes[1]{created_at,author,text}:
+  "2026-07-10T21:41:16.024Z",maintainer-agent,"Decision-point-3 input (2026-07-10 planning pass): pm-dfg0 now carries a grounded S1-S4 scoping note with the verified current pagination surface (list --limit/--offset unbounded-by-default; search --limit only; context --depth full = MAX_SAFE_INTEGER hole; no cursor anywhere). Recommendation from that analysis: cursor tokens over offset (opaque stable-sort-tuple cursor, id tiebreak) — offset re-scans degrade at 100k+ and break under concurrent mutation; a threshold-gated default limit preserves small-workspace ergonomics (pm-z436). The S1 cursor primitive can be spiked in the pm-rjqr SDK query facade as ADR input before this ADR formally lands."
 body: "## Context\nEvery pm read command today enumerates .agents/pm/<type>/*.toon (O(workspace)); history is one JSONL stream per item; locks are per-item files; output size is unbounded by default. This is fine at 1.6k items and breaks down at 100k+.\n\n## Decision drivers\n- Context building must stay sub-second and bounded-token at 1M items (philosophy: project management = context management).\n- Thousands of agents mutate concurrently: index maintenance must be as safe as appendLineAtomic; no global write hotspots.\n- Git-native storage is a hard constraint: everything must remain diffable, mergeable, and recoverable from the working tree alone (index must be derivable/rebuildable, never authoritative).\n- Zero data-format breakage: fan-out/sharding ships behind format_version gating with a migration.\n\n## Options to evaluate (decision pending)\n1. Read index: single compact ledger file vs per-type index vs embedded (SQLite/LanceDB-adjacent) cache under .agents/pm/runtime (gitignored, rebuildable).\n2. Directory fan-out: hash-bucket subdirs per type vs date-bucketed vs flat-with-index-only.\n3. Pagination: cursor tokens (stable sort key) vs offset; default --limit for list/search/context at scale.\n4. Claim/lock scaling: per-item locks already shard naturally; singleton files (settings/session) need the pm-bgcu fix plus contention budget.\n5. Git growth: gc/history-compact cadence, git gc/packing guidance, optional archive tier for closed items."
