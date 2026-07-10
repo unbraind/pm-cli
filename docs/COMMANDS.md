@@ -466,6 +466,9 @@ pm create --template bug --title "Fix search regression"
 ```
 
 Built-ins are `bug`, `feature`, `spike`, and `chore`. A saved template with the same name overrides the built-in.
+Template-defined custom type options accept string, number, and boolean defaults and pass through the same schema validation as explicit `--type-option` values. Explicit `--type-option` values take precedence over defaults for the same key.
+
+Tracker reference: [pm-l6rz](../.agents/pm/issues/pm-l6rz.toon).
 
 Use `pm close <id> "<reason>"` instead of `pm update --status closed`.
 

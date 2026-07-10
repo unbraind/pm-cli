@@ -6,16 +6,17 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,gh-issue,templates
 created_at: "2026-07-10T12:15:43.286Z"
-updated_at: "2026-07-10T13:18:57.015Z"
-closed_at: "2026-07-10T13:18:56.308Z"
+updated_at: "2026-07-10T13:55:19.027Z"
+closed_at: "2026-07-10T13:55:18.533Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: pm create --template applies template-declared tags and custom type-option fields identically to explicit --tags/--type-option flags; fields that cannot apply to the target type fail loudly listing each one; regression tests cover custom-type template + built-in kanban column; GH-497 closed
 risk: medium
 confidence: high
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-10T12:21:46.290Z",codex-root,"Implementation start: selected after live all-status duplicate/lineage review and full metadata inspection. This item is actively implemented in the broad schema-driven input fidelity bundle with pm-kfq5, pm-l6rz, pm-zazb, pm-b84u, and pm-ghf1; shared verification will include focused tests, 100/100/100/100 coverage, strict quality gates, and installed-package temporary-project proof."
   "2026-07-10T13:18:55.417Z",codex-root,"Implementation evidence: broad schema-driven input fidelity bundle completed. Focused suite passed 445 tests; final repository coverage passed 270 files / 5514 tests at Statements 100%, Branches 100%, Functions 100%, Lines 100%; pnpm typecheck, lint (ESLint + zero jscpd clones + strict static/docstring/import-boundary/token gates), docs/skills, contracts snapshot, audit, secret scan, health, and history-drift checks passed. Installed-package proof from packed tarball in /tmp/pm-proof.rzTX77 verified repeated --ac stores 'first; second', malformed related:pm-abcd fails before graph mutation, and public SDK RESERVED_ITEM_FIELD_NAMES/lintExtensionBlueprint rejects severity collisions. Sentry telemetry is healthy (0.28% finish error rate); two external pm-starter package handled errors PM-CLI-1Y/1Z remain visible and are not caused by this change set."
+  "2026-07-10T13:55:17.154Z",codex-root,"Review evidence: accepted Gemini and Greptile findings. Template runtime payloads now validate string/number/boolean primitives, custom values flow through schema validation, template defaults precede explicit type-option entries so explicit caller intent wins, and tests cover both defaults-only and explicit override behavior. Full suite passed 5514 tests and final coverage reached 100/100/100/100; full strict lint, typecheck, and contracts check passed."
 files[1]{path,scope,note}:
   src/cli/commands/create.ts,project,Promote template-declared custom type option keys into validated type-option entries
 tests[1]{command,scope,timeout_seconds}:
@@ -23,5 +24,5 @@ tests[1]{command,scope,timeout_seconds}:
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI behavior and validation guidance
   docs/SDK.md,project,SDK/package-author contract guidance
-close_reason: Implemented and verified in the schema-driven input fidelity SDK/CLI bundle with full 100/100/100/100 coverage and installed-package proof.
+close_reason: Review fixes preserve explicit overrides and validate primitive template custom values; full quality gate passed.
 body: ""

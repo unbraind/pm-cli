@@ -6,8 +6,8 @@ status: closed
 priority: 2
 tags[3]: audit-followup,schema,sdk
 created_at: "2026-07-02T21:55:23.518Z"
-updated_at: "2026-07-10T13:19:02.420Z"
-closed_at: "2026-07-10T13:19:01.818Z"
+updated_at: "2026-07-10T13:55:20.309Z"
+closed_at: "2026-07-10T13:55:19.693Z"
 author: claude-code-agent
 estimated_minutes: 120
 acceptance_criteria: "SDK lint, preflight, and test harness each flag reserved item-field name collisions from the shared reserved-key list; a drift test keeps that list in sync with constants."
@@ -16,9 +16,10 @@ risk: medium
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-fpod,related,"2026-07-02T21:55:53.536Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-10T12:21:50.170Z",codex-root,"Implementation start: selected after live all-status duplicate/lineage review and full metadata inspection. This item is actively implemented in the broad schema-driven input fidelity bundle with pm-kfq5, pm-l6rz, pm-zazb, pm-b84u, and pm-ghf1; shared verification will include focused tests, 100/100/100/100 coverage, strict quality gates, and installed-package temporary-project proof."
   "2026-07-10T13:19:01.121Z",codex-root,"Implementation evidence: broad schema-driven input fidelity bundle completed. Focused suite passed 445 tests; final repository coverage passed 270 files / 5514 tests at Statements 100%, Branches 100%, Functions 100%, Lines 100%; pnpm typecheck, lint (ESLint + zero jscpd clones + strict static/docstring/import-boundary/token gates), docs/skills, contracts snapshot, audit, secret scan, health, and history-drift checks passed. Installed-package proof from packed tarball in /tmp/pm-proof.rzTX77 verified repeated --ac stores 'first; second', malformed related:pm-abcd fails before graph mutation, and public SDK RESERVED_ITEM_FIELD_NAMES/lintExtensionBlueprint rejects severity collisions. Sentry telemetry is healthy (0.28% finish error rate); two external pm-starter package handled errors PM-CLI-1Y/1Z remain visible and are not caused by this change set."
+  "2026-07-10T13:55:17.464Z",codex-root,"Review evidence: accepted Gemini runtime-boundary finding. Reserved-field lint now guards non-string field names from malformed external blueprints without throwing; regression included. Full suite passed 5514 tests at 100/100/100/100 coverage; full strict lint, typecheck, and contracts check passed."
 files[3]{path,scope,note}:
   src/core/extensions/item-fields.ts,project,Export shared reserved metadata field set
   src/sdk/compose.ts,project,Reject reserved field collisions in blueprint lint/preflight
@@ -28,5 +29,5 @@ tests[1]{command,scope,timeout_seconds}:
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI behavior and validation guidance
   docs/SDK.md,project,SDK/package-author contract guidance
-close_reason: Implemented and verified in the schema-driven input fidelity SDK/CLI bundle with full 100/100/100/100 coverage and installed-package proof.
+close_reason: Review fix hardens malformed external blueprint handling; full quality gate passed.
 body: "## Context\nFound in the 2026-07-02 ecosystem review (Lane B). An extension can register an item field whose name collides with a reserved front-matter key (e.g. 'severity', 'blocked_reason' — see FRONT_MATTER_KEY_ORDER) and still pass assertExtensionPreflight and createExtensionTestHarness green — but pm create/update rejects the field at runtime. A green package can brick create for its users.\n\n## Approach\nExport RESERVED_ITEM_FIELD_NAMES from the SDK (single source shared with the runtime validator) and validate registered item-field keys in lintExtensionBlueprint, preflightExtension, AND the test harness so the collision fails at authoring time with a rename hint. Known reserved names already bitten in the wild: severity (PR#150), blocked_reason (PR#367).\n\n## Definition of done\nA blueprint registering a reserved field name fails lint/preflight/harness with the same error code; SDK docs list the reserved names; runtime and SDK share one constant (no drift)."

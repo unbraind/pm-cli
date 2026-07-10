@@ -341,10 +341,11 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
           continue;
         }
         const canonicalValue = coerced[canonical];
+        const aliasValue = coerced[key];
         coerced[canonical] = [
           ...(Array.isArray(canonicalValue) ? canonicalValue : [canonicalValue]),
-          ...(Array.isArray(coerced[key]) ? coerced[key] : [coerced[key]]),
-        ];
+          ...(Array.isArray(aliasValue) ? aliasValue : [aliasValue]),
+        ].filter((value) => value != null);
         delete coerced[key];
         continue;
       }

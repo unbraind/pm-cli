@@ -3326,10 +3326,10 @@ describe("create command helper coverage", () => {
   it("reads template options from runtime payloads and rejects invalid payload shapes", () => {
     expect(
       _testOnlyCreateCommand.readTemplateOptionsFromRuntimeResult(
-        { options: { title: "From template", tags: ["alpha", "beta"] } },
+        { options: { title: "From template", tags: ["alpha", "beta"], count: 2, enabled: true } },
         "sample",
       ),
-    ).toEqual({ title: "From template", tags: ["alpha", "beta"] });
+    ).toEqual({ title: "From template", tags: ["alpha", "beta"], count: 2, enabled: true });
 
     for (const payload of [null, {}, { options: null }, { options: [] }, { options: { tags: ["ok", 1] } }]) {
       expect(() => _testOnlyCreateCommand.readTemplateOptionsFromRuntimeResult(payload, "sample")).toThrow(
@@ -3785,7 +3785,11 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
       await writeItemTypeDefinitions(context.pmPath, [{
         name: "Asset",
         folder: "assets",
-        options: [{ key: "category", values: ["feature", "maintenance"] }],
+        options: [
+          { key: "category", values: ["feature", "maintenance"] },
+          { key: "count", values: ["42"] },
+          { key: "active", values: ["true"] },
+        ],
       }]);
       setActiveExtensionRegistrations({
         commands: [{ layer: "project", name: "templates", command: "templates show", action: "templates-show" }],
@@ -3797,15 +3801,26 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
           layer: "project",
           name: "templates",
           command: "templates show",
-          run: () => ({ options: { type: "Asset", category: "feature" } }),
+          run: () => ({ options: { type: "Asset", category: "feature", count: 42, active: true } }),
         }],
       });
 
       const result = await runCreate(
-        { title: "templated-asset", template: "asset", createMode: "progressive" },
+        {
+          title: "templated-asset",
+          template: "asset",
+          createMode: "progressive",
+          typeOption: ["category=maintenance"],
+        },
         { path: context.pmPath },
       );
-      expect(result.item.type_options).toEqual({ category: "feature" });
+      expect(result.item.type_options).toEqual({ category: "maintenance", count: "42", active: "true" });
+
+      const defaultsOnly = await runCreate(
+        { title: "templated-asset-defaults", template: "asset", createMode: "progressive" },
+        { path: context.pmPath },
+      );
+      expect(defaultsOnly.item.type_options).toEqual({ category: "feature", count: "42", active: "true" });
     });
   });
 

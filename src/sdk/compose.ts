@@ -922,7 +922,7 @@ export interface ExtensionBlueprintLintFinding {
 
 function collectReservedItemFieldFindings(blueprint: ExtensionBlueprint): ExtensionBlueprintLintFinding[] {
   return (blueprint.itemFields ?? [])
-    .filter((field) => RESERVED_ITEM_FIELD_NAMES.has(field.name.trim()))
+    .filter((field) => typeof field?.name === "string" && RESERVED_ITEM_FIELD_NAMES.has(field.name.trim()))
     .map((field) => ({
       code: "reserved_item_field",
       severity: "error",

@@ -615,6 +615,7 @@ describe("sdk lintExtensionBlueprint", () => {
       severity: "error",
       field: "severity",
     }));
+    expect(() => lintExtensionBlueprint({ itemFields: [{ name: null }] } as never)).not.toThrow();
   });
 
   it("flags a command path declared more than once", () => {

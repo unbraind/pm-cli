@@ -1252,6 +1252,8 @@ describe("extension command runtime", () => {
       "one",
       "two",
     ]);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ tag: undefined, t: "two" }, definitions).tag).toEqual(["two"]);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ tag: "one", t: null }, definitions).tag).toEqual(["one"]);
 
     expect(
       stripLooseCommandOptionTokens(
