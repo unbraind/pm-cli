@@ -3789,6 +3789,7 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
           { key: "category", values: ["feature", "maintenance"] },
           { key: "count", values: ["42"] },
           { key: "active", values: ["true"] },
+          { key: "title", values: ["template-title"] },
         ],
       }]);
       setActiveExtensionRegistrations({
@@ -3801,7 +3802,7 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
           layer: "project",
           name: "templates",
           command: "templates show",
-          run: () => ({ options: { type: "Asset", category: "feature", count: 42, active: true } }),
+          run: () => ({ options: { type: "Asset", title: "template-title", category: "feature", count: 42, active: true } }),
         }],
       });
 
@@ -3815,6 +3816,7 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
         { path: context.pmPath },
       );
       expect(result.item.type_options).toEqual({ category: "maintenance", count: "42", active: "true" });
+      expect(result.item.title).toBe("templated-asset");
 
       const defaultsOnly = await runCreate(
         { title: "templated-asset-defaults", template: "asset", createMode: "progressive" },

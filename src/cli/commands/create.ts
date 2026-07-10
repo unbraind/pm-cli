@@ -1456,15 +1456,17 @@ async function resolveCreateTypeSelection(
   }
   /* c8 ignore stop */
   const type = typeDefinition.name;
-  const templateTypeOptions = typeDefinition.options
+  const matchedTemplateTypeOptions = typeDefinition.options
+    .filter((option) => canonicalizeCommandOptionKey("create", option.key) === undefined)
     .filter((option) => {
       const value = resolvedOptions[option.key];
       return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
-    })
+    });
+  const templateTypeOptions = matchedTemplateTypeOptions
     .map((option) => `${option.key}=${String(resolvedOptions[option.key])}`);
   if (templateTypeOptions.length > 0) {
     resolvedOptions.typeOption = [...templateTypeOptions, ...(resolvedOptions.typeOption ?? [])];
-    for (const option of typeDefinition.options) {
+    for (const option of matchedTemplateTypeOptions) {
       delete resolvedOptions[option.key];
     }
   }
