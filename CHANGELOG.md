@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- Reserved item-field name collisions are invisible to SDK lint/preflight/harness ([pm-ghf1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ghf1.toon))
 - Repeated --ac flags on create/update silently keep only the last acceptance criterion ([pm-b84u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b84u.toon))
+- Reserved item-field name collisions are invisible to SDK lint/preflight/harness ([pm-ghf1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ghf1.toon))
 - pm create/update --dep silently normalizes malformed shorthand into dangling dependency ids (related:pm-x26a -\> pm-related:pm-x26a) ([pm-zazb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zazb.toon))
 - GH-497: pm create --template silently drops tags and custom type-option fields — only built-ins (priority/assignee) apply ([pm-l6rz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l6rz.toon))
 - GH-496: extension flags declared list:true don't accumulate repeated occurrences — host maps to scalar, Commander last-wins drops values ([pm-kfq5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kfq5.toon))
