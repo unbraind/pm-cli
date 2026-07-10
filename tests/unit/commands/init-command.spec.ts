@@ -116,13 +116,13 @@ describe("runInit", () => {
     expect(scopedSteps).toContain(
       `Inspect registered preset types: pm --pm-path ${path.resolve("/tmp/tracker")} schema list, pm --pm-path ${path.resolve("/tmp/tracker")} schema show Story`,
     );
-    const replacementSensitivePath = path.resolve("/tmp/tracker$&cash");
+    const replacementSensitivePath = path.resolve("/tmp/tracker$&cash$$tail");
     expect(initInternals.buildInitNextSteps({
       installBundledPackages: true,
       registeredTypePreset: undefined,
       agentGuidanceNextSteps: ["Run pm context before editing."],
       target: { mode: "tracker-path", tracker_root: replacementSensitivePath },
-    })).toContain(`Run pm --pm-path "${replacementSensitivePath.replace("$", "\\$")}" context before editing.`);
+    })).toContain(`Run pm --pm-path "${replacementSensitivePath.replaceAll("$", "\\$")}" context before editing.`);
 
     expect(initInternals.normalizeInitAgentGuidanceMode(undefined)).toBe("ask");
     expect(initInternals.normalizeInitAgentGuidanceMode("status")).toBe("status");

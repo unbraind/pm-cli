@@ -6,8 +6,8 @@ status: closed
 priority: 1
 tags[5]: agent-experience,gh-issue,init,path-safety,token-efficiency
 created_at: "2026-07-10T04:24:54.193Z"
-updated_at: "2026-07-10T06:23:45.591Z"
-closed_at: "2026-07-10T05:53:35.236Z"
+updated_at: "2026-07-10T06:39:17.821Z"
+closed_at: "2026-07-10T06:38:37.486Z"
 author: codex-root-20260709
 estimated_minutes: 120
 acceptance_criteria: Path-target init output and recovery bundles render executable --pm-path-scoped follow-ups; workspace-target mode creates <dir>/.agents/pm without changing legacy tracker-root semantics; SDK result contracts expose resolved target semantics; integration tests execute every emitted next step; docs and contracts remain aligned.
@@ -23,10 +23,11 @@ actual_result: All emitted pm commands are scoped when discovery is unavailable;
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-3mna,related,"2026-07-10T04:24:54.193Z",null,null
   pm-usfg,related,"2026-07-10T04:24:54.193Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-10T04:24:54.193Z",codex-root-20260709,"Duplicate check: searched all statuses for GH-488, path-target init follow-up commands, initialized tracker next steps, and prior path-target fixes. No item owns executable post-init guidance; closed pm-jek2 covers caller-settings corruption only."
   "2026-07-10T05:53:24.372Z",codex-root-20260709,"Verification evidence 2026-07-10: full sandbox suite passed 270 files / 5,505 tests with exact 100% statements, branches, functions, and lines. pm test-all over the seven active items passed 8 linked commands with 0 failures and 1 duplicate-safe skip. pnpm typecheck, contracts:check, lint (ESLint + 0 jscpd clones + static quality/token budget), docs-skills, context-eval, security scan, and audit all passed. Live CodeFactor reports A+ and 0 issues. Fresh packed npm install at /tmp/pm-cli-sdk-path-proof-XIsSsh activated 11 bundled packages in a path-target tracker, left caller extension files at zero, and passed CLI/SDK context plus isolated doctor with zero blocking failures. pm health is clean and history drift is zero."
   "2026-07-10T06:23:45.590Z",codex-root-20260709,"Greptile pre-push review 388e369e found and we fixed replacement-string expansion in scoped agent-guidance commands by using a replacement callback. A regression covers tracker paths containing the special $& sequence. Focused 149 tests, full 5,505-test exact 100/100/100/100 coverage, typecheck, contracts, lint, static quality, and zero-clone gates pass after the fix."
+  "2026-07-10T06:38:36.124Z",codex-root-20260709,"PR #491 CodeQL evidence: alert 16 identified an incomplete single-occurrence dollar escape in the replacement-sensitive-path test expectation. The regression now uses replaceAll and a path containing three dollar characters, so it proves every shell-sensitive occurrence is escaped. Focused init tests, typecheck, ESLint, zero-clone jscpd, static-quality, docstring, and token-budget gates pass."
 files[6]{path,scope,note}:
   src/cli/commands/init.ts,project,Init target resolution and tracker-scoped next steps
   src/cli/register-setup.ts,project,Public --workspace command registration
@@ -41,5 +42,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,User-facing init target semantics
   docs/SDK.md,project,Public InitResult target contract
-close_reason: "Implementation, docs, contracts, exact coverage, linked tests, and packed installed-package proof complete."
+close_reason: PR #491 CodeQL alert 16 corrected with multi-occurrence regression coverage; focused and strict quality gates pass.
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/488\\n\\nDuplicate evidence: exact all-status searches for GH-488 and path-target init follow-up commands returned no canonical item. Related historical pm-jek2 fixed caller-settings corruption, not generated next-step correctness. This item owns executable result/recovery guidance and an explicit workspace-target primitive."
