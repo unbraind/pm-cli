@@ -45,10 +45,16 @@ import {
  * from the contracts/commander option list, not the rendered text) are
  * unchanged — only commander's text `--help` omits it.
  */
-function addHiddenOption(command: Command, flags: string, description: string, repeatable: boolean): void {
+function addHiddenOption(
+  command: Command,
+  flags: string,
+  description: string,
+  repeatable: boolean,
+  repeatableParser: ((value: string) => string[]) | undefined = undefined,
+): void {
   const option = new Option(flags, description).hideHelp();
   if (repeatable) {
-    option.argParser(collect);
+    option.argParser(repeatableParser ?? collect);
   }
   command.addOption(option);
 }
@@ -451,10 +457,15 @@ function mapBulkContentAndGovernanceFilters(options: Record<string, unknown>): R
  */
 export function registerCommanderOptionContracts(command: Command, contracts: CommanderOptionRegistrationContract[]): void {
   for (const contract of contracts) {
+    const sharedValues: string[] = [];
+    const repeatableParser = (value: string): string[] => {
+      sharedValues.push(value);
+      return sharedValues;
+    };
     if (contract.required) {
       command.requiredOption(contract.option, contract.description);
     } else if (contract.repeatable) {
-      command.option(contract.option, contract.description, collect);
+      command.option(contract.option, contract.description, repeatableParser);
     } else {
       command.option(contract.option, contract.description);
     }
@@ -463,9 +474,15 @@ export function registerCommanderOptionContracts(command: Command, contracts: Co
       // for --create-mode) from --help, but keep semantically-distinct aliases
       // (e.g. --ac for --acceptance-criteria) visible.
       if (isPureSnakeCaseAlias(contract.option, aliasContract.option)) {
-        addHiddenOption(command, aliasContract.option, aliasContract.description, contract.repeatable === true);
+        addHiddenOption(
+          command,
+          aliasContract.option,
+          aliasContract.description,
+          contract.repeatable === true,
+          contract.repeatable ? repeatableParser : undefined,
+        );
       } else if (contract.repeatable) {
-        command.option(aliasContract.option, aliasContract.description, collect);
+        command.option(aliasContract.option, aliasContract.description, repeatableParser);
       } else {
         command.option(aliasContract.option, aliasContract.description);
       }

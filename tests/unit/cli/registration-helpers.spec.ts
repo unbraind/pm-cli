@@ -303,6 +303,9 @@ describe("registration helpers", () => {
       extra: "kept",
     });
     expect(normalizeUpdateOptions({ acceptanceCriteria: ["valid", 1] }).acceptanceCriteria).toBeUndefined();
+    const sharedAliases = ["second", "first"];
+    expect(normalizeUpdateOptions({ acceptanceCriteria: sharedAliases, ac: sharedAliases }).acceptanceCriteria)
+      .toBe("second; first");
   });
 
   it("skips unsafe prototype keys while preserving unknown extension options", () => {

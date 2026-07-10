@@ -53,6 +53,7 @@ function readJoinedRepeatedOption(
   contract: CommanderOptionAliasContract,
 ): string | undefined {
   const values: string[] = [];
+  const observedArrays = new Set<unknown[]>();
   for (const key of contract.keys) {
     if (!Object.hasOwn(options, key)) {
       continue;
@@ -68,6 +69,10 @@ function readJoinedRepeatedOption(
     if (!Array.isArray(value) || !value.every((entry) => typeof entry === "string")) {
       return undefined;
     }
+    if (observedArrays.has(value)) {
+      continue;
+    }
+    observedArrays.add(value);
     values.push(...value);
   }
   return values.length > 0 ? values.join("; ") : undefined;
