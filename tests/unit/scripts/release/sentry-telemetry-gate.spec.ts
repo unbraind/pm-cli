@@ -329,6 +329,37 @@ describe("scripts/release/sentry-telemetry-gate: telemetry modes", () => {
     expect(json.sentry.threshold_ok).toBe(true);
   });
 
+  it("ignores handled duplicate-import refusals without hiding unhandled failures", async () => {
+    const duplicateImportMessage =
+      'merge-strategy "fail": bead "bd-1" is already imported as pm-buex; aborting before any writes.';
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--max-high", "1"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: buildSentryFetch([
+        {
+          shortId: "PM-DUPLICATE-HANDLED",
+          level: "error",
+          logger: "node",
+          isUnhandled: false,
+          title: `CommandError: ${duplicateImportMessage}`,
+          metadata: { value: duplicateImportMessage, type: "CommandError" },
+        },
+        {
+          shortId: "PM-DUPLICATE-UNHANDLED",
+          level: "error",
+          logger: "node",
+          isUnhandled: true,
+          title: `CommandError: ${duplicateImportMessage}`,
+          metadata: { value: duplicateImportMessage, type: "CommandError" },
+        },
+      ]),
+    });
+    expect(json.sentry.high).toBe(1);
+    expect(json.sentry.blocking_short_ids).toEqual(["PM-DUPLICATE-UNHANDLED"]);
+    expect(json.sentry.ignored_expected_handled_short_ids).toEqual(["PM-DUPLICATE-HANDLED"]);
+    expect(json.sentry.threshold_ok).toBe(true);
+  });
+
   it("handles malformed issue entries while still tallying high-priority items", async () => {
     const { json } = await runSentryGate({
       argv: ["--json", "--telemetry-mode", "off", "--max-high", "1"],

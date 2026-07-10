@@ -1,0 +1,33 @@
+id: pm-io4t
+title: Sentry release gate misclassifies handled duplicate-import refusal as a blocking runtime error
+description: "The 2026-07-10 scheduled Auto Release reached all build, coverage, and package gates but stopped on PM-CLI-1X. Live Sentry data shows CommandError isUnhandled=false for the intentional merge-strategy fail duplicate guard, which aborts before writes. Extend the expected-handled classifier, prove unhandled variants still block, resolve the Sentry group, and exercise same-day Auto Release recovery."
+type: Issue
+status: closed
+priority: 1
+tags[5]: auto-release,dogfood,release,sentry,telemetry
+created_at: "2026-07-10T08:30:05.775Z"
+updated_at: "2026-07-10T08:49:22.095Z"
+closed_at: "2026-07-10T08:49:00.004Z"
+author: codex-root
+resolution: fixed
+expected_result: "Handled duplicate-import dogfood refusals do not count against the release threshold, while unhandled failures with the same text remain blocking."
+actual_result: The narrow guarded classifier ignores PM-CLI-1X and the live gate reports zero blocking high/critical issues; the regression keeps the isUnhandled=true twin in blocking_short_ids.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-7zs0,incident_from,"2026-07-10T08:32:49.253Z",codex-root,release_recovery
+  pm-yohx,related_to,"2026-07-10T08:32:49.253Z",codex-root,duplicate_check
+comments[2]{created_at,author,text}:
+  "2026-07-10T08:30:05.775Z",codex-root,"Duplicate check: pm search --status all for Sentry telemetry gate handled import merge-strategy fail release blocker and PM-CLI-1X found no item for this exact 2026-07-10 classifier gap. Canonical precedent pm-yohx is closed historical remediation; this item links the new Sentry group and current release incident without rewriting shipped history."
+  "2026-07-10T08:48:56.947Z",codex-root,"TDD and release-gate evidence: failing regression first observed high=2 for handled+unhandled duplicate-import twins; implementation adds the narrow merge-strategy fail bead classifier behind the existing CommandError/PmCliError and isUnhandled=false guard. Focused suite passes 49/49. Full repository coverage passes 270 files and 5,506 tests at statements 34380/34380, branches 24588/24588, functions 6882/6882, lines 33039/33039. Typecheck, contract snapshot, ESLint, jscpd 0 clones, static quality/docstrings, token budget, docs/skills, secret scan, and production audit all pass. Live production-token Sentry gate now reports critical=0 high=0, ignored_expected_handled=5 including PM-CLI-1X, and telemetry best-effort reports 0.25% finish errors with zero missing error-code rows. Inline telemetry flush drained the local queue to zero on disk at 2026-07-10T08:48Z."
+notes[1]{created_at,author,text}:
+  "2026-07-10T08:48:57.843Z",codex-root,"Operational recovery: GitHub Auto Release run 29073827938 failed only at sentry-telemetry-gate after all build/coverage/package gates passed. Blocker issue: GH #492. The fix preserves the gate for any isUnhandled=true duplicate-import event."
+learnings[1]{created_at,author,text}:
+  "2026-07-10T08:48:58.690Z",codex-root,"Expected dogfood failures must be classified by stable semantic fragments and only after type plus isUnhandled guards; exact counts or whole messages make release reliability brittle, while a broad text-only ignore could conceal crashes."
+files[2]{path,scope,note}:
+  scripts/release/sentry-telemetry-gate.mjs,project,Classify intentional handled duplicate-import refusal without suppressing unhandled variants
+  tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,TDD regression proves handled duplicate refusal is ignored while unhandled equivalent still blocks
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrep015v-xpemeg,test,passed,"2026-07-10T08:47:12.353Z","2026-07-10T08:47:31.555Z","2026-07-10T08:47:31.555Z",1,0,0
+close_reason: Implemented and fully verified the narrow expected-handled duplicate-import classifier; unhandled equivalents remain blocking and live Sentry/telemetry gates are green.
+body: ""

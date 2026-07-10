@@ -140,6 +140,10 @@ const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
   "pm-web exited with code",
   "github api returned http 422",
   "drift detected:",
+  // The package import dogfood deliberately runs merge-strategy=fail twice to
+  // prove duplicate detection aborts before writes. Sentry records that handled
+  // CommandError when expected-error capture is enabled for release smokes.
+  'merge-strategy "fail": bead',
 ];
 const KNOWN_EXPECTED_HANDLED_ENVIRONMENT_ISSUE_PATTERNS = [
   // Local disk exhaustion is an operational host-capacity failure surfaced by
