@@ -400,6 +400,7 @@ export function runActiveServiceOverrideSync(service: ExtensionServiceName, payl
 }
 
 export * from "./loader.js";
+export { createSerialQueue } from "../shared/serial-queue.js";
 export {
   EXTENSION_CAPABILITY_REGISTRATION_SURFACES,
   collectUsedExtensionCapabilities,

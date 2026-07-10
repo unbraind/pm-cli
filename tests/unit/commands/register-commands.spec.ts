@@ -2741,6 +2741,14 @@ describe("setup command actions", () => {
       .mockResolvedValueOnce({
         ok: false,
         action: "install",
+        details: {
+          extension: { name: "pkg-soft" },
+          activated: false,
+          runtime_activation_status: "failed",
+          activation_diagnostics: { failed_count: 1 },
+          command_discovery: { extension_name: "pkg-soft" },
+          verification: { status: "degraded" },
+        },
       } as never)
       .mockRejectedValueOnce(
         new PmCliError("registry unavailable", EXIT_CODE.NOT_FOUND, {
@@ -2793,6 +2801,12 @@ describe("setup command actions", () => {
         {
           target: "pkg-soft",
           ok: false,
+          extension: { name: "pkg-soft" },
+          activated: false,
+          runtime_activation_status: "failed",
+          activation_diagnostics: { failed_count: 1 },
+          command_discovery: { extension_name: "pkg-soft" },
+          verification: { status: "degraded" },
           warnings: [],
           error: {
             message: "Extension install returned ok=false without throwing an error.",

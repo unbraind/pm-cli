@@ -6452,8 +6452,14 @@ describe("extension command runtime", () => {
       );
 
       const install = await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath, noExtensions: true });
+      expect(install.ok).toBe(false);
       expect(install.details).toMatchObject({
+        activated: false,
         runtime_activation_status: "not_loaded",
+        verification: {
+          status: "degraded",
+          health: { status: "degraded", blocking_failure_count: 1 },
+        },
       });
     });
   });

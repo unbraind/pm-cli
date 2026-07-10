@@ -430,8 +430,8 @@ async function isLikelyWorkspaceRoot(candidate: string): Promise<boolean> {
   return false;
 }
 
-async function assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot: string, global: GlobalOptions, force: boolean): Promise<void> {
-  if (global.path === undefined || force) {
+async function assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot: string, explicitTrackerTarget: boolean, force: boolean): Promise<void> {
+  if (!explicitTrackerTarget || force) {
     return;
   }
   if (await pathExists(path.join(pmRoot, "settings.json"))) {
@@ -447,7 +447,7 @@ async function assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot: string, globa
     {
       code: "workspace_root_pm_path",
       type: "urn:pm-cli:error:workspace_root_pm_path",
-      why: "--pm-path/--path points at the tracker storage directory itself, not the repository workspace. Point it at .agents/pm or pass --force if you intentionally want root-level tracker files.",
+      why: "Path-like init targets and --pm-path/--path point at the tracker storage directory itself, not the repository workspace. Point at .agents/pm, use --workspace, or pass --force if you intentionally want root-level tracker files.",
       examples: [
         `pm --pm-path ${nestedTracker} init --yes`,
         "pm init --yes",
@@ -879,7 +879,7 @@ export async function runInit(
   const invocation = resolveInitInvocation(cwd, global, prefixArg, options.workspace);
   const pmRoot = invocation.pmRoot;
   prefixArg = invocation.prefixArg;
-  await assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot, global, options.force === true);
+  await assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot, invocation.target.mode === "tracker-path", options.force === true);
   const createdDirs: string[] = [];
   const warnings: string[] = [];
   const baseDirs = await ensureInitDirectories(pmRoot, PM_REQUIRED_SUBDIRS);

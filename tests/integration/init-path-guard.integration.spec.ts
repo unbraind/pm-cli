@@ -85,6 +85,14 @@ describe("init tracker-path guardrails", () => {
       await mkdir(path.join(workspaceRoot, ".agents", "pm"), { recursive: true });
       await writeFile(path.join(workspaceRoot, "package.json"), JSON.stringify({ name: "path-trap" }), "utf8");
 
+      const positionalGuarded = context.runCli(["init", workspaceRoot, "--json"]);
+      expect(positionalGuarded.code).toBe(2);
+      expectJsonErrorEnvelope(positionalGuarded.stderr, {
+        type: "urn:pm-cli:error:workspace_root_pm_path",
+        code: "workspace_root_pm_path",
+        exit_code: 2,
+      });
+
       const guarded = context.runCli(["--pm-path", workspaceRoot, "init", "--json"]);
       expect(guarded.code).toBe(2);
       const envelope = expectJsonErrorEnvelope(guarded.stderr, {

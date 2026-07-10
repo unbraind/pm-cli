@@ -6,8 +6,8 @@ status: closed
 priority: 1
 tags[3]: audit-followup,extensions,sdk
 created_at: "2026-07-02T21:55:19.923Z"
-updated_at: "2026-07-10T05:53:38.264Z"
-closed_at: "2026-07-10T05:53:37.292Z"
+updated_at: "2026-07-10T08:05:04.998Z"
+closed_at: "2026-07-10T08:05:03.734Z"
 author: claude-code-agent
 estimated_minutes: 120
 acceptance_criteria: Declarative extension install reports activation failure accurately and scaffold next_steps work when @unbrained/pm-cli is unresolvable; regression test covers the unresolvable-host path.
@@ -19,8 +19,10 @@ expected_result: Failed activation is never reported as activated or successful.
 actual_result: "Install returns ok=false, activated=false, degraded verification, diagnostics, recovery, and non-zero CLI exit."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-fpod,related,"2026-07-02T21:55:52.911Z",null,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-10T05:53:25.174Z",codex-root-20260709,"Verification evidence 2026-07-10: full sandbox suite passed 270 files / 5,505 tests with exact 100% statements, branches, functions, and lines. pm test-all over the seven active items passed 8 linked commands with 0 failures and 1 duplicate-safe skip. pnpm typecheck, contracts:check, lint (ESLint + 0 jscpd clones + static quality/token budget), docs-skills, context-eval, security scan, and audit all passed. Live CodeFactor reports A+ and 0 issues. Fresh packed npm install at /tmp/pm-cli-sdk-path-proof-XIsSsh activated 11 bundled packages in a path-target tracker, left caller extension files at zero, and passed CLI/SDK context plus isolated doctor with zero blocking failures. pm health is clean and history drift is zero."
+  "2026-07-10T07:08:14.821Z",codex-root-20260709,"PR #491 review follow-up: verified Gemini findings against live runtime contracts. FailedExtensionLoad.error and FailedExtensionActivation.error are required strings, and loader formatUnknownError normalizes every unknown thrown value before constructing either record; optional chaining or re-stringification at the consumer would duplicate an already enforced invariant. The valid multi-target diagnostic-loss finding was fixed in the registration aggregator. Full coverage remains exact 100/100/100/100 and linked tests pass."
+  "2026-07-10T08:05:01.776Z",codex-root-20260709,"Fresh PR #491 P1 closeout: --no-extensions is now an explicit failed verification state (ok=false, activated=false, degraded health, one blocking failure) without breaking legitimate lazy/metadata-only package activation. Runtime probes serialize the required PM_CLI_PACKAGE_ROOT override through the shared FIFO queue and restore it in finally. Packed install proof at /tmp/pm-pr491-packed-OkUpBn returned exit 1/degraded with extensions disabled and ok/activated on retry. Exact 100/100/100/100 coverage, strict quality, and linked tests pass."
 notes[1]{created_at,author,text}:
   "2026-07-04T08:32:11.718Z",maintainer-agent,"2026-07-04 sandbox audit adds evidence: same misreporting class on IMPERATIVE installs — pm extension --install reports ok:true while activation_status:failed; failure surfaces only as raw repeated Node stderr warnings (11 lines per subsequent command) and --list shows contradictory active:true/enabled:true/activation_status:failed. Install should run an activation probe and fail loudly. Root cause of the sandbox failures themselves is tracked separately (pm-r0m4 missing type:module)."
 files[3]{path,scope,note}:
@@ -29,10 +31,12 @@ files[3]{path,scope,note}:
   tests/unit/extensions/extension-command.spec.ts,project,Load and activation failure regression coverage
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts,project,300,Extension install/runtime regression suite
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
   test-all-local-mreilef6-55k1ab,test-all,passed,"2026-07-10T05:48:11.158Z","2026-07-10T05:49:30.701Z","2026-07-10T05:49:30.701Z",1,0,0,1,1
+  test-all-local-mrelcssc-dydy57,test-all,passed,"2026-07-10T07:05:28.743Z","2026-07-10T07:06:44.539Z","2026-07-10T07:06:44.539Z",1,0,0,1,1
+  test-all-local-mrendoy1-a0maba,test-all,passed,"2026-07-10T08:02:09.621Z","2026-07-10T08:03:33.561Z","2026-07-10T08:03:33.561Z",1,0,0,1,1
 docs[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,Activation diagnostics and SDK dependency recovery
   docs/SDK.md,project,Package verification and failure contract
-close_reason: "Implementation, docs, contracts, exact coverage, linked tests, and packed installed-package proof complete."
+close_reason: "Hosted review P1s resolved with TDD, serialized runtime probing, packed proof, exact coverage, and linked tests."
 body: "## Context\nFound in the 2026-07-02 ecosystem review (Lane B, pm-6vy7). Declarative (composeExtension) package installs into a workspace that cannot resolve @unbrained/pm-cli fail runtime activation with 'Cannot find package', yet the install result claims success.\n\n## Defects\n1. Contradictory report: pm install prints activated:true with runtime_activation_status:failed and failed_count:0 — an agent reading any one field gets a different story.\n2. The failed install-time activation skips item-type folder scaffolding, leaving a lingering pm health warning (overlaps pm-l98s, which covers the scaffolding gap generally).\n3. Scaffold next_steps never warn that the target workspace must be able to resolve the SDK.\n\n## Approach\nMake activation status single-source: activated must be false (or partial) whenever runtime_activation_status is failed, and failed_count must count it. Add an install-time preflight that checks @unbrained/pm-cli resolvability from the workspace and emits an actionable hint (install dep / use bundled catalog). Extend scaffold next_steps with the resolvability requirement.\n\n## Definition of done\nSandbox repro (CJS + no SDK dep) shows coherent failure reporting with a recovery hint; health warning does not linger after a successful retry; spec covers the contradictory-status regression."

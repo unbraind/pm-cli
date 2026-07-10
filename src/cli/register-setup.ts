@@ -293,6 +293,10 @@ async function executeExtensionInstallCommand(
         settings_changed: details.settings_changed,
         command_paths: details.command_paths,
         action_paths: details.action_paths,
+        runtime_activation_status: details.runtime_activation_status,
+        activation_diagnostics: details.activation_diagnostics,
+        command_discovery: details.command_discovery,
+        verification: details.verification,
         warnings: targetWarnings,
         ...(targetOk
           ? {}

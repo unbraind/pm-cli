@@ -42,7 +42,7 @@ pm install kanban --project
 
 External registry packages are installed by exact package name. If `npm:<name>` returns a registry 404, JSON error output includes `fallback_candidates` and `next_best_command`; unpublished first-party packages fall back to `pm install --project github.com/unbraind/<name>`. Install results include package-owned `command_paths`, `action_paths`, `command_discovery`, and a light `verification` block covering the target tracker, activation status, registered commands/actions/item types, and health verdict. Agents should consume those fields instead of guessing from the package name or immediately spending another invocation on doctor. A failed runtime activation returns `ok: false`, `activated: false`, a non-zero CLI exit, and actionable diagnostics; missing SDK resolution adds an explicit dependency recovery step.
 
-An explicit `--pm-path` scopes project installs to that tracker root, including extension files, managed state, settings, type-folder scaffolding, and verification output. This is the safe form for temporary package dogfood from inside another repository checkout.
+An explicit `--pm-path` scopes project installs to that tracker root, including extension files, managed state, settings, type-folder scaffolding, and verification output. This is the safe form for temporary package testing from inside another repository checkout.
 
 ```bash
 npm search "pm-cli pm-package"

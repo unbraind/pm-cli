@@ -9,7 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { activateExtensions, loadExtensions, nextExtensionReloadToken } from "../../core/extensions/index.js";
+import { activateExtensions, createSerialQueue, loadExtensions, nextExtensionReloadToken } from "../../core/extensions/index.js";
 import { resolveExtensionRoots } from "../../core/extensions/loader.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
@@ -1026,6 +1026,8 @@ interface GithubUpdateStatus {
 }
 type ActivationFailureEntry = Awaited<ReturnType<typeof activateExtensions>>["failed"][number];
 
+const extensionRuntimeProbeQueue = createSerialQueue();
+
 interface ActivationFailureDiagnostic {
   layer: string;
   name: string;
@@ -1157,45 +1159,49 @@ async function probeRuntimeCommandPathsForInstall(
   installed: ManagedExtensionSummary[];
   warnings: string[];
   activation_failures: ActivationFailureDiagnostic[];
+  extensions_disabled: boolean;
   item_type_registrations: Awaited<ReturnType<typeof activateExtensions>>["registrations"]["item_types"];
 }> {
-  const originalPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
-  process.env.PM_CLI_PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-  try {
-    const loadResult = await loadExtensions({
-      pmRoot,
-      settings,
-      cwd: process.cwd(),
-      noExtensions: global.noExtensions === true,
-      reload_token: nextExtensionReloadToken(),
-      cache_bust: true,
-    });
-    const activationResult = await activateExtensions({
-      ...loadResult,
-      loaded: loadResult.loaded,
-    });
-    const runtimeFailures = [
-      ...loadResult.failed.map((failure) => ({
-        layer: failure.layer,
-        name: failure.name,
-        entry_path: failure.entry_path,
-        error: failure.error,
-      })),
-      ...collectActivationFailureDiagnostics(activationResult.failed),
-    ];
-    return {
-      installed: applyDoctorRuntimeActivationState(refreshedInstalled, loadResult, activationResult),
-      warnings: [...loadResult.warnings, ...activationResult.warnings],
-      activation_failures: runtimeFailures,
-      item_type_registrations: activationResult.registrations.item_types,
-    };
-  } finally {
-    if (originalPackageRoot === undefined) {
-      delete process.env.PM_CLI_PACKAGE_ROOT;
-    } else {
-      process.env.PM_CLI_PACKAGE_ROOT = originalPackageRoot;
+  return extensionRuntimeProbeQueue.enqueue(async () => {
+    const originalPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    process.env.PM_CLI_PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+    try {
+      const loadResult = await loadExtensions({
+        pmRoot,
+        settings,
+        cwd: process.cwd(),
+        noExtensions: global.noExtensions === true,
+        reload_token: nextExtensionReloadToken(),
+        cache_bust: true,
+      });
+      const activationResult = await activateExtensions({
+        ...loadResult,
+        loaded: loadResult.loaded,
+      });
+      const runtimeFailures = [
+        ...loadResult.failed.map((failure) => ({
+          layer: failure.layer,
+          name: failure.name,
+          entry_path: failure.entry_path,
+          error: failure.error,
+        })),
+        ...collectActivationFailureDiagnostics(activationResult.failed),
+      ];
+      return {
+        installed: applyDoctorRuntimeActivationState(refreshedInstalled, loadResult, activationResult),
+        warnings: [...loadResult.warnings, ...activationResult.warnings],
+        activation_failures: runtimeFailures,
+        extensions_disabled: loadResult.disabled_by_flag,
+        item_type_registrations: activationResult.registrations.item_types,
+      };
+    } finally {
+      if (originalPackageRoot === undefined) {
+        delete process.env.PM_CLI_PACKAGE_ROOT;
+      } else {
+        process.env.PM_CLI_PACKAGE_ROOT = originalPackageRoot;
+      }
     }
-  }
+  });
 }
 
 async function checkGithubUpdate(
@@ -1884,7 +1890,9 @@ async function performExtensionInstallUnderLock(
     runtimeProbe.installed,
     installActivationFailure,
   );
-  const activated = installActivationFailure === undefined && runtimeActivationStatus !== "failed";
+  const activated =
+    !runtimeProbe.extensions_disabled &&
+    runtimeActivationStatus !== "failed";
   if (!activated) {
     warnings.push(`extension_install_activation_failed:${scope}:${validated.manifest.name}:${runtimeActivationStatus}`);
   }
@@ -1898,7 +1906,7 @@ async function performExtensionInstallUnderLock(
     registered_item_types: installedItemTypeDefinitions,
     health: {
       status: activated ? "ok" : "degraded",
-      blocking_failure_count: installActivationFailure ? 1 : 0,
+      blocking_failure_count: activated ? 0 : 1,
     },
   };
 

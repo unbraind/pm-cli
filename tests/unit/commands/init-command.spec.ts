@@ -204,13 +204,13 @@ describe("runInit", () => {
       expect(await initInternals.isLikelyWorkspaceRoot(tempRoot)).toBe(false);
       await writeFile(path.join(tempRoot, "package.json"), "{}\n", "utf8");
       expect(await initInternals.isLikelyWorkspaceRoot(tempRoot)).toBe(true);
-      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, { path: tempRoot }, false)).rejects.toHaveProperty(
+      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, true, false)).rejects.toHaveProperty(
         "context.code",
         "workspace_root_pm_path",
       );
-      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, { path: tempRoot }, true)).resolves.toBeUndefined();
+      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, true, true)).resolves.toBeUndefined();
       await runInit("pm", { path: tempRoot }, { defaults: true, force: true });
-      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, { path: tempRoot }, false)).resolves.toBeUndefined();
+      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, true, false)).resolves.toBeUndefined();
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

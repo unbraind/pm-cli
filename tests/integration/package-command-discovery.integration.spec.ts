@@ -90,6 +90,35 @@ describe("package command discovery integration", () => {
           verification: { status: "degraded", health: { blocking_failure_count: 1 } },
         },
       });
+
+      const validDir = path.join(context.tempRoot, "valid-package");
+      await mkdir(validDir, { recursive: true });
+      await writeFile(
+        path.join(validDir, "manifest.json"),
+        JSON.stringify({ name: "valid-package", version: "1.0.0", entry: "index.js", capabilities: [] }),
+        "utf8",
+      );
+      await writeFile(path.join(validDir, "index.js"), "export default {};\n", "utf8");
+
+      const aggregate = context.runCli(["install", validDir, sourceDir, "--json"], { expectJson: true });
+      expect(aggregate.code).toBe(1);
+      expect(aggregate.json).toMatchObject({
+        ok: false,
+        installed_count: 1,
+        failed_count: 1,
+        targets: [
+          { target: validDir, ok: true },
+          {
+            target: sourceDir,
+            ok: false,
+            activated: false,
+            runtime_activation_status: "failed",
+            activation_diagnostics: { failed_count: 1 },
+            command_discovery: { sdk_dependency_status: "missing" },
+            verification: { status: "degraded", health: { blocking_failure_count: 1 } },
+          },
+        ],
+      });
     });
   });
 });

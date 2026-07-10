@@ -9,8 +9,8 @@
 ### Fixed
 
 - GH-488: path-target pm init emits executable tracker-scoped follow-up commands ([pm-x26a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x26a.toon))
-- Project package install with --pm-path can write extensions into the caller workspace ([pm-qt5d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qt5d.toon))
 - Declarative extension install: activation failure is misreported and scaffold next_steps break when @unbrained/pm-cli is unresolvable ([pm-3wsi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3wsi.toon))
+- Project package install with --pm-path can write extensions into the caller workspace ([pm-qt5d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qt5d.toon))
 - GH-482: Node 24 nightly coverage gate flake — readdir-order-dependent branch at front-matter-cache.ts:505 ([pm-gume](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gume.toon))
 - Context evaluation runner and CI gate: rank-aware quality metrics plus token-budget regression checks ([pm-xmp5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xmp5.toon))
 - Token-cost regression gate: CI budget check over a representative command-output corpus ([pm-cu1i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cu1i.toon))
