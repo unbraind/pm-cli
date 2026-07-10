@@ -1585,11 +1585,12 @@
         },
         {
           "aliases": [
-            "--acceptance_criteria",
-            "--ac"
+            "--acceptance_criteria"
           ],
-          "flag": "--acceptance-criteria",
-          "list": true
+          "flag": "--acceptance-criteria"
+        },
+        {
+          "flag": "--ac"
         },
         {
           "flag": "--author"
@@ -5975,11 +5976,12 @@
         },
         {
           "aliases": [
-            "--acceptance_criteria",
-            "--ac"
+            "--acceptance_criteria"
           ],
-          "flag": "--acceptance-criteria",
-          "list": true
+          "flag": "--acceptance-criteria"
+        },
+        {
+          "flag": "--ac"
         },
         {
           "flag": "--assignee"
