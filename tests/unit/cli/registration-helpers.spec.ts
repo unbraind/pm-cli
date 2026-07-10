@@ -282,6 +282,7 @@ describe("registration helpers", () => {
 
     const update = normalizeUpdateOptions({
       acceptanceCriteria: ["first"],
+      acceptance_criteria: undefined,
       ac: ["second"],
       addTags: ["tests"],
       depRemove: ["pm-old"],

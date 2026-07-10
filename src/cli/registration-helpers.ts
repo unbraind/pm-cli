@@ -58,6 +58,9 @@ function readJoinedRepeatedOption(
       continue;
     }
     const value = options[key];
+    if (value == null) {
+      continue;
+    }
     if (typeof value === "string") {
       values.push(value);
       continue;
