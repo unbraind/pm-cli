@@ -62,6 +62,8 @@ export interface NextOptions {
   readyOnly?: boolean;
   format?: string;
   explainRanking?: boolean;
+  /** Internal caller override used to align claim-next ranking with --author. */
+  callerAuthor?: string;
   [key: string]: unknown;
 }
 
@@ -106,6 +108,7 @@ export interface NextResult {
   recommended: NextRecommendation | null;
   ready: NextActionableItem[];
   blocked: NextActionableItem[];
+  held_by_others: Array<{ id: string; assignee: string }>;
   summary: NextSummary;
   filters: {
     type: string | null;
@@ -207,6 +210,26 @@ function buildRecommendationReasons(
   return reasons;
 }
 
+function partitionCallerOwnedReady(
+  ready: ActionableEntry[],
+  fallbackAuthor: string,
+  explicitAuthor?: string,
+): { available: ActionableEntry[]; held: Array<{ id: string; assignee: string }> } {
+  const caller = (explicitAuthor ?? process.env.PM_AUTHOR ?? fallbackAuthor).trim() || "unknown";
+  const available: ActionableEntry[] = [];
+  const held: Array<{ id: string; assignee: string }> = [];
+  for (const entry of ready) {
+    const assignee = typeof entry.item.assignee === "string" ? entry.item.assignee.trim() : "";
+    const isForeignWork = assignee.length > 0 && assignee !== caller;
+    if (isForeignWork) held.push({ id: entry.item.id, assignee });
+    else available.push(entry);
+  }
+  return { available, held };
+}
+
+/** Test-only access to deterministic next-work partitioning edge cases. */
+export const _testOnlyNextCommand = { partitionCallerOwnedReady };
+
 // Renders a deadline as a date token plus a relative tag (overdue/today/in Nd).
 // The relative delta is computed on UTC calendar dates (both sides normalized to
 // midnight) so a deadline due today never reads as "overdue 1d" just because the
@@ -296,10 +319,11 @@ function buildNextSuggestions(recommended: NextRecommendation | null, blockedRow
     return undefined;
   }
   if (blockedRows.length > 0) {
+    const blockedWithReferences = blockedRows.find((item) => item.blockers.length > 0);
     return [
-      `${blockedRows.length} item(s) are blocked; unblock the top one by closing ${blockedRows[0].blockers
-        .map((blocker) => blocker.id)
-        .join(", ")}`,
+      blockedWithReferences
+        ? `${blockedRows.length} item(s) are blocked; unblock the top one by closing ${blockedWithReferences.blockers.map((blocker) => blocker.id).join(", ")}`
+        : `${blockedRows.length} item(s) are blocked; add blocker context or move the top item back to an active status`,
       "pm next --ready-only after a blocker closes to re-check ready work",
       'pm create --type Task --title "..." to add new ready work',
     ];
@@ -380,7 +404,8 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
 
   const report = computeActionabilityReport(candidates, corpus, statusRegistry);
   const childrenByParent = buildChildrenByParent(corpus);
-  const rankedReady = rankNextReadyEntries(report.ready, childrenByParent, statusRegistry);
+  const callerPartition = partitionCallerOwnedReady(report.ready, settings.author_default, options.callerAuthor);
+  const rankedReady = rankNextReadyEntries(callerPartition.available, childrenByParent, statusRegistry);
   const rankedBlocked = [...report.blocked].sort((left, right) =>
     compareCriticalItems(left.item, right.item, statusRegistry),
   );
@@ -406,8 +431,9 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
     output_default: "toon",
     now,
     recommended,
-    ready: readyRows.slice(0, limit),
+    ready: readyRows.slice(1, limit + 1),
     blocked: readyOnly ? [] : blockedRows.slice(0, blockedLimit),
+    held_by_others: callerPartition.held,
     summary: {
       recommended: recommended !== null,
       ready: readyRows.length,

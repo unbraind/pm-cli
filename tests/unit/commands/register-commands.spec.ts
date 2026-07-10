@@ -39,7 +39,11 @@ vi.mock("../../../src/cli/commands/health.js", () => ({ runHealth: vi.fn() }));
 vi.mock("../../../src/cli/commands/validate.js", () => ({ runValidate: vi.fn() }));
 vi.mock("../../../src/cli/commands/gc.js", () => ({ runGc: vi.fn() }));
 vi.mock("../../../src/cli/commands/contracts.js", () => ({ runContracts: vi.fn() }));
-vi.mock("../../../src/cli/commands/claim.js", () => ({ runClaim: vi.fn(), runRelease: vi.fn() }));
+vi.mock("../../../src/cli/commands/claim.js", () => ({
+  runClaim: vi.fn(),
+  runClaimNext: vi.fn(),
+  runRelease: vi.fn(),
+}));
 vi.mock("../../../src/cli/commands/create.js", () => ({ runCreate: vi.fn() }));
 vi.mock("../../../src/cli/commands/copy.js", () => ({ runCopy: vi.fn() }));
 vi.mock("../../../src/cli/commands/focus.js", () => ({ runFocus: vi.fn() }));
@@ -135,7 +139,7 @@ vi.mock("../../../src/cli/commands/extension.js", () => ({ runExtension: vi.fn()
 vi.mock("../../../src/cli/commands/upgrade.js", () => ({ runUpgrade: vi.fn() }));
 
 import { registerListQueryCommands } from "../../../src/cli/register-list-query.js";
-import { registerOperationCommands } from "../../../src/cli/register-operations.js";
+import { registerOperationCommands, requireClaimTarget } from "../../../src/cli/register-operations.js";
 import { resolveStartTaskInProgressStatus } from "../../../src/sdk/start-task-status.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import {
@@ -166,7 +170,7 @@ import { runHealth } from "../../../src/cli/commands/health.js";
 import { runValidate } from "../../../src/cli/commands/validate.js";
 import { runGc } from "../../../src/cli/commands/gc.js";
 import { runContracts } from "../../../src/cli/commands/contracts.js";
-import { runClaim, runRelease } from "../../../src/cli/commands/claim.js";
+import { runClaim, runClaimNext, runRelease } from "../../../src/cli/commands/claim.js";
 import { runCreate } from "../../../src/cli/commands/create.js";
 import { runCopy } from "../../../src/cli/commands/copy.js";
 import { runFocus } from "../../../src/cli/commands/focus.js";
@@ -514,6 +518,19 @@ describe("list-query command actions", () => {
 });
 
 describe("operation command actions", () => {
+  it("requires either an explicit claim id or --next", () => {
+    expect(() => requireClaimTarget(undefined, false)).toThrow("Specify an item id or pass --next");
+    expect(() => requireClaimTarget("pm-a", true)).toThrow("either an item id or --next");
+    expect(requireClaimTarget(undefined, true)).toBeUndefined();
+    expect(requireClaimTarget("pm-a", false)).toBeUndefined();
+  });
+
+  it("routes claim --next through ranked atomic selection", async () => {
+    vi.mocked(runClaimNext).mockResolvedValueOnce({ id: "pm-next" } as never);
+    await runCli("claim", "--next", "--if-available");
+    expect(runClaimNext).toHaveBeenCalledWith(false, expect.any(Object), expect.objectContaining({ ifAvailable: true }));
+  });
+
   it("maps pm test flags and flags dependency failures via exit code", async () => {
     await runCli("test", "pm-1", "--list", "--match", "unit", "--env-set", "A=1");
     let options = lastCallArg<Record<string, unknown>>(vi.mocked(runTest) as never, 1);

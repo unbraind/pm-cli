@@ -1060,4 +1060,15 @@ describe("runComments edit/delete (GH-243)", () => {
       expect(badIndex.code).toBe(EXIT_CODE.USAGE);
     });
   });
+
+  it("accepts the hidden --body alias without expanding help", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-body-alias");
+      const added = context.runCli(["comments", id, "--body", "agent evidence", "--json"], { expectJson: true });
+      expect(added.code).toBe(0);
+      expect((added.json as { comments: Array<{ text: string }> }).comments[0].text).toBe("agent evidence");
+      const help = context.runCli(["comments", "--help"]);
+      expect(help.stdout).not.toContain("--body");
+    });
+  });
 });

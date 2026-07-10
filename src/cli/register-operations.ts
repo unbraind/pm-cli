@@ -11,7 +11,7 @@ import { PmCliError } from "../core/shared/errors.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { resolveStartTaskInProgressStatus } from "../sdk/start-task-status.js";
-import { runClaim, runRelease } from "./commands/claim.js";
+import { runClaim, runClaimNext, runRelease } from "./commands/claim.js";
 import { runClose } from "./commands/close.js";
 import { runContracts } from "./commands/contracts.js";
 import { runGc } from "./commands/gc.js";
@@ -395,18 +395,28 @@ async function runContractsAction(options: Record<string, unknown>, command: Com
   }
 }
 
-async function runClaimAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+async function runClaimAction(id: string | undefined, options: Record<string, unknown>, command: Command): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const result = await runClaim(id, Boolean(options.force), globalOptions, {
+  const lifecycleOptions = {
     ...buildLifecycleMutationOptions(options),
     ifAvailable: options.ifAvailable === true,
-  });
+  };
+  requireClaimTarget(id, options.next === true);
+  const result = options.next === true
+    ? await runClaimNext(Boolean(options.force), globalOptions, lifecycleOptions)
+    : await runClaim(id as string, Boolean(options.force), globalOptions, lifecycleOptions);
   await invalidateSearchCachesForMutation(globalOptions, result);
   printResult(result, globalOptions);
   if (globalOptions.profile) {
     printError(`profile:command=claim took_ms=${Date.now() - startedAt}`);
   }
+}
+
+/** Enforces the claim target XOR selection contract before dispatch. */
+export function requireClaimTarget(id: string | undefined, next: boolean): void {
+  if (!next && !id) throw new PmCliError("Specify an item id or pass --next", EXIT_CODE.USAGE);
+  if (next && id) throw new PmCliError("Specify either an item id or --next, not both", EXIT_CODE.USAGE);
 }
 
 async function runReleaseAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
@@ -656,11 +666,12 @@ export function registerOperationCommands(program: Command): void {
 
   const claimCommand = program
     .command("claim")
-    .argument("<id>", "Item id")
+    .argument("[id]", "Item id (omit with --next)")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--force", "Force claim override")
     .option("--if-available", "Skip silently when the item is already claimed by another author (returns skipped=true)")
+    .option("--next", "Atomically claim the next caller-available actionable item")
     .description("Claim an item for active work.")
     .action(runClaimAction);
   addHiddenOption(claimCommand, "--assignee <value>", "Alias for --author on lifecycle ownership commands");

@@ -301,6 +301,7 @@ export interface ContextEvaluationContextResult {
 
 /** Structural next result consumed by the evaluation runner. */
 export interface ContextEvaluationNextResult {
+  recommended?: ContextEvaluationResultItem | null;
   ready?: ContextEvaluationResultItem[];
   ranking?: ContextEvaluationResultRanking;
   [key: string]: unknown;
@@ -418,7 +419,10 @@ function rankingPayloadForScenario(
         ...((result as ContextEvaluationContextResult).blocked_fallback ?? []),
       ]
         .map((item) => item.id)
-    : ((result as ContextEvaluationNextResult).ready ?? []).map((item) => item.id);
+    : [
+        ...((result as ContextEvaluationNextResult).recommended ? [(result as ContextEvaluationNextResult).recommended as ContextEvaluationResultItem] : []),
+        ...((result as ContextEvaluationNextResult).ready ?? []),
+      ].map((item) => item.id);
   const servedIds = new Set(rankedIds);
   const attribution = (result.ranking?.items ?? [])
     .filter((item) => servedIds.has(item.id))

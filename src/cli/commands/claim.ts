@@ -14,6 +14,7 @@ import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { resolveAuthor } from "../../core/shared/author.js";
 import { wrapOwnershipConflict } from "./annotation-command.js";
+import { runNext, type NextRecommendation, type NextOptions } from "./next.js";
 
 /**
  * Documents the claim result payload exchanged by command, SDK, and package integrations.
@@ -26,6 +27,24 @@ export interface ClaimResult {
   skipped?: boolean;
   warnings?: string[];
 }
+
+/** Result of atomically selecting and claiming the next caller-available item. */
+export interface ClaimNextResult extends ClaimResult {
+  recommendation: NextRecommendation;
+  attempts: number;
+}
+
+/** Returns whether a failed claim lost the atomic test-and-set race. */
+export function isAlreadyClaimedError(error: unknown): boolean {
+  return error instanceof PmCliError && error.context?.code === "already_claimed_by";
+}
+
+type ClaimRunner = (
+  id: string,
+  force: boolean,
+  global: GlobalOptions,
+  options: ClaimMutationOptions,
+) => Promise<ClaimResult>;
 
 /**
  * Documents the release result payload exchanged by command, SDK, and package integrations.
@@ -127,6 +146,53 @@ export async function runClaim(
     ...(skipped ? { skipped: true } : {}),
     ...(mutationWarnings.length > 0 ? { warnings: mutationWarnings } : {}),
   };
+}
+
+/**
+ * Selects ranked actionable work and claims the first candidate still available
+ * under the item lock. Conflicts caused by parallel claimers advance to the next
+ * candidate instead of returning a thundering-herd failure.
+ */
+export async function runClaimNext(
+  force: boolean,
+  global: GlobalOptions,
+  options: ClaimMutationOptions = {},
+  nextOptions: NextOptions = {},
+): Promise<ClaimNextResult> {
+  const next = await runNext({ ...nextOptions, callerAuthor: options.author, limit: "10" }, global);
+  const recommendations = [next.recommended, ...next.ready]
+    .filter((entry): entry is NextRecommendation => entry !== null)
+    .map((entry) => ({ ...entry, reasons: "reasons" in entry ? entry.reasons : ["ranked ready candidate"] }));
+  return claimNextFromRecommendations(recommendations, force, global, options);
+}
+
+/** Claims the first still-available row from a pre-ranked recommendation set. */
+export async function claimNextFromRecommendations(
+  recommendations: NextRecommendation[],
+  force: boolean,
+  global: GlobalOptions,
+  options: ClaimMutationOptions = {},
+  claimRunner: ClaimRunner = runClaim,
+): Promise<ClaimNextResult> {
+  let attempts = 0;
+  let lastSkipped: ClaimNextResult | undefined;
+  for (const recommendation of recommendations) {
+    attempts += 1;
+    try {
+      const claimed = await claimRunner(recommendation.id, force, global, options);
+      const result = { ...claimed, recommendation, attempts };
+      if (claimed.skipped) lastSkipped = result;
+      else return result;
+    } catch (error: unknown) {
+      if (!isAlreadyClaimedError(error)) throw error;
+    }
+  }
+  if (lastSkipped) return lastSkipped;
+  throw new PmCliError("No actionable item remained available to claim", EXIT_CODE.CONFLICT, {
+    code: "no_available_next_item",
+    why: "Every ranked candidate was claimed by another agent before this atomic selection completed.",
+    nextSteps: ["Run pm claim --next again to refresh the ranked candidate set."],
+  });
 }
 
 /**

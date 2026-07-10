@@ -101,7 +101,7 @@ pm dedupe-audit --mode parent_scope --limit 20
 pm dedupe-merge --keep pm-canonical --close pm-duplicate --dry-run
 ```
 
-Use `pm next` when the only question is "what should I work on now?" — it is the distilled, dependency-aware version of `context`. It computes READINESS rather than just listing active work: an item is **ready** when its status is active, it has no open blockers (neither the scalar `blocked_by` nor any `blocked_by` dependency points at a non-terminal item), and it has no open children (a concrete leaf, never an Epic with open work beneath it). Open containers whose descendants are already terminal are governance closeout rows: they stay out of the normal ready queue while concrete leaf work exists, then surface when closeout is the next action. `pm next` returns one `recommended` item with a deterministic rationale (status, priority, deadline, blocker clearance, parent advancement, downstream unblocks, and completed-container closeout when applicable), a ranked `ready` queue, and a `blocked` companion queue annotated with each item's open blockers so you know exactly what to clear next. In-progress work is recommended before unstarted work. Scope to one epic with `--parent <id>`, cap rows with `--limit`/`--blocked-limit`, drop the blocked list with `--ready-only`, and render markdown with `--format markdown`. Available over MCP as the narrow `pm_next` tool (and the `next` action of `pm_run`).
+Use `pm next` when the only question is "what should I work on now?" It computes dependency-aware readiness, keeps dangling dependency ids blocked until repaired, and combines lifecycle-blocked plus graph-blocked work in the companion queue. The `recommended` projection is excluded from the `ready` tail, while foreign-owned in-progress work is summarized under `held_by_others`. Use `pm claim --next` to atomically select and claim caller-available work with bounded conflict retry. Scope with `--parent`, cap rows with `--limit`/`--blocked-limit`, or use `--ready-only` for the tightest projection.
 
 ```bash
 pm next                                 # recommend the next action + ready/blocked queues
@@ -511,6 +511,7 @@ pm remind "Review PR" --at +2d                               # Reminder (--at de
 
 ```bash
 pm claim <id>
+pm claim --next
 pm release <id>
 pm release <id> --allow-audit-release --author <you>
 ```
@@ -531,7 +532,7 @@ pm notes <id> --add "Keep renderer changes isolated to TOON output."
 pm learnings <id> --add "Use runtime contracts instead of duplicating flag lists."
 ```
 
-Use comments for progress and evidence, notes for implementation context, and learnings for durable future guidance. For comments, choose exactly one input source (`[text]`, `--add`, `--stdin`, or `--file`) per invocation. To clean up obsolete orchestration notes, `--edit <index>` rewrites the comment at a 1-based index (replacement text from `[text]`/`--add`/`--stdin`/`--file`) and `--delete <index>` removes it; both record history and honor ownership rules (`--allow-audit-comment` for non-owner audits).
+Use comments for progress and evidence, notes for implementation context, and learnings for durable future guidance. `--body` is a hidden compatibility alias for comments `--add`; choose exactly one input source (`[text]`, `--add`/`--body`, `--stdin`, or `--file`) per invocation. To clean up obsolete orchestration notes, `--edit <index>` rewrites the comment at a 1-based index and `--delete <index>` removes it; both record history and honor ownership rules.
 
 ## Linked Artifacts
 

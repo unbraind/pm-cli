@@ -56,16 +56,16 @@ export interface ResolvedBlocker {
   id: string;
   title: string | null;
   status: ItemStatus | null;
-  /** True when the blocker no longer gates work: its id is unknown or terminal. */
+  /** True when the blocker no longer gates work because the referenced item is terminal. */
   resolved: boolean;
 }
 
 /**
  * Resolves an item's declared blockers against a corpus index, annotating each
- * with the blocker's title/status and whether it still gates work. A blocker is
- * treated as resolved when its id is unknown (a dangling reference cannot be
- * waited on) or the referenced item is terminal — mirroring the close-time
- * auto-unblock rule, which only clears a dependent once its blocker is terminal.
+ * with the blocker's title/status and whether it still gates work. Unknown ids
+ * remain unresolved: silently treating a typo as satisfied would dispatch work
+ * whose prerequisite was never completed. Terminal referenced items alone are
+ * resolved.
  */
 export function resolveItemBlockers(
   item: Pick<ItemFrontMatter, "blocked_by" | "dependencies">,
@@ -75,7 +75,7 @@ export function resolveItemBlockers(
   return collectBlockedByIds(item).map((id) => {
     const blocker = itemsById.get(normalizeItemId(id));
     if (!blocker) {
-      return { id, title: null, status: null, resolved: true };
+      return { id, title: null, status: null, resolved: false };
     }
     return {
       id,
@@ -199,7 +199,7 @@ export function computeActionabilityReport(
   statusRegistry: RuntimeStatusRegistry,
 ): ActionabilityReport {
   const { itemsById, childrenByParent, blockedByReverse } = indexCorpus(corpus);
-  const activeStatuses = resolveActiveStatusSet(statusRegistry);
+  const activeStatuses = new Set([...resolveActiveStatusSet(statusRegistry), ...statusRegistry.blocked_statuses]);
   // Ids of corpus items still in flight, used to keep only the non-terminal
   // dependents in each item's downstream "unblocks" list.
   const nonTerminalIds = new Set(
@@ -221,7 +221,8 @@ export function computeActionabilityReport(
       .filter((dependentId) => nonTerminalIds.has(normalizeItemId(dependentId)))
       .sort((left, right) => left.localeCompare(right));
     const entry: ActionableEntry = { item, open_blockers: openBlockers, unblocks };
-    if (openBlockers.length === 0) {
+    const lifecycleBlocked = statusRegistry.blocked_statuses.has(normalizeStatusForRegistry(item.status, statusRegistry));
+    if (openBlockers.length === 0 && !lifecycleBlocked) {
       ready.push(entry);
     } else {
       blocked.push(entry);

@@ -6,19 +6,24 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-06-10T11:16:46.777Z"
-updated_at: "2026-06-10T11:24:18.536Z"
+updated_at: "2026-07-10T20:32:55.793Z"
+closed_at: "2026-07-10T20:32:54.665Z"
 author: codex-impl
 parent: pm-mpbb
-resolution: Added tracker_not_initialized to the Sentry expected handled CLI classifier.
-expected_result: The release Sentry/telemetry gate treats structured tracker-not-initialized usage errors as expected handled CLI errors.
-actual_result: Live gate passes with PM-CLI-1J ignored as expected handled CLI error and zero relevant critical/high Sentry issues.
-comments[2]{created_at,author,text}:
+resolution: Extended the expected-handled Sentry classifier for exact starter search/context wrapper prefixes around tracker-not-initialized failures.
+expected_result: Live release gates ignore handled starter wrapper usage errors without hiding unhandled failures.
+actual_result: "Live Sentry gate reports zero blocking critical/high issues, classifies PM-CLI-1Y/1Z as expected handled, and telemetry remains healthy at 0.34% with zero missing error codes."
+comments[4]{created_at,author,text}:
   "2026-06-10T11:16:46.777Z",codex-impl,"Duplicate check: searched sentry tracker_not_initialized release gate expected CLI error. Related closed lineage includes pm-yohx and pm-flbo for earlier expected CLI classifier refreshes, but no open item covers tracker_not_initialized; creating focused follow-up."
   "2026-06-10T11:17:44.477Z",codex-impl,"Evidence: added tracker_not_initialized to the Sentry expected handled CLI classifier and covered it in release automation contract tests. Verification passed: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts (13 tests); pnpm exec tsc --noEmit --pretty false; node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort (ok true, Sentry relevant critical=0 high=0, PM-CLI-1J in ignored expected CLI list, telemetry error rate 1.62%, missing error-code rows 0)."
-files[2]{path,scope,note}:
+  "2026-07-10T20:20:17.948Z",codex-wide-pm-sdk,"Live regression evidence: pnpm release:gates passed build/static/docs/context/security/100% coverage/packed smoke/88-command dogfood, then blocked only on PM-CLI-1Y and PM-CLI-1Z. Both are CommandError wrappers from pm starter search/context around expected tracker-not-initialized CLI usage failures; telemetry remained healthy at 0.34% finish errors with zero missing error-code rows."
+  "2026-07-10T20:32:36.293Z",codex-wide-pm-sdk,"Verification: pnpm release:gates passed build/typecheck/static/docstring ratchets/docs/context/security, 100/100/100/100 coverage with 5,524 tests, packed npx smoke, and 88-command package dogfood; isolated installed-tarball acceptance created two items, atomically claimed one, accepted comments --body, detected one dangling dependency, and imported PmClient. Live Sentry/telemetry: 0 blocking critical/high, 0.34% finish error rate, zero missing error-code rows. pm health: all 7 checks ok; history drift: 0 across 1,709 items."
+files[3]{path,scope,note}:
   scripts/release/sentry-telemetry-gate.mjs,project,expected handled CLI classifier
   tests/integration/release-automation-contract.spec.ts,project,release gate classifier regression
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-close_reason: Fixed Sentry release gate classifier for structured tracker_not_initialized CommandErrors; regression and live gate passed.
+  tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,handled versus unhandled starter wrapper coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,240
+close_reason: "Implemented and verified in the atomic work-selection, dependency-integrity, recovery, alias, and telemetry bundle."
 body: ""

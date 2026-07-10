@@ -303,7 +303,7 @@ export const COMMENTS_AUDIT_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const COMMENTS_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--add", aliases: ["--comment"] },
+  { flag: "--add", aliases: ["--comment", "--body"] },
   { flag: "--stdin" },
   { flag: "--file" },
   { flag: "--edit" },
@@ -728,6 +728,8 @@ export const CLAIM_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
   { flag: "--force" },
+  { flag: "--if-available" },
+  { flag: "--next" },
 ];
 
 export const RESTORE_FLAG_CONTRACTS: CliFlagContract[] = [

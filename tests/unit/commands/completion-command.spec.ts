@@ -234,7 +234,7 @@ describe("generateBashScript", () => {
 
   it("includes comments mutation metadata flags in bash completion", () => {
     const script = generateBashScript();
-    expect(script).toContain("--add --stdin --file --edit --delete --limit --author --message --allow-audit-comment --force");
+    expect(script).toContain("--add --body --stdin --file --edit --delete --limit --author --message --allow-audit-comment --force");
     expect(script).toContain("--stdin");
     expect(script).toContain("--file");
     expect(script).toContain("--edit");
@@ -640,6 +640,18 @@ describe("generateZshScript", () => {
     expect(script).toContain("_pm_commands");
     expect(script).toContain("package:Manage package lifecycle operations");
     expect(script).toContain("packages:Alias for package");
+  });
+
+  it("places atomic claim flags only in the zsh claim block", () => {
+    const script = generateZshScript();
+    const updateStart = script.indexOf("        update)");
+    const updateBlock = script.slice(updateStart, script.indexOf("        update-many)", updateStart));
+    const claimStart = script.indexOf("        claim)");
+    const claimBlock = script.slice(claimStart, script.indexOf("        release)", claimStart));
+    expect(updateBlock).not.toContain("--if-available");
+    expect(updateBlock).not.toContain("--next[");
+    expect(claimBlock).toContain("--if-available");
+    expect(claimBlock).toContain("--next[");
   });
 
   it("includes zsh completion for list filters", () => {

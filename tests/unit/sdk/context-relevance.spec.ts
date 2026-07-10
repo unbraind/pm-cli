@@ -274,7 +274,7 @@ describe("context relevance SDK primitives", () => {
     const focus = (id: string) => ({ id }) as never;
     const reader = {
       context: async () => ({ high_level: [], low_level: [focus("pm-a"), focus("pm-b")], blocked_fallback: [], ranking }) as never,
-      next: async () => ({ ready: [focus("pm-b"), focus("pm-a")], ranking }) as never,
+      next: async () => ({ recommended: focus("pm-b"), ready: [focus("pm-a")], ranking }) as never,
     };
     const scenarios = [
       {

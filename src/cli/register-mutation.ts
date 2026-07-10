@@ -1026,7 +1026,8 @@ function resolveCommentSources(text: string | undefined, options: Record<string,
 } {
   const editIndex = typeof options.edit === "number" ? options.edit : undefined;
   const deleteIndex = typeof options.delete === "number" ? options.delete : undefined;
-  const addFromOption = readOptionString(options, "add");
+  const addFromOption =
+    readOptionString(options, "add") ?? readOptionString(options, "body") ?? readOptionString(options, "comment");
   const addFromPositional = typeof text === "string" ? text : undefined;
   const readFromStdin = options.stdin === true;
   const readFromFile = readOptionString(options, "file");
@@ -1940,7 +1941,7 @@ export function registerMutationCommands(program: Command): void {
     );
   profileCommand.action(runProfileAction);
 
-  program
+  const commentsCommand = program
     .command("comments")
     .argument("<id>", "Item id")
     .argument("[text]", "Optional comment text shorthand (equivalent to --add)")
@@ -1956,6 +1957,8 @@ export function registerMutationCommands(program: Command): void {
     .option("--force", "Force ownership override")
     .description("List, add, edit, or delete comments for an item.")
     .action(runCommentsAction);
+  addHiddenOption(commentsCommand, "--body <text>", "Alias for --add", false);
+  addHiddenOption(commentsCommand, "--comment <text>", "Alias for --add", false);
 
   program
     .command("notes")

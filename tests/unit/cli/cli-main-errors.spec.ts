@@ -4042,15 +4042,15 @@ describe("CLI Commander usage recovery helpers", () => {
     program.command("update").description("Update");
     const previousArgv = process.argv;
     try {
-      process.argv = ["node", "pm", "comments", "pm-123", "--body=done"];
+      process.argv = ["node", "pm", "comments", "pm-123", "--boddy=done"];
       const unknown = await resolveCommanderUsageContext(
-        { message: "error: unknown option '--body'" },
+        { message: "error: unknown option '--boddy'" },
         program,
         new Map(),
       );
       expect(unknown.commandName).toBe("comments");
-      expect(unknown.unknownOptionSuggestions).toContain("--add");
-      expect(unknown.suggestedRetryCommand).toContain("--add=done");
+      expect(unknown.unknownOptionSuggestions).toContain("--body");
+      expect(unknown.suggestedRetryCommand).toBe("pm comments pm-123 --body=done");
 
       process.argv = ["node", "pm", "test-all", "--type", "Task"];
       const otherCommand = await resolveCommanderUsageContext(
@@ -4132,12 +4132,12 @@ describe("CLI Commander usage recovery helpers", () => {
       );
       expect(compactMissing.suggestedRetryCommand).toBe('pm comments pm-123 --add "<value>"');
 
-      process.argv = ["node", "pm", "comments", "pm-123", "--body=done"];
-      const json = JSON.parse(await formatCommanderUsageJson({ message: "error: unknown option '--body'" }, program, new Map()));
-      expect(json.recovery.suggested_retry).toContain("--add=done");
+      process.argv = ["node", "pm", "comments", "pm-123", "--boddy=done"];
+      const json = JSON.parse(await formatCommanderUsageJson({ message: "error: unknown option '--boddy'" }, program, new Map()));
+      expect(json.recovery.suggested_retry).toContain("--body=done");
 
-      const display = await formatCommanderUsageMessage({ message: "error: unknown option '--body'" }, program, new Map());
-      expect(display).toContain("Unknown option --body");
+      const display = await formatCommanderUsageMessage({ message: "error: unknown option '--boddy'" }, program, new Map());
+      expect(display).toContain("Unknown option --boddy");
 
       setActiveExtensionServices({
         overrides: [

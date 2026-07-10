@@ -1,8 +1,9 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
-import { runClaim, runRelease } from "../../../src/cli/commands/claim.js";
+import { describe, expect, it, vi } from "vitest";
+import { claimNextFromRecommendations, isAlreadyClaimedError, runClaim, runClaimNext, runRelease, type ClaimMutationOptions } from "../../../src/cli/commands/claim.js";
+import type { GlobalOptions } from "../../../src/core/shared/command-types.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
@@ -11,7 +12,7 @@ function createTask(
   context: TempPmContext,
   params: {
     title: string;
-    status: "open" | "closed";
+    status: "open" | "in_progress" | "closed";
     assignee?: string;
   },
 ): string {
@@ -76,6 +77,51 @@ function setGovernancePreset(context: TempPmContext, preset: "minimal" | "defaul
 }
 
 describe("runClaim/runRelease", () => {
+  it("classifies only structured already-claimed conflicts as retryable", () => {
+    expect(isAlreadyClaimedError(new Error("ordinary"))).toBe(false);
+    expect(isAlreadyClaimedError(new PmCliError("other", EXIT_CODE.CONFLICT, { code: "other" }))).toBe(false);
+    expect(isAlreadyClaimedError(new PmCliError("held", EXIT_CODE.CONFLICT, { code: "already_claimed_by" }))).toBe(true);
+  });
+
+  it("propagates non-conflict failures from ranked claim composition", async () => {
+    const recommendation = { id: "pm-x", reasons: [] } as never;
+    await expect(
+      claimNextFromRecommendations([recommendation], false, {}, {}, async () => {
+        throw new Error("storage unavailable");
+      }),
+    ).rejects.toThrow("storage unavailable");
+  });
+
+  it("honors if-available while advancing skipped ranked candidates", async () => {
+    const recommendations = [
+      { id: "pm-held", reasons: [] },
+      { id: "pm-free", reasons: [] },
+    ] as never;
+    const runner = vi.fn(async (id: string, _force: boolean, _global: GlobalOptions, options: ClaimMutationOptions) => ({
+      item: { id },
+      claimed_by: id === "pm-held" ? "other" : "agent",
+      previous_assignee: id === "pm-held" ? "other" : null,
+      forced: false,
+      ...(id === "pm-held" ? { skipped: true } : {}),
+      options,
+    }));
+    const claimed = await claimNextFromRecommendations(recommendations, false, {}, { ifAvailable: true }, runner);
+    expect(claimed.recommendation.id).toBe("pm-free");
+    expect(claimed.attempts).toBe(2);
+    expect(runner).toHaveBeenCalledWith("pm-held", false, {}, { ifAvailable: true });
+  });
+
+  it("returns a non-failing skip when every if-available candidate is held", async () => {
+    const recommendation = { id: "pm-held", reasons: [] } as never;
+    const result = await claimNextFromRecommendations([recommendation], false, {}, { ifAvailable: true }, async () => ({
+      item: { id: "pm-held" },
+      claimed_by: "other",
+      previous_assignee: "other",
+      forced: false,
+      skipped: true,
+    }));
+    expect(result).toMatchObject({ skipped: true, attempts: 1, recommendation: { id: "pm-held" } });
+  });
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-claim-not-init-"));
     try {
@@ -98,6 +144,47 @@ describe("runClaim/runRelease", () => {
       expect(result.previous_assignee).toBeNull();
       expect(result.forced).toBe(false);
       expect(result.item.assignee).toBe("test-author");
+    });
+  });
+
+  it("atomically claims the next caller-available recommendation", async () => {
+    await withTempPmPath(async (context) => {
+      const first = createTask(context, { title: "claim-next-first", status: "open" });
+      const second = createTask(context, { title: "claim-next-second", status: "open" });
+      const result = await runClaimNext(false, { path: context.pmPath }, { author: "next-agent" });
+      expect([first, second]).toContain(result.recommendation.id);
+      expect(result.claimed_by).toBe("next-agent");
+      expect(result.attempts).toBe(1);
+    });
+  });
+
+  it("uses the explicit claim author for next-work ownership ranking", async () => {
+    await withTempPmPath(async (context) => {
+      const mine = createTask(context, { title: "explicit-author-work", status: "in_progress" });
+      context.runCli(["update", mine, "--assignee", "next-agent", "--json"], { expectJson: true });
+      createTask(context, { title: "other-work", status: "open" });
+      const result = await runClaimNext(false, { path: context.pmPath }, { author: "next-agent" });
+      expect(result.recommendation.id).toBe(mine);
+      expect(result.claimed_by).toBe("next-agent");
+    });
+  });
+
+  it("distributes parallel claim-next calls and reports exhaustion", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, { title: "parallel-next-a", status: "open" });
+      createTask(context, { title: "parallel-next-b", status: "open" });
+      const claimed = await Promise.all([
+        runClaimNext(false, { path: context.pmPath }, { author: "parallel-a" }),
+        runClaimNext(false, { path: context.pmPath }, { author: "parallel-b" }),
+      ]);
+      expect(new Set(claimed.map((result) => result.recommendation.id)).size).toBe(2);
+    });
+    await withTempPmPath(async (context) => {
+      await expect(runClaimNext(false, { path: context.pmPath }, { author: "nobody" })).rejects.toMatchObject({
+        context: expect.objectContaining({ code: "no_available_next_item" }),
+      });
+      const missingId = context.runCli(["claim", "--json"]);
+      expect(missingId.code).toBe(EXIT_CODE.USAGE);
     });
   });
 

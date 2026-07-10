@@ -2,6 +2,7 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  _testOnlyNextCommand as nextInternals,
   NEXT_OUTPUT_VALUES,
   renderNextMarkdown,
   resolveNextOutputFormat,
@@ -79,6 +80,19 @@ describe("resolveNextOutputFormat", () => {
 });
 
 describe("runNext", () => {
+  it("resolves caller identity through settings and unknown fallbacks", () => {
+    const previousAuthor = process.env.PM_AUTHOR;
+    delete process.env.PM_AUTHOR;
+    try {
+      expect(nextInternals.partitionCallerOwnedReady([], "settings-author")).toEqual({ available: [], held: [] });
+      expect(nextInternals.partitionCallerOwnedReady([], "   ")).toEqual({ available: [], held: [] });
+      expect(nextInternals.partitionCallerOwnedReady([], "settings-author", "explicit-author")).toEqual({ available: [], held: [] });
+    } finally {
+      if (previousAuthor === undefined) delete process.env.PM_AUTHOR;
+      else process.env.PM_AUTHOR = previousAuthor;
+    }
+  });
+
   it("recommends in-progress work first, ranks ready leaves, and lists blocked leaves with their blockers", async () => {
     await withTempPmPath(async (context) => {
       const epic = createItem(context, { title: "Build auth", type: "Epic" });
@@ -173,12 +187,12 @@ describe("runNext", () => {
 
       const result = await runNext({}, { path: context.pmPath });
       expect(result.recommended?.id).toBe(leaf);
-      expect(result.ready.map((entry) => entry.id)).toEqual([leaf]);
+      expect(result.ready).toEqual([]);
 
       context.runCli(["close", leaf, "done", "--json"], { expectJson: true });
       const closeoutOnly = await runNext({}, { path: context.pmPath });
       expect(closeoutOnly.recommended?.id).toBe(completedEpic);
-      expect(closeoutOnly.ready.map((entry) => entry.id)).toEqual([completedEpic]);
+      expect(closeoutOnly.ready).toEqual([]);
       expect(closeoutOnly.recommended?.reasons).toContain("completed container — governance closeout");
     });
   });
@@ -189,7 +203,8 @@ describe("runNext", () => {
       const inSubtree = createItem(context, { title: "Subtree leaf", parent: epic });
       createItem(context, { title: "Outside leaf" });
       const scoped = await runNext({ parent: epic }, { path: context.pmPath });
-      expect(scoped.ready.map((entry) => entry.id)).toEqual([inSubtree]);
+      expect(scoped.recommended?.id).toBe(inSubtree);
+      expect(scoped.ready).toEqual([]);
       expect(scoped.filters.parent).toBe(epic);
 
       const limited = await runNext({ limit: "1" }, { path: context.pmPath });
@@ -201,11 +216,35 @@ describe("runNext", () => {
       // A non-positive --limit falls back to the default cap (surfaces both ready leaves).
       const zeroLimit = await runNext({ limit: "0" }, { path: context.pmPath });
       expect(zeroLimit.filters.limit).toBe(5);
-      expect(zeroLimit.ready).toHaveLength(2);
+      expect(zeroLimit.ready).toHaveLength(1);
 
       const readyOnly = await runNext({ readyOnly: true }, { path: context.pmPath });
       expect(readyOnly.filters.ready_only).toBe(true);
       expect(readyOnly.blocked).toHaveLength(0);
+    });
+  });
+
+  it("keeps lifecycle and dangling-dependency blockers visible and skips foreign work", async () => {
+    await withTempPmPath(async (context) => {
+      const mine = createItem(context, { title: "My work", priority: "1" });
+      const foreign = createItem(context, { title: "Foreign work", priority: "0" });
+      context.runCli(["update", foreign, "--status", "in_progress", "--assignee", "other-agent", "--json"], { expectJson: true });
+      const dangling = createItem(context, { title: "Dangling blocker", dep: "id=pm-ghost,kind=blocked_by" });
+      const lifecycleBlocked = createItem(context, { title: "Lifecycle blocked", status: "blocked", blockedBy: "pm-ghost" });
+
+      const previousAuthor = process.env.PM_AUTHOR;
+      process.env.PM_AUTHOR = "test-author";
+      try {
+        const result = await runNext({}, { path: context.pmPath });
+        expect(result.recommended?.id).toBe(mine);
+        expect(result.ready).toEqual([]);
+        expect(result.held_by_others).toEqual([{ id: foreign, assignee: "other-agent" }]);
+        expect(result.blocked.map((entry) => entry.id).sort()).toEqual([dangling, lifecycleBlocked].sort());
+        expect(result.summary).toMatchObject({ ready: 1, blocked: 2, candidates: 4 });
+      } finally {
+        if (previousAuthor === undefined) delete process.env.PM_AUTHOR;
+        else process.env.PM_AUTHOR = previousAuthor;
+      }
     });
   });
 
@@ -233,6 +272,12 @@ describe("runNext", () => {
       expect(blockedOnly.recommended).toBeNull();
       expect(blockedOnly.suggestions?.[0]).toContain(`closing ${blocker}`);
     });
+    await withTempPmPath(async (context) => {
+      createItem(context, { title: "Blocked without references", status: "blocked" });
+      const blockedOnly = await runNext({}, { path: context.pmPath });
+      expect(blockedOnly.recommended).toBeNull();
+      expect(blockedOnly.suggestions?.[0]).toContain("add blocker context");
+    });
   });
 
   it("propagates de-duplicated, sorted parse warnings from the corpus reads", async () => {
@@ -254,6 +299,7 @@ function nextResult(overrides: Partial<NextResult>): NextResult {
     recommended: null,
     ready: [],
     blocked: [],
+    held_by_others: [],
     summary: { recommended: false, ready: 0, blocked: 0, in_progress: 0, candidates: 0, containers: 0 },
     filters: {
       type: null,

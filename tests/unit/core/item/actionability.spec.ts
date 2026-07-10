@@ -60,7 +60,7 @@ describe("collectBlockedByIds", () => {
 });
 
 describe("resolveItemBlockers", () => {
-  it("annotates each blocker as resolved (missing/terminal) or open (non-terminal)", () => {
+  it("keeps missing and non-terminal blockers unresolved while resolving terminal blockers", () => {
     const corpus = [
       item({ id: "pm-open", status: "open" }),
       item({ id: "pm-closed", status: "closed" }),
@@ -73,7 +73,7 @@ describe("resolveItemBlockers", () => {
     );
     expect(blockers).toEqual([
       { id: "pm-closed", title: "Item pm-closed", status: "closed", resolved: true },
-      { id: "pm-missing", title: null, status: null, resolved: true },
+      { id: "pm-missing", title: null, status: null, resolved: false },
       { id: "pm-open", title: "Item pm-open", status: "open", resolved: false },
     ]);
   });
@@ -105,15 +105,15 @@ describe("computeActionabilityReport", () => {
     expect(report.blocked[0].open_blockers.map((blocked) => blocked.id)).toEqual(["pm-blocker"]);
   });
 
-  it("treats a parent whose descendants are all terminal as a ready leaf and skips a missing/terminal blocker", () => {
+  it("treats a parent whose descendants are terminal as ready but keeps a missing blocker blocked", () => {
     const parent = item({ id: "pm-parent", type: "Epic", status: "open" });
     const closedChild = item({ id: "pm-closed-child", parent: "pm-parent", status: "closed" });
     const resolvedBlockee = item({ id: "pm-resolved", status: "open", blocked_by: "pm-gone" });
     const corpus = [parent, closedChild, resolvedBlockee];
 
     const report = computeActionabilityReport(corpus, corpus, registry);
-    expect(report.ready.map((entry) => entry.item.id).sort()).toEqual(["pm-parent", "pm-resolved"]);
-    expect(report.blocked).toHaveLength(0);
+    expect(report.ready.map((entry) => entry.item.id)).toEqual(["pm-parent"]);
+    expect(report.blocked.map((entry) => entry.item.id)).toEqual(["pm-resolved"]);
     expect(report.container_count).toBe(0);
   });
 

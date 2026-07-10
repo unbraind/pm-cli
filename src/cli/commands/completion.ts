@@ -616,7 +616,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(`${LIFECYCLE_ACTIONS} ${PACKAGE_LIFECYCLE_FLAGS}`)})`,
     "      ;;",
     "    comments)",
-    `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --author --message --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --body --stdin --file --edit --delete --limit --author --message --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    comments-audit)",
     `      COMPREPLY=(${compgen("--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --limit --full-history --latest --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1508,6 +1508,8 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
+            '--if-available[Skip work held by another author]' \\
+            '--next[Atomically claim the next actionable item]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -2408,6 +2410,8 @@ complete -c pm -n '__fish_seen_subcommand_from append' -l force -d 'Force overri
 complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task delete' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task delete' -l message -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task delete' -l force -d 'Force override'
+complete -c pm -n '__fish_seen_subcommand_from claim' -l if-available -d 'Skip work held by another author'
+complete -c pm -n '__fish_seen_subcommand_from claim' -l next -d 'Atomically claim the next actionable item'
 complete -c pm -n '__fish_seen_subcommand_from close close-task' -l validate-close -d 'Validate closure metadata mode' -r -a 'off warn strict'
 complete -c pm -n '__fish_seen_subcommand_from close' -l reason -d 'Closure reason' -r
 complete -c pm -n '__fish_seen_subcommand_from close' -l close-reason -d 'Alias for --reason' -r

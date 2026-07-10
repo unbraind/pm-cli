@@ -493,6 +493,12 @@ integration, or agent runtime. Presentation stays outside the SDK primitive:
 callers choose their own rendering while the data shape remains shared with the
 CLI.
 
+The `next` result excludes the recommended item from the `ready` tail, reports
+foreign-owned work in `held_by_others`, and treats dangling dependency ids as
+unresolved blockers. The CLI `claim --next` composition uses the same public
+ranking result and atomic claim mutation, so custom SDK tools can apply their own
+selection policy without losing concurrency safety.
+
 Lifecycle convenience methods and the matching top-level functions (`create`,
 `update`, `close`, `claim`, `release`, `copy`, `deleteItem`, `restore`,
 `focus`, `startTask`, `pauseTask`, and `closeTask`) use the same mutation paths

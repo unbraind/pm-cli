@@ -211,7 +211,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
-  it("suggests semantic option replacements for append-style commands", async () => {
+  it("accepts the hidden --body compatibility alias for comments", async () => {
     await withTempPmPath(async (context) => {
       const created = context.runCli(["create", "--title", "Comment target", "--type", "Task", "--json"], {
         expectJson: true,
@@ -220,12 +220,9 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       const itemId = (created.json as { item?: { id?: string } }).item?.id;
       expect(itemId).toBeDefined();
 
-      const result = context.runCli(["comments", itemId ?? "", "--body", "comment body", "--json"]);
-      expect(result.code).toBe(2);
-      const envelope = parseJsonErrorEnvelope(result.stderr);
-      expect(envelope.code).toBe("unknown_option");
-      expect(envelope.next_steps).toEqual(expect.arrayContaining(["Nearest supported options: --add"]));
-      expect(envelope.recovery?.suggested_retry).toContain("--add");
+      const result = context.runCli(["comments", itemId ?? "", "--body", "comment body", "--json"], { expectJson: true });
+      expect(result.code).toBe(0);
+      expect((result.json as { comments: Array<{ text: string }> }).comments[0]?.text).toBe("comment body");
     });
   });
 
