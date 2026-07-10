@@ -1600,6 +1600,8 @@ describe("mutation command actions", () => {
     expect(optionFlags).toContain("--label <value>");
     command.parse(["node", "demo", "--must", "present", "--label", "B", "--tag", "A"]);
     expect(command.opts()).toMatchObject({ tag: ["B", "A"], label: ["B", "A"] });
+    command.parse(["node", "demo", "--must", "present", "--tag", "next"]);
+    expect(command.opts().tag).toEqual(["next"]);
   });
 
   it("handles create with no positionals and with both a positional and a --title flag", async () => {

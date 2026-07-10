@@ -18,19 +18,19 @@ export const RESERVED_ITEM_FIELD_NAMES: ReadonlySet<string> = Object.freeze({
   has(value: string): boolean {
     return reservedItemFieldNames.has(value);
   },
-  entries(): SetIterator<[string, string]> {
+  entries(): IterableIterator<[string, string]> {
     return reservedItemFieldNames.entries();
   },
-  keys(): SetIterator<string> {
+  keys(): IterableIterator<string> {
     return reservedItemFieldNames.keys();
   },
-  values(): SetIterator<string> {
+  values(): IterableIterator<string> {
     return reservedItemFieldNames.values();
   },
   forEach(callback: (value: string, value2: string, set: ReadonlySet<string>) => void, thisArg?: unknown): void {
     reservedItemFieldNames.forEach((value) => callback.call(thisArg, value, value, RESERVED_ITEM_FIELD_NAMES));
   },
-  [Symbol.iterator](): SetIterator<string> {
+  [Symbol.iterator](): IterableIterator<string> {
     return reservedItemFieldNames.values();
   },
 });

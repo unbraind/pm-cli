@@ -458,7 +458,12 @@ function mapBulkContentAndGovernanceFilters(options: Record<string, unknown>): R
 export function registerCommanderOptionContracts(command: Command, contracts: CommanderOptionRegistrationContract[]): void {
   for (const contract of contracts) {
     const sharedValues: string[] = [];
+    let activeParseArgs = command.args;
     const repeatableParser = (value: string): string[] => {
+      if (command.args !== activeParseArgs) {
+        sharedValues.length = 0;
+        activeParseArgs = command.args;
+      }
       sharedValues.push(value);
       return sharedValues;
     };

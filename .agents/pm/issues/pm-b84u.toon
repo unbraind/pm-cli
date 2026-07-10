@@ -6,15 +6,15 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",bug
 created_at: "2026-07-07T15:15:06.845Z"
-updated_at: "2026-07-10T15:14:39.561Z"
-closed_at: "2026-07-10T15:14:39.016Z"
+updated_at: "2026-07-10T15:31:57.049Z"
+closed_at: "2026-07-10T15:31:56.354Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "Repeated --ac occurrences accumulate into the stored acceptance_criteria string (joined with '; ' to match existing workspace convention) on pm create and pm update; a repeated-flag spec covers create+update; remaining scalar-contract flags with plausible repeat intent are checked against the CliFlagContract list marker and either marked list:true or documented as single-value"
 parent: pm-mpbb
 risk: low
 confidence: high
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-10T12:21:48.935Z",codex-root,"Implementation start: selected after live all-status duplicate/lineage review and full metadata inspection. This item is actively implemented in the broad schema-driven input fidelity bundle with pm-kfq5, pm-l6rz, pm-zazb, pm-b84u, and pm-ghf1; shared verification will include focused tests, 100/100/100/100 coverage, strict quality gates, and installed-package temporary-project proof."
   "2026-07-10T13:18:59.323Z",codex-root,"Implementation evidence: broad schema-driven input fidelity bundle completed. Focused suite passed 445 tests; final repository coverage passed 270 files / 5514 tests at Statements 100%, Branches 100%, Functions 100%, Lines 100%; pnpm typecheck, lint (ESLint + zero jscpd clones + strict static/docstring/import-boundary/token gates), docs/skills, contracts snapshot, audit, secret scan, health, and history-drift checks passed. Installed-package proof from packed tarball in /tmp/pm-proof.rzTX77 verified repeated --ac stores 'first; second', malformed related:pm-abcd fails before graph mutation, and public SDK RESERVED_ITEM_FIELD_NAMES/lintExtensionBlueprint rejects severity collisions. Sentry telemetry is healthy (0.28% finish error rate); two external pm-starter package handled errors PM-CLI-1Y/1Z remain visible and are not caused by this change set."
   "2026-07-10T13:25:21.682Z",codex-root,"CI correction evidence: a clean pnpm build followed by pnpm contracts:update corrected the generated fixture so --acceptance-criteria and --ac reflect Commander-owned repeatability without the reverted bootstrap list marker. Fresh pnpm contracts:check, full pnpm lint, and focused create/update/registration tests pass."
@@ -23,6 +23,7 @@ comments[8]{created_at,author,text}:
   "2026-07-10T14:50:30.591Z",codex-root,"Final Gemini nullish evidence: Commander own alias keys with null/undefined are now skipped exactly like omitted keys before scalar/array validation. Regression includes an own undefined acceptance_criteria key between valid canonical and short-alias arrays. Strict lint/type and final full 5514-test coverage pass at 100/100/100/100."
   "2026-07-10T15:02:43.705Z",codex-root,"Final Gemini disposition: declined filtering malformed non-string array entries. Nullish Commander aliases are skipped, but other invalid payload shapes deliberately invalidate the acceptance-criteria option so corruption is visible rather than silently hidden; existing regression asserts non-string arrays return undefined."
   "2026-07-10T15:14:38.411Z",codex-root,"Final Greptile ordering evidence: registerCommanderOptionContracts now supplies one shared accumulator to the primary repeatable option and every visible/hidden alias, preserving actual argv order before normalization. readJoinedRepeatedOption recognizes shared array identity to avoid duplicate expansion. Registrar regression parses --label B --tag A and observes B,A under both keys; normalization regression preserves shared second,first order. Strict lint/type and full 5514-test coverage pass at 100/100/100/100."
+  "2026-07-10T15:31:55.442Z",codex-root,"Final Greptile repeated-parse evidence: repeatable alias accumulators now detect Commander parse lifecycle through the public args-array identity and clear before a reused Command instance processes its next invocation, while retaining mixed-alias argv order within one parse. Regression parses the same command twice and confirms the second result contains only next. Focused 157 tests, strict lint/type, and full 5514-test coverage pass at 100/100/100/100."
 files[4]{path,scope,note}:
   src/cli/registration-helpers.ts,project,Join repeated acceptance criteria deterministically
   src/sdk/cli-contracts/commander-mutation-options.ts,project,Declare acceptance criteria repeatable for create/update
@@ -33,5 +34,5 @@ tests[1]{command,scope,timeout_seconds}:
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI behavior and validation guidance
   docs/SDK.md,project,SDK/package-author contract guidance
-close_reason: Mixed repeatable aliases now preserve argv ordering through a shared Commander accumulator; full gates pass.
+close_reason: Repeatable alias values preserve argv order without leaking across reused Commander parses; full gates pass.
 body: "## Problem\n`pm create ... --ac A --ac B --ac C --ac D` silently stores ONLY D. Same class as pm-cf1u (repeated --tag last-wins) and pm-6mit (repeated --step last-wins), both fixed via the argv-level coalesceRepeatedListFlags mechanism gated by the CliFlagContract `list: true` marker — but `--ac` was never marked, so it still last-wins. For agents this is silent data loss on a governance-required field: three of four criteria vanish with exit 0 and no warning.\n\n## Reproduction (live, 2026-07-07, v2026.7.7)\nCreating pm-a9mc with four --ac flags stored only the fourth criterion (visible in the create output and the item's history stream); the criteria had to be re-joined manually via pm update with a single ;-separated string.\n\n## Fix direction\nMark the acceptance-criteria contract flag as list-coalescing and join accumulated values with '; ' (the established storage convention for multi-criterion items, e.g. pm-cfed). Sweep other scalar flags where an agent would plausibly repeat the flag (e.g. --link/--file style inputs) and either mark them or leave them single-value deliberately.\n\n## Non-overlap\npm-cf1u and pm-6mit are closed and their fixes verified for their flag sets; this is the uncovered remainder of that class, reproduced on the current release."
