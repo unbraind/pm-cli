@@ -1,0 +1,18 @@
+id: pm-kfq5
+title: "GH-496: extension flags declared list:true don't accumulate repeated occurrences — host maps to scalar, Commander last-wins drops values"
+description: "pm ops scan --repos a --repos b silently scans only b; --repos a,b works. The extension declares list:true in its flag contract and documents 'comma-separated or repeatable', but the host's option mapping registers a scalar option, so Commander's default last-wins overwrites earlier occurrences. Every extension advertising a repeatable flag inherits silent data loss — the worst failure mode for agents composing flags incrementally. Fix: when the declared FlagDefinition has list:true, register a collect-style reducer accumulating repeats into an array (merging with comma-splitting like core comma-list flags), or reject repeated occurrences with a clear error. Repro 100% in GH-496 (pm-ops 2026.7.10, but host-side). Related: pm-ltbr added the list field to FlagDefinition; pm-cf1u was the same last-wins trap for core --tag."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,extensions,gh-issue,sdk
+created_at: "2026-07-10T12:15:30.786Z"
+updated_at: "2026-07-10T12:15:30.786Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "Repeated occurrences of an extension flag declared list:true accumulate into an array (parity with core comma-list flags, comma form still works); regression test covers repeated+comma+mixed forms; contract docs state the repeatable behavior; GH-496 closed"
+risk: medium
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-cf1u,related,"2026-07-10T12:15:30.786Z",null,null
+  pm-ltbr,related,"2026-07-10T12:15:30.786Z",null,null
+body: ""

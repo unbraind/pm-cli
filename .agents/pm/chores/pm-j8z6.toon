@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: context-management,linked-files,review
 created_at: "2026-06-25T05:01:04.319Z"
-updated_at: "2026-07-07T15:15:38.172Z"
+updated_at: "2026-07-10T12:16:07.271Z"
 author: codex-ecosystem-auditor
 estimated_minutes: 180
 acceptance_criteria: "Historical linked-file ownership debt is reconciled in a dedicated tracker-only migration without polluting a product release changelog; pm validate --check-files residual rows are grouped by deleted, moved, and unowned current paths with owner candidates; no broad historical PM mutations are bundled into unrelated code PRs."
@@ -21,8 +21,9 @@ comments[7]{created_at,author,text}:
   "2026-06-25T05:20:49.117Z",codex-ecosystem-auditor,"Audit correction: broad linked-file reconciliation was tested but intentionally not kept in this release PR because it touched hundreds of historical closed items and made the package-owned changelog mis-bucket old work as current. Current baseline after pruning: pm validate --check-files reports 146 missing linked paths and 162 orphaned source/test paths; this item remains open to handle that as a dedicated tracker migration."
   "2026-07-07T14:41:46.842Z",maintainer-agent,"2026-07-07 verification: validate now reports missing_linked_paths:147 (was 146) and orphaned_paths:125 (was 134). Orphans trending down from recent linked-file fixes; missing +1 likely from the PR#479 doctor-diagnostics relocation. Class still owned here."
   "2026-07-07T15:15:38.172Z",maintainer-agent,"2026-07-07 verification (planning pass, later same day): missing_linked_paths:147 and orphaned_paths:125 — both unchanged since the previous pass. First fully stable reading after the PR#479 relocation bump; class still owned here."
-notes[1]{created_at,author,text}:
+notes[2]{created_at,author,text}:
   "2026-07-06T08:22:48.232Z",maintainer-agent,"2026-07-06 audit #8 recount — pm validate now reports validate_files_missing_linked_paths 146 and validate_files_orphaned_paths 131 (workspace-wide, 2545 linked commands scanned). Counts unchanged in character since filing; still the single tracked owner of both warning classes."
+  "2026-07-10T12:16:07.271Z",maintainer-agent,"2026-07-10 review pass: validate_files_missing_linked_paths rose 147 -> 154 (+7); orphaned_paths steady at 124. Likely cause: commits 21a7d884 (untracked vendored pm-changelog extension dist) and b573ef14 (contracts-snapshot gate rework) relocated/removed files still referenced by item linked paths. Worklist ids via pm validate --json .details.*_item_ids when picking this up."
 tests[1]{command,scope,timeout_seconds,pm_context_mode}:
   pm validate --check-files --verbose-file-lists --json,project,120,tracker
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:

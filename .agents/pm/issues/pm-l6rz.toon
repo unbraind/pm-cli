@@ -1,0 +1,15 @@
+id: pm-l6rz
+title: "GH-497: pm create --template silently drops tags and custom type-option fields — only built-ins (priority/assignee) apply"
+description: "A template declaring type/priority/assignee/tags plus custom type-option fields (e.g. agentStatus, mode, model on a custom AgentRun type) applies only the built-ins on pm create --template: tags come out empty and no type-option field is set, with no warning — even though the same fields work via pm create --type AgentRun --type-option agentStatus=queued. Reproduced with pm-presets agent-workflow preset AND the built-in kanban preset's column field, so the loss is in core template application, not the preset packages. Presets rely on templates to seed consistent agent workflows; silently losing the fields that make a custom type useful forces a follow-up pm update agents don't know to issue. Fix: template application must map every declared field — tags through the tag pipeline, unknown keys through type-option/custom-field resolution for the target type — or fail loudly listing unappliable fields. Repro 100% in GH-497 (pm CLI 2026.7.10)."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,cli,gh-issue,templates
+created_at: "2026-07-10T12:15:43.286Z"
+updated_at: "2026-07-10T12:15:43.286Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: pm create --template applies template-declared tags and custom type-option fields identically to explicit --tags/--type-option flags; fields that cannot apply to the target type fail loudly listing each one; regression tests cover custom-type template + built-in kanban column; GH-497 closed
+risk: medium
+confidence: high
+body: ""
