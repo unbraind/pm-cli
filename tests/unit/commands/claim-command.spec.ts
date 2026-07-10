@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runClaim, runRelease } from "../../../src/cli/commands/claim.js";
+import { claimNextFromRecommendations, isAlreadyClaimedError, runClaim, runClaimNext, runRelease } from "../../../src/cli/commands/claim.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
@@ -76,6 +76,20 @@ function setGovernancePreset(context: TempPmContext, preset: "minimal" | "defaul
 }
 
 describe("runClaim/runRelease", () => {
+  it("classifies only structured already-claimed conflicts as retryable", () => {
+    expect(isAlreadyClaimedError(new Error("ordinary"))).toBe(false);
+    expect(isAlreadyClaimedError(new PmCliError("other", EXIT_CODE.CONFLICT, { code: "other" }))).toBe(false);
+    expect(isAlreadyClaimedError(new PmCliError("held", EXIT_CODE.CONFLICT, { code: "already_claimed_by" }))).toBe(true);
+  });
+
+  it("propagates non-conflict failures from ranked claim composition", async () => {
+    const recommendation = { id: "pm-x", reasons: [] } as never;
+    await expect(
+      claimNextFromRecommendations([recommendation], false, {}, {}, async () => {
+        throw new Error("storage unavailable");
+      }),
+    ).rejects.toThrow("storage unavailable");
+  });
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-claim-not-init-"));
     try {
@@ -98,6 +112,36 @@ describe("runClaim/runRelease", () => {
       expect(result.previous_assignee).toBeNull();
       expect(result.forced).toBe(false);
       expect(result.item.assignee).toBe("test-author");
+    });
+  });
+
+  it("atomically claims the next caller-available recommendation", async () => {
+    await withTempPmPath(async (context) => {
+      const first = createTask(context, { title: "claim-next-first", status: "open" });
+      const second = createTask(context, { title: "claim-next-second", status: "open" });
+      const result = await runClaimNext(false, { path: context.pmPath }, { author: "next-agent" });
+      expect([first, second]).toContain(result.recommendation.id);
+      expect(result.claimed_by).toBe("next-agent");
+      expect(result.attempts).toBe(1);
+    });
+  });
+
+  it("distributes parallel claim-next calls and reports exhaustion", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, { title: "parallel-next-a", status: "open" });
+      createTask(context, { title: "parallel-next-b", status: "open" });
+      const claimed = await Promise.all([
+        runClaimNext(false, { path: context.pmPath }, { author: "parallel-a" }),
+        runClaimNext(false, { path: context.pmPath }, { author: "parallel-b" }),
+      ]);
+      expect(new Set(claimed.map((result) => result.recommendation.id)).size).toBe(2);
+    });
+    await withTempPmPath(async (context) => {
+      await expect(runClaimNext(false, { path: context.pmPath }, { author: "nobody" })).rejects.toMatchObject({
+        context: expect.objectContaining({ code: "no_available_next_item" }),
+      });
+      const missingId = context.runCli(["claim", "--json"]);
+      expect(missingId.code).toBe(EXIT_CODE.USAGE);
     });
   });
 

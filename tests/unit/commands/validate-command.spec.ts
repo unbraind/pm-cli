@@ -117,6 +117,7 @@ describe("runValidate", () => {
         "metadata",
         "resolution",
         "lifecycle",
+        "dependency_references",
         "files",
         "command_references",
         "history_drift",
@@ -253,9 +254,10 @@ describe("runValidate", () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-lifecycle-only");
       const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
-      expect(result.checks).toHaveLength(1);
+      expect(result.checks).toHaveLength(2);
       expect(result.checks[0]?.name).toBe("lifecycle");
       expect(result.checks[0]?.status).toBe("ok");
+      expect(result.checks[1]?.name).toBe("dependency_references");
       const lifecycleCheck = checkByName(result, "lifecycle");
       const details = lifecycleCheck.details as {
         stale_blocker_checks_enabled: boolean;
@@ -269,6 +271,28 @@ describe("runValidate", () => {
       expect(details.closure_like_blocked_reason_pattern_source).toBe("default");
       expect(details.closure_like_resolution_pattern_source).toBe("default");
       expect(details.closure_like_actual_result_pattern_source).toBe("default");
+    });
+  });
+
+  it("reports dangling structured dependency references with remediation", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "dangling-dependency");
+      context.runCli(["update", id, "--dep", "id=pm-ghost,kind=blocked_by", "--json"], { expectJson: true });
+      const secondId = createTask(context, "second-dangling-dependency");
+      context.runCli(["update", secondId, "--dep", "id=pm-phantom,kind=relates_to", "--json"], { expectJson: true });
+      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
+      const check = checkByName(result, "dependency_references");
+      expect(check.status).toBe("warn");
+      expect(check.details).toMatchObject({ dangling_reference_count: 1 });
+      expect((check.details.remediation_hints as string[])[0]).toContain("--replace-deps");
+      const multiRowCheck = validateInternals.buildDependencyReferencesCheck([
+        { id: "pm-b", parent: "pm-missing-b", dependencies: [] },
+        { id: "pm-a", parent: "pm-missing-a", dependencies: [] },
+      ] as never, true).check;
+      expect(multiRowCheck.details.dangling_reference_rows).toEqual([
+        "pm-a:pm-missing-a:parent",
+        "pm-b:pm-missing-b:parent",
+      ]);
     });
   });
 
@@ -2259,7 +2283,7 @@ describe("runValidate", () => {
       await runClose(id, "verified in review", {}, { path: context.pmPath });
 
       const preview = await runValidate({ autoFix: true, dryRun: true }, { path: context.pmPath });
-      expect(preview.checks.map((entry) => entry.name)).toEqual(["metadata", "resolution", "lifecycle"]);
+      expect(preview.checks.map((entry) => entry.name)).toEqual(["metadata", "resolution", "lifecycle", "dependency_references"]);
       expect(preview.fixes).toBeDefined();
       expect(preview.fixes?.mode).toBe("dry_run");
       expect(preview.fixes?.granted_fix_scopes).toEqual(["metadata", "resolution"]);

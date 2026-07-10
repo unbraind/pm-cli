@@ -2,8 +2,20 @@
 
 ## Unreleased
 
+### Added
+
+- pm claim --next: atomically claim the next actionable item so parallel agents each get distinct work ([pm-114v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-114v.toon))
+
 ### Fixed
 
+- Classify tracker-not-initialized Sentry CommandErrors as expected handled CLI errors ([pm-w7jq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-w7jq.toon))
+- GH-498: pm comments rejects --body — accept it as an alias for --add and hint on unknown options ([pm-z32q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z32q.toon))
+- GH-500: suggested_retry renders boolean flags with a "<value\>" placeholder — literal suggestion fails ([pm-6y58](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6y58.toon))
+- Dangling dependency references: accepted at create/update, skipped by validate, and treated as satisfied by pm next (silent unblock) ([pm-ol5v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ol5v.toon))
+- pm next repeats the recommended item verbatim as ready\[0\] — emit an id reference instead ([pm-hfg5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hfg5.toon))
+- pm next recommends another agent's assigned in_progress item as 'resume to finish' — recommendation must be caller-aware ([pm-yl6c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yl6c.toon))
+- GH-489: pm next summary reports blocked: 0 while blocked items exist — blocked companion list missing ([pm-l0bu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l0bu.toon))
+- GH-501: pm init <path\> roots a tracker that workspace discovery cannot find — tracker_not_initialized loop right after init ([pm-69nl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-69nl.toon))
 - GH-496: extension flags declared list:true don't accumulate repeated occurrences — host maps to scalar, Commander last-wins drops values ([pm-kfq5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kfq5.toon))
 - Reserved item-field name collisions are invisible to SDK lint/preflight/harness ([pm-ghf1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ghf1.toon))
 - Repeated --ac flags on create/update silently keep only the last acceptance criterion ([pm-b84u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b84u.toon))
@@ -666,7 +678,6 @@
 ### Fixed
 
 - GH-189: create --parent should fail fast on unresolved references ([pm-p9hw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p9hw.toon))
-- Classify tracker-not-initialized Sentry CommandErrors as expected handled CLI errors ([pm-w7jq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-w7jq.toon))
 - GH-190: SDK locateItem should default idPrefix or throw explicit argument errors ([pm-rjh9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rjh9.toon))
 - Telemetry queue max_attempts backlog health warning: surface items near retry exhaustion in pm health ([pm-irc7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-irc7.toon))
 - Harden history replay and compact diff against malformed patch entries ([pm-kf5q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kf5q.toon))

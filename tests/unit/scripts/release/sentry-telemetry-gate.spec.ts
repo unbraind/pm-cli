@@ -277,13 +277,29 @@ describe("scripts/release/sentry-telemetry-gate: telemetry modes", () => {
           isUnhandled: false,
           metadata: { value: "tracker_not_initialized", type: "CommandError" },
         },
+        {
+          shortId: "PM-5",
+          level: "error",
+          logger: "node",
+          isUnhandled: false,
+          title: "CommandError: pm starter search: `pm search` failed: {.",
+          metadata: { value: "pm starter search: `pm search` failed: {.", type: "CommandError" },
+        },
+        {
+          shortId: "PM-6",
+          level: "error",
+          logger: "node",
+          isUnhandled: false,
+          title: "CommandError: pm starter context: `pm context` failed: {.",
+          metadata: { value: "pm starter context: `pm context` failed: {.", type: "CommandError" },
+        },
       ]),
     });
     expect(json.ok).toBe(false);
     expect(json.sentry.critical).toBe(1);
     expect(json.sentry.high).toBe(1);
     expect(json.sentry.ignored_noise_total).toBe(1);
-    expect(json.sentry.ignored_expected_handled_total).toBe(1);
+    expect(json.sentry.ignored_expected_handled_total).toBe(3);
     expect(json.telemetry.checked).toBe(true);
     expect(json.telemetry.ok).toBe(true);
     expect(process.exitCode).toBe(1);

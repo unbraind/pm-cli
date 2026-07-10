@@ -124,7 +124,7 @@ describe("context relevance command integration", () => {
       expect(explainedContext.ranking?.model).toBe("default-weighted-v1");
       expect(explainedContext.ranking?.available_signals).toContain("priority_pressure");
       expect(explainedNext.ranking?.items.map((entry) => entry.id)).toEqual(
-        explainedNext.ready.map((entry) => entry.id),
+        [explainedNext.recommended?.id, ...explainedNext.ready.map((entry) => entry.id)].filter(Boolean),
       );
       expect(explainedNext.ranking?.items[0]?.contributions.priority_pressure).toBeGreaterThan(0);
       expect(contextAlias.code).toBe(0);

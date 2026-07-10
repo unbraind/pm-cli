@@ -135,6 +135,11 @@ const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
   // Structured problem+json payload for commands run before a tracker exists.
   // This is a handled CLI usage error, not an unhandled runtime failure.
   "tracker_not_initialized",
+  // Starter SDK wrappers preserve handled command failures as CommandError
+  // titles, but Sentry truncates the embedded problem+json value before the
+  // tracker_not_initialized code. Keep the exact wrapper prefixes narrow.
+  "pm starter search: `pm search` failed:",
+  "pm starter context: `pm context` failed:",
   // Expected handled failures from package dogfood/release-smoke commands.
   // These stay behind the CommandError/PmCliError + isUnhandled=false guard.
   "pm-web exited with code",

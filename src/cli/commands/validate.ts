@@ -70,6 +70,7 @@ type ValidateCheckName =
   | "metadata"
   | "resolution"
   | "lifecycle"
+  | "dependency_references"
   | "files"
   | "command_references"
   | "history_drift"
@@ -1205,6 +1206,50 @@ function buildLifecycleDependencyGraph(activeItems: ItemWithBody[], idPrefix = "
 }
 /* c8 ignore stop */
 
+function buildDependencyReferencesCheck(
+  items: ItemWithBody[],
+  verboseDiagnostics: boolean,
+): { check: ValidateCheck; warnings: string[] } {
+  const knownIds = new Set(items.map((item) => item.id.trim().toLowerCase()));
+  const rows: string[] = [];
+  for (const item of items) {
+    const parent = toMeaningfulString(item.parent);
+    if (parent && !knownIds.has(parent.toLowerCase())) rows.push(`${item.id}:${parent}:parent`);
+    const scalarBlocker = toMeaningfulString(item.blocked_by);
+    if (scalarBlocker && !knownIds.has(scalarBlocker.toLowerCase())) {
+      rows.push(`${item.id}:${scalarBlocker}:blocked_by`);
+    }
+    for (const dependency of item.dependencies ?? []) {
+      const dependencyId = toMeaningfulString(dependency.id);
+      if (dependencyId && !knownIds.has(dependencyId.toLowerCase())) {
+        rows.push(`${item.id}:${dependencyId}:${dependency.kind}`);
+      }
+    }
+  }
+  const uniqueRows = [...new Set(rows)].sort((left, right) => left.localeCompare(right));
+  const diagnosticLimit = verboseDiagnostics ? Number.POSITIVE_INFINITY : DIAGNOSTIC_LIST_SUMMARY_LIMIT;
+  const summarizedRows = summarizeList(uniqueRows, diagnosticLimit);
+  const hints = summarizeList(
+    uniqueRows.map((row) => `pm update ${row.split(":")[0]} --replace-deps '<correct dependency edges>'`),
+    diagnosticLimit,
+  );
+  return {
+    check: {
+      name: "dependency_references",
+      status: uniqueRows.length === 0 ? "ok" : "warn",
+      details: {
+        checked_items: items.length,
+        dangling_reference_count: uniqueRows.length,
+        dangling_reference_rows: summarizedRows.values,
+        dangling_reference_rows_truncated: summarizedRows.truncated,
+        remediation_hints: hints.values,
+        remediation_hints_truncated: hints.truncated,
+      },
+    },
+    warnings: uniqueRows.length > 0 ? [`validate_dangling_dependency_references:${uniqueRows.length}`] : [],
+  };
+}
+
 function extractItemIds(value: string, idPrefix = "pm"): string[] {
   const normalizedPrefix = (idPrefix.trim().toLowerCase() || "pm").replace(/-+$/g, "");
   const pattern = new RegExp(`(?:^|[^a-z0-9-])(${escapeRegExp(normalizedPrefix)}-[a-z0-9][a-z0-9-]*)`, "gi");
@@ -2332,6 +2377,7 @@ export const _testOnlyValidateCommand = {
   applyValidateFixes,
   attachValidateFixHints,
   buildCommandReferencesCheck,
+  buildDependencyReferencesCheck,
   buildCloseReasonBackfillRows,
   buildFilesCheck,
   buildLifecycleCheck,
@@ -2441,6 +2487,7 @@ async function executeRequestedValidateChecks(params: {
     );
     state.terminalParentFixRows = built.terminalParentFixRows;
     recordValidateCheck(state, built, fixHintsEnabled);
+    recordValidateCheck(state, buildDependencyReferencesCheck(params.items, fullDiagnostics), fixHintsEnabled);
   }
   if (params.requestedChecks.has("files")) {
     const built = await buildFilesCheck(

@@ -357,8 +357,16 @@ function resolveRecoverySuggestedRetry(
   }
   const missingFlag = inferredMissing?.[0];
   const normalizedMissing = missingFlag ? normalizeLongOptionFlag(missingFlag) : undefined;
+  const commandName = invocationArgv.find((token) => program.commands.some((candidate) => candidate.name() === token));
+  const command = commandName ? program.commands.find((candidate) => candidate.name() === commandName) : undefined;
+  const missingOption = normalizedMissing
+    ? command?.options.find((option) => option.flags.split(/[ ,|]+/).includes(normalizedMissing))
+    : undefined;
+  const missingTokens = normalizedMissing
+    ? missingOption?.isBoolean() === true ? [normalizedMissing] : [normalizedMissing, "<value>"]
+    : [];
   const suggestedRetry = normalizedMissing
-    ? renderAttemptedCommand([...invocationArgv, normalizedMissing, "<value>"])
+    ? renderAttemptedCommand([...invocationArgv, ...missingTokens])
     : attemptedCommand;
   return suggestedRetry === attemptedCommand ? undefined : suggestedRetry;
 }

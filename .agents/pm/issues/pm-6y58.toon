@@ -2,16 +2,33 @@ id: pm-6y58
 title: "GH-500: suggested_retry renders boolean flags with a \"<value>\" placeholder — literal suggestion fails"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: agent-ux,cli,error-recovery,gh-issue
 created_at: "2026-07-10T16:38:55.646Z"
-updated_at: "2026-07-10T16:39:25.461Z"
+updated_at: "2026-07-10T20:32:50.588Z"
+closed_at: "2026-07-10T20:32:49.329Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: suggested_retry renders boolean (arity-0) flags bare (--force) and only value-taking flags with a placeholder; repro from GH-500 (pm close <id> done twice) yields a suggestion that succeeds verbatim; regression test covers boolean and value flags in suggested_retry; GH-500 closed with a comment linking the fix
 risk: low
 confidence: high
+resolution: Derived recovery placeholders from Commander option arity so boolean flags remain literal.
+expected_result: suggested_retry commands are directly runnable for boolean options.
+actual_result: "Recovery suggestions now render --force without a bogus value placeholder, including commands preceded by global option values."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-gdi7,related,"2026-07-10T16:39:25.446Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-10T17:51:59.995Z",codex-root,"Implementation start: active in the broad atomic work-selection and agent recovery PR. Live all-status duplicate check, full item metadata, closed prerequisite lineage, GitHub issues, security alerts, dependency audit, release state, and Sentry issue surface were reviewed before claiming. This item shares CLI/SDK contracts, recovery envelopes, and end-to-end verification with the seven sibling items in the bundle."
+  "2026-07-10T20:32:33.292Z",codex-wide-pm-sdk,"Verification: pnpm release:gates passed build/typecheck/static/docstring ratchets/docs/context/security, 100/100/100/100 coverage with 5,524 tests, packed npx smoke, and 88-command package dogfood; isolated installed-tarball acceptance created two items, atomically claimed one, accepted comments --body, detected one dangling dependency, and imported PmClient. Live Sentry/telemetry: 0 blocking critical/high, 0.34% finish error rate, zero missing error-code rows. pm health: all 7 checks ok; history drift: 0 across 1,709 items."
+files[3]{path,scope,note}:
+  src/cli/commands/next.ts,project,shared agent work-selection envelope
+  src/cli/main.ts,project,arity-aware executable recovery retry
+  src/core/item/actionability.ts,project,shared dependency-aware readiness primitive
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts,project,300
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,agent-facing command contract
+  docs/SDK.md,project,SDK context primitive contract
+close_reason: "Implemented and verified in the atomic work-selection, dependency-integrity, recovery, alias, and telemetry bundle."
 body: "## Problem\nWhen a command fails due to a missing boolean flag, the recovery bundle's suggested_retry appends a \"<value>\" placeholder to the flag. Boolean flags take no value, so running the suggested command verbatim fails with a different error (too many arguments). Agents are the primary consumers of suggested_retry and copy it verbatim — an executable-looking suggestion that errors when followed burns a round-trip and erodes trust in the recovery bundle.\n\n## Repro (pm 2026.7.10)\npm close <id> done on an already-terminal item -> missing: --force -> suggested_retry: pm close <id> done --force \"<value>\" -> running it: too many arguments for 'close'.\n\n## Fix direction\nThe suggested_retry renderer must consult each flag's arity from the flag contract: arity-0 flags rendered bare, value flags with a typed placeholder. Related territory: pm-gdi7 owns unknown-option suggestion polish in the same envelope layer; this is the retry-renderer half.\n\n## Philosophy tie-in\nproject management = context management — recovery bundles are agent context; they must be executable as-is.\n\n## Source\nhttps://github.com/unbraind/pm-cli/issues/500"

@@ -234,7 +234,7 @@ describe("generateBashScript", () => {
 
   it("includes comments mutation metadata flags in bash completion", () => {
     const script = generateBashScript();
-    expect(script).toContain("--add --stdin --file --edit --delete --limit --author --message --allow-audit-comment --force");
+    expect(script).toContain("--add --body --stdin --file --edit --delete --limit --author --message --allow-audit-comment --force");
     expect(script).toContain("--stdin");
     expect(script).toContain("--file");
     expect(script).toContain("--edit");

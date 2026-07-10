@@ -1063,6 +1063,12 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "flag": "--if-available"
+        },
+        {
+          "flag": "--next"
         }
       ],
       "provider": "core"
@@ -1312,7 +1318,8 @@
       "flags": [
         {
           "aliases": [
-            "--comment"
+            "--comment",
+            "--body"
           ],
           "flag": "--add"
         },
