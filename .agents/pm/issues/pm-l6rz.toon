@@ -6,19 +6,20 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,gh-issue,templates
 created_at: "2026-07-10T12:15:43.286Z"
-updated_at: "2026-07-10T14:39:35.494Z"
-closed_at: "2026-07-10T14:39:34.741Z"
+updated_at: "2026-07-10T15:02:45.588Z"
+closed_at: "2026-07-10T15:02:44.913Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: pm create --template applies template-declared tags and custom type-option fields identically to explicit --tags/--type-option flags; fields that cannot apply to the target type fail loudly listing each one; regression tests cover custom-type template + built-in kanban column; GH-497 closed
 risk: medium
 confidence: high
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-10T12:21:46.290Z",codex-root,"Implementation start: selected after live all-status duplicate/lineage review and full metadata inspection. This item is actively implemented in the broad schema-driven input fidelity bundle with pm-kfq5, pm-l6rz, pm-zazb, pm-b84u, and pm-ghf1; shared verification will include focused tests, 100/100/100/100 coverage, strict quality gates, and installed-package temporary-project proof."
   "2026-07-10T13:18:55.417Z",codex-root,"Implementation evidence: broad schema-driven input fidelity bundle completed. Focused suite passed 445 tests; final repository coverage passed 270 files / 5514 tests at Statements 100%, Branches 100%, Functions 100%, Lines 100%; pnpm typecheck, lint (ESLint + zero jscpd clones + strict static/docstring/import-boundary/token gates), docs/skills, contracts snapshot, audit, secret scan, health, and history-drift checks passed. Installed-package proof from packed tarball in /tmp/pm-proof.rzTX77 verified repeated --ac stores 'first; second', malformed related:pm-abcd fails before graph mutation, and public SDK RESERVED_ITEM_FIELD_NAMES/lintExtensionBlueprint rejects severity collisions. Sentry telemetry is healthy (0.28% finish error rate); two external pm-starter package handled errors PM-CLI-1Y/1Z remain visible and are not caused by this change set."
   "2026-07-10T13:55:17.154Z",codex-root,"Review evidence: accepted Gemini and Greptile findings. Template runtime payloads now validate string/number/boolean primitives, custom values flow through schema validation, template defaults precede explicit type-option entries so explicit caller intent wins, and tests cover both defaults-only and explicit override behavior. Full suite passed 5514 tests and final coverage reached 100/100/100/100; full strict lint, typecheck, and contracts check passed."
   "2026-07-10T14:11:54.002Z",codex-root,"Final review evidence: corrected the Markdown fence so repeated acceptance-criteria and dependency guidance renders as prose, while template primitive/default precedence documentation remains linked. Final full suite: 5514/5514 tests, 100/100/100/100 coverage; strict lint/type/contracts green."
   "2026-07-10T14:39:34.027Z",codex-root,"Final Gemini evidence: template custom-option promotion now first excludes every key recognized by canonicalizeCommandOptionKey('create', ...), then transfers and deletes only matched non-core primitive options. Regression defines a colliding custom 'title' option and proves the explicit core title survives while valid primitive custom options and precedence remain correct. Strict lint/complexity/type gates and full 5514-test coverage pass at 100/100/100/100."
+  "2026-07-10T15:02:44.197Z",codex-root,"Final Gemini array evidence: template custom type options are scalar schema values. Non-scalar arrays now fail loudly with the exact custom option key instead of being silently ignored or expanded into repeated last-wins assignments; template collection fields such as tags remain supported by their core pipeline. Regression covers absent optional custom defaults and an invalid category array. Strict lint/type and full 5514-test coverage pass at 100/100/100/100."
 files[1]{path,scope,note}:
   src/cli/commands/create.ts,project,Promote template-declared custom type option keys into validated type-option entries
 tests[1]{command,scope,timeout_seconds}:
@@ -26,5 +27,5 @@ tests[1]{command,scope,timeout_seconds}:
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI behavior and validation guidance
   docs/SDK.md,project,SDK/package-author contract guidance
-close_reason: Core create fields are protected from custom type-option collisions; full gates pass.
+close_reason: Non-scalar template custom options now fail loudly without affecting collection-valued core template fields; full gates pass.
 body: ""

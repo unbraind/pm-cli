@@ -3789,6 +3789,7 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
           { key: "category", values: ["feature", "maintenance"] },
           { key: "count", values: ["42"] },
           { key: "active", values: ["true"] },
+          { key: "optional", values: ["x"] },
           { key: "title", values: ["template-title"] },
         ],
       }]);
@@ -3823,6 +3824,20 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
         { path: context.pmPath },
       );
       expect(defaultsOnly.item.type_options).toEqual({ category: "feature", count: "42", active: "true" });
+
+      setActiveExtensionCommands({
+        overrides: [],
+        handlers: [{
+          layer: "project",
+          name: "templates",
+          command: "templates show",
+          run: () => ({ options: { type: "Asset", category: ["feature", "maintenance"] } }),
+        }],
+      });
+      await expect(runCreate(
+        { title: "templated-asset-array", template: "asset", createMode: "progressive" },
+        { path: context.pmPath },
+      )).rejects.toThrow('Template custom type option "category" must be a string, number, or boolean value');
     });
   });
 

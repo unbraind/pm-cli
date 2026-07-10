@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",bug
 created_at: "2026-07-07T15:15:06.845Z"
-updated_at: "2026-07-10T14:50:33.065Z"
+updated_at: "2026-07-10T15:02:43.706Z"
 closed_at: "2026-07-10T14:50:32.050Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -14,13 +14,14 @@ acceptance_criteria: "Repeated --ac occurrences accumulate into the stored accep
 parent: pm-mpbb
 risk: low
 confidence: high
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-10T12:21:48.935Z",codex-root,"Implementation start: selected after live all-status duplicate/lineage review and full metadata inspection. This item is actively implemented in the broad schema-driven input fidelity bundle with pm-kfq5, pm-l6rz, pm-zazb, pm-b84u, and pm-ghf1; shared verification will include focused tests, 100/100/100/100 coverage, strict quality gates, and installed-package temporary-project proof."
   "2026-07-10T13:18:59.323Z",codex-root,"Implementation evidence: broad schema-driven input fidelity bundle completed. Focused suite passed 445 tests; final repository coverage passed 270 files / 5514 tests at Statements 100%, Branches 100%, Functions 100%, Lines 100%; pnpm typecheck, lint (ESLint + zero jscpd clones + strict static/docstring/import-boundary/token gates), docs/skills, contracts snapshot, audit, secret scan, health, and history-drift checks passed. Installed-package proof from packed tarball in /tmp/pm-proof.rzTX77 verified repeated --ac stores 'first; second', malformed related:pm-abcd fails before graph mutation, and public SDK RESERVED_ITEM_FIELD_NAMES/lintExtensionBlueprint rejects severity collisions. Sentry telemetry is healthy (0.28% finish error rate); two external pm-starter package handled errors PM-CLI-1Y/1Z remain visible and are not caused by this change set."
   "2026-07-10T13:25:21.682Z",codex-root,"CI correction evidence: a clean pnpm build followed by pnpm contracts:update corrected the generated fixture so --acceptance-criteria and --ac reflect Commander-owned repeatability without the reverted bootstrap list marker. Fresh pnpm contracts:check, full pnpm lint, and focused create/update/registration tests pass."
   "2026-07-10T13:26:50.739Z",codex-root,"CI correction evidence: a clean pnpm build followed by pnpm contracts:update corrected the generated fixture so --acceptance-criteria and --ac reflect Commander-owned repeatability without the reverted bootstrap list marker. Fresh pnpm contracts:check, full pnpm lint, and focused create/update/registration tests pass."
   "2026-07-10T14:28:21.100Z",codex-root,"Final Greptile evidence: readJoinedRepeatedOption now walks every Commander alias key, accepts scalar or collected string values, merges them in contract order, and rejects any malformed alias payload. Create regression covers canonical scalar + underscore array + short alias array; update covers canonical + short arrays. Focused tests, strict lint/type, and final full 5514-test coverage gate pass at 100/100/100/100."
   "2026-07-10T14:50:30.591Z",codex-root,"Final Gemini nullish evidence: Commander own alias keys with null/undefined are now skipped exactly like omitted keys before scalar/array validation. Regression includes an own undefined acceptance_criteria key between valid canonical and short-alias arrays. Strict lint/type and final full 5514-test coverage pass at 100/100/100/100."
+  "2026-07-10T15:02:43.705Z",codex-root,"Final Gemini disposition: declined filtering malformed non-string array entries. Nullish Commander aliases are skipped, but other invalid payload shapes deliberately invalidate the acceptance-criteria option so corruption is visible rather than silently hidden; existing regression asserts non-string arrays return undefined."
 files[4]{path,scope,note}:
   src/cli/registration-helpers.ts,project,Join repeated acceptance criteria deterministically
   src/sdk/cli-contracts/commander-mutation-options.ts,project,Declare acceptance criteria repeatable for create/update

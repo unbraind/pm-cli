@@ -1391,6 +1391,32 @@ function applyCreateDefaultType(
 }
 
 /**
+ * Select template-provided custom type options that can enter the scalar
+ * `--type-option` pipeline, protecting core create fields and rejecting
+ * non-scalar custom defaults instead of silently dropping them.
+ */
+function collectTemplateCustomTypeOptions(
+  typeDefinition: ResolvedItemTypeDefinition,
+  resolvedOptions: CreateCommandOptions,
+): ResolvedItemTypeDefinition["options"] {
+  return typeDefinition.options
+    .filter((option) => canonicalizeCommandOptionKey("create", option.key) === undefined)
+    .flatMap((option) => {
+      const value = resolvedOptions[option.key];
+      if (value === undefined) {
+        return [];
+      }
+      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        return [option];
+      }
+      throw new PmCliError(
+        `Template custom type option "${option.key}" must be a string, number, or boolean value`,
+        EXIT_CODE.USAGE,
+      );
+    });
+}
+
+/**
  * Resolve the target item type and creation mode for `pm create`: merge any
  * `--template` options, apply the governance default-type fallback, map a
  * near-miss `--type` to its canonical synonym (never blocking), and derive the
@@ -1456,12 +1482,7 @@ async function resolveCreateTypeSelection(
   }
   /* c8 ignore stop */
   const type = typeDefinition.name;
-  const matchedTemplateTypeOptions = typeDefinition.options
-    .filter((option) => canonicalizeCommandOptionKey("create", option.key) === undefined)
-    .filter((option) => {
-      const value = resolvedOptions[option.key];
-      return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
-    });
+  const matchedTemplateTypeOptions = collectTemplateCustomTypeOptions(typeDefinition, resolvedOptions);
   const templateTypeOptions = matchedTemplateTypeOptions
     .map((option) => `${option.key}=${String(resolvedOptions[option.key])}`);
   if (templateTypeOptions.length > 0) {
