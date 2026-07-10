@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- Sentry release gate misclassifies handled duplicate-import refusal as a blocking runtime error ([pm-io4t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-io4t.toon))
 - GH-488: path-target pm init emits executable tracker-scoped follow-up commands ([pm-x26a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x26a.toon))
 - Declarative extension install: activation failure is misreported and scaffold next_steps break when @unbrained/pm-cli is unresolvable ([pm-3wsi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3wsi.toon))
 - Project package install with --pm-path can write extensions into the caller workspace ([pm-qt5d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qt5d.toon))
