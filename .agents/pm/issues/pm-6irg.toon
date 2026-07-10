@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-07-10T21:38:29.741Z"
-updated_at: "2026-07-10T21:42:22.443Z"
+updated_at: "2026-07-10T21:53:12.392Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Reciprocal related links between two items produce zero lifecycle dependency-cycle warnings; a true blocked_by cycle still warns; a related edge opposing a blocked_by edge does not count as a cycle; regression test covers the related-only and mixed pairs
@@ -15,4 +15,6 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-i4ef,related,"2026-07-10T21:38:29.741Z",null,null
   pm-2ler,related,"2026-07-10T21:41:04.483Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-10T21:53:12.392Z",maintainer-agent,"Third live encounter, 2026-07-10 pass: encoding the docstring-wave execution order (gate pm-5566 blocked_by its 7 fill slices) could NOT simply add blocked_by edges, because each slice already held a related edge to pm-5566 and a related + reverse-blocked_by pair trips this false-positive cycle check. Workaround applied: replaced the 7 advisory related edges with the blocked_by edges instead of keeping both. Cost of this defect is now recurring: every ordering repair against an existing related edge needs an edge swap instead of an additive change."
 body: "buildLifecycleDependencyGraph (src/cli/commands/validate.ts:~1188) adds EVERY dependencies[] edge to the cycle graph regardless of kind. A reciprocal pair of related links (A related B + B related A) therefore raises validate_lifecycle_dependency_cycles even though related implies no ordering. Repro observed live 2026-07-10: pm-atfm <-> pm-oslr reciprocal related edges produced dependency_cycle_sample_paths [pm-atfm->pm-oslr->pm-atfm]; both items open, no blocked_by involved. Fix: exclude non-ordering kinds (related, and any future informational kinds) from the cycle graph; only ordering kinds (blocked_by, parent via parent-cycle check, definition_of_ready references) should participate. Also applies to the mixed trap already documented operationally: related + reverse-blocked_by on the same pair flags a cycle where the only true ordering edge is the single blocked_by. Data-side workaround (applied): keep related on one side only.\n\n## Additional live evidence (same pass)\nA second false positive appeared minutes after the first repair: pm-4k6b->pm-dfg0->pm-z436->pm-4k6b — a 3-hop loop composed ENTIRELY of related-kind edges, none reciprocal. This shows the defect is not limited to reciprocal pairs: any densely cross-linked backlog will eventually close all-related loops, and normal enrichment linking becomes impossible without tripping the warning. Interim data-side rule until fixed: before adding any related edge, verify it does not close a loop through other related edges (operationally expensive — another argument for the check-side fix)."

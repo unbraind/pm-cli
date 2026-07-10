@@ -6,14 +6,11 @@ status: open
 priority: 1
 tags[4]: coverage,docs,docstrings,quality
 created_at: "2026-07-04T20:18:51.847Z"
-updated_at: "2026-07-06T21:41:20.391Z"
-assignee: maintainer-agent
+updated_at: "2026-07-10T21:52:47.870Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: Gate reports 0 missing/boilerplate/trivial-stub for src/types; tsc clean; field docs state semantics/units/nullability/defaults.
 parent: pm-4ak1
 risk: low
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-5566,related,"2026-07-04T20:40:47.586Z",null,null
 body: ""

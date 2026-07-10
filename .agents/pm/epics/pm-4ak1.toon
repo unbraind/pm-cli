@@ -6,8 +6,7 @@ status: open
 priority: 1
 tags[5]: coverage,docs,docstrings,quality,source
 created_at: "2026-07-04T20:17:55.271Z"
-updated_at: "2026-07-06T21:41:17.885Z"
-assignee: maintainer-agent
+updated_at: "2026-07-10T21:51:20.222Z"
 author: maintainer-agent
 estimated_minutes: 960
 acceptance_criteria: "Static quality gate enforces 100% for: module docs (src+packages), exported declarations incl consts (src+packages), exported interface/type members, public class members; boilerplate+trivial-stub checks pass; gate spec at 100% coverage; pnpm build + typecheck + contracts green."

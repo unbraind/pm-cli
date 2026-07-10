@@ -6,14 +6,21 @@ status: open
 priority: 1
 tags[4]: coverage,docs,docstrings,quality
 created_at: "2026-07-04T20:18:50.672Z"
-updated_at: "2026-07-06T21:41:18.257Z"
-assignee: maintainer-agent
+updated_at: "2026-07-10T21:52:40.708Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: Gate exposes new pure checkers with 100% spec coverage; running the gate reports the new metrics at 100% once fill tasks land; boilerplate+trivial-stub checks green; no regression to existing gate metrics.
 parent: pm-4ak1
 risk: low
 confidence: high
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-2vb2,blocked_by,"2026-07-10T21:52:40.678Z",null,null
+  pm-768v,blocked_by,"2026-07-10T21:52:40.678Z",null,null
+  pm-m0uc,blocked_by,"2026-07-10T21:52:40.678Z",null,null
+  pm-mswi,blocked_by,"2026-07-10T21:52:40.678Z",null,null
+  pm-qely,blocked_by,"2026-07-10T21:52:40.678Z",null,null
+  pm-uwu0,blocked_by,"2026-07-10T21:52:40.678Z",null,null
+  pm-uxmf,blocked_by,"2026-07-10T21:52:40.678Z",null,null
 comments[27]{created_at,author,text}:
   "2026-07-04T20:40:45.207Z",maintainer-agent,"Evidence — extended static-quality-gate with documentedSourceFiles (src+packages scope), exported-const coverage, checkExportedMemberDocstringCoverage, and checkTrivialDocstrings. Gate spec now 49 tests, verified 100% lines/branches/functions/statements on the gate script. Trivial-stub check calibrated to ZERO false positives across the ~2783 existing docstrings. Gate reports 3957 missing across 188 files (19 package module docs, 366 exported incl consts, 3572 members) for the sibling fill tasks."
   "2026-07-04T21:37:22.370Z",claude-code-agent,"Evidence: static gate remains 100% by default while package lint ratchets to current docstring baseline during the fill-work lane. pnpm lint passed; standalone full coverage passed 5371 tests at 100/100/100/100."
