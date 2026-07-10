@@ -8,10 +8,10 @@
 
 ### Fixed
 
+- Dangling dependency references: accepted at create/update, skipped by validate, and treated as satisfied by pm next (silent unblock) ([pm-ol5v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ol5v.toon))
 - Classify tracker-not-initialized Sentry CommandErrors as expected handled CLI errors ([pm-w7jq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-w7jq.toon))
 - GH-498: pm comments rejects --body — accept it as an alias for --add and hint on unknown options ([pm-z32q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z32q.toon))
 - GH-500: suggested_retry renders boolean flags with a "<value\>" placeholder — literal suggestion fails ([pm-6y58](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6y58.toon))
-- Dangling dependency references: accepted at create/update, skipped by validate, and treated as satisfied by pm next (silent unblock) ([pm-ol5v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ol5v.toon))
 - pm next repeats the recommended item verbatim as ready\[0\] — emit an id reference instead ([pm-hfg5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hfg5.toon))
 - pm next recommends another agent's assigned in_progress item as 'resume to finish' — recommendation must be caller-aware ([pm-yl6c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yl6c.toon))
 - GH-489: pm next summary reports blocked: 0 while blocked items exist — blocked companion list missing ([pm-l0bu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l0bu.toon))

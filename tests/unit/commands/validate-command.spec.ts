@@ -279,11 +279,11 @@ describe("runValidate", () => {
       const id = createTask(context, "dangling-dependency");
       context.runCli(["update", id, "--dep", "id=pm-ghost,kind=blocked_by", "--json"], { expectJson: true });
       const secondId = createTask(context, "second-dangling-dependency");
-      context.runCli(["update", secondId, "--dep", "id=pm-phantom,kind=relates_to", "--json"], { expectJson: true });
+      context.runCli(["update", secondId, "--dep", "id=pm-phantom,kind=blocked_by", "--json"], { expectJson: true });
       const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
       const check = checkByName(result, "dependency_references");
       expect(check.status).toBe("warn");
-      expect(check.details).toMatchObject({ dangling_reference_count: 1 });
+      expect(check.details).toMatchObject({ dangling_reference_count: 2 });
       expect((check.details.remediation_hints as string[])[0]).toContain("--replace-deps");
       const multiRowCheck = validateInternals.buildDependencyReferencesCheck([
         { id: "pm-b", parent: "pm-missing-b", dependencies: [] },
