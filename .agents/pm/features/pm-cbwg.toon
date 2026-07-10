@@ -2,12 +2,11 @@ id: pm-cbwg
 title: "SDK-only exemplar: minimal custom PM CLI package proving the universal-tool story end-to-end"
 description: "A packages/ exemplar (e.g. pm-minimal) that assembles a working project-specific PM tool importing only @unbrained/pm-cli/sdk — custom types/statuses via schema primitives, custom commands via lifecycle/query primitives — serving as living documentation and the acceptance proof for story pm-w89s. Duplicate check: existing exemplars (pm-kanban etc.) demonstrate extension authoring, not SDK-only tool assembly."
 type: Feature
-status: in_progress
+status: open
 priority: 2
 tags[4]: "area:extensions","area:sdk",docs,exemplar
 created_at: "2026-07-05T04:54:31.164Z"
-updated_at: "2026-07-08T06:06:38.655Z"
-assignee: codex-agent
+updated_at: "2026-07-10T05:12:48.433Z"
 author: maintainer-agent
 estimated_minutes: 300
 acceptance_criteria: "Exemplar package builds+tests using only public SDK imports; exercises lifecycle, query, annotations, governance, schema customization; linked tests run in CI; referenced from SDK docs as the build-your-own-PM-tool guide"

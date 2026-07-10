@@ -2,12 +2,11 @@ id: pm-m4iu
 title: "pm close never stamps closed_at, so changelog and release-notes bucketing always falls back to updated_at"
 description: Stamp closed_at on close transitions so release bucketing stops keying off updated_at and closed items become safely touchable.
 type: Issue
-status: in_progress
+status: open
 priority: 1
 tags[4]: changelog,metadata,pm-cli,tracker-governance
 created_at: "2026-07-07T07:16:45.885Z"
-updated_at: "2026-07-08T06:06:39.602Z"
-assignee: codex-agent
+updated_at: "2026-07-10T05:12:44.445Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "Transitions into closed (close, close-many, create-with-closed-status) write closed_at; leaving closed clears it; value survives get/list JSON+TOON and is stripped on copy; SDK/MCP/contracts/docs wired per new-field checklist; regression test proves changelog bucketing uses closed_at over a later updated_at bump"

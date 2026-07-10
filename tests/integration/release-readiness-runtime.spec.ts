@@ -1191,6 +1191,7 @@ describe("release readiness runtime coverage", () => {
       expectTopLevelKeyOrder(initResult.json, [
         "ok",
         "path",
+        "target",
         "settings",
         "created_dirs",
         "warnings",

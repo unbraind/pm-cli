@@ -2,11 +2,11 @@ id: pm-mpbb
 title: "Capability: CLI command surface & agent ergonomics"
 description: "Evolve the CLI command surface and lifecycle primitives for agent and human ergonomics (bulk ops, query filters, hierarchy views, history diffs)"
 type: Epic
-status: in_progress
+status: open
 priority: 1
 tags[6]: agent-ux,"area:cli","area:lifecycle",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:10.452Z"
-updated_at: "2026-07-08T20:07:39.271Z"
+updated_at: "2026-07-10T05:12:41.555Z"
 author: maintainer-agent
 estimated_minutes: 960
 acceptance_criteria: Never-block error contract holds across the command surface (recovery bundle with next steps on every failure path); agent-UX review findings closed or waived.

@@ -48,12 +48,48 @@ describe("package command discovery integration", () => {
             command_paths: ["sample package ping"],
             help_commands: ["pm sample package ping --help"],
           },
+          verification: {
+            status: "ok",
+            target_pm_root: context.pmPath,
+            activated: true,
+            registered_commands: ["sample package ping"],
+            health: { status: "ok", blocking_failure_count: 0 },
+          },
         },
       });
 
       const invoked = context.runCli(["sample", "package", "ping", "--json"], { expectJson: true });
       expect(invoked.code).toBe(0);
       expect(invoked.json).toMatchObject({ ok: true, marker: "sample-package-ping" });
+    });
+  });
+
+  it("returns a non-zero exit and coherent diagnostics when installed code cannot load", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "broken-package");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        path.join(sourceDir, "manifest.json"),
+        JSON.stringify({ name: "broken-package", version: "1.0.0", entry: "index.js", capabilities: ["commands"] }),
+        "utf8",
+      );
+      await writeFile(
+        path.join(sourceDir, "index.js"),
+        'throw new Error("Cannot find package \'@unbrained/pm-cli\' imported from extension");\n',
+        "utf8",
+      );
+
+      const install = context.runCli(["install", sourceDir, "--json"], { expectJson: true });
+      expect(install.code).toBe(1);
+      expect(install.json).toMatchObject({
+        ok: false,
+        details: {
+          activated: false,
+          runtime_activation_status: "failed",
+          command_discovery: { sdk_dependency_status: "missing" },
+          verification: { status: "degraded", health: { blocking_failure_count: 1 } },
+        },
+      });
     });
   });
 });

@@ -2921,6 +2921,9 @@
           "flag": "--with-packages"
         },
         {
+          "flag": "--workspace"
+        },
+        {
           "flag": "--force"
         },
         {

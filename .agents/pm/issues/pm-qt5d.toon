@@ -2,18 +2,33 @@ id: pm-qt5d
 title: Project package install with --pm-path can write extensions into the caller workspace
 description: "Manual temp-workspace dogfood on 2026-07-04 found that running node dist/cli.js --pm-path <temp>/.agents/pm install '*' --project from the repository cwd installed bundled extensions into the caller repository tracker .agents/pm/extensions before cleanup, even though the requested tracker path was the temp tracker. This is a path-scoping UX/safety bug for agents testing package installs from a repo checkout. Expected: explicit --pm-path project-scope package installs write only under that pm root or fail with a clear workspace-root guard. Actual: the temp tracker received installed packages, but the caller workspace tracker also got extension files/managed-extension churn."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,dogfood,extensions,path-safety
 created_at: "2026-07-04T11:25:59.083Z"
-updated_at: "2026-07-04T19:17:26.665Z"
+updated_at: "2026-07-10T05:53:44.985Z"
+closed_at: "2026-07-10T05:53:43.858Z"
 author: claude-code-agent
 estimated_minutes: 90
 acceptance_criteria: A regression test covers pm install '*' --project with --pm-path pointing at a temp tracker while cwd is another initialized repo; no files are written under the caller repo .agents/pm/extensions and the command output makes the target pm root unambiguous.
 parent: pm-mpbb
 risk: medium
 confidence: high
-comments[2]{created_at,author,text}:
+resolution: Threaded the resolved init tracker root into bundled package installation.
+expected_result: Explicit target installs write only beneath the requested tracker root.
+actual_result: Integration and packed temp proof leave the caller tracker extension tree byte-empty while installing 11 target packages.
+comments[3]{created_at,author,text}:
   "2026-07-04T11:25:59.083Z",claude-code-agent,"Duplicate check before creation: searched all statuses for 'install pm-path project scope writes cwd tracker', 'package install --pm-path --project', and 'with-packages bundled package install tracker path'. Closest hits were closed pm-r0m4 (CJS type:module activation), closed pm-hosd (init --with-packages), and open pm-b3e9 (pre-install command hints); none track explicit --pm-path project install writing into the caller workspace tracker."
   "2026-07-04T11:42:53.708Z",claude-code-agent,"Evidence: created as follow-up only after explicit all-status duplicate checks. The current branch cleaned accidental local .agents/pm/extensions output from manual dogfood and does not implement this path-safety fix; acceptance remains open for a targeted regression."
+  "2026-07-10T05:53:26.634Z",codex-root-20260709,"Verification evidence 2026-07-10: full sandbox suite passed 270 files / 5,505 tests with exact 100% statements, branches, functions, and lines. pm test-all over the seven active items passed 8 linked commands with 0 failures and 1 duplicate-safe skip. pnpm typecheck, contracts:check, lint (ESLint + 0 jscpd clones + static quality/token budget), docs-skills, context-eval, security scan, and audit all passed. Live CodeFactor reports A+ and 0 issues. Fresh packed npm install at /tmp/pm-cli-sdk-path-proof-XIsSsh activated 11 bundled packages in a path-target tracker, left caller extension files at zero, and passed CLI/SDK context plus isolated doctor with zero blocking failures. pm health is clean and history drift is zero."
+files[2]{path,scope,note}:
+  src/cli/commands/init.ts,project,Propagate effective tracker root into bundled package installation
+  tests/integration/init-path-guard.integration.spec.ts,project,Caller tracker byte-safety around path-target package install
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/init-path-guard.integration.spec.ts,project,300,Path-scoped package installation regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mreilef6-55k1ab,test-all,passed,"2026-07-10T05:48:11.158Z","2026-07-10T05:51:03.980Z","2026-07-10T05:51:03.980Z",1,0,0,1,1
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Explicit pm-path package scoping
+close_reason: "Implementation, docs, contracts, exact coverage, linked tests, and packed installed-package proof complete."
 body: "## Context\n2026-07-04 temp-workspace dogfood: `node dist/cli.js --pm-path <temp>/.agents/pm install '*' --project` run from the repo checkout wrote bundled extensions into the CALLER repo's .agents/pm/extensions (managed-extensions churn) as well as the temp tracker. Path-scoping safety bug: an explicit --pm-path must confine ALL writes to that pm root.\n\n## Suspected cause\nPackage install resolves the project extension target from cwd/workspace discovery instead of the effective pm root passed via --pm-path (install pipeline and extension-manager paths diverge).\n\n## Approach\nThread the resolved pm root through the install/extension-write path; add a guard that refuses (or warns loudly) when an install would write outside the requested root. Regression spec: run install with --pm-path pointing at a temp tracker from a cwd that has its own tracker; assert the caller tracker is byte-identical before/after.\n\n## Definition of done\nThe exact dogfood repro leaves the caller workspace untouched; guard covered by spec; note in EXTENSIONS.md that --pm-path scopes package installs."

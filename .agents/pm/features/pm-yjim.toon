@@ -2,17 +2,36 @@ id: pm-yjim
 title: "GH-473: pm install prints a post-install verification summary"
 description: "Dogfood GH-473: after pm install <package>, agents must run pm package doctor to confirm the install worked; a brief inline verification summary saves an invocation. Duplicate check: searched post-install verification summary — pm-b3e9 covers PRE-install owning-package hints; no overlap."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[4]: agent-experience,gh-issue,packages,token-efficiency
 created_at: "2026-07-06T21:09:23.206Z"
-updated_at: "2026-07-08T17:09:41.785Z"
+updated_at: "2026-07-10T06:23:44.842Z"
+closed_at: "2026-07-10T05:53:40.525Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "pm install output ends with a verification summary (activation status, registered commands/types, health ok/degraded) equivalent to a light package-doctor pass; failures keep the existing per-target failure rows; covered by specs"
 parent: pm-ugqx
 risk: low
 confidence: high
+resolution: "Added compact post-install verification covering activation, registrations, target root, and blocking health."
+expected_result: Agents can confirm install success without a separate doctor invocation.
+actual_result: Single and multi-package install results include coherent light verification and failure counts.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-b3e9,related,"2026-07-06T21:09:54.218Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-10T05:53:25.929Z",codex-root-20260709,"Verification evidence 2026-07-10: full sandbox suite passed 270 files / 5,505 tests with exact 100% statements, branches, functions, and lines. pm test-all over the seven active items passed 8 linked commands with 0 failures and 1 duplicate-safe skip. pnpm typecheck, contracts:check, lint (ESLint + 0 jscpd clones + static quality/token budget), docs-skills, context-eval, security scan, and audit all passed. Live CodeFactor reports A+ and 0 issues. Fresh packed npm install at /tmp/pm-cli-sdk-path-proof-XIsSsh activated 11 bundled packages in a path-target tracker, left caller extension files at zero, and passed CLI/SDK context plus isolated doctor with zero blocking failures. pm health is clean and history drift is zero."
+  "2026-07-10T06:23:44.841Z",codex-root-20260709,"Greptile pre-push review 388e369e found and we fixed two result-contract edges: wildcard multi-package details now set installed_all from the aggregate success bit, and SDK recovery next_steps clone help commands rather than aliasing the help_commands array. Focused 149 tests, full 5,505-test exact 100/100/100/100 coverage, typecheck, contracts, lint, static quality, and zero-clone gates pass after the fixes."
+files[3]{path,scope,note}:
+  src/cli/commands/extension.ts,project,Light post-install verification projection
+  tests/integration/package-command-discovery.integration.spec.ts,project,CLI install verification and failure exit integration coverage
+  tests/unit/extensions/extension-command.spec.ts,project,Verification result coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/integration/package-command-discovery.integration.spec.ts,project,300,Install verification and discovery proof
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mreilef6-55k1ab,test-all,passed,"2026-07-10T05:48:11.158Z","2026-07-10T05:52:51.816Z","2026-07-10T05:52:51.816Z",1,0,0,1,1
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,Post-install verification workflow
+  docs/EXTENSIONS.md,project,Verification payload documentation
+close_reason: "Implementation, docs, contracts, exact coverage, linked tests, and packed installed-package proof complete."
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/473\n\nFold a light verification pass into `pm install` output (activation status, registered commands/item types, health verdict) so agents skip the follow-up `pm package doctor` in the happy path. Builds on the multi-target install aggregation shipped for pm-hj9h (per-target success/failure rows)."

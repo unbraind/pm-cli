@@ -2410,6 +2410,8 @@ describe("setup command actions", () => {
       "agile",
       "--with-packages",
       "--force",
+      "--workspace",
+      "./workspace",
     );
     expect(vi.mocked(runInit)).toHaveBeenLastCalledWith(
       "demo",
@@ -2421,6 +2423,7 @@ describe("setup command actions", () => {
         typePreset: "agile",
         withPackages: true,
         force: true,
+        workspace: "./workspace",
       }),
     );
   });
@@ -2860,6 +2863,16 @@ describe("setup command actions", () => {
   });
 
   it("escalates doctor warnings and failed upgrades through exit codes", async () => {
+    vi.mocked(runExtension).mockResolvedValue({
+      ok: false,
+      action: "install",
+      details: {},
+      warnings: [],
+    } as never);
+    await runCli("extension", "--install", "broken-package");
+    expect(process.exitCode).toBe(EXIT_CODE.GENERIC_FAILURE);
+    process.exitCode = undefined;
+
     vi.mocked(runExtension).mockResolvedValue({
       action: "doctor",
       details: { summary: { status: "warn" } },

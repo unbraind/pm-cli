@@ -531,6 +531,17 @@ tools. `pm.init` stages a tracker, `pm.config` reads/writes settings,
 methods list, inspect, apply, and lint project archetypes. These helpers let a
 package or app construct an opinionated project-management experience while
 staying on the same schema/profile primitives the CLI and MCP use.
+`pm.init` accepts `workspace` to initialize `<workspace>/.agents/pm`; path-target
+calls retain tracker-root semantics. `InitResult.target` exposes the resolved
+mode, tracker root, and optional workspace root, while every explicit-target
+`next_steps` command carries `--pm-path` so embedded tools can display runnable
+recovery without depending on the caller's current directory.
+
+Package install results include `details.verification`, a light doctor-equivalent
+projection of activation, registered commands/actions/item types, target tracker
+root, and health verdict. Treat `ok: false` or `verification.status: "degraded"`
+as an install failure even when files were copied successfully; use
+`activation_diagnostics` and `command_discovery.next_steps` for remediation.
 
 Governance and maintenance convenience methods expose the operational floor a
 custom PM host should run before it trusts or publishes tracker state.
