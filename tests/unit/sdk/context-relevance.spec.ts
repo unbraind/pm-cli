@@ -67,6 +67,11 @@ describe("context relevance SDK primitives", () => {
     ], { weights: { recency: undefined } })).toEqual(defaultScoreContextCandidates([
       candidate("pm-a", "undefined weight override", { recency: 1 }),
     ]));
+    expect(defaultScoreContextCandidates([
+      candidate("pm-a", "unknown weight override", { recency: 1 }),
+    ], { weights: { rogue: Number.NaN } } as never)).toEqual(defaultScoreContextCandidates([
+      candidate("pm-a", "unknown weight override", { recency: 1 }),
+    ]));
   });
 
   it("combines available signal families with explainable contributions", () => {
@@ -383,5 +388,25 @@ describe("context relevance SDK primitives", () => {
     });
     expect(report.passed).toBe(false);
     expect(report.failures).toEqual(["ndcg:0.5<0.8", "reciprocal_rank:0<0.5", "token_budget_adherence:0.5<0.9"]);
+    expect(Object.keys(summarizeContextEvaluationReports(report.scenarios, {
+      ndcg: 0,
+      reciprocal_rank: 0,
+      required_recall: 0,
+      continuity_coverage: 0,
+      token_budget_adherence: 0,
+      rogue: 1,
+    } as never).aggregate)).toEqual([
+      "ndcg",
+      "reciprocal_rank",
+      "required_recall",
+      "continuity_coverage",
+      "token_budget_adherence",
+    ]);
+    expect(() => summarizeContextEvaluationReports(report.scenarios, {
+      reciprocal_rank: 0,
+      required_recall: 0,
+      continuity_coverage: 0,
+      token_budget_adherence: 0,
+    } as never)).toThrow("threshold ndcg must be a finite number");
   });
 });
