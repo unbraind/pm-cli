@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Other
+
+- Refresh CodeQL Actions and reject incompatible Node 26 type-contract bump ([pm-2a9n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2a9n.toon))
+
 ## 2026.7.10 - 2026-07-10
 
 ### Added
