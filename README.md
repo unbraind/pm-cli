@@ -136,20 +136,6 @@ For token-aware local routing, install `guide-shell` with `pm install guide-shel
 
 Search behavior (lexical `search.tuning` weights, hybrid `--semantic-weight`, query expansion, reranking, and vector-store options) is fully configurable — see [Search Configuration](docs/CONFIGURATION.md#search-configuration).
 
-## Tracker References
-
-Current documentation work is tracked through:
-
-- [pm-u9d0](.agents/pm/epics/pm-u9d0.toon) - docs, onboarding, release, and CI capability epic
-
-Legacy documentation baseline references (closed):
-
-- [pm-3042](.agents/pm/epics/pm-3042.toon) - documentation overhaul epic (closed)
-- [pm-r9gu](.agents/pm/features/pm-r9gu.toon) - documentation structure feature (closed)
-- [pm-1sb2](.agents/pm/tasks/pm-1sb2.toon) - README and public docs rewrite task (closed)
-
-Docs should link to relevant `pm` items, and `pm` items should link back to changed docs through `pm docs`.
-
 ## License
 
 [MIT](LICENSE)
