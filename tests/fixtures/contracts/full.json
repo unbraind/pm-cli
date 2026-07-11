@@ -24196,6 +24196,11 @@
                 }
               ]
             },
+            "properties": {
+              "next": {
+                "const": true
+              }
+            },
             "required": [
               "next"
             ]

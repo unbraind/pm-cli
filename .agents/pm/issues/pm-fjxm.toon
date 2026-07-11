@@ -6,8 +6,8 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,concurrency,multi-agent
 created_at: "2026-07-11T03:05:51.194Z"
-updated_at: "2026-07-11T20:35:18.598Z"
-closed_at: "2026-07-11T20:35:17.453Z"
+updated_at: "2026-07-11T20:46:52.199Z"
+closed_at: "2026-07-11T20:46:51.296Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "pm claim --next accepts the full pm next candidate-filter set (type/tag/priority/assignee-filter/parent/sprint/release) and scopes ranking identically to pm next; on losing the claim race, claim --next advances to the next ready candidate under the same lock semantics, bounded by --max-attempts (default documented); exhausting candidates returns a distinct non-error empty result usable in shell while-loops; contracts/completions/docs/MCP schema updated per new-flag wiring checklist; no second command spelling introduced"
@@ -20,7 +20,7 @@ actual_result: "author_default is resolved, zero-match diagnostics are distinct,
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-114v,related,"2026-07-11T03:05:58.665Z",null,null
   pm-eqk0,related,"2026-07-11T03:05:58.665Z",null,null
-comments[9]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-07-11T18:21:03.289Z",codex-root,"Implementation start: active in one broad PR because GH-509 candidate filters/race walking, GH-513 ready ranking, and decision-needed separation share the public SDK actionability engine, claim transaction, CLI/MCP contracts, and fleet-worker verification. Live all-status search and full item/dependency/comment history confirmed no duplicate lineage; only these three items are active."
   "2026-07-11T18:28:47.199Z",codex-root,"Implementation checkpoint: claim --next now forwards the full candidate-filter set, exposes max-attempts 1..100, walks ranked race losses, and is available through PmClient.claimNext/top-level claimNext/MCP. Focused typecheck and command suites pass after contract updates."
   "2026-07-11T19:28:24.443Z",codex-root,"Final evidence: focused command/SDK suites pass; full repository coverage passes 5550/5550 at exact 100% statements, branches, functions, and lines; pnpm lint passes ESLint, zero jscpd clones, static quality, 100% docstrings, and token-budget gates; contracts, docs/skills, secret scan, and dependency audit pass. Fresh packed-package temp workspace proves filtered rank 1 selection and bounded atomic claim return the same task."
@@ -30,6 +30,7 @@ comments[9]{created_at,author,text}:
   "2026-07-11T20:06:37.323Z",codex-root,"Review fixes implemented: explicit callerAuthor now drives relevance affinity; numeric maxAttempts and priority inputs survive SDK/MCP dispatch; ClaimNextOptions documents the 1..100 bound; focused 253-test bundle and strict lint/static gates pass."
   "2026-07-11T20:17:24.273Z",codex-root,"Second review fixes implemented: empty envelopes resolve settings author_default through the canonical author resolver; zero-candidate errors distinguish filter misses from race losses; CLAIM_FLAG_CONTRACTS now includes every claim-next flag and the generated snapshot is refreshed. Focused 202 tests and strict lint/static/contracts pass."
   "2026-07-11T20:35:15.134Z",codex-root,"Final review evidence: claim action schemas now expose next, ifAvailable, maxAttempts 1..100, includeDecisions, and next includeDecisions; completion priority choices match pm next. Focused 294 tests, contracts snapshot/check, and strict lint/static gates pass."
+  "2026-07-11T20:46:50.263Z",codex-root,"Final Greptile fix: the strict claim oneOf schema now pins the next branch to next=true, matching dispatcher semantics and rejecting next=false without id at validation time. Focused 171 tests, contracts regeneration/check, and strict lint/static gates pass."
 files[7]{path,scope,note}:
   src/cli/commands/claim.ts,project,bounded atomic candidate walk
   src/cli/commands/next.ts,project,shared ranked actionability and decision separation contract
@@ -43,5 +44,5 @@ tests[1]{command,scope,timeout_seconds}:
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI fleet-worker contract
   docs/SDK.md,project,SDK selection primitive documentation
-close_reason: Completed final review contract and completion parity fixes with regression coverage.
+close_reason: Pinned the claim-next schema discriminator to true with regression coverage.
 body: ""

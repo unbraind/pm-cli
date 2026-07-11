@@ -1023,7 +1023,9 @@ function buildOneOfSchemaEntries(
         : {}),
       ...(action === "history-repair" && requiredFields.includes("all")
         ? { properties: { all: { const: true } } }
-        : {}),
+        : action === "claim" && requiredFields.includes("next")
+          ? { properties: { next: { const: true } } }
+          : {}),
     };
   });
 }

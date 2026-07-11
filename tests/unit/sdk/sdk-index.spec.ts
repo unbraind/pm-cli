@@ -767,7 +767,7 @@ describe("public sdk entrypoint", () => {
     const claimSchema = _testOnlyCliContracts.buildActionScopedToolSchema("claim") as {
       properties?: Record<string, unknown>;
       required?: string[];
-      oneOf?: Array<{ required?: string[] }>;
+      oneOf?: Array<{ required?: string[]; properties?: Record<string, unknown> }>;
     };
     expect(claimSchema.properties?.action).toMatchObject({ const: "claim" });
     expect(claimSchema.properties).toMatchObject({
@@ -785,7 +785,7 @@ describe("public sdk entrypoint", () => {
     expect(claimSchema.oneOf).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ required: ["id"] }),
-        expect.objectContaining({ required: ["next"] }),
+        expect.objectContaining({ required: ["next"], properties: { next: { const: true } } }),
       ]),
     );
     const restoreSchema = _testOnlyCliContracts.buildActionScopedToolSchema("restore") as {
