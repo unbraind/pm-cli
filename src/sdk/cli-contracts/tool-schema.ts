@@ -235,6 +235,7 @@ const NEXT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "blockedLimit",
   "readyOnly",
   "format",
+  "includeDecisions",
 ]);
 
 const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
@@ -845,8 +846,16 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     },
     completion: { required: ["shell"], optional: ["eagerTags"] },
     claim: {
-      required: ["id"],
-      optional: LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
+      optional: [
+        "id",
+        "next",
+        "ifAvailable",
+        "maxAttempts",
+        "includeDecisions",
+        ...NEXT_CONTRACT_PARAMETER_KEYS,
+        ...LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
+      ],
+      oneOfRequired: [["id"], ["next"]],
     },
     release: {
       required: ["id"],

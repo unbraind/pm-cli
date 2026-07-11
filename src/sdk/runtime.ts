@@ -57,6 +57,7 @@ import {
   runAggregate,
   runAppend,
   runClaim,
+  runClaimNext,
   runClose,
   runCloseMany,
   runComments,
@@ -125,7 +126,7 @@ import type {
   AppendCommandOptions,
   AppendResult,
 } from "../cli/commands/append.js";
-import type { ClaimResult, ReleaseResult } from "../cli/commands/claim.js";
+import type { ClaimNextResult, ClaimResult, ReleaseResult } from "../cli/commands/claim.js";
 import type { CloseResult } from "../cli/commands/close.js";
 import {
   runContracts,
@@ -1179,6 +1180,16 @@ export class PmClient {
     });
   }
 
+  /** Atomically claim the highest-ranked available item using the public next-work filters. */
+  claimNext(
+    options: PmClientFullMutationOptions = {},
+  ): Promise<ClaimNextResult> {
+    return this.runTyped("claim", {
+      next: true,
+      ...splitFullClientMutationOptions(options),
+    });
+  }
+
   /** Release an item's active claim using the same mutation path as `pm release`. */
   release(
     id: string,
@@ -1785,6 +1796,14 @@ export function claim(
   clientOptions: PmClientOptions = {},
 ): Promise<ClaimResult> {
   return new PmClient(clientOptions).claim(id, options);
+}
+
+/** Atomically select and claim ranked work without constructing a reusable client. */
+export function claimNext(
+  options: PmClientFullMutationOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<ClaimNextResult> {
+  return new PmClient(clientOptions).claimNext(options);
 }
 
 /** Release an item's active claim without constructing a reusable client. */
@@ -3768,7 +3787,14 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   update: runMcpUpdateAction,
   restore: runMcpRestoreAction,
   claim: (ctx) =>
-    runClaim(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
+    ctx.options.next === true || ctx.args.next === true
+      ? runClaimNext(
+          ctx.force,
+          ctx.global,
+          { ...ctx.options, ...ctx.args },
+          { ...ctx.options, ...ctx.args },
+        )
+      : runClaim(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
   release: (ctx) =>
     runRelease(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
   "start-task": runMcpStartTaskAction,

@@ -178,6 +178,22 @@ describe("runNext", () => {
     });
   });
 
+  it("keeps ready rows in recommendation order and separates human-gated decisions", async () => {
+    await withTempPmPath(async (context) => {
+      const p3 = createItem(context, { title: "Lowest", priority: "3" });
+      const p1 = createItem(context, { title: "Highest", priority: "1" });
+      const p2 = createItem(context, { title: "Middle", priority: "2" });
+      const decision = createItem(context, { title: "Maintainer choice", type: "Decision", priority: "0" });
+      const result = await runNext({}, { path: context.pmPath });
+      expect(result.recommended?.id).toBe(p1);
+      expect(result.recommended?.rank).toBe(1);
+      expect(result.ready.map((entry) => [entry.id, entry.rank])).toEqual([[p2, 2], [p3, 3]]);
+      expect(result.decision_needed.map((entry) => entry.id)).toEqual([decision]);
+      const optedIn = await runNext({ includeDecisions: true }, { path: context.pmPath });
+      expect(optedIn.recommended?.id).toBe(decision);
+    });
+  });
+
   it("keeps completed containers behind concrete leaf work and marks container closeout rationale", async () => {
     await withTempPmPath(async (context) => {
       const completedEpic = createItem(context, { title: "Completed platform epic", type: "Epic", priority: "0" });
@@ -298,6 +314,7 @@ function nextResult(overrides: Partial<NextResult>): NextResult {
     now: "2026-06-24T12:00:00.000Z",
     recommended: null,
     ready: [],
+    decision_needed: [],
     blocked: [],
     held_by_others: [],
     summary: { recommended: false, ready: 0, blocked: 0, in_progress: 0, candidates: 0, containers: 0 },
@@ -313,6 +330,7 @@ function nextResult(overrides: Partial<NextResult>): NextResult {
       limit: 5,
       blocked_limit: 5,
       ready_only: false,
+      include_decisions: false,
     },
     ...overrides,
   };
@@ -323,6 +341,7 @@ describe("renderNextMarkdown", () => {
     const markdown = renderNextMarkdown(
       nextResult({
         recommended: {
+          rank: 1,
           id: "pm-rec",
           title: "Recommended",
           type: "Task",
@@ -352,6 +371,24 @@ describe("renderNextMarkdown", () => {
             tags: [],
             updated_at: "2026-06-24T00:00:00.000Z",
             parent: "pm-epic",
+            open_blocker_count: 0,
+            blockers: [],
+            unblocks: ["pm-down"],
+          },
+        ],
+        decision_needed: [
+          {
+            id: "pm-decision",
+            title: "Choose direction",
+            type: "Decision",
+            status: "open",
+            priority: 1,
+            order: null,
+            deadline: null,
+            assignee: null,
+            tags: [],
+            updated_at: "2026-06-24T00:00:00.000Z",
+            parent: null,
             open_blocker_count: 0,
             blockers: [],
             unblocks: ["pm-down"],
@@ -392,6 +429,7 @@ describe("renderNextMarkdown", () => {
   it("renders empty-state placeholders, hides the blocked section under ready-only, and lists suggestions", () => {
     const markdown = renderNextMarkdown(
       nextResult({
+        decision_needed: undefined as never,
         filters: { ...nextResult({}).filters, ready_only: true },
         suggestions: ["pm create --type Task --title \"...\" to add a new work item"],
       }),

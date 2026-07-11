@@ -2,19 +2,39 @@ id: pm-eqk0
 title: pm next / claim --next treat human-gated Decision items as claimable agent work — agent lanes can claim ADRs they must never resolve
 description: "Observed 2026-07-11: pm next recommends pm-pbyu (type Decision, ADR status proposed, priority 1) as THE recommended item, and pm claim --next would atomically claim it. ADR acceptance is a maintainer-only act (project convention: agents never flip ADRs), so an autonomous agent following the recommend-claim loop lands on an item it cannot resolve — a stalled lane, and at fleet scale every idle agent funnels into the same unresolvable Decision. The recommendation itself is informative (pm-pbyu + pm-bl8x gate 13 of 25 blocked items), so the fix is presentation + claim semantics, not ranking: Decisions belong in a decision-needed channel that names what they unblock, while the claimable recommendation stays actionable-by-agents. Complements closed pm-9x6k (dependency actionability) and pm-114v (atomic claim --next)."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: decisions,multi-agent,next,workflow
 created_at: "2026-07-11T03:00:06.909Z"
-updated_at: "2026-07-11T03:06:49.579Z"
+updated_at: "2026-07-11T19:28:37.202Z"
+closed_at: "2026-07-11T19:28:36.479Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm next surfaces open Decision-type items in a distinct decision-needed section (with what they gate) instead of as the claimable recommendation; pm claim --next skips Decision-type items unless an explicit opt-in flag is passed; behavior documented and covered by tests; existing recommendation ranking otherwise unchanged
 risk: medium
 confidence: medium
+resolution: Human-gated Decisions remain visible but are excluded from agent claim lanes by default.
+expected_result: Agents never claim maintainer-only decisions without explicit authorization.
+actual_result: next emits decision_needed and claimNext skips Decisions unless includeDecisions is true.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-114v,related,"2026-07-11T03:00:06.909Z",null,null
   pm-9x6k,related,"2026-07-11T03:00:06.909Z",null,null
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-11T03:06:49.578Z",maintainer-agent,"External confirmation (2026-07-11): GH-509 (pm-fjxm) independently requests the fleet worker loop this item protects — bounded candidate-walk on claim race loss. A walk WITHOUT the Decision-skip this item specifies makes the hazard strictly worse: every race loser advances down the ready queue and lands on the Decision item, so the funnel-into-one-ADR failure becomes the common path, not the unlucky one. pm-fjxm's AC references this item; sequencing preference: land eqk0's Decision-skip before or with fjxm's walk."
+  "2026-07-11T18:21:07.424Z",codex-root,"Implementation start: active in one broad PR because GH-509 candidate filters/race walking, GH-513 ready ranking, and decision-needed separation share the public SDK actionability engine, claim transaction, CLI/MCP contracts, and fleet-worker verification. Live all-status search and full item/dependency/comment history confirmed no duplicate lineage; only these three items are active."
+  "2026-07-11T18:28:48.470Z",codex-root,"Implementation checkpoint: Decision items are separated into decision_needed with downstream unblocks context; agent recommendation/claim skips them by default and include-decisions provides explicit maintainer opt-in."
+  "2026-07-11T19:28:30.645Z",codex-root,"Final evidence: focused command/SDK suites pass; full repository coverage passes 5550/5550 at exact 100% statements, branches, functions, and lines; pnpm lint passes ESLint, zero jscpd clones, static quality, 100% docstrings, and token-budget gates; contracts, docs/skills, secret scan, and dependency audit pass. Fresh packed-package temp workspace proves filtered rank 1 selection and bounded atomic claim return the same task."
+files[6]{path,scope,note}:
+  src/cli/commands/claim.ts,project,bounded atomic candidate walk
+  src/cli/commands/next.ts,project,shared ranked actionability and decision separation contract
+  src/cli/register-operations.ts,project,CLI option forwarding
+  src/sdk/cli-contracts/tool-schema.ts,project,MCP and SDK action schema
+  src/sdk/runtime.ts,project,public SDK claimNext primitive
+  tests/fixtures/contracts/full.json,project,generated contract snapshot
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,240
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,CLI fleet-worker contract
+  docs/SDK.md,project,SDK selection primitive documentation
+close_reason: Shipped decision-needed separation and explicit maintainer opt-in for autonomous selection.
 body: ""

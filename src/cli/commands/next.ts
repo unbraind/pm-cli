@@ -78,6 +78,8 @@ export interface NextOptions {
   format?: string;
   /** Value that configures or reports explain ranking for this contract. */
   explainRanking?: boolean;
+  /** Include human-gated Decision items in the claimable ready queue. */
+  includeDecisions?: boolean;
   /** Internal caller override used to align claim-next ranking with --author. */
   callerAuthor?: string;
   [key: string]: unknown;
@@ -99,6 +101,8 @@ export interface NextBlockerRef {
  * would unblock.
  */
 export interface NextActionableItem extends ContextFocusItem {
+  /** One-based position in the complete ranked actionable queue. */
+  rank: number;
   /** Number of open blocker entries represented by this result. */
   open_blocker_count: number;
   /** Value that configures or reports blockers for this contract. */
@@ -132,6 +136,8 @@ export interface NextResult {
   recommended: NextRecommendation | null;
   /** Value that configures or reports ready for this contract. */
   ready: NextActionableItem[];
+  /** Human-gated decisions kept visible without dispatching them to agents. */
+  decision_needed: NextActionableItem[];
   /** Value that configures or reports blocked for this contract. */
   blocked: NextActionableItem[];
   /** Value that configures or reports held by others for this contract. */
@@ -151,6 +157,7 @@ export interface NextResult {
     limit: number;
     blocked_limit: number;
     ready_only: boolean;
+    include_decisions: boolean;
   };
   /** Value that configures or reports suggestions for this contract. */
   suggestions?: string[];
@@ -210,6 +217,7 @@ function toNextActionableItem(
   entry: ActionableEntry,
   statusRegistry: RuntimeStatusRegistry,
   childrenByParent: Map<string, ItemFrontMatter[]>,
+  rank: number,
 ): NextActionableItem {
   return {
     ...toContextFocusItem(entry.item, statusRegistry, childrenByParent),
@@ -220,6 +228,7 @@ function toNextActionableItem(
       status: blocker.status,
     })),
     unblocks: entry.unblocks,
+    rank,
   };
 }
 
@@ -290,6 +299,24 @@ function partitionCallerOwnedReady(
 
 /** Test-only access to deterministic next-work partitioning edge cases. */
 export const _testOnlyNextCommand = { partitionCallerOwnedReady };
+
+/** Separates human-gated decisions from autonomous agent work unless the caller explicitly opts into decision claims. */
+export function partitionDecisionEntries(
+  ready: ActionableEntry[],
+  includeDecisions: boolean,
+): { agent: ActionableEntry[]; decisions: ActionableEntry[] } {
+  const decisions = ready.filter(
+    (entry) => entry.item.type.trim().toLowerCase() === "decision",
+  );
+  return {
+    agent: includeDecisions
+      ? ready
+      : ready.filter(
+          (entry) => entry.item.type.trim().toLowerCase() !== "decision",
+        ),
+    decisions,
+  };
+}
 
 // Renders a deadline as a date token plus a relative tag (overdue/today/in Nd).
 // The relative delta is computed on UTC calendar dates (both sides normalized to
@@ -531,8 +558,16 @@ export async function runNext(
     settings.author_default,
     options.callerAuthor,
   );
+  const partitionedByDecision = partitionDecisionEntries(
+    report.ready,
+    options.includeDecisions === true,
+  );
   const rankedReady = rankNextReadyEntries(
-    callerPartition.available,
+    partitionCallerOwnedReady(
+      partitionedByDecision.agent,
+      settings.author_default,
+      options.callerAuthor,
+    ).available,
     childrenByParent,
     statusRegistry,
   );
@@ -550,11 +585,18 @@ export async function runNext(
     now,
   );
 
-  const readyRows = projectedReady.map((entry) =>
-    toNextActionableItem(entry, statusRegistry, childrenByParent),
+  const readyRows = projectedReady.map((entry, index) =>
+    toNextActionableItem(entry, statusRegistry, childrenByParent, index + 1),
   );
-  const blockedRows = rankedBlocked.map((entry) =>
-    toNextActionableItem(entry, statusRegistry, childrenByParent),
+  const blockedRows = rankedBlocked.map((entry, index) =>
+    toNextActionableItem(entry, statusRegistry, childrenByParent, index + 1),
+  );
+  const decisionRows = rankNextReadyEntries(
+    partitionedByDecision.decisions,
+    childrenByParent,
+    statusRegistry,
+  ).map((entry, index) =>
+    toNextActionableItem(entry, statusRegistry, childrenByParent, index + 1),
   );
 
   const recommended = buildNextRecommendation({
@@ -570,6 +612,7 @@ export async function runNext(
     now,
     recommended,
     ready: readyRows.slice(1, limit + 1),
+    decision_needed: decisionRows,
     blocked: readyOnly ? [] : blockedRows.slice(0, blockedLimit),
     held_by_others: callerPartition.held,
     summary: {
@@ -592,6 +635,7 @@ export async function runNext(
       limit,
       blocked_limit: blockedLimit,
       ready_only: readyOnly,
+      include_decisions: options.includeDecisions === true,
     },
   };
 
@@ -633,6 +677,15 @@ export function renderNextMarkdown(result: NextResult): string {
     lines.push(`  why: ${result.recommended.reasons.join("; ")}`);
   } else {
     lines.push("No ready work.");
+  }
+  lines.push("");
+
+  lines.push("## Decision needed");
+  const decisionNeeded = result.decision_needed ?? [];
+  if (decisionNeeded.length === 0) {
+    lines.push("No human-gated decisions.");
+  } else {
+    for (const item of decisionNeeded) lines.push(`- ${formatNextLine(item)}`);
   }
   lines.push("");
 
@@ -678,5 +731,6 @@ function formatNextLine(item: NextActionableItem): string {
   const parentToken = item.parent ? ` parent:${item.parent}` : "";
   const unblocksToken =
     item.unblocks.length > 0 ? ` unblocks:${item.unblocks.length}` : "";
-  return `${item.id} p${item.priority} ${item.status} ${item.type} deadline:${deadlineToken}${parentToken}${unblocksToken} ${item.title}`;
+  const rankToken = Number.isInteger(item.rank) ? `#${item.rank} ` : "";
+  return `${rankToken}${item.id} p${item.priority} ${item.status} ${item.type} deadline:${deadlineToken}${parentToken}${unblocksToken} ${item.title}`;
 }

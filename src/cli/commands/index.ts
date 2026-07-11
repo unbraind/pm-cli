@@ -10,7 +10,7 @@ export {
   type AggregateResult,
 } from "./aggregate.js";
 export { runActivity } from "./activity.js";
-export { runClaim, runRelease } from "./claim.js";
+export { runClaim, runClaimNext, runRelease } from "./claim.js";
 export {
   runClose,
   type CloseCommandOptions,

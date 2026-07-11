@@ -511,6 +511,8 @@ async function runClaimAction(
   const lifecycleOptions = {
     ...buildLifecycleMutationOptions(options),
     ifAvailable: options.ifAvailable === true,
+    maxAttempts:
+      typeof options.maxAttempts === "string" ? options.maxAttempts : undefined,
   };
   requireClaimTarget(id, options.next === true);
   const result =
@@ -519,6 +521,20 @@ async function runClaimAction(
           Boolean(options.force),
           globalOptions,
           lifecycleOptions,
+          {
+            type: typeof options.type === "string" ? options.type : undefined,
+            tag: typeof options.tag === "string" ? options.tag : undefined,
+            priority:
+              typeof options.priority === "string" ? options.priority : undefined,
+            assigneeFilter:
+              typeof options.assigneeFilter === "string"
+                ? options.assigneeFilter
+                : undefined,
+            parent: typeof options.parent === "string" ? options.parent : undefined,
+            sprint: typeof options.sprint === "string" ? options.sprint : undefined,
+            release: typeof options.release === "string" ? options.release : undefined,
+            includeDecisions: options.includeDecisions === true,
+          },
         )
       : await runClaim(
           id as string,
@@ -1018,6 +1034,24 @@ export function registerOperationCommands(program: Command): void {
     .option(
       "--next",
       "Atomically claim the next caller-available actionable item",
+    )
+    .option("--type <value>", "Filter --next candidates by type")
+    .option("--tag <value>", "Filter --next candidates by tag")
+    .option("--priority <value>", "Filter --next candidates by priority")
+    .option(
+      "--assignee-filter <value>",
+      "Filter --next candidates: assigned|unassigned",
+    )
+    .option("--parent <id>", "Scope --next candidates to a subtree")
+    .option("--sprint <value>", "Filter --next candidates by sprint")
+    .option("--release <value>", "Filter --next candidates by release")
+    .option(
+      "--max-attempts <n>",
+      "Bound the --next candidate walk (default 10; maximum 100)",
+    )
+    .option(
+      "--include-decisions",
+      "Allow --next to claim human-gated Decision items",
     )
     .description("Claim an item for active work.")
     .action(runClaimAction);

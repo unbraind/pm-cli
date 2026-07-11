@@ -68,6 +68,7 @@ import {
   createPmCliExpectedError,
   clearWorkspaceContractsCache,
   claim as claimItem,
+  claimNext as claimNextItem,
   close as closeItem,
   closeTask,
   compactFlagAliasContracts,
@@ -766,9 +767,16 @@ describe("public sdk entrypoint", () => {
     const claimSchema = _testOnlyCliContracts.buildActionScopedToolSchema("claim") as {
       properties?: Record<string, unknown>;
       required?: string[];
+      oneOf?: Array<{ required?: string[] }>;
     };
     expect(claimSchema.properties?.action).toMatchObject({ const: "claim" });
-    expect(claimSchema.required).toEqual(expect.arrayContaining(["action", "id"]));
+    expect(claimSchema.required).toEqual(["action"]);
+    expect(claimSchema.oneOf).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ required: ["id"] }),
+        expect.objectContaining({ required: ["next"] }),
+      ]),
+    );
     const restoreSchema = _testOnlyCliContracts.buildActionScopedToolSchema("restore") as {
       properties?: Record<string, unknown>;
     };
@@ -1108,6 +1116,9 @@ console.log(JSON.stringify(payload));`,
       expect(created.changed_fields).toEqual(expect.arrayContaining(["title", "status"]));
       expect(created.changed_field_count).toBeUndefined();
 
+      const claimedNext = await client.claimNext({ type: "Task", maxAttempts: "3" });
+      expect(claimedNext).toMatchObject({ available: true, claimed_by: "sdk-client-test" });
+
       const fullDiffCreated = (await client.create({
         title: "SDK client full diff item",
         type: "Task",
@@ -1333,6 +1344,12 @@ console.log(JSON.stringify(payload));`,
       };
       expect(released.item).toMatchObject({ id: itemId });
       expect(released.item?.assignee).toBeUndefined();
+
+      const nextClaimed = await claimNextItem(
+        { type: "Task", maxAttempts: "2" },
+        wrapperDefaults,
+      );
+      expect(nextClaimed).toMatchObject({ available: true, claimed_by: "sdk-client-test" });
 
       const copied = (await copyItem(itemId, { title: "SDK top-level copy" }, wrapperDefaults)) as {
         item?: { id?: string; title?: string };

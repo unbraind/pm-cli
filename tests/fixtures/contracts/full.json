@@ -24140,6 +24140,36 @@
       },
       {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "next"
+                  ]
+                }
+              ]
+            },
+            "required": [
+              "id"
+            ]
+          },
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "id"
+                  ]
+                }
+              ]
+            },
+            "required": [
+              "next"
+            ]
+          }
+        ],
         "properties": {
           "action": {
             "const": "claim",
@@ -24152,6 +24182,18 @@
             ],
             "type": "string"
           },
+          "assigneeFilter": {
+            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "enum": [
+              "assigned",
+              "unassigned"
+            ],
+            "examples": [
+              "assigned",
+              "unassigned"
+            ],
+            "type": "string"
+          },
           "author": {
             "description": "Mutation author identity.",
             "examples": [
@@ -24159,9 +24201,27 @@
             ],
             "type": "string"
           },
+          "blockedLimit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Cap blocked rows returned by the next action (defaults to the ready --limit).",
+            "examples": [
+              "3"
+            ]
+          },
           "force": {
             "description": "Force.",
             "type": "boolean"
+          },
+          "format": {
+            "description": "Format.",
+            "type": "string"
           },
           "id": {
             "description": "Item identifier for read or mutation actions.",
@@ -24175,6 +24235,17 @@
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Limit."
+          },
           "message": {
             "description": "History message for mutation audit trail.",
             "type": "string"
@@ -24187,6 +24258,13 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "parent": {
+            "description": "Parent item ID filter for hierarchical list queries.",
+            "examples": [
+              "pm-epic01"
+            ],
+            "type": "string"
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -24198,6 +24276,22 @@
             "description": "Pm Executable.",
             "type": "string"
           },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Priority value in range 0..4.",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
+          },
           "profile": {
             "description": "Emit deterministic timing diagnostics to stderr.",
             "type": "boolean"
@@ -24206,17 +24300,45 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "readyOnly": {
+            "description": "When true, the next action omits the blocked companion list.",
+            "type": "boolean"
+          },
+          "release": {
+            "description": "Release.",
+            "type": "string"
+          },
+          "sprint": {
+            "description": "Sprint.",
+            "type": "string"
+          },
+          "tag": {
+            "description": "npm version or dist-tag used for CLI and registry package upgrades.",
+            "examples": [
+              "latest",
+              "next",
+              "2026.5.11"
+            ],
+            "type": "string"
+          },
           "timeoutMs": {
             "description": "Tool execution timeout in milliseconds.",
             "examples": [
               120000
             ],
             "type": "number"
+          },
+          "type": {
+            "description": "Item type name from the active runtime type registry.",
+            "examples": [
+              "Task",
+              "Feature"
+            ],
+            "type": "string"
           }
         },
         "required": [
-          "action",
-          "id"
+          "action"
         ],
         "title": "pm action \"claim\" parameters",
         "type": "object"

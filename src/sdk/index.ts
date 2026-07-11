@@ -295,6 +295,7 @@ export {
   aggregate,
   append,
   claim,
+  claimNext,
   close,
   closeTask,
   comments,

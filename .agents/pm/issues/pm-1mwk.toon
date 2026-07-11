@@ -2,17 +2,38 @@ id: pm-1mwk
 title: "GH-513: pm next ready[] documented as ranked but not priority-ordered; no rank/score exposed"
 description: "GH-513 (dogfood, pm 2026.7.11): pm next --help promises 'ranked ready and blocked queues' and recommended is correctly priority-first, but ready[] order matches neither priority nor creation nor updated_at (repro: p1/p3/p2), and rows carry order:null, reasons:null, no score/rank key — JSON consumers cannot trust or reconstruct the ranking. Fleet impact compounds GH-509/pm-fjxm: after recommended is claimed, agents fall back to ready[0], so straightforward iteration picks lower-priority work. Preferred fix (issue option 1, least surprise): sort ready[] with the same comparator that selects recommended so ready is a true continuation; optionally also expose rank/reasons per row (option 2). Duplicate check: registry + pm search (ready queue ranked/rank score) — pm-g543 is unknown-command suggester ranking, pm-4k6b is the relevance-engine ADR territory, PR#502 pm-next defects all closed; no overlap."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,cli,gh-issue,multi-agent
 created_at: "2026-07-11T16:07:09.068Z"
-updated_at: "2026-07-11T16:07:23.529Z"
+updated_at: "2026-07-11T19:28:35.623Z"
+closed_at: "2026-07-11T19:28:34.786Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "ready[] in pm next --json is ordered by the exact comparator used to pick recommended (priority-first plus existing tie-breakers) with a regression spec covering the GH-513 repro (p0 recommended, ready strictly p1,p2,p3); help text and docs match actual behavior; decision recorded whether per-row rank/reasons are exposed; GH-513 closed"
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: ready rows preserve the recommendation comparator order and expose rank.
+expected_result: Consumers can trust and reconstruct next queue ordering.
+actual_result: p1 recommendation is followed deterministically by p2 and p3 rows with ranks.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-fjxm,related,"2026-07-11T16:07:23.510Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-11T18:21:05.510Z",codex-root,"Implementation start: active in one broad PR because GH-509 candidate filters/race walking, GH-513 ready ranking, and decision-needed separation share the public SDK actionability engine, claim transaction, CLI/MCP contracts, and fleet-worker verification. Live all-status search and full item/dependency/comment history confirmed no duplicate lineage; only these three items are active."
+  "2026-07-11T18:28:47.856Z",codex-root,"Implementation checkpoint: recommended and ready now share one ordered projection with explicit one-based ranks; regression coverage proves p1 recommended followed by p2 then p3 regardless of creation order."
+  "2026-07-11T19:28:27.543Z",codex-root,"Final evidence: focused command/SDK suites pass; full repository coverage passes 5550/5550 at exact 100% statements, branches, functions, and lines; pnpm lint passes ESLint, zero jscpd clones, static quality, 100% docstrings, and token-budget gates; contracts, docs/skills, secret scan, and dependency audit pass. Fresh packed-package temp workspace proves filtered rank 1 selection and bounded atomic claim return the same task."
+files[6]{path,scope,note}:
+  src/cli/commands/claim.ts,project,bounded atomic candidate walk
+  src/cli/commands/next.ts,project,shared ranked actionability and decision separation contract
+  src/cli/register-operations.ts,project,CLI option forwarding
+  src/sdk/cli-contracts/tool-schema.ts,project,MCP and SDK action schema
+  src/sdk/runtime.ts,project,public SDK claimNext primitive
+  tests/fixtures/contracts/full.json,project,generated contract snapshot
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,240
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,CLI fleet-worker contract
+  docs/SDK.md,project,SDK selection primitive documentation
+close_reason: Shipped stable ranked ready continuation with explicit one-based ranks and regression coverage.
 body: ""

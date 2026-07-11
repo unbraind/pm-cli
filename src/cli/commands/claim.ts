@@ -36,12 +36,41 @@ export interface ClaimResult {
 }
 
 /** Result of atomically selecting and claiming the next caller-available item. */
-export interface ClaimNextResult extends ClaimResult {
+export interface ClaimNextAvailableResult extends ClaimResult {
+  /** True when an actionable candidate was claimed. */
+  available: true;
   /** Value that configures or reports recommendation for this contract. */
   recommendation: NextRecommendation;
   /** Value that configures or reports attempts for this contract. */
   attempts: number;
 }
+
+/** Non-error empty result returned when an if-available candidate walk is exhausted. */
+export interface ClaimNextUnavailableResult {
+  /** Indicates that no candidate remained claimable. */
+  available: false;
+  /** Empty item projection for a deliberately unavailable selection. */
+  item: null;
+  /** Caller identity that attempted the selection. */
+  claimed_by: string;
+  /** No previous owner exists for an empty selection. */
+  previous_assignee: null;
+  /** Whether forced selection was requested. */
+  forced: boolean;
+  /** Signals a deliberate non-error skip. */
+  skipped: true;
+  /** No recommendation survived the bounded walk. */
+  recommendation: null;
+  /** Number of ranked candidates attempted. */
+  attempts: number;
+  /** Stable machine-readable exhaustion warning. */
+  warnings: ["no_available_next_item"];
+}
+
+/** Result of a successful or deliberately empty atomic next-work claim. */
+export type ClaimNextResult =
+  | ClaimNextAvailableResult
+  | ClaimNextUnavailableResult;
 
 /** Returns whether a failed claim lost the atomic test-and-set race. */
 export function isAlreadyClaimedError(error: unknown): boolean {
@@ -79,6 +108,8 @@ export interface ClaimMutationOptions {
   message?: string;
   /** Value that configures or reports if available for this contract. */
   ifAvailable?: boolean;
+  /** Maximum ranked candidates attempted by `claim --next`. */
+  maxAttempts?: string;
 }
 
 /** Documents the release mutation options payload exchanged by command, SDK, and package integrations. */
@@ -180,8 +211,13 @@ export async function runClaimNext(
   options: ClaimMutationOptions = {},
   nextOptions: NextOptions = {},
 ): Promise<ClaimNextResult> {
+  const maxAttempts = parseClaimNextAttempts(options.maxAttempts);
   const next = await runNext(
-    { ...nextOptions, callerAuthor: options.author, limit: "10" },
+    {
+      ...nextOptions,
+      callerAuthor: options.author,
+      limit: String(maxAttempts),
+    },
     global,
   );
   const recommendations = [next.recommended, ...next.ready]
@@ -190,7 +226,25 @@ export async function runClaimNext(
       ...entry,
       reasons: "reasons" in entry ? entry.reasons : ["ranked ready candidate"],
     }));
-  return claimNextFromRecommendations(recommendations, force, global, options);
+  return claimNextFromRecommendations(
+    recommendations.slice(0, maxAttempts),
+    force,
+    global,
+    options,
+  );
+}
+
+/** Parses the bounded candidate walk used by `claim --next`. */
+export function parseClaimNextAttempts(raw: string | undefined): number {
+  if (raw === undefined) return 10;
+  const parsed = Number(raw);
+  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > 100) {
+    throw new PmCliError(
+      "--max-attempts must be an integer from 1 to 100",
+      EXIT_CODE.USAGE,
+    );
+  }
+  return parsed;
 }
 
 /** Claims the first still-available row from a pre-ranked recommendation set. */
@@ -202,7 +256,6 @@ export async function claimNextFromRecommendations(
   claimRunner: ClaimRunner = runClaim,
 ): Promise<ClaimNextResult> {
   let attempts = 0;
-  let lastSkipped: ClaimNextResult | undefined;
   for (const recommendation of recommendations) {
     attempts += 1;
     try {
@@ -212,14 +265,25 @@ export async function claimNextFromRecommendations(
         global,
         options,
       );
-      const result = { ...claimed, recommendation, attempts };
-      if (claimed.skipped) lastSkipped = result;
-      else return result;
+      const result = { ...claimed, recommendation, attempts, available: true as const };
+      if (!claimed.skipped) return result;
     } catch (error: unknown) {
       if (!isAlreadyClaimedError(error)) throw error;
     }
   }
-  if (lastSkipped) return lastSkipped;
+  if (options.ifAvailable === true) {
+    return {
+      available: false,
+      item: null,
+      claimed_by: options.author ?? process.env.PM_AUTHOR ?? "unknown",
+      previous_assignee: null,
+      forced: force,
+      skipped: true,
+      recommendation: null,
+      attempts,
+      warnings: ["no_available_next_item"],
+    };
+  }
   throw new PmCliError(
     "No actionable item remained available to claim",
     EXIT_CODE.CONFLICT,

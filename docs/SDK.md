@@ -536,11 +536,14 @@ integration, or agent runtime. Presentation stays outside the SDK primitive:
 callers choose their own rendering while the data shape remains shared with the
 CLI.
 
-The `next` result excludes the recommended item from the `ready` tail, reports
-foreign-owned work in `held_by_others`, and treats dangling dependency ids as
-unresolved blockers. The CLI `claim --next` composition uses the same public
-ranking result and atomic claim mutation, so custom SDK tools can apply their own
-selection policy without losing concurrency safety.
+The `next` result excludes the recommended item from the `ready` tail, assigns
+stable one-based ranks, reports foreign-owned work in `held_by_others`, and
+treats dangling dependency ids as unresolved blockers. Human-gated decisions
+remain visible in `decision_needed` but stay outside the agent-ready queue unless
+the caller explicitly opts in. `PmClient.claimNext()` and top-level `claimNext()`
+compose the same ranking result and atomic claim mutation, accept the next-work
+filters, and bound race-loss candidate walking with `maxAttempts`, so custom SDK
+tools do not need to reproduce CLI concurrency policy.
 
 Lifecycle convenience methods and the matching top-level functions (`create`,
 `update`, `close`, `claim`, `release`, `copy`, `deleteItem`, `restore`,
