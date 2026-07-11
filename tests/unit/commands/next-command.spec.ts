@@ -184,14 +184,18 @@ describe("runNext", () => {
       const p1 = createItem(context, { title: "Highest", priority: "1" });
       const p2 = createItem(context, { title: "Middle", priority: "2" });
       const decision = createItem(context, { title: "Maintainer choice", type: "Decision", priority: "0" });
+      const foreignDecision = createItem(context, { title: "Other maintainer choice", type: "Decision", priority: "1" });
+      context.runCli(["update", foreignDecision, "--assignee", "other-agent", "--json"], { expectJson: true });
       const result = await runNext({}, { path: context.pmPath });
       expect(result.recommended?.id).toBe(p1);
       expect(result.recommended?.rank).toBe(1);
       expect(result.ready.map((entry) => [entry.id, entry.rank])).toEqual([[p2, 2], [p3, 3]]);
-      expect(result.decision_needed.map((entry) => entry.id)).toEqual([decision]);
+      expect(result.decision_needed.map((entry) => entry.id)).toEqual([decision, foreignDecision]);
+      expect(result.held_by_others).toEqual([]);
       const optedIn = await runNext({ includeDecisions: true }, { path: context.pmPath });
       expect(optedIn.recommended?.id).toBe(decision);
       expect(optedIn.decision_needed).toEqual([]);
+      expect(optedIn.held_by_others).toEqual([{ id: foreignDecision, assignee: "other-agent" }]);
 
       const numericPriority = await runNext({ priority: 2 }, { path: context.pmPath });
       expect(numericPriority.recommended?.id).toBe(p2);

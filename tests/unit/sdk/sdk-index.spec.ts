@@ -770,6 +770,17 @@ describe("public sdk entrypoint", () => {
       oneOf?: Array<{ required?: string[] }>;
     };
     expect(claimSchema.properties?.action).toMatchObject({ const: "claim" });
+    expect(claimSchema.properties).toMatchObject({
+      ifAvailable: { type: "boolean" },
+      next: { type: "boolean" },
+      maxAttempts: {
+        anyOf: expect.arrayContaining([
+          { type: "integer", minimum: 1, maximum: 100 },
+          { type: "string", pattern: "^(?:[1-9]|[1-9][0-9]|100)$" },
+        ]),
+      },
+      includeDecisions: { type: "boolean" },
+    });
     expect(claimSchema.required).toEqual(["action"]);
     expect(claimSchema.oneOf).toEqual(
       expect.arrayContaining([

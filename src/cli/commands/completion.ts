@@ -1716,7 +1716,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--next[Atomically claim the next actionable item]' \\
             '--type[Filter --next candidates by type]:type' \\
             '--tag[Filter --next candidates by tag]:tag' \\
-            '--priority[Filter --next candidates by priority]:priority' \\
+            '--priority[Filter --next candidates by priority]:(0 1 2 3 4)' \\
             '--assignee-filter[Filter --next candidates by ownership]:assignee_filter:(assigned unassigned)' \\
             '--parent[Scope --next candidates to a subtree]:parent' \\
             '--sprint[Filter --next candidates by sprint]:sprint' \\

@@ -18565,6 +18565,10 @@
             "description": "Format.",
             "type": "string"
           },
+          "includeDecisions": {
+            "description": "Include Decisions.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -24257,6 +24261,14 @@
             ],
             "type": "string"
           },
+          "ifAvailable": {
+            "description": "If Available.",
+            "type": "boolean"
+          },
+          "includeDecisions": {
+            "description": "Include Decisions.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -24273,9 +24285,27 @@
             ],
             "description": "Limit."
           },
+          "maxAttempts": {
+            "anyOf": [
+              {
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "pattern": "^(?:[1-9]|[1-9][0-9]|100)$",
+                "type": "string"
+              }
+            ],
+            "description": "Max Attempts."
+          },
           "message": {
             "description": "History message for mutation audit trail.",
             "type": "string"
+          },
+          "next": {
+            "description": "Next.",
+            "type": "boolean"
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",

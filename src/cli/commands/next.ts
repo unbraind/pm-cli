@@ -557,21 +557,17 @@ export async function runNext(
 
   const report = computeActionabilityReport(candidates, corpus, statusRegistry);
   const childrenByParent = buildChildrenByParent(corpus);
-  const callerPartition = partitionCallerOwnedReady(
-    report.ready,
-    settings.author_default,
-    options.callerAuthor,
-  );
   const partitionedByDecision = partitionDecisionEntries(
     report.ready,
     options.includeDecisions === true,
   );
+  const callerPartition = partitionCallerOwnedReady(
+    partitionedByDecision.agent,
+    settings.author_default,
+    options.callerAuthor,
+  );
   const rankedReady = rankNextReadyEntries(
-    partitionCallerOwnedReady(
-      partitionedByDecision.agent,
-      settings.author_default,
-      options.callerAuthor,
-    ).available,
+    callerPartition.available,
     childrenByParent,
     statusRegistry,
   );
