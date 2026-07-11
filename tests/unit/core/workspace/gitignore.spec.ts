@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   ensurePmGitignore,
   getPmGitignoreBlock,
-} from "../../../../src/core/workspace/gitignore.js";
+} from "../../../../src/sdk/workspace.js";
 
 describe("ensurePmGitignore", () => {
   it("creates, repairs, and then preserves the canonical fenced block", async () => {

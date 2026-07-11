@@ -45,7 +45,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings, writeSettings } from "../../core/store/settings.js";
-import { ensurePmGitignore } from "../../core/workspace/gitignore.js";
+import { ensurePmGitignore } from "../../sdk/workspace.js";
 import type { GovernancePreset, PmSettings } from "../../types/index.js";
 import { renderPmCommand } from "../argv-utils.js";
 import { runExtension, type ExtensionCommandResult } from "./extension.js";

@@ -1,10 +1,10 @@
 /**
- * @module core/workspace/gitignore
+ * @module sdk/workspace
  *
- * Maintains the repository ignore contract for pm runtime and search caches.
+ * Maintains repository-scaffold contracts shared by the public SDK and CLI.
  */
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 
 /** Opening marker for the init-owned ignore block. */
 export const PM_GITIGNORE_START = "# pm-cli:runtime-cache:start";
@@ -36,7 +36,14 @@ export async function ensurePmGitignore(
   workspaceRoot: string,
 ): Promise<EnsurePmGitignoreResult> {
   const gitignorePath = path.join(workspaceRoot, ".gitignore");
-  const current = (await readFileIfExists(gitignorePath)) ?? "";
+  let current = "";
+  try {
+    current = await readFile(gitignorePath, "utf8");
+  } catch (error: unknown) {
+    if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) {
+      throw error;
+    }
+  }
   const start = current.indexOf(PM_GITIGNORE_START);
   const end = current.indexOf(PM_GITIGNORE_END);
   const withoutManagedBlock =
@@ -48,6 +55,6 @@ export async function ensurePmGitignore(
   if (next === current) {
     return { path: gitignorePath, changed: false };
   }
-  await writeFileAtomic(gitignorePath, next);
+  await writeFile(gitignorePath, next, "utf8");
   return { path: gitignorePath, changed: true };
 }
