@@ -1,0 +1,23 @@
+id: pm-ksca
+title: "Fix red main coverage gate: measure-agent-token-surface.mjs landed without a covering spec"
+description: "The pm-a22j baseline script scripts/measure-agent-token-surface.mjs was checked in without a spec while the coverage gate includes scripts/**/*.mjs at a global 100% threshold (ADR pm-w13j literal all-src). Its own main CI run (a8c1fc65) was cancelled by the next push (cancel-in-progress concurrency), so the red gate only surfaced on the following completed run (6c55c7f2): lines 99.83%, scripts group 95.4%."
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-07-11T17:00:41.556Z"
+updated_at: "2026-07-11T17:18:14.669Z"
+closed_at: "2026-07-11T17:18:14.669Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: "tests/unit/scripts/measure-agent-token-surface.spec.ts covers the script to 100% lines/branches/functions/statements via the createScriptHarness convention (mocked node:child_process, all parser/error/timeout branches); full coverage gate passes locally and on main CI"
+parent: pm-mpbb
+risk: low
+confidence: high
+resolution: fixed
+expected_result: Coverage gate on main at 100% lines/branches/functions/statements including scripts/**/*.mjs
+actual_result: "Added tests/unit/scripts/measure-agent-token-surface.spec.ts (6 tests, createScriptHarness + mocked node:child_process covering parser branches, stderr-exit fallback, PM_BIN override, tools/list variants, MCP error and 30s-timeout paths); script now 100% on all four metrics and full local gate passes 33,962/33,962 lines"
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-a22j,related,"2026-07-11T17:00:41.556Z",null,null
+close_reason: Covering spec added; local full coverage gate green at 100% all-metrics; main CI verification on the fix commit
+body: ""

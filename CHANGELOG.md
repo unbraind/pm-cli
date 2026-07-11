@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- Fix red main coverage gate: measure-agent-token-surface.mjs landed without a covering spec ([pm-ksca](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ksca.toon))
 - GH-508: dedupe LegacyNoneCollectionNormalizer tables duplicated between create.ts and update.ts (CodeFactor) ([pm-zuw8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zuw8.toon))
 - Release-readiness guard expects pre-sync version:check command after date-version synchronization ([pm-pmmv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pmmv.toon))
 - Restore generated-loader docstrings and redact host path from tracker history ([pm-9ugc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9ugc.toon))
