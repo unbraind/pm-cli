@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-507: recovery suggested_retry appends <value\> to missing boolean EXTENSION flags (contract arity ignored) ([pm-9qcr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9qcr.toon))
+- GH-505: nested extension failures suggest irrelevant missing flags instead of preserving tracker recovery ([pm-o71e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o71e.toon))
+- GH-504: importer/exporter registered without options yields an unusable CLI command (no arg/flag contracts) ([pm-0mjz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0mjz.toon))
+- GH-503: flattened extension-command aliases (csv-export, jira-sync) drop option contracts ([pm-s9iu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s9iu.toon))
+
 ## 2026.7.11 - 2026-07-11
 
 ### Added
@@ -8,10 +17,6 @@
 
 ### Fixed
 
-- GH-507: recovery suggested_retry appends <value\> to missing boolean EXTENSION flags (contract arity ignored) ([pm-9qcr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9qcr.toon))
-- GH-505: nested extension failures suggest irrelevant missing flags instead of preserving tracker recovery ([pm-o71e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o71e.toon))
-- GH-504: importer/exporter registered without options yields an unusable CLI command (no arg/flag contracts) ([pm-0mjz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0mjz.toon))
-- GH-503: flattened extension-command aliases (csv-export, jira-sync) drop option contracts ([pm-s9iu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s9iu.toon))
 - Dangling dependency references: accepted at create/update, skipped by validate, and treated as satisfied by pm next (silent unblock) ([pm-ol5v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ol5v.toon))
 - Classify tracker-not-initialized Sentry CommandErrors as expected handled CLI errors ([pm-w7jq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-w7jq.toon))
 - GH-498: pm comments rejects --body — accept it as an alias for --add and hint on unknown options ([pm-z32q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z32q.toon))
