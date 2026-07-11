@@ -137,18 +137,26 @@ export function extensionFlagTakesValueForInvocation(
   if (!commandName || !normalizedMissing) {
     return undefined;
   }
-  const commandIndex = invocationArgv.lastIndexOf(commandName);
-  if (commandIndex < 0) {
-    return undefined;
+  let descriptor: ExtensionCommandHelpDescriptor | undefined;
+  let matchedTokenCount = 0;
+  for (const [index, token] of invocationArgv.entries()) {
+    if (token !== commandName) {
+      continue;
+    }
+    const commandTokens = invocationArgv.slice(index);
+    for (const [path, candidate] of descriptors.entries()) {
+      const pathTokens = path.split(" ");
+      if (
+        pathTokens.length > matchedTokenCount &&
+        pathTokens.every(
+          (pathToken, pathIndex) => commandTokens[pathIndex] === pathToken,
+        )
+      ) {
+        descriptor = candidate;
+        matchedTokenCount = pathTokens.length;
+      }
+    }
   }
-  const commandTokens = invocationArgv.slice(commandIndex);
-  const descriptor = [...descriptors.entries()]
-    .filter(([path]) =>
-      path
-        .split(" ")
-        .every((token, index) => commandTokens[index] === token),
-    )
-    .sort(([left], [right]) => right.length - left.length)[0]?.[1];
   const flag = descriptor?.flags.find(
     (candidate) =>
       candidate.long === normalizedMissing ||
@@ -165,7 +173,11 @@ export function extensionFlagTakesValueForInvocation(
       : typeof flag.type === "string"
         ? flag.type
         : undefined;
-  return valueName || (valueType !== undefined && valueType !== "boolean");
+  return (
+    flag.required === true ||
+    valueName ||
+    (valueType !== undefined && valueType !== "boolean")
+  );
 }
 
 function toNonEmptyFlagString(value: unknown): string | null {

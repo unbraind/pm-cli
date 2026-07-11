@@ -435,6 +435,7 @@ describe("CLI main error helpers", () => {
               { long: "--source", value_name: "path" },
               { long: "--count", value_type: "number" },
               { long: "--label", type: "string" },
+              { long: "--token", required: true },
             ],
           },
         ],
@@ -458,6 +459,12 @@ describe("CLI main error helpers", () => {
     )).toBe(false);
     expect(extensionFlagTakesValueForInvocation(
       ["--name", "todos", "todos", "sync"],
+      "todos",
+      "--allow-empty",
+      descriptors,
+    )).toBe(false);
+    expect(extensionFlagTakesValueForInvocation(
+      ["todos", "sync", "--source", "todos"],
       "todos",
       "--allow-empty",
       descriptors,
@@ -490,6 +497,12 @@ describe("CLI main error helpers", () => {
       ["todos", "sync"],
       "todos",
       "--count",
+      descriptors,
+    )).toBe(true);
+    expect(extensionFlagTakesValueForInvocation(
+      ["todos", "sync"],
+      "todos",
+      "--token",
       descriptors,
     )).toBe(true);
   });

@@ -27,8 +27,6 @@
 | Settings, storage, search, and output | [Configuration](docs/CONFIGURATION.md) |
 | Safe test execution and linked tests | [Testing](docs/TESTING.md) |
 | Package and extension authoring | [Packages and Extensions](docs/EXTENSIONS.md) and [SDK](docs/SDK.md) |
-| Codex native integration | [Codex Plugin](docs/CODEX_PLUGIN.md) |
-| Claude Code native integration | [Claude Code Plugin](docs/CLAUDE_CODE_PLUGIN.md) |
 | Maintainer release process (daily auto-release + local parity) | [Releasing](docs/RELEASING.md) |
 | Contributor internals | [Architecture](docs/ARCHITECTURE.md) |
 
@@ -53,14 +51,6 @@ Project-local invocation also works:
 ```bash
 npx --yes @unbrained/pm-cli@latest --help
 ```
-
-For Claude Code, install the native plugin (no `pm` CLI required):
-
-```
-/plugin install pm-claude@pm
-```
-
-This registers 28 MCP tools, 5 workflow skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and a session-start context hook — all without shelling out to the `pm` CLI.
 
 `pm` packages use the same package-first vocabulary:
 
@@ -114,15 +104,6 @@ pm list-in-progress --limit 20
 If no relevant item exists, create a parent lineage before child work, claim the child item, link changed files/docs/tests, and leave evidence comments before closing. The full workflow is in the [Agent Guide](docs/AGENT_GUIDE.md).
 
 For token-aware local routing, install `guide-shell` with `pm install guide-shell --project`, then use `pm guide workflows` and drill into related topics (`commands`, `skills`, `release`) only when needed.
-
-## Release Automation
-
-- Daily release preparation runs in `.github/workflows/auto-release.yml`.
-- Tag-driven publishing remains in `.github/workflows/release.yml`.
-- Local parity commands:
-  - `pnpm release:pipeline:dry-run`
-  - `pnpm release:pipeline`
-  - run maintainer-only reliability checks separately and keep their raw details in ignored local notes
 
 ## Core Model
 
