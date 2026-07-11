@@ -298,7 +298,7 @@ describe("extensions runtime registration resolution", () => {
           item_fields: [{ layer: "project", name: "reserved", fields: [{ name: "title", type: "string" }] }],
         },
       ),
-    ).toThrow(/collides with reserved item metadata/);
+    ).toThrow(/collides with built-in item metadata/);
     expect(() =>
       collectRegisteredItemFieldNames({
         ...createEmptyExtensionRegistrationRegistry(),
