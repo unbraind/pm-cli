@@ -21,6 +21,7 @@
 
 ### Other
 
+- Baseline agent token cost of the CLI surface: measure pm --help, per-command help, and contracts payload sizes before consolidation ([pm-a22j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-a22j.toon))
 - Research and document the July 2026 native ChatGPT/Codex plugin implementation plan ([pm-n28t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-n28t.toon))
 - Align all plugin and package manifests to date-based versioning with release-time sync ([pm-hxsv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hxsv.toon))
 

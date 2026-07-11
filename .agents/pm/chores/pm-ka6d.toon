@@ -1,0 +1,16 @@
+id: pm-ka6d
+title: Document the two-call agent cold-start (contracts --summary + next) as the canonical orientation in docs and plugin templates
+description: ""
+type: Chore
+status: open
+priority: 2
+tags[3]: agent-ux,"area:docs",simplification
+created_at: "2026-07-11T16:23:07.560Z"
+updated_at: "2026-07-11T16:23:07.560Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: Agent-facing docs describe the two-call cold-start as the canonical orientation path; plugin instruction templates teach the same sequence; no new top-level commands introduced; before/after token numbers cited from the a22j baseline script
+parent: pm-mpbb
+risk: low
+confidence: high
+body: "Promoted from the pm-mpbb DX ledger (candidate lever d) on 2026-07-11, when the pm-a22j baseline gate opened.\n\nThe numbers make the case: pm contracts --summary = 2,867 B TOON (~0.7k tok) vs contracts --full = 506,091 B (176x) vs the MCP tools/list payload = 32,979 B (~8.2k tok, paid on every MCP session bootstrap). The cheap two-call cold-start already exists — `pm contracts --summary` (what exists) then `pm next` (what to do) — but no doc or plugin template teaches it as THE orientation path, so agents default to expensive discovery (--help walks, contracts --full, or full MCP attachment).\n\nScope: docs (agents guide + README agent section) describe the two-call cold-start as the canonical orientation; plugin instruction templates (Claude/Codex/ChatGPT alignment, see plan commit ba09b155) teach the same sequence; cite the baseline script scripts/measure-agent-token-surface.mjs for before/after numbers.\n\nConstraint (ledger fence): no new top-level commands — this is documentation and template work only."

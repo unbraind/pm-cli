@@ -2,18 +2,26 @@ id: pm-a22j
 title: "Baseline agent token cost of the CLI surface: measure pm --help, per-command help, and contracts payload sizes before consolidation"
 description: "Establish the before numbers the simplification epic is judged against: token/byte size of pm --help, sum of per-command --help, contracts --full, and MCP tool-list payloads, committed as a small measurement script + recorded snapshot. Duplicate check: no existing measurement/baseline item for surface size."
 type: Chore
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli",measurement,simplification
 created_at: "2026-07-05T04:53:03.897Z"
-updated_at: "2026-07-11T10:57:38.777Z"
+updated_at: "2026-07-11T16:20:05.497Z"
+closed_at: "2026-07-11T16:20:05.495Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Repeatable script reports byte+approx-token counts for pm --help, all command helps, contracts --full, and MCP tool list; baseline snapshot recorded in the item body/notes; script reusable for the after-comparison"
 parent: pm-n7rr
 risk: low
 confidence: high
-notes[2]{created_at,author,text}:
+resolution: "Baseline established and reproducible: full help surface 174,642 B (~43.7k tok, 62 commands), MCP tools/list 32,979 B (~8.2k tok, 28 tools), contracts family re-measured; checked-in script scripts/measure-agent-token-surface.mjs is the canonical re-measurement method"
+expected_result: "Repeatable script reporting byte+token counts for pm --help, all command helps, contracts payloads, and the MCP tool list, with a recorded baseline snapshot"
+actual_result: Script checked in and lint-clean; run reconciles the manual census exactly; baseline snapshot recorded in item notes; script emits jq-sliceable JSON for the after-comparison
+notes[3]{created_at,author,text}:
   "2026-07-06T08:04:52.095Z",maintainer-agent,"Baseline evidence already measured by the 2026-07-05 external dogfood audit (record here so the chore starts from data): pm contracts --json 25,118 B; --availability-only 24,666 B; --action create 63,534 B; --full 520,414 B. Output-shape costs: pm list --limit 20 = 2,552 B TOON vs 3,773 B JSON (+48%); pm context = 4,582 vs 7,034 (+53%); trivial create echo 368 B vs 29 B --id-only (12.7x); tags = 43% of context brief output. Re-measure pm --help/per-command help on this workspace to complete the baseline, then re-run the full set after each pm-n7rr consolidation lands."
   "2026-07-11T10:57:38.776Z",maintainer-agent,"Help-surface census 2026-07-11 (completes the missing half of the baseline; contracts/output-shape numbers live in the prior note). Method (repeatable): extract command names from `pm --help`, run `pm <cmd> --help | wc -c` per command, tokens ~= bytes/4. Numbers on this workspace, current build:\n- Root `pm --help` = 9,423 B (~2.4k tok), 61 commands listed.\n- Sum of all 61 per-command helps = 164,643 B (~41k tok); full help surface ~= 174 KB ~= 43.5k tok.\n- Top offenders: update-many 11,218 / update 7,792 / create 7,494 / close-many 7,011 / package 6,204 / extension 6,077.\n- list-* family (list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled) = 47,698 B across 8 commands = 29% of the per-command surface for what is ONE command with a --status flag: the single largest consolidation win for pm-n7rr.\n- Bootstrap path `pm contracts --summary` = 2,867 B TOON / 4,111 B JSON (vs contracts --full 520,414 B = 181x).\nRemaining for the AC: formalize as a checked-in script + measure the MCP tools/list payload; re-run the full set after each pm-n7rr consolidation lands."
+  "2026-07-11T16:19:51.018Z",maintainer-agent,"Baseline COMPLETE 2026-07-11 (checked-in script + final missing half). Script = scripts/measure-agent-token-surface.mjs (JSON report on stdout: root help, all per-command helps, contracts family, MCP tools/list; PM_BIN overridable; jq-sliceable; linked to this item). Script reconciles the manual census exactly: full help surface 174,642 B ~= 43.7k tok across 62 commands (62 vs 61 manual: script also counts the beads + changelog extension groups; script method is now canonical), list-* family 47,698 B / 8 commands = 29%, same top offenders (update-many 11,218 / update 7,792 / create 7,494 / close-many 7,011). NEW number closing the AC: MCP tools/list = 32,979 B ~= 8.2k tok for 28 tools (~295 tok/tool avg) - paid on EVERY session bootstrap by MCP-attached agents, unlike lazy per-command help. Contracts re-measured: summary TOON 2,867 / summary JSON 4,111 / --json 39,630 (was 25,118 on 07-05: +58% growth in six days) / --full 506,091 B. After-comparison = re-run the script after each pm-n7rr consolidation slice and diff."
+files[1]{path,scope,note}:
+  scripts/measure-agent-token-surface.mjs,project,Repeatable token-surface baseline script (the a22j AC deliverable)
+close_reason: "Baseline complete: checked-in measurement script + MCP tools/list payload measured; all acceptance criteria met"
 body: ""
