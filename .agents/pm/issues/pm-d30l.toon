@@ -1,0 +1,27 @@
+id: pm-d30l
+title: Full coverage contention times out metadata content-filter integration case
+description: "The repo-wide coverage gate on current main and the SDK plan branch times out tests/unit/commands/metadata-governance-commands.spec.ts content-field filter case at the global 30s per-test ceiling under suite contention, while the same file passes in isolation and the case completes in about 14s. Duplicate check: pm search --status all for metadata governance content filters timeout coverage found the closed feature lineage pm-yq7m/pm-hntj but no timeout regression item."
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-07-11T12:23:38.997Z"
+updated_at: "2026-07-11T13:26:36.730Z"
+closed_at: "2026-07-11T13:26:35.978Z"
+author: codex-root
+estimated_minutes: 45
+acceptance_criteria: The contention-heavy content-filter integration case has an explicit justified timeout budget; isolated regression passes; full coverage completes at exact 100/100/100/100.
+parent: pm-yq7m
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-je50,related,"2026-07-11T12:23:38.997Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-11T12:23:38.997Z",codex-root,"Duplicate check evidence: searched all statuses for metadata governance content filters timeout coverage and GH-510 nightly coverage timeout; no matching timeout-regression item exists."
+  "2026-07-11T13:26:33.340Z",codex-root,"Evidence: contention-heavy content-filter integration case completed at 22s under the full suite with an explicit 60s budget; isolated file passed; final repo coverage passed 5,541 tests and exact 100/100/100/100."
+files[1]{path,scope,note}:
+  tests/unit/commands/metadata-governance-commands.spec.ts,project,content-filter integration timeout budget
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/metadata-governance-commands.spec.ts,project,180
+close_reason: Stabilized the full coverage gate with an explicit contention-aware test budget and exact 100% coverage proof.
+body: ""

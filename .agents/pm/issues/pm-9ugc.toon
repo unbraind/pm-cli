@@ -1,0 +1,30 @@
+id: pm-9ugc
+title: Restore generated-loader docstrings and redact host path from tracker history
+description: "Mandatory security/static gates on the SDK plan branch found generated pm-beads/pm-todos runtime loaders below the 100% docstring contract and an absolute /home path in closed research item pm-n28t plus its history. Duplicate check: all-status searches for runtime loader docstring pm-beads pm-todos and the exact security finding found prior implementation lineage but no current gate-regression item."
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-07-11T13:08:57.186Z"
+updated_at: "2026-07-11T13:26:39.906Z"
+closed_at: "2026-07-11T13:26:39.137Z"
+author: codex-root
+estimated_minutes: 60
+acceptance_criteria: Generator emits module and exported API docstrings; generated loaders are synchronized; audited history redaction removes the absolute home path from current item and full history; security and static quality gates pass.
+parent: pm-5566
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-je50,related,"2026-07-11T13:08:57.186Z",null,null
+  pm-n28t,related,"2026-07-11T13:08:57.186Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-11T13:08:57.186Z",codex-root,"Duplicate check evidence: searched all statuses for runtime loader docstrings and pm-n28t absolute path security finding; no matching active regression item."
+  "2026-07-11T13:26:35.070Z",codex-root,"Evidence: generator now emits module and exported API docstrings for both runtime loaders; generated files are synchronized. Audited history-redact removed the absolute home path from pm-n28t current item/history with a verified hash chain. Static quality reports 100% source/export/member docstrings and zero duplicates; security scan is clean."
+files[3]{path,scope,note}:
+  packages/pm-beads/extensions/beads/runtime-loader.ts,project,generated loader
+  packages/pm-todos/extensions/todos/runtime-loader.ts,project,generated loader
+  scripts/gen-package-runtime-loaders.mjs,project,docstring-complete generator
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/runtime-loaders.spec.ts,project,180
+close_reason: Restored generated-loader docstring coverage and securely redacted the host path from tracker history.
+body: ""

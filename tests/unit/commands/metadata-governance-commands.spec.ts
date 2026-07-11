@@ -292,7 +292,7 @@ describe("metadata-governance commands", () => {
         const verbose = context.runCli(["list", "--no-files", "--json"], { expectJson: true });
         expect((verbose.json as { filters: Record<string, unknown> }).filters.no_files).toBe(true);
       });
-    });
+    }, 60_000);
 
     it("ANDs multiple content selections and rejects a field requested both present and absent", async () => {
       await withTempPmPath(async (context) => {

@@ -1,3 +1,4 @@
+/** @module packages/pm-beads/runtime-loader */
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -11,6 +12,7 @@ const CURRENT_EXTENSION_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const EXTENSION_NAME = "beads";
 const PACKAGE_NAME = "pm-beads";
 const DIAGNOSTIC_NAME = "beads";
+/** Runtime module exports loaded from the installed package or co-located extension. */
 export type PackageRuntimeModule = Record<string, unknown>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -94,6 +96,7 @@ async function tryRuntime(modulePath: string, attempted: string[]): Promise<Pack
   }
 }
 
+/** Resolve and load the first usable packaged runtime module. */
 export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> {
   const attempted: string[] = [];
   for (const modulePath of [...resolvePackageRootCandidates().flatMap(runtimePaths), path.join(CURRENT_EXTENSION_ROOT, "runtime.ts")]) {

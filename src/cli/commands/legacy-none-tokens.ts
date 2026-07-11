@@ -32,6 +32,53 @@ export interface LegacyNoneCollectionNormalizer<
   disableFlagKey?: keyof TOptions;
 }
 
+/** Build the shared create/update collection normalizer table with optional replacement-mode guards. */
+export function createLegacyNoneCollectionNormalizers<
+  TOptions extends Record<string, unknown>,
+>(
+  options: {
+    depDisableFlagKey?: keyof TOptions;
+    testDisableFlagKey?: keyof TOptions;
+  } = {},
+): ReadonlyArray<LegacyNoneCollectionNormalizer<TOptions>> {
+  const row = (
+    optionKey: string,
+    clearFlagKey: string,
+    valueFlag: string,
+    clearFlag: string,
+    disableFlagKey?: keyof TOptions,
+  ): LegacyNoneCollectionNormalizer<TOptions> => ({
+    optionKey: optionKey as keyof TOptions,
+    clearFlagKey: clearFlagKey as keyof TOptions,
+    valueFlag,
+    clearFlag,
+    ...(disableFlagKey === undefined ? {} : { disableFlagKey }),
+  });
+  return [
+    row("dep", "clearDeps", "--dep", "--clear-deps", options.depDisableFlagKey),
+    row("comment", "clearComments", "--comment", "--clear-comments"),
+    row("note", "clearNotes", "--note", "--clear-notes"),
+    row("learning", "clearLearnings", "--learning", "--clear-learnings"),
+    row("file", "clearFiles", "--file", "--clear-files"),
+    row(
+      "test",
+      "clearTests",
+      "--test",
+      "--clear-tests",
+      options.testDisableFlagKey,
+    ),
+    row("doc", "clearDocs", "--doc", "--clear-docs"),
+    row("reminder", "clearReminders", "--reminder", "--clear-reminders"),
+    row("event", "clearEvents", "--event", "--clear-events"),
+    row(
+      "typeOption",
+      "clearTypeOptions",
+      "--type-option",
+      "--clear-type-options",
+    ),
+  ];
+}
+
 /** Implements check whether legacy none token for the public runtime surface of this module. */
 export function isLegacyNoneToken(value: string | undefined): boolean {
   if (value === undefined) {

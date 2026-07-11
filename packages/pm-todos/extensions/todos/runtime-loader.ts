@@ -1,3 +1,4 @@
+/** @module packages/pm-todos/runtime-loader */
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -8,6 +9,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
  */
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 const localRuntime = path.join(path.dirname(fileURLToPath(import.meta.url)), "runtime.ts");
+/** Runtime module exports loaded from the installed package or co-located extension. */
 export type PackageRuntimeModule = Record<string, unknown>;
 const packageConfig = { extensionName: "todos", packageName: "pm-todos", diagnosticName: "todos" } as const;
 
@@ -75,6 +77,7 @@ const loadRuntimeFile = async (target: string, attempted: string[]): Promise<Pac
   }
 };
 
+/** Resolve and load the first usable packaged runtime module. */
 export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> {
   const attempted: string[] = [];
   for (const target of runtimeFiles()) {

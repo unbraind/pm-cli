@@ -1,5 +1,5 @@
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   PmClient,
   append,
@@ -64,6 +64,40 @@ import {
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("SDK context-management primitives", () => {
+  it("routes every typed plan convenience method through the shared plan primitive", async () => {
+    const client = new PmClient({ noExtensions: true });
+    const result: PlanCommandResult = { action: "show", warnings: [] };
+    const plan = vi.spyOn(client, "plan").mockResolvedValue(result);
+
+    await client.planAddStep("pm-plan", {});
+    await client.planCompleteStep("pm-plan", "step-1");
+    await client.planBlockStep("pm-plan", "step-1", {});
+    await client.planReorderStep("pm-plan", "step-1", 2);
+    await client.planRemoveStep("pm-plan", "step-1");
+    await client.planLink("pm-plan", "step-1", {});
+    await client.planUnlink("pm-plan", "step-1", {});
+    await client.planDecision("pm-plan", {});
+    await client.planDiscovery("pm-plan", {});
+    await client.planValidation("pm-plan", {});
+    await client.planResume("pm-plan", {});
+    await client.planApprove("pm-plan");
+
+    expect(plan.mock.calls).toEqual([
+      ["add-step", "pm-plan", {}],
+      ["complete-step", "pm-plan", {}, "step-1"],
+      ["block-step", "pm-plan", {}, "step-1"],
+      ["reorder-step", "pm-plan", {}, "step-1", 2],
+      ["remove-step", "pm-plan", {}, "step-1"],
+      ["link", "pm-plan", {}, "step-1"],
+      ["unlink", "pm-plan", {}, "step-1"],
+      ["decision", "pm-plan", {}],
+      ["discovery", "pm-plan", {}],
+      ["validation", "pm-plan", {}],
+      ["resume", "pm-plan", {}],
+      ["approve", "pm-plan", {}],
+    ]);
+  });
+
   it("exposes typed plan primitives and materializes governed custom fields", async () => {
     await withTempPmPath(async (context) => {
       const client = new PmClient({
@@ -84,6 +118,13 @@ describe("SDK context-management primitives", () => {
         depth: "standard",
       });
       expect(shown.plan.steps).toHaveLength(2);
+
+      const reordered = await client.planReorderStep(
+        created.plan.id,
+        "plan-step-002",
+        1,
+      );
+      expect(reordered.plan.steps[0]?.id).toBe("plan-step-002");
 
       const updated = await client.planUpdateStep(
         created.plan.id,
