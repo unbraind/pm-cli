@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: decisions,multi-agent,next,workflow
 created_at: "2026-07-11T03:00:06.909Z"
-updated_at: "2026-07-11T03:00:06.909Z"
+updated_at: "2026-07-11T03:06:49.579Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm next surfaces open Decision-type items in a distinct decision-needed section (with what they gate) instead of as the claimable recommendation; pm claim --next skips Decision-type items unless an explicit opt-in flag is passed; behavior documented and covered by tests; existing recommendation ranking otherwise unchanged
@@ -15,4 +15,6 @@ confidence: medium
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-114v,related,"2026-07-11T03:00:06.909Z",null,null
   pm-9x6k,related,"2026-07-11T03:00:06.909Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-11T03:06:49.578Z",maintainer-agent,"External confirmation (2026-07-11): GH-509 (pm-fjxm) independently requests the fleet worker loop this item protects — bounded candidate-walk on claim race loss. A walk WITHOUT the Decision-skip this item specifies makes the hazard strictly worse: every race loser advances down the ready queue and lands on the Decision item, so the funnel-into-one-ADR failure becomes the common path, not the unlucky one. pm-fjxm's AC references this item; sequencing preference: land eqk0's Decision-skip before or with fjxm's walk."
 body: ""
