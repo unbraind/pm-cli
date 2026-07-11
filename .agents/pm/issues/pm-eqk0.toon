@@ -1,0 +1,18 @@
+id: pm-eqk0
+title: pm next / claim --next treat human-gated Decision items as claimable agent work — agent lanes can claim ADRs they must never resolve
+description: "Observed 2026-07-11: pm next recommends pm-pbyu (type Decision, ADR status proposed, priority 1) as THE recommended item, and pm claim --next would atomically claim it. ADR acceptance is a maintainer-only act (project convention: agents never flip ADRs), so an autonomous agent following the recommend-claim loop lands on an item it cannot resolve — a stalled lane, and at fleet scale every idle agent funnels into the same unresolvable Decision. The recommendation itself is informative (pm-pbyu + pm-bl8x gate 13 of 25 blocked items), so the fix is presentation + claim semantics, not ranking: Decisions belong in a decision-needed channel that names what they unblock, while the claimable recommendation stays actionable-by-agents. Complements closed pm-9x6k (dependency actionability) and pm-114v (atomic claim --next)."
+type: Issue
+status: open
+priority: 2
+tags[4]: decisions,multi-agent,next,workflow
+created_at: "2026-07-11T03:00:06.909Z"
+updated_at: "2026-07-11T03:00:06.909Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: pm next surfaces open Decision-type items in a distinct decision-needed section (with what they gate) instead of as the claimable recommendation; pm claim --next skips Decision-type items unless an explicit opt-in flag is passed; behavior documented and covered by tests; existing recommendation ranking otherwise unchanged
+risk: medium
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-114v,related,"2026-07-11T03:00:06.909Z",null,null
+  pm-9x6k,related,"2026-07-11T03:00:06.909Z",null,null
+body: ""

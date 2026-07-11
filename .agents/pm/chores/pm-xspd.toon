@@ -1,0 +1,20 @@
+id: pm-xspd
+title: "Close the jscpd/CodeFactor sensitivity gap: minTokens 115 misses low-token table clones the CodeFactor bot still files"
+description: "Evidence 2026-07-11: pnpm lint:duplicates on main reports 0 clones (562 files, minLines 22 / minTokens 115) while CodeFactor filed GH-508 for a 28-line byte-identical object-literal table duplicated between create.ts:335-362 and update.ts:260-287. Short-identifier object rows stay under 115 tokens across 28 lines, so the zero-duplication gate from PR#506/pm-7wmq is structurally blind to table-shaped clones that CodeFactor's thresholds catch. Fixing pm-zuw8 clears this instance but not the class; result is recurring CodeFactor auto-issues despite a green local gate. Successor to closed parity item pm-6sqo."
+type: Chore
+status: open
+priority: 3
+tags[3]: codefactor,duplication,quality-gate
+created_at: "2026-07-11T02:58:27.882Z"
+updated_at: "2026-07-11T02:58:27.882Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: "jscpd config detects the GH-508-class clone shape (create.ts/update.ts normalizer tables) on a pre-fix checkout, via lowered minTokens or a second low-token/high-line profile; lint:duplicates still passes on main after pm-zuw8 lands; false-positive review documented if thresholds are lowered"
+parent: pm-92if
+risk: low
+confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-zuw8,related,"2026-07-11T02:58:27.882Z",null,null
+files[1]{path,scope,note}:
+  .jscpd.json,project,null
+body: ""
