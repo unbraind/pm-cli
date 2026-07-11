@@ -18,7 +18,7 @@ const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
 
 /** Describes a repeatable option whose legacy none/null token maps to a clear flag. */
 export interface LegacyNoneCollectionNormalizer<
-  TOptions extends Record<string, unknown>,
+  TOptions extends object,
 > {
   /** Value that configures or reports option key for this contract. */
   optionKey: keyof TOptions;
@@ -78,7 +78,7 @@ export interface LegacyNoneCollectionOptions {
 
 /** Build the shared create/update collection normalizer table with optional replacement-mode guards. */
 export function createLegacyNoneCollectionNormalizers<
-  TOptions extends LegacyNoneCollectionOptions & Record<string, unknown>,
+  TOptions extends LegacyNoneCollectionOptions,
 >(
   options: {
     depDisableFlagKey?: keyof TOptions;
