@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: cli,codefactor,duplication
 created_at: "2026-07-11T02:57:29.002Z"
-updated_at: "2026-07-11T14:40:23.407Z"
+updated_at: "2026-07-11T16:06:04.939Z"
 closed_at: "2026-07-11T14:40:22.368Z"
 author: maintainer-agent
 estimated_minutes: 45
@@ -14,6 +14,9 @@ acceptance_criteria: "Shared normalizer rows (comment/note/learning/file/test/do
 parent: pm-92if
 risk: low
 confidence: high
+resolution: fixed
+expected_result: single shared LegacyNoneCollectionNormalizer builder for create/update; zero jscpd clones
+actual_result: Deduplicated via shared builder + relaxed factory constraint in PR#512; closes GH-508
 comments[3]{created_at,author,text}:
   "2026-07-11T13:26:34.192Z",codex-root,"Evidence: create/update now consume one typed shared legacy-none collection normalizer factory while preserving replaceDeps/replaceTests guards. Focused 263 tests pass; jscpd reports zero clones; static duplicate scan reports zero chunks; final coverage is exact 100/100/100/100."
   "2026-07-11T14:11:23.116Z",codex-root,"Current-head review evidence: shared collection keys are constrained by LegacyNoneCollectionOptions and emitted as typed literal definitions, eliminating the unsafe keyof assertions while preserving create/update behavior. Create/update/normalizer suites, typecheck, lint, zero-duplication, and 100% docstring gates pass."

@@ -1,0 +1,18 @@
+id: pm-1mwk
+title: "GH-513: pm next ready[] documented as ranked but not priority-ordered; no rank/score exposed"
+description: "GH-513 (dogfood, pm 2026.7.11): pm next --help promises 'ranked ready and blocked queues' and recommended is correctly priority-first, but ready[] order matches neither priority nor creation nor updated_at (repro: p1/p3/p2), and rows carry order:null, reasons:null, no score/rank key — JSON consumers cannot trust or reconstruct the ranking. Fleet impact compounds GH-509/pm-fjxm: after recommended is claimed, agents fall back to ready[0], so straightforward iteration picks lower-priority work. Preferred fix (issue option 1, least surprise): sort ready[] with the same comparator that selects recommended so ready is a true continuation; optionally also expose rank/reasons per row (option 2). Duplicate check: registry + pm search (ready queue ranked/rank score) — pm-g543 is unknown-command suggester ranking, pm-4k6b is the relevance-engine ADR territory, PR#502 pm-next defects all closed; no overlap."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,cli,gh-issue,multi-agent
+created_at: "2026-07-11T16:07:09.068Z"
+updated_at: "2026-07-11T16:07:23.529Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: "ready[] in pm next --json is ordered by the exact comparator used to pick recommended (priority-first plus existing tie-breakers) with a regression spec covering the GH-513 repro (p0 recommended, ready strictly p1,p2,p3); help text and docs match actual behavior; decision recorded whether per-row rank/reasons are exposed; GH-513 closed"
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-fjxm,related,"2026-07-11T16:07:23.510Z",null,null
+body: ""

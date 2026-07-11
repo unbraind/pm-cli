@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: bug,gh-issue,plan,schema
 created_at: "2026-07-06T08:03:10.077Z"
-updated_at: "2026-07-11T12:02:21.192Z"
+updated_at: "2026-07-11T16:06:06.167Z"
 closed_at: "2026-07-11T12:02:20.112Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,6 +14,9 @@ acceptance_criteria: plan materialize can supply required custom-field values (d
 parent: pm-8jdc
 risk: medium
 confidence: high
+resolution: fixed
+expected_result: plan materialize succeeds on types with required-on-create custom fields
+actual_result: "--field name=value passthrough with reserved-key collision rejection shipped in PR#512; closes GH-452"
 comments[1]{created_at,author,text}:
   "2026-07-11T12:02:19.021Z",codex-root,"Evidence: plan materialize accepts repeatable --field name=value, normalizes schema option keys, and forwards them through runCreate so required-on-create governance remains enforced. SDK regression creates required Task field acceptance_owner, materializes through PmClient, and verifies persisted value. Packed installed-package proof passed."
 files[2]{path,scope,note}:

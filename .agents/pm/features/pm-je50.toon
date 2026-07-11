@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: architecture,"area:plan","area:sdk"
 created_at: "2026-07-05T05:09:13.638Z"
-updated_at: "2026-07-11T16:00:54.528Z"
+updated_at: "2026-07-11T16:06:03.401Z"
 closed_at: "2026-07-11T14:11:24.830Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,6 +14,9 @@ acceptance_criteria: "SDK exports typed plan primitives covering the full pm pla
 parent: pm-usfg
 risk: medium
 confidence: medium
+resolution: implemented
+expected_result: pm plan create/steps/deps/decisions/discoveries/validate/materialize callable via typed PmClient without CLI shell-out
+actual_result: "PmClient.plan(...) facade shipped in PR#512 with contracts, docs/SDK.md, 100% coverage; tarball consumer verified init→materialize"
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-qd2h,related,"2026-07-10T21:31:11.790Z",null,null
   pm-ypha,related,"2026-07-10T21:31:11.790Z",null,null

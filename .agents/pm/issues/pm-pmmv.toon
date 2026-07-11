@@ -6,10 +6,13 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-11T11:43:44.559Z"
-updated_at: "2026-07-11T14:16:00.047Z"
+updated_at: "2026-07-11T16:06:07.639Z"
 closed_at: "2026-07-11T14:15:59.162Z"
 author: codex-root
 parent: pm-hxsv
+resolution: fixed
+expected_result: release-readiness guard aligned with date-version sync pipeline
+actual_result: "version:check now requires date-version sync; manifest diagnostics preserved in PR#512"
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-je50,related,"2026-07-11T11:43:44.559Z",null,null
 comments[5]{created_at,author,text}:

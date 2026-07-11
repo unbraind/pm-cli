@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-ux,bug,gh-issue,plan
 created_at: "2026-07-06T08:03:10.608Z"
-updated_at: "2026-07-11T12:02:24.577Z"
+updated_at: "2026-07-11T16:06:06.847Z"
 closed_at: "2026-07-11T12:02:23.404Z"
 author: maintainer-agent
 estimated_minutes: 45
@@ -14,6 +14,9 @@ acceptance_criteria: "materialize --json materialized[] entries include id/title
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: fixed
+expected_result: plan materialize --json returns id/title/type/parent/tags/from_step
+actual_result: Confirmation-rich projection shipped in PR#512; closes GH-453
 comments[1]{created_at,author,text}:
   "2026-07-11T12:02:22.094Z",codex-root,"Evidence: materialized entries now return id/title/type/parent/tags/from_step from the created item. CLI and SDK regressions assert the compact confirmation projection; packed installed-package proof passed without get round trips."
 files[2]{path,scope,note}:
