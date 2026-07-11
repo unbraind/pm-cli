@@ -180,13 +180,13 @@ describe("scripts/sync-versions: check mode", () => {
       `${path.join("packages", "pm-alpha", "package.json")} version: 0.1.0 -> ${ROOT_VERSION}`,
     );
     expect(message).toContain(
-      `${path.join(".claude-plugin", "marketplace.json")} metadata.version: 1.4.1 -> ${ROOT_VERSION}`,
+      `.claude-plugin/marketplace.json metadata.version: 1.4.1 -> ${ROOT_VERSION}`,
     );
     expect(message).toContain(
       `marketplace.json plugins[0].version: 1.4.1 -> ${ROOT_VERSION}`,
     );
     expect(message).toContain(
-      `${path.join(".agents", "plugins", "marketplace.json")} plugins[2].version: 1.1.0 -> ${ROOT_VERSION}`,
+      `.agents/plugins/marketplace.json plugins[2].version: 1.1.0 -> ${ROOT_VERSION}`,
     );
     expect(message).toContain("pnpm version:sync");
     expect(result.writes).toEqual([]);
