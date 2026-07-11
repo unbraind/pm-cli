@@ -1,0 +1,17 @@
+id: pm-hous
+title: "GH-514: pm init writes no .gitignore rules — runtime/search caches churn as tracked files in downstream repos"
+description: "GH-514 reports pm init writing a malformed .gitignore line concatenating .agents/pm/search/ + .agents/pm/runtime/metadata-cache-bodies.json. Source evidence: the block header string ('PM CLI runtime and cache files') has NEVER existed in this repo history (git log -S empty; zero hits in src/dist/packages/plugins) — pm init currently writes NO .gitignore entries at all. The malformed block in the reporting repo (simworld) was authored by external tooling. The real defect this issue surfaces: because pm init owns no ignore rules, repos that version .agents/pm get spurious churn on runtime/metadata-cache*.json and search/ caches with every command, and users/agents hand-write (and garble) ignore blocks. Fix = pm init owns a canonical idempotent fenced block + a health/validate check for already-tracked cache files. Related: pm-4det (this repo untracked its own caches), GH-501/pm-69nl (init discovery)."
+type: Issue
+status: open
+priority: 2
+tags[4]: dx,gh-issue,init,onboarding
+created_at: "2026-07-11T18:01:34.472Z"
+updated_at: "2026-07-11T18:02:06.305Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "pm init (workspace and path-target modes) idempotently writes a canonical fenced ignore block covering .agents/pm/runtime/ and .agents/pm/search/ into the repo .gitignore (creating it if absent), one path per line; Re-running pm init never duplicates or garbles the block (fence markers; existing malformed concatenated lines inside the fence are replaced); pm validate or pm health warns when tracked .agents/pm runtime/search cache files exist in git (the already-tracked case a blanket ignore cannot fix), with a remediation hint (git rm --cached); Docs (init + getting-started) document the ignore block and the tracked-cache remediation"
+risk: low
+confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-69nl,related,"2026-07-11T18:02:06.291Z",null,null
+body: ""
