@@ -173,6 +173,7 @@ describe("GitHub workflow contract", () => {
     ]);
     expectContainsAll(coverageShardsJob, [
       "needs: build-foundation",
+      "persist-credentials: false",
       "shard: [1, 2, 3, 4]",
       "--shard=${{ matrix.shard }}/4",
       "--reporter=blob",
@@ -187,6 +188,7 @@ describe("GitHub workflow contract", () => {
     expectContainsAll(coverageJob, [
       "name: Gates (coverage)",
       "needs: coverage-shards",
+      "persist-credentials: false",
       "pattern: coverage-blob-*",
       "merge-multiple: true",
       "path: .vitest-reports",
