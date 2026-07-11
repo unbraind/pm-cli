@@ -177,6 +177,8 @@ export interface PlanCommandOptions {
   materializeParent?: string;
   /** Value that configures or reports materialize tags for this contract. */
   materializeTags?: string;
+  /** Custom field values forwarded to every materialized item as `name=value` pairs. */
+  field?: string | string[];
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
@@ -198,7 +200,14 @@ export interface PlanCommandResult {
   /** Value that configures or reports next actions for this contract. */
   next_actions?: string[];
   /** Value that configures or reports materialized for this contract. */
-  materialized?: { id: string; type: string; from_step: string }[];
+  materialized?: {
+    id: string;
+    title: string;
+    type: string;
+    parent?: string;
+    tags: string[];
+    from_step: string;
+  }[];
   // pm-fl0c #10 (2026-05-28): steps that pm plan materialize intentionally
   // skipped (already-completed or already-materialized via an `implements`
   // link). Surfacing these makes `--steps all` idempotent without users
@@ -709,9 +718,7 @@ interface MaterializeTargetResolution {
 // `pm plan materialize --steps all` is idempotent and never re-creates fresh
 // Tasks for work already tracked. Explicit step refs are still allowed
 // through (the user asked by ID) but the skip-reason is recorded.
-function classifyMaterializeSkip(
-  step: PlanStep,
-):
+function classifyMaterializeSkip(step: PlanStep):
   | {
       reason: "already_completed" | "already_materialized";
       existing_id?: string;
@@ -1996,11 +2003,56 @@ async function createMaterializedStepItems(params: {
   tags: string | undefined;
   options: PlanCommandOptions;
   pmRoot: string;
-}): Promise<{ id: string; type: string; from_step: string }[]> {
-  const materialized: { id: string; type: string; from_step: string }[] = [];
+}): Promise<
+  {
+    id: string;
+    title: string;
+    type: string;
+    parent?: string;
+    tags: string[];
+    from_step: string;
+  }[]
+> {
+  const materialized: {
+    id: string;
+    title: string;
+    type: string;
+    parent?: string;
+    tags: string[];
+    from_step: string;
+  }[] = [];
+  const materializeFields: Record<string, string> = {};
+  for (const specification of toSpecArray(params.options.field)) {
+    const separator = specification.indexOf("=");
+    if (separator <= 0) {
+      throw new PmCliError(
+        `Invalid --field entry "${specification}"; expected name=value`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    const name = specification.slice(0, separator).trim();
+    const value = specification.slice(separator + 1).trim();
+    if (name.length === 0) {
+      throw new PmCliError(
+        `Invalid --field entry "${specification}"; expected name=value`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    const segments = name
+      .trim()
+      .replaceAll(/[^A-Za-z0-9]+/g, " ")
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((segment) => segment.toLowerCase());
+    const [first, ...rest] = segments;
+    materializeFields[
+      `${first}${rest.map((segment) => `${segment.slice(0, 1).toUpperCase()}${segment.slice(1)}`).join("")}`
+    ] = value;
+  }
   for (const step of params.targets) {
     const created = await runCreate(
       {
+        ...materializeFields,
         title: step.title,
         description: step.body?.trim() || step.title,
         type: params.resolvedTypeName,
@@ -2020,7 +2072,10 @@ async function createMaterializedStepItems(params: {
     );
     materialized.push({
       id: created.item.id,
+      title: created.item.title,
       type: params.resolvedTypeName,
+      parent: created.item.parent,
+      tags: created.item.tags ?? [],
       from_step: step.id,
     });
   }

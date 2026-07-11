@@ -173,6 +173,21 @@ export type {
 } from "./cli-contracts.js";
 export * from "./compose.js";
 export * from "./context-relevance.js";
+export type {
+  PlanCommandOptions,
+  PlanCommandResult,
+  PlanDispatchInput,
+  PlanResultPlan,
+  PlanShowDepth,
+  PlanStepSummary,
+  PlanSubcommand,
+  PlanTemplateName,
+} from "../cli/commands/plan.js";
+export {
+  PLAN_SHOW_DEPTH_VALUES,
+  PLAN_SUBCOMMANDS,
+  PLAN_TEMPLATE_NAMES,
+} from "../cli/commands/plan.js";
 export * from "./define.js";
 export {
   BASELINE_ITEM_FORMAT_VERSION,

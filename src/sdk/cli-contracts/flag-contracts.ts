@@ -498,6 +498,7 @@ export const PLAN_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--validation-command", aliases: ["--validation_command"] },
   { flag: "--validation-expected", aliases: ["--validation_expected"] },
   { flag: "--depth" },
+  { flag: "--field" },
   { flag: "--fields", list: true },
   { flag: "--steps" },
   { flag: "--materialize-type", aliases: ["--materialize_type"] },

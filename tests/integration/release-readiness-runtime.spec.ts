@@ -1796,7 +1796,9 @@ describe("release readiness runtime coverage", () => {
     expect(packageJson.scripts?.typecheck).toBe(
       "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.packages.json && tsc -p tsconfig.examples.json",
     );
-    expect(packageJson.scripts?.["version:check"]).toBe("node scripts/release-version.mjs check");
+    expect(packageJson.scripts?.["version:check"]).toBe(
+      "node scripts/release-version.mjs check && node scripts/sync-versions.mjs check",
+    );
     expect(packageJson.scripts?.["version:next"]).toBe("node scripts/release-version.mjs next");
     expect(packageJson.scripts?.["quality:static"]).toBe(
       "pnpm build && node scripts/release/static-quality-gate.mjs --min-docstring-coverage 92.93 --min-exported-docstring-coverage 84.41 --min-member-docstring-coverage 13.655 && node scripts/release/token-budget-gate.mjs",

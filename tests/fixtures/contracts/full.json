@@ -5395,6 +5395,9 @@
           "flag": "--depth"
         },
         {
+          "flag": "--field"
+        },
+        {
           "flag": "--fields",
           "list": true
         },

@@ -2628,6 +2628,11 @@ export function registerMutationCommands(program: Command): void {
       "--materialize-tags <value>",
       "Comma-separated tags for materialized children",
     )
+    .option(
+      "--field <name=value>",
+      "Custom field value forwarded to every materialized child (repeatable)",
+      collect,
+    )
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "Mutation message")
     .option("--force", "Force ownership override");

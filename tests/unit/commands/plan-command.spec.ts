@@ -1,10 +1,22 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runPlan, PLAN_SUBCOMMANDS, PLAN_SHOW_DEPTH_VALUES, PLAN_TEMPLATE_NAMES } from "../../../src/cli/commands/plan.js";
+import {
+  runPlan,
+  PLAN_SUBCOMMANDS,
+  PLAN_SHOW_DEPTH_VALUES,
+  PLAN_TEMPLATE_NAMES,
+} from "../../../src/cli/commands/plan.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../helpers/withTempPmPath.js";
 
-const GLOBAL = { json: true, quiet: true, noPager: true } as unknown as Parameters<typeof runPlan>[0]["global"];
+const GLOBAL = {
+  json: true,
+  quiet: true,
+  noPager: true,
+} as unknown as Parameters<typeof runPlan>[0]["global"];
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -43,7 +55,9 @@ describe("runPlan command family", () => {
       await expect(
         runPlan({
           subcommand: "create",
-          options: { author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: { author: "test-author" } as Parameters<
+            typeof runPlan
+          >[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -64,7 +78,9 @@ describe("runPlan command family", () => {
       expect(show.plan.harness).toBe("claude-code");
       expect(show.plan.scope).toBe("test scope");
       expect(show.plan.steps_summary.total).toBe(0);
-      expect(show.next_actions).toEqual(expect.arrayContaining([expect.stringContaining("add-step")]));
+      expect(show.next_actions).toEqual(
+        expect.arrayContaining([expect.stringContaining("add-step")]),
+      );
     });
   });
 
@@ -74,14 +90,20 @@ describe("runPlan command family", () => {
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "project me", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepTitle: "project me",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
 
       const projected = await runPlan({
         subcommand: "show",
         id: planId,
-        options: { depth: "deep", fields: "id,title,steps_summary" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          depth: "deep",
+          fields: "id,title,steps_summary",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(projected.plan).toEqual({
@@ -98,12 +120,16 @@ describe("runPlan command family", () => {
           superseded: 0,
         },
       });
-      expect(projected.next_actions).toEqual(expect.arrayContaining([expect.stringContaining("approve")]));
+      expect(projected.next_actions).toEqual(
+        expect.arrayContaining([expect.stringContaining("approve")]),
+      );
 
       const stepsProjection = await runPlan({
         subcommand: "show",
         id: planId,
-        options: { fields: "id,title,steps" } as Parameters<typeof runPlan>[0]["options"],
+        options: { fields: "id,title,steps" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(stepsProjection.plan).toEqual({
@@ -122,37 +148,44 @@ describe("runPlan command family", () => {
         runPlan({
           subcommand: "show",
           id: planId,
-          options: { fields: "id,typo,steps_summary" } as Parameters<typeof runPlan>[0]["options"],
+          options: { fields: "id,typo,steps_summary" } as Parameters<
+            typeof runPlan
+          >[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
-        message: expect.stringContaining("Unknown Plan --fields value(s): typo"),
+        message: expect.stringContaining(
+          "Unknown Plan --fields value(s): typo",
+        ),
       });
     });
   });
 
   it("rejects pm plan commands on non-Plan items", async () => {
     await withTempPmPath(async (context) => {
-      const created = context.runCli([
-        "create",
-        "--json",
-        "--title",
-        "Not a plan",
-        "--description",
-        "regular task",
-        "--type",
-        "Task",
-        "--status",
-        "open",
-        "--priority",
-        "1",
-        "--author",
-        "test-author",
-        "--message",
-        "create task",
-      ], { expectJson: true });
-      const id = ((created.json as { item: { id: string } }).item).id;
+      const created = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Not a plan",
+          "--description",
+          "regular task",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--author",
+          "test-author",
+          "--message",
+          "create task",
+        ],
+        { expectJson: true },
+      );
+      const id = (created.json as { item: { id: string } }).item.id;
       await expect(
         runPlan({
           subcommand: "show",
@@ -170,14 +203,22 @@ describe("runPlan command family", () => {
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "Step one", stepStatus: "in_progress", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepTitle: "Step one",
+          stepStatus: "in_progress",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       await expect(
         runPlan({
           subcommand: "add-step",
           id: planId,
-          options: { stepTitle: "Step two", stepStatus: "in_progress", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: {
+            stepTitle: "Step two",
+            stepStatus: "in_progress",
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.CONFLICT });
@@ -190,21 +231,29 @@ describe("runPlan command family", () => {
       const add1 = await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "first", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: { stepTitle: "first", author: "test-author" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(add1.step?.id).toBe("plan-step-001");
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "second", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: { stepTitle: "second", author: "test-author" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       const updated = await runPlan({
         subcommand: "update-step",
         id: planId,
         stepRef: "plan-step-001",
-        options: { stepStatus: "in_progress", stepEvidence: "started", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepStatus: "in_progress",
+          stepEvidence: "started",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(updated.step?.status).toBe("in_progress");
@@ -212,7 +261,9 @@ describe("runPlan command family", () => {
         subcommand: "complete-step",
         id: planId,
         stepRef: "plan-step-001",
-        options: { stepEvidence: "done", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: { stepEvidence: "done", author: "test-author" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(completed.step?.status).toBe("completed");
@@ -221,7 +272,9 @@ describe("runPlan command family", () => {
           subcommand: "block-step",
           id: planId,
           stepRef: "plan-step-002",
-          options: { author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: { author: "test-author" } as Parameters<
+            typeof runPlan
+          >[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -229,7 +282,10 @@ describe("runPlan command family", () => {
         subcommand: "block-step",
         id: planId,
         stepRef: "plan-step-002",
-        options: { stepBlockedReason: "needs review", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepBlockedReason: "needs review",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(blocked.step?.status).toBe("blocked");
@@ -238,7 +294,9 @@ describe("runPlan command family", () => {
         id: planId,
         stepRef: "plan-step-002",
         reorderTo: 1,
-        options: { author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: { author: "test-author" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(reordered.plan.steps?.[0]?.id).toBe("plan-step-002");
@@ -246,7 +304,9 @@ describe("runPlan command family", () => {
         subcommand: "remove-step",
         id: planId,
         stepRef: "plan-step-002",
-        options: { author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: { author: "test-author" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(removed.plan.steps_summary.total).toBe(1);
@@ -256,45 +316,60 @@ describe("runPlan command family", () => {
   it("link and unlink mutate step linked_items, with promote-to-item-dep", async () => {
     await withTempPmPath(async (context) => {
       const { planId } = await bootstrapPlan(context);
-      const related = context.runCli([
-        "create",
-        "--json",
-        "--title",
-        "Related",
-        "--description",
-        "related task",
-        "--type",
-        "Task",
-        "--status",
-        "open",
-        "--priority",
-        "2",
-        "--author",
-        "test-author",
-        "--message",
-        "create related",
-      ], { expectJson: true });
+      const related = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Related",
+          "--description",
+          "related task",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "2",
+          "--author",
+          "test-author",
+          "--message",
+          "create related",
+        ],
+        { expectJson: true },
+      );
       const relatedId = (related.json as { item: { id: string } }).item.id;
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "first", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: { stepTitle: "first", author: "test-author" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       const linked = await runPlan({
         subcommand: "link",
         id: planId,
         stepRef: "plan-step-001",
-        options: { link: relatedId, linkKind: "related", linkNote: "n", promoteToItemDep: true, author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          link: relatedId,
+          linkKind: "related",
+          linkNote: "n",
+          promoteToItemDep: true,
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(linked.step?.linked_items?.[0]?.id).toBe(relatedId);
-      expect(linked.plan.linked_items?.some((dep) => dep.id === relatedId)).toBe(true);
+      expect(
+        linked.plan.linked_items?.some((dep) => dep.id === relatedId),
+      ).toBe(true);
       const unlinked = await runPlan({
         subcommand: "unlink",
         id: planId,
         stepRef: "plan-step-001",
-        options: { link: relatedId, author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: { link: relatedId, author: "test-author" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(unlinked.step?.linked_items ?? []).toEqual([]);
@@ -307,28 +382,44 @@ describe("runPlan command family", () => {
       const dec = await runPlan({
         subcommand: "decision",
         id: planId,
-        options: { decisionText: "pick A", decisionRationale: "reason", decisionEvidence: "ev", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          decisionText: "pick A",
+          decisionRationale: "reason",
+          decisionEvidence: "ev",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(dec.plan.decisions?.length).toBe(1);
       const disc = await runPlan({
         subcommand: "discovery",
         id: planId,
-        options: { discoveryText: "found", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          discoveryText: "found",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(disc.plan.discoveries?.length).toBe(1);
       const val = await runPlan({
         subcommand: "validation",
         id: planId,
-        options: { validationText: "check", validationCommand: "pm health", validationExpected: "ok", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          validationText: "check",
+          validationCommand: "pm health",
+          validationExpected: "ok",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(val.plan.validation?.length).toBe(1);
       const resume = await runPlan({
         subcommand: "resume",
         id: planId,
-        options: { resumeContext: "where we are", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          resumeContext: "where we are",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(resume.plan.resume_context).toBe("where we are");
@@ -341,33 +432,96 @@ describe("runPlan command family", () => {
       const dec = await runPlan({
         subcommand: "decision",
         id: planId,
-        options: { decision: "pick shorthand", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          decision: "pick shorthand",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(dec.plan.decisions?.[0]?.decision).toBe("pick shorthand");
       const disc = await runPlan({
         subcommand: "discovery",
         id: planId,
-        options: { discovery: "found shorthand", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          discovery: "found shorthand",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(disc.plan.discoveries?.[0]?.text).toBe("found shorthand");
       const val = await runPlan({
         subcommand: "validation",
         id: planId,
-        options: { validation: "check shorthand", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          validation: "check shorthand",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(val.plan.validation?.[0]?.text).toBe("check shorthand");
-      const cliDecision = context.runCli(["plan", "decision", planId, "--decision", "cli decision", "--json", "--author", "test-author"], { expectJson: true });
+      const cliDecision = context.runCli(
+        [
+          "plan",
+          "decision",
+          planId,
+          "--decision",
+          "cli decision",
+          "--json",
+          "--author",
+          "test-author",
+        ],
+        { expectJson: true },
+      );
       expect(cliDecision.code).toBe(0);
-      expect((cliDecision.json as { plan: { decisions?: Array<{ decision: string }> } }).plan.decisions?.at(-1)?.decision).toBe("cli decision");
-      const cliDiscovery = context.runCli(["plan", "discovery", planId, "--discovery", "cli discovery", "--json", "--author", "test-author"], { expectJson: true });
+      expect(
+        (
+          cliDecision.json as {
+            plan: { decisions?: Array<{ decision: string }> };
+          }
+        ).plan.decisions?.at(-1)?.decision,
+      ).toBe("cli decision");
+      const cliDiscovery = context.runCli(
+        [
+          "plan",
+          "discovery",
+          planId,
+          "--discovery",
+          "cli discovery",
+          "--json",
+          "--author",
+          "test-author",
+        ],
+        { expectJson: true },
+      );
       expect(cliDiscovery.code).toBe(0);
-      expect((cliDiscovery.json as { plan: { discoveries?: Array<{ text: string }> } }).plan.discoveries?.at(-1)?.text).toBe("cli discovery");
-      const cliValidation = context.runCli(["plan", "validation", planId, "--validation", "cli validation", "--json", "--author", "test-author"], { expectJson: true });
+      expect(
+        (
+          cliDiscovery.json as {
+            plan: { discoveries?: Array<{ text: string }> };
+          }
+        ).plan.discoveries?.at(-1)?.text,
+      ).toBe("cli discovery");
+      const cliValidation = context.runCli(
+        [
+          "plan",
+          "validation",
+          planId,
+          "--validation",
+          "cli validation",
+          "--json",
+          "--author",
+          "test-author",
+        ],
+        { expectJson: true },
+      );
       expect(cliValidation.code).toBe(0);
-      expect((cliValidation.json as { plan: { validation?: Array<{ text: string }> } }).plan.validation?.at(-1)?.text).toBe("cli validation");
+      expect(
+        (
+          cliValidation.json as {
+            plan: { validation?: Array<{ text: string }> };
+          }
+        ).plan.validation?.at(-1)?.text,
+      ).toBe("cli validation");
     });
   });
 
@@ -394,24 +548,39 @@ describe("runPlan command family", () => {
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "to materialize", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepTitle: "to materialize",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       const approved = await runPlan({
         subcommand: "approve",
         id: planId,
-        options: { author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: { author: "test-author" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(approved.plan.mode).toBe("approved");
       const materialized = await runPlan({
         subcommand: "materialize",
         id: planId,
-        options: { steps: "plan-step-001", materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          steps: "plan-step-001",
+          materializeType: "Task",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(materialized.materialized?.length).toBe(1);
-      expect(materialized.materialized?.[0]?.type).toBe("Task");
+      expect(materialized.materialized?.[0]).toMatchObject({
+        title: "to materialize",
+        type: "Task",
+        parent: planId,
+        tags: [],
+        from_step: "plan-step-001",
+      });
     });
   });
 
@@ -421,28 +590,60 @@ describe("runPlan command family", () => {
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "first materialized", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepTitle: "first materialized",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "second materialized", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepTitle: "second materialized",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
 
       const result = await runPlan({
         subcommand: "materialize",
         id: planId,
-        options: { steps: "all", materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          steps: "all",
+          materializeType: "Task",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
 
-      const materializedIds = new Set(result.materialized?.map((entry) => entry.id) ?? []);
+      const materializedIds = new Set(
+        result.materialized?.map((entry) => entry.id) ?? [],
+      );
       expect(materializedIds.size).toBe(2);
-      expect(result.plan.linked_items?.filter((entry) => materializedIds.has(entry.id))).toEqual([]);
-      expect(result.plan.steps?.every((step) => step.linked_items?.some((link) => materializedIds.has(link.id) && link.kind === "implements"))).toBe(true);
-      const validation = context.runCli(["validate", "--check-lifecycle", "--dependency-cycle-severity", "error", "--json"], { expectJson: true });
+      expect(
+        result.plan.linked_items?.filter((entry) =>
+          materializedIds.has(entry.id),
+        ),
+      ).toEqual([]);
+      expect(
+        result.plan.steps?.every((step) =>
+          step.linked_items?.some(
+            (link) =>
+              materializedIds.has(link.id) && link.kind === "implements",
+          ),
+        ),
+      ).toBe(true);
+      const validation = context.runCli(
+        [
+          "validate",
+          "--check-lifecycle",
+          "--dependency-cycle-severity",
+          "error",
+          "--json",
+        ],
+        { expectJson: true },
+      );
       expect(validation.code).toBe(0);
     });
   });
@@ -453,14 +654,21 @@ describe("runPlan command family", () => {
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "idempotent step", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepTitle: "idempotent step",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
 
       const first = await runPlan({
         subcommand: "materialize",
         id: planId,
-        options: { steps: "all", materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          steps: "all",
+          materializeType: "Task",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(first.materialized?.length).toBe(1);
@@ -473,21 +681,37 @@ describe("runPlan command family", () => {
       const noop = await runPlan({
         subcommand: "materialize",
         id: planId,
-        options: { steps: "all", materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          steps: "all",
+          materializeType: "Task",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(noop.materialized).toEqual([]);
       expect(noop.materialize_skipped).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ from_step: "plan-step-001", reason: "already_materialized", existing_id: initialId }),
+          expect.objectContaining({
+            from_step: "plan-step-001",
+            reason: "already_materialized",
+            existing_id: initialId,
+          }),
         ]),
       );
       expect(noop.warnings).toEqual(
-        expect.arrayContaining([expect.stringContaining("plan_materialize_skipped:plan-step-001:already_materialized")]),
+        expect.arrayContaining([
+          expect.stringContaining(
+            "plan_materialize_skipped:plan-step-001:already_materialized",
+          ),
+        ]),
       );
       // Original linked Task still present; we did not create a duplicate.
-      const fresh = context.runCli(["list", "--type", "Task", "--json"], { expectJson: true });
-      const items = (fresh.json as { items: Array<{ id: string }> }).items.map((entry) => entry.id);
+      const fresh = context.runCli(["list", "--type", "Task", "--json"], {
+        expectJson: true,
+      });
+      const items = (fresh.json as { items: Array<{ id: string }> }).items.map(
+        (entry) => entry.id,
+      );
       expect(items.filter((entryId) => entryId === initialId)).toHaveLength(1);
     });
   });
@@ -498,13 +722,19 @@ describe("runPlan command family", () => {
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "first step", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepTitle: "first step",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "second step", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepTitle: "second step",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
 
@@ -512,7 +742,11 @@ describe("runPlan command family", () => {
       const initial = await runPlan({
         subcommand: "materialize",
         id: planId,
-        options: { steps: "plan-step-001", materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          steps: "plan-step-001",
+          materializeType: "Task",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(initial.materialized?.length).toBe(1);
@@ -521,17 +755,28 @@ describe("runPlan command family", () => {
       const second = await runPlan({
         subcommand: "materialize",
         id: planId,
-        options: { steps: ["plan-step-001", "plan-step-002"], materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          steps: ["plan-step-001", "plan-step-002"],
+          materializeType: "Task",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(second.materialized?.length).toBe(1);
       expect(second.materialize_skipped).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ from_step: "plan-step-001", reason: "already_materialized" }),
+          expect.objectContaining({
+            from_step: "plan-step-001",
+            reason: "already_materialized",
+          }),
         ]),
       );
       expect(second.warnings).toEqual(
-        expect.arrayContaining([expect.stringContaining("plan_materialize_skipped:plan-step-001:already_materialized")]),
+        expect.arrayContaining([
+          expect.stringContaining(
+            "plan_materialize_skipped:plan-step-001:already_materialized",
+          ),
+        ]),
       );
     });
   });
@@ -542,7 +787,10 @@ describe("runPlan command family", () => {
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "only materialized", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepTitle: "only materialized",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
 
@@ -550,7 +798,11 @@ describe("runPlan command family", () => {
         runPlan({
           subcommand: "materialize",
           id: planId,
-          options: { steps: ["all", "missing-step"], materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: {
+            steps: ["all", "missing-step"],
+            materializeType: "Task",
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject({ exitCode: 2 });
@@ -559,24 +811,27 @@ describe("runPlan command family", () => {
 
   it("create supports claim and from-search options and accepts blocks/blockedBy deps", async () => {
     await withTempPmPath(async (context) => {
-      const related = context.runCli([
-        "create",
-        "--json",
-        "--title",
-        "Related",
-        "--description",
-        "related",
-        "--type",
-        "Task",
-        "--status",
-        "open",
-        "--priority",
-        "2",
-        "--author",
-        "test-author",
-        "--message",
-        "create related",
-      ], { expectJson: true });
+      const related = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Related",
+          "--description",
+          "related",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "2",
+          "--author",
+          "test-author",
+          "--message",
+          "create related",
+        ],
+        { expectJson: true },
+      );
       const relatedId = (related.json as { item: { id: string } }).item.id;
       const result = await runPlan({
         subcommand: "create",
@@ -612,7 +867,11 @@ describe("runPlan command family", () => {
         subcommand: "create",
         options: {
           title: "Multi-step Plan",
-          step: ["Read the code", "Write the fix, then re-read it", "Run the tests"],
+          step: [
+            "Read the code",
+            "Write the fix, then re-read it",
+            "Run the tests",
+          ],
           author: "test-author",
         } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
@@ -628,7 +887,9 @@ describe("runPlan command family", () => {
         global: { ...GLOBAL, path: context.pmPath },
       });
       // Steps keep argv order; comma-containing titles survive intact.
-      expect(show.plan.steps?.map((step) => [step.order, step.title, step.status])).toEqual([
+      expect(
+        show.plan.steps?.map((step) => [step.order, step.title, step.status]),
+      ).toEqual([
         [1, "Read the code", "pending"],
         [2, "Write the fix, then re-read it", "pending"],
         [3, "Run the tests", "pending"],
@@ -638,7 +899,11 @@ describe("runPlan command family", () => {
 
   it("create seeds built-in template steps and exposes completion progress", async () => {
     await withTempPmPath(async (context) => {
-      expect(PLAN_TEMPLATE_NAMES).toEqual(["bug-investigation", "feature-implementation", "refactoring-sprint"]);
+      expect(PLAN_TEMPLATE_NAMES).toEqual([
+        "bug-investigation",
+        "feature-implementation",
+        "refactoring-sprint",
+      ]);
       const result = await runPlan({
         subcommand: "create",
         options: {
@@ -648,28 +913,59 @@ describe("runPlan command family", () => {
         } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
-      expect(result.plan.steps_summary).toMatchObject({ total: 5, completed: 0, completion_pct: 0 });
+      expect(result.plan.steps_summary).toMatchObject({
+        total: 5,
+        completed: 0,
+        completion_pct: 0,
+      });
       expect(result.step?.title).toBe("Reproduce the bug");
 
       const show = await runPlan({
         subcommand: "show",
         id: result.plan.id,
-        options: { depth: "standard" } as Parameters<typeof runPlan>[0]["options"],
+        options: { depth: "standard" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
-      expect(show.plan.steps?.map((step) => [step.order, step.title, step.body])).toEqual([
-        [1, "Reproduce the bug", "Capture exact steps, inputs, and the observed vs expected behavior."],
-        [2, "Locate the root cause", "Trace the failure to the responsible code path with evidence."],
-        [3, "Write a failing test", "Add a regression test that fails for the current bug."],
-        [4, "Implement the fix", "Apply the minimal change that makes the failing test pass."],
-        [5, "Verify and document", "Run the full suite and record the resolution and verification."],
+      expect(
+        show.plan.steps?.map((step) => [step.order, step.title, step.body]),
+      ).toEqual([
+        [
+          1,
+          "Reproduce the bug",
+          "Capture exact steps, inputs, and the observed vs expected behavior.",
+        ],
+        [
+          2,
+          "Locate the root cause",
+          "Trace the failure to the responsible code path with evidence.",
+        ],
+        [
+          3,
+          "Write a failing test",
+          "Add a regression test that fails for the current bug.",
+        ],
+        [
+          4,
+          "Implement the fix",
+          "Apply the minimal change that makes the failing test pass.",
+        ],
+        [
+          5,
+          "Verify and document",
+          "Run the full suite and record the resolution and verification.",
+        ],
       ]);
 
       await runPlan({
         subcommand: "complete-step",
         id: result.plan.id,
         stepRef: "plan-step-001",
-        options: { stepEvidence: "reproduced", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepEvidence: "reproduced",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       const progress = await runPlan({
@@ -687,7 +983,11 @@ describe("runPlan command family", () => {
       await expect(
         runPlan({
           subcommand: "create",
-          options: { title: "Bad Template", template: "missing", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: {
+            title: "Bad Template",
+            template: "missing",
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({
@@ -729,7 +1029,10 @@ describe("runPlan command family", () => {
         options: { depth: "deep" } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
-      expect(show.plan.steps?.map((step) => step.title)).toEqual(["First step", "42"]);
+      expect(show.plan.steps?.map((step) => step.title)).toEqual([
+        "First step",
+        "42",
+      ]);
     });
   });
 
@@ -794,7 +1097,10 @@ describe("runPlan command family", () => {
       const added = await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { step: ["Aliased step title"], author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          step: ["Aliased step title"],
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(added.step?.title).toBe("Aliased step title");
@@ -803,7 +1109,10 @@ describe("runPlan command family", () => {
         runPlan({
           subcommand: "add-step",
           id: planId,
-          options: { step: ["One", "Two"], author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: {
+            step: ["One", "Two"],
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({
@@ -843,7 +1152,11 @@ describe("runPlan command family", () => {
         runPlan({
           subcommand: "add-step",
           id: planId,
-          options: { stepTitle: "bad", file: "src/x.ts", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: {
+            stepTitle: "bad",
+            file: "src/x.ts",
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -851,7 +1164,11 @@ describe("runPlan command family", () => {
         runPlan({
           subcommand: "add-step",
           id: planId,
-          options: { stepTitle: "bad-test", test: "note=oops", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: {
+            stepTitle: "bad-test",
+            test: "note=oops",
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -859,28 +1176,42 @@ describe("runPlan command family", () => {
         runPlan({
           subcommand: "add-step",
           id: planId,
-          options: { stepTitle: "bad-doc", doc: "note=oops", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: {
+            stepTitle: "bad-doc",
+            doc: "note=oops",
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
       await expect(
         runPlan({
           subcommand: "create",
-          options: { title: "bad-mode", mode: "ridiculous", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: {
+            title: "bad-mode",
+            mode: "ridiculous",
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
       await expect(
         runPlan({
           subcommand: "create",
-          options: { title: "bad-harness", harness: "robot", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: {
+            title: "bad-harness",
+            harness: "robot",
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "one", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: { stepTitle: "one", author: "test-author" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       await expect(
@@ -888,7 +1219,10 @@ describe("runPlan command family", () => {
           subcommand: "update-step",
           id: planId,
           stepRef: "plan-step-001",
-          options: { stepStatus: "not-a-status", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: {
+            stepStatus: "not-a-status",
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -896,7 +1230,9 @@ describe("runPlan command family", () => {
         runPlan({
           subcommand: "show",
           id: planId,
-          options: { depth: "ginormous" } as Parameters<typeof runPlan>[0]["options"],
+          options: { depth: "ginormous" } as Parameters<
+            typeof runPlan
+          >[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -913,7 +1249,10 @@ describe("runPlan command family", () => {
           subcommand: "link",
           id: planId,
           stepRef: "plan-step-001",
-          options: { linkKind: "telepathy", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: {
+            linkKind: "telepathy",
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -921,7 +1260,9 @@ describe("runPlan command family", () => {
         runPlan({
           subcommand: "complete-step",
           id: planId,
-          options: { author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: { author: "test-author" } as Parameters<
+            typeof runPlan
+          >[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -934,14 +1275,19 @@ describe("runPlan command family", () => {
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "by-order", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: { stepTitle: "by-order", author: "test-author" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       const updated = await runPlan({
         subcommand: "update-step",
         id: planId,
         stepRef: "1",
-        options: { stepEvidence: "lookup by order", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepEvidence: "lookup by order",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(updated.step?.evidence).toBe("lookup by order");
@@ -950,7 +1296,10 @@ describe("runPlan command family", () => {
           subcommand: "update-step",
           id: planId,
           stepRef: "plan-step-099",
-          options: { stepEvidence: "missing", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: {
+            stepEvidence: "missing",
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.NOT_FOUND });
@@ -959,7 +1308,10 @@ describe("runPlan command family", () => {
           subcommand: "update-step",
           id: planId,
           stepRef: " ",
-          options: { stepEvidence: "blank", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: {
+            stepEvidence: "blank",
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -972,14 +1324,18 @@ describe("runPlan command family", () => {
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "one", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: { stepTitle: "one", author: "test-author" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       await expect(
         runPlan({
           subcommand: "materialize",
           id: planId,
-          options: { author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: { author: "test-author" } as Parameters<
+            typeof runPlan
+          >[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -987,7 +1343,11 @@ describe("runPlan command family", () => {
         runPlan({
           subcommand: "materialize",
           id: planId,
-          options: { steps: "plan-step-001", materializeType: "NoSuchType", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: {
+            steps: "plan-step-001",
+            materializeType: "NoSuchType",
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -1000,7 +1360,9 @@ describe("runPlan command family", () => {
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "one", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: { stepTitle: "one", author: "test-author" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       await expect(
@@ -1008,7 +1370,9 @@ describe("runPlan command family", () => {
           subcommand: "link",
           id: planId,
           stepRef: "plan-step-001",
-          options: { author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: { author: "test-author" } as Parameters<
+            typeof runPlan
+          >[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -1017,7 +1381,9 @@ describe("runPlan command family", () => {
           subcommand: "unlink",
           id: planId,
           stepRef: "plan-step-001",
-          options: { author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: { author: "test-author" } as Parameters<
+            typeof runPlan
+          >[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -1033,7 +1399,9 @@ describe("runPlan command family", () => {
         runPlan({
           subcommand: "resume",
           id: planId,
-          options: { author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: { author: "test-author" } as Parameters<
+            typeof runPlan
+          >[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -1041,7 +1409,9 @@ describe("runPlan command family", () => {
         runPlan({
           subcommand: "decision",
           id: planId,
-          options: { author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: { author: "test-author" } as Parameters<
+            typeof runPlan
+          >[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -1049,7 +1419,9 @@ describe("runPlan command family", () => {
         runPlan({
           subcommand: "discovery",
           id: planId,
-          options: { author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: { author: "test-author" } as Parameters<
+            typeof runPlan
+          >[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -1057,7 +1429,9 @@ describe("runPlan command family", () => {
         runPlan({
           subcommand: "validation",
           id: planId,
-          options: { author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: { author: "test-author" } as Parameters<
+            typeof runPlan
+          >[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -1068,24 +1442,88 @@ describe("runPlan command family", () => {
     await withTempPmPath(async (context) => {
       const { planId } = await bootstrapPlan(context);
       const cases: Array<Parameters<typeof runPlan>[0]> = [
-        { subcommand: "add-step", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
-        { subcommand: "update-step", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
-        { subcommand: "complete-step", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
-        { subcommand: "block-step", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
-        { subcommand: "remove-step", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
-        { subcommand: "link", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
-        { subcommand: "unlink", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
-        { subcommand: "approve", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
-        { subcommand: "materialize", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
-        { subcommand: "reorder-step", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
-        { subcommand: "decision", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
-        { subcommand: "discovery", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
-        { subcommand: "validation", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
-        { subcommand: "resume", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
-        { subcommand: "reorder-step", id: planId, stepRef: "plan-step-001", options: {} as never, global: { ...GLOBAL, path: context.pmPath } },
+        {
+          subcommand: "add-step",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
+        {
+          subcommand: "update-step",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
+        {
+          subcommand: "complete-step",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
+        {
+          subcommand: "block-step",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
+        {
+          subcommand: "remove-step",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
+        {
+          subcommand: "link",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
+        {
+          subcommand: "unlink",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
+        {
+          subcommand: "approve",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
+        {
+          subcommand: "materialize",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
+        {
+          subcommand: "reorder-step",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
+        {
+          subcommand: "decision",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
+        {
+          subcommand: "discovery",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
+        {
+          subcommand: "validation",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
+        {
+          subcommand: "resume",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
+        {
+          subcommand: "reorder-step",
+          id: planId,
+          stepRef: "plan-step-001",
+          options: {} as never,
+          global: { ...GLOBAL, path: context.pmPath },
+        },
       ];
       for (const args of cases) {
-        await expect(runPlan(args)).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+        await expect(runPlan(args)).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.USAGE,
+        });
       }
     });
   });
@@ -1093,42 +1531,56 @@ describe("runPlan command family", () => {
   it("materialize propagates step linked_items as related deps on new items", async () => {
     await withTempPmPath(async (context) => {
       const { planId } = await bootstrapPlan(context);
-      const related = context.runCli([
-        "create",
-        "--json",
-        "--title",
-        "Related",
-        "--description",
-        "related",
-        "--type",
-        "Task",
-        "--status",
-        "open",
-        "--priority",
-        "2",
-        "--author",
-        "test-author",
-        "--message",
-        "create related",
-      ], { expectJson: true });
+      const related = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Related",
+          "--description",
+          "related",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "2",
+          "--author",
+          "test-author",
+          "--message",
+          "create related",
+        ],
+        { expectJson: true },
+      );
       const relatedId = (related.json as { item: { id: string } }).item.id;
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "with link", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepTitle: "with link",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       await runPlan({
         subcommand: "link",
         id: planId,
         stepRef: "plan-step-001",
-        options: { link: relatedId, linkKind: "blocks", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          link: relatedId,
+          linkKind: "blocks",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       const result = await runPlan({
         subcommand: "materialize",
         id: planId,
-        options: { steps: "plan-step-001", materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          steps: "plan-step-001",
+          materializeType: "Task",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(result.materialized?.length).toBe(1);
@@ -1141,7 +1593,13 @@ describe("runPlan command family", () => {
       const added = await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "minimal", stepBody: "   ", stepOwner: "   ", stepEvidence: "  ", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepTitle: "minimal",
+          stepBody: "   ",
+          stepOwner: "   ",
+          stepEvidence: "  ",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(added.step?.body).toBeUndefined();
@@ -1151,7 +1609,9 @@ describe("runPlan command family", () => {
         runPlan({
           subcommand: "add-step",
           id: planId,
-          options: { stepTitle: "   ", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          options: { stepTitle: "   ", author: "test-author" } as Parameters<
+            typeof runPlan
+          >[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -1164,14 +1624,20 @@ describe("runPlan command family", () => {
       await runPlan({
         subcommand: "add-step",
         id: planId,
-        options: { stepTitle: "one", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: { stepTitle: "one", author: "test-author" } as Parameters<
+          typeof runPlan
+        >[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       const updated = await runPlan({
         subcommand: "update-step",
         id: planId,
         stepRef: "plan-step-001",
-        options: { stepStatus: "superseded", stepReplacement: "plan-step-002", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        options: {
+          stepStatus: "superseded",
+          stepReplacement: "plan-step-002",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
         global: { ...GLOBAL, path: context.pmPath },
       });
       expect(updated.step?.superseded_by).toBe("plan-step-002");

@@ -2,15 +2,26 @@ id: pm-qd2h
 title: "GH-452: plan materialize dead-ends on types with required-on-create custom fields"
 description: "Dogfood GH-452: a --required-on-create custom field on a type breaks pm plan materialize for every step (missing_required_option, no passthrough) — the plan->materialize->task loop dead-ends under governed schemas. Duplicate check: searched materialize required field — no existing item."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: bug,gh-issue,plan,schema
 created_at: "2026-07-06T08:03:10.077Z"
-updated_at: "2026-07-06T08:03:10.077Z"
+updated_at: "2026-07-11T12:02:21.192Z"
+closed_at: "2026-07-11T12:02:20.112Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: plan materialize can supply required custom-field values (documented passthrough) and succeeds for governed types; spec covers required-field x materialize interplay; docs updated
 parent: pm-8jdc
 risk: medium
 confidence: high
+comments[1]{created_at,author,text}:
+  "2026-07-11T12:02:19.021Z",codex-root,"Evidence: plan materialize accepts repeatable --field name=value, normalizes schema option keys, and forwards them through runCreate so required-on-create governance remains enforced. SDK regression creates required Task field acceptance_owner, materializes through PmClient, and verifies persisted value. Packed installed-package proof passed."
+files[2]{path,scope,note}:
+  src/cli/commands/plan.ts,project,governed materialization and enriched result projection
+  src/sdk/runtime.ts,project,typed public plan workflow primitives
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/sdk/sdk-context-primitives.spec.ts,project,300
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,public plan workflow SDK guide
+close_reason: Implemented governed materialization field passthrough with SDK and packed-package proof.
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/452\n\n## Problem\n`pm plan materialize --materialize-type <T>` dead-ends when type T has a --required-on-create custom field: materialize has no way to pass custom-field values, fails missing_required_option per step. Any governed schema (required acceptance_owner etc.) breaks the plan -> materialize -> task loop; workaround defeats typed materialization.\n\n## Proposed fix\nLet materialize supply custom-field values (--field key=value per step or plan-level defaults), and/or let required-on-create policies exempt system-driven creates with an explicit policy knob. Prefer explicit --field passthrough (keeps governance intact).\n\n## Definition of done\nMaterialize succeeds for types with required-on-create custom fields via documented passthrough; spec covers required-field + materialize interplay; docs plan section updated."

@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Release-readiness guard expects pre-sync version:check command after date-version synchronization ([pm-pmmv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pmmv.toon))
+- GH-453: plan materialize --json response omits title/type/parent on materialized entries ([pm-ypha](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ypha.toon))
+- GH-452: plan materialize dead-ends on types with required-on-create custom fields ([pm-qd2h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qd2h.toon))
 - GH-507: recovery suggested_retry appends <value\> to missing boolean EXTENSION flags (contract arity ignored) ([pm-9qcr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9qcr.toon))
 - GH-505: nested extension failures suggest irrelevant missing flags instead of preserving tracker recovery ([pm-o71e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o71e.toon))
 - GH-504: importer/exporter registered without options yields an unusable CLI command (no arg/flag contracts) ([pm-0mjz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0mjz.toon))

@@ -1,0 +1,25 @@
+id: pm-pmmv
+title: "Release-readiness guard expects pre-sync version:check command after date-version synchronization"
+description: "The closed pm-hxsv date-version synchronization change extended package.json version:check with sync-versions.mjs check but left release-readiness-runtime.spec.ts asserting the old command, breaking full coverage on main."
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-07-11T11:43:44.559Z"
+updated_at: "2026-07-11T12:02:27.487Z"
+closed_at: "2026-07-11T12:02:26.480Z"
+author: codex-root
+parent: pm-hxsv
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-je50,related,"2026-07-11T11:43:44.559Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-11T11:43:44.559Z",codex-root,"Duplicate check: pm search --status all found closed canonical implementation pm-hxsv; this is a new regression child, not a duplicate or reopening of shipped work."
+  "2026-07-11T12:02:25.481Z",codex-root,"Evidence: aligned release-readiness version:check expectation, release pipeline staging assertion, and all first-party package manifest version assertions with date-based synchronized root version. Three focused regression tests pass."
+files[3]{path,scope,note}:
+  tests/integration/release-automation-contract.spec.ts,project,synchronized manifest staging contract
+  tests/integration/release-readiness-runtime.spec.ts,project,version sync release-readiness guard
+  tests/unit/packages/package-manifest.spec.ts,project,date-versioned first-party package expectations
+tests[1]{command,scope,timeout_seconds}:
+  pnpm exec vitest run tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/packages/package-manifest.spec.ts,project,300
+close_reason: Aligned release contract tests with shipped date-version synchronization.
+body: ""

@@ -255,7 +255,7 @@ describe("release automation contract", () => {
     expect(pipelineSource).toContain("--all-release-tags");
     expect(pipelineSource).toContain("ensureGeneratedReleaseSectionHasContent(params.targetVersion, generatedChangelogPath)");
     expect(pipelineSource).toContain("empty_generated_changelog_section_for_target_version");
-    expect(pipelineSource).toContain('git(["add", "package.json", "CHANGELOG.md"])');
+    expect(pipelineSource).toContain('git([\n    "add",\n    "package.json",\n    "CHANGELOG.md",');
     expect(pipelineSource).not.toContain("CHANGELOG.pm.md");
   });
 

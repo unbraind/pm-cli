@@ -137,6 +137,11 @@ import type { CreateResult } from "../cli/commands/create.js";
 import type { DeleteResult } from "../cli/commands/delete.js";
 import type { ListOptions, ListResult } from "../cli/commands/list.js";
 import type { NextOptions, NextResult } from "../cli/commands/next.js";
+import type {
+  PlanCommandOptions,
+  PlanCommandResult,
+  PlanSubcommand,
+} from "../cli/commands/plan.js";
 import type { SearchOptions, SearchResult } from "../cli/commands/search.js";
 import type {
   StatsCommandOptions,
@@ -983,6 +988,155 @@ export class PmClient {
   /** Run tracker cache/runtime garbage collection. */
   gc(options: GcCommandOptions = {}): Promise<GcResult> {
     return this.runTyped("gc", { options });
+  }
+
+  /** Run any typed plan workflow primitive through the shared CLI/MCP engine. */
+  plan(
+    subcommand: PlanSubcommand,
+    id?: string,
+    options: PlanCommandOptions = {},
+    stepRef?: string,
+    reorderTo?: number,
+  ): Promise<PlanCommandResult> {
+    return this.runTyped("plan", {
+      ...(id === undefined ? {} : { id }),
+      ...(stepRef === undefined ? {} : { stepRef }),
+      ...(reorderTo === undefined ? {} : { reorderTo }),
+      options: { ...options, subcommand },
+    });
+  }
+
+  /** Create a durable plan with optional ordered seed steps. */
+  planCreate(options: PlanCommandOptions): Promise<PlanCommandResult> {
+    return this.plan("create", undefined, options);
+  }
+
+  /** Read a plan using brief, standard, deep, or field-projected output. */
+  planShow(
+    id: string,
+    options: PlanCommandOptions = {},
+  ): Promise<PlanCommandResult> {
+    return this.plan("show", id, options);
+  }
+
+  /** Append an ordered step to a plan. */
+  planAddStep(
+    id: string,
+    options: PlanCommandOptions,
+  ): Promise<PlanCommandResult> {
+    return this.plan("add-step", id, options);
+  }
+
+  /** Update any mutable property of an existing plan step. */
+  planUpdateStep(
+    id: string,
+    stepRef: string,
+    options: PlanCommandOptions,
+  ): Promise<PlanCommandResult> {
+    return this.plan("update-step", id, options, stepRef);
+  }
+
+  /** Complete a plan step and record its evidence. */
+  planCompleteStep(
+    id: string,
+    stepRef: string,
+    options: PlanCommandOptions = {},
+  ): Promise<PlanCommandResult> {
+    return this.plan("complete-step", id, options, stepRef);
+  }
+
+  /** Block a plan step with an actionable reason. */
+  planBlockStep(
+    id: string,
+    stepRef: string,
+    options: PlanCommandOptions,
+  ): Promise<PlanCommandResult> {
+    return this.plan("block-step", id, options, stepRef);
+  }
+
+  /** Reorder a plan step while preserving stable step identifiers. */
+  planReorderStep(
+    id: string,
+    stepRef: string,
+    reorderTo: number,
+    options: PlanCommandOptions = {},
+  ): Promise<PlanCommandResult> {
+    return this.plan("reorder-step", id, options, stepRef, reorderTo);
+  }
+
+  /** Remove a step from a plan and compact the remaining order. */
+  planRemoveStep(
+    id: string,
+    stepRef: string,
+    options: PlanCommandOptions = {},
+  ): Promise<PlanCommandResult> {
+    return this.plan("remove-step", id, options, stepRef);
+  }
+
+  /** Link a tracker item to a plan step. */
+  planLink(
+    id: string,
+    stepRef: string,
+    options: PlanCommandOptions,
+  ): Promise<PlanCommandResult> {
+    return this.plan("link", id, options, stepRef);
+  }
+
+  /** Remove tracker-item links from a plan step. */
+  planUnlink(
+    id: string,
+    stepRef: string,
+    options: PlanCommandOptions,
+  ): Promise<PlanCommandResult> {
+    return this.plan("unlink", id, options, stepRef);
+  }
+
+  /** Append a durable plan decision. */
+  planDecision(
+    id: string,
+    options: PlanCommandOptions,
+  ): Promise<PlanCommandResult> {
+    return this.plan("decision", id, options);
+  }
+
+  /** Append a durable plan discovery. */
+  planDiscovery(
+    id: string,
+    options: PlanCommandOptions,
+  ): Promise<PlanCommandResult> {
+    return this.plan("discovery", id, options);
+  }
+
+  /** Append a plan validation expectation or result. */
+  planValidation(
+    id: string,
+    options: PlanCommandOptions,
+  ): Promise<PlanCommandResult> {
+    return this.plan("validation", id, options);
+  }
+
+  /** Update the bounded resume context for a stateless future agent. */
+  planResume(
+    id: string,
+    options: PlanCommandOptions,
+  ): Promise<PlanCommandResult> {
+    return this.plan("resume", id, options);
+  }
+
+  /** Approve a plan for execution. */
+  planApprove(
+    id: string,
+    options: PlanCommandOptions = {},
+  ): Promise<PlanCommandResult> {
+    return this.plan("approve", id, options);
+  }
+
+  /** Materialize selected plan steps into governed tracker items. */
+  planMaterialize(
+    id: string,
+    options: PlanCommandOptions,
+  ): Promise<PlanCommandResult> {
+    return this.plan("materialize", id, options);
   }
 
   /** Create an item using the same mutation path as `pm create`. */
