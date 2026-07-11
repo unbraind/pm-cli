@@ -32,50 +32,126 @@ export interface LegacyNoneCollectionNormalizer<
   disableFlagKey?: keyof TOptions;
 }
 
+/** Collection and clear options shared by create and update legacy-token normalization. */
+export interface LegacyNoneCollectionOptions {
+  /** Dependency entries accepted by create and update. */
+  dep?: string[];
+  /** Whether dependency entries should be cleared. */
+  clearDeps?: boolean;
+  /** Comment entries accepted by create and update. */
+  comment?: string[];
+  /** Whether comment entries should be cleared. */
+  clearComments?: boolean;
+  /** Note entries accepted by create and update. */
+  note?: string[];
+  /** Whether note entries should be cleared. */
+  clearNotes?: boolean;
+  /** Learning entries accepted by create and update. */
+  learning?: string[];
+  /** Whether learning entries should be cleared. */
+  clearLearnings?: boolean;
+  /** Linked-file entries accepted by create and update. */
+  file?: string[];
+  /** Whether linked-file entries should be cleared. */
+  clearFiles?: boolean;
+  /** Linked-test entries accepted by create and update. */
+  test?: string[];
+  /** Whether linked-test entries should be cleared. */
+  clearTests?: boolean;
+  /** Linked-document entries accepted by create and update. */
+  doc?: string[];
+  /** Whether linked-document entries should be cleared. */
+  clearDocs?: boolean;
+  /** Reminder entries accepted by create and update. */
+  reminder?: string[];
+  /** Whether reminder entries should be cleared. */
+  clearReminders?: boolean;
+  /** Event entries accepted by create and update. */
+  event?: string[];
+  /** Whether event entries should be cleared. */
+  clearEvents?: boolean;
+  /** Custom type-option entries accepted by create and update. */
+  typeOption?: string[];
+  /** Whether custom type-option entries should be cleared. */
+  clearTypeOptions?: boolean;
+}
+
 /** Build the shared create/update collection normalizer table with optional replacement-mode guards. */
 export function createLegacyNoneCollectionNormalizers<
-  TOptions extends Record<string, unknown>,
+  TOptions extends LegacyNoneCollectionOptions & Record<string, unknown>,
 >(
   options: {
     depDisableFlagKey?: keyof TOptions;
     testDisableFlagKey?: keyof TOptions;
   } = {},
 ): ReadonlyArray<LegacyNoneCollectionNormalizer<TOptions>> {
-  const row = (
-    optionKey: string,
-    clearFlagKey: string,
-    valueFlag: string,
-    clearFlag: string,
-    disableFlagKey?: keyof TOptions,
-  ): LegacyNoneCollectionNormalizer<TOptions> => ({
-    optionKey: optionKey as keyof TOptions,
-    clearFlagKey: clearFlagKey as keyof TOptions,
-    valueFlag,
-    clearFlag,
-    ...(disableFlagKey === undefined ? {} : { disableFlagKey }),
-  });
   return [
-    row("dep", "clearDeps", "--dep", "--clear-deps", options.depDisableFlagKey),
-    row("comment", "clearComments", "--comment", "--clear-comments"),
-    row("note", "clearNotes", "--note", "--clear-notes"),
-    row("learning", "clearLearnings", "--learning", "--clear-learnings"),
-    row("file", "clearFiles", "--file", "--clear-files"),
-    row(
-      "test",
-      "clearTests",
-      "--test",
-      "--clear-tests",
-      options.testDisableFlagKey,
-    ),
-    row("doc", "clearDocs", "--doc", "--clear-docs"),
-    row("reminder", "clearReminders", "--reminder", "--clear-reminders"),
-    row("event", "clearEvents", "--event", "--clear-events"),
-    row(
-      "typeOption",
-      "clearTypeOptions",
-      "--type-option",
-      "--clear-type-options",
-    ),
+    {
+      optionKey: "dep",
+      clearFlagKey: "clearDeps",
+      valueFlag: "--dep",
+      clearFlag: "--clear-deps",
+      ...(options.depDisableFlagKey === undefined
+        ? {}
+        : { disableFlagKey: options.depDisableFlagKey }),
+    },
+    {
+      optionKey: "comment",
+      clearFlagKey: "clearComments",
+      valueFlag: "--comment",
+      clearFlag: "--clear-comments",
+    },
+    {
+      optionKey: "note",
+      clearFlagKey: "clearNotes",
+      valueFlag: "--note",
+      clearFlag: "--clear-notes",
+    },
+    {
+      optionKey: "learning",
+      clearFlagKey: "clearLearnings",
+      valueFlag: "--learning",
+      clearFlag: "--clear-learnings",
+    },
+    {
+      optionKey: "file",
+      clearFlagKey: "clearFiles",
+      valueFlag: "--file",
+      clearFlag: "--clear-files",
+    },
+    {
+      optionKey: "test",
+      clearFlagKey: "clearTests",
+      valueFlag: "--test",
+      clearFlag: "--clear-tests",
+      ...(options.testDisableFlagKey === undefined
+        ? {}
+        : { disableFlagKey: options.testDisableFlagKey }),
+    },
+    {
+      optionKey: "doc",
+      clearFlagKey: "clearDocs",
+      valueFlag: "--doc",
+      clearFlag: "--clear-docs",
+    },
+    {
+      optionKey: "reminder",
+      clearFlagKey: "clearReminders",
+      valueFlag: "--reminder",
+      clearFlag: "--clear-reminders",
+    },
+    {
+      optionKey: "event",
+      clearFlagKey: "clearEvents",
+      valueFlag: "--event",
+      clearFlag: "--clear-events",
+    },
+    {
+      optionKey: "typeOption",
+      clearFlagKey: "clearTypeOptions",
+      valueFlag: "--type-option",
+      clearFlag: "--clear-type-options",
+    },
   ];
 }
 

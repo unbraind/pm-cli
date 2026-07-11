@@ -6,21 +6,22 @@ status: closed
 priority: 3
 tags[3]: cli,codefactor,duplication
 created_at: "2026-07-11T02:57:29.002Z"
-updated_at: "2026-07-11T13:26:38.353Z"
-closed_at: "2026-07-11T13:26:37.522Z"
+updated_at: "2026-07-11T14:11:27.165Z"
+closed_at: "2026-07-11T14:11:26.462Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: "Shared normalizer rows (comment/note/learning/file/test/doc) extracted to one module consumed by both create.ts and update.ts, preserving update-only disableFlagKey entries (replaceDeps/replaceTests); CodeFactor duplicate-code finding for create.ts:335-362 vs update.ts:260-287 clears; GH-508 closed"
 parent: pm-92if
 risk: low
 confidence: high
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-11T13:26:34.192Z",codex-root,"Evidence: create/update now consume one typed shared legacy-none collection normalizer factory while preserving replaceDeps/replaceTests guards. Focused 263 tests pass; jscpd reports zero clones; static duplicate scan reports zero chunks; final coverage is exact 100/100/100/100."
+  "2026-07-11T14:11:23.116Z",codex-root,"Current-head review evidence: shared collection keys are constrained by LegacyNoneCollectionOptions and emitted as typed literal definitions, eliminating the unsafe keyof assertions while preserving create/update behavior. Create/update/normalizer suites, typecheck, lint, zero-duplication, and 100% docstring gates pass."
 files[3]{path,scope,note}:
   src/cli/commands/create.ts,project,null
   src/cli/commands/legacy-none-tokens.ts,project,shared normalizer factory
   src/cli/commands/update.ts,project,null
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/legacy-none-tokens.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts,project,300
-close_reason: Extracted the shared legacy-none normalizer table and cleared the duplicate-code gate.
+close_reason: Removed unsafe normalizer key assertions with a structurally constrained shared contract.
 body: ""
