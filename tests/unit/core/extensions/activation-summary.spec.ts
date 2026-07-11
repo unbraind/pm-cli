@@ -19,10 +19,9 @@ describe("describeExtensionActivation", () => {
     expect(activation.failed).toEqual([]);
     expect(describeExtensionActivation(activation)).toEqual({
       capabilities: [...KNOWN_EXTENSION_CAPABILITIES].sort(),
-      // Only the declared definition: importer/exporter command paths are NOT
-      // declared in registrations.commands unless command-metadata options are
-      // passed (none are here), so they appear only under command_handlers below.
-      commands: ["ext-a cmd"],
+      // Importer/exporter paths receive default command contracts even when
+      // package authors omit optional metadata.
+      commands: ["ext-a cmd", "ext-a-export export", "ext-a-import import"],
       command_overrides: ["list"],
       // The synthesized importer/exporter handlers join the declared command.
       command_handlers: ["ext-a cmd", "ext-a-export export", "ext-a-import import"],
@@ -88,8 +87,13 @@ describe("describeExtensionActivation", () => {
         activate: (api) => api.registerCommand({ name: "ext-b cmd", run: () => ({}) }),
       },
     ]);
-    // Unfiltered unions both extensions' declared command definitions.
-    expect(describeExtensionActivation(activation).commands).toEqual(["ext-a cmd", "ext-b cmd"]);
+    // Unfiltered unions declared and synthesized importer/exporter definitions.
+    expect(describeExtensionActivation(activation).commands).toEqual([
+      "ext-a cmd",
+      "ext-a-export export",
+      "ext-a-import import",
+      "ext-b cmd",
+    ]);
     // command_handlers unions ext-a's handler (plus its importer/exporter paths) with ext-b's.
     expect(describeExtensionActivation(activation).command_handlers).toEqual([
       "ext-a cmd",

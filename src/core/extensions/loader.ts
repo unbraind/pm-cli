@@ -2846,36 +2846,45 @@ class ExtensionApiRegistrar implements ExtensionApi {
     commandPath: string,
     options: ImportExportRegistrationOptions | undefined,
   ): void {
-    if (options === undefined) {
-      return;
-    }
     if (
-      typeof options !== "object" ||
-      options === null ||
-      Array.isArray(options)
+      options !== undefined &&
+      (typeof options !== "object" || options === null || Array.isArray(options))
     ) {
       throw new TypeError(`${method} options must be an object when provided`);
     }
-    assertOptionalStringField(`${method} options.action`, options.action);
+    const defaultDescription = `${method === "registerImporter" ? "Import" : "Export"} items with the registered extension adapter.`;
+    const defaultArguments = [
+      {
+        name: "file",
+        required: false,
+        description: "Optional input or output file path.",
+      },
+    ];
+    const resolvedOptions: ImportExportRegistrationOptions = {
+      ...options,
+      description: options?.description ?? defaultDescription,
+      arguments: options?.arguments ?? defaultArguments,
+    };
+    assertOptionalStringField(`${method} options.action`, resolvedOptions.action);
     assertOptionalStringField(
       `${method} options.description`,
-      options.description,
+      resolvedOptions.description,
     );
-    assertOptionalStringField(`${method} options.intent`, options.intent);
-    const action = resolveCommandDefinitionAction(commandPath, options.action);
+    assertOptionalStringField(`${method} options.intent`, resolvedOptions.intent);
+    const action = resolveCommandDefinitionAction(commandPath, resolvedOptions.action);
     const examples = normalizeOptionalStringArrayField(
       `${method} options.examples`,
-      options.examples,
+      resolvedOptions.examples,
     );
     const failureHints = normalizeOptionalStringArrayField(
       `${method} options.failure_hints`,
-      options.failure_hints,
+      resolvedOptions.failure_hints,
     );
     const argumentsDefinition = normalizeCommandDefinitionArguments(
-      options.arguments,
+      resolvedOptions.arguments,
     );
 
-    if (options.flags !== undefined) {
+    if (resolvedOptions.flags !== undefined) {
       assertExtensionCapability(
         this.#loadedExtension,
         "schema",
@@ -2890,14 +2899,14 @@ class ExtensionApiRegistrar implements ExtensionApi {
           "schema",
         )
       ) {
-        validateFlagDefinitions(options.flags);
+        validateFlagDefinitions(resolvedOptions.flags);
         this.#registrationRegistry.flags.push({
           layer: this.#loadedExtension.layer,
           name: this.#loadedExtension.name,
           target_command: commandPath,
           flags: normalizeRegistrationRecordList(
             `${method} options.flags`,
-            options.flags,
+            resolvedOptions.flags,
           ),
         });
       }
@@ -2913,11 +2922,11 @@ class ExtensionApiRegistrar implements ExtensionApi {
       failure_hints: failureHints,
       arguments: argumentsDefinition,
     };
-    const description = options.description?.trim();
+    const description = resolvedOptions.description?.trim();
     if (description) {
       registration.description = description;
     }
-    const intent = options.intent?.trim();
+    const intent = resolvedOptions.intent?.trim();
     if (intent) {
       registration.intent = intent;
     }

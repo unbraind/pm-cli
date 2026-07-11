@@ -3774,8 +3774,12 @@ describe("createExtensionTestHarness", () => {
     // raw activation as an escape hatch.
     expect(harness.name).toBe("harness-ext");
     expect(harness.layer).toBe("project");
-    expect(harness.activation.registrations.commands).toHaveLength(1);
-    expect(harness.activationSummary().commands).toEqual(["harness hello"]);
+    expect(harness.activation.registrations.commands).toHaveLength(3);
+    expect(harness.activationSummary().commands).toEqual([
+      "csv export",
+      "csv import",
+      "harness hello",
+    ]);
     expect(harness.activationSummary({ extensionName: "missing-ext" }).commands).toEqual([]);
     expect(
       harness.renderMarkdown({ title: "Harness Extension", headingLevel: 3, extensionName: "harness-ext" }),
@@ -3944,7 +3948,11 @@ describe("createExtensionTestHarness", () => {
     // them callable — the ergonomic the harness promises for agent-authored tests.
     const { activationSummary, assertCommandContract, renderMarkdown, runCommand, deactivate } = harness;
     expect(assertCommandContract({ command: "harness hello" }).command.command).toBe("harness hello");
-    expect(activationSummary().commands).toEqual(["harness hello"]);
+    expect(activationSummary().commands).toEqual([
+      "csv export",
+      "csv import",
+      "harness hello",
+    ]);
     expect(renderMarkdown()).toContain("## Extension surfaces");
     expect((await runCommand({ command: "harness hello" })).handled).toBe(true);
 

@@ -140,6 +140,8 @@ import {
   buildDynamicExtensionCommandMetadataHelp,
   findCommandByPath,
   ensureCommandPath,
+  buildCanonicalExtensionAliases,
+  extensionFlagTakesValueForInvocation,
 } from "./extension-command-help.js";
 import {
   parseBootstrapGlobalOptions,
@@ -394,7 +396,10 @@ function inferMissingFieldsForRecovery(
   invocationArgv: string[],
   existingRecovery: PmCliErrorRecoveryPayload | undefined,
 ): string[] | undefined {
-  if (existingRecovery?.suggested_retry) {
+  if (
+    existingRecovery?.suggested_retry ||
+    rawMessage.includes("failed in extension handler (")
+  ) {
     return undefined;
   }
   const providedFields = extractProvidedOptionFlags(invocationArgv);
@@ -432,8 +437,14 @@ function resolveRecoverySuggestedRetry(
         option.flags.split(/[ ,|]+/).includes(normalizedMissing),
       )
     : undefined;
+  const extensionFlagTakesValue = extensionFlagTakesValueForInvocation(
+    invocationArgv,
+    commandName,
+    normalizedMissing,
+    activeRuntimeExtensionCommandDescriptors,
+  );
   const missingTokens = normalizedMissing
-    ? missingOption?.isBoolean() === true
+    ? missingOption?.isBoolean() === true || extensionFlagTakesValue === false
       ? [normalizedMissing]
       : [normalizedMissing, "<value>"]
     : [];
@@ -1828,10 +1839,15 @@ async function loadRuntimeExtensionSnapshot(
     const commandFlagHelp = collectDynamicExtensionFlagHelpByCommand(
       activationResult.registrations.flags,
     );
+    const canonicalAliases = buildCanonicalExtensionAliases(
+      activationResult.commands.handlers,
+      activationResult.registrations.commands,
+    );
     const commandDescriptors = collectExtensionCommandHelpDescriptors(
       commandHandlers,
       activationResult.registrations.commands,
       activationResult.registrations.flags,
+      canonicalAliases,
     );
     const snapshot: RuntimeExtensionSnapshot = {
       hooks: activationResult.hooks,

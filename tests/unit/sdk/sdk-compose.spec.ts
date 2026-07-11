@@ -124,7 +124,7 @@ describe("sdk composeExtension", () => {
 
     // Every surface registered exactly once.
     expect(activation.registration_counts).toMatchObject({
-      commands: 1,
+      commands: 3,
       flags: 1,
       item_types: 1,
       item_fields: 1,

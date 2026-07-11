@@ -85,6 +85,101 @@ export function normalizeExtensionCommandPath(commandPath: string): string {
     .join(" ");
 }
 
+/** Build verified flattened-alias mappings within one extension and layer. */
+export function buildCanonicalExtensionAliases(
+  handlers: ReadonlyArray<{
+    command: string;
+    layer: "project" | "global";
+    name: string;
+  }>,
+  definitions: ReadonlyArray<{
+    command: string;
+    layer: "project" | "global";
+    name: string;
+  }>,
+): Map<string, string> {
+  const aliases = new Map<string, string>();
+  for (const handler of handlers) {
+    const alias = normalizeExtensionCommandPath(handler.command);
+    for (const definition of definitions) {
+      if (
+        definition.layer !== handler.layer ||
+        definition.name !== handler.name
+      ) {
+        continue;
+      }
+      const canonical = normalizeExtensionCommandPath(definition.command);
+      const parts = canonical.split(" ");
+      const action = parts.at(-1);
+      const suffix = parts.slice(1).join(" ");
+      const expectedAlias = suffix
+        ? `${parts[0]}-${action} ${suffix}`
+        : `${parts[0]}-${action}`;
+      if (
+        action &&
+        alias === expectedAlias
+      ) {
+        aliases.set(alias, canonical);
+        break;
+      }
+    }
+  }
+  return aliases;
+}
+
+/** Resolve whether a registered extension flag consumes a value. */
+export function extensionFlagTakesValueForInvocation(
+  invocationArgv: string[],
+  commandName: string | undefined,
+  normalizedMissing: string | undefined,
+  descriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+): boolean | undefined {
+  if (!commandName || !normalizedMissing) {
+    return undefined;
+  }
+  let descriptor: ExtensionCommandHelpDescriptor | undefined;
+  let matchedTokenCount = 0;
+  for (const [index, token] of invocationArgv.entries()) {
+    if (token !== commandName) {
+      continue;
+    }
+    const commandTokens = invocationArgv.slice(index);
+    for (const [path, candidate] of descriptors.entries()) {
+      const pathTokens = path.split(" ");
+      if (
+        pathTokens.length > matchedTokenCount &&
+        pathTokens.every(
+          (pathToken, pathIndex) => commandTokens[pathIndex] === pathToken,
+        )
+      ) {
+        descriptor = candidate;
+        matchedTokenCount = pathTokens.length;
+      }
+    }
+  }
+  const flag = descriptor?.flags.find(
+    (candidate) =>
+      candidate.long === normalizedMissing ||
+      candidate.short === normalizedMissing,
+  );
+  if (!flag) {
+    return undefined;
+  }
+  const valueName =
+    typeof flag.value_name === "string" && flag.value_name.trim().length > 0;
+  const valueType =
+    typeof flag.value_type === "string"
+      ? flag.value_type
+      : typeof flag.type === "string"
+        ? flag.type
+        : undefined;
+  return (
+    flag.required === true ||
+    valueName ||
+    (valueType !== undefined && valueType !== "boolean")
+  );
+}
+
 function toNonEmptyFlagString(value: unknown): string | null {
   if (typeof value !== "string") {
     return null;
@@ -329,11 +424,25 @@ function collectExtensionHelpCommandSet(
   return commandSet;
 }
 
+/** Resolve the canonical nested command behind an auto-generated flattened
+ * extension alias such as `csv-export export` -> `csv export`. Package authors
+ * should not have to duplicate command metadata merely because a compatibility
+ * alias was registered by the host package. */
+function resolveFlattenedAliasDescriptor(
+  commandPath: string,
+  definitionsByCommand: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+  canonicalAliases: ReadonlyMap<string, string>,
+): ExtensionCommandHelpDescriptor | undefined {
+  const canonical = canonicalAliases.get(commandPath);
+  return canonical ? definitionsByCommand.get(canonical) : undefined;
+}
+
 /** Implements collect extension command help descriptors for the public runtime surface of this module. */
 export function collectExtensionCommandHelpDescriptors(
   commandHandlers: string[],
   commandDefinitions: RegisteredExtensionCommandDefinition[],
   flagRegistrations: RegisteredExtensionFlagDefinitions[],
+  canonicalAliases: ReadonlyMap<string, string> = new Map(),
 ): Map<string, ExtensionCommandHelpDescriptor> {
   const definitionsByCommand =
     collectExtensionDefinitionsByCommand(commandDefinitions);
@@ -348,11 +457,21 @@ export function collectExtensionCommandHelpDescriptors(
     left.localeCompare(right),
   );
   for (const commandPath of sortedCommands) {
-    const definition = definitionsByCommand.get(commandPath);
-    const flags = flagsByCommand.get(commandPath) ?? [];
+    const definition =
+      definitionsByCommand.get(commandPath) ??
+      resolveFlattenedAliasDescriptor(
+        commandPath,
+        definitionsByCommand,
+        canonicalAliases,
+      );
+    const flags =
+      flagsByCommand.get(commandPath) ??
+      (definition ? flagsByCommand.get(definition.command) : undefined) ??
+      [];
     if (definition) {
       descriptors.set(commandPath, {
         ...definition,
+        command: commandPath,
         flags,
       });
       continue;

@@ -2,17 +2,37 @@ id: pm-9qcr
 title: "GH-507: recovery suggested_retry appends <value> to missing boolean EXTENSION flags (contract arity ignored)"
 description: "When an extension command throws a structured CommandError whose remediation names a declared boolean flag (SDK command contract declares --allow-empty with no value_name), pm correctly identifies the missing flag but renders it value-taking in recovery.suggested_retry: '--allow-empty \"<value>\"'. Expected bare '--allow-empty'. The flag renders correctly as boolean in help and contract metadata — only recovery suggestion generation ignores the extension contract's arity. This is the extension-contract sibling of GH-500/pm-6y58 (FIXED via PR#502 for built-in flag tables): the arity fix does not consult SDK/extension command contracts. Observed with pm-cli 2026.7.10 + pm-todos 'todos sync'."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[5]: agent-ux,cli,error-recovery,extensions,gh-issue
 created_at: "2026-07-11T02:50:04.830Z"
-updated_at: "2026-07-11T02:50:04.830Z"
+updated_at: "2026-07-11T09:30:51.717Z"
+closed_at: "2026-07-11T09:30:49.822Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: suggested_retry consults the active extension/SDK command contract for flag arity; boolean extension flags render bare (--allow-empty) while value-taking extension flags keep the placeholder; repro from GH-507 (todos sync guard failure) yields a suggestion that succeeds verbatim; regression test covers boolean + value extension flags; GH-507 closed with a comment linking the fix
 risk: low
 confidence: high
+resolution: Suggested retries use longest registered command-path matching across all token occurrences and honor required flag arity.
+expected_result: Recovery suggestions remain executable when command tokens repeat before or after invocation and when required flags omit explicit type metadata.
+actual_result: "Trailing/leading token collisions resolve the canonical descriptor, boolean flags stay bare, and required untyped flags receive value placeholders."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-6y58,related,"2026-07-11T02:50:04.830Z",null,null
   pm-o71e,related,"2026-07-11T02:50:04.830Z",null,null
+comments[9]{created_at,author,text}:
+  "2026-07-11T04:45:45.833Z",codex-root,"Implementation start: bundled with GH-503/504/505/507 because flattened aliases, bare importer/exporter contracts, nested typed recovery, and boolean retry arity share extension registration and structured-error surfaces. Duplicate check used pm search --status all; closed prior extension SDK work remains closed."
+  "2026-07-11T04:48:29.576Z",codex-root,"Pause note: root cause investigation reached structured recovery assembly in src/cli/main.ts, but no verified patch is recorded yet. Item remains open and unclaimed."
+  "2026-07-11T05:05:12.142Z",codex-root,"Implementation checkpoint: contract and recovery patches are in the working tree; pnpm typecheck, pnpm lint, and focused CLI/extension suites pass. The first full coverage run was invalidated by a shared-state test and stopped after the test was rewritten as a pure helper assertion; full 100% coverage, temp installed-package proof, Greptile, commit/PR, and review loops remain required. Returning to open and releasing claim because work is paused."
+  "2026-07-11T05:52:24.488Z",codex-root,"Verification evidence: pnpm lint passed (ESLint, zero jscpd clones, static quality and token-budget gates); full coverage passed 5532/5532 with exact 100% statements/branches/functions/lines. Fresh installed-package proof packed @unbrained/pm-cli@2026.7.10, installed it into /tmp/pm-extension-contract-proof, initialized a tracker, installed a TypeScript importer/exporter extension with omitted options, verified generated [file] help, successful positional import, healthy activation, and synthesized command contracts in extension describe."
+  "2026-07-11T06:31:12.019Z",codex-root,"Greptile review fix evidence: replaced naming-only alias inheritance with an authoritative same-extension alias map and changed flag arity lookup to longest registered command-path prefix so positional values cannot corrupt lookup. Focused suites passed; full suite passed 5533/5533 at exact 100/100/100/100 coverage."
+  "2026-07-11T07:56:27.675Z",codex-root,"Review-loop evidence: fixed typed extension flag arity for value_type/type, guarded missing command tokens, and covered longest-prefix plus missing-flag paths. Also fixed single-token flattened aliases on pm-s9iu. Full suite passed 5533/5533 at exact 100/100/100/100 coverage; pnpm lint/static and typecheck passed."
+  "2026-07-11T08:33:27.077Z",codex-root,"Final evidence: suggested_retry derives extension flag arity from active command contracts, including boolean and typed value flags, and locates the invoked command token without being confused by earlier global option values. Focused suite 231/231; full suite 5533/5533; exact coverage 100/100/100/100."
+  "2026-07-11T09:14:32.188Z",codex-root,"Final-review implementation start: Gemini identified command-token repetition after the invoked path; Greptile reproduced required:true untyped flags as value-taking. Both belong to the existing recovery arity lineage, so pm-9qcr alone is active."
+  "2026-07-11T09:30:48.619Z",codex-root,"Final-review fix evidence: descriptor lookup now evaluates every command-token occurrence and selects the longest registered path, handling both leading global values and trailing option/positional values. required:true untyped extension flags now remain value-taking in suggested retries, matching Commander registration. Focused suite 122/122; full suite 5533/5533; exact coverage 100/100/100/100; lint, zero duplication, static quality, token budget, and typecheck passed."
+files[2]{path,scope,note}:
+  src/cli/main.ts,project,extension-aware structured recovery fidelity
+  tests/unit/cli/cli-main-errors.spec.ts,project,extension flag arity recovery regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/extensions/extension-loader.spec.ts,project,240
+close_reason: Resolved final review edge cases for repeated command tokens and required untyped flag arity.
 body: ""

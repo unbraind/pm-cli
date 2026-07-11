@@ -27,8 +27,6 @@
 | Settings, storage, search, and output | [Configuration](docs/CONFIGURATION.md) |
 | Safe test execution and linked tests | [Testing](docs/TESTING.md) |
 | Package and extension authoring | [Packages and Extensions](docs/EXTENSIONS.md) and [SDK](docs/SDK.md) |
-| Codex native integration | [Codex Plugin](docs/CODEX_PLUGIN.md) |
-| Claude Code native integration | [Claude Code Plugin](docs/CLAUDE_CODE_PLUGIN.md) |
 | Maintainer release process (daily auto-release + local parity) | [Releasing](docs/RELEASING.md) |
 | Contributor internals | [Architecture](docs/ARCHITECTURE.md) |
 
@@ -53,14 +51,6 @@ Project-local invocation also works:
 ```bash
 npx --yes @unbrained/pm-cli@latest --help
 ```
-
-For Claude Code, install the native plugin (no `pm` CLI required):
-
-```
-/plugin install pm-claude@pm
-```
-
-This registers 28 MCP tools, 5 workflow skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and a session-start context hook — all without shelling out to the `pm` CLI.
 
 `pm` packages use the same package-first vocabulary:
 
@@ -115,15 +105,6 @@ If no relevant item exists, create a parent lineage before child work, claim the
 
 For token-aware local routing, install `guide-shell` with `pm install guide-shell --project`, then use `pm guide workflows` and drill into related topics (`commands`, `skills`, `release`) only when needed.
 
-## Release Automation
-
-- Daily release preparation runs in `.github/workflows/auto-release.yml`.
-- Tag-driven publishing remains in `.github/workflows/release.yml`.
-- Local parity commands:
-  - `pnpm release:pipeline:dry-run`
-  - `pnpm release:pipeline`
-  - run maintainer-only reliability checks separately and keep their raw details in ignored local notes
-
 ## Core Model
 
 - Items live under `.agents/pm/` as TOON by default, with JSON-front-matter markdown also supported.
@@ -135,20 +116,6 @@ For token-aware local routing, install `guide-shell` with `pm install guide-shel
 - `pm guide` is the optional local progressive-disclosure docs and skills index for agents after installing `guide-shell`.
 
 Search behavior (lexical `search.tuning` weights, hybrid `--semantic-weight`, query expansion, reranking, and vector-store options) is fully configurable — see [Search Configuration](docs/CONFIGURATION.md#search-configuration).
-
-## Tracker References
-
-Current documentation work is tracked through:
-
-- [pm-u9d0](.agents/pm/epics/pm-u9d0.toon) - docs, onboarding, release, and CI capability epic
-
-Legacy documentation baseline references (closed):
-
-- [pm-3042](.agents/pm/epics/pm-3042.toon) - documentation overhaul epic (closed)
-- [pm-r9gu](.agents/pm/features/pm-r9gu.toon) - documentation structure feature (closed)
-- [pm-1sb2](.agents/pm/tasks/pm-1sb2.toon) - README and public docs rewrite task (closed)
-
-Docs should link to relevant `pm` items, and `pm` items should link back to changed docs through `pm docs`.
 
 ## License
 

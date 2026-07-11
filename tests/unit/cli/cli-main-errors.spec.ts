@@ -63,6 +63,8 @@ import {
   applyDynamicExtensionArguments,
   applyDynamicExtensionFlagOptions,
   buildResidualDynamicExtensionFlagHelp,
+  buildCanonicalExtensionAliases,
+  extensionFlagTakesValueForInvocation,
   buildDynamicExtensionCommandMetadataHelp,
   buildDynamicExtensionHelpOptionSummaries,
   collectDynamicExtensionFlagHelpByCommand,
@@ -418,6 +420,113 @@ describe("CLI main error helpers", () => {
     });
   });
 
+  it("uses extension flag arity when constructing suggested retries", () => {
+    const descriptors = new Map([
+        [
+          "todos sync",
+          {
+            command: "todos sync",
+            action: "sync",
+            examples: [],
+            failure_hints: [],
+            arguments: [],
+            flags: [
+              { long: "--allow-empty" },
+              { long: "--source", value_name: "path" },
+              { long: "--count", value_type: "number" },
+              { long: "--label", type: "string" },
+              { long: "--token", required: true },
+            ],
+          },
+        ],
+        [
+          "todos",
+          {
+            command: "todos",
+            action: "todos",
+            examples: [],
+            failure_hints: [],
+            arguments: [],
+            flags: [],
+          },
+        ],
+      ]);
+    expect(extensionFlagTakesValueForInvocation(
+      ["todos", "sync", "items.json"],
+      "todos",
+      "--allow-empty",
+      descriptors,
+    )).toBe(false);
+    expect(extensionFlagTakesValueForInvocation(
+      ["--name", "todos", "todos", "sync"],
+      "todos",
+      "--allow-empty",
+      descriptors,
+    )).toBe(false);
+    expect(extensionFlagTakesValueForInvocation(
+      ["todos", "sync", "--source", "todos"],
+      "todos",
+      "--allow-empty",
+      descriptors,
+    )).toBe(false);
+    expect(extensionFlagTakesValueForInvocation(
+      ["todos", "sync"],
+      "todos",
+      "--source",
+      descriptors,
+    )).toBe(true);
+    expect(extensionFlagTakesValueForInvocation(
+      ["todos", "sync"],
+      "todos",
+      "--label",
+      descriptors,
+    )).toBe(true);
+    expect(extensionFlagTakesValueForInvocation(
+      ["todos", "sync"],
+      "todos",
+      "--missing",
+      descriptors,
+    )).toBeUndefined();
+    expect(extensionFlagTakesValueForInvocation(
+      ["todos", "sync"],
+      "missing",
+      "--source",
+      descriptors,
+    )).toBeUndefined();
+    expect(extensionFlagTakesValueForInvocation(
+      ["todos", "sync"],
+      "todos",
+      "--count",
+      descriptors,
+    )).toBe(true);
+    expect(extensionFlagTakesValueForInvocation(
+      ["todos", "sync"],
+      "todos",
+      "--token",
+      descriptors,
+    )).toBe(true);
+  });
+
+  it("maps flattened aliases only within the same extension registration", () => {
+    const aliases = buildCanonicalExtensionAliases(
+      [
+        { command: "csv-export export", layer: "project", name: "csv" },
+        { command: "hot-reload reload", layer: "project", name: "hot-reload" },
+        { command: "sync-sync", layer: "project", name: "sync" },
+      ],
+      [
+        { command: "csv export", layer: "project", name: "csv" },
+        { command: "hot reload", layer: "project", name: "other" },
+        { command: "sync", layer: "project", name: "sync" },
+      ],
+    );
+
+    expect([...aliases]).toEqual([
+      ["csv-export export", "csv export"],
+      ["sync-sync", "sync"],
+    ]);
+  });
+
   it("does not suggest retries for flags that were already provided", () => {
     const context = _testOnly.buildPmCliRecoveryContext(
       undefined,
@@ -429,6 +538,19 @@ describe("CLI main error helpers", () => {
       attempted_command: "pm update pm-123 --message done",
       normalized_args: ["update", "pm-123", "--message", "done"],
       provided_fields: ["--message"],
+    });
+  });
+
+  it("does not invent top-level retries from nested extension failures", () => {
+    const context = _testOnly.buildPmCliRecoveryContext(
+      undefined,
+      ["todos", "import", "items.json"],
+      'Command "todos import" failed in extension handler (extension_command_handler_failed:project:todos:todos import). Nested command failed: missing --limit',
+    );
+
+    expect(context.recovery).toEqual({
+      attempted_command: "pm todos import items.json",
+      normalized_args: ["todos", "import", "items.json"],
     });
   });
 
