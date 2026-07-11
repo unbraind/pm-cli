@@ -135,6 +135,22 @@ describe("runClaim/runRelease", () => {
       recommendation: null,
     });
   });
+  it("reports conflict guidance when every attempted candidate loses its claim race", async () => {
+    const recommendation = { id: "pm-raced", reasons: [] } as never;
+    await expect(
+      claimNextFromRecommendations([recommendation], false, {}, {}, async () => {
+        throw new PmCliError("held", EXIT_CODE.CONFLICT, { code: "already_claimed_by" });
+      }),
+    ).rejects.toMatchObject<Partial<PmCliError>>({
+      message: "No actionable item remained available to claim",
+      exitCode: EXIT_CODE.CONFLICT,
+      context: {
+        code: "no_available_next_item",
+        why: "Every ranked candidate was claimed by another agent before this atomic selection completed.",
+        nextSteps: ["Run pm claim --next again to refresh the ranked candidate set."],
+      },
+    });
+  });
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-claim-not-init-"));
     try {

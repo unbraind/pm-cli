@@ -862,6 +862,9 @@ describe("public sdk entrypoint", () => {
     expect(flagsFor("ctx")).toEqual(expect.arrayContaining(["--depth"]));
     expect(flagsFor("test-runs-worker")).toEqual(expect.arrayContaining(["--status", "--tail"]));
     expect(flagsFor("extension init")).toEqual(expect.arrayContaining(["--project", "--global", "--capability"]));
+    expect(flagsFor("package init")).toEqual(
+      expect.arrayContaining(["--project", "--global", "--capability", "--declarative"]),
+    );
     expect(flagsFor("extension install")).toEqual(expect.arrayContaining(["--github", "--ref"]));
     expect(flagsFor("extension uninstall")).toEqual(expect.arrayContaining(["--project", "--global"]));
     expect(flagsFor("extension explore")).toEqual(expect.arrayContaining(["--project", "--global"]));

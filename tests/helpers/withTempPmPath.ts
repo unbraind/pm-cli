@@ -2,6 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { runInit } from "../../src/cli/commands/init.js";
 import { runDirectDistCli, runInProcessDistCli, type DirectCliRunResult } from "./cliRunner.js";
 
 export type CliRunResult = DirectCliRunResult;
@@ -324,10 +325,11 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
   applyTempPmEnv(env);
 
   try {
-    const initResult = runCli(["init", "--json"], { expectJson: true });
-    if (initResult.code !== 0) {
-      throw new Error(`Failed to initialize test PM_PATH: ${initResult.stderr || initResult.stdout}`);
-    }
+    await runInit(
+      undefined,
+      { path: pmPath, json: true, quiet: false, noExtensions: false, profile: false },
+      { defaults: true },
+    );
 
     return await callback({
       tempRoot,

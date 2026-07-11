@@ -25,6 +25,8 @@
 
 ### Other
 
+- CI/CD + test-suite performance: in-process CLI runner and dedupe redundant matrix legs ([pm-7rlp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7rlp.toon))
+- Coverage to 100%: src/core, src/mcp, and src/sdk modules ([pm-krwu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-krwu.toon))
 - Baseline agent token cost of the CLI surface: measure pm --help, per-command help, and contracts payload sizes before consolidation ([pm-a22j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-a22j.toon))
 - Research and document the July 2026 native ChatGPT/Codex plugin implementation plan ([pm-n28t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-n28t.toon))
 - Align all plugin and package manifests to date-based versioning with release-time sync ([pm-hxsv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hxsv.toon))
@@ -616,7 +618,6 @@
 - ADR: literal all-src coverage supersedes curated include/exclude allowlist ([pm-w13j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-w13j.toon))
 - Literal 100% all-source test coverage & module-mirrored test reorganization ([pm-xau3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-xau3.toon))
 - Coverage to 100%: packages, plugins, and docs examples ([pm-6tch](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6tch.toon))
-- Coverage to 100%: src/core, src/mcp, and src/sdk modules ([pm-krwu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-krwu.toon))
 - Coverage to 100%: src/cli command handlers (group B — query, search, calendar, test, init, extension) ([pm-7v9s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7v9s.toon))
 - Coverage to 100%: src/cli command handlers (group A — mutation, history, storage, schema) ([pm-ud1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ud1x.toon))
 - Coverage to 100%: src/cli infrastructure (registration, bootstrap, help, main) ([pm-uvxc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-uvxc.toon))
@@ -1105,7 +1106,6 @@
 - Calendar + SDK + vector-search + docs review (2026-05-27) ([pm-a0w4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-a0w4.toon))
 - Code-quality & dead/duplicate code audit (2026-05-27) ([pm-jvbt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-jvbt.toon))
 - Keep large modules maintainable via barrel re-export splits + explicit uncovered allowlist ([pm-3cbk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-3cbk.toon))
-- CI/CD + test-suite performance: in-process CLI runner and dedupe redundant matrix legs ([pm-7rlp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7rlp.toon))
 - Bump @sentry/node 10.53.1 to 10.54.0 ([pm-0g2p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-0g2p.toon))
 - Dedupe history-redact + history-repair lock+ownership scaffolding ([pm-kbm9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-kbm9.toon))
 - Agent-UX combined PR: compact mutation output (pm-ch59) + smarter unknown-flag recovery (pm-8nyc) ([pm-70mi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-70mi.toon))
