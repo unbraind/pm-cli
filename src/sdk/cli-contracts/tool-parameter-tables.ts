@@ -522,6 +522,9 @@ export const PLAN_ACTION_PARAMETER_PROPERTIES: Record<string, unknown> = {
   materializeType: { type: "string" },
   materializeParent: { type: "string" },
   materializeTags: { type: "string" },
+  field: {
+    anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+  },
 };
 
 /** Public contract for plan action parameter metadata, shared by SDK and presentation-layer consumers. */

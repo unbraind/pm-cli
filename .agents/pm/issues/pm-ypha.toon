@@ -2,15 +2,26 @@ id: pm-ypha
 title: "GH-453: plan materialize --json response omits title/type/parent on materialized entries"
 description: "Dogfood GH-453: materialize response projection returns only id per created item though disk data is complete. Duplicate check: searched materialize projection — no existing item."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: agent-ux,bug,gh-issue,plan
 created_at: "2026-07-06T08:03:10.608Z"
-updated_at: "2026-07-06T08:03:10.608Z"
+updated_at: "2026-07-11T12:02:24.577Z"
+closed_at: "2026-07-11T12:02:23.404Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: "materialize --json materialized[] entries include id/title/type/parent/tags; spec updated; no extra get round-trip needed for confirmation"
 parent: pm-mpbb
 risk: low
 confidence: high
+comments[1]{created_at,author,text}:
+  "2026-07-11T12:02:22.094Z",codex-root,"Evidence: materialized entries now return id/title/type/parent/tags/from_step from the created item. CLI and SDK regressions assert the compact confirmation projection; packed installed-package proof passed without get round trips."
+files[2]{path,scope,note}:
+  src/cli/commands/plan.ts,project,governed materialization and enriched result projection
+  src/sdk/runtime.ts,project,typed public plan workflow primitives
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/sdk/sdk-context-primitives.spec.ts,project,300
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,public plan workflow SDK guide
+close_reason: Implemented complete compact materialization confirmation projection.
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/453\n\n## Problem\n`pm plan materialize --json` returns materialized[] entries with only `id`; title/type/parent are undefined in the response projection (data on disk is correct). Callers need a pm get round trip per created item to confirm.\n\n## Proposed fix\nInclude { id, title, type, parent, tags } per materialized entry — same compact projection list rows use.\n\n## Definition of done\nmaterialize --json response carries the confirmation fields; spec updated; no extra reads needed to verify materialization."

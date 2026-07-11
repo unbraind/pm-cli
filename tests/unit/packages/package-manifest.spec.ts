@@ -382,6 +382,9 @@ describe("pm package manifest model", () => {
   });
 
   it("recognizes first-party package roots as installable pm packages", async () => {
+    const rootPackage = JSON.parse(
+      await readFile(path.join(repoRoot, "package.json"), "utf8"),
+    ) as { version: string };
     const beadsRoot = path.join(repoRoot, "packages", "pm-beads");
     const calendarRoot = path.join(repoRoot, "packages", "pm-calendar");
     const commandKitRoot = path.join(repoRoot, "packages", "pm-command-kit");
@@ -397,7 +400,7 @@ describe("pm package manifest model", () => {
     await expect(readPmPackageManifest(beadsRoot)).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-beads",
-      package_version: "0.1.0",
+      package_version: rootPackage.version,
       aliases: ["beads"],
       catalog: {
         display_name: "Beads Import",
@@ -414,7 +417,7 @@ describe("pm package manifest model", () => {
     await expect(readPmPackageManifest(calendarRoot)).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-calendar",
-      package_version: "0.1.0",
+      package_version: rootPackage.version,
       aliases: ["calendar"],
       catalog: {
         display_name: "Calendar Views",
@@ -431,7 +434,7 @@ describe("pm package manifest model", () => {
     await expect(readPmPackageManifest(commandKitRoot)).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-command-kit",
-      package_version: "0.1.0",
+      package_version: rootPackage.version,
       aliases: ["command-kit"],
       catalog: {
         display_name: "Command Kit Exemplar",
@@ -448,7 +451,7 @@ describe("pm package manifest model", () => {
     await expect(readPmPackageManifest(governanceAuditRoot)).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-governance-audit",
-      package_version: "0.1.0",
+      package_version: rootPackage.version,
       aliases: ["governance-audit"],
       catalog: {
         display_name: "Governance Audit",
@@ -465,7 +468,7 @@ describe("pm package manifest model", () => {
     await expect(readPmPackageManifest(guideShellRoot)).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-guide-shell",
-      package_version: "0.1.0",
+      package_version: rootPackage.version,
       aliases: ["guide-shell"],
       catalog: {
         display_name: "Guide + Shell UX",
@@ -482,7 +485,7 @@ describe("pm package manifest model", () => {
     await expect(readPmPackageManifest(kanbanRoot)).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-kanban",
-      package_version: "0.1.0",
+      package_version: rootPackage.version,
       aliases: ["kanban"],
       catalog: {
         display_name: "Kanban Archetype",
@@ -499,7 +502,7 @@ describe("pm package manifest model", () => {
     await expect(readPmPackageManifest(lifecycleHooksRoot)).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-lifecycle-hooks",
-      package_version: "0.1.0",
+      package_version: rootPackage.version,
       aliases: ["lifecycle-hooks"],
       catalog: {
         display_name: "Lifecycle Hooks",
@@ -516,7 +519,7 @@ describe("pm package manifest model", () => {
     await expect(readPmPackageManifest(linkedTestAdaptersRoot)).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-linked-test-adapters",
-      package_version: "0.1.0",
+      package_version: rootPackage.version,
       aliases: ["linked-test-adapters"],
       catalog: {
         display_name: "Linked Test Adapters",
@@ -533,7 +536,7 @@ describe("pm package manifest model", () => {
     await expect(readPmPackageManifest(searchAdvancedRoot)).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-search-advanced",
-      package_version: "0.1.0",
+      package_version: rootPackage.version,
       aliases: ["search-advanced"],
       catalog: {
         display_name: "Advanced Search",
@@ -550,7 +553,7 @@ describe("pm package manifest model", () => {
     await expect(readPmPackageManifest(templatesRoot)).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-templates",
-      package_version: "0.1.0",
+      package_version: rootPackage.version,
       aliases: ["templates"],
       catalog: {
         display_name: "Create Templates",
@@ -567,7 +570,7 @@ describe("pm package manifest model", () => {
     await expect(readPmPackageManifest(todosRoot)).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-todos",
-      package_version: "0.1.0",
+      package_version: rootPackage.version,
       aliases: ["todos"],
       catalog: {
         display_name: "Todos Import/Export",

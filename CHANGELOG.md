@@ -2,8 +2,18 @@
 
 ## Unreleased
 
+### Added
+
+- Promote plan workflow primitives to the public SDK: plan create/steps/dependencies/decisions/discoveries/validation/materialization ([pm-je50](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-je50.toon))
+
 ### Fixed
 
+- GH-508: dedupe LegacyNoneCollectionNormalizer tables duplicated between create.ts and update.ts (CodeFactor) ([pm-zuw8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zuw8.toon))
+- Release-readiness guard expects pre-sync version:check command after date-version synchronization ([pm-pmmv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pmmv.toon))
+- Restore generated-loader docstrings and redact host path from tracker history ([pm-9ugc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9ugc.toon))
+- Full coverage contention times out metadata content-filter integration case ([pm-d30l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-d30l.toon))
+- GH-453: plan materialize --json response omits title/type/parent on materialized entries ([pm-ypha](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ypha.toon))
+- GH-452: plan materialize dead-ends on types with required-on-create custom fields ([pm-qd2h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qd2h.toon))
 - GH-507: recovery suggested_retry appends <value\> to missing boolean EXTENSION flags (contract arity ignored) ([pm-9qcr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9qcr.toon))
 - GH-505: nested extension failures suggest irrelevant missing flags instead of preserving tracker recovery ([pm-o71e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o71e.toon))
 - GH-504: importer/exporter registered without options yields an unusable CLI command (no arg/flag contracts) ([pm-0mjz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0mjz.toon))

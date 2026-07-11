@@ -77,10 +77,10 @@ import {
 } from "./metadata-normalizers.js";
 import {
   applyLegacyNoneCollectionNormalizers,
+  createLegacyNoneCollectionNormalizers,
   assertNoLegacyNoneToken,
   assertNoLegacyNoneTokens,
   isLegacyNoneToken,
-  type LegacyNoneCollectionNormalizer,
 } from "./legacy-none-tokens.js";
 import { ensureEnumValue as ensureEnum } from "./recurrence-parsers.js";
 import {
@@ -246,72 +246,11 @@ function toAuthor(
   return trimmed || "unknown";
 }
 
-const UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS: ReadonlyArray<
-  LegacyNoneCollectionNormalizer<UpdateCommandOptions>
-> = [
-  {
-    optionKey: "dep",
-    clearFlagKey: "clearDeps",
-    valueFlag: "--dep",
-    clearFlag: "--clear-deps",
-    disableFlagKey: "replaceDeps",
-  },
-  {
-    optionKey: "comment",
-    clearFlagKey: "clearComments",
-    valueFlag: "--comment",
-    clearFlag: "--clear-comments",
-  },
-  {
-    optionKey: "note",
-    clearFlagKey: "clearNotes",
-    valueFlag: "--note",
-    clearFlag: "--clear-notes",
-  },
-  {
-    optionKey: "learning",
-    clearFlagKey: "clearLearnings",
-    valueFlag: "--learning",
-    clearFlag: "--clear-learnings",
-  },
-  {
-    optionKey: "file",
-    clearFlagKey: "clearFiles",
-    valueFlag: "--file",
-    clearFlag: "--clear-files",
-  },
-  {
-    optionKey: "test",
-    clearFlagKey: "clearTests",
-    valueFlag: "--test",
-    clearFlag: "--clear-tests",
-    disableFlagKey: "replaceTests",
-  },
-  {
-    optionKey: "doc",
-    clearFlagKey: "clearDocs",
-    valueFlag: "--doc",
-    clearFlag: "--clear-docs",
-  },
-  {
-    optionKey: "reminder",
-    clearFlagKey: "clearReminders",
-    valueFlag: "--reminder",
-    clearFlag: "--clear-reminders",
-  },
-  {
-    optionKey: "event",
-    clearFlagKey: "clearEvents",
-    valueFlag: "--event",
-    clearFlag: "--clear-events",
-  },
-  {
-    optionKey: "typeOption",
-    clearFlagKey: "clearTypeOptions",
-    valueFlag: "--type-option",
-    clearFlag: "--clear-type-options",
-  },
-];
+const UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS =
+  createLegacyNoneCollectionNormalizers<UpdateCommandOptions>({
+    depDisableFlagKey: "replaceDeps",
+    testDisableFlagKey: "replaceTests",
+  });
 
 function normalizeLegacyNoneUpdateOptions(
   options: UpdateCommandOptions,

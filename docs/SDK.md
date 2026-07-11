@@ -115,6 +115,8 @@ Command/action contract exports:
 - Customization primitive option/result contracts: `InitCommandOptions` / `InitResult`, `ConfigCommandOptions` / `ConfigResult`, `SchemaSubcommand` / `SchemaResult` / `SchemaInspectResult`, `SchemaListResult`, `SchemaShowResult`, `SchemaAddTypeResult`, `SchemaRemoveTypeResult`, `SchemaAddStatusResult`, `SchemaRemoveStatusResult`, `SchemaAddFieldResult`, `SchemaRemoveFieldResult`, `SchemaListFieldsResult`, `SchemaShowFieldResult`, `SchemaApplyPresetResult`, `SchemaAddTypeInferResult`, `SchemaShowStatusResult`, `ProfileSubcommand` / `ProfileResult`, `ProfileListResult`, `ProfileShowResult`, `ProfileApplyResult`, `ProfileLintResult`
 - Typed governance and maintenance primitives on `PmClient`: `validate`, `health`, and `gc`
 - Governance and maintenance option/result contracts: `ValidateCommandOptions` / `ValidateResult`, `RunHealthOptions` / `HealthResult`, `GcCommandOptions` / `GcResult`
+- Typed plan workflow primitives on `PmClient`: `plan`, `planCreate`, `planShow`, `planAddStep`, `planUpdateStep`, `planCompleteStep`, `planBlockStep`, `planReorderStep`, `planRemoveStep`, `planLink`, `planUnlink`, `planDecision`, `planDiscovery`, `planValidation`, `planResume`, `planApprove`, and `planMaterialize`
+- Plan contracts: `PlanSubcommand`, `PlanCommandOptions`, `PlanCommandResult`, `PlanResultPlan`, `PlanStepSummary`, `PlanShowDepth`, and `PlanTemplateName`
 - Typed package and extension lifecycle primitives on `PmClient`: `extension`, `extensionList`, `extensionActivate`, `extensionDeactivate`, `package`, `packageList`, `packageInstall`, `packageUninstall`, `packageDoctor`, `packageManage`, `packageDescribe`, `packageReload`, `packageCatalog`, `packageActivate`, `packageDeactivate`, and `upgrade`
 - Lifecycle primitive option/result contracts: `ExtensionCommandOptions` / `ExtensionCommandResult`, `PackageCommandOptions` / `PackageCommandResult`, `UpgradeCommandOptions` / `UpgradeResult`
 - `PM_CORE_COMMAND_NAMES`
@@ -122,6 +124,35 @@ Command/action contract exports:
 - `PM_TOOL_PARAMETERS_SCHEMA`
 - `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`
 - `PM_TOOL_ACTION_PARAMETER_CONTRACTS`
+
+### Plan workflows
+
+Custom tools can manage durable plans without shelling out or importing CLI internals. The typed façade uses the same engine and result envelopes as `pm plan` and MCP `pm_plan`:
+
+```ts
+import { PmClient } from "@unbrained/pm-cli/sdk";
+
+const pm = new PmClient({ pmRoot, author: "planning-agent" });
+await pm.schemaAddField("acceptance_owner", {
+  type: "string",
+  requiredOnCreate: true,
+  requiredTypes: ["Task"],
+});
+const created = await pm.planCreate({
+  title: "Ship governed workflow",
+  step: ["Implement", "Verify"],
+});
+await pm.planUpdateStep(created.plan.id, "plan-step-001", {
+  stepStatus: "in_progress",
+});
+const result = await pm.planMaterialize(created.plan.id, {
+  steps: "all",
+  materializeType: "Task",
+  field: ["acceptance_owner=planning-agent"],
+});
+```
+
+`field` is repeatable and forwards `name=value` pairs through normal schema-aware create validation for every materialized child. Required-on-create fields remain mandatory. Each `materialized` entry includes `id`, `title`, `type`, `parent`, `tags`, and `from_step`, so an agent can confirm the created work without extra `get` calls.
 
 Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 
@@ -206,7 +237,7 @@ is the "invoke" verb that completes the package-author testing loop —
 `activateExtensionForTest` → `assertRegisteredCommandContract` → **run** →
 `deactivateExtensionForTest`. It dispatches a registered command handler through
 pm's real engine and returns the `CommandHandlerResult`, so a test can assert
-*behavior* (`result.result`) rather than only that the command is wired. The
+_behavior_ (`result.result`) rather than only that the command is wired. The
 `CommandHandlerContext` is built with agent-safe global defaults
 (`{ json: true, quiet: true, noPager: true }`) that callers may override. A clean
 run yields `{ handled: true, result, warnings: [] }`; a handler that throws a
@@ -243,7 +274,7 @@ Each override helper guards that a matching override is registered for the targe
 (command / format / service), so a typo surfaces as a descriptive error rather
 than a silent `overridden: false` / `handled: false`.
 
-The *executable registration* surfaces — search providers, vector store
+The _executable registration_ surfaces — search providers, vector store
 adapters, schema migrations, importers, and exporters — also have invoke helpers,
 so every executable register\* method has both an `assertRegistered*` and a
 `runRegistered*ForTest` counterpart. Each exercises the real registered behavior,
@@ -291,7 +322,7 @@ silent no-op. All invoke helpers are `async`, so a test always `await`s them.
 `describeExtensionActivation(activation, { extensionName })` is the **describe**
 (enumerate-all) verb that complements the `assertRegistered*` (verify-one) and
 `runRegistered*ForTest` (invoke-one) helpers. The activation result already
-carries per-surface *counts*; this returns the *names*. It walks every
+carries per-surface _counts_; this returns the _names_. It walks every
 sub-registry once and returns a flat `ExtensionActivationSummary` whose arrays
 are de-duplicated and locale-sorted (except `hooks`, emitted in canonical
 lifecycle order to mirror `hook_counts`) of every registered surface's
@@ -346,9 +377,15 @@ default `2`; section headings render one level deeper) control nesting, and
 empty ones.
 
 ```ts
-import { describeExtensionBlueprint, renderExtensionSurfaceMarkdown } from "@unbrained/pm-cli/sdk";
+import {
+  describeExtensionBlueprint,
+  renderExtensionSurfaceMarkdown,
+} from "@unbrained/pm-cli/sdk";
 
-const reference = renderExtensionSurfaceMarkdown(describeExtensionBlueprint(blueprint), { title: "my-pkg", headingLevel: 2 });
+const reference = renderExtensionSurfaceMarkdown(
+  describeExtensionBlueprint(blueprint),
+  { title: "my-pkg", headingLevel: 2 },
+);
 // → "## my-pkg\n\nCapabilities: `commands`, `schema`\n\n### Commands\n\n- `greet hello`\n…"
 ```
 
@@ -461,7 +498,10 @@ const grouped = await pm.aggregate({ groupBy: "status", count: true });
 const stats = await pm.stats({ metadataCoverage: true });
 await pm.comments(created.item.id, { add: "Investigation context captured." });
 await pm.files(created.item.id, { add: ["src/index.ts"], note: "entrypoint" });
-await pm.docs(created.item.id, { add: ["docs/SDK.md"], note: "authoring reference" });
+await pm.docs(created.item.id, {
+  add: ["docs/SDK.md"],
+  note: "authoring reference",
+});
 const graph = await pm.deps(created.item.id, { format: "graph" });
 const types = await pm.schemaList();
 const profiles = await pm.profileList();
@@ -469,7 +509,10 @@ const validation = await pm.validate({ checkResolution: true });
 const health = await pm.health({ checkOnly: true, summary: true });
 const packages = await pm.packageList({ project: true });
 const doctor = await pm.packageDoctor({ project: true, isolated: true });
-const plannedUpgrade = await pm.upgrade(undefined, { dryRun: true, cliOnly: true });
+const plannedUpgrade = await pm.upgrade(undefined, {
+  dryRun: true,
+  cliOnly: true,
+});
 
 await runAction({
   action: "context",
@@ -688,11 +731,19 @@ methods bind to the right sub-registry for you:
 ```ts
 import { createExtensionTestHarness } from "@unbrained/pm-cli/sdk/testing";
 
-const ext = await createExtensionTestHarness(extensionModule, { capabilities: ["commands", "schema"] });
+const ext = await createExtensionTestHarness(extensionModule, {
+  capabilities: ["commands", "schema"],
+});
 
-ext.assertCommandContract({ command: "incident triage", flags: ["--severity"] });
+ext.assertCommandContract({
+  command: "incident triage",
+  flags: ["--severity"],
+});
 ext.assertFlags({ targetCommand: "list", flags: ["--incident-filter"] });
-const { result } = await ext.runCommand({ command: "incident triage", options: { severity: "high" } });
+const { result } = await ext.runCommand({
+  command: "incident triage",
+  options: { severity: "high" },
+});
 const summary = ext.activationSummary();
 const reference = ext.renderMarkdown({ title: "incident package surfaces" });
 await ext.deactivate();
@@ -702,24 +753,24 @@ For provider-safe schemas, use `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`. It is flat 
 
 ## Capability Requirements
 
-| Registration | Manifest capability |
-|--------------|---------------------|
-| `registerCommand` | `commands` |
-| inline command flags | `schema` |
-| `registerFlags` | `schema` |
-| `registerItemFields` | `schema` |
-| `registerItemTypes` | `schema` |
-| `registerMigration` | `schema` |
-| `registerProfile` | `schema` |
-| `registerImporter` | `importers` |
-| `registerExporter` | `importers` |
-| `registerParser` | `parser` |
-| `registerPreflight` | `preflight` |
-| `registerService` | `services` |
-| `registerRenderer` | `renderers` |
-| lifecycle hooks | `hooks` |
-| `registerSearchProvider` | `search` |
-| `registerVectorStoreAdapter` | `search` |
+| Registration                 | Manifest capability |
+| ---------------------------- | ------------------- |
+| `registerCommand`            | `commands`          |
+| inline command flags         | `schema`            |
+| `registerFlags`              | `schema`            |
+| `registerItemFields`         | `schema`            |
+| `registerItemTypes`          | `schema`            |
+| `registerMigration`          | `schema`            |
+| `registerProfile`            | `schema`            |
+| `registerImporter`           | `importers`         |
+| `registerExporter`           | `importers`         |
+| `registerParser`             | `parser`            |
+| `registerPreflight`          | `preflight`         |
+| `registerService`            | `services`          |
+| `registerRenderer`           | `renderers`         |
+| lifecycle hooks              | `hooks`             |
+| `registerSearchProvider`     | `search`            |
+| `registerVectorStoreAdapter` | `search`            |
 
 Some override surfaces are single-winner: command overrides, parser overrides, preflight overrides, and output renderers. Keep those handlers narrowly scoped and verify package combinations with:
 
@@ -754,7 +805,9 @@ export default defineExtension({
       description: "Return a deterministic hello payload.",
       intent: "verify SDK extension activation",
       examples: ["pm hello"],
-      failure_hints: ["Run pm package doctor --detail deep --trace on activation failures."],
+      failure_hints: [
+        "Run pm package doctor --detail deep --trace on activation failures.",
+      ],
       run: async () => ({ ok: true, message: "hello" }),
     });
   },
@@ -989,7 +1042,7 @@ the type level.
 pm packages are authored **and loaded** as TypeScript (ADR
 [pm-2c28](../.agents/pm/decisions/pm-2c28.toon) / [pm-m1uz](../.agents/pm/decisions/pm-m1uz.toon)). A bare `const cmd = { ... }`
 satisfies the registration types only structurally and widens its literals;
-wrapping it in a builder checks the object against the contract *and* preserves
+wrapping it in a builder checks the object against the contract _and_ preserves
 the narrow literal types, while inferring the nested handler's `context`
 parameter from the builder signature — the same ergonomics `defineConfig` gives a
 Vite config. It also lets you colocate, export, reuse, and unit-test a definition
@@ -1046,7 +1099,11 @@ surfaces you use (ideally with `define*`-authored definitions) and leave the res
 out:
 
 ```ts
-import { composeExtension, defineCommand, deriveExtensionCapabilities } from "@unbrained/pm-cli/sdk";
+import {
+  composeExtension,
+  defineCommand,
+  deriveExtensionCapabilities,
+} from "@unbrained/pm-cli/sdk";
 import type { ExtensionBlueprint } from "@unbrained/pm-cli/sdk";
 
 const echo = defineCommand({
@@ -1059,7 +1116,9 @@ const echo = defineCommand({
 const blueprint: ExtensionBlueprint = {
   commands: [echo],
   parsers: { "command-kit echo": (context) => ({ options: context.options }) },
-  flags: { list: [{ long: "--kit-note", value_type: "string", value_name: "text" }] },
+  flags: {
+    list: [{ long: "--kit-note", value_type: "string", value_name: "text" }],
+  },
 };
 
 // The generated `activate` registers commands → overrides → flags → parsers →
@@ -1124,11 +1183,16 @@ export const commandsModule = defineExtensionBlueprint({
 
 ```ts
 // index.ts — the manifest entry; import sibling .ts modules by their real extension (loaded directly via native type stripping).
-import { composeExtension, mergeExtensionBlueprints } from "@unbrained/pm-cli/sdk";
+import {
+  composeExtension,
+  mergeExtensionBlueprints,
+} from "@unbrained/pm-cli/sdk";
 import { commandsModule } from "./commands.ts";
 import { searchModule } from "./search.ts";
 
-export default composeExtension(mergeExtensionBlueprints(commandsModule, searchModule));
+export default composeExtension(
+  mergeExtensionBlueprints(commandsModule, searchModule),
+);
 ```
 
 The merge is pure, deterministic, and never mutates an input. Each surface combines
@@ -1170,8 +1234,8 @@ const manifest = synthesizeExtensionManifest(blueprint, {
 manifest.capabilities; // ["commands", "parser", "schema"] — derived, not hand-written
 ```
 
-Where `defineExtensionManifest` only *types* a manifest you wrote by hand, this
-*generates* it. For the rare surface registered through the imperative `activate`
+Where `defineExtensionManifest` only _types_ a manifest you wrote by hand, this
+_generates_ it. For the rare surface registered through the imperative `activate`
 escape hatch (invisible to static derivation — e.g. a renderer wired in
 `activate`), pass `additionalCapabilities` and they are unioned in (legacy-alias
 resolved, unknown names dropped). Use the result as the on-disk `manifest.json`
@@ -1198,7 +1262,7 @@ const { module, manifest } = composeExtensionPackage(blueprint, {
   entry: "./index.ts",
   priority: 0,
 });
-export default module;          // the package entry's default export
+export default module; // the package entry's default export
 // write `manifest` verbatim as manifest.json — capabilities derived, never hand-synced
 ```
 
@@ -1221,7 +1285,10 @@ the runtime guardrails (the same discipline as `deriveExtensionCapabilities`
 inverting [`reconcileExtensionCapabilityUsage`](#capability-requirements)):
 
 ```ts
-import { describeExtensionBlueprint, lintExtensionBlueprint } from "@unbrained/pm-cli/sdk";
+import {
+  describeExtensionBlueprint,
+  lintExtensionBlueprint,
+} from "@unbrained/pm-cli/sdk";
 
 // describeExtensionBlueprint returns the same ExtensionActivationSummary shape as
 // the runtime describeExtensionActivation — but from the blueprint data alone, no
@@ -1234,8 +1301,10 @@ describeExtensionBlueprint(blueprint).command_handlers; // ["command-kit echo", 
 // `error` (the loader throws extension_capability_missing); a declared-but-unused
 // capability, a duplicate command, a command/override conflict, and a present-but-
 // empty surface are `warning`s. Pass declaredCapabilities or set manifest.capabilities.
-const report = lintExtensionBlueprint(blueprint, { declaredCapabilities: ["commands", "parser", "schema"] });
-report.ok;       // false if any error-severity finding
+const report = lintExtensionBlueprint(blueprint, {
+  declaredCapabilities: ["commands", "parser", "schema"],
+});
+report.ok; // false if any error-severity finding
 report.findings; // [{ code, severity, message, capability?/command?/field? }, ...]
 ```
 
@@ -1292,7 +1361,7 @@ tests of extension registration shape; keep `pm package doctor` and runtime
 contracts in integration tests.
 
 For declarative (`composeExtension`) packages, `assertExtensionBlueprint(blueprint, options?)`
-is the `assert*` family member that preflights the blueprint *without* activating
+is the `assert*` family member that preflights the blueprint _without_ activating
 it — it runs `lintExtensionBlueprint` and throws if any finding is error-severity
 (today: a capability a surface exercises but the declared set omits, which would
 fail activation with `extension_capability_missing`). It returns the full
@@ -1309,7 +1378,7 @@ const report = assertExtensionBlueprint(blueprint);
 
 `assertExtensionManifestMatchesBlueprint(manifest, blueprint)` is the **strict**
 bookend to that lenient preflight: where `assertExtensionBlueprint` only fails on
-an *undeclared* capability and merely warns on an unused one, this assertion fails
+an _undeclared_ capability and merely warns on an unused one, this assertion fails
 on **both** — so a hand-maintained `manifest.json` stays exactly the least-privilege
 set the blueprint requires (assert what `synthesizeExtensionManifest` would
 otherwise generate). Only `capabilities` are reconciled, since that is the one
@@ -1325,7 +1394,7 @@ assertExtensionManifestMatchesBlueprint(manifest, blueprint);
 ```
 
 Where the blueprint guards `capabilities`, a manifest's `pm_min_version` /
-`pm_max_version` bounds guard *which pm CLI versions the package supports*.
+`pm_max_version` bounds guard _which pm CLI versions the package supports_.
 Tracker references: `pm-knma` introduced `checkExtensionManifestCompatibility`;
 `pm-hng2` introduced `assertExtensionManifestCompatible`.
 `checkExtensionManifestCompatibility(manifest, { pmVersion, pmMaxVersionExceededMode? })`
@@ -1343,7 +1412,9 @@ import { checkExtensionManifestCompatibility } from "@unbrained/pm-cli/sdk";
 import { assertExtensionManifestCompatible } from "@unbrained/pm-cli/sdk/testing";
 
 // Inspect every bound outcome against a target version…
-const report = checkExtensionManifestCompatibility(manifest, { pmVersion: "2026.6.23" });
+const report = checkExtensionManifestCompatibility(manifest, {
+  pmVersion: "2026.6.23",
+});
 //   report.compatible === false, report.findings[0].code === "pm_min_version_unmet", …
 
 // …or fail the package's own suite when a bound would block the load.
@@ -1375,14 +1446,24 @@ import { assertExtensionPreflight } from "@unbrained/pm-cli/sdk/testing";
 
 // Inspect every author-time stage in one report…
 const report = preflightExtension(blueprint, {
-  identity: { name: "command-kit", version: "1.0.0", entry: "./index.ts", priority: 0 },
+  identity: {
+    name: "command-kit",
+    version: "1.0.0",
+    entry: "./index.ts",
+    priority: 0,
+  },
   target: { pmVersion: "2026.6.23" },
 });
 //   report.manifest.capabilities (derived), report.compatibility.compatible, report.findings[]
 
 // …or guard the whole package in one CI line.
 assertExtensionPreflight(blueprint, {
-  identity: { name: "command-kit", version: "1.0.0", entry: "./index.ts", priority: 0 },
+  identity: {
+    name: "command-kit",
+    version: "1.0.0",
+    entry: "./index.ts",
+    priority: 0,
+  },
   target: { pmVersion: "2026.6.23" },
 });
 ```
@@ -1407,13 +1488,18 @@ the `"<name> import"` / `"<name> export"` command path. Pass the whole `activati
 and the registration name:
 
 ```ts
-import { runRegisteredImporterForTest, runRegisteredExporterForTest } from "@unbrained/pm-cli/sdk/testing";
+import {
+  runRegisteredImporterForTest,
+  runRegisteredExporterForTest,
+} from "@unbrained/pm-cli/sdk/testing";
 
 const imported = await runRegisteredImporterForTest(activation, {
   importer: "csv",
   options: { rows: 3 },
 });
-const exported = await runRegisteredExporterForTest(activation, { exporter: "csv" });
+const exported = await runRegisteredExporterForTest(activation, {
+  exporter: "csv",
+});
 
 // Both return a CommandHandlerResult: imported.result is the importer's return value.
 ```
@@ -1454,10 +1540,13 @@ const parsed = await runRegisteredParserOverrideForTest(activation.parsers, {
 });
 // parsed.overridden === true; parsed.context holds the rewritten args/options.
 
-const rendered = await runRegisteredRendererOverrideForTest(activation.renderers, {
-  format: "toon",
-  result: { id: "pm-1a2b" },
-});
+const rendered = await runRegisteredRendererOverrideForTest(
+  activation.renderers,
+  {
+    format: "toon",
+    result: { id: "pm-1a2b" },
+  },
+);
 // rendered.rendered is the custom string the override produced.
 ```
 
@@ -1490,8 +1579,12 @@ assertRegisteredExporter(activation.registrations, {
   exporter: "jsonl",
   extensionName: "my-ext",
 });
-assertRegisteredSearchProvider(activation.registrations, { provider: "semantic-local" });
-assertRegisteredVectorStoreAdapter(activation.registrations, { adapter: "pinecone" });
+assertRegisteredSearchProvider(activation.registrations, {
+  provider: "semantic-local",
+});
+assertRegisteredVectorStoreAdapter(activation.registrations, {
+  adapter: "pinecone",
+});
 ```
 
 Use `assertRegisteredVectorStoreAdapter` for packages that call
@@ -1549,7 +1642,10 @@ import {
 } from "@unbrained/pm-cli/sdk/testing";
 
 assertRegisteredCommandOverride(activation.commands, { command: "list" });
-assertRegisteredParserOverride(activation.parsers, { command: "list", extensionName: "my-ext" });
+assertRegisteredParserOverride(activation.parsers, {
+  command: "list",
+  extensionName: "my-ext",
+});
 assertRegisteredPreflightOverride(activation.preflight); // preflight overrides are global (no command)
 assertRegisteredRendererOverride(activation.renderers, { format: "toon" });
 ```
@@ -1605,9 +1701,17 @@ export const kanbanProfile = defineProjectProfile({
   summary: "WIP-limited flow with a verifying stage.",
   types: [{ name: "Card", folder: "cards" }],
   statuses: [{ id: "doing", roles: ["active"] }],
-  fields: [{ key: "wip_limit", type: "number", commands: ["create", "update"] }],
+  fields: [
+    { key: "wip_limit", type: "number", commands: ["create", "update"] },
+  ],
   workflows: [{ type: "Card", allowed_transitions: [["open", "doing"]] }],
-  config: [{ key: "search_provider", value: "bm25", summary: "Offline lexical search." }],
+  config: [
+    {
+      key: "search_provider",
+      value: "bm25",
+      summary: "Offline lexical search.",
+    },
+  ],
   templates: [{ name: "card", options: { type: "Card" } }],
   packages: [{ spec: "templates", reason: "Reusable card shapes." }],
 });
@@ -1629,7 +1733,9 @@ surface to `schema`. Prove a profile registered with `assertRegisteredProfile`:
 ```ts
 import { assertRegisteredProfile } from "@unbrained/pm-cli/sdk/testing";
 
-const { profile } = assertRegisteredProfile(activation.registrations, { profile: "kanban" });
+const { profile } = assertRegisteredProfile(activation.registrations, {
+  profile: "kanban",
+});
 // profile is the normalized ProjectProfileDefinition
 ```
 
@@ -1651,11 +1757,21 @@ import {
 
 // Invoke a registered provider's semantic query (or embed / embedBatch /
 // queryExpansion / rerank); the result type follows `operation`.
-const hits = await runRegisteredSearchProviderForTest(activation.registrations, {
-  provider: "semantic-local",
-  operation: "query",
-  context: { query: "calendar", mode: "semantic", tokens: ["calendar"], options: {}, settings, documents },
-});
+const hits = await runRegisteredSearchProviderForTest(
+  activation.registrations,
+  {
+    provider: "semantic-local",
+    operation: "query",
+    context: {
+      query: "calendar",
+      mode: "semantic",
+      tokens: ["calendar"],
+      options: {},
+      settings,
+      documents,
+    },
+  },
+);
 
 // Invoke a registered adapter's upsert / query / delete.
 await runRegisteredVectorStoreAdapterForTest(activation.registrations, {
@@ -1711,7 +1827,11 @@ export default defineExtension({
         aliases: ["incident"],
         required_create_fields: ["title", "description", "severity"],
         options: [
-          { key: "severity", values: ["critical", "major", "minor"], required: true },
+          {
+            key: "severity",
+            values: ["critical", "major", "minor"],
+            required: true,
+          },
           { key: "service", values: ["api", "web", "worker"] },
         ],
       },
@@ -1810,8 +1930,16 @@ export default defineExtension({
       name: "example-search",
       async query(context) {
         return context.documents
-          .filter((doc) => doc.metadata.title?.toLowerCase().includes(context.query.toLowerCase()))
-          .map((doc) => ({ id: doc.metadata.id, score: 0.5, matched_fields: ["title"] }));
+          .filter((doc) =>
+            doc.metadata.title
+              ?.toLowerCase()
+              .includes(context.query.toLowerCase()),
+          )
+          .map((doc) => ({
+            id: doc.metadata.id,
+            score: 0.5,
+            matched_fields: ["title"],
+          }));
       },
     });
   },

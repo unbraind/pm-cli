@@ -19,7 +19,10 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 
 const PACKAGES = [
   {
@@ -27,14 +30,26 @@ const PACKAGES = [
     packageName: "pm-beads",
     diagnosticName: "beads",
     template: "standard",
-    targetDirectory: path.join(repoRoot, "packages", "pm-beads", "extensions", "beads"),
+    targetDirectory: path.join(
+      repoRoot,
+      "packages",
+      "pm-beads",
+      "extensions",
+      "beads",
+    ),
   },
   {
     extensionName: "todos",
     packageName: "pm-todos",
     diagnosticName: "todos",
     template: "set-based",
-    targetDirectory: path.join(repoRoot, "packages", "pm-todos", "extensions", "todos"),
+    targetDirectory: path.join(
+      repoRoot,
+      "packages",
+      "pm-todos",
+      "extensions",
+      "todos",
+    ),
   },
 ];
 
@@ -42,7 +57,8 @@ function renderTypeScriptLoader(config) {
   if (config.template === "set-based") {
     return renderSetBasedTypeScriptLoader(config);
   }
-  return `import { existsSync } from "node:fs";
+  return `/** @module packages/${config.packageName}/extensions/${config.extensionName}/runtime-loader */
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -55,6 +71,7 @@ const CURRENT_EXTENSION_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const EXTENSION_NAME = "${config.extensionName}";
 const PACKAGE_NAME = "${config.packageName}";
 const DIAGNOSTIC_NAME = "${config.diagnosticName}";
+/** Runtime module exports loaded from the installed package or co-located extension. */
 export type PackageRuntimeModule = Record<string, unknown>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -138,6 +155,7 @@ async function tryRuntime(modulePath: string, attempted: string[]): Promise<Pack
   }
 }
 
+/** Resolve and load the first usable packaged runtime module. */
 export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> {
   const attempted: string[] = [];
   for (const modulePath of [...resolvePackageRootCandidates().flatMap(runtimePaths), path.join(CURRENT_EXTENSION_ROOT, "runtime.ts")]) {
@@ -155,7 +173,8 @@ export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> 
 }
 
 function renderSetBasedTypeScriptLoader(config) {
-  return `import { existsSync } from "node:fs";
+  return `/** @module packages/${config.packageName}/extensions/${config.extensionName}/runtime-loader */
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -165,6 +184,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
  */
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 const localRuntime = path.join(path.dirname(fileURLToPath(import.meta.url)), "runtime.ts");
+/** Runtime module exports loaded from the installed package or co-located extension. */
 export type PackageRuntimeModule = Record<string, unknown>;
 const packageConfig = { extensionName: "${config.extensionName}", packageName: "${config.packageName}", diagnosticName: "${config.diagnosticName}" } as const;
 
@@ -232,6 +252,7 @@ const loadRuntimeFile = async (target: string, attempted: string[]): Promise<Pac
   }
 };
 
+/** Resolve and load the first usable packaged runtime module. */
 export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> {
   const attempted: string[] = [];
   for (const target of runtimeFiles()) {
@@ -272,9 +293,14 @@ export async function main() {
         } catch {
           current = "";
         }
-        if (normalizeGeneratedText(current) !== normalizeGeneratedText(output.content)) {
+        if (
+          normalizeGeneratedText(current) !==
+          normalizeGeneratedText(output.content)
+        ) {
           drift = true;
-          console.error(`Out of sync: ${path.relative(repoRoot, output.target)}`);
+          console.error(
+            `Out of sync: ${path.relative(repoRoot, output.target)}`,
+          );
         }
       } else {
         await writeFile(output.target, output.content);
@@ -293,7 +319,10 @@ export async function main() {
 }
 
 /* c8 ignore start -- CLI auto-run guard; logic covered via exported main() */
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   main().catch((error) => {
     console.error(error);
     process.exit(1);

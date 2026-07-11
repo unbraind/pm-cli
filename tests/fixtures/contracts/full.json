@@ -5395,6 +5395,9 @@
           "flag": "--depth"
         },
         {
+          "flag": "--field"
+        },
+        {
           "flag": "--fields",
           "list": true
         },
@@ -21933,6 +21936,20 @@
               "path=docs/SDK.md,note=public API reference"
             ]
           },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Field."
+          },
           "fields": {
             "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
@@ -24561,10 +24578,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.0.6"
+    "x-schema-version": "4.0.7"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.0.6",
+  "schema_version": "4.0.7",
   "selected": {
     "action": null,
     "availability_only": false,
