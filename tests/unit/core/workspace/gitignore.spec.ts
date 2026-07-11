@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -24,6 +24,18 @@ describe("ensurePmGitignore", () => {
       const repaired = await readFile(first.path, "utf8");
       expect(repaired).toBe(`node_modules/\n\n${getPmGitignoreBlock()}\n`);
       expect((await ensurePmGitignore(root)).changed).toBe(false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("propagates unexpected read failures without replacing the target", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-error-"));
+    try {
+      await mkdir(path.join(root, ".gitignore"));
+      await expect(ensurePmGitignore(root)).rejects.toMatchObject({
+        code: expect.stringMatching(/^(EISDIR|EACCES)$/),
+      });
     } finally {
       await rm(root, { recursive: true, force: true });
     }

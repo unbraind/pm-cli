@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- Restore 100% SDK workspace read-error coverage ([pm-jw2a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jw2a.toon))
 - GH-510: macOS nightly red — withTempPmPath skips realpath canonicalization; init-path-guard probe-root assertion fails (/var vs /private/var) ([pm-dprb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dprb.toon))
 - GH-454: schema add-field accepts reserved built-in names silently; collision error names no partner ([pm-b9ov](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b9ov.toon))
 - GH-516: pm init seeds unrelated managed packages into fresh PM_GLOBAL_PATH workspaces ([pm-b0se](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b0se.toon))
