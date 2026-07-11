@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: architecture,"area:plan","area:sdk"
 created_at: "2026-07-05T05:09:13.638Z"
-updated_at: "2026-07-11T14:11:25.640Z"
+updated_at: "2026-07-11T16:00:54.528Z"
 closed_at: "2026-07-11T14:11:24.830Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -24,8 +24,9 @@ comments[5]{created_at,author,text}:
   "2026-07-11T13:39:33.547Z",codex-root,"PR review evidence: --field normalization now preserves existing camelCase boundaries and rejects separator-only keys instead of writing an undefined property. Focused plan regressions cover both cases; typecheck and strict static quality pass."
   "2026-07-11T13:43:24.353Z",codex-root,"PR review evidence: SDK materialization documentation now registers the required custom field before using it, and the typed façade mock uses a complete PlanCommandResult with plan and generated_at. Focused SDK/generator tests, typecheck, strict static quality, docs/skills, and generated-file sync gates pass."
   "2026-07-11T14:11:22.423Z",codex-root,"Current-head review evidence: plan --field is now declared in PLAN_ACTION_PARAMETER_PROPERTIES and the plan action optional-key contract, with strict CLI-to-MCP schema parity coverage and schema version 4.0.7. Focused tests, contract snapshot, typecheck, lint, and static gates pass."
-notes[1]{created_at,author,text}:
+notes[2]{created_at,author,text}:
   "2026-07-10T21:30:53.590Z",maintainer-agent,"Implementation slicing 2026-07-10 (grounded in current src state). Already public — do NOT redo: the pm_plan MCP surface and generic plan action dispatch; profile *planning* (planProfileApplication from core/profile/profile-plan.ts) is a different domain and already exported. The actual gap: the ENTIRE plan workflow lives in src/cli/commands/plan.ts (1,796 lines) — there is no src/core/plan module at all, making this the largest single-module promotion left in the epic besides test.ts. Plan is also the agent-harness surface (Codex/Claude/Cursor-style planning), so primitive-level promotion is what makes SDK-embedded planning harnesses possible without shelling out. Suggested slices: S1 plan document model + step lifecycle primitives (~90m) — create with stepTitle, step transitions, plan read model. S2 plan annotation primitives (~60m) — dependencies/decisions/discoveries; shapes should mirror the pm-zwpp S1 annotation kernel — coordinate so plan does not grow a second annotation engine. S3 validation + materialization primitives (~60m) — materialize creates real items and MUST consume the shipped lifecycle primitives (pm-98cz) rather than private paths; this is the primitive-level fix site for pm-qd2h / GH-452 (materialize dead-ends on required-on-create custom fields) and pm-ypha / GH-453 (materialize --json omits title/type/parent) — coordinate with both, do not duplicate their fixes. S4 typed PmClient facades + SDK reference docs/tests (~30m), result shapes matching runAction oracle. Order: strictly S1 -> S2 -> S3 -> S4 (each layer consumes the previous one)."
+  "2026-07-11T16:00:54.527Z",maintainer-agent,"PR #512 merged (squash 9f8545e2, 2026-07-11). Final review round resolved two CodeRabbit findings in 02394a09: (1) plan action `field` contract aligned to the string-or-array anyOf shape shared by file/test/doc (matches PlanCommandOptions.field + toSpecArray; fixture regenerated); (2) --field keys colliding with reserved materialize keys (title/description/type/parent/tags/author/message/dep) now reject with EXIT_CODE.USAGE + regression test. All 11 review threads resolved; CodeRabbit/Gemini/Greptile clean; all CI gates green."
 files[5]{path,scope,note}:
   src/cli/commands/plan.ts,project,governed materialization and enriched result projection
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,plan field tool schema contract
