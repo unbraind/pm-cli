@@ -1,8 +1,8 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { claimNextFromRecommendations, isAlreadyClaimedError, runClaim, runClaimNext, runRelease, type ClaimMutationOptions } from "../../../src/cli/commands/claim.js";
+import { claimNextFromRecommendations, isAlreadyClaimedError, parseClaimNextAttempts, runClaim, runClaimNext, runRelease, type ClaimMutationOptions } from "../../../src/cli/commands/claim.js";
 import type { GlobalOptions } from "../../../src/core/shared/command-types.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
@@ -77,6 +77,14 @@ function setGovernancePreset(context: TempPmContext, preset: "minimal" | "defaul
 }
 
 describe("runClaim/runRelease", () => {
+  it("validates the bounded claim-next candidate walk", () => {
+    expect(parseClaimNextAttempts(undefined)).toBe(10);
+    expect(parseClaimNextAttempts("4")).toBe(4);
+    expect(parseClaimNextAttempts(4)).toBe(4);
+    expect(() => parseClaimNextAttempts("0")).toThrow(/1 to 100/);
+    expect(() => parseClaimNextAttempts("101")).toThrow(/1 to 100/);
+    expect(() => parseClaimNextAttempts("1.5")).toThrow(/1 to 100/);
+  });
   it("classifies only structured already-claimed conflicts as retryable", () => {
     expect(isAlreadyClaimedError(new Error("ordinary"))).toBe(false);
     expect(isAlreadyClaimedError(new PmCliError("other", EXIT_CODE.CONFLICT, { code: "other" }))).toBe(false);
@@ -120,7 +128,28 @@ describe("runClaim/runRelease", () => {
       forced: false,
       skipped: true,
     }));
-    expect(result).toMatchObject({ skipped: true, attempts: 1, recommendation: { id: "pm-held" } });
+    expect(result).toMatchObject({
+      available: false,
+      skipped: true,
+      attempts: 1,
+      recommendation: null,
+    });
+  });
+  it("reports conflict guidance when every attempted candidate loses its claim race", async () => {
+    const recommendation = { id: "pm-raced", reasons: [] } as never;
+    await expect(
+      claimNextFromRecommendations([recommendation], false, {}, {}, async () => {
+        throw new PmCliError("held", EXIT_CODE.CONFLICT, { code: "already_claimed_by" });
+      }),
+    ).rejects.toMatchObject<Partial<PmCliError>>({
+      message: "No actionable item remained available to claim",
+      exitCode: EXIT_CODE.CONFLICT,
+      context: {
+        code: "no_available_next_item",
+        why: "Every ranked candidate was claimed by another agent before this atomic selection completed.",
+        nextSteps: ["Run pm claim --next again to refresh the ranked candidate set."],
+      },
+    });
   });
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-claim-not-init-"));
@@ -180,11 +209,49 @@ describe("runClaim/runRelease", () => {
       expect(new Set(claimed.map((result) => result.recommendation.id)).size).toBe(2);
     });
     await withTempPmPath(async (context) => {
+      const empty = await runClaimNext(
+        false,
+        { path: context.pmPath },
+        { author: "nobody", ifAvailable: true },
+      );
+      expect(empty).toMatchObject({
+        available: false,
+        item: null,
+        skipped: true,
+        recommendation: null,
+        attempts: 0,
+        warnings: ["no_available_next_item"],
+      });
       await expect(runClaimNext(false, { path: context.pmPath }, { author: "nobody" })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.NOT_FOUND,
         context: expect.objectContaining({ code: "no_available_next_item" }),
       });
       const missingId = context.runCli(["claim", "--json"]);
       expect(missingId.code).toBe(EXIT_CODE.USAGE);
+    });
+  });
+
+  it("uses the configured default author in an empty if-available envelope", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        author_default?: string;
+      };
+      settings.author_default = "settings-author";
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      const previousAuthor = process.env.PM_AUTHOR;
+      delete process.env.PM_AUTHOR;
+      try {
+        const empty = await runClaimNext(
+          false,
+          { path: context.pmPath },
+          { ifAvailable: true },
+        );
+        expect(empty.claimed_by).toBe("settings-author");
+      } finally {
+        if (previousAuthor === undefined) delete process.env.PM_AUTHOR;
+        else process.env.PM_AUTHOR = previousAuthor;
+      }
     });
   });
 

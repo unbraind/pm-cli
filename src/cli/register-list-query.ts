@@ -833,6 +833,10 @@ export function registerListQueryCommands(
       )
       .option("--ready-only", "Omit the blocked companion list")
       .option(
+        "--include-decisions",
+        "Include human-gated Decision items in the claimable ready queue",
+      )
+      .option(
         "--format <value>",
         "Next output format override: markdown|toon|json",
       )

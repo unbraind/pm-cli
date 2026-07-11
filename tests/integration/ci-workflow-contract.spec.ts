@@ -76,6 +76,8 @@ describe("GitHub workflow contract", () => {
     const ciPath = path.resolve(repoRoot, ".github/workflows/ci.yml");
     const ciWorkflow = normalizeWorkflow(await readFile(ciPath, "utf8"));
     const runtimeSmokeJob = extractWorkflowJob(ciWorkflow, "build-test");
+    const coverageShardsJob = extractWorkflowJob(ciWorkflow, "coverage-shards");
+    const coverageJob = extractWorkflowJob(ciWorkflow, "coverage");
     const windowsRegressionJob = extractWorkflowJob(ciWorkflow, "windows-regression");
 
     expectContainsAll(ciWorkflow, [
@@ -96,19 +98,21 @@ describe("GitHub workflow contract", () => {
       "build-foundation:",
       "build-test:",
       "gates:",
+      "coverage-shards:",
+      "coverage:",
       "windows-regression:",
       "name: Build foundation (Ubuntu, Node 24)",
       "name: Runtime smoke (${{ matrix.os }}, Node ${{ matrix.node }})",
       "name: Gates (${{ matrix.gate }})",
+      "name: Coverage shard ${{ matrix.shard }}/4",
+      "name: Gates (coverage)",
       "name: Windows regression (Node 24)",
       "needs: build-foundation",
       "gate:",
-      "- coverage",
       "- typecheck",
       "- static",
       "- compat",
       "- smokes",
-      "if: matrix.gate == 'coverage'",
       "if: matrix.gate == 'typecheck'",
       "if: matrix.gate == 'static'",
       "if: matrix.gate == 'compat'",
@@ -147,7 +151,7 @@ describe("GitHub workflow contract", () => {
       "pnpm security:scan",
       "pnpm lint",
       "run: pnpm typecheck",
-      "run: pnpm test:coverage",
+      "pnpm test:coverage --",
       "run: node scripts/release/compatibility-check.mjs --json",
       "npm pack --dry-run",
       "pnpm smoke:npx",
@@ -166,6 +170,32 @@ describe("GitHub workflow contract", () => {
       "report_type: test_results",
       "files: ./coverage/junit.xml",
       "name: pm-cli-test-results",
+    ]);
+    expectContainsAll(coverageShardsJob, [
+      "needs: build-foundation",
+      "persist-credentials: false",
+      "shard: [1, 2, 3, 4]",
+      "--shard=${{ matrix.shard }}/4",
+      "--reporter=blob",
+      "--outputFile.blob=.vitest-reports/blob-${{ matrix.shard }}.json",
+      "--coverage.thresholds.lines=0",
+      "--coverage.thresholds.branches=0",
+      "--coverage.thresholds.functions=0",
+      "--coverage.thresholds.statements=0",
+      "name: coverage-blob-${{ matrix.shard }}",
+      "if-no-files-found: error",
+    ]);
+    expectContainsAll(coverageJob, [
+      "name: Gates (coverage)",
+      "needs: coverage-shards",
+      "persist-credentials: false",
+      "pattern: coverage-blob-*",
+      "merge-multiple: true",
+      "path: .vitest-reports",
+      "pnpm exec vitest --merge-reports=.vitest-reports --coverage",
+      "name: coverage-node24-ubuntu-latest",
+      "files: ./coverage/lcov.info",
+      "files: ./coverage/junit.xml",
     ]);
     expectContainsAll(runtimeSmokeJob, [
       "name: Runtime smoke (${{ matrix.os }}, Node ${{ matrix.node }})",

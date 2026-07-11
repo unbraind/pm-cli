@@ -68,6 +68,7 @@ import {
   createPmCliExpectedError,
   clearWorkspaceContractsCache,
   claim as claimItem,
+  claimNext as claimNextItem,
   close as closeItem,
   closeTask,
   compactFlagAliasContracts,
@@ -766,9 +767,27 @@ describe("public sdk entrypoint", () => {
     const claimSchema = _testOnlyCliContracts.buildActionScopedToolSchema("claim") as {
       properties?: Record<string, unknown>;
       required?: string[];
+      oneOf?: Array<{ required?: string[]; properties?: Record<string, unknown> }>;
     };
     expect(claimSchema.properties?.action).toMatchObject({ const: "claim" });
-    expect(claimSchema.required).toEqual(expect.arrayContaining(["action", "id"]));
+    expect(claimSchema.properties).toMatchObject({
+      ifAvailable: { type: "boolean" },
+      next: { type: "boolean" },
+      maxAttempts: {
+        anyOf: expect.arrayContaining([
+          { type: "integer", minimum: 1, maximum: 100 },
+          { type: "string", pattern: "^(?:[1-9]|[1-9][0-9]|100)$" },
+        ]),
+      },
+      includeDecisions: { type: "boolean" },
+    });
+    expect(claimSchema.required).toEqual(["action"]);
+    expect(claimSchema.oneOf).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ required: ["id"] }),
+        expect.objectContaining({ required: ["next"], properties: { next: { const: true } } }),
+      ]),
+    );
     const restoreSchema = _testOnlyCliContracts.buildActionScopedToolSchema("restore") as {
       properties?: Record<string, unknown>;
     };
@@ -843,6 +862,9 @@ describe("public sdk entrypoint", () => {
     expect(flagsFor("ctx")).toEqual(expect.arrayContaining(["--depth"]));
     expect(flagsFor("test-runs-worker")).toEqual(expect.arrayContaining(["--status", "--tail"]));
     expect(flagsFor("extension init")).toEqual(expect.arrayContaining(["--project", "--global", "--capability"]));
+    expect(flagsFor("package init")).toEqual(
+      expect.arrayContaining(["--project", "--global", "--capability", "--declarative"]),
+    );
     expect(flagsFor("extension install")).toEqual(expect.arrayContaining(["--github", "--ref"]));
     expect(flagsFor("extension uninstall")).toEqual(expect.arrayContaining(["--project", "--global"]));
     expect(flagsFor("extension explore")).toEqual(expect.arrayContaining(["--project", "--global"]));
@@ -884,7 +906,20 @@ describe("public sdk entrypoint", () => {
     expect(flagsFor("gc")).toEqual(expect.arrayContaining(["--dry-run"]));
     expect(flagsFor("stats")).toEqual(expect.arrayContaining(["--storage"]));
     expect(flagsFor("contracts")).toEqual(expect.arrayContaining(["--flags-only"]));
-    expect(flagsFor("claim")).toEqual(expect.arrayContaining(["--message"]));
+    expect(flagsFor("claim")).toEqual(
+      expect.arrayContaining([
+        "--message",
+        "--type",
+        "--tag",
+        "--priority",
+        "--assignee-filter",
+        "--parent",
+        "--sprint",
+        "--release",
+        "--max-attempts",
+        "--include-decisions",
+      ]),
+    );
     expect(contractsFor("claim")).toEqual(
       expect.arrayContaining([expect.objectContaining({ flag: "--author", aliases: expect.arrayContaining(["--assignee"]) })]),
     );
@@ -1107,6 +1142,9 @@ console.log(JSON.stringify(payload));`,
       expect(created.item?.title).toBe("SDK client item");
       expect(created.changed_fields).toEqual(expect.arrayContaining(["title", "status"]));
       expect(created.changed_field_count).toBeUndefined();
+
+      const claimedNext = await client.claimNext({ type: "Task", maxAttempts: "3" });
+      expect(claimedNext).toMatchObject({ available: true, claimed_by: "sdk-client-test" });
 
       const fullDiffCreated = (await client.create({
         title: "SDK client full diff item",
@@ -1333,6 +1371,12 @@ console.log(JSON.stringify(payload));`,
       };
       expect(released.item).toMatchObject({ id: itemId });
       expect(released.item?.assignee).toBeUndefined();
+
+      const nextClaimed = await claimNextItem(
+        { type: "Task", maxAttempts: "2" },
+        wrapperDefaults,
+      );
+      expect(nextClaimed).toMatchObject({ available: true, claimed_by: "sdk-client-test" });
 
       const copied = (await copyItem(itemId, { title: "SDK top-level copy" }, wrapperDefaults)) as {
         item?: { id?: string; title?: string };

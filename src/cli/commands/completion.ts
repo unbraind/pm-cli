@@ -1714,6 +1714,15 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--force[Force override]' \\
             '--if-available[Skip work held by another author]' \\
             '--next[Atomically claim the next actionable item]' \\
+            '--type[Filter --next candidates by type]:(${typeChoices})' \\
+            '--tag[Filter --next candidates by tag]:(${zshTagChoices})' \\
+            '--priority[Filter --next candidates by priority]:(0 1 2 3 4)' \\
+            '--assignee-filter[Filter --next candidates by ownership]:assignee_filter:(assigned unassigned)' \\
+            '--parent[Scope --next candidates to a subtree]:parent' \\
+            '--sprint[Filter --next candidates by sprint]:sprint' \\
+            '--release[Filter --next candidates by release]:release' \\
+            '--max-attempts[Bound the --next candidate walk]:max_attempts' \\
+            '--include-decisions[Allow human-gated Decision candidates]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;

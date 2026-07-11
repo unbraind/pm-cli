@@ -527,8 +527,43 @@ describe("operation command actions", () => {
 
   it("routes claim --next through ranked atomic selection", async () => {
     vi.mocked(runClaimNext).mockResolvedValueOnce({ id: "pm-next" } as never);
-    await runCli("claim", "--next", "--if-available");
-    expect(runClaimNext).toHaveBeenCalledWith(false, expect.any(Object), expect.objectContaining({ ifAvailable: true }));
+    await runCli(
+      "claim", "--next", "--if-available", "--type", "Task", "--tag", "agent",
+      "--priority", "1", "--assignee-filter", "unassigned", "--parent", "pm-root",
+      "--sprint", "S1", "--release", "R1", "--max-attempts", "4", "--include-decisions",
+    );
+    expect(runClaimNext).toHaveBeenCalledWith(
+      false,
+      expect.any(Object),
+      expect.objectContaining({ ifAvailable: true, maxAttempts: "4" }),
+      expect.objectContaining({
+        type: "Task",
+        tag: "agent",
+        priority: "1",
+        assigneeFilter: "unassigned",
+        parent: "pm-root",
+        sprint: "S1",
+        release: "R1",
+        includeDecisions: true,
+      }),
+    );
+    vi.mocked(runClaimNext).mockResolvedValueOnce({ id: "pm-next-defaults" } as never);
+    await runCli("claim", "--next");
+    expect(runClaimNext).toHaveBeenLastCalledWith(
+      false,
+      expect.any(Object),
+      expect.any(Object),
+      expect.objectContaining({
+        type: undefined,
+        tag: undefined,
+        priority: undefined,
+        assigneeFilter: undefined,
+        parent: undefined,
+        sprint: undefined,
+        release: undefined,
+        includeDecisions: false,
+      }),
+    );
   });
 
   it("maps pm test flags and flags dependency failures via exit code", async () => {

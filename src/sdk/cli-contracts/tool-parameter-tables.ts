@@ -342,6 +342,15 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   rollback: { type: "string" },
   noCheckpoint: { type: "boolean" },
   force: { type: "boolean" },
+  ifAvailable: { type: "boolean" },
+  next: { type: "boolean" },
+  maxAttempts: {
+    anyOf: [
+      { type: "integer", minimum: 1, maximum: 100 },
+      { type: "string", pattern: "^(?:[1-9]|[1-9][0-9]|100)$" },
+    ],
+  },
+  includeDecisions: { type: "boolean" },
   run: { type: "boolean" },
   count: { type: "boolean" },
   sum: { type: "string" },

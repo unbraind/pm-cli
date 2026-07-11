@@ -2,18 +2,49 @@ id: pm-fjxm
 title: "GH-509: pm claim --next lacks candidate filters and race-loss walk — thread next filters + advance to next candidate"
 description: "GH-509 (filed against npm v2026.7.10, which predates PR#502). The base atomic primitive ALREADY shipped: pm claim --next atomically recommends+claims under one lock (pm-114v, PR#502, 2026-07-10). The issue's remaining delta on main: (1) claim --next accepts NONE of pm next's candidate filters (--type/--tag/--priority/--assignee-filter/--parent/--sprint/--release) so a worker cannot scope to its lane — verified via pm claim --help on main 2026-07-11; (2) on race loss the loser fails (exit 4) instead of transparently advancing to the next ready candidate — issue proposes walk-with-bound via --max-attempts <n> / --if-available semantics (claim --next already has --if-available for the single-item case); (3) canonical single-call worker loop: while item=$(pm claim --next --author $AGENT --type task --json); do ...; done. Spelling decision (next --claim vs extending claim --next) belongs to ADR pm-pbyu grammar rules — prefer extending the existing claim --next verb, do not mint a second spelling. Interacts with pm-eqk0: any candidate-walk must ALSO skip Decision-type items or the walk funnels every lane into an unresolvable ADR."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,cli,concurrency,multi-agent
 created_at: "2026-07-11T03:05:51.194Z"
-updated_at: "2026-07-11T03:05:58.683Z"
+updated_at: "2026-07-11T22:34:42.107Z"
+closed_at: "2026-07-11T22:34:41.367Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "pm claim --next accepts the full pm next candidate-filter set (type/tag/priority/assignee-filter/parent/sprint/release) and scopes ranking identically to pm next; on losing the claim race, claim --next advances to the next ready candidate under the same lock semantics, bounded by --max-attempts (default documented); exhausting candidates returns a distinct non-error empty result usable in shell while-loops; contracts/completions/docs/MCP schema updated per new-flag wiring checklist; no second command spelling introduced"
 parent: pm-dj98
 risk: medium
 confidence: high
+resolution: Claim-next empty and error paths now preserve canonical identity and exact discoverable contracts.
+expected_result: Empty selection results and contracts match successful claim semantics and live help.
+actual_result: "author_default is resolved, zero-match diagnostics are distinct, and all claim-next flags appear in contracts."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-114v,related,"2026-07-11T03:05:58.665Z",null,null
   pm-eqk0,related,"2026-07-11T03:05:58.665Z",null,null
+comments[11]{created_at,author,text}:
+  "2026-07-11T18:21:03.289Z",codex-root,"Implementation start: active in one broad PR because GH-509 candidate filters/race walking, GH-513 ready ranking, and decision-needed separation share the public SDK actionability engine, claim transaction, CLI/MCP contracts, and fleet-worker verification. Live all-status search and full item/dependency/comment history confirmed no duplicate lineage; only these three items are active."
+  "2026-07-11T18:28:47.199Z",codex-root,"Implementation checkpoint: claim --next now forwards the full candidate-filter set, exposes max-attempts 1..100, walks ranked race losses, and is available through PmClient.claimNext/top-level claimNext/MCP. Focused typecheck and command suites pass after contract updates."
+  "2026-07-11T19:28:24.443Z",codex-root,"Final evidence: focused command/SDK suites pass; full repository coverage passes 5550/5550 at exact 100% statements, branches, functions, and lines; pnpm lint passes ESLint, zero jscpd clones, static quality, 100% docstrings, and token-budget gates; contracts, docs/skills, secret scan, and dependency audit pass. Fresh packed-package temp workspace proves filtered rank 1 selection and bounded atomic claim return the same task."
+  "2026-07-11T19:29:31.126Z",codex-root,Final self-review found the exhaustion AC was only throwing or returning a held-item shape. Reopened this item alone to add the explicit --if-available empty success envelope before shipping.
+  "2026-07-11T19:44:09.297Z",codex-root,"Exhaustion completion evidence: --if-available now returns available:false, item:null, skipped:true, recommendation:null after zero candidates or a fully-held walk; focused SDK/claim suites pass and full coverage remains 5550/5550 at exact 100/100/100/100."
+  "2026-07-11T20:03:14.500Z",codex-root,"Bot review start: Greptile found callerAuthor was not threaded into relevance scoring; Gemini found numeric maxAttempts/priority SDK inputs could be dropped. Reopened for fixes."
+  "2026-07-11T20:06:37.323Z",codex-root,"Review fixes implemented: explicit callerAuthor now drives relevance affinity; numeric maxAttempts and priority inputs survive SDK/MCP dispatch; ClaimNextOptions documents the 1..100 bound; focused 253-test bundle and strict lint/static gates pass."
+  "2026-07-11T20:17:24.273Z",codex-root,"Second review fixes implemented: empty envelopes resolve settings author_default through the canonical author resolver; zero-candidate errors distinguish filter misses from race losses; CLAIM_FLAG_CONTRACTS now includes every claim-next flag and the generated snapshot is refreshed. Focused 202 tests and strict lint/static/contracts pass."
+  "2026-07-11T20:35:15.134Z",codex-root,"Final review evidence: claim action schemas now expose next, ifAvailable, maxAttempts 1..100, includeDecisions, and next includeDecisions; completion priority choices match pm next. Focused 294 tests, contracts snapshot/check, and strict lint/static gates pass."
+  "2026-07-11T20:46:50.263Z",codex-root,"Final Greptile fix: the strict claim oneOf schema now pins the next branch to next=true, matching dispatcher semantics and rejecting next=false without id at validation time. Focused 171 tests, contracts regeneration/check, and strict lint/static gates pass."
+  "2026-07-11T22:34:38.879Z",codex-root,"CodeRabbit completion feedback addressed: claim --next type and tag filters now reuse the same dynamic typeChoices and zshTagChoices as pm next; focused workflow/completion bundle passed 111 tests."
+files[8]{path,scope,note}:
+  src/cli/commands/claim.ts,project,bounded atomic candidate walk
+  src/cli/commands/completion.ts,project,Use dynamic type and tag choices for claim-next completion parity
+  src/cli/commands/next.ts,project,shared ranked actionability and decision separation contract
+  src/cli/register-operations.ts,project,CLI option forwarding
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,claim action parameter schema parity
+  src/sdk/cli-contracts/tool-schema.ts,project,MCP and SDK action schema
+  src/sdk/runtime.ts,project,public SDK claimNext primitive
+  tests/fixtures/contracts/full.json,project,generated contract snapshot
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,240
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,CLI fleet-worker contract
+  docs/SDK.md,project,SDK selection primitive documentation
+close_reason: "Atomic claim-next implementation and its dynamic filter completions are complete, reviewed, and regression-tested."
 body: ""
