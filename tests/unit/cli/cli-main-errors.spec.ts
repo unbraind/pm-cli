@@ -64,6 +64,7 @@ import {
   applyDynamicExtensionFlagOptions,
   buildResidualDynamicExtensionFlagHelp,
   buildCanonicalExtensionAliases,
+  extensionFlagTakesValueForInvocation,
   buildDynamicExtensionCommandMetadataHelp,
   buildDynamicExtensionHelpOptionSummaries,
   collectDynamicExtensionFlagHelpByCommand,
@@ -432,20 +433,57 @@ describe("CLI main error helpers", () => {
             flags: [
               { long: "--allow-empty" },
               { long: "--source", value_name: "path" },
+              { long: "--count", value_type: "number" },
+              { long: "--label", type: "string" },
             ],
           },
         ],
+        [
+          "todos",
+          {
+            command: "todos",
+            action: "todos",
+            examples: [],
+            failure_hints: [],
+            arguments: [],
+            flags: [],
+          },
+        ],
       ]);
-    expect(_testOnly.extensionFlagTakesValueForInvocation(
+    expect(extensionFlagTakesValueForInvocation(
       ["todos", "sync", "items.json"],
       "todos",
       "--allow-empty",
       descriptors,
     )).toBe(false);
-    expect(_testOnly.extensionFlagTakesValueForInvocation(
+    expect(extensionFlagTakesValueForInvocation(
       ["todos", "sync"],
       "todos",
       "--source",
+      descriptors,
+    )).toBe(true);
+    expect(extensionFlagTakesValueForInvocation(
+      ["todos", "sync"],
+      "todos",
+      "--label",
+      descriptors,
+    )).toBe(true);
+    expect(extensionFlagTakesValueForInvocation(
+      ["todos", "sync"],
+      "todos",
+      "--missing",
+      descriptors,
+    )).toBeUndefined();
+    expect(extensionFlagTakesValueForInvocation(
+      ["todos", "sync"],
+      "missing",
+      "--source",
+      descriptors,
+    )).toBeUndefined();
+    expect(extensionFlagTakesValueForInvocation(
+      ["todos", "sync"],
+      "todos",
+      "--count",
       descriptors,
     )).toBe(true);
   });
@@ -455,14 +493,19 @@ describe("CLI main error helpers", () => {
       [
         { command: "csv-export export", layer: "project", name: "csv" },
         { command: "hot-reload reload", layer: "project", name: "hot-reload" },
+        { command: "sync-sync", layer: "project", name: "sync" },
       ],
       [
         { command: "csv export", layer: "project", name: "csv" },
         { command: "hot reload", layer: "project", name: "other" },
+        { command: "sync", layer: "project", name: "sync" },
       ],
     );
 
-    expect([...aliases]).toEqual([["csv-export export", "csv export"]]);
+    expect([...aliases]).toEqual([
+      ["csv-export export", "csv export"],
+      ["sync-sync", "sync"],
+    ]);
   });
 
   it("does not suggest retries for flags that were already provided", () => {

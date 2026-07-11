@@ -6,20 +6,21 @@ status: in_progress
 priority: 2
 tags[4]: agent-ux,cli,extensions,gh-issue
 created_at: "2026-07-11T02:49:25.052Z"
-updated_at: "2026-07-11T07:08:48.511Z"
+updated_at: "2026-07-11T07:56:28.735Z"
 assignee: codex-root
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: Flattened <group>-<sub> aliases inherit the canonical command's full option contract; --help on the flattened form renders the same option lines as the canonical form; unknown options on the flattened form fail fast identically to the canonical form; regression test covers both defects with a fixture extension; GH-503 closed with a comment linking the fix
 risk: medium
 confidence: high
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-11T04:45:37.224Z",codex-root,"Implementation start: bundled with GH-503/504/505/507 because flattened aliases, bare importer/exporter contracts, nested typed recovery, and boolean retry arity share extension registration and structured-error surfaces. Duplicate check used pm search --status all; closed prior extension SDK work remains closed."
   "2026-07-11T04:48:30.393Z",codex-root,"Partial implementation evidence: added shared descriptor inheritance for flattened aliases and default positional-file command metadata for handler-only importer/exporter registrations. pnpm typecheck passed. Focused Vitest invocation started but did not emit a final summary, so this is not closure evidence and requires regression tests plus full verification."
   "2026-07-11T05:05:03.092Z",codex-root,"Implementation checkpoint: contract and recovery patches are in the working tree; pnpm typecheck, pnpm lint, and focused CLI/extension suites pass. The first full coverage run was invalidated by a shared-state test and stopped after the test was rewritten as a pure helper assertion; full 100% coverage, temp installed-package proof, Greptile, commit/PR, and review loops remain required. Returning to open and releasing claim because work is paused."
   "2026-07-11T05:52:22.242Z",codex-root,"Verification evidence: pnpm lint passed (ESLint, zero jscpd clones, static quality and token-budget gates); full coverage passed 5532/5532 with exact 100% statements/branches/functions/lines. Fresh installed-package proof packed @unbrained/pm-cli@2026.7.10, installed it into /tmp/pm-extension-contract-proof, initialized a tracker, installed a TypeScript importer/exporter extension with omitted options, verified generated [file] help, successful positional import, healthy activation, and synthesized command contracts in extension describe."
   "2026-07-11T06:31:11.378Z",codex-root,"Greptile review fix evidence: replaced naming-only alias inheritance with an authoritative same-extension alias map and changed flag arity lookup to longest registered command-path prefix so positional values cannot corrupt lookup. Focused suites passed; full suite passed 5533/5533 at exact 100/100/100/100 coverage."
   "2026-07-11T07:08:48.510Z",codex-root,"CI/static-gate fix evidence: moved buildCanonicalExtensionAliases out of oversized src/cli/main.ts into the extension-command contract module. pnpm lint and static quality now pass; full suite passed 5533/5533 at exact 100/100/100/100 coverage."
+  "2026-07-11T07:56:28.735Z",codex-root,"Review-loop evidence: fixed same-extension single-token flattened alias formatting and moved shared recovery/alias helpers into the extension-command contract module to satisfy the file-length ratchet. Full suite passed 5533/5533 at exact 100/100/100/100 coverage."
 files[5]{path,scope,note}:
   src/cli/extension-command-help.ts,project,shared flattened alias command descriptor fidelity
   src/cli/main.ts,project,extension-aware structured recovery fidelity

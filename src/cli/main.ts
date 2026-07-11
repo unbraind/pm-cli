@@ -141,6 +141,7 @@ import {
   findCommandByPath,
   ensureCommandPath,
   buildCanonicalExtensionAliases,
+  extensionFlagTakesValueForInvocation,
 } from "./extension-command-help.js";
 import {
   parseBootstrapGlobalOptions,
@@ -412,36 +413,6 @@ function inferMissingFieldsForRecovery(
   return trulyMissing && trulyMissing.length > 0 ? trulyMissing : undefined;
 }
 
-function extensionFlagTakesValueForInvocation(
-  invocationArgv: string[],
-  commandName: string | undefined,
-  normalizedMissing: string | undefined,
-  descriptors = activeRuntimeExtensionCommandDescriptors,
-): boolean | undefined {
-  if (!commandName || !normalizedMissing) {
-    return undefined;
-  }
-  const commandTokens = invocationArgv.slice(invocationArgv.indexOf(commandName));
-  const descriptor = [...descriptors.entries()]
-    .filter(([path]) =>
-      path
-        .split(" ")
-        .every((token, index) => commandTokens[index] === token),
-    )
-    .sort(([left], [right]) => right.length - left.length)[0]?.[1];
-  const flag = descriptor?.flags.find(
-    (candidate) =>
-      candidate.long === normalizedMissing ||
-      candidate.short === normalizedMissing,
-  );
-  if (!flag) {
-    return undefined;
-  }
-  return (
-    typeof flag.value_name === "string" && flag.value_name.trim().length > 0
-  );
-}
-
 function resolveRecoverySuggestedRetry(
   invocationArgv: string[],
   attemptedCommand: string,
@@ -470,6 +441,7 @@ function resolveRecoverySuggestedRetry(
     invocationArgv,
     commandName,
     normalizedMissing,
+    activeRuntimeExtensionCommandDescriptors,
   );
   const missingTokens = normalizedMissing
     ? missingOption?.isBoolean() === true || extensionFlagTakesValue === false
@@ -3640,7 +3612,6 @@ export const _testOnly = {
   extensionActivationCommands,
   extensionCapabilities,
   extensionNeedsActivationForProbe,
-  extensionFlagTakesValueForInvocation,
   extensionProvidesTemplatesRuntime,
   hasAnyCapability,
   handleGenericRunPmCliError,

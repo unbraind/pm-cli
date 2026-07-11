@@ -111,9 +111,13 @@ export function buildCanonicalExtensionAliases(
       const canonical = normalizeExtensionCommandPath(definition.command);
       const parts = canonical.split(" ");
       const action = parts.at(-1);
+      const suffix = parts.slice(1).join(" ");
+      const expectedAlias = suffix
+        ? `${parts[0]}-${action} ${suffix}`
+        : `${parts[0]}-${action}`;
       if (
         action &&
-        alias === `${parts[0]}-${action} ${parts.slice(1).join(" ")}`
+        alias === expectedAlias
       ) {
         aliases.set(alias, canonical);
         break;
@@ -121,6 +125,47 @@ export function buildCanonicalExtensionAliases(
     }
   }
   return aliases;
+}
+
+/** Resolve whether a registered extension flag consumes a value. */
+export function extensionFlagTakesValueForInvocation(
+  invocationArgv: string[],
+  commandName: string | undefined,
+  normalizedMissing: string | undefined,
+  descriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+): boolean | undefined {
+  if (!commandName || !normalizedMissing) {
+    return undefined;
+  }
+  const commandIndex = invocationArgv.indexOf(commandName);
+  if (commandIndex < 0) {
+    return undefined;
+  }
+  const commandTokens = invocationArgv.slice(commandIndex);
+  const descriptor = [...descriptors.entries()]
+    .filter(([path]) =>
+      path
+        .split(" ")
+        .every((token, index) => commandTokens[index] === token),
+    )
+    .sort(([left], [right]) => right.length - left.length)[0]?.[1];
+  const flag = descriptor?.flags.find(
+    (candidate) =>
+      candidate.long === normalizedMissing ||
+      candidate.short === normalizedMissing,
+  );
+  if (!flag) {
+    return undefined;
+  }
+  const valueName =
+    typeof flag.value_name === "string" && flag.value_name.trim().length > 0;
+  const valueType =
+    typeof flag.value_type === "string"
+      ? flag.value_type
+      : typeof flag.type === "string"
+        ? flag.type
+        : undefined;
+  return valueName || (valueType !== undefined && valueType !== "boolean");
 }
 
 function toNonEmptyFlagString(value: unknown): string | null {
