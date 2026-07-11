@@ -8,8 +8,8 @@
 
 ### Fixed
 
-- Release-readiness guard expects pre-sync version:check command after date-version synchronization ([pm-pmmv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pmmv.toon))
 - Restore generated-loader docstrings and redact host path from tracker history ([pm-9ugc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9ugc.toon))
+- Release-readiness guard expects pre-sync version:check command after date-version synchronization ([pm-pmmv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pmmv.toon))
 - GH-508: dedupe LegacyNoneCollectionNormalizer tables duplicated between create.ts and update.ts (CodeFactor) ([pm-zuw8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zuw8.toon))
 - Full coverage contention times out metadata content-filter integration case ([pm-d30l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-d30l.toon))
 - GH-453: plan materialize --json response omits title/type/parent on materialized entries ([pm-ypha](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ypha.toon))

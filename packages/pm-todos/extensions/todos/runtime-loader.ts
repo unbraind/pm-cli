@@ -1,4 +1,4 @@
-/** @module packages/pm-todos/runtime-loader */
+/** @module packages/pm-todos/extensions/todos/runtime-loader */
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";

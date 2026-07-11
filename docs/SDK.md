@@ -133,6 +133,11 @@ Custom tools can manage durable plans without shelling out or importing CLI inte
 import { PmClient } from "@unbrained/pm-cli/sdk";
 
 const pm = new PmClient({ pmRoot, author: "planning-agent" });
+await pm.schemaAddField("acceptance_owner", {
+  type: "string",
+  requiredOnCreate: true,
+  requiredTypes: ["Task"],
+});
 const created = await pm.planCreate({
   title: "Ship governed workflow",
   step: ["Implement", "Verify"],

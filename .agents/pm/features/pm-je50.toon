@@ -6,8 +6,8 @@ status: closed
 priority: 2
 tags[3]: architecture,"area:plan","area:sdk"
 created_at: "2026-07-05T05:09:13.638Z"
-updated_at: "2026-07-11T13:39:37.453Z"
-closed_at: "2026-07-11T13:39:36.550Z"
+updated_at: "2026-07-11T13:43:27.071Z"
+closed_at: "2026-07-11T13:43:26.155Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "SDK exports typed plan primitives covering the full pm plan surface (create with stepTitle, step lifecycle, dependencies, decisions, discoveries, validation, materialize) with identical governance and history semantics; CLI and MCP plan surfaces consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (plan specs green)."
@@ -18,10 +18,11 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-qd2h,related,"2026-07-10T21:31:11.790Z",null,null
   pm-ypha,related,"2026-07-10T21:31:11.790Z",null,null
   pm-zwpp,related,"2026-07-10T21:31:11.790Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-11T12:02:18.272Z",codex-root,"Evidence: public SDK now exports plan contracts and PmClient façade methods for every plan subcommand. Focused plan/SDK/contracts suites pass; typecheck, zero-duplication, static quality, token-budget, docs, and contracts snapshot gates pass. Packed-tarball temp consumer initialized a tracker, created a two-step plan, materialized a Task, and verified enriched title/type/parent/tags/from_step output. Full coverage run was contaminated by an accidental concurrent duplicate and surfaced pre-existing date-version sync assertions; all functional SDK/plan tests passed, and the unrelated assertions are fixed under pm-pmmv. Full clean coverage rerun remains required before closure."
   "2026-07-11T13:26:32.667Z",codex-root,"Final evidence: public SDK exposes every typed plan workflow primitive; governed materialization preserves required custom fields and returns confirmation-rich projections. Final installed-tarball temp consumer created/reordered/annotated/materialized a three-step plan. Full coverage passed 271 files / 5,541 tests / exact 100/100/100/100; lint, static quality, contracts, docs, security, health, history drift, and generator sync gates pass."
   "2026-07-11T13:39:33.547Z",codex-root,"PR review evidence: --field normalization now preserves existing camelCase boundaries and rejects separator-only keys instead of writing an undefined property. Focused plan regressions cover both cases; typecheck and strict static quality pass."
+  "2026-07-11T13:43:24.353Z",codex-root,"PR review evidence: SDK materialization documentation now registers the required custom field before using it, and the typed façade mock uses a complete PlanCommandResult with plan and generated_at. Focused SDK/generator tests, typecheck, strict static quality, docs/skills, and generated-file sync gates pass."
 notes[1]{created_at,author,text}:
   "2026-07-10T21:30:53.590Z",maintainer-agent,"Implementation slicing 2026-07-10 (grounded in current src state). Already public — do NOT redo: the pm_plan MCP surface and generic plan action dispatch; profile *planning* (planProfileApplication from core/profile/profile-plan.ts) is a different domain and already exported. The actual gap: the ENTIRE plan workflow lives in src/cli/commands/plan.ts (1,796 lines) — there is no src/core/plan module at all, making this the largest single-module promotion left in the epic besides test.ts. Plan is also the agent-harness surface (Codex/Claude/Cursor-style planning), so primitive-level promotion is what makes SDK-embedded planning harnesses possible without shelling out. Suggested slices: S1 plan document model + step lifecycle primitives (~90m) — create with stepTitle, step transitions, plan read model. S2 plan annotation primitives (~60m) — dependencies/decisions/discoveries; shapes should mirror the pm-zwpp S1 annotation kernel — coordinate so plan does not grow a second annotation engine. S3 validation + materialization primitives (~60m) — materialize creates real items and MUST consume the shipped lifecycle primitives (pm-98cz) rather than private paths; this is the primitive-level fix site for pm-qd2h / GH-452 (materialize dead-ends on required-on-create custom fields) and pm-ypha / GH-453 (materialize --json omits title/type/parent) — coordinate with both, do not duplicate their fixes. S4 typed PmClient facades + SDK reference docs/tests (~30m), result shapes matching runAction oracle. Order: strictly S1 -> S2 -> S3 -> S4 (each layer consumes the previous one)."
 files[2]{path,scope,note}:
@@ -31,5 +32,5 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/sdk/sdk-context-primitives.spec.ts,project,300
 docs[1]{path,scope,note}:
   docs/SDK.md,project,public plan workflow SDK guide
-close_reason: Addressed Gemini field-name normalization findings with behavior-level regressions.
+close_reason: Resolved all actionable plan SDK review findings with focused regression coverage and strict gate evidence.
 body: ""

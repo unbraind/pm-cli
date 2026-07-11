@@ -1,4 +1,4 @@
-/** @module packages/pm-beads/runtime-loader */
+/** @module packages/pm-beads/extensions/beads/runtime-loader */
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";

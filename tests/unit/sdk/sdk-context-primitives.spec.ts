@@ -66,7 +66,27 @@ import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 describe("SDK context-management primitives", () => {
   it("routes every typed plan convenience method through the shared plan primitive", async () => {
     const client = new PmClient({ noExtensions: true });
-    const result: PlanCommandResult = { action: "show", warnings: [] };
+    const result: PlanCommandResult = {
+      action: "show",
+      plan: {
+        id: "pm-plan",
+        title: "SDK plan",
+        status: "active",
+        mode: "default",
+        steps_summary: {
+          total: 0,
+          pending: 0,
+          in_progress: 0,
+          blocked: 0,
+          completed: 0,
+          skipped: 0,
+          superseded: 0,
+          completion_pct: 0,
+        },
+      },
+      warnings: [],
+      generated_at: "2026-07-11T00:00:00.000Z",
+    };
     const plan = vi.spyOn(client, "plan").mockResolvedValue(result);
 
     await client.planAddStep("pm-plan", {});

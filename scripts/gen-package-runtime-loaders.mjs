@@ -57,7 +57,7 @@ function renderTypeScriptLoader(config) {
   if (config.template === "set-based") {
     return renderSetBasedTypeScriptLoader(config);
   }
-  return `/** @module packages/${config.packageName}/runtime-loader */
+  return `/** @module packages/${config.packageName}/extensions/${config.extensionName}/runtime-loader */
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -173,7 +173,7 @@ export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> 
 }
 
 function renderSetBasedTypeScriptLoader(config) {
-  return `/** @module packages/${config.packageName}/runtime-loader */
+  return `/** @module packages/${config.packageName}/extensions/${config.extensionName}/runtime-loader */
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
