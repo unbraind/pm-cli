@@ -1,0 +1,18 @@
+id: pm-yh8r
+title: "LOC-cap headroom: decompose near-cap infrastructure files outside the SDK-promotion partition (main.ts at 99% of the 3400 gate)"
+description: ""
+type: Chore
+status: open
+priority: 2
+tags: []
+created_at: "2026-07-11T10:47:52.058Z"
+updated_at: "2026-07-11T10:47:52.058Z"
+author: maintainer-agent
+estimated_minutes: 720
+acceptance_criteria: "main.ts, extensions/loader.ts, sdk/runtime.ts, register-mutation.ts, completion.ts each at or under 80% of the 3400 effective-line gate; splits are behavior-preserving (byte-identical outputs on goldens, contract tests green); vitest.config mirrored test paths updated; jscpd clean; coverage gate holds 100%; no decomposition of files fenced to other owners"
+risk: medium
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-jt3b,related,"2026-07-11T10:47:52.058Z",null,null
+  pm-usfg,related,"2026-07-11T10:47:52.058Z",null,null
+body: "## Why (2026-07-11 maintainer directive: too many too-long files by effective LOC; document-only pass)\nEffective-LOC census (non-blank, non-comment; gate counts the same way since PR#506, cap 3400):\nmain.ts 3369 (99%) · search.ts 3330 (jt3b) · extensions/loader.ts 3312 · commands/extension.ts 3239 · sdk/runtime.ts 3236 · validate.ts 3052 (oxrw) · register-mutation.ts 3032 · create.ts 2851 · completion.ts 2809 · update.ts 2758 · extension/scaffold.ts 2739 · test.ts 2713 (oslr) · health.ts 2460 (oxrw) · telemetry/runtime.ts 2366 · contracts.ts 2358 · plan.ts 2095 (je50).\nThe old LOC growth watch (pm-k1im) and main.ts items (pm-6c3h, pm-sh6o) are closed; nothing OPEN owns the infrastructure files, and main.ts is one feature away from failing the gate.\n\n## Ownership fences (never double-file)\n- search.ts → pm-jt3b (query-parser + inline-field split already scoped).\n- Command files in the promotion partition get FIRST relief from their SDK slice (validate/health → pm-oxrw, schema/config/profile/init → pm-3mna, plan → pm-je50, test/context → pm-oslr, annotations → pm-zwpp, history-maintenance → pm-4a7m); decompose only the presentation remainder if still near cap afterwards.\n- THIS item owns the files outside that partition: main.ts, core/extensions/loader.ts, sdk/runtime.ts, cli/register-mutation.ts, cli/commands/completion.ts (+ commands/extension.ts + scaffold.ts if their slice relief is insufficient).\n\n## Split seams (follow the PR#396 split playbook: extract at same call position, public surface byte-identical)\n- main.ts → continue the pm-6c3h/pm-sh6o per-command-registration extraction; bootstrap/help/global-flag blocks are self-contained.\n- loader.ts → manifest-parse / activation / sandbox-boundary seams (version-compat already extracted, pm-sjea precedent).\n- sdk/runtime.ts → per-domain action tables + shared dispatch kernel (keeps runAction semantics-oracle role intact).\n- register-mutation.ts → per-mutation registration modules mirroring commands/index.ts layout.\n- completion.ts → data tables (flag strings per shell) out of logic; tables are generated-ish and cheap to isolate."
