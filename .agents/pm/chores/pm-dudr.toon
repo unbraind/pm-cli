@@ -1,0 +1,15 @@
+id: pm-dudr
+title: "Claude plugin spec-alignment hygiene vs 2026-07-11 official docs (minor, non-blocking)"
+description: ""
+type: Chore
+status: open
+priority: 3
+tags[3]: claude-plugin,docs,hygiene
+created_at: "2026-07-11T10:05:30.442Z"
+updated_at: "2026-07-11T10:05:30.442Z"
+author: maintainer-agent
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-l9wl,related,"2026-07-11T10:05:30.442Z",null,null
+body: "Minor deviations from current official plugin docs (code.claude.com/docs/en/plugins-reference, fetched 2026-07-11; Claude Code v2.1.207). None block loading — `claude plugin validate --strict` passes today. Sweep these when touching the plugin (the substantive install-path defect is pm-l9wl):\n\n1. `plugins/pm-claude/.mcp.json` carries a non-schema `\"note\"` key inside the server entry. Unrecognized-field tolerance is documented for plugin.json top level, not for MCP server configs; Claude Code settings validators are known to strip unknown keys. Move the note to a JS/README comment.\n2. `.claude-plugin/marketplace.json` nests `description`/`version` under `metadata` — docs mark that \"accepted for backward compatibility\"; best practice is top-level fields.\n3. `commands/` (14 flat .md) is the legacy form — docs: \"Commands: Skills as flat Markdown files. Use `skills/` for new plugins.\" Plan a consolidation into `skills/` (each becomes `<name>/SKILL.md`), keeping invocation names stable.\n4. Adopt newer manifest fields: `$schema` (https://json.schemastore.org/claude-code-plugin-manifest.json) for editor validation, `displayName` (v2.1.143+) for the /plugin picker.\n5. Root `marketplace.json` duplicate: kept intentionally for backwards compat (smoke test asserts it). Document the dual-file invariant where it's enforced, or drop it once compat window closes — it is a silent-drift hazard (only `.claude-plugin/marketplace.json` is read by /plugin marketplace add).\n6. If a rename/removal ever happens, use the top-level `renames` map (v2.1.193+) instead of breaking installs."

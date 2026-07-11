@@ -1,0 +1,29 @@
+id: pm-hxsv
+title: Align all plugin and package manifests to date-based versioning with release-time sync
+description: ""
+type: Task
+status: closed
+priority: 1
+tags[4]: ci,claude-plugin,release,versioning
+created_at: "2026-07-11T10:19:05.709Z"
+updated_at: "2026-07-11T10:19:23.991Z"
+closed_at: "2026-07-11T10:19:23.103Z"
+author: maintainer-agent
+acceptance_criteria: "All plugin manifests, marketplace catalogs, and workspace package.json files carry the root date-based version; Release pipeline re-stamps and commits synced manifests on every cut; CI static gate rejects any version drift; Sync script has 100% coverage per the all-src gate"
+risk: low
+confidence: high
+resolution: "Implemented scripts/sync-versions.mjs (check|apply) + release-pipeline apply step + CI check chain; one-time stamp of all 11 packages, 2 plugin manifests, 3 marketplace catalogs to 2026.7.11; extension manifests deliberately out of scope (loader-internal). Verified via vitest (148 tests across touched suites), 100% script coverage, eslint, claude plugin validate --strict, smoke-claude-plugin."
+expected_result: "All plugins/packages share the root date-based version, enforced automatically"
+actual_result: "Pre-fix: packages at semver 0.1.0, pm-claude plugin frozen at 1.4.1 since 2026-07-02, pm-codex at 1.1.0, no sync mechanism"
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-l9wl,related,"2026-07-11T10:19:05.709Z",null,null
+files[7]{path,scope,note}:
+  .claude-plugin/marketplace.json,project,metadata + entry stamped 2026.7.11
+  package.json,project,"version:check chains sync check; new version:sync script"
+  plugins/pm-claude/.claude-plugin/plugin.json,project,1.4.1 -> 2026.7.11
+  scripts/release/run-release-pipeline.mjs,project,apply after npm version bump + synced manifests staged in release commit
+  scripts/sync-versions.mjs,project,"new: check/apply date-based version sync across packages+plugins+marketplaces"
+  tests/integration/claude-plugin-contract.spec.ts,project,semver-era assertions replaced with date-pattern + root lockstep
+  tests/unit/scripts/sync-versions.spec.ts,project,"new: 6 scenarios,100% lines/branches/functions"
+close_reason: "Shipped and verified: 19 slots stamped 2026.7.11 across 16 manifests; sync enforced at release time (pipeline apply) and in CI (version:check chain); 100%-coverage spec; contract-spec semver time bombs (minor>=4 Jan-Mar failure, ordinal-release regex) defused. All targeted vitest suites, eslint, claude plugin validate --strict, and the full plugin smoke pass."
+body: "User directive 2026-07-11: pm-cli does NOT use semver — every plugin and package must carry the same date-based version (YYYY.M.D[-N]) as the root package.\n\n## What shipped\n\n1. **scripts/sync-versions.mjs** (new): `check` fails on any drift from the root package.json version; `apply` stamps the root version into every distribution-facing manifest. Discovers workspace packages dynamically (readdirSync), so new packages join the policy automatically. Refuses to propagate a non-date-based root version. Handles all three marketplace slot shapes (top-level version, metadata.version, plugins[].version) and only syncs slots that already exist — deleting a duplicate field later is never undone.\n2. **One-time alignment applied**: 19 version slots stamped 2026.7.11 across 16 files — 11 packages/*/package.json (0.1.0, all private), plugins/pm-claude/.claude-plugin/plugin.json (1.4.1), plugins/pm-codex/.codex-plugin/plugin.json (1.1.0), .claude-plugin/marketplace.json + root marketplace.json (metadata.version + plugins[0].version), .agents/plugins/marketplace.json (both entries).\n3. **Release pipeline** (scripts/release/run-release-pipeline.mjs): runs `sync-versions.mjs apply` immediately after the root `npm version` bump and stages the synced manifests in the release commit — plugins/packages can never drift again; marketplace users now receive a plugin update with every release (was frozen at 1.4.1 since 2026-07-02).\n4. **CI gate**: `pnpm version:check` (already in CI Gates static) now chains `sync-versions.mjs check`; new `pnpm version:sync` convenience script.\n5. **tests/unit/scripts/sync-versions.spec.ts** (new): 6 scenarios, 100% lines/branches/functions on the script (repo scripts sit under the 100% coverage gate).\n6. **tests/integration/claude-plugin-contract.spec.ts**: replaced two latent semver-era time bombs — `minor >= 4` (would fail every Jan–Mar under date versions) and `/^\\d+\\.\\d+\\.\\d+$/` (rejected same-day ordinal releases YYYY.M.D-N). Now asserts date-pattern + exact lockstep with root package.json.\n\n## Deliberate scope boundary\n\nExtension manifests (packages/*/extensions/*/manifest.json + version literals in each extension index.ts) stay at 0.1.0: they are pm-loader-internal metadata pinned by unit specs, not published artifact versions. Follow-up candidate if the policy should extend there.\n\n## Verification\n\n- `node scripts/sync-versions.mjs check` passes post-apply; `claude plugin validate .` and `... ./plugins/pm-claude --strict` both pass (v2.1.207).\n- vitest: sync-versions (6), run-release-pipeline (33), claude-plugin-contract, pm-mcp-server, session-start, smoke-claude-plugin, release-version, builtin-extension-entrypoints — all green (109+39 tests).\n- eslint clean on all touched files; `node scripts/smoke-claude-plugin.mjs` passes end-to-end."

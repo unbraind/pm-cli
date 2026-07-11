@@ -9,6 +9,10 @@
 - GH-504: importer/exporter registered without options yields an unusable CLI command (no arg/flag contracts) ([pm-0mjz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0mjz.toon))
 - GH-503: flattened extension-command aliases (csv-export, jira-sync) drop option contracts ([pm-s9iu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s9iu.toon))
 
+### Other
+
+- Align all plugin and package manifests to date-based versioning with release-time sync ([pm-hxsv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hxsv.toon))
+
 ## 2026.7.11 - 2026-07-11
 
 ### Added

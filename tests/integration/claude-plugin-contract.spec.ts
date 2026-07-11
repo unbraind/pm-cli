@@ -104,10 +104,11 @@ describe("Claude Code plugin contract", () => {
     const pluginJson = (await readJson(path.join(pluginRoot, ".claude-plugin", "plugin.json"))) as Record<string, unknown>;
     expect(pluginJson.name).toBe("pm-claude");
     expect(typeof pluginJson.version).toBe("string");
-    expect(pluginJson.version).toMatch(/^\d+\.\d+\.\d+$/);
-    const [major, minor] = (pluginJson.version as string).split(".").map(Number);
-    expect(major).toBeGreaterThanOrEqual(1);
-    expect(minor).toBeGreaterThanOrEqual(4);
+    // Date-based version policy (YYYY.M.D[-N]), kept in lockstep with the root
+    // package by scripts/sync-versions.mjs — pm-cli artifacts do not use semver.
+    expect(pluginJson.version).toMatch(/^[1-9]\d{3}\.[1-9]\d*\.[1-9]\d*(-[2-9]\d*)?$/);
+    const rootPackageJson = (await readJson(path.join(repoRoot, "package.json"))) as Record<string, unknown>;
+    expect(pluginJson.version).toBe(rootPackageJson.version);
     expect(pluginJson.license).toBe("MIT");
     expect(pluginJson.homepage).toContain("github.com");
     expect(pluginJson.repository).toContain("github.com");

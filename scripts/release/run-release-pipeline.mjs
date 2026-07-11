@@ -345,6 +345,10 @@ function prepareReleaseChangelog(params) {
     }
     const npm = commandFor("npm");
     runCommand(npm, ["version", "--no-git-tag-version", params.targetVersion]);
+    // Keep every distribution-facing manifest (workspace packages, plugin
+    // manifests, marketplace catalogs) on the same date-based version as the
+    // root package; `pnpm version:check` in the CI static gate rejects drift.
+    runCommand(process.execPath, ["scripts/sync-versions.mjs", "apply"]);
     writeFileSync(path.join(repoRoot, "CHANGELOG.md"), readFileSync(generatedChangelogPath, "utf8"), "utf8");
     return { prepared: true, generatedChangelogPath };
   } finally {
@@ -385,7 +389,18 @@ function commitAndMaybePushRelease(targetVersion, tagName, author, push) {
     GIT_COMMITTER_NAME: author,
     GIT_COMMITTER_EMAIL: authorEmail,
   };
-  git(["add", "package.json", "CHANGELOG.md"]);
+  git([
+    "add",
+    "package.json",
+    "CHANGELOG.md",
+    // Manifests stamped by scripts/sync-versions.mjs during release preparation.
+    "packages/*/package.json",
+    "plugins/pm-claude/.claude-plugin/plugin.json",
+    "plugins/pm-codex/.codex-plugin/plugin.json",
+    ".claude-plugin/marketplace.json",
+    "marketplace.json",
+    ".agents/plugins/marketplace.json",
+  ]);
   runCommand("git", [
     "commit",
     "-m",
