@@ -140,6 +140,7 @@ import {
   buildDynamicExtensionCommandMetadataHelp,
   findCommandByPath,
   ensureCommandPath,
+  buildCanonicalExtensionAliases,
 } from "./extension-command-help.js";
 import {
   parseBootstrapGlobalOptions,
@@ -1822,43 +1823,6 @@ async function loadRuntimeExtensionDiscoverySnapshot(
     };
     return null;
   }
-}
-
-function buildCanonicalExtensionAliases(
-  handlers: ReadonlyArray<{
-    command: string;
-    layer: "project" | "global";
-    name: string;
-  }>,
-  definitions: ReadonlyArray<{
-    command: string;
-    layer: "project" | "global";
-    name: string;
-  }>,
-): Map<string, string> {
-  const aliases = new Map<string, string>();
-  for (const handler of handlers) {
-    const alias = normalizeExtensionCommandPath(handler.command);
-    for (const definition of definitions) {
-      if (
-        definition.layer !== handler.layer ||
-        definition.name !== handler.name
-      ) {
-        continue;
-      }
-      const canonical = normalizeExtensionCommandPath(definition.command);
-      const parts = canonical.split(" ");
-      const action = parts.at(-1);
-      if (
-        action &&
-        alias === `${parts[0]}-${action} ${parts.slice(1).join(" ")}`
-      ) {
-        aliases.set(alias, canonical);
-        break;
-      }
-    }
-  }
-  return aliases;
 }
 
 async function loadRuntimeExtensionSnapshot(
@@ -3647,7 +3611,6 @@ export const _testOnly = {
   buildBootstrapActivationProbe,
   buildPostActionTelemetryOutcome,
   buildPmCliRecoveryContext,
-  buildCanonicalExtensionAliases,
   buildRuntimeExtensionDiscoverySnapshotCacheKey,
   buildRuntimeExtensionActivationScope,
   buildRuntimeExtensionSnapshotCacheKey,

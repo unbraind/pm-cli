@@ -63,6 +63,7 @@ import {
   applyDynamicExtensionArguments,
   applyDynamicExtensionFlagOptions,
   buildResidualDynamicExtensionFlagHelp,
+  buildCanonicalExtensionAliases,
   buildDynamicExtensionCommandMetadataHelp,
   buildDynamicExtensionHelpOptionSummaries,
   collectDynamicExtensionFlagHelpByCommand,
@@ -450,7 +451,7 @@ describe("CLI main error helpers", () => {
   });
 
   it("maps flattened aliases only within the same extension registration", () => {
-    const aliases = _testOnly.buildCanonicalExtensionAliases(
+    const aliases = buildCanonicalExtensionAliases(
       [
         { command: "csv-export export", layer: "project", name: "csv" },
         { command: "hot-reload reload", layer: "project", name: "hot-reload" },
