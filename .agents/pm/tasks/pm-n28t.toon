@@ -1,0 +1,38 @@
+id: pm-n28t
+title: Research and document the July 2026 native ChatGPT/Codex plugin implementation plan
+description: "Record official OpenAI plugin and Apps SDK research as of 2026-07-11, audit the current pm-codex bundle with live installation evidence, and produce a detailed phased remediation plan without changing plugin runtime code, manifests, assets, or tests."
+type: Task
+status: closed
+priority: 1
+tags[6]: apps-sdk,"area:docs",chatgpt,codex,mcp,research
+created_at: "2026-07-11T11:10:58.363Z"
+updated_at: "2026-07-11T11:21:58.187Z"
+closed_at: "2026-07-11T11:21:57.451Z"
+author: codex-native-plugin-research
+estimated_minutes: 240
+acceptance_criteria: "A focused public document dated 2026-07-11 cites current official OpenAI plugin, Apps SDK, security, testing, deployment, and submission sources; distinguishes a plugin from an app and local Codex from ChatGPT web/public distribution; records live repository and isolated cache-install findings; identifies verified gaps and non-gaps; provides target layouts, file-by-file phases, security and tool-contract requirements, test matrices, rollout gates, and proposed pm decomposition; docs index and Codex router link it; no plugin implementation artifact changes."
+value: "Future implementation can proceed from verified product terminology, current official sources, exact repository evidence, and testable acceptance gates instead of assumptions."
+parent: pm-95d7
+risk: low
+confidence: high
+resolution: "Documented the verified native Codex status, installed-runtime and validator defects, ChatGPT Apps SDK gaps, architecture decision, phased remediation, security requirements, verification matrix, and pm execution plan."
+expected_result: "The repository contains an authoritative research-backed implementation plan, and the parent feature remains open and unclaimed for later approval."
+actual_result: Added a dated 775-line official-source implementation plan plus docs router updates; live isolated install evidence distinguishes the working Codex package from the missing self-contained runtime and optional ChatGPT app; all linked and broader documentation gates passed.
+component: docs/CODEX_PLUGIN.md
+comments[5]{created_at,author,text}:
+  "2026-07-11T11:10:58.363Z",codex-native-plugin-research,"Duplicate-check evidence: all-status searches performed for the exact July 2026 pm-codex, Apps SDK, ChatGPT plugin, official docs, and cache fallback concepts returned no existing research/documentation task. Closed pm-0c9q and pm-d97r remain prior shipped lineage; this docs-only task is the scoped first child of pm-95d7."
+  "2026-07-11T11:11:10.197Z",codex-native-plugin-research,"Scope checkpoint: Current Codex CLI 0.144.1 proof shows the repo marketplace installs pm-codex 2026.7.11 and registers pm-mcp. Research has also proven the installed cache lacks dist/dependencies and its launcher falls back to npx @unbrained/pm-cli@latest; the bundle has no app wiring or hosted HTTP MCP path; commands/ is not a documented Codex plugin component; current MCP tools lack Apps SDK output schemas and safety annotations. Documentation only in this task."
+  "2026-07-11T11:13:00.448Z",codex-native-plugin-research,"Validator evidence: uv run --with pyyaml python /home/steve/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py plugins/pm-codex fails six checks. Each of pm-auditor, pm-native, and pm-release declares icon_small and icon_large as ./assets/pm-cli-small.svg relative to the skill root, but only plugins/pm-codex/assets/pm-cli-small.svg exists. Current Codex installation tolerance does not replace validator compliance."
+  "2026-07-11T11:21:55.914Z",codex-native-plugin-research,"Official-source evidence (opened live 2026-07-11): OpenAI Codex Plugins and Build Plugins; ChatGPT Build an app and Submit plugins; Apps SDK overview, tool planning, MCP server, authentication, deployment, ChatGPT connection, testing, MCP Apps compatibility, security/privacy, reference, and changelog; Secure MCP Tunnel; and Codex changelog. The report links each canonical official URL and records the observed developers.openai.com to learn.chatgpt.com redirects."
+  "2026-07-11T11:21:56.563Z",codex-native-plugin-research,"Verification evidence: pm-linked pnpm build passed; pm-linked pnpm quality:docs-skills passed; pnpm quality:static passed, including static quality and the 14-surface token-budget gate; git diff --check passed; pm health --check-only --summary passed with zero warnings; pm validate history_drift passed with zero drift. Its only warning is pre-existing repository debt: 278 legacy closed items missing resolution metadata. Changed product files are documentation only: docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md, docs/CODEX_PLUGIN.md, and docs/README.md; plugin runtime, manifest, assets, and tests remain untouched."
+tests[2]{command,scope,timeout_seconds,note}:
+  pnpm build,project,240,Documentation baseline build
+  "pnpm quality:docs-skills",project,300,Documentation links and skills quality gate
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrg9wd8t-ogmtin,test,passed,"2026-07-11T11:20:01.380Z","2026-07-11T11:20:18.702Z","2026-07-11T11:20:18.702Z",2,0,0
+docs[3]{path,scope,note}:
+  docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md,project,Official-source audit and phased native ChatGPT/Codex plugin remediation plan
+  docs/CODEX_PLUGIN.md,project,Public Codex plugin status clarification and implementation-plan link
+  docs/README.md,project,Documentation index route for ChatGPT/Codex plugin implementers
+close_reason: "Completed the research-only official-source audit and detailed implementation plan; linked docs and all scoped verification gates pass, with no plugin implementation changes."
+body: ""
