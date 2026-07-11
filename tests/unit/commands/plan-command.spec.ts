@@ -1363,6 +1363,18 @@ describe("runPlan command family", () => {
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runPlan({
+          subcommand: "materialize",
+          id: planId,
+          options: {
+            steps: "plan-step-001",
+            field: ["title=Override"],
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
+          global: { ...GLOBAL, path: context.pmPath },
+        }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
       const materialized = await runPlan({
         subcommand: "materialize",
         id: planId,

@@ -2022,6 +2022,16 @@ async function createMaterializedStepItems(params: {
     from_step: string;
   }[] = [];
   const materializeFields: Record<string, string> = {};
+  const reservedMaterializeKeys = new Set([
+    "title",
+    "description",
+    "type",
+    "parent",
+    "tags",
+    "author",
+    "message",
+    "dep",
+  ]);
   for (const specification of toSpecArray(params.options.field)) {
     const separator = specification.indexOf("=");
     if (separator <= 0) {
@@ -2052,9 +2062,14 @@ async function createMaterializedStepItems(params: {
       );
     }
     const [first, ...rest] = segments;
-    materializeFields[
-      `${first}${rest.map((segment) => `${segment.slice(0, 1).toUpperCase()}${segment.slice(1)}`).join("")}`
-    ] = value;
+    const fieldKey = `${first}${rest.map((segment) => `${segment.slice(0, 1).toUpperCase()}${segment.slice(1)}`).join("")}`;
+    if (reservedMaterializeKeys.has(fieldKey)) {
+      throw new PmCliError(
+        `Invalid --field entry "${specification}"; "${fieldKey}" is reserved by materialize and cannot be overridden`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    materializeFields[fieldKey] = value;
   }
   for (const step of params.targets) {
     const created = await runCreate(

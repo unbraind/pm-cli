@@ -21937,11 +21937,18 @@
             ]
           },
           "field": {
-            "description": "Field.",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Field."
           },
           "fields": {
             "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
