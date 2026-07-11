@@ -104,7 +104,10 @@ import type {
   ExtensionActivationSummary,
 } from "../core/extensions/activation-summary.js";
 import type { ProjectProfileDefinition } from "../core/profile/profile-presets.js";
-import { lintProjectProfile, type ProjectProfileLintReport } from "../core/profile/profile-lint.js";
+import {
+  lintProjectProfile,
+  type ProjectProfileLintReport,
+} from "../core/profile/profile-lint.js";
 import { renderExtensionSurfaceMarkdown } from "../core/extensions/activation-summary-markdown.js";
 import type { ExtensionSurfaceMarkdownOptions } from "../core/extensions/activation-summary-markdown.js";
 import type {
@@ -121,18 +124,21 @@ import type {
   PreflightExtensionOptions,
 } from "./compose.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
-import type { PmPackageManifest, PmPackageResourceKind } from "../core/packages/manifest.js";
-import { asPropertyRecord, resolveActivatablePropertyRecord } from "../core/shared/primitives.js";
+import type {
+  PmPackageManifest,
+  PmPackageResourceKind,
+} from "../core/packages/manifest.js";
+import {
+  asPropertyRecord,
+  resolveActivatablePropertyRecord,
+} from "../core/shared/primitives.js";
 
 // `describeExtensionActivation` is the `describe` (enumerate-all) verb that
 // pairs with the `assert*` (verify-one) and `run*` (invoke-one) helpers below.
 // It lives in core (it walks the same registries the loader populates) and is
 // surfaced here so package authors get the whole testing surface from the
 // `@unbrained/pm-cli/sdk/testing` subpath.
-export {
-  describeExtensionActivation,
-  renderExtensionSurfaceMarkdown,
-};
+export { describeExtensionActivation, renderExtensionSurfaceMarkdown };
 export type {
   DescribeExtensionActivationOptions,
   ExtensionActivationSummary,
@@ -155,35 +161,27 @@ export type {
   LintExtensionBlueprintOptions,
 };
 
-/**
- * Documents the activate extension for test options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the activate extension for test options payload exchanged by command, SDK, and package integrations. */
 export interface ActivateExtensionForTestOptions {
+  /** Value that configures or reports name for this contract. */
   name?: string;
+  /** Value that configures or reports layer for this contract. */
   layer?: ExtensionLayer;
+  /** Value that configures or reports capabilities for this contract. */
   capabilities?: readonly ExtensionCapability[];
+  /** Value that configures or reports policy for this contract. */
   policy?: ExtensionGovernancePolicy;
 }
 
-/**
- * Documents the deactivate extension for test options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the deactivate extension for test options payload exchanged by command, SDK, and package integrations. */
 export interface DeactivateExtensionForTestOptions {
   /** Overrides the in-memory extension name (defaults to `manifest.name` or `"test-extension"`). */
   name?: string;
   /** Overrides the layer recorded for the in-memory extension (defaults to `"project"`). */
   layer?: ExtensionLayer;
-  /**
-   * Activation result returned by `activateExtensionForTest`. When provided, an
-   * extension whose `activate` failed is skipped — mirroring the host teardown
-   * contract that never deactivates a never-initialized extension. Pass the same
-   * `name`/`layer` to both helpers so the skip key matches.
-   */
+  /** Activation result returned by `activateExtensionForTest`. When provided, an extension whose `activate` failed is skipped — mirroring the host teardown contract that never deactivates a never-initialized extension. Pass the same `name`/`layer` to both helpers so the skip key matches. */
   activation?: Pick<ExtensionActivationResult, "failed">;
-  /**
-   * Per-hook teardown bound, forwarded as `deactivate_timeout_ms`. Use `0` (or
-   * `Infinity`) to wait indefinitely; omit to keep the host default.
-   */
+  /** Per-hook teardown bound, forwarded as `deactivate_timeout_ms`. Use `0` (or `Infinity`) to wait indefinitely; omit to keep the host default. */
   deactivateTimeoutMs?: number;
 }
 
@@ -192,25 +190,15 @@ export interface DeactivateExtensionForTestOptions {
  * registered extension command handler when exercising its behavior in a test.
  */
 export interface RunRegisteredCommandForTestOptions {
-  /**
-   * Full registered command path to invoke, e.g. `"hello"` or `"todos import"`.
-   * Matched against `commands.handlers[].command` after normalization (trimmed,
-   * lower-cased, internal whitespace collapsed), mirroring runtime dispatch.
-   */
+  /** Full registered command path to invoke, e.g. `"hello"` or `"todos import"`. Matched against `commands.handlers[].command` after normalization (trimmed, lower-cased, internal whitespace collapsed), mirroring runtime dispatch. */
   command: string;
   /** Positional arguments forwarded as `context.args` (default: none). */
   args?: readonly string[];
   /** Parsed flags/options forwarded as `context.options` (default: none). */
   options?: Record<string, unknown>;
-  /**
-   * Global option overrides merged onto the agent-safe test defaults
-   * (`{ json: true, quiet: true, noPager: true }`), forwarded as `context.global`.
-   */
+  /** Global option overrides merged onto the agent-safe test defaults (`{ json: true, quiet: true, noPager: true }`), forwarded as `context.global`. */
   global?: Partial<GlobalOptions>;
-  /**
-   * Resolved pm workspace root forwarded as `context.pm_root` (default: `""`).
-   * Most pure handlers ignore it; set it when the handler reads workspace files.
-   */
+  /** Resolved pm workspace root forwarded as `context.pm_root` (default: `""`). Most pure handlers ignore it; set it when the handler reads workspace files. */
   pmRoot?: string;
 }
 
@@ -238,10 +226,15 @@ export type RunRegisteredHookForTestOptions =
  * `queryExpansion`, and `rerank`.
  */
 export interface SearchProviderOperationContexts {
+  /** Value that configures or reports query for this contract. */
   query: SearchProviderQueryContext;
+  /** Value that configures or reports embed for this contract. */
   embed: SearchProviderEmbedContext;
+  /** Value that configures or reports embed batch for this contract. */
   embedBatch: SearchProviderEmbedBatchContext;
+  /** Value that configures or reports query expansion for this contract. */
   queryExpansion: SearchProviderQueryExpansionContext;
+  /** Value that configures or reports rerank for this contract. */
   rerank: SearchProviderRerankContext;
 }
 
@@ -251,10 +244,15 @@ export interface SearchProviderOperationContexts {
  * type from the chosen `operation` instead of a union the caller must narrow.
  */
 export interface SearchProviderOperationResults {
+  /** Value that configures or reports query for this contract. */
   query: SearchProviderQueryResult;
+  /** Value that configures or reports embed for this contract. */
   embed: number[];
+  /** Value that configures or reports embed batch for this contract. */
   embedBatch: number[][];
+  /** Value that configures or reports query expansion for this contract. */
   queryExpansion: SearchProviderQueryExpansionResult;
+  /** Value that configures or reports rerank for this contract. */
   rerank: SearchProviderRerankResult;
 }
 
@@ -284,8 +282,11 @@ export type RunRegisteredSearchProviderForTestOptions = {
  * registered adapter: nearest-neighbour `query`, `upsert`, and `delete`.
  */
 export interface VectorStoreAdapterOperationContexts {
+  /** Value that configures or reports query for this contract. */
   query: VectorStoreQueryContext;
+  /** Value that configures or reports upsert for this contract. */
   upsert: VectorStoreUpsertContext;
+  /** Value that configures or reports delete for this contract. */
   delete: VectorStoreDeleteContext;
 }
 
@@ -296,8 +297,11 @@ export interface VectorStoreAdapterOperationContexts {
  * throwing, so their result is `unknown` and typically ignored.
  */
 export interface VectorStoreAdapterOperationResults {
+  /** Value that configures or reports query for this contract. */
   query: VectorStoreQueryHit[];
+  /** Value that configures or reports upsert for this contract. */
   upsert: unknown;
+  /** Value that configures or reports delete for this contract. */
   delete: unknown;
 }
 
@@ -351,10 +355,7 @@ export interface RunRegisteredImporterForTestOptions {
   args?: readonly string[];
   /** Parsed flags/options forwarded as `context.options` (default: none). */
   options?: Record<string, unknown>;
-  /**
-   * Global option overrides merged onto the agent-safe test defaults
-   * (`{ json: true, quiet: true, noPager: true }`), forwarded as `context.global`.
-   */
+  /** Global option overrides merged onto the agent-safe test defaults (`{ json: true, quiet: true, noPager: true }`), forwarded as `context.global`. */
   global?: Partial<GlobalOptions>;
   /** Resolved pm workspace root forwarded as `context.pm_root` (default: `""`). */
   pmRoot?: string;
@@ -378,18 +379,13 @@ export interface RunRegisteredExporterForTestOptions {
   args?: readonly string[];
   /** Parsed flags/options forwarded as `context.options` (default: none). */
   options?: Record<string, unknown>;
-  /**
-   * Global option overrides merged onto the agent-safe test defaults
-   * (`{ json: true, quiet: true, noPager: true }`), forwarded as `context.global`.
-   */
+  /** Global option overrides merged onto the agent-safe test defaults (`{ json: true, quiet: true, noPager: true }`), forwarded as `context.global`. */
   global?: Partial<GlobalOptions>;
   /** Resolved pm workspace root forwarded as `context.pm_root` (default: `""`). */
   pmRoot?: string;
 }
 
-/**
- * Documents the extension deactivation expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the extension deactivation expectation payload exchanged by command, SDK, and package integrations. */
 export interface ExtensionDeactivationExpectation {
   /** Expected count of extensions whose `deactivate` ran without throwing (default `1`). */
   deactivated?: number;
@@ -397,40 +393,50 @@ export interface ExtensionDeactivationExpectation {
   failed?: number;
 }
 
-/**
- * Documents the registered command contract expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered command contract expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredCommandContractExpectation {
+  /** Value that configures or reports command for this contract. */
   command: string;
+  /** Value that configures or reports action for this contract. */
   action?: string;
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
+  /** Value that configures or reports arguments for this contract. */
   arguments?: string[];
+  /** Value that configures or reports flags for this contract. */
   flags?: string[];
 }
 
-/**
- * Documents the registered command contract assertion payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered command contract assertion payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredCommandContractAssertion {
+  /** Value that configures or reports command for this contract. */
   command: RegisteredExtensionCommandDefinition;
+  /** Value that configures or reports flags for this contract. */
   flags: FlagDefinition[];
 }
 
-/**
- * Documents the registered flags expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered flags expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredFlagsExpectation {
+  /** Value that configures or reports target command for this contract. */
   targetCommand: string;
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
+  /** Value that configures or reports flags for this contract. */
   flags?: string[];
 }
 
-/**
- * Public hook lifecycle kinds an extension can register through `api.hooks.*`.
- */
-export type RegisteredHookKind = "before_command" | "after_command" | "on_read" | "on_write" | "on_index";
+/** Public hook lifecycle kinds an extension can register through `api.hooks.*`. */
+export type RegisteredHookKind =
+  | "before_command"
+  | "after_command"
+  | "on_read"
+  | "on_write"
+  | "on_index";
 
-const HOOK_KIND_TO_REGISTRY_FIELD: Record<RegisteredHookKind, keyof ExtensionHookRegistry> = {
+const HOOK_KIND_TO_REGISTRY_FIELD: Record<
+  RegisteredHookKind,
+  keyof ExtensionHookRegistry
+> = {
   before_command: "beforeCommand",
   after_command: "afterCommand",
   on_read: "onRead",
@@ -438,131 +444,131 @@ const HOOK_KIND_TO_REGISTRY_FIELD: Record<RegisteredHookKind, keyof ExtensionHoo
   on_index: "onIndex",
 };
 
-/**
- * Documents the registered hook expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered hook expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredHookExpectation {
+  /** Value that configures or reports kind for this contract. */
   kind: RegisteredHookKind;
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
 }
 
-/**
- * Documents the registered search provider expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered search provider expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredSearchProviderExpectation {
+  /** Value that configures or reports provider for this contract. */
   provider: string;
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
 }
 
-/**
- * Documents the registered vector store adapter expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered vector store adapter expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredVectorStoreAdapterExpectation {
+  /** Value that configures or reports adapter for this contract. */
   adapter: string;
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
 }
 
-/**
- * Documents the registered importer expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered importer expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredImporterExpectation {
+  /** Value that configures or reports importer for this contract. */
   importer: string;
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
 }
 
-/**
- * Documents the registered exporter expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered exporter expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredExporterExpectation {
+  /** Value that configures or reports exporter for this contract. */
   exporter: string;
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
 }
 
-/**
- * Documents the registered item field expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered item field expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredItemFieldExpectation {
+  /** Value that configures or reports field for this contract. */
   field: string;
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
+  /** Schema type that determines the shape and validation rules for this value. */
   type?: SchemaFieldDefinition["type"];
 }
 
-/**
- * Documents the registered item field assertion payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered item field assertion payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredItemFieldAssertion {
+  /** Value that configures or reports registration for this contract. */
   registration: RegisteredExtensionSchemaFieldDefinitions;
+  /** Value that configures or reports field for this contract. */
   field: SchemaFieldDefinition;
 }
 
-/**
- * Documents the registered item type expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered item type expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredItemTypeExpectation {
+  /** Schema type that determines the shape and validation rules for this value. */
   itemType: string;
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
+  /** Value that configures or reports folder for this contract. */
   folder?: string;
 }
 
-/**
- * Documents the registered item type assertion payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered item type assertion payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredItemTypeAssertion {
+  /** Value that configures or reports registration for this contract. */
   registration: RegisteredExtensionSchemaItemTypeDefinitions;
+  /** Schema type that determines the shape and validation rules for this value. */
   itemType: SchemaItemTypeDefinition;
 }
 
-/**
- * Documents the registered command override expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered command override expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredCommandOverrideExpectation {
+  /** Value that configures or reports command for this contract. */
   command: string;
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
 }
 
-/**
- * Documents the registered parser override expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered parser override expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredParserOverrideExpectation {
+  /** Value that configures or reports command for this contract. */
   command: string;
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
 }
 
-/**
- * Documents the registered preflight override expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered preflight override expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredPreflightOverrideExpectation {
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
 }
 
-/**
- * Documents the registered renderer override expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered renderer override expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredRendererOverrideExpectation {
+  /** Value that configures or reports format for this contract. */
   format: OutputRendererFormat;
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
 }
 
-/**
- * Documents the registered service override expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered service override expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredServiceOverrideExpectation {
+  /** Value that configures or reports service for this contract. */
   service: ExtensionServiceName;
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
 }
 
-/**
- * Documents the registered migration expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered migration expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredMigrationExpectation {
+  /** Value that configures or reports migration for this contract. */
   migration: string;
+  /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
+  /** Value that configures or reports mandatory for this contract. */
   mandatory?: boolean;
 }
 
-/**
- * Documents the registered project-profile expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered project-profile expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredProfileExpectation {
   /** Profile name to assert is registered (case-insensitive). */
   profile: string;
@@ -570,9 +576,7 @@ export interface RegisteredProfileExpectation {
   extensionName?: string;
 }
 
-/**
- * Documents the registered project-profile assertion payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the registered project-profile assertion payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredProfileAssertion {
   /** The matching registration entry. */
   registration: RegisteredExtensionProjectProfile;
@@ -580,28 +584,17 @@ export interface RegisteredProfileAssertion {
   profile: ProjectProfileDefinition;
 }
 
-/**
- * Documents the extension capability usage expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the extension capability usage expectation payload exchanged by command, SDK, and package integrations. */
 export interface ExtensionCapabilityUsageExpectation {
-  /**
-   * Capabilities the manifest declares. Mirror `manifest.capabilities` here so
-   * the assertion fails when the manifest grants more than the code uses.
-   */
+  /** Capabilities the manifest declares. Mirror `manifest.capabilities` here so the assertion fails when the manifest grants more than the code uses. */
   declared: readonly ExtensionCapability[];
   /** Restrict reconciliation to a single extension when the activation has several. */
   extensionName?: string;
-  /**
-   * Capabilities allowed to be declared without being exercised (e.g. ones a
-   * runtime registers only behind a config flag). These are excluded from the
-   * least-privilege failure.
-   */
+  /** Capabilities allowed to be declared without being exercised (e.g. ones a runtime registers only behind a config flag). These are excluded from the least-privilege failure. */
   allowUnused?: readonly ExtensionCapability[];
 }
 
-/**
- * Documents the extension capability usage assertion payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the extension capability usage assertion payload exchanged by command, SDK, and package integrations. */
 export interface ExtensionCapabilityUsageAssertion {
   /** Declared capabilities considered, sorted and de-duplicated. */
   declared: ExtensionCapability[];
@@ -611,17 +604,18 @@ export interface ExtensionCapabilityUsageAssertion {
   unused: ExtensionCapability[];
 }
 
-/**
- * Restricts package manifest resource expectation values accepted by command, SDK, and storage contracts.
- */
-export type PackageManifestResourceExpectation = Partial<Record<PmPackageResourceKind, readonly string[]>>;
+/** Restricts package manifest resource expectation values accepted by command, SDK, and storage contracts. */
+export type PackageManifestResourceExpectation = Partial<
+  Record<PmPackageResourceKind, readonly string[]>
+>;
 
-/**
- * Documents the package manifest expectation payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the package manifest expectation payload exchanged by command, SDK, and package integrations. */
 export interface PackageManifestExpectation {
+  /** Value that configures or reports package name for this contract. */
   packageName?: string;
+  /** Value that configures or reports aliases for this contract. */
   aliases?: readonly string[];
+  /** Value that configures or reports resources for this contract. */
   resources?: PackageManifestResourceExpectation;
 }
 
@@ -687,7 +681,9 @@ function assertStringSetIncludes(
   label: string,
 ): void {
   const actualValues = new Set(actual ?? []);
-  const missing = sortedUnique(expected.filter((value) => !actualValues.has(value)));
+  const missing = sortedUnique(
+    expected.filter((value) => !actualValues.has(value)),
+  );
   if (missing.length > 0) {
     throw new Error(
       `Expected package manifest ${label} to include ${missing.join(", ")}; available: ${formatAvailable(
@@ -710,7 +706,9 @@ function collectFlagLabels(flags: readonly FlagDefinition[]): Set<string> {
   return labels;
 }
 
-function readTestExtensionManifest(module: unknown): Partial<ExtensionManifest> {
+function readTestExtensionManifest(
+  module: unknown,
+): Partial<ExtensionManifest> {
   const moduleRecord = asPropertyRecord(module);
   if (!moduleRecord) {
     return {};
@@ -731,16 +729,24 @@ function readTestExtensionManifest(module: unknown): Partial<ExtensionManifest> 
   ) {
     return defaultExport as Partial<ExtensionManifest>;
   }
-  if (typeof module !== "function" && ("name" in moduleRecord || "capabilities" in moduleRecord)) {
+  if (
+    typeof module !== "function" &&
+    ("name" in moduleRecord || "capabilities" in moduleRecord)
+  ) {
     return moduleRecord as Partial<ExtensionManifest>;
   }
   return {};
 }
 
-function resolveTestExtensionName(manifest: Partial<ExtensionManifest>, explicitName: string | undefined): string {
+function resolveTestExtensionName(
+  manifest: Partial<ExtensionManifest>,
+  explicitName: string | undefined,
+): string {
   return (
     explicitName ??
-    (typeof manifest.name === "string" && manifest.name.trim().length > 0 ? manifest.name.trim() : "test-extension")
+    (typeof manifest.name === "string" && manifest.name.trim().length > 0
+      ? manifest.name.trim()
+      : "test-extension")
   );
 }
 
@@ -752,7 +758,10 @@ function readTestExtensionCapabilities(
     return [...options.capabilities];
   }
   if (Array.isArray(manifest.capabilities)) {
-    return manifest.capabilities.filter((capability): capability is ExtensionCapability => typeof capability === "string");
+    return manifest.capabilities.filter(
+      (capability): capability is ExtensionCapability =>
+        typeof capability === "string",
+    );
   }
   return [];
 }
@@ -767,7 +776,12 @@ function readTestExtensionCapabilities(
 function buildSingleExtensionLoadResult(
   module: unknown,
   manifest: Partial<ExtensionManifest>,
-  identity: { name: string; layer: ExtensionLayer; capabilities: ExtensionCapability[]; policy: ExtensionGovernancePolicy },
+  identity: {
+    name: string;
+    layer: ExtensionLayer;
+    capabilities: ExtensionCapability[];
+    policy: ExtensionGovernancePolicy;
+  },
 ): ExtensionLoadResult {
   return {
     disabled_by_flag: false,
@@ -785,14 +799,25 @@ function buildSingleExtensionLoadResult(
         directory: "",
         manifest_path: "",
         name: identity.name,
-        version: typeof manifest.version === "string" ? manifest.version : "0.0.0",
-        entry: typeof manifest.entry === "string" ? manifest.entry : "./index.js",
+        version:
+          typeof manifest.version === "string" ? manifest.version : "0.0.0",
+        entry:
+          typeof manifest.entry === "string" ? manifest.entry : "./index.js",
         priority: typeof manifest.priority === "number" ? manifest.priority : 0,
         entry_path: "",
         capabilities: identity.capabilities,
-        manifest_version: typeof manifest.manifest_version === "number" ? manifest.manifest_version : undefined,
-        pm_min_version: typeof manifest.pm_min_version === "string" ? manifest.pm_min_version : undefined,
-        pm_max_version: typeof manifest.pm_max_version === "string" ? manifest.pm_max_version : undefined,
+        manifest_version:
+          typeof manifest.manifest_version === "number"
+            ? manifest.manifest_version
+            : undefined,
+        pm_min_version:
+          typeof manifest.pm_min_version === "string"
+            ? manifest.pm_min_version
+            : undefined,
+        pm_max_version:
+          typeof manifest.pm_max_version === "string"
+            ? manifest.pm_max_version
+            : undefined,
         engines: manifest.engines,
         trusted: manifest.trusted,
         provenance: manifest.provenance,
@@ -850,7 +875,9 @@ export async function deactivateExtensionForTest(
       policy: createDefaultExtensionGovernancePolicy(),
     }),
     options.activation,
-    options.deactivateTimeoutMs === undefined ? {} : { deactivate_timeout_ms: options.deactivateTimeoutMs },
+    options.deactivateTimeoutMs === undefined
+      ? {}
+      : { deactivate_timeout_ms: options.deactivateTimeoutMs },
   );
 }
 
@@ -887,9 +914,13 @@ export async function runRegisteredCommandForTest(
   if (command.length === 0) {
     throw new Error("Expected command name must be a non-empty string");
   }
-  const hasHandler = commands.handlers.some((entry) => entry.command === command);
+  const hasHandler = commands.handlers.some(
+    (entry) => entry.command === command,
+  );
   if (!hasHandler) {
-    const available = sortedUnique(commands.handlers.map((entry) => entry.command));
+    const available = sortedUnique(
+      commands.handlers.map((entry) => entry.command),
+    );
     throw new Error(
       `Expected a registered command handler for "${command}" to invoke. Available command handlers: ${formatAvailable(
         available,
@@ -1085,14 +1116,11 @@ export async function runRegisteredServiceOverrideForTest(
   return runServiceOverride(services, context);
 }
 
-/**
- * Maps each search-provider operation to the runtime-definition keys that may
- * hold its function, in priority order. The host accepts both camelCase and
- * snake_case spellings for the multi-word operations, so this helper mirrors that
- * by trying `embedBatch` before `embed_batch` and `queryExpansion` before
- * `query_expansion`.
- */
-const SEARCH_PROVIDER_OPERATION_DEFINITION_KEYS: Record<keyof SearchProviderOperationContexts, readonly string[]> = {
+/** Maps each search-provider operation to the runtime-definition keys that may hold its function, in priority order. The host accepts both camelCase and snake_case spellings for the multi-word operations, so this helper mirrors that by trying `embedBatch` before `embed_batch` and `queryExpansion` before `query_expansion`. */
+const SEARCH_PROVIDER_OPERATION_DEFINITION_KEYS: Record<
+  keyof SearchProviderOperationContexts,
+  readonly string[]
+> = {
   query: ["query"],
   embed: ["embed"],
   embedBatch: ["embedBatch", "embed_batch"],
@@ -1120,7 +1148,9 @@ const SEARCH_PROVIDER_OPERATION_DEFINITION_KEYS: Record<keyof SearchProviderOper
  * the requested operation, since invoking an absent provider/operation is a
  * wiring bug in the test rather than a behavior under test.
  */
-export async function runRegisteredSearchProviderForTest<Operation extends keyof SearchProviderOperationContexts>(
+export async function runRegisteredSearchProviderForTest<
+  Operation extends keyof SearchProviderOperationContexts,
+>(
   registrations: ExtensionRegistrationRegistry,
   options: {
     provider: string;
@@ -1128,9 +1158,14 @@ export async function runRegisteredSearchProviderForTest<Operation extends keyof
     context: SearchProviderOperationContexts[Operation];
   },
 ): Promise<SearchProviderOperationResults[Operation]> {
-  const registration = resolveRegisteredSearchProvider(registrations, options.provider);
+  const registration = resolveRegisteredSearchProvider(
+    registrations,
+    options.provider,
+  );
   if (!registration) {
-    const available = sortedUnique(registrations.search_providers.map((entry) => entry.definition.name));
+    const available = sortedUnique(
+      registrations.search_providers.map((entry) => entry.definition.name),
+    );
     throw new Error(
       `Expected a registered search provider "${options.provider}" to invoke. Available search providers: ${formatAvailable(
         available,
@@ -1138,7 +1173,9 @@ export async function runRegisteredSearchProviderForTest<Operation extends keyof
     );
   }
   const runtimeDefinition = registration.runtime_definition;
-  const operationFn = SEARCH_PROVIDER_OPERATION_DEFINITION_KEYS[options.operation]
+  const operationFn = SEARCH_PROVIDER_OPERATION_DEFINITION_KEYS[
+    options.operation
+  ]
     .map((key) => runtimeDefinition[key])
     .find((value) => typeof value === "function");
   if (typeof operationFn !== "function") {
@@ -1146,9 +1183,11 @@ export async function runRegisteredSearchProviderForTest<Operation extends keyof
       `Registered search provider "${options.provider}" does not implement the "${options.operation}" operation.`,
     );
   }
-  return (await (operationFn as (context: SearchProviderOperationContexts[Operation]) => unknown)(
-    options.context,
-  )) as SearchProviderOperationResults[Operation];
+  return (await (
+    operationFn as (
+      context: SearchProviderOperationContexts[Operation],
+    ) => unknown
+  )(options.context)) as SearchProviderOperationResults[Operation];
 }
 
 /**
@@ -1179,9 +1218,14 @@ export async function runRegisteredVectorStoreAdapterForTest<
     context: VectorStoreAdapterOperationContexts[Operation];
   },
 ): Promise<VectorStoreAdapterOperationResults[Operation]> {
-  const registration = resolveRegisteredVectorStoreAdapter(registrations, options.adapter);
+  const registration = resolveRegisteredVectorStoreAdapter(
+    registrations,
+    options.adapter,
+  );
   if (!registration) {
-    const available = sortedUnique(registrations.vector_store_adapters.map((entry) => entry.definition.name));
+    const available = sortedUnique(
+      registrations.vector_store_adapters.map((entry) => entry.definition.name),
+    );
     throw new Error(
       `Expected a registered vector store adapter "${options.adapter}" to invoke. Available vector store adapters: ${formatAvailable(
         available,
@@ -1194,9 +1238,11 @@ export async function runRegisteredVectorStoreAdapterForTest<
       `Registered vector store adapter "${options.adapter}" does not implement the "${options.operation}" operation.`,
     );
   }
-  return (await (operationFn as (context: VectorStoreAdapterOperationContexts[Operation]) => unknown)(
-    options.context,
-  )) as VectorStoreAdapterOperationResults[Operation];
+  return (await (
+    operationFn as (
+      context: VectorStoreAdapterOperationContexts[Operation],
+    ) => unknown
+  )(options.context)) as VectorStoreAdapterOperationResults[Operation];
 }
 
 /**
@@ -1229,7 +1275,9 @@ export async function runRegisteredMigrationForTest(
   });
   const run = getMigrationRuntimeDefinition(migration).run;
   if (typeof run !== "function") {
-    throw new Error(`Registered migration "${options.migration}" does not implement a run function to invoke.`);
+    throw new Error(
+      `Registered migration "${options.migration}" does not implement a run function to invoke.`,
+    );
   }
   const declaredStatus = migration.definition.status;
   const context: SchemaMigrationRunContext = {
@@ -1238,9 +1286,14 @@ export async function runRegisteredMigrationForTest(
     layer: migration.layer,
     extension: migration.name,
     pm_root: options.pmRoot ?? "",
-    status: (typeof declaredStatus === "string" ? declaredStatus.trim().toLowerCase() : "") || "pending",
+    status:
+      (typeof declaredStatus === "string"
+        ? declaredStatus.trim().toLowerCase()
+        : "") || "pending",
   };
-  return await (run as (context: SchemaMigrationRunContext) => unknown)(context);
+  return await (run as (context: SchemaMigrationRunContext) => unknown)(
+    context,
+  );
 }
 
 /**
@@ -1342,7 +1395,9 @@ export function assertExtensionDeactivated(
   }
   const expectedFailed = expectation.failed ?? 0;
   if (result.failed.length !== expectedFailed) {
-    const detail = result.failed.map((failure) => `${failure.layer}:${failure.name} (${failure.error})`).join(", ");
+    const detail = result.failed
+      .map((failure) => `${failure.layer}:${failure.name} (${failure.error})`)
+      .join(", ");
     throw new Error(
       `Expected ${expectedFailed} teardown failure${expectedFailed === 1 ? "" : "s"}, ` +
         `but observed ${result.failed.length}${detail.length > 0 ? `: ${detail}` : ""}.`,
@@ -1351,15 +1406,15 @@ export function assertExtensionDeactivated(
   return result;
 }
 
-/**
- * Assert that a normalized package manifest advertises expected package
- * resources. Pair with `readPmPackageManifest(packageRoot)` in package tests.
- */
+/** Assert that a normalized package manifest advertises expected package resources. Pair with `readPmPackageManifest(packageRoot)` in package tests. */
 export function assertPackageManifest(
   manifest: PmPackageManifest,
   expectation: PackageManifestExpectation,
 ): PmPackageManifest {
-  if (expectation.packageName !== undefined && manifest.package_name !== expectation.packageName) {
+  if (
+    expectation.packageName !== undefined &&
+    manifest.package_name !== expectation.packageName
+  ) {
     throw new Error(
       `Expected package manifest package_name to be "${expectation.packageName}"; received "${
         manifest.package_name ?? "(none)"
@@ -1370,19 +1425,20 @@ export function assertPackageManifest(
     assertStringSetIncludes(manifest.aliases, expectation.aliases, "aliases");
   }
   if (expectation.resources !== undefined) {
-    for (const [kind, expectedPaths] of Object.entries(expectation.resources) as Array<
-      [PmPackageResourceKind, readonly string[]]
-    >) {
-      assertStringSetIncludes(manifest.resources[kind], expectedPaths, `pm.${kind}`);
+    for (const [kind, expectedPaths] of Object.entries(
+      expectation.resources,
+    ) as Array<[PmPackageResourceKind, readonly string[]]>) {
+      assertStringSetIncludes(
+        manifest.resources[kind],
+        expectedPaths,
+        `pm.${kind}`,
+      );
     }
   }
   return manifest;
 }
 
-/**
- * Assert that an activated extension registration registry contains a command
- * contract with the expected public metadata.
- */
+/** Assert that an activated extension registration registry contains a command contract with the expected public metadata. */
 export function assertRegisteredCommandContract(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredCommandContractExpectation,
@@ -1392,13 +1448,21 @@ export function assertRegisteredCommandContract(
     throw new Error("Expected command name must be a non-empty string");
   }
 
-  const commandCandidates = registrations.commands.filter((entry) => entry.command === expectedCommand);
+  const commandCandidates = registrations.commands.filter(
+    (entry) => entry.command === expectedCommand,
+  );
   const command = expectation.extensionName
-    ? commandCandidates.find((entry) => entry.name === expectation.extensionName)
+    ? commandCandidates.find(
+        (entry) => entry.name === expectation.extensionName,
+      )
     : commandCandidates[0];
   if (!command) {
-    const available = registrations.commands.map((entry) => entry.command).sort((left, right) => left.localeCompare(right));
-    const extensionSuffix = expectation.extensionName ? ` from extension "${expectation.extensionName}"` : "";
+    const available = registrations.commands
+      .map((entry) => entry.command)
+      .sort((left, right) => left.localeCompare(right));
+    const extensionSuffix = expectation.extensionName
+      ? ` from extension "${expectation.extensionName}"`
+      : "";
     throw new Error(
       `Expected extension command "${expectedCommand}"${extensionSuffix} to be registered. Available commands: ${formatAvailable(
         available,
@@ -1406,15 +1470,22 @@ export function assertRegisteredCommandContract(
     );
   }
 
-  if (expectation.action !== undefined && command.action !== expectation.action) {
+  if (
+    expectation.action !== undefined &&
+    command.action !== expectation.action
+  ) {
     throw new Error(
       `Expected extension command "${expectedCommand}" action "${expectation.action}", received "${command.action}"`,
     );
   }
 
   if (expectation.arguments !== undefined) {
-    const actualArguments = (command.arguments ?? []).map((argument) => argument.name);
-    const missingArguments = expectation.arguments.filter((argument) => !actualArguments.includes(argument));
+    const actualArguments = (command.arguments ?? []).map(
+      (argument) => argument.name,
+    );
+    const missingArguments = expectation.arguments.filter(
+      (argument) => !actualArguments.includes(argument),
+    );
     if (missingArguments.length > 0) {
       throw new Error(
         `Expected extension command "${expectedCommand}" arguments ${formatAvailable(
@@ -1428,13 +1499,16 @@ export function assertRegisteredCommandContract(
     .filter(
       (entry) =>
         entry.target_command === expectedCommand &&
-        (expectation.extensionName === undefined || entry.name === expectation.extensionName),
+        (expectation.extensionName === undefined ||
+          entry.name === expectation.extensionName),
     )
     .flatMap((entry) => entry.flags);
 
   if (expectation.flags !== undefined) {
     const actualFlagLabels = collectFlagLabels(flags);
-    const missingFlags = expectation.flags.filter((flag) => !actualFlagLabels.has(flag));
+    const missingFlags = expectation.flags.filter(
+      (flag) => !actualFlagLabels.has(flag),
+    );
     if (missingFlags.length > 0) {
       throw new Error(
         `Expected extension command "${expectedCommand}" flags ${formatAvailable(expectation.flags)}; missing ${formatAvailable(
@@ -1447,10 +1521,7 @@ export function assertRegisteredCommandContract(
   return { command, flags };
 }
 
-/**
- * Assert that an activated extension registration registry contains flags
- * injected into an existing command through `api.registerFlags(...)`.
- */
+/** Assert that an activated extension registration registry contains flags injected into an existing command through `api.registerFlags(...)`. */
 export function assertRegisteredFlags(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredFlagsExpectation,
@@ -1460,14 +1531,20 @@ export function assertRegisteredFlags(
     throw new Error("Expected target command name must be a non-empty string");
   }
 
-  const candidates = registrations.flags.filter((entry) => entry.target_command === expectedCommand);
+  const candidates = registrations.flags.filter(
+    (entry) => entry.target_command === expectedCommand,
+  );
   let registration: RegisteredExtensionFlagDefinitions | undefined;
   if (expectation.extensionName) {
-    registration = candidates.find((entry) => entry.name === expectation.extensionName);
+    registration = candidates.find(
+      (entry) => entry.name === expectation.extensionName,
+    );
   } else if (candidates.length === 1) {
     registration = candidates[0];
   } else if (candidates.length > 1) {
-    const availableExtensions = sortedUnique(candidates.map((entry) => entry.name));
+    const availableExtensions = sortedUnique(
+      candidates.map((entry) => entry.name),
+    );
     throw new Error(
       `Expected flags for target command "${expectedCommand}" matched multiple extensions: ${formatAvailable(
         availableExtensions,
@@ -1475,8 +1552,12 @@ export function assertRegisteredFlags(
     );
   }
   if (!registration) {
-    const available = sortedUnique(registrations.flags.map((entry) => entry.target_command));
-    const availableExtensions = sortedUnique(candidates.map((entry) => entry.name));
+    const available = sortedUnique(
+      registrations.flags.map((entry) => entry.target_command),
+    );
+    const availableExtensions = sortedUnique(
+      candidates.map((entry) => entry.name),
+    );
     throw new Error(
       `Expected flags for target command "${expectedCommand}"${extensionNameSuffix(
         expectation.extensionName,
@@ -1488,13 +1569,17 @@ export function assertRegisteredFlags(
 
   if (expectation.flags !== undefined) {
     const actualFlagLabels = collectFlagLabels(registration.flags);
-    const missingFlags = expectation.flags.filter((flag) => !actualFlagLabels.has(flag));
+    const missingFlags = expectation.flags.filter(
+      (flag) => !actualFlagLabels.has(flag),
+    );
     if (missingFlags.length > 0) {
       throw new Error(
         `Expected flags for target command "${expectedCommand}" to include ${formatAvailable(
           expectation.flags,
         )}; missing ${formatAvailable(missingFlags)}; available ${formatAvailable(
-          [...actualFlagLabels].sort((left, right) => left.localeCompare(right)),
+          [...actualFlagLabels].sort((left, right) =>
+            left.localeCompare(right),
+          ),
         )}`,
       );
     }
@@ -1515,7 +1600,9 @@ export function assertRegisteredHook<TKind extends RegisteredHookKind>(
   expectation: RegisteredHookExpectation & { kind: TKind },
 ): ExtensionHookRegistry[(typeof HOOK_KIND_TO_REGISTRY_FIELD)[TKind]][number] {
   const field = HOOK_KIND_TO_REGISTRY_FIELD[expectation.kind];
-  const candidates = hooks[field] as ReadonlyArray<RegisteredExtensionHook<unknown>>;
+  const candidates = hooks[field] as ReadonlyArray<
+    RegisteredExtensionHook<unknown>
+  >;
   const hook = expectation.extensionName
     ? candidates.find((entry) => entry.name === expectation.extensionName)
     : candidates[0];
@@ -1531,10 +1618,7 @@ export function assertRegisteredHook<TKind extends RegisteredHookKind>(
   return hook as ExtensionHookRegistry[(typeof HOOK_KIND_TO_REGISTRY_FIELD)[TKind]][number];
 }
 
-/**
- * Assert that an activated extension registration registry contains a search
- * provider with the expected name (optionally scoped to a specific extension).
- */
+/** Assert that an activated extension registration registry contains a search provider with the expected name (optionally scoped to a specific extension). */
 export function assertRegisteredSearchProvider(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredSearchProviderExpectation,
@@ -1545,13 +1629,16 @@ export function assertRegisteredSearchProvider(
   }
 
   const candidates = registrations.search_providers.filter(
-    (entry) => normalizeSdkIdentifier(entry.definition.name) === expectedProvider,
+    (entry) =>
+      normalizeSdkIdentifier(entry.definition.name) === expectedProvider,
   );
   const provider = expectation.extensionName
     ? candidates.find((entry) => entry.name === expectation.extensionName)
     : candidates[0];
   if (!provider) {
-    const available = sortedUnique(registrations.search_providers.map((entry) => entry.definition.name));
+    const available = sortedUnique(
+      registrations.search_providers.map((entry) => entry.definition.name),
+    );
     throw new Error(
       `Expected search provider "${expectedProvider}"${extensionNameSuffix(
         expectation.extensionName,
@@ -1562,28 +1649,29 @@ export function assertRegisteredSearchProvider(
   return provider;
 }
 
-/**
- * Assert that an activated extension registration registry contains a vector
- * store adapter with the expected name (optionally scoped to a specific
- * extension).
- */
+/** Assert that an activated extension registration registry contains a vector store adapter with the expected name (optionally scoped to a specific extension). */
 export function assertRegisteredVectorStoreAdapter(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredVectorStoreAdapterExpectation,
 ): RegisteredExtensionVectorStoreAdapter {
   const expectedAdapter = normalizeSdkIdentifier(expectation.adapter);
   if (expectedAdapter.length === 0) {
-    throw new Error("Expected vector store adapter name must be a non-empty string");
+    throw new Error(
+      "Expected vector store adapter name must be a non-empty string",
+    );
   }
 
   const candidates = registrations.vector_store_adapters.filter(
-    (entry) => normalizeSdkIdentifier(entry.definition.name) === expectedAdapter,
+    (entry) =>
+      normalizeSdkIdentifier(entry.definition.name) === expectedAdapter,
   );
   const adapter = expectation.extensionName
     ? candidates.find((entry) => entry.name === expectation.extensionName)
     : candidates[0];
   if (!adapter) {
-    const available = sortedUnique(registrations.vector_store_adapters.map((entry) => entry.definition.name));
+    const available = sortedUnique(
+      registrations.vector_store_adapters.map((entry) => entry.definition.name),
+    );
     throw new Error(
       `Expected vector store adapter "${expectedAdapter}"${extensionNameSuffix(
         expectation.extensionName,
@@ -1594,10 +1682,7 @@ export function assertRegisteredVectorStoreAdapter(
   return adapter;
 }
 
-/**
- * Assert that an activated extension registration registry contains an importer
- * for the expected format/name (optionally scoped to a specific extension).
- */
+/** Assert that an activated extension registration registry contains an importer for the expected format/name (optionally scoped to a specific extension). */
 export function assertRegisteredImporter(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredImporterExpectation,
@@ -1614,7 +1699,9 @@ export function assertRegisteredImporter(
     ? candidates.find((entry) => entry.name === expectation.extensionName)
     : candidates[0];
   if (!importer) {
-    const available = sortedUnique(registrations.importers.map((entry) => entry.importer));
+    const available = sortedUnique(
+      registrations.importers.map((entry) => entry.importer),
+    );
     throw new Error(
       `Expected importer "${expectedImporter}"${extensionNameSuffix(
         expectation.extensionName,
@@ -1625,10 +1712,7 @@ export function assertRegisteredImporter(
   return importer;
 }
 
-/**
- * Assert that an activated extension registration registry contains an exporter
- * for the expected format/name (optionally scoped to a specific extension).
- */
+/** Assert that an activated extension registration registry contains an exporter for the expected format/name (optionally scoped to a specific extension). */
 export function assertRegisteredExporter(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredExporterExpectation,
@@ -1645,7 +1729,9 @@ export function assertRegisteredExporter(
     ? candidates.find((entry) => entry.name === expectation.extensionName)
     : candidates[0];
   if (!exporter) {
-    const available = sortedUnique(registrations.exporters.map((entry) => entry.exporter));
+    const available = sortedUnique(
+      registrations.exporters.map((entry) => entry.exporter),
+    );
     throw new Error(
       `Expected exporter "${expectedExporter}"${extensionNameSuffix(
         expectation.extensionName,
@@ -1656,10 +1742,7 @@ export function assertRegisteredExporter(
   return exporter;
 }
 
-/**
- * Assert that an activated extension registration registry contains a custom
- * item field definition (optionally scoped to a specific extension).
- */
+/** Assert that an activated extension registration registry contains a custom item field definition (optionally scoped to a specific extension). */
 export function assertRegisteredItemField(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredItemFieldExpectation,
@@ -1670,17 +1753,31 @@ export function assertRegisteredItemField(
   }
 
   const candidates = registrations.item_fields
-    .filter((entry) => expectation.extensionName === undefined || entry.name === expectation.extensionName)
+    .filter(
+      (entry) =>
+        expectation.extensionName === undefined ||
+        entry.name === expectation.extensionName,
+    )
     .map((registration) => ({
       registration,
-      field: registration.fields.find((field) => normalizeSdkIdentifier(field.name) === expectedField),
+      field: registration.fields.find(
+        (field) => normalizeSdkIdentifier(field.name) === expectedField,
+      ),
     }))
-    .filter((entry): entry is RegisteredItemFieldAssertion => entry.field !== undefined);
+    .filter(
+      (entry): entry is RegisteredItemFieldAssertion =>
+        entry.field !== undefined,
+    );
 
-  const match = candidates.find((entry) => expectation.type === undefined || entry.field.type === expectation.type);
+  const match = candidates.find(
+    (entry) =>
+      expectation.type === undefined || entry.field.type === expectation.type,
+  );
   if (!match) {
     const available = sortedUnique(
-      registrations.item_fields.flatMap((entry) => entry.fields.map((field) => `${field.name}:${field.type}`)),
+      registrations.item_fields.flatMap((entry) =>
+        entry.fields.map((field) => `${field.name}:${field.type}`),
+      ),
     );
     throw new Error(
       `Expected item field "${expectedField}"${extensionNameSuffix(
@@ -1692,10 +1789,7 @@ export function assertRegisteredItemField(
   return match;
 }
 
-/**
- * Assert that an activated extension registration registry contains a custom
- * item type definition (optionally scoped to a specific extension).
- */
+/** Assert that an activated extension registration registry contains a custom item type definition (optionally scoped to a specific extension). */
 export function assertRegisteredItemType(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredItemTypeExpectation,
@@ -1706,17 +1800,32 @@ export function assertRegisteredItemType(
   }
 
   const candidates = registrations.item_types
-    .filter((entry) => expectation.extensionName === undefined || entry.name === expectation.extensionName)
+    .filter(
+      (entry) =>
+        expectation.extensionName === undefined ||
+        entry.name === expectation.extensionName,
+    )
     .map((registration) => ({
       registration,
-      itemType: registration.types.find((itemType) => normalizeSdkIdentifier(itemType.name) === expectedType),
+      itemType: registration.types.find(
+        (itemType) => normalizeSdkIdentifier(itemType.name) === expectedType,
+      ),
     }))
-    .filter((entry): entry is RegisteredItemTypeAssertion => entry.itemType !== undefined);
+    .filter(
+      (entry): entry is RegisteredItemTypeAssertion =>
+        entry.itemType !== undefined,
+    );
 
-  const match = candidates.find((entry) => expectation.folder === undefined || entry.itemType.folder === expectation.folder);
+  const match = candidates.find(
+    (entry) =>
+      expectation.folder === undefined ||
+      entry.itemType.folder === expectation.folder,
+  );
   if (!match) {
     const available = sortedUnique(
-      registrations.item_types.flatMap((entry) => entry.types.map((itemType) => `${itemType.name}:${itemType.folder}`)),
+      registrations.item_types.flatMap((entry) =>
+        entry.types.map((itemType) => `${itemType.name}:${itemType.folder}`),
+      ),
     );
     throw new Error(
       `Expected item type "${expectedType}"${extensionNameSuffix(
@@ -1750,10 +1859,19 @@ export function assertRegisteredProfile(
   }
 
   const match = registrations.profiles
-    .filter((entry) => expectation.extensionName === undefined || entry.name === expectation.extensionName)
-    .find((entry) => normalizeSdkProfileMatchKey(entry.profile.name) === expectedProfile);
+    .filter(
+      (entry) =>
+        expectation.extensionName === undefined ||
+        entry.name === expectation.extensionName,
+    )
+    .find(
+      (entry) =>
+        normalizeSdkProfileMatchKey(entry.profile.name) === expectedProfile,
+    );
   if (!match) {
-    const available = sortedUnique(registrations.profiles.map((entry) => entry.profile.name));
+    const available = sortedUnique(
+      registrations.profiles.map((entry) => entry.profile.name),
+    );
     throw new Error(
       `Expected profile "${expectedProfile}"${extensionNameSuffix(
         expectation.extensionName,
@@ -1782,12 +1900,16 @@ export function assertRegisteredCommandOverride(
     throw new Error("Expected command name must be a non-empty string");
   }
 
-  const candidates = commands.overrides.filter((entry) => entry.command === expectedCommand);
+  const candidates = commands.overrides.filter(
+    (entry) => entry.command === expectedCommand,
+  );
   const override = expectation.extensionName
     ? candidates.find((entry) => entry.name === expectation.extensionName)
     : candidates[0];
   if (!override) {
-    const available = sortedUnique(commands.overrides.map((entry) => entry.command));
+    const available = sortedUnique(
+      commands.overrides.map((entry) => entry.command),
+    );
     throw new Error(
       `Expected command override "${expectedCommand}"${extensionNameSuffix(
         expectation.extensionName,
@@ -1816,12 +1938,16 @@ export function assertRegisteredParserOverride(
     throw new Error("Expected command name must be a non-empty string");
   }
 
-  const candidates = parsers.overrides.filter((entry) => entry.command === expectedCommand);
+  const candidates = parsers.overrides.filter(
+    (entry) => entry.command === expectedCommand,
+  );
   const override = expectation.extensionName
     ? candidates.find((entry) => entry.name === expectation.extensionName)
     : candidates[0];
   if (!override) {
-    const available = sortedUnique(parsers.overrides.map((entry) => entry.command));
+    const available = sortedUnique(
+      parsers.overrides.map((entry) => entry.command),
+    );
     throw new Error(
       `Expected parser override "${expectedCommand}"${extensionNameSuffix(
         expectation.extensionName,
@@ -1847,10 +1973,14 @@ export function assertRegisteredPreflightOverride(
   expectation: RegisteredPreflightOverrideExpectation = {},
 ): RegisteredExtensionPreflightOverride {
   const override = expectation.extensionName
-    ? preflight.overrides.find((entry) => entry.name === expectation.extensionName)
+    ? preflight.overrides.find(
+        (entry) => entry.name === expectation.extensionName,
+      )
     : preflight.overrides[0];
   if (!override) {
-    const available = sortedUnique(preflight.overrides.map((entry) => entry.name));
+    const available = sortedUnique(
+      preflight.overrides.map((entry) => entry.name),
+    );
     throw new Error(
       `Expected a preflight override${extensionNameSuffix(
         expectation.extensionName,
@@ -1877,12 +2007,16 @@ export function assertRegisteredRendererOverride(
     throw new Error("Expected renderer format must be a non-empty string");
   }
 
-  const candidates = renderers.overrides.filter((entry) => entry.format === expectedFormat);
+  const candidates = renderers.overrides.filter(
+    (entry) => entry.format === expectedFormat,
+  );
   const override = expectation.extensionName
     ? candidates.find((entry) => entry.name === expectation.extensionName)
     : candidates[0];
   if (!override) {
-    const available = sortedUnique(renderers.overrides.map((entry) => entry.format));
+    const available = sortedUnique(
+      renderers.overrides.map((entry) => entry.format),
+    );
     throw new Error(
       `Expected renderer override "${expectedFormat}"${extensionNameSuffix(
         expectation.extensionName,
@@ -1911,12 +2045,16 @@ export function assertRegisteredServiceOverride(
     throw new Error("Expected service name must be a non-empty string");
   }
 
-  const candidates = services.overrides.filter((entry) => normalizeSdkIdentifier(entry.service) === expectedService);
+  const candidates = services.overrides.filter(
+    (entry) => normalizeSdkIdentifier(entry.service) === expectedService,
+  );
   const override = expectation.extensionName
     ? candidates.find((entry) => entry.name === expectation.extensionName)
     : candidates[0];
   if (!override) {
-    const available = sortedUnique(services.overrides.map((entry) => entry.service));
+    const available = sortedUnique(
+      services.overrides.map((entry) => entry.service),
+    );
     throw new Error(
       `Expected service override "${expectedService}"${extensionNameSuffix(
         expectation.extensionName,
@@ -1946,12 +2084,15 @@ export function assertRegisteredMigration(
 
   const candidates = registrations.migrations.filter(
     (entry) =>
-      (expectation.extensionName === undefined || entry.name === expectation.extensionName) &&
+      (expectation.extensionName === undefined ||
+        entry.name === expectation.extensionName) &&
       typeof entry.definition.id === "string" &&
       normalizeSdkIdentifier(entry.definition.id) === expectedMigration,
   );
   const match = candidates.find(
-    (entry) => expectation.mandatory === undefined || (entry.definition.mandatory ?? false) === expectation.mandatory,
+    (entry) =>
+      expectation.mandatory === undefined ||
+      (entry.definition.mandatory ?? false) === expectation.mandatory,
   );
   if (match) {
     return match;
@@ -1972,7 +2113,8 @@ export function assertRegisteredMigration(
   const available = sortedUnique(
     registrations.migrations.map((entry) => {
       const id =
-        typeof entry.definition.id === "string" && entry.definition.id.trim().length > 0
+        typeof entry.definition.id === "string" &&
+        entry.definition.id.trim().length > 0
           ? entry.definition.id.trim()
           : "(unnamed)";
       return `${id}:${entry.definition.mandatory === true}`;
@@ -2000,7 +2142,10 @@ export function assertExtensionCapabilityUsage(
   activation: ExtensionActivationResult,
   expectation: ExtensionCapabilityUsageExpectation,
 ): ExtensionCapabilityUsageAssertion {
-  const toKnownCapabilitySet = (capabilities: readonly string[], field: string): Set<ExtensionCapability> => {
+  const toKnownCapabilitySet = (
+    capabilities: readonly string[],
+    field: string,
+  ): Set<ExtensionCapability> => {
     const known = new Set<ExtensionCapability>();
     for (const capability of capabilities) {
       const normalized = normalizeKnownExtensionCapability(capability);
@@ -2014,13 +2159,20 @@ export function assertExtensionCapabilityUsage(
     }
     return known;
   };
-  const declared = [...toKnownCapabilitySet(expectation.declared, "declared")].sort((left, right) =>
-    left.localeCompare(right),
+  const declared = [
+    ...toKnownCapabilitySet(expectation.declared, "declared"),
+  ].sort((left, right) => left.localeCompare(right));
+  const allowUnused = toKnownCapabilitySet(
+    expectation.allowUnused ?? [],
+    "allowUnused",
   );
-  const allowUnused = toKnownCapabilitySet(expectation.allowUnused ?? [], "allowUnused");
-  const used = collectUsedExtensionCapabilities(activation, { extensionName: expectation.extensionName });
+  const used = collectUsedExtensionCapabilities(activation, {
+    extensionName: expectation.extensionName,
+  });
   const usedSet = new Set(used);
-  const unused = declared.filter((capability) => !usedSet.has(capability) && !allowUnused.has(capability));
+  const unused = declared.filter(
+    (capability) => !usedSet.has(capability) && !allowUnused.has(capability),
+  );
   if (unused.length > 0) {
     const scopeSuffix = extensionNameSuffix(expectation.extensionName);
     throw new Error(
@@ -2052,10 +2204,14 @@ export function assertExtensionBlueprint(
 ): ExtensionBlueprintLintResult {
   const result = lintExtensionBlueprint(blueprint, options);
   if (!result.ok) {
-    const errors = result.findings.filter((finding) => finding.severity === "error");
+    const errors = result.findings.filter(
+      (finding) => finding.severity === "error",
+    );
     throw new Error(
       `Extension blueprint failed preflight with ${errors.length} ${errors.length === 1 ? "error" : "errors"}:\n` +
-        errors.map((finding) => `  - [${finding.code}] ${finding.message}`).join("\n"),
+        errors
+          .map((finding) => `  - [${finding.code}] ${finding.message}`)
+          .join("\n"),
     );
   }
   return result;
@@ -2063,11 +2219,7 @@ export function assertExtensionBlueprint(
 
 /** Options for {@link assertProjectProfile}. */
 export interface AssertProjectProfileOptions {
-  /**
-   * Also throw when the profile produces `warning`-severity findings (e.g. a
-   * workflow transition referencing a status no profile or built-in defines).
-   * Off by default so warnings stay advisory; turn on for strict CI gates.
-   */
+  /** Also throw when the profile produces `warning`-severity findings (e.g. a workflow transition referencing a status no profile or built-in defines). Off by default so warnings stay advisory; turn on for strict CI gates. */
   strict?: boolean;
 }
 
@@ -2088,12 +2240,19 @@ export function assertProjectProfile(
 ): ProjectProfileLintReport {
   const report = lintProjectProfile(profile);
   const blocking = report.findings.filter(
-    (finding) => finding.severity === "error" || (options.strict === true && finding.severity === "warning"),
+    (finding) =>
+      finding.severity === "error" ||
+      (options.strict === true && finding.severity === "warning"),
   );
   if (blocking.length > 0) {
     throw new Error(
       `Project profile "${report.profile}" failed lint with ${blocking.length} ${blocking.length === 1 ? "issue" : "issues"}:\n` +
-        blocking.map((finding) => `  - ${finding.severity} [${finding.code}] ${finding.message}`).join("\n"),
+        blocking
+          .map(
+            (finding) =>
+              `  - ${finding.severity} [${finding.code}] ${finding.message}`,
+          )
+          .join("\n"),
     );
   }
   return report;
@@ -2144,29 +2303,43 @@ export function assertExtensionManifestMatchesBlueprint(
   // Coerce a malformed/absent capabilities field to an explicit empty declared set
   // so an untyped `.js` caller gets a deterministic `missing` list rather than the
   // lint silently falling back to the blueprint's in-module manifest mirror.
-  const declaredCapabilities = Array.isArray(manifest.capabilities) ? manifest.capabilities : [];
+  const declaredCapabilities = Array.isArray(manifest.capabilities)
+    ? manifest.capabilities
+    : [];
   const result = lintExtensionBlueprint(blueprint, { declaredCapabilities });
   // `declared` is guaranteed non-null here: we always hand lint an array, so it
   // never takes its "no declared set" branch. The cast drops the unreachable null.
   const declared = result.declared as ExtensionCapability[];
   const declaredSet = new Set(declared);
   const usedSet = new Set(result.used);
-  const missing = result.used.filter((capability) => !declaredSet.has(capability));
+  const missing = result.used.filter(
+    (capability) => !declaredSet.has(capability),
+  );
   const unused = declared.filter((capability) => !usedSet.has(capability));
   if (missing.length > 0 || unused.length > 0) {
     const parts: string[] = [];
     if (missing.length > 0) {
-      parts.push(`missing [${missing.join(", ")}] (the blueprint registers ${missing.length === 1 ? "a surface" : "surfaces"} requiring ${missing.length === 1 ? "it" : "them"}; activation throws extension_capability_missing)`);
+      parts.push(
+        `missing [${missing.join(", ")}] (the blueprint registers ${missing.length === 1 ? "a surface" : "surfaces"} requiring ${missing.length === 1 ? "it" : "them"}; activation throws extension_capability_missing)`,
+      );
     }
     if (unused.length > 0) {
-      parts.push(`unused [${unused.join(", ")}] (declared but no surface exercises ${unused.length === 1 ? "it" : "them"}; drop for least privilege)`);
+      parts.push(
+        `unused [${unused.join(", ")}] (declared but no surface exercises ${unused.length === 1 ? "it" : "them"}; drop for least privilege)`,
+      );
     }
     throw new Error(
       `Manifest capabilities do not match the blueprint: ${parts.join("; ")}. ` +
         "Set capabilities to synthesizeExtensionManifest(blueprint, identity).capabilities to stay in sync.",
     );
   }
-  return { used: result.used, declared, missing, unused, findings: result.findings };
+  return {
+    used: result.used,
+    declared,
+    missing,
+    unused,
+    findings: result.findings,
+  };
 }
 
 /**
@@ -2190,7 +2363,9 @@ export function assertExtensionManifestCompatible(
   target: ExtensionManifestCompatibilityTarget,
 ): ExtensionManifestCompatibilityResult {
   const result = checkExtensionManifestCompatibility(manifest, target);
-  const blocking = result.findings.filter((finding) => finding.severity === "error");
+  const blocking = result.findings.filter(
+    (finding) => finding.severity === "error",
+  );
   if (blocking.length > 0) {
     throw new Error(
       `Extension manifest is not compatible with pm ${result.pmVersion}: ${blocking
@@ -2224,10 +2399,17 @@ export function assertExtensionPreflight(
 ): ExtensionPreflightReport {
   const report = preflightExtension(blueprint, options);
   if (!report.ok) {
-    const errors = report.findings.filter((finding) => finding.severity === "error");
+    const errors = report.findings.filter(
+      (finding) => finding.severity === "error",
+    );
     throw new Error(
       `Extension failed preflight with ${errors.length} ${errors.length === 1 ? "error" : "errors"}:\n` +
-        errors.map((finding) => `  - [${finding.source}:${finding.code}] ${finding.message}`).join("\n"),
+        errors
+          .map(
+            (finding) =>
+              `  - [${finding.source}:${finding.code}] ${finding.message}`,
+          )
+          .join("\n"),
     );
   }
   return report;
@@ -2262,7 +2444,9 @@ export interface ExtensionTestHarness {
   readonly activation: ExtensionActivationResult;
 
   /** Bound {@link describeExtensionActivation} over the whole `activation`. */
-  activationSummary(options?: DescribeExtensionActivationOptions): ExtensionActivationSummary;
+  activationSummary(
+    options?: DescribeExtensionActivationOptions,
+  ): ExtensionActivationSummary;
   /**
    * Bound {@link renderExtensionSurfaceMarkdown} over {@link activationSummary},
    * so tests and README generators can produce deterministic surface docs from
@@ -2271,64 +2455,112 @@ export interface ExtensionTestHarness {
   renderMarkdown(options?: RenderExtensionHarnessMarkdownOptions): string;
 
   /** Bound {@link assertRegisteredCommandContract} over `activation.registrations`. */
-  assertCommandContract(expectation: RegisteredCommandContractExpectation): RegisteredCommandContractAssertion;
+  assertCommandContract(
+    expectation: RegisteredCommandContractExpectation,
+  ): RegisteredCommandContractAssertion;
   /** Bound {@link assertRegisteredFlags} over `activation.registrations`. */
-  assertFlags(expectation: RegisteredFlagsExpectation): RegisteredExtensionFlagDefinitions;
+  assertFlags(
+    expectation: RegisteredFlagsExpectation,
+  ): RegisteredExtensionFlagDefinitions;
   /** Bound {@link assertRegisteredItemField} over `activation.registrations`. */
-  assertItemField(expectation: RegisteredItemFieldExpectation): RegisteredItemFieldAssertion;
+  assertItemField(
+    expectation: RegisteredItemFieldExpectation,
+  ): RegisteredItemFieldAssertion;
   /** Bound {@link assertRegisteredItemType} over `activation.registrations`. */
-  assertItemType(expectation: RegisteredItemTypeExpectation): RegisteredItemTypeAssertion;
+  assertItemType(
+    expectation: RegisteredItemTypeExpectation,
+  ): RegisteredItemTypeAssertion;
   /** Bound {@link assertRegisteredProfile} over `activation.registrations`. */
-  assertProfile(expectation: RegisteredProfileExpectation): RegisteredProfileAssertion;
+  assertProfile(
+    expectation: RegisteredProfileExpectation,
+  ): RegisteredProfileAssertion;
   /** Bound {@link assertRegisteredHook} over `activation.hooks`. */
   assertHook<TKind extends RegisteredHookKind>(
     expectation: RegisteredHookExpectation & { kind: TKind },
   ): ExtensionHookRegistry[(typeof HOOK_KIND_TO_REGISTRY_FIELD)[TKind]][number];
   /** Bound {@link assertRegisteredCommandOverride} over `activation.commands`. */
-  assertCommandOverride(expectation: RegisteredCommandOverrideExpectation): RegisteredExtensionCommandOverride;
+  assertCommandOverride(
+    expectation: RegisteredCommandOverrideExpectation,
+  ): RegisteredExtensionCommandOverride;
   /** Bound {@link assertRegisteredParserOverride} over `activation.parsers`. */
-  assertParserOverride(expectation: RegisteredParserOverrideExpectation): RegisteredExtensionParserOverride;
+  assertParserOverride(
+    expectation: RegisteredParserOverrideExpectation,
+  ): RegisteredExtensionParserOverride;
   /** Bound {@link assertRegisteredPreflightOverride} over `activation.preflight`. */
-  assertPreflightOverride(expectation?: RegisteredPreflightOverrideExpectation): RegisteredExtensionPreflightOverride;
+  assertPreflightOverride(
+    expectation?: RegisteredPreflightOverrideExpectation,
+  ): RegisteredExtensionPreflightOverride;
   /** Bound {@link assertRegisteredRendererOverride} over `activation.renderers`. */
-  assertRendererOverride(expectation: RegisteredRendererOverrideExpectation): RegisteredExtensionRendererOverride;
+  assertRendererOverride(
+    expectation: RegisteredRendererOverrideExpectation,
+  ): RegisteredExtensionRendererOverride;
   /** Bound {@link assertRegisteredServiceOverride} over `activation.services`. */
-  assertServiceOverride(expectation: RegisteredServiceOverrideExpectation): RegisteredExtensionServiceOverride;
+  assertServiceOverride(
+    expectation: RegisteredServiceOverrideExpectation,
+  ): RegisteredExtensionServiceOverride;
   /** Bound {@link assertRegisteredSearchProvider} over `activation.registrations`. */
-  assertSearchProvider(expectation: RegisteredSearchProviderExpectation): RegisteredExtensionSearchProvider;
+  assertSearchProvider(
+    expectation: RegisteredSearchProviderExpectation,
+  ): RegisteredExtensionSearchProvider;
   /** Bound {@link assertRegisteredVectorStoreAdapter} over `activation.registrations`. */
-  assertVectorStoreAdapter(expectation: RegisteredVectorStoreAdapterExpectation): RegisteredExtensionVectorStoreAdapter;
+  assertVectorStoreAdapter(
+    expectation: RegisteredVectorStoreAdapterExpectation,
+  ): RegisteredExtensionVectorStoreAdapter;
   /** Bound {@link assertRegisteredImporter} over `activation.registrations`. */
-  assertImporter(expectation: RegisteredImporterExpectation): RegisteredExtensionImporter;
+  assertImporter(
+    expectation: RegisteredImporterExpectation,
+  ): RegisteredExtensionImporter;
   /** Bound {@link assertRegisteredExporter} over `activation.registrations`. */
-  assertExporter(expectation: RegisteredExporterExpectation): RegisteredExtensionExporter;
+  assertExporter(
+    expectation: RegisteredExporterExpectation,
+  ): RegisteredExtensionExporter;
   /** Bound {@link assertRegisteredMigration} over `activation.registrations`. */
-  assertMigration(expectation: RegisteredMigrationExpectation): RegisteredExtensionSchemaMigrationDefinition;
+  assertMigration(
+    expectation: RegisteredMigrationExpectation,
+  ): RegisteredExtensionSchemaMigrationDefinition;
   /** Bound {@link assertExtensionCapabilityUsage} over the whole `activation`. */
-  assertCapabilityUsage(expectation: ExtensionCapabilityUsageExpectation): ExtensionCapabilityUsageAssertion;
+  assertCapabilityUsage(
+    expectation: ExtensionCapabilityUsageExpectation,
+  ): ExtensionCapabilityUsageAssertion;
 
   /** Bound {@link runRegisteredCommandForTest} over `activation.commands`. */
-  runCommand(options: RunRegisteredCommandForTestOptions): Promise<CommandHandlerResult>;
+  runCommand(
+    options: RunRegisteredCommandForTestOptions,
+  ): Promise<CommandHandlerResult>;
   /** Bound {@link runRegisteredHookForTest} over `activation.hooks`. */
   runHook(options: RunRegisteredHookForTestOptions): Promise<string[]>;
   /** Bound {@link runRegisteredCommandOverrideForTest} over `activation.commands`. */
-  runCommandOverride(context: CommandOverrideContext): Promise<CommandOverrideResult>;
+  runCommandOverride(
+    context: CommandOverrideContext,
+  ): Promise<CommandOverrideResult>;
   /** Bound {@link runRegisteredParserOverrideForTest} over `activation.parsers`. */
-  runParserOverride(context: ParserOverrideContext): Promise<ParserOverrideResult>;
+  runParserOverride(
+    context: ParserOverrideContext,
+  ): Promise<ParserOverrideResult>;
   /** Bound {@link runRegisteredPreflightOverrideForTest} over `activation.preflight`. */
-  runPreflightOverride(context: PreflightOverrideContext): Promise<PreflightOverrideResult>;
+  runPreflightOverride(
+    context: PreflightOverrideContext,
+  ): Promise<PreflightOverrideResult>;
   /** Bound {@link runRegisteredRendererOverrideForTest} over `activation.renderers`. */
-  runRendererOverride(context: RendererOverrideContext): Promise<RendererOverrideResult>;
+  runRendererOverride(
+    context: RendererOverrideContext,
+  ): Promise<RendererOverrideResult>;
   /** Bound {@link runRegisteredServiceOverrideForTest} over `activation.services`. */
-  runServiceOverride(context: ServiceOverrideContext): Promise<ServiceOverrideResult>;
+  runServiceOverride(
+    context: ServiceOverrideContext,
+  ): Promise<ServiceOverrideResult>;
   /** Bound {@link runRegisteredSearchProviderForTest} over `activation.registrations`. */
-  runSearchProvider<Operation extends keyof SearchProviderOperationContexts>(options: {
+  runSearchProvider<
+    Operation extends keyof SearchProviderOperationContexts,
+  >(options: {
     provider: string;
     operation: Operation;
     context: SearchProviderOperationContexts[Operation];
   }): Promise<SearchProviderOperationResults[Operation]>;
   /** Bound {@link runRegisteredVectorStoreAdapterForTest} over `activation.registrations`. */
-  runVectorStoreAdapter<Operation extends keyof VectorStoreAdapterOperationContexts>(options: {
+  runVectorStoreAdapter<
+    Operation extends keyof VectorStoreAdapterOperationContexts,
+  >(options: {
     adapter: string;
     operation: Operation;
     context: VectorStoreAdapterOperationContexts[Operation];
@@ -2336,24 +2568,25 @@ export interface ExtensionTestHarness {
   /** Bound {@link runRegisteredMigrationForTest} over `activation.registrations`. */
   runMigration(options: RunRegisteredMigrationForTestOptions): Promise<unknown>;
   /** Bound {@link runRegisteredImporterForTest} over the whole `activation`. */
-  runImporter(options: RunRegisteredImporterForTestOptions): Promise<CommandHandlerResult>;
+  runImporter(
+    options: RunRegisteredImporterForTestOptions,
+  ): Promise<CommandHandlerResult>;
   /** Bound {@link runRegisteredExporterForTest} over the whole `activation`. */
-  runExporter(options: RunRegisteredExporterForTestOptions): Promise<CommandHandlerResult>;
+  runExporter(
+    options: RunRegisteredExporterForTestOptions,
+  ): Promise<CommandHandlerResult>;
 
   /**
    * Bound {@link deactivateExtensionForTest} — runs the real teardown engine for
    * this harness's module, forwarding its resolved `name`/`layer`/`activation` so
    * the skip-key matches and a never-initialized extension is not deactivated.
    */
-  deactivate(options?: { deactivateTimeoutMs?: number }): Promise<ExtensionDeactivationResult>;
+  deactivate(options?: {
+    deactivateTimeoutMs?: number;
+  }): Promise<ExtensionDeactivationResult>;
 }
 
-/**
- * Reject obviously wrong harness input (e.g. an options object passed as the
- * module) instead of silently producing an empty activation. Mirrors the
- * loader's activatable-extension shapes: an `activate` function on the module
- * or on its default export.
- */
+/** Reject obviously wrong harness input (e.g. an options object passed as the module) instead of silently producing an empty activation. Mirrors the loader's activatable-extension shapes: an `activate` function on the module or on its default export. */
 function assertTestModuleHasActivateExport(module: unknown): void {
   if (resolveActivatablePropertyRecord(module)) {
     return;
@@ -2402,7 +2635,9 @@ export async function createExtensionTestHarness(
     const detail = activation.failed
       .map((failure) => {
         const missingCapability = failure.trace?.missing_capability;
-        const reason = missingCapability ? `${failure.error}; missing capability "${missingCapability}"` : failure.error;
+        const reason = missingCapability
+          ? `${failure.error}; missing capability "${missingCapability}"`
+          : failure.error;
         return `${failure.layer}:${failure.name} (${reason})`;
       })
       .join(", ");
@@ -2422,10 +2657,16 @@ export async function createExtensionTestHarness(
     },
     renderMarkdown(markdownOptions = {}) {
       const { extensionName, ...renderOptions } = markdownOptions ?? {};
-      return renderExtensionSurfaceMarkdown(describeExtensionActivation(activation, { extensionName }), renderOptions);
+      return renderExtensionSurfaceMarkdown(
+        describeExtensionActivation(activation, { extensionName }),
+        renderOptions,
+      );
     },
     assertCommandContract(expectation) {
-      return assertRegisteredCommandContract(activation.registrations, expectation);
+      return assertRegisteredCommandContract(
+        activation.registrations,
+        expectation,
+      );
     },
     assertFlags(expectation) {
       return assertRegisteredFlags(activation.registrations, expectation);
@@ -2449,19 +2690,31 @@ export async function createExtensionTestHarness(
       return assertRegisteredParserOverride(activation.parsers, expectation);
     },
     assertPreflightOverride(expectation) {
-      return assertRegisteredPreflightOverride(activation.preflight, expectation);
+      return assertRegisteredPreflightOverride(
+        activation.preflight,
+        expectation,
+      );
     },
     assertRendererOverride(expectation) {
-      return assertRegisteredRendererOverride(activation.renderers, expectation);
+      return assertRegisteredRendererOverride(
+        activation.renderers,
+        expectation,
+      );
     },
     assertServiceOverride(expectation) {
       return assertRegisteredServiceOverride(activation.services, expectation);
     },
     assertSearchProvider(expectation) {
-      return assertRegisteredSearchProvider(activation.registrations, expectation);
+      return assertRegisteredSearchProvider(
+        activation.registrations,
+        expectation,
+      );
     },
     assertVectorStoreAdapter(expectation) {
-      return assertRegisteredVectorStoreAdapter(activation.registrations, expectation);
+      return assertRegisteredVectorStoreAdapter(
+        activation.registrations,
+        expectation,
+      );
     },
     assertImporter(expectation) {
       return assertRegisteredImporter(activation.registrations, expectation);
@@ -2488,22 +2741,37 @@ export async function createExtensionTestHarness(
       return runRegisteredParserOverrideForTest(activation.parsers, context);
     },
     runPreflightOverride(context) {
-      return runRegisteredPreflightOverrideForTest(activation.preflight, context);
+      return runRegisteredPreflightOverrideForTest(
+        activation.preflight,
+        context,
+      );
     },
     runRendererOverride(context) {
-      return runRegisteredRendererOverrideForTest(activation.renderers, context);
+      return runRegisteredRendererOverrideForTest(
+        activation.renderers,
+        context,
+      );
     },
     runServiceOverride(context) {
       return runRegisteredServiceOverrideForTest(activation.services, context);
     },
     runSearchProvider(runOptions) {
-      return runRegisteredSearchProviderForTest(activation.registrations, runOptions);
+      return runRegisteredSearchProviderForTest(
+        activation.registrations,
+        runOptions,
+      );
     },
     runVectorStoreAdapter(runOptions) {
-      return runRegisteredVectorStoreAdapterForTest(activation.registrations, runOptions);
+      return runRegisteredVectorStoreAdapterForTest(
+        activation.registrations,
+        runOptions,
+      );
     },
     runMigration(runOptions) {
-      return runRegisteredMigrationForTest(activation.registrations, runOptions);
+      return runRegisteredMigrationForTest(
+        activation.registrations,
+        runOptions,
+      );
     },
     runImporter(runOptions) {
       return runRegisteredImporterForTest(activation, runOptions);

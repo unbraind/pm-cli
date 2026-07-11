@@ -5,46 +5,41 @@
  */
 import { Command } from "commander";
 
-/**
- * Documents the help bundle payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the help bundle payload exchanged by command, SDK, and package integrations. */
 export interface HelpBundle {
+  /** Value that configures or reports why for this contract. */
   why: string;
+  /** Value that configures or reports examples for this contract. */
   examples: string[];
+  /** Value that configures or reports tips for this contract. */
   tips?: string[];
 }
 
-/**
- * Documents the help narrative payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the help narrative payload exchanged by command, SDK, and package integrations. */
 export interface HelpNarrative {
+  /** Value that configures or reports intent for this contract. */
   intent: string;
+  /** Value that configures or reports examples for this contract. */
   examples: string[];
+  /** Value that configures or reports tips for this contract. */
   tips: string[];
+  /** Strategy used to control detail behavior. */
   detail_mode: HelpDetailMode;
 }
 
-/**
- * Restricts help detail mode values accepted by command, SDK, and storage contracts.
- */
+/** Restricts help detail mode values accepted by command, SDK, and storage contracts. */
 export type HelpDetailMode = "compact" | "detailed";
 
 // Compact help/narrative surfaces show at most the first example. Centralizing this
 // keeps the empty-examples guard in one place for renderCompactHelpBundle and
 // resolveHelpNarrative (both must degrade to an empty list rather than [undefined]).
-/**
- * Implements first example or empty for the public runtime surface of this module.
- */
+/** Implements first example or empty for the public runtime surface of this module. */
 export function firstExampleOrEmpty(examples: string[]): string[] {
   return examples.length > 0 ? [examples[0]] : [];
 }
 
 function renderCompactHelpBundle(bundle: HelpBundle): string {
-  const lines: string[] = [
-    "",
-    "Intent:",
-    `  ${bundle.why}`,
-  ];
+  const lines: string[] = ["", "Intent:", `  ${bundle.why}`];
   const compactExamples = firstExampleOrEmpty(bundle.examples);
   if (compactExamples.length > 0) {
     lines.push("", "Example:");
@@ -71,16 +66,17 @@ function renderDetailedHelpBundle(bundle: HelpBundle): string {
   return lines.join("\n");
 }
 
-function renderHelpBundle(bundle: HelpBundle, detailMode: HelpDetailMode): string {
+function renderHelpBundle(
+  bundle: HelpBundle,
+  detailMode: HelpDetailMode,
+): string {
   if (detailMode === "detailed") {
     return renderDetailedHelpBundle(bundle);
   }
   return renderCompactHelpBundle(bundle);
 }
 
-/**
- * Implements normalize help command path for the public runtime surface of this module.
- */
+/** Implements normalize help command path for the public runtime surface of this module. */
 export function normalizeHelpCommandPath(commandPath: string): string {
   return commandPath
     .trim()
@@ -111,17 +107,23 @@ function findCommandByPath(root: Command, pathParts: string[]): Command | null {
   return current;
 }
 
-function attachBundleByPath(root: Command, commandPath: string, bundle: HelpBundle, detailMode: HelpDetailMode): void {
-  const command = findCommandByPath(root, commandPath.split(" ").filter((part) => part.length > 0));
+function attachBundleByPath(
+  root: Command,
+  commandPath: string,
+  bundle: HelpBundle,
+  detailMode: HelpDetailMode,
+): void {
+  const command = findCommandByPath(
+    root,
+    commandPath.split(" ").filter((part) => part.length > 0),
+  );
   if (!command) {
     return;
   }
   command.addHelpText("after", renderHelpBundle(bundle, detailMode));
 }
 
-/**
- * Implements resolve help detail mode for the public runtime surface of this module.
- */
+/** Implements resolve help detail mode for the public runtime surface of this module. */
 export function resolveHelpDetailMode(argv: string[]): HelpDetailMode {
   if (argv.includes("--explain")) {
     return "detailed";
@@ -152,7 +154,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   config: {
     why: "Reads or updates project/global settings such as definition-of-done, item format, telemetry, and policy toggles.",
     examples: [
-      'pm config project get definition-of-done',
+      "pm config project get definition-of-done",
       'pm config project set definition-of-done --criterion "tests pass"',
       "pm config project set item-format --format toon",
       "pm config project set sprint-release-format-policy --policy strict_error",
@@ -163,8 +165,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
   },
   extension: {
-    why:
-      "Compatibility command for package-backed runtime extension lifecycle operations across project or global scope.",
+    why: "Compatibility command for package-backed runtime extension lifecycle operations across project or global scope.",
     examples: [
       "pm install ./my-package --project",
       "pm install '*' --project",
@@ -191,8 +192,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
   },
   package: {
-    why:
-      "Installs, explores, manages, diagnoses, adopts, activates, deactivates, and refreshes package-backed pm runtime extensions.",
+    why: "Installs, explores, manages, diagnoses, adopts, activates, deactivates, and refreshes package-backed pm runtime extensions.",
     examples: [
       "pm install npm:@scope/pm-package --project",
       "pm package install ./my-package --project",
@@ -296,7 +296,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm extension --install --project ./my-extension",
       "pm extension doctor --project --detail summary",
     ],
-    tips: ["Prefer pm install or pm package install for new package-first automation."],
+    tips: [
+      "Prefer pm install or pm package install for new package-first automation.",
+    ],
   },
   "extension doctor": {
     why: "Diagnoses compatibility extension activation, policy, collision, and managed-state health for project or global extension scopes.",
@@ -327,7 +329,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm install npm:@scope/pm-package --global",
       "pm install --github org/repo/packages/my-pm-package --ref main",
     ],
-    tips: ["Installed packages are recorded in managed state and can be inspected with pm package manage."],
+    tips: [
+      "Installed packages are recorded in managed state and can be inspected with pm package manage.",
+    ],
   },
   upgrade: {
     why: "Updates the global pm CLI/SDK and refreshes managed pm packages from recorded install sources.",
@@ -358,14 +362,10 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   focus: {
     why: "Sets a session focused item so new pm create items default their --parent to it (project management = context management).",
-    examples: [
-      "pm focus pm-epic1",
-      "pm focus",
-      "pm focus --clear",
-    ],
+    examples: ["pm focus pm-epic1", "pm focus", "pm focus --clear"],
     tips: [
       "Focus is session-local (stored in .agents/pm/runtime/session.json, gitignored) — it never affects teammates.",
-      "An explicit --parent on pm create always overrides the focused item; use --parent \"\" to create with no parent.",
+      'An explicit --parent on pm create always overrides the focused item; use --parent "" to create with no parent.',
       "A stale focused item produces the same missing-parent validation as an explicit stale --parent.",
     ],
   },
@@ -413,8 +413,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
   },
   normalize: {
-    why:
-      "Scans items for low-signal lifecycle metadata drift, emits deterministic per-item plans, and optionally applies normalized metadata updates with update-style safety checks.",
+    why: "Scans items for low-signal lifecycle metadata drift, emits deterministic per-item plans, and optionally applies normalized metadata updates with update-style safety checks.",
     examples: [
       "pm normalize --dry-run",
       "pm normalize --filter-status in_progress --dry-run",
@@ -444,7 +443,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm deps pm-a1b2 --format graph",
       "pm deps pm-a1b2 --max-depth 2 --collapse repeated --summary",
     ],
-    tips: ["Use --summary for lightweight counts when full graph payloads are unnecessary."],
+    tips: [
+      "Use --summary for lightweight counts when full graph payloads are unnecessary.",
+    ],
   },
   list: {
     why: "Lists active items with deterministic filtering and ordering.",
@@ -457,7 +458,10 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   "list-all": {
     why: "Lists all item states (including terminal states) when you need full visibility.",
-    examples: ["pm list-all --limit 50", "pm list-all --type Issue --include-body"],
+    examples: [
+      "pm list-all --limit 50",
+      "pm list-all --type Issue --include-body",
+    ],
   },
   "list-open": {
     why: "Shows work that is ready to claim and start.",
@@ -490,7 +494,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm aggregate --group-by type,status --count",
       "pm aggregate --group-by parent,type --count --status open --parent pm-feature01",
     ],
-    tips: ["Current aggregate mode is grouped counts only, so pass --count explicitly."],
+    tips: [
+      "Current aggregate mode is grouped counts only, so pass --count explicitly.",
+    ],
   },
   "dedupe-audit": {
     why: "Audits potential duplicate items and emits deterministic merge suggestions before any mutation.",
@@ -499,7 +505,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm dedupe-audit --mode title_fuzzy --threshold 0.8 --limit 20",
       "pm dedupe-audit --mode parent_scope --status open",
     ],
-    tips: ["Use title_exact for strict collisions, title_fuzzy for near-duplicates, and parent_scope for child-level collisions."],
+    tips: [
+      "Use title_exact for strict collisions, title_fuzzy for near-duplicates, and parent_scope for child-level collisions.",
+    ],
   },
   guide: {
     why: "Routes local progressive-disclosure documentation so agents can fetch only the context they need.",
@@ -590,7 +598,10 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   reindex: {
     why: "Rebuilds search artifacts after large changes to item corpus or provider/vector config.",
-    examples: ["pm reindex --mode keyword", "pm reindex --mode hybrid --progress --json"],
+    examples: [
+      "pm reindex --mode keyword",
+      "pm reindex --mode hybrid --progress --json",
+    ],
     tips: [
       "Use --progress for non-interactive visibility during local embedding runs.",
       "JSON output includes semantic stale/unchanged/embed/upsert counts so agents can gate long reindex work without parsing stderr.",
@@ -611,13 +622,16 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   history: {
     why: "Inspects item mutation timeline and audit trail.",
-    examples: ["pm history pm-a1b2 --limit 20", "pm history pm-a1b2 --full --verify"],
+    examples: [
+      "pm history pm-a1b2 --limit 20",
+      "pm history pm-a1b2 --full --verify",
+    ],
   },
   "history-compact": {
     why: "Compacts long history streams into a synthetic checkpoint while preserving replay integrity. Pass an item id for one stream, or a bulk selector (--ids/--all-over/--closed/--all-streams) to sweep many.",
     examples: [
       "pm history-compact pm-a1b2 --dry-run",
-      "pm history-compact pm-a1b2 --before 25 --author codex-agent --message \"Compact early history\"",
+      'pm history-compact pm-a1b2 --before 25 --author codex-agent --message "Compact early history"',
       "pm history-compact --all-over 500 --dry-run",
       "pm history-compact --closed --author codex-agent",
       "pm history-compact --ids pm-a1b2,pm-c3d4 --dry-run",
@@ -631,11 +645,15 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm activity --id pm-a1b2 --op update --author codex-agent --from -7d --to now",
       "pm activity --json --stream rows --limit 200",
     ],
-    tips: ["Use --stream with --json for line-delimited automation output; --from is inclusive and --to is exclusive."],
+    tips: [
+      "Use --stream with --json for line-delimited automation output; --from is inclusive and --to is exclusive.",
+    ],
   },
   restore: {
     why: "Restores an item to a prior timestamp/version with history replay safety.",
-    examples: ['pm restore pm-a1b2 2026-04-01T00:00:00.000Z --author "codex-agent" --message "Rollback to known-good state"'],
+    examples: [
+      'pm restore pm-a1b2 2026-04-01T00:00:00.000Z --author "codex-agent" --message "Rollback to known-good state"',
+    ],
   },
   close: {
     why: "Transitions work to terminal closed state with explicit rationale.",
@@ -648,11 +666,15 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   delete: {
     why: "Removes an item while preserving history evidence and lock/ownership checks.",
-    examples: ['pm delete pm-a1b2 --author "codex-agent" --message "Remove duplicate item"'],
+    examples: [
+      'pm delete pm-a1b2 --author "codex-agent" --message "Remove duplicate item"',
+    ],
   },
   append: {
     why: "Adds implementation notes to body without replacing existing content.",
-    examples: ['pm append pm-a1b2 --body "Implemented retry with bounded backoff." --message "Record implementation detail"'],
+    examples: [
+      'pm append pm-a1b2 --body "Implemented retry with bounded backoff." --message "Record implementation detail"',
+    ],
   },
   comments: {
     why: "Adds or reviews lightweight status updates linked to an item.",
@@ -780,8 +802,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
   },
   validate: {
-    why:
-      "Runs standalone metadata, resolution, lifecycle (including dependency-cycle diagnostics), linked-file, linked-command reference, and history drift checks with default remediation hints for resolution gaps.",
+    why: "Runs standalone metadata, resolution, lifecycle (including dependency-cycle diagnostics), linked-file, linked-command reference, and history drift checks with default remediation hints for resolution gaps.",
     examples: [
       "pm validate",
       "pm validate --check-resolution --json",
@@ -792,7 +813,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm validate --check-command-references",
       "pm validate --check-resolution --fail-on-warn --json",
     ],
-    tips: ["Resolution-gap warnings include default `pm update <id> ...` remediation hint templates in check details."],
+    tips: [
+      "Resolution-gap warnings include default `pm update <id> ...` remediation hint templates in check details.",
+    ],
   },
   gc: {
     why: "Deletes optional cache artifacts by default to keep local tracker state tidy; use --dry-run to preview targets without deleting files.",
@@ -804,7 +827,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       'pm claim pm-a1b2 --author "codex-agent" --message "Claim for implementation"',
       'pm claim pm-a1b2 --force --author "codex-agent" --message "Take over terminal item"',
     ],
-    tips: ["Claim takeover for non-terminal items does not require --force; --force is reserved for terminal/lock overrides."],
+    tips: [
+      "Claim takeover for non-terminal items does not require --force; --force is reserved for terminal/lock overrides.",
+    ],
   },
   release: {
     why: "Releases an active claim when paused, handed off, or completed.",
@@ -812,19 +837,27 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       'pm release pm-a1b2 --author "codex-agent" --message "Release after closure"',
       'pm release pm-a1b2 --allow-audit-release --author "reviewer" --message "Audit handoff release"',
     ],
-    tips: ["Use --allow-audit-release for non-owner handoffs that only clear assignee metadata."],
+    tips: [
+      "Use --allow-audit-release for non-owner handoffs that only clear assignee metadata.",
+    ],
   },
   "start-task": {
     why: "Lifecycle alias that claims an item and sets status to in_progress.",
-    examples: ['pm start-task pm-a1b2 --author "codex-agent" --message "Start implementation"'],
+    examples: [
+      'pm start-task pm-a1b2 --author "codex-agent" --message "Start implementation"',
+    ],
   },
   "pause-task": {
     why: "Lifecycle alias that sets status to open and releases active assignment.",
-    examples: ['pm pause-task pm-a1b2 --author "codex-agent" --message "Pause for dependency unblock"'],
+    examples: [
+      'pm pause-task pm-a1b2 --author "codex-agent" --message "Pause for dependency unblock"',
+    ],
   },
   "close-task": {
     why: "Lifecycle alias that closes with reason text and clears assignment metadata.",
-    examples: ['pm close-task pm-a1b2 "All acceptance criteria met" --author "codex-agent" --message "Close and handoff"'],
+    examples: [
+      'pm close-task pm-a1b2 "All acceptance criteria met" --author "codex-agent" --message "Close and handoff"',
+    ],
   },
   meet: {
     why: "Shortcut to create a Meeting from friendly time flags (start/duration) without structured --event CSV.",
@@ -850,13 +883,25 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   remind: {
     why: "Shortcut to create a Reminder from a single point in time without structured --reminder CSV.",
-    examples: ['pm remind "Review PR" --at +2d', 'pm remind "Follow up" --at 2026-07-01T09:00:00Z --text "Ping the team"'],
-    tips: ["The reminder time defaults to +1d and the reminder text defaults to the title."],
+    examples: [
+      'pm remind "Review PR" --at +2d',
+      'pm remind "Follow up" --at 2026-07-01T09:00:00Z --text "Ping the team"',
+    ],
+    tips: [
+      "The reminder time defaults to +1d and the reminder text defaults to the title.",
+    ],
   },
   completion: {
     why: "Generates shell completion scripts for faster and more reliable command entry.",
-    examples: ["pm completion bash", "pm completion zsh", "pm completion fish", "pm completion bash --eager-tags"],
-    tips: ["Default scripts resolve tag suggestions lazily at completion time; use --eager-tags to embed current tags directly."],
+    examples: [
+      "pm completion bash",
+      "pm completion zsh",
+      "pm completion fish",
+      "pm completion bash --eager-tags",
+    ],
+    tips: [
+      "Default scripts resolve tag suggestions lazily at completion time; use --eager-tags to embed current tags directly.",
+    ],
   },
   contracts: {
     why: "Exposes machine-readable CLI command and tool schema contracts for agent integrations.",
@@ -868,10 +913,13 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm contracts --action create",
       "pm contracts --schema-only",
     ],
-    tips: ["Use --command to narrow actions/schema to one CLI surface; combine with --flags-only or --availability-only for lighter payloads."],
+    tips: [
+      "Use --command to narrow actions/schema to one CLI surface; combine with --flags-only or --availability-only for lighter payloads.",
+    ],
   },
 };
 
+/** Public contract for root help bundle, shared by SDK and presentation-layer consumers. */
 export const ROOT_HELP_BUNDLE: HelpBundle = {
   why: "Provides deterministic project management workflows for humans and coding agents.",
   examples: [
@@ -896,10 +944,10 @@ function resolveCanonicalHelpPath(commandPath: string | undefined): string {
   return HELP_PATH_ALIASES[normalized] ?? normalized;
 }
 
-/**
- * Implements resolve help bundle for path for the public runtime surface of this module.
- */
-export function resolveHelpBundleForPath(commandPath: string | undefined): HelpBundle {
+/** Implements resolve help bundle for path for the public runtime surface of this module. */
+export function resolveHelpBundleForPath(
+  commandPath: string | undefined,
+): HelpBundle {
   const canonicalPath = resolveCanonicalHelpPath(commandPath);
   if (!canonicalPath) {
     return ROOT_HELP_BUNDLE;
@@ -907,23 +955,28 @@ export function resolveHelpBundleForPath(commandPath: string | undefined): HelpB
   return HELP_BY_COMMAND_PATH[canonicalPath] ?? ROOT_HELP_BUNDLE;
 }
 
-/**
- * Implements resolve help narrative for the public runtime surface of this module.
- */
-export function resolveHelpNarrative(commandPath: string | undefined, detailMode: HelpDetailMode): HelpNarrative {
+/** Implements resolve help narrative for the public runtime surface of this module. */
+export function resolveHelpNarrative(
+  commandPath: string | undefined,
+  detailMode: HelpDetailMode,
+): HelpNarrative {
   const bundle = resolveHelpBundleForPath(commandPath);
   return {
     intent: bundle.why,
-    examples: detailMode === "detailed" ? [...bundle.examples] : firstExampleOrEmpty(bundle.examples),
+    examples:
+      detailMode === "detailed"
+        ? [...bundle.examples]
+        : firstExampleOrEmpty(bundle.examples),
     tips: detailMode === "detailed" ? [...(bundle.tips ?? [])] : [],
     detail_mode: detailMode,
   };
 }
 
-/**
- * Implements attach rich help text for the public runtime surface of this module.
- */
-export function attachRichHelpText(program: Command, argv: string[] = process.argv.slice(2)): void {
+/** Implements attach rich help text for the public runtime surface of this module. */
+export function attachRichHelpText(
+  program: Command,
+  argv: string[] = process.argv.slice(2),
+): void {
   const detailMode = resolveHelpDetailMode(argv);
   program.addHelpText("after", renderHelpBundle(ROOT_HELP_BUNDLE, detailMode));
   for (const [commandPath, bundle] of Object.entries(HELP_BY_COMMAND_PATH)) {
@@ -931,6 +984,7 @@ export function attachRichHelpText(program: Command, argv: string[] = process.ar
   }
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   renderCompactHelpBundle,
   renderDetailedHelpBundle,

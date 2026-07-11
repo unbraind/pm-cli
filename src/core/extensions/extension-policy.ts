@@ -44,45 +44,69 @@ interface NormalizedExtensionPolicyOverride {
 
 /** Concrete per-layer resolution of `pm_max_version_exceeded_mode` (default: block). */
 export interface NormalizedPmMaxVersionExceededMode {
+  /** Value that configures or reports global for this contract. */
   global: PmMaxVersionExceededMode;
+  /** Value that configures or reports project for this contract. */
   project: PmMaxVersionExceededMode;
 }
 
-/**
- * Documents the normalized extension policy payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the normalized extension policy payload exchanged by command, SDK, and package integrations. */
 export interface NormalizedExtensionPolicy {
+  /** Value that configures or reports mode for this contract. */
   mode: ExtensionPolicyMode;
+  /** Strategy used to control trust behavior. */
   trustMode: ExtensionTrustMode;
+  /** Strategy used to control pm max version exceeded behavior. */
   pmMaxVersionExceededMode: NormalizedPmMaxVersionExceededMode;
+  /** Value that configures or reports require provenance for this contract. */
   requireProvenance: boolean;
+  /** Value that configures or reports trusted extensions for this contract. */
   trustedExtensions: Set<string>;
+  /** Fallback sandbox profile used when callers do not provide an override. */
   defaultSandboxProfile: ExtensionSandboxProfile;
+  /** Value that configures or reports allowed extensions for this contract. */
   allowedExtensions: Set<string>;
+  /** Value that configures or reports blocked extensions for this contract. */
   blockedExtensions: Set<string>;
+  /** Value that configures or reports allowed capabilities for this contract. */
   allowedCapabilities: Set<string>;
+  /** Value that configures or reports blocked capabilities for this contract. */
   blockedCapabilities: Set<string>;
+  /** Value that configures or reports allowed surfaces for this contract. */
   allowedSurfaces: Set<string>;
+  /** Value that configures or reports blocked surfaces for this contract. */
   blockedSurfaces: Set<string>;
+  /** Value that configures or reports allowed commands for this contract. */
   allowedCommands: Set<string>;
+  /** Value that configures or reports blocked commands for this contract. */
   blockedCommands: Set<string>;
+  /** Value that configures or reports allowed actions for this contract. */
   allowedActions: Set<string>;
+  /** Value that configures or reports blocked actions for this contract. */
   blockedActions: Set<string>;
+  /** Value that configures or reports allowed services for this contract. */
   allowedServices: Set<string>;
+  /** Value that configures or reports blocked services for this contract. */
   blockedServices: Set<string>;
+  /** Value that configures or reports overrides by name for this contract. */
   overridesByName: Map<string, NormalizedExtensionPolicyOverride>;
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
-/**
- * Documents the policy extension ref payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the policy extension ref payload exchanged by command, SDK, and package integrations. */
 export interface PolicyExtensionRef {
+  /** Value that configures or reports layer for this contract. */
   layer: ExtensionLayer;
+  /** Value that configures or reports name for this contract. */
   name: string;
+  /** Value that configures or reports trusted for this contract. */
   trusted?: boolean;
+  /** Value that configures or reports provenance verified for this contract. */
   provenanceVerified?: boolean;
+  /** Value that configures or reports sandbox profile for this contract. */
   sandboxProfile?: ExtensionSandboxProfile;
+  /** Value that configures or reports permissions for this contract. */
   permissions?: Record<string, boolean | undefined>;
 }
 
@@ -93,7 +117,9 @@ function normalizePolicyName(value: string | undefined): string {
   return value.trim().toLowerCase();
 }
 
-function normalizePolicyStringSet(values: readonly string[] | undefined): Set<string> {
+function normalizePolicyStringSet(
+  values: readonly string[] | undefined,
+): Set<string> {
   return new Set(
     (values ?? [])
       .map((value) => value.trim().toLowerCase())
@@ -119,7 +145,9 @@ function normalizePolicySurfaceToken(value: string): string {
   return `${segments[0]}.${segments.slice(1).join("")}`;
 }
 
-function normalizePolicySurfaceSet(values: readonly string[] | undefined): Set<string> {
+function normalizePolicySurfaceSet(
+  values: readonly string[] | undefined,
+): Set<string> {
   return new Set(
     (values ?? [])
       .map((value) => normalizePolicySurfaceToken(value))
@@ -129,13 +157,17 @@ function normalizePolicySurfaceSet(values: readonly string[] | undefined): Set<s
 
 function normalizePolicyMode(value: string | undefined): ExtensionPolicyMode {
   const normalized = normalizePolicyName(value);
-  if ((KNOWN_EXTENSION_POLICY_MODES as readonly string[]).includes(normalized)) {
+  if (
+    (KNOWN_EXTENSION_POLICY_MODES as readonly string[]).includes(normalized)
+  ) {
     return normalized as ExtensionPolicyMode;
   }
   return "off";
 }
 
-function normalizePolicyTrustMode(value: string | undefined): ExtensionTrustMode {
+function normalizePolicyTrustMode(
+  value: string | undefined,
+): ExtensionTrustMode {
   const normalized = normalizePolicyName(value);
   if ((KNOWN_EXTENSION_TRUST_MODES as readonly string[]).includes(normalized)) {
     return normalized as ExtensionTrustMode;
@@ -143,33 +175,34 @@ function normalizePolicyTrustMode(value: string | undefined): ExtensionTrustMode
   return "off";
 }
 
-/**
- * Implements normalize policy sandbox profile for the public runtime surface of this module.
- */
-export function normalizePolicySandboxProfile(value: string | undefined): ExtensionSandboxProfile {
+/** Implements normalize policy sandbox profile for the public runtime surface of this module. */
+export function normalizePolicySandboxProfile(
+  value: string | undefined,
+): ExtensionSandboxProfile {
   const normalized = normalizePolicyName(value);
-  if ((KNOWN_EXTENSION_SANDBOX_PROFILES as readonly string[]).includes(normalized)) {
+  if (
+    (KNOWN_EXTENSION_SANDBOX_PROFILES as readonly string[]).includes(normalized)
+  ) {
     return normalized as ExtensionSandboxProfile;
   }
   return "none";
 }
 
-function normalizePmMaxVersionExceededModeValue(value: unknown): PmMaxVersionExceededMode | undefined {
+function normalizePmMaxVersionExceededModeValue(
+  value: unknown,
+): PmMaxVersionExceededMode | undefined {
   if (typeof value !== "string") {
     return undefined;
   }
   const normalized = value.trim().toLowerCase();
-  return (KNOWN_PM_MAX_VERSION_EXCEEDED_MODES as readonly string[]).includes(normalized)
+  return (KNOWN_PM_MAX_VERSION_EXCEEDED_MODES as readonly string[]).includes(
+    normalized,
+  )
     ? (normalized as PmMaxVersionExceededMode)
     : undefined;
 }
 
-/**
- * Resolve `extensions.policy.pm_max_version_exceeded_mode` to a concrete
- * per-layer mode map. Accepts a single mode string (applied to both layers) or
- * a `{ global?, project? }` override map; anything unset or unknown defaults to
- * the safe `"block"`.
- */
+/** Resolve `extensions.policy.pm_max_version_exceeded_mode` to a concrete per-layer mode map. Accepts a single mode string (applied to both layers) or a `{ global?, project? }` override map; anything unset or unknown defaults to the safe `"block"`. */
 export function normalizePmMaxVersionExceededMode(
   value: PmMaxVersionExceededModeSetting | undefined,
 ): NormalizedPmMaxVersionExceededMode {
@@ -189,7 +222,9 @@ export function normalizePmMaxVersionExceededMode(
 function serializePmMaxVersionExceededMode(
   mode: NormalizedPmMaxVersionExceededMode,
 ): PmMaxVersionExceededModeSetting {
-  return mode.global === mode.project ? mode.global : { global: mode.global, project: mode.project };
+  return mode.global === mode.project
+    ? mode.global
+    : { global: mode.global, project: mode.project };
 }
 
 function toSortedList(values: Iterable<string>): string[] {
@@ -214,8 +249,12 @@ function buildExtensionPolicyOverride(
         rawOverride.sandbox_profile !== undefined
           ? normalizePolicySandboxProfile(rawOverride.sandbox_profile)
           : undefined,
-      allowedCapabilities: normalizePolicyStringSet(rawOverride.allowed_capabilities),
-      blockedCapabilities: normalizePolicyStringSet(rawOverride.blocked_capabilities),
+      allowedCapabilities: normalizePolicyStringSet(
+        rawOverride.allowed_capabilities,
+      ),
+      blockedCapabilities: normalizePolicyStringSet(
+        rawOverride.blocked_capabilities,
+      ),
       allowedSurfaces: normalizePolicySurfaceSet(rawOverride.allowed_surfaces),
       blockedSurfaces: normalizePolicySurfaceSet(rawOverride.blocked_surfaces),
       allowedCommands: normalizePolicyStringSet(rawOverride.allowed_commands),
@@ -257,35 +296,53 @@ function collectExtensionPolicyWarnings(normalized: {
   overridesByName: Map<string, NormalizedExtensionPolicyOverride>;
 }): string[] {
   const warnings: string[] = [];
-  const sortedOverrides = [...normalized.overridesByName.values()].sort((left, right) =>
-    left.name.localeCompare(right.name),
+  const sortedOverrides = [...normalized.overridesByName.values()].sort(
+    (left, right) => left.name.localeCompare(right.name),
   );
-  for (const capability of toSortedList([...normalized.allowedCapabilities, ...normalized.blockedCapabilities])) {
+  for (const capability of toSortedList([
+    ...normalized.allowedCapabilities,
+    ...normalized.blockedCapabilities,
+  ])) {
     if (!isKnownExtensionCapability(capability)) {
       warnings.push(`extension_policy_unknown_capability:${capability}`);
     }
   }
   for (const override of sortedOverrides) {
-    for (const capability of toSortedList([...override.allowedCapabilities, ...override.blockedCapabilities])) {
+    for (const capability of toSortedList([
+      ...override.allowedCapabilities,
+      ...override.blockedCapabilities,
+    ])) {
       if (!isKnownExtensionCapability(capability)) {
-        warnings.push(`extension_policy_unknown_capability:${override.name}:${capability}`);
+        warnings.push(
+          `extension_policy_unknown_capability:${override.name}:${capability}`,
+        );
       }
     }
   }
   const knownSurfaces = new Set<string>(KNOWN_EXTENSION_POLICY_SURFACES);
-  for (const surface of toSortedList([...normalized.allowedSurfaces, ...normalized.blockedSurfaces])) {
+  for (const surface of toSortedList([
+    ...normalized.allowedSurfaces,
+    ...normalized.blockedSurfaces,
+  ])) {
     if (!knownSurfaces.has(surface)) {
       warnings.push(`extension_policy_unknown_surface:${surface}`);
     }
   }
   for (const override of sortedOverrides) {
-    for (const surface of toSortedList([...override.allowedSurfaces, ...override.blockedSurfaces])) {
+    for (const surface of toSortedList([
+      ...override.allowedSurfaces,
+      ...override.blockedSurfaces,
+    ])) {
       if (!knownSurfaces.has(surface)) {
-        warnings.push(`extension_policy_unknown_surface:${override.name}:${surface}`);
+        warnings.push(
+          `extension_policy_unknown_surface:${override.name}:${surface}`,
+        );
       }
     }
   }
-  return [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+  return [...new Set(warnings)].sort((left, right) =>
+    left.localeCompare(right),
+  );
 }
 
 /**
@@ -296,20 +353,34 @@ function collectExtensionPolicyWarnings(normalized: {
  * name, and unknown-capability/surface tokens surfaced as warnings. A missing
  * policy block resolves to the all-defaults policy (mode/trust `off`).
  */
-export function normalizeExtensionPolicy(settings: PmSettings): NormalizedExtensionPolicy {
-  const policy: Partial<ExtensionGovernancePolicy> = (settings.extensions?.policy as ExtensionGovernancePolicy | undefined) ?? {};
-  const allowedCapabilities = normalizePolicyStringSet(policy.allowed_capabilities);
-  const blockedCapabilities = normalizePolicyStringSet(policy.blocked_capabilities);
+export function normalizeExtensionPolicy(
+  settings: PmSettings,
+): NormalizedExtensionPolicy {
+  const policy: Partial<ExtensionGovernancePolicy> =
+    (settings.extensions?.policy as ExtensionGovernancePolicy | undefined) ??
+    {};
+  const allowedCapabilities = normalizePolicyStringSet(
+    policy.allowed_capabilities,
+  );
+  const blockedCapabilities = normalizePolicyStringSet(
+    policy.blocked_capabilities,
+  );
   const allowedSurfaces = normalizePolicySurfaceSet(policy.allowed_surfaces);
   const blockedSurfaces = normalizePolicySurfaceSet(policy.blocked_surfaces);
-  const overridesByName = collectExtensionPolicyOverrides(policy.extension_overrides);
+  const overridesByName = collectExtensionPolicyOverrides(
+    policy.extension_overrides,
+  );
   return {
     mode: normalizePolicyMode(policy.mode),
     trustMode: normalizePolicyTrustMode(policy.trust_mode),
-    pmMaxVersionExceededMode: normalizePmMaxVersionExceededMode(policy.pm_max_version_exceeded_mode),
+    pmMaxVersionExceededMode: normalizePmMaxVersionExceededMode(
+      policy.pm_max_version_exceeded_mode,
+    ),
     requireProvenance: policy.require_provenance === true,
     trustedExtensions: normalizePolicyStringSet(policy.trusted_extensions),
-    defaultSandboxProfile: normalizePolicySandboxProfile(policy.default_sandbox_profile),
+    defaultSandboxProfile: normalizePolicySandboxProfile(
+      policy.default_sandbox_profile,
+    ),
     allowedExtensions: normalizePolicyStringSet(policy.allowed_extensions),
     blockedExtensions: normalizePolicyStringSet(policy.blocked_extensions),
     allowedCapabilities,
@@ -333,10 +404,10 @@ export function normalizeExtensionPolicy(settings: PmSettings): NormalizedExtens
   };
 }
 
-/**
- * Implements serialize extension policy for the public runtime surface of this module.
- */
-export function serializeExtensionPolicy(policy: NormalizedExtensionPolicy): ExtensionGovernancePolicy {
+/** Implements serialize extension policy for the public runtime surface of this module. */
+export function serializeExtensionPolicy(
+  policy: NormalizedExtensionPolicy,
+): ExtensionGovernancePolicy {
   const overrides = [...policy.overridesByName.values()]
     .sort((left, right) => left.name.localeCompare(right.name))
     .map((override) => ({
@@ -344,22 +415,46 @@ export function serializeExtensionPolicy(policy: NormalizedExtensionPolicy): Ext
       ...(override.disabled ? { disabled: true } : {}),
       ...(override.requireTrusted ? { require_trusted: true } : {}),
       ...(override.requireProvenance ? { require_provenance: true } : {}),
-      ...(override.sandboxProfile ? { sandbox_profile: override.sandboxProfile } : {}),
-      ...(override.allowedCapabilities.size > 0 ? { allowed_capabilities: toSortedList(override.allowedCapabilities) } : {}),
-      ...(override.blockedCapabilities.size > 0 ? { blocked_capabilities: toSortedList(override.blockedCapabilities) } : {}),
-      ...(override.allowedSurfaces.size > 0 ? { allowed_surfaces: toSortedList(override.allowedSurfaces) } : {}),
-      ...(override.blockedSurfaces.size > 0 ? { blocked_surfaces: toSortedList(override.blockedSurfaces) } : {}),
-      ...(override.allowedCommands.size > 0 ? { allowed_commands: toSortedList(override.allowedCommands) } : {}),
-      ...(override.blockedCommands.size > 0 ? { blocked_commands: toSortedList(override.blockedCommands) } : {}),
-      ...(override.allowedActions.size > 0 ? { allowed_actions: toSortedList(override.allowedActions) } : {}),
-      ...(override.blockedActions.size > 0 ? { blocked_actions: toSortedList(override.blockedActions) } : {}),
-      ...(override.allowedServices.size > 0 ? { allowed_services: toSortedList(override.allowedServices) } : {}),
-      ...(override.blockedServices.size > 0 ? { blocked_services: toSortedList(override.blockedServices) } : {}),
+      ...(override.sandboxProfile
+        ? { sandbox_profile: override.sandboxProfile }
+        : {}),
+      ...(override.allowedCapabilities.size > 0
+        ? { allowed_capabilities: toSortedList(override.allowedCapabilities) }
+        : {}),
+      ...(override.blockedCapabilities.size > 0
+        ? { blocked_capabilities: toSortedList(override.blockedCapabilities) }
+        : {}),
+      ...(override.allowedSurfaces.size > 0
+        ? { allowed_surfaces: toSortedList(override.allowedSurfaces) }
+        : {}),
+      ...(override.blockedSurfaces.size > 0
+        ? { blocked_surfaces: toSortedList(override.blockedSurfaces) }
+        : {}),
+      ...(override.allowedCommands.size > 0
+        ? { allowed_commands: toSortedList(override.allowedCommands) }
+        : {}),
+      ...(override.blockedCommands.size > 0
+        ? { blocked_commands: toSortedList(override.blockedCommands) }
+        : {}),
+      ...(override.allowedActions.size > 0
+        ? { allowed_actions: toSortedList(override.allowedActions) }
+        : {}),
+      ...(override.blockedActions.size > 0
+        ? { blocked_actions: toSortedList(override.blockedActions) }
+        : {}),
+      ...(override.allowedServices.size > 0
+        ? { allowed_services: toSortedList(override.allowedServices) }
+        : {}),
+      ...(override.blockedServices.size > 0
+        ? { blocked_services: toSortedList(override.blockedServices) }
+        : {}),
     }));
   return {
     mode: policy.mode,
     trust_mode: policy.trustMode,
-    pm_max_version_exceeded_mode: serializePmMaxVersionExceededMode(policy.pmMaxVersionExceededMode),
+    pm_max_version_exceeded_mode: serializePmMaxVersionExceededMode(
+      policy.pmMaxVersionExceededMode,
+    ),
     require_provenance: policy.requireProvenance,
     trusted_extensions: toSortedList(policy.trustedExtensions),
     default_sandbox_profile: policy.defaultSandboxProfile,
@@ -379,18 +474,24 @@ export function serializeExtensionPolicy(policy: NormalizedExtensionPolicy): Ext
   };
 }
 
-/**
- * Implements hydrate extension policy for the public runtime surface of this module.
- */
-export function hydrateExtensionPolicy(policy: ExtensionGovernancePolicy): NormalizedExtensionPolicy {
-  const overridesByName = collectExtensionPolicyOverrides(policy.extension_overrides);
+/** Implements hydrate extension policy for the public runtime surface of this module. */
+export function hydrateExtensionPolicy(
+  policy: ExtensionGovernancePolicy,
+): NormalizedExtensionPolicy {
+  const overridesByName = collectExtensionPolicyOverrides(
+    policy.extension_overrides,
+  );
   return {
     mode: normalizePolicyMode(policy.mode),
     trustMode: normalizePolicyTrustMode(policy.trust_mode),
-    pmMaxVersionExceededMode: normalizePmMaxVersionExceededMode(policy.pm_max_version_exceeded_mode),
+    pmMaxVersionExceededMode: normalizePmMaxVersionExceededMode(
+      policy.pm_max_version_exceeded_mode,
+    ),
     requireProvenance: policy.require_provenance === true,
     trustedExtensions: normalizePolicyStringSet(policy.trusted_extensions),
-    defaultSandboxProfile: normalizePolicySandboxProfile(policy.default_sandbox_profile),
+    defaultSandboxProfile: normalizePolicySandboxProfile(
+      policy.default_sandbox_profile,
+    ),
     allowedExtensions: normalizePolicyStringSet(policy.allowed_extensions),
     blockedExtensions: normalizePolicyStringSet(policy.blocked_extensions),
     allowedCapabilities: normalizePolicyStringSet(policy.allowed_capabilities),
@@ -438,7 +539,10 @@ function resolvePolicyCapabilityReason(
 ): string | null {
   const normalizedCapability = capability.trim().toLowerCase();
   const override = resolvePolicyOverride(policy, extension.name);
-  const allowed = override && override.allowedCapabilities.size > 0 ? override.allowedCapabilities : policy.allowedCapabilities;
+  const allowed =
+    override && override.allowedCapabilities.size > 0
+      ? override.allowedCapabilities
+      : policy.allowedCapabilities;
   const blocked = new Set<string>([
     ...policy.blockedCapabilities,
     ...(override ? override.blockedCapabilities : []),
@@ -458,12 +562,21 @@ function resolvePolicySurfaceReason(
   surface: ExtensionPolicySurface,
 ): string | null {
   const override = resolvePolicyOverride(policy, extension.name);
-  const allowed = override && override.allowedSurfaces.size > 0 ? override.allowedSurfaces : policy.allowedSurfaces;
+  const allowed =
+    override && override.allowedSurfaces.size > 0
+      ? override.allowedSurfaces
+      : policy.allowedSurfaces;
   const blocked = new Set<string>([
     ...policy.blockedSurfaces,
     ...(override ? override.blockedSurfaces : []),
   ]);
-  return evaluatePolicySet(allowed, blocked, surface, "surface_not_allowlisted", "surface_blocked");
+  return evaluatePolicySet(
+    allowed,
+    blocked,
+    surface,
+    "surface_not_allowlisted",
+    "surface_blocked",
+  );
 }
 
 function resolvePolicyCommandReason(
@@ -476,12 +589,21 @@ function resolvePolicyCommandReason(
     return null;
   }
   const override = resolvePolicyOverride(policy, extension.name);
-  const allowed = override && override.allowedCommands.size > 0 ? override.allowedCommands : policy.allowedCommands;
+  const allowed =
+    override && override.allowedCommands.size > 0
+      ? override.allowedCommands
+      : policy.allowedCommands;
   const blocked = new Set<string>([
     ...policy.blockedCommands,
     ...(override ? override.blockedCommands : []),
   ]);
-  return evaluatePolicySet(allowed, blocked, normalizedCommand, "command_not_allowlisted", "command_blocked");
+  return evaluatePolicySet(
+    allowed,
+    blocked,
+    normalizedCommand,
+    "command_not_allowlisted",
+    "command_blocked",
+  );
 }
 
 function resolvePolicyActionReason(
@@ -494,12 +616,21 @@ function resolvePolicyActionReason(
     return null;
   }
   const override = resolvePolicyOverride(policy, extension.name);
-  const allowed = override && override.allowedActions.size > 0 ? override.allowedActions : policy.allowedActions;
+  const allowed =
+    override && override.allowedActions.size > 0
+      ? override.allowedActions
+      : policy.allowedActions;
   const blocked = new Set<string>([
     ...policy.blockedActions,
     ...(override ? override.blockedActions : []),
   ]);
-  return evaluatePolicySet(allowed, blocked, normalizedAction, "action_not_allowlisted", "action_blocked");
+  return evaluatePolicySet(
+    allowed,
+    blocked,
+    normalizedAction,
+    "action_not_allowlisted",
+    "action_blocked",
+  );
 }
 
 function resolvePolicyServiceReason(
@@ -512,15 +643,27 @@ function resolvePolicyServiceReason(
     return null;
   }
   const override = resolvePolicyOverride(policy, extension.name);
-  const allowed = override && override.allowedServices.size > 0 ? override.allowedServices : policy.allowedServices;
+  const allowed =
+    override && override.allowedServices.size > 0
+      ? override.allowedServices
+      : policy.allowedServices;
   const blocked = new Set<string>([
     ...policy.blockedServices,
     ...(override ? override.blockedServices : []),
   ]);
-  return evaluatePolicySet(allowed, blocked, normalizedService, "service_not_allowlisted", "service_blocked");
+  return evaluatePolicySet(
+    allowed,
+    blocked,
+    normalizedService,
+    "service_not_allowlisted",
+    "service_blocked",
+  );
 }
 
-function resolvePolicyExtensionReason(policy: NormalizedExtensionPolicy, extension: PolicyExtensionRef): string | null {
+function resolvePolicyExtensionReason(
+  policy: NormalizedExtensionPolicy,
+  extension: PolicyExtensionRef,
+): string | null {
   const name = normalizePolicyName(extension.name);
   const override = resolvePolicyOverride(policy, extension.name);
   if (override?.disabled === true) {
@@ -535,7 +678,10 @@ function resolvePolicyExtensionReason(policy: NormalizedExtensionPolicy, extensi
   );
 }
 
-function resolvePolicyTrustReason(policy: NormalizedExtensionPolicy, extension: PolicyExtensionRef): string | null {
+function resolvePolicyTrustReason(
+  policy: NormalizedExtensionPolicy,
+  extension: PolicyExtensionRef,
+): string | null {
   if (policy.trustMode === "off") {
     return null;
   }
@@ -544,24 +690,41 @@ function resolvePolicyTrustReason(policy: NormalizedExtensionPolicy, extension: 
   const trusted = extension.trusted === true;
   const provenanceVerified = extension.provenanceVerified === true;
 
-  if (policy.trustedExtensions.size > 0 && !policy.trustedExtensions.has(name)) {
+  if (
+    policy.trustedExtensions.size > 0 &&
+    !policy.trustedExtensions.has(name)
+  ) {
     return "extension_not_trusted";
   }
-  if ((override?.requireTrusted === true || policy.trustMode === "warn" || policy.trustMode === "enforce") && !trusted) {
+  if (
+    (override?.requireTrusted === true ||
+      policy.trustMode === "warn" ||
+      policy.trustMode === "enforce") &&
+    !trusted
+  ) {
     return "extension_untrusted";
   }
-  if ((policy.requireProvenance || override?.requireProvenance === true) && !provenanceVerified) {
+  if (
+    (policy.requireProvenance || override?.requireProvenance === true) &&
+    !provenanceVerified
+  ) {
     return "provenance_missing_or_unverified";
   }
   return null;
 }
 
-function resolvePolicySandboxReason(policy: NormalizedExtensionPolicy, extension: PolicyExtensionRef): string | null {
+function resolvePolicySandboxReason(
+  policy: NormalizedExtensionPolicy,
+  extension: PolicyExtensionRef,
+): string | null {
   if (policy.mode === "off") {
     return null;
   }
   const override = resolvePolicyOverride(policy, extension.name);
-  const profile = override?.sandboxProfile ?? extension.sandboxProfile ?? policy.defaultSandboxProfile;
+  const profile =
+    override?.sandboxProfile ??
+    extension.sandboxProfile ??
+    policy.defaultSandboxProfile;
   if (profile === "none") {
     return null;
   }
@@ -570,7 +733,8 @@ function resolvePolicySandboxReason(policy: NormalizedExtensionPolicy, extension
     return "sandbox_permissions_missing";
   }
 
-  const hasPermission = (name: keyof typeof permissions): boolean => permissions[name] === true;
+  const hasPermission = (name: keyof typeof permissions): boolean =>
+    permissions[name] === true;
   if (profile === "restricted") {
     if (hasPermission("process_spawn")) {
       return "sandbox_restricted_disallows_process_spawn";
@@ -612,15 +776,7 @@ function buildPolicyWarning(
   return `extension_policy_${mode}_${scope}:${extension.layer}:${extension.name}:reason=${reason}${suffix}`;
 }
 
-/**
- * Evaluate the layer-level governance policy for one extension by combining the
- * extension allow/block decision, the trust-mode decision, and the sandbox-profile
- * decision. Reasons are weighed in extension → trust → sandbox order: the first
- * reason whose governing mode is `enforce` blocks the extension; otherwise the
- * first whose mode is `warn` surfaces a non-blocking violation warning; otherwise
- * the extension is allowed. The all-`off` short-circuit skips reason resolution
- * entirely.
- */
+/** Evaluate the layer-level governance policy for one extension by combining the extension allow/block decision, the trust-mode decision, and the sandbox-profile decision. Reasons are weighed in extension → trust → sandbox order: the first reason whose governing mode is `enforce` blocks the extension; otherwise the first whose mode is `warn` surfaces a non-blocking violation warning; otherwise the extension is allowed. The all-`off` short-circuit skips reason resolution entirely. */
 export function evaluateExtensionPolicyForExtension(
   policy: NormalizedExtensionPolicy,
   extension: PolicyExtensionRef,
@@ -639,26 +795,48 @@ export function evaluateExtensionPolicyForExtension(
   }
   const trustReason = resolvePolicyTrustReason(policy, extension);
   if (trustReason) {
-    violations.push({ reason: trustReason, scope: "trust", mode: policy.trustMode });
+    violations.push({
+      reason: trustReason,
+      scope: "trust",
+      mode: policy.trustMode,
+    });
   }
   const sandboxReason = resolvePolicySandboxReason(policy, extension);
   if (sandboxReason) {
-    violations.push({ reason: sandboxReason, scope: "extension", mode: policy.mode });
+    violations.push({
+      reason: sandboxReason,
+      scope: "extension",
+      mode: policy.mode,
+    });
   }
   const enforced = violations.find((violation) => violation.mode === "enforce");
   if (enforced) {
-    return { allowed: false, warning: buildPolicyWarning("blocked", enforced.scope, extension, enforced.reason) };
+    return {
+      allowed: false,
+      warning: buildPolicyWarning(
+        "blocked",
+        enforced.scope,
+        extension,
+        enforced.reason,
+      ),
+    };
   }
   const warned = violations.find((violation) => violation.mode === "warn");
   if (warned) {
-    return { allowed: true, warning: buildPolicyWarning("violation", warned.scope, extension, warned.reason) };
+    return {
+      allowed: true,
+      warning: buildPolicyWarning(
+        "violation",
+        warned.scope,
+        extension,
+        warned.reason,
+      ),
+    };
   }
   return { allowed: true, warning: null };
 }
 
-/**
- * Implements evaluate extension policy for capability for the public runtime surface of this module.
- */
+/** Implements evaluate extension policy for capability for the public runtime surface of this module. */
 export function evaluateExtensionPolicyForCapability(
   policy: NormalizedExtensionPolicy,
   extension: PolicyExtensionRef,
@@ -674,11 +852,11 @@ export function evaluateExtensionPolicyForCapability(
   return {
     allowed: policy.mode === "warn",
     warning: buildPolicyWarning(
-    policy.mode === "warn" ? "violation" : "blocked",
-    "capability",
-    extension,
-    reason,
-    { capability: capability.trim().toLowerCase() },
+      policy.mode === "warn" ? "violation" : "blocked",
+      "capability",
+      extension,
+      reason,
+      { capability: capability.trim().toLowerCase() },
     ),
   };
 }
@@ -690,11 +868,7 @@ interface RegistrationPolicyDetails {
   service?: string;
 }
 
-/**
- * Resolve the first applicable registration-policy reason for a surface
- * registration, weighed in capability → surface → command → action → service
- * precedence. Returns `null` when the registration violates no allow/block rule.
- */
+/** Resolve the first applicable registration-policy reason for a surface registration, weighed in capability → surface → command → action → service precedence. Returns `null` when the registration violates no allow/block rule. */
 function resolveRegistrationPolicyReason(
   policy: NormalizedExtensionPolicy,
   extension: PolicyExtensionRef,
@@ -703,12 +877,26 @@ function resolveRegistrationPolicyReason(
   detail: RegistrationPolicyDetails,
 ): string | null {
   const capabilityReason =
-    typeof capability === "string" ? resolvePolicyCapabilityReason(policy, extension, capability) : null;
+    typeof capability === "string"
+      ? resolvePolicyCapabilityReason(policy, extension, capability)
+      : null;
   const surfaceReason = resolvePolicySurfaceReason(policy, extension, surface);
-  const commandReason = detail.command ? resolvePolicyCommandReason(policy, extension, detail.command) : null;
-  const actionReason = detail.action ? resolvePolicyActionReason(policy, extension, detail.action) : null;
-  const serviceReason = detail.service ? resolvePolicyServiceReason(policy, extension, detail.service) : null;
-  return capabilityReason ?? surfaceReason ?? commandReason ?? actionReason ?? serviceReason;
+  const commandReason = detail.command
+    ? resolvePolicyCommandReason(policy, extension, detail.command)
+    : null;
+  const actionReason = detail.action
+    ? resolvePolicyActionReason(policy, extension, detail.action)
+    : null;
+  const serviceReason = detail.service
+    ? resolvePolicyServiceReason(policy, extension, detail.service)
+    : null;
+  return (
+    capabilityReason ??
+    surfaceReason ??
+    commandReason ??
+    actionReason ??
+    serviceReason
+  );
 }
 
 /**
@@ -734,7 +922,10 @@ function buildRegistrationPolicyWarningDetails(
     warningDetails.command = normalizeCommandName(detail.command);
   }
   if (detail.action) {
-    warningDetails.action = normalizePolicyName(detail.action).replace(/\s+/g, "-");
+    warningDetails.action = normalizePolicyName(detail.action).replace(
+      /\s+/g,
+      "-",
+    );
   }
   if (detail.service) {
     warningDetails.service = normalizePolicyName(detail.service);
@@ -742,13 +933,7 @@ function buildRegistrationPolicyWarningDetails(
   return warningDetails;
 }
 
-/**
- * Evaluate the governance policy for a single capability/surface registration an
- * extension performs during activation. When `mode` is `off` the registration is
- * always allowed; otherwise the first allow/block reason (capability → surface →
- * command → action → service) blocks the registration under `enforce` or surfaces
- * a non-blocking violation warning under `warn`.
- */
+/** Evaluate the governance policy for a single capability/surface registration an extension performs during activation. When `mode` is `off` the registration is always allowed; otherwise the first allow/block reason (capability → surface → command → action → service) blocks the registration under `enforce` or surfaces a non-blocking violation warning under `warn`. */
 export function evaluateExtensionPolicyForRegistration(
   policy: NormalizedExtensionPolicy,
   extension: PolicyExtensionRef,
@@ -765,7 +950,13 @@ export function evaluateExtensionPolicyForRegistration(
     return { allowed: true, warning: null };
   }
   const detail = details ?? {};
-  const reason = resolveRegistrationPolicyReason(policy, extension, surface, capability, detail);
+  const reason = resolveRegistrationPolicyReason(
+    policy,
+    extension,
+    surface,
+    capability,
+    detail,
+  );
   if (!reason) {
     return { allowed: true, warning: null };
   }

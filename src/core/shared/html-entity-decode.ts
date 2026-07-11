@@ -108,7 +108,9 @@ function decodeValue(value: unknown, seen: WeakMap<object, unknown>): unknown {
     const source = value as Record<string, unknown>;
     // Preserve the original prototype so downstream callers can still rely on
     // standard methods like `.hasOwnProperty` on plain objects.
-    const result: Record<string, unknown> = Object.create(Object.getPrototypeOf(value as object));
+    const result: Record<string, unknown> = Object.create(
+      Object.getPrototypeOf(value as object),
+    );
     seen.set(value as object, result);
     // Use Object.defineProperty (not bracket assignment) for ALL keys so a
     // smuggled `__proto__` / `constructor` / `prototype` key from an MCP

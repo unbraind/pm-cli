@@ -1907,8 +1907,8 @@ describe("release readiness runtime coverage", () => {
 
   it("keeps mutation-triggered search refresh wiring for test run-tracking paths", async () => {
     const opsSource = await readRepoText("src/cli/register-operations.ts");
-    expect(opsSource).toContain(
-      "values.addValues.length > 0 || values.addJsonValues.length > 0 || values.removeValues.length > 0 || options.run === true",
+    expect(opsSource).toMatch(
+      /values\.addValues\.length > 0\s*\|\|\s*values\.addJsonValues\.length > 0\s*\|\|\s*values\.removeValues\.length > 0\s*\|\|\s*options\.run === true/u,
     );
     expect(opsSource).toContain("ids: result.results.map((entry) => entry.id)");
   });

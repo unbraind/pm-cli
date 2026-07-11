@@ -21,56 +21,57 @@ import { createDefaultExtensionGovernancePolicy } from "../extensions/extension-
  * `src/core/schema/runtime-schema.ts` re-exports them as
  * `DEFAULT_RUNTIME_STATUS_DEFINITIONS` / `DEFAULT_RUNTIME_WORKFLOW`.
  */
-export const DEFAULT_STATUS_DEFINITIONS: ReadonlyArray<RuntimeStatusDefinition> = Object.freeze([
-  {
-    id: "draft",
-    roles: ["draft"],
-  },
-  {
-    id: "open",
-    roles: ["active", "default_open"],
-  },
-  {
-    id: "in_progress",
-    aliases: ["in-progress"],
-    roles: ["active"],
-  },
-  {
-    id: "blocked",
-    roles: ["blocked"],
-  },
-  {
-    id: "closed",
-    roles: ["terminal", "terminal_done", "default_close"],
-  },
-  {
-    id: "canceled",
-    aliases: ["cancelled"],
-    roles: ["terminal", "terminal_canceled", "default_cancel"],
-  },
-]);
+export const DEFAULT_STATUS_DEFINITIONS: ReadonlyArray<RuntimeStatusDefinition> =
+  Object.freeze([
+    {
+      id: "draft",
+      roles: ["draft"],
+    },
+    {
+      id: "open",
+      roles: ["active", "default_open"],
+    },
+    {
+      id: "in_progress",
+      aliases: ["in-progress"],
+      roles: ["active"],
+    },
+    {
+      id: "blocked",
+      roles: ["blocked"],
+    },
+    {
+      id: "closed",
+      roles: ["terminal", "terminal_done", "default_close"],
+    },
+    {
+      id: "canceled",
+      aliases: ["cancelled"],
+      roles: ["terminal", "terminal_canceled", "default_cancel"],
+    },
+  ]);
 
-export const DEFAULT_WORKFLOW_DEFINITION: RuntimeWorkflowDefinition = Object.freeze({
-  draft_status: "draft",
-  open_status: "open",
-  in_progress_status: "in_progress",
-  blocked_status: "blocked",
-  close_status: "closed",
-  canceled_status: "canceled",
-});
+/** Fallback workflow definition used when callers do not provide an override. */
+export const DEFAULT_WORKFLOW_DEFINITION: RuntimeWorkflowDefinition =
+  Object.freeze({
+    draft_status: "draft",
+    open_status: "open",
+    in_progress_status: "in_progress",
+    blocked_status: "blocked",
+    close_status: "closed",
+    canceled_status: "canceled",
+  });
 
+/** Public contract for pm dirname, shared by SDK and presentation-layer consumers. */
 export const PM_DIRNAME = ".agents/pm";
+/** Public contract for settings filename, shared by SDK and presentation-layer consumers. */
 export const SETTINGS_FILENAME = "settings.json";
 
-/**
- * GH-249: placeholder close reason recorded when `pm create --status closed`
- * lands an item directly in the close status under
- * `governance.require_close_reason` and no --message/--resolution text is
- * available. Mirrors `pm update --status closed`'s "Closed via pm update"
- * default so all three closure paths record a reason.
- */
-export const CREATE_DIRECT_CLOSE_REASON_DEFAULT = "Closed at creation via pm create";
+/** GH-249: placeholder close reason recorded when `pm create --status closed` lands an item directly in the close status under `governance.require_close_reason` and no --message/--resolution text is available. Mirrors `pm update --status closed`'s "Closed via pm update" default so all three closure paths record a reason. */
+export const CREATE_DIRECT_CLOSE_REASON_DEFAULT =
+  "Closed at creation via pm create";
 
+/** Public contract for pm core required subdirs, shared by SDK and presentation-layer consumers. */
 export const PM_CORE_REQUIRED_SUBDIRS = [
   "",
   "epics",
@@ -85,6 +86,7 @@ export const PM_CORE_REQUIRED_SUBDIRS = [
   "locks",
 ] as const;
 
+/** Public contract for pm optional type subdirs, shared by SDK and presentation-layer consumers. */
 export const PM_OPTIONAL_TYPE_SUBDIRS = [
   "decisions",
   "events",
@@ -94,8 +96,13 @@ export const PM_OPTIONAL_TYPE_SUBDIRS = [
   "plans",
 ] as const;
 
-export const PM_REQUIRED_SUBDIRS = [...PM_CORE_REQUIRED_SUBDIRS, ...PM_OPTIONAL_TYPE_SUBDIRS] as const;
+/** Public contract for pm required subdirs, shared by SDK and presentation-layer consumers. */
+export const PM_REQUIRED_SUBDIRS = [
+  ...PM_CORE_REQUIRED_SUBDIRS,
+  ...PM_OPTIONAL_TYPE_SUBDIRS,
+] as const;
 
+/** Public contract for type to folder, shared by SDK and presentation-layer consumers. */
 export const TYPE_TO_FOLDER: Record<BuiltinItemType, string> = {
   Epic: "epics",
   Feature: "features",
@@ -110,6 +117,7 @@ export const TYPE_TO_FOLDER: Record<BuiltinItemType, string> = {
   Plan: "plans",
 };
 
+/** Public contract for front matter key order, shared by SDK and presentation-layer consumers. */
 export const FRONT_MATTER_KEY_ORDER: ReadonlyArray<string> = [
   "id",
   "title",
@@ -185,7 +193,11 @@ export const FRONT_MATTER_KEY_ORDER: ReadonlyArray<string> = [
 
 type BuiltinGovernancePreset = Exclude<GovernancePreset, "custom">;
 
-export const GOVERNANCE_PRESET_DEFAULTS: Record<BuiltinGovernancePreset, Omit<GovernanceSettings, "preset">> = {
+/** Public contract for governance preset defaults, shared by SDK and presentation-layer consumers. */
+export const GOVERNANCE_PRESET_DEFAULTS: Record<
+  BuiltinGovernancePreset,
+  Omit<GovernanceSettings, "preset">
+> = {
   minimal: {
     ownership_enforcement: "none",
     create_mode_default: "progressive",
@@ -215,6 +227,7 @@ export const GOVERNANCE_PRESET_DEFAULTS: Record<BuiltinGovernancePreset, Omit<Go
   },
 };
 
+/** Fallback validate stale blocker reason patterns used when callers do not provide an override. */
 export const DEFAULT_VALIDATE_STALE_BLOCKER_REASON_PATTERNS = [
   "no active blocker",
   "ready for planned execution sequencing",
@@ -222,16 +235,32 @@ export const DEFAULT_VALIDATE_STALE_BLOCKER_REASON_PATTERNS = [
   "work is closed",
 ] as const;
 
+/** Fallback validate closure like metadata field patterns used when callers do not provide an override. */
 export const DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS = {
-  blocked_reason: ["no active blocker because work is closed", "work is closed"],
-  resolution: ["closed with implementation evidence", "closed with verification evidence", "work completed and recorded", "work is closed"],
-  actual_result: ["closed and recorded", "work completed", "work completed and recorded"],
+  blocked_reason: [
+    "no active blocker because work is closed",
+    "work is closed",
+  ],
+  resolution: [
+    "closed with implementation evidence",
+    "closed with verification evidence",
+    "work completed and recorded",
+    "work is closed",
+  ],
+  actual_result: [
+    "closed and recorded",
+    "work completed",
+    "work completed and recorded",
+  ],
 } as const;
 
-function cloneOptionalArray<T>(values: readonly T[] | undefined): T[] | undefined {
+function cloneOptionalArray<T>(
+  values: readonly T[] | undefined,
+): T[] | undefined {
   return values ? [...values] : undefined;
 }
 
+/** Public contract for settings defaults, shared by SDK and presentation-layer consumers. */
 export const SETTINGS_DEFAULTS: PmSettings = {
   version: 1,
   id_prefix: "pm-",
@@ -260,11 +289,15 @@ export const SETTINGS_DEFAULTS: PmSettings = {
     parent_reference: "warn",
     metadata_profile: "core",
     metadata_required_fields: [],
-    lifecycle_stale_blocker_reason_patterns: [...DEFAULT_VALIDATE_STALE_BLOCKER_REASON_PATTERNS],
+    lifecycle_stale_blocker_reason_patterns: [
+      ...DEFAULT_VALIDATE_STALE_BLOCKER_REASON_PATTERNS,
+    ],
     lifecycle_closure_like_blocked_reason_patterns: [
       ...DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS.blocked_reason,
     ],
-    lifecycle_closure_like_resolution_patterns: [...DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS.resolution],
+    lifecycle_closure_like_resolution_patterns: [
+      ...DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS.resolution,
+    ],
     lifecycle_closure_like_actual_result_patterns: [
       ...DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS.actual_result,
     ],
@@ -381,11 +414,13 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   },
 };
 
+/** Public contract for empty canonical document, shared by SDK and presentation-layer consumers. */
 export const EMPTY_CANONICAL_DOCUMENT = {
   metadata: {},
   body: "",
 };
 
+/** Public contract for exit code, shared by SDK and presentation-layer consumers. */
 export const EXIT_CODE = {
   SUCCESS: 0,
   GENERIC_FAILURE: 1,
@@ -395,12 +430,18 @@ export const EXIT_CODE = {
   DEPENDENCY_FAILED: 5,
 } as const;
 
-/**
- * Restricts telemetry error category values accepted by command, SDK, and storage contracts.
- */
-export type TelemetryErrorCategory = "usage" | "validation" | "conflict" | "runtime" | "unknown";
+/** Restricts telemetry error category values accepted by command, SDK, and storage contracts. */
+export type TelemetryErrorCategory =
+  | "usage"
+  | "validation"
+  | "conflict"
+  | "runtime"
+  | "unknown";
 
-export const TELEMETRY_ERROR_CATEGORY_BY_CODE: Readonly<Record<string, TelemetryErrorCategory>> = Object.freeze({
+/** Public contract for telemetry error category by code, shared by SDK and presentation-layer consumers. */
+export const TELEMETRY_ERROR_CATEGORY_BY_CODE: Readonly<
+  Record<string, TelemetryErrorCategory>
+> = Object.freeze({
   unknown_command: "usage",
   unknown_option: "usage",
   missing_required_option: "usage",
@@ -423,10 +464,10 @@ export const TELEMETRY_ERROR_CATEGORY_BY_CODE: Readonly<Record<string, Telemetry
   unknown_error: "runtime",
 });
 
-/**
- * Implements resolve telemetry error category for the public runtime surface of this module.
- */
-export function resolveTelemetryErrorCategory(errorCode: string | undefined): TelemetryErrorCategory {
+/** Implements resolve telemetry error category for the public runtime surface of this module. */
+export function resolveTelemetryErrorCategory(
+  errorCode: string | undefined,
+): TelemetryErrorCategory {
   const normalized = (errorCode ?? "").trim().toLowerCase();
   if (normalized.length === 0) {
     return "unknown";
@@ -438,10 +479,17 @@ export function resolveTelemetryErrorCategory(errorCode: string | undefined): Te
   if (normalized.includes("conflict") || normalized.includes("locked")) {
     return "conflict";
   }
-  if (normalized.startsWith("unknown_") || normalized.startsWith("missing_required_")) {
+  if (
+    normalized.startsWith("unknown_") ||
+    normalized.startsWith("missing_required_")
+  ) {
     return "usage";
   }
-  if (normalized.startsWith("invalid_") || normalized.endsWith("_not_found") || normalized.includes("validation")) {
+  if (
+    normalized.startsWith("invalid_") ||
+    normalized.endsWith("_not_found") ||
+    normalized.includes("validation")
+  ) {
     return "validation";
   }
   if (normalized.endsWith("_error") || normalized.endsWith("_failed")) {

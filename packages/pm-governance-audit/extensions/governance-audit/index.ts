@@ -1,6 +1,16 @@
+/**
+ * Runtime contracts and behavior for packages/pm governance audit/extensions/governance audit/index.
+ *
+ * @module packages/pm-governance-audit/extensions/governance-audit/index
+ */
 import { appendFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
-import type { CommandDefinition, ExtensionApi, OnReadHookContext, OnWriteHookContext } from "@unbrained/pm-cli/sdk";
+import type {
+  CommandDefinition,
+  ExtensionApi,
+  OnReadHookContext,
+  OnWriteHookContext,
+} from "@unbrained/pm-cli/sdk";
 import {
   runCommentsAuditPackage,
   runDedupeAuditPackage,
@@ -8,6 +18,7 @@ import {
   runNormalizePackage,
 } from "./runtime.ts";
 
+/** Declarative package manifest consumed by the extension loader. */
 export const manifest = {
   name: "builtin-governance-audit",
   version: "0.1.0",
@@ -19,86 +30,281 @@ export const manifest = {
 const HOOK_LOG_ENV = "PM_GOVERNANCE_AUDIT_HOOK_LOG";
 const createdHookLogDirs = new Set<string>();
 
+const auditNormalizeFilterFlags = [
+  ["--type", "Filter by item type."],
+  ["--tag", "Filter by tag."],
+  ["--priority", "Filter by priority."],
+  ["--deadline-before", "Filter by deadline upper bound."],
+  ["--deadline-after", "Filter by deadline lower bound."],
+  ["--assignee", "Filter by assignee."],
+  ["--assignee-filter", "Filter assignee presence."],
+  ["--parent", "Filter by parent item ID."],
+  ["--sprint", "Filter by sprint."],
+  ["--release", "Filter by release."],
+].map(([long, description]) => ({
+  long,
+  value_name: "value",
+  value_type: "string" as const,
+  description,
+}));
+
 const dedupeAuditFlags = [
-  { long: "--mode", value_name: "value", value_type: "string", description: "Audit mode: title_exact|title_fuzzy|parent_scope." },
-  { long: "--status", value_name: "value", value_type: "string", description: "Filter by status." },
-  { long: "--type", value_name: "value", value_type: "string", description: "Filter by item type." },
-  { long: "--tag", value_name: "value", value_type: "string", description: "Filter by tag." },
-  { long: "--priority", value_name: "value", value_type: "string", description: "Filter by priority." },
-  { long: "--deadline-before", value_name: "value", value_type: "string", description: "Filter by deadline upper bound." },
-  { long: "--deadline-after", value_name: "value", value_type: "string", description: "Filter by deadline lower bound." },
-  { long: "--assignee", value_name: "value", value_type: "string", description: "Filter by assignee." },
-  { long: "--assignee-filter", value_name: "value", value_type: "string", description: "Filter assignee presence." },
-  { long: "--parent", value_name: "value", value_type: "string", description: "Filter by parent item ID." },
-  { long: "--sprint", value_name: "value", value_type: "string", description: "Filter by sprint." },
-  { long: "--release", value_name: "value", value_type: "string", description: "Filter by release." },
-  { long: "--limit", value_name: "n", value_type: "string", description: "Limit analyzed items." },
-  { long: "--threshold", value_name: "value", value_type: "string", description: "Similarity threshold for fuzzy modes." },
+  {
+    long: "--mode",
+    value_name: "value",
+    value_type: "string",
+    description: "Audit mode: title_exact|title_fuzzy|parent_scope.",
+  },
+  {
+    long: "--status",
+    value_name: "value",
+    value_type: "string",
+    description: "Filter by status.",
+  },
+  ...auditNormalizeFilterFlags,
+  {
+    long: "--limit",
+    value_name: "n",
+    value_type: "string",
+    description: "Limit analyzed items.",
+  },
+  {
+    long: "--threshold",
+    value_name: "value",
+    value_type: "string",
+    description: "Similarity threshold for fuzzy modes.",
+  },
 ] as const;
 
 const dedupeMergeFlags = [
-  { long: "--keep", value_name: "id", value_type: "string", description: "Canonical item id to keep (children move here)." },
-  { long: "--close", value_name: "ids", value_type: "string", description: "Duplicate item id(s) to consolidate (comma-separated)." },
-  { long: "--apply", value_type: "boolean", description: "Apply the merge; omit for a non-mutating preview." },
-  { long: "--dry-run", value_type: "boolean", description: "Force a preview even when --apply is also set." },
-  { long: "--skip-children", value_type: "boolean", description: "Do not re-parent the duplicates' active children." },
-  { long: "--author", value_name: "value", value_type: "string", description: "Author recorded on merge mutations." },
-  { long: "--message", value_name: "value", value_type: "string", description: "History message recorded on merge mutations." },
+  {
+    long: "--keep",
+    value_name: "id",
+    value_type: "string",
+    description: "Canonical item id to keep (children move here).",
+  },
+  {
+    long: "--close",
+    value_name: "ids",
+    value_type: "string",
+    description: "Duplicate item id(s) to consolidate (comma-separated).",
+  },
+  {
+    long: "--apply",
+    value_type: "boolean",
+    description: "Apply the merge; omit for a non-mutating preview.",
+  },
+  {
+    long: "--dry-run",
+    value_type: "boolean",
+    description: "Force a preview even when --apply is also set.",
+  },
+  {
+    long: "--skip-children",
+    value_type: "boolean",
+    description: "Do not re-parent the duplicates' active children.",
+  },
+  {
+    long: "--author",
+    value_name: "value",
+    value_type: "string",
+    description: "Author recorded on merge mutations.",
+  },
+  {
+    long: "--message",
+    value_name: "value",
+    value_type: "string",
+    description: "History message recorded on merge mutations.",
+  },
 ] as const;
 
 const commentsAuditFlags = [
-  { long: "--status", value_name: "value", value_type: "string", description: "Filter by status." },
-  { long: "--type", value_name: "value", value_type: "string", description: "Filter by item type." },
-  { long: "--tag", value_name: "value", value_type: "string", description: "Filter by tag." },
-  { long: "--priority", value_name: "value", value_type: "string", description: "Filter by priority." },
-  { long: "--parent", value_name: "value", value_type: "string", description: "Filter by parent item ID." },
-  { long: "--sprint", value_name: "value", value_type: "string", description: "Filter by sprint." },
-  { long: "--release", value_name: "value", value_type: "string", description: "Filter by release." },
-  { long: "--assignee", value_name: "value", value_type: "string", description: "Filter by assignee." },
-  { long: "--assignee-filter", value_name: "value", value_type: "string", description: "Filter assignee presence." },
-  { long: "--limit", value_name: "n", value_type: "string", description: "Limit output rows." },
-  { long: "--limit-items", value_name: "n", value_type: "string", description: "Limit scanned items before comment expansion." },
-  { long: "--latest", value_name: "n", value_type: "string", description: "Include latest n comments per item." },
-  { long: "--full-history", value_type: "boolean", description: "Emit full comment history rows." },
+  {
+    long: "--status",
+    value_name: "value",
+    value_type: "string",
+    description: "Filter by status.",
+  },
+  {
+    long: "--type",
+    value_name: "value",
+    value_type: "string",
+    description: "Filter by item type.",
+  },
+  {
+    long: "--tag",
+    value_name: "value",
+    value_type: "string",
+    description: "Filter by tag.",
+  },
+  {
+    long: "--priority",
+    value_name: "value",
+    value_type: "string",
+    description: "Filter by priority.",
+  },
+  {
+    long: "--parent",
+    value_name: "value",
+    value_type: "string",
+    description: "Filter by parent item ID.",
+  },
+  {
+    long: "--sprint",
+    value_name: "value",
+    value_type: "string",
+    description: "Filter by sprint.",
+  },
+  {
+    long: "--release",
+    value_name: "value",
+    value_type: "string",
+    description: "Filter by release.",
+  },
+  {
+    long: "--assignee",
+    value_name: "value",
+    value_type: "string",
+    description: "Filter by assignee.",
+  },
+  {
+    long: "--assignee-filter",
+    value_name: "value",
+    value_type: "string",
+    description: "Filter assignee presence.",
+  },
+  {
+    long: "--limit",
+    value_name: "n",
+    value_type: "string",
+    description: "Limit output rows.",
+  },
+  {
+    long: "--limit-items",
+    value_name: "n",
+    value_type: "string",
+    description: "Limit scanned items before comment expansion.",
+  },
+  {
+    long: "--latest",
+    value_name: "n",
+    value_type: "string",
+    description: "Include latest n comments per item.",
+  },
+  {
+    long: "--full-history",
+    value_type: "boolean",
+    description: "Emit full comment history rows.",
+  },
 ] as const;
 
 const normalizeFlags = [
-  { long: "--filter-status", value_name: "value", value_type: "string", description: "Status filter applied before normalize planning." },
-  { long: "--filter_status", value_name: "value", value_type: "string", description: "Alias for --filter-status." },
-  { long: "--type", value_name: "value", value_type: "string", description: "Filter by item type." },
-  { long: "--tag", value_name: "value", value_type: "string", description: "Filter by tag." },
-  { long: "--priority", value_name: "value", value_type: "string", description: "Filter by priority." },
-  { long: "--deadline-before", value_name: "value", value_type: "string", description: "Filter by deadline upper bound." },
-  { long: "--deadline-after", value_name: "value", value_type: "string", description: "Filter by deadline lower bound." },
-  { long: "--assignee", value_name: "value", value_type: "string", description: "Filter by assignee." },
-  { long: "--assignee-filter", value_name: "value", value_type: "string", description: "Filter assignee presence." },
-  { long: "--parent", value_name: "value", value_type: "string", description: "Filter by parent item ID." },
-  { long: "--sprint", value_name: "value", value_type: "string", description: "Filter by sprint." },
-  { long: "--release", value_name: "value", value_type: "string", description: "Filter by release." },
-  { long: "--limit", value_name: "n", value_type: "string", description: "Limit listed items." },
-  { long: "--offset", value_name: "n", value_type: "string", description: "Skip first n listed items." },
-  { long: "--include-body", value_type: "boolean", description: "Include body while listing candidate items." },
-  { long: "--include_body", value_type: "boolean", description: "Alias for --include-body." },
-  { long: "--compact", value_type: "boolean", description: "Request compact list projection." },
-  { long: "--fields", value_name: "value", value_type: "string", description: "Comma-separated list projection fields." },
-  { long: "--sort", value_name: "value", value_type: "string", description: "Sort field." },
-  { long: "--order", value_name: "value", value_type: "string", description: "Sort order." },
-  { long: "--dry-run", value_type: "boolean", description: "Preview normalize mutations without applying." },
-  { long: "--apply", value_type: "boolean", description: "Apply normalize mutations." },
-  { long: "--author", value_name: "value", value_type: "string", description: "Author used for apply-mode updates." },
-  { long: "--message", value_name: "value", value_type: "string", description: "History message used for apply-mode updates." },
-  { long: "--force", value_type: "boolean", description: "Force apply-mode updates." },
-  { long: "--allow-audit-update", value_type: "boolean", description: "Allow append-only audit updates across owners." },
-  { long: "--allow_audit_update", value_type: "boolean", description: "Alias for --allow-audit-update." },
+  {
+    long: "--filter-status",
+    value_name: "value",
+    value_type: "string",
+    description: "Status filter applied before normalize planning.",
+  },
+  {
+    long: "--filter_status",
+    value_name: "value",
+    value_type: "string",
+    description: "Alias for --filter-status.",
+  },
+  ...auditNormalizeFilterFlags,
+  {
+    long: "--limit",
+    value_name: "n",
+    value_type: "string",
+    description: "Limit listed items.",
+  },
+  {
+    long: "--offset",
+    value_name: "n",
+    value_type: "string",
+    description: "Skip first n listed items.",
+  },
+  {
+    long: "--include-body",
+    value_type: "boolean",
+    description: "Include body while listing candidate items.",
+  },
+  {
+    long: "--include_body",
+    value_type: "boolean",
+    description: "Alias for --include-body.",
+  },
+  {
+    long: "--compact",
+    value_type: "boolean",
+    description: "Request compact list projection.",
+  },
+  {
+    long: "--fields",
+    value_name: "value",
+    value_type: "string",
+    description: "Comma-separated list projection fields.",
+  },
+  {
+    long: "--sort",
+    value_name: "value",
+    value_type: "string",
+    description: "Sort field.",
+  },
+  {
+    long: "--order",
+    value_name: "value",
+    value_type: "string",
+    description: "Sort order.",
+  },
+  {
+    long: "--dry-run",
+    value_type: "boolean",
+    description: "Preview normalize mutations without applying.",
+  },
+  {
+    long: "--apply",
+    value_type: "boolean",
+    description: "Apply normalize mutations.",
+  },
+  {
+    long: "--author",
+    value_name: "value",
+    value_type: "string",
+    description: "Author used for apply-mode updates.",
+  },
+  {
+    long: "--message",
+    value_name: "value",
+    value_type: "string",
+    description: "History message used for apply-mode updates.",
+  },
+  {
+    long: "--force",
+    value_type: "boolean",
+    description: "Force apply-mode updates.",
+  },
+  {
+    long: "--allow-audit-update",
+    value_type: "boolean",
+    description: "Allow append-only audit updates across owners.",
+  },
+  {
+    long: "--allow_audit_update",
+    value_type: "boolean",
+    description: "Alias for --allow-audit-update.",
+  },
 ] as const;
 
 function dedupeAuditCommand(): CommandDefinition {
   return {
     name: "dedupe-audit",
     action: "dedupe-audit",
-    description: "Audit likely duplicate items by title and parent scope heuristics.",
+    description:
+      "Audit likely duplicate items by title and parent scope heuristics.",
     flags: [...dedupeAuditFlags],
-    run: async (context) => runDedupeAuditPackage(context.options, context.global),
+    run: async (context) =>
+      runDedupeAuditPackage(context.options, context.global),
   };
 }
 
@@ -106,9 +312,11 @@ function dedupeMergeCommand(): CommandDefinition {
   return {
     name: "dedupe-merge",
     action: "dedupe-merge",
-    description: "Consolidate duplicates into a canonical item: re-parent active children and close duplicates with duplicate_of.",
+    description:
+      "Consolidate duplicates into a canonical item: re-parent active children and close duplicates with duplicate_of.",
     flags: [...dedupeMergeFlags],
-    run: async (context) => runDedupeMergePackage(context.options, context.global),
+    run: async (context) =>
+      runDedupeMergePackage(context.options, context.global),
   };
 }
 
@@ -118,7 +326,8 @@ function commentsAuditCommand(): CommandDefinition {
     action: "comments-audit",
     description: "Audit item comment coverage and export comment history rows.",
     flags: [...commentsAuditFlags],
-    run: async (context) => runCommentsAuditPackage(context.options, context.global),
+    run: async (context) =>
+      runCommentsAuditPackage(context.options, context.global),
   };
 }
 
@@ -128,11 +337,15 @@ function normalizeCommand(): CommandDefinition {
     action: "normalize",
     description: "Plan/apply lifecycle metadata normalization sweeps.",
     flags: [...normalizeFlags],
-    run: async (context) => runNormalizePackage(context.options, context.global),
+    run: async (context) =>
+      runNormalizePackage(context.options, context.global),
   };
 }
 
-function appendHookAuditRecord(kind: "on_read" | "on_write", context: OnReadHookContext | OnWriteHookContext): void {
+function appendHookAuditRecord(
+  kind: "on_read" | "on_write",
+  context: OnReadHookContext | OnWriteHookContext,
+): void {
   const logPath = process.env[HOOK_LOG_ENV]?.trim();
   if (!logPath) {
     return;
@@ -144,7 +357,8 @@ function appendHookAuditRecord(kind: "on_read" | "on_write", context: OnReadHook
       mkdirSync(logDir, { recursive: true });
       createdHookLogDirs.add(logDir);
     }
-    const writeContext = kind === "on_write" ? (context as OnWriteHookContext) : undefined;
+    const writeContext =
+      kind === "on_write" ? (context as OnWriteHookContext) : undefined;
     appendFileSync(
       absoluteLogPath,
       `${JSON.stringify({
@@ -163,6 +377,7 @@ function appendHookAuditRecord(kind: "on_read" | "on_write", context: OnReadHook
   }
 }
 
+/** Registers this package's commands, actions, and runtime hooks with the host. */
 export function activate(api: ExtensionApi): void {
   api.registerCommand(dedupeAuditCommand());
   api.registerCommand(dedupeMergeCommand());

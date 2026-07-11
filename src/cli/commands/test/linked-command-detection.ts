@@ -10,8 +10,16 @@
 // under the per-file LOC budget; consumers re-export these from test.ts so no
 // caller outside test.ts changes.
 
+/** Public contract for pm global flags with value, shared by SDK and presentation-layer consumers. */
 export const PM_GLOBAL_FLAGS_WITH_VALUE = new Set(["--path"]);
-export const NPX_FLAGS_WITH_VALUE = new Set(["-p", "--package", "-c", "--call"]);
+/** Public contract for npx flags with value, shared by SDK and presentation-layer consumers. */
+export const NPX_FLAGS_WITH_VALUE = new Set([
+  "-p",
+  "--package",
+  "-c",
+  "--call",
+]);
+/** Public contract for pnpm global flags with value, shared by SDK and presentation-layer consumers. */
 export const PNPM_GLOBAL_FLAGS_WITH_VALUE = new Set([
   "-c",
   "-C",
@@ -20,26 +28,42 @@ export const PNPM_GLOBAL_FLAGS_WITH_VALUE = new Set([
   "--filter",
   "--workspace-dir",
 ]);
-export const NPM_GLOBAL_FLAGS_WITH_VALUE = new Set(["-C", "--prefix", "--userconfig", "--cache"]);
+/** Public contract for npm global flags with value, shared by SDK and presentation-layer consumers. */
+export const NPM_GLOBAL_FLAGS_WITH_VALUE = new Set([
+  "-C",
+  "--prefix",
+  "--userconfig",
+  "--cache",
+]);
+/** Public contract for yarn global flags with value, shared by SDK and presentation-layer consumers. */
 export const YARN_GLOBAL_FLAGS_WITH_VALUE = new Set(["--cwd"]);
+/** Public contract for bun global flags with value, shared by SDK and presentation-layer consumers. */
 export const BUN_GLOBAL_FLAGS_WITH_VALUE = new Set(["--cwd"]);
+/** Public contract for npm exec subcommands, shared by SDK and presentation-layer consumers. */
 export const NPM_EXEC_SUBCOMMANDS = new Set(["exec", "x"]);
+/** Public contract for script run subcommands, shared by SDK and presentation-layer consumers. */
 export const SCRIPT_RUN_SUBCOMMANDS = new Set(["run", "run-script"]);
-export const SCRIPT_RUN_FLAGS_WITH_VALUE = new Set(["-C", "--dir", "--cwd", "-w", "--workspace", "--filter"]);
+/** Public contract for script run flags with value, shared by SDK and presentation-layer consumers. */
+export const SCRIPT_RUN_FLAGS_WITH_VALUE = new Set([
+  "-C",
+  "--dir",
+  "--cwd",
+  "-w",
+  "--workspace",
+  "--filter",
+]);
 
-/**
- * Implements split normalized command segments for the public runtime surface of this module.
- */
-export function splitNormalizedCommandSegments(normalizedCommand: string): string[] {
+/** Implements split normalized command segments for the public runtime surface of this module. */
+export function splitNormalizedCommandSegments(
+  normalizedCommand: string,
+): string[] {
   return normalizedCommand
     .split(/&&|\|\||\||;/)
     .map((segment) => segment.trim())
     .filter((segment) => segment.length > 0);
 }
 
-/**
- * Implements strip leading env assignments for the public runtime surface of this module.
- */
+/** Implements strip leading env assignments for the public runtime surface of this module. */
 export function stripLeadingEnvAssignments(tokens: string[]): string[] {
   let start = 0;
   if (tokens[start] === "env") {
@@ -56,9 +80,7 @@ export function stripLeadingEnvAssignments(tokens: string[]): string[] {
   return tokens.slice(start);
 }
 
-/**
- * Implements first pm subcommand for the public runtime surface of this module.
- */
+/** Implements first pm subcommand for the public runtime surface of this module. */
 export function firstPmSubcommand(args: string[]): string | undefined {
   let index = 0;
   while (index < args.length) {
@@ -80,9 +102,7 @@ export function firstPmSubcommand(args: string[]): string | undefined {
   return undefined;
 }
 
-/**
- * Implements check whether pm executable token for the public runtime surface of this module.
- */
+/** Implements check whether pm executable token for the public runtime surface of this module. */
 export function isPmExecutableToken(token: string): boolean {
   return (
     token === "pm" ||
@@ -94,14 +114,14 @@ export function isPmExecutableToken(token: string): boolean {
   );
 }
 
-/**
- * Implements normalize package specifier for the public runtime surface of this module.
- */
+/** Implements normalize package specifier for the public runtime surface of this module. */
 export function normalizePackageSpecifier(token: string): string {
   const trimmed = token.trim();
   if (!trimmed.startsWith("@")) {
     const versionSeparator = trimmed.indexOf("@");
-    return versionSeparator === -1 ? trimmed : trimmed.slice(0, versionSeparator);
+    return versionSeparator === -1
+      ? trimmed
+      : trimmed.slice(0, versionSeparator);
   }
   const scopeSeparator = trimmed.indexOf("/");
   if (scopeSeparator === -1) {
@@ -111,9 +131,7 @@ export function normalizePackageSpecifier(token: string): string {
   return versionSeparator === -1 ? trimmed : trimmed.slice(0, versionSeparator);
 }
 
-/**
- * Implements check whether pm cli package token for the public runtime surface of this module.
- */
+/** Implements check whether pm cli package token for the public runtime surface of this module. */
 export function isPmCliPackageToken(token: string): boolean {
   const normalizedSpecifier = normalizePackageSpecifier(token);
   return (
@@ -124,17 +142,19 @@ export function isPmCliPackageToken(token: string): boolean {
   );
 }
 
-/**
- * Implements check whether pm cli script token for the public runtime surface of this module.
- */
+/** Implements check whether pm cli script token for the public runtime surface of this module. */
 export function isPmCliScriptToken(token: string): boolean {
-  return token === "dist/cli.js" || token === "./dist/cli.js" || token.endsWith("/dist/cli.js");
+  return (
+    token === "dist/cli.js" ||
+    token === "./dist/cli.js" ||
+    token.endsWith("/dist/cli.js")
+  );
 }
 
-/**
- * Implements parse npx command for the public runtime surface of this module.
- */
-export function parseNpxCommand(tokens: string[]): { command: string; args: string[] } | null {
+/** Implements parse npx command for the public runtime surface of this module. */
+export function parseNpxCommand(
+  tokens: string[],
+): { command: string; args: string[] } | null {
   let index = 0;
   while (index < tokens.length) {
     const token = tokens[index];
@@ -165,9 +185,7 @@ export function parseNpxCommand(tokens: string[]): { command: string; args: stri
   };
 }
 
-/**
- * Implements parse launcher subcommand for the public runtime surface of this module.
- */
+/** Implements parse launcher subcommand for the public runtime surface of this module. */
 export function parseLauncherSubcommand(
   tokens: string[],
   flagsWithValue: Set<string>,
@@ -199,10 +217,10 @@ export function parseLauncherSubcommand(
   return null;
 }
 
-/**
- * Implements parse pnpm dlx command for the public runtime surface of this module.
- */
-export function parsePnpmDlxCommand(tokens: string[]): { command: string; args: string[] } | null {
+/** Implements parse pnpm dlx command for the public runtime surface of this module. */
+export function parsePnpmDlxCommand(
+  tokens: string[],
+): { command: string; args: string[] } | null {
   const parsed = parseLauncherSubcommand(tokens, PNPM_GLOBAL_FLAGS_WITH_VALUE);
   if (parsed?.subcommand !== "dlx") {
     return null;
@@ -210,10 +228,10 @@ export function parsePnpmDlxCommand(tokens: string[]): { command: string; args: 
   return parseNpxCommand(parsed.args);
 }
 
-/**
- * Implements parse npm exec command for the public runtime surface of this module.
- */
-export function parseNpmExecCommand(tokens: string[]): { command: string; args: string[] } | null {
+/** Implements parse npm exec command for the public runtime surface of this module. */
+export function parseNpmExecCommand(
+  tokens: string[],
+): { command: string; args: string[] } | null {
   const parsed = parseLauncherSubcommand(tokens, NPM_GLOBAL_FLAGS_WITH_VALUE);
   if (!parsed || !NPM_EXEC_SUBCOMMANDS.has(parsed.subcommand)) {
     return null;
@@ -221,10 +239,10 @@ export function parseNpmExecCommand(tokens: string[]): { command: string; args: 
   return parseNpxCommand(parsed.args);
 }
 
-/**
- * Implements resolve pm subcommand context for the public runtime surface of this module.
- */
-export function resolvePmSubcommandContext(args: string[]): { subcommand: string; remaining: string[] } | null {
+/** Implements resolve pm subcommand context for the public runtime surface of this module. */
+export function resolvePmSubcommandContext(
+  args: string[],
+): { subcommand: string; remaining: string[] } | null {
   let index = 0;
   while (index < args.length) {
     const token = args[index];
@@ -248,9 +266,7 @@ export function resolvePmSubcommandContext(args: string[]): { subcommand: string
   return null;
 }
 
-/**
- * Implements first positional token for the public runtime surface of this module.
- */
+/** Implements first positional token for the public runtime surface of this module. */
 export function firstPositionalToken(tokens: string[]): string | undefined {
   for (const token of tokens) {
     if (!token.startsWith("-")) {

@@ -8,7 +8,10 @@ import { collectBlockedByIds } from "../../core/item/actionability.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { isTerminalStatus } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
+import {
+  resolveRuntimeStatusRegistry,
+  type RuntimeStatusRegistry,
+} from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -23,30 +26,37 @@ import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter } from "../../types/index.js";
 
-/**
- * Documents the close command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the close command options payload exchanged by command, SDK, and package integrations. */
 export interface CloseCommandOptions {
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Value that configures or reports validate close for this contract. */
   validateClose?: string;
+  /** Value that configures or reports force for this contract. */
   force?: boolean;
   // pm-fl0c #11 (2026-05-28): allow setting the three closure validation
   // fields inline on `pm close` so agents do not have to issue a prior
   // `pm update` just to satisfy --validate-close warn|strict. These map 1:1
   // to ItemFrontMatter.{resolution,expected_result,actual_result}.
+  /** Value that configures or reports resolution for this contract. */
   resolution?: string;
+  /** Structured result returned by the expected operation. */
   expectedResult?: string;
+  /** Structured result returned by the actual operation. */
   actualResult?: string;
+  /** Value that configures or reports duplicate of for this contract. */
   duplicateOf?: string;
 }
 
-/**
- * Documents the close result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the close result payload exchanged by command, SDK, and package integrations. */
 export interface CloseResult {
+  /** Value that configures or reports item for this contract. */
   item: Record<string, unknown>;
+  /** Value that configures or reports changed fields for this contract. */
   changed_fields: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
@@ -68,13 +78,19 @@ interface CloseMutationContext {
   closedAt: string;
 }
 
-function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
+function toAuthor(
+  candidate: string | undefined,
+  defaultAuthor: string,
+): string {
   const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
   const trimmed = resolved.trim();
   return trimmed || "unknown";
 }
 
-function normalizeCloseReason(reasonText: string | undefined, required: boolean): string | undefined {
+function normalizeCloseReason(
+  reasonText: string | undefined,
+  required: boolean,
+): string | undefined {
   const reason = (reasonText ?? "").trim();
   if (reason.length > 0) {
     return reason;
@@ -85,7 +101,8 @@ function normalizeCloseReason(reasonText: string | undefined, required: boolean)
       EXIT_CODE.USAGE,
       {
         code: "close_reason_required",
-        required: "Provide a one-line closing summary as the positional text, --reason, or --message.",
+        required:
+          "Provide a one-line closing summary as the positional text, --reason, or --message.",
         why: "governance.require_close_reason is enabled, so every close must record why the item is done.",
         examples: [
           'pm close <id> "Done: <what changed and why>"',
@@ -114,31 +131,43 @@ interface CloseReasonFallbackInput {
   requireCloseReason: boolean;
 }
 
-function resolveEffectiveCloseReasonText(input: CloseReasonFallbackInput): string | undefined {
+function resolveEffectiveCloseReasonText(
+  input: CloseReasonFallbackInput,
+): string | undefined {
   if ((input.closeReasonText ?? "").trim().length > 0) {
     return input.closeReasonText;
   }
   if (input.duplicateOf !== undefined) {
     return `Duplicate of ${input.duplicateOf}`;
   }
-  const trimmedResolution = typeof input.resolution === "string" ? input.resolution.trim() : "";
+  const trimmedResolution =
+    typeof input.resolution === "string" ? input.resolution.trim() : "";
   if (trimmedResolution.length > 0) {
     return trimmedResolution;
   }
-  const trimmedMessage = typeof input.message === "string" ? input.message.trim() : "";
+  const trimmedMessage =
+    typeof input.message === "string" ? input.message.trim() : "";
   if (input.requireCloseReason && trimmedMessage.length > 0) {
     return trimmedMessage;
   }
   return input.closeReasonText;
 }
 
-const CLOSE_VALIDATION_FIELDS: Array<{ key: keyof Pick<ItemFrontMatter, "resolution" | "expected_result" | "actual_result">; label: string }> = [
+const CLOSE_VALIDATION_FIELDS: Array<{
+  key: keyof Pick<
+    ItemFrontMatter,
+    "resolution" | "expected_result" | "actual_result"
+  >;
+  label: string;
+}> = [
   { key: "resolution", label: "resolution" },
   { key: "expected_result", label: "expected_result" },
   { key: "actual_result", label: "actual_result" },
 ];
 
-function parseValidateCloseMode(raw: string | undefined): ValidateCloseMode | undefined {
+function parseValidateCloseMode(
+  raw: string | undefined,
+): ValidateCloseMode | undefined {
   if (raw === undefined) {
     return undefined;
   }
@@ -146,16 +175,25 @@ function parseValidateCloseMode(raw: string | undefined): ValidateCloseMode | un
   if (normalized.length === 0 || normalized === "warn") {
     return "warn";
   }
-  if (normalized === "off" || normalized === "none" || normalized === "disabled") {
+  if (
+    normalized === "off" ||
+    normalized === "none" ||
+    normalized === "disabled"
+  ) {
     return "off";
   }
   if (normalized === "strict") {
     return "strict";
   }
-  throw new PmCliError(`Invalid --validate-close mode "${raw}" (expected "off", "warn", or "strict")`, EXIT_CODE.USAGE);
+  throw new PmCliError(
+    `Invalid --validate-close mode "${raw}" (expected "off", "warn", or "strict")`,
+    EXIT_CODE.USAGE,
+  );
 }
 
-function findMissingCloseValidationFields(frontMatter: ItemFrontMatter): string[] {
+function findMissingCloseValidationFields(
+  frontMatter: ItemFrontMatter,
+): string[] {
   const missing: string[] = [];
   for (const field of CLOSE_VALIDATION_FIELDS) {
     const rawValue = frontMatter[field.key];
@@ -202,10 +240,14 @@ async function assertDuplicateTargetExists(
     return undefined;
   }
   if (rawTarget === closingId) {
-    throw new PmCliError("An item cannot be closed as a duplicate of itself.", EXIT_CODE.USAGE, {
-      code: "duplicate_target_self",
-      why: "--duplicate-of must identify the canonical item that should remain open or already represent the work.",
-    });
+    throw new PmCliError(
+      "An item cannot be closed as a duplicate of itself.",
+      EXIT_CODE.USAGE,
+      {
+        code: "duplicate_target_self",
+        why: "--duplicate-of must identify the canonical item that should remain open or already represent the work.",
+      },
+    );
   }
   const typeRegistry = resolveItemTypeRegistry(settings);
   const itemCache = new Map<string, ItemFrontMatter | null>();
@@ -213,38 +255,77 @@ async function assertDuplicateTargetExists(
     if (itemCache.has(id)) {
       return itemCache.get(id) ?? null;
     }
-    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+    const located = await locateItem(
+      pmRoot,
+      id,
+      settings.id_prefix,
+      settings.item_format,
+      typeRegistry.type_to_folder,
+    );
     if (!located) {
       itemCache.set(id, null);
       return null;
     }
-    const { document } = await readLocatedItem(located, { schema: settings.schema });
+    const { document } = await readLocatedItem(located, {
+      schema: settings.schema,
+    });
     itemCache.set(id, document.metadata);
     return document.metadata;
   };
   const target = await loadItemById(rawTarget);
   if (!target) {
-    throw new PmCliError(`Duplicate target "${rawTarget}" was not found. Create or locate the canonical item first.`, EXIT_CODE.USAGE, {
-      code: "duplicate_target_missing",
-      why: "Duplicate closure should point at a real canonical pm item so future dedupe and changelog tooling can trace the relationship.",
-      examples: [`pm close ${closingId} "Duplicate of ${rawTarget}" --duplicate-of ${rawTarget}`],
-      nextSteps: ["Run pm search/list to find the canonical item, then retry with --duplicate-of <id>."],
-    });
+    throw new PmCliError(
+      `Duplicate target "${rawTarget}" was not found. Create or locate the canonical item first.`,
+      EXIT_CODE.USAGE,
+      {
+        code: "duplicate_target_missing",
+        why: "Duplicate closure should point at a real canonical pm item so future dedupe and changelog tooling can trace the relationship.",
+        examples: [
+          `pm close ${closingId} "Duplicate of ${rawTarget}" --duplicate-of ${rawTarget}`,
+        ],
+        nextSteps: [
+          "Run pm search/list to find the canonical item, then retry with --duplicate-of <id>.",
+        ],
+      },
+    );
   }
-  if (await duplicateChainReferencesClosingItem(loadItemById, target.duplicate_of, closingId)) {
-    throw new PmCliError(`Circular duplicate reference detected. Target "${rawTarget}" points back to "${closingId}".`, EXIT_CODE.USAGE, {
-      code: "duplicate_target_circular",
-      why: "Circular duplicate relationships create loops for dedupe and status propagation tooling.",
-      nextSteps: ["Choose the existing canonical item, or clear the target duplicate_of metadata before closing this item as a duplicate."],
-    });
+  if (
+    await duplicateChainReferencesClosingItem(
+      loadItemById,
+      target.duplicate_of,
+      closingId,
+    )
+  ) {
+    throw new PmCliError(
+      `Circular duplicate reference detected. Target "${rawTarget}" points back to "${closingId}".`,
+      EXIT_CODE.USAGE,
+      {
+        code: "duplicate_target_circular",
+        why: "Circular duplicate relationships create loops for dedupe and status propagation tooling.",
+        nextSteps: [
+          "Choose the existing canonical item, or clear the target duplicate_of metadata before closing this item as a duplicate.",
+        ],
+      },
+    );
   }
-  if (typeof target.duplicate_of === "string" && target.duplicate_of.trim().length > 0) {
-    throw new PmCliError(`Duplicate target "${rawTarget}" is already marked as a duplicate of "${target.duplicate_of.trim()}".`, EXIT_CODE.USAGE, {
-      code: "duplicate_target_is_duplicate",
-      why: "Duplicate closure should point directly at the canonical item, not another duplicate.",
-      examples: [`pm close ${closingId} "Duplicate of ${target.duplicate_of.trim()}" --duplicate-of ${target.duplicate_of.trim()}`],
-      nextSteps: ["Use the canonical item referenced by duplicate_of as the --duplicate-of target."],
-    });
+  if (
+    typeof target.duplicate_of === "string" &&
+    target.duplicate_of.trim().length > 0
+  ) {
+    throw new PmCliError(
+      `Duplicate target "${rawTarget}" is already marked as a duplicate of "${target.duplicate_of.trim()}".`,
+      EXIT_CODE.USAGE,
+      {
+        code: "duplicate_target_is_duplicate",
+        why: "Duplicate closure should point directly at the canonical item, not another duplicate.",
+        examples: [
+          `pm close ${closingId} "Duplicate of ${target.duplicate_of.trim()}" --duplicate-of ${target.duplicate_of.trim()}`,
+        ],
+        nextSteps: [
+          "Use the canonical item referenced by duplicate_of as the --duplicate-of target.",
+        ],
+      },
+    );
   }
   return target.id;
 }
@@ -264,7 +345,11 @@ async function findActiveChildIds(
     settings.schema,
   );
   return items
-    .filter((item) => item.parent === parentId && !isTerminalStatus(item.status, statusRegistry))
+    .filter(
+      (item) =>
+        item.parent === parentId &&
+        !isTerminalStatus(item.status, statusRegistry),
+    )
     .map((item) => item.id)
     .sort((left, right) => left.localeCompare(right));
 }
@@ -292,7 +377,10 @@ async function findAutoUnblockCandidates(
     .filter(({ blockerIds }) =>
       blockerIds.every((blockerId) => {
         const blocker = itemsById.get(blockerId);
-        return blocker !== undefined && isTerminalStatus(blocker.status, statusRegistry);
+        return (
+          blocker !== undefined &&
+          isTerminalStatus(blocker.status, statusRegistry)
+        );
       }),
     )
     .map(({ item, blockerIds }) => ({ id: item.id, blocker_ids: blockerIds }))
@@ -306,7 +394,12 @@ async function autoUnblockResolvedDependents(
   author: string,
   statusRegistry: RuntimeStatusRegistry,
 ): Promise<string[]> {
-  const candidates = await findAutoUnblockCandidates(pmRoot, settings, closedId, statusRegistry);
+  const candidates = await findAutoUnblockCandidates(
+    pmRoot,
+    settings,
+    closedId,
+    statusRegistry,
+  );
   const warnings: string[] = [];
   for (const candidate of candidates) {
     try {
@@ -323,7 +416,10 @@ async function autoUnblockResolvedDependents(
           /* c8 ignore stop */
           const remainingDependencies = dependencies.filter((dependency) => {
             const dependencyId = dependency.id.trim();
-            return dependency.kind !== "blocked_by" || !candidate.blocker_ids.includes(dependencyId);
+            return (
+              dependency.kind !== "blocked_by" ||
+              !candidate.blocker_ids.includes(dependencyId)
+            );
           });
           document.metadata.status = statusRegistry.open_status;
           delete document.metadata.blocked_by;
@@ -334,7 +430,12 @@ async function autoUnblockResolvedDependents(
           } else {
             delete document.metadata.dependencies;
           }
-          const changedFields = ["status", "blocked_by", "blocked_reason", "unblock_note"];
+          const changedFields = [
+            "status",
+            "blocked_by",
+            "blocked_reason",
+            "unblock_note",
+          ];
           if (remainingDependencies.length !== dependencies.length) {
             changedFields.push("dependencies");
           }
@@ -343,10 +444,15 @@ async function autoUnblockResolvedDependents(
           };
         },
       });
-      warnings.push(`auto_unblocked:${unblocked.item.id}:resolved_blockers=${candidate.blocker_ids.join(",")}`);
-    /* c8 ignore start -- defensive fan-out failure path; normal lock/claim state is auditable and still unblocks. */
+      warnings.push(
+        `auto_unblocked:${unblocked.item.id}:resolved_blockers=${candidate.blocker_ids.join(",")}`,
+      );
+      /* c8 ignore start -- defensive fan-out failure path; normal lock/claim state is auditable and still unblocks. */
     } catch (error) {
-      const reason = error instanceof Error ? error.message.replace(/\s+/g, " ").trim() : "unknown";
+      const reason =
+        error instanceof Error
+          ? error.message.replace(/\s+/g, " ").trim()
+          : "unknown";
       warnings.push(`auto_unblock_failed:${candidate.id}:${reason}`);
     }
     /* c8 ignore stop */
@@ -354,9 +460,15 @@ async function autoUnblockResolvedDependents(
   return warnings;
 }
 
-function applyInlineCloseFields(metadata: ItemFrontMatter, options: CloseCommandOptions): CloseInlineFieldKey[] {
+function applyInlineCloseFields(
+  metadata: ItemFrontMatter,
+  options: CloseCommandOptions,
+): CloseInlineFieldKey[] {
   const changedFields: CloseInlineFieldKey[] = [];
-  const inlineCloseFields: Array<{ option: string | undefined; key: CloseInlineFieldKey }> = [
+  const inlineCloseFields: Array<{
+    option: string | undefined;
+    key: CloseInlineFieldKey;
+  }> = [
     { option: options.resolution, key: "resolution" },
     { option: options.expectedResult, key: "expected_result" },
     { option: options.actualResult, key: "actual_result" },
@@ -375,7 +487,10 @@ function applyInlineCloseFields(metadata: ItemFrontMatter, options: CloseCommand
   return changedFields;
 }
 
-function applyDuplicateCloseMetadata(metadata: ItemFrontMatter, duplicateOf: string | undefined): CloseInlineFieldKey[] {
+function applyDuplicateCloseMetadata(
+  metadata: ItemFrontMatter,
+  duplicateOf: string | undefined,
+): CloseInlineFieldKey[] {
   if (duplicateOf === undefined) {
     return [];
   }
@@ -383,7 +498,10 @@ function applyDuplicateCloseMetadata(metadata: ItemFrontMatter, duplicateOf: str
   const duplicateFallbackFields: CloseInlineFieldKey[] = [];
   const fallbackValues: Array<{ key: CloseInlineFieldKey; value: string }> = [
     { key: "resolution", value: `Duplicate of ${duplicateOf}` },
-    { key: "expected_result", value: `Canonical item ${duplicateOf} tracks the work.` },
+    {
+      key: "expected_result",
+      value: `Canonical item ${duplicateOf} tracks the work.`,
+    },
     { key: "actual_result", value: `Closed as duplicate of ${duplicateOf}.` },
   ];
   for (const { key, value } of fallbackValues) {
@@ -410,7 +528,9 @@ function collectCloseValidationWarnings(
           EXIT_CODE.USAGE,
         );
       }
-      warnings.push(`close_validation_missing_fields:${metadata.id}:${missingFields.join(",")}`);
+      warnings.push(
+        `close_validation_missing_fields:${metadata.id}:${missingFields.join(",")}`,
+      );
     }
     if (activeChildIds.length > 0) {
       if (validateCloseMode === "strict") {
@@ -419,17 +539,24 @@ function collectCloseValidationWarnings(
           EXIT_CODE.USAGE,
         );
       }
-      warnings.push(`close_validation_active_children:${metadata.id}:${activeChildIds.join(",")}`);
+      warnings.push(
+        `close_validation_active_children:${metadata.id}:${activeChildIds.join(",")}`,
+      );
     }
     return warnings;
   }
   if (activeChildIds.length > 0) {
-    warnings.push(`closed_with_active_children:${metadata.id}:${activeChildIds.join(",")}`);
+    warnings.push(
+      `closed_with_active_children:${metadata.id}:${activeChildIds.join(",")}`,
+    );
   }
   return warnings;
 }
 
-function applyCloseReason(metadata: ItemFrontMatter, closeReason: string | undefined): string[] {
+function applyCloseReason(
+  metadata: ItemFrontMatter,
+  closeReason: string | undefined,
+): string[] {
   if (closeReason !== undefined) {
     metadata.close_reason = closeReason;
     return ["close_reason"];
@@ -449,12 +576,20 @@ function clearCloseAssignee(metadata: ItemFrontMatter): string[] {
   return ["assignee"];
 }
 
-function clearClosedBlockerSignals(metadata: ItemFrontMatter): { changedFields: string[]; warnings: string[] } {
-  const previousBlockedBy = typeof metadata.blocked_by === "string" ? metadata.blocked_by.trim() : "";
+function clearClosedBlockerSignals(metadata: ItemFrontMatter): {
+  changedFields: string[];
+  warnings: string[];
+} {
+  const previousBlockedBy =
+    typeof metadata.blocked_by === "string" ? metadata.blocked_by.trim() : "";
   const existingDeps = metadata.dependencies ?? [];
   const blockedByEdge = existingDeps.find((dep) => dep.kind === "blocked_by");
   const hadBlockedReason = metadata.blocked_reason !== undefined;
-  if (previousBlockedBy.length === 0 && blockedByEdge === undefined && !hadBlockedReason) {
+  if (
+    previousBlockedBy.length === 0 &&
+    blockedByEdge === undefined &&
+    !hadBlockedReason
+  ) {
     return { changedFields: [], warnings: [] };
   }
   const changedFields: string[] = [];
@@ -467,7 +602,9 @@ function clearClosedBlockerSignals(metadata: ItemFrontMatter): { changedFields: 
     changedFields.push("blocked_reason");
   }
   if (blockedByEdge !== undefined) {
-    const remainingDeps = existingDeps.filter((dep) => dep.kind !== "blocked_by");
+    const remainingDeps = existingDeps.filter(
+      (dep) => dep.kind !== "blocked_by",
+    );
     if (remainingDeps.length > 0) {
       metadata.dependencies = remainingDeps;
     } else {
@@ -479,17 +616,35 @@ function clearClosedBlockerSignals(metadata: ItemFrontMatter): { changedFields: 
   const reportedBlocker = previousBlockedBy || blockedByEdge?.id;
   return {
     changedFields,
-    warnings: reportedBlocker ? [`closed_cleared_blocked_by:${metadata.id}:${reportedBlocker}`] : [],
+    warnings: reportedBlocker
+      ? [`closed_cleared_blocked_by:${metadata.id}:${reportedBlocker}`]
+      : [],
   };
 }
 
-function mutateCloseMetadata(metadata: ItemFrontMatter, context: CloseMutationContext): { changedFields: string[]; warnings?: string[] } {
-  if (isTerminalStatus(metadata.status, context.statusRegistry) && !context.force) {
-    throw new PmCliError(`Item ${metadata.id} is already terminal; use --force to close again.`, EXIT_CODE.CONFLICT);
+function mutateCloseMetadata(
+  metadata: ItemFrontMatter,
+  context: CloseMutationContext,
+): { changedFields: string[]; warnings?: string[] } {
+  if (
+    isTerminalStatus(metadata.status, context.statusRegistry) &&
+    !context.force
+  ) {
+    throw new PmCliError(
+      `Item ${metadata.id} is already terminal; use --force to close again.`,
+      EXIT_CODE.CONFLICT,
+    );
   }
   const inlineChangedFields = applyInlineCloseFields(metadata, context.options);
-  const duplicateFallbackFields = applyDuplicateCloseMetadata(metadata, context.duplicateOf);
-  const mutationWarnings = collectCloseValidationWarnings(metadata, context.validateCloseMode, context.activeChildIds);
+  const duplicateFallbackFields = applyDuplicateCloseMetadata(
+    metadata,
+    context.duplicateOf,
+  );
+  const mutationWarnings = collectCloseValidationWarnings(
+    metadata,
+    context.validateCloseMode,
+    context.activeChildIds,
+  );
   metadata.status = context.statusRegistry.close_status;
   metadata.closed_at = context.closedAt;
   const changedFields = [
@@ -518,13 +673,12 @@ function mutateCloseMetadata(metadata: ItemFrontMatter, context: CloseMutationCo
   };
 }
 
+/** Public contract for test only close command, shared by SDK and presentation-layer consumers. */
 export const _testOnlyCloseCommand = {
   blockedByIds: collectBlockedByIds,
 };
 
-/**
- * Implements run close for the public runtime surface of this module.
- */
+/** Implements run close for the public runtime surface of this module. */
 export async function runClose(
   id: string,
   closeReasonText: string | undefined,
@@ -533,7 +687,10 @@ export async function runClose(
 ): Promise<CloseResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
   const settings = await readSettings(pmRoot);
@@ -545,9 +702,20 @@ export async function runClose(
   // reason is supplied. Existence is the more fundamental precondition, so it
   // is validated first regardless of whether a reason was provided.
   const typeToFolder = resolveItemTypeRegistry(settings).type_to_folder;
-  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
+  const located = await locateItem(
+    pmRoot,
+    id,
+    settings.id_prefix,
+    settings.item_format,
+    typeToFolder,
+  );
   if (!located) {
-    throw await buildItemNotFoundError(pmRoot, id, settings.id_prefix, typeToFolder);
+    throw await buildItemNotFoundError(
+      pmRoot,
+      id,
+      settings.id_prefix,
+      typeToFolder,
+    );
   }
   // GH-204: resolve the duplicate target BEFORE reason validation so
   // `pm close <id> --duplicate-of <canonical>` succeeds under
@@ -555,7 +723,12 @@ export async function runClose(
   // positional/--reason text is provided the reason defaults to
   // "Duplicate of <id>" (mirroring the auto-filled closure metadata).
   // Explicit reason text still wins.
-  const duplicateOf = await assertDuplicateTargetExists(pmRoot, settings, options.duplicateOf, id);
+  const duplicateOf = await assertDuplicateTargetExists(
+    pmRoot,
+    settings,
+    options.duplicateOf,
+    id,
+  );
   // pm-7x8d / pm-9hry / GH-204: when no explicit positional/--reason text is given, derive
   // the close reason from the next-best closure signal instead of hard-blocking
   // under governance.require_close_reason. Precedence: explicit reason text >
@@ -571,12 +744,22 @@ export async function runClose(
     message: options.message,
     requireCloseReason: settings.governance.require_close_reason,
   });
-  const closeReason = normalizeCloseReason(effectiveCloseReasonText, settings.governance.require_close_reason);
-  const validateCloseMode = parseValidateCloseMode(options.validateClose) ?? settings.governance.close_validation_default;
+  const closeReason = normalizeCloseReason(
+    effectiveCloseReasonText,
+    settings.governance.require_close_reason,
+  );
+  const validateCloseMode =
+    parseValidateCloseMode(options.validateClose) ??
+    settings.governance.close_validation_default;
   // C3 (pm-fu5d): scan for active children even under minimal governance so
   // closing a parent is never silently orphaning — off mode emits an
   // informational note instead of the warn/strict validation warning.
-  const activeChildIds = await findActiveChildIds(pmRoot, settings, id, statusRegistry);
+  const activeChildIds = await findActiveChildIds(
+    pmRoot,
+    settings,
+    id,
+    statusRegistry,
+  );
 
   const result = await mutateItem({
     pmRoot,
@@ -605,7 +788,13 @@ export async function runClose(
     changed_fields: result.changedFields,
     warnings: [
       ...result.warnings,
-      ...(await autoUnblockResolvedDependents(pmRoot, settings, located.id, author, statusRegistry)),
+      ...(await autoUnblockResolvedDependents(
+        pmRoot,
+        settings,
+        located.id,
+        author,
+        statusRegistry,
+      )),
     ],
   };
 }

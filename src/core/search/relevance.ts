@@ -4,11 +4,19 @@
  * Powers search, embeddings, and semantic retrieval behavior for Relevance.
  */
 import type { PmSettings } from "../../types.js";
-import { coercePositiveInteger, toNonEmptyString } from "../shared/primitives.js";
+import {
+  coercePositiveInteger,
+  toNonEmptyString,
+} from "../shared/primitives.js";
 import { tokenizeAlphaNumeric } from "../shared/text-normalization.js";
-import { executeEmbeddingRequest, type EmbeddingProviderConfig } from "./providers.js";
+import {
+  executeEmbeddingRequest,
+  type EmbeddingProviderConfig,
+} from "./providers.js";
 
+/** Fallback query expansion max queries used when callers do not provide an override. */
 export const DEFAULT_QUERY_EXPANSION_MAX_QUERIES = 4;
+/** Fallback rerank top k used when callers do not provide an override. */
 export const DEFAULT_RERANK_TOP_K = 20;
 const MAX_RERANK_TOP_K = 200;
 
@@ -28,37 +36,39 @@ const QUERY_EXPANSION_STOP_WORDS = new Set([
   "with",
 ]);
 
-/**
- * Documents the query expansion config payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the query expansion config payload exchanged by command, SDK, and package integrations. */
 export interface QueryExpansionConfig {
+  /** Whether enabled applies to this operation. */
   enabled: boolean;
+  /** Value that configures or reports provider for this contract. */
   provider: string | null;
+  /** Value that configures or reports max queries for this contract. */
   max_queries: number;
 }
 
-/**
- * Documents the rerank config payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the rerank config payload exchanged by command, SDK, and package integrations. */
 export interface RerankConfig {
+  /** Whether enabled applies to this operation. */
   enabled: boolean;
+  /** Value that configures or reports model for this contract. */
   model: string;
+  /** Value that configures or reports top k for this contract. */
   top_k: number;
 }
 
-/**
- * Documents the rerank candidate payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the rerank candidate payload exchanged by command, SDK, and package integrations. */
 export interface RerankCandidate {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports text for this contract. */
   text: string;
 }
 
-/**
- * Documents the rerank scored hit payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the rerank scored hit payload exchanged by command, SDK, and package integrations. */
 export interface RerankScoredHit {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports score for this contract. */
   score: number;
 }
 
@@ -113,7 +123,10 @@ function singularizeSimple(token: string): string {
 
 function pluralizeSimple(token: string): string {
   const normalizedToken = token.toLowerCase();
-  if (normalizedToken.length > 2 && (!normalizedToken.endsWith("s") || normalizedToken.endsWith("ss"))) {
+  if (
+    normalizedToken.length > 2 &&
+    (!normalizedToken.endsWith("s") || normalizedToken.endsWith("ss"))
+  ) {
     if (normalizedToken.endsWith("y") && !/[aeiou]y$/u.test(normalizedToken)) {
       return `${normalizedToken.slice(0, -1)}ies`;
     }
@@ -131,9 +144,7 @@ function pluralizeSimple(token: string): string {
   return normalizedToken;
 }
 
-/**
- * Implements build deterministic query expansions for the public runtime surface of this module.
- */
+/** Implements build deterministic query expansions for the public runtime surface of this module. */
 export function buildDeterministicQueryExpansions(
   query: string,
   maxQueries = DEFAULT_QUERY_EXPANSION_MAX_QUERIES,
@@ -146,7 +157,9 @@ export function buildDeterministicQueryExpansions(
   if (tokens.length === 0) {
     return [normalizedQuery];
   }
-  const contentTokens = tokens.filter((token) => !QUERY_EXPANSION_STOP_WORDS.has(token.toLowerCase()));
+  const contentTokens = tokens.filter(
+    (token) => !QUERY_EXPANSION_STOP_WORDS.has(token.toLowerCase()),
+  );
   const singularized = tokens.map((token) => singularizeSimple(token));
   const pluralized = contentTokens.map((token) => pluralizeSimple(token));
   return dedupeQueries(
@@ -161,9 +174,7 @@ export function buildDeterministicQueryExpansions(
   );
 }
 
-/**
- * Implements normalize query expansion output for the public runtime surface of this module.
- */
+/** Implements normalize query expansion output for the public runtime surface of this module. */
 export function normalizeQueryExpansionOutput(raw: unknown): string[] {
   const rawQueries = Array.isArray(raw)
     ? raw
@@ -177,21 +188,25 @@ export function normalizeQueryExpansionOutput(raw: unknown): string[] {
   );
 }
 
-/**
- * Implements merge query expansions for the public runtime surface of this module.
- */
-export function mergeQueryExpansions(base: string[], extra: string[], maxQueries: number): string[] {
+/** Implements merge query expansions for the public runtime surface of this module. */
+export function mergeQueryExpansions(
+  base: string[],
+  extra: string[],
+  maxQueries: number,
+): string[] {
   return dedupeQueries([...base, ...extra], Math.max(1, maxQueries));
 }
 
-/**
- * Implements resolve query expansion config for the public runtime surface of this module.
- */
+/** Implements resolve query expansion config for the public runtime surface of this module. */
 export function resolveQueryExpansionConfig(
   settings: PmSettings,
   fallbackProviderName: string | null,
 ): QueryExpansionConfig {
-  const search = (settings as { search?: { query_expansion?: { enabled?: unknown; provider?: unknown } } }).search;
+  const search = (
+    settings as {
+      search?: { query_expansion?: { enabled?: unknown; provider?: unknown } };
+    }
+  ).search;
   const queryExpansion = search?.query_expansion;
   const configuredProvider = toNonEmptyString(queryExpansion?.provider);
   return {
@@ -201,11 +216,18 @@ export function resolveQueryExpansionConfig(
   };
 }
 
-/**
- * Implements resolve rerank config for the public runtime surface of this module.
- */
-export function resolveRerankConfig(settings: PmSettings, fallbackModel: string): RerankConfig {
-  const search = (settings as { search?: { rerank?: { enabled?: unknown; model?: unknown; top_k?: unknown } } }).search;
+/** Implements resolve rerank config for the public runtime surface of this module. */
+export function resolveRerankConfig(
+  settings: PmSettings,
+  fallbackModel: string,
+): RerankConfig {
+  const search = (
+    settings as {
+      search?: {
+        rerank?: { enabled?: unknown; model?: unknown; top_k?: unknown };
+      };
+    }
+  ).search;
   const rerank = search?.rerank;
   const configuredModel = toNonEmptyString(rerank?.model);
   const configuredTopK = coercePositiveInteger(rerank?.top_k);
@@ -217,9 +239,7 @@ export function resolveRerankConfig(settings: PmSettings, fallbackModel: string)
   };
 }
 
-/**
- * Implements normalize rerank output for the public runtime surface of this module.
- */
+/** Implements normalize rerank output for the public runtime surface of this module. */
 export function normalizeRerankOutput(raw: unknown): RerankScoredHit[] {
   const rawHits = Array.isArray(raw)
     ? raw
@@ -242,7 +262,10 @@ export function normalizeRerankOutput(raw: unknown): RerankScoredHit[] {
       bestById.set(id, score);
     }
   }
-  const normalized = [...bestById.entries()].map(([id, score]) => ({ id, score }));
+  const normalized = [...bestById.entries()].map(([id, score]) => ({
+    id,
+    score,
+  }));
   normalized.sort((left, right) => {
     if (left.score !== right.score) {
       return right.score - left.score;
@@ -274,7 +297,13 @@ function cosineSimilarityWithKnownLeftNorm(
   right: number[] | null | undefined,
   leftNorm: number,
 ): number {
-  if (!left || !right || left.length === 0 || right.length === 0 || left.length !== right.length) {
+  if (
+    !left ||
+    !right ||
+    left.length === 0 ||
+    right.length === 0 ||
+    left.length !== right.length
+  ) {
     return 0;
   }
   const numerator = dotProduct(left, right);
@@ -292,9 +321,7 @@ function cosineSimilarityWithKnownLeftNorm(
   return Math.max(-1, Math.min(1, numerator / denominator));
 }
 
-/**
- * Implements rerank candidates with embeddings for the public runtime surface of this module.
- */
+/** Implements rerank candidates with embeddings for the public runtime surface of this module. */
 export async function rerankCandidatesWithEmbeddings(
   provider: EmbeddingProviderConfig,
   model: string,
@@ -307,9 +334,15 @@ export async function rerankCandidatesWithEmbeddings(
   }
   const effectiveModel = toNonEmptyString(model) ?? provider.model;
   const rerankProvider: EmbeddingProviderConfig =
-    effectiveModel === provider.model ? provider : { ...provider, model: effectiveModel };
+    effectiveModel === provider.model
+      ? provider
+      : { ...provider, model: effectiveModel };
   const payload = [query.trim(), ...candidates.map((entry) => entry.text)];
-  const vectors = await executeEmbeddingRequest(rerankProvider, payload, timeoutMs ? { timeout_ms: timeoutMs } : {});
+  const vectors = await executeEmbeddingRequest(
+    rerankProvider,
+    payload,
+    timeoutMs ? { timeout_ms: timeoutMs } : {},
+  );
   const queryVector = vectors[0];
   if (!queryVector) {
     return new Map();
@@ -322,7 +355,11 @@ export async function rerankCandidatesWithEmbeddings(
     if (!candidateVector) {
       continue;
     }
-    const similarity = cosineSimilarityWithKnownLeftNorm(queryVector, candidateVector, queryNorm);
+    const similarity = cosineSimilarityWithKnownLeftNorm(
+      queryVector,
+      candidateVector,
+      queryNorm,
+    );
     scoreById.set(candidate.id, Math.max(0, Math.min(1, (similarity + 1) / 2)));
   }
   return scoreById;

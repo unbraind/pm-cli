@@ -8,77 +8,101 @@ import path from "node:path";
 import { EXIT_CODE } from "../../../core/shared/constants.js";
 import { PmCliError } from "../../../core/shared/errors.js";
 import { nowIso } from "../../../core/shared/time.js";
-import { normalizeExtensionNameForMatch, normalizeStringList } from "./shared.js";
+import {
+  normalizeExtensionNameForMatch,
+  normalizeStringList,
+} from "./shared.js";
 import type { ExtensionScope } from "../extension.js";
 
 const MANAGED_EXTENSION_STATE_FILENAME = ".managed-extensions.json";
 const MANAGED_EXTENSION_STATE_VERSION = 1;
 
-/**
- * Documents the managed extension source payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the managed extension source payload exchanged by command, SDK, and package integrations. */
 export interface ManagedExtensionSource {
+  /** Value that configures or reports kind for this contract. */
   kind: "local" | "github" | "npm" | "builtin";
+  /** Value that configures or reports input for this contract. */
   input: string;
+  /** Value that configures or reports location for this contract. */
   location: string;
+  /** Value that configures or reports name for this contract. */
   name?: string;
+  /** Value that configures or reports package for this contract. */
   package?: string;
+  /** Value that configures or reports version for this contract. */
   version?: string;
+  /** Value that configures or reports repository for this contract. */
   repository?: string;
+  /** Value that configures or reports owner for this contract. */
   owner?: string;
+  /** Value that configures or reports repo for this contract. */
   repo?: string;
+  /** Value that configures or reports ref for this contract. */
   ref?: string;
+  /** Value that configures or reports subpath for this contract. */
   subpath?: string;
+  /** Value that configures or reports commit for this contract. */
   commit?: string;
 }
 
-/**
- * Documents the managed extension record payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the managed extension record payload exchanged by command, SDK, and package integrations. */
 export interface ManagedExtensionRecord {
+  /** Value that configures or reports name for this contract. */
   name: string;
+  /** Value that configures or reports directory for this contract. */
   directory: string;
+  /** Value that configures or reports scope for this contract. */
   scope: ExtensionScope;
+  /** Value that configures or reports manifest version for this contract. */
   manifest_version: string;
+  /** Value that configures or reports manifest entry for this contract. */
   manifest_entry: string;
+  /** Value that configures or reports capabilities for this contract. */
   capabilities: string[];
+  /** ISO 8601 timestamp recording when installed occurred. */
   installed_at: string;
+  /** ISO 8601 timestamp recording when updated occurred. */
   updated_at: string;
+  /** Value that configures or reports source for this contract. */
   source: ManagedExtensionSource;
+  /** ISO 8601 timestamp recording when last update check occurred. */
   last_update_check_at?: string;
+  /** Value that configures or reports last update remote commit for this contract. */
   last_update_remote_commit?: string;
+  /** Value that configures or reports update available for this contract. */
   update_available?: boolean | null;
+  /** Value that configures or reports update error for this contract. */
   update_error?: string;
 }
 
-/**
- * Documents the managed extension state payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the managed extension state payload exchanged by command, SDK, and package integrations. */
 export interface ManagedExtensionState {
+  /** Value that configures or reports version for this contract. */
   version: number;
+  /** ISO 8601 timestamp recording when updated occurred. */
   updated_at: string;
+  /** Value that configures or reports entries for this contract. */
   entries: ManagedExtensionRecord[];
 }
 
-/**
- * Documents the managed extension state read result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the managed extension state read result payload exchanged by command, SDK, and package integrations. */
 export interface ManagedExtensionStateReadResult {
+  /** Filesystem path used for path resolution. */
   path: string;
+  /** Value that configures or reports state for this contract. */
   state: ManagedExtensionState;
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
-/**
- * Implements resolve managed extension state path for the public runtime surface of this module.
- */
-export function resolveManagedExtensionStatePath(extensionsRoot: string): string {
+/** Implements resolve managed extension state path for the public runtime surface of this module. */
+export function resolveManagedExtensionStatePath(
+  extensionsRoot: string,
+): string {
   return path.join(extensionsRoot, MANAGED_EXTENSION_STATE_FILENAME);
 }
 
-/**
- * Implements create empty managed extension state for the public runtime surface of this module.
- */
+/** Implements create empty managed extension state for the public runtime surface of this module. */
 export function createEmptyManagedExtensionState(): ManagedExtensionState {
   return {
     version: MANAGED_EXTENSION_STATE_VERSION,
@@ -87,10 +111,10 @@ export function createEmptyManagedExtensionState(): ManagedExtensionState {
   };
 }
 
-/**
- * Implements sort managed entries for the public runtime surface of this module.
- */
-export function sortManagedEntries(entries: ManagedExtensionRecord[]): ManagedExtensionRecord[] {
+/** Implements sort managed entries for the public runtime surface of this module. */
+export function sortManagedEntries(
+  entries: ManagedExtensionRecord[],
+): ManagedExtensionRecord[] {
   return [...entries].sort((left, right) => {
     const byScope = left.scope.localeCompare(right.scope);
     if (byScope !== 0) {
@@ -104,18 +128,28 @@ export function sortManagedEntries(entries: ManagedExtensionRecord[]): ManagedEx
   });
 }
 
-/**
- * Implements managed extension sources equivalent for the public runtime surface of this module.
- */
-export function managedExtensionSourcesEquivalent(left: ManagedExtensionSource, right: ManagedExtensionSource): boolean {
-  if (left.kind !== right.kind || left.input !== right.input || left.location !== right.location) {
+/** Implements managed extension sources equivalent for the public runtime surface of this module. */
+export function managedExtensionSourcesEquivalent(
+  left: ManagedExtensionSource,
+  right: ManagedExtensionSource,
+): boolean {
+  if (
+    left.kind !== right.kind ||
+    left.input !== right.input ||
+    left.location !== right.location
+  ) {
     return false;
   }
   if (left.kind === "npm" && right.kind === "npm") {
     return left.package === right.package && left.version === right.version;
   }
   if (left.kind === "github" && right.kind === "github") {
-    return left.repository === right.repository && left.ref === right.ref && left.subpath === right.subpath && left.commit === right.commit;
+    return (
+      left.repository === right.repository &&
+      left.ref === right.ref &&
+      left.subpath === right.subpath &&
+      left.commit === right.commit
+    );
   }
   if (left.kind === "builtin" && right.kind === "builtin") {
     return left.name === right.name;
@@ -123,11 +157,7 @@ export function managedExtensionSourcesEquivalent(left: ManagedExtensionSource, 
   return true;
 }
 
-/**
- * Narrow `value` to a string, or `undefined` for any other type — the
- * normalization applied to every optional managed-state string field so an
- * absent or malformed value is dropped rather than carried through as `unknown`.
- */
+/** Narrow `value` to a string, or `undefined` for any other type — the normalization applied to every optional managed-state string field so an absent or malformed value is dropped rather than carried through as `unknown`. */
 function optionalString(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
@@ -145,7 +175,14 @@ function hasRequiredManagedRecordFields(
 ): entry is Record<string, unknown> &
   Pick<
     ManagedExtensionRecord,
-    "name" | "directory" | "scope" | "manifest_version" | "manifest_entry" | "capabilities" | "installed_at" | "updated_at"
+    | "name"
+    | "directory"
+    | "scope"
+    | "manifest_version"
+    | "manifest_entry"
+    | "capabilities"
+    | "installed_at"
+    | "updated_at"
   > {
   return (
     typeof entry.name === "string" &&
@@ -156,24 +193,25 @@ function hasRequiredManagedRecordFields(
     typeof entry.manifest_version === "string" &&
     typeof entry.manifest_entry === "string" &&
     Array.isArray(entry.capabilities) &&
-    entry.capabilities.every((value): value is string => typeof value === "string") &&
+    entry.capabilities.every(
+      (value): value is string => typeof value === "string",
+    ) &&
     typeof entry.installed_at === "string" &&
     typeof entry.updated_at === "string"
   );
 }
 
-/**
- * Normalize one persisted managed-extension source object, returning `null` when
- * the discriminant (`kind`) or the required `input`/`location` strings are
- * missing or malformed so the caller can skip the owning record.
- */
+/** Normalize one persisted managed-extension source object, returning `null` when the discriminant (`kind`) or the required `input`/`location` strings are missing or malformed so the caller can skip the owning record. */
 function normalizeManagedSource(raw: unknown): ManagedExtensionSource | null {
   if (typeof raw !== "object" || raw === null) {
     return null;
   }
   const source = raw as Record<string, unknown>;
   if (
-    (source.kind !== "local" && source.kind !== "github" && source.kind !== "npm" && source.kind !== "builtin") ||
+    (source.kind !== "local" &&
+      source.kind !== "github" &&
+      source.kind !== "npm" &&
+      source.kind !== "builtin") ||
     typeof source.input !== "string" ||
     typeof source.location !== "string"
   ) {
@@ -226,22 +264,26 @@ function normalizeManagedRecord(raw: unknown): ManagedExtensionRecord | null {
     last_update_check_at: optionalString(entry.last_update_check_at),
     last_update_remote_commit: optionalString(entry.last_update_remote_commit),
     update_available:
-      typeof entry.update_available === "boolean" || entry.update_available === null
+      typeof entry.update_available === "boolean" ||
+      entry.update_available === null
         ? entry.update_available
         : undefined,
     update_error: optionalString(entry.update_error),
   };
 }
 
-/**
- * Implements normalize managed state for the public runtime surface of this module.
- */
-export function normalizeManagedState(raw: unknown): ManagedExtensionState | null {
+/** Implements normalize managed state for the public runtime surface of this module. */
+export function normalizeManagedState(
+  raw: unknown,
+): ManagedExtensionState | null {
   if (typeof raw !== "object" || raw === null) {
     return null;
   }
   const candidate = raw as Record<string, unknown>;
-  if (candidate.version !== MANAGED_EXTENSION_STATE_VERSION || !Array.isArray(candidate.entries)) {
+  if (
+    candidate.version !== MANAGED_EXTENSION_STATE_VERSION ||
+    !Array.isArray(candidate.entries)
+  ) {
     return null;
   }
 
@@ -259,10 +301,10 @@ export function normalizeManagedState(raw: unknown): ManagedExtensionState | nul
   };
 }
 
-/**
- * Implements read managed extension state for the public runtime surface of this module.
- */
-export async function readManagedExtensionState(extensionsRoot: string): Promise<ManagedExtensionStateReadResult> {
+/** Implements read managed extension state for the public runtime surface of this module. */
+export async function readManagedExtensionState(
+  extensionsRoot: string,
+): Promise<ManagedExtensionStateReadResult> {
   const statePath = resolveManagedExtensionStatePath(extensionsRoot);
   const fallback = createEmptyManagedExtensionState();
   try {
@@ -284,7 +326,12 @@ export async function readManagedExtensionState(extensionsRoot: string): Promise
     if (error instanceof PmCliError) {
       throw error;
     }
-    if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT") {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: string }).code === "ENOENT"
+    ) {
       return {
         path: statePath,
         state: fallback,
@@ -298,10 +345,11 @@ export async function readManagedExtensionState(extensionsRoot: string): Promise
   }
 }
 
-/**
- * Implements write managed extension state for the public runtime surface of this module.
- */
-export async function writeManagedExtensionState(extensionsRoot: string, state: ManagedExtensionState): Promise<void> {
+/** Implements write managed extension state for the public runtime surface of this module. */
+export async function writeManagedExtensionState(
+  extensionsRoot: string,
+  state: ManagedExtensionState,
+): Promise<void> {
   const statePath = resolveManagedExtensionStatePath(extensionsRoot);
   const normalized: ManagedExtensionState = {
     version: MANAGED_EXTENSION_STATE_VERSION,
@@ -309,18 +357,24 @@ export async function writeManagedExtensionState(extensionsRoot: string, state: 
     entries: sortManagedEntries(state.entries),
   };
   await fs.mkdir(extensionsRoot, { recursive: true });
-  await fs.writeFile(statePath, `${JSON.stringify(normalized, null, 2)}\n`, "utf8");
+  await fs.writeFile(
+    statePath,
+    `${JSON.stringify(normalized, null, 2)}\n`,
+    "utf8",
+  );
 }
 
-
-/**
- * Implements upsert managed entry for the public runtime surface of this module.
- */
-export function upsertManagedEntry(state: ManagedExtensionState, entry: ManagedExtensionRecord): ManagedExtensionState {
+/** Implements upsert managed entry for the public runtime surface of this module. */
+export function upsertManagedEntry(
+  state: ManagedExtensionState,
+  entry: ManagedExtensionRecord,
+): ManagedExtensionState {
   const updatedEntries = state.entries.filter(
     (candidate) =>
-      normalizeExtensionNameForMatch(candidate.name) !== normalizeExtensionNameForMatch(entry.name) &&
-      normalizeExtensionNameForMatch(candidate.directory) !== normalizeExtensionNameForMatch(entry.directory),
+      normalizeExtensionNameForMatch(candidate.name) !==
+        normalizeExtensionNameForMatch(entry.name) &&
+      normalizeExtensionNameForMatch(candidate.directory) !==
+        normalizeExtensionNameForMatch(entry.directory),
   );
   updatedEntries.push(entry);
   return {

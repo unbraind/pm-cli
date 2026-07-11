@@ -9,71 +9,59 @@ import { toDefaultFolder } from "../item/type-registry.js";
 
 export type { ItemTypeDefinition } from "../../types/index.js";
 
-/**
- * Pure logic for the `pm schema add-type` command and the create/update
- * invalid-type discoverability hint. The CLI command file (schema.ts) handles
- * IO/governance; everything testable and side-effect-free lives here so it can
- * be coverage-gated to 100%.
- */
+/** Pure logic for the `pm schema add-type` command and the create/update invalid-type discoverability hint. The CLI command file (schema.ts) handles IO/governance; everything testable and side-effect-free lives here so it can be coverage-gated to 100%. */
 
 const BUILTIN_NAME_LOOKUP = new Map<string, string>(
   BUILTIN_ITEM_TYPE_VALUES.map((name) => [name.toLowerCase(), name]),
 );
 
-/**
- * The shape persisted at `.agents/pm/schema/types.json`.
- */
+/** The shape persisted at `.agents/pm/schema/types.json`. */
 export interface ItemTypesFile {
+  /** Value that configures or reports definitions for this contract. */
   definitions: ItemTypeDefinition[];
 }
 
-/**
- * Documents the normalized add type input payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the normalized add type input payload exchanged by command, SDK, and package integrations. */
 export interface NormalizedAddTypeInput {
+  /** Value that configures or reports name for this contract. */
   name: string;
+  /** Value that configures or reports description for this contract. */
   description?: string;
+  /** Lifecycle state reported for defaultthe record. */
   defaultStatus?: string;
+  /** Value that configures or reports folder for this contract. */
   folder?: string;
+  /** Value that configures or reports aliases for this contract. */
   aliases: string[];
 }
 
-/**
- * Documents the raw add type input payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the raw add type input payload exchanged by command, SDK, and package integrations. */
 export interface RawAddTypeInput {
+  /** Value that configures or reports name for this contract. */
   name: string | undefined;
+  /** Value that configures or reports description for this contract. */
   description?: string;
+  /** Lifecycle state reported for defaultthe record. */
   defaultStatus?: string;
+  /** Value that configures or reports folder for this contract. */
   folder?: string;
+  /** Value that configures or reports aliases for this contract. */
   aliases?: string[];
 }
 
-/**
- * Documents the upsert item type result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the upsert item type result payload exchanged by command, SDK, and package integrations. */
 export interface UpsertItemTypeResult {
+  /** Value that configures or reports file for this contract. */
   file: ItemTypesFile;
   /** The definition as stored after the upsert (existing fields preserved). */
   definition: ItemTypeDefinition;
   /** True when an existing definition with the same (case-insensitive) name was replaced. */
   replaced: boolean;
-  /**
-   * The canonical name of the replaced definition (only present when `replaced`).
-   * Lets the caller detect a silent recase (e.g. "Spike" -> "spike") and warn.
-   */
+  /** The canonical name of the replaced definition (only present when `replaced`). Lets the caller detect a silent recase (e.g. "Spike" -> "spike") and warn. */
   previousName?: string;
 }
 
-/**
- * Custom item type names (and aliases) must be a single letter-led identifier
- * token: letters, digits, hyphen, or underscore — no whitespace or other
- * punctuation. This keeps names copy-pasteable as shell arguments and folder
- * slugs deterministic, matching the single-token PascalCase shape of every
- * built-in type. Folder/slug overlap between two distinct valid tokens (e.g.
- * "Spike"/"Spikes", "code-review"/"code_review") is rejected separately by
- * assertTypeFolderAvailable.
- */
+/** Custom item type names (and aliases) must be a single letter-led identifier token: letters, digits, hyphen, or underscore — no whitespace or other punctuation. This keeps names copy-pasteable as shell arguments and folder slugs deterministic, matching the single-token PascalCase shape of every built-in type. Folder/slug overlap between two distinct valid tokens (e.g. "Spike"/"Spikes", "code-review"/"code_review") is rejected separately by assertTypeFolderAvailable. */
 const TYPE_NAME_TOKEN_PATTERN = /^[A-Za-z][A-Za-z0-9_-]*$/;
 
 function assertValidTypeToken(value: string, label: string): void {
@@ -84,10 +72,9 @@ function assertValidTypeToken(value: string, label: string): void {
   }
 }
 
-/**
- * Documents the remove item type result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the remove item type result payload exchanged by command, SDK, and package integrations. */
 export interface RemoveItemTypeResult {
+  /** Value that configures or reports file for this contract. */
   file: ItemTypesFile;
   /** True when a matching definition existed and was dropped from the file. */
   removed: boolean;
@@ -95,28 +82,19 @@ export interface RemoveItemTypeResult {
   definition?: ItemTypeDefinition;
 }
 
-/**
- * Returns the canonical built-in name when `name` collides (case-insensitively)
- * with a reserved built-in item type, otherwise undefined.
- */
+/** Returns the canonical built-in name when `name` collides (case-insensitively) with a reserved built-in item type, otherwise undefined. */
 export function matchBuiltinTypeName(name: string): string | undefined {
   return BUILTIN_NAME_LOOKUP.get(name.trim().toLowerCase());
 }
 
-/**
- * Coerces a persisted `aliases` value into a string array, tolerating malformed
- * data (a non-array, or an array containing non-string entries) without throwing
- * or exploding a stray string into character aliases.
- */
+/** Coerces a persisted `aliases` value into a string array, tolerating malformed data (a non-array, or an array containing non-string entries) without throwing or exploding a stray string into character aliases. */
 function coerceAliasArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === "string")
+    : [];
 }
 
-/**
- * Escapes a value for safe interpolation inside a double-quoted shell string so
- * suggested copy-pasteable commands stay well-formed for names containing
- * `"`, `` ` ``, `$`, or `\`.
- */
+/** Escapes a value for safe interpolation inside a double-quoted shell string so suggested copy-pasteable commands stay well-formed for names containing `"`, `` ` ``, `$`, or `\`. */
 export function escapeForDoubleQuotes(value: string): string {
   return value.replace(/[\\"`$]/g, (char) => `\\${char}`);
 }
@@ -136,12 +114,10 @@ function dedupeAliases(values: Iterable<string>): string[] {
   return [...seen.values()].sort((left, right) => left.localeCompare(right));
 }
 
-/**
- * Validates and normalizes raw add-type CLI input. Throws a plain Error with a
- * stable message when the name is missing/empty or collides with a built-in;
- * the CLI layer maps these to PmCliError exit codes.
- */
-export function normalizeAddTypeInput(raw: RawAddTypeInput): NormalizedAddTypeInput {
+/** Validates and normalizes raw add-type CLI input. Throws a plain Error with a stable message when the name is missing/empty or collides with a built-in; the CLI layer maps these to PmCliError exit codes. */
+export function normalizeAddTypeInput(
+  raw: RawAddTypeInput,
+): NormalizedAddTypeInput {
   const name = (raw.name ?? "").trim();
   if (name.length === 0) {
     throw new Error("Type name must not be empty.");
@@ -168,22 +144,20 @@ export function normalizeAddTypeInput(raw: RawAddTypeInput): NormalizedAddTypeIn
   }
   return {
     name,
-    description: description && description.length > 0 ? description : undefined,
-    defaultStatus: defaultStatus && defaultStatus.length > 0 ? defaultStatus : undefined,
+    description:
+      description && description.length > 0 ? description : undefined,
+    defaultStatus:
+      defaultStatus && defaultStatus.length > 0 ? defaultStatus : undefined,
     folder: folder && folder.length > 0 ? folder : undefined,
     aliases,
   };
 }
 
-/**
- * Throws when the requested name or any alias collides (case-insensitively)
- * with the canonical name or an alias of a DIFFERENT existing definition.
- * Such collisions would make `pm create`/`pm update --type` resolve
- * ambiguously (the runtime registry keys a single lowercase alias map), so
- * they are rejected. Tokens belonging to the same-named definition being
- * upserted are ignored, keeping re-runs idempotent.
- */
-export function assertAliasesAvailable(input: NormalizedAddTypeInput, existing: ItemTypesFile): void {
+/** Throws when the requested name or any alias collides (case-insensitively) with the canonical name or an alias of a DIFFERENT existing definition. Such collisions would make `pm create`/`pm update --type` resolve ambiguously (the runtime registry keys a single lowercase alias map), so they are rejected. Tokens belonging to the same-named definition being upserted are ignored, keeping re-runs idempotent. */
+export function assertAliasesAvailable(
+  input: NormalizedAddTypeInput,
+  existing: ItemTypesFile,
+): void {
   const selfLower = input.name.toLowerCase();
   const taken = new Map<string, string>();
   for (const definition of existing.definitions) {
@@ -191,7 +165,10 @@ export function assertAliasesAvailable(input: NormalizedAddTypeInput, existing: 
       continue;
     }
     const definitionName = definition.name.trim();
-    if (definitionName.length === 0 || definitionName.toLowerCase() === selfLower) {
+    if (
+      definitionName.length === 0 ||
+      definitionName.toLowerCase() === selfLower
+    ) {
       continue;
     }
     taken.set(definitionName.toLowerCase(), definitionName);
@@ -203,22 +180,21 @@ export function assertAliasesAvailable(input: NormalizedAddTypeInput, existing: 
   }
   const nameOwner = taken.get(selfLower);
   if (nameOwner) {
-    throw new Error(`Type name "${input.name}" collides with an alias of existing item type "${nameOwner}".`);
+    throw new Error(
+      `Type name "${input.name}" collides with an alias of existing item type "${nameOwner}".`,
+    );
   }
   for (const alias of input.aliases) {
     const owner = taken.get(alias.toLowerCase());
     if (owner) {
-      throw new Error(`Alias "${alias}" already maps to existing item type "${owner}".`);
+      throw new Error(
+        `Alias "${alias}" already maps to existing item type "${owner}".`,
+      );
     }
   }
 }
 
-/**
- * Resolves the storage folder a definition would use: an explicit non-empty
- * `folder` wins, otherwise the deterministic slug derived from the name (the
- * same derivation the runtime registry applies, single-sourced from
- * type-registry.toDefaultFolder).
- */
+/** Resolves the storage folder a definition would use: an explicit non-empty `folder` wins, otherwise the deterministic slug derived from the name (the same derivation the runtime registry applies, single-sourced from type-registry.toDefaultFolder). */
 function resolveDefinitionFolder(name: string, folder: unknown): string {
   if (typeof folder === "string" && folder.trim().length > 0) {
     return folder.trim().toLowerCase();
@@ -257,26 +233,31 @@ export function assertTypeFolderAvailable(
       continue;
     }
     const definitionName = definition.name.trim();
-    if (definitionName.length === 0 || definitionName.toLowerCase() === selfLower) {
+    if (
+      definitionName.length === 0 ||
+      definitionName.toLowerCase() === selfLower
+    ) {
       continue;
     }
-    if (resolveDefinitionFolder(definitionName, definition.folder) === inputFolder) {
+    if (
+      resolveDefinitionFolder(definitionName, definition.folder) === inputFolder
+    ) {
       fail(definitionName);
     }
   }
   const reservedOwner = reservedFolders?.get(inputFolder);
-  if (reservedOwner !== undefined && reservedOwner.toLowerCase() !== selfLower) {
+  if (
+    reservedOwner !== undefined &&
+    reservedOwner.toLowerCase() !== selfLower
+  ) {
     fail(reservedOwner);
   }
 }
 
-/**
- * Coerces an arbitrary parsed value from types.json into an ItemTypesFile.
- * Accepts the canonical `{ definitions: [...] }` shape, a bare array of
- * definitions, or a nested `{ item_types: { definitions: [...] } }` form, and
- * tolerates a missing/invalid file by returning an empty definitions list.
- */
-export function parseItemTypesFile(raw: string | null | undefined): ItemTypesFile {
+/** Coerces an arbitrary parsed value from types.json into an ItemTypesFile. Accepts the canonical `{ definitions: [...] }` shape, a bare array of definitions, or a nested `{ item_types: { definitions: [...] } }` form, and tolerates a missing/invalid file by returning an empty definitions list. */
+export function parseItemTypesFile(
+  raw: string | null | undefined,
+): ItemTypesFile {
   if (raw === null || raw === undefined || raw.trim().length === 0) {
     return { definitions: [] };
   }
@@ -328,21 +309,24 @@ function selectDefinitionsArray(parsed: unknown): unknown[] | undefined {
   return undefined;
 }
 
-/**
- * Idempotent UPSERT of a custom item type into the parsed file. Matching is
- * case-insensitive by name. When a definition already exists, fields supplied
- * in `input` override the previous values; aliases are merged (deduped); other
- * fields not addressed by add-type flags are preserved untouched.
- */
-export function upsertItemType(file: ItemTypesFile, input: NormalizedAddTypeInput): UpsertItemTypeResult {
+/** Idempotent UPSERT of a custom item type into the parsed file. Matching is case-insensitive by name. When a definition already exists, fields supplied in `input` override the previous values; aliases are merged (deduped); other fields not addressed by add-type flags are preserved untouched. */
+export function upsertItemType(
+  file: ItemTypesFile,
+  input: NormalizedAddTypeInput,
+): UpsertItemTypeResult {
   const lowerName = input.name.toLowerCase();
   const definitions = file.definitions.slice();
   const existingIndex = definitions.findIndex(
-    (definition) => typeof definition.name === "string" && definition.name.trim().toLowerCase() === lowerName,
+    (definition) =>
+      typeof definition.name === "string" &&
+      definition.name.trim().toLowerCase() === lowerName,
   );
   const existing = existingIndex >= 0 ? definitions[existingIndex] : undefined;
 
-  const mergedAliases = dedupeAliases([...coerceAliasArray(existing?.aliases), ...input.aliases]);
+  const mergedAliases = dedupeAliases([
+    ...coerceAliasArray(existing?.aliases),
+    ...input.aliases,
+  ]);
 
   const next: ItemTypeDefinition = {
     ...existing,
@@ -370,18 +354,17 @@ export function upsertItemType(file: ItemTypesFile, input: NormalizedAddTypeInpu
     file: { definitions },
     definition: next,
     replaced: existingIndex >= 0,
-    ...(existing && typeof existing.name === "string" ? { previousName: existing.name } : {}),
+    ...(existing && typeof existing.name === "string"
+      ? { previousName: existing.name }
+      : {}),
   };
 }
 
-/**
- * Removes a custom item type definition from the parsed file by name
- * (case-insensitive). Throws a plain Error when `name` is empty or collides
- * with a reserved built-in type (built-ins are not stored in the file and must
- * never be deletable). Returns `removed: false` when no matching custom
- * definition exists so the CLI layer can treat the call as an idempotent no-op.
- */
-export function removeItemType(file: ItemTypesFile, name: string | undefined): RemoveItemTypeResult {
+/** Removes a custom item type definition from the parsed file by name (case-insensitive). Throws a plain Error when `name` is empty or collides with a reserved built-in type (built-ins are not stored in the file and must never be deletable). Returns `removed: false` when no matching custom definition exists so the CLI layer can treat the call as an idempotent no-op. */
+export function removeItemType(
+  file: ItemTypesFile,
+  name: string | undefined,
+): RemoveItemTypeResult {
   const trimmed = (name ?? "").trim();
   if (trimmed.length === 0) {
     throw new Error("Type name must not be empty.");
@@ -395,7 +378,9 @@ export function removeItemType(file: ItemTypesFile, name: string | undefined): R
   const lowerName = trimmed.toLowerCase();
   const definitions = file.definitions.slice();
   const existingIndex = definitions.findIndex(
-    (definition) => typeof definition.name === "string" && definition.name.trim().toLowerCase() === lowerName,
+    (definition) =>
+      typeof definition.name === "string" &&
+      definition.name.trim().toLowerCase() === lowerName,
   );
   if (existingIndex < 0) {
     return { file: { definitions }, removed: false };
@@ -404,27 +389,27 @@ export function removeItemType(file: ItemTypesFile, name: string | undefined): R
   return { file: { definitions }, removed: true, definition };
 }
 
-function applyAttribute(definition: ItemTypeDefinition, key: string, value: string | undefined): void {
+function applyAttribute(
+  definition: ItemTypeDefinition,
+  key: string,
+  value: string | undefined,
+): void {
   const record = definition as unknown as Record<string, unknown>;
   if (value !== undefined) {
     record[key] = value;
   }
 }
 
-/**
- * Serializes the item types file with a trailing newline (matches the rest of
- * the schema scaffold files written by pm).
- */
+/** Serializes the item types file with a trailing newline (matches the rest of the schema scaffold files written by pm). */
 export function serializeItemTypesFile(file: ItemTypesFile): string {
   return `${JSON.stringify({ definitions: file.definitions }, null, 2)}\n`;
 }
 
-/**
- * Appends a discoverable hint to the "Invalid type" error so agents learn that
- * custom types exist and how to register one. Quotes are chosen so the printed
- * line is copy-pasteable as a shell command.
- */
-export function buildInvalidTypeHint(name: string, typesFilePath?: string): string {
+/** Appends a discoverable hint to the "Invalid type" error so agents learn that custom types exist and how to register one. Quotes are chosen so the printed line is copy-pasteable as a shell command. */
+export function buildInvalidTypeHint(
+  name: string,
+  typesFilePath?: string,
+): string {
   const safeName = name.trim().length > 0 ? name.trim() : name;
   const target = typesFilePath?.trim() || ".agents/pm/schema/types.json";
   return `To register a custom type, run: pm schema add-type "${escapeForDoubleQuotes(safeName)}" (writes ${target}).`;
@@ -437,6 +422,10 @@ export function buildInvalidTypeHint(name: string, typesFilePath?: string): stri
  * tracker (see {@link resolveItemTypesFilePath}) so the hint reflects a custom
  * `--pm-path` instead of the hardcoded `.agents/pm` default.
  */
-export function buildInvalidTypeError(name: string, allowedTypes: readonly string[], typesFilePath?: string): string {
+export function buildInvalidTypeError(
+  name: string,
+  allowedTypes: readonly string[],
+  typesFilePath?: string,
+): string {
   return `Invalid type value "${name}". Allowed: ${allowedTypes.join(", ")}. ${buildInvalidTypeHint(name, typesFilePath)}`;
 }

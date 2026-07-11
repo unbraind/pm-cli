@@ -15,8 +15,11 @@ import { RUNTIME_STATUS_ROLE_VALUES } from "../types.js";
  * the server itself stays the single consumer of the dispatch handlers.
  */
 export interface ToolDefinition {
+  /** Value that configures or reports name for this contract. */
   name: string;
+  /** Value that configures or reports description for this contract. */
   description: string;
+  /** Value that configures or reports input schema for this contract. */
   inputSchema: Record<string, unknown>;
 }
 
@@ -25,15 +28,18 @@ const TOOL_SCHEMA_BASE = {
   properties: {
     cwd: {
       type: "string",
-      description: "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+      description:
+        "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
     },
     path: {
       type: "string",
-      description: "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+      description:
+        "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
     },
     author: {
       type: "string",
-      description: "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+      description:
+        "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
     },
   },
   additionalProperties: true,
@@ -56,8 +62,14 @@ const LIST_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> = {
   type: { type: "string", description: "Alias for options.type." },
   tag: { type: "string", description: "Alias for options.tag." },
   priority: { type: "string", description: "Alias for options.priority." },
-  limit: { type: ["string", "number"], description: "Alias for options.limit." },
-  offset: { type: ["string", "number"], description: "Alias for options.offset." },
+  limit: {
+    type: ["string", "number"],
+    description: "Alias for options.limit.",
+  },
+  offset: {
+    type: ["string", "number"],
+    description: "Alias for options.offset.",
+  },
 };
 
 const SEARCH_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> = {
@@ -66,10 +78,16 @@ const SEARCH_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> = {
   type: { type: "string", description: "Alias for options.type." },
   tag: { type: "string", description: "Alias for options.tag." },
   priority: { type: "string", description: "Alias for options.priority." },
-  limit: { type: ["string", "number"], description: "Alias for options.limit." },
+  limit: {
+    type: ["string", "number"],
+    description: "Alias for options.limit.",
+  },
 };
 
-function objectSchema(properties: Record<string, unknown>, required: string[] = []): Record<string, unknown> {
+function objectSchema(
+  properties: Record<string, unknown>,
+  required: string[] = [],
+): Record<string, unknown> {
   return {
     ...TOOL_SCHEMA_BASE,
     properties: {
@@ -80,6 +98,7 @@ function objectSchema(properties: Record<string, unknown>, required: string[] = 
   };
 }
 
+/** Public contract for tools, shared by SDK and presentation-layer consumers. */
 export const TOOLS: ToolDefinition[] = [
   {
     name: "pm_run",
@@ -92,9 +111,19 @@ export const TOOLS: ToolDefinition[] = [
           description: PM_RUN_ACTION_DESCRIPTION,
         },
         id: idSchema,
-        query: { type: "string", description: "Search query for action=search." },
-        reason: { type: "string", description: "Close reason for action=close." },
-        force: { type: "boolean", description: "Force ownership/terminal-state override when supported." },
+        query: {
+          type: "string",
+          description: "Search query for action=search.",
+        },
+        reason: {
+          type: "string",
+          description: "Close reason for action=close.",
+        },
+        force: {
+          type: "boolean",
+          description:
+            "Force ownership/terminal-state override when supported.",
+        },
         // pm-v68d: the schema-specific subcommand enum and add-type/add-status
         // properties migrated to the dedicated pm_schema tool. action=schema
         // still accepts them as passthrough, but agents should prefer pm_schema.
@@ -103,7 +132,10 @@ export const TOOLS: ToolDefinition[] = [
           description:
             "Subcommand selector for actions that take one (for example telemetry, or schema — prefer the dedicated pm_schema tool for schema operations).",
         },
-        options: { type: "object", description: "Underlying pm command options using camelCase keys." },
+        options: {
+          type: "object",
+          description: "Underlying pm command options using camelCase keys.",
+        },
         fullChangedFields: {
           type: "boolean",
           description:
@@ -111,7 +143,8 @@ export const TOOLS: ToolDefinition[] = [
         },
         idOnly: {
           type: "boolean",
-          description: "For single-item mutation actions, return only id and status.",
+          description:
+            "For single-item mutation actions, return only id and status.",
         },
       },
       ["action"],
@@ -147,7 +180,14 @@ export const TOOLS: ToolDefinition[] = [
       "options.status='all' for no lifecycle restriction, " +
       "options.fields='id,title,score' for a custom projection, or options.full=true for full item bodies (can be large). " +
       "The result echoes the applied filters and projection mode in query_summary.",
-    inputSchema: objectSchema({ query: { type: "string" }, options: { type: "object" }, ...SEARCH_TOP_LEVEL_OPTION_PROPERTIES }, ["query"]),
+    inputSchema: objectSchema(
+      {
+        query: { type: "string" },
+        options: { type: "object" },
+        ...SEARCH_TOP_LEVEL_OPTION_PROPERTIES,
+      },
+      ["query"],
+    ),
   },
   {
     name: "pm_list",
@@ -159,16 +199,26 @@ export const TOOLS: ToolDefinition[] = [
       "Pass options.fields='id,title,priority' for custom projection. " +
       "Pass options.limit=N to cap row count. " +
       "The result echoes the applied filters and projection mode in query_summary.",
-    inputSchema: objectSchema({ options: { type: "object" }, ...LIST_TOP_LEVEL_OPTION_PROPERTIES }),
+    inputSchema: objectSchema({
+      options: { type: "object" },
+      ...LIST_TOP_LEVEL_OPTION_PROPERTIES,
+    }),
   },
   {
     name: "pm_get",
     description:
       "Read one pm item. Pass options.depth='brief' or options.fields='id,title,status' for low-token inspection.",
-    inputSchema: objectSchema({
-      id: idSchema,
-      options: { type: "object", description: "Get options such as depth=brief|standard|deep|full or fields=id,title,status." },
-    }, ["id"]),
+    inputSchema: objectSchema(
+      {
+        id: idSchema,
+        options: {
+          type: "object",
+          description:
+            "Get options such as depth=brief|standard|deep|full or fields=id,title,status.",
+        },
+      },
+      ["id"],
+    ),
   },
   {
     name: "pm_create",
@@ -177,9 +227,20 @@ export const TOOLS: ToolDefinition[] = [
       "Output is compact by default (changed_fields replaced with changed_field_count for token efficiency); pass fullChangedFields=true for the full changed_fields array.",
     inputSchema: objectSchema(
       {
-        fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
-        allowMissingParent: { type: "boolean", description: "Allow unresolved parent references and emit a validation warning." },
-        options: { type: "object", description: "Create options. title and description are required." },
+        fullChangedFields: {
+          type: "boolean",
+          description:
+            "Return full changed_fields instead of changed_field_count.",
+        },
+        allowMissingParent: {
+          type: "boolean",
+          description:
+            "Allow unresolved parent references and emit a validation warning.",
+        },
+        options: {
+          type: "object",
+          description: "Create options. title and description are required.",
+        },
       },
       ["options"],
     ),
@@ -192,8 +253,16 @@ export const TOOLS: ToolDefinition[] = [
     inputSchema: objectSchema(
       {
         id: idSchema,
-        fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
-        options: { type: "object", description: "Copy options such as title override, author, and message." },
+        fullChangedFields: {
+          type: "boolean",
+          description:
+            "Return full changed_fields instead of changed_field_count.",
+        },
+        options: {
+          type: "object",
+          description:
+            "Copy options such as title override, author, and message.",
+        },
       },
       ["id"],
     ),
@@ -206,8 +275,14 @@ export const TOOLS: ToolDefinition[] = [
     inputSchema: objectSchema(
       {
         id: idSchema,
-        clear: { type: "boolean", description: "Clear the focused item (cannot be combined with id)." },
-        options: { type: "object", description: "Focus options such as clear (boolean)." },
+        clear: {
+          type: "boolean",
+          description: "Clear the focused item (cannot be combined with id).",
+        },
+        options: {
+          type: "object",
+          description: "Focus options such as clear (boolean).",
+        },
       },
       [],
     ),
@@ -220,7 +295,11 @@ export const TOOLS: ToolDefinition[] = [
     inputSchema: objectSchema(
       {
         id: idSchema,
-        fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
+        fullChangedFields: {
+          type: "boolean",
+          description:
+            "Return full changed_fields instead of changed_field_count.",
+        },
         options: { type: "object" },
       },
       ["id", "options"],
@@ -236,10 +315,18 @@ export const TOOLS: ToolDefinition[] = [
         id: idSchema,
         body: {
           type: "string",
-          description: "Markdown text to append to the item body. Required here or as options.body.",
+          description:
+            "Markdown text to append to the item body. Required here or as options.body.",
         },
-        fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
-        options: { type: "object", description: "Append options such as body, author, and message." },
+        fullChangedFields: {
+          type: "boolean",
+          description:
+            "Return full changed_fields instead of changed_field_count.",
+        },
+        options: {
+          type: "object",
+          description: "Append options such as body, author, and message.",
+        },
       },
       ["id"],
     ),
@@ -247,12 +334,18 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "pm_claim",
     description: "Claim a pm item.",
-    inputSchema: objectSchema({ id: idSchema, force: { type: "boolean" }, options: { type: "object" } }, ["id"]),
+    inputSchema: objectSchema(
+      { id: idSchema, force: { type: "boolean" }, options: { type: "object" } },
+      ["id"],
+    ),
   },
   {
     name: "pm_release",
     description: "Release a pm item claim.",
-    inputSchema: objectSchema({ id: idSchema, force: { type: "boolean" }, options: { type: "object" } }, ["id"]),
+    inputSchema: objectSchema(
+      { id: idSchema, force: { type: "boolean" }, options: { type: "object" } },
+      ["id"],
+    ),
   },
   {
     name: "pm_close",
@@ -262,9 +355,21 @@ export const TOOLS: ToolDefinition[] = [
     inputSchema: objectSchema(
       {
         id: idSchema,
-        reason: { type: "string", description: "Close reason text when provided or required by governance settings." },
-        duplicateOf: { type: "string", description: "Canonical item id when closing this item as a duplicate." },
-        fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
+        reason: {
+          type: "string",
+          description:
+            "Close reason text when provided or required by governance settings.",
+        },
+        duplicateOf: {
+          type: "string",
+          description:
+            "Canonical item id when closing this item as a duplicate.",
+        },
+        fullChangedFields: {
+          type: "boolean",
+          description:
+            "Return full changed_fields instead of changed_field_count.",
+        },
         idOnly: { type: "boolean", description: "Return only id and status." },
         options: { type: "object" },
       },
@@ -277,40 +382,55 @@ export const TOOLS: ToolDefinition[] = [
       "List, add, edit, or delete comments on a pm item. Use options.add to append, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. " +
       "List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. " +
       "Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
+    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
+      "id",
+    ]),
   },
   {
     name: "pm_files",
-    description: "List, add, remove, audit, or validate linked files for a pm item.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
+    description:
+      "List, add, remove, audit, or validate linked files for a pm item.",
+    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
+      "id",
+    ]),
   },
   {
     name: "pm_docs",
     description: "List, add, or remove linked docs for a pm item.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
+    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
+      "id",
+    ]),
   },
   {
     name: "pm_notes",
     description:
       "List or add structured notes on a pm item. Use options.add to append a note; omit it to list existing notes.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
+    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
+      "id",
+    ]),
   },
   {
     name: "pm_learnings",
     description:
       "List or add learnings on a pm item. Use options.add to capture a learning/insight; omit it to list existing learnings.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
+    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
+      "id",
+    ]),
   },
   {
     name: "pm_deps",
     description:
       "List, add, or remove dependencies for a pm item. Use options.add to declare a dependency and options.remove to drop one; omit both to list current dependencies.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
+    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
+      "id",
+    ]),
   },
   {
     name: "pm_test",
     description: "List, add, remove, or run linked tests for a pm item.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
+    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
+      "id",
+    ]),
   },
   {
     name: "pm_validate",
@@ -319,12 +439,14 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "pm_health",
-    description: "Run pm health diagnostics. Pass options.brief=true for compact low-token details, options.skipIntegrity=true, options.skipDrift=true, options.skipVectors=true for a fast status-only check, or options.full=true for the complete deep check.",
+    description:
+      "Run pm health diagnostics. Pass options.brief=true for compact low-token details, options.skipIntegrity=true, options.skipDrift=true, options.skipVectors=true for a fast status-only check, or options.full=true for the complete deep check.",
     inputSchema: objectSchema({ options: { type: "object" } }),
   },
   {
     name: "pm_contracts",
-    description: "Inspect pm command, flag, schema, and availability contracts.",
+    description:
+      "Inspect pm command, flag, schema, and availability contracts.",
     inputSchema: objectSchema({ options: { type: "object" } }),
   },
   {
@@ -361,21 +483,29 @@ export const TOOLS: ToolDefinition[] = [
         },
         description: {
           type: "string",
-          description: "Custom item type, status, or field description for add-type/add-status/add-field.",
+          description:
+            "Custom item type, status, or field description for add-type/add-status/add-field.",
         },
-        defaultStatus: { type: "string", description: "Default status for add-type." },
+        defaultStatus: {
+          type: "string",
+          description: "Default status for add-type.",
+        },
         folder: { type: "string", description: "Storage folder for add-type." },
         alias: {
           type: "array",
           items: { type: "string" },
-          description: "Aliases for add-type/add-status, or extra CLI flag aliases for add-field.",
+          description:
+            "Aliases for add-type/add-status, or extra CLI flag aliases for add-field.",
         },
         role: {
           type: "array",
           items: { type: "string", enum: [...RUNTIME_STATUS_ROLE_VALUES] },
           description: `Lifecycle roles for add-status: ${RUNTIME_STATUS_ROLE_VALUES.join(", ")}.`,
         },
-        order: { type: "number", description: "Display/sort order for add-status." },
+        order: {
+          type: "number",
+          description: "Display/sort order for add-status.",
+        },
         fieldType: {
           type: "string",
           enum: ["string", "number", "boolean", "string_array"],
@@ -384,27 +514,63 @@ export const TOOLS: ToolDefinition[] = [
         commands: {
           type: "array",
           items: { type: "string" },
-          description: "Commands a custom field is wired onto (add-field): create, update, update_many, list, search, calendar, context.",
+          description:
+            "Commands a custom field is wired onto (add-field): create, update, update_many, list, search, calendar, context.",
         },
-        cliFlag: { type: "string", description: "Override the auto-derived CLI flag for a custom field (add-field)." },
-        required: { type: "boolean", description: "Mark a custom field as always required (add-field)." },
-        requiredOnCreate: { type: "boolean", description: "Mark a custom field as required at create time (add-field)." },
-        allowUnset: { type: "boolean", description: "Whether a custom field may be cleared via --unset (add-field); defaults to true." },
+        cliFlag: {
+          type: "string",
+          description:
+            "Override the auto-derived CLI flag for a custom field (add-field).",
+        },
+        required: {
+          type: "boolean",
+          description: "Mark a custom field as always required (add-field).",
+        },
+        requiredOnCreate: {
+          type: "boolean",
+          description:
+            "Mark a custom field as required at create time (add-field).",
+        },
+        allowUnset: {
+          type: "boolean",
+          description:
+            "Whether a custom field may be cleared via --unset (add-field); defaults to true.",
+        },
         requiredTypes: {
           type: "array",
           items: { type: "string" },
-          description: "Restrict a custom field's requirement to specific item types (add-field).",
+          description:
+            "Restrict a custom field's requirement to specific item types (add-field).",
         },
         typePreset: {
           type: "string",
           enum: ["agile", "ops", "research"],
           description: "Domain type preset to adopt (apply-preset).",
         },
-        infer: { type: "boolean", description: "Infer item types from title-prefix conventions (add-type); previews unless apply is true." },
-        minCount: { type: "number", description: "Minimum items sharing a prefix for add-type inference (default 10)." },
-        apply: { type: "boolean", description: "Register inferred types (add-type infer); without it the call previews only." },
-        force: { type: "boolean", description: "Override removal guardrails for destructive schema changes when supported." },
-        options: { type: "object", description: "Additional schema options using camelCase keys." },
+        infer: {
+          type: "boolean",
+          description:
+            "Infer item types from title-prefix conventions (add-type); previews unless apply is true.",
+        },
+        minCount: {
+          type: "number",
+          description:
+            "Minimum items sharing a prefix for add-type inference (default 10).",
+        },
+        apply: {
+          type: "boolean",
+          description:
+            "Register inferred types (add-type infer); without it the call previews only.",
+        },
+        force: {
+          type: "boolean",
+          description:
+            "Override removal guardrails for destructive schema changes when supported.",
+        },
+        options: {
+          type: "object",
+          description: "Additional schema options using camelCase keys.",
+        },
       },
       ["subcommand"],
     ),
@@ -427,10 +593,20 @@ export const TOOLS: ToolDefinition[] = [
           description:
             "Profile name for show/apply/lint. Required for those subcommands. Built-ins are agile, ops, and research; an active extension can contribute additional archetype names that resolve here too.",
         },
-        dryRun: { type: "boolean", description: "Preview the apply diff without writing any files (apply)." },
+        dryRun: {
+          type: "boolean",
+          description:
+            "Preview the apply diff without writing any files (apply).",
+        },
         author: { type: "string", description: "Mutation author for apply." },
-        force: { type: "boolean", description: "Force ownership/lock override for apply." },
-        options: { type: "object", description: "Additional profile options using camelCase keys." },
+        force: {
+          type: "boolean",
+          description: "Force ownership/lock override for apply.",
+        },
+        options: {
+          type: "object",
+          description: "Additional profile options using camelCase keys.",
+        },
       },
       ["subcommand"],
     ),
@@ -446,14 +622,18 @@ export const TOOLS: ToolDefinition[] = [
         configAction: {
           type: "string",
           enum: ["get", "set", "list", "export"],
-          description: "Config operation to perform. get/set require key; list/export dump the resolved settings surface.",
+          description:
+            "Config operation to perform. get/set require key; list/export dump the resolved settings surface.",
         },
         key: {
           type: "string",
           description:
             "Settings key for get/set, for example governance-require-close-reason, telemetry-tracking, or a nested leaf such as search_provider (dash and underscore variants accepted; configAction=get without a key lists supported keys in the error).",
         },
-        value: { type: "string", description: "New value for configAction=set." },
+        value: {
+          type: "string",
+          description: "New value for configAction=set.",
+        },
         scope: {
           type: "string",
           enum: ["project", "global"],
@@ -461,7 +641,8 @@ export const TOOLS: ToolDefinition[] = [
         },
         options: {
           type: "object",
-          description: "Additional config options such as criterion, clearCriteria, format, or policy.",
+          description:
+            "Additional config options such as criterion, clearCriteria, format, or policy.",
         },
       },
       ["configAction"],
@@ -472,35 +653,44 @@ export const TOOLS: ToolDefinition[] = [
     description:
       "Run agent-optimized Plan workflows. options.subcommand selects: create|show|add-step|update-step|complete-step|block-step|reorder-step|remove-step|link|unlink|decision|discovery|validation|resume|approve|materialize. Provide id for all non-create subcommands; provide stepRef for step lifecycle subcommands. Plans store agent-readable steps with dependencies, decisions, discoveries, validation, and resume context.",
     inputSchema: objectSchema({
-      id: { type: "string", description: "Plan id (required for all subcommands except create)." },
-      stepRef: { type: "string", description: "Step id or order for step lifecycle subcommands." },
+      id: {
+        type: "string",
+        description: "Plan id (required for all subcommands except create).",
+      },
+      stepRef: {
+        type: "string",
+        description: "Step id or order for step lifecycle subcommands.",
+      },
       reorderTo: { type: "number", description: "New order for reorder-step." },
-      options: { type: "object", description: "Plan options including subcommand, stepRef, stepStatus, link, depth, etc." },
+      options: {
+        type: "object",
+        description:
+          "Plan options including subcommand, stepRef, stepStatus, link, depth, etc.",
+      },
     }),
   },
 ];
 
-/**
- * Stable projection of one MCP tool definition for the contract golden file
- * (pm-4os2): tool name, description, required top-level fields, and the full
- * inputSchema shape. Any drift (typo'd property, dropped required field,
- * changed TOOL_SCHEMA_BASE) shows up in `pnpm contracts:check`.
- */
+/** Stable projection of one MCP tool definition for the contract golden file (pm-4os2): tool name, description, required top-level fields, and the full inputSchema shape. Any drift (typo'd property, dropped required field, changed TOOL_SCHEMA_BASE) shows up in `pnpm contracts:check`. */
 export interface McpToolContract {
+  /** Value that configures or reports name for this contract. */
   name: string;
+  /** Value that configures or reports description for this contract. */
   description: string;
+  /** Value that configures or reports required for this contract. */
   required: string[];
+  /** Value that configures or reports input schema for this contract. */
   input_schema: Record<string, unknown>;
 }
 
-/**
- * Implements build mcp tool contracts for the public runtime surface of this module.
- */
+/** Implements build mcp tool contracts for the public runtime surface of this module. */
 export function buildMcpToolContracts(): McpToolContract[] {
   return TOOLS.map((tool) => {
     const schemaRequired = tool.inputSchema["required"];
     const required = Array.isArray(schemaRequired)
-      ? schemaRequired.map((entry) => String(entry)).sort((left, right) => left.localeCompare(right))
+      ? schemaRequired
+          .map((entry) => String(entry))
+          .sort((left, right) => left.localeCompare(right))
       : [];
     return {
       name: tool.name,

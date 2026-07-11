@@ -10,10 +10,10 @@ import { PmCliError } from "../shared/errors.js";
 const SPRINT_RELEASE_VALUE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
 const SPRINT_RELEASE_MAX_LENGTH = 64;
 
-/**
- * Implements normalize sprint release format policy for the public runtime surface of this module.
- */
-export function normalizeSprintReleaseFormatPolicy(value: string | undefined): SprintReleaseFormatPolicy {
+/** Implements normalize sprint release format policy for the public runtime surface of this module. */
+export function normalizeSprintReleaseFormatPolicy(
+  value: string | undefined,
+): SprintReleaseFormatPolicy {
   const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
   if (normalized === "warn" || normalized === "strict_error") {
     return normalized;
@@ -27,9 +27,7 @@ export function normalizeSprintReleaseFormatPolicy(value: string | undefined): S
   );
 }
 
-/**
- * Implements validate sprint or release value for the public runtime surface of this module.
- */
+/** Implements validate sprint or release value for the public runtime surface of this module. */
 export function validateSprintOrReleaseValue(
   field: "sprint" | "release",
   rawValue: string,
@@ -37,15 +35,24 @@ export function validateSprintOrReleaseValue(
 ): { value: string; warnings: string[] } {
   const value = rawValue.trim();
   if (value.length === 0) {
-    throw new PmCliError(`--${field} must not be empty. Use --${field} none to unset.`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `--${field} must not be empty. Use --${field} none to unset.`,
+      EXIT_CODE.USAGE,
+    );
   }
-  const isValid = value.length <= SPRINT_RELEASE_MAX_LENGTH && SPRINT_RELEASE_VALUE_PATTERN.test(value);
+  const isValid =
+    value.length <= SPRINT_RELEASE_MAX_LENGTH &&
+    SPRINT_RELEASE_VALUE_PATTERN.test(value);
   if (isValid) {
     return { value, warnings: [] };
   }
-  const guidance = "Expected 1-64 characters matching [A-Za-z0-9][A-Za-z0-9._/-]* (no spaces).";
+  const guidance =
+    "Expected 1-64 characters matching [A-Za-z0-9][A-Za-z0-9._/-]* (no spaces).";
   if (policy === "strict_error") {
-    throw new PmCliError(`Invalid --${field} value "${value}". ${guidance}`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Invalid --${field} value "${value}". ${guidance}`,
+      EXIT_CODE.USAGE,
+    );
   }
   return {
     value,

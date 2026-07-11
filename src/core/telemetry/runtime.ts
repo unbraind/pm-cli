@@ -11,8 +11,15 @@ import os from "node:os";
 import path from "node:path";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { resolvePmPackageRootFromModule } from "../packages/root.js";
-import { appendLineAtomic, readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
-import { resolveTelemetryErrorCategory, type TelemetryErrorCategory } from "../shared/constants.js";
+import {
+  appendLineAtomic,
+  readFileIfExists,
+  writeFileAtomic,
+} from "../fs/fs-utils.js";
+import {
+  resolveTelemetryErrorCategory,
+  type TelemetryErrorCategory,
+} from "../shared/constants.js";
 import { nowIso } from "../shared/time.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import { readSettings, writeSettings } from "../store/settings.js";
@@ -25,9 +32,21 @@ import {
   type TelemetryResolutionStage,
 } from "./observability.js";
 
-const TELEMETRY_QUEUE_RELATIVE_PATH = path.join("runtime", "telemetry", "events.jsonl");
-const TELEMETRY_STATE_RELATIVE_PATH = path.join("runtime", "telemetry", "state.json");
-const TELEMETRY_OTEL_SPANS_RELATIVE_PATH = path.join("runtime", "telemetry", "otel-spans.jsonl");
+const TELEMETRY_QUEUE_RELATIVE_PATH = path.join(
+  "runtime",
+  "telemetry",
+  "events.jsonl",
+);
+const TELEMETRY_STATE_RELATIVE_PATH = path.join(
+  "runtime",
+  "telemetry",
+  "state.json",
+);
+const TELEMETRY_OTEL_SPANS_RELATIVE_PATH = path.join(
+  "runtime",
+  "telemetry",
+  "otel-spans.jsonl",
+);
 // Kept small so a worst-case batch against a blackholed collector
 // (TELEMETRY_OTEL_SPANS_FLUSH_BATCH_SIZE * TELEMETRY_HTTP_TIMEOUT_MS plus the
 // preceding event flush) stays well under TELEMETRY_FLUSH_LOCK_STALE_MS (60s).
@@ -35,6 +54,7 @@ const TELEMETRY_OTEL_SPANS_RELATIVE_PATH = path.join("runtime", "telemetry", "ot
 // start a second concurrent worker.
 const TELEMETRY_OTEL_SPANS_FLUSH_BATCH_SIZE = 8;
 const TELEMETRY_OTEL_SPANS_MAX_PENDING = 500;
+/** Public contract for telemetry schema version, shared by SDK and presentation-layer consumers. */
 export const TELEMETRY_SCHEMA_VERSION = 1;
 const TELEMETRY_CLIENT_SCHEMA_VERSION = 1;
 const TELEMETRY_FLUSH_BATCH_SIZE = 100;
@@ -45,6 +65,7 @@ const MILLISECONDS_PER_DAY = 86_400_000;
 const TELEMETRY_MAX_EVENT_BYTES = 65_536;
 const TELEMETRY_SANITIZE_MAX_DEPTH = 6;
 const TELEMETRY_SANITIZE_MAX_ARRAY_ITEMS = 20;
+/** Public contract for telemetry max queue entry attempts, shared by SDK and presentation-layer consumers. */
 export const TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS = 15;
 const TELEMETRY_RESULT_PREVIEW_MAX_BYTES = 8_192;
 const TELEMETRY_QUEUE_REWRITE_RETRY_DELAYS_MS = [25, 50, 100, 200] as const;
@@ -63,7 +84,14 @@ const PM_TELEMETRY_INLINE_FLUSH_ENV = "PM_TELEMETRY_INLINE_FLUSH";
 const PM_TELEMETRY_FLUSH_CHILD_ENV = "PM_TELEMETRY_FLUSH_CHILD";
 const PM_TELEMETRY_SOURCE_CONTEXT_ENV = "PM_TELEMETRY_SOURCE_CONTEXT";
 const PM_AUTHOR_ENV = "PM_AUTHOR";
-export const PM_TELEMETRY_SOURCE_CONTEXT_VALUES = ["user", "automation", "test", "dogfood", "audit_smoke"] as const;
+/** Supported values accepted by the pm telemetry source context contract. */
+export const PM_TELEMETRY_SOURCE_CONTEXT_VALUES = [
+  "user",
+  "automation",
+  "test",
+  "dogfood",
+  "audit_smoke",
+] as const;
 
 let _lastFlushPromise: Promise<void> = Promise.resolve();
 let _queueMutationPromise: Promise<unknown> = Promise.resolve();
@@ -73,7 +101,9 @@ export async function waitForPendingFlush(): Promise<void> {
   await _lastFlushPromise;
   await _queueMutationPromise;
 }
-const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(PM_TELEMETRY_SOURCE_CONTEXT_VALUES);
+const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(
+  PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
+);
 const BOOLEAN_TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 const PROCESS_SESSION_ID = crypto.randomUUID();
 
@@ -138,21 +168,9 @@ interface TelemetryRuntimeState {
   last_otel_failure_error?: string;
 }
 
-/**
- * A built OpenTelemetry span request awaiting export. Persisted to a small,
- * bounded queue so the OTLP trace POST happens in the detached, unref'd flush
- * worker instead of inline in the foreground command. This keeps the CLI process
- * from staying alive while a connecting socket to an unreachable traces endpoint
- * drains its 5s timeout (the GH-209 root cause). `payload` is the fully built
- * OTLP resourceSpans body; `endpoint` is the per-span traces endpoint.
- */
+/** A built OpenTelemetry span request awaiting export. Persisted to a small, bounded queue so the OTLP trace POST happens in the detached, unref'd flush worker instead of inline in the foreground command. This keeps the CLI process from staying alive while a connecting socket to an unreachable traces endpoint drains its 5s timeout (the GH-209 root cause). `payload` is the fully built OTLP resourceSpans body; `endpoint` is the per-span traces endpoint. */
 interface PendingOtelSpan {
-  /**
-   * Stable id used to reconcile the queue after the network flush: the worker
-   * re-reads the file and removes/updates only the spans it processed, by id, so
-   * spans appended by a concurrent foreground process during the flush are never
-   * overwritten. Mirrors the event-queue's event_id-based reconciliation.
-   */
+  /** Stable id used to reconcile the queue after the network flush: the worker re-reads the file and removes/updates only the spans it processed, by id, so spans appended by a concurrent foreground process during the flush are never overwritten. Mirrors the event-queue's event_id-based reconciliation. */
   id: string;
   endpoint: string;
   payload: unknown;
@@ -162,7 +180,8 @@ interface PendingOtelSpan {
 }
 
 type TelemetryCaptureLevel = "minimal" | "redacted" | "max";
-type TelemetrySourceContext = (typeof PM_TELEMETRY_SOURCE_CONTEXT_VALUES)[number];
+type TelemetrySourceContext =
+  (typeof PM_TELEMETRY_SOURCE_CONTEXT_VALUES)[number];
 type TelemetrySourceContextSource = "inferred" | "env_override";
 
 interface ResolvedTelemetrySourceContext {
@@ -170,73 +189,107 @@ interface ResolvedTelemetrySourceContext {
   source_context_source: TelemetrySourceContextSource;
 }
 
-/**
- * Documents the active telemetry command payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the active telemetry command payload exchanged by command, SDK, and package integrations. */
 export interface ActiveTelemetryCommand {
+  /** ISO 8601 timestamp recording when started occurred. */
   started_at: string;
+  /** Elapsed time in milliseconds for started at. */
   started_at_ms: number;
+  /** Value that configures or reports command for this contract. */
   command: string;
+  /** Value that configures or reports command taxonomy for this contract. */
   command_taxonomy: TelemetryCommandTaxonomy;
+  /** Value that configures or reports pm version for this contract. */
   pm_version: string;
+  /** Value that configures or reports source context for this contract. */
   source_context: TelemetrySourceContext;
+  /** Value that configures or reports source context source for this contract. */
   source_context_source: TelemetrySourceContextSource;
+  /** Value that configures or reports installation id for this contract. */
   installation_id: string;
+  /** Value that configures or reports pm root hash for this contract. */
   pm_root_hash: string;
+  /** Value that configures or reports cwd hash for this contract. */
   cwd_hash: string;
+  /** Value that configures or reports endpoint for this contract. */
   endpoint: string;
+  /** Value that configures or reports retention days for this contract. */
   retention_days: number;
+  /** Value that configures or reports global pm root for this contract. */
   global_pm_root: string;
+  /** Value that configures or reports capture level for this contract. */
   capture_level: TelemetryCaptureLevel;
+  /** Value that configures or reports otel traces endpoint for this contract. */
   otel_traces_endpoint?: string;
+  /** Value that configures or reports otel trace id for this contract. */
   otel_trace_id?: string;
+  /** Value that configures or reports otel span id for this contract. */
   otel_span_id?: string;
 }
 
-/**
- * Documents the telemetry command context payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the telemetry command context payload exchanged by command, SDK, and package integrations. */
 export interface TelemetryCommandContext {
+  /** Value that configures or reports command for this contract. */
   command: string;
+  /** Value that configures or reports pm version for this contract. */
   pm_version: string;
+  /** Value that configures or reports args for this contract. */
   args: string[];
+  /** Value that configures or reports options for this contract. */
   options: Record<string, unknown>;
+  /** Value that configures or reports global for this contract. */
   global: GlobalOptions;
+  /** Value that configures or reports pm root for this contract. */
   pm_root: string;
 }
 
-/**
- * Documents the telemetry command outcome payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the telemetry command outcome payload exchanged by command, SDK, and package integrations. */
 export interface TelemetryCommandOutcome {
+  /** Whether the operation completed without a blocking failure. */
   ok: boolean;
+  /** Value that configures or reports error for this contract. */
   error?: string;
+  /** Value that configures or reports result for this contract. */
   result?: unknown;
+  /** Value that configures or reports exit code for this contract. */
   exit_code?: number;
+  /** Value that configures or reports error code for this contract. */
   error_code?: string;
+  /** Value that configures or reports error category for this contract. */
   error_category?: TelemetryErrorCategory;
+  /** Value that configures or reports command resolution for this contract. */
   command_resolution?: TelemetryCommandResolution;
+  /** Value that configures or reports resolution stage for this contract. */
   resolution_stage?: TelemetryResolutionStage;
 }
 
-/**
- * Documents the telemetry error event context payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the telemetry error event context payload exchanged by command, SDK, and package integrations. */
 export interface TelemetryErrorEventContext {
+  /** Value that configures or reports command for this contract. */
   command: string;
+  /** Value that configures or reports args for this contract. */
   args: string[];
+  /** Value that configures or reports options for this contract. */
   options: Record<string, unknown>;
+  /** Value that configures or reports global for this contract. */
   global: GlobalOptions;
+  /** Value that configures or reports pm version for this contract. */
   pm_version: string;
+  /** Value that configures or reports pm root for this contract. */
   pm_root: string;
+  /** Value that configures or reports error code for this contract. */
   error_code: string;
+  /** Value that configures or reports error message for this contract. */
   error_message: string;
+  /** Value that configures or reports exit code for this contract. */
   exit_code: number;
+  /** Value that configures or reports error category for this contract. */
   error_category?: TelemetryErrorCategory;
+  /** Value that configures or reports command resolution for this contract. */
   command_resolution?: TelemetryCommandResolution;
+  /** Value that configures or reports resolution stage for this contract. */
   resolution_stage?: TelemetryResolutionStage;
 }
-
 
 function queuePath(globalPmRoot: string): string {
   return path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH);
@@ -263,7 +316,12 @@ function flushSpawnLockPath(globalPmRoot: string): string {
 }
 
 function telemetryFlushRunnerPath(): string {
-  return path.join(resolvePmPackageRootFromModule(import.meta.url, ["../../.."]), "dist", "cli", "telemetry-flush.js");
+  return path.join(
+    resolvePmPackageRootFromModule(import.meta.url, ["../../.."]),
+    "dist",
+    "cli",
+    "telemetry-flush.js",
+  );
 }
 
 function shouldFlushInline(): boolean {
@@ -274,17 +332,27 @@ function shouldFlushInline(): boolean {
     return true;
   }
   const nodeEnv = (process.env.NODE_ENV ?? "").trim().toLowerCase();
-  return typeof process.env.VITEST === "string" || typeof process.env.VITEST_WORKER_ID === "string" || nodeEnv === "test";
+  return (
+    typeof process.env.VITEST === "string" ||
+    typeof process.env.VITEST_WORKER_ID === "string" ||
+    nodeEnv === "test"
+  );
 }
 
-async function readRuntimeState(globalPmRoot: string): Promise<TelemetryRuntimeState> {
+async function readRuntimeState(
+  globalPmRoot: string,
+): Promise<TelemetryRuntimeState> {
   const raw = await readFileIfExists(runtimeStatePath(globalPmRoot));
   if (!raw || raw.trim().length === 0) {
     return {};
   }
   try {
     const parsed = JSON.parse(raw) as TelemetryRuntimeState;
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
       return {};
     }
     return parsed;
@@ -293,7 +361,10 @@ async function readRuntimeState(globalPmRoot: string): Promise<TelemetryRuntimeS
   }
 }
 
-async function writeRuntimeState(globalPmRoot: string, patch: TelemetryRuntimeState): Promise<void> {
+async function writeRuntimeState(
+  globalPmRoot: string,
+  patch: TelemetryRuntimeState,
+): Promise<void> {
   try {
     const current = await readRuntimeState(globalPmRoot);
     const next: TelemetryRuntimeState = {
@@ -305,28 +376,40 @@ async function writeRuntimeState(globalPmRoot: string, patch: TelemetryRuntimeSt
         .filter(([, value]) => value !== undefined)
         .sort((left, right) => left[0].localeCompare(right[0])),
     );
-    await writeFileAtomic(runtimeStatePath(globalPmRoot), `${JSON.stringify(normalized, null, 2)}\n`);
+    await writeFileAtomic(
+      runtimeStatePath(globalPmRoot),
+      `${JSON.stringify(normalized, null, 2)}\n`,
+    );
   } catch {
     // Runtime state persistence is best effort and must not block command execution.
   }
 }
 
 function isSensitiveKey(key: string): boolean {
-  const normalized = key.trim().toLowerCase().replaceAll("-", "_").replaceAll(/[^a-z0-9_]+/g, "_");
+  const normalized = key
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_")
+    .replaceAll(/[^a-z0-9_]+/g, "_");
   const tokens = normalized.split("_").filter((token) => token.length > 0);
   return SENSITIVE_KEYWORDS.some(
-    (keyword) => normalized === keyword || normalized.endsWith(`_${keyword}`) || tokens.includes(keyword),
+    (keyword) =>
+      normalized === keyword ||
+      normalized.endsWith(`_${keyword}`) ||
+      tokens.includes(keyword),
   );
 }
 
 function redactInlineSensitiveAssignments(input: string): string {
   const withoutAssignments = input.replaceAll(
     INLINE_SENSITIVE_ASSIGNMENT_PATTERN,
-    (_match: string, key: string, delimiter: string): string => `${key}${delimiter}[redacted]`,
+    (_match: string, key: string, delimiter: string): string =>
+      `${key}${delimiter}[redacted]`,
   );
   return withoutAssignments.replaceAll(
     INLINE_SENSITIVE_FLAG_PATTERN,
-    (_match: string, flag: string, delimiter: string): string => `${flag}${delimiter}[redacted]`,
+    (_match: string, flag: string, delimiter: string): string =>
+      `${flag}${delimiter}[redacted]`,
   );
 }
 
@@ -352,7 +435,13 @@ function isEmailLocalCharacter(character: string | undefined): boolean {
   if (isAsciiLetterOrDigitCode(code)) {
     return true;
   }
-  return character === "." || character === "_" || character === "%" || character === "+" || character === "-";
+  return (
+    character === "." ||
+    character === "_" ||
+    character === "%" ||
+    character === "+" ||
+    character === "-"
+  );
 }
 
 function isEmailDomainCharacter(character: string | undefined): boolean {
@@ -368,7 +457,11 @@ function isEmailDomainCharacter(character: string | undefined): boolean {
 
 function looksLikeEmailToken(token: string): boolean {
   const atIndex = token.indexOf("@");
-  if (atIndex <= 0 || atIndex !== token.lastIndexOf("@") || atIndex === token.length - 1) {
+  if (
+    atIndex <= 0 ||
+    atIndex !== token.lastIndexOf("@") ||
+    atIndex === token.length - 1
+  ) {
     return false;
   }
   const localPart = token.slice(0, atIndex);
@@ -426,13 +519,18 @@ function redactEmailTokens(input: string): string {
 
 function sanitizeCommonSensitiveTokens(input: string): string {
   const withoutEmails = redactEmailTokens(input);
-  const withoutBearer = withoutEmails.replaceAll(BEARER_TOKEN_PATTERN, "bearer [redacted_token]");
+  const withoutBearer = withoutEmails.replaceAll(
+    BEARER_TOKEN_PATTERN,
+    "bearer [redacted_token]",
+  );
   return withoutBearer.replaceAll(PRIVATE_IP_PATTERN, "[redacted_ip]");
 }
 
 function sanitizeStringRedacted(input: string): string {
   const withoutCommonSensitiveTokens = sanitizeCommonSensitiveTokens(input);
-  const withoutInlineSecrets = redactInlineSensitiveAssignments(withoutCommonSensitiveTokens);
+  const withoutInlineSecrets = redactInlineSensitiveAssignments(
+    withoutCommonSensitiveTokens,
+  );
   const withoutAbsolutePaths = redactAbsolutePathTokens(withoutInlineSecrets);
   const trimmed = withoutAbsolutePaths.trim();
   if (trimmed.startsWith("/") && trimmed.length > 1) {
@@ -446,7 +544,9 @@ function sanitizeStringRedacted(input: string): string {
 
 function sanitizeStringMax(input: string): string {
   const withoutCommonSensitiveTokens = sanitizeCommonSensitiveTokens(input);
-  const withoutInlineSecrets = redactInlineSensitiveAssignments(withoutCommonSensitiveTokens);
+  const withoutInlineSecrets = redactInlineSensitiveAssignments(
+    withoutCommonSensitiveTokens,
+  );
   const withoutAbsolutePaths = redactAbsolutePathTokens(withoutInlineSecrets);
   const trimmed = withoutAbsolutePaths.trim();
   if (trimmed.startsWith("/") && trimmed.length > 1) {
@@ -458,7 +558,10 @@ function sanitizeStringMax(input: string): string {
   return withoutAbsolutePaths;
 }
 
-function sanitizeString(input: string, captureLevel: Exclude<TelemetryCaptureLevel, "minimal"> = "redacted"): string {
+function sanitizeString(
+  input: string,
+  captureLevel: Exclude<TelemetryCaptureLevel, "minimal"> = "redacted",
+): string {
   if (captureLevel === "max") {
     return sanitizeStringMax(input);
   }
@@ -487,7 +590,9 @@ function sanitizeValue(
     return "[depth_truncated]";
   }
   if (Array.isArray(value)) {
-    return value.slice(0, TELEMETRY_SANITIZE_MAX_ARRAY_ITEMS).map((entry) => sanitizeValue(entry, undefined, captureLevel, depth + 1));
+    return value
+      .slice(0, TELEMETRY_SANITIZE_MAX_ARRAY_ITEMS)
+      .map((entry) => sanitizeValue(entry, undefined, captureLevel, depth + 1));
   }
   if (typeof value === "object") {
     const record = value as Record<string, unknown>;
@@ -537,9 +642,15 @@ function sanitizeCommandArgs(
   return sanitized;
 }
 
-function normalizeCaptureLevel(value: string | undefined): TelemetryCaptureLevel {
+function normalizeCaptureLevel(
+  value: string | undefined,
+): TelemetryCaptureLevel {
   const normalized = value?.trim().toLowerCase();
-  if (normalized === "minimal" || normalized === "redacted" || normalized === "max") {
+  if (
+    normalized === "minimal" ||
+    normalized === "redacted" ||
+    normalized === "max"
+  ) {
     return normalized;
   }
   return "redacted";
@@ -554,12 +665,17 @@ function normalizePmVersion(value: string | undefined): string {
   return trimmed.length > 0 ? trimmed : "0.0.0";
 }
 
-function normalizeTelemetryErrorCode(value: string | undefined): string | undefined {
+function normalizeTelemetryErrorCode(
+  value: string | undefined,
+): string | undefined {
   const normalized = value?.trim();
   return normalized && normalized.length > 0 ? normalized : undefined;
 }
 
-function normalizeTelemetryExitCode(exitCode: number | undefined, ok: boolean): number {
+function normalizeTelemetryExitCode(
+  exitCode: number | undefined,
+  ok: boolean,
+): number {
   if (Number.isFinite(exitCode)) {
     return Math.max(0, Math.trunc(exitCode as number));
   }
@@ -574,17 +690,27 @@ function normalizeTelemetryErrorCategory(params: {
   if (params.ok) {
     return undefined;
   }
-  if (typeof params.errorCategory === "string" && params.errorCategory.trim().length > 0) {
+  if (
+    typeof params.errorCategory === "string" &&
+    params.errorCategory.trim().length > 0
+  ) {
     return params.errorCategory;
   }
-  if (typeof params.errorCode === "string" && params.errorCode.trim().length > 0) {
+  if (
+    typeof params.errorCode === "string" &&
+    params.errorCode.trim().length > 0
+  ) {
     return resolveTelemetryErrorCategory(params.errorCode);
   }
   return "unknown";
 }
 
-function resolveTelemetrySourceContext(globalOptions: GlobalOptions): ResolvedTelemetrySourceContext {
-  const override = (process.env[PM_TELEMETRY_SOURCE_CONTEXT_ENV] ?? "").trim().toLowerCase();
+function resolveTelemetrySourceContext(
+  globalOptions: GlobalOptions,
+): ResolvedTelemetrySourceContext {
+  const override = (process.env[PM_TELEMETRY_SOURCE_CONTEXT_ENV] ?? "")
+    .trim()
+    .toLowerCase();
   if (PM_TELEMETRY_SOURCE_CONTEXT_SET.has(override)) {
     return {
       source_context: override as TelemetrySourceContext,
@@ -592,7 +718,11 @@ function resolveTelemetrySourceContext(globalOptions: GlobalOptions): ResolvedTe
     };
   }
   const nodeEnv = (process.env.NODE_ENV ?? "").trim().toLowerCase();
-  if (typeof process.env.VITEST === "string" || typeof process.env.VITEST_WORKER_ID === "string" || nodeEnv === "test") {
+  if (
+    typeof process.env.VITEST === "string" ||
+    typeof process.env.VITEST_WORKER_ID === "string" ||
+    nodeEnv === "test"
+  ) {
     return {
       source_context: "test",
       source_context_source: "inferred",
@@ -600,7 +730,8 @@ function resolveTelemetrySourceContext(globalOptions: GlobalOptions): ResolvedTe
   }
   const nonTty = process.stdin.isTTY !== true || process.stdout.isTTY !== true;
   const ci = parseBooleanTrueLike(process.env.CI);
-  const scriptLikeMode = globalOptions.json === true || globalOptions.quiet === true;
+  const scriptLikeMode =
+    globalOptions.json === true || globalOptions.quiet === true;
   if (nonTty || ci || scriptLikeMode) {
     return {
       source_context: "automation",
@@ -614,7 +745,10 @@ function resolveTelemetrySourceContext(globalOptions: GlobalOptions): ResolvedTe
 }
 
 function hashWithInstallationId(installationId: string, value: string): string {
-  return crypto.createHash("sha256").update(`${installationId}:${value}`).digest("hex");
+  return crypto
+    .createHash("sha256")
+    .update(`${installationId}:${value}`)
+    .digest("hex");
 }
 
 /**
@@ -645,19 +779,27 @@ function normalizeForHash(value: unknown, depth = 0): unknown {
   if (value === null || value === undefined) {
     return value;
   }
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
     return value;
   }
   if (depth >= TELEMETRY_SANITIZE_MAX_DEPTH) {
     return "[depth_truncated]";
   }
   if (Array.isArray(value)) {
-    return value.slice(0, TELEMETRY_SANITIZE_MAX_ARRAY_ITEMS).map((entry) => normalizeForHash(entry, depth + 1));
+    return value
+      .slice(0, TELEMETRY_SANITIZE_MAX_ARRAY_ITEMS)
+      .map((entry) => normalizeForHash(entry, depth + 1));
   }
   if (typeof value === "object") {
     const record = value as Record<string, unknown>;
     const normalized: Record<string, unknown> = {};
-    const sortedKeys = Object.keys(record).sort((left, right) => left.localeCompare(right));
+    const sortedKeys = Object.keys(record).sort((left, right) =>
+      left.localeCompare(right),
+    );
     for (const key of sortedKeys) {
       normalized[key] = normalizeForHash(record[key], depth + 1);
     }
@@ -667,10 +809,16 @@ function normalizeForHash(value: unknown, depth = 0): unknown {
 }
 
 function hashTelemetryValue(installationId: string, value: unknown): string {
-  return hashWithInstallationId(installationId, JSON.stringify(normalizeForHash(value)));
+  return hashWithInstallationId(
+    installationId,
+    JSON.stringify(normalizeForHash(value)),
+  );
 }
 
-function hashCommandArgs(installationId: string, args: string[]): { hashes: string[]; digest: string } {
+function hashCommandArgs(
+  installationId: string,
+  args: string[],
+): { hashes: string[]; digest: string } {
   return {
     hashes: args.map((arg) => hashWithInstallationId(installationId, arg)),
     digest: hashWithInstallationId(installationId, args.join("\u0000")),
@@ -683,21 +831,35 @@ function hashTelemetryErrorFingerprint(
   errorCode: string | undefined,
   errorMessage: string | undefined,
 ): string {
-  const normalizedMessage = sanitizeString(typeof errorMessage === "string" ? errorMessage : "", "redacted");
-  const normalizedCode = typeof errorCode === "string" && errorCode.length > 0 ? errorCode : "unknown_error";
+  const normalizedMessage = sanitizeString(
+    typeof errorMessage === "string" ? errorMessage : "",
+    "redacted",
+  );
+  const normalizedCode =
+    typeof errorCode === "string" && errorCode.length > 0
+      ? errorCode
+      : "unknown_error";
   const fingerprintSource = `${command}\u0000${normalizedCode}\u0000${normalizedMessage}`;
   return hashWithInstallationId(installationId, fingerprintSource);
 }
 
 function telemetryDisabledByEnvironment(): boolean {
   return (
-    PM_TELEMETRY_DISABLED_VALUES.has((process.env[PM_TELEMETRY_DISABLED_ENV] ?? "").trim().toLowerCase()) ||
-    PM_TELEMETRY_DISABLED_VALUES.has((process.env[PM_NO_TELEMETRY_ENV] ?? "").trim().toLowerCase())
+    PM_TELEMETRY_DISABLED_VALUES.has(
+      (process.env[PM_TELEMETRY_DISABLED_ENV] ?? "").trim().toLowerCase(),
+    ) ||
+    PM_TELEMETRY_DISABLED_VALUES.has(
+      (process.env[PM_NO_TELEMETRY_ENV] ?? "").trim().toLowerCase(),
+    )
   );
 }
 
 function resolveOtelTracesEndpoint(): string | null {
-  if (PM_TELEMETRY_OTEL_DISABLED_VALUES.has((process.env[PM_TELEMETRY_OTEL_DISABLED_ENV] ?? "").trim().toLowerCase())) {
+  if (
+    PM_TELEMETRY_OTEL_DISABLED_VALUES.has(
+      (process.env[PM_TELEMETRY_OTEL_DISABLED_ENV] ?? "").trim().toLowerCase(),
+    )
+  ) {
     return null;
   }
 
@@ -733,21 +895,30 @@ function isoToUnixNano(iso: string): string {
   return `${BigInt(epochMs) * 1_000_000n}`;
 }
 
-function otlpStringAttribute(key: string, value: string): { key: string; value: { stringValue: string } } {
+function otlpStringAttribute(
+  key: string,
+  value: string,
+): { key: string; value: { stringValue: string } } {
   return {
     key,
     value: { stringValue: value },
   };
 }
 
-function otlpBoolAttribute(key: string, value: boolean): { key: string; value: { boolValue: boolean } } {
+function otlpBoolAttribute(
+  key: string,
+  value: boolean,
+): { key: string; value: { boolValue: boolean } } {
   return {
     key,
     value: { boolValue: value },
   };
 }
 
-function otlpIntAttribute(key: string, value: number): { key: string; value: { intValue: string } } {
+function otlpIntAttribute(
+  key: string,
+  value: number,
+): { key: string; value: { intValue: string } } {
   return {
     key,
     value: { intValue: String(Math.max(0, Math.trunc(value))) },
@@ -763,7 +934,13 @@ function otlpIntAttribute(key: string, value: number): { key: string; value: { i
  */
 function buildOtelSpanRequest(
   activeCommand: ActiveTelemetryCommand,
-  outcome: { ok: boolean; error?: string; exit_code?: number; error_code?: string; error_category?: TelemetryErrorCategory },
+  outcome: {
+    ok: boolean;
+    error?: string;
+    exit_code?: number;
+    error_code?: string;
+    error_category?: TelemetryErrorCategory;
+  },
   finishedAtIso: string,
   durationMs: number,
 ): { endpoint: string; payload: unknown } | null {
@@ -778,9 +955,15 @@ function buildOtelSpanRequest(
     return null;
   }
 
-  const serviceNameCandidate = sanitizeString((process.env[OTEL_SERVICE_NAME_ENV] ?? "").trim());
-  const serviceName = serviceNameCandidate.length > 0 ? serviceNameCandidate : "pm-cli";
-  const normalizedExitCode = normalizeTelemetryExitCode(outcome.exit_code, outcome.ok);
+  const serviceNameCandidate = sanitizeString(
+    (process.env[OTEL_SERVICE_NAME_ENV] ?? "").trim(),
+  );
+  const serviceName =
+    serviceNameCandidate.length > 0 ? serviceNameCandidate : "pm-cli";
+  const normalizedExitCode = normalizeTelemetryExitCode(
+    outcome.exit_code,
+    outcome.ok,
+  );
   const normalizedErrorCode = normalizeTelemetryErrorCode(outcome.error_code);
   const normalizedErrorCategory = normalizeTelemetryErrorCategory({
     ok: outcome.ok,
@@ -795,7 +978,10 @@ function buildOtelSpanRequest(
     otlpStringAttribute("pm.command", sanitizeString(activeCommand.command)),
     otlpStringAttribute("pm.version", activeCommand.pm_version),
     otlpStringAttribute("pm.source_context", activeCommand.source_context),
-    otlpStringAttribute("pm.source_context_source", activeCommand.source_context_source),
+    otlpStringAttribute(
+      "pm.source_context_source",
+      activeCommand.source_context_source,
+    ),
     otlpStringAttribute("pm.installation_id", activeCommand.installation_id),
     otlpStringAttribute("pm.session_id", PROCESS_SESSION_ID),
     otlpStringAttribute("pm.pm_root_hash", activeCommand.pm_root_hash),
@@ -808,10 +994,14 @@ function buildOtelSpanRequest(
     attributes.push(otlpStringAttribute("pm.error_code", normalizedErrorCode));
   }
   if (typeof normalizedErrorCategory === "string") {
-    attributes.push(otlpStringAttribute("pm.error_category", normalizedErrorCategory));
+    attributes.push(
+      otlpStringAttribute("pm.error_category", normalizedErrorCategory),
+    );
   }
   if (typeof outcome.error === "string" && outcome.error.trim().length > 0) {
-    attributes.push(otlpStringAttribute("pm.error", sanitizeString(outcome.error)));
+    attributes.push(
+      otlpStringAttribute("pm.error", sanitizeString(outcome.error)),
+    );
   }
 
   const payload = {
@@ -839,7 +1029,11 @@ function buildOtelSpanRequest(
                   code: outcome.ok ? 1 : 2,
                   message: outcome.ok
                     ? ""
-                    : sanitizeString(typeof outcome.error === "string" ? outcome.error : "command_failed"),
+                    : sanitizeString(
+                        typeof outcome.error === "string"
+                          ? outcome.error
+                          : "command_failed",
+                      ),
                 },
               },
             ],
@@ -869,12 +1063,16 @@ function summarizeResult(
     return {
       type: "array",
       length: result.length,
-      sample: result.slice(0, 5).map((entry) => sanitizeValue(entry, undefined, captureLevel)),
+      sample: result
+        .slice(0, 5)
+        .map((entry) => sanitizeValue(entry, undefined, captureLevel)),
     };
   }
   if (typeof result === "object") {
     const record = result as Record<string, unknown>;
-    const keys = Object.keys(record).sort((left, right) => left.localeCompare(right));
+    const keys = Object.keys(record).sort((left, right) =>
+      left.localeCompare(right),
+    );
     const sanitized: Record<string, unknown> = {};
     let previewBytes = 0;
     for (const key of keys.slice(0, 25)) {
@@ -906,13 +1104,33 @@ function buildCommandStartPayload(params: {
   cwdHash: string;
   installationId: string;
 }): Record<string, unknown> {
-  const { captureLevel, context, pmVersion, sourceContext, pmRootHash, cwdHash, installationId } = params;
+  const {
+    captureLevel,
+    context,
+    pmVersion,
+    sourceContext,
+    pmRootHash,
+    cwdHash,
+    installationId,
+  } = params;
   const commandTaxonomy = deriveTelemetryCommandTaxonomy(context.command);
   const hashedArgs = hashCommandArgs(installationId, context.args);
-  const commandInvocationDigest = hashWithInstallationId(installationId, `${context.command}\u0000${context.args.join("\u0000")}`);
-  const commandOptionsDigest = hashTelemetryValue(installationId, context.options);
-  const globalOptionsDigest = hashTelemetryValue(installationId, context.global);
-  const authorContextFields = buildAuthorContextPayloadFields(captureLevel, installationId);
+  const commandInvocationDigest = hashWithInstallationId(
+    installationId,
+    `${context.command}\u0000${context.args.join("\u0000")}`,
+  );
+  const commandOptionsDigest = hashTelemetryValue(
+    installationId,
+    context.options,
+  );
+  const globalOptionsDigest = hashTelemetryValue(
+    installationId,
+    context.global,
+  );
+  const authorContextFields = buildAuthorContextPayloadFields(
+    captureLevel,
+    installationId,
+  );
   if (captureLevel === "minimal") {
     return {
       capture_level: captureLevel,
@@ -937,9 +1155,17 @@ function buildCommandStartPayload(params: {
     command_args_hashes: hashedArgs.hashes,
     command_args_digest: hashedArgs.digest,
     command_invocation_digest: commandInvocationDigest,
-    command_options: sanitizeValue(context.options, undefined, captureLevel) as Record<string, unknown>,
+    command_options: sanitizeValue(
+      context.options,
+      undefined,
+      captureLevel,
+    ) as Record<string, unknown>,
     command_options_digest: commandOptionsDigest,
-    global_options: sanitizeValue(context.global, undefined, captureLevel) as Record<string, unknown>,
+    global_options: sanitizeValue(
+      context.global,
+      undefined,
+      captureLevel,
+    ) as Record<string, unknown>,
     global_options_digest: globalOptionsDigest,
     pm_root_hash: pmRootHash,
     cwd_hash: cwdHash,
@@ -989,9 +1215,17 @@ function buildCommandFinishPayload(params: {
   } = params;
   const errorFingerprint =
     outcome.ok === false
-      ? hashTelemetryErrorFingerprint(installationId, command, errorCode, outcome.error)
+      ? hashTelemetryErrorFingerprint(
+          installationId,
+          command,
+          errorCode,
+          outcome.error,
+        )
       : undefined;
-  const authorContextFields = buildAuthorContextPayloadFields(captureLevel, installationId);
+  const authorContextFields = buildAuthorContextPayloadFields(
+    captureLevel,
+    installationId,
+  );
   if (captureLevel === "minimal") {
     return {
       capture_level: captureLevel,
@@ -1005,7 +1239,9 @@ function buildCommandFinishPayload(params: {
       exit_code: exitCode,
       error_code: errorCode,
       error_category: errorCategory,
-      error: outcome.error ? sanitizeString(outcome.error, "redacted") : undefined,
+      error: outcome.error
+        ? sanitizeString(outcome.error, "redacted")
+        : undefined,
       error_fingerprint: errorFingerprint,
       duration_ms: durationMs,
       ...authorContextFields,
@@ -1024,7 +1260,9 @@ function buildCommandFinishPayload(params: {
     exit_code: exitCode,
     error_code: errorCode,
     error_category: errorCategory,
-    error: outcome.error ? sanitizeString(outcome.error, captureLevel) : undefined,
+    error: outcome.error
+      ? sanitizeString(outcome.error, captureLevel)
+      : undefined,
     error_fingerprint: errorFingerprint,
     duration_ms: durationMs,
     started_at: startedAt,
@@ -1069,9 +1307,17 @@ function buildCommandErrorPayload(params: {
     exitCode,
   } = params;
   const attemptedArgHashes = hashCommandArgs(installationId, args);
-  const attemptedCommandDigest = hashWithInstallationId(installationId, command);
+  const attemptedCommandDigest = hashWithInstallationId(
+    installationId,
+    command,
+  );
   const attemptedOptionsDigest = hashTelemetryValue(installationId, options);
-  const errorFingerprint = hashTelemetryErrorFingerprint(installationId, command, errorCode, errorMessage);
+  const errorFingerprint = hashTelemetryErrorFingerprint(
+    installationId,
+    command,
+    errorCode,
+    errorMessage,
+  );
   if (captureLevel === "minimal") {
     return {
       capture_level: captureLevel,
@@ -1105,7 +1351,11 @@ function buildCommandErrorPayload(params: {
     attempted_args: sanitizeCommandArgs(args, captureLevel),
     attempted_args_hashes: attemptedArgHashes.hashes,
     attempted_args_digest: attemptedArgHashes.digest,
-    attempted_options: sanitizeValue(options, undefined, captureLevel) as Record<string, unknown>,
+    attempted_options: sanitizeValue(
+      options,
+      undefined,
+      captureLevel,
+    ) as Record<string, unknown>,
     attempted_options_digest: attemptedOptionsDigest,
     error_code: errorCode,
     error_category: errorCategory,
@@ -1127,7 +1377,11 @@ function buildCommandErrorPayload(params: {
 
 async function ensureInstallationId(
   globalPmRoot: string,
-): Promise<{ installationId: string; endpoint: string; retentionDays: number }> {
+): Promise<{
+  installationId: string;
+  endpoint: string;
+  retentionDays: number;
+}> {
   const settings = await readSettings(globalPmRoot);
   let changed = false;
   if (settings.telemetry.installation_id.trim().length === 0) {
@@ -1144,7 +1398,10 @@ async function ensureInstallationId(
   };
 }
 
-async function enqueueTelemetryEvent(globalPmRoot: string, event: TelemetryEvent): Promise<void> {
+async function enqueueTelemetryEvent(
+  globalPmRoot: string,
+  event: TelemetryEvent,
+): Promise<void> {
   const queued: QueuedTelemetryEvent = {
     client_schema_version: TELEMETRY_CLIENT_SCHEMA_VERSION,
     event,
@@ -1152,7 +1409,17 @@ async function enqueueTelemetryEvent(globalPmRoot: string, event: TelemetryEvent
   };
   let serialized = JSON.stringify(queued);
   if (serialized.length > TELEMETRY_MAX_EVENT_BYTES) {
-    const trimmed = { ...event, payload: { ...event.payload, result_summary: { truncated: true, reason: "payload_size_exceeded", original_bytes: serialized.length } } };
+    const trimmed = {
+      ...event,
+      payload: {
+        ...event.payload,
+        result_summary: {
+          truncated: true,
+          reason: "payload_size_exceeded",
+          original_bytes: serialized.length,
+        },
+      },
+    };
     const trimmedQueued: QueuedTelemetryEvent = {
       client_schema_version: TELEMETRY_CLIENT_SCHEMA_VERSION,
       event: trimmed,
@@ -1180,10 +1447,9 @@ function parseQueueLines(raw: string): QueuedTelemetryEvent[] {
         parsed.event &&
         typeof parsed.event === "object" &&
         typeof parsed.attempts === "number" &&
-        (
-          parsed.client_schema_version === undefined ||
-          (typeof parsed.client_schema_version === "number" && Number.isFinite(parsed.client_schema_version))
-        )
+        (parsed.client_schema_version === undefined ||
+          (typeof parsed.client_schema_version === "number" &&
+            Number.isFinite(parsed.client_schema_version)))
       ) {
         entries.push(parsed);
       }
@@ -1195,12 +1461,18 @@ function parseQueueLines(raw: string): QueuedTelemetryEvent[] {
 }
 
 function nextRetryIso(attempts: number): string {
-  const delay = Math.min(TELEMETRY_RETRY_BASE_DELAY_MS * 2 ** Math.max(attempts - 1, 0), TELEMETRY_MAX_RETRY_DELAY_MS);
+  const delay = Math.min(
+    TELEMETRY_RETRY_BASE_DELAY_MS * 2 ** Math.max(attempts - 1, 0),
+    TELEMETRY_MAX_RETRY_DELAY_MS,
+  );
   return new Date(Date.now() + delay).toISOString();
 }
 
 function isDueForRetryAt(nextAttemptAfter: string | undefined): boolean {
-  if (typeof nextAttemptAfter !== "string" || nextAttemptAfter.trim().length === 0) {
+  if (
+    typeof nextAttemptAfter !== "string" ||
+    nextAttemptAfter.trim().length === 0
+  ) {
     return true;
   }
   const dueAtMs = Date.parse(nextAttemptAfter);
@@ -1215,11 +1487,16 @@ function isDueForRetry(entry: QueuedTelemetryEvent): boolean {
 }
 
 function retentionCutoffMs(retentionDays: number): number {
-  const normalizedDays = Number.isFinite(retentionDays) ? Math.max(1, Math.trunc(retentionDays)) : 1;
+  const normalizedDays = Number.isFinite(retentionDays)
+    ? Math.max(1, Math.trunc(retentionDays))
+    : 1;
   return Date.now() - normalizedDays * MILLISECONDS_PER_DAY;
 }
 
-function isExpiredQueueEntry(entry: QueuedTelemetryEvent, cutoffMs: number): boolean {
+function isExpiredQueueEntry(
+  entry: QueuedTelemetryEvent,
+  cutoffMs: number,
+): boolean {
   const occurredAt = entry.event?.occurred_at;
   if (typeof occurredAt !== "string" || occurredAt.trim().length === 0) {
     return false;
@@ -1241,7 +1518,11 @@ function pruneExpiredQueueEntries(
   for (const entry of entries) {
     const serializedSize = JSON.stringify(entry).length;
     const oversized = serializedSize > TELEMETRY_MAX_EVENT_BYTES;
-    if (oversized || isExpiredQueueEntry(entry, cutoffMs) || entry.attempts >= TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS) {
+    if (
+      oversized ||
+      isExpiredQueueEntry(entry, cutoffMs) ||
+      entry.attempts >= TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS
+    ) {
       prunedCount += 1;
       continue;
     }
@@ -1250,7 +1531,10 @@ function pruneExpiredQueueEntries(
   return { entries: retained, prunedCount };
 }
 
-async function rewriteQueue(globalPmRoot: string, entries: QueuedTelemetryEvent[]): Promise<void> {
+async function rewriteQueue(
+  globalPmRoot: string,
+  entries: QueuedTelemetryEvent[],
+): Promise<void> {
   const serialized = entries.map((entry) => JSON.stringify(entry)).join("\n");
   const contents = serialized.length > 0 ? `${serialized}\n` : "";
   for (let attempt = 0; ; attempt += 1) {
@@ -1281,13 +1565,11 @@ function sleep(milliseconds: number): Promise<void> {
   });
 }
 
-/**
- * Append a built OTLP span request to the bounded pending-spans queue. The
- * detached flush worker drains and POSTs these so the foreground command never
- * performs OTLP network I/O (GH-209). Best effort: a write failure never blocks
- * the command, and the span is simply not exported.
- */
-async function enqueuePendingOtelSpan(globalPmRoot: string, request: { endpoint: string; payload: unknown }): Promise<void> {
+/** Append a built OTLP span request to the bounded pending-spans queue. The detached flush worker drains and POSTs these so the foreground command never performs OTLP network I/O (GH-209). Best effort: a write failure never blocks the command, and the span is simply not exported. */
+async function enqueuePendingOtelSpan(
+  globalPmRoot: string,
+  request: { endpoint: string; payload: unknown },
+): Promise<void> {
   const pending: PendingOtelSpan = {
     id: crypto.randomUUID(),
     endpoint: request.endpoint,
@@ -1305,14 +1587,22 @@ async function enqueuePendingOtelSpan(globalPmRoot: string, request: { endpoint:
   });
 }
 
-/**
- * Derive a stable id for a legacy id-less pending span from its identity fields.
- * Deterministic so the same on-disk line yields the same id across reads, which
- * is what lets reconciliation remove/update it after a flush.
- */
-function backfillPendingOtelSpanId(entry: { endpoint: string; enqueued_at: string; payload: unknown }): string {
-  const material = JSON.stringify([entry.endpoint, entry.enqueued_at, entry.payload]);
-  return crypto.createHash("sha256").update(material).digest("hex").slice(0, 32);
+/** Derive a stable id for a legacy id-less pending span from its identity fields. Deterministic so the same on-disk line yields the same id across reads, which is what lets reconciliation remove/update it after a flush. */
+function backfillPendingOtelSpanId(entry: {
+  endpoint: string;
+  enqueued_at: string;
+  payload: unknown;
+}): string {
+  const material = JSON.stringify([
+    entry.endpoint,
+    entry.enqueued_at,
+    entry.payload,
+  ]);
+  return crypto
+    .createHash("sha256")
+    .update(material)
+    .digest("hex")
+    .slice(0, 32);
 }
 
 function parsePendingOtelSpanLines(raw: string): PendingOtelSpan[] {
@@ -1349,8 +1639,14 @@ function parsePendingOtelSpanLines(raw: string): PendingOtelSpan[] {
   return entries;
 }
 
-function isExpiredPendingOtelSpan(entry: PendingOtelSpan, cutoffMs: number): boolean {
-  if (typeof entry.enqueued_at !== "string" || entry.enqueued_at.trim().length === 0) {
+function isExpiredPendingOtelSpan(
+  entry: PendingOtelSpan,
+  cutoffMs: number,
+): boolean {
+  if (
+    typeof entry.enqueued_at !== "string" ||
+    entry.enqueued_at.trim().length === 0
+  ) {
     return false;
   }
   const enqueuedAtMs = Date.parse(entry.enqueued_at);
@@ -1369,7 +1665,11 @@ function prunePendingOtelSpans(
   let prunedCount = 0;
   for (const entry of entries) {
     const oversized = JSON.stringify(entry).length > TELEMETRY_MAX_EVENT_BYTES;
-    if (oversized || isExpiredPendingOtelSpan(entry, cutoffMs) || entry.attempts >= TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS) {
+    if (
+      oversized ||
+      isExpiredPendingOtelSpan(entry, cutoffMs) ||
+      entry.attempts >= TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS
+    ) {
       prunedCount += 1;
       continue;
     }
@@ -1384,7 +1684,10 @@ function prunePendingOtelSpans(
   return { entries: retained, prunedCount };
 }
 
-async function rewritePendingOtelSpans(globalPmRoot: string, entries: PendingOtelSpan[]): Promise<void> {
+async function rewritePendingOtelSpans(
+  globalPmRoot: string,
+  entries: PendingOtelSpan[],
+): Promise<void> {
   const serialized = entries.map((entry) => JSON.stringify(entry)).join("\n");
   const contents = serialized.length > 0 ? `${serialized}\n` : "";
   for (let attempt = 0; ; attempt += 1) {
@@ -1401,26 +1704,16 @@ async function rewritePendingOtelSpans(globalPmRoot: string, entries: PendingOte
   }
 }
 
-/**
- * Drain the pending OTLP span queue and POST due spans to their traces endpoint.
- * Runs only inside the flush worker (detached child) or the inline test path, so
- * the foreground command never makes OTLP network calls. Failures increment
- * per-span attempts with backoff and are retried by a later flush; runtime state
- * records OTLP export diagnostics for `pm health` (GH-205).
- */
-/**
- * Re-read the spans queue under the mutation serializer and rewrite it with the
- * processed spans removed/updated by id, preserving any spans a concurrent
- * foreground process appended during the (network) flush window. `succeededIds`
- * are dropped; `failedUpdates` patch attempts/next_attempt_after by id; all other
- * (incl. newly-appended) entries are retained, then pruned. Returns the count of
- * spans left in the queue. Mirrors removeFlushedEntriesFromCurrentQueue.
- */
+/** Drain the pending OTLP span queue and POST due spans to their traces endpoint. Runs only inside the flush worker (detached child) or the inline test path, so the foreground command never makes OTLP network calls. Failures increment per-span attempts with backoff and are retried by a later flush; runtime state records OTLP export diagnostics for `pm health` (GH-205). */
+/** Re-read the spans queue under the mutation serializer and rewrite it with the processed spans removed/updated by id, preserving any spans a concurrent foreground process appended during the (network) flush window. `succeededIds` are dropped; `failedUpdates` patch attempts/next_attempt_after by id; all other (incl. newly-appended) entries are retained, then pruned. Returns the count of spans left in the queue. Mirrors removeFlushedEntriesFromCurrentQueue. */
 async function reconcilePendingOtelSpansAfterFlush(
   globalPmRoot: string,
   retentionDays: number,
   succeededIds: ReadonlySet<string>,
-  failedUpdates: ReadonlyMap<string, { attempts: number; next_attempt_after: string }>,
+  failedUpdates: ReadonlyMap<
+    string,
+    { attempts: number; next_attempt_after: string }
+  >,
 ): Promise<number> {
   return withQueueMutation(async () => {
     const raw = await readFileIfExists(otelSpansQueuePath(globalPmRoot));
@@ -1431,37 +1724,64 @@ async function reconcilePendingOtelSpansAfterFlush(
         continue;
       }
       const failure = failedUpdates.get(entry.id);
-      reconciled.push(failure ? { ...entry, attempts: failure.attempts, next_attempt_after: failure.next_attempt_after } : entry);
+      reconciled.push(
+        failure
+          ? {
+              ...entry,
+              attempts: failure.attempts,
+              next_attempt_after: failure.next_attempt_after,
+            }
+          : entry,
+      );
     }
-    const { entries: retained } = prunePendingOtelSpans(reconciled, retentionDays);
+    const { entries: retained } = prunePendingOtelSpans(
+      reconciled,
+      retentionDays,
+    );
     await rewritePendingOtelSpans(globalPmRoot, retained);
     return retained.length;
   });
 }
 
-async function flushPendingOtelSpans(globalPmRoot: string, retentionDays: number): Promise<void> {
+async function flushPendingOtelSpans(
+  globalPmRoot: string,
+  retentionDays: number,
+): Promise<void> {
   const raw = await readFileIfExists(otelSpansQueuePath(globalPmRoot));
   if (raw === null || raw.trim().length === 0) {
     await writeRuntimeState(globalPmRoot, { pending_otel_spans: 0 });
     return;
   }
   const entries = parsePendingOtelSpanLines(raw);
-  const { entries: retained, prunedCount } = prunePendingOtelSpans(entries, retentionDays);
-  const due = retained.filter((entry) => isDueForRetryAt(entry.next_attempt_after)).slice(
-    0,
-    TELEMETRY_OTEL_SPANS_FLUSH_BATCH_SIZE,
+  const { entries: retained, prunedCount } = prunePendingOtelSpans(
+    entries,
+    retentionDays,
   );
+  const due = retained
+    .filter((entry) => isDueForRetryAt(entry.next_attempt_after))
+    .slice(0, TELEMETRY_OTEL_SPANS_FLUSH_BATCH_SIZE);
   if (due.length === 0) {
     // Nothing to POST. Still reconcile so pruning persists, but only if pruning
     // actually changed the on-disk set (avoids a redundant rewrite each command).
-    const remaining = prunedCount > 0 ? await reconcilePendingOtelSpansAfterFlush(globalPmRoot, retentionDays, new Set(), new Map()) : retained.length;
+    const remaining =
+      prunedCount > 0
+        ? await reconcilePendingOtelSpansAfterFlush(
+            globalPmRoot,
+            retentionDays,
+            new Set(),
+            new Map(),
+          )
+        : retained.length;
     await writeRuntimeState(globalPmRoot, { pending_otel_spans: remaining });
     return;
   }
 
   const attemptTime = nowIso();
   const succeededIds = new Set<string>();
-  const failedUpdates = new Map<string, { attempts: number; next_attempt_after: string }>();
+  const failedUpdates = new Map<
+    string,
+    { attempts: number; next_attempt_after: string }
+  >();
   let succeededCount = 0;
   let lastError: string | undefined;
   // Export the batch concurrently so a slow/blackholed collector caps the worker
@@ -1483,14 +1803,25 @@ async function flushPendingOtelSpans(globalPmRoot: string, retentionDays: number
         succeededIds.add(span.id);
         succeededCount += 1;
       } catch (error: unknown) {
-        lastError = error instanceof Error ? sanitizeString(error.message, "redacted") : "local_otel_export_failed";
+        lastError =
+          error instanceof Error
+            ? sanitizeString(error.message, "redacted")
+            : "local_otel_export_failed";
         const nextAttempts = span.attempts + 1;
-        failedUpdates.set(span.id, { attempts: nextAttempts, next_attempt_after: nextRetryIso(nextAttempts) });
+        failedUpdates.set(span.id, {
+          attempts: nextAttempts,
+          next_attempt_after: nextRetryIso(nextAttempts),
+        });
       }
     }),
   );
 
-  const remaining = await reconcilePendingOtelSpansAfterFlush(globalPmRoot, retentionDays, succeededIds, failedUpdates);
+  const remaining = await reconcilePendingOtelSpansAfterFlush(
+    globalPmRoot,
+    retentionDays,
+    succeededIds,
+    failedUpdates,
+  );
   const statePatch: TelemetryRuntimeState = {
     pending_otel_spans: remaining,
     last_otel_attempt_at: attemptTime,
@@ -1511,13 +1842,12 @@ async function flushPendingOtelSpans(globalPmRoot: string, retentionDays: number
   await writeRuntimeState(globalPmRoot, statePatch);
 }
 
-/**
- * Flush both telemetry artifacts under the same worker invocation: the event
- * ingest queue and the pending OTLP span queue. Used by the detached flush
- * worker and the inline (test) path so OTLP export always happens off the
- * foreground command's critical path.
- */
-async function flushTelemetryArtifacts(globalPmRoot: string, endpoint: string, retentionDays: number): Promise<void> {
+/** Flush both telemetry artifacts under the same worker invocation: the event ingest queue and the pending OTLP span queue. Used by the detached flush worker and the inline (test) path so OTLP export always happens off the foreground command's critical path. */
+async function flushTelemetryArtifacts(
+  globalPmRoot: string,
+  endpoint: string,
+  retentionDays: number,
+): Promise<void> {
   // Isolate the two artifacts: a failure flushing the event queue (e.g. a corrupt
   // queue file) must not strand the OTLP span flush in the same pass, and vice
   // versa. Both are best effort and retried on the next dispatch.
@@ -1543,7 +1873,11 @@ async function cleanupTelemetryQueueTempOrphans(
     const cutoffMs = Date.now() - Math.max(0, maxAgeMs);
     await Promise.all(
       entries
-        .filter((entry) => entry.isFile() && /^\.events\.jsonl\.\d+\.\d+\.[a-f0-9]+\.tmp$/.test(entry.name))
+        .filter(
+          (entry) =>
+            entry.isFile() &&
+            /^\.events\.jsonl\.\d+\.\d+\.[a-f0-9]+\.tmp$/.test(entry.name),
+        )
         .map(async (entry) => {
           const candidate = path.join(dirPath, entry.name);
           const candidateStats = await stat(candidate);
@@ -1558,10 +1892,12 @@ async function cleanupTelemetryQueueTempOrphans(
 }
 
 async function withQueueMutation<T>(operation: () => Promise<T>): Promise<T> {
-  const run = _queueMutationPromise.catch(
-    /* c8 ignore next */
-    () => {},
-  ).then(operation);
+  const run = _queueMutationPromise
+    .catch(
+      /* c8 ignore next */
+      () => {},
+    )
+    .then(operation);
   _queueMutationPromise = run.catch(
     /* c8 ignore next */
     () => {},
@@ -1569,7 +1905,9 @@ async function withQueueMutation<T>(operation: () => Promise<T>): Promise<T> {
   return run;
 }
 
-async function readCurrentQueueEntries(globalPmRoot: string): Promise<QueuedTelemetryEvent[]> {
+async function readCurrentQueueEntries(
+  globalPmRoot: string,
+): Promise<QueuedTelemetryEvent[]> {
   const raw = await readFileIfExists(queuePath(globalPmRoot));
   if (raw === null || raw.trim().length === 0) {
     return [];
@@ -1584,8 +1922,13 @@ async function removeFlushedEntriesFromCurrentQueue(
 ): Promise<QueuedTelemetryEvent[]> {
   return withQueueMutation(async () => {
     const currentEntries = await readCurrentQueueEntries(globalPmRoot);
-    const { entries: retainedEntries } = pruneExpiredQueueEntries(currentEntries, retentionDays);
-    const remaining = retainedEntries.filter((entry) => !flushedIds.has(entry.event.event_id));
+    const { entries: retainedEntries } = pruneExpiredQueueEntries(
+      currentEntries,
+      retentionDays,
+    );
+    const remaining = retainedEntries.filter(
+      (entry) => !flushedIds.has(entry.event.event_id),
+    );
     await rewriteQueue(globalPmRoot, remaining);
     return remaining;
   });
@@ -1599,7 +1942,10 @@ async function markFailedEntriesInCurrentQueue(
 ): Promise<QueuedTelemetryEvent[]> {
   return withQueueMutation(async () => {
     const currentEntries = await readCurrentQueueEntries(globalPmRoot);
-    const { entries: retainedEntries } = pruneExpiredQueueEntries(currentEntries, retentionDays);
+    const { entries: retainedEntries } = pruneExpiredQueueEntries(
+      currentEntries,
+      retentionDays,
+    );
     const retried = retainedEntries.map((entry) => {
       if (!failedIds.has(entry.event.event_id)) {
         return entry;
@@ -1617,7 +1963,11 @@ async function markFailedEntriesInCurrentQueue(
   });
 }
 
-async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays: number): Promise<void> {
+async function flushQueue(
+  globalPmRoot: string,
+  endpoint: string,
+  retentionDays: number,
+): Promise<void> {
   await cleanupTelemetryQueueTempOrphans(globalPmRoot);
   const normalizedEndpoint = endpoint.trim();
   if (normalizedEndpoint.length === 0) {
@@ -1639,7 +1989,10 @@ async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays:
     });
     return;
   }
-  const { entries: retainedEntries, prunedCount } = pruneExpiredQueueEntries(queueEntries, retentionDays);
+  const { entries: retainedEntries, prunedCount } = pruneExpiredQueueEntries(
+    queueEntries,
+    retentionDays,
+  );
   if (retainedEntries.length === 0) {
     await rewriteQueue(globalPmRoot, []);
     await writeRuntimeState(globalPmRoot, {
@@ -1648,7 +2001,9 @@ async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays:
     });
     return;
   }
-  const dueEntries = retainedEntries.filter((entry) => isDueForRetry(entry)).slice(0, TELEMETRY_FLUSH_BATCH_SIZE);
+  const dueEntries = retainedEntries
+    .filter((entry) => isDueForRetry(entry))
+    .slice(0, TELEMETRY_FLUSH_BATCH_SIZE);
   if (dueEntries.length === 0) {
     if (prunedCount > 0) {
       await rewriteQueue(globalPmRoot, retainedEntries);
@@ -1683,7 +2038,12 @@ async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays:
       throw new Error(`telemetry_flush_http_${response.status}`);
     }
   } catch (error: unknown) {
-    const retried = await markFailedEntriesInCurrentQueue(globalPmRoot, dueIds, attemptTime, retentionDays);
+    const retried = await markFailedEntriesInCurrentQueue(
+      globalPmRoot,
+      dueIds,
+      attemptTime,
+      retentionDays,
+    );
     const errorMessage = (() => {
       if (error instanceof Error) {
         return sanitizeString(error.message, "redacted");
@@ -1701,7 +2061,11 @@ async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays:
   }
 
   try {
-    const remaining = await removeFlushedEntriesFromCurrentQueue(globalPmRoot, dueIds, retentionDays);
+    const remaining = await removeFlushedEntriesFromCurrentQueue(
+      globalPmRoot,
+      dueIds,
+      retentionDays,
+    );
     await writeRuntimeState(globalPmRoot, {
       endpoint: normalizedEndpoint,
       queue_entries: remaining.length,
@@ -1710,7 +2074,7 @@ async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays:
       last_failed_flush_at: undefined,
       last_failed_flush_error: undefined,
     });
-  /* c8 ignore start */
+    /* c8 ignore start */
   } catch (error: unknown) {
     const errorMessage = (() => {
       if (error instanceof Error) {
@@ -1718,7 +2082,9 @@ async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays:
       }
       return "telemetry_flush_failed";
     })();
-    const currentEntries = await readCurrentQueueEntries(globalPmRoot).catch(() => retainedEntries);
+    const currentEntries = await readCurrentQueueEntries(globalPmRoot).catch(
+      () => retainedEntries,
+    );
     await writeRuntimeState(globalPmRoot, {
       endpoint: normalizedEndpoint,
       queue_entries: currentEntries.length,
@@ -1730,14 +2096,21 @@ async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays:
   /* c8 ignore stop */
 }
 
-async function acquireTelemetryFlushLock(globalPmRoot: string): Promise<boolean> {
+async function acquireTelemetryFlushLock(
+  globalPmRoot: string,
+): Promise<boolean> {
   const lockPath = flushLockPath(globalPmRoot);
   await mkdir(path.dirname(lockPath), { recursive: true });
   try {
     await mkdir(lockPath);
     return true;
   } catch (error: unknown) {
-    if (typeof error !== "object" || error === null || !("code" in error) || (error as { code?: unknown }).code !== "EEXIST") {
+    if (
+      typeof error !== "object" ||
+      error === null ||
+      !("code" in error) ||
+      (error as { code?: unknown }).code !== "EEXIST"
+    ) {
       throw error;
     }
   }
@@ -1805,13 +2178,21 @@ function createDirectoryLock(lockPath: string): boolean {
 }
 
 function acquireTelemetryFlushSpawnGate(globalPmRoot: string): boolean {
-  if (isFreshDirectoryLock(flushLockPath(globalPmRoot), TELEMETRY_FLUSH_LOCK_STALE_MS)) {
+  if (
+    isFreshDirectoryLock(
+      flushLockPath(globalPmRoot),
+      TELEMETRY_FLUSH_LOCK_STALE_MS,
+    )
+  ) {
     return false;
   }
 
   const lockPath = flushSpawnLockPath(globalPmRoot);
   try {
-    if (Date.now() - statSync(lockPath).mtimeMs < TELEMETRY_FLUSH_SPAWN_LOCK_STALE_MS) {
+    if (
+      Date.now() - statSync(lockPath).mtimeMs <
+      TELEMETRY_FLUSH_SPAWN_LOCK_STALE_MS
+    ) {
       return false;
     }
     removeDirectoryLockBestEffort(lockPath);
@@ -1828,6 +2209,7 @@ function releaseTelemetryFlushSpawnGate(globalPmRoot: string): void {
   removeDirectoryLockBestEffort(flushSpawnLockPath(globalPmRoot));
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   acquireTelemetryFlushSpawnGate,
   acquireTelemetryFlushLock,
@@ -1894,7 +2276,11 @@ export const _testOnly = {
   writeRuntimeState,
 };
 
-async function flushQueueWithProcessLock(globalPmRoot: string, endpoint: string, retentionDays: number): Promise<void> {
+async function flushQueueWithProcessLock(
+  globalPmRoot: string,
+  endpoint: string,
+  retentionDays: number,
+): Promise<void> {
   const acquired = await acquireTelemetryFlushLock(globalPmRoot);
   releaseTelemetryFlushSpawnGate(globalPmRoot);
   if (!acquired) {
@@ -1911,11 +2297,21 @@ async function flushQueueWithProcessLock(globalPmRoot: string, endpoint: string,
   }
 }
 
-function scheduleTelemetryFlush(globalPmRoot: string, endpoint: string, retentionDays: number): void {
+function scheduleTelemetryFlush(
+  globalPmRoot: string,
+  endpoint: string,
+  retentionDays: number,
+): void {
   if (shouldFlushInline()) {
     const previousFlush = _lastFlushPromise;
-    const nextFlush = flushTelemetryArtifacts(globalPmRoot, endpoint, retentionDays);
-    _lastFlushPromise = Promise.allSettled([previousFlush, nextFlush]).then(() => {});
+    const nextFlush = flushTelemetryArtifacts(
+      globalPmRoot,
+      endpoint,
+      retentionDays,
+    );
+    _lastFlushPromise = Promise.allSettled([previousFlush, nextFlush]).then(
+      () => {},
+    );
     return;
   }
 
@@ -1952,10 +2348,10 @@ function scheduleTelemetryFlush(globalPmRoot: string, endpoint: string, retentio
   }
 }
 
-/**
- * Implements flush telemetry queue now for the public runtime surface of this module.
- */
-export async function flushTelemetryQueueNow(globalPmRoot = resolveGlobalPmRoot(process.cwd())): Promise<void> {
+/** Implements flush telemetry queue now for the public runtime surface of this module. */
+export async function flushTelemetryQueueNow(
+  globalPmRoot = resolveGlobalPmRoot(process.cwd()),
+): Promise<void> {
   if (telemetryDisabledByEnvironment()) {
     return;
   }
@@ -1964,17 +2360,18 @@ export async function flushTelemetryQueueNow(globalPmRoot = resolveGlobalPmRoot(
     if (!settings.telemetry.enabled) {
       return;
     }
-    const { endpoint, retentionDays } = await ensureInstallationId(globalPmRoot);
+    const { endpoint, retentionDays } =
+      await ensureInstallationId(globalPmRoot);
     await flushQueueWithProcessLock(globalPmRoot, endpoint, retentionDays);
   } catch {
     // Telemetry workers are best effort and must never fail user commands.
   }
 }
 
-/**
- * Implements start telemetry command for the public runtime surface of this module.
- */
-export async function startTelemetryCommand(context: TelemetryCommandContext): Promise<ActiveTelemetryCommand | null> {
+/** Implements start telemetry command for the public runtime surface of this module. */
+export async function startTelemetryCommand(
+  context: TelemetryCommandContext,
+): Promise<ActiveTelemetryCommand | null> {
   if (telemetryDisabledByEnvironment()) {
     return null;
   }
@@ -1990,8 +2387,11 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
     if (!settings.telemetry.enabled) {
       return null;
     }
-    const captureLevel = normalizeCaptureLevel(settings.telemetry.capture_level);
-    const { installationId, endpoint, retentionDays } = await ensureInstallationId(globalPmRoot);
+    const captureLevel = normalizeCaptureLevel(
+      settings.telemetry.capture_level,
+    );
+    const { installationId, endpoint, retentionDays } =
+      await ensureInstallationId(globalPmRoot);
     const pmVersion = normalizePmVersion(context.pm_version);
     const sourceContext = resolveTelemetrySourceContext(context.global);
     const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
@@ -2035,8 +2435,12 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
       global_pm_root: globalPmRoot,
       capture_level: captureLevel,
       otel_traces_endpoint: otelTracesEndpoint ?? undefined,
-      otel_trace_id: otelTracesEndpoint ? crypto.randomBytes(16).toString("hex") : undefined,
-      otel_span_id: otelTracesEndpoint ? crypto.randomBytes(8).toString("hex") : undefined,
+      otel_trace_id: otelTracesEndpoint
+        ? crypto.randomBytes(16).toString("hex")
+        : undefined,
+      otel_span_id: otelTracesEndpoint
+        ? crypto.randomBytes(8).toString("hex")
+        : undefined,
     };
   } catch {
     // Telemetry must never block command execution.
@@ -2044,9 +2448,7 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
   }
 }
 
-/**
- * Implements finish telemetry command for the public runtime surface of this module.
- */
+/** Implements finish telemetry command for the public runtime surface of this module. */
 export async function finishTelemetryCommand(
   activeCommand: ActiveTelemetryCommand | null,
   outcome: TelemetryCommandOutcome,
@@ -2070,7 +2472,10 @@ export async function finishTelemetryCommand(
       errorCode: normalizedErrorCode,
       errorCategory: outcome.error_category,
     });
-    const normalizedExitCode = normalizeTelemetryExitCode(outcome.exit_code, outcome.ok);
+    const normalizedExitCode = normalizeTelemetryExitCode(
+      outcome.exit_code,
+      outcome.ok,
+    );
     const commandResolution =
       outcome.command_resolution ??
       deriveTelemetryCommandResolution({
@@ -2125,16 +2530,20 @@ export async function finishTelemetryCommand(
       // unreachable (GH-209).
       await enqueuePendingOtelSpan(activeCommand.global_pm_root, otelRequest);
     }
-    scheduleTelemetryFlush(activeCommand.global_pm_root, activeCommand.endpoint, activeCommand.retention_days);
+    scheduleTelemetryFlush(
+      activeCommand.global_pm_root,
+      activeCommand.endpoint,
+      activeCommand.retention_days,
+    );
   } catch {
     // Telemetry must never block command execution.
   }
 }
 
-/**
- * Implements emit telemetry error event for the public runtime surface of this module.
- */
-export async function emitTelemetryErrorEvent(context: TelemetryErrorEventContext): Promise<void> {
+/** Implements emit telemetry error event for the public runtime surface of this module. */
+export async function emitTelemetryErrorEvent(
+  context: TelemetryErrorEventContext,
+): Promise<void> {
   if (telemetryDisabledByEnvironment()) {
     return;
   }
@@ -2144,26 +2553,33 @@ export async function emitTelemetryErrorEvent(context: TelemetryErrorEventContex
     if (!settings.telemetry.enabled) {
       return;
     }
-    const captureLevel = normalizeCaptureLevel(settings.telemetry.capture_level);
-    const { installationId, endpoint, retentionDays } = await ensureInstallationId(globalPmRoot);
+    const captureLevel = normalizeCaptureLevel(
+      settings.telemetry.capture_level,
+    );
+    const { installationId, endpoint, retentionDays } =
+      await ensureInstallationId(globalPmRoot);
     const pmVersion = normalizePmVersion(context.pm_version);
     const sourceContext = resolveTelemetrySourceContext(context.global);
     const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
     const cwdHash = hashWithInstallationId(installationId, process.cwd());
     const occurredAt = nowIso();
-    const normalizedErrorCode =
-      normalizeTelemetryErrorCode(
-        inferTelemetryErrorCode({
-          ok: false,
-          errorCode: context.error_code,
-          errorMessage: context.error_message,
-          exitCode: context.exit_code,
-        }),
-      ) as string;
+    const normalizedErrorCode = normalizeTelemetryErrorCode(
+      inferTelemetryErrorCode({
+        ok: false,
+        errorCode: context.error_code,
+        errorMessage: context.error_message,
+        exitCode: context.exit_code,
+      }),
+    ) as string;
     const normalizedErrorCategory =
-      context.error_category ?? resolveTelemetryErrorCategory(normalizedErrorCode);
-    const normalizedExitCode = normalizeTelemetryExitCode(context.exit_code, false);
-    const normalizedCommand = context.command.trim().length > 0 ? context.command : "<unknown>";
+      context.error_category ??
+      resolveTelemetryErrorCategory(normalizedErrorCode);
+    const normalizedExitCode = normalizeTelemetryExitCode(
+      context.exit_code,
+      false,
+    );
+    const normalizedCommand =
+      context.command.trim().length > 0 ? context.command : "<unknown>";
     const commandTaxonomy = deriveTelemetryCommandTaxonomy(normalizedCommand);
     const commandResolution =
       context.command_resolution ??

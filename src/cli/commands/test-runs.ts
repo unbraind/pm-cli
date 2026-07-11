@@ -21,14 +21,31 @@ import {
   startBackgroundTestRun,
   stopBackgroundTestRun,
 } from "../../core/test/background-runs.js";
-import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
+import {
+  getSettingsPath,
+  resolveGlobalPmRoot,
+  resolvePmRoot,
+} from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { parseLimit } from "../shared-parsers.js";
 
-const BACKGROUND_STATUS_VALUES: readonly BackgroundTestRunStatus[] = ["queued", "running", "passed", "failed", "stopped", "canceled"];
-const BACKGROUND_STREAM_VALUES: readonly BackgroundLogStream[] = ["stdout", "stderr", "both"];
+const BACKGROUND_STATUS_VALUES: readonly BackgroundTestRunStatus[] = [
+  "queued",
+  "running",
+  "passed",
+  "failed",
+  "stopped",
+  "canceled",
+];
+const BACKGROUND_STREAM_VALUES: readonly BackgroundLogStream[] = [
+  "stdout",
+  "stderr",
+  "both",
+];
 
-function normalizeStatus(value: string | undefined): BackgroundTestRunStatus | undefined {
+function normalizeStatus(
+  value: string | undefined,
+): BackgroundTestRunStatus | undefined {
   if (value === undefined) {
     return undefined;
   }
@@ -62,7 +79,10 @@ function resolveWhoamiFallback(): string | undefined {
   return undefined;
 }
 
-function resolveRequestedBy(author: string | undefined, fallback: string): string {
+function resolveRequestedBy(
+  author: string | undefined,
+  fallback: string,
+): string {
   const candidates = [
     author,
     process.env.PM_AUTHOR,
@@ -86,34 +106,40 @@ function resolveRequestedBy(author: string | undefined, fallback: string): strin
 
 async function ensureInitialized(pmRoot: string): Promise<void> {
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 }
 
-/**
- * Documents the start background run command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the start background run command options payload exchanged by command, SDK, and package integrations. */
 export interface StartBackgroundRunCommandOptions {
+  /** Value that configures or reports kind for this contract. */
   kind: BackgroundTestRunKind;
+  /** Value that configures or reports command args for this contract. */
   commandArgs: string[];
+  /** Value that configures or reports target id for this contract. */
   targetId?: string;
+  /** Value that configures or reports status filter for this contract. */
   statusFilter?: string;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Value that configures or reports no extensions for this contract. */
   noExtensions?: boolean;
 }
 
-/**
- * Documents the start background run result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the start background run result payload exchanged by command, SDK, and package integrations. */
 export interface StartBackgroundRunResult {
+  /** Value that configures or reports started for this contract. */
   started: boolean;
+  /** Value that configures or reports duplicate of for this contract. */
   duplicate_of?: string;
+  /** Value that configures or reports run for this contract. */
   run: unknown;
 }
 
-/**
- * Implements run start background run for the public runtime surface of this module.
- */
+/** Implements run start background run for the public runtime surface of this module. */
 export async function runStartBackgroundRun(
   options: StartBackgroundRunCommandOptions,
   global: GlobalOptions,
@@ -122,7 +148,10 @@ export async function runStartBackgroundRun(
   const globalPmRoot = resolveGlobalPmRoot(process.cwd());
   await ensureInitialized(pmRoot);
   const settings = await readSettings(pmRoot);
-  const requestedBy = resolveRequestedBy(options.author, settings.author_default);
+  const requestedBy = resolveRequestedBy(
+    options.author,
+    settings.author_default,
+  );
   const started = await startBackgroundTestRun({
     pmRoot,
     globalPmRoot,
@@ -150,18 +179,19 @@ export async function runStartBackgroundRun(
   };
 }
 
-/**
- * Documents the test runs list command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the test runs list command options payload exchanged by command, SDK, and package integrations. */
 export interface TestRunsListCommandOptions {
+  /** Lifecycle state reported for status. */
   status?: string;
+  /** Value that configures or reports limit for this contract. */
   limit?: string;
 }
 
-/**
- * Implements run test runs list for the public runtime surface of this module.
- */
-export async function runTestRunsList(options: TestRunsListCommandOptions, global: GlobalOptions): Promise<{
+/** Implements run test runs list for the public runtime surface of this module. */
+export async function runTestRunsList(
+  options: TestRunsListCommandOptions,
+  global: GlobalOptions,
+): Promise<{
   runs: unknown[];
   count: number;
   filters: {
@@ -184,10 +214,11 @@ export async function runTestRunsList(options: TestRunsListCommandOptions, globa
   };
 }
 
-/**
- * Implements run test runs status for the public runtime surface of this module.
- */
-export async function runTestRunsStatus(runId: string, global: GlobalOptions): Promise<{
+/** Implements run test runs status for the public runtime surface of this module. */
+export async function runTestRunsStatus(
+  runId: string,
+  global: GlobalOptions,
+): Promise<{
   run: unknown;
   health: unknown;
 }> {
@@ -200,17 +231,15 @@ export async function runTestRunsStatus(runId: string, global: GlobalOptions): P
   };
 }
 
-/**
- * Documents the test runs logs command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the test runs logs command options payload exchanged by command, SDK, and package integrations. */
 export interface TestRunsLogsCommandOptions {
+  /** Value that configures or reports stream for this contract. */
   stream?: string;
+  /** Value that configures or reports tail for this contract. */
   tail?: string;
 }
 
-/**
- * Implements run test runs logs for the public runtime surface of this module.
- */
+/** Implements run test runs logs for the public runtime surface of this module. */
 export async function runTestRunsLogs(
   runId: string,
   options: TestRunsLogsCommandOptions,
@@ -236,16 +265,13 @@ export async function runTestRunsLogs(
   };
 }
 
-/**
- * Documents the test runs stop command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the test runs stop command options payload exchanged by command, SDK, and package integrations. */
 export interface TestRunsStopCommandOptions {
+  /** Value that configures or reports force for this contract. */
   force?: boolean;
 }
 
-/**
- * Implements run test runs stop for the public runtime surface of this module.
- */
+/** Implements run test runs stop for the public runtime surface of this module. */
 export async function runTestRunsStop(
   runId: string,
   options: TestRunsStopCommandOptions,
@@ -256,24 +282,26 @@ export async function runTestRunsStop(
 }> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureInitialized(pmRoot);
-  const stopped = await stopBackgroundTestRun(pmRoot, runId, options.force === true);
+  const stopped = await stopBackgroundTestRun(
+    pmRoot,
+    runId,
+    options.force === true,
+  );
   return {
     run: stopped.run,
     signal_sent: stopped.signal_sent,
   };
 }
 
-/**
- * Documents the test runs resume command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the test runs resume command options payload exchanged by command, SDK, and package integrations. */
 export interface TestRunsResumeCommandOptions {
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Value that configures or reports no extensions for this contract. */
   noExtensions?: boolean;
 }
 
-/**
- * Implements run test runs resume for the public runtime surface of this module.
- */
+/** Implements run test runs resume for the public runtime surface of this module. */
 export async function runTestRunsResume(
   runId: string,
   options: TestRunsResumeCommandOptions,
@@ -285,25 +313,38 @@ export async function runTestRunsResume(
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureInitialized(pmRoot);
   const settings = await readSettings(pmRoot);
-  const requestedBy = resolveRequestedBy(options.author, settings.author_default);
-  const resumed = await resumeBackgroundTestRun(pmRoot, runId, requestedBy, options.noExtensions === true);
+  const requestedBy = resolveRequestedBy(
+    options.author,
+    settings.author_default,
+  );
+  const resumed = await resumeBackgroundTestRun(
+    pmRoot,
+    runId,
+    requestedBy,
+    options.noExtensions === true,
+  );
   return {
     resumed_from: runId,
     run: resumed,
   };
 }
 
-/**
- * Implements run test runs worker for the public runtime surface of this module.
- */
-export async function runTestRunsWorker(runId: string, global: GlobalOptions): Promise<{
+/** Implements run test runs worker for the public runtime surface of this module. */
+export async function runTestRunsWorker(
+  runId: string,
+  global: GlobalOptions,
+): Promise<{
   id: string;
   status: BackgroundTestRunStatus;
   exit_code?: number;
 }> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureInitialized(pmRoot);
-  const finished = await runBackgroundTestRunWorker(pmRoot, runId, global.noExtensions === true);
+  const finished = await runBackgroundTestRunWorker(
+    pmRoot,
+    runId,
+    global.noExtensions === true,
+  );
   return {
     id: finished.id,
     status: finished.status,

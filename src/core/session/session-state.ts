@@ -18,26 +18,27 @@ import { getRuntimePath } from "../store/paths.js";
  * stale or hand-edited file never blocks a command.
  */
 export interface SessionState {
+  /** Value that configures or reports focused item for this contract. */
   focused_item?: string;
 }
 
 const SESSION_FILENAME = "session.json";
 
-/**
- * Implements get session state path for the public runtime surface of this module.
- */
+/** Implements get session state path for the public runtime surface of this module. */
 export function getSessionStatePath(pmRoot: string): string {
   return path.join(getRuntimePath(pmRoot), SESSION_FILENAME);
 }
 
-/**
- * Implements read session state for the public runtime surface of this module.
- */
+/** Implements read session state for the public runtime surface of this module. */
 export async function readSessionState(pmRoot: string): Promise<SessionState> {
   try {
     const raw = await fs.readFile(getSessionStatePath(pmRoot), "utf8");
     const parsed = JSON.parse(raw) as unknown;
-    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    if (
+      parsed === null ||
+      typeof parsed !== "object" ||
+      Array.isArray(parsed)
+    ) {
       return {};
     }
     const focused = (parsed as Record<string, unknown>).focused_item;
@@ -50,31 +51,33 @@ export async function readSessionState(pmRoot: string): Promise<SessionState> {
   }
 }
 
-async function writeSessionState(pmRoot: string, state: SessionState): Promise<void> {
+async function writeSessionState(
+  pmRoot: string,
+  state: SessionState,
+): Promise<void> {
   const target = getSessionStatePath(pmRoot);
   await fs.mkdir(path.dirname(target), { recursive: true });
   await writeFileAtomic(target, JSON.stringify(state));
 }
 
-/**
- * Implements get focused item for the public runtime surface of this module.
- */
-export async function getFocusedItem(pmRoot: string): Promise<string | undefined> {
+/** Implements get focused item for the public runtime surface of this module. */
+export async function getFocusedItem(
+  pmRoot: string,
+): Promise<string | undefined> {
   const state = await readSessionState(pmRoot);
   return state.focused_item;
 }
 
-/**
- * Implements set focused item for the public runtime surface of this module.
- */
-export async function setFocusedItem(pmRoot: string, id: string): Promise<void> {
+/** Implements set focused item for the public runtime surface of this module. */
+export async function setFocusedItem(
+  pmRoot: string,
+  id: string,
+): Promise<void> {
   const state = await readSessionState(pmRoot);
   await writeSessionState(pmRoot, { ...state, focused_item: id });
 }
 
-/**
- * Implements clear focused item for the public runtime surface of this module.
- */
+/** Implements clear focused item for the public runtime surface of this module. */
 export async function clearFocusedItem(pmRoot: string): Promise<void> {
   const state = await readSessionState(pmRoot);
   const next: SessionState = { ...state };

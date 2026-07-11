@@ -6,25 +6,39 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runActiveOnWriteHooks } from "../extensions/index.js";
-import { readFileIfExists, removeFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
-import { parseItemDocument, serializeItemDocument } from "../item/item-format.js";
+import {
+  readFileIfExists,
+  removeFileIfExists,
+  writeFileAtomic,
+} from "../fs/fs-utils.js";
+import {
+  parseItemDocument,
+  serializeItemDocument,
+} from "../item/item-format.js";
 import { TYPE_TO_FOLDER } from "../shared/constants.js";
 import { getItemFormatFromPath, getItemPath } from "./paths.js";
-import type { ItemFormat, ItemType, RuntimeSchemaSettings } from "../../types/index.js";
+import type {
+  ItemFormat,
+  ItemType,
+  RuntimeSchemaSettings,
+} from "../../types/index.js";
 
 interface ItemPathVariants {
   json_markdown?: string;
   toon?: string;
 }
 
-/**
- * Documents the item format migration result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the item format migration result payload exchanged by command, SDK, and package integrations. */
 export interface ItemFormatMigrationResult {
+  /** Value that configures or reports target format for this contract. */
   target_format: ItemFormat;
+  /** Value that configures or reports scanned for this contract. */
   scanned: number;
+  /** Value that configures or reports migrated for this contract. */
   migrated: string[];
+  /** Value that configures or reports removed for this contract. */
   removed: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
@@ -37,12 +51,12 @@ function normalizeRelativePath(pmRoot: string, absolutePath: string): string {
 }
 
 function errorSummary(error: unknown): string {
-  return String(error).replaceAll(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120);
+  return String(error)
+    .replaceAll(/[^a-zA-Z0-9._-]+/g, "_")
+    .slice(0, 120);
 }
 
-/**
- * Implements migrate item files to format for the public runtime surface of this module.
- */
+/** Implements migrate item files to format for the public runtime surface of this module. */
 export async function migrateItemFilesToFormat(
   pmRoot: string,
   targetFormat: ItemFormat,
@@ -51,7 +65,9 @@ export async function migrateItemFilesToFormat(
   schema?: RuntimeSchemaSettings,
 ): Promise<ItemFormatMigrationResult> {
   if (targetFormat !== "toon") {
-    throw new Error("Only toon item-format migration targets are supported. Markdown item files are legacy read-only input.");
+    throw new Error(
+      "Only toon item-format migration targets are supported. Markdown item files are legacy read-only input.",
+    );
   }
   const migratedIds = new Set<string>();
   const removedPaths = new Set<string>();
@@ -86,7 +102,9 @@ export async function migrateItemFilesToFormat(
       variantsById.set(itemId, entry);
     }
 
-    const itemIds = [...variantsById.keys()].sort((left, right) => left.localeCompare(right));
+    const itemIds = [...variantsById.keys()].sort((left, right) =>
+      left.localeCompare(right),
+    );
     for (const itemId of itemIds) {
       const variants = variantsById.get(itemId) as ItemPathVariants;
       scanned += 1;
@@ -100,16 +118,29 @@ export async function migrateItemFilesToFormat(
         continue;
       }
       const sourcePath = variants[targetFormat] ?? alternatePath;
-      const sourceFormat = sourcePath === variants[targetFormat] ? targetFormat : alternateFormat;
+      const sourceFormat =
+        sourcePath === variants[targetFormat] ? targetFormat : alternateFormat;
       try {
         const sourceRaw = await fs.readFile(sourcePath, "utf8");
         const parsedDocument = parseItemDocument(sourceRaw, {
           format: sourceFormat,
           schema,
-          onWarning: (warning) => warnings.push(`item_format_migration_parse_warning:${itemId}:${warning}`),
+          onWarning: (warning) =>
+            warnings.push(
+              `item_format_migration_parse_warning:${itemId}:${warning}`,
+            ),
         });
-        const targetPath = getItemPath(pmRoot, itemType, itemId, targetFormat, typeToFolder);
-        const serializedTarget = serializeItemDocument(parsedDocument, { format: targetFormat, schema });
+        const targetPath = getItemPath(
+          pmRoot,
+          itemType,
+          itemId,
+          targetFormat,
+          typeToFolder,
+        );
+        const serializedTarget = serializeItemDocument(parsedDocument, {
+          format: targetFormat,
+          schema,
+        });
         const existingTargetRaw = await readFileIfExists(targetPath);
         if (existingTargetRaw !== serializedTarget) {
           await writeFileAtomic(targetPath, serializedTarget);

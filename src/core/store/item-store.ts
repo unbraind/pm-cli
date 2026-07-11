@@ -14,29 +14,55 @@ import {
   runActiveServiceOverride,
 } from "../extensions/index.js";
 import { collectRegisteredItemFieldNames } from "../extensions/item-fields.js";
-import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE, TYPE_TO_FOLDER } from "../shared/constants.js";
+import {
+  EMPTY_CANONICAL_DOCUMENT,
+  EXIT_CODE,
+  TYPE_TO_FOLDER,
+} from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { levenshteinDistanceWithinLimit } from "../shared/levenshtein.js";
 import { appendHistoryEntry, createHistoryEntry } from "../history/history.js";
 import { enforceHistoryStreamPolicyForItem } from "../history/history-stream-policy.js";
-import { canonicalDocument, parseItemDocument, serializeItemDocument } from "../item/item-format.js";
+import {
+  canonicalDocument,
+  parseItemDocument,
+  serializeItemDocument,
+} from "../item/item-format.js";
 import { resolveItemTypeRegistry } from "../item/type-registry.js";
 import { acquireLock } from "../lock/lock.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { normalizeItemId, normalizeRawItemId } from "../item/id.js";
-import { listAllDocumentCandidatesCached, listAllDocumentsCached, listAllDocumentsCachedLight } from "./front-matter-cache.js";
-import { getHistoryPath, getItemFormatFromPath, getItemPath, ITEM_FILE_EXTENSIONS } from "./paths.js";
+import {
+  listAllDocumentCandidatesCached,
+  listAllDocumentsCached,
+  listAllDocumentsCachedLight,
+} from "./front-matter-cache.js";
+import {
+  getHistoryPath,
+  getItemFormatFromPath,
+  getItemPath,
+  ITEM_FILE_EXTENSIONS,
+} from "./paths.js";
 import { resolveGovernanceKnobs } from "./settings.js";
 import { nowIso } from "../shared/time.js";
-import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemType, PmSettings, RuntimeSchemaSettings } from "../../types/index.js";
+import type {
+  ItemDocument,
+  ItemFormat,
+  ItemFrontMatter,
+  ItemType,
+  PmSettings,
+  RuntimeSchemaSettings,
+} from "../../types/index.js";
 
-/**
- * Documents the located item payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the located item payload exchanged by command, SDK, and package integrations. */
 export interface LocatedItem {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Schema type that determines the shape and validation rules for this value. */
   type: ItemType;
+  /** Filesystem path used for item resolution. */
   itemPath: string;
+  /** Value that configures or reports item format for this contract. */
   item_format: ItemFormat;
 }
 
@@ -50,7 +76,12 @@ async function fileExists(targetPath: string): Promise<boolean> {
 }
 
 function isErrno(error: unknown, code: string): boolean {
-  return typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === code;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === code
+  );
 }
 
 function appendWarning(warnings: string[] | undefined, warning: string): void {
@@ -62,11 +93,18 @@ function appendWarning(warnings: string[] | undefined, warning: string): void {
   }
 }
 
-function resolveActiveExtensionFieldNames(explicit: readonly string[] | undefined): readonly string[] {
-  return explicit ?? collectRegisteredItemFieldNames(getActiveExtensionRegistrations());
+function resolveActiveExtensionFieldNames(
+  explicit: readonly string[] | undefined,
+): readonly string[] {
+  return (
+    explicit ??
+    collectRegisteredItemFieldNames(getActiveExtensionRegistrations())
+  );
 }
 
-function resolveItemFormatSearchOrder(preferredFormat?: ItemFormat): ItemFormat[] {
+function resolveItemFormatSearchOrder(
+  preferredFormat?: ItemFormat,
+): ItemFormat[] {
   if (preferredFormat === "toon") {
     return ["toon", "json_markdown"];
   }
@@ -76,9 +114,7 @@ function resolveItemFormatSearchOrder(preferredFormat?: ItemFormat): ItemFormat[
   return ["toon", "json_markdown"];
 }
 
-/**
- * Implements locate item for the public runtime surface of this module.
- */
+/** Implements locate item for the public runtime surface of this module. */
 export async function locateItem(
   pmRoot: string,
   rawId: string,
@@ -88,13 +124,22 @@ export async function locateItem(
 ): Promise<LocatedItem | null> {
   const normalizedId = normalizeItemId(rawId, idPrefix);
   const rawNormalizedId = normalizeRawItemId(rawId);
-  const candidateIds = normalizedId === rawNormalizedId ? [normalizedId] : [normalizedId, rawNormalizedId];
+  const candidateIds =
+    normalizedId === rawNormalizedId
+      ? [normalizedId]
+      : [normalizedId, rawNormalizedId];
   const entries = Object.entries(typeToFolder) as Array<[ItemType, string]>;
   const searchOrder = resolveItemFormatSearchOrder(preferredFormat);
   for (const candidateId of candidateIds) {
     for (const [type] of entries) {
       for (const itemFormat of searchOrder) {
-        const itemPath = getItemPath(pmRoot, type, candidateId, itemFormat, typeToFolder);
+        const itemPath = getItemPath(
+          pmRoot,
+          type,
+          candidateId,
+          itemFormat,
+          typeToFolder,
+        );
         if (await fileExists(itemPath)) {
           return {
             id: candidateId,
@@ -109,12 +154,14 @@ export async function locateItem(
   return null;
 }
 
-/**
- * Implements read located item for the public runtime surface of this module.
- */
+/** Implements read located item for the public runtime surface of this module. */
 export async function readLocatedItem(
   item: LocatedItem,
-  options: { schema?: RuntimeSchemaSettings; extensionFieldNames?: readonly string[]; warnings?: string[] } = {},
+  options: {
+    schema?: RuntimeSchemaSettings;
+    extensionFieldNames?: readonly string[];
+    warnings?: string[];
+  } = {},
 ): Promise<{ raw: string; document: ItemDocument }> {
   const raw = await fs.readFile(item.itemPath, "utf8");
   await runActiveOnReadHooks({
@@ -124,15 +171,15 @@ export async function readLocatedItem(
   const document = parseItemDocument(raw, {
     format: item.item_format,
     schema: options.schema,
-    extensionFieldNames: resolveActiveExtensionFieldNames(options.extensionFieldNames),
+    extensionFieldNames: resolveActiveExtensionFieldNames(
+      options.extensionFieldNames,
+    ),
     onWarning: (warning) => appendWarning(options.warnings, warning),
   });
   return { raw, document };
 }
 
-/**
- * Implements list all front matter for the public runtime surface of this module.
- */
+/** Implements list all front matter for the public runtime surface of this module. */
 export async function listAllFrontMatter(
   pmRoot: string,
   preferredFormat?: ItemFormat,
@@ -140,7 +187,13 @@ export async function listAllFrontMatter(
   warnings?: string[],
   schema?: RuntimeSchemaSettings,
 ): Promise<ItemFrontMatter[]> {
-  const documents = await listAllDocumentsCached(pmRoot, preferredFormat, typeToFolder, warnings, schema);
+  const documents = await listAllDocumentsCached(
+    pmRoot,
+    preferredFormat,
+    typeToFolder,
+    warnings,
+    schema,
+  );
   return documents.map((document) => document.metadata);
 }
 
@@ -157,13 +210,17 @@ export async function listAllFrontMatterLight(
   warnings?: string[],
   schema?: RuntimeSchemaSettings,
 ): Promise<ItemFrontMatter[]> {
-  const documents = await listAllDocumentsCachedLight(pmRoot, preferredFormat, typeToFolder, warnings, schema);
+  const documents = await listAllDocumentsCachedLight(
+    pmRoot,
+    preferredFormat,
+    typeToFolder,
+    warnings,
+    schema,
+  );
   return documents.map((document) => document.metadata);
 }
 
-/**
- * Implements list all front matter with body for the public runtime surface of this module.
- */
+/** Implements list all front matter with body for the public runtime surface of this module. */
 export async function listAllFrontMatterWithBody(
   pmRoot: string,
   preferredFormat?: ItemFormat,
@@ -223,29 +280,42 @@ async function buildDidYouMeanSuggestions(
   if (ids.length === 0) return [];
   const limit = Math.max(3, Math.floor(normalized.length / 2));
   const scored = ids
-    .map((id) => ({ id, distance: levenshteinDistanceWithinLimit(id, normalized, limit) }))
-    .filter((entry): entry is { id: string; distance: number } => entry.distance !== null)
+    .map((id) => ({
+      id,
+      distance: levenshteinDistanceWithinLimit(id, normalized, limit),
+    }))
+    .filter(
+      (entry): entry is { id: string; distance: number } =>
+        entry.distance !== null,
+    )
     .sort((left, right) => left.distance - right.distance)
     .slice(0, 3)
     .map((entry) => entry.id);
   return scored;
 }
 
-/**
- * Implements build item not found error for the public runtime surface of this module.
- */
+/** Implements build item not found error for the public runtime surface of this module. */
 export async function buildItemNotFoundError(
   pmRoot: string,
   badId: string,
   idPrefix: string,
   typeToFolder: Record<string, string>,
 ): Promise<PmCliError> {
-  const suggestions = await buildDidYouMeanSuggestions(pmRoot, badId, idPrefix, typeToFolder);
-  const nextSteps: string[] = ["Confirm the active --path/PM_PATH scope, then retry with a valid id."];
+  const suggestions = await buildDidYouMeanSuggestions(
+    pmRoot,
+    badId,
+    idPrefix,
+    typeToFolder,
+  );
+  const nextSteps: string[] = [
+    "Confirm the active --path/PM_PATH scope, then retry with a valid id.",
+  ];
   if (suggestions.length > 0) {
     nextSteps.unshift(`Did you mean one of: ${suggestions.join(", ")}?`);
   }
-  return new PmCliError(`Item ${badId} not found`, EXIT_CODE.NOT_FOUND, { nextSteps });
+  return new PmCliError(`Item ${badId} not found`, EXIT_CODE.NOT_FOUND, {
+    nextSteps,
+  });
 }
 
 function bypassesAssigneeConflict(
@@ -366,8 +436,16 @@ function resolveItemStoreWriteOverride(
   effectiveSerializedAfter: string;
   skipItemWrite: boolean;
 } {
-  if (!serviceWriteOverride.handled || typeof serviceWriteOverride.result !== "object" || serviceWriteOverride.result === null) {
-    return { effectiveTargetItemPath: targetItemPath, effectiveSerializedAfter: serializedAfter, skipItemWrite: false };
+  if (
+    !serviceWriteOverride.handled ||
+    typeof serviceWriteOverride.result !== "object" ||
+    serviceWriteOverride.result === null
+  ) {
+    return {
+      effectiveTargetItemPath: targetItemPath,
+      effectiveSerializedAfter: serializedAfter,
+      skipItemWrite: false,
+    };
   }
   const overrideRecord = serviceWriteOverride.result as {
     target_item_path?: unknown;
@@ -376,10 +454,14 @@ function resolveItemStoreWriteOverride(
   };
   return {
     effectiveTargetItemPath:
-      typeof overrideRecord.target_item_path === "string" && overrideRecord.target_item_path.trim().length > 0
+      typeof overrideRecord.target_item_path === "string" &&
+      overrideRecord.target_item_path.trim().length > 0
         ? overrideRecord.target_item_path
         : targetItemPath,
-    effectiveSerializedAfter: typeof overrideRecord.contents === "string" ? overrideRecord.contents : serializedAfter,
+    effectiveSerializedAfter:
+      typeof overrideRecord.contents === "string"
+        ? overrideRecord.contents
+        : serializedAfter,
     skipItemWrite: overrideRecord.skip_write === true,
   };
 }
@@ -401,9 +483,7 @@ async function rollbackMutatedItemWrite(params: {
   await writeFileAtomic(params.originalItemPath, params.originalRaw);
 }
 
-/**
- * Implements mutate item for the public runtime surface of this module.
- */
+/** Implements mutate item for the public runtime surface of this module. */
 export async function mutateItem(params: {
   pmRoot: string;
   settings: PmSettings;
@@ -489,23 +569,27 @@ export async function mutateItem(params: {
       typeToFolder,
     );
     const historyPath = getHistoryPath(params.pmRoot, located.id);
-    const serviceWriteOverride = await runActiveServiceOverride("item_store_write", {
-      op: params.op,
-      pm_root: params.pmRoot,
-      item_id: located.id,
-      source_item_path: located.itemPath,
-      target_item_path: targetItemPath,
-      history_path: historyPath,
-      item_format: targetItemFormat,
-      before: beforeDocument,
-      after: afterDocument,
-      contents: serializedAfter,
-    });
-    const { effectiveTargetItemPath, effectiveSerializedAfter, skipItemWrite } = resolveItemStoreWriteOverride(
-      serviceWriteOverride,
-      targetItemPath,
-      serializedAfter,
+    const serviceWriteOverride = await runActiveServiceOverride(
+      "item_store_write",
+      {
+        op: params.op,
+        pm_root: params.pmRoot,
+        item_id: located.id,
+        source_item_path: located.itemPath,
+        target_item_path: targetItemPath,
+        history_path: historyPath,
+        item_format: targetItemFormat,
+        before: beforeDocument,
+        after: afterDocument,
+        contents: serializedAfter,
+      },
     );
+    const { effectiveTargetItemPath, effectiveSerializedAfter, skipItemWrite } =
+      resolveItemStoreWriteOverride(
+        serviceWriteOverride,
+        targetItemPath,
+        serializedAfter,
+      );
 
     if (!skipItemWrite) {
       await writeFileAtomic(effectiveTargetItemPath, effectiveSerializedAfter);
@@ -562,8 +646,14 @@ export async function mutateItem(params: {
       item_type: afterDocument.metadata.type,
       previous_status: beforeDocument.metadata.status,
       status: afterDocument.metadata.status,
-      previous: projectAfterCommandItemSnapshot(beforeDocument.metadata, mutation.changedFields),
-      current: projectAfterCommandItemSnapshot(afterDocument.metadata, mutation.changedFields),
+      previous: projectAfterCommandItemSnapshot(
+        beforeDocument.metadata,
+        mutation.changedFields,
+      ),
+      current: projectAfterCommandItemSnapshot(
+        afterDocument.metadata,
+        mutation.changedFields,
+      ),
       changed_fields: mutation.changedFields,
     });
 
@@ -584,6 +674,7 @@ export async function mutateItem(params: {
   }
 }
 
+/** Public contract for item store test only, shared by SDK and presentation-layer consumers. */
 export const itemStoreTestOnly = {
   appendWarning,
   bypassesAssigneeConflict,
@@ -591,9 +682,7 @@ export const itemStoreTestOnly = {
   isErrno,
 };
 
-/**
- * Implements delete item for the public runtime surface of this module.
- */
+/** Implements delete item for the public runtime surface of this module. */
 export async function deleteItem(params: {
   pmRoot: string;
   settings: PmSettings;
@@ -602,7 +691,12 @@ export async function deleteItem(params: {
   message?: string;
   force?: boolean;
   dryRun?: boolean;
-}): Promise<{ item: ItemFrontMatter; changedFields: string[]; warnings: string[]; targetPath?: string }> {
+}): Promise<{
+  item: ItemFrontMatter;
+  changedFields: string[];
+  warnings: string[];
+  targetPath?: string;
+}> {
   const prepared = await prepareLockedItem({
     pmRoot: params.pmRoot,
     settings: params.settings,
@@ -611,7 +705,13 @@ export async function deleteItem(params: {
     author: params.author,
     force: params.force,
   });
-  const { located, originalRaw, document, warnings: parseWarnings, releaseLock } = prepared;
+  const {
+    located,
+    originalRaw,
+    document,
+    warnings: parseWarnings,
+    releaseLock,
+  } = prepared;
 
   try {
     const historyPolicy = await enforceHistoryStreamPolicyForItem({
@@ -621,9 +721,12 @@ export async function deleteItem(params: {
       commandLabel: "delete",
     });
 
-    const beforeDocument = canonicalDocument(document, { schema: params.settings.schema });
+    const beforeDocument = canonicalDocument(document, {
+      schema: params.settings.schema,
+    });
     const deletionTimestamp = nowIso();
-    const tombstoneDocument = EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument;
+    const tombstoneDocument =
+      EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument;
     const historyEntry = createHistoryEntry({
       nowIso: deletionTimestamp,
       author: params.author,
@@ -633,14 +736,17 @@ export async function deleteItem(params: {
       message: params.message,
     });
     const historyPath = getHistoryPath(params.pmRoot, located.id);
-    const serviceDeleteOverride = await runActiveServiceOverride("item_store_delete", {
-      op: "delete",
-      pm_root: params.pmRoot,
-      item_id: located.id,
-      item_path: located.itemPath,
-      history_path: historyPath,
-      before: beforeDocument,
-    });
+    const serviceDeleteOverride = await runActiveServiceOverride(
+      "item_store_delete",
+      {
+        op: "delete",
+        pm_root: params.pmRoot,
+        item_id: located.id,
+        item_path: located.itemPath,
+        history_path: historyPath,
+        before: beforeDocument,
+      },
+    );
     let effectiveItemPath = located.itemPath;
     let skipDelete = false;
     if (
@@ -652,7 +758,10 @@ export async function deleteItem(params: {
         item_path?: unknown;
         skip_delete?: unknown;
       };
-      if (typeof overrideRecord.item_path === "string" && overrideRecord.item_path.trim().length > 0) {
+      if (
+        typeof overrideRecord.item_path === "string" &&
+        overrideRecord.item_path.trim().length > 0
+      ) {
         effectiveItemPath = overrideRecord.item_path;
       }
       if (overrideRecord.skip_delete === true) {
@@ -665,7 +774,11 @@ export async function deleteItem(params: {
         item: beforeDocument.metadata,
         changedFields: ["deleted"],
         targetPath: effectiveItemPath,
-        warnings: [...parseWarnings, ...historyPolicy.warnings, ...serviceDeleteOverride.warnings],
+        warnings: [
+          ...parseWarnings,
+          ...historyPolicy.warnings,
+          ...serviceDeleteOverride.warnings,
+        ],
       };
     }
 
@@ -709,14 +822,22 @@ export async function deleteItem(params: {
       op: "delete",
       item_type: beforeDocument.metadata.type,
       previous_status: beforeDocument.metadata.status,
-      previous: projectAfterCommandItemSnapshot(beforeDocument.metadata, Object.keys(beforeDocument.metadata)),
+      previous: projectAfterCommandItemSnapshot(
+        beforeDocument.metadata,
+        Object.keys(beforeDocument.metadata),
+      ),
       changed_fields: ["deleted"],
     });
 
     return {
       item: beforeDocument.metadata,
       changedFields: ["deleted"],
-      warnings: [...parseWarnings, ...historyPolicy.warnings, ...serviceDeleteOverride.warnings, ...hookWarnings],
+      warnings: [
+        ...parseWarnings,
+        ...historyPolicy.warnings,
+        ...serviceDeleteOverride.warnings,
+        ...hookWarnings,
+      ],
     };
   } finally {
     await releaseLock();

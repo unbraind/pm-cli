@@ -12,26 +12,31 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { listAllFrontMatterLight } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { Dependency, ItemFrontMatter, ItemStatus, ItemType } from "../../types/index.js";
+import type {
+  Dependency,
+  ItemFrontMatter,
+  ItemStatus,
+  ItemType,
+} from "../../types/index.js";
 
+/** Supported values accepted by the deps format contract. */
 export const DEPS_FORMAT_VALUES = ["tree", "graph"] as const;
-/**
- * Restricts deps format values accepted by command, SDK, and storage contracts.
- */
+/** Restricts deps format values accepted by command, SDK, and storage contracts. */
 export type DepsFormat = (typeof DEPS_FORMAT_VALUES)[number];
+/** Supported values accepted by the deps collapse contract. */
 export const DEPS_COLLAPSE_VALUES = ["none", "repeated"] as const;
-/**
- * Restricts deps collapse mode values accepted by command, SDK, and storage contracts.
- */
+/** Restricts deps collapse mode values accepted by command, SDK, and storage contracts. */
 export type DepsCollapseMode = (typeof DEPS_COLLAPSE_VALUES)[number];
 
-/**
- * Documents the deps command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the deps command options payload exchanged by command, SDK, and package integrations. */
 export interface DepsCommandOptions {
+  /** Value that configures or reports format for this contract. */
   format?: string;
+  /** Value that configures or reports max depth for this contract. */
   maxDepth?: string | number;
+  /** Value that configures or reports collapse for this contract. */
   collapse?: string;
+  /** Value that configures or reports summary for this contract. */
   summary?: boolean;
 }
 
@@ -43,62 +48,81 @@ interface IndexedItem {
   dependencies: Dependency[];
 }
 
-/**
- * Documents the deps tree node payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the deps tree node payload exchanged by command, SDK, and package integrations. */
 export interface DepsTreeNode {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports title for this contract. */
   title?: string;
+  /** Schema type that determines the shape and validation rules for this value. */
   type?: ItemType;
+  /** Lifecycle state reported for status. */
   status?: ItemStatus;
+  /** Value that configures or reports via for this contract. */
   via?: string;
+  /** Value that configures or reports missing for this contract. */
   missing: boolean;
+  /** Value that configures or reports cycle for this contract. */
   cycle: boolean;
+  /** Value that configures or reports truncated for this contract. */
   truncated?: boolean;
+  /** Value that configures or reports collapsed for this contract. */
   collapsed?: boolean;
+  /** Value that configures or reports dependencies for this contract. */
   dependencies: DepsTreeNode[];
 }
 
-/**
- * Documents the deps graph node payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the deps graph node payload exchanged by command, SDK, and package integrations. */
 export interface DepsGraphNode {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports title for this contract. */
   title?: string;
+  /** Schema type that determines the shape and validation rules for this value. */
   type?: ItemType;
+  /** Lifecycle state reported for status. */
   status?: ItemStatus;
+  /** Value that configures or reports missing for this contract. */
   missing: boolean;
 }
 
-/**
- * Documents the deps graph edge payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the deps graph edge payload exchanged by command, SDK, and package integrations. */
 export interface DepsGraphEdge {
+  /** Value that configures or reports from for this contract. */
   from: string;
+  /** Value that configures or reports to for this contract. */
   to: string;
+  /** Value that configures or reports kind for this contract. */
   kind: string;
 }
 
-/**
- * Documents the deps graph result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the deps graph result payload exchanged by command, SDK, and package integrations. */
 export interface DepsGraphResult {
+  /** Value that configures or reports root id for this contract. */
   root_id: string;
+  /** Value that configures or reports nodes for this contract. */
   nodes: DepsGraphNode[];
+  /** Value that configures or reports edges for this contract. */
   edges: DepsGraphEdge[];
+  /** Value that configures or reports missing ids for this contract. */
   missing_ids: string[];
 }
 
-/**
- * Documents the deps result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the deps result payload exchanged by command, SDK, and package integrations. */
 export interface DepsResult {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports format for this contract. */
   format: DepsFormat;
+  /** Number of node entries represented by this result. */
   node_count: number;
+  /** Number of edge entries represented by this result. */
   edge_count: number;
+  /** Number of missing entries represented by this result. */
   missing_count: number;
+  /** Value that configures or reports tree for this contract. */
   tree?: DepsTreeNode;
+  /** Value that configures or reports graph for this contract. */
   graph?: DepsGraphResult;
 }
 
@@ -107,7 +131,10 @@ function parseFormat(raw: string | undefined): DepsFormat {
   if ((DEPS_FORMAT_VALUES as readonly string[]).includes(candidate)) {
     return candidate as DepsFormat;
   }
-  throw new PmCliError(`Invalid --format value "${raw}". Use "tree" or "graph".`, EXIT_CODE.USAGE);
+  throw new PmCliError(
+    `Invalid --format value "${raw}". Use "tree" or "graph".`,
+    EXIT_CODE.USAGE,
+  );
 }
 
 function parseMaxDepth(raw: string | number | undefined): number | undefined {
@@ -116,7 +143,10 @@ function parseMaxDepth(raw: string | number | undefined): number | undefined {
   }
   const normalized = typeof raw === "number" ? raw : Number(raw.trim());
   if (!Number.isInteger(normalized) || normalized < 0) {
-    throw new PmCliError(`Invalid --max-depth value "${raw}". Use a non-negative integer.`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Invalid --max-depth value "${raw}". Use a non-negative integer.`,
+      EXIT_CODE.USAGE,
+    );
   }
   return normalized;
 }
@@ -126,10 +156,15 @@ function parseCollapse(raw: string | undefined): DepsCollapseMode {
   if ((DEPS_COLLAPSE_VALUES as readonly string[]).includes(candidate)) {
     return candidate as DepsCollapseMode;
   }
-  throw new PmCliError(`Invalid --collapse value "${raw}". Use "none" or "repeated".`, EXIT_CODE.USAGE);
+  throw new PmCliError(
+    `Invalid --collapse value "${raw}". Use "none" or "repeated".`,
+    EXIT_CODE.USAGE,
+  );
 }
 
-function normalizeDependencies(dependencies: Dependency[] | undefined): Dependency[] {
+function normalizeDependencies(
+  dependencies: Dependency[] | undefined,
+): Dependency[] {
   if (!dependencies || dependencies.length === 0) {
     return [];
   }
@@ -200,12 +235,24 @@ function toTreeNode(
   const nextLineage = new Set(lineage);
   nextLineage.add(id);
   baseNode.dependencies = item.dependencies.map((dependency) =>
-    toTreeNode(dependency.id, index, nextLineage, maxDepth, collapse, expanded, depth + 1, dependency.kind),
+    toTreeNode(
+      dependency.id,
+      index,
+      nextLineage,
+      maxDepth,
+      collapse,
+      expanded,
+      depth + 1,
+      dependency.kind,
+    ),
   );
   return baseNode;
 }
 
-function mergeGraphNode(existing: DepsGraphNode | undefined, candidate: DepsGraphNode): DepsGraphNode {
+function mergeGraphNode(
+  existing: DepsGraphNode | undefined,
+  candidate: DepsGraphNode,
+): DepsGraphNode {
   if (!existing) {
     return candidate;
   }
@@ -265,7 +312,9 @@ function toGraph(root: DepsTreeNode): DepsGraphResult {
 
   visit(root);
 
-  const nodes = [...nodesById.values()].sort((left, right) => left.id.localeCompare(right.id));
+  const nodes = [...nodesById.values()].sort((left, right) =>
+    left.id.localeCompare(right.id),
+  );
   const edges = [...edgesByKey.values()].sort((left, right) => {
     const byFrom = left.from.localeCompare(right.from);
     if (byFrom !== 0) return byFrom;
@@ -273,7 +322,9 @@ function toGraph(root: DepsTreeNode): DepsGraphResult {
     if (byTo !== 0) return byTo;
     return left.kind.localeCompare(right.kind);
   });
-  const missingIds = nodes.filter((node) => node.missing).map((node) => node.id);
+  const missingIds = nodes
+    .filter((node) => node.missing)
+    .map((node) => node.id);
   return {
     root_id: root.id,
     nodes,
@@ -282,27 +333,48 @@ function toGraph(root: DepsTreeNode): DepsGraphResult {
   };
 }
 
-/**
- * Implements run deps for the public runtime surface of this module.
- */
-export async function runDeps(id: string, options: DepsCommandOptions, global: GlobalOptions): Promise<DepsResult> {
+/** Implements run deps for the public runtime surface of this module. */
+export async function runDeps(
+  id: string,
+  options: DepsCommandOptions,
+  global: GlobalOptions,
+): Promise<DepsResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   const format = parseFormat(options.format);
   const maxDepth = parseMaxDepth(options.maxDepth);
   const collapse = parseCollapse(options.collapse);
   const summaryOnly = options.summary === true;
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const items = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
+  const items = await listAllFrontMatterLight(
+    pmRoot,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+    undefined,
+    settings.schema,
+  );
   const index = new Map(items.map((item) => [item.id, toIndexedItem(item)]));
   if (!index.has(id)) {
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
   }
 
-  const tree = toTreeNode(id, index, new Set<string>(), maxDepth, collapse, new Set<string>());
+  const tree = toTreeNode(
+    id,
+    index,
+    new Set<string>(),
+    maxDepth,
+    collapse,
+    new Set<string>(),
+  );
   const graph = toGraph(tree);
   const baseResult = {
     id,

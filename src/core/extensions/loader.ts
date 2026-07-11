@@ -10,9 +10,20 @@ import { pathExists } from "../fs/fs-utils.js";
 import { isPathWithinDirectory } from "../fs/path-utils.js";
 import { resolvePmPackageRootFromModule } from "../packages/root.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
-import { asRecordLoose, resolveActivatablePropertyRecord } from "../shared/primitives.js";
-import { flattenFlagListValue, isFlagDefaultValueCoercible, resolveFlagValueKind } from "./flag-value-types.js";
-import { KNOWN_ITEM_FIELD_TYPES, normalizeItemFieldType, suggestKnownItemFieldType } from "./item-field-types.js";
+import {
+  asRecordLoose,
+  resolveActivatablePropertyRecord,
+} from "../shared/primitives.js";
+import {
+  flattenFlagListValue,
+  isFlagDefaultValueCoercible,
+  resolveFlagValueKind,
+} from "./flag-value-types.js";
+import {
+  KNOWN_ITEM_FIELD_TYPES,
+  normalizeItemFieldType,
+  suggestKnownItemFieldType,
+} from "./item-field-types.js";
 import {
   compareComparableVersions,
   evaluatePmMaxVersionBound,
@@ -20,7 +31,10 @@ import {
   parseComparableVersion,
   type PmVersionBoundEvaluation,
 } from "./version-compat.js";
-import type { ProjectProfileDefinition, ProjectProfileRegistrationInput } from "../profile/profile-presets.js";
+import type {
+  ProjectProfileDefinition,
+  ProjectProfileRegistrationInput,
+} from "../profile/profile-presets.js";
 // Cohesive helper groups now live in sibling modules. They are imported for the
 // discovery/activation code that stays here and re-exported below so existing
 // import sites (sdk/index.ts, commands/extension.ts, health.ts, tests, …) keep
@@ -158,24 +172,28 @@ import {
 } from "./extension-types.js";
 export * from "./extension-types.js";
 
+/** Fallback extension priority used when callers do not provide an override. */
 export const DEFAULT_EXTENSION_PRIORITY = 100;
 let currentPmCliVersionPromise: Promise<string | null> | null = null;
 
 /* Types now in extension-types.ts - re-exported via `export * from "./extension-types.js"` above */
 
-const DEFAULT_EXTENSION_POLICY: ExtensionGovernancePolicy = Object.freeze(createDefaultExtensionGovernancePolicy());
+const DEFAULT_EXTENSION_POLICY: ExtensionGovernancePolicy = Object.freeze(
+  createDefaultExtensionGovernancePolicy(),
+);
 
 let extensionReloadEpoch = 0;
 
-/**
- * Implements next extension reload token for the public runtime surface of this module.
- */
+/** Implements next extension reload token for the public runtime surface of this module. */
 export function nextExtensionReloadToken(seed = Date.now()): string {
   extensionReloadEpoch += 1;
   return `${extensionReloadEpoch}-${seed}`;
 }
 
-function parseOptionalManifestString(candidate: Record<string, unknown>, field: string): string | null | undefined {
+function parseOptionalManifestString(
+  candidate: Record<string, unknown>,
+  field: string,
+): string | null | undefined {
   const value = candidate[field];
   if (value === undefined || value === null) {
     return undefined;
@@ -186,7 +204,9 @@ function parseOptionalManifestString(candidate: Record<string, unknown>, field: 
   return value.trim();
 }
 
-function parseManifestEngines(value: unknown): ExtensionManifestEngines | null | undefined {
+function parseManifestEngines(
+  value: unknown,
+): ExtensionManifestEngines | null | undefined {
   if (value === undefined || value === null) {
     return undefined;
   }
@@ -195,7 +215,9 @@ function parseManifestEngines(value: unknown): ExtensionManifestEngines | null |
     return null;
   }
   const engines: ExtensionManifestEngines = {};
-  for (const key of Object.keys(enginesRecord).sort((left, right) => left.localeCompare(right))) {
+  for (const key of Object.keys(enginesRecord).sort((left, right) =>
+    left.localeCompare(right),
+  )) {
     if (key.trim().length === 0) {
       return null;
     }
@@ -209,7 +231,10 @@ function parseManifestEngines(value: unknown): ExtensionManifestEngines | null |
 }
 
 /** Parse a required manifest string field, returning `null` when it is absent, non-string, or blank. */
-function parseRequiredManifestString(candidate: Record<string, unknown>, field: string): string | null {
+function parseRequiredManifestString(
+  candidate: Record<string, unknown>,
+  field: string,
+): string | null {
   const value = candidate[field];
   if (typeof value !== "string" || value.trim().length === 0) {
     return null;
@@ -240,13 +265,17 @@ function parseOptionalBooleanValue(value: unknown): boolean | null | undefined {
 }
 
 /** Parse the optional integer `priority`, defaulting to {@link DEFAULT_EXTENSION_PRIORITY} when absent and rejecting (`null`) a non-integer. */
-function parseManifestPriority(candidate: Record<string, unknown>): number | null {
+function parseManifestPriority(
+  candidate: Record<string, unknown>,
+): number | null {
   const value = parseOptionalIntegerValue(candidate.priority);
   return value === undefined ? DEFAULT_EXTENSION_PRIORITY : value;
 }
 
 /** Parse the optional `sandbox_profile`, rejecting (`null`) any value that does not round-trip through {@link normalizePolicySandboxProfile}. */
-function parseManifestSandboxProfile(candidate: Record<string, unknown>): ExtensionSandboxProfile | null | undefined {
+function parseManifestSandboxProfile(
+  candidate: Record<string, unknown>,
+): ExtensionSandboxProfile | null | undefined {
   const value = candidate.sandbox_profile;
   if (value === undefined || value === null) {
     return undefined;
@@ -263,11 +292,15 @@ function parseManifestSandboxProfile(candidate: Record<string, unknown>): Extens
 
 /** Return the trimmed string when `value` is a non-blank string, otherwise `undefined`. */
 function optionalTrimmedString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim()
+    : undefined;
 }
 
 /** Parse the optional `provenance` record (`undefined` absent, `null` malformed), keeping only the present trimmed string fields and a boolean `verified`. */
-function parseManifestProvenance(value: unknown): ExtensionManifest["provenance"] | null | undefined {
+function parseManifestProvenance(
+  value: unknown,
+): ExtensionManifest["provenance"] | null | undefined {
   if (value === undefined || value === null) {
     return undefined;
   }
@@ -279,7 +312,8 @@ function parseManifestProvenance(value: unknown): ExtensionManifest["provenance"
   const signature = optionalTrimmedString(provenanceRecord.signature);
   const attestation = optionalTrimmedString(provenanceRecord.attestation);
   const verified =
-    provenanceRecord.verified === undefined || provenanceRecord.verified === null
+    provenanceRecord.verified === undefined ||
+    provenanceRecord.verified === null
       ? undefined
       : typeof provenanceRecord.verified === "boolean"
         ? provenanceRecord.verified
@@ -296,7 +330,9 @@ function parseManifestProvenance(value: unknown): ExtensionManifest["provenance"
 }
 
 /** Parse the optional `permissions` record (`undefined` absent, `null` malformed), keeping only the boolean grants that are present. */
-function parseManifestPermissions(value: unknown): ExtensionManifest["permissions"] | null | undefined {
+function parseManifestPermissions(
+  value: unknown,
+): ExtensionManifest["permissions"] | null | undefined {
   if (value === undefined || value === null) {
     return undefined;
   }
@@ -309,8 +345,12 @@ function parseManifestPermissions(value: unknown): ExtensionManifest["permission
   const network = parseOptionalBooleanValue(permissionsRecord.network);
   const envRead = parseOptionalBooleanValue(permissionsRecord.env_read);
   const envWrite = parseOptionalBooleanValue(permissionsRecord.env_write);
-  const processSpawn = parseOptionalBooleanValue(permissionsRecord.process_spawn);
-  if ([fsRead, fsWrite, network, envRead, envWrite, processSpawn].includes(null)) {
+  const processSpawn = parseOptionalBooleanValue(
+    permissionsRecord.process_spawn,
+  );
+  if (
+    [fsRead, fsWrite, network, envRead, envWrite, processSpawn].includes(null)
+  ) {
     return null;
   }
   return {
@@ -319,26 +359,41 @@ function parseManifestPermissions(value: unknown): ExtensionManifest["permission
     ...(typeof network === "boolean" ? { network } : {}),
     ...(typeof envRead === "boolean" ? { env_read: envRead } : {}),
     ...(typeof envWrite === "boolean" ? { env_write: envWrite } : {}),
-    ...(typeof processSpawn === "boolean" ? { process_spawn: processSpawn } : {}),
+    ...(typeof processSpawn === "boolean"
+      ? { process_spawn: processSpawn }
+      : {}),
   };
 }
 
 /** Parse the optional `capabilities` array, normalizing legacy aliases; returns empty lists when absent and `null` when the field is not a string array. */
 function parseManifestCapabilities(
   value: unknown,
-): { capabilities: string[]; legacy_aliases: LegacyExtensionCapabilityAliasMapping[] } | null {
+): {
+  capabilities: string[];
+  legacy_aliases: LegacyExtensionCapabilityAliasMapping[];
+} | null {
   if (value === undefined || value === null) {
     return { capabilities: [], legacy_aliases: [] };
   }
-  if (!Array.isArray(value) || value.some((entry) => typeof entry !== "string")) {
+  if (
+    !Array.isArray(value) ||
+    value.some((entry) => typeof entry !== "string")
+  ) {
     return null;
   }
-  const normalizedCapabilities = normalizeManifestCapabilities(value as string[]);
-  return { capabilities: normalizedCapabilities.capabilities, legacy_aliases: normalizedCapabilities.legacy_aliases };
+  const normalizedCapabilities = normalizeManifestCapabilities(
+    value as string[],
+  );
+  return {
+    capabilities: normalizedCapabilities.capabilities,
+    legacy_aliases: normalizedCapabilities.legacy_aliases,
+  };
 }
 
 /** Parse the optional `activation` block, returning the de-duplicated sorted `commands` set, `undefined` when no command activation is declared, and `null` when the block is malformed. */
-function parseManifestActivation(value: unknown): ExtensionManifest["activation"] | null | undefined {
+function parseManifestActivation(
+  value: unknown,
+): ExtensionManifest["activation"] | null | undefined {
   if (value === undefined || value === null) {
     return undefined;
   }
@@ -350,7 +405,10 @@ function parseManifestActivation(value: unknown): ExtensionManifest["activation"
   if (rawCommands === undefined || rawCommands === null) {
     return undefined;
   }
-  if (!Array.isArray(rawCommands) || rawCommands.some((entry) => typeof entry !== "string")) {
+  if (
+    !Array.isArray(rawCommands) ||
+    rawCommands.some((entry) => typeof entry !== "string")
+  ) {
     return null;
   }
   const commands = [
@@ -379,7 +437,9 @@ interface ParsedManifestMetadata {
 }
 
 /** Parse every optional manifest metadata field, returning `null` as soon as any one is malformed. */
-function parseManifestMetadata(candidate: Record<string, unknown>): ParsedManifestMetadata | null {
+function parseManifestMetadata(
+  candidate: Record<string, unknown>,
+): ParsedManifestMetadata | null {
   const manifestVersion = parseOptionalIntegerValue(candidate.manifest_version);
   if (manifestVersion === null) {
     return null;
@@ -476,11 +536,17 @@ function parseManifest(raw: unknown): ExtensionManifest | null {
     activation: metadata.activation,
     capabilities: metadata.capabilities,
     legacy_capability_aliases:
-      metadata.legacy_capability_aliases.length > 0 ? metadata.legacy_capability_aliases : undefined,
+      metadata.legacy_capability_aliases.length > 0
+        ? metadata.legacy_capability_aliases
+        : undefined,
   };
 }
 
-function shouldEnable(name: string, enabled: Set<string>, disabled: Set<string>): boolean {
+function shouldEnable(
+  name: string,
+  enabled: Set<string>,
+  disabled: Set<string>,
+): boolean {
   if (disabled.has(name)) {
     return false;
   }
@@ -491,22 +557,31 @@ function shouldEnable(name: string, enabled: Set<string>, disabled: Set<string>)
 }
 
 /** Resolve symlinks on both paths before the containment check so a link inside the directory cannot escape it. */
-export async function isCanonicalPathWithinDirectory(directory: string, targetPath: string): Promise<boolean> {
-  const [resolvedDirectory, resolvedTargetPath] = await Promise.all([fs.realpath(directory), fs.realpath(targetPath)]);
+export async function isCanonicalPathWithinDirectory(
+  directory: string,
+  targetPath: string,
+): Promise<boolean> {
+  const [resolvedDirectory, resolvedTargetPath] = await Promise.all([
+    fs.realpath(directory),
+    fs.realpath(targetPath),
+  ]);
   return isPathWithinDirectory(resolvedDirectory, resolvedTargetPath);
 }
 
-/**
- * Implements resolve extension roots for the public runtime surface of this module.
- */
-export function resolveExtensionRoots(pmRoot: string, cwd = process.cwd()): { global: string; project: string } {
+/** Implements resolve extension roots for the public runtime surface of this module. */
+export function resolveExtensionRoots(
+  pmRoot: string,
+  cwd = process.cwd(),
+): { global: string; project: string } {
   return {
     global: path.join(resolveGlobalPmRoot(cwd), "extensions"),
     project: path.join(pmRoot, "extensions"),
   };
 }
 
-async function listExtensionDirectories(extensionsRoot: string): Promise<string[]> {
+async function listExtensionDirectories(
+  extensionsRoot: string,
+): Promise<string[]> {
   try {
     const entries = await fs.readdir(extensionsRoot, { withFileTypes: true });
     return entries
@@ -550,26 +625,48 @@ function summarizeCandidate(candidate: ExtensionCandidate): EffectiveExtension {
 }
 
 function normalizeManagedSourcePackage(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim()
+    : undefined;
 }
 
-async function readManagedExtensionSourcePackages(extensionsRoot: string): Promise<Map<string, string>> {
+async function readManagedExtensionSourcePackages(
+  extensionsRoot: string,
+): Promise<Map<string, string>> {
   const packages = new Map<string, string>();
   try {
-    const parsed = JSON.parse(await fs.readFile(path.join(extensionsRoot, ".managed-extensions.json"), "utf8")) as unknown;
-    if (typeof parsed !== "object" || parsed === null || !Array.isArray((parsed as { entries?: unknown }).entries)) {
+    const parsed = JSON.parse(
+      await fs.readFile(
+        path.join(extensionsRoot, ".managed-extensions.json"),
+        "utf8",
+      ),
+    ) as unknown;
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      !Array.isArray((parsed as { entries?: unknown }).entries)
+    ) {
       return packages;
     }
     for (const entry of (parsed as { entries: unknown[] }).entries) {
       if (typeof entry !== "object" || entry === null) {
         continue;
       }
-      const record = entry as { directory?: unknown; name?: unknown; source?: { package?: unknown } };
-      const sourcePackage = normalizeManagedSourcePackage(record.source?.package);
+      const record = entry as {
+        directory?: unknown;
+        name?: unknown;
+        source?: { package?: unknown };
+      };
+      const sourcePackage = normalizeManagedSourcePackage(
+        record.source?.package,
+      );
       if (!sourcePackage) {
         continue;
       }
-      if (typeof record.directory === "string" && record.directory.trim().length > 0) {
+      if (
+        typeof record.directory === "string" &&
+        record.directory.trim().length > 0
+      ) {
         packages.set(`directory:${record.directory.trim()}`, sourcePackage);
       }
       if (typeof record.name === "string" && record.name.trim().length > 0) {
@@ -582,7 +679,9 @@ async function readManagedExtensionSourcePackages(extensionsRoot: string): Promi
   return packages;
 }
 
-function sortCandidates(candidates: ExtensionCandidate[]): ExtensionCandidate[] {
+function sortCandidates(
+  candidates: ExtensionCandidate[],
+): ExtensionCandidate[] {
   return [...candidates].sort((left, right) => {
     if (left.manifest.priority !== right.manifest.priority) {
       return left.manifest.priority - right.manifest.priority;
@@ -599,10 +698,15 @@ function buildEffectiveExtensions(
   globalCandidates: ExtensionCandidate[],
   projectCandidates: ExtensionCandidate[],
 ): ExtensionCandidate[] {
-  const ordered = [...sortCandidates(globalCandidates), ...sortCandidates(projectCandidates)];
+  const ordered = [
+    ...sortCandidates(globalCandidates),
+    ...sortCandidates(projectCandidates),
+  ];
   const effective: ExtensionCandidate[] = [];
   for (const candidate of ordered) {
-    const existingIndex = effective.findIndex((entry) => entry.manifest.name === candidate.manifest.name);
+    const existingIndex = effective.findIndex(
+      (entry) => entry.manifest.name === candidate.manifest.name,
+    );
     if (existingIndex >= 0) {
       effective.splice(existingIndex, 1);
     }
@@ -622,7 +726,8 @@ async function scanExtensionLayer(
   const warnings: string[] = [];
   const candidates: ExtensionCandidate[] = [];
   const directories = await listExtensionDirectories(extensionsRoot);
-  const managedSourcePackages = await readManagedExtensionSourcePackages(extensionsRoot);
+  const managedSourcePackages =
+    await readManagedExtensionSourcePackages(extensionsRoot);
 
   for (const directory of directories) {
     const scanned = await scanExtensionDirectory(
@@ -648,10 +753,7 @@ function emptyExtensionLayerScan(): ExtensionLayerScanResult {
   return { diagnostics: [], warnings: [], candidates: [] };
 }
 
-/**
- * Build the `warn`-status scan result for a directory whose manifest is missing
- * or unparseable, carrying the supplied diagnostic warning and no candidate.
- */
+/** Build the `warn`-status scan result for a directory whose manifest is missing or unparseable, carrying the supplied diagnostic warning and no candidate. */
 function buildUnavailableExtensionScan(
   layer: ExtensionLayer,
   directory: string,
@@ -676,12 +778,7 @@ function buildUnavailableExtensionScan(
   };
 }
 
-/**
- * Collect the non-fatal load warnings for a parsed extension manifest, in
- * detection order: legacy capability aliases, unknown capabilities, an entry
- * outside or absent from the extension directory, then the pm version
- * floor/ceiling incompatibility warnings.
- */
+/** Collect the non-fatal load warnings for a parsed extension manifest, in detection order: legacy capability aliases, unknown capabilities, an entry outside or absent from the extension directory, then the pm version floor/ceiling incompatibility warnings. */
 function collectScannedExtensionWarnings(
   layer: ExtensionLayer,
   manifest: ExtensionManifest,
@@ -691,16 +788,29 @@ function collectScannedExtensionWarnings(
   pmMaxVersionCompatibility: { allowed: boolean; warning?: string },
 ): string[] {
   const extensionWarnings: string[] = [];
-  if (Array.isArray(manifest.legacy_capability_aliases) && manifest.legacy_capability_aliases.length > 0) {
+  if (
+    Array.isArray(manifest.legacy_capability_aliases) &&
+    manifest.legacy_capability_aliases.length > 0
+  ) {
     extensionWarnings.push(
-      formatLegacyExtensionCapabilityAliasWarning(layer, manifest.name, manifest.legacy_capability_aliases),
+      formatLegacyExtensionCapabilityAliasWarning(
+        layer,
+        manifest.name,
+        manifest.legacy_capability_aliases,
+      ),
     );
   }
-  for (const capability of collectUnknownExtensionCapabilities(manifest.capabilities)) {
-    extensionWarnings.push(formatUnknownExtensionCapabilityWarning(layer, manifest.name, capability));
+  for (const capability of collectUnknownExtensionCapabilities(
+    manifest.capabilities,
+  )) {
+    extensionWarnings.push(
+      formatUnknownExtensionCapabilityWarning(layer, manifest.name, capability),
+    );
   }
   if (!entryWithinDirectory) {
-    extensionWarnings.push(`extension_entry_outside_extension:${layer}:${manifest.name}`);
+    extensionWarnings.push(
+      `extension_entry_outside_extension:${layer}:${manifest.name}`,
+    );
   } else if (!entryExists) {
     extensionWarnings.push(`extension_entry_missing:${layer}:${manifest.name}`);
   }
@@ -725,31 +835,55 @@ async function scanExtensionDirectory(
   const extensionDir = path.join(extensionsRoot, directory);
   const manifestPath = path.join(extensionDir, "manifest.json");
   if (!(await pathExists(manifestPath))) {
-    return buildUnavailableExtensionScan(layer, directory, manifestPath, `extension_manifest_missing:${layer}:${directory}`);
+    return buildUnavailableExtensionScan(
+      layer,
+      directory,
+      manifestPath,
+      `extension_manifest_missing:${layer}:${directory}`,
+    );
   }
 
   let manifest: ExtensionManifest | null;
   try {
-    const parsed = JSON.parse(await fs.readFile(manifestPath, "utf8")) as unknown;
+    const parsed = JSON.parse(
+      await fs.readFile(manifestPath, "utf8"),
+    ) as unknown;
     manifest = parseManifest(parsed);
   } catch {
     manifest = null;
   }
 
   if (!manifest) {
-    return buildUnavailableExtensionScan(layer, directory, manifestPath, `extension_manifest_invalid:${layer}:${directory}`);
+    return buildUnavailableExtensionScan(
+      layer,
+      directory,
+      manifestPath,
+      `extension_manifest_invalid:${layer}:${directory}`,
+    );
   }
 
   const entryPath = path.resolve(extensionDir, manifest.entry);
-  const entryWithinDirectoryByPath = isPathWithinDirectory(extensionDir, entryPath);
-  const entryExists = entryWithinDirectoryByPath ? await pathExists(entryPath) : false;
+  const entryWithinDirectoryByPath = isPathWithinDirectory(
+    extensionDir,
+    entryPath,
+  );
+  const entryExists = entryWithinDirectoryByPath
+    ? await pathExists(entryPath)
+    : false;
   const entryWithinDirectory =
     entryWithinDirectoryByPath && entryExists
       ? await isCanonicalPathWithinDirectory(extensionDir, entryPath)
       : entryWithinDirectoryByPath;
   const enabledForLoad = shouldEnable(manifest.name, enabled, disabled);
-  const pmVersionCompatibility = await evaluatePmMinVersionCompatibility(layer, manifest);
-  const pmMaxVersionCompatibility = await evaluatePmMaxVersionCompatibility(layer, manifest, pmMaxVersionExceededMode);
+  const pmVersionCompatibility = await evaluatePmMinVersionCompatibility(
+    layer,
+    manifest,
+  );
+  const pmMaxVersionCompatibility = await evaluatePmMaxVersionCompatibility(
+    layer,
+    manifest,
+    pmMaxVersionExceededMode,
+  );
   const extensionWarnings = collectScannedExtensionWarnings(
     layer,
     manifest,
@@ -764,7 +898,8 @@ async function scanExtensionDirectory(
     pmVersionCompatibility.allowed &&
     pmMaxVersionCompatibility.allowed;
   const sourcePackage =
-    managedSourcePackages.get(`directory:${directory}`) ?? managedSourcePackages.get(`name:${manifest.name}`);
+    managedSourcePackages.get(`directory:${directory}`) ??
+    managedSourcePackages.get(`name:${manifest.name}`);
 
   return {
     diagnostic: {
@@ -794,14 +929,20 @@ async function scanExtensionDirectory(
   };
 }
 
-
-/**
- * Implements discover extensions for the public runtime surface of this module.
- */
-export async function discoverExtensions(options: DiscoverExtensionsOptions): Promise<ExtensionDiscoveryResult> {
-  const roots = resolveExtensionRoots(options.pmRoot, options.cwd ?? process.cwd());
-  const configured_enabled = normalizeNames(options.settings.extensions.enabled);
-  const configured_disabled = normalizeNames(options.settings.extensions.disabled);
+/** Implements discover extensions for the public runtime surface of this module. */
+export async function discoverExtensions(
+  options: DiscoverExtensionsOptions,
+): Promise<ExtensionDiscoveryResult> {
+  const roots = resolveExtensionRoots(
+    options.pmRoot,
+    options.cwd ?? process.cwd(),
+  );
+  const configured_enabled = normalizeNames(
+    options.settings.extensions.enabled,
+  );
+  const configured_disabled = normalizeNames(
+    options.settings.extensions.disabled,
+  );
   const policy = normalizeExtensionPolicy(options.settings);
   const serializedPolicy = serializeExtensionPolicy(policy);
 
@@ -820,12 +961,28 @@ export async function discoverExtensions(options: DiscoverExtensionsOptions): Pr
 
   const enabled = new Set(configured_enabled);
   const disabled = new Set(configured_disabled);
-  const globalScan = options.ignoreGlobalExtensions === true
-    ? emptyExtensionLayerScan()
-    : await scanExtensionLayer("global", roots.global, enabled, disabled, policy.pmMaxVersionExceededMode.global);
-  const projectScan = await scanExtensionLayer("project", roots.project, enabled, disabled, policy.pmMaxVersionExceededMode.project);
+  const globalScan =
+    options.ignoreGlobalExtensions === true
+      ? emptyExtensionLayerScan()
+      : await scanExtensionLayer(
+          "global",
+          roots.global,
+          enabled,
+          disabled,
+          policy.pmMaxVersionExceededMode.global,
+        );
+  const projectScan = await scanExtensionLayer(
+    "project",
+    roots.project,
+    enabled,
+    disabled,
+    policy.pmMaxVersionExceededMode.project,
+  );
   const policyWarnings: string[] = [...policy.warnings];
-  const effectiveCandidates = buildEffectiveExtensions(globalScan.candidates, projectScan.candidates);
+  const effectiveCandidates = buildEffectiveExtensions(
+    globalScan.candidates,
+    projectScan.candidates,
+  );
   const effective: EffectiveExtension[] = [];
   for (const candidate of effectiveCandidates) {
     const extensionRef = {
@@ -835,7 +992,8 @@ export async function discoverExtensions(options: DiscoverExtensionsOptions): Pr
       provenanceVerified: candidate.manifest.provenance?.verified === true,
       sandboxProfile: candidate.manifest.sandbox_profile,
       permissions:
-        candidate.manifest.permissions && typeof candidate.manifest.permissions === "object"
+        candidate.manifest.permissions &&
+        typeof candidate.manifest.permissions === "object"
           ? {
               fs_read: candidate.manifest.permissions.fs_read,
               fs_write: candidate.manifest.permissions.fs_write,
@@ -846,7 +1004,10 @@ export async function discoverExtensions(options: DiscoverExtensionsOptions): Pr
             }
           : undefined,
     };
-    const extensionDecision = evaluateExtensionPolicyForExtension(policy, extensionRef);
+    const extensionDecision = evaluateExtensionPolicyForExtension(
+      policy,
+      extensionRef,
+    );
     if (extensionDecision.warning) {
       policyWarnings.push(extensionDecision.warning);
     }
@@ -854,7 +1015,11 @@ export async function discoverExtensions(options: DiscoverExtensionsOptions): Pr
       continue;
     }
     for (const capability of candidate.manifest.capabilities) {
-      const capabilityDecision = evaluateExtensionPolicyForCapability(policy, extensionRef, capability);
+      const capabilityDecision = evaluateExtensionPolicyForCapability(
+        policy,
+        extensionRef,
+        capability,
+      );
       if (capabilityDecision.warning) {
         policyWarnings.push(capabilityDecision.warning);
       }
@@ -869,7 +1034,13 @@ export async function discoverExtensions(options: DiscoverExtensionsOptions): Pr
     configured_disabled,
     discovered: [...globalScan.diagnostics, ...projectScan.diagnostics],
     effective,
-    warnings: [...new Set([...globalScan.warnings, ...projectScan.warnings, ...policyWarnings])],
+    warnings: [
+      ...new Set([
+        ...globalScan.warnings,
+        ...projectScan.warnings,
+        ...policyWarnings,
+      ]),
+    ],
     policy: serializedPolicy,
   };
 }
@@ -883,10 +1054,18 @@ function formatUnknownError(error: unknown): string {
 
 async function readCurrentPmCliVersion(): Promise<string | null> {
   try {
-    const packageRoot = resolvePmPackageRootFromModule(import.meta.url, ["../../.."]);
-    const raw = await fs.readFile(path.join(packageRoot, "package.json"), "utf8");
+    const packageRoot = resolvePmPackageRootFromModule(import.meta.url, [
+      "../../..",
+    ]);
+    const raw = await fs.readFile(
+      path.join(packageRoot, "package.json"),
+      "utf8",
+    );
     const parsed = JSON.parse(raw) as { version?: unknown };
-    return typeof parsed.version === "string" && parsed.version.trim().length > 0 ? parsed.version.trim() : null;
+    return typeof parsed.version === "string" &&
+      parsed.version.trim().length > 0
+      ? parsed.version.trim()
+      : null;
   } catch {
     return null;
   }
@@ -938,9 +1117,18 @@ async function evaluatePmMinVersionCompatibility(
   if (manifest.pm_min_version === undefined) {
     return { allowed: true };
   }
-  const evaluation = evaluatePmMinVersionBound(manifest.pm_min_version, await resolveCurrentPmCliVersion());
-  const warning = formatPmVersionCompatibilityWarning(layer, manifest, evaluation);
-  return warning ? { allowed: evaluation.allowed, warning } : { allowed: evaluation.allowed };
+  const evaluation = evaluatePmMinVersionBound(
+    manifest.pm_min_version,
+    await resolveCurrentPmCliVersion(),
+  );
+  const warning = formatPmVersionCompatibilityWarning(
+    layer,
+    manifest,
+    evaluation,
+  );
+  return warning
+    ? { allowed: evaluation.allowed, warning }
+    : { allowed: evaluation.allowed };
 }
 
 async function evaluatePmMaxVersionCompatibility(
@@ -956,8 +1144,14 @@ async function evaluatePmMaxVersionCompatibility(
     await resolveCurrentPmCliVersion(),
     exceededMode,
   );
-  const warning = formatPmVersionCompatibilityWarning(layer, manifest, evaluation);
-  return warning ? { allowed: evaluation.allowed, warning } : { allowed: evaluation.allowed };
+  const warning = formatPmVersionCompatibilityWarning(
+    layer,
+    manifest,
+    evaluation,
+  );
+  return warning
+    ? { allowed: evaluation.allowed, warning }
+    : { allowed: evaluation.allowed };
 }
 
 async function fingerprintPath(pathToInspect: string): Promise<string> {
@@ -974,7 +1168,8 @@ async function resolveExtensionImportHref(
   options: DiscoverExtensionsOptions,
 ): Promise<string> {
   const baseUrl = new URL(pathToFileURL(extension.entry_path).href);
-  const shouldCacheBust = options.cache_bust === true || typeof options.reload_token === "string";
+  const shouldCacheBust =
+    options.cache_bust === true || typeof options.reload_token === "string";
   if (!shouldCacheBust) {
     return baseUrl.href;
   }
@@ -989,10 +1184,10 @@ async function resolveExtensionImportHref(
   return baseUrl.href;
 }
 
-/**
- * Implements load extensions for the public runtime surface of this module.
- */
-export async function loadExtensions(options: DiscoverExtensionsOptions): Promise<ExtensionLoadResult> {
+/** Implements load extensions for the public runtime surface of this module. */
+export async function loadExtensions(
+  options: DiscoverExtensionsOptions,
+): Promise<ExtensionLoadResult> {
   const discovery = await discoverExtensions(options);
   const loaded: LoadedExtension[] = [];
   const failed: FailedExtensionLoad[] = [];
@@ -1008,7 +1203,9 @@ export async function loadExtensions(options: DiscoverExtensionsOptions): Promis
   }
 
   const extensionsToLoad =
-    typeof options.extensionFilter === "function" ? discovery.effective.filter(options.extensionFilter) : discovery.effective;
+    typeof options.extensionFilter === "function"
+      ? discovery.effective.filter(options.extensionFilter)
+      : discovery.effective;
   for (const extension of extensionsToLoad) {
     try {
       const importHref = await resolveExtensionImportHref(extension, options);
@@ -1018,7 +1215,9 @@ export async function loadExtensions(options: DiscoverExtensionsOptions): Promis
         module,
       });
     } catch (error: unknown) {
-      warnings.push(`extension_load_failed:${extension.layer}:${extension.name}`);
+      warnings.push(
+        `extension_load_failed:${extension.layer}:${extension.name}`,
+      );
       failed.push({
         layer: extension.layer,
         name: extension.name,
@@ -1039,7 +1238,9 @@ export async function loadExtensions(options: DiscoverExtensionsOptions): Promis
 const DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS = 5_000;
 const MAX_EXTENSION_DEACTIVATE_TIMEOUT_MS = 2_147_483_647;
 
-function toActivatableExtension(source: Record<string, unknown>): ActivatableExtension {
+function toActivatableExtension(
+  source: Record<string, unknown>,
+): ActivatableExtension {
   // Bind to `source` so a module/default-export authored with methods (or a class
   // instance) keeps its `this` across both lifecycle calls — `activate` is a
   // method call on a fresh object and `deactivate` is invoked bare, so without
@@ -1049,13 +1250,17 @@ function toActivatableExtension(source: Record<string, unknown>): ActivatableExt
     activate: activate.bind(source),
   };
   if (typeof source.deactivate === "function") {
-    const deactivate = source.deactivate as NonNullable<ActivatableExtension["deactivate"]>;
+    const deactivate = source.deactivate as NonNullable<
+      ActivatableExtension["deactivate"]
+    >;
     activatable.deactivate = deactivate.bind(source);
   }
   return activatable;
 }
 
-function resolveActivatableExtension(module: unknown): ActivatableExtension | null {
+function resolveActivatableExtension(
+  module: unknown,
+): ActivatableExtension | null {
   const activatableRecord = resolveActivatablePropertyRecord(module);
   return activatableRecord ? toActivatableExtension(activatableRecord) : null;
 }
@@ -1079,11 +1284,18 @@ export async function deactivateExtensions(
   activationResult?: Pick<ExtensionActivationResult, "failed">,
   options: ExtensionDeactivationOptions = {},
 ): Promise<ExtensionDeactivationResult> {
-  const timeoutMs = normalizeExtensionDeactivateTimeout(options?.deactivate_timeout_ms);
-  const failedActivationKeys = new Set(
-    (activationResult?.failed ?? []).map((entry) => `${entry.layer}:${entry.name}`),
+  const timeoutMs = normalizeExtensionDeactivateTimeout(
+    options?.deactivate_timeout_ms,
   );
-  const targets: Array<{ extension: LoadedExtension; deactivate: () => void | Promise<void> }> = [];
+  const failedActivationKeys = new Set(
+    (activationResult?.failed ?? []).map(
+      (entry) => `${entry.layer}:${entry.name}`,
+    ),
+  );
+  const targets: Array<{
+    extension: LoadedExtension;
+    deactivate: () => void | Promise<void>;
+  }> = [];
   for (const extension of loadResult.loaded) {
     if (failedActivationKeys.has(`${extension.layer}:${extension.name}`)) {
       continue;
@@ -1100,7 +1312,12 @@ export async function deactivateExtensions(
         await runExtensionDeactivateWithTimeout(deactivate, timeoutMs);
         return { ok: true as const };
       } catch (error: unknown) {
-        return { ok: false as const, layer: extension.layer, name: extension.name, error: formatUnknownError(error) };
+        return {
+          ok: false as const,
+          layer: extension.layer,
+          name: extension.name,
+          error: formatUnknownError(error),
+        };
       }
     }),
   );
@@ -1112,8 +1329,14 @@ export async function deactivateExtensions(
       deactivated += 1;
       continue;
     }
-    warnings.push(`extension_deactivate_failed:${outcome.layer}:${outcome.name}`);
-    failed.push({ layer: outcome.layer, name: outcome.name, error: outcome.error });
+    warnings.push(
+      `extension_deactivate_failed:${outcome.layer}:${outcome.name}`,
+    );
+    failed.push({
+      layer: outcome.layer,
+      name: outcome.name,
+      error: outcome.error,
+    });
   }
   return { deactivated, warnings, failed };
 }
@@ -1128,7 +1351,10 @@ function normalizeExtensionDeactivateTimeout(rawTimeout: unknown): number {
   if (!Number.isFinite(rawTimeout)) {
     return DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS;
   }
-  return Math.min(MAX_EXTENSION_DEACTIVATE_TIMEOUT_MS, Math.max(1, Math.floor(rawTimeout)));
+  return Math.min(
+    MAX_EXTENSION_DEACTIVATE_TIMEOUT_MS,
+    Math.max(1, Math.floor(rawTimeout)),
+  );
 }
 
 async function runExtensionDeactivateWithTimeout(
@@ -1150,7 +1376,9 @@ async function runExtensionDeactivateWithTimeout(
       deactivatePromise,
       new Promise<never>((_, reject) => {
         timeoutHandle = setTimeout(() => {
-          reject(new Error(`extension deactivate timed out after ${timeoutMs}ms`));
+          reject(
+            new Error(`extension deactivate timed out after ${timeoutMs}ms`),
+          );
         }, timeoutMs);
         timeoutHandle.unref?.();
       }),
@@ -1196,7 +1424,10 @@ function normalizeRegistrationName(name: string): string {
     .join(" ");
 }
 
-function toRegistrationCommandPath(name: string, action: "import" | "export"): string {
+function toRegistrationCommandPath(
+  name: string,
+  action: "import" | "export",
+): string {
   return normalizeCommandName(`${name} ${action}`);
 }
 
@@ -1219,7 +1450,9 @@ function sanitizeRegistrationValue(value: unknown): unknown {
   if (typeof value === "object") {
     const record = value as Record<string, unknown>;
     const normalized: Record<string, unknown> = {};
-    const keys = Object.keys(record).sort((left, right) => left.localeCompare(right));
+    const keys = Object.keys(record).sort((left, right) =>
+      left.localeCompare(right),
+    );
     for (const key of keys) {
       normalized[key] = sanitizeRegistrationValue(record[key]);
     }
@@ -1235,7 +1468,9 @@ function cloneRuntimeRegistrationValue(value: unknown): unknown {
   if (typeof value === "object" && value !== null) {
     const record = value as Record<string, unknown>;
     const cloned: Record<string, unknown> = {};
-    for (const key of Object.keys(record).sort((left, right) => left.localeCompare(right))) {
+    for (const key of Object.keys(record).sort((left, right) =>
+      left.localeCompare(right),
+    )) {
       cloned[key] = cloneRuntimeRegistrationValue(record[key]);
     }
     return cloned;
@@ -1243,13 +1478,18 @@ function cloneRuntimeRegistrationValue(value: unknown): unknown {
   return value;
 }
 
-const EXTENSION_REGISTRATION_TRACE_SYMBOL = Symbol("extension_registration_trace");
+const EXTENSION_REGISTRATION_TRACE_SYMBOL = Symbol(
+  "extension_registration_trace",
+);
 
 type RegistrationTraceCarrier = Error & {
   [EXTENSION_REGISTRATION_TRACE_SYMBOL]?: ExtensionActivationFailureTrace;
 };
 
-function createRegistrationValidationError(message: string, trace: ExtensionActivationFailureTrace): TypeError {
+function createRegistrationValidationError(
+  message: string,
+  trace: ExtensionActivationFailureTrace,
+): TypeError {
   const error = new TypeError(message) as RegistrationTraceCarrier;
   Object.defineProperty(error, EXTENSION_REGISTRATION_TRACE_SYMBOL, {
     value: trace,
@@ -1260,35 +1500,51 @@ function createRegistrationValidationError(message: string, trace: ExtensionActi
   return error;
 }
 
-function extractRegistrationValidationTrace(error: unknown): ExtensionActivationFailureTrace | undefined {
+function extractRegistrationValidationTrace(
+  error: unknown,
+): ExtensionActivationFailureTrace | undefined {
   if (!(error instanceof Error)) {
     return undefined;
   }
-  return (error as RegistrationTraceCarrier)[EXTENSION_REGISTRATION_TRACE_SYMBOL];
+  return (error as RegistrationTraceCarrier)[
+    EXTENSION_REGISTRATION_TRACE_SYMBOL
+  ];
 }
 
-function normalizeRegistrationRecord(name: string, value: unknown): Record<string, unknown> {
+function normalizeRegistrationRecord(
+  name: string,
+  value: unknown,
+): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new TypeError(`${name} requires an object definition`);
   }
   return sanitizeRegistrationValue(value) as Record<string, unknown>;
 }
 
-function normalizeRuntimeRegistrationRecord(name: string, value: unknown): Record<string, unknown> {
+function normalizeRuntimeRegistrationRecord(
+  name: string,
+  value: unknown,
+): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new TypeError(`${name} requires an object definition`);
   }
   return cloneRuntimeRegistrationValue(value) as Record<string, unknown>;
 }
 
-function normalizeRegistrationRecordList(name: string, value: unknown): Array<Record<string, unknown>> {
+function normalizeRegistrationRecordList(
+  name: string,
+  value: unknown,
+): Array<Record<string, unknown>> {
   if (!Array.isArray(value)) {
     throw new TypeError(`${name} requires an array of object definitions`);
   }
   return value.map((entry) => normalizeRegistrationRecord(name, entry));
 }
 
-function asRegistrationRecord(name: string, value: unknown): Record<string, unknown> {
+function asRegistrationRecord(
+  name: string,
+  value: unknown,
+): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new TypeError(`${name} requires an object definition`);
   }
@@ -1311,7 +1567,11 @@ function assertOptionalStringField(name: string, value: unknown): void {
 }
 
 function isFlagDefaultScalar(value: unknown): boolean {
-  return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
+  return (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  );
 }
 
 function assertOptionalFlagDefaultField(name: string, value: unknown): void {
@@ -1321,13 +1581,17 @@ function assertOptionalFlagDefaultField(name: string, value: unknown): void {
   if (Array.isArray(value)) {
     for (const [index, item] of value.entries()) {
       if (!isFlagDefaultScalar(item)) {
-        throw new TypeError(`${name}[${index}] must be a string, number, or boolean`);
+        throw new TypeError(
+          `${name}[${index}] must be a string, number, or boolean`,
+        );
       }
     }
     return;
   }
   if (!isFlagDefaultScalar(value)) {
-    throw new TypeError(`${name} must be a string, number, or boolean, or an array of these when provided`);
+    throw new TypeError(
+      `${name} must be a string, number, or boolean, or an array of these when provided`,
+    );
   }
 }
 
@@ -1336,7 +1600,9 @@ function assertOptionalStringArrayField(name: string, value: unknown): void {
     return;
   }
   if (!Array.isArray(value)) {
-    throw new TypeError(`${name} must be an array of non-empty strings when provided`);
+    throw new TypeError(
+      `${name} must be an array of non-empty strings when provided`,
+    );
   }
   for (const [index, entry] of value.entries()) {
     if (typeof entry !== "string" || entry.trim().length === 0) {
@@ -1345,7 +1611,10 @@ function assertOptionalStringArrayField(name: string, value: unknown): void {
   }
 }
 
-function normalizeOptionalStringArrayField(name: string, value: unknown): string[] {
+function normalizeOptionalStringArrayField(
+  name: string,
+  value: unknown,
+): string[] {
   assertOptionalStringArrayField(name, value);
   if (!Array.isArray(value)) {
     return [];
@@ -1373,36 +1642,64 @@ function normalizeCommandActionName(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function resolveCommandDefinitionAction(commandPath: string, action: unknown): string {
+function resolveCommandDefinitionAction(
+  commandPath: string,
+  action: unknown,
+): string {
   if (action === undefined) {
     return commandPath.replace(/\s+/g, "-");
   }
   if (typeof action !== "string" || action.trim().length === 0) {
-    throw new TypeError("registerCommand definition.action must be a non-empty string when provided");
+    throw new TypeError(
+      "registerCommand definition.action must be a non-empty string when provided",
+    );
   }
   const normalized = normalizeCommandActionName(action);
   if (normalized.length === 0) {
-    throw new TypeError("registerCommand definition.action must contain alphanumeric characters");
+    throw new TypeError(
+      "registerCommand definition.action must contain alphanumeric characters",
+    );
   }
   return normalized;
 }
 
-function normalizeCommandDefinitionArguments(value: unknown): ExtensionCommandArgumentDefinition[] {
+function normalizeCommandDefinitionArguments(
+  value: unknown,
+): ExtensionCommandArgumentDefinition[] {
   if (value === undefined) {
     return [];
   }
   if (!Array.isArray(value)) {
-    throw new TypeError("registerCommand definition.arguments must be an array when provided");
+    throw new TypeError(
+      "registerCommand definition.arguments must be an array when provided",
+    );
   }
   const normalized: ExtensionCommandArgumentDefinition[] = [];
   for (const [index, entry] of value.entries()) {
-    const record = asRegistrationRecord(`registerCommand definition.arguments[${index}]`, entry);
-    const name = assertNonEmptyString(`registerCommand definition.arguments[${index}].name`, record.name);
-    assertOptionalBooleanField(`registerCommand definition.arguments[${index}].required`, record.required);
-    assertOptionalBooleanField(`registerCommand definition.arguments[${index}].variadic`, record.variadic);
-    assertOptionalStringField(`registerCommand definition.arguments[${index}].description`, record.description);
+    const record = asRegistrationRecord(
+      `registerCommand definition.arguments[${index}]`,
+      entry,
+    );
+    const name = assertNonEmptyString(
+      `registerCommand definition.arguments[${index}].name`,
+      record.name,
+    );
+    assertOptionalBooleanField(
+      `registerCommand definition.arguments[${index}].required`,
+      record.required,
+    );
+    assertOptionalBooleanField(
+      `registerCommand definition.arguments[${index}].variadic`,
+      record.variadic,
+    );
+    assertOptionalStringField(
+      `registerCommand definition.arguments[${index}].description`,
+      record.description,
+    );
     if (name.includes(" ")) {
-      throw new TypeError(`registerCommand definition.arguments[${index}].name must not contain spaces`);
+      throw new TypeError(
+        `registerCommand definition.arguments[${index}].name must not contain spaces`,
+      );
     }
     const definition: ExtensionCommandArgumentDefinition = {
       name,
@@ -1423,10 +1720,17 @@ function normalizeCommandDefinitionArguments(value: unknown): ExtensionCommandAr
     .map((argument, index) => (argument.variadic ? index : -1))
     .filter((index) => index >= 0);
   if (variadicIndexes.length > 1) {
-    throw new TypeError("registerCommand definition.arguments supports at most one variadic argument");
+    throw new TypeError(
+      "registerCommand definition.arguments supports at most one variadic argument",
+    );
   }
-  if (variadicIndexes.length === 1 && variadicIndexes[0] !== normalized.length - 1) {
-    throw new TypeError("registerCommand definition.arguments variadic argument must be the final argument");
+  if (
+    variadicIndexes.length === 1 &&
+    variadicIndexes[0] !== normalized.length - 1
+  ) {
+    throw new TypeError(
+      "registerCommand definition.arguments variadic argument must be the final argument",
+    );
   }
 
   return normalized;
@@ -1434,38 +1738,63 @@ function normalizeCommandDefinitionArguments(value: unknown): ExtensionCommandAr
 
 function validateFlagDefinitions(flags: unknown): void {
   if (!Array.isArray(flags)) {
-    throw new TypeError("registerFlags flags requires an array of object definitions");
+    throw new TypeError(
+      "registerFlags flags requires an array of object definitions",
+    );
   }
   for (const [index, raw] of flags.entries()) {
     const record = asRegistrationRecord(`registerFlags flags[${index}]`, raw);
     const long = record.long;
     const short = record.short;
     if (long === undefined && short === undefined) {
-      throw new TypeError(`registerFlags flags[${index}] requires at least one of long or short`);
+      throw new TypeError(
+        `registerFlags flags[${index}] requires at least one of long or short`,
+      );
     }
     assertOptionalStringField(`registerFlags flags[${index}].long`, long);
     assertOptionalStringField(`registerFlags flags[${index}].short`, short);
-    assertOptionalStringField(`registerFlags flags[${index}].value_name`, record.value_name);
-    assertOptionalStringField(`registerFlags flags[${index}].description`, record.description);
-    assertOptionalBooleanField(`registerFlags flags[${index}].required`, record.required);
-    assertOptionalBooleanField(`registerFlags flags[${index}].enabled`, record.enabled);
-    assertOptionalBooleanField(`registerFlags flags[${index}].visible`, record.visible);
-    assertOptionalBooleanField(`registerFlags flags[${index}].list`, record.list);
-    assertOptionalFlagDefaultField(`registerFlags flags[${index}].default`, record.default);
+    assertOptionalStringField(
+      `registerFlags flags[${index}].value_name`,
+      record.value_name,
+    );
+    assertOptionalStringField(
+      `registerFlags flags[${index}].description`,
+      record.description,
+    );
+    assertOptionalBooleanField(
+      `registerFlags flags[${index}].required`,
+      record.required,
+    );
+    assertOptionalBooleanField(
+      `registerFlags flags[${index}].enabled`,
+      record.enabled,
+    );
+    assertOptionalBooleanField(
+      `registerFlags flags[${index}].visible`,
+      record.visible,
+    );
+    assertOptionalBooleanField(
+      `registerFlags flags[${index}].list`,
+      record.list,
+    );
+    assertOptionalFlagDefaultField(
+      `registerFlags flags[${index}].default`,
+      record.default,
+    );
     if (Array.isArray(record.default) && record.list !== true) {
-      throw new TypeError(`registerFlags flags[${index}].default cannot be an array unless list is true.`);
+      throw new TypeError(
+        `registerFlags flags[${index}].default cannot be an array unless list is true.`,
+      );
     }
     assertFlagValueTypeAndDefault(`registerFlags flags[${index}]`, record);
   }
 }
 
-/**
- * Reject a declared `value_type`/`type` that is not a known flag value kind, and
- * a `default` whose value(s) would not cleanly coerce under that kind — so the
- * typed-flag contract is enforced at registration instead of silently leaving
- * an untyped value to surface at use time.
- */
-function assertFlagValueTypeAndDefault(label: string, record: Record<string, unknown>): void {
+/** Reject a declared `value_type`/`type` that is not a known flag value kind, and a `default` whose value(s) would not cleanly coerce under that kind — so the typed-flag contract is enforced at registration instead of silently leaving an untyped value to surface at use time. */
+function assertFlagValueTypeAndDefault(
+  label: string,
+  record: Record<string, unknown>,
+): void {
   const declaredType =
     (typeof record.value_type === "string" ? record.value_type : undefined) ??
     (typeof record.type === "string" ? record.type : undefined);
@@ -1484,23 +1813,45 @@ function assertFlagValueTypeAndDefault(label: string, record: Record<string, unk
   // For list flags, validate the default exactly as the runtime will see it —
   // comma-joined strings and nested arrays are flattened first — so a valid
   // default like `value_type: "number", default: "10,20"` is not wrongly rejected.
-  const defaults = record.list === true ? flattenFlagListValue(record.default) : [record.default];
+  const defaults =
+    record.list === true
+      ? flattenFlagListValue(record.default)
+      : [record.default];
   for (const [defaultIndex, defaultValue] of defaults.entries()) {
-    if (!isFlagDefaultValueCoercible(defaultValue as string | number | boolean, kind)) {
-      const suffix = defaults.length > 1 ? `default[${defaultIndex}]` : "default";
-      throw new TypeError(`${label}.${suffix} (${JSON.stringify(defaultValue)}) is not coercible to ${kind}.`);
+    if (
+      !isFlagDefaultValueCoercible(
+        defaultValue as string | number | boolean,
+        kind,
+      )
+    ) {
+      const suffix =
+        defaults.length > 1 ? `default[${defaultIndex}]` : "default";
+      throw new TypeError(
+        `${label}.${suffix} (${JSON.stringify(defaultValue)}) is not coercible to ${kind}.`,
+      );
     }
   }
 }
 
 function validateItemFieldDefinitions(fields: unknown): void {
   if (!Array.isArray(fields)) {
-    throw new TypeError("registerItemFields fields requires an array of object definitions");
+    throw new TypeError(
+      "registerItemFields fields requires an array of object definitions",
+    );
   }
   for (const [index, raw] of fields.entries()) {
-    const record = asRegistrationRecord(`registerItemFields fields[${index}]`, raw);
-    assertNonEmptyString(`registerItemFields fields[${index}].name`, record.name);
-    const fieldType = assertNonEmptyString(`registerItemFields fields[${index}].type`, record.type);
+    const record = asRegistrationRecord(
+      `registerItemFields fields[${index}]`,
+      raw,
+    );
+    assertNonEmptyString(
+      `registerItemFields fields[${index}].name`,
+      record.name,
+    );
+    const fieldType = assertNonEmptyString(
+      `registerItemFields fields[${index}].type`,
+      record.type,
+    );
     if (normalizeItemFieldType(fieldType) === null) {
       const suggestion = suggestKnownItemFieldType(fieldType);
       const hint = suggestion ? ` Did you mean "${suggestion}"?` : "";
@@ -1509,19 +1860,36 @@ function validateItemFieldDefinitions(fields: unknown): void {
           `(expected one of: ${KNOWN_ITEM_FIELD_TYPES.join(", ")}).${hint}`,
       );
     }
-    assertOptionalBooleanField(`registerItemFields fields[${index}].optional`, record.optional);
+    assertOptionalBooleanField(
+      `registerItemFields fields[${index}].optional`,
+      record.optional,
+    );
   }
 }
 
 function validateItemTypeDefinitions(types: unknown): void {
   if (!Array.isArray(types)) {
-    throw new TypeError("registerItemTypes types requires an array of object definitions");
+    throw new TypeError(
+      "registerItemTypes types requires an array of object definitions",
+    );
   }
   for (const [typeIndex, raw] of types.entries()) {
-    const record = asRegistrationRecord(`registerItemTypes types[${typeIndex}]`, raw);
-    assertNonEmptyString(`registerItemTypes types[${typeIndex}].name`, record.name);
-    assertOptionalStringField(`registerItemTypes types[${typeIndex}].folder`, record.folder);
-    assertOptionalStringArrayField(`registerItemTypes types[${typeIndex}].aliases`, record.aliases);
+    const record = asRegistrationRecord(
+      `registerItemTypes types[${typeIndex}]`,
+      raw,
+    );
+    assertNonEmptyString(
+      `registerItemTypes types[${typeIndex}].name`,
+      record.name,
+    );
+    assertOptionalStringField(
+      `registerItemTypes types[${typeIndex}].folder`,
+      record.folder,
+    );
+    assertOptionalStringArrayField(
+      `registerItemTypes types[${typeIndex}].aliases`,
+      record.aliases,
+    );
     assertOptionalStringArrayField(
       `registerItemTypes types[${typeIndex}].required_create_fields`,
       record.required_create_fields,
@@ -1537,7 +1905,10 @@ function validateItemTypeDefinitions(types: unknown): void {
           `registerItemTypes types[${typeIndex}].command_option_policies must be an array when provided`,
         );
       }
-      for (const [policyIndex, rawPolicy] of record.command_option_policies.entries()) {
+      for (const [
+        policyIndex,
+        rawPolicy,
+      ] of record.command_option_policies.entries()) {
         const policy = asRegistrationRecord(
           `registerItemTypes types[${typeIndex}].command_option_policies[${policyIndex}]`,
           rawPolicy,
@@ -1567,13 +1938,27 @@ function validateItemTypeDefinitions(types: unknown): void {
 
     if (record.options !== undefined) {
       if (!Array.isArray(record.options)) {
-        throw new TypeError(`registerItemTypes types[${typeIndex}].options must be an array when provided`);
+        throw new TypeError(
+          `registerItemTypes types[${typeIndex}].options must be an array when provided`,
+        );
       }
       for (const [optionIndex, rawOption] of record.options.entries()) {
-        const option = asRegistrationRecord(`registerItemTypes types[${typeIndex}].options[${optionIndex}]`, rawOption);
-        assertNonEmptyString(`registerItemTypes types[${typeIndex}].options[${optionIndex}].key`, option.key);
-        assertOptionalStringArrayField(`registerItemTypes types[${typeIndex}].options[${optionIndex}].values`, option.values);
-        assertOptionalBooleanField(`registerItemTypes types[${typeIndex}].options[${optionIndex}].required`, option.required);
+        const option = asRegistrationRecord(
+          `registerItemTypes types[${typeIndex}].options[${optionIndex}]`,
+          rawOption,
+        );
+        assertNonEmptyString(
+          `registerItemTypes types[${typeIndex}].options[${optionIndex}].key`,
+          option.key,
+        );
+        assertOptionalStringArrayField(
+          `registerItemTypes types[${typeIndex}].options[${optionIndex}].values`,
+          option.values,
+        );
+        assertOptionalBooleanField(
+          `registerItemTypes types[${typeIndex}].options[${optionIndex}].required`,
+          option.required,
+        );
         assertOptionalStringArrayField(
           `registerItemTypes types[${typeIndex}].options[${optionIndex}].aliases`,
           option.aliases,
@@ -1584,19 +1969,36 @@ function validateItemTypeDefinitions(types: unknown): void {
 }
 
 function validateMigrationDefinition(definition: unknown): void {
-  const record = asRegistrationRecord("registerMigration definition", definition);
+  const record = asRegistrationRecord(
+    "registerMigration definition",
+    definition,
+  );
   if (record.id !== undefined && typeof record.id !== "string") {
-    throw new TypeError("registerMigration definition.id must be a string when provided");
+    throw new TypeError(
+      "registerMigration definition.id must be a string when provided",
+    );
   }
-  if (record.description !== undefined && typeof record.description !== "string") {
-    throw new TypeError("registerMigration definition.description must be a string when provided");
+  if (
+    record.description !== undefined &&
+    typeof record.description !== "string"
+  ) {
+    throw new TypeError(
+      "registerMigration definition.description must be a string when provided",
+    );
   }
   if (record.status !== undefined && typeof record.status !== "string") {
-    throw new TypeError("registerMigration definition.status must be a string when provided");
+    throw new TypeError(
+      "registerMigration definition.status must be a string when provided",
+    );
   }
-  assertOptionalBooleanField("registerMigration definition.mandatory", record.mandatory);
+  assertOptionalBooleanField(
+    "registerMigration definition.mandatory",
+    record.mandatory,
+  );
   if (record.run !== undefined && typeof record.run !== "function") {
-    throw new TypeError("registerMigration definition.run must be a function when provided");
+    throw new TypeError(
+      "registerMigration definition.run must be a function when provided",
+    );
   }
 }
 
@@ -1615,16 +2017,12 @@ const PROJECT_PROFILE_DIMENSIONS = [
   "packages",
 ] as const;
 
-/**
- * Validates the field shapes the profile planner, `pm profile show/apply/lint`,
- * and `describeProjectProfile` dereference without re-checking, so a structurally
- * well-formed but type-violating extension entry (e.g. a workflow whose `type` is
- * a number, or whose `allowed_transitions` is not an array) is rejected here
- * rather than crashing a downstream consumer. Dimensions whose consumers already
- * coerce or gracefully reject malformed values (statuses, fields, config) need no
- * shape check. The `entry` is an already-confirmed non-null object.
- */
-function validateProjectProfileEntryShape(dimension: string, index: number, entry: Record<string, unknown>): void {
+/** Validates the field shapes the profile planner, `pm profile show/apply/lint`, and `describeProjectProfile` dereference without re-checking, so a structurally well-formed but type-violating extension entry (e.g. a workflow whose `type` is a number, or whose `allowed_transitions` is not an array) is rejected here rather than crashing a downstream consumer. Dimensions whose consumers already coerce or gracefully reject malformed values (statuses, fields, config) need no shape check. The `entry` is an already-confirmed non-null object. */
+function validateProjectProfileEntryShape(
+  dimension: string,
+  index: number,
+  entry: Record<string, unknown>,
+): void {
   const at = `registerProfile profile.${dimension}[${index}]`;
   if (dimension === "types") {
     if (entry.name !== undefined && typeof entry.name !== "string") {
@@ -1641,7 +2039,9 @@ function validateProjectProfileEntryShape(dimension: string, index: number, entr
     }
     for (const [pairIndex, pair] of entry.allowed_transitions.entries()) {
       if (!Array.isArray(pair)) {
-        throw new TypeError(`${at}.allowed_transitions[${pairIndex}] must be a [from, to] array`);
+        throw new TypeError(
+          `${at}.allowed_transitions[${pairIndex}] must be a [from, to] array`,
+        );
       }
     }
     return;
@@ -1650,7 +2050,11 @@ function validateProjectProfileEntryShape(dimension: string, index: number, entr
     if (typeof entry.name !== "string") {
       throw new TypeError(`${at}.name must be a string`);
     }
-    if (typeof entry.options !== "object" || entry.options === null || Array.isArray(entry.options)) {
+    if (
+      typeof entry.options !== "object" ||
+      entry.options === null ||
+      Array.isArray(entry.options)
+    ) {
       throw new TypeError(`${at}.options must be an object`);
     }
     return;
@@ -1667,7 +2071,9 @@ function validateProjectProfileDefinition(profile: unknown): void {
   assertNonEmptyString("registerProfile profile.name", record.name);
   assertNonEmptyString("registerProfile profile.title", record.title);
   if (record.summary !== undefined && typeof record.summary !== "string") {
-    throw new TypeError("registerProfile profile.summary must be a string when provided");
+    throw new TypeError(
+      "registerProfile profile.summary must be a string when provided",
+    );
   }
   for (const dimension of PROJECT_PROFILE_DIMENSIONS) {
     const value = record[dimension];
@@ -1675,7 +2081,9 @@ function validateProjectProfileDefinition(profile: unknown): void {
       continue;
     }
     if (!Array.isArray(value)) {
-      throw new TypeError(`registerProfile profile.${dimension} must be an array when provided`);
+      throw new TypeError(
+        `registerProfile profile.${dimension} must be an array when provided`,
+      );
     }
     // Each dimension entry must be a non-null object: a primitive or null entry
     // (e.g. `statuses: [null]`, `types: [42]`) survives an array-only check but
@@ -1683,12 +2091,18 @@ function validateProjectProfileDefinition(profile: unknown): void {
     // / `entry.key` / `entry.type` later. Reject it at the registration boundary.
     for (const [index, entry] of value.entries()) {
       if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
-        throw new TypeError(`registerProfile profile.${dimension}[${index}] must be an object`);
+        throw new TypeError(
+          `registerProfile profile.${dimension}[${index}] must be an object`,
+        );
       }
       // Beyond "is an object", validate the specific field shapes consumers
       // dereference so a type-violating entry can never crash the planner, the
       // `pm profile` surfaces, or describeProjectProfile downstream.
-      validateProjectProfileEntryShape(dimension, index, entry as Record<string, unknown>);
+      validateProjectProfileEntryShape(
+        dimension,
+        index,
+        entry as Record<string, unknown>,
+      );
     }
   }
 }
@@ -1701,7 +2115,9 @@ function validateProjectProfileDefinition(profile: unknown): void {
  * validation on the cloned snapshot, so it only ever supplies missing defaults
  * and never has to coerce an invalid type (those are already rejected).
  */
-function applyProjectProfileDefaults(profile: Record<string, unknown>): ProjectProfileDefinition {
+function applyProjectProfileDefaults(
+  profile: Record<string, unknown>,
+): ProjectProfileDefinition {
   if (profile.summary === undefined) {
     profile.summary = "";
   }
@@ -1713,10 +2129,9 @@ function applyProjectProfileDefaults(profile: Record<string, unknown>): ProjectP
   return profile as unknown as ProjectProfileDefinition;
 }
 
-function attachRuntimeDefinition<TEntry extends { definition: Record<string, unknown> }>(
-  entry: TEntry,
-  runtimeDefinition: Record<string, unknown>,
-): TEntry {
+function attachRuntimeDefinition<
+  TEntry extends { definition: Record<string, unknown> },
+>(entry: TEntry, runtimeDefinition: Record<string, unknown>): TEntry {
   Object.defineProperty(entry, "runtime_definition", {
     value: runtimeDefinition,
     enumerable: false,
@@ -1726,7 +2141,9 @@ function attachRuntimeDefinition<TEntry extends { definition: Record<string, unk
   return entry;
 }
 
-function getDeclaredExtensionCapabilities(extension: LoadedExtension): Set<ExtensionCapability> | null {
+function getDeclaredExtensionCapabilities(
+  extension: LoadedExtension,
+): Set<ExtensionCapability> | null {
   if (!Array.isArray(extension.capabilities)) {
     return null;
   }
@@ -1740,7 +2157,11 @@ function getDeclaredExtensionCapabilities(extension: LoadedExtension): Set<Exten
   return declared;
 }
 
-function assertExtensionCapability(extension: LoadedExtension, capability: ExtensionCapability, method: string): void {
+function assertExtensionCapability(
+  extension: LoadedExtension,
+  capability: ExtensionCapability,
+  method: string,
+): void {
   const declared = getDeclaredExtensionCapabilities(extension);
   // Keep direct unit tests that construct LoadedExtension fixtures without
   // capability metadata backwards-compatible while enforcing manifest-declared
@@ -1764,14 +2185,19 @@ function assertExtensionCapability(extension: LoadedExtension, capability: Exten
   }
 }
 
-function buildExtensionSelfIdentity(extension: LoadedExtension): ExtensionSelfIdentity {
+function buildExtensionSelfIdentity(
+  extension: LoadedExtension,
+): ExtensionSelfIdentity {
   return Object.freeze({
     name: extension.name,
     layer: extension.layer,
     version: extension.version,
     capabilities: Object.freeze(
-      (extension.capabilities ?? []).filter((capability): capability is ExtensionCapability =>
-        (KNOWN_EXTENSION_CAPABILITIES as readonly string[]).includes(capability),
+      (extension.capabilities ?? []).filter(
+        (capability): capability is ExtensionCapability =>
+          (KNOWN_EXTENSION_CAPABILITIES as readonly string[]).includes(
+            capability,
+          ),
       ),
     ) as readonly ExtensionCapability[],
     pm_min_version: extension.pm_min_version,
@@ -1780,7 +2206,9 @@ function buildExtensionSelfIdentity(extension: LoadedExtension): ExtensionSelfId
   });
 }
 
-function buildPolicyExtensionRef(extension: LoadedExtension): PolicyExtensionRef {
+function buildPolicyExtensionRef(
+  extension: LoadedExtension,
+): PolicyExtensionRef {
   return {
     layer: extension.layer,
     name: extension.name,
@@ -1859,7 +2287,8 @@ class ExtensionApiRegistrar implements ExtensionApi {
     this.registerImporter = this.registerImporter.bind(this);
     this.registerExporter = this.registerExporter.bind(this);
     this.registerSearchProvider = this.registerSearchProvider.bind(this);
-    this.registerVectorStoreAdapter = this.registerVectorStoreAdapter.bind(this);
+    this.registerVectorStoreAdapter =
+      this.registerVectorStoreAdapter.bind(this);
     this.hooks = {
       beforeCommand: (hook) => this.registerBeforeCommand(hook),
       afterCommand: (hook) => this.registerAfterCommand(hook),
@@ -1898,7 +2327,10 @@ class ExtensionApiRegistrar implements ExtensionApi {
   ): ExtensionActivationFailureTrace {
     return {
       method: "registerCommand",
-      registration_index: mode === "override" ? this.#commandRegistry.overrides.length : this.#commandRegistry.handlers.length,
+      registration_index:
+        mode === "override"
+          ? this.#commandRegistry.overrides.length
+          : this.#commandRegistry.handlers.length,
       command,
       expected_schema: expectedSchema,
       received: sanitizeRegistrationValue(received),
@@ -1906,7 +2338,10 @@ class ExtensionApiRegistrar implements ExtensionApi {
     };
   }
 
-  private registerCommandOverride(command: string, override: CommandOverride | undefined): void {
+  private registerCommandOverride(
+    command: string,
+    override: CommandOverride | undefined,
+  ): void {
     const normalizedCommand = normalizeCommandName(command);
     if (normalizedCommand.length === 0) {
       throw createRegistrationValidationError(
@@ -1933,7 +2368,14 @@ class ExtensionApiRegistrar implements ExtensionApi {
         trace,
       );
     }
-    if (!this.allowRegistration("commands.override", "registerCommand", "commands", { command: normalizedCommand })) {
+    if (
+      !this.allowRegistration(
+        "commands.override",
+        "registerCommand",
+        "commands",
+        { command: normalizedCommand },
+      )
+    ) {
       return;
     }
     this.#commandRegistry.overrides.push({
@@ -1948,8 +2390,10 @@ class ExtensionApiRegistrar implements ExtensionApi {
     definition: CommandDefinition,
     normalizedCommand: string,
   ): CommandHandler | undefined {
-    const runHandler = typeof definition.run === "function" ? definition.run : undefined;
-    const legacyHandler = typeof definition.handler === "function" ? definition.handler : undefined;
+    const runHandler =
+      typeof definition.run === "function" ? definition.run : undefined;
+    const legacyHandler =
+      typeof definition.handler === "function" ? definition.handler : undefined;
     if (!runHandler && legacyHandler) {
       this.#activationWarnings.push(
         `extension_command_definition_legacy_handler_alias:${this.#loadedExtension.layer}:${this.#loadedExtension.name}:${normalizedCommand}`,
@@ -1967,7 +2411,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
           undefined,
           "{ name: string; run: (context) => unknown; }",
           definition,
-          "Use registerCommand({ name: \"command path\", run: (context) => ... }).",
+          'Use registerCommand({ name: "command path", run: (context) => ... }).',
         ),
       );
     }
@@ -1997,7 +2441,10 @@ class ExtensionApiRegistrar implements ExtensionApi {
         ),
       );
     }
-    const resolvedHandler = this.resolveCommandDefinitionRunHandler(definition, normalizedCommand);
+    const resolvedHandler = this.resolveCommandDefinitionRunHandler(
+      definition,
+      normalizedCommand,
+    );
     if (typeof resolvedHandler !== "function") {
       const trace = this.registerCommandTrace(
         "definition",
@@ -2012,31 +2459,68 @@ class ExtensionApiRegistrar implements ExtensionApi {
       );
     }
     try {
-      assertOptionalStringField("registerCommand definition.action", definition.action);
-      assertOptionalStringField("registerCommand definition.description", definition.description);
-      assertOptionalStringField("registerCommand definition.intent", definition.intent);
-      const action = resolveCommandDefinitionAction(normalizedCommand, definition.action);
-      if (!this.allowRegistration("commands.handler", "registerCommand", "commands", { command: normalizedCommand, action })) {
+      assertOptionalStringField(
+        "registerCommand definition.action",
+        definition.action,
+      );
+      assertOptionalStringField(
+        "registerCommand definition.description",
+        definition.description,
+      );
+      assertOptionalStringField(
+        "registerCommand definition.intent",
+        definition.intent,
+      );
+      const action = resolveCommandDefinitionAction(
+        normalizedCommand,
+        definition.action,
+      );
+      if (
+        !this.allowRegistration(
+          "commands.handler",
+          "registerCommand",
+          "commands",
+          { command: normalizedCommand, action },
+        )
+      ) {
         return;
       }
       const description = definition.description?.trim();
       const intent = definition.intent?.trim();
-      const examples = normalizeOptionalStringArrayField("registerCommand definition.examples", definition.examples);
+      const examples = normalizeOptionalStringArrayField(
+        "registerCommand definition.examples",
+        definition.examples,
+      );
       const failureHints = normalizeOptionalStringArrayField(
         "registerCommand definition.failure_hints",
         definition.failure_hints,
       );
-      const argumentsDefinition = normalizeCommandDefinitionArguments(definition.arguments);
+      const argumentsDefinition = normalizeCommandDefinitionArguments(
+        definition.arguments,
+      );
 
       if (definition.flags !== undefined) {
-        assertExtensionCapability(this.#loadedExtension, "schema", "registerCommand flags");
-        if (this.allowRegistration("schema.flags", "registerCommand flags", "schema")) {
+        assertExtensionCapability(
+          this.#loadedExtension,
+          "schema",
+          "registerCommand flags",
+        );
+        if (
+          this.allowRegistration(
+            "schema.flags",
+            "registerCommand flags",
+            "schema",
+          )
+        ) {
           validateFlagDefinitions(definition.flags);
           this.#registrationRegistry.flags.push({
             layer: this.#loadedExtension.layer,
             name: this.#loadedExtension.name,
             target_command: normalizedCommand,
-            flags: normalizeRegistrationRecordList("registerCommand definition.flags", definition.flags),
+            flags: normalizeRegistrationRecordList(
+              "registerCommand definition.flags",
+              definition.flags,
+            ),
           });
         }
       }
@@ -2080,8 +2564,15 @@ class ExtensionApiRegistrar implements ExtensionApi {
     });
   }
 
-  public registerCommand(commandOrDefinition: string | CommandDefinition, override?: CommandOverride): void {
-    assertExtensionCapability(this.#loadedExtension, "commands", "registerCommand");
+  public registerCommand(
+    commandOrDefinition: string | CommandDefinition,
+    override?: CommandOverride,
+  ): void {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "commands",
+      "registerCommand",
+    );
     if (typeof commandOrDefinition === "string") {
       this.registerCommandOverride(commandOrDefinition, override);
       return;
@@ -2090,11 +2581,19 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   public registerParser(command: string, override: ParserOverride): void {
-    assertExtensionCapability(this.#loadedExtension, "parser", "registerParser");
-    if (!this.allowRegistration("parser.override", "registerParser", "parser")) {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "parser",
+      "registerParser",
+    );
+    if (
+      !this.allowRegistration("parser.override", "registerParser", "parser")
+    ) {
       return;
     }
-    const normalizedCommand = normalizeCommandName(assertNonEmptyString("registerParser command", command));
+    const normalizedCommand = normalizeCommandName(
+      assertNonEmptyString("registerParser command", command),
+    );
     assertFunctionHandler("registerParser override", override);
     this.#parserRegistry.overrides.push({
       layer: this.#loadedExtension.layer,
@@ -2105,8 +2604,18 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   public registerPreflight(override: PreflightOverride): void {
-    assertExtensionCapability(this.#loadedExtension, "preflight", "registerPreflight");
-    if (!this.allowRegistration("preflight.override", "registerPreflight", "preflight")) {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "preflight",
+      "registerPreflight",
+    );
+    if (
+      !this.allowRegistration(
+        "preflight.override",
+        "registerPreflight",
+        "preflight",
+      )
+    ) {
       return;
     }
     assertFunctionHandler("registerPreflight override", override);
@@ -2117,13 +2626,29 @@ class ExtensionApiRegistrar implements ExtensionApi {
     });
   }
 
-  public registerService(service: ExtensionServiceName, override: ServiceOverride): void {
-    assertExtensionCapability(this.#loadedExtension, "services", "registerService");
+  public registerService(
+    service: ExtensionServiceName,
+    override: ServiceOverride,
+  ): void {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "services",
+      "registerService",
+    );
     const normalizedService = String(service).trim().toLowerCase();
     if (!isExtensionServiceName(normalizedService)) {
-      throw new TypeError(`registerService service must be one of: ${KNOWN_EXTENSION_SERVICE_NAMES.join(", ")}`);
+      throw new TypeError(
+        `registerService service must be one of: ${KNOWN_EXTENSION_SERVICE_NAMES.join(", ")}`,
+      );
     }
-    if (!this.allowRegistration("services.override", "registerService", "services", { service: normalizedService })) {
+    if (
+      !this.allowRegistration(
+        "services.override",
+        "registerService",
+        "services",
+        { service: normalizedService },
+      )
+    ) {
       return;
     }
     assertFunctionHandler("registerService override", override);
@@ -2135,9 +2660,22 @@ class ExtensionApiRegistrar implements ExtensionApi {
     });
   }
 
-  public registerRenderer(format: OutputRendererFormat, renderer: RendererOverride): void {
-    assertExtensionCapability(this.#loadedExtension, "renderers", "registerRenderer");
-    if (!this.allowRegistration("renderers.override", "registerRenderer", "renderers")) {
+  public registerRenderer(
+    format: OutputRendererFormat,
+    renderer: RendererOverride,
+  ): void {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "renderers",
+      "registerRenderer",
+    );
+    if (
+      !this.allowRegistration(
+        "renderers.override",
+        "registerRenderer",
+        "renderers",
+      )
+    ) {
       return;
     }
     if (typeof renderer !== "function") {
@@ -2145,7 +2683,9 @@ class ExtensionApiRegistrar implements ExtensionApi {
     }
     const normalizedFormat = String(format).trim().toLowerCase();
     if (!isOutputRendererFormat(normalizedFormat)) {
-      throw new Error(`registerRenderer format must be toon|json, received: ${String(format)}`);
+      throw new Error(
+        `registerRenderer format must be toon|json, received: ${String(format)}`,
+      );
     }
     this.#rendererRegistry.overrides.push({
       layer: this.#loadedExtension.layer,
@@ -2160,11 +2700,18 @@ class ExtensionApiRegistrar implements ExtensionApi {
     if (!this.allowRegistration("schema.flags", "registerFlags", "schema")) {
       return;
     }
-    const normalizedTargetCommand = normalizeCommandName(assertNonEmptyString("registerFlags targetCommand", targetCommand));
+    const normalizedTargetCommand = normalizeCommandName(
+      assertNonEmptyString("registerFlags targetCommand", targetCommand),
+    );
     validateFlagDefinitions(flags);
-    const normalizedFlags = normalizeRegistrationRecordList("registerFlags flags", flags);
+    const normalizedFlags = normalizeRegistrationRecordList(
+      "registerFlags flags",
+      flags,
+    );
     if (normalizedFlags.length === 0) {
-      throw new TypeError("registerFlags requires at least one flag definition");
+      throw new TypeError(
+        "registerFlags requires at least one flag definition",
+      );
     }
     this.#registrationRegistry.flags.push({
       layer: this.#loadedExtension.layer,
@@ -2175,8 +2722,18 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   public registerItemFields(fields: SchemaFieldDefinition[]): void {
-    assertExtensionCapability(this.#loadedExtension, "schema", "registerItemFields");
-    if (!this.allowRegistration("schema.itemfields", "registerItemFields", "schema")) {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "schema",
+      "registerItemFields",
+    );
+    if (
+      !this.allowRegistration(
+        "schema.itemfields",
+        "registerItemFields",
+        "schema",
+      )
+    ) {
       return;
     }
     validateItemFieldDefinitions(fields);
@@ -2185,7 +2742,9 @@ class ExtensionApiRegistrar implements ExtensionApi {
       fields,
     ) as SchemaFieldDefinition[];
     if (normalizedFields.length === 0) {
-      throw new TypeError("registerItemFields requires at least one field definition");
+      throw new TypeError(
+        "registerItemFields requires at least one field definition",
+      );
     }
     this.#registrationRegistry.item_fields.push({
       layer: this.#loadedExtension.layer,
@@ -2195,8 +2754,14 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   public registerItemTypes(types: SchemaItemTypeDefinition[]): void {
-    assertExtensionCapability(this.#loadedExtension, "schema", "registerItemTypes");
-    if (!this.allowRegistration("schema.itemtypes", "registerItemTypes", "schema")) {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "schema",
+      "registerItemTypes",
+    );
+    if (
+      !this.allowRegistration("schema.itemtypes", "registerItemTypes", "schema")
+    ) {
       return;
     }
     validateItemTypeDefinitions(types);
@@ -2205,7 +2770,9 @@ class ExtensionApiRegistrar implements ExtensionApi {
       types,
     ) as SchemaItemTypeDefinition[];
     if (normalizedTypes.length === 0) {
-      throw new TypeError("registerItemTypes requires at least one type definition");
+      throw new TypeError(
+        "registerItemTypes requires at least one type definition",
+      );
     }
     this.#registrationRegistry.item_types.push({
       layer: this.#loadedExtension.layer,
@@ -2215,18 +2782,34 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   public registerMigration(definition: SchemaMigrationDefinition): void {
-    assertExtensionCapability(this.#loadedExtension, "schema", "registerMigration");
-    if (!this.allowRegistration("schema.migrations", "registerMigration", "schema")) {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "schema",
+      "registerMigration",
+    );
+    if (
+      !this.allowRegistration(
+        "schema.migrations",
+        "registerMigration",
+        "schema",
+      )
+    ) {
       return;
     }
     validateMigrationDefinition(definition);
-    const runtimeDefinition = normalizeRuntimeRegistrationRecord("registerMigration definition", definition);
+    const runtimeDefinition = normalizeRuntimeRegistrationRecord(
+      "registerMigration definition",
+      definition,
+    );
     this.#registrationRegistry.migrations.push(
       attachRuntimeDefinition(
         {
           layer: this.#loadedExtension.layer,
           name: this.#loadedExtension.name,
-          definition: normalizeRegistrationRecord("registerMigration definition", definition),
+          definition: normalizeRegistrationRecord(
+            "registerMigration definition",
+            definition,
+          ),
         },
         runtimeDefinition,
       ) as RegisteredExtensionSchemaMigrationDefinition,
@@ -2234,8 +2817,14 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   public registerProfile(profile: ProjectProfileRegistrationInput): void {
-    assertExtensionCapability(this.#loadedExtension, "schema", "registerProfile");
-    if (!this.allowRegistration("schema.profiles", "registerProfile", "schema")) {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "schema",
+      "registerProfile",
+    );
+    if (
+      !this.allowRegistration("schema.profiles", "registerProfile", "schema")
+    ) {
       return;
     }
     // Snapshot first, then validate and default the snapshot: cloning resolves
@@ -2260,28 +2849,56 @@ class ExtensionApiRegistrar implements ExtensionApi {
     if (options === undefined) {
       return;
     }
-    if (typeof options !== "object" || options === null || Array.isArray(options)) {
+    if (
+      typeof options !== "object" ||
+      options === null ||
+      Array.isArray(options)
+    ) {
       throw new TypeError(`${method} options must be an object when provided`);
     }
     assertOptionalStringField(`${method} options.action`, options.action);
-    assertOptionalStringField(`${method} options.description`, options.description);
+    assertOptionalStringField(
+      `${method} options.description`,
+      options.description,
+    );
     assertOptionalStringField(`${method} options.intent`, options.intent);
     const action = resolveCommandDefinitionAction(commandPath, options.action);
-    const examples = normalizeOptionalStringArrayField(`${method} options.examples`, options.examples);
-    const failureHints = normalizeOptionalStringArrayField(`${method} options.failure_hints`, options.failure_hints);
-    const argumentsDefinition = normalizeCommandDefinitionArguments(options.arguments);
+    const examples = normalizeOptionalStringArrayField(
+      `${method} options.examples`,
+      options.examples,
+    );
+    const failureHints = normalizeOptionalStringArrayField(
+      `${method} options.failure_hints`,
+      options.failure_hints,
+    );
+    const argumentsDefinition = normalizeCommandDefinitionArguments(
+      options.arguments,
+    );
 
     if (options.flags !== undefined) {
-      assertExtensionCapability(this.#loadedExtension, "schema", `${method} options.flags`);
+      assertExtensionCapability(
+        this.#loadedExtension,
+        "schema",
+        `${method} options.flags`,
+      );
       // Route metadata flags through the same surface-policy gate as registerFlags so
       // enforce-mode policies blocking schema.flags are honored even when importers are allowed.
-      if (this.allowRegistration("schema.flags", `${method} options.flags`, "schema")) {
+      if (
+        this.allowRegistration(
+          "schema.flags",
+          `${method} options.flags`,
+          "schema",
+        )
+      ) {
         validateFlagDefinitions(options.flags);
         this.#registrationRegistry.flags.push({
           layer: this.#loadedExtension.layer,
           name: this.#loadedExtension.name,
           target_command: commandPath,
-          flags: normalizeRegistrationRecordList(`${method} options.flags`, options.flags),
+          flags: normalizeRegistrationRecordList(
+            `${method} options.flags`,
+            options.flags,
+          ),
         });
       }
     }
@@ -2307,17 +2924,37 @@ class ExtensionApiRegistrar implements ExtensionApi {
     this.#registrationRegistry.commands.push(registration);
   }
 
-  public registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void {
-    assertExtensionCapability(this.#loadedExtension, "importers", "registerImporter");
-    if (!this.allowRegistration("importers.importer", "registerImporter", "importers")) {
+  public registerImporter(
+    name: string,
+    importer: Importer,
+    options?: ImportExportRegistrationOptions,
+  ): void {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "importers",
+      "registerImporter",
+    );
+    if (
+      !this.allowRegistration(
+        "importers.importer",
+        "registerImporter",
+        "importers",
+      )
+    ) {
       return;
     }
-    const normalizedName = normalizeRegistrationName(assertNonEmptyString("registerImporter name", name));
+    const normalizedName = normalizeRegistrationName(
+      assertNonEmptyString("registerImporter name", name),
+    );
     assertFunctionHandler("registerImporter importer", importer);
     const commandPath = toRegistrationCommandPath(normalizedName, "import");
     // Validate and register optional command metadata before mutating the registry
     // so an invalid options object leaves no partial importer registration.
-    this.applyImportExportCommandMetadata("registerImporter", commandPath, options);
+    this.applyImportExportCommandMetadata(
+      "registerImporter",
+      commandPath,
+      options,
+    );
     this.#registrationRegistry.importers.push({
       layer: this.#loadedExtension.layer,
       name: this.#loadedExtension.name,
@@ -2340,17 +2977,37 @@ class ExtensionApiRegistrar implements ExtensionApi {
     });
   }
 
-  public registerExporter(name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void {
-    assertExtensionCapability(this.#loadedExtension, "importers", "registerExporter");
-    if (!this.allowRegistration("importers.exporter", "registerExporter", "importers")) {
+  public registerExporter(
+    name: string,
+    exporter: Exporter,
+    options?: ImportExportRegistrationOptions,
+  ): void {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "importers",
+      "registerExporter",
+    );
+    if (
+      !this.allowRegistration(
+        "importers.exporter",
+        "registerExporter",
+        "importers",
+      )
+    ) {
       return;
     }
-    const normalizedName = normalizeRegistrationName(assertNonEmptyString("registerExporter name", name));
+    const normalizedName = normalizeRegistrationName(
+      assertNonEmptyString("registerExporter name", name),
+    );
     assertFunctionHandler("registerExporter exporter", exporter);
     const commandPath = toRegistrationCommandPath(normalizedName, "export");
     // Validate and register optional command metadata before mutating the registry
     // so an invalid options object leaves no partial exporter registration.
-    this.applyImportExportCommandMetadata("registerExporter", commandPath, options);
+    this.applyImportExportCommandMetadata(
+      "registerExporter",
+      commandPath,
+      options,
+    );
     this.#registrationRegistry.exporters.push({
       layer: this.#loadedExtension.layer,
       name: this.#loadedExtension.name,
@@ -2374,35 +3031,69 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   public registerSearchProvider(provider: SearchProviderDefinition): void {
-    assertExtensionCapability(this.#loadedExtension, "search", "registerSearchProvider");
-    if (!this.allowRegistration("search.provider", "registerSearchProvider", "search")) {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "search",
+      "registerSearchProvider",
+    );
+    if (
+      !this.allowRegistration(
+        "search.provider",
+        "registerSearchProvider",
+        "search",
+      )
+    ) {
       return;
     }
-    const runtimeDefinition = normalizeRuntimeRegistrationRecord("registerSearchProvider provider", provider);
+    const runtimeDefinition = normalizeRuntimeRegistrationRecord(
+      "registerSearchProvider provider",
+      provider,
+    );
     this.#registrationRegistry.search_providers.push(
       attachRuntimeDefinition(
         {
           layer: this.#loadedExtension.layer,
           name: this.#loadedExtension.name,
-          definition: normalizeRegistrationRecord("registerSearchProvider provider", provider),
+          definition: normalizeRegistrationRecord(
+            "registerSearchProvider provider",
+            provider,
+          ),
         },
         runtimeDefinition,
       ) as RegisteredExtensionSearchProvider,
     );
   }
 
-  public registerVectorStoreAdapter(adapter: VectorStoreAdapterDefinition): void {
-    assertExtensionCapability(this.#loadedExtension, "search", "registerVectorStoreAdapter");
-    if (!this.allowRegistration("search.vectorstore", "registerVectorStoreAdapter", "search")) {
+  public registerVectorStoreAdapter(
+    adapter: VectorStoreAdapterDefinition,
+  ): void {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "search",
+      "registerVectorStoreAdapter",
+    );
+    if (
+      !this.allowRegistration(
+        "search.vectorstore",
+        "registerVectorStoreAdapter",
+        "search",
+      )
+    ) {
       return;
     }
-    const runtimeDefinition = normalizeRuntimeRegistrationRecord("registerVectorStoreAdapter adapter", adapter);
+    const runtimeDefinition = normalizeRuntimeRegistrationRecord(
+      "registerVectorStoreAdapter adapter",
+      adapter,
+    );
     this.#registrationRegistry.vector_store_adapters.push(
       attachRuntimeDefinition(
         {
           layer: this.#loadedExtension.layer,
           name: this.#loadedExtension.name,
-          definition: normalizeRegistrationRecord("registerVectorStoreAdapter adapter", adapter),
+          definition: normalizeRegistrationRecord(
+            "registerVectorStoreAdapter adapter",
+            adapter,
+          ),
         },
         runtimeDefinition,
       ) as RegisteredExtensionVectorStoreAdapter,
@@ -2410,8 +3101,18 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   private registerBeforeCommand(hook: BeforeCommandHook): void {
-    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.beforeCommand");
-    if (!this.allowRegistration("hooks.beforecommand", "api.hooks.beforeCommand", "hooks")) {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "hooks",
+      "api.hooks.beforeCommand",
+    );
+    if (
+      !this.allowRegistration(
+        "hooks.beforecommand",
+        "api.hooks.beforeCommand",
+        "hooks",
+      )
+    ) {
       return;
     }
     assertHookHandler("beforeCommand", hook);
@@ -2423,8 +3124,18 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   private registerAfterCommand(hook: AfterCommandHook): void {
-    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.afterCommand");
-    if (!this.allowRegistration("hooks.aftercommand", "api.hooks.afterCommand", "hooks")) {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "hooks",
+      "api.hooks.afterCommand",
+    );
+    if (
+      !this.allowRegistration(
+        "hooks.aftercommand",
+        "api.hooks.afterCommand",
+        "hooks",
+      )
+    ) {
       return;
     }
     assertHookHandler("afterCommand", hook);
@@ -2436,8 +3147,14 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   private registerOnWrite(hook: OnWriteHook): void {
-    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.onWrite");
-    if (!this.allowRegistration("hooks.onwrite", "api.hooks.onWrite", "hooks")) {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "hooks",
+      "api.hooks.onWrite",
+    );
+    if (
+      !this.allowRegistration("hooks.onwrite", "api.hooks.onWrite", "hooks")
+    ) {
       return;
     }
     assertHookHandler("onWrite", hook);
@@ -2449,7 +3166,11 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   private registerOnRead(hook: OnReadHook): void {
-    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.onRead");
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "hooks",
+      "api.hooks.onRead",
+    );
     if (!this.allowRegistration("hooks.onread", "api.hooks.onRead", "hooks")) {
       return;
     }
@@ -2462,8 +3183,14 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   private registerOnIndex(hook: OnIndexHook): void {
-    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.onIndex");
-    if (!this.allowRegistration("hooks.onindex", "api.hooks.onIndex", "hooks")) {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "hooks",
+      "api.hooks.onIndex",
+    );
+    if (
+      !this.allowRegistration("hooks.onindex", "api.hooks.onIndex", "hooks")
+    ) {
       return;
     }
     assertHookHandler("onIndex", hook);
@@ -2501,11 +3228,22 @@ function createExtensionApi(
   );
 }
 
-function getRegistrationCounts(registrations: ExtensionRegistrationRegistry): ExtensionRegistrationCounts {
+function getRegistrationCounts(
+  registrations: ExtensionRegistrationRegistry,
+): ExtensionRegistrationCounts {
   const commandCount = registrations.commands.length;
-  const flagCount = registrations.flags.reduce((total, entry) => total + entry.flags.length, 0);
-  const itemFieldCount = registrations.item_fields.reduce((total, entry) => total + entry.fields.length, 0);
-  const itemTypeCount = registrations.item_types.reduce((total, entry) => total + entry.types.length, 0);
+  const flagCount = registrations.flags.reduce(
+    (total, entry) => total + entry.flags.length,
+    0,
+  );
+  const itemFieldCount = registrations.item_fields.reduce(
+    (total, entry) => total + entry.fields.length,
+    0,
+  );
+  const itemTypeCount = registrations.item_types.reduce(
+    (total, entry) => total + entry.types.length,
+    0,
+  );
   return {
     commands: commandCount,
     flags: flagCount,
@@ -2520,9 +3258,13 @@ function getRegistrationCounts(registrations: ExtensionRegistrationRegistry): Ex
   };
 }
 
-function collectCommandCollisionWarnings(commands: ExtensionCommandRegistry): string[] {
+function collectCommandCollisionWarnings(
+  commands: ExtensionCommandRegistry,
+): string[] {
   const warnings: string[] = [];
-  const collectByCommand = <TEntry extends { layer: ExtensionLayer; name: string; command: string }>(
+  const collectByCommand = <
+    TEntry extends { layer: ExtensionLayer; name: string; command: string },
+  >(
     entries: TEntry[],
     codePrefix: string,
   ): void => {
@@ -2532,7 +3274,9 @@ function collectCommandCollisionWarnings(commands: ExtensionCommandRegistry): st
       bucket.push(entry);
       grouped.set(entry.command, bucket);
     }
-    for (const command of [...grouped.keys()].sort((left, right) => left.localeCompare(right))) {
+    for (const command of [...grouped.keys()].sort((left, right) =>
+      left.localeCompare(right),
+    )) {
       const bucket = grouped.get(command)!;
       if (bucket.length <= 1) {
         continue;
@@ -2549,14 +3293,20 @@ function collectCommandCollisionWarnings(commands: ExtensionCommandRegistry): st
   collectByCommand(commands.handlers, "extension_command_handler_collision");
   collectByCommand(commands.overrides, "extension_command_override_collision");
 
-  const handlerCommands = new Set(commands.handlers.map((entry) => entry.command));
-  const overlapCommands = [...new Set(commands.overrides.map((entry) => entry.command))].filter((command) =>
-    handlerCommands.has(command),
+  const handlerCommands = new Set(
+    commands.handlers.map((entry) => entry.command),
   );
+  const overlapCommands = [
+    ...new Set(commands.overrides.map((entry) => entry.command)),
+  ].filter((command) => handlerCommands.has(command));
   overlapCommands.sort((left, right) => left.localeCompare(right));
   for (const command of overlapCommands) {
-    const handlers = commands.handlers.filter((entry) => entry.command === command);
-    const overrides = commands.overrides.filter((entry) => entry.command === command);
+    const handlers = commands.handlers.filter(
+      (entry) => entry.command === command,
+    );
+    const overrides = commands.overrides.filter(
+      (entry) => entry.command === command,
+    );
     for (const override of overrides) {
       for (const handler of handlers) {
         warnings.push(
@@ -2569,15 +3319,22 @@ function collectCommandCollisionWarnings(commands: ExtensionCommandRegistry): st
   return warnings;
 }
 
-function collectRendererCollisionWarnings(renderers: ExtensionRendererRegistry): string[] {
-  const grouped = new Map<OutputRendererFormat, RegisteredExtensionRendererOverride[]>();
+function collectRendererCollisionWarnings(
+  renderers: ExtensionRendererRegistry,
+): string[] {
+  const grouped = new Map<
+    OutputRendererFormat,
+    RegisteredExtensionRendererOverride[]
+  >();
   for (const entry of renderers.overrides) {
     const bucket = grouped.get(entry.format) ?? [];
     bucket.push(entry);
     grouped.set(entry.format, bucket);
   }
   const warnings: string[] = [];
-  for (const format of [...grouped.keys()].sort((left, right) => left.localeCompare(right))) {
+  for (const format of [...grouped.keys()].sort((left, right) =>
+    left.localeCompare(right),
+  )) {
     const bucket = grouped.get(format)!;
     if (bucket.length <= 1) {
       continue;
@@ -2592,7 +3349,9 @@ function collectRendererCollisionWarnings(renderers: ExtensionRendererRegistry):
   return warnings;
 }
 
-function collectParserCollisionWarnings(parsers: ExtensionParserRegistry): string[] {
+function collectParserCollisionWarnings(
+  parsers: ExtensionParserRegistry,
+): string[] {
   const warnings: string[] = [];
   const grouped = new Map<string, RegisteredExtensionParserOverride[]>();
   for (const entry of parsers.overrides) {
@@ -2600,7 +3359,9 @@ function collectParserCollisionWarnings(parsers: ExtensionParserRegistry): strin
     bucket.push(entry);
     grouped.set(entry.command, bucket);
   }
-  for (const command of [...grouped.keys()].sort((left, right) => left.localeCompare(right))) {
+  for (const command of [...grouped.keys()].sort((left, right) =>
+    left.localeCompare(right),
+  )) {
     const bucket = grouped.get(command)!;
     if (bucket.length <= 1) {
       continue;
@@ -2615,32 +3376,42 @@ function collectParserCollisionWarnings(parsers: ExtensionParserRegistry): strin
   return warnings;
 }
 
-function collectPreflightCollisionWarnings(preflight: ExtensionPreflightRegistry): string[] {
+function collectPreflightCollisionWarnings(
+  preflight: ExtensionPreflightRegistry,
+): string[] {
   if (preflight.overrides.length <= 1) {
     return [];
   }
   const winner = preflight.overrides[preflight.overrides.length - 1];
-  return preflight.overrides.slice(0, -1).map(
-    (displaced) =>
-      `extension_preflight_override_collision:${winner.layer}:${winner.name}:${displaced.layer}:${displaced.name}`,
-  );
+  return preflight.overrides
+    .slice(0, -1)
+    .map(
+      (displaced) =>
+        `extension_preflight_override_collision:${winner.layer}:${winner.name}:${displaced.layer}:${displaced.name}`,
+    );
 }
 
 // Services whose runtime semantics are chain/fall-through (each override gets a chance);
 // for those, registering multiple overrides is by design, not a collision.
-const CHAINED_SERVICE_NAMES: ReadonlySet<ExtensionServiceName> = new Set<ExtensionServiceName>([
-  "output_format",
-]);
+const CHAINED_SERVICE_NAMES: ReadonlySet<ExtensionServiceName> =
+  new Set<ExtensionServiceName>(["output_format"]);
 
-function collectServiceCollisionWarnings(services: ExtensionServiceRegistry): string[] {
+function collectServiceCollisionWarnings(
+  services: ExtensionServiceRegistry,
+): string[] {
   const warnings: string[] = [];
-  const grouped = new Map<ExtensionServiceName, RegisteredExtensionServiceOverride[]>();
+  const grouped = new Map<
+    ExtensionServiceName,
+    RegisteredExtensionServiceOverride[]
+  >();
   for (const entry of services.overrides) {
     const bucket = grouped.get(entry.service) ?? [];
     bucket.push(entry);
     grouped.set(entry.service, bucket);
   }
-  for (const service of [...grouped.keys()].sort((left, right) => left.localeCompare(right))) {
+  for (const service of [...grouped.keys()].sort((left, right) =>
+    left.localeCompare(right),
+  )) {
     const bucket = grouped.get(service)!;
     if (bucket.length <= 1) {
       continue;
@@ -2658,11 +3429,13 @@ function collectServiceCollisionWarnings(services: ExtensionServiceRegistry): st
   return warnings;
 }
 
-/**
- * Implements activate extensions for the public runtime surface of this module.
- */
-export async function activateExtensions(loadResult: ExtensionLoadResult): Promise<ExtensionActivationResult> {
-  const policy = hydrateExtensionPolicy(loadResult.policy ?? DEFAULT_EXTENSION_POLICY);
+/** Implements activate extensions for the public runtime surface of this module. */
+export async function activateExtensions(
+  loadResult: ExtensionLoadResult,
+): Promise<ExtensionActivationResult> {
+  const policy = hydrateExtensionPolicy(
+    loadResult.policy ?? DEFAULT_EXTENSION_POLICY,
+  );
   const hooks = createEmptyExtensionHookRegistry();
   const commands = createEmptyExtensionCommandRegistry();
   const parsers = createEmptyExtensionParserRegistry();
@@ -2695,7 +3468,9 @@ export async function activateExtensions(loadResult: ExtensionLoadResult): Promi
         ),
       );
     } catch (error: unknown) {
-      warnings.push(`extension_activate_failed:${extension.layer}:${extension.name}`);
+      warnings.push(
+        `extension_activate_failed:${extension.layer}:${extension.name}`,
+      );
       const trace = extractRegistrationValidationTrace(error);
       failed.push({
         layer: extension.layer,
@@ -2743,6 +3518,7 @@ export async function activateExtensions(loadResult: ExtensionLoadResult): Promi
   };
 }
 
+/** Public contract for test only loader, shared by SDK and presentation-layer consumers. */
 export const _testOnlyLoader = {
   assertFlagValueTypeAndDefault,
   assertOptionalStringField,

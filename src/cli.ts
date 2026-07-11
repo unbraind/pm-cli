@@ -11,12 +11,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 type NodeModuleWithCompileCache = typeof nodeModule & {
-  enableCompileCache?: (cacheDir?: string) => { status?: number; message?: string };
+  enableCompileCache?: (cacheDir?: string) => {
+    status?: number;
+    message?: string;
+  };
 };
 
 function enableNodeCompileCache(): void {
   const { enableCompileCache } = nodeModule as NodeModuleWithCompileCache;
-  if (typeof enableCompileCache !== "function" || process.env.PM_CLI_DISABLE_COMPILE_CACHE === "1") {
+  if (
+    typeof enableCompileCache !== "function" ||
+    process.env.PM_CLI_DISABLE_COMPILE_CACHE === "1"
+  ) {
     return;
   }
   const userCacheKey =
@@ -24,7 +30,8 @@ function enableNodeCompileCache(): void {
       ? String(process.getuid())
       : os.userInfo().username.replace(/[^a-zA-Z0-9._-]/g, "_");
   const cacheDir =
-    process.env.PM_CLI_COMPILE_CACHE_DIR ?? path.join(os.tmpdir(), `pm-cli-node-compile-cache-${userCacheKey}`);
+    process.env.PM_CLI_COMPILE_CACHE_DIR ??
+    path.join(os.tmpdir(), `pm-cli-node-compile-cache-${userCacheKey}`);
   try {
     enableCompileCache(cacheDir);
   } catch {
@@ -50,7 +57,10 @@ function findPackageJson(startPath: string): string | undefined {
 function printFastVersionIfRequested(): boolean {
   const args = process.argv.slice(2);
   const versionArgs = args.filter((arg) => arg !== "--no-extensions");
-  if (versionArgs.length !== 1 || (versionArgs[0] !== "--version" && versionArgs[0] !== "-V")) {
+  if (
+    versionArgs.length !== 1 ||
+    (versionArgs[0] !== "--version" && versionArgs[0] !== "-V")
+  ) {
     return false;
   }
   const version = readPackageVersionForPath(fileURLToPath(import.meta.url));
@@ -67,7 +77,9 @@ function readPackageVersionForPath(startPath: string): string | undefined {
     return undefined;
   }
   try {
-    const parsed = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as { version?: unknown };
+    const parsed = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as {
+      version?: unknown;
+    };
     if (typeof parsed.version !== "string") {
       return undefined;
     }
@@ -77,6 +89,7 @@ function readPackageVersionForPath(startPath: string): string | undefined {
   }
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   enableNodeCompileCache,
   findPackageJson,

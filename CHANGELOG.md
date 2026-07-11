@@ -27,6 +27,15 @@
 
 ### Other
 
+- Repo-wide 100% docstring coverage: public API + data contracts (gate-enforced) ([pm-4ak1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-4ak1.toon))
+- Docstring gate: extend static-quality-gate to enforce public-API + data-contract coverage repo-wide ([pm-5566](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5566.toon))
+- Docstrings: src/types (shared data model interfaces + consts) ([pm-uxmf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-uxmf.toon))
+- Docstrings: src/sdk (public SDK surface + cli-contracts) ([pm-uwu0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-uwu0.toon))
+- Docstrings: packages/\* (module docs + exported/public surface for all 11 shipped packages) ([pm-qely](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qely.toon))
+- Docstrings: src/core/extensions (extension-types + loader/runtime contracts) ([pm-mswi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mswi.toon))
+- Docstrings: src/cli/commands (largest surface — command option/result interfaces) ([pm-m0uc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-m0uc.toon))
+- Docstrings: src/core (search, schema, test, history, telemetry, governance, store, item, and remaining core modules) ([pm-768v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-768v.toon))
+- Docstrings: src/cli (non-commands), src/mcp, src/ root modules ([pm-2vb2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-2vb2.toon))
 - Untrack vendored pm-changelog extension dist from git (installed npm artifact, restored by changelog:pm:install) ([pm-sod3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-sod3.toon))
 - Refresh CodeQL Actions and reject incompatible Node 26 type-contract bump ([pm-2a9n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2a9n.toon))
 

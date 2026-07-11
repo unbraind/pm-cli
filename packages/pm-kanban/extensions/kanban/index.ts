@@ -39,6 +39,7 @@ import type {
   SchemaItemTypeDefinition,
 } from "@unbrained/pm-cli/sdk";
 
+/** Declarative package manifest consumed by the extension loader. */
 export const manifest = {
   name: "builtin-kanban-profile",
   version: "0.1.0",
@@ -61,10 +62,7 @@ export const KANBAN_ITEM_TYPE: SchemaItemTypeDefinition = {
   required_create_fields: [],
 };
 
-/**
- * Flow-control front-matter fields for a Kanban board. None shadow a built-in
- * field key, so they register cleanly alongside core metadata.
- */
+/** Flow-control front-matter fields for a Kanban board. None shadow a built-in field key, so they register cleanly alongside core metadata. */
 export const KANBAN_ITEM_FIELDS: SchemaFieldDefinition[] = [
   { name: "wip_limit", type: "number", optional: true },
   { name: "class_of_service", type: "string", optional: true },
@@ -86,7 +84,8 @@ export const KANBAN_ITEM_FIELDS: SchemaFieldDefinition[] = [
 export const kanbanProfile: ProjectProfileDefinition = {
   name: "kanban",
   title: "Kanban continuous flow",
-  summary: "Continuous-flow delivery with WIP limits, a verifying stage, class of service, and blocked-reason tracking.",
+  summary:
+    "Continuous-flow delivery with WIP limits, a verifying stage, class of service, and blocked-reason tracking.",
   types: [
     {
       name: "Card",
@@ -106,7 +105,8 @@ export const kanbanProfile: ProjectProfileDefinition = {
       id: "verifying",
       roles: ["active"],
       aliases: ["verify"],
-      description: "Work is implementation-complete and being verified before done.",
+      description:
+        "Work is implementation-complete and being verified before done.",
     },
   ],
   fields: [
@@ -114,21 +114,24 @@ export const kanbanProfile: ProjectProfileDefinition = {
       key: "wip_limit",
       type: "number",
       commands: ["create", "update", "list"],
-      description: "Maximum number of cards allowed in the card's current column.",
+      description:
+        "Maximum number of cards allowed in the card's current column.",
       aliases: ["wip"],
     },
     {
       key: "class_of_service",
       type: "string",
       commands: ["create", "update", "list"],
-      description: "Delivery class: standard, expedite, fixed-date, or intangible.",
+      description:
+        "Delivery class: standard, expedite, fixed-date, or intangible.",
       aliases: ["cos"],
     },
     {
       key: "impediment",
       type: "string",
       commands: ["create", "update"],
-      description: "The impediment currently blocking the card, recorded for flow analysis.",
+      description:
+        "The impediment currently blocking the card, recorded for flow analysis.",
     },
   ],
   workflows: [
@@ -145,8 +148,16 @@ export const kanbanProfile: ProjectProfileDefinition = {
     },
   ],
   config: [
-    { key: "search_provider", value: "bm25", summary: "Offline BM25 lexical search needs no embedding service." },
-    { key: "search_max_results", value: "30", summary: "Board-sized result cap for quick card lookup." },
+    {
+      key: "search_provider",
+      value: "bm25",
+      summary: "Offline BM25 lexical search needs no embedding service.",
+    },
+    {
+      key: "search_max_results",
+      value: "30",
+      summary: "Board-sized result cap for quick card lookup.",
+    },
   ],
   templates: [
     {
@@ -155,14 +166,21 @@ export const kanbanProfile: ProjectProfileDefinition = {
         type: "Card",
         priority: "2",
         tags: "kanban",
-        acceptanceCriteria: "Card delivers the stated outcome and meets the definition of done.",
+        acceptanceCriteria:
+          "Card delivers the stated outcome and meets the definition of done.",
         body: "## Context\n\n## Definition of done\n- [ ] \n",
       },
     },
   ],
   packages: [
-    { spec: "templates", reason: "Reusable create templates for recurring card shapes." },
-    { spec: "lifecycle-hooks", reason: "Automate flow transitions and WIP-limit reactions." },
+    {
+      spec: "templates",
+      reason: "Reusable create templates for recurring card shapes.",
+    },
+    {
+      spec: "lifecycle-hooks",
+      reason: "Automate flow transitions and WIP-limit reactions.",
+    },
     { spec: "calendar", reason: "Visualize delivery cadence and due dates." },
   ],
 };

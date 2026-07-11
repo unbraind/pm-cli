@@ -25,22 +25,31 @@ const execFileAsync = promisify(execFile);
 const DEFAULT_CLI_PACKAGE = "@unbrained/pm-cli";
 const DEFAULT_TAG = "latest";
 
-/**
- * Documents the upgrade command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the upgrade command options payload exchanged by command, SDK, and package integrations. */
 export interface UpgradeCommandOptions {
+  /** Value that configures or reports dry run for this contract. */
   dryRun?: boolean;
+  /** Value that configures or reports cli only for this contract. */
   cliOnly?: boolean;
+  /** Value that configures or reports packages only for this contract. */
   packagesOnly?: boolean;
+  /** Value that configures or reports project for this contract. */
   project?: boolean;
+  /** Value that configures or reports local for this contract. */
   local?: boolean;
+  /** Value that configures or reports global for this contract. */
   global?: boolean;
+  /** Value that configures or reports repair for this contract. */
   repair?: boolean;
+  /** Value that configures or reports tag for this contract. */
   tag?: string;
+  /** Value that configures or reports package name for this contract. */
   packageName?: string;
+  /** Value that configures or reports command runner for this contract. */
   commandRunner?: UpgradeCommandRunner;
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   defaultCommandRunner,
   isLocalNpmSpec,
@@ -55,66 +64,86 @@ export const _testOnly = {
   summarize,
 };
 
-/**
- * Documents the upgrade command runner result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the upgrade command runner result payload exchanged by command, SDK, and package integrations. */
 export interface UpgradeCommandRunnerResult {
+  /** Value that configures or reports stdout for this contract. */
   stdout: string;
+  /** Value that configures or reports stderr for this contract. */
   stderr: string;
 }
 
-/**
- * Restricts upgrade command runner values accepted by command, SDK, and storage contracts.
- */
+/** Restricts upgrade command runner values accepted by command, SDK, and storage contracts. */
 export type UpgradeCommandRunner = (
   command: string,
   args: string[],
   options?: { cwd?: string },
 ) => Promise<UpgradeCommandRunnerResult>;
 
-/**
- * Documents the upgrade cli result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the upgrade cli result payload exchanged by command, SDK, and package integrations. */
 export interface UpgradeCliResult {
+  /** Value that configures or reports requested for this contract. */
   requested: boolean;
+  /** Lifecycle state reported for status. */
   status: "planned" | "updated" | "failed" | "skipped";
+  /** Value that configures or reports package for this contract. */
   package: string;
+  /** Value that configures or reports target for this contract. */
   target: string;
+  /** Value that configures or reports command for this contract. */
   command: string[];
+  /** Value that configures or reports before version for this contract. */
   before_version?: string;
+  /** Value that configures or reports after version for this contract. */
   after_version?: string;
+  /** Value that configures or reports repair for this contract. */
   repair: boolean;
+  /** Value that configures or reports reason for this contract. */
   reason?: string;
+  /** Value that configures or reports error for this contract. */
   error?: string;
 }
 
-/**
- * Documents the upgrade package result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the upgrade package result payload exchanged by command, SDK, and package integrations. */
 export interface UpgradePackageResult {
+  /** Value that configures or reports name for this contract. */
   name: string;
+  /** Value that configures or reports directory for this contract. */
   directory: string;
+  /** Value that configures or reports scope for this contract. */
   scope: ExtensionScope;
+  /** Value that configures or reports source for this contract. */
   source: ManagedExtensionSource;
+  /** Lifecycle state reported for status. */
   status: "planned" | "updated" | "failed" | "skipped";
+  /** Value that configures or reports command for this contract. */
   command: string[];
+  /** Value that configures or reports previous version for this contract. */
   previous_version: string;
+  /** Value that configures or reports installed version for this contract. */
   installed_version?: string;
+  /** Value that configures or reports reason for this contract. */
   reason?: string;
+  /** Value that configures or reports error for this contract. */
   error?: string;
 }
 
-/**
- * Documents the upgrade result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the upgrade result payload exchanged by command, SDK, and package integrations. */
 export interface UpgradeResult {
+  /** Whether the operation completed without a blocking failure. */
   ok: boolean;
+  /** Value that configures or reports action for this contract. */
   action: "upgrade";
+  /** Value that configures or reports dry run for this contract. */
   dry_run: boolean;
+  /** Value that configures or reports scope for this contract. */
   scope: ExtensionScope;
+  /** Value that configures or reports target for this contract. */
   target?: string;
+  /** Value that configures or reports cli for this contract. */
   cli: UpgradeCliResult;
+  /** Value that configures or reports packages for this contract. */
   packages: UpgradePackageResult[];
+  /** Value that configures or reports summary for this contract. */
   summary: {
     requested_cli: boolean;
     requested_packages: boolean;
@@ -129,7 +158,10 @@ function resolveScope(options: UpgradeCommandOptions): ExtensionScope {
   const projectLike = options.project === true || options.local === true;
   const global = options.global === true;
   if (projectLike && global) {
-    throw new PmCliError('Options "--project/--local" and "--global" are mutually exclusive.', EXIT_CODE.USAGE);
+    throw new PmCliError(
+      'Options "--project/--local" and "--global" are mutually exclusive.',
+      EXIT_CODE.USAGE,
+    );
   }
   return global ? "global" : "project";
 }
@@ -138,7 +170,10 @@ function normalizeTarget(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function packageRecordMatchesTarget(record: ManagedExtensionRecord, target: string): boolean {
+function packageRecordMatchesTarget(
+  record: ManagedExtensionRecord,
+  target: string,
+): boolean {
   const normalizedTarget = normalizeTarget(target);
   const values = [
     record.name,
@@ -147,12 +182,20 @@ function packageRecordMatchesTarget(record: ManagedExtensionRecord, target: stri
     record.source.location,
     record.source.package,
     record.source.repository,
-    record.source.owner && record.source.repo ? `${record.source.owner}/${record.source.repo}` : undefined,
+    record.source.owner && record.source.repo
+      ? `${record.source.owner}/${record.source.repo}`
+      : undefined,
   ];
-  return values.some((value) => typeof value === "string" && normalizeTarget(value) === normalizedTarget);
+  return values.some(
+    (value) =>
+      typeof value === "string" && normalizeTarget(value) === normalizedTarget,
+  );
 }
 
-function resolveRoots(scope: ExtensionScope, global: GlobalOptions): {
+function resolveRoots(
+  scope: ExtensionScope,
+  global: GlobalOptions,
+): {
   selected_root: string;
 } {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
@@ -177,11 +220,20 @@ async function defaultCommandRunner(
       stderr: result.stderr,
     };
   } catch (error: unknown) {
-    const stderr = typeof error === "object" && error !== null && "stderr" in error
-      ? String((error as { stderr?: unknown }).stderr ?? "")
-      : "";
-    const message = stderr.trim().length > 0 ? stderr.trim() : error instanceof Error ? error.message : String(error);
-    throw new PmCliError(`Command failed: ${command} ${args.join(" ")}\n${message}`, EXIT_CODE.GENERIC_FAILURE);
+    const stderr =
+      typeof error === "object" && error !== null && "stderr" in error
+        ? String((error as { stderr?: unknown }).stderr ?? "")
+        : "";
+    const message =
+      stderr.trim().length > 0
+        ? stderr.trim()
+        : error instanceof Error
+          ? error.message
+          : String(error);
+    throw new PmCliError(
+      `Command failed: ${command} ${args.join(" ")}\n${message}`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
   }
 }
 
@@ -190,16 +242,22 @@ async function readCurrentVersion(): Promise<string | undefined> {
 }
 
 function resolveTag(options: UpgradeCommandOptions): string {
-  return typeof options.tag === "string" && options.tag.trim().length > 0 ? options.tag.trim() : DEFAULT_TAG;
+  return typeof options.tag === "string" && options.tag.trim().length > 0
+    ? options.tag.trim()
+    : DEFAULT_TAG;
 }
 
 function resolveCliPackage(options: UpgradeCommandOptions): string {
-  return typeof options.packageName === "string" && options.packageName.trim().length > 0
+  return typeof options.packageName === "string" &&
+    options.packageName.trim().length > 0
     ? options.packageName.trim()
     : DEFAULT_CLI_PACKAGE;
 }
 
-async function upgradeCli(options: UpgradeCommandOptions, dryRun: boolean): Promise<UpgradeCliResult> {
+async function upgradeCli(
+  options: UpgradeCommandOptions,
+  dryRun: boolean,
+): Promise<UpgradeCliResult> {
   const runner = options.commandRunner ?? defaultCommandRunner;
   const packageName = resolveCliPackage(options);
   const tag = resolveTag(options);
@@ -239,21 +297,40 @@ async function upgradeCli(options: UpgradeCommandOptions, dryRun: boolean): Prom
 }
 
 function isLocalNpmSpec(spec: string): boolean {
-  return path.isAbsolute(spec) || spec.startsWith(".") || spec.startsWith("..") || spec.startsWith("file:");
+  return (
+    path.isAbsolute(spec) ||
+    spec.startsWith(".") ||
+    spec.startsWith("..") ||
+    spec.startsWith("file:")
+  );
 }
 
-function resolvePackageInstallSource(source: ManagedExtensionSource, tag: string): string {
+function resolvePackageInstallSource(
+  source: ManagedExtensionSource,
+  tag: string,
+): string {
   if (source.kind === "npm") {
-    const rawSpec = source.input.startsWith("npm:") ? source.input.slice("npm:".length).trim() : source.input.trim();
-    if (!isLocalNpmSpec(rawSpec) && source.package && source.package.trim().length > 0) {
+    const rawSpec = source.input.startsWith("npm:")
+      ? source.input.slice("npm:".length).trim()
+      : source.input.trim();
+    if (
+      !isLocalNpmSpec(rawSpec) &&
+      source.package &&
+      source.package.trim().length > 0
+    ) {
       return `npm:${source.package.trim()}@${tag}`;
     }
-    return source.input.startsWith("npm:") ? source.input : `npm:${source.input}`;
+    return source.input.startsWith("npm:")
+      ? source.input
+      : `npm:${source.input}`;
   }
   return source.input;
 }
 
-async function resolveRunnablePackageSource(source: ManagedExtensionSource, tag: string): Promise<string> {
+async function resolveRunnablePackageSource(
+  source: ManagedExtensionSource,
+  tag: string,
+): Promise<string> {
   const installSource = resolvePackageInstallSource(source, tag);
   if (source.kind !== "local") {
     return installSource;
@@ -267,15 +344,28 @@ async function resolveRunnablePackageSource(source: ManagedExtensionSource, tag:
   return installSource;
 }
 
-function packageCommandFor(source: ManagedExtensionSource, installSource: string, scope: ExtensionScope, ref?: string): string[] {
-  const command = ["pm", "install", installSource, scope === "global" ? "--global" : "--project"];
+function packageCommandFor(
+  source: ManagedExtensionSource,
+  installSource: string,
+  scope: ExtensionScope,
+  ref?: string,
+): string[] {
+  const command = [
+    "pm",
+    "install",
+    installSource,
+    scope === "global" ? "--global" : "--project",
+  ];
   if (source.kind === "github" && ref && ref.trim().length > 0) {
     command.push("--ref", ref.trim());
   }
   return command;
 }
 
-async function readManagedRecords(scope: ExtensionScope, global: GlobalOptions): Promise<ManagedExtensionRecord[]> {
+async function readManagedRecords(
+  scope: ExtensionScope,
+  global: GlobalOptions,
+): Promise<ManagedExtensionRecord[]> {
   const roots = resolveRoots(scope, global);
   const managedState = await readManagedExtensionState(roots.selected_root);
   return managedState.state.entries.filter((entry) => entry.scope === scope);
@@ -287,8 +377,16 @@ async function refreshManagedRecord(
   record: ManagedExtensionRecord,
 ): Promise<ManagedExtensionRecord | undefined> {
   const records = await readManagedRecords(scope, global);
-  return records.find((candidate) => packageRecordMatchesTarget(candidate, record.name)) ??
-    records.find((candidate) => normalizeTarget(candidate.directory) === normalizeTarget(record.directory));
+  return (
+    records.find((candidate) =>
+      packageRecordMatchesTarget(candidate, record.name),
+    ) ??
+    records.find(
+      (candidate) =>
+        normalizeTarget(candidate.directory) ===
+        normalizeTarget(record.directory),
+    )
+  );
 }
 
 async function upgradePackageRecord(
@@ -300,7 +398,12 @@ async function upgradePackageRecord(
 ): Promise<UpgradePackageResult> {
   const tag = resolveTag(options);
   const installSource = await resolveRunnablePackageSource(record.source, tag);
-  const command = packageCommandFor(record.source, installSource, scope, record.source.ref);
+  const command = packageCommandFor(
+    record.source,
+    installSource,
+    scope,
+    record.source.ref,
+  );
   const planned: UpgradePackageResult = {
     name: record.name,
     directory: record.directory,
@@ -345,7 +448,10 @@ function summarize(
   includeCli: boolean,
   includePackages: boolean,
 ): UpgradeResult["summary"] {
-  const statuses = [includeCli ? cli.status : undefined, ...packages.map((entry) => entry.status)].filter(
+  const statuses = [
+    includeCli ? cli.status : undefined,
+    ...packages.map((entry) => entry.status),
+  ].filter(
     (value): value is UpgradeCliResult["status"] => typeof value === "string",
   );
   return {
@@ -358,49 +464,71 @@ function summarize(
   };
 }
 
-/**
- * Implements run upgrade for the public runtime surface of this module.
- */
+/** Implements run upgrade for the public runtime surface of this module. */
 export async function runUpgrade(
   target: string | undefined,
   options: UpgradeCommandOptions,
   global: GlobalOptions,
 ): Promise<UpgradeResult> {
   if (options.cliOnly === true && options.packagesOnly === true) {
-    throw new PmCliError('Options "--cli-only" and "--packages-only" are mutually exclusive.', EXIT_CODE.USAGE);
+    throw new PmCliError(
+      'Options "--cli-only" and "--packages-only" are mutually exclusive.',
+      EXIT_CODE.USAGE,
+    );
   }
 
   const scope = resolveScope(options);
   const dryRun = options.dryRun === true;
-  const normalizedTarget = typeof target === "string" && target.trim().length > 0 ? target.trim() : undefined;
+  const normalizedTarget =
+    typeof target === "string" && target.trim().length > 0
+      ? target.trim()
+      : undefined;
   if (options.cliOnly === true && normalizedTarget) {
-    throw new PmCliError('A package target cannot be used with "--cli-only".', EXIT_CODE.USAGE);
+    throw new PmCliError(
+      'A package target cannot be used with "--cli-only".',
+      EXIT_CODE.USAGE,
+    );
   }
-  const includeCli = options.packagesOnly === true || normalizedTarget ? false : true;
+  const includeCli =
+    options.packagesOnly === true || normalizedTarget ? false : true;
   const includePackages = options.cliOnly === true ? false : true;
   const cli = includeCli
     ? await upgradeCli(options, dryRun)
-    : {
+    : ({
         requested: false,
         status: "skipped",
         package: resolveCliPackage(options),
         target: `${resolveCliPackage(options)}@${resolveTag(options)}`,
-        command: ["npm", "install", "-g", `${resolveCliPackage(options)}@${resolveTag(options)}`],
+        command: [
+          "npm",
+          "install",
+          "-g",
+          `${resolveCliPackage(options)}@${resolveTag(options)}`,
+        ],
         repair: options.repair === true,
         reason: "not_requested",
-      } as UpgradeCliResult;
+      } as UpgradeCliResult);
 
-  let packageRecords = includePackages ? await readManagedRecords(scope, global) : [];
+  let packageRecords = includePackages
+    ? await readManagedRecords(scope, global)
+    : [];
   if (normalizedTarget) {
-    packageRecords = packageRecords.filter((entry) => packageRecordMatchesTarget(entry, normalizedTarget));
+    packageRecords = packageRecords.filter((entry) =>
+      packageRecordMatchesTarget(entry, normalizedTarget),
+    );
     if (packageRecords.length === 0) {
-      throw new PmCliError(`Managed package "${normalizedTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
+      throw new PmCliError(
+        `Managed package "${normalizedTarget}" was not found in ${scope} scope.`,
+        EXIT_CODE.NOT_FOUND,
+      );
     }
   }
 
   const packages: UpgradePackageResult[] = [];
   for (const record of packageRecords) {
-    packages.push(await upgradePackageRecord(record, options, global, scope, dryRun));
+    packages.push(
+      await upgradePackageRecord(record, options, global, scope, dryRun),
+    );
   }
 
   const summary = summarize(cli, packages, includeCli, includePackages);

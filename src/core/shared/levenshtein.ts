@@ -9,10 +9,12 @@
 // budget plain Levenshtein uses for substitutions. pm-fl0c #6 (2026-05-28):
 // fixed because plain Levenshtein scored "titel"->"title" at 2, defeating the
 // length-5 maxDistance=1 ceiling in suggestNearestLongFlags.
-/**
- * Computes bounded Levenshtein distance for typo suggestions without scanning unnecessary suffixes.
- */
-export function levenshteinDistanceWithinLimit(left: string, right: string, limit: number): number | null {
+/** Computes bounded Levenshtein distance for typo suggestions without scanning unnecessary suffixes. */
+export function levenshteinDistanceWithinLimit(
+  left: string,
+  right: string,
+  limit: number,
+): number | null {
   if (left === right) {
     return 0;
   }

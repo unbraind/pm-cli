@@ -86,11 +86,9 @@ export interface ExtensionModule {
    * site.
    */
   manifest?: ExtensionManifest;
+  /** Registers this package's commands, actions, and runtime hooks with the host. */
   activate(api: ExtensionApi): void | Promise<void>;
-  /**
-   * Optional teardown lifecycle hook (VS Code-style `deactivate`). Invoked by
-   * the host on shutdown/reload to release resources opened during `activate`.
-   */
+  /** Optional teardown lifecycle hook (VS Code-style `deactivate`). Invoked by the host on shutdown/reload to release resources opened during `activate`. */
   deactivate?(): void | Promise<void>;
 }
 
@@ -103,7 +101,9 @@ export interface ExtensionModule {
  * Reach for {@link composeExtension} instead when you would rather declare the
  * registrations as data than wire them imperatively in `activate`.
  */
-export function defineExtension<TModule extends ExtensionModule>(module: TModule): TModule {
+export function defineExtension<TModule extends ExtensionModule>(
+  module: TModule,
+): TModule {
   return module;
 }
 
@@ -200,10 +200,7 @@ export interface ExtensionBlueprint {
   exporters?: ExtensionBlueprintExporter[];
   /** Lifecycle hooks registered through `api.hooks.*`. */
   hooks?: ExtensionBlueprintHooks;
-  /**
-   * Optional imperative escape hatch run *after* every declarative registration,
-   * for the rare wiring the blueprint cannot express. Receives the same `api`.
-   */
+  /** Optional imperative escape hatch run *after* every declarative registration, for the rare wiring the blueprint cannot express. Receives the same `api`. */
   activate?: (api: ExtensionApi) => void | Promise<void>;
   /** Optional teardown hook copied onto the produced module verbatim. */
   deactivate?: () => void | Promise<void>;
@@ -226,7 +223,9 @@ export interface ExtensionBlueprint {
  * Use as:
  * `export const commandsModule = defineExtensionBlueprint({ commands: [...] })`
  */
-export function defineExtensionBlueprint<TBlueprint extends ExtensionBlueprint>(blueprint: TBlueprint): TBlueprint {
+export function defineExtensionBlueprint<TBlueprint extends ExtensionBlueprint>(
+  blueprint: TBlueprint,
+): TBlueprint {
   return blueprint;
 }
 
@@ -235,11 +234,16 @@ export function defineExtensionBlueprint<TBlueprint extends ExtensionBlueprint>(
  * command overrides, flag tables, and parser/renderer/service overrides — in the
  * deterministic order {@link composeExtension} documents.
  */
-function registerBlueprintCommandSurfaces(api: ExtensionApi, blueprint: ExtensionBlueprint): void {
+function registerBlueprintCommandSurfaces(
+  api: ExtensionApi,
+  blueprint: ExtensionBlueprint,
+): void {
   for (const command of blueprint.commands ?? []) {
     api.registerCommand(command);
   }
-  for (const [command, override] of Object.entries(blueprint.commandOverrides ?? {})) {
+  for (const [command, override] of Object.entries(
+    blueprint.commandOverrides ?? {},
+  )) {
     api.registerCommand(command, override);
   }
   for (const [targetCommand, flags] of Object.entries(blueprint.flags ?? {})) {
@@ -248,25 +252,23 @@ function registerBlueprintCommandSurfaces(api: ExtensionApi, blueprint: Extensio
   for (const [command, override] of Object.entries(blueprint.parsers ?? {})) {
     api.registerParser(command, override);
   }
-  for (const [format, renderer] of Object.entries(blueprint.renderers ?? {}) as Array<
-    [OutputRendererFormat, RendererOverride]
-  >) {
+  for (const [format, renderer] of Object.entries(
+    blueprint.renderers ?? {},
+  ) as Array<[OutputRendererFormat, RendererOverride]>) {
     api.registerRenderer(format, renderer);
   }
-  for (const [service, override] of Object.entries(blueprint.services ?? {}) as Array<
-    [ExtensionServiceName, ServiceOverride]
-  >) {
+  for (const [service, override] of Object.entries(
+    blueprint.services ?? {},
+  ) as Array<[ExtensionServiceName, ServiceOverride]>) {
     api.registerService(service, override);
   }
 }
 
-/**
- * Register a blueprint's schema-layer surfaces — preflight overrides, item types,
- * item fields, schema migrations, and project profiles — preserving the
- * batch-registration semantics of `registerItemTypes`/`registerItemFields`
- * (only invoked when at least one entry is present).
- */
-function registerBlueprintSchemaSurfaces(api: ExtensionApi, blueprint: ExtensionBlueprint): void {
+/** Register a blueprint's schema-layer surfaces — preflight overrides, item types, item fields, schema migrations, and project profiles — preserving the batch-registration semantics of `registerItemTypes`/`registerItemFields` (only invoked when at least one entry is present). */
+function registerBlueprintSchemaSurfaces(
+  api: ExtensionApi,
+  blueprint: ExtensionBlueprint,
+): void {
   for (const override of blueprint.preflights ?? []) {
     api.registerPreflight(override);
   }
@@ -286,12 +288,11 @@ function registerBlueprintSchemaSurfaces(api: ExtensionApi, blueprint: Extension
   }
 }
 
-/**
- * Register a blueprint's retrieval and interchange surfaces — search providers,
- * vector store adapters, importers, and exporters — passing each importer's and
- * exporter's optional registration options through verbatim.
- */
-function registerBlueprintRetrievalSurfaces(api: ExtensionApi, blueprint: ExtensionBlueprint): void {
+/** Register a blueprint's retrieval and interchange surfaces — search providers, vector store adapters, importers, and exporters — passing each importer's and exporter's optional registration options through verbatim. */
+function registerBlueprintRetrievalSurfaces(
+  api: ExtensionApi,
+  blueprint: ExtensionBlueprint,
+): void {
   for (const provider of blueprint.searchProviders ?? []) {
     api.registerSearchProvider(provider);
   }
@@ -306,11 +307,11 @@ function registerBlueprintRetrievalSurfaces(api: ExtensionApi, blueprint: Extens
   }
 }
 
-/**
- * Register a blueprint's lifecycle hooks in canonical order
- * (beforeCommand → afterCommand → onWrite → onRead → onIndex).
- */
-function registerBlueprintHooks(api: ExtensionApi, hooks: ExtensionBlueprintHooks): void {
+/** Register a blueprint's lifecycle hooks in canonical order (beforeCommand → afterCommand → onWrite → onRead → onIndex). */
+function registerBlueprintHooks(
+  api: ExtensionApi,
+  hooks: ExtensionBlueprintHooks,
+): void {
   for (const hook of hooks.beforeCommand ?? []) {
     api.hooks.beforeCommand(hook);
   }
@@ -344,7 +345,9 @@ function registerBlueprintHooks(api: ExtensionApi, hooks: ExtensionBlueprintHook
  * does for hand-written `activate` bodies, so a malformed definition surfaces
  * the same activation diagnostic either way.
  */
-export function composeExtension(blueprint: ExtensionBlueprint): ExtensionModule {
+export function composeExtension(
+  blueprint: ExtensionBlueprint,
+): ExtensionModule {
   const activate = async (api: ExtensionApi): Promise<void> => {
     registerBlueprintCommandSurfaces(api, blueprint);
     registerBlueprintSchemaSurfaces(api, blueprint);
@@ -383,25 +386,18 @@ function mergeArraySurface<TValue>(
   return merged.length > 0 ? merged : undefined;
 }
 
-/**
- * Shallow-merge single-handler record surfaces (`commandOverrides`, `parsers`,
- * `renderers`, `services`) with last-defined-wins precedence on a key collision,
- * exactly like spreading the records in argument order. Returns `undefined` when
- * no blueprint contributes any key.
- */
+/** Shallow-merge single-handler record surfaces (`commandOverrides`, `parsers`, `renderers`, `services`) with last-defined-wins precedence on a key collision, exactly like spreading the records in argument order. Returns `undefined` when no blueprint contributes any key. */
 function mergeHandlerRecord<TRecord extends object>(
   surfaces: ReadonlyArray<TRecord | null | undefined>,
 ): TRecord | undefined {
-  const merged = Object.assign({}, ...surfaces.map((surface) => surface ?? {})) as TRecord;
+  const merged = Object.assign(
+    {},
+    ...surfaces.map((surface) => surface ?? {}),
+  ) as TRecord;
   return Object.keys(merged).length > 0 ? merged : undefined;
 }
 
-/**
- * Merge `flags` records by concatenating every blueprint's flag array for a shared
- * target command, mirroring the additive `api.registerFlags` semantics so each
- * module's flags reach the command. Returns `undefined` when no blueprint declares
- * any flags.
- */
+/** Merge `flags` records by concatenating every blueprint's flag array for a shared target command, mirroring the additive `api.registerFlags` semantics so each module's flags reach the command. Returns `undefined` when no blueprint declares any flags. */
 function mergeFlagRecord(
   surfaces: ReadonlyArray<Record<string, FlagDefinition[]> | null | undefined>,
 ): Record<string, FlagDefinition[]> | undefined {
@@ -425,8 +421,14 @@ const EXTENSION_BLUEPRINT_HOOK_KEYS = [
 ] as const satisfies ReadonlyArray<keyof ExtensionBlueprintHooks>;
 
 type ExtensionBlueprintHookKey = (typeof EXTENSION_BLUEPRINT_HOOK_KEYS)[number];
-type MissingExtensionBlueprintHookKeys = Exclude<keyof ExtensionBlueprintHooks, ExtensionBlueprintHookKey>;
-type ExtraExtensionBlueprintHookKeys = Exclude<ExtensionBlueprintHookKey, keyof ExtensionBlueprintHooks>;
+type MissingExtensionBlueprintHookKeys = Exclude<
+  keyof ExtensionBlueprintHooks,
+  ExtensionBlueprintHookKey
+>;
+type ExtraExtensionBlueprintHookKeys = Exclude<
+  ExtensionBlueprintHookKey,
+  keyof ExtensionBlueprintHooks
+>;
 
 // Compile-time exhaustiveness guard: adding a hook field must update the canonical
 // merge order above, and stale keys cannot remain in that list.
@@ -436,8 +438,10 @@ const EXTENSION_BLUEPRINT_HOOK_KEY_COVERAGE: Record<
 > = {};
 void EXTENSION_BLUEPRINT_HOOK_KEY_COVERAGE;
 
-type ExtensionBlueprintHookArray<TKey extends keyof ExtensionBlueprintHooks> = NonNullable<ExtensionBlueprintHooks[TKey]>;
-type ExtensionBlueprintHookValue<TKey extends keyof ExtensionBlueprintHooks> = ExtensionBlueprintHookArray<TKey>[number];
+type ExtensionBlueprintHookArray<TKey extends keyof ExtensionBlueprintHooks> =
+  NonNullable<ExtensionBlueprintHooks[TKey]>;
+type ExtensionBlueprintHookValue<TKey extends keyof ExtensionBlueprintHooks> =
+  ExtensionBlueprintHookArray<TKey>[number];
 
 function assignMergedHookSurface<TKey extends keyof ExtensionBlueprintHooks>(
   merged: ExtensionBlueprintHooks,
@@ -447,17 +451,17 @@ function assignMergedHookSurface<TKey extends keyof ExtensionBlueprintHooks>(
   const hookArrays = surfaces.map((hooks) => hooks?.[key]) as ReadonlyArray<
     ExtensionBlueprintHookArray<TKey> | null | undefined
   >;
-  const value = mergeArraySurface<ExtensionBlueprintHookValue<TKey>>(hookArrays);
+  const value =
+    mergeArraySurface<ExtensionBlueprintHookValue<TKey>>(hookArrays);
   if (value !== undefined) {
-    const typedMerged = merged as { [K in TKey]?: ExtensionBlueprintHookArray<K> };
+    const typedMerged = merged as {
+      [K in TKey]?: ExtensionBlueprintHookArray<K>;
+    };
     typedMerged[key] = value as ExtensionBlueprintHookArray<TKey>;
   }
 }
 
-/**
- * Merge the nested `hooks` surface by concatenating each lifecycle kind's array in
- * canonical order. Returns `undefined` when no blueprint registers any hook.
- */
+/** Merge the nested `hooks` surface by concatenating each lifecycle kind's array in canonical order. Returns `undefined` when no blueprint registers any hook. */
 function mergeHookSurfaces(
   surfaces: ReadonlyArray<ExtensionBlueprintHooks | null | undefined>,
 ): ExtensionBlueprintHooks | undefined {
@@ -505,29 +509,86 @@ function mergeHookSurfaces(
  * empty field is omitted rather than emitted empty, so merging zero blueprints
  * returns an empty blueprint (`{}`).
  */
-export function mergeExtensionBlueprints(...blueprints: ExtensionBlueprint[]): ExtensionBlueprint {
+export function mergeExtensionBlueprints(
+  ...blueprints: ExtensionBlueprint[]
+): ExtensionBlueprint {
   const merged: ExtensionBlueprint = {};
-  const assign = <TKey extends keyof ExtensionBlueprint>(key: TKey, value: ExtensionBlueprint[TKey]): void => {
+  const assign = <TKey extends keyof ExtensionBlueprint>(
+    key: TKey,
+    value: ExtensionBlueprint[TKey],
+  ): void => {
     if (value !== undefined) {
       merged[key] = value;
     }
   };
-  assign("commands", mergeArraySurface(blueprints.map((blueprint) => blueprint.commands)));
-  assign("commandOverrides", mergeHandlerRecord(blueprints.map((blueprint) => blueprint.commandOverrides)));
-  assign("flags", mergeFlagRecord(blueprints.map((blueprint) => blueprint.flags)));
-  assign("parsers", mergeHandlerRecord(blueprints.map((blueprint) => blueprint.parsers)));
-  assign("renderers", mergeHandlerRecord(blueprints.map((blueprint) => blueprint.renderers)));
-  assign("services", mergeHandlerRecord(blueprints.map((blueprint) => blueprint.services)));
-  assign("preflights", mergeArraySurface(blueprints.map((blueprint) => blueprint.preflights)));
-  assign("itemTypes", mergeArraySurface(blueprints.map((blueprint) => blueprint.itemTypes)));
-  assign("itemFields", mergeArraySurface(blueprints.map((blueprint) => blueprint.itemFields)));
-  assign("migrations", mergeArraySurface(blueprints.map((blueprint) => blueprint.migrations)));
-  assign("profiles", mergeArraySurface(blueprints.map((blueprint) => blueprint.profiles)));
-  assign("searchProviders", mergeArraySurface(blueprints.map((blueprint) => blueprint.searchProviders)));
-  assign("vectorStoreAdapters", mergeArraySurface(blueprints.map((blueprint) => blueprint.vectorStoreAdapters)));
-  assign("importers", mergeArraySurface(blueprints.map((blueprint) => blueprint.importers)));
-  assign("exporters", mergeArraySurface(blueprints.map((blueprint) => blueprint.exporters)));
-  assign("hooks", mergeHookSurfaces(blueprints.map((blueprint) => blueprint.hooks)));
+  assign(
+    "commands",
+    mergeArraySurface(blueprints.map((blueprint) => blueprint.commands)),
+  );
+  assign(
+    "commandOverrides",
+    mergeHandlerRecord(
+      blueprints.map((blueprint) => blueprint.commandOverrides),
+    ),
+  );
+  assign(
+    "flags",
+    mergeFlagRecord(blueprints.map((blueprint) => blueprint.flags)),
+  );
+  assign(
+    "parsers",
+    mergeHandlerRecord(blueprints.map((blueprint) => blueprint.parsers)),
+  );
+  assign(
+    "renderers",
+    mergeHandlerRecord(blueprints.map((blueprint) => blueprint.renderers)),
+  );
+  assign(
+    "services",
+    mergeHandlerRecord(blueprints.map((blueprint) => blueprint.services)),
+  );
+  assign(
+    "preflights",
+    mergeArraySurface(blueprints.map((blueprint) => blueprint.preflights)),
+  );
+  assign(
+    "itemTypes",
+    mergeArraySurface(blueprints.map((blueprint) => blueprint.itemTypes)),
+  );
+  assign(
+    "itemFields",
+    mergeArraySurface(blueprints.map((blueprint) => blueprint.itemFields)),
+  );
+  assign(
+    "migrations",
+    mergeArraySurface(blueprints.map((blueprint) => blueprint.migrations)),
+  );
+  assign(
+    "profiles",
+    mergeArraySurface(blueprints.map((blueprint) => blueprint.profiles)),
+  );
+  assign(
+    "searchProviders",
+    mergeArraySurface(blueprints.map((blueprint) => blueprint.searchProviders)),
+  );
+  assign(
+    "vectorStoreAdapters",
+    mergeArraySurface(
+      blueprints.map((blueprint) => blueprint.vectorStoreAdapters),
+    ),
+  );
+  assign(
+    "importers",
+    mergeArraySurface(blueprints.map((blueprint) => blueprint.importers)),
+  );
+  assign(
+    "exporters",
+    mergeArraySurface(blueprints.map((blueprint) => blueprint.exporters)),
+  );
+  assign(
+    "hooks",
+    mergeHookSurfaces(blueprints.map((blueprint) => blueprint.hooks)),
+  );
   // Last-defined-wins for the in-module manifest mirror: a later module's identity
   // supersedes an earlier one's, matching the single-handler record precedence.
   let manifest: ExtensionManifest | undefined;
@@ -573,7 +634,10 @@ export function mergeExtensionBlueprints(...blueprints: ExtensionBlueprint[]): E
           }
           if (errors.length > 0) {
             if (errors.length > 1) {
-              throw new AggregateError(errors, "Multiple extension blueprint deactivate hooks failed.");
+              throw new AggregateError(
+                errors,
+                "Multiple extension blueprint deactivate hooks failed.",
+              );
             }
             throw errors[0];
           }
@@ -592,7 +656,9 @@ export function mergeExtensionBlueprints(...blueprints: ExtensionBlueprint[]): E
  * `hooks` is handled separately (it is a nested object, not an array/record of
  * registrations) and so is intentionally absent from this table.
  */
-const BLUEPRINT_FIELD_CAPABILITIES: ReadonlyArray<readonly [BlueprintRegistrationField, ExtensionCapability]> = [
+const BLUEPRINT_FIELD_CAPABILITIES: ReadonlyArray<
+  readonly [BlueprintRegistrationField, ExtensionCapability]
+> = [
   ["commands", "commands"],
   ["commandOverrides", "commands"],
   ["flags", "schema"],
@@ -627,7 +693,9 @@ type BlueprintRegistrationField =
   | "importers"
   | "exporters";
 
-function hasEntries(value: readonly unknown[] | Record<string, unknown> | null | undefined): boolean {
+function hasEntries(
+  value: readonly unknown[] | Record<string, unknown> | null | undefined,
+): boolean {
   // `!value` treats both `null` and `undefined` as "no entries", so an untyped
   // JavaScript author cannot crash capability derivation with an explicit null
   // field — `Object.keys(null)` would otherwise throw.
@@ -650,7 +718,9 @@ function hasEntries(value: readonly unknown[] | Record<string, unknown> | null |
  * here before activation rather than detecting drift after it. A blueprint with
  * no registration surfaces returns an empty array.
  */
-export function deriveExtensionCapabilities(blueprint: ExtensionBlueprint): ExtensionCapability[] {
+export function deriveExtensionCapabilities(
+  blueprint: ExtensionBlueprint,
+): ExtensionCapability[] {
   const capabilities = new Set<ExtensionCapability>();
   for (const [field, capability] of BLUEPRINT_FIELD_CAPABILITIES) {
     if (hasEntries(blueprint[field])) {
@@ -663,7 +733,11 @@ export function deriveExtensionCapabilities(blueprint: ExtensionBlueprint): Exte
   // what activation enforces when a command declares flags inline and the
   // blueprint has no separate `flags` field. `!== undefined` (not a truthiness or
   // length check) matches the loader's exact guard, including an empty inline array.
-  if ((blueprint.commands ?? []).filter(isPresent).some((command) => command.flags !== undefined)) {
+  if (
+    (blueprint.commands ?? [])
+      .filter(isPresent)
+      .some((command) => command.flags !== undefined)
+  ) {
     capabilities.add("schema");
   }
   // `registerImporter`/`registerExporter` with `options.flags` register flag
@@ -675,8 +749,13 @@ export function deriveExtensionCapabilities(blueprint: ExtensionBlueprint): Exte
   // exact `options.flags` guard, including an empty flag array. `entry?.` keeps a
   // malformed null array entry (from an untyped `.js`/JSON boundary) from crashing
   // derivation, consistent with the null-field robustness above.
-  const importExportEntries = [...(blueprint.importers ?? []), ...(blueprint.exporters ?? [])].filter(isPresent);
-  if (importExportEntries.some((entry) => entry?.options?.flags !== undefined)) {
+  const importExportEntries = [
+    ...(blueprint.importers ?? []),
+    ...(blueprint.exporters ?? []),
+  ].filter(isPresent);
+  if (
+    importExportEntries.some((entry) => entry?.options?.flags !== undefined)
+  ) {
     capabilities.add("schema");
   }
   // Importers/exporters always synthesize command handlers (`<name> import` /
@@ -688,7 +767,15 @@ export function deriveExtensionCapabilities(blueprint: ExtensionBlueprint): Exte
   }
   // `?? {}` keeps an explicit `hooks: null` from throwing, mirroring composeExtension.
   const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
-  if ([hooks.beforeCommand, hooks.afterCommand, hooks.onWrite, hooks.onRead, hooks.onIndex].some(hasEntries)) {
+  if (
+    [
+      hooks.beforeCommand,
+      hooks.afterCommand,
+      hooks.onWrite,
+      hooks.onRead,
+      hooks.onIndex,
+    ].some(hasEntries)
+  ) {
     capabilities.add("hooks");
   }
   return [...capabilities].sort((left, right) => left.localeCompare(right));
@@ -707,10 +794,14 @@ const BLUEPRINT_HOOK_FIELD_TO_KIND = [
   ["onWrite", "on_write"],
   ["onRead", "on_read"],
   ["onIndex", "on_index"],
-] as const satisfies ReadonlyArray<readonly [keyof ExtensionBlueprintHooks, string]>;
+] as const satisfies ReadonlyArray<
+  readonly [keyof ExtensionBlueprintHooks, string]
+>;
 
 /** De-duplicate and locale-sort a list of identifiers, mirroring the runtime summary. */
-function sortUnique<TValue extends string>(values: readonly TValue[]): TValue[] {
+function sortUnique<TValue extends string>(
+  values: readonly TValue[],
+): TValue[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
 
@@ -733,8 +824,12 @@ function collectBlueprintCommandPaths(
 ): string[] {
   return [
     ...commands.map((command) => normalizeCommandName(command.name)),
-    ...importers.filter((entry) => entry.options !== undefined).map(importerCommandPath),
-    ...exporters.filter((entry) => entry.options !== undefined).map(exporterCommandPath),
+    ...importers
+      .filter((entry) => entry.options !== undefined)
+      .map(importerCommandPath),
+    ...exporters
+      .filter((entry) => entry.options !== undefined)
+      .map(exporterCommandPath),
   ];
 }
 
@@ -745,15 +840,25 @@ function collectBlueprintFlagCommands(
   exporters: ExtensionBlueprintExporter[],
 ): string[] {
   return [
-    ...Object.keys(blueprint.flags ?? {}).map((command) => normalizeCommandName(command)),
-    ...commands.filter((command) => command.flags !== undefined).map((command) => normalizeCommandName(command.name)),
-    ...importers.filter((entry) => entry.options?.flags !== undefined).map(importerCommandPath),
-    ...exporters.filter((entry) => entry.options?.flags !== undefined).map(exporterCommandPath),
+    ...Object.keys(blueprint.flags ?? {}).map((command) =>
+      normalizeCommandName(command),
+    ),
+    ...commands
+      .filter((command) => command.flags !== undefined)
+      .map((command) => normalizeCommandName(command.name)),
+    ...importers
+      .filter((entry) => entry.options?.flags !== undefined)
+      .map(importerCommandPath),
+    ...exporters
+      .filter((entry) => entry.options?.flags !== undefined)
+      .map(exporterCommandPath),
   ];
 }
 
 function collectBlueprintHookKinds(hooks: ExtensionBlueprintHooks): string[] {
-  return BLUEPRINT_HOOK_FIELD_TO_KIND.filter(([field]) => (hooks[field]?.length ?? 0) > 0).map(([, kind]) => kind);
+  return BLUEPRINT_HOOK_FIELD_TO_KIND.filter(
+    ([field]) => (hooks[field]?.length ?? 0) > 0,
+  ).map(([, kind]) => kind);
 }
 
 function collectBlueprintSurfaceSummary(
@@ -776,24 +881,49 @@ function collectBlueprintSurfaceSummary(
   | "preflight_overrides"
 > {
   return {
-    item_types: sortUnique((blueprint.itemTypes ?? []).map((type) => type.name)),
-    item_fields: sortUnique((blueprint.itemFields ?? []).map((field) => field.name)),
+    item_types: sortUnique(
+      (blueprint.itemTypes ?? []).map((type) => type.name),
+    ),
+    item_fields: sortUnique(
+      (blueprint.itemFields ?? []).map((field) => field.name),
+    ),
     // id-less migrations register but carry no identifier, so they are omitted —
     // exactly as describeExtensionActivation drops them from its `migrations` list.
     migrations: sortUnique(
-      (blueprint.migrations ?? []).flatMap((migration) => (typeof migration.id === "string" ? [migration.id] : [])),
+      (blueprint.migrations ?? []).flatMap((migration) =>
+        typeof migration.id === "string" ? [migration.id] : [],
+      ),
     ),
-    profiles: sortUnique((blueprint.profiles ?? []).map((profile) => profile.name)),
-    importers: sortUnique(importers.map((entry) => normalizeCommandName(entry.name))),
-    exporters: sortUnique(exporters.map((entry) => normalizeCommandName(entry.name))),
-    search_providers: sortUnique((blueprint.searchProviders ?? []).map((provider) => provider.name)),
-    vector_store_adapters: sortUnique((blueprint.vectorStoreAdapters ?? []).map((adapter) => adapter.name)),
-    parser_overrides: sortUnique(Object.keys(blueprint.parsers ?? {}).map((command) => normalizeCommandName(command))),
+    profiles: sortUnique(
+      (blueprint.profiles ?? []).map((profile) => profile.name),
+    ),
+    importers: sortUnique(
+      importers.map((entry) => normalizeCommandName(entry.name)),
+    ),
+    exporters: sortUnique(
+      exporters.map((entry) => normalizeCommandName(entry.name)),
+    ),
+    search_providers: sortUnique(
+      (blueprint.searchProviders ?? []).map((provider) => provider.name),
+    ),
+    vector_store_adapters: sortUnique(
+      (blueprint.vectorStoreAdapters ?? []).map((adapter) => adapter.name),
+    ),
+    parser_overrides: sortUnique(
+      Object.keys(blueprint.parsers ?? {}).map((command) =>
+        normalizeCommandName(command),
+      ),
+    ),
     service_overrides: sortUnique(
-      Object.keys(blueprint.services ?? {}).map((service) => String(service).trim().toLowerCase() as ExtensionServiceName),
+      Object.keys(blueprint.services ?? {}).map(
+        (service) =>
+          String(service).trim().toLowerCase() as ExtensionServiceName,
+      ),
     ),
     renderer_overrides: sortUnique(
-      Object.keys(blueprint.renderers ?? {}).map((format) => String(format).trim().toLowerCase() as OutputRendererFormat),
+      Object.keys(blueprint.renderers ?? {}).map(
+        (format) => String(format).trim().toLowerCase() as OutputRendererFormat,
+      ),
     ),
     preflight_overrides: (blueprint.preflights ?? []).length,
   };
@@ -823,27 +953,50 @@ function collectBlueprintSurfaceSummary(
  * `activate` escape hatch — arbitrary code a static reader cannot inspect. A
  * blueprint that registers everything through that hatch summarizes as empty.
  */
-export function describeExtensionBlueprint(blueprint: ExtensionBlueprint): ExtensionActivationSummary {
+export function describeExtensionBlueprint(
+  blueprint: ExtensionBlueprint,
+): ExtensionActivationSummary {
   const commands = (blueprint.commands ?? []).filter(isPresent);
   const importers = (blueprint.importers ?? []).filter(isPresent);
   const exporters = (blueprint.exporters ?? []).filter(isPresent);
   const importerPaths = importers.map(importerCommandPath);
   const exporterPaths = exporters.map(exporterCommandPath);
-  const commandPaths = collectBlueprintCommandPaths(commands, importers, exporters);
+  const commandPaths = collectBlueprintCommandPaths(
+    commands,
+    importers,
+    exporters,
+  );
   // A command definition with inline `flags` registers a flag target under its own
   // path in addition to any top-level `flags` record. Import/export options with
   // `flags` register through the same runtime metadata path, so union all sources.
-  const flagCommands = collectBlueprintFlagCommands(blueprint, commands, importers, exporters);
+  const flagCommands = collectBlueprintFlagCommands(
+    blueprint,
+    commands,
+    importers,
+    exporters,
+  );
   const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
-  const surfaces = collectBlueprintSurfaceSummary(blueprint, importers, exporters);
+  const surfaces = collectBlueprintSurfaceSummary(
+    blueprint,
+    importers,
+    exporters,
+  );
 
   return {
     capabilities: deriveExtensionCapabilities(blueprint),
     commands: sortUnique(commandPaths),
-    command_overrides: sortUnique(Object.keys(blueprint.commandOverrides ?? {}).map((command) => normalizeCommandName(command))),
+    command_overrides: sortUnique(
+      Object.keys(blueprint.commandOverrides ?? {}).map((command) =>
+        normalizeCommandName(command),
+      ),
+    ),
     // command_handlers is a superset of commands that also carries the synthesized
     // importer/exporter command paths, but never the override-only paths.
-    command_handlers: sortUnique([...commandPaths, ...importerPaths, ...exporterPaths]),
+    command_handlers: sortUnique([
+      ...commandPaths,
+      ...importerPaths,
+      ...exporterPaths,
+    ]),
     hooks: collectBlueprintHookKinds(hooks),
     flag_commands: sortUnique(flagCommands),
     ...surfaces,
@@ -920,9 +1073,15 @@ export interface ExtensionBlueprintLintFinding {
   field?: string;
 }
 
-function collectReservedItemFieldFindings(blueprint: ExtensionBlueprint): ExtensionBlueprintLintFinding[] {
+function collectReservedItemFieldFindings(
+  blueprint: ExtensionBlueprint,
+): ExtensionBlueprintLintFinding[] {
   return (blueprint.itemFields ?? [])
-    .filter((field) => typeof field?.name === "string" && RESERVED_ITEM_FIELD_NAMES.has(field.name.trim()))
+    .filter(
+      (field) =>
+        typeof field?.name === "string" &&
+        RESERVED_ITEM_FIELD_NAMES.has(field.name.trim()),
+    )
     .map((field) => ({
       code: "reserved_item_field",
       severity: "error",
@@ -935,12 +1094,7 @@ function collectReservedItemFieldFindings(blueprint: ExtensionBlueprint): Extens
  * Options for {@link lintExtensionBlueprint} and {@link ../sdk/testing.js#assertExtensionBlueprint}.
  */
 export interface LintExtensionBlueprintOptions {
-  /**
-   * The capabilities the package's `manifest.json` declares (or will), used to
-   * reconcile against the surfaces the blueprint exercises. Overrides
-   * `blueprint.manifest.capabilities` when both are present. Omit both to lint
-   * without a capability reconciliation (only the structural checks run).
-   */
+  /** The capabilities the package's `manifest.json` declares (or will), used to reconcile against the surfaces the blueprint exercises. Overrides `blueprint.manifest.capabilities` when both are present. Omit both to lint without a capability reconciliation (only the structural checks run). */
   declaredCapabilities?: readonly string[];
 }
 
@@ -959,7 +1113,9 @@ export interface ExtensionBlueprintLintResult {
 }
 
 /** Normalize a raw declared-capability list to known capabilities only (legacy-alias aware, sorted, de-duplicated). */
-function normalizeDeclaredCapabilities(capabilities: readonly string[]): ExtensionCapability[] {
+function normalizeDeclaredCapabilities(
+  capabilities: readonly string[],
+): ExtensionCapability[] {
   const known = new Set<ExtensionCapability>();
   for (const capability of capabilities) {
     // Resolve a legacy alias (e.g. migration/validation → schema) exactly as the
@@ -968,7 +1124,9 @@ function normalizeDeclaredCapabilities(capabilities: readonly string[]): Extensi
     // alias-satisfied capability as undeclared. Fall back to a canonical known
     // name; unknown capabilities are a separate diagnostic and are dropped so a
     // typo is not misreported as "unused".
-    const normalized = resolveLegacyExtensionCapabilityAlias(capability) ?? normalizeKnownExtensionCapability(capability);
+    const normalized =
+      resolveLegacyExtensionCapabilityAlias(capability) ??
+      normalizeKnownExtensionCapability(capability);
     if (normalized !== null) {
       known.add(normalized);
     }
@@ -976,13 +1134,7 @@ function normalizeDeclaredCapabilities(capabilities: readonly string[]): Extensi
   return [...known].sort((left, right) => left.localeCompare(right));
 }
 
-/**
- * Reconcile a blueprint's exercised capabilities against its declared set: a
- * used-but-undeclared capability is an `error` (activation throws
- * `extension_capability_missing`), a declared-but-unused one a `warning`, and a
- * wholly absent declared set (`declared === null`) yields the single
- * `manifest_capabilities_absent` adoption hint.
- */
+/** Reconcile a blueprint's exercised capabilities against its declared set: a used-but-undeclared capability is an `error` (activation throws `extension_capability_missing`), a declared-but-unused one a `warning`, and a wholly absent declared set (`declared === null`) yields the single `manifest_capabilities_absent` adoption hint. */
 function collectBlueprintCapabilityFindings(
   used: ExtensionCapability[],
   declared: ExtensionCapability[] | null,
@@ -1023,13 +1175,10 @@ function collectBlueprintCapabilityFindings(
   return findings;
 }
 
-/**
- * Detect structural command footguns in a blueprint: a command path declared
- * more than once (`duplicate_command`, the later registration shadowing the
- * earlier at dispatch) and a path declared both as a fresh command definition
- * and as an override (`command_override_conflict`).
- */
-function collectBlueprintCommandFindings(blueprint: ExtensionBlueprint): ExtensionBlueprintLintFinding[] {
+/** Detect structural command footguns in a blueprint: a command path declared more than once (`duplicate_command`, the later registration shadowing the earlier at dispatch) and a path declared both as a fresh command definition and as an override (`command_override_conflict`). */
+function collectBlueprintCommandFindings(
+  blueprint: ExtensionBlueprint,
+): ExtensionBlueprintLintFinding[] {
   const findings: ExtensionBlueprintLintFinding[] = [];
   const commandPathCounts = new Map<string, number>();
   for (const command of blueprint.commands ?? []) {
@@ -1047,7 +1196,9 @@ function collectBlueprintCommandFindings(blueprint: ExtensionBlueprint): Extensi
     }
   }
   const overridePaths = new Set(
-    Object.keys(blueprint.commandOverrides ?? {}).map((command) => normalizeCommandName(command)),
+    Object.keys(blueprint.commandOverrides ?? {}).map((command) =>
+      normalizeCommandName(command),
+    ),
   );
   for (const path of commandPathCounts.keys()) {
     if (overridePaths.has(path)) {
@@ -1062,12 +1213,10 @@ function collectBlueprintCommandFindings(blueprint: ExtensionBlueprint): Extensi
   return findings;
 }
 
-/**
- * Flag blueprint registration fields that are present but contribute nothing —
- * an empty array/record surface, or a `hooks` object registering no lifecycle
- * hook — each reported as an `empty_surface` warning (fields first, then hooks).
- */
-function collectBlueprintEmptySurfaceFindings(blueprint: ExtensionBlueprint): ExtensionBlueprintLintFinding[] {
+/** Flag blueprint registration fields that are present but contribute nothing — an empty array/record surface, or a `hooks` object registering no lifecycle hook — each reported as an `empty_surface` warning (fields first, then hooks). */
+function collectBlueprintEmptySurfaceFindings(
+  blueprint: ExtensionBlueprint,
+): ExtensionBlueprintLintFinding[] {
   const findings: ExtensionBlueprintLintFinding[] = [];
   for (const field of BLUEPRINT_LINTABLE_SURFACE_FIELDS) {
     if (field in blueprint && !hasEntries(blueprint[field])) {
@@ -1081,9 +1230,13 @@ function collectBlueprintEmptySurfaceFindings(blueprint: ExtensionBlueprint): Ex
   }
   if ("hooks" in blueprint) {
     const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
-    const registersHook = [hooks.beforeCommand, hooks.afterCommand, hooks.onWrite, hooks.onRead, hooks.onIndex].some(
-      hasEntries,
-    );
+    const registersHook = [
+      hooks.beforeCommand,
+      hooks.afterCommand,
+      hooks.onWrite,
+      hooks.onRead,
+      hooks.onIndex,
+    ].some(hasEntries);
     if (!registersHook) {
       findings.push({
         code: "empty_surface",
@@ -1129,8 +1282,11 @@ export function lintExtensionBlueprint(
 
   // A non-array declared source (an untyped `.js` author's malformed manifest, or
   // a missing field) is treated as "no declared set" rather than "declares nothing".
-  const declaredSource = options.declaredCapabilities ?? blueprint.manifest?.capabilities;
-  const declared = Array.isArray(declaredSource) ? normalizeDeclaredCapabilities(declaredSource) : null;
+  const declaredSource =
+    options.declaredCapabilities ?? blueprint.manifest?.capabilities;
+  const declared = Array.isArray(declaredSource)
+    ? normalizeDeclaredCapabilities(declaredSource)
+    : null;
 
   // Findings accumulate in detection order: capability drift, then command
   // duplicates/conflicts, then empty surfaces.
@@ -1159,14 +1315,11 @@ export function lintExtensionBlueprint(
  * (engines, permissions, provenance, version floors/ceilings, sandbox profile,
  * manifest version, activation, legacy aliases) are the author's to supply here.
  */
-export interface SynthesizeExtensionManifestIdentity extends Omit<ExtensionManifest, "capabilities"> {
-  /**
-   * Extra capabilities to grant beyond the blueprint's derived set, for surfaces
-   * registered through the blueprint's imperative `activate` escape hatch that
-   * static derivation cannot see (e.g. a renderer wired in `activate`). Each is
-   * legacy-alias resolved and normalized like a declared manifest capability;
-   * unknown names are dropped (the synthesized manifest is validated at load).
-   */
+export interface SynthesizeExtensionManifestIdentity extends Omit<
+  ExtensionManifest,
+  "capabilities"
+> {
+  /** Extra capabilities to grant beyond the blueprint's derived set, for surfaces registered through the blueprint's imperative `activate` escape hatch that static derivation cannot see (e.g. a renderer wired in `activate`). Each is legacy-alias resolved and normalized like a declared manifest capability; unknown names are dropped (the synthesized manifest is validated at load). */
   additionalCapabilities?: readonly string[];
 }
 
@@ -1198,10 +1351,15 @@ export function synthesizeExtensionManifest(
   const { additionalCapabilities, ...manifestIdentity } = identity;
   // `Array.isArray` keeps a non-array value (or an omitted field) crossing an
   // untyped boundary from crashing the spread, mirroring the rest of the SDK.
-  const extra = Array.isArray(additionalCapabilities) ? normalizeDeclaredCapabilities(additionalCapabilities) : [];
-  const capabilities = [...new Set<ExtensionCapability>([...deriveExtensionCapabilities(blueprint), ...extra])].sort(
-    (left, right) => left.localeCompare(right),
-  );
+  const extra = Array.isArray(additionalCapabilities)
+    ? normalizeDeclaredCapabilities(additionalCapabilities)
+    : [];
+  const capabilities = [
+    ...new Set<ExtensionCapability>([
+      ...deriveExtensionCapabilities(blueprint),
+      ...extra,
+    ]),
+  ].sort((left, right) => left.localeCompare(right));
   return { ...manifestIdentity, capabilities };
 }
 
@@ -1257,20 +1415,9 @@ export function composeExtensionPackage(
  * manifest's version bounds against.
  */
 export interface ExtensionManifestCompatibilityTarget {
-  /**
-   * The pm CLI version to check the manifest against, e.g. the running CLI's
-   * `version` or a version floor a package commits to supporting. Plain
-   * dotted-numeric (`2026.6.23`) or `v`-prefixed values are compared; anything
-   * uninterpretable yields an `unchecked` finding rather than a false verdict.
-   */
+  /** The pm CLI version to check the manifest against, e.g. the running CLI's `version` or a version floor a package commits to supporting. Plain dotted-numeric (`2026.6.23`) or `v`-prefixed values are compared; anything uninterpretable yields an `unchecked` finding rather than a false verdict. */
   pmVersion: string;
-  /**
-   * How a `pm_max_version` overrun is treated, mirroring the runtime
-   * `extensions.policy.pm_max_version_exceeded_mode`. `"block"` (the default)
-   * reports an exceeded upper bound as a blocking incompatibility; `"warn"`
-   * reports it as a non-blocking advisory, matching an operator who relaxed the
-   * gate during a CLI upgrade window.
-   */
+  /** How a `pm_max_version` overrun is treated, mirroring the runtime `extensions.policy.pm_max_version_exceeded_mode`. `"block"` (the default) reports an exceeded upper bound as a blocking incompatibility; `"warn"` reports it as a non-blocking advisory, matching an operator who relaxed the gate during a CLI upgrade window. */
   pmMaxVersionExceededMode?: PmMaxVersionExceededMode;
 }
 
@@ -1343,7 +1490,8 @@ function toCompatibilityFinding(
   if (evaluation.status === "absent" || evaluation.status === "ok") {
     return null;
   }
-  const code = `${evaluation.kind}_${evaluation.status}` as ExtensionManifestCompatibilityCode;
+  const code =
+    `${evaluation.kind}_${evaluation.status}` as ExtensionManifestCompatibilityCode;
   let message: string;
   switch (code) {
     case "pm_min_version_invalid":
@@ -1404,7 +1552,10 @@ export function checkExtensionManifestCompatibility(
   manifest: ExtensionManifestCompatibilityManifest,
   target: ExtensionManifestCompatibilityTarget,
 ): ExtensionManifestCompatibilityResult {
-  const minEvaluation = evaluatePmMinVersionBound(manifest.pm_min_version, target.pmVersion);
+  const minEvaluation = evaluatePmMinVersionBound(
+    manifest.pm_min_version,
+    target.pmVersion,
+  );
   const maxEvaluation = evaluatePmMaxVersionBound(
     manifest.pm_max_version,
     target.pmVersion,
@@ -1509,14 +1660,7 @@ export interface ExtensionPreflightReport {
   manifest: ExtensionManifest | null;
   /** The {@link checkExtensionManifestCompatibility} result, or `null` when no `options.target` was supplied. */
   compatibility: ExtensionManifestCompatibilityResult | null;
-  /**
-   * Every finding from all stages, blueprint-lint findings before compatibility
-   * findings, each tagged by `source`. This is the consolidated, curated view: when
-   * `options.identity` synthesizes the manifest without an explicit
-   * `declaredCapabilities` set, capability-drift findings the lint raised against the
-   * blueprint's now-superseded in-module `manifest` mirror are omitted here (the raw
-   * `blueprint` result still carries them).
-   */
+  /** Every finding from all stages, blueprint-lint findings before compatibility findings, each tagged by `source`. This is the consolidated, curated view: when `options.identity` synthesizes the manifest without an explicit `declaredCapabilities` set, capability-drift findings the lint raised against the blueprint's now-superseded in-module `manifest` mirror are omitted here (the raw `blueprint` result still carries them). */
   findings: ExtensionPreflightFinding[];
 }
 
@@ -1555,13 +1699,20 @@ export function preflightExtension(
   blueprint: ExtensionBlueprint,
   options: PreflightExtensionOptions = {},
 ): ExtensionPreflightReport {
-  const blueprintResult = lintExtensionBlueprint(blueprint, { declaredCapabilities: options.declaredCapabilities });
-  const manifest = options.identity ? synthesizeExtensionManifest(blueprint, options.identity) : null;
+  const blueprintResult = lintExtensionBlueprint(blueprint, {
+    declaredCapabilities: options.declaredCapabilities,
+  });
+  const manifest = options.identity
+    ? synthesizeExtensionManifest(blueprint, options.identity)
+    : null;
   // Compatibility evaluates the bounds the package will ship: the synthesized
   // manifest when an identity drives generation, else the blueprint's in-module
   // manifest mirror, else an empty manifest (no bounds → trivially compatible).
   const compatibility = options.target
-    ? checkExtensionManifestCompatibility(manifest ?? blueprint.manifest ?? {}, options.target)
+    ? checkExtensionManifestCompatibility(
+        manifest ?? blueprint.manifest ?? {},
+        options.target,
+      )
     : null;
   // When preflight synthesizes the manifest from an identity (and the caller did not
   // pin an explicit declaredCapabilities set), the blueprint lint reconciled against
@@ -1572,9 +1723,12 @@ export function preflightExtension(
   // findings are unaffected and the raw lint result on `report.blueprint` keeps all of
   // them. An explicit declaredCapabilities set is a deliberate "check exactly this"
   // request, so it is never suppressed.
-  const suppressCapabilityDrift = manifest !== null && options.declaredCapabilities === undefined;
+  const suppressCapabilityDrift =
+    manifest !== null && options.declaredCapabilities === undefined;
   const blueprintFindings = suppressCapabilityDrift
-    ? blueprintResult.findings.filter((finding) => !CAPABILITY_DRIFT_LINT_CODES.has(finding.code))
+    ? blueprintResult.findings.filter(
+        (finding) => !CAPABILITY_DRIFT_LINT_CODES.has(finding.code),
+      )
     : blueprintResult.findings;
   const findings: ExtensionPreflightFinding[] = [
     ...blueprintFindings.map(

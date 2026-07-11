@@ -3,30 +3,36 @@
  *
  * Implements append-only history and replay behavior for History Diff.
  */
-import { cloneEmptyReplayDocument, tryApplyReplayPatch, type ReplayDocument } from "./replay.js";
+import {
+  cloneEmptyReplayDocument,
+  tryApplyReplayPatch,
+  type ReplayDocument,
+} from "./replay.js";
 import type { HistoryEntry } from "../../types/index.js";
 
-/**
- * Documents the history field change payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the history field change payload exchanged by command, SDK, and package integrations. */
 export interface HistoryFieldChange {
+  /** Value that configures or reports field for this contract. */
   field: string;
   // before and after are the raw field values captured by replaying the history chain.
   // `undefined` is intentional: it signals that the field was absent in the document at
   // that point (e.g. after a JSON-Patch `remove` op). JSON serialization will omit
   // undefined values, which correctly communicates "field did not exist".
+  /** Value that configures or reports before for this contract. */
   before: unknown;
+  /** Value that configures or reports after for this contract. */
   after: unknown;
 }
 
-/**
- * Documents the history diff value entry payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the history diff value entry payload exchanged by command, SDK, and package integrations. */
 export interface HistoryDiffValueEntry {
   /** 1-based position in the FULL stream (fullEntries index + 1). */
   index: number;
+  /** Value that configures or reports ts for this contract. */
   ts: string;
+  /** Value that configures or reports op for this contract. */
   op: string;
+  /** Value that configures or reports author for this contract. */
   author: string;
   /** Number of JSON-patch operations in this entry (entry.patch.length). */
   patch_ops: number;
@@ -64,7 +70,9 @@ export function patchPathToChangedField(path: string): string {
     path === "/front_matter" ||
     path.startsWith("/front_matter/")
   ) {
-    const segment = path.replace(/^\/(?:metadata|front_matter)\/?/, "").split("/")[0];
+    const segment = path
+      .replace(/^\/(?:metadata|front_matter)\/?/, "")
+      .split("/")[0];
     if (!segment) return "metadata";
     return decodeJsonPointerSegment(segment);
   }
@@ -147,7 +155,9 @@ export function computeHistoryDiff(
         changedFieldSet.add(patchPathToChangedField(patchOp.from));
       }
     }
-    const sortedFields = [...changedFieldSet].sort((a, b) => a.localeCompare(b));
+    const sortedFields = [...changedFieldSet].sort((a, b) =>
+      a.localeCompare(b),
+    );
 
     // Only emit entries in the display window.
     if (p >= windowStartIndex) {

@@ -11,7 +11,11 @@ import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
+import {
+  locateItem,
+  mutateItem,
+  readLocatedItem,
+} from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { resolveAuthor } from "../../core/shared/author.js";
@@ -28,77 +32,109 @@ import {
   type LinkedPathValidation,
 } from "./linked-artifacts.js";
 
-/**
- * Documents the files command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the files command options payload exchanged by command, SDK, and package integrations. */
 export interface FilesCommandOptions {
+  /** Value that configures or reports add for this contract. */
   add?: string[];
+  /** Value that configures or reports add glob for this contract. */
   addGlob?: string[];
+  /** Value that configures or reports remove for this contract. */
   remove?: string[];
+  /** Value that configures or reports migrate for this contract. */
   migrate?: string[];
   /** GH-170 (pm-pfnx): standalone note applied to every --add/--add-glob link in this invocation. */
   note?: string;
+  /** Value that configures or reports list for this contract. */
   list?: boolean;
+  /** Value that configures or reports append stable for this contract. */
   appendStable?: boolean;
+  /** Value that configures or reports validate paths for this contract. */
   validatePaths?: boolean;
+  /** Value that configures or reports audit for this contract. */
   audit?: boolean;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Value that configures or reports force for this contract. */
   force?: boolean;
 }
 
-/**
- * Documents the files discover options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the files discover options payload exchanged by command, SDK, and package integrations. */
 export interface FilesDiscoverOptions {
+  /** Value that configures or reports apply for this contract. */
   apply?: boolean;
+  /** Value that configures or reports append stable for this contract. */
   appendStable?: boolean;
+  /** Value that configures or reports note for this contract. */
   note?: string;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Value that configures or reports force for this contract. */
   force?: boolean;
 }
 
-/**
- * Documents the files discovery candidate payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the files discovery candidate payload exchanged by command, SDK, and package integrations. */
 export interface FilesDiscoveryCandidate {
+  /** Filesystem path used for path resolution. */
   path: string;
+  /** Value that configures or reports scope for this contract. */
   scope: LinkScope;
+  /** Lifecycle state reported for status. */
   status: "addable" | "already_linked";
+  /** Number of source entries represented by this result. */
   source_count: number;
+  /** Value that configures or reports source fields for this contract. */
   source_fields: string[];
+  /** Value that configures or reports original paths for this contract. */
   original_paths: string[];
 }
 
-/**
- * Documents the files result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the files result payload exchanged by command, SDK, and package integrations. */
 export interface FilesResult {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports files for this contract. */
   files: LinkedFile[];
+  /** Value that configures or reports changed for this contract. */
   changed: boolean;
+  /** Value that configures or reports count for this contract. */
   count: number;
+  /** Value that configures or reports migrations applied for this contract. */
   migrations_applied?: number;
+  /** Value that configures or reports validation for this contract. */
   validation?: LinkedPathValidation;
+  /** Value that configures or reports audit for this contract. */
   audit?: LinkedPathAuditEntry[];
 }
 
-/**
- * Documents the files discover result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the files discover result payload exchanged by command, SDK, and package integrations. */
 export interface FilesDiscoverResult {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports files for this contract. */
   files: LinkedFile[];
+  /** Value that configures or reports changed for this contract. */
   changed: boolean;
+  /** Value that configures or reports apply for this contract. */
   apply: boolean;
+  /** Value that configures or reports count for this contract. */
   count: number;
+  /** Number of candidate entries represented by this result. */
   candidate_count: number;
+  /** Number of addable entries represented by this result. */
   addable_count: number;
+  /** Number of added entries represented by this result. */
   added_count: number;
+  /** Number of skipped existing entries represented by this result. */
   skipped_existing_count: number;
+  /** Value that configures or reports candidates for this contract. */
   candidates: FilesDiscoveryCandidate[];
+  /** Value that configures or reports added for this contract. */
   added: LinkedFile[];
+  /** Value that configures or reports skipped existing for this contract. */
   skipped_existing: FilesDiscoveryCandidate[];
 }
 
@@ -124,14 +160,21 @@ async function realpathForContainment(inputPath: string): Promise<string> {
   }
 }
 
-function linkedFileResolvedKey(linkedFile: Pick<LinkedFile, "path" | "scope">, projectRoot: string): string {
+function linkedFileResolvedKey(
+  linkedFile: Pick<LinkedFile, "path" | "scope">,
+  projectRoot: string,
+): string {
   const resolvedPath = path.isAbsolute(linkedFile.path)
     ? path.resolve(linkedFile.path)
     : path.resolve(projectRoot, linkedFile.path);
   return `${normalizeCandidatePathForOutput(resolvedPath)}::${linkedFile.scope}`;
 }
 
-function collectTextReferences(value: unknown, fieldPath: string, references: TextReference[]): void {
+function collectTextReferences(
+  value: unknown,
+  fieldPath: string,
+  references: TextReference[],
+): void {
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (trimmed.length > 0) {
@@ -140,13 +183,19 @@ function collectTextReferences(value: unknown, fieldPath: string, references: Te
     return;
   }
   if (Array.isArray(value)) {
-    value.forEach((entry, index) => collectTextReferences(entry, `${fieldPath}[${index}]`, references));
+    value.forEach((entry, index) =>
+      collectTextReferences(entry, `${fieldPath}[${index}]`, references),
+    );
     return;
   }
   if (typeof value === "object" && value !== null) {
     for (const [key, nested] of Object.entries(value)) {
       /* c8 ignore next -- root-level object traversal always carries a non-empty field path in current callers. */
-      collectTextReferences(nested, fieldPath ? `${fieldPath}.${key}` : key, references);
+      collectTextReferences(
+        nested,
+        fieldPath ? `${fieldPath}.${key}` : key,
+        references,
+      );
     }
   }
 }
@@ -168,7 +217,9 @@ function cleanupPathToken(value: string): string {
   return next;
 }
 
-function extractRawPathReferences(references: TextReference[]): RawPathReference[] {
+function extractRawPathReferences(
+  references: TextReference[],
+): RawPathReference[] {
   const rawReferences: RawPathReference[] = [];
   const absolutePattern = /(?:[A-Za-z]:[\\/]|\/)[^\s"'`<>()[\]{},;]+/gu;
   const relativePattern =
@@ -195,7 +246,9 @@ async function resolveDiscoveredFile(
   rawPath: string,
   projectRoot: string,
 ): Promise<Pick<LinkedFile, "path" | "scope"> | undefined> {
-  const absolutePath = path.isAbsolute(rawPath) ? path.resolve(rawPath) : path.resolve(projectRoot, rawPath);
+  const absolutePath = path.isAbsolute(rawPath)
+    ? path.resolve(rawPath)
+    : path.resolve(projectRoot, rawPath);
   let stats;
   try {
     stats = await fs.stat(absolutePath);
@@ -210,8 +263,15 @@ async function resolveDiscoveredFile(
     realpathForContainment(absolutePath),
   ]);
   if (isPathWithinDirectory(canonicalProjectRoot, canonicalAbsolutePath)) {
-    const relativePath = path.relative(canonicalProjectRoot, canonicalAbsolutePath);
-    if (!relativePath || relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+    const relativePath = path.relative(
+      canonicalProjectRoot,
+      canonicalAbsolutePath,
+    );
+    if (
+      !relativePath ||
+      relativePath.startsWith("..") ||
+      path.isAbsolute(relativePath)
+    ) {
       return undefined;
     }
     return {
@@ -225,8 +285,15 @@ async function resolveDiscoveredFile(
   };
 }
 
-async function discoverReferencedFiles(document: ItemDocument, projectRoot: string): Promise<FilesDiscoveryCandidate[]> {
-  const existingResolvedKeys = new Set((document.metadata.files ?? []).map((entry) => linkedFileResolvedKey(entry, projectRoot)));
+async function discoverReferencedFiles(
+  document: ItemDocument,
+  projectRoot: string,
+): Promise<FilesDiscoveryCandidate[]> {
+  const existingResolvedKeys = new Set(
+    (document.metadata.files ?? []).map((entry) =>
+      linkedFileResolvedKey(entry, projectRoot),
+    ),
+  );
   const grouped = new Map<
     string,
     {
@@ -237,7 +304,9 @@ async function discoverReferencedFiles(document: ItemDocument, projectRoot: stri
       sourceCount: number;
     }
   >();
-  const rawReferences = extractRawPathReferences(collectItemTextReferences(document));
+  const rawReferences = extractRawPathReferences(
+    collectItemTextReferences(document),
+  );
   for (const reference of rawReferences) {
     const resolved = await resolveDiscoveredFile(reference.value, projectRoot);
     if (!resolved) {
@@ -260,10 +329,16 @@ async function discoverReferencedFiles(document: ItemDocument, projectRoot: stri
     .map(([key, entry]) => ({
       path: entry.path,
       scope: entry.scope,
-      status: existingResolvedKeys.has(key) ? ("already_linked" as const) : ("addable" as const),
+      status: existingResolvedKeys.has(key)
+        ? ("already_linked" as const)
+        : ("addable" as const),
       source_count: entry.sourceCount,
-      source_fields: [...entry.sourceFields].sort((left, right) => left.localeCompare(right)),
-      original_paths: [...entry.originalPaths].sort((left, right) => left.localeCompare(right)),
+      source_fields: [...entry.sourceFields].sort((left, right) =>
+        left.localeCompare(right),
+      ),
+      original_paths: [...entry.originalPaths].sort((left, right) =>
+        left.localeCompare(right),
+      ),
     }))
     .sort((left, right) => {
       const byStatus = left.status.localeCompare(right.status);
@@ -275,6 +350,7 @@ async function discoverReferencedFiles(document: ItemDocument, projectRoot: stri
     });
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   normalizeCandidatePathForOutput,
   realpathForContainment,
@@ -287,22 +363,27 @@ export const _testOnly = {
   discoverReferencedFiles,
 };
 
-/**
- * Implements run files for the public runtime surface of this module.
- */
-export async function runFiles(id: string, options: FilesCommandOptions, global: GlobalOptions): Promise<FilesResult> {
-  const result: LinkedArtifactResult = await runLinkedArtifacts(id, options, global, {
-    metadataKey: "files",
-    op: "files_add",
-    bareNoun: "file",
-    supportsAppendStable: true,
-  });
+/** Implements run files for the public runtime surface of this module. */
+export async function runFiles(
+  id: string,
+  options: FilesCommandOptions,
+  global: GlobalOptions,
+): Promise<FilesResult> {
+  const result: LinkedArtifactResult = await runLinkedArtifacts(
+    id,
+    options,
+    global,
+    {
+      metadataKey: "files",
+      op: "files_add",
+      bareNoun: "file",
+      supportsAppendStable: true,
+    },
+  );
   return renameArtifactsResultKey(result, "files") as unknown as FilesResult;
 }
 
-/**
- * Implements run files discover for the public runtime surface of this module.
- */
+/** Implements run files discover for the public runtime surface of this module. */
 export async function runFilesDiscover(
   id: string,
   options: FilesDiscoverOptions,
@@ -310,19 +391,38 @@ export async function runFilesDiscover(
 ): Promise<FilesDiscoverResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
+  const located = await locateItem(
+    pmRoot,
+    id,
+    settings.id_prefix,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+  );
   /* c8 ignore next -- not-found behavior is validated by CLI integration coverage. */
   if (!located) {
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
   }
   const loaded = await readLocatedItem(located, { schema: settings.schema });
-  const candidates = await discoverReferencedFiles(loaded.document, process.cwd());
-  const addableCandidates = candidates.filter((candidate) => candidate.status === "addable");
-  const skippedExisting = candidates.filter((candidate) => candidate.status === "already_linked");
+  const candidates = await discoverReferencedFiles(
+    loaded.document,
+    process.cwd(),
+  );
+  const addableCandidates = candidates.filter(
+    (candidate) => candidate.status === "addable",
+  );
+  const skippedExisting = candidates.filter(
+    (candidate) => candidate.status === "already_linked",
+  );
   const requestedApply = options.apply === true;
   const note = options.note?.trim() || "discovered from item text";
 
@@ -360,7 +460,9 @@ export async function runFilesDiscover(
     force: options.force,
     mutate(document) {
       const next = [...(document.metadata.files ?? [])];
-      const existingResolvedKeys = new Set(next.map((entry) => linkedFileResolvedKey(entry, process.cwd())));
+      const existingResolvedKeys = new Set(
+        next.map((entry) => linkedFileResolvedKey(entry, process.cwd())),
+      );
       const appliedAdds: LinkedFile[] = [];
       for (const add of discoveredAdds) {
         const resolvedKey = linkedFileResolvedKey(add, process.cwd());
@@ -374,7 +476,9 @@ export async function runFilesDiscover(
       }
       const deduped = dedupeLinkedArtifacts(next);
       /* c8 ignore next -- appendStable branch is covered through runFiles command contract tests. */
-      const normalized = options.appendStable ? deduped : sortLinkedArtifacts(deduped);
+      const normalized = options.appendStable
+        ? deduped
+        : sortLinkedArtifacts(deduped);
       if (normalized.length > 0) {
         document.metadata.files = normalized;
       } else {
@@ -384,14 +488,23 @@ export async function runFilesDiscover(
         /* c8 ignore next -- no-op mutation responses may emit empty changedFields for skipped discover batches. */
         changedFields: appliedAdds.length > 0 ? ["files"] : [],
         /* c8 ignore next -- warning emission is exercised by race-aware integration tests. */
-        warnings: appliedAdds.length !== discoveredAdds.length ? [`files_discover_skipped_existing:${discoveredAdds.length - appliedAdds.length}`] : [],
+        warnings:
+          appliedAdds.length !== discoveredAdds.length
+            ? [
+                `files_discover_skipped_existing:${discoveredAdds.length - appliedAdds.length}`,
+              ]
+            : [],
       };
     },
   });
 
   const files = result.item.files ?? [];
-  const addedResolvedKeys = new Set(discoveredAdds.map((entry) => linkedFileResolvedKey(entry, process.cwd())));
-  const added = files.filter((entry) => addedResolvedKeys.has(linkedFileResolvedKey(entry, process.cwd())));
+  const addedResolvedKeys = new Set(
+    discoveredAdds.map((entry) => linkedFileResolvedKey(entry, process.cwd())),
+  );
+  const added = files.filter((entry) =>
+    addedResolvedKeys.has(linkedFileResolvedKey(entry, process.cwd())),
+  );
   return {
     id: result.item.id,
     files,

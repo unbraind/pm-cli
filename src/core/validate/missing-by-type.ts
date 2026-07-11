@@ -16,11 +16,7 @@ export interface MissingFieldOccurrence {
   field: string;
 }
 
-/**
- * Aggregate missing-field occurrences into `{ type: { field: count } }` with
- * both levels sorted lexicographically for stable, diff-friendly output.
- * Zero counts never appear (only observed occurrences are aggregated).
- */
+/** Aggregate missing-field occurrences into `{ type: { field: count } }` with both levels sorted lexicographically for stable, diff-friendly output. Zero counts never appear (only observed occurrences are aggregated). */
 export function buildMissingByTypeCounts(
   occurrences: Iterable<MissingFieldOccurrence>,
 ): Record<string, Record<string, number>> {
@@ -31,14 +27,21 @@ export function buildMissingByTypeCounts(
       fieldCounts = new Map<string, number>();
       countsByType.set(occurrence.item_type, fieldCounts);
     }
-    fieldCounts.set(occurrence.field, (fieldCounts.get(occurrence.field) ?? 0) + 1);
+    fieldCounts.set(
+      occurrence.field,
+      (fieldCounts.get(occurrence.field) ?? 0) + 1,
+    );
   }
 
   const result: Record<string, Record<string, number>> = {};
-  for (const type of [...countsByType.keys()].sort((left, right) => left.localeCompare(right))) {
+  for (const type of [...countsByType.keys()].sort((left, right) =>
+    left.localeCompare(right),
+  )) {
     const fieldCounts = countsByType.get(type)!;
     const fields: Record<string, number> = {};
-    for (const field of [...fieldCounts.keys()].sort((left, right) => left.localeCompare(right))) {
+    for (const field of [...fieldCounts.keys()].sort((left, right) =>
+      left.localeCompare(right),
+    )) {
       fields[field] = fieldCounts.get(field)!;
     }
     result[type] = fields;

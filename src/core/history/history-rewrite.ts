@@ -16,31 +16,32 @@ import type { ItemDocument, PmSettings } from "../../types/index.js";
 type LoadedItem = Awaited<ReturnType<typeof readLocatedItem>>;
 type HistoryRawWriter = (filePath: string, content: string) => Promise<void>;
 
-/**
- * Documents the history rewrite subject payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the history rewrite subject payload exchanged by command, SDK, and package integrations. */
 export interface HistoryRewriteSubject {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Filesystem path used for history resolution. */
   historyPath: string;
 }
 
-/**
- * Documents the history rewrite ownership params payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the history rewrite ownership params payload exchanged by command, SDK, and package integrations. */
 export interface HistoryRewriteOwnershipParams {
+  /** Value that configures or reports item document for this contract. */
   itemDocument: ItemDocument | null;
+  /** Value that configures or reports subject id for this contract. */
   subjectId: string;
+  /** Value that configures or reports author for this contract. */
   author: string;
+  /** Value that configures or reports force for this contract. */
   force: boolean | undefined;
+  /** Value that configures or reports settings for this contract. */
   settings: PmSettings;
 }
 
-/**
- * Apply ownership_enforcement governance to a history-rewriting operation.
- * Returns the warning(s) the caller should append (empty when no conflict or strict-throws).
- * Throws PmCliError(CONFLICT) in strict mode when the assignee conflicts and --force is not set.
- */
-export function checkHistoryRewriteOwnership(params: HistoryRewriteOwnershipParams): string[] {
+/** Apply ownership_enforcement governance to a history-rewriting operation. Returns the warning(s) the caller should append (empty when no conflict or strict-throws). Throws PmCliError(CONFLICT) in strict mode when the assignee conflicts and --force is not set. */
+export function checkHistoryRewriteOwnership(
+  params: HistoryRewriteOwnershipParams,
+): string[] {
   if (!params.itemDocument) return [];
   const assigned = params.itemDocument.metadata?.assignee?.trim();
   if (!assigned || assigned === params.author || params.force) return [];
@@ -53,43 +54,48 @@ export function checkHistoryRewriteOwnership(params: HistoryRewriteOwnershipPara
     );
   }
   if (governance.ownership_enforcement === "warn") {
-    return [`ownership_warning:assignee_conflict:${params.subjectId}:${assigned}`];
+    return [
+      `ownership_warning:assignee_conflict:${params.subjectId}:${assigned}`,
+    ];
   }
   return [];
 }
 
-/**
- * Documents the verify history rewrite drift params payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the verify history rewrite drift params payload exchanged by command, SDK, and package integrations. */
 export interface VerifyHistoryRewriteDriftParams {
+  /** Value that configures or reports pm root for this contract. */
   pmRoot: string;
+  /** Value that configures or reports subject for this contract. */
   subject: HistoryRewriteSubject;
+  /** Value that configures or reports settings for this contract. */
   settings: PmSettings;
+  /** Value that configures or reports type registry for this contract. */
   typeRegistry: ItemTypeRegistry;
+  /** Value that configures or reports history raw before lock for this contract. */
   historyRawBeforeLock: string | null;
+  /** Value that configures or reports current item raw before lock for this contract. */
   currentItemRawBeforeLock: string | null;
   /** Short operation name used in the conflict message (e.g. "history-redact"). */
   operation: string;
 }
 
-/**
- * Documents the verified history rewrite state payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the verified history rewrite state payload exchanged by command, SDK, and package integrations. */
 export interface VerifiedHistoryRewriteState {
+  /** Value that configures or reports history raw under lock for this contract. */
   historyRawUnderLock: string | null;
+  /** Value that configures or reports located under lock for this contract. */
   locatedUnderLock: Awaited<ReturnType<typeof locateItem>>;
+  /** Value that configures or reports loaded item under lock for this contract. */
   loadedItemUnderLock: LoadedItem | null;
 }
 
-/**
- * Re-read the history stream and the located item document under the acquired lock and
- * compare both with the pre-lock raw snapshots. Throws PmCliError(CONFLICT) if either
- * diverged while waiting for the lock so the caller surfaces an actionable retry.
- */
+/** Re-read the history stream and the located item document under the acquired lock and compare both with the pre-lock raw snapshots. Throws PmCliError(CONFLICT) if either diverged while waiting for the lock so the caller surfaces an actionable retry. */
 export async function verifyHistoryRewriteNoDrift(
   params: VerifyHistoryRewriteDriftParams,
 ): Promise<VerifiedHistoryRewriteState> {
-  const historyRawUnderLock = await readFileIfExists(params.subject.historyPath);
+  const historyRawUnderLock = await readFileIfExists(
+    params.subject.historyPath,
+  );
   if (historyRawUnderLock !== params.historyRawBeforeLock) {
     throw new PmCliError(
       `History for ${params.subject.id} changed while waiting for lock; retry ${params.operation}.`,
@@ -104,9 +110,14 @@ export async function verifyHistoryRewriteNoDrift(
     params.typeRegistry.type_to_folder,
   );
   const loadedItemUnderLock = locatedUnderLock
-    ? await readLocatedItem(locatedUnderLock, { schema: params.settings.schema })
+    ? await readLocatedItem(locatedUnderLock, {
+        schema: params.settings.schema,
+      })
     : null;
-  if ((loadedItemUnderLock?.raw ?? null) !== (params.currentItemRawBeforeLock ?? null)) {
+  if (
+    (loadedItemUnderLock?.raw ?? null) !==
+    (params.currentItemRawBeforeLock ?? null)
+  ) {
     throw new PmCliError(
       `Item ${params.subject.id} changed while waiting for lock; retry ${params.operation}.`,
       EXIT_CODE.CONFLICT,
@@ -115,28 +126,37 @@ export async function verifyHistoryRewriteNoDrift(
   return { historyRawUnderLock, locatedUnderLock, loadedItemUnderLock };
 }
 
-/**
- * Documents the execute history rewrite params payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the execute history rewrite params payload exchanged by command, SDK, and package integrations. */
 export interface ExecuteHistoryRewriteParams {
+  /** Value that configures or reports pm root for this contract. */
   pmRoot: string;
+  /** Value that configures or reports subject for this contract. */
   subject: HistoryRewriteSubject;
+  /** Value that configures or reports settings for this contract. */
   settings: PmSettings;
+  /** Value that configures or reports type registry for this contract. */
   typeRegistry: ItemTypeRegistry;
+  /** Value that configures or reports history raw before lock for this contract. */
   historyRawBeforeLock: string | null;
+  /** Value that configures or reports current item raw before lock for this contract. */
   currentItemRawBeforeLock: string | null;
   /** Short operation name used in conflict guidance (e.g. "history-redact"). */
   operation: string;
+  /** Value that configures or reports author for this contract. */
   author: string;
+  /** Value that configures or reports force for this contract. */
   force: boolean | undefined;
+  /** Value that configures or reports item document for this contract. */
   itemDocument: ItemDocument | null;
+  /** Value that configures or reports apply rewrite for this contract. */
   applyRewrite: (verified: VerifiedHistoryRewriteState) => Promise<void>;
-  applyPostRewrite?: (verified: VerifiedHistoryRewriteState) => Promise<string[]>;
+  /** Value that configures or reports apply post rewrite for this contract. */
+  applyPostRewrite?: (
+    verified: VerifiedHistoryRewriteState,
+  ) => Promise<string[]>;
 }
 
-/**
- * Writes the rewritten history stream and restores the under-lock snapshot on failure.
- */
+/** Writes the rewritten history stream and restores the under-lock snapshot on failure. */
 export async function writeHistoryRawWithRollback(params: {
   historyPath: string;
   nextHistoryRaw: string;
@@ -163,20 +183,19 @@ export async function writeHistoryRawWithRollback(params: {
   }
 }
 
-/**
- * Shared lock/verify/ownership orchestration for history-rewrite commands.
- * Callers provide the operation-specific write/rollback logic and optional
- * post-write hook execution while this helper enforces the common governance +
- * lock sequencing contract.
- */
-export async function executeHistoryRewrite(params: ExecuteHistoryRewriteParams): Promise<string[]> {
-  const warnings = [...checkHistoryRewriteOwnership({
-    itemDocument: params.itemDocument,
-    subjectId: params.subject.id,
-    author: params.author,
-    force: params.force,
-    settings: params.settings,
-  })];
+/** Shared lock/verify/ownership orchestration for history-rewrite commands. Callers provide the operation-specific write/rollback logic and optional post-write hook execution while this helper enforces the common governance + lock sequencing contract. */
+export async function executeHistoryRewrite(
+  params: ExecuteHistoryRewriteParams,
+): Promise<string[]> {
+  const warnings = [
+    ...checkHistoryRewriteOwnership({
+      itemDocument: params.itemDocument,
+      subjectId: params.subject.id,
+      author: params.author,
+      force: params.force,
+      settings: params.settings,
+    }),
+  ];
   const releaseLock = await acquireLock(
     params.pmRoot,
     params.subject.id,

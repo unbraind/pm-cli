@@ -11,6 +11,7 @@
  * Keys are compared case-insensitively after trimming. Values are canonical built-in
  * type names (resolved through the registry, never written verbatim).
  */
+/** Public contract for type synonyms, shared by SDK and presentation-layer consumers. */
 export const TYPE_SYNONYMS: Readonly<Record<string, string>> = {
   bug: "Issue",
   bugfix: "Issue",
@@ -26,12 +27,10 @@ export const TYPE_SYNONYMS: Readonly<Record<string, string>> = {
   todo: "Task",
 };
 
-/**
- * Map a free-form type token to its canonical built-in type synonym, or `undefined`
- * when there is no synonym. The caller must still confirm the canonical target exists
- * in the active type registry before using it.
- */
-export function resolveTypeSynonym(rawType: string | undefined): string | undefined {
+/** Map a free-form type token to its canonical built-in type synonym, or `undefined` when there is no synonym. The caller must still confirm the canonical target exists in the active type registry before using it. */
+export function resolveTypeSynonym(
+  rawType: string | undefined,
+): string | undefined {
   if (rawType === undefined) {
     return undefined;
   }

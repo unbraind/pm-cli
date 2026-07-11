@@ -38,12 +38,13 @@ export function parseEventBoolean(value: string, flag: string): boolean {
   if (normalized === "false" || normalized === "0" || normalized === "no") {
     return false;
   }
-  throw new PmCliError(`${flag} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
+  throw new PmCliError(
+    `${flag} must be one of true|false|1|0|yes|no`,
+    EXIT_CODE.USAGE,
+  );
 }
 
-/**
- * Implements parse delimited list for the public runtime surface of this module.
- */
+/** Implements parse delimited list for the public runtime surface of this module. */
 export function parseDelimitedList(raw: string | undefined): string[] {
   if (!raw) {
     return [];
@@ -54,21 +55,22 @@ export function parseDelimitedList(raw: string | undefined): string[] {
     .filter((value) => value.length > 0);
 }
 
-/**
- * Implements ensure enum value for the public runtime surface of this module.
- */
-export function ensureEnumValue<T extends string>(value: string, allowed: readonly T[], label: string): T {
+/** Implements ensure enum value for the public runtime surface of this module. */
+export function ensureEnumValue<T extends string>(
+  value: string,
+  allowed: readonly T[],
+  label: string,
+): T {
   if (!allowed.includes(value as T)) {
-    throw new PmCliError(`Invalid ${label} value "${value}". Allowed: ${allowed.join(", ")}`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Invalid ${label} value "${value}". Allowed: ${allowed.join(", ")}`,
+      EXIT_CODE.USAGE,
+    );
   }
   return value as T;
 }
 
-/**
- * `"defined"` parses `recur_interval=`/`recur_count=` (empty values), matching
- * the historical `create` behaviour. `"truthy"` skips empty values, matching
- * the historical `update` behaviour.
- */
+/** `"defined"` parses `recur_interval=`/`recur_count=` (empty values), matching the historical `create` behaviour. `"truthy"` skips empty values, matching the historical `update` behaviour. */
 export type RecurrenceEmptyNumericGuard = "defined" | "truthy";
 
 /**
@@ -89,33 +91,60 @@ export const RECURRENCE_CSV_KEYS = [
   "recur_exdates",
 ] as const;
 
-function numericRecurrenceValueProvided(raw: string | undefined, guard: RecurrenceEmptyNumericGuard): boolean {
+function numericRecurrenceValueProvided(
+  raw: string | undefined,
+  guard: RecurrenceEmptyNumericGuard,
+): boolean {
   return guard === "defined" ? raw !== undefined : Boolean(raw);
 }
 
-function parsePositiveRecurrenceInteger(raw: string | undefined, label: string, guard: RecurrenceEmptyNumericGuard): number | undefined {
+function parsePositiveRecurrenceInteger(
+  raw: string | undefined,
+  label: string,
+  guard: RecurrenceEmptyNumericGuard,
+): number | undefined {
   if (!numericRecurrenceValueProvided(raw, guard)) {
     return undefined;
   }
   const parsed = parseOptionalNumber(raw as string, `event ${label}`);
   if (!Number.isInteger(parsed) || parsed < 1) {
-    throw new PmCliError(`--event ${label} must be an integer >= 1`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `--event ${label} must be an integer >= 1`,
+      EXIT_CODE.USAGE,
+    );
   }
   return parsed;
 }
 
-function parseRecurrenceUntil(untilRaw: string | undefined, startAt: string, nowValue: Date): string | undefined {
-  const until = untilRaw ? resolveIsoOrRelative(untilRaw, nowValue, "event.recur_until") : undefined;
+function parseRecurrenceUntil(
+  untilRaw: string | undefined,
+  startAt: string,
+  nowValue: Date,
+): string | undefined {
+  const until = untilRaw
+    ? resolveIsoOrRelative(untilRaw, nowValue, "event.recur_until")
+    : undefined;
   if (until && until < startAt) {
-    throw new PmCliError("--event recur_until must be at or after start", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--event recur_until must be at or after start",
+      EXIT_CODE.USAGE,
+    );
   }
   return until;
 }
 
-function parseRecurrenceWeekdays(raw: string | undefined): Array<(typeof RECURRENCE_WEEKDAY_VALUES)[number]> {
+function parseRecurrenceWeekdays(
+  raw: string | undefined,
+): Array<(typeof RECURRENCE_WEEKDAY_VALUES)[number]> {
   return Array.from(
     new Set(
-      parseDelimitedList(raw).map((value) => ensureEnumValue(value.toLowerCase(), RECURRENCE_WEEKDAY_VALUES, "event weekday")),
+      parseDelimitedList(raw).map((value) =>
+        ensureEnumValue(
+          value.toLowerCase(),
+          RECURRENCE_WEEKDAY_VALUES,
+          "event weekday",
+        ),
+      ),
     ),
   ).sort((left, right) => weekdayOrderIndex(left) - weekdayOrderIndex(right));
 }
@@ -126,7 +155,10 @@ function parseRecurrenceMonthDays(raw: string | undefined): number[] {
       parseDelimitedList(raw).map((value) => {
         const day = parseOptionalNumber(value, "event recur_by_month_day");
         if (!Number.isInteger(day) || day < 1 || day > 31) {
-          throw new PmCliError("--event recur_by_month_day values must be integers 1..31", EXIT_CODE.USAGE);
+          throw new PmCliError(
+            "--event recur_by_month_day values must be integers 1..31",
+            EXIT_CODE.USAGE,
+          );
         }
         return day;
       }),
@@ -134,15 +166,20 @@ function parseRecurrenceMonthDays(raw: string | undefined): number[] {
   ).sort((left, right) => left - right);
 }
 
-function parseRecurrenceExdates(raw: string | undefined, nowValue: Date): string[] {
+function parseRecurrenceExdates(
+  raw: string | undefined,
+  nowValue: Date,
+): string[] {
   return Array.from(
-    new Set(parseDelimitedList(raw).map((value) => resolveIsoOrRelative(value, nowValue, "event.recur_exdates"))),
+    new Set(
+      parseDelimitedList(raw).map((value) =>
+        resolveIsoOrRelative(value, nowValue, "event.recur_exdates"),
+      ),
+    ),
   ).sort((left, right) => left.localeCompare(right));
 }
 
-/**
- * Implements parse recurrence rule for the public runtime surface of this module.
- */
+/** Implements parse recurrence rule for the public runtime surface of this module. */
 export function parseRecurrenceRule(
   kv: Record<string, string>,
   startAt: string,
@@ -157,19 +194,40 @@ export function parseRecurrenceRule(
   const byMonthDayRaw = kv.recur_by_month_day?.trim();
   const exdatesRaw = kv.recur_exdates?.trim();
 
-  const recurrenceInputsProvided = [freqRaw, intervalRaw, countRaw, untilRaw, byWeekdayRaw, byMonthDayRaw, exdatesRaw].some(
-    (value) => value !== undefined,
-  );
+  const recurrenceInputsProvided = [
+    freqRaw,
+    intervalRaw,
+    countRaw,
+    untilRaw,
+    byWeekdayRaw,
+    byMonthDayRaw,
+    exdatesRaw,
+  ].some((value) => value !== undefined);
   if (!recurrenceInputsProvided) {
     return undefined;
   }
   if (!freqRaw) {
-    throw new PmCliError("--event recurrence fields require recur_freq=<daily|weekly|monthly|yearly>", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--event recurrence fields require recur_freq=<daily|weekly|monthly|yearly>",
+      EXIT_CODE.USAGE,
+    );
   }
 
-  const freq = ensureEnumValue(freqRaw.toLowerCase(), RECURRENCE_FREQUENCY_VALUES, "event recurrence frequency");
-  const interval = parsePositiveRecurrenceInteger(intervalRaw, "recur_interval", emptyNumericGuard);
-  const count = parsePositiveRecurrenceInteger(countRaw, "recur_count", emptyNumericGuard);
+  const freq = ensureEnumValue(
+    freqRaw.toLowerCase(),
+    RECURRENCE_FREQUENCY_VALUES,
+    "event recurrence frequency",
+  );
+  const interval = parsePositiveRecurrenceInteger(
+    intervalRaw,
+    "recur_interval",
+    emptyNumericGuard,
+  );
+  const count = parsePositiveRecurrenceInteger(
+    countRaw,
+    "recur_count",
+    emptyNumericGuard,
+  );
   const until = parseRecurrenceUntil(untilRaw, startAt, nowValue);
   const byWeekday = parseRecurrenceWeekdays(byWeekdayRaw);
   const byMonthDay = parseRecurrenceMonthDays(byMonthDayRaw);

@@ -10,24 +10,15 @@
 // mutations on the same item (without awaiting the first response) no longer
 // races into a lock conflict on the second.
 
-/**
- * Defines the FIFO queue contract used to serialize asynchronous mutation-sensitive work.
- */
+/** Defines the FIFO queue contract used to serialize asynchronous mutation-sensitive work. */
 export interface SerialQueue {
-  /**
-   * Schedule `task` to run after every previously-enqueued task has settled.
-   * Returns a promise for this task's result (or rejection) so callers can
-   * await individual outcomes. A rejected task never wedges the queue: later
-   * tasks still run in order.
-   */
+  /** Schedule `task` to run after every previously-enqueued task has settled. Returns a promise for this task's result (or rejection) so callers can await individual outcomes. A rejected task never wedges the queue: later tasks still run in order. */
   enqueue<T>(task: () => Promise<T> | T): Promise<T>;
   /** Resolves once the queue has fully drained (no pending tasks remain). */
   idle(): Promise<void>;
 }
 
-/**
- * Implements create serial queue for the public runtime surface of this module.
- */
+/** Implements create serial queue for the public runtime surface of this module. */
 export function createSerialQueue(): SerialQueue {
   // `tail` is the error-isolated chain the next task waits on; it is kept
   // separate from the per-task promise returned to callers so one rejection
@@ -60,7 +51,9 @@ export function createSerialQueue(): SerialQueue {
       return run;
     },
     idle(): Promise<void> {
-      return pending === 0 ? Promise.resolve() : new Promise((resolve) => idleWaiters.push(resolve));
+      return pending === 0
+        ? Promise.resolve()
+        : new Promise((resolve) => idleWaiters.push(resolve));
     },
   };
 }

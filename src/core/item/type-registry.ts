@@ -18,6 +18,7 @@ import {
   strictPolicyCommand,
 } from "./item-type-definition.js";
 
+/** Fallback required create fields used when callers do not provide an override. */
 export const DEFAULT_REQUIRED_CREATE_FIELDS = [
   "title",
   "description",
@@ -33,15 +34,23 @@ export const DEFAULT_REQUIRED_CREATE_FIELDS = [
   "assignee",
 ] as const;
 
-export const DEFAULT_REQUIRED_CREATE_REPEATABLES = ["dep", "comment", "note", "learning", "file", "test", "doc"] as const;
+/** Fallback required create repeatables used when callers do not provide an override. */
+export const DEFAULT_REQUIRED_CREATE_REPEATABLES = [
+  "dep",
+  "comment",
+  "note",
+  "learning",
+  "file",
+  "test",
+  "doc",
+] as const;
 
-/**
- * Restricts command option policy command values accepted by command, SDK, and storage contracts.
- */
+/** Restricts command option policy command values accepted by command, SDK, and storage contracts. */
 export type CommandOptionPolicyCommand = "create" | "update";
 
 // Keep aligned with cli/commands/shared-unset-fields.ts. This core registry
 // cannot import CLI unset metadata without creating a core -> CLI dependency.
+/** Public contract for common mutation command option keys, shared by SDK and presentation-layer consumers. */
 export const COMMON_MUTATION_COMMAND_OPTION_KEYS = [
   "deadline",
   "estimatedMinutes",
@@ -261,41 +270,51 @@ const UPDATE_COMMAND_OPTION_FLAG_LABELS = commandOptionLabelMap([
   ["force", "--force"],
 ]);
 
-/**
- * Documents the command option policy state payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the command option policy state payload exchanged by command, SDK, and package integrations. */
 export interface CommandOptionPolicyState {
+  /** Value that configures or reports required for this contract. */
   required: string[];
+  /** Value that configures or reports hidden for this contract. */
   hidden: string[];
+  /** Whether disabled applies to this operation. */
   disabled: string[];
+  /** Value that configures or reports errors for this contract. */
   errors: string[];
 }
 
-/**
- * Documents the resolved item type definition payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the resolved item type definition payload exchanged by command, SDK, and package integrations. */
 export interface ResolvedItemTypeDefinition {
+  /** Value that configures or reports name for this contract. */
   name: string;
   /** Optional human description carried from the type definition. */
   description?: string;
+  /** Value that configures or reports folder for this contract. */
   folder: string;
+  /** Value that configures or reports aliases for this contract. */
   aliases: string[];
   /** Optional per-type status applied at create time when `--status` is omitted. */
   default_status?: string;
+  /** Value that configures or reports required create fields for this contract. */
   required_create_fields: string[];
+  /** Value that configures or reports required create repeatables for this contract. */
   required_create_repeatables: string[];
+  /** Value that configures or reports options for this contract. */
   options: ItemTypeOptionDefinition[];
+  /** Value that configures or reports command option policies for this contract. */
   command_option_policies: ItemTypeCommandOptionPolicy[];
 }
 
-/**
- * Documents the item type registry payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the item type registry payload exchanged by command, SDK, and package integrations. */
 export interface ItemTypeRegistry {
+  /** Value that configures or reports types for this contract. */
   types: string[];
+  /** Value that configures or reports folders for this contract. */
   folders: string[];
+  /** Value that configures or reports type to folder for this contract. */
   type_to_folder: Record<string, string>;
+  /** Schema type that determines the shape and validation rules for this value. */
   by_type: Record<string, ResolvedItemTypeDefinition>;
+  /** Schema type that determines the shape and validation rules for this value. */
   alias_to_type: Record<string, string>;
 }
 
@@ -303,17 +322,23 @@ function normalizeCommandOptionToken(value: string): string {
   return value.trim().replace(/^--+/, "").toLowerCase();
 }
 
-function commandOptionKeys(command: CommandOptionPolicyCommand): readonly string[] {
-  return command === "create" ? CREATE_COMMAND_OPTION_KEYS : UPDATE_COMMAND_OPTION_KEYS;
+function commandOptionKeys(
+  command: CommandOptionPolicyCommand,
+): readonly string[] {
+  return command === "create"
+    ? CREATE_COMMAND_OPTION_KEYS
+    : UPDATE_COMMAND_OPTION_KEYS;
 }
 
-function commandOptionAliases(command: CommandOptionPolicyCommand): Record<string, string> {
-  return command === "create" ? CREATE_COMMAND_OPTION_ALIASES : UPDATE_COMMAND_OPTION_ALIASES;
+function commandOptionAliases(
+  command: CommandOptionPolicyCommand,
+): Record<string, string> {
+  return command === "create"
+    ? CREATE_COMMAND_OPTION_ALIASES
+    : UPDATE_COMMAND_OPTION_ALIASES;
 }
 
-/**
- * Implements canonicalize command option key for the public runtime surface of this module.
- */
+/** Implements canonicalize command option key for the public runtime surface of this module. */
 export function canonicalizeCommandOptionKey(
   command: CommandOptionPolicyCommand,
   rawOption: string,
@@ -326,20 +351,27 @@ export function canonicalizeCommandOptionKey(
   if (aliased) {
     return aliased;
   }
-  return commandOptionKeys(command).find((candidate) => candidate.toLowerCase() === normalizedToken);
+  return commandOptionKeys(command).find(
+    (candidate) => candidate.toLowerCase() === normalizedToken,
+  );
 }
 
-/**
- * Implements command option flag label for the public runtime surface of this module.
- */
-export function commandOptionFlagLabel(command: CommandOptionPolicyCommand, optionKey: string): string {
-  const labels = command === "create" ? CREATE_COMMAND_OPTION_FLAG_LABELS : UPDATE_COMMAND_OPTION_FLAG_LABELS;
-  return labels[optionKey] ?? `--${optionKey.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
+/** Implements command option flag label for the public runtime surface of this module. */
+export function commandOptionFlagLabel(
+  command: CommandOptionPolicyCommand,
+  optionKey: string,
+): string {
+  const labels =
+    command === "create"
+      ? CREATE_COMMAND_OPTION_FLAG_LABELS
+      : UPDATE_COMMAND_OPTION_FLAG_LABELS;
+  return (
+    labels[optionKey] ??
+    `--${optionKey.replace(/([A-Z])/g, "-$1").toLowerCase()}`
+  );
 }
 
-/**
- * Implements to default folder for the public runtime surface of this module.
- */
+/** Implements to default folder for the public runtime surface of this module. */
 export function toDefaultFolder(name: string): string {
   const normalized = toSlugToken(name);
   if (normalized.length === 0) {
@@ -374,16 +406,27 @@ function toSlugToken(value: string): string {
 // Runtime registry consumes untrusted extension/file definitions, so it uses the
 // strict policy-command resolver (trim + lowercase, reject non-create/update). All
 // other normalization is single-sourced from ./item-type-definition.ts (pm-v798).
-function normalizeTypeDefinition(definition: ItemTypeDefinition): ItemTypeDefinition | null {
-  return normalizeSharedItemTypeDefinition(definition, { resolvePolicyCommand: strictPolicyCommand });
+function normalizeTypeDefinition(
+  definition: ItemTypeDefinition,
+): ItemTypeDefinition | null {
+  return normalizeSharedItemTypeDefinition(definition, {
+    resolvePolicyCommand: strictPolicyCommand,
+  });
 }
 
-function readStringArray(record: Record<string, unknown>, key: string): string[] | undefined {
+function readStringArray(
+  record: Record<string, unknown>,
+  key: string,
+): string[] | undefined {
   const value = record[key];
-  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : undefined;
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === "string")
+    : undefined;
 }
 
-function coerceOptionDefinitionFromUnknown(raw: unknown): ItemTypeOptionDefinition | null {
+function coerceOptionDefinitionFromUnknown(
+  raw: unknown,
+): ItemTypeOptionDefinition | null {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     return null;
   }
@@ -394,18 +437,29 @@ function coerceOptionDefinitionFromUnknown(raw: unknown): ItemTypeOptionDefiniti
   return {
     key: optionRecord.key,
     values: readStringArray(optionRecord, "values") ?? [],
-    required: optionRecord.required === undefined ? undefined : Boolean(optionRecord.required),
+    required:
+      optionRecord.required === undefined
+        ? undefined
+        : Boolean(optionRecord.required),
     aliases: readStringArray(optionRecord, "aliases"),
-    description: typeof optionRecord.description === "string" ? optionRecord.description : undefined,
+    description:
+      typeof optionRecord.description === "string"
+        ? optionRecord.description
+        : undefined,
   };
 }
 
-function coerceCommandOptionPolicyFromUnknown(raw: unknown): ItemTypeCommandOptionPolicy | null {
+function coerceCommandOptionPolicyFromUnknown(
+  raw: unknown,
+): ItemTypeCommandOptionPolicy | null {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     return null;
   }
   const policyRecord = raw as Record<string, unknown>;
-  if (typeof policyRecord.command !== "string" || typeof policyRecord.option !== "string") {
+  if (
+    typeof policyRecord.command !== "string" ||
+    typeof policyRecord.option !== "string"
+  ) {
     return null;
   }
   const normalizedCommand = policyRecord.command.trim().toLowerCase();
@@ -415,13 +469,24 @@ function coerceCommandOptionPolicyFromUnknown(raw: unknown): ItemTypeCommandOpti
   return {
     command: normalizedCommand,
     option: policyRecord.option,
-    required: policyRecord.required === undefined ? undefined : Boolean(policyRecord.required),
-    visible: policyRecord.visible === undefined ? undefined : Boolean(policyRecord.visible),
-    enabled: policyRecord.enabled === undefined ? undefined : Boolean(policyRecord.enabled),
+    required:
+      policyRecord.required === undefined
+        ? undefined
+        : Boolean(policyRecord.required),
+    visible:
+      policyRecord.visible === undefined
+        ? undefined
+        : Boolean(policyRecord.visible),
+    enabled:
+      policyRecord.enabled === undefined
+        ? undefined
+        : Boolean(policyRecord.enabled),
   };
 }
 
-function coerceOptionDefinitionsFromRecord(record: Record<string, unknown>): ItemTypeOptionDefinition[] | undefined {
+function coerceOptionDefinitionsFromRecord(
+  record: Record<string, unknown>,
+): ItemTypeOptionDefinition[] | undefined {
   if (!Array.isArray(record.options)) {
     return undefined;
   }
@@ -430,7 +495,9 @@ function coerceOptionDefinitionsFromRecord(record: Record<string, unknown>): Ite
     .filter((entry): entry is ItemTypeOptionDefinition => entry !== null);
 }
 
-function coerceCommandOptionPoliciesFromRecord(record: Record<string, unknown>): ItemTypeCommandOptionPolicy[] | undefined {
+function coerceCommandOptionPoliciesFromRecord(
+  record: Record<string, unknown>,
+): ItemTypeCommandOptionPolicy[] | undefined {
   if (!Array.isArray(record.command_option_policies)) {
     return undefined;
   }
@@ -439,7 +506,9 @@ function coerceCommandOptionPoliciesFromRecord(record: Record<string, unknown>):
     .filter((entry): entry is ItemTypeCommandOptionPolicy => entry !== null);
 }
 
-function coerceTypeDefinitionFromUnknown(raw: unknown): ItemTypeDefinition | null {
+function coerceTypeDefinitionFromUnknown(
+  raw: unknown,
+): ItemTypeDefinition | null {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     return null;
   }
@@ -449,8 +518,12 @@ function coerceTypeDefinitionFromUnknown(raw: unknown): ItemTypeDefinition | nul
     return null;
   }
   const folder = typeof record.folder === "string" ? record.folder : undefined;
-  const description = typeof record.description === "string" ? record.description : undefined;
-  const defaultStatus = typeof record.default_status === "string" ? record.default_status : undefined;
+  const description =
+    typeof record.description === "string" ? record.description : undefined;
+  const defaultStatus =
+    typeof record.default_status === "string"
+      ? record.default_status
+      : undefined;
   return {
     name,
     description,
@@ -458,7 +531,10 @@ function coerceTypeDefinitionFromUnknown(raw: unknown): ItemTypeDefinition | nul
     folder,
     aliases: readStringArray(record, "aliases"),
     required_create_fields: readStringArray(record, "required_create_fields"),
-    required_create_repeatables: readStringArray(record, "required_create_repeatables"),
+    required_create_repeatables: readStringArray(
+      record,
+      "required_create_repeatables",
+    ),
     options: coerceOptionDefinitionsFromRecord(record),
     command_option_policies: coerceCommandOptionPoliciesFromRecord(record),
   };
@@ -470,7 +546,7 @@ function resolveDefinitionRequiredCreateFields(
 ): string[] {
   return normalizedDefinition.required_create_fields
     ? normalizeItemTypeStringList(normalizedDefinition.required_create_fields)
-    : existing?.required_create_fields ?? [];
+    : (existing?.required_create_fields ?? []);
 }
 
 function resolveDefinitionRequiredCreateRepeatables(
@@ -478,15 +554,21 @@ function resolveDefinitionRequiredCreateRepeatables(
   existing: ResolvedItemTypeDefinition | undefined,
 ): string[] {
   return normalizedDefinition.required_create_repeatables
-    ? normalizeItemTypeStringList(normalizedDefinition.required_create_repeatables)
-    : existing?.required_create_repeatables ?? [];
+    ? normalizeItemTypeStringList(
+        normalizedDefinition.required_create_repeatables,
+      )
+    : (existing?.required_create_repeatables ?? []);
 }
 
 function resolveDefinitionOptions(
   normalizedDefinition: ItemTypeDefinition,
   existing: ResolvedItemTypeDefinition | undefined,
 ): ItemTypeOptionDefinition[] {
-  return normalizedDefinition.options ? normalizedDefinition.options : existing?.options ? [...existing.options] : [];
+  return normalizedDefinition.options
+    ? normalizedDefinition.options
+    : existing?.options
+      ? [...existing.options]
+      : [];
 }
 
 function resolveDefinitionCommandOptionPolicies(
@@ -506,15 +588,31 @@ function buildResolvedTypeDefinition(
 ): ResolvedItemTypeDefinition {
   const keepName = existing?.name ?? normalizedDefinition.name;
   const description = normalizedDefinition.description ?? existing?.description;
-  const defaultStatus = normalizedDefinition.default_status ?? existing?.default_status;
+  const defaultStatus =
+    normalizedDefinition.default_status ?? existing?.default_status;
   const resolvedDefinition: ResolvedItemTypeDefinition = {
     name: keepName,
-    folder: normalizedDefinition.folder ?? existing?.folder ?? toDefaultFolder(keepName),
-    aliases: normalizeItemTypeStringList([...(existing?.aliases ?? []), ...(normalizedDefinition.aliases ?? [])]),
-    required_create_fields: resolveDefinitionRequiredCreateFields(normalizedDefinition, existing),
-    required_create_repeatables: resolveDefinitionRequiredCreateRepeatables(normalizedDefinition, existing),
+    folder:
+      normalizedDefinition.folder ??
+      existing?.folder ??
+      toDefaultFolder(keepName),
+    aliases: normalizeItemTypeStringList([
+      ...(existing?.aliases ?? []),
+      ...(normalizedDefinition.aliases ?? []),
+    ]),
+    required_create_fields: resolveDefinitionRequiredCreateFields(
+      normalizedDefinition,
+      existing,
+    ),
+    required_create_repeatables: resolveDefinitionRequiredCreateRepeatables(
+      normalizedDefinition,
+      existing,
+    ),
     options: resolveDefinitionOptions(normalizedDefinition, existing),
-    command_option_policies: resolveDefinitionCommandOptionPolicies(normalizedDefinition, existing),
+    command_option_policies: resolveDefinitionCommandOptionPolicies(
+      normalizedDefinition,
+      existing,
+    ),
   };
   if (description) {
     resolvedDefinition.description = description;
@@ -536,11 +634,16 @@ function applyTypeDefinitions(
     }
     const lowerName = normalizedDefinition.name.toLowerCase();
     const existing = target.get(lowerName);
-    target.set(lowerName, buildResolvedTypeDefinition(normalizedDefinition, existing));
+    target.set(
+      lowerName,
+      buildResolvedTypeDefinition(normalizedDefinition, existing),
+    );
   }
 }
 
-function collectExtensionTypeDefinitions(registrations: ExtensionRegistrationRegistry | null | undefined): ItemTypeDefinition[] {
+function collectExtensionTypeDefinitions(
+  registrations: ExtensionRegistrationRegistry | null | undefined,
+): ItemTypeDefinition[] {
   if (!registrations) {
     return [];
   }
@@ -560,12 +663,13 @@ function collectExtensionTypeDefinitions(registrations: ExtensionRegistrationReg
   return definitions;
 }
 
-/**
- * Implements resolve item type registry for the public runtime surface of this module.
- */
+/** Implements resolve item type registry for the public runtime surface of this module. */
 export function resolveItemTypeRegistry(
   settings: PmSettings,
-  extensionRegistrations: ExtensionRegistrationRegistry | null | undefined = null,
+  extensionRegistrations:
+    | ExtensionRegistrationRegistry
+    | null
+    | undefined = null,
 ): ItemTypeRegistry {
   const byLowerName = new Map<string, ResolvedItemTypeDefinition>();
   for (const builtin of ITEM_TYPE_VALUES) {
@@ -581,9 +685,14 @@ export function resolveItemTypeRegistry(
   }
 
   applyTypeDefinitions(settings.item_types?.definitions ?? [], byLowerName);
-  applyTypeDefinitions(collectExtensionTypeDefinitions(extensionRegistrations), byLowerName);
+  applyTypeDefinitions(
+    collectExtensionTypeDefinitions(extensionRegistrations),
+    byLowerName,
+  );
 
-  const definitions = [...byLowerName.values()].sort((left, right) => left.name.localeCompare(right.name));
+  const definitions = [...byLowerName.values()].sort((left, right) =>
+    left.name.localeCompare(right.name),
+  );
   const byType: Record<string, ResolvedItemTypeDefinition> = {};
   const aliasToType: Record<string, string> = {};
   const typeToFolder: Record<string, string> = {};
@@ -595,7 +704,9 @@ export function resolveItemTypeRegistry(
       aliasToType[alias.toLowerCase()] = definition.name;
     }
   }
-  const folders = [...new Set(definitions.map((definition) => definition.folder))].sort((left, right) => left.localeCompare(right));
+  const folders = [
+    ...new Set(definitions.map((definition) => definition.folder)),
+  ].sort((left, right) => left.localeCompare(right));
   return {
     types: definitions.map((definition) => definition.name),
     folders,
@@ -605,19 +716,18 @@ export function resolveItemTypeRegistry(
   };
 }
 
-/**
- * Implements resolve type name for the public runtime surface of this module.
- */
-export function resolveTypeName(rawType: string | undefined, registry: ItemTypeRegistry): string | undefined {
+/** Implements resolve type name for the public runtime surface of this module. */
+export function resolveTypeName(
+  rawType: string | undefined,
+  registry: ItemTypeRegistry,
+): string | undefined {
   if (rawType === undefined) {
     return undefined;
   }
   return registry.alias_to_type[rawType.trim().toLowerCase()];
 }
 
-/**
- * Implements resolve type definition for the public runtime surface of this module.
- */
+/** Implements resolve type definition for the public runtime surface of this module. */
 export function resolveTypeDefinition(
   typeName: string | undefined,
   registry: ItemTypeRegistry,
@@ -647,7 +757,11 @@ function applyBaseRequiredCommandOptions(
   }
 }
 
-function applyBooleanPolicySet(target: Set<string>, option: string, enabled: boolean): void {
+function applyBooleanPolicySet(
+  target: Set<string>,
+  option: string,
+  enabled: boolean,
+): void {
   if (enabled) {
     target.add(option);
     return;
@@ -716,9 +830,7 @@ function appendRequiredDisabledPolicyErrors(
   }
 }
 
-/**
- * Implements resolve command option policy state for the public runtime surface of this module.
- */
+/** Implements resolve command option policy state for the public runtime surface of this module. */
 export function resolveCommandOptionPolicyState(
   typeDefinition: ResolvedItemTypeDefinition,
   command: CommandOptionPolicyCommand,
@@ -730,7 +842,12 @@ export function resolveCommandOptionPolicyState(
   const disabled = new Set<string>();
   const state = { required, hidden, disabled, errors };
 
-  applyBaseRequiredCommandOptions(state, typeDefinition, command, baseRequiredOptions);
+  applyBaseRequiredCommandOptions(
+    state,
+    typeDefinition,
+    command,
+    baseRequiredOptions,
+  );
   applyCommandOptionPolicies(state, typeDefinition, command);
   appendRequiredDisabledPolicyErrors(state, typeDefinition, command);
 
@@ -742,7 +859,9 @@ export function resolveCommandOptionPolicyState(
   };
 }
 
-function buildTypeOptionAliasMap(typeDefinition: ResolvedItemTypeDefinition): Map<string, ItemTypeOptionDefinition> {
+function buildTypeOptionAliasMap(
+  typeDefinition: ResolvedItemTypeDefinition,
+): Map<string, ItemTypeOptionDefinition> {
   const optionByAlias = new Map<string, ItemTypeOptionDefinition>();
   for (const option of typeDefinition.options) {
     optionByAlias.set(option.key.toLowerCase(), option);
@@ -762,18 +881,20 @@ function resolveTypeOptionValue(
   if (allowedValues.length === 0) {
     return trimmedValue;
   }
-  const valueLookup = new Map(allowedValues.map((value) => [value.toLowerCase(), value]));
+  const valueLookup = new Map(
+    allowedValues.map((value) => [value.toLowerCase(), value]),
+  );
   const canonical = valueLookup.get(trimmedValue.toLowerCase());
   if (!canonical) {
-    errors.push(`Invalid value "${trimmedValue}" for type option "${optionDefinition.key}". Allowed: ${allowedValues.join(", ")}`);
+    errors.push(
+      `Invalid value "${trimmedValue}" for type option "${optionDefinition.key}". Allowed: ${allowedValues.join(", ")}`,
+    );
     return undefined;
   }
   return canonical;
 }
 
-/**
- * Implements validate type options for the public runtime surface of this module.
- */
+/** Implements validate type options for the public runtime surface of this module. */
 export function validateTypeOptions(
   typeName: string,
   rawTypeOptions: Record<string, string> | undefined,
@@ -803,7 +924,9 @@ export function validateTypeOptions(
     }
     const optionDefinition = optionByAlias.get(trimmedKey.toLowerCase());
     if (!optionDefinition) {
-      const allowed = typeDefinition.options.map((option) => option.key).join(", ");
+      const allowed = typeDefinition.options
+        .map((option) => option.key)
+        .join(", ");
       errors.push(
         typeDefinition.options.length > 0
           ? `Unknown type option "${trimmedKey}" for type "${typeDefinition.name}". Allowed: ${allowed}`
@@ -811,7 +934,11 @@ export function validateTypeOptions(
       );
       continue;
     }
-    const resolvedValue = resolveTypeOptionValue(optionDefinition, trimmedValue, errors);
+    const resolvedValue = resolveTypeOptionValue(
+      optionDefinition,
+      trimmedValue,
+      errors,
+    );
     if (resolvedValue === undefined) {
       continue;
     }
@@ -820,11 +947,15 @@ export function validateTypeOptions(
 
   for (const option of typeDefinition.options) {
     if (option.required && !(option.key in normalized)) {
-      errors.push(`Missing required type option "${option.key}" for type "${typeDefinition.name}"`);
+      errors.push(
+        `Missing required type option "${option.key}" for type "${typeDefinition.name}"`,
+      );
     }
   }
 
-  const sortedKeys = Object.keys(normalized).sort((left, right) => left.localeCompare(right));
+  const sortedKeys = Object.keys(normalized).sort((left, right) =>
+    left.localeCompare(right),
+  );
   if (sortedKeys.length === 0) {
     return {
       normalized: undefined,
@@ -832,7 +963,9 @@ export function validateTypeOptions(
     };
   }
   return {
-    normalized: Object.fromEntries(sortedKeys.map((key) => [key, normalized[key]])),
+    normalized: Object.fromEntries(
+      sortedKeys.map((key) => [key, normalized[key]]),
+    ),
     errors,
   };
 }

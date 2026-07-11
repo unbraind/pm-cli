@@ -16,12 +16,7 @@
  * stay visible.
  */
 
-/**
- * Extract every long flag (for example `--create-mode`) from a commander flag
- * spec that may include short aliases and a value placeholder. A spec can list
- * more than one long flag, for example `"--estimate, --estimated-minutes
- * <value>"` → `["--estimate", "--estimated-minutes"]`.
- */
+/** Extract every long flag (for example `--create-mode`) from a commander flag spec that may include short aliases and a value placeholder. A spec can list more than one long flag, for example `"--estimate, --estimated-minutes <value>"` → `["--estimate", "--estimated-minutes"]`. */
 export function extractLongFlags(flagSpec: string): string[] {
   return flagSpec
     .split(/[\s,|]+/)
@@ -29,10 +24,7 @@ export function extractLongFlags(flagSpec: string): string[] {
     .filter((token) => token.startsWith("--"));
 }
 
-/**
- * Extract the first long flag from a commander flag spec, or null when none is
- * present.
- */
+/** Extract the first long flag from a commander flag spec, or null when none is present. */
 export function extractLongFlag(flagSpec: string): string | null {
   return extractLongFlags(flagSpec)[0] ?? null;
 }
@@ -51,12 +43,16 @@ export function extractLongFlag(flagSpec: string): string | null {
  *   --order                  <- --rank    (different identifier)
  *   --strict-exit            <- --fail-on-warn (semantically distinct)
  */
-export function isPureSnakeCaseAlias(canonicalFlagSpec: string, aliasFlagSpec: string): boolean {
+export function isPureSnakeCaseAlias(
+  canonicalFlagSpec: string,
+  aliasFlagSpec: string,
+): boolean {
   const aliasLong = extractLongFlag(aliasFlagSpec);
   if (aliasLong === null) {
     return false;
   }
-  const normalize = (long: string): string => long.slice(2).replaceAll("-", "_");
+  const normalize = (long: string): string =>
+    long.slice(2).replaceAll("-", "_");
   // The canonical spec may declare multiple long flags (e.g.
   // "--estimate, --estimated-minutes <value>"); the alias is hidden when it is
   // the underscore form of ANY of them.

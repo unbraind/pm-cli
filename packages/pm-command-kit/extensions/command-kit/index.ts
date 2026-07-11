@@ -21,6 +21,7 @@ import type {
   ParserOverrideDelta,
 } from "@unbrained/pm-cli/sdk";
 
+/** Declarative package manifest consumed by the extension loader. */
 export const manifest = {
   name: "builtin-command-kit",
   version: "0.1.0",
@@ -30,10 +31,14 @@ export const manifest = {
   activation: { commands: ["command-kit echo", "list"] },
 };
 
+/** Public contract for echo command, shared by SDK and presentation-layer consumers. */
 export const ECHO_COMMAND = "command-kit echo";
 
 function toPositiveInteger(value: unknown, fallback: number): number {
-  const parsed = typeof value === "number" ? value : Number.parseInt(String(value ?? ""), 10);
+  const parsed =
+    typeof value === "number"
+      ? value
+      : Number.parseInt(String(value ?? ""), 10);
   if (!Number.isInteger(parsed) || parsed < 1) {
     return fallback;
   }
@@ -41,7 +46,11 @@ function toPositiveInteger(value: unknown, fallback: number): number {
 }
 
 function toDecorationList(value: unknown): string[] {
-  const raw: unknown[] = Array.isArray(value) ? value : typeof value === "string" ? value.split(",") : [];
+  const raw: unknown[] = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(",")
+      : [];
   const seen = new Set<string>();
   for (const entry of raw) {
     const trimmed = String(entry).trim();
@@ -52,14 +61,10 @@ function toDecorationList(value: unknown): string[] {
   return [...seen];
 }
 
-/**
- * registerParser exemplar: normalize parsed options BEFORE the command handler
- * runs. Returns a delta — only the keys you set are merged over the parsed
- * input. Here the deprecated `--shout` alias is rewritten to `--upper`,
- * `--repeat` is coerced to a positive integer, and `--decorations` values are
- * trimmed and de-duplicated.
- */
-export function rewriteEchoOptions(context: ParserOverrideContext): ParserOverrideDelta {
+/** registerParser exemplar: normalize parsed options BEFORE the command handler runs. Returns a delta — only the keys you set are merged over the parsed input. Here the deprecated `--shout` alias is rewritten to `--upper`, `--repeat` is coerced to a positive integer, and `--decorations` values are trimmed and de-duplicated. */
+export function rewriteEchoOptions(
+  context: ParserOverrideContext,
+): ParserOverrideDelta {
   const options: Record<string, unknown> = { ...context.options };
   if (options.shout === true || options.shout === "true") {
     options.upper = true;
@@ -73,16 +78,24 @@ export function rewriteEchoOptions(context: ParserOverrideContext): ParserOverri
 }
 
 /** Command handler: pure compute, structured result rendered by the host. */
-export function runEchoCommand(context: CommandHandlerContext): Record<string, unknown> {
+export function runEchoCommand(
+  context: CommandHandlerContext,
+): Record<string, unknown> {
   const args = Array.isArray(context?.args) ? context.args : [];
   const options =
-    context?.options && typeof context.options === "object" && !Array.isArray(context.options) ? context.options : {};
+    context?.options &&
+    typeof context.options === "object" &&
+    !Array.isArray(context.options)
+      ? context.options
+      : {};
   const message = args
     .map((arg) => String(arg).trim())
     .filter((arg) => arg.length > 0)
     .join(" ");
   if (message.length === 0) {
-    throw new Error('command-kit echo requires a message argument. Try: pm command-kit echo "hello world".');
+    throw new Error(
+      'command-kit echo requires a message argument. Try: pm command-kit echo "hello world".',
+    );
   }
   const upper = options.upper === true || options.upper === "true";
   const repeat = toPositiveInteger(options.repeat, 1);
@@ -107,7 +120,8 @@ const echoFlags: FlagDefinition[] = [
   {
     long: "--shout",
     value_type: "boolean",
-    description: "Deprecated alias for --upper; rewritten to --upper by the registered parser.",
+    description:
+      "Deprecated alias for --upper; rewritten to --upper by the registered parser.",
   },
   {
     long: "--repeat",
@@ -121,7 +135,8 @@ const echoFlags: FlagDefinition[] = [
     value_name: "csv",
     value_type: "string",
     list: true,
-    description: "Comma-separated decoration labels; repeated flags accumulate.",
+    description:
+      "Comma-separated decoration labels; repeated flags accumulate.",
   },
 ];
 
@@ -130,8 +145,10 @@ export function buildEchoCommandDefinition(): CommandDefinition {
   return {
     name: ECHO_COMMAND,
     action: "command-kit-echo",
-    description: "Echo a message as structured output (commands-capability exemplar).",
-    intent: "Demonstrate every CommandDefinition field: arguments, flags, examples, and failure hints.",
+    description:
+      "Echo a message as structured output (commands-capability exemplar).",
+    intent:
+      "Demonstrate every CommandDefinition field: arguments, flags, examples, and failure hints.",
     arguments: [
       {
         name: "message",
@@ -160,10 +177,12 @@ export const injectedListFlags: FlagDefinition[] = [
     long: "--kit-note",
     value_name: "text",
     value_type: "string",
-    description: "Inert exemplar flag injected into `pm list` by pm-command-kit; the core list handler ignores it.",
+    description:
+      "Inert exemplar flag injected into `pm list` by pm-command-kit; the core list handler ignores it.",
   },
 ];
 
+/** Registers this package's commands, actions, and runtime hooks with the host. */
 export function activate(api: ExtensionApi): void {
   api.registerCommand(buildEchoCommandDefinition());
   api.registerParser(ECHO_COMMAND, rewriteEchoOptions);

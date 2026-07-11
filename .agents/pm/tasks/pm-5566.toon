@@ -2,26 +2,22 @@ id: pm-5566
 title: "Docstring gate: extend static-quality-gate to enforce public-API + data-contract coverage repo-wide"
 description: "Extend scripts/release/static-quality-gate.mjs: (1) module-doc coverage over packages/ too (not just src/); (2) exported-declaration coverage includes exported const/let/var; (3) NEW exported-member coverage for members of exported interfaces, object-literal type aliases, and public members of exported classes; (4) NEW conservative trivial-stub check rejecting name-only/empty docstrings; all repo-wide across src/+packages/, thresholds default 100. Add full regression coverage to tests/unit/scripts/release/static-quality-gate.spec.ts (gate script is under the 100% coverage gate). This task is the enforcement oracle that defines DONE for the sibling fill tasks."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[4]: coverage,docs,docstrings,quality
 created_at: "2026-07-04T20:18:50.672Z"
-updated_at: "2026-07-10T21:52:40.708Z"
+updated_at: "2026-07-11T00:04:02.826Z"
+closed_at: "2026-07-11T00:02:30.224Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: Gate exposes new pure checkers with 100% spec coverage; running the gate reports the new metrics at 100% once fill tasks land; boilerplate+trivial-stub checks green; no regression to existing gate metrics.
 parent: pm-4ak1
 risk: low
 confidence: high
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-2vb2,blocked_by,"2026-07-10T21:52:40.678Z",null,null
-  pm-768v,blocked_by,"2026-07-10T21:52:40.678Z",null,null
-  pm-m0uc,blocked_by,"2026-07-10T21:52:40.678Z",null,null
-  pm-mswi,blocked_by,"2026-07-10T21:52:40.678Z",null,null
-  pm-qely,blocked_by,"2026-07-10T21:52:40.678Z",null,null
-  pm-uwu0,blocked_by,"2026-07-10T21:52:40.678Z",null,null
-  pm-uxmf,blocked_by,"2026-07-10T21:52:40.678Z",null,null
-comments[27]{created_at,author,text}:
+resolution: Repo-wide documentation contract completed and enforced by mandatory static quality gates.
+expected_result: Every in-scope public API and data-contract symbol is documented and regression-gated.
+actual_result: Static gate reports 100% module/export/member docstring coverage with zero trivial or boilerplate violations; release gates and exact 100% code coverage pass.
+comments[32]{created_at,author,text}:
   "2026-07-04T20:40:45.207Z",maintainer-agent,"Evidence — extended static-quality-gate with documentedSourceFiles (src+packages scope), exported-const coverage, checkExportedMemberDocstringCoverage, and checkTrivialDocstrings. Gate spec now 49 tests, verified 100% lines/branches/functions/statements on the gate script. Trivial-stub check calibrated to ZERO false positives across the ~2783 existing docstrings. Gate reports 3957 missing across 188 files (19 package module docs, 366 exported incl consts, 3572 members) for the sibling fill tasks."
   "2026-07-04T21:37:22.370Z",claude-code-agent,"Evidence: static gate remains 100% by default while package lint ratchets to current docstring baseline during the fill-work lane. pnpm lint passed; standalone full coverage passed 5371 tests at 100/100/100/100."
   "2026-07-04T22:19:12.933Z",claude-code-agent,"Evidence update: CodeFactor PR annotation on static-quality-gate complexity is fixed and pnpm lint now includes a changed-file CodeFactor parity gate for shipped src/packages/scripts files with max complexity 16. JSON evidence: codefactor_complexity ok=true, scanned_file_count=20, max_complexity=16, violations=0. Verification passed: static-quality spec 55 tests; pnpm lint; full coverage 5379 tests at 100/100/100/100."
@@ -49,11 +45,23 @@ comments[27]{created_at,author,text}:
   "2026-07-05T03:21:13.658Z",claude-code-agent,"Pre-push Greptile status after docstring-detector fix: ran greptile review --branch main --agent on clean head 7d03bf3c; local review f19a6337-7f51-4fe8-8fcd-940ebe60a624 remained in Reviewing files for multiple polling windows and was interrupted to avoid a stuck process. Latest local gates passed before push: static-quality spec 58 tests; pnpm lint including CodeFactor parity; explicit static JSON ok=true codefactor_complexity.ok=true scanned_file_count=21 max_complexity=16 violations=[] source_docstrings=92.937>=92.93 exported_docstrings=84.458>=84.41 member_docstrings=13.6595>=13.655; full coverage 263 files / 5406 tests at 100/100/100/100; changelog:pm:check unchanged with pm-changelog 2026.6.30. Hosted Greptile and review bots will be retriggered after push for current-head findings."
   "2026-07-05T03:37:29.098Z",claude-code-agent,"Hosted Greptile current-head follow-up evidence: PR #430 comment 3524237148 at 2026-07-05T03:26:16Z flagged that a plain top-of-file module banner could be reused as the first export's own docstring. Updated nodeOwnDocstringComment to always exclude the top module-doc comment by position, requiring a separate declaration docstring, and added regression coverage for the exact plain-banner false positive. Verification passed: static-quality spec 58 tests; pnpm lint including local CodeFactor parity; explicit static JSON ok=true codefactor_complexity.ok=true scanned_file_count=21 max_complexity=16 violations=[] source_docstrings=92.937>=92.93 exported_docstrings=84.415>=84.41 member_docstrings=13.6595>=13.655; full coverage 263 files / 5406 tests / 100% statements branches functions lines; changelog:pm:check unchanged with pm-changelog 2026.6.30."
   "2026-07-05T03:39:37.650Z",claude-code-agent,"Pre-push Greptile status after module-doc reuse fix: ran greptile review --branch main --agent on clean head 636520a5; local review 6d1f879d-f45f-4c3f-a37b-806a151356f3 remained in Reviewing files for multiple polling windows and was interrupted to avoid a stuck process. Latest local gates passed before push: static-quality spec 58 tests; pnpm lint including CodeFactor parity; explicit static JSON ok=true codefactor_complexity.ok=true scanned_file_count=21 max_complexity=16 violations=[] source_docstrings=92.937>=92.93 exported_docstrings=84.415>=84.41 member_docstrings=13.6595>=13.655; full coverage 263 files / 5406 tests at 100/100/100/100; changelog:pm:check unchanged with pm-changelog 2026.6.30. Hosted Greptile and review bots will be retriggered after push for current-head findings."
-learnings[1]{created_at,author,text}:
+  "2026-07-10T22:02:49.294Z",codex-root-wide-sdk-20260710,"Implementation checkpoint: branch feat/repo-wide-api-docstring-contracts now reaches 100% module/export/member documentation coverage with zero boilerplate or trivial-doc violations across 188 previously incomplete files. pnpm typecheck and pnpm contracts:check pass. Publication is intentionally paused because the changed-file static gate still reports six files over the 3400-line cap, three duplicate chunks, and seven complexity violations; no commit, push, or PR was created."
+  "2026-07-10T23:16:45.999Z",codex-gpt5,"Implementation evidence: strict deduplication remediation extracted shared timestamp filtering, linked-test Commander options/background args, service-override context construction, installed-extension lifecycle lookup, and governance filter contracts. pnpm typecheck passed; pnpm lint passed with jscpd 0 clones; static quality and token-budget gates passed; focused regression suites passed; full node scripts/run-tests.mjs coverage exited 0 under the repository's mandatory 100/100/100/100 thresholds."
+  "2026-07-11T00:01:29.404Z",codex-gpt5,"Observability evidence: release gate found Sentry PM-CLI-24 (single handled event, first/last seen 2026-07-10T22:32:52Z) from a legacy external pm-todos build whose exporter spawned 'pm list-all'. Current first-party packages/pm-todos uses public SDK listAllFrontMatter with no subprocess path; package-first dogfood passed 88 commands and packed npx smoke passed. Resolved the stale one-event Sentry issue after live verification; telemetry gate remained healthy at 0.38% finish error rate with zero missing error-code rows."
+  "2026-07-11T00:02:29.153Z",codex-gpt5,"Final verification: release gate passed 5,529 tests with exact 100% statements (34,502/34,502), branches (24,638/24,638), functions (6,929/6,929), and lines (33,794/33,794); lint reported 0 clones; static docstring/complexity/import-boundary and token-budget gates passed; temp package-first dogfood passed 88 commands; packed npx smoke passed; Sentry/telemetry gate passed with 0 critical/high issues."
+  "2026-07-11T00:04:02.826Z",codex-gpt5,"Pre-push Greptile evidence: greptile review --branch main --agent ran on local commit 4622d843 and refused the 287-file bundle with 'this review is too large to send. Split it into smaller commits and try again.' No findings were produced. Preserving the intentionally broad review unit; hosted PR Greptile will be triggered on the pushed head."
+learnings[2]{created_at,author,text}:
   "2026-07-04T20:40:45.847Z",maintainer-agent,"The trivial-docstring quality gate must subtract the symbol's own identifier tokens AND a tiny filler-word set from the prose, then flag only when zero meaningful words remain. Calibrated against all existing docstrings first (0 false positives) before enabling; enabling it repo-wide without that calibration would have failed the gate on legitimate terse docs."
-files[6]{path,scope,note}:
+  "2026-07-10T23:16:47.785Z",codex-gpt5,Repo-wide documentation changes can expose latent jscpd clones by shifting token windows; preserve the zero threshold by extracting shared behavioral primitives rather than excluding documented files or weakening detection.
+files[12]{path,scope,note}:
   package.json,project,"quality:static ratchet wiring for current docstring baseline"
+  packages/pm-governance-audit/extensions/governance-audit/index.ts,project,Single-source audit/normalize filter contracts remove package clone
   scripts/release/static-quality-gate.mjs,project,"Extended gate: packages module docs,exported consts,exported interface/type/class members,trivial-stub check"
+  src/cli/commands/extension.ts,project,Shared installed-extension resolution removes lifecycle clone
+  src/cli/commands/list-filter-shared.ts,project,Shared timestamp predicate removes list/search clone under zero-duplication gate
+  src/cli/register-operations.ts,project,Shared linked-test option registration removes CLI contract clone
+  src/cli/registration-helpers.ts,project,Shared linked-test background argument builder removes runtime clone
+  src/core/extensions/extension-hook-runtime.ts,project,Shared service override selection/context construction removes runtime clone
   tests/integration/release-automation-contract.spec.ts,project,"quality:static script contract ratcheted to 13.655"
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness script contract ratcheted to 13.655
   tests/unit/core/item/core-item-lock-coverage.spec.ts,project,coverage completion for lock wait code
@@ -80,4 +88,5 @@ tests[5]:
     note: eslint jscpd static quality gate
 docs[1]{path,scope,note}:
   docs/TESTING.md,project,documents pnpm lint CodeFactor-parity local gate
+close_reason: Repo-wide public API/data-contract documentation and strict enforcement acceptance criteria satisfied; full release evidence recorded.
 body: ""

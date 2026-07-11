@@ -5,8 +5,15 @@
  */
 import jsonPatch from "fast-json-patch";
 import fs from "node:fs/promises";
-import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
-import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
+import {
+  pathExists,
+  readFileIfExists,
+  writeFileAtomic,
+} from "../../core/fs/fs-utils.js";
+import {
+  appendHistoryEntry,
+  createHistoryEntry,
+} from "../../core/history/history.js";
 import {
   EMPTY_REPLAY_DOCUMENT,
   normalizeReplayPatchOps,
@@ -18,7 +25,10 @@ import {
 } from "../../core/history/replay.js";
 import { enforceHistoryStreamPolicyForItem } from "../../core/history/history-stream-policy.js";
 import { normalizeItemId, normalizeRawItemId } from "../../core/item/id.js";
-import { canonicalDocument, serializeItemDocument } from "../../core/item/item-format.js";
+import {
+  canonicalDocument,
+  serializeItemDocument,
+} from "../../core/item/item-format.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { acquireLock } from "../../core/lock/lock.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -32,10 +42,20 @@ import {
   runActiveOnWriteHooks,
 } from "../../core/extensions/index.js";
 import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
-import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import {
+  getHistoryPath,
+  getItemPath,
+  getSettingsPath,
+  resolvePmRoot,
+} from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { resolveAuthor } from "../../core/shared/author.js";
-import type { HistoryEntry, HistoryPatchOp, ItemDocument, ItemMetadata } from "../../types/index.js";
+import type {
+  HistoryEntry,
+  HistoryPatchOp,
+  ItemDocument,
+  ItemMetadata,
+} from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
 
 interface ResolvedRestoreTarget {
@@ -64,20 +84,21 @@ interface PatchFailureContext {
   reason?: string;
 }
 
-/**
- * Documents the restore command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the restore command options payload exchanged by command, SDK, and package integrations. */
 export interface RestoreCommandOptions {
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Value that configures or reports force for this contract. */
   force?: boolean;
 }
 
-/**
- * Documents the restore result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the restore result payload exchanged by command, SDK, and package integrations. */
 export interface RestoreResult {
+  /** Value that configures or reports item for this contract. */
   item: ItemMetadata;
+  /** Value that configures or reports restored from for this contract. */
   restored_from: {
     kind: "version" | "timestamp";
     target: string;
@@ -85,19 +106,31 @@ export interface RestoreResult {
     entry_ts: string;
     entry_op: string;
   };
+  /** Value that configures or reports changed fields for this contract. */
   changed_fields: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
-function ensureReplayTarget(target: string, history: HistoryEntry[]): ResolvedRestoreTarget {
+function ensureReplayTarget(
+  target: string,
+  history: HistoryEntry[],
+): ResolvedRestoreTarget {
   const trimmed = target.trim();
   if (!trimmed) {
-    throw new PmCliError("Missing restore target. Use a timestamp or version number.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Missing restore target. Use a timestamp or version number.",
+      EXIT_CODE.USAGE,
+    );
   }
 
   if (/^\d+$/.test(trimmed)) {
     const version = Number(trimmed);
-    if (!Number.isSafeInteger(version) || version < 1 || version > history.length) {
+    if (
+      !Number.isSafeInteger(version) ||
+      version < 1 ||
+      version > history.length
+    ) {
       throw new PmCliError(
         `Restore version must be between 1 and ${history.length} for this item.`,
         EXIT_CODE.USAGE,
@@ -133,7 +166,10 @@ function ensureReplayTarget(target: string, history: HistoryEntry[]): ResolvedRe
   }
 
   if (index < 0) {
-    throw new PmCliError(`No history entries exist at or before timestamp ${trimmed}.`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `No history entries exist at or before timestamp ${trimmed}.`,
+      EXIT_CODE.USAGE,
+    );
   }
 
   return {
@@ -159,14 +195,22 @@ function extractPatchFailureContext(
     operation?: unknown;
   };
   /* c8 ignore start -- parser-generated patch errors may omit index metadata in current fixtures. */
-  if (typeof candidate.index === "number" && Number.isInteger(candidate.index) && candidate.index >= 0) {
+  if (
+    typeof candidate.index === "number" &&
+    Number.isInteger(candidate.index) &&
+    candidate.index >= 0
+  ) {
     context.patchIndex = candidate.index;
   }
   /* c8 ignore stop */
   /* c8 ignore start -- operation payload metadata is optional in upstream json-patch failures. */
   const operationRecord =
     typeof candidate.operation === "object" && candidate.operation !== null
-      ? (candidate.operation as { op?: unknown; path?: unknown; from?: unknown })
+      ? (candidate.operation as {
+          op?: unknown;
+          path?: unknown;
+          from?: unknown;
+        })
       : null;
   /* c8 ignore stop */
   enrichPatchFailureContext(context, operationRecord, patch);
@@ -189,7 +233,10 @@ function enrichPatchFailureContext(
   if (operationRecord && typeof operationRecord.from === "string") {
     context.from = operationRecord.from;
   }
-  if ((context.op === undefined || context.path === undefined) && context.patchIndex !== undefined) {
+  if (
+    (context.op === undefined || context.path === undefined) &&
+    context.patchIndex !== undefined
+  ) {
     const fallback = patch[context.patchIndex];
     /* c8 ignore start -- fallback enrichment paths are only exercised by malformed patch telemetry payloads. */
     if (fallback) {
@@ -229,7 +276,10 @@ function applyHistoryPatch(
         EXIT_CODE.GENERIC_FAILURE,
       );
     }
-    const replay = applied as { metadata: Record<string, unknown>; body: string };
+    const replay = applied as {
+      metadata: Record<string, unknown>;
+      body: string;
+    };
     return {
       metadata: replay.metadata,
       body: replay.body,
@@ -242,7 +292,9 @@ function applyHistoryPatch(
     const contextTokens = [
       `history_op=${entryOp}`,
       /* c8 ignore next -- contextual fields are best-effort and may be absent depending on patch failure shape. */
-      failureContext.patchIndex !== undefined ? `patch_index=${failureContext.patchIndex}` : null,
+      failureContext.patchIndex !== undefined
+        ? `patch_index=${failureContext.patchIndex}`
+        : null,
       /* c8 ignore next -- contextual fields are best-effort and may be absent depending on patch failure shape. */
       failureContext.op ? `op=${failureContext.op}` : null,
       /* c8 ignore next -- contextual fields are best-effort and may be absent depending on patch failure shape. */
@@ -251,7 +303,9 @@ function applyHistoryPatch(
       failureContext.from ? `from=${failureContext.from}` : null,
     ].filter((token): token is string => token !== null);
     /* c8 ignore start -- jsonPatch/structuredClone/normalizeReplayPatchOps always throw Error instances with non-empty messages here, so extractPatchFailureContext always sets reason; the empty-suffix fallback is unreachable through applyHistoryPatch. */
-    const reasonSuffix = failureContext.reason ? ` ${failureContext.reason}` : "";
+    const reasonSuffix = failureContext.reason
+      ? ` ${failureContext.reason}`
+      : "";
     /* c8 ignore stop */
     throw new PmCliError(
       `Failed to apply history patch at entry ${entryNumber} (${contextTokens.join(", ")}).${reasonSuffix}`,
@@ -260,8 +314,13 @@ function applyHistoryPatch(
   }
 }
 
-function replayToTarget(history: HistoryEntry[], targetIndex: number): CanonicalReplayDocument {
-  let document: CanonicalReplayDocument = structuredClone(EMPTY_REPLAY_DOCUMENT);
+function replayToTarget(
+  history: HistoryEntry[],
+  targetIndex: number,
+): CanonicalReplayDocument {
+  let document: CanonicalReplayDocument = structuredClone(
+    EMPTY_REPLAY_DOCUMENT,
+  );
 
   for (let i = 0; i <= targetIndex; i += 1) {
     const entry = history[i];
@@ -317,7 +376,13 @@ async function resolveRestoreSubject(
   settings: Awaited<ReturnType<typeof readSettings>>,
   typeToFolder: Record<string, string>,
 ): Promise<ResolvedRestoreSubject> {
-  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
+  const located = await locateItem(
+    pmRoot,
+    id,
+    settings.id_prefix,
+    settings.item_format,
+    typeToFolder,
+  );
   if (located) {
     const historyPath = getHistoryPath(pmRoot, located.id);
     const historyPolicy = await enforceHistoryStreamPolicyForItem({
@@ -337,7 +402,10 @@ async function resolveRestoreSubject(
   const normalizedId = normalizeItemId(id, settings.id_prefix);
   const rawNormalizedId = normalizeRawItemId(id);
   /* c8 ignore start -- raw-id fallback is covered by normalize-item-id utility tests. */
-  const candidateIds = normalizedId === rawNormalizedId ? [normalizedId] : [normalizedId, rawNormalizedId];
+  const candidateIds =
+    normalizedId === rawNormalizedId
+      ? [normalizedId]
+      : [normalizedId, rawNormalizedId];
   /* c8 ignore stop */
   for (const candidateId of candidateIds) {
     const historyPath = getHistoryPath(pmRoot, candidateId);
@@ -354,10 +422,16 @@ async function resolveRestoreSubject(
   throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
 }
 
-function changedFields(beforeDocument: ItemDocument, afterDocument: ItemDocument): string[] {
+function changedFields(
+  beforeDocument: ItemDocument,
+  afterDocument: ItemDocument,
+): string[] {
   const beforeReplay = toReplayDocument(beforeDocument);
   const afterReplay = toReplayDocument(afterDocument);
-  const patch = jsonPatch.compare(beforeReplay, afterReplay) as HistoryPatchOp[];
+  const patch = jsonPatch.compare(
+    beforeReplay,
+    afterReplay,
+  ) as HistoryPatchOp[];
   const fields = new Set<string>();
 
   for (const op of patch) {
@@ -365,7 +439,9 @@ function changedFields(beforeDocument: ItemDocument, afterDocument: ItemDocument
       fields.add("body");
       continue;
     }
-    const segment = op.path.replace(/^\/(?:metadata|front_matter)\/?/, "").split("/")[0];
+    const segment = op.path
+      .replace(/^\/(?:metadata|front_matter)\/?/, "")
+      .split("/")[0];
     fields.add(segment.replaceAll("~1", "/").replaceAll("~0", "~"));
   }
 
@@ -380,10 +456,18 @@ async function loadRestoreStateUnderLock(params: {
   typeToFolder: Record<string, string>;
   historyRawBeforeLock: string | null;
   currentItemRawBeforeLock: string | null;
-}): Promise<{ loadedItemUnderLock: Awaited<ReturnType<typeof readLocatedItem>> | null; existingItemPath: string | null }> {
-  const historyRawUnderLock = await readFileIfExists(params.subject.historyPath);
+}): Promise<{
+  loadedItemUnderLock: Awaited<ReturnType<typeof readLocatedItem>> | null;
+  existingItemPath: string | null;
+}> {
+  const historyRawUnderLock = await readFileIfExists(
+    params.subject.historyPath,
+  );
   if (historyRawUnderLock !== params.historyRawBeforeLock) {
-    throw new PmCliError(`History for ${params.resolvedId} changed while waiting for lock; retry restore.`, EXIT_CODE.CONFLICT);
+    throw new PmCliError(
+      `History for ${params.resolvedId} changed while waiting for lock; retry restore.`,
+      EXIT_CODE.CONFLICT,
+    );
   }
   const locatedUnderLock = await locateItem(
     params.pmRoot,
@@ -392,11 +476,21 @@ async function loadRestoreStateUnderLock(params: {
     params.settings.item_format,
     params.typeToFolder,
   );
-  const loadedItemUnderLock = locatedUnderLock ? await readLocatedItem(locatedUnderLock, { schema: params.settings.schema }) : null;
+  const loadedItemUnderLock = locatedUnderLock
+    ? await readLocatedItem(locatedUnderLock, {
+        schema: params.settings.schema,
+      })
+    : null;
   if ((loadedItemUnderLock?.raw ?? null) !== params.currentItemRawBeforeLock) {
-    throw new PmCliError(`Item ${params.resolvedId} changed while waiting for lock; retry restore.`, EXIT_CODE.CONFLICT);
+    throw new PmCliError(
+      `Item ${params.resolvedId} changed while waiting for lock; retry restore.`,
+      EXIT_CODE.CONFLICT,
+    );
   }
-  return { loadedItemUnderLock, existingItemPath: locatedUnderLock?.itemPath ?? null };
+  return {
+    loadedItemUnderLock,
+    existingItemPath: locatedUnderLock?.itemPath ?? null,
+  };
 }
 
 function resolveRestoreCurrentState(
@@ -404,7 +498,10 @@ function resolveRestoreCurrentState(
   history: HistoryEntry[],
 ): RestoreCurrentState {
   if (loadedItemUnderLock) {
-    return { document: loadedItemUnderLock.document, originalRaw: loadedItemUnderLock.raw };
+    return {
+      document: loadedItemUnderLock.document,
+      originalRaw: loadedItemUnderLock.raw,
+    };
   }
   return { document: replayCurrentDocument(history), originalRaw: null };
 }
@@ -417,14 +514,20 @@ function collectRestoreOwnershipWarnings(params: {
   resolvedId: string;
 }): string[] {
   const assigned = params.document.metadata.assignee?.trim();
-  const hasOwnershipConflict = assigned && assigned !== params.author && !params.force;
+  const hasOwnershipConflict =
+    assigned && assigned !== params.author && !params.force;
   if (!hasOwnershipConflict) {
     return [];
   }
   if (params.enforcement === "strict") {
-    throw new PmCliError(`Item ${params.resolvedId} is assigned to ${assigned}. Use --force to override.`, EXIT_CODE.CONFLICT);
+    throw new PmCliError(
+      `Item ${params.resolvedId} is assigned to ${assigned}. Use --force to override.`,
+      EXIT_CODE.CONFLICT,
+    );
   }
-  return params.enforcement === "warn" ? [`ownership_warning:assignee_conflict:${params.resolvedId}:${assigned}`] : [];
+  return params.enforcement === "warn"
+    ? [`ownership_warning:assignee_conflict:${params.resolvedId}:${assigned}`]
+    : [];
 }
 
 async function restorePreviousItemAfterHistoryFailure(params: {
@@ -432,7 +535,11 @@ async function restorePreviousItemAfterHistoryFailure(params: {
   resolvedOriginalRaw: string | null;
   restoredItemPath: string;
 }): Promise<void> {
-  if (params.existingItemPath && params.resolvedOriginalRaw !== null && params.restoredItemPath !== params.existingItemPath) {
+  if (
+    params.existingItemPath &&
+    params.resolvedOriginalRaw !== null &&
+    params.restoredItemPath !== params.existingItemPath
+  ) {
     await writeFileAtomic(params.existingItemPath, params.resolvedOriginalRaw);
     await fs.rm(params.restoredItemPath, { force: true });
     return;
@@ -474,9 +581,7 @@ async function runRestoreWriteHooks(params: {
   ];
 }
 
-/**
- * Implements run restore for the public runtime surface of this module.
- */
+/** Implements run restore for the public runtime surface of this module. */
 export async function runRestore(
   id: string,
   target: string,
@@ -485,22 +590,41 @@ export async function runRestore(
 ): Promise<RestoreResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const subject = await resolveRestoreSubject(pmRoot, id, settings, typeRegistry.type_to_folder);
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
+  const subject = await resolveRestoreSubject(
+    pmRoot,
+    id,
+    settings,
+    typeRegistry.type_to_folder,
+  );
   const resolvedId = subject.id;
   const historyRawBeforeLock = await readFileIfExists(subject.historyPath);
   const history = await readHistoryEntries(subject.historyPath, resolvedId);
   if (history.length === 0) {
-    throw new PmCliError(`No history exists for ${resolvedId}; restore is unavailable.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `No history exists for ${resolvedId}; restore is unavailable.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
   const resolvedTarget = ensureReplayTarget(target, history);
-  const replayDocument = ensureMaterializedRestoreTarget(replayToTarget(history, resolvedTarget.historyIndex), resolvedTarget);
-  const restoredDocument = replayToCanonicalItemDocument(replayDocument, { schema: settings.schema });
+  const replayDocument = ensureMaterializedRestoreTarget(
+    replayToTarget(history, resolvedTarget.historyIndex),
+    resolvedTarget,
+  );
+  const restoredDocument = replayToCanonicalItemDocument(replayDocument, {
+    schema: settings.schema,
+  });
 
   if (restoredDocument.metadata.id !== resolvedId) {
     throw new PmCliError(
@@ -508,7 +632,9 @@ export async function runRestore(
       EXIT_CODE.GENERIC_FAILURE,
     );
   }
-  const loadedItemBeforeLock = subject.located ? await readLocatedItem(subject.located, { schema: settings.schema }) : null;
+  const loadedItemBeforeLock = subject.located
+    ? await readLocatedItem(subject.located, { schema: settings.schema })
+    : null;
   const currentItemRawBeforeLock = loadedItemBeforeLock?.raw ?? null;
 
   const author = resolveAuthor(options.author, settings.author_default);
@@ -523,17 +649,21 @@ export async function runRestore(
   );
 
   try {
-    const { loadedItemUnderLock, existingItemPath } = await loadRestoreStateUnderLock({
-      pmRoot,
-      resolvedId,
-      subject,
-      settings,
-      typeToFolder: typeRegistry.type_to_folder,
-      historyRawBeforeLock,
-      currentItemRawBeforeLock,
-    });
+    const { loadedItemUnderLock, existingItemPath } =
+      await loadRestoreStateUnderLock({
+        pmRoot,
+        resolvedId,
+        subject,
+        settings,
+        typeToFolder: typeRegistry.type_to_folder,
+        historyRawBeforeLock,
+        currentItemRawBeforeLock,
+      });
     const itemFormat = "toon";
-    const currentState = resolveRestoreCurrentState(loadedItemUnderLock, history);
+    const currentState = resolveRestoreCurrentState(
+      loadedItemUnderLock,
+      history,
+    );
     const ownershipWarnings = collectRestoreOwnershipWarnings({
       document: currentState.document,
       author,
@@ -542,7 +672,10 @@ export async function runRestore(
       resolvedId,
     });
 
-    const serializedRestore = serializeItemDocument(restoredDocument, { format: itemFormat, schema: settings.schema });
+    const serializedRestore = serializeItemDocument(restoredDocument, {
+      format: itemFormat,
+      schema: settings.schema,
+    });
     /* c8 ignore next -- restored item path typing is exercised in restore integration workflows. */
     const restoredItemPath = getItemPath(
       pmRoot,
@@ -575,7 +708,10 @@ export async function runRestore(
       });
       throw error;
     }
-    const restoreChangedFields = changedFields(currentState.document, restoredDocument);
+    const restoreChangedFields = changedFields(
+      currentState.document,
+      restoredDocument,
+    );
     const hookWarnings = await runRestoreWriteHooks({
       restoredItemPath,
       historyPath: subject.historyPath,
@@ -588,8 +724,14 @@ export async function runRestore(
       item_type: restoredDocument.metadata.type,
       previous_status: currentState.document.metadata.status,
       status: restoredDocument.metadata.status,
-      previous: projectAfterCommandItemSnapshot(currentState.document.metadata, restoreChangedFields),
-      current: projectAfterCommandItemSnapshot(restoredDocument.metadata, restoreChangedFields),
+      previous: projectAfterCommandItemSnapshot(
+        currentState.document.metadata,
+        restoreChangedFields,
+      ),
+      current: projectAfterCommandItemSnapshot(
+        restoredDocument.metadata,
+        restoreChangedFields,
+      ),
       changed_fields: restoreChangedFields,
     });
 
@@ -604,13 +746,18 @@ export async function runRestore(
         entry_op: targetEntry.op,
       },
       changed_fields: restoreChangedFields,
-      warnings: [...subject.historyPolicyWarnings, ...ownershipWarnings, ...hookWarnings],
+      warnings: [
+        ...subject.historyPolicyWarnings,
+        ...ownershipWarnings,
+        ...hookWarnings,
+      ],
     };
   } finally {
     await releaseLock();
   }
 }
 
+/** Public contract for test only restore command, shared by SDK and presentation-layer consumers. */
 export const _testOnlyRestoreCommand = {
   applyHistoryPatch,
   changedFields,

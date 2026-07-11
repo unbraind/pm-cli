@@ -21,16 +21,22 @@ function trackedTestRunHistoryLimit(): number {
   return parsed;
 }
 
-function normalizeTrackedTestRunSummaries(entries: ItemTestRunSummary[]): ItemTestRunSummary[] {
+function normalizeTrackedTestRunSummaries(
+  entries: ItemTestRunSummary[],
+): ItemTestRunSummary[] {
   return [...entries]
-    .filter((entry) =>
-      entry.run_id.trim().length > 0 &&
-      entry.started_at.trim().length > 0 &&
-      entry.finished_at.trim().length > 0 &&
-      entry.recorded_at.trim().length > 0
+    .filter(
+      (entry) =>
+        entry.run_id.trim().length > 0 &&
+        entry.started_at.trim().length > 0 &&
+        entry.finished_at.trim().length > 0 &&
+        entry.recorded_at.trim().length > 0,
     )
     .sort((left, right) => {
-      const byRecorded = compareTimestampStrings(left.recorded_at, right.recorded_at);
+      const byRecorded = compareTimestampStrings(
+        left.recorded_at,
+        right.recorded_at,
+      );
       if (byRecorded !== 0) return byRecorded;
       const byRunId = left.run_id.localeCompare(right.run_id);
       if (byRunId !== 0) return byRunId;
@@ -38,9 +44,7 @@ function normalizeTrackedTestRunSummaries(entries: ItemTestRunSummary[]): ItemTe
     });
 }
 
-/**
- * Implements append tracked test run summary for the public runtime surface of this module.
- */
+/** Implements append tracked test run summary for the public runtime surface of this module. */
 export async function appendTrackedTestRunSummary(options: {
   pmRoot: string;
   settings: PmSettings;
@@ -60,8 +64,14 @@ export async function appendTrackedTestRunSummary(options: {
     force: false,
     mutate(document) {
       const current = document.metadata.test_runs ?? [];
-      const next = normalizeTrackedTestRunSummaries([...current, options.entry]);
-      const bounded = next.length > historyLimit ? next.slice(next.length - historyLimit) : next;
+      const next = normalizeTrackedTestRunSummaries([
+        ...current,
+        options.entry,
+      ]);
+      const bounded =
+        next.length > historyLimit
+          ? next.slice(next.length - historyLimit)
+          : next;
       document.metadata.test_runs = bounded;
       return { changedFields: ["test_runs"] };
     },

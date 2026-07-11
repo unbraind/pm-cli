@@ -18,11 +18,7 @@ import {
 
 /** Allowed CSV/markdown keys for `--reminder` (GH-258). */
 const REMINDER_KEYS = ["at", "date", "text", "title"] as const;
-/**
- * Allowed CSV/markdown keys for `--event` (GH-258). Recurrence keys are spread
- * from the authoritative RECURRENCE_CSV_KEYS next to parseRecurrenceRule so the
- * allow-list can never drift from what the recurrence parser actually reads.
- */
+/** Allowed CSV/markdown keys for `--event` (GH-258). Recurrence keys are spread from the authoritative RECURRENCE_CSV_KEYS next to parseRecurrenceRule so the allow-list can never drift from what the recurrence parser actually reads. */
 const EVENT_KEYS = [
   "start",
   "date",
@@ -50,29 +46,43 @@ interface ParseEventEntriesOptions {
   recurrenceEmptyNumericGuard: RecurrenceEmptyNumericGuard;
 }
 
-function optionalString(value: string | undefined, mode: ReminderValueMode): string | undefined {
+function optionalString(
+  value: string | undefined,
+  mode: ReminderValueMode,
+): string | undefined {
   return mode === "trimmed" ? value?.trim() : value;
 }
 
-function isProvided(value: string | undefined, guard: EmptyValueGuard): boolean {
+function isProvided(
+  value: string | undefined,
+  guard: EmptyValueGuard,
+): boolean {
   return guard === "defined" ? value !== undefined : Boolean(value);
 }
 
-/**
- * Implements parse reminder entries for the public runtime surface of this module.
- */
-export function parseReminderEntries(raw: string[], nowValue: Date, options: ParseReminderEntriesOptions): Reminder[] {
+/** Implements parse reminder entries for the public runtime surface of this module. */
+export function parseReminderEntries(
+  raw: string[],
+  nowValue: Date,
+  options: ParseReminderEntriesOptions,
+): Reminder[] {
   return raw.map((entry) => {
     const kv = parseCsvKv(entry, "--reminder");
     assertNoUnknownCsvKeys(kv, "--reminder", REMINDER_KEYS);
     const atRaw = optionalString(kv.at ?? kv.date, options.valueMode);
     const textRaw = optionalString(kv.text ?? kv.title, options.valueMode);
     if (!atRaw || !textRaw) {
-      throw new PmCliError("--reminder requires at=<iso|relative> or date=<iso|relative>, plus text=<value> or title=<value>", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "--reminder requires at=<iso|relative> or date=<iso|relative>, plus text=<value> or title=<value>",
+        EXIT_CODE.USAGE,
+      );
     }
     const text = textRaw.trim();
     if (!text) {
-      throw new PmCliError("--reminder text must not be empty", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "--reminder text must not be empty",
+        EXIT_CODE.USAGE,
+      );
     }
     return {
       at: resolveIsoOrRelative(atRaw, nowValue, "reminder.at"),
@@ -81,16 +91,21 @@ export function parseReminderEntries(raw: string[], nowValue: Date, options: Par
   });
 }
 
-/**
- * Implements parse event entries for the public runtime surface of this module.
- */
-export function parseEventEntries(raw: string[], nowValue: Date, options: ParseEventEntriesOptions): CalendarEvent[] {
+/** Implements parse event entries for the public runtime surface of this module. */
+export function parseEventEntries(
+  raw: string[],
+  nowValue: Date,
+  options: ParseEventEntriesOptions,
+): CalendarEvent[] {
   return raw.map((entry) => {
     const kv = parseCsvKv(entry, "--event");
     assertNoUnknownCsvKeys(kv, "--event", EVENT_KEYS);
     const startRaw = (kv.start ?? kv.date)?.trim();
     if (!startRaw) {
-      throw new PmCliError("--event requires start=<iso|relative> or date=<iso|relative>", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "--event requires start=<iso|relative> or date=<iso|relative>",
+        EXIT_CODE.USAGE,
+      );
     }
     const startAt = resolveIsoOrRelative(startRaw, nowValue, "event.start");
     const endRaw = kv.end?.trim();
@@ -114,12 +129,20 @@ export function parseEventEntries(raw: string[], nowValue: Date, options: ParseE
     ] as const;
     for (const [fieldLabel, rawValue, trimmedValue] of optionalTextFields) {
       if (rawValue !== undefined && !trimmedValue) {
-        throw new PmCliError(`--event ${fieldLabel} must not be empty`, EXIT_CODE.USAGE);
+        throw new PmCliError(
+          `--event ${fieldLabel} must not be empty`,
+          EXIT_CODE.USAGE,
+        );
       }
     }
 
     const allDayRaw = kv.all_day?.trim();
-    const recurrence = parseRecurrenceRule(kv, startAt, nowValue, options.recurrenceEmptyNumericGuard);
+    const recurrence = parseRecurrenceRule(
+      kv,
+      startAt,
+      nowValue,
+      options.recurrenceEmptyNumericGuard,
+    );
     const allDay = isProvided(allDayRaw, options.allDayEmptyGuard)
       ? parseEventBoolean(allDayRaw as string, "--event all_day")
       : undefined;
@@ -137,15 +160,16 @@ export function parseEventEntries(raw: string[], nowValue: Date, options: ParseE
   });
 }
 
-/**
- * Implements parse type option entries for the public runtime surface of this module.
- */
+/** Implements parse type option entries for the public runtime surface of this module. */
 export function parseTypeOptionEntries(raw: string[]): Record<string, string> {
   const values: Record<string, string> = {};
   for (const entry of raw) {
     const trimmedEntry = entry.trim();
     if (trimmedEntry.length === 0) {
-      throw new PmCliError("--type-option values must not be empty", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "--type-option values must not be empty",
+        EXIT_CODE.USAGE,
+      );
     }
     let key: string | undefined;
     let value: string | undefined;
@@ -176,9 +200,16 @@ export function parseTypeOptionEntries(raw: string[]): Record<string, string> {
       value = trimmedEntry.slice(separatorIndex + 1).trim();
     }
     if (!key || !value) {
-      throw new PmCliError("--type-option requires key and value", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "--type-option requires key and value",
+        EXIT_CODE.USAGE,
+      );
     }
     values[key] = value;
   }
-  return Object.fromEntries(Object.entries(values).sort((left, right) => left[0].localeCompare(right[0])));
+  return Object.fromEntries(
+    Object.entries(values).sort((left, right) =>
+      left[0].localeCompare(right[0]),
+    ),
+  );
 }

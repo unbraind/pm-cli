@@ -5,7 +5,10 @@
  */
 import jsonPatch from "fast-json-patch";
 import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
-import { executeHistoryRewrite, writeHistoryRawWithRollback } from "../../core/history/history-rewrite.js";
+import {
+  executeHistoryRewrite,
+  writeHistoryRawWithRollback,
+} from "../../core/history/history-rewrite.js";
 import {
   historyEntriesToRaw,
   reanchorHistoryEntries,
@@ -20,31 +23,45 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
-import { listAllFrontMatterWithBody, readLocatedItem } from "../../core/store/item-store.js";
+import {
+  getActiveExtensionRegistrations,
+  runActiveOnWriteHooks,
+} from "../../core/extensions/index.js";
+import {
+  listAllFrontMatterWithBody,
+  readLocatedItem,
+} from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { HistoryEntry, HistoryPatchOp, ItemMetadata } from "../../types/index.js";
+import type {
+  HistoryEntry,
+  HistoryPatchOp,
+  ItemMetadata,
+} from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
 import { resolveHistorySubject } from "./history-redact.js";
 
-/**
- * Documents the history repair command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the history repair command options payload exchanged by command, SDK, and package integrations. */
 export interface HistoryRepairCommandOptions {
+  /** Value that configures or reports dry run for this contract. */
   dryRun?: boolean;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Value that configures or reports force for this contract. */
   force?: boolean;
 }
 
-/**
- * Documents the history repair result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the history repair result payload exchanged by command, SDK, and package integrations. */
 export interface HistoryRepairResult {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports dry run for this contract. */
   dry_run: boolean;
+  /** Value that configures or reports changed for this contract. */
   changed: boolean;
+  /** Value that configures or reports history for this contract. */
   history: {
     path: string;
     entries_scanned: number;
@@ -58,12 +75,15 @@ export interface HistoryRepairResult {
     verify_ok: boolean;
     verify_errors: string[];
   };
+  /** Value that configures or reports item for this contract. */
   item: {
     exists: boolean;
     path: string | null;
     matched_chain_before: boolean | null;
   };
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
 }
 
@@ -75,7 +95,10 @@ interface HistoryRepairItemReplayContext {
   loadedItem: Awaited<ReturnType<typeof readLocatedItem>> | null;
 }
 
-function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
+function toAuthor(
+  candidate: string | undefined,
+  defaultAuthor: string,
+): string {
   /* c8 ignore next -- PM_AUTHOR fallback branch is environment-dependent in CI. */
   const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
   const trimmed = resolved.trim();
@@ -88,7 +111,9 @@ async function loadHistoryRepairItemReplay(
   historyEntries: HistoryEntry[],
 ): Promise<HistoryRepairItemReplayContext> {
   const currentItemPath = subject.located?.itemPath ?? null;
-  const loadedItem = subject.located ? await readLocatedItem(subject.located, { schema: settings.schema }) : null;
+  const loadedItem = subject.located
+    ? await readLocatedItem(subject.located, { schema: settings.schema })
+    : null;
   if (!loadedItem) {
     return {
       currentItemReplay: null,
@@ -99,7 +124,8 @@ async function loadHistoryRepairItemReplay(
     };
   }
   const currentItemReplay = toReplayDocument(loadedItem.document);
-  const lastOriginalAfterHash = historyEntries[historyEntries.length - 1]?.after_hash;
+  const lastOriginalAfterHash =
+    historyEntries[historyEntries.length - 1]?.after_hash;
   return {
     currentItemReplay,
     currentItemPath,
@@ -140,14 +166,21 @@ function buildHistoryRepairEntries(params: {
   if (!params.changed) {
     return { rewrittenEntries, auditEntryAdded: false };
   }
-  const afterReplay = params.reconcileNeeded && params.currentItemReplay ? params.currentItemReplay : params.finalReplay;
+  const afterReplay =
+    params.reconcileNeeded && params.currentItemReplay
+      ? params.currentItemReplay
+      : params.finalReplay;
   rewrittenEntries.push({
     ts: nowIso(),
     author: params.author,
     op: "history_repair",
-    patch: params.reconcileNeeded && params.currentItemReplay
-      ? (jsonPatch.compare(params.finalReplay, params.currentItemReplay) as HistoryPatchOp[])
-      : [],
+    patch:
+      params.reconcileNeeded && params.currentItemReplay
+        ? (jsonPatch.compare(
+            params.finalReplay,
+            params.currentItemReplay,
+          ) as HistoryPatchOp[])
+        : [],
     before_hash: replayHash(params.finalReplay),
     after_hash: replayHash(afterReplay),
     message: params.message,
@@ -155,7 +188,10 @@ function buildHistoryRepairEntries(params: {
   return { rewrittenEntries, auditEntryAdded: true };
 }
 
-function collectHistoryRepairWarnings(changed: boolean, skippedOps: number): string[] {
+function collectHistoryRepairWarnings(
+  changed: boolean,
+  skippedOps: number,
+): string[] {
   const warnings: string[] = [];
   if (!changed) {
     warnings.push("history_repair_no_changes");
@@ -205,9 +241,7 @@ async function applyHistoryRepairRewrite(params: {
   });
 }
 
-/**
- * Implements run history repair for the public runtime surface of this module.
- */
+/** Implements run history repair for the public runtime surface of this module. */
 export async function runHistoryRepair(
   id: string,
   options: HistoryRepairCommandOptions,
@@ -215,32 +249,60 @@ export async function runHistoryRepair(
 ): Promise<HistoryRepairResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const subject = await resolveHistorySubject(pmRoot, id, settings, typeRegistry.type_to_folder);
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
+  const subject = await resolveHistorySubject(
+    pmRoot,
+    id,
+    settings,
+    typeRegistry.type_to_folder,
+  );
 
   if (!(await pathExists(subject.historyPath))) {
-    throw new PmCliError(`No history stream exists for ${subject.id}.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `No history stream exists for ${subject.id}.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   const historyRawBeforeLock = await readFileIfExists(subject.historyPath);
-  const historyEntries = await readHistoryEntries(subject.historyPath, subject.id);
+  const historyEntries = await readHistoryEntries(
+    subject.historyPath,
+    subject.id,
+  );
   if (historyEntries.length === 0) {
-    throw new PmCliError(`No history entries exist for ${subject.id}; nothing to repair.`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `No history entries exist for ${subject.id}; nothing to repair.`,
+      EXIT_CODE.USAGE,
+    );
   }
 
   const chainBefore = verifyHistoryChain(historyEntries);
   const reanchor = reanchorHistoryEntries(historyEntries);
 
-  const itemReplayContext = await loadHistoryRepairItemReplay(subject, settings, historyEntries);
+  const itemReplayContext = await loadHistoryRepairItemReplay(
+    subject,
+    settings,
+    historyEntries,
+  );
 
   const finalReplay = reanchor.finalDocument;
   const reconcileNeeded =
-    itemReplayContext.currentItemReplay !== null && replayHash(finalReplay) !== replayHash(itemReplayContext.currentItemReplay);
+    itemReplayContext.currentItemReplay !== null &&
+    replayHash(finalReplay) !== replayHash(itemReplayContext.currentItemReplay);
 
-  const changed = reanchor.entriesRehashed > 0 || reanchor.entriesPatchRepaired > 0 || reconcileNeeded;
+  const changed =
+    reanchor.entriesRehashed > 0 ||
+    reanchor.entriesPatchRepaired > 0 ||
+    reconcileNeeded;
   const author = toAuthor(options.author, settings.author_default);
   const dryRun = Boolean(options.dryRun);
 
@@ -310,43 +372,54 @@ export async function runHistoryRepair(
       path: itemReplayContext.currentItemPath,
       matched_chain_before: itemReplayContext.matchedChainBefore,
     },
-    warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
+    warnings: [...new Set(warnings)].sort((left, right) =>
+      left.localeCompare(right),
+    ),
     generated_at: nowIso(),
   };
 }
 
-/**
- * Documents the history repair all stream result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the history repair all stream result payload exchanged by command, SDK, and package integrations. */
 export interface HistoryRepairAllStreamResult {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports outcome for this contract. */
   outcome: "repaired" | "skipped_clean" | "failed";
+  /** Value that configures or reports entries rehashed for this contract. */
   entries_rehashed?: number;
+  /** Value that configures or reports entries patch repaired for this contract. */
   entries_patch_repaired?: number;
+  /** Value that configures or reports reconciled with item for this contract. */
   reconciled_with_item?: boolean;
+  /** Value that configures or reports error for this contract. */
   error?: string;
 }
 
-/**
- * Documents the history repair all result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the history repair all result payload exchanged by command, SDK, and package integrations. */
 export interface HistoryRepairAllResult {
+  /** Value that configures or reports all for this contract. */
   all: true;
+  /** Value that configures or reports dry run for this contract. */
   dry_run: boolean;
+  /** Value that configures or reports scanned streams for this contract. */
   scanned_streams: number;
+  /** Value that configures or reports drifted streams for this contract. */
   drifted_streams: number;
   /** One compact row per drifted stream (clean streams are summarized by the counts only). */
   streams: HistoryRepairAllStreamResult[];
+  /** Value that configures or reports totals for this contract. */
   totals: { repaired: number; skipped_clean: number; failed: number };
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
 }
 
-/**
- * Enforce the `pm history-repair` target contract shared by the CLI and MCP
- * surfaces: exactly one of an item `<id>` or `--all` must be provided.
- */
-export function assertHistoryRepairTarget(id: string | undefined, all: boolean): void {
+/** Enforce the `pm history-repair` target contract shared by the CLI and MCP surfaces: exactly one of an item `<id>` or `--all` must be provided. */
+export function assertHistoryRepairTarget(
+  id: string | undefined,
+  all: boolean,
+): void {
   if (all && id !== undefined) {
     throw new PmCliError(
       "history-repair: <id> and --all are mutually exclusive; pass an item id to repair one stream or --all to repair every drifted stream.",
@@ -361,24 +434,24 @@ export function assertHistoryRepairTarget(id: string | undefined, all: boolean):
   }
 }
 
-/**
- * Bulk drift repair: scan every item's history stream with the same drift scan
- * `pm health` uses, then run the audited single-stream repair (ownership check,
- * lock, no-drift verification, audit marker) for each drifted stream. One
- * failing stream never aborts the rest; failures are collected per row and the
- * caller decides the exit code from `totals.failed`.
- */
+/** Bulk drift repair: scan every item's history stream with the same drift scan `pm health` uses, then run the audited single-stream repair (ownership check, lock, no-drift verification, audit marker) for each drifted stream. One failing stream never aborts the rest; failures are collected per row and the caller decides the exit code from `totals.failed`. */
 export async function runHistoryRepairAll(
   options: HistoryRepairCommandOptions,
   global: GlobalOptions,
 ): Promise<HistoryRepairAllResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
   const itemReadWarnings: string[] = [];
   const items = await listAllFrontMatterWithBody(
     pmRoot,
@@ -387,7 +460,10 @@ export async function runHistoryRepairAll(
     itemReadWarnings,
     settings.schema,
   );
-  const drift = await scanHistoryDrift(pmRoot, items as Array<ItemMetadata & { body: string }>);
+  const drift = await scanHistoryDrift(
+    pmRoot,
+    items as Array<ItemMetadata & { body: string }>,
+  );
 
   const streams: HistoryRepairAllStreamResult[] = [];
   const totals = { repaired: 0, skipped_clean: 0, failed: 0 };
@@ -422,7 +498,9 @@ export async function runHistoryRepairAll(
     drifted_streams: drift.driftedItems.length,
     streams,
     totals,
-    warnings: [...new Set(itemReadWarnings)].sort((left, right) => left.localeCompare(right)),
+    warnings: [...new Set(itemReadWarnings)].sort((left, right) =>
+      left.localeCompare(right),
+    ),
     generated_at: nowIso(),
   };
 }

@@ -10,7 +10,10 @@
  * property/metadata tables stay internal to tool-schema and are not surfaced
  * here.)
  */
-export type { CommanderOptionAliasContract, CommanderOptionRegistrationContract } from "./cli-contracts/commander-types.js";
+export type {
+  CommanderOptionAliasContract,
+  CommanderOptionRegistrationContract,
+} from "./cli-contracts/commander-types.js";
 export {
   ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
   CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
@@ -74,7 +77,10 @@ export {
   TOOL_CONTEXT_OPTION_CONTRACTS,
   TOOL_DEPS_OPTION_CONTRACTS,
 } from "./cli-contracts/tool-option-contracts.js";
-export type { CliFlagContract, ToolOptionFlagContract } from "./cli-contracts/flag-contracts.js";
+export type {
+  CliFlagContract,
+  ToolOptionFlagContract,
+} from "./cli-contracts/flag-contracts.js";
 export {
   withFlagAliasMetadata,
   compactFlagAliasContracts,

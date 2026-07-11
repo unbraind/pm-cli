@@ -7,19 +7,18 @@ import { spawn } from "node:child_process";
 import { mkdirSync, rmSync, statSync } from "node:fs";
 import path from "node:path";
 
-import { pathExists, readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
+import {
+  pathExists,
+  readFileIfExists,
+  writeFileAtomic,
+} from "../fs/fs-utils.js";
 import { acquireLock } from "../lock/lock.js";
 import { resolvePmPackageRootFromModule } from "../packages/root.js";
 import { readSettings } from "../store/settings.js";
 import { toErrorMessage } from "../shared/primitives.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "./semantic-defaults.js";
 
-/**
- * Shared lock id for any process that rewrites the local vector store. Reindex
- * and the background mutation-refresh worker both acquire this so they never
- * write concurrently and corrupt the store. Exported so `pm reindex` reuses the
- * same id rather than duplicating the literal.
- */
+/** Shared lock id for any process that rewrites the local vector store. Reindex and the background mutation-refresh worker both acquire this so they never write concurrently and corrupt the store. Exported so `pm reindex` reuses the same id rather than duplicating the literal. */
 export const REINDEX_LOCK_ID = "reindex";
 
 const PENDING_QUEUE_REL_PATH = "search/pending-refresh.json";
@@ -34,16 +33,15 @@ function parseBooleanTrueLike(value: string | undefined): boolean {
     return false;
   }
   const normalized = value.trim().toLowerCase();
-  return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
+  return (
+    normalized === "1" ||
+    normalized === "true" ||
+    normalized === "yes" ||
+    normalized === "on"
+  );
 }
 
-/**
- * Mutation search refresh runs inline (blocking) under test runners, inside the
- * background worker child itself, or when explicitly requested. Otherwise the
- * semantic refresh is dispatched to a detached child so mutations return without
- * waiting on embeddings. Mirrors the telemetry-flush inline gate so the full test
- * suite stays deterministic.
- */
+/** Mutation search refresh runs inline (blocking) under test runners, inside the background worker child itself, or when explicitly requested. Otherwise the semantic refresh is dispatched to a detached child so mutations return without waiting on embeddings. Mirrors the telemetry-flush inline gate so the full test suite stays deterministic. */
 export function shouldRunSearchRefreshInForeground(): boolean {
   if (parseBooleanTrueLike(process.env[SEARCH_REFRESH_INLINE_ENV])) {
     return true;
@@ -94,7 +92,11 @@ function releaseQueueGate(pmRoot: string): void {
   }
 }
 
-async function withQueueGate<T>(pmRoot: string, fn: () => Promise<T>, fallback: T): Promise<T> {
+async function withQueueGate<T>(
+  pmRoot: string,
+  fn: () => Promise<T>,
+  fallback: T,
+): Promise<T> {
   // Briefly serialize read-modify-write access to the pending queue across the
   // mutation process and the worker child. Acquisition is best effort; if a
   // healthy gate is held we skip rather than risk a torn queue.
@@ -127,25 +129,40 @@ async function readPendingQueueIds(pmRoot: string): Promise<string[]> {
     if (!Array.isArray(parsed.ids)) {
       return [];
     }
-    return parsed.ids.filter((id): id is string => typeof id === "string" && id.length > 0);
+    return parsed.ids.filter(
+      (id): id is string => typeof id === "string" && id.length > 0,
+    );
   } catch {
     return [];
   }
 }
 
-async function writePendingQueueIds(pmRoot: string, ids: string[]): Promise<void> {
-  await writeFileAtomic(pendingQueuePath(pmRoot), `${JSON.stringify({ ids })}\n`);
+async function writePendingQueueIds(
+  pmRoot: string,
+  ids: string[],
+): Promise<void> {
+  await writeFileAtomic(
+    pendingQueuePath(pmRoot),
+    `${JSON.stringify({ ids })}\n`,
+  );
 }
 
 /** Merge mutated item ids into the persistent pending-refresh queue. */
-export async function enqueuePendingRefreshIds(pmRoot: string, itemIds: string[]): Promise<void> {
-  const incoming = itemIds.filter((id) => typeof id === "string" && id.trim().length > 0);
+export async function enqueuePendingRefreshIds(
+  pmRoot: string,
+  itemIds: string[],
+): Promise<void> {
+  const incoming = itemIds.filter(
+    (id) => typeof id === "string" && id.trim().length > 0,
+  );
   if (incoming.length === 0) {
     return;
   }
   const mergeIncoming = async (): Promise<void> => {
     const existing = await readPendingQueueIds(pmRoot);
-    const merged = [...new Set([...existing, ...incoming])].sort((left, right) => left.localeCompare(right));
+    const merged = [...new Set([...existing, ...incoming])].sort(
+      (left, right) => left.localeCompare(right),
+    );
     await writePendingQueueIds(pmRoot, merged);
   };
   const gated = await withQueueGate(
@@ -167,18 +184,16 @@ export async function enqueuePendingRefreshIds(pmRoot: string, itemIds: string[]
 }
 
 /** Atomically read and clear the pending-refresh queue, returning drained ids. */
-export async function drainPendingRefreshIds(pmRoot: string): Promise<string[]> {
-  return withQueueGate(
-    pmRoot,
-    async () => {
-      const ids = await readPendingQueueIds(pmRoot);
-      if (ids.length > 0) {
-        await writePendingQueueIds(pmRoot, []);
-      }
-      return ids;
-    },
-    [],
-  );
+export async function drainPendingRefreshIds(
+  pmRoot: string,
+): Promise<string[]> {
+  return withQueueGate(pmRoot, async () => {
+    const ids = await readPendingQueueIds(pmRoot);
+    if (ids.length > 0) {
+      await writePendingQueueIds(pmRoot, []);
+    }
+    return ids;
+  }, []);
 }
 
 function searchRefreshRunnerPath(): string {
@@ -190,12 +205,7 @@ function searchRefreshRunnerPath(): string {
   );
 }
 
-/**
- * Spawn the detached refresh worker child for this pm root. Best effort: a
- * failed dispatch must never keep the CLI alive or fail a mutation; the next
- * mutation re-dispatches and `vector_index_stale` warns about the catch-up
- * window in the meantime.
- */
+/** Spawn the detached refresh worker child for this pm root. Best effort: a failed dispatch must never keep the CLI alive or fail a mutation; the next mutation re-dispatches and `vector_index_stale` warns about the catch-up window in the meantime. */
 function dispatchRefreshChild(pmRoot: string): void {
   try {
     const child = spawn(process.execPath, [searchRefreshRunnerPath()], {
@@ -217,23 +227,22 @@ function dispatchRefreshChild(pmRoot: string): void {
   }
 }
 
-/**
- * Enqueue mutated ids and dispatch a detached worker child to refresh semantic
- * embeddings without blocking the mutation. The reindex lock the worker acquires
- * serializes concurrent refreshes, so the spawn itself stays unconditional and
- * cheap; a worker that loses the lock exits and its ids are drained by the holder.
- */
-export async function scheduleBackgroundSemanticRefresh(pmRoot: string, itemIds: string[]): Promise<void> {
+/** Enqueue mutated ids and dispatch a detached worker child to refresh semantic embeddings without blocking the mutation. The reindex lock the worker acquires serializes concurrent refreshes, so the spawn itself stays unconditional and cheap; a worker that loses the lock exits and its ids are drained by the holder. */
+export async function scheduleBackgroundSemanticRefresh(
+  pmRoot: string,
+  itemIds: string[],
+): Promise<void> {
   await enqueuePendingRefreshIds(pmRoot, itemIds);
   dispatchRefreshChild(pmRoot);
 }
 
-/**
- * Documents the semantic refresh worker result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the semantic refresh worker result payload exchanged by command, SDK, and package integrations. */
 export interface SemanticRefreshWorkerResult {
+  /** Value that configures or reports processed for this contract. */
   processed: string[];
+  /** Value that configures or reports rounds for this contract. */
   rounds: number;
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
@@ -242,13 +251,7 @@ type SemanticRefreshFn = (
   itemIds: string[],
 ) => Promise<{ refreshed: string[]; skipped: string[]; warnings: string[] }>;
 
-/**
- * Drain the pending queue and refresh semantic vectors under the reindex lock so
- * the local vector store is never rewritten concurrently. If the lock is held by
- * another worker we exit immediately — that holder drains our enqueued ids. After
- * releasing we re-check the queue once and re-dispatch if a sibling enqueued ids
- * during our final window, guaranteeing eventual processing.
- */
+/** Drain the pending queue and refresh semantic vectors under the reindex lock so the local vector store is never rewritten concurrently. If the lock is held by another worker we exit immediately — that holder drains our enqueued ids. After releasing we re-check the queue once and re-dispatch if a sibling enqueued ids during our final window, guaranteeing eventual processing. */
 export async function runSemanticRefreshWorker(
   pmRoot: string,
   refresh: SemanticRefreshFn,
@@ -261,9 +264,17 @@ export async function runSemanticRefreshWorker(
 
   let settings: Awaited<ReturnType<typeof readSettings>>;
   try {
-    settings = resolveSettingsWithSemanticRuntimeDefaults(await readSettings(pmRoot)).settings;
+    settings = resolveSettingsWithSemanticRuntimeDefaults(
+      await readSettings(pmRoot),
+    ).settings;
   } catch (error: unknown) {
-    return { processed, rounds: 0, warnings: [`search_background_refresh_settings_read_failed:${toErrorMessage(error)}`] };
+    return {
+      processed,
+      rounds: 0,
+      warnings: [
+        `search_background_refresh_settings_read_failed:${toErrorMessage(error)}`,
+      ],
+    };
   }
 
   let release: (() => Promise<void>) | null = null;
@@ -298,7 +309,9 @@ export async function runSemanticRefreshWorker(
         processed.push(...result.refreshed);
         warnings.push(...result.warnings);
       } catch (error: unknown) {
-        warnings.push(`search_background_refresh_failed:${toErrorMessage(error)}`);
+        warnings.push(
+          `search_background_refresh_failed:${toErrorMessage(error)}`,
+        );
         // Re-enqueue so the work is retried by a later dispatch rather than lost.
         await enqueuePendingRefreshIds(pmRoot, ids);
         failed = true;
@@ -319,5 +332,9 @@ export async function runSemanticRefreshWorker(
     dispatchRefreshChild(pmRoot);
   }
 
-  return { processed: [...new Set(processed)].sort((a, b) => a.localeCompare(b)), rounds, warnings };
+  return {
+    processed: [...new Set(processed)].sort((a, b) => a.localeCompare(b)),
+    rounds,
+    warnings,
+  };
 }

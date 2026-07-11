@@ -2,15 +2,23 @@ id: pm-qely
 title: "Docstrings: packages/* (module docs + exported/public surface for all 11 shipped packages)"
 description: "Add module @module headers to the 19 package files lacking them, and TSDoc to every exported declaration/const, exported interface/type member, and public class member across all packages/* extensions. Baseline ~121 missing incl 19 module docs. Docstrings only; keep hand-maintained shipping shape. Verify via gate + typecheck + package typecheck (tsconfig.packages.json)."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[4]: coverage,docs,docstrings,quality
 created_at: "2026-07-04T20:18:53.628Z"
-updated_at: "2026-07-10T21:52:49.617Z"
+updated_at: "2026-07-11T00:02:48.737Z"
+closed_at: "2026-07-11T00:02:20.603Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: Gate reports 0 missing/boilerplate/trivial-stub for packages/*; tsc -p tsconfig.packages.json clean; every package .ts has an @module header.
 parent: pm-4ak1
 risk: low
 confidence: high
+resolution: Repo-wide documentation contract completed and enforced by mandatory static quality gates.
+expected_result: Every in-scope public API and data-contract symbol is documented and regression-gated.
+actual_result: Static gate reports 100% module/export/member docstring coverage with zero trivial or boilerplate violations; release gates and exact 100% code coverage pass.
+comments[2]{created_at,author,text}:
+  "2026-07-10T22:02:50.555Z",codex-root-wide-sdk-20260710,"Implementation checkpoint: branch feat/repo-wide-api-docstring-contracts now reaches 100% module/export/member documentation coverage with zero boilerplate or trivial-doc violations across 188 previously incomplete files. pnpm typecheck and pnpm contracts:check pass. Publication is intentionally paused because the changed-file static gate still reports six files over the 3400-line cap, three duplicate chunks, and seven complexity violations; no commit, push, or PR was created."
+  "2026-07-11T00:02:19.195Z",codex-gpt5,"Final verification: release gate passed 5,529 tests with exact 100% statements (34,502/34,502), branches (24,638/24,638), functions (6,929/6,929), and lines (33,794/33,794); lint reported 0 clones; static docstring/complexity/import-boundary and token-budget gates passed; temp package-first dogfood passed 88 commands; packed npx smoke passed; Sentry/telemetry gate passed with 0 critical/high issues."
+close_reason: Repo-wide public API/data-contract documentation and strict enforcement acceptance criteria satisfied; full release evidence recorded.
 body: ""

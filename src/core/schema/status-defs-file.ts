@@ -4,11 +4,17 @@
  * Resolves configurable schema, fields, statuses, and workflows for Status Defs File.
  */
 import { RUNTIME_STATUS_ROLE_VALUES } from "../../types/index.js";
-import type { RuntimeStatusDefinition, RuntimeStatusRole } from "../../types/index.js";
+import type {
+  RuntimeStatusDefinition,
+  RuntimeStatusRole,
+} from "../../types/index.js";
 import { DEFAULT_RUNTIME_STATUS_DEFINITIONS } from "./runtime-schema.js";
 import { evictOldestMemoEntries } from "../shared/memo.js";
 
-export type { RuntimeStatusDefinition, RuntimeStatusRole } from "../../types/index.js";
+export type {
+  RuntimeStatusDefinition,
+  RuntimeStatusRole,
+} from "../../types/index.js";
 
 /**
  * Pure logic for the `pm schema add-status` / `pm schema remove-status`
@@ -35,59 +41,50 @@ const RUNTIME_STATUS_ROLE_SET = new Set<string>(RUNTIME_STATUS_ROLE_VALUES);
 const STATUS_TOKEN_MEMO_MAX_ENTRIES = 2_000;
 const statusTokenMemo = new Map<string, string>();
 
-/**
- * The 5 lifecycle status ids that ship as built-in defaults and may never be
- * removed (their normalized ids match DEFAULT_RUNTIME_STATUS_DEFINITIONS:
- * open/in_progress/blocked/closed/canceled). `draft` is also a default but the
- * acceptance criteria enumerate the 5 terminal/active ids explicitly, so the
- * guard derives the full set from the canonical defaults to stay in sync.
- */
+/** The 5 lifecycle status ids that ship as built-in defaults and may never be removed (their normalized ids match DEFAULT_RUNTIME_STATUS_DEFINITIONS: open/in_progress/blocked/closed/canceled). `draft` is also a default but the acceptance criteria enumerate the 5 terminal/active ids explicitly, so the guard derives the full set from the canonical defaults to stay in sync. */
 export const BUILTIN_STATUS_IDS: ReadonlySet<string> = new Set(
-  DEFAULT_RUNTIME_STATUS_DEFINITIONS.map((definition) => normalizeStatusToken(definition.id)).filter(
-    (id) => id.length > 0,
-  ),
+  DEFAULT_RUNTIME_STATUS_DEFINITIONS.map((definition) =>
+    normalizeStatusToken(definition.id),
+  ).filter((id) => id.length > 0),
 );
 
-/**
- * The shape persisted at `.agents/pm/schema/statuses.json`.
- */
+/** The shape persisted at `.agents/pm/schema/statuses.json`. */
 export interface StatusDefsFile {
+  /** Value that configures or reports statuses for this contract. */
   statuses: RuntimeStatusDefinition[];
 }
 
-/**
- * Documents the raw add status input payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the raw add status input payload exchanged by command, SDK, and package integrations. */
 export interface RawAddStatusInput {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string | undefined;
+  /** Value that configures or reports roles for this contract. */
   roles?: string[];
+  /** Value that configures or reports aliases for this contract. */
   aliases?: string[];
+  /** Value that configures or reports description for this contract. */
   description?: string;
+  /** Value that configures or reports order for this contract. */
   order?: number;
 }
 
-/**
- * Documents the normalized add status input payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the normalized add status input payload exchanged by command, SDK, and package integrations. */
 export interface NormalizedAddStatusInput {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
-  /**
-   * Normalized roles, or `undefined` when the raw input did not supply a roles
-   * field at all. `undefined` means "leave existing roles untouched" on upsert;
-   * an explicit empty array means "clear roles". This distinction is what keeps
-   * `add-status review --description x` from wiping a previously-set role.
-   */
+  /** Normalized roles, or `undefined` when the raw input did not supply a roles field at all. `undefined` means "leave existing roles untouched" on upsert; an explicit empty array means "clear roles". This distinction is what keeps `add-status review --description x` from wiping a previously-set role. */
   roles?: RuntimeStatusRole[];
   /** Same omitted-vs-explicit-empty semantics as `roles`. */
   aliases?: string[];
+  /** Value that configures or reports description for this contract. */
   description?: string;
+  /** Value that configures or reports order for this contract. */
   order?: number;
 }
 
-/**
- * Documents the upsert status def result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the upsert status def result payload exchanged by command, SDK, and package integrations. */
 export interface UpsertStatusDefResult {
+  /** Value that configures or reports file for this contract. */
   file: StatusDefsFile;
   /** The definition as stored after the upsert (existing fields preserved). */
   definition: RuntimeStatusDefinition;
@@ -95,10 +92,9 @@ export interface UpsertStatusDefResult {
   replaced: boolean;
 }
 
-/**
- * Documents the remove status def result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the remove status def result payload exchanged by command, SDK, and package integrations. */
 export interface RemoveStatusDefResult {
+  /** Value that configures or reports file for this contract. */
   file: StatusDefsFile;
   /** True when a matching definition existed and was dropped from the file. */
   removed: boolean;
@@ -106,10 +102,7 @@ export interface RemoveStatusDefResult {
   definition?: RuntimeStatusDefinition;
 }
 
-/**
- * Normalizes a status token using the same rules as runtime-schema.ts: lowercase
- * and collapse any run of whitespace/hyphens into a single underscore.
- */
+/** Normalizes a status token using the same rules as runtime-schema.ts: lowercase and collapse any run of whitespace/hyphens into a single underscore. */
 export function normalizeStatusToken(value: unknown): string {
   if (typeof value !== "string") {
     return "";
@@ -118,7 +111,10 @@ export function normalizeStatusToken(value: unknown): string {
   if (memoized !== undefined) {
     return memoized;
   }
-  const normalized = value.trim().toLowerCase().replaceAll(/[\s-]+/g, "_");
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replaceAll(/[\s-]+/g, "_");
   if (statusTokenMemo.size >= STATUS_TOKEN_MEMO_MAX_ENTRIES) {
     evictOldestMemoEntries(statusTokenMemo);
   }
@@ -147,7 +143,9 @@ function dedupeTokens(values: Iterable<string>): string[] {
  * upsert leaves the existing value untouched; when supplied (even an empty array)
  * the field is normalized to an array so the upsert can apply an explicit clear.
  */
-export function normalizeAddStatusInput(raw: RawAddStatusInput): NormalizedAddStatusInput {
+export function normalizeAddStatusInput(
+  raw: RawAddStatusInput,
+): NormalizedAddStatusInput {
   const id = normalizeStatusToken(raw.id);
   if (id.length === 0) {
     throw new Error("Status id must not be empty.");
@@ -166,7 +164,8 @@ export function normalizeAddStatusInput(raw: RawAddStatusInput): NormalizedAddSt
     roles = [];
     const seenRoles = new Set<string>();
     for (const rawRole of raw.roles) {
-      const role = typeof rawRole === "string" ? rawRole.trim().toLowerCase() : "";
+      const role =
+        typeof rawRole === "string" ? rawRole.trim().toLowerCase() : "";
       if (role.length === 0) {
         continue;
       }
@@ -182,15 +181,20 @@ export function normalizeAddStatusInput(raw: RawAddStatusInput): NormalizedAddSt
     }
   }
   const aliases =
-    raw.aliases === undefined ? undefined : dedupeTokens(raw.aliases).filter((alias) => alias !== id);
+    raw.aliases === undefined
+      ? undefined
+      : dedupeTokens(raw.aliases).filter((alias) => alias !== id);
   const description = raw.description?.trim();
   const order =
-    typeof raw.order === "number" && Number.isFinite(raw.order) ? Math.trunc(raw.order) : undefined;
+    typeof raw.order === "number" && Number.isFinite(raw.order)
+      ? Math.trunc(raw.order)
+      : undefined;
   return {
     id,
     roles,
     aliases,
-    description: description && description.length > 0 ? description : undefined,
+    description:
+      description && description.length > 0 ? description : undefined,
     order,
   };
 }
@@ -231,13 +235,10 @@ function extractStatusDefinitions(parsed: unknown): RuntimeStatusDefinition[] {
   return definitions;
 }
 
-/**
- * Coerces an arbitrary parsed value from statuses.json into a StatusDefsFile.
- * Accepts the canonical `{ statuses: [...] }` shape, a bare array of
- * definitions, or a `{ definitions: [...] }` form, and tolerates a
- * missing/invalid file by returning an empty statuses list.
- */
-export function parseStatusDefsFile(raw: string | null | undefined): StatusDefsFile {
+/** Coerces an arbitrary parsed value from statuses.json into a StatusDefsFile. Accepts the canonical `{ statuses: [...] }` shape, a bare array of definitions, or a `{ definitions: [...] }` form, and tolerates a missing/invalid file by returning an empty statuses list. */
+export function parseStatusDefsFile(
+  raw: string | null | undefined,
+): StatusDefsFile {
   if (raw === null || raw === undefined || raw.trim().length === 0) {
     return { statuses: [] };
   }
@@ -250,24 +251,12 @@ export function parseStatusDefsFile(raw: string | null | undefined): StatusDefsF
   return { statuses: extractStatusDefinitions(parsed) };
 }
 
-/**
- * Serializes the status definitions file with a trailing newline (matches the
- * rest of the schema scaffold files written by pm).
- */
+/** Serializes the status definitions file with a trailing newline (matches the rest of the schema scaffold files written by pm). */
 export function serializeStatusDefsFile(file: StatusDefsFile): string {
   return `${JSON.stringify({ statuses: file.statuses }, null, 2)}\n`;
 }
 
-/**
- * Idempotent UPSERT of a status definition into the parsed file. Matching is by
- * normalized id. When a definition already exists, fields supplied in `input`
- * override the previous values (roles/aliases replace when a non-empty array is
- * given, clear when an explicit empty array is given, and are left UNTOUCHED
- * when the field is `undefined` — i.e. the add-status flag was omitted);
- * description/order override when provided. Fields not addressed by add-status
- * flags are preserved untouched, so `add-status <id> --description x` keeps any
- * previously-set roles/aliases.
- */
+/** Idempotent UPSERT of a status definition into the parsed file. Matching is by normalized id. When a definition already exists, fields supplied in `input` override the previous values (roles/aliases replace when a non-empty array is given, clear when an explicit empty array is given, and are left UNTOUCHED when the field is `undefined` — i.e. the add-status flag was omitted); description/order override when provided. Fields not addressed by add-status flags are preserved untouched, so `add-status <id> --description x` keeps any previously-set roles/aliases. */
 export function upsertStatusDef(
   file: StatusDefsFile,
   input: NormalizedAddStatusInput,
@@ -281,7 +270,8 @@ export function upsertStatusDef(
   // statuses.json fall back to `baseDefinition` (the resolved settings-backed
   // definition) so omitting --role/--alias preserves metadata that lives in
   // settings.schema.statuses rather than the file.
-  const existing = existingIndex >= 0 ? statuses[existingIndex] : baseDefinition;
+  const existing =
+    existingIndex >= 0 ? statuses[existingIndex] : baseDefinition;
 
   const next: RuntimeStatusDefinition = {
     ...existing,
@@ -324,14 +314,11 @@ export function upsertStatusDef(
   };
 }
 
-/**
- * Removes a status definition from the parsed file by id (normalized). Throws a
- * plain Error when `id` is empty or matches a reserved built-in default status
- * (those are never stored in the file and must never be deletable). Returns
- * `removed: false` when no matching definition exists so the CLI layer can treat
- * the call as an idempotent no-op.
- */
-export function removeStatusDef(file: StatusDefsFile, id: string | undefined): RemoveStatusDefResult {
+/** Removes a status definition from the parsed file by id (normalized). Throws a plain Error when `id` is empty or matches a reserved built-in default status (those are never stored in the file and must never be deletable). Returns `removed: false` when no matching definition exists so the CLI layer can treat the call as an idempotent no-op. */
+export function removeStatusDef(
+  file: StatusDefsFile,
+  id: string | undefined,
+): RemoveStatusDefResult {
   const normalizedId = normalizeStatusToken(id);
   if (normalizedId.length === 0) {
     throw new Error("Status id must not be empty.");
@@ -352,17 +339,7 @@ export function removeStatusDef(file: StatusDefsFile, id: string | undefined): R
   return { file: { statuses }, removed: true, definition };
 }
 
-/**
- * Throws when the new status id or any explicitly-supplied alias collides with a
- * DIFFERENT existing status's id/alias. `resolvedAliasToId` maps a normalized
- * token to its owning status id (the runtime status registry's alias_to_id map,
- * which stores ids and aliases in one namespace). Re-adding the same status
- * (matching id) is allowed — only cross-status collisions throw. This prevents a
- * custom status from shadowing a built-in lifecycle token (for example
- * `add-status review --alias open`, or a custom id `cancelled` that aliases the
- * built-in `canceled`), which would make `pm update --status open` resolve to the
- * wrong status. The CLI layer maps the thrown Error to a USAGE exit code.
- */
+/** Throws when the new status id or any explicitly-supplied alias collides with a DIFFERENT existing status's id/alias. `resolvedAliasToId` maps a normalized token to its owning status id (the runtime status registry's alias_to_id map, which stores ids and aliases in one namespace). Re-adding the same status (matching id) is allowed — only cross-status collisions throw. This prevents a custom status from shadowing a built-in lifecycle token (for example `add-status review --alias open`, or a custom id `cancelled` that aliases the built-in `canceled`), which would make `pm update --status open` resolve to the wrong status. The CLI layer maps the thrown Error to a USAGE exit code. */
 export function assertStatusTokensAvailable(
   input: { id: string; aliases?: string[] },
   resolvedAliasToId: ReadonlyMap<string, string>,

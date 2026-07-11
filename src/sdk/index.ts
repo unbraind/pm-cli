@@ -13,9 +13,7 @@ import {
   KNOWN_EXTENSION_SANDBOX_PROFILES,
   KNOWN_EXTENSION_TRUST_MODES,
 } from "../core/extensions/loader.js";
-export {
-  RESERVED_ITEM_FIELD_NAMES,
-} from "../core/extensions/item-fields.js";
+export { RESERVED_ITEM_FIELD_NAMES } from "../core/extensions/item-fields.js";
 export {
   PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS,
   PM_PACKAGE_RESOURCE_KINDS,
@@ -28,7 +26,10 @@ export {
   type PmPackageResourceKind,
   type PmPackageResourceMap,
 } from "../core/packages/manifest.js";
-export type { CommanderOptionAliasContract, CommanderOptionRegistrationContract } from "./cli-contracts.js";
+export type {
+  CommanderOptionAliasContract,
+  CommanderOptionRegistrationContract,
+} from "./cli-contracts.js";
 export {
   ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
   APPEND_FLAG_CONTRACTS,
@@ -657,44 +658,35 @@ export {
  * `capabilities`.
  */
 export const EXTENSION_CAPABILITIES = KNOWN_EXTENSION_CAPABILITIES;
-/**
- * Restricts extension capability values accepted by command, SDK, and storage contracts.
- */
+/** Restricts extension capability values accepted by command, SDK, and storage contracts. */
 export type ExtensionCapability = (typeof EXTENSION_CAPABILITIES)[number];
 
-/**
- * Canonical extension governance policy modes and registration surfaces.
- */
+/** Canonical extension governance policy modes and registration surfaces. */
 export const EXTENSION_POLICY_MODES = KNOWN_EXTENSION_POLICY_MODES;
+/** Public contract for extension policy surfaces, shared by SDK and presentation-layer consumers. */
 export const EXTENSION_POLICY_SURFACES = KNOWN_EXTENSION_POLICY_SURFACES;
+/** Public contract for extension trust modes, shared by SDK and presentation-layer consumers. */
 export const EXTENSION_TRUST_MODES = KNOWN_EXTENSION_TRUST_MODES;
+/** Public contract for extension sandbox profiles, shared by SDK and presentation-layer consumers. */
 export const EXTENSION_SANDBOX_PROFILES = KNOWN_EXTENSION_SANDBOX_PROFILES;
-/**
- * Restricts extension policy mode values accepted by command, SDK, and storage contracts.
- */
+/** Restricts extension policy mode values accepted by command, SDK, and storage contracts. */
 export type ExtensionPolicyMode = (typeof EXTENSION_POLICY_MODES)[number];
-/**
- * Restricts extension policy surface values accepted by command, SDK, and storage contracts.
- */
+/** Restricts extension policy surface values accepted by command, SDK, and storage contracts. */
 export type ExtensionPolicySurface = (typeof EXTENSION_POLICY_SURFACES)[number];
-/**
- * Restricts extension trust mode values accepted by command, SDK, and storage contracts.
- */
+/** Restricts extension trust mode values accepted by command, SDK, and storage contracts. */
 export type ExtensionTrustMode = (typeof EXTENSION_TRUST_MODES)[number];
-/**
- * Restricts extension sandbox profile values accepted by command, SDK, and storage contracts.
- */
-export type ExtensionSandboxProfile = (typeof EXTENSION_SANDBOX_PROFILES)[number];
+/** Restricts extension sandbox profile values accepted by command, SDK, and storage contracts. */
+export type ExtensionSandboxProfile =
+  (typeof EXTENSION_SANDBOX_PROFILES)[number];
 
-/**
- * Versioned capability contract metadata emitted by runtime diagnostics.
- */
-export { EXTENSION_CAPABILITY_CONTRACT, EXTENSION_CAPABILITY_CONTRACT_VERSION, EXTENSION_CAPABILITY_LEGACY_ALIASES };
+/** Versioned capability contract metadata emitted by runtime diagnostics. */
+export {
+  EXTENSION_CAPABILITY_CONTRACT,
+  EXTENSION_CAPABILITY_CONTRACT_VERSION,
+  EXTENSION_CAPABILITY_LEGACY_ALIASES,
+};
 
-/**
- * Least-privilege capability reconciliation helpers: map declared capabilities
- * against the registration surfaces a package actually exercises at activation.
- */
+/** Least-privilege capability reconciliation helpers: map declared capabilities against the registration surfaces a package actually exercises at activation. */
 export {
   EXTENSION_CAPABILITY_REGISTRATION_SURFACES,
   collectUsedExtensionCapabilities,
@@ -806,4 +798,10 @@ export type {
 } from "../core/extensions/loader.js";
 
 export type { GlobalOptions } from "../core/shared/command-types.js";
-export type { ItemDocument, ItemFrontMatter, ItemStatus, ItemType, PmSettings } from "../types/index.js";
+export type {
+  ItemDocument,
+  ItemFrontMatter,
+  ItemStatus,
+  ItemType,
+  PmSettings,
+} from "../types/index.js";

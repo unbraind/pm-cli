@@ -9,16 +9,12 @@ import crypto from "node:crypto";
 
 const WINDOWS_RENAME_RETRY_DELAYS_MS = [10, 25, 50, 100];
 
-/**
- * Implements ensure dir for the public runtime surface of this module.
- */
+/** Implements ensure dir for the public runtime surface of this module. */
 export async function ensureDir(dirPath: string): Promise<void> {
   await fs.mkdir(dirPath, { recursive: true });
 }
 
-/**
- * Implements path exists for the public runtime surface of this module.
- */
+/** Implements path exists for the public runtime surface of this module. */
 export async function pathExists(targetPath: string): Promise<boolean> {
   try {
     await fs.access(targetPath);
@@ -28,10 +24,10 @@ export async function pathExists(targetPath: string): Promise<boolean> {
   }
 }
 
-/**
- * Implements read file if exists for the public runtime surface of this module.
- */
-export async function readFileIfExists(targetPath: string): Promise<string | null> {
+/** Implements read file if exists for the public runtime surface of this module. */
+export async function readFileIfExists(
+  targetPath: string,
+): Promise<string | null> {
   try {
     return await fs.readFile(targetPath, "utf8");
   } catch (error: unknown) {
@@ -42,10 +38,11 @@ export async function readFileIfExists(targetPath: string): Promise<string | nul
   }
 }
 
-/**
- * Implements write file atomic for the public runtime surface of this module.
- */
-export async function writeFileAtomic(targetPath: string, contents: string): Promise<void> {
+/** Implements write file atomic for the public runtime surface of this module. */
+export async function writeFileAtomic(
+  targetPath: string,
+  contents: string,
+): Promise<void> {
   const dirPath = path.dirname(targetPath);
   await ensureDir(dirPath);
   const tempPath = path.join(
@@ -120,7 +117,10 @@ export async function writeFileAtomic(targetPath: string, contents: string): Pro
  * serialized regardless. Callers writing large records concurrently from
  * multiple processes must hold an equivalent lock.
  */
-export async function appendLineAtomic(targetPath: string, line: string): Promise<void> {
+export async function appendLineAtomic(
+  targetPath: string,
+  line: string,
+): Promise<void> {
   const dirPath = path.dirname(targetPath);
   await ensureDir(dirPath);
   const handle = await fs.open(targetPath, "a");
@@ -131,9 +131,7 @@ export async function appendLineAtomic(targetPath: string, line: string): Promis
   }
 }
 
-/**
- * Implements remove file if exists for the public runtime surface of this module.
- */
+/** Implements remove file if exists for the public runtime surface of this module. */
 export async function removeFileIfExists(targetPath: string): Promise<void> {
   try {
     await fs.unlink(targetPath);
@@ -145,5 +143,10 @@ export async function removeFileIfExists(targetPath: string): Promise<void> {
 }
 
 function isErrno(error: unknown, code: string): boolean {
-  return typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === code;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === code
+  );
 }

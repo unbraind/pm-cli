@@ -5,11 +5,21 @@
  */
 import crypto from "node:crypto";
 
-type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
+type JsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | JsonValue[]
+  | { [key: string]: JsonValue };
 
 function sortScalarValue(value: unknown): JsonValue | undefined {
   if (value === null) return null;
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
     return value;
   }
   if (typeof value === "bigint") {
@@ -27,7 +37,9 @@ function sortScalarValue(value: unknown): JsonValue | undefined {
   return undefined;
 }
 
-function sortPlainObjectKeys(value: Record<string, unknown>): Record<string, JsonValue> {
+function sortPlainObjectKeys(
+  value: Record<string, unknown>,
+): Record<string, JsonValue> {
   // Use locale-independent Unicode code-unit ordering so canonical hashes stay reproducible.
   const sortedKeys = Object.keys(value).sort();
   const result: Record<string, JsonValue> = {};
@@ -62,9 +74,7 @@ function sortObjectKeys(value: unknown): JsonValue {
   return sortPlainObjectKeys(value as Record<string, unknown>);
 }
 
-/**
- * Implements stable stringify for the public runtime surface of this module.
- */
+/** Implements stable stringify for the public runtime surface of this module. */
 export function stableStringify(value: unknown): string {
   return JSON.stringify(sortObjectKeys(value));
 }
@@ -87,31 +97,52 @@ function hasUnmatchedEquivalent<T>(
   return false;
 }
 
-function compareRegExpValues(left: unknown, right: unknown): boolean | undefined {
+function compareRegExpValues(
+  left: unknown,
+  right: unknown,
+): boolean | undefined {
   if (!(left instanceof RegExp || right instanceof RegExp)) {
     return undefined;
   }
-  return left instanceof RegExp && right instanceof RegExp && left.toString() === right.toString();
+  return (
+    left instanceof RegExp &&
+    right instanceof RegExp &&
+    left.toString() === right.toString()
+  );
 }
 
 function compareDateValues(left: unknown, right: unknown): boolean | undefined {
   if (!(left instanceof Date || right instanceof Date)) {
     return undefined;
   }
-  return left instanceof Date && right instanceof Date && left.getTime() === right.getTime();
+  return (
+    left instanceof Date &&
+    right instanceof Date &&
+    left.getTime() === right.getTime()
+  );
 }
 
 function compareSetValues(left: unknown, right: unknown): boolean | undefined {
   if (!(left instanceof Set || right instanceof Set)) {
     return undefined;
   }
-  if (!(left instanceof Set && right instanceof Set) || left.size !== right.size) {
+  if (
+    !(left instanceof Set && right instanceof Set) ||
+    left.size !== right.size
+  ) {
     return false;
   }
   const rightValues = [...right];
   const matched = new Set<number>();
   for (const leftValue of left) {
-    if (!hasUnmatchedEquivalent(leftValue, rightValues, matched, stableValueEquals)) {
+    if (
+      !hasUnmatchedEquivalent(
+        leftValue,
+        rightValues,
+        matched,
+        stableValueEquals,
+      )
+    ) {
       return false;
     }
   }
@@ -122,7 +153,10 @@ function compareMapValues(left: unknown, right: unknown): boolean | undefined {
   if (!(left instanceof Map || right instanceof Map)) {
     return undefined;
   }
-  if (!(left instanceof Map && right instanceof Map) || left.size !== right.size) {
+  if (
+    !(left instanceof Map && right instanceof Map) ||
+    left.size !== right.size
+  ) {
     return false;
   }
   const rightEntries = [...right.entries()];
@@ -130,8 +164,13 @@ function compareMapValues(left: unknown, right: unknown): boolean | undefined {
   for (const [leftKey, leftValue] of left.entries()) {
     const leftEntry: [unknown, unknown] = [leftKey, leftValue];
     if (
-      !hasUnmatchedEquivalent(leftEntry, rightEntries, matched, ([candidateKey, candidateValue], [rightKey, rightValue]) =>
-        stableValueEquals(candidateKey, rightKey) && stableValueEquals(candidateValue, rightValue),
+      !hasUnmatchedEquivalent(
+        leftEntry,
+        rightEntries,
+        matched,
+        ([candidateKey, candidateValue], [rightKey, rightValue]) =>
+          stableValueEquals(candidateKey, rightKey) &&
+          stableValueEquals(candidateValue, rightValue),
       )
     ) {
       return false;
@@ -140,11 +179,18 @@ function compareMapValues(left: unknown, right: unknown): boolean | undefined {
   return true;
 }
 
-function compareArrayValues(left: unknown, right: unknown): boolean | undefined {
+function compareArrayValues(
+  left: unknown,
+  right: unknown,
+): boolean | undefined {
   if (!(Array.isArray(left) || Array.isArray(right))) {
     return undefined;
   }
-  if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+  if (
+    !Array.isArray(left) ||
+    !Array.isArray(right) ||
+    left.length !== right.length
+  ) {
     return false;
   }
   return left.every((value, index) => stableValueEquals(value, right[index]));
@@ -161,7 +207,12 @@ function comparePlainObjectValues(left: object, right: object): boolean {
     if (leftKey !== rightKeys[index]) {
       return false;
     }
-    if (!stableValueEquals((left as Record<string, unknown>)[leftKey], (right as Record<string, unknown>)[leftKey])) {
+    if (
+      !stableValueEquals(
+        (left as Record<string, unknown>)[leftKey],
+        (right as Record<string, unknown>)[leftKey],
+      )
+    ) {
       return false;
     }
   }
@@ -176,14 +227,17 @@ const SPECIALIZED_STABLE_VALUE_COMPARISONS = [
   compareArrayValues,
 ] as const;
 
-/**
- * Implements stable value equals for the public runtime surface of this module.
- */
+/** Implements stable value equals for the public runtime surface of this module. */
 export function stableValueEquals(left: unknown, right: unknown): boolean {
   if (Object.is(left, right)) {
     return true;
   }
-  if (left === null || right === null || typeof left !== "object" || typeof right !== "object") {
+  if (
+    left === null ||
+    right === null ||
+    typeof left !== "object" ||
+    typeof right !== "object"
+  ) {
     return false;
   }
   for (const compare of SPECIALIZED_STABLE_VALUE_COMPARISONS) {
@@ -195,16 +249,12 @@ export function stableValueEquals(left: unknown, right: unknown): boolean {
   return comparePlainObjectValues(left, right);
 }
 
-/**
- * Implements sha256 hex for the public runtime surface of this module.
- */
+/** Implements sha256 hex for the public runtime surface of this module. */
 export function sha256Hex(value: string): string {
   return crypto.createHash("sha256").update(value, "utf8").digest("hex");
 }
 
-/**
- * Implements order object for the public runtime surface of this module.
- */
+/** Implements order object for the public runtime surface of this module. */
 export function orderObject<T extends Record<string, unknown>>(
   value: T,
   keyOrder: ReadonlyArray<string>,

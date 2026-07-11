@@ -16,22 +16,21 @@
 /** Classification assigned to a stale linked path during files validation. */
 export type StaleLinkClassification = "moved" | "deleted";
 
-/**
- * Documents the stale link owner input payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the stale link owner input payload exchanged by command, SDK, and package integrations. */
 export interface StaleLinkOwnerInput {
+  /** Value that configures or reports item id for this contract. */
   item_id: string;
   /** Normalized workspace-relative path that no longer resolves. */
   path: string;
   /** Which link list of the owning item the path lives in. */
   link_kind: "files" | "docs";
+  /** Value that configures or reports classification for this contract. */
   classification: StaleLinkClassification;
 }
 
-/**
- * Documents the missing linked path owner payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the missing linked path owner payload exchanged by command, SDK, and package integrations. */
 export interface MissingLinkedPathOwner {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
   /** Owning item type, `"Unknown"` if metadata is absent. */
   type: string;
@@ -43,21 +42,23 @@ export interface MissingLinkedPathOwner {
   field: "files" | "docs";
 }
 
-/**
- * Documents the missing linked path row payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the missing linked path row payload exchanged by command, SDK, and package integrations. */
 export interface MissingLinkedPathRow {
+  /** Filesystem path used for path resolution. */
   path: string;
+  /** Value that configures or reports classification for this contract. */
   classification: StaleLinkClassification;
+  /** Value that configures or reports items for this contract. */
   items: MissingLinkedPathOwner[];
 }
 
-/**
- * Documents the owner item metadata payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the owner item metadata payload exchanged by command, SDK, and package integrations. */
 export interface OwnerItemMetadata {
+  /** Schema type that determines the shape and validation rules for this value. */
   type?: string;
+  /** Value that configures or reports title for this contract. */
   title?: string;
+  /** Lifecycle state reported for status. */
   status?: string;
 }
 
@@ -67,13 +68,7 @@ interface PathBucket {
   owners: Map<string, StaleLinkOwnerInput>;
 }
 
-/**
- * `moved` wins over `deleted` when a single path's rows disagree on
- * classification: `moved` means a relink candidate exists, which is the safer,
- * more-actionable signal (relink instead of risk pruning a still-reachable
- * link). In practice all rows for one path share a classification; this is a
- * deterministic tie-break for the degenerate case.
- */
+/** `moved` wins over `deleted` when a single path's rows disagree on classification: `moved` means a relink candidate exists, which is the safer, more-actionable signal (relink instead of risk pruning a still-reachable link). In practice all rows for one path share a classification; this is a deterministic tie-break for the degenerate case. */
 function preferClassification(
   current: StaleLinkClassification,
   next: StaleLinkClassification,
@@ -102,7 +97,10 @@ export function buildMissingLinkedPathRows(
   for (const row of rows) {
     const bucket = buckets.get(row.path);
     if (bucket) {
-      bucket.classification = preferClassification(bucket.classification, row.classification);
+      bucket.classification = preferClassification(
+        bucket.classification,
+        row.classification,
+      );
       bucket.owners.set(ownerKey(row), row);
     } else {
       buckets.set(row.path, {
@@ -130,7 +128,9 @@ export function buildMissingLinkedPathRows(
         })
         .sort((leftOwner, rightOwner) => {
           const byId = leftOwner.id.localeCompare(rightOwner.id);
-          return byId !== 0 ? byId : leftOwner.field.localeCompare(rightOwner.field);
+          return byId !== 0
+            ? byId
+            : leftOwner.field.localeCompare(rightOwner.field);
         }),
     }));
 }
@@ -148,7 +148,9 @@ function escapeTitle(title: string): string {
  * render (`status=` and `title=""`). Order follows
  * {@link buildMissingLinkedPathRows} output order.
  */
-export function summarizeMissingLinkedPathRows(rows: readonly MissingLinkedPathRow[]): string[] {
+export function summarizeMissingLinkedPathRows(
+  rows: readonly MissingLinkedPathRow[],
+): string[] {
   const lines: string[] = [];
   for (const row of rows) {
     for (const owner of row.items) {

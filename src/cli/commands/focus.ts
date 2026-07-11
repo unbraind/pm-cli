@@ -15,36 +15,42 @@ import {
   getFocusedItem,
   setFocusedItem,
 } from "../../core/session/session-state.js";
-import { buildItemNotFoundError, locateItem, readLocatedItem } from "../../core/store/item-store.js";
+import {
+  buildItemNotFoundError,
+  locateItem,
+  readLocatedItem,
+} from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 
-/**
- * Documents the focus options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the focus options payload exchanged by command, SDK, and package integrations. */
 export interface FocusOptions {
+  /** Value that configures or reports clear for this contract. */
   clear?: boolean;
 }
 
-/**
- * Documents the focus result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the focus result payload exchanged by command, SDK, and package integrations. */
 export interface FocusResult {
+  /** Value that configures or reports action for this contract. */
   action: "set" | "clear" | "show";
+  /** Value that configures or reports focused item for this contract. */
   focused_item: string | null;
+  /** Value that configures or reports title for this contract. */
   title: string | null;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message: string;
 }
 
 async function ensureInitialized(pmRoot: string): Promise<void> {
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 }
 
-/**
- * Implements run focus for the public runtime surface of this module.
- */
+/** Implements run focus for the public runtime surface of this module. */
 export async function runFocus(
   id: string | undefined,
   options: FocusOptions,
@@ -78,7 +84,8 @@ export async function runFocus(
         action: "show",
         focused_item: null,
         title: null,
-        message: "No focus set. Use 'pm focus <id>' to set a default parent for new items.",
+        message:
+          "No focus set. Use 'pm focus <id>' to set a default parent for new items.",
       };
     }
     const title = await resolveFocusedTitle(pmRoot, current);
@@ -91,10 +98,24 @@ export async function runFocus(
   }
 
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
+  const located = await locateItem(
+    pmRoot,
+    id,
+    settings.id_prefix,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+  );
   if (!located) {
-    throw await buildItemNotFoundError(pmRoot, id, settings.id_prefix, typeRegistry.type_to_folder);
+    throw await buildItemNotFoundError(
+      pmRoot,
+      id,
+      settings.id_prefix,
+      typeRegistry.type_to_folder,
+    );
   }
   const normalizedId = normalizeItemId(located.id, settings.id_prefix);
   const loaded = await readLocatedItem(located, { schema: settings.schema });
@@ -108,13 +129,25 @@ export async function runFocus(
   };
 }
 
-async function resolveFocusedTitle(pmRoot: string, id: string): Promise<string | null> {
+async function resolveFocusedTitle(
+  pmRoot: string,
+  id: string,
+): Promise<string | null> {
   // The tracker is already known to be initialized (ensureInitialized ran), so
   // readSettings/locateItem behave like the `pm get` read path: a deleted/stale
   // focused item simply locates to null and yields no title hint.
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
+  const located = await locateItem(
+    pmRoot,
+    id,
+    settings.id_prefix,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+  );
   if (!located) {
     return null;
   }

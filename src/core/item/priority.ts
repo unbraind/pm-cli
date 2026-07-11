@@ -6,17 +6,10 @@
 import { PmCliError } from "../shared/errors.js";
 import { EXIT_CODE } from "../shared/constants.js";
 
-/**
- * Restricts priority values accepted by command, SDK, and storage contracts.
- */
+/** Restricts priority values accepted by command, SDK, and storage contracts. */
 export type Priority = 0 | 1 | 2 | 3 | 4;
 
-/**
- * Canonical mapping from named priority levels to numeric values. Agents and
- * humans frequently write words ("high") instead of numbers, so both create and
- * update accept either form. This single map is the source of truth so the two
- * commands cannot drift apart.
- */
+/** Canonical mapping from named priority levels to numeric values. Agents and humans frequently write words ("high") instead of numbers, so both create and update accept either form. This single map is the source of truth so the two commands cannot drift apart. */
 export const PRIORITY_NAME_TO_VALUE: Readonly<Record<string, Priority>> = {
   critical: 0,
   high: 1,
@@ -27,10 +20,7 @@ export const PRIORITY_NAME_TO_VALUE: Readonly<Record<string, Priority>> = {
 
 const PRIORITY_NAME_LIST = Object.keys(PRIORITY_NAME_TO_VALUE);
 
-/**
- * Human-readable description of every accepted priority form. Reused in error
- * messages so the wording stays consistent across commands.
- */
+/** Human-readable description of every accepted priority form. Reused in error messages so the wording stays consistent across commands. */
 export const PRIORITY_ACCEPTED_FORMS_HINT =
   "numbers 0..4 (0=critical, 1=high, 2=medium, 3=low, 4=minimal) or names " +
   `(${PRIORITY_NAME_LIST.join(", ")}), case-insensitive`;
@@ -68,8 +58,12 @@ export function resolvePriority(raw: string | number): Priority {
   }
 
   const normalizedName = trimmed.toLowerCase();
-  if (Object.prototype.hasOwnProperty.call(PRIORITY_NAME_TO_VALUE, normalizedName)) {
-    return PRIORITY_NAME_TO_VALUE[normalizedName as keyof typeof PRIORITY_NAME_TO_VALUE];
+  if (
+    Object.prototype.hasOwnProperty.call(PRIORITY_NAME_TO_VALUE, normalizedName)
+  ) {
+    return PRIORITY_NAME_TO_VALUE[
+      normalizedName as keyof typeof PRIORITY_NAME_TO_VALUE
+    ];
   }
 
   // Numeric form: only exact integers 0..4 are valid. Number() would accept

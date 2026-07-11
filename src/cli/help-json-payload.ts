@@ -40,26 +40,32 @@ import {
   buildUnknownCommandGuidanceFromRuntime,
 } from "./commander-usage.js";
 
-/**
- * Documents the help argument summary payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the help argument summary payload exchanged by command, SDK, and package integrations. */
 export interface HelpArgumentSummary {
+  /** Value that configures or reports name for this contract. */
   name: string;
+  /** Value that configures or reports required for this contract. */
   required: boolean;
+  /** Value that configures or reports variadic for this contract. */
   variadic: boolean;
+  /** Value that configures or reports description for this contract. */
   description: string | null;
 }
 
-/**
- * Documents the help subcommand summary payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the help subcommand summary payload exchanged by command, SDK, and package integrations. */
 export interface HelpSubcommandSummary {
+  /** Value that configures or reports name for this contract. */
   name: string;
+  /** Value that configures or reports aliases for this contract. */
   aliases: string[];
+  /** Value that configures or reports description for this contract. */
   description: string;
 }
 
-function resolveCommandFromPathTokens(root: Command, pathTokens: string[]): Command | null {
+function resolveCommandFromPathTokens(
+  root: Command,
+  pathTokens: string[],
+): Command | null {
   if (pathTokens.length === 0) {
     return root;
   }
@@ -81,9 +87,14 @@ function readOptionAttributeName(option: unknown): string | null {
   };
   if (typeof optionRecord.attributeName === "function") {
     const value = optionRecord.attributeName();
-    return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+    return typeof value === "string" && value.trim().length > 0
+      ? value.trim()
+      : null;
   }
-  if (typeof optionRecord.attributeName === "string" && optionRecord.attributeName.trim().length > 0) {
+  if (
+    typeof optionRecord.attributeName === "string" &&
+    optionRecord.attributeName.trim().length > 0
+  ) {
     return optionRecord.attributeName.trim();
   }
   return null;
@@ -96,7 +107,11 @@ function buildOptionAliasMap(options: unknown[]): Map<string, string[]> {
       long?: string;
     };
     const attributeName = readOptionAttributeName(option);
-    if (!attributeName || typeof optionRecord.long !== "string" || optionRecord.long.trim().length === 0) {
+    if (
+      !attributeName ||
+      typeof optionRecord.long !== "string" ||
+      optionRecord.long.trim().length === 0
+    ) {
       continue;
     }
     const existing = aliasMap.get(attributeName) ?? [];
@@ -106,9 +121,13 @@ function buildOptionAliasMap(options: unknown[]): Map<string, string[]> {
   for (const [attributeName, values] of aliasMap.entries()) {
     aliasMap.set(
       attributeName,
-      [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))].sort((left, right) =>
-        left.localeCompare(right),
-      ),
+      [
+        ...new Set(
+          values
+            .map((value) => value.trim())
+            .filter((value) => value.length > 0),
+        ),
+      ].sort((left, right) => left.localeCompare(right)),
     );
   }
   return aliasMap;
@@ -131,18 +150,27 @@ function buildHelpOptionSummaries(command: Command): HelpOptionSummary[] {
       variadic?: boolean;
       defaultValue?: unknown;
     };
-    const flags = typeof optionRecord.flags === "string" ? optionRecord.flags.trim() : "";
-    const description = typeof optionRecord.description === "string" ? optionRecord.description.trim() : "";
+    const flags =
+      typeof optionRecord.flags === "string" ? optionRecord.flags.trim() : "";
+    const description =
+      typeof optionRecord.description === "string"
+        ? optionRecord.description.trim()
+        : "";
     const attributeName = readOptionAttributeName(option);
-    const aliasCandidates = attributeName ? optionAliasMap.get(attributeName) ?? [] : [];
+    const aliasCandidates = attributeName
+      ? (optionAliasMap.get(attributeName) ?? [])
+      : [];
     const aliases = aliasCandidates
       .filter((entry) => entry !== optionRecord.long)
       .map((entry) => entry.trim())
       .filter((entry) => entry.length > 0);
     const aliasForMatch = description.match(/^Alias for ([^ ]+)/i);
-    const aliasFor = aliasForMatch && aliasForMatch[1] ? aliasForMatch[1].trim() : null;
+    const aliasFor =
+      aliasForMatch && aliasForMatch[1] ? aliasForMatch[1].trim() : null;
     const required =
-      optionRecord.mandatory === true || description.includes("[required]") || description.toLowerCase().includes("required;");
+      optionRecord.mandatory === true ||
+      description.includes("[required]") ||
+      description.toLowerCase().includes("required;");
     const valueRequired = flags.includes("<");
     const takesValue = valueRequired || flags.includes("[");
     const summary: HelpOptionSummary = {
@@ -165,7 +193,9 @@ function buildHelpOptionSummaries(command: Command): HelpOptionSummary[] {
   });
 }
 
-function compactHelpOptionAliases(options: HelpOptionSummary[]): HelpOptionSummary[] {
+function compactHelpOptionAliases(
+  options: HelpOptionSummary[],
+): HelpOptionSummary[] {
   const canonicalByLong = new Map<string, HelpOptionSummary>();
   const aliasOptions: HelpOptionSummary[] = [];
   for (const option of options) {
@@ -185,7 +215,9 @@ function compactHelpOptionAliases(options: HelpOptionSummary[]): HelpOptionSumma
     }
     const aliasLong = aliasOption.long as string;
     const aliases = new Set<string>([...(canonical.aliases ?? []), aliasLong]);
-    canonical.aliases = [...aliases].sort((left, right) => left.localeCompare(right));
+    canonical.aliases = [...aliases].sort((left, right) =>
+      left.localeCompare(right),
+    );
   }
   return options.filter((option) => {
     if (!option.alias_for || !option.long) {
@@ -223,9 +255,11 @@ function buildHelpArgumentSummaries(command: Command): HelpArgumentSummary[] {
         : typeof argument.name === "string"
           ? argument.name
           : "argument";
-    const description = typeof argument.description === "string" && argument.description.trim().length > 0
-      ? argument.description.trim()
-      : null;
+    const description =
+      typeof argument.description === "string" &&
+      argument.description.trim().length > 0
+        ? argument.description.trim()
+        : null;
     return {
       name: rawName.trim(),
       required: argument.required === true,
@@ -235,7 +269,9 @@ function buildHelpArgumentSummaries(command: Command): HelpArgumentSummary[] {
   });
 }
 
-function buildHelpSubcommandSummaries(command: Command): HelpSubcommandSummary[] {
+function buildHelpSubcommandSummaries(
+  command: Command,
+): HelpSubcommandSummary[] {
   return command.commands
     .map((entry) => ({
       name: entry.name().trim(),
@@ -256,7 +292,10 @@ function buildJsonHelpNarrative(
   const extensionExamples = extensionDescriptor.examples ?? [];
   const extensionFailureHints = extensionDescriptor.failure_hints ?? [];
   return {
-    intent: extensionDescriptor.intent ?? extensionDescriptor.description ?? fallbackNarrative.intent,
+    intent:
+      extensionDescriptor.intent ??
+      extensionDescriptor.description ??
+      fallbackNarrative.intent,
     examples:
       detailMode === "detailed"
         ? extensionExamples.length > 0
@@ -286,8 +325,14 @@ function buildJsonHelpPayload(
   const resolvedPath = normalizeHelpCommandPath(getCommandPath(targetCommand));
   const commandPath = resolvedPath.length > 0 ? resolvedPath : undefined;
   const fallbackNarrative = resolveHelpNarrative(commandPath, detailMode);
-  const extensionDescriptor = commandPath ? extensionDescriptors.get(commandPath) : undefined;
-  const narrative = buildJsonHelpNarrative(detailMode, fallbackNarrative, extensionDescriptor);
+  const extensionDescriptor = commandPath
+    ? extensionDescriptors.get(commandPath)
+    : undefined;
+  const narrative = buildJsonHelpNarrative(
+    detailMode,
+    fallbackNarrative,
+    extensionDescriptor,
+  );
   const optionSummaries = compactHelpOptionAliases(
     mergeHelpOptionSummaries(
       buildHelpOptionSummaries(targetCommand),
@@ -313,9 +358,7 @@ function buildJsonHelpPayload(
   };
 }
 
-/**
- * Implements maybe render bootstrap json help for the public runtime surface of this module.
- */
+/** Implements maybe render bootstrap json help for the public runtime surface of this module. */
 export async function maybeRenderBootstrapJsonHelp(
   rootProgram: Command,
   argv: string[],
@@ -329,11 +372,18 @@ export async function maybeRenderBootstrapJsonHelp(
   if (!helpRequest.requested) {
     return false;
   }
-  const targetCommand = resolveCommandFromPathTokens(rootProgram, helpRequest.commandPathTokens);
+  const targetCommand = resolveCommandFromPathTokens(
+    rootProgram,
+    helpRequest.commandPathTokens,
+  );
   if (!targetCommand) {
     if (!bootstrapGlobal.quiet) {
       const unknownMessage = `unknown command '${helpRequest.commandPathTokens.join(" ")}'`;
-      const runtimeContext = buildUnknownCommandGuidanceFromRuntime(unknownMessage, rootProgram, extensionDescriptors);
+      const runtimeContext = buildUnknownCommandGuidanceFromRuntime(
+        unknownMessage,
+        rootProgram,
+        extensionDescriptors,
+      );
       const envelope = formatCommanderErrorForJson(
         unknownMessage,
         "help",
@@ -352,14 +402,23 @@ export async function maybeRenderBootstrapJsonHelp(
     return true;
   }
   if (!bootstrapGlobal.quiet) {
-    const payload = buildJsonHelpPayload(rootProgram, targetCommand, argv, helpRequest.commandPathTokens, extensionDescriptors);
+    const payload = buildJsonHelpPayload(
+      rootProgram,
+      targetCommand,
+      argv,
+      helpRequest.commandPathTokens,
+      extensionDescriptors,
+    );
     writeStdout(`${JSON.stringify(payload, null, 2)}\n`);
   }
   process.exitCode = EXIT_CODE.SUCCESS;
   return true;
 }
 
-function buildCreateUpdatePolicyIntro(commandName: "create" | "update", typeRegistry: ReturnType<typeof resolveItemTypeRegistry>): string {
+function buildCreateUpdatePolicyIntro(
+  commandName: "create" | "update",
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>,
+): string {
   const lines = [
     "",
     "Type-aware option policies:",
@@ -367,12 +426,17 @@ function buildCreateUpdatePolicyIntro(commandName: "create" | "update", typeRegi
     `  active type values: ${typeRegistry.types.join("|")}`,
   ];
   if (commandName === "create") {
-    lines.push("  scheduling shortcut: use --schedule-preset lightweight for Reminder/Meeting/Event minimal create flows.");
+    lines.push(
+      "  scheduling shortcut: use --schedule-preset lightweight for Reminder/Meeting/Event minimal create flows.",
+    );
   }
   return lines.join("\n");
 }
 
-function appendTypeOptionHelpLines(lines: string[], typeDefinition: NonNullable<ReturnType<typeof resolveTypeDefinition>>): void {
+function appendTypeOptionHelpLines(
+  lines: string[],
+  typeDefinition: NonNullable<ReturnType<typeof resolveTypeDefinition>>,
+): void {
   if (typeDefinition.options.length === 0) {
     lines.push("  type options: none");
     return;
@@ -382,8 +446,12 @@ function appendTypeOptionHelpLines(lines: string[], typeDefinition: NonNullable<
     const requiredLabel = option.required ? " (required)" : "";
     const aliases = option.aliases ?? [];
     lines.push(`    - ${option.key}${requiredLabel}`);
-    lines.push(`      values: ${option.values.length > 0 ? option.values.join("|") : "any non-empty string"}`);
-    lines.push(`      aliases: ${aliases.length > 0 ? aliases.join("|") : "none"}`);
+    lines.push(
+      `      values: ${option.values.length > 0 ? option.values.join("|") : "any non-empty string"}`,
+    );
+    lines.push(
+      `      aliases: ${aliases.length > 0 ? aliases.join("|") : "none"}`,
+    );
     if (option.description && option.description.trim().length > 0) {
       lines.push(`      description: ${option.description.trim()}`);
     }
@@ -412,11 +480,25 @@ function buildCreateUpdatePolicyHelpText(
 
   const baseRequired =
     commandName === "create"
-      ? new Set<string>(["title", "description", "type", ...typeDefinition.required_create_fields, ...typeDefinition.required_create_repeatables])
+      ? new Set<string>([
+          "title",
+          "description",
+          "type",
+          ...typeDefinition.required_create_fields,
+          ...typeDefinition.required_create_repeatables,
+        ])
       : new Set<string>();
-  const policyState = resolveCommandOptionPolicyState(typeDefinition, commandName, baseRequired);
+  const policyState = resolveCommandOptionPolicyState(
+    typeDefinition,
+    commandName,
+    baseRequired,
+  );
   const toFlags = (options: string[]): string =>
-    options.length > 0 ? options.map((option) => commandOptionFlagLabel(commandName, option)).join(", ") : "none";
+    options.length > 0
+      ? options
+          .map((option) => commandOptionFlagLabel(commandName, option))
+          .join(", ")
+      : "none";
 
   const lines = [
     "",
@@ -425,7 +507,10 @@ function buildCreateUpdatePolicyHelpText(
     `  disabled: ${toFlags(policyState.disabled)}`,
     `  hidden: ${toFlags(policyState.hidden)}`,
   ];
-  if (commandName === "create" && ["Reminder", "Meeting", "Event"].includes(typeDefinition.name)) {
+  if (
+    commandName === "create" &&
+    ["Reminder", "Meeting", "Event"].includes(typeDefinition.name)
+  ) {
     lines.push(
       "  schedule preset: --schedule-preset lightweight switches schedule artifacts to progressive required-option policy.",
     );
@@ -438,9 +523,7 @@ function buildCreateUpdatePolicyHelpText(
   return lines.join("\n");
 }
 
-/**
- * Implements attach create update policy help text for the public runtime surface of this module.
- */
+/** Implements attach create update policy help text for the public runtime surface of this module. */
 export function attachCreateUpdatePolicyHelpText(
   rootProgram: Command,
   typeRegistry: ReturnType<typeof resolveItemTypeRegistry>,
@@ -454,9 +537,13 @@ export function attachCreateUpdatePolicyHelpText(
   if (!command) {
     return;
   }
-  command.addHelpText("after", buildCreateUpdatePolicyHelpText(bootstrapCommand, typeRegistry, argv));
+  command.addHelpText(
+    "after",
+    buildCreateUpdatePolicyHelpText(bootstrapCommand, typeRegistry, argv),
+  );
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   attachCreateUpdatePolicyHelpText,
   buildCreateUpdatePolicyHelpText,

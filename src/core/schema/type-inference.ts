@@ -23,9 +23,7 @@ import { matchBuiltinTypeName } from "./item-types-file.js";
 
 const PREFIX_PATTERN = /^([A-Za-z][A-Za-z0-9_-]*?)\s*[-:]\s+\S/;
 
-/**
- * Documents the inferred type candidate payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the inferred type candidate payload exchanged by command, SDK, and package integrations. */
 export interface InferredTypeCandidate {
   /** Suggested PascalCase type name derived from the prefix. */
   name: string;
@@ -39,9 +37,7 @@ export interface InferredTypeCandidate {
   shadows_builtin: boolean;
 }
 
-/**
- * Documents the infer types options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the infer types options payload exchanged by command, SDK, and package integrations. */
 export interface InferTypesOptions {
   /** Minimum number of titles that must share a prefix to surface it (default 10). */
   minCount?: number;
@@ -49,10 +45,7 @@ export interface InferTypesOptions {
   maxExamples?: number;
 }
 
-/**
- * Extracts the leading prefix token from a title, or undefined when the title has
- * no stable letter-led `PREFIX-`/`PREFIX:` convention.
- */
+/** Extracts the leading prefix token from a title, or undefined when the title has no stable letter-led `PREFIX-`/`PREFIX:` convention. */
 export function extractTitlePrefix(title: string): string | undefined {
   const match = PREFIX_PATTERN.exec(title.trim());
   if (!match) {
@@ -73,26 +66,31 @@ export function extractTitlePrefix(title: string): string | undefined {
   return token.toLowerCase();
 }
 
-/**
- * Converts a normalized prefix token into a PascalCase type name. Internal
- * hyphen/underscore runs become word boundaries; each word is capitalized.
- */
+/** Converts a normalized prefix token into a PascalCase type name. Internal hyphen/underscore runs become word boundaries; each word is capitalized. */
 export function prefixToTypeName(prefix: string): string {
   return prefix
     .split(/[-_]+/)
     .filter((segment) => segment.length > 0)
-    .map((segment) => `${segment.slice(0, 1).toUpperCase()}${segment.slice(1).toLowerCase()}`)
+    .map(
+      (segment) =>
+        `${segment.slice(0, 1).toUpperCase()}${segment.slice(1).toLowerCase()}`,
+    )
     .join("");
 }
 
-/**
- * Scans titles for shared prefix conventions and returns candidate custom types,
- * sorted by descending frequency then name. Only prefixes carried by at least
- * `minCount` titles are returned.
- */
-export function inferTypesFromTitles(titles: string[], options: InferTypesOptions = {}): InferredTypeCandidate[] {
-  const minCount = typeof options.minCount === "number" && options.minCount > 0 ? Math.trunc(options.minCount) : 10;
-  const maxExamples = typeof options.maxExamples === "number" && options.maxExamples > 0 ? Math.trunc(options.maxExamples) : 3;
+/** Scans titles for shared prefix conventions and returns candidate custom types, sorted by descending frequency then name. Only prefixes carried by at least `minCount` titles are returned. */
+export function inferTypesFromTitles(
+  titles: string[],
+  options: InferTypesOptions = {},
+): InferredTypeCandidate[] {
+  const minCount =
+    typeof options.minCount === "number" && options.minCount > 0
+      ? Math.trunc(options.minCount)
+      : 10;
+  const maxExamples =
+    typeof options.maxExamples === "number" && options.maxExamples > 0
+      ? Math.trunc(options.maxExamples)
+      : 3;
   const byPrefix = new Map<string, { count: number; examples: string[] }>();
   for (const rawTitle of titles) {
     const title = typeof rawTitle === "string" ? rawTitle.trim() : "";
@@ -124,6 +122,9 @@ export function inferTypesFromTitles(titles: string[], options: InferTypesOption
       shadows_builtin: matchBuiltinTypeName(name) !== undefined,
     });
   }
-  candidates.sort((left, right) => (right.count - left.count) || left.name.localeCompare(right.name));
+  candidates.sort(
+    (left, right) =>
+      right.count - left.count || left.name.localeCompare(right.name),
+  );
   return candidates;
 }

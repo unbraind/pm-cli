@@ -66,7 +66,9 @@ import type { ProjectProfileDefinition } from "../core/profile/profile-presets.j
  * {@link ./compose.js#deriveExtensionCapabilities | `deriveExtensionCapabilities`}
  * to keep `capabilities` matched to the surfaces the extension actually registers.
  */
-export function defineExtensionManifest<TManifest extends ExtensionManifest>(manifest: TManifest): TManifest {
+export function defineExtensionManifest<TManifest extends ExtensionManifest>(
+  manifest: TManifest,
+): TManifest {
   return manifest;
 }
 
@@ -82,7 +84,9 @@ export function defineExtensionManifest<TManifest extends ExtensionManifest>(man
  * typed at the definition site, mirroring {@link defineItemType}. It is the
  * authoring anchor a first-party or third-party profile package builds on.
  */
-export function defineProjectProfile<TProfile extends ProjectProfileDefinition>(profile: TProfile): TProfile {
+export function defineProjectProfile<TProfile extends ProjectProfileDefinition>(
+  profile: TProfile,
+): TProfile {
   return profile;
 }
 
@@ -94,7 +98,9 @@ export function defineProjectProfile<TProfile extends ProjectProfileDefinition>(
  * types. Pass the result straight to `registerCommand`, or export it so the
  * command can be invoked in tests via `runRegisteredCommandForTest`.
  */
-export function defineCommand<TDefinition extends CommandDefinition>(definition: TDefinition): TDefinition {
+export function defineCommand<TDefinition extends CommandDefinition>(
+  definition: TDefinition,
+): TDefinition {
   return definition;
 }
 
@@ -116,7 +122,9 @@ export function defineFlag<TFlag extends FlagDefinition>(flag: TFlag): TFlag {
  * Preserves the literal `name`/`folder`/`aliases` so a project archetype's
  * domain types stay strongly typed where the definition is declared and reused.
  */
-export function defineItemType<TType extends SchemaItemTypeDefinition>(type: TType): TType {
+export function defineItemType<TType extends SchemaItemTypeDefinition>(
+  type: TType,
+): TType {
   return type;
 }
 
@@ -127,7 +135,9 @@ export function defineItemType<TType extends SchemaItemTypeDefinition>(type: TTy
  * keeping the field's extra metadata (the contract carries an index signature)
  * intact.
  */
-export function defineItemField<TField extends SchemaFieldDefinition>(field: TField): TField {
+export function defineItemField<TField extends SchemaFieldDefinition>(
+  field: TField,
+): TField {
   return field;
 }
 
@@ -138,7 +148,9 @@ export function defineItemField<TField extends SchemaFieldDefinition>(field: TFi
  * runner's context, so the same definition can be registered and later exercised
  * through `runRegisteredMigrationForTest`.
  */
-export function defineMigration<TMigration extends SchemaMigrationDefinition>(migration: TMigration): TMigration {
+export function defineMigration<TMigration extends SchemaMigrationDefinition>(
+  migration: TMigration,
+): TMigration {
   return migration;
 }
 
@@ -149,7 +161,9 @@ export function defineMigration<TMigration extends SchemaMigrationDefinition>(mi
  * so a custom retrieval backend is type-checked at the definition site and
  * reusable in `runRegisteredSearchProviderForTest`.
  */
-export function defineSearchProvider<TProvider extends SearchProviderDefinition>(provider: TProvider): TProvider {
+export function defineSearchProvider<
+  TProvider extends SearchProviderDefinition,
+>(provider: TProvider): TProvider {
   return provider;
 }
 
@@ -160,7 +174,9 @@ export function defineSearchProvider<TProvider extends SearchProviderDefinition>
  * its own semantic index storage gets contract checking before activation and a
  * definition it can drive through `runRegisteredVectorStoreAdapterForTest`.
  */
-export function defineVectorStoreAdapter<TAdapter extends VectorStoreAdapterDefinition>(adapter: TAdapter): TAdapter {
+export function defineVectorStoreAdapter<
+  TAdapter extends VectorStoreAdapterDefinition,
+>(adapter: TAdapter): TAdapter {
   return adapter;
 }
 
@@ -171,7 +187,9 @@ export function defineVectorStoreAdapter<TAdapter extends VectorStoreAdapterDefi
  * `context` parameter from {@link CommandOverride}, so a bare arrow authored in
  * a `.js` package still gets a fully-typed argument.
  */
-export function defineCommandOverride(override: CommandOverride): CommandOverride {
+export function defineCommandOverride(
+  override: CommandOverride,
+): CommandOverride {
   return override;
 }
 
@@ -192,7 +210,9 @@ export function defineParserOverride(override: ParserOverride): ParserOverride {
  * Contextually types the `context` parameter and the returned gate decision so a
  * package's pre-run validation override is checked at the definition site.
  */
-export function definePreflightOverride(override: PreflightOverride): PreflightOverride {
+export function definePreflightOverride(
+  override: PreflightOverride,
+): PreflightOverride {
   return override;
 }
 
@@ -203,7 +223,9 @@ export function definePreflightOverride(override: PreflightOverride): PreflightO
  * package overriding a built-in service (output formatting, embeddings, and the
  * like) keeps its handler argument typed without an explicit annotation.
  */
-export function defineServiceOverride(override: ServiceOverride): ServiceOverride {
+export function defineServiceOverride(
+  override: ServiceOverride,
+): ServiceOverride {
   return override;
 }
 
@@ -213,7 +235,9 @@ export function defineServiceOverride(override: ServiceOverride): ServiceOverrid
  * Contextually types the `context` parameter and the `string | null | undefined`
  * return contract so a custom output renderer is checked where it is authored.
  */
-export function defineRendererOverride(renderer: RendererOverride): RendererOverride {
+export function defineRendererOverride(
+  renderer: RendererOverride,
+): RendererOverride {
   return renderer;
 }
 
@@ -246,7 +270,9 @@ export function defineExporter(exporter: Exporter): Exporter {
  * inspects or annotates a command before it runs keeps its argument typed when
  * authored as a standalone, exportable, testable value.
  */
-export function defineBeforeCommandHook(hook: BeforeCommandHook): BeforeCommandHook {
+export function defineBeforeCommandHook(
+  hook: BeforeCommandHook,
+): BeforeCommandHook {
   return hook;
 }
 
@@ -257,7 +283,9 @@ export function defineBeforeCommandHook(hook: BeforeCommandHook): BeforeCommandH
  * `affected` items pm mutated — so the natural place to react to every change
  * ("project management = context management") is checked where it is written.
  */
-export function defineAfterCommandHook(hook: AfterCommandHook): AfterCommandHook {
+export function defineAfterCommandHook(
+  hook: AfterCommandHook,
+): AfterCommandHook {
   return hook;
 }
 

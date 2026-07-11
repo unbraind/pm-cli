@@ -13,5 +13,7 @@ import { runSemanticRefreshWorker } from "../core/search/background-refresh.js";
 // pm root from PM_PATH/cwd, then drains the pending queue under the reindex lock.
 const pmRoot = resolvePmRoot(process.cwd(), process.env.PM_PATH);
 await runSemanticRefreshWorker(pmRoot, (root, itemIds) =>
-  refreshSemanticEmbeddingsForMutatedItems(root, itemIds, { apply_runtime_defaults: true }),
+  refreshSemanticEmbeddingsForMutatedItems(root, itemIds, {
+    apply_runtime_defaults: true,
+  }),
 );

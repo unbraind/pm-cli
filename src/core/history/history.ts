@@ -9,9 +9,17 @@ import { runActiveServiceOverride } from "../extensions/index.js";
 import { appendLineAtomic } from "../fs/fs-utils.js";
 import { canonicalDocument } from "../item/item-format.js";
 import { toItemRecord } from "../item/item-record.js";
-import { orderObject, sha256Hex, stableStringify } from "../shared/serialization.js";
+import {
+  orderObject,
+  sha256Hex,
+  stableStringify,
+} from "../shared/serialization.js";
 import { nowIso } from "../shared/time.js";
-import type { HistoryEntry, HistoryPatchOp, ItemDocument } from "../../types/index.js";
+import type {
+  HistoryEntry,
+  HistoryPatchOp,
+  ItemDocument,
+} from "../../types/index.js";
 
 const EMPTY_LEGACY_HASH_DOCUMENT = {
   front_matter: {},
@@ -76,7 +84,8 @@ function normalizeHistoryPatchOps(
   let replayCursor: unknown = structuredClone(beforeDocument);
   for (const operation of patch) {
     const normalizedOperation =
-      operation.op === "replace" && !isDefinedPointerPath(replayCursor, operation.path)
+      operation.op === "replace" &&
+      !isDefinedPointerPath(replayCursor, operation.path)
         ? ({ ...operation, op: "add" } as HistoryPatchOp)
         : operation;
     normalized.push(normalizedOperation);
@@ -90,8 +99,12 @@ function normalizeHistoryPatchOps(
   return normalized;
 }
 
-function canonicalHashDocument(document: ItemDocument): { front_matter: Record<string, unknown>; body: string } {
-  const hasMetadata = document.metadata && Object.keys(document.metadata).length > 0;
+function canonicalHashDocument(document: ItemDocument): {
+  front_matter: Record<string, unknown>;
+  body: string;
+} {
+  const hasMetadata =
+    document.metadata && Object.keys(document.metadata).length > 0;
   if (!hasMetadata) {
     return {
       front_matter: {},
@@ -99,15 +112,22 @@ function canonicalHashDocument(document: ItemDocument): { front_matter: Record<s
     };
   }
   const canonical = canonicalDocument(document);
-  const orderedFrontMatter = orderObject(toItemRecord(canonical.metadata), FRONT_MATTER_KEY_ORDER);
+  const orderedFrontMatter = orderObject(
+    toItemRecord(canonical.metadata),
+    FRONT_MATTER_KEY_ORDER,
+  );
   return {
     front_matter: orderedFrontMatter,
     body: canonical.body,
   };
 }
 
-function canonicalPatchDocument(document: ItemDocument): { metadata: Record<string, unknown>; body: string } {
-  const hasMetadata = document.metadata && Object.keys(document.metadata).length > 0;
+function canonicalPatchDocument(document: ItemDocument): {
+  metadata: Record<string, unknown>;
+  body: string;
+} {
+  const hasMetadata =
+    document.metadata && Object.keys(document.metadata).length > 0;
   if (!hasMetadata) {
     return {
       metadata: {},
@@ -115,30 +135,27 @@ function canonicalPatchDocument(document: ItemDocument): { metadata: Record<stri
     };
   }
   const canonical = canonicalDocument(document);
-  const orderedMetadata = orderObject(toItemRecord(canonical.metadata), FRONT_MATTER_KEY_ORDER);
+  const orderedMetadata = orderObject(
+    toItemRecord(canonical.metadata),
+    FRONT_MATTER_KEY_ORDER,
+  );
   return {
     metadata: orderedMetadata,
     body: canonical.body,
   };
 }
 
-/**
- * Implements hash document for the public runtime surface of this module.
- */
+/** Implements hash document for the public runtime surface of this module. */
 export function hashDocument(document: ItemDocument): string {
   return sha256Hex(stableStringify(canonicalHashDocument(document)));
 }
 
-/**
- * Implements hash empty document for the public runtime surface of this module.
- */
+/** Implements hash empty document for the public runtime surface of this module. */
 export function hashEmptyDocument(): string {
   return sha256Hex(stableStringify(EMPTY_LEGACY_HASH_DOCUMENT));
 }
 
-/**
- * Implements create history entry for the public runtime surface of this module.
- */
+/** Implements create history entry for the public runtime surface of this module. */
 export function createHistoryEntry(params: {
   nowIso: string;
   author: string;
@@ -151,7 +168,10 @@ export function createHistoryEntry(params: {
   const afterHashCanonical = canonicalHashDocument(params.after);
   const beforePatchCanonical = canonicalPatchDocument(params.before);
   const afterPatchCanonical = canonicalPatchDocument(params.after);
-  const rawPatch = jsonPatch.compare(beforePatchCanonical, afterPatchCanonical) as HistoryPatchOp[];
+  const rawPatch = jsonPatch.compare(
+    beforePatchCanonical,
+    afterPatchCanonical,
+  ) as HistoryPatchOp[];
   const patch = normalizeHistoryPatchOps(beforePatchCanonical, rawPatch);
 
   return {
@@ -174,7 +194,10 @@ function fallbackHistoryTimestamp(entry: Pick<HistoryEntry, "ts">): string {
   return ts.length > 0 ? ts : nowIso();
 }
 
-function withHistoryTimestamp(value: Record<string, unknown>, fallbackTs: string): Record<string, unknown> {
+function withHistoryTimestamp(
+  value: Record<string, unknown>,
+  fallbackTs: string,
+): Record<string, unknown> {
   const ts = value.ts;
   if (typeof ts === "string" && ts.trim().length > 0) {
     return value;
@@ -182,7 +205,10 @@ function withHistoryTimestamp(value: Record<string, unknown>, fallbackTs: string
   return { ...value, ts: fallbackTs };
 }
 
-function serializeHistoryLine(value: unknown, fallbackEntry: Pick<HistoryEntry, "ts">): string {
+function serializeHistoryLine(
+  value: unknown,
+  fallbackEntry: Pick<HistoryEntry, "ts">,
+): string {
   const fallbackTs = fallbackHistoryTimestamp(fallbackEntry);
   if (typeof value === "string") {
     try {
@@ -201,10 +227,11 @@ function serializeHistoryLine(value: unknown, fallbackEntry: Pick<HistoryEntry, 
   return JSON.stringify(value);
 }
 
-/**
- * Implements append history entry for the public runtime surface of this module.
- */
-export async function appendHistoryEntry(historyPath: string, entry: HistoryEntry): Promise<void> {
+/** Implements append history entry for the public runtime surface of this module. */
+export async function appendHistoryEntry(
+  historyPath: string,
+  entry: HistoryEntry,
+): Promise<void> {
   const override = await runActiveServiceOverride("history_append", {
     history_path: historyPath,
     entry,
@@ -214,7 +241,10 @@ export async function appendHistoryEntry(historyPath: string, entry: HistoryEntr
       return;
     }
     if (typeof override.result === "string") {
-      await appendLineAtomic(historyPath, serializeHistoryLine(override.result, entry));
+      await appendLineAtomic(
+        historyPath,
+        serializeHistoryLine(override.result, entry),
+      );
       return;
     }
     if (typeof override.result === "object" && override.result !== null) {
@@ -227,18 +257,28 @@ export async function appendHistoryEntry(historyPath: string, entry: HistoryEntr
       if (record.skip === true) {
         return;
       }
-      const nextHistoryPath = typeof record.history_path === "string" ? record.history_path : historyPath;
+      const nextHistoryPath =
+        typeof record.history_path === "string"
+          ? record.history_path
+          : historyPath;
       if (typeof record.line === "string") {
-        await appendLineAtomic(nextHistoryPath, serializeHistoryLine(record.line, entry));
+        await appendLineAtomic(
+          nextHistoryPath,
+          serializeHistoryLine(record.line, entry),
+        );
         return;
       }
-      await appendLineAtomic(nextHistoryPath, serializeHistoryLine(record.entry ?? entry, entry));
+      await appendLineAtomic(
+        nextHistoryPath,
+        serializeHistoryLine(record.entry ?? entry, entry),
+      );
       return;
     }
   }
   await appendLineAtomic(historyPath, serializeHistoryLine(entry, entry));
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   decodeJsonPointer,
   isDefinedPointerPath,

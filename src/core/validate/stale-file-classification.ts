@@ -15,42 +15,39 @@
 /** Classification labels for linked paths that no longer exist on disk. */
 export type StaleLinkedPathClassification = "moved" | "deleted";
 
-/**
- * Documents the classified stale linked path payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the classified stale linked path payload exchanged by command, SDK, and package integrations. */
 export interface ClassifiedStaleLinkedPath {
   /** Normalized workspace-relative stale linked path. */
   path: string;
+  /** Value that configures or reports classification for this contract. */
   classification: StaleLinkedPathClassification;
-  /**
-   * Candidate new locations (same basename, different path), sorted and capped
-   * at `candidateLimit`. Empty for `deleted`.
-   */
+  /** Candidate new locations (same basename, different path), sorted and capped at `candidateLimit`. Empty for `deleted`. */
   candidates: string[];
   /** True when more candidates existed than `candidateLimit` allowed. */
   candidates_truncated: boolean;
 }
 
+/** Fallback stale path candidate limit used when callers do not provide an override. */
 export const DEFAULT_STALE_PATH_CANDIDATE_LIMIT = 3;
 
 function basenameOf(relativePath: string): string {
-  const lastSlash = Math.max(relativePath.lastIndexOf("/"), relativePath.lastIndexOf("\\"));
+  const lastSlash = Math.max(
+    relativePath.lastIndexOf("/"),
+    relativePath.lastIndexOf("\\"),
+  );
   return lastSlash === -1 ? relativePath : relativePath.slice(lastSlash + 1);
 }
 
-/**
- * Classify each stale (missing) linked path as `moved` or `deleted` by
- * matching its basename against the candidate file list. Output preserves the
- * input order of `stalePaths` (callers pass an already-sorted unique list).
- * A candidate equal to the stale path itself never matches (the path is known
- * missing; an identical candidate would be self-referential noise).
- */
+/** Classify each stale (missing) linked path as `moved` or `deleted` by matching its basename against the candidate file list. Output preserves the input order of `stalePaths` (callers pass an already-sorted unique list). A candidate equal to the stale path itself never matches (the path is known missing; an identical candidate would be self-referential noise). */
 export function classifyStaleLinkedPaths(
   stalePaths: readonly string[],
   candidateFiles: readonly string[],
   candidateLimit: number = DEFAULT_STALE_PATH_CANDIDATE_LIMIT,
 ): ClassifiedStaleLinkedPath[] {
-  const limit = Number.isFinite(candidateLimit) && candidateLimit >= 1 ? Math.floor(candidateLimit) : DEFAULT_STALE_PATH_CANDIDATE_LIMIT;
+  const limit =
+    Number.isFinite(candidateLimit) && candidateLimit >= 1
+      ? Math.floor(candidateLimit)
+      : DEFAULT_STALE_PATH_CANDIDATE_LIMIT;
   const candidatesByBasename = new Map<string, string[]>();
   for (const candidate of candidateFiles) {
     const basename = basenameOf(candidate);
@@ -86,13 +83,13 @@ export function classifyStaleLinkedPaths(
   });
 }
 
-/**
- * Render compact `<path>:moved:<top-candidate>` / `<path>:deleted` rows for
- * the files check details (token-efficient counterpart to the full
- * classification objects).
- */
-export function summarizeStaleLinkedPathClassifications(classified: readonly ClassifiedStaleLinkedPath[]): string[] {
+/** Render compact `<path>:moved:<top-candidate>` / `<path>:deleted` rows for the files check details (token-efficient counterpart to the full classification objects). */
+export function summarizeStaleLinkedPathClassifications(
+  classified: readonly ClassifiedStaleLinkedPath[],
+): string[] {
   return classified.map((entry) =>
-    entry.classification === "moved" ? `${entry.path}:moved:${entry.candidates[0]}` : `${entry.path}:deleted`,
+    entry.classification === "moved"
+      ? `${entry.path}:moved:${entry.candidates[0]}`
+      : `${entry.path}:deleted`,
   );
 }

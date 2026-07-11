@@ -7,9 +7,18 @@ import jsonPatch from "fast-json-patch";
 import { FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { canonicalDocument } from "../item/item-format.js";
 import { toItemRecord } from "../item/item-record.js";
-import { orderObject, sha256Hex, stableStringify } from "../shared/serialization.js";
+import {
+  orderObject,
+  sha256Hex,
+  stableStringify,
+} from "../shared/serialization.js";
 import { hashDocument } from "./history.js";
-import type { HistoryEntry, HistoryPatchOp, ItemDocument, ItemMetadata } from "../../types/index.js";
+import type {
+  HistoryEntry,
+  HistoryPatchOp,
+  ItemDocument,
+  ItemMetadata,
+} from "../../types/index.js";
 
 /**
  * Shared history replay/patch mechanics single-sourced for the history, restore,
@@ -21,25 +30,24 @@ import type { HistoryEntry, HistoryPatchOp, ItemDocument, ItemMetadata } from ".
  */
 
 export interface ReplayDocument {
+  /** Value that configures or reports metadata for this contract. */
   metadata: Record<string, unknown>;
+  /** Value that configures or reports body for this contract. */
   body: string;
 }
 
+/** Public contract for empty replay document, shared by SDK and presentation-layer consumers. */
 export const EMPTY_REPLAY_DOCUMENT: ReplayDocument = {
   metadata: {},
   body: "",
 };
 
-/**
- * Implements clone empty replay document for the public runtime surface of this module.
- */
+/** Implements clone empty replay document for the public runtime surface of this module. */
 export function cloneEmptyReplayDocument(): ReplayDocument {
   return structuredClone(EMPTY_REPLAY_DOCUMENT);
 }
 
-/**
- * Implements replay hash for the public runtime surface of this module.
- */
+/** Implements replay hash for the public runtime surface of this module. */
 export function replayHash(document: ReplayDocument): string {
   try {
     return hashDocument(replayToItemDocument(document));
@@ -50,13 +58,17 @@ export function replayHash(document: ReplayDocument): string {
     // re-anchor and verification stay internally consistent for these streams. Fully
     // formed documents always take the canonical path above, so valid streams are
     // unaffected.
-    return sha256Hex(stableStringify({ replay_fallback: true, metadata: document.metadata, body: document.body }));
+    return sha256Hex(
+      stableStringify({
+        replay_fallback: true,
+        metadata: document.metadata,
+        body: document.body,
+      }),
+    );
   }
 }
 
-/**
- * Implements replay to item document for the public runtime surface of this module.
- */
+/** Implements replay to item document for the public runtime surface of this module. */
 export function replayToItemDocument(document: ReplayDocument): ItemDocument {
   return {
     metadata: document.metadata as ItemMetadata,
@@ -64,11 +76,7 @@ export function replayToItemDocument(document: ReplayDocument): ItemDocument {
   };
 }
 
-/**
- * Converts a materialized replay document into a canonical item document. Use
- * this when callers have already rejected the empty/deleted replay state and
- * need restored metadata validated through the normal front-matter rules.
- */
+/** Converts a materialized replay document into a canonical item document. Use this when callers have already rejected the empty/deleted replay state and need restored metadata validated through the normal front-matter rules. */
 export function replayToCanonicalItemDocument(
   document: ReplayDocument,
   options: Parameters<typeof canonicalDocument>[1] = {},
@@ -76,10 +84,7 @@ export function replayToCanonicalItemDocument(
   return canonicalDocument(replayToItemDocument(document), options);
 }
 
-/**
- * Canonicalize an item document into the ordered replay form used when comparing
- * a replayed chain against the on-disk item (restore + history-repair reconciliation).
- */
+/** Canonicalize an item document into the ordered replay form used when comparing a replayed chain against the on-disk item (restore + history-repair reconciliation). */
 export function toReplayDocument(document: ItemDocument): ReplayDocument {
   if (!document.metadata || Object.keys(document.metadata).length === 0) {
     return {
@@ -89,14 +94,15 @@ export function toReplayDocument(document: ItemDocument): ReplayDocument {
   }
   const canonical = canonicalDocument(document);
   return {
-    metadata: orderObject(toItemRecord(canonical.metadata), FRONT_MATTER_KEY_ORDER),
+    metadata: orderObject(
+      toItemRecord(canonical.metadata),
+      FRONT_MATTER_KEY_ORDER,
+    ),
     body: canonical.body,
   };
 }
 
-/**
- * Implements normalize replay patch path for the public runtime surface of this module.
- */
+/** Implements normalize replay patch path for the public runtime surface of this module. */
 export function normalizeReplayPatchPath(path: string): string {
   if (path === "/front_matter") {
     return "/metadata";
@@ -116,21 +122,26 @@ function isHistoryPatchOp(value: unknown): value is HistoryPatchOp {
   );
 }
 
-/**
- * Implements normalize replay patch ops for the public runtime surface of this module.
- */
-export function normalizeReplayPatchOps(patch: HistoryPatchOp[] | unknown): HistoryPatchOp[] {
+/** Implements normalize replay patch ops for the public runtime surface of this module. */
+export function normalizeReplayPatchOps(
+  patch: HistoryPatchOp[] | unknown,
+): HistoryPatchOp[] {
   if (!Array.isArray(patch)) {
     return [];
   }
   return patch.filter(isHistoryPatchOp).map((operation) => ({
     ...operation,
     path: normalizeReplayPatchPath(operation.path),
-    from: typeof operation.from === "string" ? normalizeReplayPatchPath(operation.from) : undefined,
+    from:
+      typeof operation.from === "string"
+        ? normalizeReplayPatchPath(operation.from)
+        : undefined,
   }));
 }
 
-function isReplayDocumentShape(value: unknown): value is { metadata: Record<string, unknown>; body: string } {
+function isReplayDocumentShape(
+  value: unknown,
+): value is { metadata: Record<string, unknown>; body: string } {
   return (
     typeof value === "object" &&
     value !== null &&
@@ -142,19 +153,16 @@ function isReplayDocumentShape(value: unknown): value is { metadata: Record<stri
   );
 }
 
-/**
- * Restricts replay apply result values accepted by command, SDK, and storage contracts.
- */
+/** Restricts replay apply result values accepted by command, SDK, and storage contracts. */
 export type ReplayApplyResult =
   | { ok: true; document: ReplayDocument }
   | { ok: false; error: unknown };
 
-/**
- * Strictly apply a history patch (front_matter->metadata normalized) to a replay
- * document. Returns a result envelope rather than throwing so each caller can
- * format its own error contract.
- */
-export function tryApplyReplayPatch(current: ReplayDocument, patch: HistoryPatchOp[]): ReplayApplyResult {
+/** Strictly apply a history patch (front_matter->metadata normalized) to a replay document. Returns a result envelope rather than throwing so each caller can format its own error contract. */
+export function tryApplyReplayPatch(
+  current: ReplayDocument,
+  patch: HistoryPatchOp[],
+): ReplayApplyResult {
   try {
     const normalizedPatch = normalizeReplayPatchOps(patch);
     const applied = jsonPatch.applyPatch(
@@ -164,20 +172,25 @@ export function tryApplyReplayPatch(current: ReplayDocument, patch: HistoryPatch
       false,
     ).newDocument as unknown;
     if (!isReplayDocumentShape(applied)) {
-      return { ok: false, error: new Error("history_replay_invalid_document_shape") };
+      return {
+        ok: false,
+        error: new Error("history_replay_invalid_document_shape"),
+      };
     }
-    return { ok: true, document: { metadata: applied.metadata, body: applied.body } };
+    return {
+      ok: true,
+      document: { metadata: applied.metadata, body: applied.body },
+    };
   } catch (error) {
     return { ok: false, error };
   }
 }
 
-/**
- * Deterministically verify a history chain: each entry's before_hash must equal
- * the prior replayed after_hash, the patch must strictly apply, and the recorded
- * after_hash must equal the replayed result.
- */
-export function verifyHistoryChain(entries: HistoryEntry[]): { ok: boolean; errors: string[] } {
+/** Deterministically verify a history chain: each entry's before_hash must equal the prior replayed after_hash, the patch must strictly apply, and the recorded after_hash must equal the replayed result. */
+export function verifyHistoryChain(entries: HistoryEntry[]): {
+  ok: boolean;
+  errors: string[];
+} {
   let replay = cloneEmptyReplayDocument();
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
@@ -205,16 +218,20 @@ export function verifyHistoryChain(entries: HistoryEntry[]): { ok: boolean; erro
   return { ok: true, errors: [] };
 }
 
-/**
- * Documents the lenient apply result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the lenient apply result payload exchanged by command, SDK, and package integrations. */
 export interface LenientApplyResult {
+  /** Value that configures or reports document for this contract. */
   document: ReplayDocument;
+  /** Value that configures or reports converted replace to add for this contract. */
   convertedReplaceToAdd: number;
+  /** Value that configures or reports skipped ops for this contract. */
   skippedOps: number;
 }
 
-function tryApplySingleOp(document: unknown, op: HistoryPatchOp): { ok: true; document: unknown } | { ok: false } {
+function tryApplySingleOp(
+  document: unknown,
+  op: HistoryPatchOp,
+): { ok: true; document: unknown } | { ok: false } {
   try {
     const applied = jsonPatch.applyPatch(
       structuredClone(document),
@@ -228,13 +245,11 @@ function tryApplySingleOp(document: unknown, op: HistoryPatchOp): { ok: true; do
   }
 }
 
-/**
- * Apply a legacy patch op-by-op, recovering from drift that strict replay rejects:
- * a `replace` whose path no longer exists is retried as `add`, and any op that
- * still cannot apply against the current replay state is skipped. The resulting
- * document is what the repaired entry's recomputed patch should target.
- */
-export function lenientApplyReplayPatch(current: ReplayDocument, patch: HistoryPatchOp[]): LenientApplyResult {
+/** Apply a legacy patch op-by-op, recovering from drift that strict replay rejects: a `replace` whose path no longer exists is retried as `add`, and any op that still cannot apply against the current replay state is skipped. The resulting document is what the repaired entry's recomputed patch should target. */
+export function lenientApplyReplayPatch(
+  current: ReplayDocument,
+  patch: HistoryPatchOp[],
+): LenientApplyResult {
   let working: unknown = structuredClone(current);
   let convertedReplaceToAdd = 0;
   let skippedOps = 0;
@@ -267,37 +282,42 @@ export function lenientApplyReplayPatch(current: ReplayDocument, patch: HistoryP
   return { document, convertedReplaceToAdd, skippedOps };
 }
 
-/**
- * Documents the reanchor entry detail payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the reanchor entry detail payload exchanged by command, SDK, and package integrations. */
 export interface ReanchorEntryDetail {
+  /** Value that configures or reports index for this contract. */
   index: number;
+  /** Value that configures or reports rehashed for this contract. */
   rehashed: boolean;
+  /** Value that configures or reports patch repaired for this contract. */
   patch_repaired: boolean;
+  /** Value that configures or reports converted replace to add for this contract. */
   converted_replace_to_add: number;
+  /** Value that configures or reports skipped ops for this contract. */
   skipped_ops: number;
 }
 
-/**
- * Documents the reanchor result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the reanchor result payload exchanged by command, SDK, and package integrations. */
 export interface ReanchorResult {
+  /** Value that configures or reports entries for this contract. */
   entries: HistoryEntry[];
+  /** Value that configures or reports final document for this contract. */
   finalDocument: ReplayDocument;
+  /** Value that configures or reports entries rehashed for this contract. */
   entriesRehashed: number;
+  /** Value that configures or reports entries patch repaired for this contract. */
   entriesPatchRepaired: number;
+  /** Value that configures or reports converted replace to add for this contract. */
   convertedReplaceToAdd: number;
+  /** Value that configures or reports skipped ops for this contract. */
   skippedOps: number;
+  /** Value that configures or reports details for this contract. */
   details: ReanchorEntryDetail[];
 }
 
-/**
- * Re-anchor a drifted history chain: replay every entry from empty, recompute the
- * before/after hashes, and only rewrite a patch when the original op set no longer
- * strictly applies (legacy drift). Clean entries keep their patch verbatim so the
- * on-disk diff stays minimal. The returned chain verifies via verifyHistoryChain.
- */
-export function reanchorHistoryEntries(entries: HistoryEntry[]): ReanchorResult {
+/** Re-anchor a drifted history chain: replay every entry from empty, recompute the before/after hashes, and only rewrite a patch when the original op set no longer strictly applies (legacy drift). Clean entries keep their patch verbatim so the on-disk diff stays minimal. The returned chain verifies via verifyHistoryChain. */
+export function reanchorHistoryEntries(
+  entries: HistoryEntry[],
+): ReanchorResult {
   let replay = cloneEmptyReplayDocument();
   const rewritten: HistoryEntry[] = [];
   const details: ReanchorEntryDetail[] = [];
@@ -333,7 +353,8 @@ export function reanchorHistoryEntries(entries: HistoryEntry[]): ReanchorResult 
     }
 
     const afterHash = replayHash(next);
-    const rehashed = beforeHash !== entry.before_hash || afterHash !== entry.after_hash;
+    const rehashed =
+      beforeHash !== entry.before_hash || afterHash !== entry.after_hash;
     if (rehashed) {
       entriesRehashed += 1;
     }
@@ -365,9 +386,7 @@ export function reanchorHistoryEntries(entries: HistoryEntry[]): ReanchorResult 
   };
 }
 
-/**
- * Implements history entries to raw for the public runtime surface of this module.
- */
+/** Implements history entries to raw for the public runtime surface of this module. */
 export function historyEntriesToRaw(entries: HistoryEntry[]): string {
   if (entries.length === 0) {
     return "";

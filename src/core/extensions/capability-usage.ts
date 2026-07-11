@@ -12,7 +12,11 @@
  * grant. Every declared-but-unused capability is an over-broad permission a
  * reviewer would otherwise have to catch by hand.
  */
-import type { ExtensionActivationResult, ExtensionCapability, ExtensionLayer } from "./extension-types.js";
+import type {
+  ExtensionActivationResult,
+  ExtensionCapability,
+  ExtensionLayer,
+} from "./extension-types.js";
 import { normalizeKnownExtensionCapability } from "./extension-capability-aliases.js";
 
 /**
@@ -27,8 +31,20 @@ import { normalizeKnownExtensionCapability } from "./extension-capability-aliase
 export const EXTENSION_CAPABILITY_REGISTRATION_SURFACES = {
   commands: ["registerCommand", "command override", "command handler"],
   renderers: ["registerRenderer"],
-  hooks: ["hooks.beforeCommand", "hooks.afterCommand", "hooks.onWrite", "hooks.onRead", "hooks.onIndex"],
-  schema: ["registerFlags", "registerItemFields", "registerItemTypes", "registerMigration", "registerProfile"],
+  hooks: [
+    "hooks.beforeCommand",
+    "hooks.afterCommand",
+    "hooks.onWrite",
+    "hooks.onRead",
+    "hooks.onIndex",
+  ],
+  schema: [
+    "registerFlags",
+    "registerItemFields",
+    "registerItemTypes",
+    "registerMigration",
+    "registerProfile",
+  ],
   importers: ["registerImporter", "registerExporter"],
   search: ["registerSearchProvider", "registerVectorStoreAdapter"],
   parser: ["registerParser"],
@@ -36,9 +52,7 @@ export const EXTENSION_CAPABILITY_REGISTRATION_SURFACES = {
   services: ["registerService"],
 } as const satisfies Record<ExtensionCapability, readonly string[]>;
 
-/**
- * Per-extension reconciliation of declared versus exercised capabilities.
- */
+/** Per-extension reconciliation of declared versus exercised capabilities. */
 export interface ExtensionCapabilityUsageReconciliation {
   /** Layer the extension was loaded from (`global` or `project`). */
   layer: ExtensionLayer;
@@ -52,21 +66,11 @@ export interface ExtensionCapabilityUsageReconciliation {
   unused: ExtensionCapability[];
 }
 
-/**
- * Options for {@link collectUsedExtensionCapabilities}.
- */
+/** Options for {@link collectUsedExtensionCapabilities}. */
 export interface CollectUsedExtensionCapabilitiesOptions {
-  /**
-   * Restrict the result to a single extension by name. Names are matched
-   * case-insensitively after trimming. Omit to union across every extension in
-   * the activation result.
-   */
+  /** Restrict the result to a single extension by name. Names are matched case-insensitively after trimming. Omit to union across every extension in the activation result. */
   extensionName?: string;
-  /**
-   * Restrict the result to a set of extension names. This preserves the
-   * single-name option while allowing package aliases that activate multiple
-   * extensions to summarize their combined capability surface.
-   */
+  /** Restrict the result to a set of extension names. This preserves the single-name option while allowing package aliases that activate multiple extensions to summarize their combined capability surface. */
   extensionNames?: readonly string[];
 }
 
@@ -96,7 +100,9 @@ export function normalizeExtensionName(name: string): string {
   return name.trim().toLowerCase();
 }
 
-function normalizeDeclaredCapabilities(capabilities: readonly string[] | undefined): ExtensionCapability[] {
+function normalizeDeclaredCapabilities(
+  capabilities: readonly string[] | undefined,
+): ExtensionCapability[] {
   if (!Array.isArray(capabilities)) {
     return [];
   }
@@ -112,7 +118,9 @@ function normalizeDeclaredCapabilities(capabilities: readonly string[] | undefin
   return [...known].sort((left, right) => left.localeCompare(right));
 }
 
-function attributeCapabilityUsage(activation: ExtensionActivationResult): Map<string, Set<ExtensionCapability>> {
+function attributeCapabilityUsage(
+  activation: ExtensionActivationResult,
+): Map<string, Set<ExtensionCapability>> {
   const usage = new Map<string, Set<ExtensionCapability>>();
   const record = (
     entries: ReadonlyArray<{ layer: ExtensionLayer; name: string }>,
@@ -128,7 +136,15 @@ function attributeCapabilityUsage(activation: ExtensionActivationResult): Map<st
       exercised.add(capability);
     }
   };
-  const { registrations, commands, parsers, preflight, services, renderers, hooks } = activation;
+  const {
+    registrations,
+    commands,
+    parsers,
+    preflight,
+    services,
+    renderers,
+    hooks,
+  } = activation;
   record(registrations.commands, "commands");
   record(commands.overrides, "commands");
   record(commands.handlers, "commands");
@@ -193,7 +209,11 @@ export function collectUsedExtensionCapabilities(
  * when `unused` is empty so callers can report fully-minimal manifests too.
  */
 export function reconcileExtensionCapabilityUsage(
-  loaded: ReadonlyArray<{ layer: ExtensionLayer; name: string; capabilities?: readonly string[] }>,
+  loaded: ReadonlyArray<{
+    layer: ExtensionLayer;
+    name: string;
+    capabilities?: readonly string[];
+  }>,
   activation: ExtensionActivationResult,
 ): ExtensionCapabilityUsageReconciliation[] {
   const usage = attributeCapabilityUsage(activation);
@@ -203,10 +223,20 @@ export function reconcileExtensionCapabilityUsage(
     if (declared.length === 0) {
       continue;
     }
-    const exercised = usage.get(usageKey(extension.layer, extension.name)) ?? new Set<ExtensionCapability>();
-    const used = [...exercised].sort((left, right) => left.localeCompare(right));
+    const exercised =
+      usage.get(usageKey(extension.layer, extension.name)) ??
+      new Set<ExtensionCapability>();
+    const used = [...exercised].sort((left, right) =>
+      left.localeCompare(right),
+    );
     const unused = declared.filter((capability) => !exercised.has(capability));
-    reconciliations.push({ layer: extension.layer, name: extension.name, declared, used, unused });
+    reconciliations.push({
+      layer: extension.layer,
+      name: extension.name,
+      declared,
+      used,
+      unused,
+    });
   }
   return reconciliations;
 }

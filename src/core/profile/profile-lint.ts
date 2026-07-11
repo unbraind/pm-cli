@@ -33,14 +33,20 @@
  * thin wrappers around {@link lintProjectProfile}.
  */
 import { BUILTIN_ITEM_TYPE_VALUES } from "../../types/index.js";
-import { parseNestedSettingValue, resolveNestedSettingDescriptor } from "../config/nested-settings.js";
+import {
+  parseNestedSettingValue,
+  resolveNestedSettingDescriptor,
+} from "../config/nested-settings.js";
 import { normalizeAddFieldInput } from "../schema/fields-file.js";
 import { normalizeAddStatusInput } from "../schema/status-defs-file.js";
 import { normalizeAddTypeInput } from "../schema/item-types-file.js";
 import { normalizeStatusToken } from "../schema/type-workflows.js";
 import { DEFAULT_RUNTIME_STATUS_DEFINITIONS } from "../schema/runtime-schema.js";
 import { toErrorMessage } from "../shared/primitives.js";
-import { normalizeProfileLookupKey, type ProjectProfileDefinition } from "./profile-presets.js";
+import {
+  normalizeProfileLookupKey,
+  type ProjectProfileDefinition,
+} from "./profile-presets.js";
 
 /** Severity grade of a profile lint finding. */
 export type ProfileLintSeverity = "error" | "warning";
@@ -56,9 +62,7 @@ export const PROFILE_LINT_DIMENSIONS = [
   "templates",
   "packages",
 ] as const;
-/**
- * Restricts profile lint dimension values accepted by command, SDK, and storage contracts.
- */
+/** Restricts profile lint dimension values accepted by command, SDK, and storage contracts. */
 export type ProfileLintDimension = (typeof PROFILE_LINT_DIMENSIONS)[number];
 
 /** Stable machine-readable codes every {@link ProjectProfileLintFinding} carries. */
@@ -84,9 +88,7 @@ export const PROFILE_LINT_CODES = [
   "template_type_unknown",
   "package_spec_empty",
 ] as const;
-/**
- * Restricts profile lint code values accepted by command, SDK, and storage contracts.
- */
+/** Restricts profile lint code values accepted by command, SDK, and storage contracts. */
 export type ProfileLintCode = (typeof PROFILE_LINT_CODES)[number];
 
 /** A single graded consistency finding produced by {@link lintProjectProfile}. */
@@ -117,12 +119,7 @@ export interface ProjectProfileLintReport {
   warningCount: number;
 }
 
-/**
- * Built-in status tokens (canonical ids and their aliases, normalized) every
- * tracker recognizes regardless of profile. A workflow transition referencing one
- * of these is always resolvable, so it never triggers a `workflow_status_unknown`
- * warning. Computed once from the canonical defaults so it never drifts.
- */
+/** Built-in status tokens (canonical ids and their aliases, normalized) every tracker recognizes regardless of profile. A workflow transition referencing one of these is always resolvable, so it never triggers a `workflow_status_unknown` warning. Computed once from the canonical defaults so it never drifts. */
 const BUILTIN_STATUS_TOKENS: ReadonlySet<string> = new Set(
   DEFAULT_RUNTIME_STATUS_DEFINITIONS.flatMap((definition) => [
     normalizeStatusToken(definition.id),
@@ -131,16 +128,22 @@ const BUILTIN_STATUS_TOKENS: ReadonlySet<string> = new Set(
 );
 
 /** Built-in item type names, lower-cased for case-insensitive workflow/template matching. */
-const BUILTIN_TYPE_KEYS: ReadonlySet<string> = new Set(BUILTIN_ITEM_TYPE_VALUES.map((name) => name.toLowerCase()));
+const BUILTIN_TYPE_KEYS: ReadonlySet<string> = new Set(
+  BUILTIN_ITEM_TYPE_VALUES.map((name) => name.toLowerCase()),
+);
 
 /** Lint the profile-level identity fields (name, title, summary). */
-function lintProfileIdentity(profile: ProjectProfileDefinition, findings: ProjectProfileLintFinding[]): void {
+function lintProfileIdentity(
+  profile: ProjectProfileDefinition,
+  findings: ProjectProfileLintFinding[],
+): void {
   if (profile.name.trim().length === 0) {
     findings.push({
       severity: "error",
       code: "profile_name_empty",
       dimension: "profile",
-      message: "Profile name must not be empty; profile resolution requires a non-blank name.",
+      message:
+        "Profile name must not be empty; profile resolution requires a non-blank name.",
     });
   } else if (profile.name !== normalizeProfileLookupKey(profile.name)) {
     findings.push({
@@ -156,7 +159,8 @@ function lintProfileIdentity(profile: ProjectProfileDefinition, findings: Projec
       severity: "warning",
       code: "profile_title_empty",
       dimension: "profile",
-      message: "Profile title is empty; list and show surfaces will render a blank title.",
+      message:
+        "Profile title is empty; list and show surfaces will render a blank title.",
     });
   }
   if (profile.summary.trim().length === 0) {
@@ -164,17 +168,17 @@ function lintProfileIdentity(profile: ProjectProfileDefinition, findings: Projec
       severity: "warning",
       code: "profile_summary_empty",
       dimension: "profile",
-      message: "Profile summary is empty; list and show surfaces will render a blank archetype description.",
+      message:
+        "Profile summary is empty; list and show surfaces will render a blank archetype description.",
     });
   }
 }
 
-/**
- * Lint the item types, returning the set of declared type keys (lower-cased)
- * collected from entries that normalize cleanly so workflow and template checks
- * can resolve cross-references against them.
- */
-function lintTypes(profile: ProjectProfileDefinition, findings: ProjectProfileLintFinding[]): Set<string> {
+/** Lint the item types, returning the set of declared type keys (lower-cased) collected from entries that normalize cleanly so workflow and template checks can resolve cross-references against them. */
+function lintTypes(
+  profile: ProjectProfileDefinition,
+  findings: ProjectProfileLintFinding[],
+): Set<string> {
   const declared = new Set<string>();
   const seen = new Set<string>();
   for (const [index, type] of profile.types.entries()) {
@@ -208,12 +212,11 @@ function lintTypes(profile: ProjectProfileDefinition, findings: ProjectProfileLi
   return declared;
 }
 
-/**
- * Lint the custom statuses, returning the set of declared status tokens (ids and
- * aliases, normalized) collected from entries that normalize cleanly so workflow
- * transition checks can resolve cross-references against them.
- */
-function lintStatuses(profile: ProjectProfileDefinition, findings: ProjectProfileLintFinding[]): Set<string> {
+/** Lint the custom statuses, returning the set of declared status tokens (ids and aliases, normalized) collected from entries that normalize cleanly so workflow transition checks can resolve cross-references against them. */
+function lintStatuses(
+  profile: ProjectProfileDefinition,
+  findings: ProjectProfileLintFinding[],
+): Set<string> {
   const declared = new Set<string>();
   const seen = new Set<string>();
   for (const [index, status] of profile.statuses.entries()) {
@@ -250,7 +253,10 @@ function lintStatuses(profile: ProjectProfileDefinition, findings: ProjectProfil
 }
 
 /** Lint the custom fields for invalid and duplicate keys. */
-function lintFields(profile: ProjectProfileDefinition, findings: ProjectProfileLintFinding[]): void {
+function lintFields(
+  profile: ProjectProfileDefinition,
+  findings: ProjectProfileLintFinding[],
+): void {
   const seen = new Set<string>();
   for (const [index, field] of profile.fields.entries()) {
     let key: string;
@@ -280,11 +286,7 @@ function lintFields(profile: ProjectProfileDefinition, findings: ProjectProfileL
   }
 }
 
-/**
- * Lint the per-type workflows: flag workflows that govern an undeclared type,
- * duplicate workflows for the same type, malformed transition pairs, and
- * transitions referencing a status token no built-in or profile status defines.
- */
+/** Lint the per-type workflows: flag workflows that govern an undeclared type, duplicate workflows for the same type, malformed transition pairs, and transitions referencing a status token no built-in or profile status defines. */
 function lintWorkflows(
   profile: ProjectProfileDefinition,
   declaredTypes: ReadonlySet<string>,
@@ -300,7 +302,8 @@ function lintWorkflows(
         code: "workflow_type_empty",
         dimension: "workflows",
         target: `#${index}`,
-        message: "Workflow has an empty type; the workflow resolver drops entries without a type.",
+        message:
+          "Workflow has an empty type; the workflow resolver drops entries without a type.",
       });
       continue;
     }
@@ -343,7 +346,11 @@ function lintWorkflows(
         continue;
       }
       for (const token of [from, to]) {
-        if (BUILTIN_STATUS_TOKENS.has(token) || declaredStatuses.has(token) || reportedUnknownStatuses.has(token)) {
+        if (
+          BUILTIN_STATUS_TOKENS.has(token) ||
+          declaredStatuses.has(token) ||
+          reportedUnknownStatuses.has(token)
+        ) {
           continue;
         }
         reportedUnknownStatuses.add(token);
@@ -359,11 +366,11 @@ function lintWorkflows(
   }
 }
 
-/**
- * Lint the config knobs: resolve each descriptor, flag duplicates that would
- * silently overwrite an earlier knob, and parse each value.
- */
-function lintConfig(profile: ProjectProfileDefinition, findings: ProjectProfileLintFinding[]): void {
+/** Lint the config knobs: resolve each descriptor, flag duplicates that would silently overwrite an earlier knob, and parse each value. */
+function lintConfig(
+  profile: ProjectProfileDefinition,
+  findings: ProjectProfileLintFinding[],
+): void {
   const seen = new Set<string>();
   for (const entry of profile.config) {
     const descriptor = resolveNestedSettingDescriptor(entry.key);
@@ -428,7 +435,10 @@ function lintTemplates(
 }
 
 /** Lint the advisory package recommendations for an empty spec. */
-function lintPackages(profile: ProjectProfileDefinition, findings: ProjectProfileLintFinding[]): void {
+function lintPackages(
+  profile: ProjectProfileDefinition,
+  findings: ProjectProfileLintFinding[],
+): void {
   for (const [index, recommendation] of profile.packages.entries()) {
     if (recommendation.spec.trim().length === 0) {
       findings.push({
@@ -436,7 +446,8 @@ function lintPackages(profile: ProjectProfileDefinition, findings: ProjectProfil
         code: "package_spec_empty",
         dimension: "packages",
         target: `#${index}`,
-        message: "Package recommendation has an empty spec; it cannot be surfaced as an install hint.",
+        message:
+          "Package recommendation has an empty spec; it cannot be surfaced as an install hint.",
       });
     }
   }
@@ -453,7 +464,9 @@ function lintPackages(profile: ProjectProfileDefinition, findings: ProjectProfil
  * @returns A report whose `ok` flag is true exactly when no `error` findings
  *   were produced.
  */
-export function lintProjectProfile(profile: ProjectProfileDefinition): ProjectProfileLintReport {
+export function lintProjectProfile(
+  profile: ProjectProfileDefinition,
+): ProjectProfileLintReport {
   const findings: ProjectProfileLintFinding[] = [];
   lintProfileIdentity(profile, findings);
   const declaredTypes = lintTypes(profile, findings);
@@ -463,7 +476,9 @@ export function lintProjectProfile(profile: ProjectProfileDefinition): ProjectPr
   lintConfig(profile, findings);
   lintTemplates(profile, declaredTypes, findings);
   lintPackages(profile, findings);
-  const errorCount = findings.filter((finding) => finding.severity === "error").length;
+  const errorCount = findings.filter(
+    (finding) => finding.severity === "error",
+  ).length;
   const warningCount = findings.length - errorCount;
   return {
     profile: profile.name,

@@ -29,11 +29,7 @@
  */
 const REMOTE_ARTIFACT_REFERENCE_PATTERN = /^[a-z][a-z0-9+.-]+:\/\//i;
 
-/**
- * Return `true` when a linked-artifact path is a remote reference (a URL with a
- * `scheme://` authority) rather than a local filesystem path. Whitespace is
- * trimmed before matching so a stored `"  https://…"` is still recognized.
- */
+/** Return `true` when a linked-artifact path is a remote reference (a URL with a `scheme://` authority) rather than a local filesystem path. Whitespace is trimmed before matching so a stored `" https://…"` is still recognized. */
 export function isRemoteLinkedArtifactReference(path: string): boolean {
   return REMOTE_ARTIFACT_REFERENCE_PATTERN.test(path.trim());
 }

@@ -8,13 +8,20 @@ import { getActiveExtensionRegistrations } from "../../core/extensions/index.js"
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseOptionalNumber } from "../../core/item/parse.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
-import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
+import {
+  resolveRuntimeStatusRegistry,
+  type RuntimeStatusRegistry,
+} from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import { listAllFrontMatterLight } from "../../core/store/item-store.js";
-import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
+import {
+  getSettingsPath,
+  resolveGlobalPmRoot,
+  resolvePmRoot,
+} from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { appendTrackedTestRunSummary } from "../../core/test/item-test-run-tracking.js";
 import { resolveAuthor } from "../../core/shared/author.js";
@@ -28,48 +35,69 @@ import {
   type TestRunResult,
 } from "./test.js";
 
-/**
- * Documents the test all command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the test all command options payload exchanged by command, SDK, and package integrations. */
 export interface TestAllCommandOptions {
+  /** Lifecycle state reported for status. */
   status?: string;
+  /** Value that configures or reports limit for this contract. */
   limit?: string;
+  /** Value that configures or reports offset for this contract. */
   offset?: string;
+  /** Value that configures or reports timeout for this contract. */
   timeout?: string;
+  /** Value that configures or reports progress for this contract. */
   progress?: boolean;
+  /** Value that configures or reports env set for this contract. */
   envSet?: string[];
+  /** Value that configures or reports env clear for this contract. */
   envClear?: string[];
+  /** Value that configures or reports shared host safe for this contract. */
   sharedHostSafe?: boolean;
+  /** Value that configures or reports pm context for this contract. */
   pmContext?: string;
+  /** Value that configures or reports override linked pm context for this contract. */
   overrideLinkedPmContext?: boolean;
+  /** Value that configures or reports fail on context mismatch for this contract. */
   failOnContextMismatch?: boolean;
+  /** Value that configures or reports fail on skipped for this contract. */
   failOnSkipped?: boolean;
+  /** Value that configures or reports fail on empty test run for this contract. */
   failOnEmptyTestRun?: boolean;
+  /** Value that configures or reports require assertions for pm for this contract. */
   requireAssertionsForPm?: boolean;
+  /** Value that configures or reports check context for this contract. */
   checkContext?: boolean;
+  /** Value that configures or reports auto pm context for this contract. */
   autoPmContext?: boolean;
 }
 
-/**
- * Documents the test all item result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the test all item result payload exchanged by command, SDK, and package integrations. */
 export interface TestAllItemResult {
+  /** Whether the operation completed without a blocking failure. */
   ok: boolean;
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Lifecycle state reported for status. */
   status: ItemStatus;
+  /** Number of test entries represented by this result. */
   test_count: number;
+  /** Value that configures or reports passed for this contract. */
   passed: number;
+  /** Value that configures or reports failed for this contract. */
   failed: number;
+  /** Value that configures or reports skipped for this contract. */
   skipped: number;
+  /** Executes the results operation through the package runtime. */
   run_results: TestRunResult[];
+  /** Value that configures or reports failure categories for this contract. */
   failure_categories: Record<LinkedTestFailureCategory, number>;
 }
 
-/**
- * Documents the test all result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the test all result payload exchanged by command, SDK, and package integrations. */
 export interface TestAllResult {
+  /** Whether the operation completed without a blocking failure. */
   ok: boolean;
+  /** Value that configures or reports totals for this contract. */
   totals: {
     items: number;
     linked_tests: number;
@@ -78,16 +106,25 @@ export interface TestAllResult {
     skipped: number;
     failure_categories: Record<LinkedTestFailureCategory, number>;
   };
+  /** Value that configures or reports failed for this contract. */
   failed: number;
+  /** Value that configures or reports passed for this contract. */
   passed: number;
+  /** Value that configures or reports skipped for this contract. */
   skipped: number;
+  /** Value that configures or reports fail on skipped triggered for this contract. */
   fail_on_skipped_triggered?: boolean;
+  /** Value that configures or reports fail on empty test run triggered for this contract. */
   fail_on_empty_test_run_triggered?: boolean;
+  /** Value that configures or reports warnings for this contract. */
   warnings?: string[];
+  /** Value that configures or reports results for this contract. */
   results: TestAllItemResult[];
 }
 
-type TestAllSelectedItem = Awaited<ReturnType<typeof listAllFrontMatterLight>>[number];
+type TestAllSelectedItem = Awaited<
+  ReturnType<typeof listAllFrontMatterLight>
+>[number];
 
 interface TestAllItemTests {
   item: TestAllSelectedItem;
@@ -135,14 +172,22 @@ interface TestAllAccumulation {
   trackingWarnings: string[];
 }
 
-function parseStatus(raw: string | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
+function parseStatus(
+  raw: string | undefined,
+  statusRegistry: RuntimeStatusRegistry,
+): ItemStatus | undefined {
   if (raw === undefined) {
     return undefined;
   }
   const normalized = normalizeStatusInput(raw, statusRegistry);
   if (!normalized) {
-    const allowedStatuses = statusRegistry.definitions.map((definition) => definition.id);
-    throw new PmCliError(`Invalid --status value "${raw}". Allowed: ${allowedStatuses.join(", ")}`, EXIT_CODE.USAGE);
+    const allowedStatuses = statusRegistry.definitions.map(
+      (definition) => definition.id,
+    );
+    throw new PmCliError(
+      `Invalid --status value "${raw}". Allowed: ${allowedStatuses.join(", ")}`,
+      EXIT_CODE.USAGE,
+    );
   }
   return normalized;
 }
@@ -154,13 +199,19 @@ function parseTimeout(raw: string | undefined): number | undefined {
   return parseOptionalNumber(raw, "timeout");
 }
 
-function parseNonNegativeInteger(raw: string | undefined, flag: string): number | undefined {
+function parseNonNegativeInteger(
+  raw: string | undefined,
+  flag: string,
+): number | undefined {
   if (raw === undefined) {
     return undefined;
   }
   const parsed = Number(raw);
   if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new PmCliError(`${flag} must be a non-negative integer`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `${flag} must be a non-negative integer`,
+      EXIT_CODE.USAGE,
+    );
   }
   return parsed;
 }
@@ -186,7 +237,11 @@ function normalizeEnvSetSignature(value: LinkedTest["env_set"]): string {
     return "{}";
   }
   return JSON.stringify(
-    Object.fromEntries(Object.entries(value).sort(([left], [right]) => left.localeCompare(right))),
+    Object.fromEntries(
+      Object.entries(value).sort(([left], [right]) =>
+        left.localeCompare(right),
+      ),
+    ),
   );
 }
 
@@ -194,26 +249,45 @@ function normalizeEnvClearSignature(value: LinkedTest["env_clear"]): string {
   if (!value || value.length === 0) {
     return "[]";
   }
-  return JSON.stringify([...value].sort((left, right) => left.localeCompare(right)));
+  return JSON.stringify(
+    [...value].sort((left, right) => left.localeCompare(right)),
+  );
 }
 
-function normalizePmContextModeSignature(value: LinkedTest["pm_context_mode"]): string {
+function normalizePmContextModeSignature(
+  value: LinkedTest["pm_context_mode"],
+): string {
   const normalized = value?.trim().toLowerCase();
   return normalized && normalized.length > 0 ? normalized : "none";
 }
 
 function normalizeAssertionSignature(test: LinkedTest): string {
   const normalized = {
-    assert_stdout_contains: [...new Set(test.assert_stdout_contains ?? [])].sort((left, right) => left.localeCompare(right)),
-    assert_stdout_regex: [...new Set(test.assert_stdout_regex ?? [])].sort((left, right) => left.localeCompare(right)),
-    assert_stderr_contains: [...new Set(test.assert_stderr_contains ?? [])].sort((left, right) => left.localeCompare(right)),
-    assert_stderr_regex: [...new Set(test.assert_stderr_regex ?? [])].sort((left, right) => left.localeCompare(right)),
-    assert_stdout_min_lines: typeof test.assert_stdout_min_lines === "number" ? test.assert_stdout_min_lines : undefined,
+    assert_stdout_contains: [
+      ...new Set(test.assert_stdout_contains ?? []),
+    ].sort((left, right) => left.localeCompare(right)),
+    assert_stdout_regex: [...new Set(test.assert_stdout_regex ?? [])].sort(
+      (left, right) => left.localeCompare(right),
+    ),
+    assert_stderr_contains: [
+      ...new Set(test.assert_stderr_contains ?? []),
+    ].sort((left, right) => left.localeCompare(right)),
+    assert_stderr_regex: [...new Set(test.assert_stderr_regex ?? [])].sort(
+      (left, right) => left.localeCompare(right),
+    ),
+    assert_stdout_min_lines:
+      typeof test.assert_stdout_min_lines === "number"
+        ? test.assert_stdout_min_lines
+        : undefined,
     assert_json_field_equals: Object.fromEntries(
-      Object.entries(test.assert_json_field_equals ?? {}).sort(([left], [right]) => left.localeCompare(right)),
+      Object.entries(test.assert_json_field_equals ?? {}).sort(
+        ([left], [right]) => left.localeCompare(right),
+      ),
     ),
     assert_json_field_gte: Object.fromEntries(
-      Object.entries(test.assert_json_field_gte ?? {}).sort(([left], [right]) => left.localeCompare(right)),
+      Object.entries(test.assert_json_field_gte ?? {}).sort(([left], [right]) =>
+        left.localeCompare(right),
+      ),
     ),
   };
   return JSON.stringify(normalized);
@@ -233,7 +307,10 @@ function buildLinkedTestKey(test: LinkedTest): string {
   return `path:${test.scope}:${linkedPath}`;
 }
 
-function maxTimeoutSeconds(current: number | undefined, candidate: number | undefined): number | undefined {
+function maxTimeoutSeconds(
+  current: number | undefined,
+  candidate: number | undefined,
+): number | undefined {
   if (candidate === undefined) {
     /* c8 ignore next - exercised implicitly by duplicate timeout normalization */
     return current;
@@ -244,7 +321,11 @@ function maxTimeoutSeconds(current: number | undefined, candidate: number | unde
   return current;
 }
 
-function countStatuses(runResults: TestRunResult[]): { passed: number; failed: number; skipped: number } {
+function countStatuses(runResults: TestRunResult[]): {
+  passed: number;
+  failed: number;
+  skipped: number;
+} {
   let passed = 0;
   let failed = 0;
   let skipped = 0;
@@ -271,7 +352,10 @@ function mergeFailureCategoryCounts(
   }
 }
 
-function emitTestAllProgress(options: TestAllCommandOptions, message: string): void {
+function emitTestAllProgress(
+  options: TestAllCommandOptions,
+  message: string,
+): void {
   if (options.progress !== true) {
     return;
   }
@@ -310,10 +394,14 @@ async function selectTestAllItems(params: {
   options: TestAllCommandOptions;
 }): Promise<TestAllSelection> {
   const statusRegistry = resolveRuntimeStatusRegistry(params.settings.schema);
-  const typeRegistry = resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations());
+  const typeRegistry = resolveItemTypeRegistry(
+    params.settings,
+    getActiveExtensionRegistrations(),
+  );
   const statusFilter = parseStatus(params.options.status, statusRegistry);
   const limitFilter = parseNonNegativeInteger(params.options.limit, "--limit");
-  const offsetFilter = parseNonNegativeInteger(params.options.offset, "--offset") ?? 0;
+  const offsetFilter =
+    parseNonNegativeInteger(params.options.offset, "--offset") ?? 0;
   const allItems = await listAllFrontMatterLight(
     params.pmRoot,
     params.settings.item_format,
@@ -331,7 +419,9 @@ async function selectTestAllItems(params: {
   return { filteredItems, statusFilter, limitFilter, offsetFilter };
 }
 
-function buildEffectiveTimeoutByKey(itemTests: TestAllItemTests[]): Map<string, number | undefined> {
+function buildEffectiveTimeoutByKey(
+  itemTests: TestAllItemTests[],
+): Map<string, number | undefined> {
   const effectiveTimeoutByKey = new Map<string, number | undefined>();
   for (const { tests } of itemTests) {
     for (const test of tests) {
@@ -340,7 +430,10 @@ function buildEffectiveTimeoutByKey(itemTests: TestAllItemTests[]): Map<string, 
         effectiveTimeoutByKey.set(key, test.timeout_seconds);
         continue;
       }
-      effectiveTimeoutByKey.set(key, maxTimeoutSeconds(effectiveTimeoutByKey.get(key), test.timeout_seconds));
+      effectiveTimeoutByKey.set(
+        key,
+        maxTimeoutSeconds(effectiveTimeoutByKey.get(key), test.timeout_seconds),
+      );
     }
   }
   return effectiveTimeoutByKey;
@@ -357,7 +450,11 @@ async function runTestAllItem(
     if (!duplicate) {
       context.seenTestKeys.add(key);
       const effectiveTimeoutSeconds = context.effectiveTimeoutByKey.get(key);
-      testsToRun.push(effectiveTimeoutSeconds === undefined ? test : { ...test, timeout_seconds: effectiveTimeoutSeconds });
+      testsToRun.push(
+        effectiveTimeoutSeconds === undefined
+          ? test
+          : { ...test, timeout_seconds: effectiveTimeoutSeconds },
+      );
     }
     return { test, key, duplicate };
   });
@@ -395,7 +492,11 @@ async function runTestAllItem(
   });
   const summary = countStatuses(runResults);
   const failureCategories = countFailureCategories(runResults);
-  const trackingWarnings = await appendTestAllItemTracking(entry, summary, context);
+  const trackingWarnings = await appendTestAllItemTracking(
+    entry,
+    summary,
+    context,
+  );
   return {
     passed: summary.passed,
     failed: summary.failed,
@@ -403,7 +504,9 @@ async function runTestAllItem(
     trackingWarnings,
     failureCategories,
     result: {
-      ok: summary.failed === 0 && !(context.options.failOnSkipped === true && summary.skipped > 0),
+      ok:
+        summary.failed === 0 &&
+        !(context.options.failOnSkipped === true && summary.skipped > 0),
       id: entry.item.id,
       status: entry.item.status,
       test_count: entry.tests.length,
@@ -434,7 +537,11 @@ async function appendTestAllItemTracking(
       entry: {
         run_id: context.trackingRunId,
         kind: "test-all",
-        status: summary.failed > 0 || (context.options.failOnSkipped === true && summary.skipped > 0) ? "failed" : "passed",
+        status:
+          summary.failed > 0 ||
+          (context.options.failOnSkipped === true && summary.skipped > 0)
+            ? "failed"
+            : "passed",
         started_at: context.runStartedAt,
         finished_at: nowIso(),
         recorded_at: nowIso(),
@@ -445,11 +552,16 @@ async function appendTestAllItemTracking(
         skipped: summary.skipped,
         items: 1,
         linked_tests: entry.tests.length,
-        fail_on_skipped_triggered: context.options.failOnSkipped === true && summary.skipped > 0 ? true : undefined,
+        fail_on_skipped_triggered:
+          context.options.failOnSkipped === true && summary.skipped > 0
+            ? true
+            : undefined,
       },
     });
   } catch (error: unknown) {
-    return [`test_result_tracking_failed:${entry.item.id}:${formatTrackingError(error)}`];
+    return [
+      `test_result_tracking_failed:${entry.item.id}:${formatTrackingError(error)}`,
+    ];
   }
   return [];
 }
@@ -463,8 +575,11 @@ function buildTestAllItemRunContext(params: {
   runStartedAt: string;
 }): TestAllItemRunContext {
   const trackingAttemptRaw = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT?.trim();
-  const trackingParsedAttempt = trackingAttemptRaw ? Number.parseInt(trackingAttemptRaw, 10) : Number.NaN;
-  const trackingResumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM?.trim();
+  const trackingParsedAttempt = trackingAttemptRaw
+    ? Number.parseInt(trackingAttemptRaw, 10)
+    : Number.NaN;
+  const trackingResumedFrom =
+    process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM?.trim();
   return {
     pmRoot: params.pmRoot,
     settings: params.settings,
@@ -479,8 +594,14 @@ function buildTestAllItemRunContext(params: {
     trackingEnabled: params.settings.testing.record_results_to_items === true,
     trackingAuthor: resolveAuthor(undefined, params.settings.author_default),
     trackingRunId: resolveTrackedRunId(),
-    trackingAttempt: Number.isFinite(trackingParsedAttempt) && trackingParsedAttempt >= 1 ? trackingParsedAttempt : undefined,
-    trackingResumedFrom: trackingResumedFrom && trackingResumedFrom.length > 0 ? trackingResumedFrom : undefined,
+    trackingAttempt:
+      Number.isFinite(trackingParsedAttempt) && trackingParsedAttempt >= 1
+        ? trackingParsedAttempt
+        : undefined,
+    trackingResumedFrom:
+      trackingResumedFrom && trackingResumedFrom.length > 0
+        ? trackingResumedFrom
+        : undefined,
     runStartedAt: params.runStartedAt,
   };
 }
@@ -498,7 +619,8 @@ function initializeTestAllAccumulation(
     failureCategories: countFailureCategories([]),
     trackingWarnings: [],
   };
-  const failOnEmptyTestRunTriggered = options.failOnEmptyTestRun === true && linkedTests === 0;
+  const failOnEmptyTestRunTriggered =
+    options.failOnEmptyTestRun === true && linkedTests === 0;
   if (failOnEmptyTestRunTriggered) {
     accumulation.failed += 1;
     accumulation.failureCategories.empty_run += 1;
@@ -515,9 +637,15 @@ async function runTestAllItems(
   accumulation: TestAllAccumulation,
 ): Promise<void> {
   for (const [itemIndex, entry] of itemTests.entries()) {
-    emitTestAllProgress(context.options, `item ${itemIndex + 1}/${itemTests.length} start id=${entry.item.id} linked_tests=${entry.tests.length}`);
+    emitTestAllProgress(
+      context.options,
+      `item ${itemIndex + 1}/${itemTests.length} start id=${entry.item.id} linked_tests=${entry.tests.length}`,
+    );
     const execution = await runTestAllItem(entry, context);
-    mergeFailureCategoryCounts(accumulation.failureCategories, execution.failureCategories);
+    mergeFailureCategoryCounts(
+      accumulation.failureCategories,
+      execution.failureCategories,
+    );
     accumulation.passed += execution.passed;
     accumulation.failed += execution.failed;
     accumulation.skipped += execution.skipped;
@@ -532,11 +660,16 @@ async function runTestAllItems(
   }
 }
 
-function appendContextPreflightWarning(options: TestAllCommandOptions, accumulation: TestAllAccumulation): void {
+function appendContextPreflightWarning(
+  options: TestAllCommandOptions,
+  accumulation: TestAllAccumulation,
+): void {
   if (options.checkContext !== true) {
     return;
   }
-  const allRunResults = accumulation.results.flatMap((entry) => entry.run_results);
+  const allRunResults = accumulation.results.flatMap(
+    (entry) => entry.run_results,
+  );
   const preflight = summarizeContextPreflight(allRunResults);
   accumulation.trackingWarnings.push(
     `context_preflight:checked_pm_commands=${preflight.checked_pm_commands};` +
@@ -568,26 +701,40 @@ function buildTestAllResult(params: {
     passed: params.accumulation.passed,
     skipped: params.accumulation.skipped,
     fail_on_skipped_triggered: params.failOnSkippedTriggered ? true : undefined,
-    fail_on_empty_test_run_triggered: params.failOnEmptyTestRunTriggered ? true : undefined,
-    warnings: params.accumulation.trackingWarnings.length > 0 ? params.accumulation.trackingWarnings : undefined,
+    fail_on_empty_test_run_triggered: params.failOnEmptyTestRunTriggered
+      ? true
+      : undefined,
+    warnings:
+      params.accumulation.trackingWarnings.length > 0
+        ? params.accumulation.trackingWarnings
+        : undefined,
     results: params.accumulation.results,
   };
 }
 
-/**
- * Implements run test all for the public runtime surface of this module.
- */
-export async function runTestAll(options: TestAllCommandOptions, global: GlobalOptions): Promise<TestAllResult> {
+/** Implements run test all for the public runtime surface of this module. */
+export async function runTestAll(
+  options: TestAllCommandOptions,
+  global: GlobalOptions,
+): Promise<TestAllResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
   const settings = await readSettings(pmRoot);
-  const { filteredItems, statusFilter, limitFilter, offsetFilter } = await selectTestAllItems({ pmRoot, settings, options });
+  const { filteredItems, statusFilter, limitFilter, offsetFilter } =
+    await selectTestAllItems({ pmRoot, settings, options });
   const defaultTimeoutSeconds = parseTimeout(options.timeout);
   const runStartedAt = nowIso();
-  const { itemTests, linkedTests } = await collectTestAllItemTests(filteredItems, global, pmRoot);
+  const { itemTests, linkedTests } = await collectTestAllItemTests(
+    filteredItems,
+    global,
+    pmRoot,
+  );
   emitTestAllProgress(
     options,
     `selection items=${filteredItems.length} linked_tests=${linkedTests}` +
@@ -596,7 +743,8 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
       `${offsetFilter > 0 ? ` offset=${offsetFilter}` : ""}`,
   );
 
-  const { accumulation, failOnEmptyTestRunTriggered } = initializeTestAllAccumulation(options, linkedTests, filteredItems);
+  const { accumulation, failOnEmptyTestRunTriggered } =
+    initializeTestAllAccumulation(options, linkedTests, filteredItems);
   const itemRunContext = buildTestAllItemRunContext({
     pmRoot,
     settings,
@@ -607,10 +755,14 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
   });
   await runTestAllItems(itemTests, itemRunContext, accumulation);
 
-  const failOnSkippedTriggered = options.failOnSkipped === true && accumulation.skipped > 0;
+  const failOnSkippedTriggered =
+    options.failOnSkipped === true && accumulation.skipped > 0;
   appendContextPreflightWarning(options, accumulation);
 
-  const ok = accumulation.failed === 0 && failOnSkippedTriggered !== true && failOnEmptyTestRunTriggered !== true;
+  const ok =
+    accumulation.failed === 0 &&
+    failOnSkippedTriggered !== true &&
+    failOnEmptyTestRunTriggered !== true;
   emitTestAllProgress(
     options,
     `end status=${ok ? "passed" : "failed"} items=${filteredItems.length} linked_tests=${linkedTests}` +
@@ -627,6 +779,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
   });
 }
 
+/** Public contract for test only test all, shared by SDK and presentation-layer consumers. */
 export const _testOnlyTestAll = {
   formatTrackingError,
 };

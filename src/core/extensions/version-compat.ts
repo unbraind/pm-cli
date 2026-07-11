@@ -53,11 +53,7 @@ export type PmVersionBoundStatus =
   | "exceeded"
   | "exceeded_warn";
 
-/**
- * The structured result of evaluating one manifest version bound, consumed by the
- * loader (to format its `extension_pm_*_version_*` warning strings) and the SDK
- * (to build author-time compatibility findings).
- */
+/** The structured result of evaluating one manifest version bound, consumed by the loader (to format its `extension_pm_*_version_*` warning strings) and the SDK (to build author-time compatibility findings). */
 export interface PmVersionBoundEvaluation {
   /** Which bound this evaluation describes. */
   kind: PmVersionBoundKind;
@@ -84,7 +80,10 @@ function formatVersionBoundValue(value: unknown): string {
  * any build/pre-release suffix and keeps the leading dotted-numeric release.
  */
 export function parseComparableVersion(value: string): number[] | null {
-  const normalized = value.trim().replace(/^>=\s*/, "").replace(/^v/i, "");
+  const normalized = value
+    .trim()
+    .replace(/^>=\s*/, "")
+    .replace(/^v/i, "");
   const release = normalized.split(/[+-]/, 1)[0];
   if (!/^\d+(?:[.-]\d+)*$/.test(release)) {
     return null;
@@ -100,7 +99,10 @@ export function parseComparableVersion(value: string): number[] | null {
  * can classify the comparison as `unchecked`). Missing trailing segments are
  * treated as `0`, so `1.2` and `1.2.0` compare equal.
  */
-export function compareComparableVersions(currentVersion: string, otherVersion: string): number | null {
+export function compareComparableVersions(
+  currentVersion: string,
+  otherVersion: string,
+): number | null {
   const currentParts = parseComparableVersion(currentVersion);
   const otherParts = parseComparableVersion(otherVersion);
   if (!currentParts || !otherParts) {
@@ -135,26 +137,68 @@ export function evaluatePmMinVersionBound(
   currentVersion: string | null,
 ): PmVersionBoundEvaluation {
   if (required === undefined || required === null) {
-    return { kind: "pm_min_version", status: "absent", allowed: true, required: "", current: currentVersion };
+    return {
+      kind: "pm_min_version",
+      status: "absent",
+      allowed: true,
+      required: "",
+      current: currentVersion,
+    };
   }
   const declared = formatVersionBoundValue(required);
   if (typeof required !== "string" || declared.trim().length === 0) {
-    return { kind: "pm_min_version", status: "invalid", allowed: false, required: declared, current: currentVersion };
+    return {
+      kind: "pm_min_version",
+      status: "invalid",
+      allowed: false,
+      required: declared,
+      current: currentVersion,
+    };
   }
   if (!parseComparableVersion(declared)) {
-    return { kind: "pm_min_version", status: "invalid", allowed: false, required: declared, current: currentVersion };
+    return {
+      kind: "pm_min_version",
+      status: "invalid",
+      allowed: false,
+      required: declared,
+      current: currentVersion,
+    };
   }
   if (currentVersion === null) {
-    return { kind: "pm_min_version", status: "unchecked", allowed: true, required: declared, current: null };
+    return {
+      kind: "pm_min_version",
+      status: "unchecked",
+      allowed: true,
+      required: declared,
+      current: null,
+    };
   }
   const comparison = compareComparableVersions(currentVersion, declared);
   if (comparison === null) {
-    return { kind: "pm_min_version", status: "unchecked", allowed: true, required: declared, current: currentVersion };
+    return {
+      kind: "pm_min_version",
+      status: "unchecked",
+      allowed: true,
+      required: declared,
+      current: currentVersion,
+    };
   }
   if (comparison < 0) {
-    return { kind: "pm_min_version", status: "unmet", allowed: false, required: declared, current: currentVersion };
+    return {
+      kind: "pm_min_version",
+      status: "unmet",
+      allowed: false,
+      required: declared,
+      current: currentVersion,
+    };
   }
-  return { kind: "pm_min_version", status: "ok", allowed: true, required: declared, current: currentVersion };
+  return {
+    kind: "pm_min_version",
+    status: "ok",
+    allowed: true,
+    required: declared,
+    current: currentVersion,
+  };
 }
 
 /**
@@ -178,21 +222,51 @@ export function evaluatePmMaxVersionBound(
   exceededMode: PmMaxVersionExceededMode,
 ): PmVersionBoundEvaluation {
   if (required === undefined || required === null) {
-    return { kind: "pm_max_version", status: "absent", allowed: true, required: "", current: currentVersion };
+    return {
+      kind: "pm_max_version",
+      status: "absent",
+      allowed: true,
+      required: "",
+      current: currentVersion,
+    };
   }
   const declared = formatVersionBoundValue(required);
   if (typeof required !== "string" || declared.trim().length === 0) {
-    return { kind: "pm_max_version", status: "invalid", allowed: false, required: declared, current: currentVersion };
+    return {
+      kind: "pm_max_version",
+      status: "invalid",
+      allowed: false,
+      required: declared,
+      current: currentVersion,
+    };
   }
   if (/^[<>=~^]/.test(declared.trim()) || !parseComparableVersion(declared)) {
-    return { kind: "pm_max_version", status: "invalid", allowed: false, required: declared, current: currentVersion };
+    return {
+      kind: "pm_max_version",
+      status: "invalid",
+      allowed: false,
+      required: declared,
+      current: currentVersion,
+    };
   }
   if (currentVersion === null) {
-    return { kind: "pm_max_version", status: "unchecked", allowed: true, required: declared, current: null };
+    return {
+      kind: "pm_max_version",
+      status: "unchecked",
+      allowed: true,
+      required: declared,
+      current: null,
+    };
   }
   const comparison = compareComparableVersions(currentVersion, declared);
   if (comparison === null) {
-    return { kind: "pm_max_version", status: "unchecked", allowed: true, required: declared, current: currentVersion };
+    return {
+      kind: "pm_max_version",
+      status: "unchecked",
+      allowed: true,
+      required: declared,
+      current: currentVersion,
+    };
   }
   if (comparison > 0) {
     if (exceededMode === "warn") {
@@ -204,7 +278,19 @@ export function evaluatePmMaxVersionBound(
         current: currentVersion,
       };
     }
-    return { kind: "pm_max_version", status: "exceeded", allowed: false, required: declared, current: currentVersion };
+    return {
+      kind: "pm_max_version",
+      status: "exceeded",
+      allowed: false,
+      required: declared,
+      current: currentVersion,
+    };
   }
-  return { kind: "pm_max_version", status: "ok", allowed: true, required: declared, current: currentVersion };
+  return {
+    kind: "pm_max_version",
+    status: "ok",
+    allowed: true,
+    required: declared,
+    current: currentVersion,
+  };
 }

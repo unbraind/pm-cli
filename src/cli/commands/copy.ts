@@ -3,10 +3,20 @@
  *
  * Implements the pm copy command surface and its agent-facing runtime behavior.
  */
-import { pathExists, removeFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
-import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
+import {
+  pathExists,
+  removeFileIfExists,
+  writeFileAtomic,
+} from "../../core/fs/fs-utils.js";
+import {
+  appendHistoryEntry,
+  createHistoryEntry,
+} from "../../core/history/history.js";
 import { generateItemId } from "../../core/item/id.js";
-import { canonicalDocument, serializeItemDocument } from "../../core/item/item-format.js";
+import {
+  canonicalDocument,
+  serializeItemDocument,
+} from "../../core/item/item-format.js";
 import { acquireLock } from "../../core/lock/lock.js";
 import {
   getActiveExtensionRegistrations,
@@ -16,36 +26,54 @@ import {
 } from "../../core/extensions/index.js";
 import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
-import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../../core/shared/constants.js";
+import {
+  EXIT_CODE,
+  FRONT_MATTER_KEY_ORDER,
+} from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { nowIso } from "../../core/shared/time.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { buildItemNotFoundError, locateItem, readLocatedItem } from "../../core/store/item-store.js";
-import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import {
+  buildItemNotFoundError,
+  locateItem,
+  readLocatedItem,
+} from "../../core/store/item-store.js";
+import {
+  getHistoryPath,
+  getItemPath,
+  getSettingsPath,
+  resolvePmRoot,
+} from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemDocument, ItemMetadata } from "../../types/index.js";
 
-/**
- * Documents the copy options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the copy options payload exchanged by command, SDK, and package integrations. */
 export interface CopyOptions {
+  /** Value that configures or reports title for this contract. */
   title?: string;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
 }
 
-/**
- * Documents the copy result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the copy result payload exchanged by command, SDK, and package integrations. */
 export interface CopyResult {
+  /** Value that configures or reports source id for this contract. */
   source_id: string;
+  /** Value that configures or reports item for this contract. */
   item: ItemMetadata;
+  /** Value that configures or reports changed fields for this contract. */
   changed_fields: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
-function selectAuthor(explicitAuthor: string | undefined, settingsAuthor: string): string {
+function selectAuthor(
+  explicitAuthor: string | undefined,
+  settingsAuthor: string,
+): string {
   const candidate = explicitAuthor ?? process.env.PM_AUTHOR ?? settingsAuthor;
   const trimmed = candidate.trim();
   return trimmed.length > 0 ? trimmed : "unknown";
@@ -55,14 +83,19 @@ function buildChangedFields(frontMatter: ItemMetadata, body: string): string[] {
   const changed = [
     ...new Set([
       ...FRONT_MATTER_KEY_ORDER.filter((key) => frontMatter[key] !== undefined),
-      ...Object.keys(frontMatter).filter((key) => frontMatter[key] !== undefined),
+      ...Object.keys(frontMatter).filter(
+        (key) => frontMatter[key] !== undefined,
+      ),
       ...(body.length > 0 ? ["body"] : []),
     ]),
   ];
   return changed.sort((left, right) => left.localeCompare(right));
 }
 
-function buildCopyMessage(sourceId: string, message: string | undefined): string {
+function buildCopyMessage(
+  sourceId: string,
+  message: string | undefined,
+): string {
   const suffix = `copied_from=${sourceId}`;
   if (!message) {
     return suffix;
@@ -71,22 +104,43 @@ function buildCopyMessage(sourceId: string, message: string | undefined): string
   return trimmed.length > 0 ? `${trimmed} | ${suffix}` : suffix;
 }
 
-/**
- * Implements run copy for the public runtime surface of this module.
- */
-export async function runCopy(sourceId: string, options: CopyOptions, global: GlobalOptions): Promise<CopyResult> {
+/** Implements run copy for the public runtime surface of this module. */
+export async function runCopy(
+  sourceId: string,
+  options: CopyOptions,
+  global: GlobalOptions,
+): Promise<CopyResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const located = await locateItem(pmRoot, sourceId, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
+  const located = await locateItem(
+    pmRoot,
+    sourceId,
+    settings.id_prefix,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+  );
   if (!located) {
-    throw await buildItemNotFoundError(pmRoot, sourceId, settings.id_prefix, typeRegistry.type_to_folder);
+    throw await buildItemNotFoundError(
+      pmRoot,
+      sourceId,
+      settings.id_prefix,
+      typeRegistry.type_to_folder,
+    );
   }
-  const sourceLoaded = await readLocatedItem(located, { schema: settings.schema });
+  const sourceLoaded = await readLocatedItem(located, {
+    schema: settings.schema,
+  });
   const sourceMetadata = sourceLoaded.document.metadata;
   const copiedAt = nowIso();
   const author = selectAuthor(options.author, settings.author_default);
@@ -109,7 +163,9 @@ export async function runCopy(sourceId: string, options: CopyOptions, global: Gl
   delete copiedMetadata.close_reason;
   delete copiedMetadata.test_runs;
 
-  const extensionFieldNames = collectRegisteredItemFieldNames(getActiveExtensionRegistrations());
+  const extensionFieldNames = collectRegisteredItemFieldNames(
+    getActiveExtensionRegistrations(),
+  );
   const copiedDocument = canonicalDocument(
     {
       metadata: copiedMetadata,
@@ -120,8 +176,17 @@ export async function runCopy(sourceId: string, options: CopyOptions, global: Gl
       extensionFieldNames,
     },
   );
-  const changedFields = buildChangedFields(copiedDocument.metadata, copiedDocument.body);
-  const itemPath = getItemPath(pmRoot, copiedDocument.metadata.type, newId, settings.item_format, typeRegistry.type_to_folder);
+  const changedFields = buildChangedFields(
+    copiedDocument.metadata,
+    copiedDocument.body,
+  );
+  const itemPath = getItemPath(
+    pmRoot,
+    copiedDocument.metadata.type,
+    newId,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+  );
   const historyPath = getHistoryPath(pmRoot, newId);
   const lockRelease = await acquireLock(
     pmRoot,
@@ -189,7 +254,10 @@ export async function runCopy(sourceId: string, options: CopyOptions, global: Gl
       op: "create",
       item_type: copiedDocument.metadata.type,
       status: copiedDocument.metadata.status,
-      current: projectAfterCommandItemSnapshot(copiedDocument.metadata, changedFields),
+      current: projectAfterCommandItemSnapshot(
+        copiedDocument.metadata,
+        changedFields,
+      ),
       changed_fields: changedFields,
     });
   } finally {

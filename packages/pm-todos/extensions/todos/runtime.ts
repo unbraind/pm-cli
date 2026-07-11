@@ -1,3 +1,8 @@
+/**
+ * Runtime contracts and behavior for packages/pm todos/extensions/todos/runtime.
+ *
+ * @module packages/pm-todos/extensions/todos/runtime
+ */
 import fs from "node:fs/promises";
 import type { Dirent } from "node:fs";
 import path from "node:path";
@@ -21,35 +26,57 @@ const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 const CURRENT_RUNTIME_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_TODOS_FOLDER = ".pm/todos";
 
+/** Inputs that customize the todos import operation. */
 export interface TodosImportOptions {
+  /** Value that configures or reports folder for this contract. */
   folder?: string;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
 }
 
+/** Inputs that customize the todos export operation. */
 export interface TodosExportOptions {
+  /** Value that configures or reports folder for this contract. */
   folder?: string;
 }
 
+/** Structured result returned by the todos import operation. */
 export interface TodosImportResult {
+  /** Whether the operation completed without a blocking failure. */
   ok: boolean;
+  /** Value that configures or reports folder for this contract. */
   folder: string;
+  /** Value that configures or reports imported for this contract. */
   imported: number;
+  /** Value that configures or reports skipped for this contract. */
   skipped: number;
+  /** Value that configures or reports ids for this contract. */
   ids: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
+/** Structured result returned by the todos export operation. */
 export interface TodosExportResult {
+  /** Whether the operation completed without a blocking failure. */
   ok: boolean;
+  /** Value that configures or reports folder for this contract. */
   folder: string;
+  /** Value that configures or reports exported for this contract. */
   exported: number;
+  /** Value that configures or reports ids for this contract. */
   ids: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
 type PriorityValue = 0 | 1 | 2 | 3 | 4;
-type ConfidenceTextValue = Extract<NonNullable<ItemMetadata["confidence"]>, string>;
+type ConfidenceTextValue = Extract<
+  NonNullable<ItemMetadata["confidence"]>,
+  string
+>;
 
 interface ParsedTodoCandidate {
   entryName: string;
@@ -68,7 +95,9 @@ interface TodosImportRuntime {
   message: string;
 }
 
-type ImportCandidateResult = { id: string; writeWarnings: string[] } | { warning: string };
+type ImportCandidateResult =
+  | { id: string; writeWarnings: string[] }
+  | { warning: string };
 
 interface ActiveExtensionRegistrations {
   types?: unknown;
@@ -89,7 +118,9 @@ interface TodosSdkModule {
   PmCliError: new (message: string, exitCode?: number) => Error;
   RISK_VALUES: readonly string[];
   canonicalDocument: (document: ItemDocument) => ItemDocument;
-  commitImportedItem: (params: CommitImportedItemParams) => Promise<CommitImportedItemResult>;
+  commitImportedItem: (
+    params: CommitImportedItemParams,
+  ) => Promise<CommitImportedItemResult>;
   ensureTrackerInitialized: (pmRoot: string) => Promise<void>;
   generateItemId: (pmRoot: string, prefix: string) => Promise<string>;
   getActiveExtensionRegistrations: () => ActiveExtensionRegistrations | null;
@@ -122,23 +153,47 @@ interface TodosSdkModule {
     registrations: ActiveExtensionRegistrations | null,
   ) => ItemTypeRegistry;
   resolvePmRoot: (cwd: string, overridePath?: string) => string;
-  runActiveOnReadHooks: (context: { path: string; scope: "project" | "global" }) => Promise<string[]>;
+  runActiveOnReadHooks: (context: {
+    path: string;
+    scope: "project" | "global";
+  }) => Promise<string[]>;
   runActiveOnWriteHooks: (context: {
     path: string;
     scope: "project" | "global";
     op: string;
   }) => Promise<string[]>;
-  selectImportAuthor: (explicitAuthor: string | undefined, settingsAuthor: string) => string;
+  selectImportAuthor: (
+    explicitAuthor: string | undefined,
+    settingsAuthor: string,
+  ) => string;
   splitFrontMatter: (content: string) => { frontMatter: string; body: string };
   toEstimatedMinutesValue: (value: unknown) => number | undefined;
   toImportBoolean: (value: unknown) => boolean | undefined;
-  toImportConfidence: (value: unknown, allowedTextValues: readonly string[]) => ItemMetadata["confidence"];
+  toImportConfidence: (
+    value: unknown,
+    allowedTextValues: readonly string[],
+  ) => ItemMetadata["confidence"];
   toImportInteger: (value: unknown) => number | undefined;
-  toImportLinkedDocs: (value: unknown, options?: ToImportLinkedArtifactsOptions) => ItemMetadata["docs"];
-  toImportLinkedFiles: (value: unknown, options?: ToImportLinkedArtifactsOptions) => ItemMetadata["files"];
-  toImportLinkedTests: (value: unknown, options?: ToImportLinkedTestsOptions) => ItemMetadata["tests"];
-  toImportLogEntries: (value: unknown, options: ToImportLogEntriesOptions) => ItemMetadata["comments"];
-  toImportNormalizedEnum: <T extends readonly string[]>(value: unknown, allowed: T) => T[number] | undefined;
+  toImportLinkedDocs: (
+    value: unknown,
+    options?: ToImportLinkedArtifactsOptions,
+  ) => ItemMetadata["docs"];
+  toImportLinkedFiles: (
+    value: unknown,
+    options?: ToImportLinkedArtifactsOptions,
+  ) => ItemMetadata["files"];
+  toImportLinkedTests: (
+    value: unknown,
+    options?: ToImportLinkedTestsOptions,
+  ) => ItemMetadata["tests"];
+  toImportLogEntries: (
+    value: unknown,
+    options: ToImportLogEntriesOptions,
+  ) => ItemMetadata["comments"];
+  toImportNormalizedEnum: <T extends readonly string[]>(
+    value: unknown,
+    allowed: T,
+  ) => T[number] | undefined;
   toImportPriority: (value: unknown) => 0 | 1 | 2 | 3 | 4;
   toImportStatus: (value: unknown) => ItemStatus;
   toImportTags: (value: unknown) => string[];
@@ -192,8 +247,11 @@ const TODOS_SDK_FUNCTION_EXPORTS = [
 
 function resolveTodosSdkModulePath(): string {
   const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
-  const hasConfiguredPackageRoot = typeof envRoot === "string" && envRoot.trim().length > 0;
-  const packageRoot = hasConfiguredPackageRoot ? path.resolve(envRoot.trim()) : path.resolve(CURRENT_RUNTIME_ROOT, "../../../..");
+  const hasConfiguredPackageRoot =
+    typeof envRoot === "string" && envRoot.trim().length > 0;
+  const packageRoot = hasConfiguredPackageRoot
+    ? path.resolve(envRoot.trim())
+    : path.resolve(CURRENT_RUNTIME_ROOT, "../../../..");
   return hasConfiguredPackageRoot
     ? path.join(packageRoot, "dist", "sdk", "index.js")
     : path.join(packageRoot, "src", "sdk", "index.ts");
@@ -204,7 +262,9 @@ function hasTodosSdkArrayExports(loaded: Partial<TodosSdkModule>): boolean {
 }
 
 function hasTodosSdkFunctionExports(loaded: Partial<TodosSdkModule>): boolean {
-  return TODOS_SDK_FUNCTION_EXPORTS.every((key) => typeof loaded[key] === "function");
+  return TODOS_SDK_FUNCTION_EXPORTS.every(
+    (key) => typeof loaded[key] === "function",
+  );
 }
 
 function hasTodosSdkExitCodeExports(loaded: Partial<TodosSdkModule>): boolean {
@@ -215,21 +275,34 @@ function hasTodosSdkExitCodeExports(loaded: Partial<TodosSdkModule>): boolean {
   );
 }
 
-function isTodosSdkModule(loaded: Partial<TodosSdkModule>): loaded is TodosSdkModule {
-  return hasTodosSdkArrayExports(loaded) && hasTodosSdkFunctionExports(loaded) && hasTodosSdkExitCodeExports(loaded);
+function isTodosSdkModule(
+  loaded: Partial<TodosSdkModule>,
+): loaded is TodosSdkModule {
+  return (
+    hasTodosSdkArrayExports(loaded) &&
+    hasTodosSdkFunctionExports(loaded) &&
+    hasTodosSdkExitCodeExports(loaded)
+  );
 }
 
 async function loadTodosSdkModule(): Promise<TodosSdkModule> {
   const modulePath = resolveTodosSdkModulePath();
   try {
-    const loaded = (await import(pathToFileURL(modulePath).href)) as Partial<TodosSdkModule>;
+    const loaded = (await import(
+      pathToFileURL(modulePath).href
+    )) as Partial<TodosSdkModule>;
     if (isTodosSdkModule(loaded)) {
       return loaded;
     }
   } catch (error: unknown) {
-    throw new Error(`builtin-todos failed to load SDK exports from ${modulePath}.`, { cause: error });
+    throw new Error(
+      `builtin-todos failed to load SDK exports from ${modulePath}.`,
+      { cause: error },
+    );
   }
-  throw new Error(`builtin-todos failed to load SDK exports from ${modulePath}.`);
+  throw new Error(
+    `builtin-todos failed to load SDK exports from ${modulePath}.`,
+  );
 }
 
 const {
@@ -314,7 +387,10 @@ const TODOS_TEST_OPTIONS = {
   timeoutExclusiveMinimum: true,
 } satisfies ToImportLinkedTestsOptions;
 
-function toDependencyEntries(value: unknown, fallbackCreatedAt: string): ItemMetadata["dependencies"] {
+function toDependencyEntries(
+  value: unknown,
+  fallbackCreatedAt: string,
+): ItemMetadata["dependencies"] {
   if (!Array.isArray(value)) {
     return undefined;
   }
@@ -329,7 +405,10 @@ function toDependencyEntries(value: unknown, fallbackCreatedAt: string): ItemMet
     }
     const normalizedKind = toNonEmptyString(entry.kind)?.toLowerCase();
     const kind =
-      normalizedKind && DEPENDENCY_KIND_VALUES.includes(normalizedKind as (typeof DEPENDENCY_KIND_VALUES)[number])
+      normalizedKind &&
+      DEPENDENCY_KIND_VALUES.includes(
+        normalizedKind as (typeof DEPENDENCY_KIND_VALUES)[number],
+      )
         ? (normalizedKind as (typeof DEPENDENCY_KIND_VALUES)[number])
         : "related";
     dependencies.push({
@@ -345,7 +424,10 @@ function toDependencyEntries(value: unknown, fallbackCreatedAt: string): ItemMet
 
 function toItemType(value: unknown, typeNames: string[]): ItemType {
   const normalized = toNonEmptyString(value)?.toLowerCase();
-  const fallbackType = typeNames.find((entry) => entry.toLowerCase() === "task") ?? typeNames[0] ?? "Task";
+  const fallbackType =
+    typeNames.find((entry) => entry.toLowerCase() === "task") ??
+    typeNames[0] ??
+    "Task";
   if (!normalized) {
     return fallbackType;
   }
@@ -366,10 +448,15 @@ function normalizeBody(body: string): string {
 }
 
 function resolveFolderPath(rawPath: string): string {
-  return path.isAbsolute(rawPath) ? rawPath : path.resolve(process.cwd(), rawPath);
+  return path.isAbsolute(rawPath)
+    ? rawPath
+    : path.resolve(process.cwd(), rawPath);
 }
 
-function parseTodoMarkdown(content: string): { frontMatter: Record<string, unknown>; body: string } {
+function parseTodoMarkdown(content: string): {
+  frontMatter: Record<string, unknown>;
+  body: string;
+} {
   const split = splitFrontMatter(content);
   if (split.frontMatter.length === 0) {
     throw new TypeError("Missing JSON front matter");
@@ -389,7 +476,10 @@ function parseTodoMarkdown(content: string): { frontMatter: Record<string, unkno
   };
 }
 
-async function readTodoCandidate(sourceFolder: string, entry: Dirent): Promise<ParsedTodoCandidate | { warning: string }> {
+async function readTodoCandidate(
+  sourceFolder: string,
+  entry: Dirent,
+): Promise<ParsedTodoCandidate | { warning: string }> {
   const sourcePath = path.join(sourceFolder, entry.name);
   let raw: string;
   try {
@@ -417,16 +507,23 @@ async function readTodoCandidate(sourceFolder: string, entry: Dirent): Promise<P
   };
 }
 
-async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: TodosImportRuntime): Promise<ImportCandidateResult> {
+async function importTodoCandidate(
+  candidate: ParsedTodoCandidate,
+  runtime: TodosImportRuntime,
+): Promise<ImportCandidateResult> {
   const title = toNonEmptyString(candidate.frontMatter.title);
   if (!title) {
     return { warning: `todos_import_missing_title:${candidate.entryName}` };
   }
 
   const explicitId = toNonEmptyString(candidate.frontMatter.id);
-  const derivedId = path.basename(candidate.entryName, path.extname(candidate.entryName));
+  const derivedId = path.basename(
+    candidate.entryName,
+    path.extname(candidate.entryName),
+  );
   // Hidden filenames (for example `.md`) do not provide stable human ids.
-  const idSource = explicitId ?? (derivedId.startsWith(".") ? undefined : derivedId);
+  const idSource =
+    explicitId ?? (derivedId.startsWith(".") ? undefined : derivedId);
   const id = idSource
     ? normalizeItemId(idSource, runtime.settings.id_prefix)
     : await generateItemId(runtime.pmRoot, runtime.settings.id_prefix);
@@ -443,7 +540,13 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
   if (located) {
     return { warning: `todos_import_item_exists:${id}` };
   }
-  const itemPath = getItemPath(runtime.pmRoot, type, id, "toon", runtime.typeToFolder);
+  const itemPath = getItemPath(
+    runtime.pmRoot,
+    type,
+    id,
+    "toon",
+    runtime.typeToFolder,
+  );
 
   const afterDocument = canonicalDocument({
     metadata: normalizeFrontMatter({
@@ -453,16 +556,25 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
       type,
       status: toStatus(candidate.frontMatter.status),
       priority: toPriority(candidate.frontMatter.priority),
-      confidence: toImportConfidence(candidate.frontMatter.confidence, CONFIDENCE_TEXT_VALUES),
+      confidence: toImportConfidence(
+        candidate.frontMatter.confidence,
+        CONFIDENCE_TEXT_VALUES,
+      ),
       tags: toTags(candidate.frontMatter.tags),
       created_at: createdAt,
       updated_at: updatedAt,
       deadline: toIsoString(candidate.frontMatter.deadline),
       assignee: toNonEmptyString(candidate.frontMatter.assignee),
       author: toNonEmptyString(candidate.frontMatter.author) ?? runtime.author,
-      estimated_minutes: toEstimatedMinutes(candidate.frontMatter.estimated_minutes),
-      acceptance_criteria: toNonEmptyString(candidate.frontMatter.acceptance_criteria),
-      definition_of_ready: toNonEmptyString(candidate.frontMatter.definition_of_ready),
+      estimated_minutes: toEstimatedMinutes(
+        candidate.frontMatter.estimated_minutes,
+      ),
+      acceptance_criteria: toNonEmptyString(
+        candidate.frontMatter.acceptance_criteria,
+      ),
+      definition_of_ready: toNonEmptyString(
+        candidate.frontMatter.definition_of_ready,
+      ),
       order: toInteger(candidate.frontMatter.order),
       goal: toNonEmptyString(candidate.frontMatter.goal),
       objective: toNonEmptyString(candidate.frontMatter.objective),
@@ -479,19 +591,27 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
       blocked_reason: toNonEmptyString(candidate.frontMatter.blocked_reason),
       unblock_note: toNonEmptyString(candidate.frontMatter.unblock_note),
       reporter: toNonEmptyString(candidate.frontMatter.reporter),
-      severity: toImportNormalizedEnum(candidate.frontMatter.severity, ISSUE_SEVERITY_VALUES),
+      severity: toImportNormalizedEnum(
+        candidate.frontMatter.severity,
+        ISSUE_SEVERITY_VALUES,
+      ),
       environment: toNonEmptyString(candidate.frontMatter.environment),
       repro_steps: toNonEmptyString(candidate.frontMatter.repro_steps),
       resolution: toNonEmptyString(candidate.frontMatter.resolution),
       expected_result: toNonEmptyString(candidate.frontMatter.expected_result),
       actual_result: toNonEmptyString(candidate.frontMatter.actual_result),
-      affected_version: toNonEmptyString(candidate.frontMatter.affected_version),
+      affected_version: toNonEmptyString(
+        candidate.frontMatter.affected_version,
+      ),
       fixed_version: toNonEmptyString(candidate.frontMatter.fixed_version),
       component: toNonEmptyString(candidate.frontMatter.component),
       regression: toImportBoolean(candidate.frontMatter.regression),
       customer_impact: toNonEmptyString(candidate.frontMatter.customer_impact),
       close_reason: toNonEmptyString(candidate.frontMatter.close_reason),
-      dependencies: toDependencyEntries(candidate.frontMatter.dependencies, createdAt),
+      dependencies: toDependencyEntries(
+        candidate.frontMatter.dependencies,
+        createdAt,
+      ),
       comments: toImportLogEntries(candidate.frontMatter.comments, {
         ...TODOS_LOG_ENTRY_OPTIONS,
         fallbackCreatedAt: createdAt,
@@ -509,7 +629,10 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
       }),
       files: toImportLinkedFiles(candidate.frontMatter.files),
       docs: toImportLinkedDocs(candidate.frontMatter.docs),
-      tests: toImportLinkedTests(candidate.frontMatter.tests, TODOS_TEST_OPTIONS),
+      tests: toImportLinkedTests(
+        candidate.frontMatter.tests,
+        TODOS_TEST_OPTIONS,
+      ),
     } as ItemMetadata),
     body: candidate.body,
   });
@@ -531,12 +654,19 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
   return { id, writeWarnings: commit.writeWarnings };
 }
 
-export async function runTodosImport(options: TodosImportOptions, global: GlobalOptions): Promise<TodosImportResult> {
+/** Executes the todos import operation through the package runtime. */
+export async function runTodosImport(
+  options: TodosImportOptions,
+  global: GlobalOptions,
+): Promise<TodosImportResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureInitHasRun(pmRoot);
 
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
   const folder = toNonEmptyString(options.folder) ?? DEFAULT_TODOS_FOLDER;
   const sourceFolder = resolveFolderPath(folder);
 
@@ -550,8 +680,12 @@ export async function runTodosImport(options: TodosImportOptions, global: Global
     );
   }
 
-  const author = selectAuthor(toNonEmptyString(options.author), settings.author_default);
-  const message = toNonEmptyString(options.message) ?? "Import from todos markdown";
+  const author = selectAuthor(
+    toNonEmptyString(options.author),
+    settings.author_default,
+  );
+  const message =
+    toNonEmptyString(options.message) ?? "Import from todos markdown";
   const warnings: string[] = [
     ...(await runActiveOnReadHooks({
       path: sourceFolder,
@@ -563,7 +697,9 @@ export async function runTodosImport(options: TodosImportOptions, global: Global
   let skipped = 0;
 
   const markdownFiles = entries
-    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".md"))
+    .filter(
+      (entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".md"),
+    )
     .sort((left, right) => left.name.localeCompare(right.name));
 
   const runtime: TodosImportRuntime = {
@@ -607,12 +743,19 @@ export async function runTodosImport(options: TodosImportOptions, global: Global
   };
 }
 
-export async function runTodosExport(options: TodosExportOptions, global: GlobalOptions): Promise<TodosExportResult> {
+/** Executes the todos export operation through the package runtime. */
+export async function runTodosExport(
+  options: TodosExportOptions,
+  global: GlobalOptions,
+): Promise<TodosExportResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureInitHasRun(pmRoot);
 
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
   const folder = toNonEmptyString(options.folder) ?? DEFAULT_TODOS_FOLDER;
   const destinationFolder = resolveFolderPath(folder);
   await fs.mkdir(destinationFolder, { recursive: true });
@@ -620,11 +763,23 @@ export async function runTodosExport(options: TodosExportOptions, global: Global
   const warnings: string[] = [];
   const ids: string[] = [];
   let exported = 0;
-  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
-  const sorted = [...items].sort((left, right) => left.id.localeCompare(right.id));
+  const items = await listAllFrontMatter(
+    pmRoot,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+  );
+  const sorted = [...items].sort((left, right) =>
+    left.id.localeCompare(right.id),
+  );
 
   for (const item of sorted) {
-    const located = await locateItem(pmRoot, item.id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+    const located = await locateItem(
+      pmRoot,
+      item.id,
+      settings.id_prefix,
+      settings.item_format,
+      typeRegistry.type_to_folder,
+    );
     if (!located) {
       warnings.push(`todos_export_missing_item:${item.id}`);
       continue;
@@ -635,8 +790,12 @@ export async function runTodosExport(options: TodosExportOptions, global: Global
       const todoFrontMatter: Record<string, unknown> = { ...document.metadata };
       const frontMatter = JSON.stringify(todoFrontMatter, null, 2);
       const body = normalizeBody(document.body);
-      const serialized = body.length > 0 ? `${frontMatter}\n\n${body}\n` : `${frontMatter}\n`;
-      const exportPath = path.join(destinationFolder, `${document.metadata.id}.md`);
+      const serialized =
+        body.length > 0 ? `${frontMatter}\n\n${body}\n` : `${frontMatter}\n`;
+      const exportPath = path.join(
+        destinationFolder,
+        `${document.metadata.id}.md`,
+      );
       await writeFileAtomic(exportPath, serialized);
       warnings.push(
         ...(await runActiveOnWriteHooks({

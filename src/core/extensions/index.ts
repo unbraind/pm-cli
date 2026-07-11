@@ -64,96 +64,88 @@ const AFTER_COMMAND_SNAPSHOT_OMITTED_FIELDS = new Set([
   "tests",
 ]);
 
-/**
- * Implements set active extension hooks for the public runtime surface of this module.
- */
-export function setActiveExtensionHooks(hooks: ExtensionHookRegistry | null): void {
+/** Implements set active extension hooks for the public runtime surface of this module. */
+export function setActiveExtensionHooks(
+  hooks: ExtensionHookRegistry | null,
+): void {
   activeExtensionHooks = hooks;
 }
 
-/**
- * Implements set active extension commands for the public runtime surface of this module.
- */
-export function setActiveExtensionCommands(commands: ExtensionCommandRegistry | null): void {
+/** Implements set active extension commands for the public runtime surface of this module. */
+export function setActiveExtensionCommands(
+  commands: ExtensionCommandRegistry | null,
+): void {
   activeExtensionCommands = commands;
 }
 
-/**
- * Implements set active extension parsers for the public runtime surface of this module.
- */
-export function setActiveExtensionParsers(parsers: ExtensionParserRegistry | null): void {
+/** Implements set active extension parsers for the public runtime surface of this module. */
+export function setActiveExtensionParsers(
+  parsers: ExtensionParserRegistry | null,
+): void {
   activeExtensionParsers = parsers;
 }
 
-/**
- * Implements set active extension preflight for the public runtime surface of this module.
- */
-export function setActiveExtensionPreflight(preflight: ExtensionPreflightRegistry | null): void {
+/** Implements set active extension preflight for the public runtime surface of this module. */
+export function setActiveExtensionPreflight(
+  preflight: ExtensionPreflightRegistry | null,
+): void {
   activeExtensionPreflight = preflight;
 }
 
-/**
- * Implements set active extension services for the public runtime surface of this module.
- */
-export function setActiveExtensionServices(services: ExtensionServiceRegistry | null): void {
+/** Implements set active extension services for the public runtime surface of this module. */
+export function setActiveExtensionServices(
+  services: ExtensionServiceRegistry | null,
+): void {
   activeExtensionServices = services;
 }
 
-/**
- * Implements set active extension renderers for the public runtime surface of this module.
- */
-export function setActiveExtensionRenderers(renderers: ExtensionRendererRegistry | null): void {
+/** Implements set active extension renderers for the public runtime surface of this module. */
+export function setActiveExtensionRenderers(
+  renderers: ExtensionRendererRegistry | null,
+): void {
   activeExtensionRenderers = renderers;
 }
 
-/**
- * Implements set active extension registrations for the public runtime surface of this module.
- */
-export function setActiveExtensionRegistrations(registrations: ExtensionRegistrationRegistry | null): void {
+/** Implements set active extension registrations for the public runtime surface of this module. */
+export function setActiveExtensionRegistrations(
+  registrations: ExtensionRegistrationRegistry | null,
+): void {
   activeExtensionRegistrations = registrations;
 }
 
-/**
- * Implements get active extension registrations for the public runtime surface of this module.
- */
+/** Implements get active extension registrations for the public runtime surface of this module. */
 export function getActiveExtensionRegistrations(): ExtensionRegistrationRegistry | null {
   return activeExtensionRegistrations;
 }
 
-/**
- * Implements set active command context for the public runtime surface of this module.
- */
-export function setActiveCommandContext(context: Omit<CommandOverrideContext, "result"> | null): void {
+/** Implements set active command context for the public runtime surface of this module. */
+export function setActiveCommandContext(
+  context: Omit<CommandOverrideContext, "result"> | null,
+): void {
   activeCommandContext = context;
 }
 
-/**
- * Implements set active command result for the public runtime surface of this module.
- */
+/** Implements set active command result for the public runtime surface of this module. */
 export function setActiveCommandResult(result: unknown): void {
   activeCommandResult = result;
 }
 
-/**
- * Implements get active command result for the public runtime surface of this module.
- */
+/** Implements get active command result for the public runtime surface of this module. */
 export function getActiveCommandResult(): unknown {
   return activeCommandResult;
 }
 
-/**
- * Implements record after command affected item for the public runtime surface of this module.
- */
-export function recordAfterCommandAffectedItem(item: AfterCommandAffectedItem): void {
+/** Implements record after command affected item for the public runtime surface of this module. */
+export function recordAfterCommandAffectedItem(
+  item: AfterCommandAffectedItem,
+): void {
   if (!item || (activeExtensionHooks?.afterCommand?.length ?? 0) === 0) {
     return;
   }
   activeAfterCommandAffectedItems.push(item);
 }
 
-/**
- * Implements project after command item snapshot for the public runtime surface of this module.
- */
+/** Implements project after command item snapshot for the public runtime surface of this module. */
 export function projectAfterCommandItemSnapshot(
   metadata: ItemFrontMatter,
   changedFields: readonly string[],
@@ -174,7 +166,9 @@ export function projectAfterCommandItemSnapshot(
     if (typeof field !== "string") {
       continue;
     }
-    const actualField = field.startsWith("unset:") ? field.slice("unset:".length) : field;
+    const actualField = field.startsWith("unset:")
+      ? field.slice("unset:".length)
+      : field;
     if (
       actualField === "id" ||
       actualField === "type" ||
@@ -183,17 +177,20 @@ export function projectAfterCommandItemSnapshot(
     ) {
       continue;
     }
-    if (Object.hasOwn(source, actualField) && source[actualField] !== undefined) {
+    if (
+      Object.hasOwn(source, actualField) &&
+      source[actualField] !== undefined
+    ) {
       snapshot[actualField] = source[actualField];
     }
   }
   return snapshot as Partial<ItemFrontMatter>;
 }
 
-/**
- * Implements consume after command affected items for the public runtime surface of this module.
- */
-export function consumeAfterCommandAffectedItems(): AfterCommandAffectedItem[] | undefined {
+/** Implements consume after command affected items for the public runtime surface of this module. */
+export function consumeAfterCommandAffectedItems():
+  | AfterCommandAffectedItem[]
+  | undefined {
   if (activeAfterCommandAffectedItems.length === 0) {
     return undefined;
   }
@@ -202,9 +199,7 @@ export function consumeAfterCommandAffectedItems(): AfterCommandAffectedItem[] |
   return affected;
 }
 
-/**
- * Implements clear active extension hooks for the public runtime surface of this module.
- */
+/** Implements clear active extension hooks for the public runtime surface of this module. */
 export function clearActiveExtensionHooks(): void {
   activeExtensionHooks = null;
   activeExtensionCommands = null;
@@ -218,50 +213,45 @@ export function clearActiveExtensionHooks(): void {
   activeAfterCommandAffectedItems = [];
 }
 
-/**
- * Implements run active on write hooks for the public runtime surface of this module.
- */
-export async function runActiveOnWriteHooks(context: OnWriteHookContext): Promise<string[]> {
+/** Implements run active on write hooks for the public runtime surface of this module. */
+export async function runActiveOnWriteHooks(
+  context: OnWriteHookContext,
+): Promise<string[]> {
   if (!activeExtensionHooks) {
     return [];
   }
   return runOnWriteHooks(activeExtensionHooks, context);
 }
 
-/**
- * Implements run active on read hooks for the public runtime surface of this module.
- */
-export async function runActiveOnReadHooks(context: OnReadHookContext): Promise<string[]> {
+/** Implements run active on read hooks for the public runtime surface of this module. */
+export async function runActiveOnReadHooks(
+  context: OnReadHookContext,
+): Promise<string[]> {
   if (!activeExtensionHooks) {
     return [];
   }
   return runOnReadHooks(activeExtensionHooks, context);
 }
 
-/**
- * Synchronous fast-path predicate: true only when at least one onRead hook is
- * registered. Bulk readers (e.g. the metadata cache scanning hundreds of files)
- * use this to skip per-file `await runActiveOnReadHooks(...)` calls entirely when
- * no extension observes reads, avoiding hundreds of needless microtasks.
- */
+/** Synchronous fast-path predicate: true only when at least one onRead hook is registered. Bulk readers (e.g. the metadata cache scanning hundreds of files) use this to skip per-file `await runActiveOnReadHooks(...)` calls entirely when no extension observes reads, avoiding hundreds of needless microtasks. */
 export function hasActiveOnReadHooks(): boolean {
   return (activeExtensionHooks?.onRead?.length ?? 0) > 0;
 }
 
-/**
- * Implements run active on index hooks for the public runtime surface of this module.
- */
-export async function runActiveOnIndexHooks(context: OnIndexHookContext): Promise<string[]> {
+/** Implements run active on index hooks for the public runtime surface of this module. */
+export async function runActiveOnIndexHooks(
+  context: OnIndexHookContext,
+): Promise<string[]> {
   if (!activeExtensionHooks) {
     return [];
   }
   return runOnIndexHooks(activeExtensionHooks, context);
 }
 
-/**
- * Implements run active command override for the public runtime surface of this module.
- */
-export function runActiveCommandOverride(result: unknown): CommandOverrideResult {
+/** Implements run active command override for the public runtime surface of this module. */
+export function runActiveCommandOverride(
+  result: unknown,
+): CommandOverrideResult {
   if (!activeExtensionCommands || !activeCommandContext) {
     return {
       overridden: false,
@@ -272,17 +262,21 @@ export function runActiveCommandOverride(result: unknown): CommandOverrideResult
   return runCommandOverride(activeExtensionCommands, {
     command: activeCommandContext.command,
     args: [...activeCommandContext.args],
-    options: activeCommandContext.options ? { ...activeCommandContext.options } : {},
-    global: activeCommandContext.global ? { ...activeCommandContext.global } : undefined,
+    options: activeCommandContext.options
+      ? { ...activeCommandContext.options }
+      : {},
+    global: activeCommandContext.global
+      ? { ...activeCommandContext.global }
+      : undefined,
     pm_root: activeCommandContext.pm_root,
     result,
   });
 }
 
-/**
- * Implements run active command handler for the public runtime surface of this module.
- */
-export async function runActiveCommandHandler(context: CommandHandlerContext): Promise<CommandHandlerResult> {
+/** Implements run active command handler for the public runtime surface of this module. */
+export async function runActiveCommandHandler(
+  context: CommandHandlerContext,
+): Promise<CommandHandlerResult> {
   if (!activeExtensionCommands) {
     return {
       handled: false,
@@ -293,10 +287,10 @@ export async function runActiveCommandHandler(context: CommandHandlerContext): P
   return runCommandHandler(activeExtensionCommands, context);
 }
 
-/**
- * Implements run active parser override for the public runtime surface of this module.
- */
-export async function runActiveParserOverride(context: ParserOverrideContext): Promise<ParserOverrideResult> {
+/** Implements run active parser override for the public runtime surface of this module. */
+export async function runActiveParserOverride(
+  context: ParserOverrideContext,
+): Promise<ParserOverrideResult> {
   if (!activeExtensionParsers) {
     return {
       overridden: false,
@@ -313,10 +307,10 @@ export async function runActiveParserOverride(context: ParserOverrideContext): P
   return runParserOverride(activeExtensionParsers, context);
 }
 
-/**
- * Implements run active preflight override for the public runtime surface of this module.
- */
-export async function runActivePreflightOverride(context: PreflightOverrideContext): Promise<PreflightOverrideResult> {
+/** Implements run active preflight override for the public runtime surface of this module. */
+export async function runActivePreflightOverride(
+  context: PreflightOverrideContext,
+): Promise<PreflightOverrideResult> {
   if (!activeExtensionPreflight) {
     return {
       overridden: false,
@@ -334,10 +328,11 @@ export async function runActivePreflightOverride(context: PreflightOverrideConte
   return runPreflightOverride(activeExtensionPreflight, context);
 }
 
-/**
- * Implements run active renderer override for the public runtime surface of this module.
- */
-export function runActiveRendererOverride(format: OutputRendererFormat, result: unknown): RendererOverrideResult {
+/** Implements run active renderer override for the public runtime surface of this module. */
+export function runActiveRendererOverride(
+  format: OutputRendererFormat,
+  result: unknown,
+): RendererOverrideResult {
   if (!activeExtensionRenderers) {
     return {
       overridden: false,
@@ -349,8 +344,12 @@ export function runActiveRendererOverride(format: OutputRendererFormat, result: 
     format,
     command: activeCommandContext?.command,
     args: activeCommandContext ? [...activeCommandContext.args] : [],
-    options: activeCommandContext?.options ? { ...activeCommandContext.options } : {},
-    global: activeCommandContext?.global ? { ...activeCommandContext.global } : undefined,
+    options: activeCommandContext?.options
+      ? { ...activeCommandContext.options }
+      : {},
+    global: activeCommandContext?.global
+      ? { ...activeCommandContext.global }
+      : undefined,
     pm_root: activeCommandContext?.pm_root,
     result,
   });
@@ -361,16 +360,18 @@ function buildServiceContext(service: ExtensionServiceName, payload: unknown) {
     service,
     command: activeCommandContext?.command,
     args: activeCommandContext ? [...activeCommandContext.args] : [],
-    options: activeCommandContext?.options ? { ...activeCommandContext.options } : {},
-    global: activeCommandContext?.global ? { ...activeCommandContext.global } : undefined,
+    options: activeCommandContext?.options
+      ? { ...activeCommandContext.options }
+      : {},
+    global: activeCommandContext?.global
+      ? { ...activeCommandContext.global }
+      : undefined,
     pm_root: activeCommandContext?.pm_root,
     payload,
   };
 }
 
-/**
- * Implements run active service override for the public runtime surface of this module.
- */
+/** Implements run active service override for the public runtime surface of this module. */
 export async function runActiveServiceOverride(
   service: ExtensionServiceName,
   payload: unknown,
@@ -382,13 +383,17 @@ export async function runActiveServiceOverride(
       warnings: [],
     };
   }
-  return runServiceOverride(activeExtensionServices, buildServiceContext(service, payload));
+  return runServiceOverride(
+    activeExtensionServices,
+    buildServiceContext(service, payload),
+  );
 }
 
-/**
- * Implements run active service override sync for the public runtime surface of this module.
- */
-export function runActiveServiceOverrideSync(service: ExtensionServiceName, payload: unknown): ServiceOverrideResult {
+/** Implements run active service override sync for the public runtime surface of this module. */
+export function runActiveServiceOverrideSync(
+  service: ExtensionServiceName,
+  payload: unknown,
+): ServiceOverrideResult {
   if (!activeExtensionServices) {
     return {
       handled: false,
@@ -396,7 +401,10 @@ export function runActiveServiceOverrideSync(service: ExtensionServiceName, payl
       warnings: [],
     };
   }
-  return runServiceOverrideSync(activeExtensionServices, buildServiceContext(service, payload));
+  return runServiceOverrideSync(
+    activeExtensionServices,
+    buildServiceContext(service, payload),
+  );
 }
 
 export * from "./loader.js";

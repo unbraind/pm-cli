@@ -1,3 +1,8 @@
+/**
+ * Runtime contracts and behavior for packages/pm beads/extensions/beads/runtime.
+ *
+ * @module packages/pm-beads/extensions/beads/runtime
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -28,19 +33,31 @@ const UNSAFE_AUTO_DISCOVERY_FILES = [
   "sync_base.jsonl",
 ] as const;
 
+/** Inputs that customize the beads import operation. */
 export interface BeadsImportOptions {
+  /** Value that configures or reports file for this contract. */
   file?: string;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Value that configures or reports preserve source ids for this contract. */
   preserveSourceIds?: boolean;
 }
 
+/** Structured result returned by the beads import operation. */
 export interface BeadsImportResult {
+  /** Whether the operation completed without a blocking failure. */
   ok: boolean;
+  /** Value that configures or reports source for this contract. */
   source: string;
+  /** Value that configures or reports imported for this contract. */
   imported: number;
+  /** Value that configures or reports skipped for this contract. */
   skipped: number;
+  /** Value that configures or reports ids for this contract. */
   ids: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
@@ -97,7 +114,9 @@ interface BeadsImportRuntime {
   message: string;
 }
 
-type BeadsImportLineResult = { id: string; writeWarnings: string[] } | { warning: string };
+type BeadsImportLineResult =
+  | { id: string; writeWarnings: string[] }
+  | { warning: string };
 type ParsedBeadsLine = { record: BeadsRecord } | { warning: string } | null;
 
 interface BeadsSdkModule {
@@ -108,7 +127,9 @@ interface BeadsSdkModule {
   };
   PmCliError: new (message: string, exitCode?: number) => Error;
   canonicalDocument: (document: ItemDocument) => ItemDocument;
-  commitImportedItem: (params: CommitImportedItemParams) => Promise<CommitImportedItemResult>;
+  commitImportedItem: (
+    params: CommitImportedItemParams,
+  ) => Promise<CommitImportedItemResult>;
   ensureTrackerInitialized: (pmRoot: string) => Promise<void>;
   generateItemId: (pmRoot: string, prefix: string) => Promise<string>;
   getActiveExtensionRegistrations: () => ActiveExtensionRegistrations | null;
@@ -138,13 +159,31 @@ interface BeadsSdkModule {
     registrations: ActiveExtensionRegistrations | null,
   ) => ItemTypeRegistry;
   resolvePmRoot: (cwd: string, overridePath?: string) => string;
-  runActiveOnReadHooks: (context: { path: string; scope: "project" | "global" }) => Promise<string[]>;
-  selectImportAuthor: (explicitAuthor: string | undefined, settingsAuthor: string) => string;
+  runActiveOnReadHooks: (context: {
+    path: string;
+    scope: "project" | "global";
+  }) => Promise<string[]>;
+  selectImportAuthor: (
+    explicitAuthor: string | undefined,
+    settingsAuthor: string,
+  ) => string;
   toEstimatedMinutesValue: (value: unknown) => number | undefined;
-  toImportLinkedDocs: (value: unknown, options?: ToImportLinkedArtifactsOptions) => ItemMetadata["docs"];
-  toImportLinkedFiles: (value: unknown, options?: ToImportLinkedArtifactsOptions) => ItemMetadata["files"];
-  toImportLinkedTests: (value: unknown, options?: ToImportLinkedTestsOptions) => ItemMetadata["tests"];
-  toImportLogEntries: (value: unknown, options: ToImportLogEntriesOptions) => ItemMetadata["comments"];
+  toImportLinkedDocs: (
+    value: unknown,
+    options?: ToImportLinkedArtifactsOptions,
+  ) => ItemMetadata["docs"];
+  toImportLinkedFiles: (
+    value: unknown,
+    options?: ToImportLinkedArtifactsOptions,
+  ) => ItemMetadata["files"];
+  toImportLinkedTests: (
+    value: unknown,
+    options?: ToImportLinkedTestsOptions,
+  ) => ItemMetadata["tests"];
+  toImportLogEntries: (
+    value: unknown,
+    options: ToImportLogEntriesOptions,
+  ) => ItemMetadata["comments"];
   toImportPriority: (value: unknown) => 0 | 1 | 2 | 3 | 4;
   toImportStatus: (value: unknown) => ItemStatus;
   toImportTags: (value: unknown) => string[];
@@ -188,8 +227,11 @@ const BEADS_SDK_FUNCTION_EXPORTS = [
 
 function resolveBeadsSdkModulePath(): string {
   const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
-  const hasConfiguredPackageRoot = typeof envRoot === "string" && envRoot.trim().length > 0;
-  const packageRoot = hasConfiguredPackageRoot ? path.resolve(envRoot.trim()) : path.resolve(CURRENT_RUNTIME_ROOT, "../../../..");
+  const hasConfiguredPackageRoot =
+    typeof envRoot === "string" && envRoot.trim().length > 0;
+  const packageRoot = hasConfiguredPackageRoot
+    ? path.resolve(envRoot.trim())
+    : path.resolve(CURRENT_RUNTIME_ROOT, "../../../..");
   return hasConfiguredPackageRoot
     ? path.join(packageRoot, "dist", "sdk", "index.js")
     : path.join(packageRoot, "src", "sdk", "index.ts");
@@ -200,7 +242,9 @@ function hasBeadsSdkArrayExports(loaded: Partial<BeadsSdkModule>): boolean {
 }
 
 function hasBeadsSdkFunctionExports(loaded: Partial<BeadsSdkModule>): boolean {
-  return BEADS_SDK_FUNCTION_EXPORTS.every((key) => typeof loaded[key] === "function");
+  return BEADS_SDK_FUNCTION_EXPORTS.every(
+    (key) => typeof loaded[key] === "function",
+  );
 }
 
 function hasBeadsSdkExitCodeExports(loaded: Partial<BeadsSdkModule>): boolean {
@@ -212,21 +256,34 @@ function hasBeadsSdkExitCodeExports(loaded: Partial<BeadsSdkModule>): boolean {
   );
 }
 
-function isBeadsSdkModule(loaded: Partial<BeadsSdkModule>): loaded is BeadsSdkModule {
-  return hasBeadsSdkArrayExports(loaded) && hasBeadsSdkFunctionExports(loaded) && hasBeadsSdkExitCodeExports(loaded);
+function isBeadsSdkModule(
+  loaded: Partial<BeadsSdkModule>,
+): loaded is BeadsSdkModule {
+  return (
+    hasBeadsSdkArrayExports(loaded) &&
+    hasBeadsSdkFunctionExports(loaded) &&
+    hasBeadsSdkExitCodeExports(loaded)
+  );
 }
 
 async function loadBeadsSdkModule(): Promise<BeadsSdkModule> {
   const modulePath = resolveBeadsSdkModulePath();
   try {
-    const loaded = (await import(pathToFileURL(modulePath).href)) as Partial<BeadsSdkModule>;
+    const loaded = (await import(
+      pathToFileURL(modulePath).href
+    )) as Partial<BeadsSdkModule>;
     if (isBeadsSdkModule(loaded)) {
       return loaded;
     }
   } catch (error: unknown) {
-    throw new Error(`builtin-beads failed to load SDK exports from ${modulePath}.`, { cause: error });
+    throw new Error(
+      `builtin-beads failed to load SDK exports from ${modulePath}.`,
+      { cause: error },
+    );
   }
-  throw new Error(`builtin-beads failed to load SDK exports from ${modulePath}.`);
+  throw new Error(
+    `builtin-beads failed to load SDK exports from ${modulePath}.`,
+  );
 }
 
 const beadsSdk = await loadBeadsSdkModule();
@@ -337,14 +394,19 @@ function toItemType(value: unknown): { type: ItemType; sourceType?: string } {
 
 const toStatus: (value: unknown) => ItemStatus = toImportStatus;
 
-function toDependencyKind(value: unknown): { kind: Dependency["kind"]; sourceKind?: string } {
+function toDependencyKind(value: unknown): {
+  kind: Dependency["kind"];
+  sourceKind?: string;
+} {
   const raw = toNonEmptyString(value);
   const normalized = raw?.toLowerCase();
   if (!normalized) {
     return { kind: "related" };
   }
 
-  const preserveIfChanged = (kind: Dependency["kind"]): { kind: Dependency["kind"]; sourceKind?: string } => ({
+  const preserveIfChanged = (
+    kind: Dependency["kind"],
+  ): { kind: Dependency["kind"]; sourceKind?: string } => ({
     kind,
     sourceKind: normalized === kind ? undefined : raw,
   });
@@ -364,8 +426,14 @@ function toDependencyKind(value: unknown): { kind: Dependency["kind"]; sourceKin
   };
 }
 
-function normalizeImportedId(id: string, prefix: string, preserveSourceIds: boolean): string {
-  return preserveSourceIds ? normalizeRawItemId(id) : normalizeItemId(id, prefix);
+function normalizeImportedId(
+  id: string,
+  prefix: string,
+  preserveSourceIds: boolean,
+): string {
+  return preserveSourceIds
+    ? normalizeRawItemId(id)
+    : normalizeItemId(id, prefix);
 }
 
 function toDependencies(
@@ -380,7 +448,12 @@ function toDependencies(
 
   const dependencies: Dependency[] = [];
   for (const entry of value) {
-    const dependency = toDependency(entry, fallbackCreatedAt, prefix, preserveSourceIds);
+    const dependency = toDependency(
+      entry,
+      fallbackCreatedAt,
+      prefix,
+      preserveSourceIds,
+    );
     if (dependency) dependencies.push(dependency);
   }
 
@@ -394,13 +467,21 @@ function toDependency(
   preserveSourceIds: boolean,
 ): Dependency | undefined {
   if (typeof value === "string") {
-    return toDependencyFromString(value, fallbackCreatedAt, prefix, preserveSourceIds);
+    return toDependencyFromString(
+      value,
+      fallbackCreatedAt,
+      prefix,
+      preserveSourceIds,
+    );
   }
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return undefined;
   }
   const candidate = value as Record<string, unknown>;
-  const id = toNonEmptyString(candidate.id) ?? toNonEmptyString(candidate.item_id) ?? toNonEmptyString(candidate.depends_on_id);
+  const id =
+    toNonEmptyString(candidate.id) ??
+    toNonEmptyString(candidate.item_id) ??
+    toNonEmptyString(candidate.depends_on_id);
   if (!id) {
     return undefined;
   }
@@ -409,7 +490,9 @@ function toDependency(
     id: normalizeImportedId(id, prefix, preserveSourceIds),
     kind: dependencyKind.kind,
     created_at: toIsoString(candidate.created_at) ?? fallbackCreatedAt,
-    author: toNonEmptyString(candidate.author) ?? toNonEmptyString(candidate.created_by),
+    author:
+      toNonEmptyString(candidate.author) ??
+      toNonEmptyString(candidate.created_by),
     source_kind: dependencyKind.sourceKind,
   };
 }
@@ -435,7 +518,9 @@ const selectAuthor = selectImportAuthor;
 const ensureInitHasRun = ensureTrackerInitialized;
 
 function resolveInputPath(rawPath: string): string {
-  return path.isAbsolute(rawPath) ? rawPath : path.resolve(process.cwd(), rawPath);
+  return path.isAbsolute(rawPath)
+    ? rawPath
+    : path.resolve(process.cwd(), rawPath);
 }
 
 async function readStdin(): Promise<string> {
@@ -474,7 +559,10 @@ async function resolveBeadsSource(rawPath: string | undefined): Promise<{
 
     const explicitPath = resolveInputPath(explicitSource);
     if (!(await pathExists(explicitPath))) {
-      throw new PmCliError(`Beads source file not found at ${explicitPath}`, EXIT_CODE.NOT_FOUND);
+      throw new PmCliError(
+        `Beads source file not found at ${explicitPath}`,
+        EXIT_CODE.NOT_FOUND,
+      );
     }
     return {
       source: explicitSource,
@@ -491,7 +579,10 @@ async function resolveBeadsSource(rawPath: string | undefined): Promise<{
         source: candidate,
         sourcePath: candidatePath,
         raw: await fs.readFile(candidatePath, "utf8"),
-        warnings: candidate === PRIMARY_AUTO_DISCOVERY_FILES[0] ? [] : [`beads_import_source_autodiscovered:${candidate}`],
+        warnings:
+          candidate === PRIMARY_AUTO_DISCOVERY_FILES[0]
+            ? []
+            : [`beads_import_source_autodiscovered:${candidate}`],
       };
     }
   }
@@ -529,11 +620,21 @@ function parseBeadsLine(line: string, lineNumber: number): ParsedBeadsLine {
   return { record: parsed as BeadsRecord };
 }
 
-async function resolveBeadsImportId(record: BeadsRecord, runtime: BeadsImportRuntime): Promise<string> {
+async function resolveBeadsImportId(
+  record: BeadsRecord,
+  runtime: BeadsImportRuntime,
+): Promise<string> {
   const rawId = toNonEmptyString(record.id);
   return rawId
-    ? normalizeImportedId(rawId, runtime.settings.id_prefix, runtime.preserveSourceIds)
-    : await runtime.sdk.generateItemId(runtime.pmRoot, runtime.settings.id_prefix);
+    ? normalizeImportedId(
+        rawId,
+        runtime.settings.id_prefix,
+        runtime.preserveSourceIds,
+      )
+    : await runtime.sdk.generateItemId(
+        runtime.pmRoot,
+        runtime.settings.id_prefix,
+      );
 }
 
 function buildBeadsImportedBody(record: BeadsRecord): string {
@@ -545,12 +646,17 @@ function buildBeadsImportedBody(record: BeadsRecord): string {
     finalBody += (finalBody ? "\n\n" : "") + "## Design\n\n" + design;
   }
   if (externalRef) {
-    finalBody += (finalBody ? "\n\n" : "") + "## External Reference\n" + externalRef;
+    finalBody +=
+      (finalBody ? "\n\n" : "") + "## External Reference\n" + externalRef;
   }
   return finalBody;
 }
 
-async function importBeadsRecord(record: BeadsRecord, lineNumber: number, runtime: BeadsImportRuntime): Promise<BeadsImportLineResult> {
+async function importBeadsRecord(
+  record: BeadsRecord,
+  lineNumber: number,
+  runtime: BeadsImportRuntime,
+): Promise<BeadsImportLineResult> {
   const title = toNonEmptyString(record.title);
   if (!title) {
     return { warning: `beads_import_missing_title:${lineNumber}` };
@@ -562,7 +668,8 @@ async function importBeadsRecord(record: BeadsRecord, lineNumber: number, runtim
   const typeMapping = toItemType(record.issue_type ?? record.type);
   const type = typeMapping.type;
   const closedAt = toIsoString(record.closed_at);
-  const assignee = toNonEmptyString(record.assignee) ?? toNonEmptyString(record.owner);
+  const assignee =
+    toNonEmptyString(record.assignee) ?? toNonEmptyString(record.owner);
   const frontMatter = runtime.sdk.normalizeFrontMatter({
     id,
     title,
@@ -578,13 +685,21 @@ async function importBeadsRecord(record: BeadsRecord, lineNumber: number, runtim
     closed_at: closedAt,
     assignee,
     source_owner: toNonEmptyString(record.owner),
-    author: toNonEmptyString(record.author) ?? toNonEmptyString(record.created_by) ?? runtime.author,
+    author:
+      toNonEmptyString(record.author) ??
+      toNonEmptyString(record.created_by) ??
+      runtime.author,
     estimated_minutes: toEstimatedMinutes(record.estimated_minutes),
     acceptance_criteria: toNonEmptyString(record.acceptance_criteria),
     design: toNonEmptyString(record.design),
     external_ref: toNonEmptyString(record.external_ref),
     close_reason: toNonEmptyString(record.close_reason),
-    dependencies: toDependencies(record.dependencies, createdAt, runtime.settings.id_prefix, runtime.preserveSourceIds),
+    dependencies: toDependencies(
+      record.dependencies,
+      createdAt,
+      runtime.settings.id_prefix,
+      runtime.preserveSourceIds,
+    ),
     comments: toImportLogEntries(record.comments, {
       ...BEADS_LOG_ENTRY_OPTIONS,
       fallbackCreatedAt: createdAt,
@@ -618,7 +733,13 @@ async function importBeadsRecord(record: BeadsRecord, lineNumber: number, runtim
   if (existing) {
     return { warning: `beads_import_item_exists:${id}` };
   }
-  const itemPath = runtime.sdk.getItemPath(runtime.pmRoot, type, id, "toon", runtime.typeRegistry.type_to_folder);
+  const itemPath = runtime.sdk.getItemPath(
+    runtime.pmRoot,
+    type,
+    id,
+    "toon",
+    runtime.typeRegistry.type_to_folder,
+  );
   const commit = await runtime.sdk.commitImportedItem({
     pmRoot: runtime.pmRoot,
     id,
@@ -629,20 +750,32 @@ async function importBeadsRecord(record: BeadsRecord, lineNumber: number, runtim
     settings: runtime.settings,
     conflictWarningPrefix: "beads_import_lock_conflict",
   });
-  return commit.committed ? { id, writeWarnings: commit.writeWarnings } : { warning: commit.conflictWarning };
+  return commit.committed
+    ? { id, writeWarnings: commit.writeWarnings }
+    : { warning: commit.conflictWarning };
 }
 
-export async function runBeadsImport(options: BeadsImportOptions, global: GlobalOptions): Promise<BeadsImportResult> {
+/** Executes the beads import operation through the package runtime. */
+export async function runBeadsImport(
+  options: BeadsImportOptions,
+  global: GlobalOptions,
+): Promise<BeadsImportResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureInitHasRun(pmRoot);
 
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
   const preserveSourceIds = options.preserveSourceIds === true;
-  const { source, sourcePath, raw, warnings: sourceWarnings } = await resolveBeadsSource(options.file);
-  const warnings: string[] = [
-    ...sourceWarnings,
-  ];
+  const {
+    source,
+    sourcePath,
+    raw,
+    warnings: sourceWarnings,
+  } = await resolveBeadsSource(options.file);
+  const warnings: string[] = [...sourceWarnings];
   if (sourcePath) {
     warnings.push(
       ...(await runActiveOnReadHooks({
@@ -652,8 +785,12 @@ export async function runBeadsImport(options: BeadsImportOptions, global: Global
     );
   }
   const lines = raw.split(/\r?\n/);
-  const author = selectAuthor(toNonEmptyString(options.author), settings.author_default);
-  const message = toNonEmptyString(options.message) ?? "Import from Beads JSONL";
+  const author = selectAuthor(
+    toNonEmptyString(options.author),
+    settings.author_default,
+  );
+  const message =
+    toNonEmptyString(options.message) ?? "Import from Beads JSONL";
   const ids: string[] = [];
   let imported = 0;
   let skipped = 0;
@@ -678,7 +815,11 @@ export async function runBeadsImport(options: BeadsImportOptions, global: Global
       skipped += 1;
       continue;
     }
-    const importedLine = await importBeadsRecord(parsed.record, lineNumber, runtime);
+    const importedLine = await importBeadsRecord(
+      parsed.record,
+      lineNumber,
+      runtime,
+    );
     if ("warning" in importedLine) {
       warnings.push(importedLine.warning);
       skipped += 1;

@@ -5,33 +5,44 @@
  */
 import { stat } from "node:fs/promises";
 
-/**
- * Documents the settings read cache path signature payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the settings read cache path signature payload exchanged by command, SDK, and package integrations. */
 export interface SettingsReadCachePathSignature {
+  /** Filesystem path used for path resolution. */
   path: string;
+  /** Elapsed time in milliseconds for mtime. */
   mtime_ms: number | null;
+  /** Value that configures or reports size for this contract. */
   size: number | null;
 }
 
-/**
- * Documents the settings read cache entry payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the settings read cache entry payload exchanged by command, SDK, and package integrations. */
 export interface SettingsReadCacheEntry<T> {
+  /** Value that configures or reports tracked paths for this contract. */
   tracked_paths: string[];
+  /** Value that configures or reports signatures for this contract. */
   signatures: SettingsReadCachePathSignature[];
+  /** Value that configures or reports value for this contract. */
   value: T;
 }
 
-const settingsReadCacheByRoot = new Map<string, SettingsReadCacheEntry<unknown>>();
+const settingsReadCacheByRoot = new Map<
+  string,
+  SettingsReadCacheEntry<unknown>
+>();
 
 function normalizeTrackedPaths(paths: string[]): string[] {
-  return [...new Set(paths.map((pathValue) => pathValue.trim()).filter((pathValue) => pathValue.length > 0))].sort((left, right) =>
-    left.localeCompare(right),
-  );
+  return [
+    ...new Set(
+      paths
+        .map((pathValue) => pathValue.trim())
+        .filter((pathValue) => pathValue.length > 0),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
 }
 
-async function readPathSignature(targetPath: string): Promise<SettingsReadCachePathSignature> {
+async function readPathSignature(
+  targetPath: string,
+): Promise<SettingsReadCachePathSignature> {
   try {
     const targetStats = await stat(targetPath);
     return {
@@ -48,19 +59,19 @@ async function readPathSignature(targetPath: string): Promise<SettingsReadCacheP
   }
 }
 
-/**
- * Implements collect settings read cache signatures for the public runtime surface of this module.
- */
-export async function collectSettingsReadCacheSignatures(paths: string[]): Promise<SettingsReadCachePathSignature[]> {
+/** Implements collect settings read cache signatures for the public runtime surface of this module. */
+export async function collectSettingsReadCacheSignatures(
+  paths: string[],
+): Promise<SettingsReadCachePathSignature[]> {
   const normalizedPaths = normalizeTrackedPaths(paths);
-  const signatures = await Promise.all(normalizedPaths.map((targetPath) => readPathSignature(targetPath)));
+  const signatures = await Promise.all(
+    normalizedPaths.map((targetPath) => readPathSignature(targetPath)),
+  );
   signatures.sort((left, right) => left.path.localeCompare(right.path));
   return signatures;
 }
 
-/**
- * Implements settings read cache signatures equal for the public runtime surface of this module.
- */
+/** Implements settings read cache signatures equal for the public runtime surface of this module. */
 export function settingsReadCacheSignaturesEqual(
   left: SettingsReadCachePathSignature[],
   right: SettingsReadCachePathSignature[],
@@ -82,17 +93,20 @@ export function settingsReadCacheSignaturesEqual(
   return true;
 }
 
-/**
- * Implements get settings read cache entry for the public runtime surface of this module.
- */
-export function getSettingsReadCacheEntry<T>(pmRoot: string): SettingsReadCacheEntry<T> | undefined {
-  return settingsReadCacheByRoot.get(pmRoot) as SettingsReadCacheEntry<T> | undefined;
+/** Implements get settings read cache entry for the public runtime surface of this module. */
+export function getSettingsReadCacheEntry<T>(
+  pmRoot: string,
+): SettingsReadCacheEntry<T> | undefined {
+  return settingsReadCacheByRoot.get(pmRoot) as
+    | SettingsReadCacheEntry<T>
+    | undefined;
 }
 
-/**
- * Implements set settings read cache entry for the public runtime surface of this module.
- */
-export function setSettingsReadCacheEntry<T>(pmRoot: string, entry: SettingsReadCacheEntry<T>): void {
+/** Implements set settings read cache entry for the public runtime surface of this module. */
+export function setSettingsReadCacheEntry<T>(
+  pmRoot: string,
+  entry: SettingsReadCacheEntry<T>,
+): void {
   const normalizedTrackedPaths = normalizeTrackedPaths(entry.tracked_paths);
   const normalizedSignatures = [...entry.signatures]
     .map((signature) => ({
@@ -108,9 +122,7 @@ export function setSettingsReadCacheEntry<T>(pmRoot: string, entry: SettingsRead
   });
 }
 
-/**
- * Implements clear settings read cache for the public runtime surface of this module.
- */
+/** Implements clear settings read cache for the public runtime surface of this module. */
 export function clearSettingsReadCache(pmRoot?: string): void {
   if (pmRoot) {
     settingsReadCacheByRoot.delete(pmRoot);

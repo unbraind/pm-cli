@@ -14,16 +14,19 @@ const RECOMMENDED_OLLAMA_EMBEDDING_MODEL = "qwen3-embedding:0.6b";
 const DEFAULT_LANCEDB_PATH = ".agents/pm/search/lancedb/";
 const OLLAMA_VERSION_TIMEOUT_MS = 1_500;
 const OLLAMA_LIST_TIMEOUT_MS = 2_500;
-const QWEN_EMBEDDING_MODEL_PATTERN = /qwen.*(?:embed|embedding)|(?:embed|embedding).*qwen/i;
+const QWEN_EMBEDDING_MODEL_PATTERN =
+  /qwen.*(?:embed|embedding)|(?:embed|embedding).*qwen/i;
 const EMBEDDING_MODEL_PATTERN = /embed|embedding/i;
 
-/**
- * Documents the semantic runtime defaults resolution payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the semantic runtime defaults resolution payload exchanged by command, SDK, and package integrations. */
 export interface SemanticRuntimeDefaultsResolution {
+  /** Value that configures or reports settings for this contract. */
   settings: PmSettings;
+  /** Value that configures or reports auto ollama defaults applied for this contract. */
   auto_ollama_defaults_applied: boolean;
+  /** Value that configures or reports auto ollama defaults skipped reason for this contract. */
   auto_ollama_defaults_skipped_reason?: "no_installed_embedding_model";
+  /** Value that configures or reports auto ollama defaults remediation for this contract. */
   auto_ollama_defaults_remediation?: string;
 }
 
@@ -52,14 +55,7 @@ function hasCompetingVectorAdapter(adapter: unknown): boolean {
   return Boolean(normalized && normalized.toLowerCase() !== "lancedb");
 }
 
-/**
- * True only when the user has opted into a provider/store that COMPETES with the
- * Ollama + LanceDB auto-default stack: an explicit non-Ollama search provider, a
- * non-LanceDB vector adapter, or any OpenAI/Qdrant credentials. A partial Ollama
- * setup (e.g. only `ollama.base_url`) is NOT competing — its missing leaves are
- * filled per-field below so a single config write can never silently disable
- * semantic search and then hard-error `pm reindex`.
- */
+/** True only when the user has opted into a provider/store that COMPETES with the Ollama + LanceDB auto-default stack: an explicit non-Ollama search provider, a non-LanceDB vector adapter, or any OpenAI/Qdrant credentials. A partial Ollama setup (e.g. only `ollama.base_url`) is NOT competing — its missing leaves are filled per-field below so a single config write can never silently disable semantic search and then hard-error `pm reindex`. */
 function hasCompetingSemanticConfiguration(settings: PmSettings): boolean {
   if (hasCompetingProvider(settings.search?.provider)) {
     return true;
@@ -67,11 +63,13 @@ function hasCompetingSemanticConfiguration(settings: PmSettings): boolean {
   if (hasCompetingVectorAdapter(settings.vector_store?.adapter)) {
     return true;
   }
-  if (hasConfiguredValue([
-    settings.providers?.openai?.base_url,
-    settings.providers?.openai?.model,
-    settings.providers?.openai?.api_key,
-  ])) {
+  if (
+    hasConfiguredValue([
+      settings.providers?.openai?.base_url,
+      settings.providers?.openai?.model,
+      settings.providers?.openai?.api_key,
+    ])
+  ) {
     return true;
   }
   return hasConfiguredValue([
@@ -106,16 +104,22 @@ function parseOllamaModelList(output: string): string | null {
   if (models.length === 0) {
     return null;
   }
-  const preferredQwenEmbeddingModel = models.find((entry) => QWEN_EMBEDDING_MODEL_PATTERN.test(entry));
+  const preferredQwenEmbeddingModel = models.find((entry) =>
+    QWEN_EMBEDDING_MODEL_PATTERN.test(entry),
+  );
   if (preferredQwenEmbeddingModel) {
     return preferredQwenEmbeddingModel;
   }
-  const embeddingModel = models.find((entry) => EMBEDDING_MODEL_PATTERN.test(entry));
+  const embeddingModel = models.find((entry) =>
+    EMBEDDING_MODEL_PATTERN.test(entry),
+  );
   return embeddingModel ?? null;
 }
 
 function resolveAutoOllamaModel(settings: PmSettings): string | null {
-  const settingsModel = toOptionalNonEmptyString(settings.providers?.ollama?.model);
+  const settingsModel = toOptionalNonEmptyString(
+    settings.providers?.ollama?.model,
+  );
   if (settingsModel) {
     return settingsModel;
   }
@@ -128,7 +132,9 @@ function resolveAutoOllamaModel(settings: PmSettings): string | null {
     timeout: OLLAMA_LIST_TIMEOUT_MS,
   });
   if (!listed.error && listed.status === 0) {
-    const listedModel = parseOllamaModelList(typeof listed.stdout === "string" ? listed.stdout : "");
+    const listedModel = parseOllamaModelList(
+      typeof listed.stdout === "string" ? listed.stdout : "",
+    );
     if (listedModel) {
       return listedModel;
     }
@@ -143,20 +149,31 @@ interface SemanticDefaultNeeds {
   embeddingModel: boolean;
 }
 
-function resolveSemanticDefaultNeeds(settings: PmSettings): SemanticDefaultNeeds {
+function resolveSemanticDefaultNeeds(
+  settings: PmSettings,
+): SemanticDefaultNeeds {
   return {
-    baseUrl: toOptionalNonEmptyString(settings.providers?.ollama?.base_url) === null,
+    baseUrl:
+      toOptionalNonEmptyString(settings.providers?.ollama?.base_url) === null,
     model: toOptionalNonEmptyString(settings.providers?.ollama?.model) === null,
-    lancedbPath: toOptionalNonEmptyString(settings.vector_store?.lancedb?.path) === null,
-    embeddingModel: toOptionalNonEmptyString(settings.search?.embedding_model) === null,
+    lancedbPath:
+      toOptionalNonEmptyString(settings.vector_store?.lancedb?.path) === null,
+    embeddingModel:
+      toOptionalNonEmptyString(settings.search?.embedding_model) === null,
   };
 }
 
 function needsAnySemanticDefault(needs: SemanticDefaultNeeds): boolean {
-  return needs.baseUrl || needs.model || needs.lancedbPath || needs.embeddingModel;
+  return (
+    needs.baseUrl || needs.model || needs.lancedbPath || needs.embeddingModel
+  );
 }
 
-function applyOllamaProviderDefaults(settings: PmSettings, needs: SemanticDefaultNeeds, resolvedModel: string): void {
+function applyOllamaProviderDefaults(
+  settings: PmSettings,
+  needs: SemanticDefaultNeeds,
+  resolvedModel: string,
+): void {
   if (!needs.baseUrl && !needs.model) {
     return;
   }
@@ -170,16 +187,25 @@ function applyOllamaProviderDefaults(settings: PmSettings, needs: SemanticDefaul
   }
 }
 
-function applyVectorStoreDefaults(settings: PmSettings, needs: SemanticDefaultNeeds): void {
+function applyVectorStoreDefaults(
+  settings: PmSettings,
+  needs: SemanticDefaultNeeds,
+): void {
   if (!needs.lancedbPath) {
     return;
   }
-  const vectorStore = (settings.vector_store ??= {} as PmSettings["vector_store"]);
-  const lancedb = (vectorStore.lancedb ??= {} as PmSettings["vector_store"]["lancedb"]);
+  const vectorStore = (settings.vector_store ??=
+    {} as PmSettings["vector_store"]);
+  const lancedb = (vectorStore.lancedb ??=
+    {} as PmSettings["vector_store"]["lancedb"]);
   lancedb.path = DEFAULT_LANCEDB_PATH;
 }
 
-function applySearchEmbeddingDefaults(settings: PmSettings, needs: SemanticDefaultNeeds, resolvedModel: string): void {
+function applySearchEmbeddingDefaults(
+  settings: PmSettings,
+  needs: SemanticDefaultNeeds,
+  resolvedModel: string,
+): void {
   if (!needs.embeddingModel) {
     return;
   }
@@ -187,10 +213,10 @@ function applySearchEmbeddingDefaults(settings: PmSettings, needs: SemanticDefau
   search.embedding_model = resolvedModel;
 }
 
-/**
- * Implements resolve settings with semantic runtime defaults for the public runtime surface of this module.
- */
-export function resolveSettingsWithSemanticRuntimeDefaults(settings: PmSettings): SemanticRuntimeDefaultsResolution {
+/** Implements resolve settings with semantic runtime defaults for the public runtime surface of this module. */
+export function resolveSettingsWithSemanticRuntimeDefaults(
+  settings: PmSettings,
+): SemanticRuntimeDefaultsResolution {
   const unchanged: SemanticRuntimeDefaultsResolution = {
     settings,
     auto_ollama_defaults_applied: false,
@@ -223,8 +249,7 @@ export function resolveSettingsWithSemanticRuntimeDefaults(settings: PmSettings)
     return {
       ...unchanged,
       auto_ollama_defaults_skipped_reason: "no_installed_embedding_model",
-      auto_ollama_defaults_remediation:
-        `Run ollama pull ${RECOMMENDED_OLLAMA_EMBEDDING_MODEL} or configure providers.ollama.model explicitly (and search.embedding_model if you need an override).`,
+      auto_ollama_defaults_remediation: `Run ollama pull ${RECOMMENDED_OLLAMA_EMBEDDING_MODEL} or configure providers.ollama.model explicitly (and search.embedding_model if you need an override).`,
     };
   }
   // `readSettings` always normalizes these nested objects, but this function is

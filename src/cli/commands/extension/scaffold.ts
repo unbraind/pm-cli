@@ -17,6 +17,7 @@ import { normalizeManagedDirectoryName } from "./shared.js";
 // first released host that supports that full generated contract is v2026.6.24.
 // manifest_version tracks the manifest schema generation (currently 1).
 const SCAFFOLD_MANIFEST_VERSION = 1;
+/** Public contract for scaffold pm min version, shared by SDK and presentation-layer consumers. */
 export const SCAFFOLD_PM_MIN_VERSION = "2026.6.24";
 const SCAFFOLD_NODE_ENGINE = ">=22.18.0";
 const SCAFFOLD_DECLARED_PERMISSIONS = {
@@ -29,8 +30,12 @@ const SCAFFOLD_DECLARED_PERMISSIONS = {
 };
 
 const RESERVED_SCAFFOLD_COMMAND_ROOTS = new Set([
-  ...PM_CORE_COMMAND_NAMES.map((commandName) => commandName.split("-")[0]!.toLowerCase()),
-  ...Object.keys(EXECUTABLE_COMMAND_ALIASES).map((alias) => alias.toLowerCase()),
+  ...PM_CORE_COMMAND_NAMES.map((commandName) =>
+    commandName.split("-")[0]!.toLowerCase(),
+  ),
+  ...Object.keys(EXECUTABLE_COMMAND_ALIASES).map((alias) =>
+    alias.toLowerCase(),
+  ),
   // "scaffold" is a Commander command that currently lives outside both
   // PM_CORE_COMMAND_NAMES and EXECUTABLE_COMMAND_ALIASES.
   "scaffold",
@@ -67,7 +72,10 @@ const SAMPLE_HARNESS_FINALLY_LINES = [
   "  }",
 ] as const;
 
-function indentGeneratedLines(lines: readonly string[], prefix: string): string[] {
+function indentGeneratedLines(
+  lines: readonly string[],
+  prefix: string,
+): string[] {
   return lines.map((line) => (line === "" ? line : `${prefix}${line}`));
 }
 
@@ -79,7 +87,10 @@ function buildSchemaCapabilityAssertionLines(options: {
   readonly migrationId: string;
   readonly includeMigrationReplacementHint?: boolean;
 }): string[] {
-  const migrationHint = options.includeMigrationReplacementHint === true ? ["  // as your migration grows."] : [];
+  const migrationHint =
+    options.includeMigrationReplacementHint === true
+      ? ["  // as your migration grows."]
+      : [];
   return [
     "  // assertItemType/Field/Migration throw unless the registration is present, so",
     "  // reaching each next line already proves the wiring; assert on the returned",
@@ -138,23 +149,7 @@ const SCAFFOLD_TSCONFIG = {
   include: ["**/*.ts"],
 };
 
-/**
- * Capability shapes the package/extension scaffolder can target via the
- * `--capability` selector — one per SDK extension capability, so every
- * registration surface has a runnable starter. `commands` emits the default
- * command-only starter; `hooks` additionally wires an `after_command` lifecycle
- * reactor; `search` wires an in-memory provider/adapter pair; `importers` wires
- * importer and exporter command primitives so authors can customize project
- * context movement; `schema` registers a custom item type, item field, and
- * migration so authors can model their own project domain; `profile` registers a
- * complete project-profile archetype (item types, statuses, fields, a workflow,
- * config, a template, and package recommendations) via `api.registerProfile` so
- * `pm profile apply` can tailor a tracker in one shot; `renderers` overrides how
- * a command's output is serialized for a format; `parser` rewrites a command's
- * parsed options before its handler runs; `preflight` adjusts pm's pre-run
- * migration/format gate decision; and `services` overrides a built-in pm service
- * (e.g. output formatting) — without starting from a blank extension.
- */
+/** Capability shapes the package/extension scaffolder can target via the `--capability` selector — one per SDK extension capability, so every registration surface has a runnable starter. `commands` emits the default command-only starter; `hooks` additionally wires an `after_command` lifecycle reactor; `search` wires an in-memory provider/adapter pair; `importers` wires importer and exporter command primitives so authors can customize project context movement; `schema` registers a custom item type, item field, and migration so authors can model their own project domain; `profile` registers a complete project-profile archetype (item types, statuses, fields, a workflow, config, a template, and package recommendations) via `api.registerProfile` so `pm profile apply` can tailor a tracker in one shot; `renderers` overrides how a command's output is serialized for a format; `parser` rewrites a command's parsed options before its handler runs; `preflight` adjusts pm's pre-run migration/format gate decision; and `services` overrides a built-in pm service (e.g. output formatting) — without starting from a blank extension. */
 export const SCAFFOLD_CAPABILITIES = [
   "commands",
   "hooks",
@@ -171,9 +166,13 @@ export const SCAFFOLD_CAPABILITIES = [
 /**
  * Restricts the `--capability` selector to a {@link SCAFFOLD_CAPABILITIES} value.
  */
-export type ExtensionScaffoldCapability = (typeof SCAFFOLD_CAPABILITIES)[number];
+export type ExtensionScaffoldCapability =
+  (typeof SCAFFOLD_CAPABILITIES)[number];
 
-const SCAFFOLD_MANIFEST_CAPABILITIES: Record<ExtensionScaffoldCapability, readonly string[]> = {
+const SCAFFOLD_MANIFEST_CAPABILITIES: Record<
+  ExtensionScaffoldCapability,
+  readonly string[]
+> = {
   commands: ["commands"],
   hooks: ["commands", "hooks"],
   search: ["commands", "search"],
@@ -192,7 +191,10 @@ const SCAFFOLD_MANIFEST_CAPABILITIES: Record<ExtensionScaffoldCapability, readon
   services: ["commands", "services"],
 };
 
-const SAMPLE_TEST_CAPABILITIES_LITERAL: Record<ExtensionScaffoldCapability, string> = {
+const SAMPLE_TEST_CAPABILITIES_LITERAL: Record<
+  ExtensionScaffoldCapability,
+  string
+> = {
   commands: '["commands"]',
   hooks: '["commands", "hooks"]',
   search: '["commands", "search"]',
@@ -206,7 +208,8 @@ const SAMPLE_TEST_CAPABILITIES_LITERAL: Record<ExtensionScaffoldCapability, stri
 };
 
 const ENTRYPOINT_BULLETS: Record<ExtensionScaffoldCapability, string> = {
-  commands: "- `index.ts`: the TypeScript manifest entry — starter command registration plus a `deactivate` teardown stub.",
+  commands:
+    "- `index.ts`: the TypeScript manifest entry — starter command registration plus a `deactivate` teardown stub.",
   hooks:
     "- `index.ts`: the TypeScript manifest entry — starter command registration, an `after_command` lifecycle hook, and a `deactivate` teardown stub.",
   search:
@@ -250,9 +253,13 @@ const SAMPLE_TEST_BULLETS: Record<ExtensionScaffoldCapability, string> = {
     "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, service override registration and invocation (including command pass-through), and teardown via the SDK testing helpers.",
 };
 
-const TSCONFIG_BULLET = "- `tsconfig.json`: strict type-check-only TypeScript config (`noEmit`) for the `.ts` source the loader runs directly.";
+const TSCONFIG_BULLET =
+  "- `tsconfig.json`: strict type-check-only TypeScript config (`noEmit`) for the `.ts` source the loader runs directly.";
 
-const PACKAGE_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, readonly string[]> = {
+const PACKAGE_CAPABILITY_README_SECTIONS: Record<
+  ExtensionScaffoldCapability,
+  readonly string[]
+> = {
   commands: [],
   hooks: [
     "",
@@ -294,7 +301,7 @@ const PACKAGE_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, re
     "management`. Replace the sample type/field/migration with your own domain",
     "model; the `schema` capability in `manifest.json` grants all three",
     "registrations. Once installed, the custom type is usable everywhere, e.g.",
-    "`pm create <type> \"<title>\"` and `pm list --type <type>`.",
+    '`pm create <type> "<title>"` and `pm list --type <type>`.',
   ],
   profile: [
     "",
@@ -353,7 +360,10 @@ const PACKAGE_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, re
   ],
 };
 
-const EXTENSION_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, readonly string[]> = {
+const EXTENSION_CAPABILITY_README_SECTIONS: Record<
+  ExtensionScaffoldCapability,
+  readonly string[]
+> = {
   commands: [],
   hooks: [
     "",
@@ -445,7 +455,10 @@ const EXTENSION_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, 
 
 // README activation explainer for command-bearing starters (commands/hooks/
 // search/importers): they declare `activation.commands` so pm loads them lazily.
-const LAZY_ACTIVATION_README_SECTION: Record<"package" | "extension", readonly string[]> = {
+const LAZY_ACTIVATION_README_SECTION: Record<
+  "package" | "extension",
+  readonly string[]
+> = {
   package: [
     "",
     "## Lazy Activation",
@@ -475,7 +488,10 @@ const LAZY_ACTIVATION_README_SECTION: Record<"package" | "extension", readonly s
 // README activation explainer for the `schema` starter: it contributes a GLOBAL
 // custom item type/field, so it intentionally omits `activation.commands` and
 // relies on pm's conservative activation tier (see buildScaffoldActivationCommands).
-const SCHEMA_ACTIVATION_README_SECTION: Record<"package" | "extension", readonly string[]> = {
+const SCHEMA_ACTIVATION_README_SECTION: Record<
+  "package" | "extension",
+  readonly string[]
+> = {
   package: [
     "",
     "## Activation",
@@ -504,7 +520,10 @@ const SCHEMA_ACTIVATION_README_SECTION: Record<"package" | "extension", readonly
 // is resolved by the built-in `pm profile list/show/apply` commands (which the
 // package does not own), so it intentionally omits `activation.commands` and relies
 // on pm's conservative activation tier (granted by the `schema` capability).
-const PROFILE_ACTIVATION_README_SECTION: Record<"package" | "extension", readonly string[]> = {
+const PROFILE_ACTIVATION_README_SECTION: Record<
+  "package" | "extension",
+  readonly string[]
+> = {
   package: [
     "",
     "## Activation",
@@ -537,7 +556,10 @@ const PROFILE_ACTIVATION_README_SECTION: Record<"package" | "extension", readonl
  * bullet explains the global-contribution tradeoff instead of referencing a field
  * they deliberately lack.
  */
-function buildScaffoldManifestBullet(capability: ExtensionScaffoldCapability, vocabulary: "extension" | "package"): string {
+function buildScaffoldManifestBullet(
+  capability: ExtensionScaffoldCapability,
+  vocabulary: "extension" | "package",
+): string {
   if (capability === "schema") {
     return `- \`manifest.json\`: ${vocabulary} metadata and capabilities (no \`activation.commands\` — the custom item type activates for every command).`;
   }
@@ -547,11 +569,7 @@ function buildScaffoldManifestBullet(capability: ExtensionScaffoldCapability, vo
   return `- \`manifest.json\`: ${vocabulary} metadata, capabilities, and \`activation.commands\` (the command paths that lazily activate this ${vocabulary}).`;
 }
 
-/**
- * Select the README activation section for the chosen capability and vocabulary:
- * the `schema` and `profile` starters explain conservative activation (they omit
- * `activation.commands`); every other capability documents lazy activation.
- */
+/** Select the README activation section for the chosen capability and vocabulary: the `schema` and `profile` starters explain conservative activation (they omit `activation.commands`); every other capability documents lazy activation. */
 function buildScaffoldActivationReadmeSection(
   capability: ExtensionScaffoldCapability,
   vocabulary: "extension" | "package",
@@ -574,11 +592,7 @@ interface ExtensionScaffoldResult {
   extension_name: string;
   command_name: string;
   capability: ExtensionScaffoldCapability;
-  /**
-   * Authoring style of the generated entrypoint: `"imperative"` (a hand-written
-   * `activate` body, the default) or `"declarative"` (a `composeExtension`
-   * blueprint). The declarative style is package-mode only (any capability).
-   */
+  /** Authoring style of the generated entrypoint: `"imperative"` (a hand-written `activate` body, the default) or `"declarative"` (a `composeExtension` blueprint). The declarative style is package-mode only (any capability). */
   style: ExtensionScaffoldStyle;
   target_path: string;
   created_directory: boolean;
@@ -593,12 +607,7 @@ interface ExtensionScaffoldResult {
  */
 export type ExtensionScaffoldStyle = "imperative" | "declarative";
 
-/**
- * Builds the starter command path from the normalized package/extension name.
- * Names that start with a built-in pm command or executable alias are prefixed
- * with `starter` so the generated command dispatches to the package instead of
- * being consumed by core command parsing.
- */
+/** Builds the starter command path from the normalized package/extension name. Names that start with a built-in pm command or executable alias are prefixed with `starter` so the generated command dispatches to the package instead of being consumed by core command parsing. */
 export function buildScaffoldCommandName(extensionName: string): string {
   const commandWords = extensionName
     .replace(/-/g, " ")
@@ -616,9 +625,14 @@ export function buildScaffoldCommandName(extensionName: string): string {
   const nextStarterWord = commandWords[leadingStarterWords]?.toLowerCase();
   const starterRootCollision =
     leadingStarterWords > 0 &&
-    (leadingStarterWords === commandWords.length || (nextStarterWord !== undefined && RESERVED_SCAFFOLD_COMMAND_ROOTS.has(nextStarterWord)));
-  const reservedRoot = RESERVED_SCAFFOLD_COMMAND_ROOTS.has(firstWordLower) || starterRootCollision;
-  const resolvedWords = reservedRoot ? ["starter", ...commandWords] : commandWords;
+    (leadingStarterWords === commandWords.length ||
+      (nextStarterWord !== undefined &&
+        RESERVED_SCAFFOLD_COMMAND_ROOTS.has(nextStarterWord)));
+  const reservedRoot =
+    RESERVED_SCAFFOLD_COMMAND_ROOTS.has(firstWordLower) || starterRootCollision;
+  const resolvedWords = reservedRoot
+    ? ["starter", ...commandWords]
+    : commandWords;
   return `${resolvedWords.join(" ")} ping`;
 }
 
@@ -713,12 +727,7 @@ function buildProfileArchetypeFieldLines(extensionName: string): string[] {
   ];
 }
 
-/**
- * Build the `activate` body lines for the starter entrypoint. The base body
- * always registers the starter command; capability-specific variants append
- * the matching SDK surface so generated packages demonstrate one runnable
- * customization primitive end to end.
- */
+/** Build the `activate` body lines for the starter entrypoint. The base body always registers the starter command; capability-specific variants append the matching SDK surface so generated packages demonstrate one runnable customization primitive end to end. */
 function buildActivateBodyLines(
   extensionName: string,
   commandName: string,
@@ -756,7 +765,7 @@ function buildActivateBodyLines(
       "      const needle = context.query.toLowerCase();",
       "      const hits = context.documents",
       "        .filter((document) => {",
-      "          const title = String(document.metadata.title ?? \"\").toLowerCase();",
+      '          const title = String(document.metadata.title ?? "").toLowerCase();',
       "          return title.includes(needle);",
       "        })",
       "        .map((document) => ({",
@@ -774,7 +783,7 @@ function buildActivateBodyLines(
       "  // the adapter without external services.",
       "  api.registerVectorStoreAdapter({",
       `    name: ${JSON.stringify(vectorAdapterName)},`,
-      "    query: async (context) => [{ id: \"starter-vector-hit\", score: context.limit }],",
+      '    query: async (context) => [{ id: "starter-vector-hit", score: context.limit }],',
       "    upsert: async (context) => ({ upserted: context.points.length }),",
       "    delete: async (context) => ({ deleted: context.ids.length }),",
       "  });",
@@ -787,14 +796,15 @@ function buildActivateBodyLines(
     // single-word name the de-hyphenated form equals the type name, so omit the
     // alias rather than register a redundant self-alias in the starter.
     const itemTypeAlias = extensionName.replace(/-/g, "");
-    const itemTypeAliases = itemTypeAlias === itemTypeName ? [] : [itemTypeAlias];
+    const itemTypeAliases =
+      itemTypeAlias === itemTypeName ? [] : [itemTypeAlias];
     const fieldName = `${extensionName.replace(/-/g, "_")}_note`;
     const migrationId = `${extensionName}-0001-init`;
     return [
       ...commandLines,
       "",
       "  // Schema registrations let a package model its own project domain — the",
-      "  // heart of \"project management = context management\". Item types and fields",
+      '  // heart of "project management = context management". Item types and fields',
       "  // are GLOBAL contributions: built-in commands like `pm create <type>` and",
       "  // `pm list --type <type>` must see them, so this package declares no",
       "  // `activation.commands` and pm activates it conservatively for every command.",
@@ -847,7 +857,9 @@ function buildActivateBodyLines(
       "  api.registerProfile({",
       // The archetype field lines are all non-empty, so re-indent each by the
       // `activate` body offset (object braces sit at two spaces, fields at four).
-      ...buildProfileArchetypeFieldLines(extensionName).map((line) => `  ${line}`),
+      ...buildProfileArchetypeFieldLines(extensionName).map(
+        (line) => `  ${line}`,
+      ),
       "  });",
     ];
   }
@@ -863,7 +875,7 @@ function buildActivateBodyLines(
       `    ${JSON.stringify(adapterName)},`,
       "    async (context) => ({",
       "      imported: 1,",
-      "      source: context.options.source ?? \"starter\",",
+      '      source: context.options.source ?? "starter",',
       "      args: context.args,",
       "    }),",
       "    {",
@@ -884,7 +896,7 @@ function buildActivateBodyLines(
       `    ${JSON.stringify(adapterName)},`,
       "    async (context) => ({",
       "      exported: true,",
-      "      destination: context.options.destination ?? \"stdout\",",
+      '      destination: context.options.destination ?? "stdout",',
       "      args: context.args,",
       "    }),",
       "    {",
@@ -907,7 +919,7 @@ function buildActivateBodyLines(
       ...commandLines,
       "",
       "  // Renderer overrides customize how pm serializes a command's structured",
-      "  // result for an output format (\"toon\" or \"json\"). pm runs this override for",
+      '  // result for an output format ("toon" or "json"). pm runs this override for',
       "  // EVERY command's output in that format, so it scopes itself to THIS",
       "  // package's own command and returns null — pass-through to pm's default",
       "  // renderer — for everything else. Return a string to take over rendering.",
@@ -1021,16 +1033,7 @@ function buildActivateBodyLines(
   ];
 }
 
-/**
- * Build the colocated `node:test` sample suite (`index.test.ts`) for the chosen
- * capability. Authored in TypeScript and run through the generated package's
- * `npm test` script (typecheck first, then `node --test`, which strips types on
- * Node >=22.18), it imports the `./index.ts` manifest entry directly under
- * NodeNext resolution.
- * Every variant covers activation, command invocation, and teardown via
- * `createExtensionTestHarness`; capability variants add tests that use the
- * harness-bound `assert*`/`run*` helpers and deactivate in `finally`.
- */
+/** Build the colocated `node:test` sample suite (`index.test.ts`) for the chosen capability. Authored in TypeScript and run through the generated package's `npm test` script (typecheck first, then `node --test`, which strips types on Node >=22.18), it imports the `./index.ts` manifest entry directly under NodeNext resolution. Every variant covers activation, command invocation, and teardown via `createExtensionTestHarness`; capability variants add tests that use the harness-bound `assert*`/`run*` helpers and deactivate in `finally`. */
 function buildSampleTestSource(
   extensionName: string,
   commandName: string,
@@ -1092,10 +1095,20 @@ function buildSampleTestSource(
       ]
     : [];
   const searchTestLines = searchEnabled
-    ? buildDeclarativeCapabilityTestBlock(extensionName, commandName, "search", capabilitiesLiteral)
+    ? buildDeclarativeCapabilityTestBlock(
+        extensionName,
+        commandName,
+        "search",
+        capabilitiesLiteral,
+      )
     : [];
   const importerTestLines = importersEnabled
-    ? buildDeclarativeCapabilityTestBlock(extensionName, commandName, "importers", capabilitiesLiteral)
+    ? buildDeclarativeCapabilityTestBlock(
+        extensionName,
+        commandName,
+        "importers",
+        capabilitiesLiteral,
+      )
     : [];
   const schemaTestLines = schemaEnabled
     ? [
@@ -1134,7 +1147,10 @@ function buildSampleTestSource(
         "  });",
         "  let deactivated = false;",
         "  try {",
-        ...indentGeneratedLines(buildProfileCapabilityAssertionLines(extensionName), "  "),
+        ...indentGeneratedLines(
+          buildProfileCapabilityAssertionLines(extensionName),
+          "  ",
+        ),
         "    const teardown = await ext.deactivate();",
         "    assertExtensionDeactivated(teardown);",
         "    deactivated = true;",
@@ -1316,7 +1332,11 @@ function buildSampleTestSource(
     '} from "@unbrained/pm-cli/sdk/testing";',
     // The search sample's synthetic query/vector contexts reference these SDK types
     // for their typed-stub fixtures; other capabilities need no extra type imports.
-    ...(searchEnabled ? ['import type { ItemDocument, PmSettings } from "@unbrained/pm-cli/sdk";'] : []),
+    ...(searchEnabled
+      ? [
+          'import type { ItemDocument, PmSettings } from "@unbrained/pm-cli/sdk";',
+        ]
+      : []),
     'import extension from "./index.ts";',
     "",
     ...SAMPLE_HARNESS_CLEANUP_LINES,
@@ -1430,7 +1450,10 @@ function buildScaffoldActivationCommands(
 // One-line surface phrase per capability, listing the registration surfaces the
 // declarative blueprint populates beyond the always-present starter command. Used
 // to keep the generated README's entrypoint bullet accurate per capability.
-const DECLARATIVE_ENTRYPOINT_SURFACE_PHRASE: Record<ExtensionScaffoldCapability, string> = {
+const DECLARATIVE_ENTRYPOINT_SURFACE_PHRASE: Record<
+  ExtensionScaffoldCapability,
+  string
+> = {
   commands: "starter command",
   hooks: "starter command and after_command hook",
   search: "starter command, search provider, and vector-store adapter",
@@ -1446,7 +1469,10 @@ const DECLARATIVE_ENTRYPOINT_SURFACE_PHRASE: Record<ExtensionScaffoldCapability,
 // The `ExtensionBlueprint` fields each capability populates, rendered as inline
 // code in the README's Declarative Authoring section so authors can see which
 // blueprint surface maps to the capability they scaffolded.
-const DECLARATIVE_CAPABILITY_BLUEPRINT_FIELDS: Record<ExtensionScaffoldCapability, string> = {
+const DECLARATIVE_CAPABILITY_BLUEPRINT_FIELDS: Record<
+  ExtensionScaffoldCapability,
+  string
+> = {
   commands: "`commands`",
   hooks: "`commands` and `hooks.afterCommand`",
   search: "`commands`, `searchProviders`, and `vectorStoreAdapters`",
@@ -1540,7 +1566,9 @@ function buildDeclarativeBlueprintSurface(
   capability: ExtensionScaffoldCapability,
 ): DeclarativeBlueprintSurface {
   const builderImports: string[] = [];
-  const definitions: string[] = [...buildDeclarativePingCommandLines(extensionName, commandName, capability)];
+  const definitions: string[] = [
+    ...buildDeclarativePingCommandLines(extensionName, commandName, capability),
+  ];
   const blueprintFields: string[] = ["  commands: [pingCommand],"];
 
   const searchProviderName = `${extensionName}-search`;
@@ -1611,7 +1639,10 @@ function buildDeclarativeBlueprintSurface(
         "  delete: async (context) => ({ deleted: context.ids.length }),",
         "});",
       );
-      blueprintFields.push("  searchProviders: [searchProvider],", "  vectorStoreAdapters: [vectorStoreAdapter],");
+      blueprintFields.push(
+        "  searchProviders: [searchProvider],",
+        "  vectorStoreAdapters: [vectorStoreAdapter],",
+      );
       break;
     case "importers":
       builderImports.push("defineExporter", "defineImporter");
@@ -1673,7 +1704,11 @@ function buildDeclarativeBlueprintSurface(
       );
       break;
     case "schema":
-      builderImports.push("defineItemField", "defineItemType", "defineMigration");
+      builderImports.push(
+        "defineItemField",
+        "defineItemType",
+        "defineMigration",
+      );
       definitions.push(
         "",
         "// Schema registrations let a package model its own project domain - the heart of",
@@ -1708,7 +1743,11 @@ function buildDeclarativeBlueprintSurface(
         "  run: async (context) => ({ migrated: true, id: context.id }),",
         "});",
       );
-      blueprintFields.push("  itemTypes: [itemType],", "  itemFields: [noteField],", "  migrations: [initMigration],");
+      blueprintFields.push(
+        "  itemTypes: [itemType],",
+        "  itemFields: [noteField],",
+        "  migrations: [initMigration],",
+      );
       break;
     case "profile":
       builderImports.push("defineProjectProfile");
@@ -1761,7 +1800,9 @@ function buildDeclarativeBlueprintSurface(
         "  return { options };",
         "});",
       );
-      blueprintFields.push(`  parsers: { ${JSON.stringify(commandName)}: pingParser },`);
+      blueprintFields.push(
+        `  parsers: { ${JSON.stringify(commandName)}: pingParser },`,
+      );
       break;
     case "preflight":
       builderImports.push("definePreflightOverride");
@@ -1823,7 +1864,11 @@ function buildDeclarativeEntrypoint(
   commandName: string,
   capability: ExtensionScaffoldCapability,
 ): string {
-  const surface = buildDeclarativeBlueprintSurface(extensionName, commandName, capability);
+  const surface = buildDeclarativeBlueprintSurface(
+    extensionName,
+    commandName,
+    capability,
+  );
   // `composeExtension`/`defineCommand`/`defineExtensionBlueprint` are always needed;
   // sort the full set so the import line is stable and idiomatic per capability.
   const builderImports = [
@@ -2015,7 +2060,9 @@ function buildDeclarativeCapabilityTestBlock(
     case "profile":
       return [
         `test(${JSON.stringify(`${extensionName} registers its project profile`)}, async () => {`,
-        ...withHarnessCleanup(buildProfileCapabilityAssertionLines(extensionName)),
+        ...withHarnessCleanup(
+          buildProfileCapabilityAssertionLines(extensionName),
+        ),
         "});",
         "",
       ];
@@ -2175,14 +2222,20 @@ function buildDeclarativeSampleTestSource(
   // The preflight report's capability set is DERIVED from the blueprint and SORTED,
   // so assert against the sorted manifest capabilities (a set match in canonical
   // order); the harness `capabilities` grant uses the same literal.
-  const capabilitiesLiteral = JSON.stringify([...SCAFFOLD_MANIFEST_CAPABILITIES[capability]].sort());
+  const capabilitiesLiteral = JSON.stringify(
+    [...SCAFFOLD_MANIFEST_CAPABILITIES[capability]].sort(),
+  );
   return [
     'import assert from "node:assert/strict";',
     'import { test } from "node:test";',
     'import { assertExtensionDeactivated, assertExtensionPreflight, createExtensionTestHarness } from "@unbrained/pm-cli/sdk/testing";',
     // The search sample's synthetic query/vector contexts reference these SDK types
     // for their typed-stub fixtures; other capabilities need no extra type imports.
-    ...(capability === "search" ? ['import type { ItemDocument, PmSettings } from "@unbrained/pm-cli/sdk";'] : []),
+    ...(capability === "search"
+      ? [
+          'import type { ItemDocument, PmSettings } from "@unbrained/pm-cli/sdk";',
+        ]
+      : []),
     'import extension, { blueprint } from "./index.ts";',
     "",
     ...SAMPLE_HARNESS_CLEANUP_LINES,
@@ -2247,7 +2300,12 @@ function buildDeclarativeSampleTestSource(
     ...SAMPLE_HARNESS_FINALLY_LINES,
     "});",
     "",
-    ...buildDeclarativeCapabilityTestBlock(extensionName, commandName, capability, capabilitiesLiteral),
+    ...buildDeclarativeCapabilityTestBlock(
+      extensionName,
+      commandName,
+      capability,
+      capabilitiesLiteral,
+    ),
   ].join("\n");
 }
 
@@ -2272,7 +2330,10 @@ function buildDeclarativePackageReadme(
   // global contribution), so describe the manifest accurately and use the
   // conservative-activation section.
   const manifestBullet = buildScaffoldManifestBullet(capability, "package");
-  const activationSection = buildScaffoldActivationReadmeSection(capability, "package");
+  const activationSection = buildScaffoldActivationReadmeSection(
+    capability,
+    "package",
+  );
   return [
     `# ${packageName}`,
     "",
@@ -2336,7 +2397,7 @@ function buildDeclarativePackageReadme(
     "- `pm_max_version` (string, optional): highest pm CLI version that may load this package. Add it to block CLIs that are newer than the version you have validated against. The loader blocks the package when the CLI exceeds this bound.",
     "",
     "## Policy Metadata",
-    "The starter command is pure compute, so `manifest.json` declares `trusted: true`, `sandbox_profile: \"strict\"`, and all six permission keys as `false`. Keep that least-privilege shape for pure packages; relax only the specific permission your package actually needs and verify with `pm package doctor --project --detail deep --trace`.",
+    'The starter command is pure compute, so `manifest.json` declares `trusted: true`, `sandbox_profile: "strict"`, and all six permission keys as `false`. Keep that least-privilege shape for pure packages; relax only the specific permission your package actually needs and verify with `pm package doctor --project --detail deep --trace`.',
     "",
     "## Notes",
     "- Author in `index.ts`; pm loads it directly (no build), so edits take effect on the next install/reload — there is no `.js` to regenerate.",
@@ -2346,13 +2407,7 @@ function buildDeclarativePackageReadme(
   ].join("\n");
 }
 
-/**
- * Derived, deterministic identifier set the package `define*` README snippets
- * reference: the search/vector adapter names, the importer/exporter adapter
- * label, the custom item type/folder/aliases, the note field, and the seed
- * migration id. All are projected from `extensionName` so the generated snippet
- * matches the generated `index.ts`.
- */
+/** Derived, deterministic identifier set the package `define*` README snippets reference: the search/vector adapter names, the importer/exporter adapter label, the custom item type/folder/aliases, the note field, and the seed migration id. All are projected from `extensionName` so the generated snippet matches the generated `index.ts`. */
 interface ScaffoldSnippetNames {
   searchProviderName: string;
   vectorAdapterName: string;
@@ -2368,7 +2423,9 @@ interface ScaffoldSnippetNames {
  * Project the {@link ScaffoldSnippetNames} for `extensionName`, omitting a
  * redundant self-alias when the de-hyphenated form already equals the type name.
  */
-function buildScaffoldSnippetNames(extensionName: string): ScaffoldSnippetNames {
+function buildScaffoldSnippetNames(
+  extensionName: string,
+): ScaffoldSnippetNames {
   const itemTypeName = extensionName;
   const itemTypeAlias = extensionName.replace(/-/g, "");
   return {
@@ -2383,17 +2440,20 @@ function buildScaffoldSnippetNames(extensionName: string): ScaffoldSnippetNames 
   };
 }
 
-/**
- * Build the comma-separated `define*` builder import list for the README
- * snippet, including only the builders the chosen capability demonstrates.
- */
-function buildDefineBuilderImports(capability: ExtensionScaffoldCapability): string {
+/** Build the comma-separated `define*` builder import list for the README snippet, including only the builders the chosen capability demonstrates. */
+function buildDefineBuilderImports(
+  capability: ExtensionScaffoldCapability,
+): string {
   return [
     "defineCommand",
     ...(capability === "hooks" ? ["defineAfterCommandHook"] : []),
-    ...(capability === "search" ? ["defineSearchProvider", "defineVectorStoreAdapter"] : []),
+    ...(capability === "search"
+      ? ["defineSearchProvider", "defineVectorStoreAdapter"]
+      : []),
     ...(capability === "importers" ? ["defineImporter", "defineExporter"] : []),
-    ...(capability === "schema" ? ["defineItemType", "defineItemField", "defineMigration"] : []),
+    ...(capability === "schema"
+      ? ["defineItemType", "defineItemField", "defineMigration"]
+      : []),
     ...(capability === "profile" ? ["defineProjectProfile"] : []),
     ...(capability === "renderers" ? ["defineRendererOverride"] : []),
     ...(capability === "parser" ? ["defineParserOverride"] : []),
@@ -2402,11 +2462,7 @@ function buildDefineBuilderImports(capability: ExtensionScaffoldCapability): str
   ].join(", ");
 }
 
-/**
- * Build the exported `define*` declarations for the README snippet: the base
- * `pingCommand` (with parser flags for the parser capability) plus the one
- * capability-specific export the chosen capability demonstrates.
- */
+/** Build the exported `define*` declarations for the README snippet: the base `pingCommand` (with parser flags for the parser capability) plus the one capability-specific export the chosen capability demonstrates. */
 function buildDefineBuilderExports(
   extensionName: string,
   commandName: string,
@@ -2447,15 +2503,15 @@ function buildDefineBuilderExports(
       `  name: ${JSON.stringify(names.searchProviderName)},`,
       "  query: async (context) => ({",
       "    hits: context.documents",
-      "      .filter((document) => String(document.metadata.title ?? \"\").toLowerCase().includes(context.query.toLowerCase()))",
-      "      .map((document) => ({ id: document.metadata.id, score: 1, matched_fields: [\"title\"] })),",
+      '      .filter((document) => String(document.metadata.title ?? "").toLowerCase().includes(context.query.toLowerCase()))',
+      '      .map((document) => ({ id: document.metadata.id, score: 1, matched_fields: ["title"] })),',
       "  }),",
       "  embed: async (context) => [context.input.length],",
       "});",
       "",
       "export const vectorStoreAdapter = defineVectorStoreAdapter({",
       `  name: ${JSON.stringify(names.vectorAdapterName)},`,
-      "  query: async (context) => [{ id: \"starter-vector-hit\", score: context.limit }],",
+      '  query: async (context) => [{ id: "starter-vector-hit", score: context.limit }],',
       "  upsert: async (context) => ({ upserted: context.points.length }),",
       "  delete: async (context) => ({ deleted: context.ids.length }),",
       "});",
@@ -2466,13 +2522,13 @@ function buildDefineBuilderExports(
       "",
       "export const importer = defineImporter(async (context) => ({",
       "  imported: 1,",
-      "  source: context.options.source ?? \"starter\",",
+      '  source: context.options.source ?? "starter",',
       "  args: context.args,",
       "}));",
       "",
       "export const exporter = defineExporter(async (context) => ({",
       "  exported: true,",
-      "  destination: context.options.destination ?? \"stdout\",",
+      '  destination: context.options.destination ?? "stdout",',
       "  args: context.args,",
       "}));",
     );
@@ -2568,7 +2624,9 @@ function buildDefineBuilderActivate(
     lines.push('  api.registerRenderer("toon", toonRenderer);');
   }
   if (capability === "parser") {
-    lines.push(`  api.registerParser(${JSON.stringify(commandName)}, pingParser);`);
+    lines.push(
+      `  api.registerParser(${JSON.stringify(commandName)}, pingParser);`,
+    );
   }
   if (capability === "preflight") {
     lines.push("  api.registerPreflight(preflightOverride);");
@@ -2580,7 +2638,10 @@ function buildDefineBuilderActivate(
     lines.push("  api.hooks.afterCommand(afterCommandHook);");
   }
   if (capability === "search") {
-    lines.push("  api.registerSearchProvider(searchProvider);", "  api.registerVectorStoreAdapter(vectorStoreAdapter);");
+    lines.push(
+      "  api.registerSearchProvider(searchProvider);",
+      "  api.registerVectorStoreAdapter(vectorStoreAdapter);",
+    );
   }
   if (capability === "schema") {
     lines.push(
@@ -2623,9 +2684,7 @@ function buildDefineBuilderActivate(
   return lines;
 }
 
-/**
- * Implements build starter extension scaffold files for the public runtime surface of this module.
- */
+/** Implements build starter extension scaffold files for the public runtime surface of this module. */
 export function buildStarterExtensionScaffoldFiles(
   extensionName: string,
   commandName: string,
@@ -2635,7 +2694,11 @@ export function buildStarterExtensionScaffoldFiles(
 ): Record<string, string> {
   const packageName = `pm-${extensionName}`;
   const capabilities = SCAFFOLD_MANIFEST_CAPABILITIES[capability];
-  const activationCommands = buildScaffoldActivationCommands(extensionName, commandName, capability);
+  const activationCommands = buildScaffoldActivationCommands(
+    extensionName,
+    commandName,
+    capability,
+  );
   const manifest = `${JSON.stringify(
     {
       name: extensionName,
@@ -2654,7 +2717,9 @@ export function buildStarterExtensionScaffoldFiles(
       // global contribution — a custom item type/field, or a project profile
       // resolved by `pm profile` — stays available to built-in commands (see
       // buildScaffoldActivationCommands).
-      ...(activationCommands.length > 0 ? { activation: { commands: activationCommands } } : {}),
+      ...(activationCommands.length > 0
+        ? { activation: { commands: activationCommands } }
+        : {}),
     },
     null,
     2,
@@ -2742,17 +2807,18 @@ export function buildStarterExtensionScaffoldFiles(
     // helpers without adding a third-party test runner. The suite covers the
     // capability the scaffold targets (command invocation, and for the hooks
     // capability, the after_command lifecycle hook).
-    const sampleTest = buildSampleTestSource(extensionName, commandName, capability);
+    const sampleTest = buildSampleTestSource(
+      extensionName,
+      commandName,
+      capability,
+    );
     const sampleTestBullet = SAMPLE_TEST_BULLETS[capability];
     // The package commits only TypeScript source — pm loads the `.ts` entry
     // directly, so there is no compiled output to ignore. Keep dependencies and
     // the tsc incremental cache out of version control.
-    const gitignore = [
-      "node_modules/",
-      "*.log",
-      "*.tsbuildinfo",
-      "",
-    ].join("\n");
+    const gitignore = ["node_modules/", "*.log", "*.tsbuildinfo", ""].join(
+      "\n",
+    );
     const names = buildScaffoldSnippetNames(extensionName);
     const defineBuilderImports = buildDefineBuilderImports(capability);
     const defineBuilderSnippet = [
@@ -2760,7 +2826,12 @@ export function buildStarterExtensionScaffoldFiles(
       `import { ${defineBuilderImports} } from "@unbrained/pm-cli/sdk";`,
       'import type { ExtensionApi } from "@unbrained/pm-cli/sdk";',
       "",
-      ...buildDefineBuilderExports(extensionName, commandName, capability, names),
+      ...buildDefineBuilderExports(
+        extensionName,
+        commandName,
+        capability,
+        names,
+      ),
       "",
       "export function activate(api: ExtensionApi): void {",
       "  api.registerCommand(pingCommand);",
@@ -2826,7 +2897,7 @@ export function buildStarterExtensionScaffoldFiles(
       "- `pm_max_version` (string, optional): highest pm CLI version that may load this package. Add it to block CLIs that are newer than the version you have validated against. The loader blocks the package when the CLI exceeds this bound.",
       "",
       "## Policy Metadata",
-      "The starter command is pure compute, so `manifest.json` declares `trusted: true`, `sandbox_profile: \"strict\"`, and all six permission keys as `false`. Keep that least-privilege shape for pure packages; relax only the specific permission your package actually needs and verify with `pm package doctor --project --detail deep --trace`.",
+      'The starter command is pure compute, so `manifest.json` declares `trusted: true`, `sandbox_profile: "strict"`, and all six permission keys as `false`. Keep that least-privilege shape for pure packages; relax only the specific permission your package actually needs and verify with `pm package doctor --project --detail deep --trace`.',
       "",
       "## Notes",
       "- Author in `index.ts`; pm loads it directly (no build), so edits take effect on the next install/reload — there is no `.js` to regenerate.",
@@ -2842,11 +2913,21 @@ export function buildStarterExtensionScaffoldFiles(
     return {
       "package.json": packageJson,
       "manifest.json": manifest,
-      "index.ts": declarative ? buildDeclarativeEntrypoint(extensionName, commandName, capability) : entrypoint,
-      "index.test.ts": declarative ? buildDeclarativeSampleTestSource(extensionName, commandName, capability) : sampleTest,
+      "index.ts": declarative
+        ? buildDeclarativeEntrypoint(extensionName, commandName, capability)
+        : entrypoint,
+      "index.test.ts": declarative
+        ? buildDeclarativeSampleTestSource(
+            extensionName,
+            commandName,
+            capability,
+          )
+        : sampleTest,
       "tsconfig.json": tsconfig,
       ".gitignore": gitignore,
-      "README.md": declarative ? buildDeclarativePackageReadme(packageName, commandName, capability) : packageReadme,
+      "README.md": declarative
+        ? buildDeclarativePackageReadme(packageName, commandName, capability)
+        : packageReadme,
     };
   }
   const readme = [
@@ -2882,7 +2963,7 @@ export function buildStarterExtensionScaffoldFiles(
     "- `pm_max_version` (string, optional): highest pm CLI version that may load this extension. Add it to block CLIs that are newer than the version you have validated against. The loader blocks the extension when the CLI exceeds this bound.",
     "",
     "## Policy Metadata",
-    "The starter command is pure compute, so `manifest.json` declares `trusted: true`, `sandbox_profile: \"strict\"`, and all six permission keys as `false`. Keep that least-privilege shape for pure extensions; relax only the specific permission your extension actually needs and verify with `pm extension --doctor --project --detail deep --trace`.",
+    'The starter command is pure compute, so `manifest.json` declares `trusted: true`, `sandbox_profile: "strict"`, and all six permission keys as `false`. Keep that least-privilege shape for pure extensions; relax only the specific permission your extension actually needs and verify with `pm extension --doctor --project --detail deep --trace`.',
     "",
     "- This scaffold is TypeScript ESM source loaded directly by pm (no compile), so it works in package scopes with `type: module`.",
     "- Author in `index.ts` (the manifest entry); edits take effect on the next install/reload — there is no `.js` to regenerate.",
@@ -2901,9 +2982,7 @@ export function buildStarterExtensionScaffoldFiles(
   };
 }
 
-/**
- * Implements scaffold extension project for the public runtime surface of this module.
- */
+/** Implements scaffold extension project for the public runtime surface of this module. */
 export async function scaffoldExtensionProject(
   target: string,
   vocabulary: "extension" | "package" = "extension",
@@ -2911,13 +2990,16 @@ export async function scaffoldExtensionProject(
   declarative: boolean = false,
 ): Promise<ExtensionScaffoldResult> {
   const normalizedCapability = capability.trim().toLowerCase();
-  if (!(SCAFFOLD_CAPABILITIES as readonly string[]).includes(normalizedCapability)) {
+  if (
+    !(SCAFFOLD_CAPABILITIES as readonly string[]).includes(normalizedCapability)
+  ) {
     throw new PmCliError(
       `Unknown scaffold capability "${capability}". Supported capabilities: ${SCAFFOLD_CAPABILITIES.join(", ")}.`,
       EXIT_CODE.USAGE,
     );
   }
-  const resolvedCapability = normalizedCapability as ExtensionScaffoldCapability;
+  const resolvedCapability =
+    normalizedCapability as ExtensionScaffoldCapability;
   // The declarative (`composeExtension` blueprint) starter is package-mode only.
   // `composeExtension` is a runtime SDK *value* import, so it belongs in
   // package-mode authoring where the SDK is a linked dependency — not in the
@@ -2929,14 +3011,24 @@ export async function scaffoldExtensionProject(
       EXIT_CODE.USAGE,
     );
   }
-  const style: ExtensionScaffoldStyle = declarative ? "declarative" : "imperative";
+  const style: ExtensionScaffoldStyle = declarative
+    ? "declarative"
+    : "imperative";
   const normalizedTarget = target.trim();
   const targetPath = path.resolve(process.cwd(), normalizedTarget);
-  const extensionName = normalizeManagedDirectoryName(path.basename(targetPath));
+  const extensionName = normalizeManagedDirectoryName(
+    path.basename(targetPath),
+  );
   // Hyphenated names become space-separated command words; reserved roots get a
   // `starter` prefix so core commands and aliases cannot intercept dispatch.
   const commandName = buildScaffoldCommandName(extensionName);
-  const scaffoldFiles = buildStarterExtensionScaffoldFiles(extensionName, commandName, vocabulary, resolvedCapability, declarative);
+  const scaffoldFiles = buildStarterExtensionScaffoldFiles(
+    extensionName,
+    commandName,
+    vocabulary,
+    resolvedCapability,
+    declarative,
+  );
 
   let createdDirectory = false;
   if (await pathExists(targetPath)) {

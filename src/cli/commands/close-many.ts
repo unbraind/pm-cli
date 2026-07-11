@@ -45,22 +45,33 @@ const CLOSE_MANY_FILTER_GUIDANCE = [
   "--ids",
 ].join(", ");
 
-/**
- * Documents the close many command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the close many command options payload exchanged by command, SDK, and package integrations. */
 export interface CloseManyCommandOptions {
+  /** Lifecycle state reported for status. */
   status?: string;
+  /** Value that configures or reports list for this contract. */
   list?: ListOptions;
+  /** Value that configures or reports reason for this contract. */
   reason?: string;
+  /** Value that configures or reports resolution for this contract. */
   resolution?: string;
+  /** Structured result returned by the expected operation. */
   expectedResult?: string;
+  /** Structured result returned by the actual operation. */
   actualResult?: string;
+  /** Value that configures or reports validate close for this contract. */
   validateClose?: string;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Value that configures or reports force for this contract. */
   force?: boolean;
+  /** Value that configures or reports dry run for this contract. */
   dryRun?: boolean;
+  /** Value that configures or reports rollback for this contract. */
   rollback?: string;
+  /** Value that configures or reports checkpoint for this contract. */
   checkpoint?: boolean;
 }
 
@@ -94,43 +105,73 @@ interface CloseManyPlanContext {
   planRows: CloseManyPlanRow[];
 }
 
-/**
- * Documents the close many result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the close many result payload exchanged by command, SDK, and package integrations. */
 export interface CloseManyResult {
+  /** Value that configures or reports mode for this contract. */
   mode: "dry_run" | "apply" | "rollback";
+  /** Number of matched entries represented by this result. */
   matched_count: number;
+  /** Value that configures or reports dry run for this contract. */
   dry_run: boolean;
+  /** Value that configures or reports reason for this contract. */
   reason?: string;
+  /** Value that configures or reports filters for this contract. */
   filters?: Record<string, unknown>;
+  /** Value that configures or reports validate close for this contract. */
   validate_close?: string;
+  /** Value that configures or reports item plans for this contract. */
   item_plans?: CloseManyPlanRow[];
+  /** Value that configures or reports checkpoint for this contract. */
   checkpoint?: {
     id: string;
     created_at: string;
     path: string;
     rollback_command: string;
   };
+  /** Number of closed entries represented by this result. */
   closed_count?: number;
+  /** Number of skipped entries represented by this result. */
   skipped_count?: number;
+  /** Number of failed entries represented by this result. */
   failed_count?: number;
+  /** Number of restored entries represented by this result. */
   restored_count?: number;
+  /** Value that configures or reports rollback checkpoint id for this contract. */
   rollback_checkpoint_id?: string;
-  rows?: CloseManyApplyRow[] | Array<{ id: string; status: "restored" | "failed"; changed_fields?: string[]; warnings?: string[]; error?: string }>;
+  /** Value that configures or reports rows for this contract. */
+  rows?:
+    | CloseManyApplyRow[]
+    | Array<{
+        id: string;
+        status: "restored" | "failed";
+        changed_fields?: string[];
+        warnings?: string[];
+        error?: string;
+      }>;
+  /** Value that configures or reports ids for this contract. */
   ids: string[];
 }
 
-function hasCloseManyFilters(list: ListOptions | undefined, status: string | undefined): boolean {
+function hasCloseManyFilters(
+  list: ListOptions | undefined,
+  status: string | undefined,
+): boolean {
   return hasListFilters(list, status, { includePagination: false });
 }
 
-function hasCloseManyRollbackConflicts(list: ListOptions | undefined, status: string | undefined): boolean {
+function hasCloseManyRollbackConflicts(
+  list: ListOptions | undefined,
+  status: string | undefined,
+): boolean {
   return hasListFilters(list, status);
 }
 
 function rejectBlankIdsFilter(list: ListOptions | undefined): void {
   if (list?.ids != null && String(list.ids).trim().length === 0) {
-    throw new PmCliError("--ids requires at least one non-empty item ID", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--ids requires at least one non-empty item ID",
+      EXIT_CODE.USAGE,
+    );
   }
 }
 
@@ -139,8 +180,14 @@ function activeListOptions(list: ListOptions | undefined): ListOptions {
   if (!list) {
     return active;
   }
-  for (const [key, value] of Object.entries(list) as Array<[keyof ListOptions, unknown]>) {
-    if (value == null || (typeof value === "string" && !value.split(",").some((entry) => entry.trim().length > 0))) {
+  for (const [key, value] of Object.entries(list) as Array<
+    [keyof ListOptions, unknown]
+  >) {
+    if (
+      value == null ||
+      (typeof value === "string" &&
+        !value.split(",").some((entry) => entry.trim().length > 0))
+    ) {
       continue;
     }
     (active as Record<string, unknown>)[key] = value;
@@ -159,7 +206,8 @@ function resolveReason(reason: unknown, required: boolean): string | undefined {
       EXIT_CODE.USAGE,
       {
         code: "close_reason_required",
-        required: "Provide a shared closing summary via --reason for the whole batch.",
+        required:
+          "Provide a shared closing summary via --reason for the whole batch.",
         why: "governance.require_close_reason is enabled, so every close must record why the items are done.",
         examples: [
           'pm close-many --filter-sprint S-12 --reason "Sprint S-12 acceptance criteria met"',
@@ -181,9 +229,15 @@ function resolveReason(reason: unknown, required: boolean): string | undefined {
 async function buildActiveChildrenByParent(
   pmRoot: string,
   settings: Awaited<ReturnType<typeof readSettings>>,
-): Promise<{ childrenByParent: Map<string, string[]>; parentByChild: Map<string, string> }> {
+): Promise<{
+  childrenByParent: Map<string, string[]>;
+  parentByChild: Map<string, string>;
+}> {
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
   const items = await listAllFrontMatterLight(
     pmRoot,
     settings.item_format,
@@ -214,7 +268,11 @@ async function buildActiveChildrenByParent(
   return { childrenByParent, parentByChild };
 }
 
-function hierarchyDepth(id: string, parentByChild: Map<string, string>, cache?: Map<string, number>): number {
+function hierarchyDepth(
+  id: string,
+  parentByChild: Map<string, string>,
+  cache?: Map<string, number>,
+): number {
   const cached = cache?.get(id);
   if (cached !== undefined) {
     return cached;
@@ -259,9 +317,17 @@ async function runCloseManyRollback(params: {
     params.rollbackId,
     CLOSE_MANY_CHECKPOINT_SCHEMA_VERSION,
   );
-  const restoreMessage = params.options.message ?? `Rollback close-many checkpoint ${checkpoint.id}`;
-  const rollback = await restoreCheckpointItems(checkpoint.items, (id, targetUpdatedAt) =>
-    runRestore(id, targetUpdatedAt, { author: params.options.author, message: restoreMessage, force: true }, params.global),
+  const restoreMessage =
+    params.options.message ?? `Rollback close-many checkpoint ${checkpoint.id}`;
+  const rollback = await restoreCheckpointItems(
+    checkpoint.items,
+    (id, targetUpdatedAt) =>
+      runRestore(
+        id,
+        targetUpdatedAt,
+        { author: params.options.author, message: restoreMessage, force: true },
+        params.global,
+      ),
   );
   return {
     mode: "rollback",
@@ -289,7 +355,9 @@ function planCloseManyRows(
   force: boolean,
 ): CloseManyPlanRow[] {
   return matched.map((item) => {
-    const activeChildIds = (childrenByParent.get(item.id) ?? []).filter((childId) => !closePlannedIds.has(childId));
+    const activeChildIds = (childrenByParent.get(item.id) ?? []).filter(
+      (childId) => !closePlannedIds.has(childId),
+    );
     const willSkip = !canCloseManyItem(item, statusRegistry, force);
     return {
       id: item.id,
@@ -297,7 +365,9 @@ function planCloseManyRows(
       status: item.status,
       action: willSkip ? "skip" : "close",
       ...(willSkip ? { skip_reason: "already_terminal" } : {}),
-      ...(activeChildIds.length > 0 ? { active_child_ids: activeChildIds } : {}),
+      ...(activeChildIds.length > 0
+        ? { active_child_ids: activeChildIds }
+        : {}),
     };
   });
 }
@@ -311,15 +381,20 @@ async function writeCloseManyCheckpoint(params: {
   filters: Record<string, unknown>;
   checkpointItems: MutationCheckpointItem[];
 }): Promise<CloseManyResult["checkpoint"]> {
-  const checkpointPath = await writeMutationCheckpoint(params.pmRoot, CLOSE_MANY_CHECKPOINT_SUBDIR, params.checkpointId, {
-    schema_version: CLOSE_MANY_CHECKPOINT_SCHEMA_VERSION,
-    id: params.checkpointId,
-    created_at: params.nowValue,
-    author: resolveAuthor(params.options.author, "unknown"),
-    ...(params.reason !== undefined ? { reason: params.reason } : {}),
-    filters: params.filters,
-    items: params.checkpointItems,
-  });
+  const checkpointPath = await writeMutationCheckpoint(
+    params.pmRoot,
+    CLOSE_MANY_CHECKPOINT_SUBDIR,
+    params.checkpointId,
+    {
+      schema_version: CLOSE_MANY_CHECKPOINT_SCHEMA_VERSION,
+      id: params.checkpointId,
+      created_at: params.nowValue,
+      author: resolveAuthor(params.options.author, "unknown"),
+      ...(params.reason !== undefined ? { reason: params.reason } : {}),
+      filters: params.filters,
+      items: params.checkpointItems,
+    },
+  );
   return {
     id: params.checkpointId,
     created_at: params.nowValue,
@@ -339,38 +414,67 @@ async function applyCloseManyRows(params: {
   const closedIds: string[] = [];
   for (const item of params.matched) {
     if (!params.closableIds.has(item.id)) {
-      rows.push({ id: item.id, status: "skipped", skip_reason: "already_terminal" });
+      rows.push({
+        id: item.id,
+        status: "skipped",
+        skip_reason: "already_terminal",
+      });
       continue;
     }
     try {
-      const result = await runClose(item.id, params.reason, params.closeOptions, params.global);
+      const result = await runClose(
+        item.id,
+        params.reason,
+        params.closeOptions,
+        params.global,
+      );
       rows.push({
         id: item.id,
         status: "closed",
         changed_fields: result.changed_fields,
-        ...(result.warnings && result.warnings.length > 0 ? { warnings: result.warnings } : {}),
+        ...(result.warnings && result.warnings.length > 0
+          ? { warnings: result.warnings }
+          : {}),
       });
       closedIds.push(item.id);
     } catch (error: unknown) {
-      rows.push({ id: item.id, status: "failed", error: toErrorMessage(error) });
+      rows.push({
+        id: item.id,
+        status: "failed",
+        error: toErrorMessage(error),
+      });
     }
   }
   return { rows, closedIds };
 }
 
-function resolveCloseManyRollbackId(options: CloseManyCommandOptions): string | undefined {
+function resolveCloseManyRollbackId(
+  options: CloseManyCommandOptions,
+): string | undefined {
   return typeof options.rollback === "string" ? options.rollback : undefined;
 }
 
-function validateCloseManyRollbackOptions(options: CloseManyCommandOptions, rollbackId: string): void {
+function validateCloseManyRollbackOptions(
+  options: CloseManyCommandOptions,
+  rollbackId: string,
+): void {
   if (rollbackId.trim().length === 0) {
-    throw new PmCliError("--rollback requires a checkpoint id", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--rollback requires a checkpoint id",
+      EXIT_CODE.USAGE,
+    );
   }
   if (options.dryRun === true) {
-    throw new PmCliError("--dry-run cannot be combined with --rollback", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--dry-run cannot be combined with --rollback",
+      EXIT_CODE.USAGE,
+    );
   }
   if (hasCloseManyRollbackConflicts(options.list, options.status)) {
-    throw new PmCliError("Rollback mode does not accept filter options", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Rollback mode does not accept filter options",
+      EXIT_CODE.USAGE,
+    );
   }
 }
 
@@ -384,10 +488,15 @@ function assertCloseManyHasFilters(options: CloseManyCommandOptions): void {
   );
 }
 
-function sortCloseManyMatchedItems(matched: ListedItem[], parentByChild: Map<string, string>): ListedItem[] {
+function sortCloseManyMatchedItems(
+  matched: ListedItem[],
+  parentByChild: Map<string, string>,
+): ListedItem[] {
   const depthCache = new Map<string, number>();
   return [...matched].sort((left, right) => {
-    const depthDelta = hierarchyDepth(right.id, parentByChild, depthCache) - hierarchyDepth(left.id, parentByChild, depthCache);
+    const depthDelta =
+      hierarchyDepth(right.id, parentByChild, depthCache) -
+      hierarchyDepth(left.id, parentByChild, depthCache);
     return depthDelta !== 0 ? depthDelta : left.id.localeCompare(right.id);
   });
 }
@@ -405,7 +514,11 @@ function resolveCloseManyPlannedIds(
   statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>,
   force: boolean,
 ): Set<string> {
-  return new Set(matched.filter((item) => canCloseManyItem(item, statusRegistry, force)).map((item) => item.id));
+  return new Set(
+    matched
+      .filter((item) => canCloseManyItem(item, statusRegistry, force))
+      .map((item) => item.id),
+  );
 }
 
 async function buildCloseManyPlanContext(params: {
@@ -416,12 +529,29 @@ async function buildCloseManyPlanContext(params: {
 }): Promise<CloseManyPlanContext> {
   assertCloseManyHasFilters(params.options);
   const statusRegistry = resolveRuntimeStatusRegistry(params.settings.schema);
-  const reason = resolveReason(params.options.reason, params.settings.governance.require_close_reason);
+  const reason = resolveReason(
+    params.options.reason,
+    params.settings.governance.require_close_reason,
+  );
   const force = params.options.force === true;
-  const listed = await runList(params.options.status, activeListOptions(params.options.list), params.global);
-  const { childrenByParent, parentByChild } = await buildActiveChildrenByParent(params.pmRoot, params.settings);
-  const matched = sortCloseManyMatchedItems(listed.items as ListedItem[], parentByChild);
-  const closePlannedIds = resolveCloseManyPlannedIds(matched, statusRegistry, force);
+  const listed = await runList(
+    params.options.status,
+    activeListOptions(params.options.list),
+    params.global,
+  );
+  const { childrenByParent, parentByChild } = await buildActiveChildrenByParent(
+    params.pmRoot,
+    params.settings,
+  );
+  const matched = sortCloseManyMatchedItems(
+    listed.items as ListedItem[],
+    parentByChild,
+  );
+  const closePlannedIds = resolveCloseManyPlannedIds(
+    matched,
+    statusRegistry,
+    force,
+  );
   return {
     pmRoot: params.pmRoot,
     settings: params.settings,
@@ -431,18 +561,28 @@ async function buildCloseManyPlanContext(params: {
     force,
     listed,
     matched,
-    planRows: planCloseManyRows(matched, childrenByParent, closePlannedIds, statusRegistry, force),
+    planRows: planCloseManyRows(
+      matched,
+      childrenByParent,
+      closePlannedIds,
+      statusRegistry,
+      force,
+    ),
   };
 }
 
-function buildCloseManyDryRunResult(context: CloseManyPlanContext): CloseManyResult {
+function buildCloseManyDryRunResult(
+  context: CloseManyPlanContext,
+): CloseManyResult {
   return {
     mode: "dry_run",
     matched_count: context.matched.length,
     dry_run: true,
     ...(context.reason !== undefined ? { reason: context.reason } : {}),
     filters: context.listed.filters,
-    ...(context.validateCloseMode ? { validate_close: context.validateCloseMode } : {}),
+    ...(context.validateCloseMode
+      ? { validate_close: context.validateCloseMode }
+      : {}),
     item_plans: context.planRows,
     ids: [],
   };
@@ -472,13 +612,17 @@ async function resolveCloseManyCheckpointInfo(params: {
   });
 }
 
-/**
- * Implements run close many for the public runtime surface of this module.
- */
-export async function runCloseMany(options: CloseManyCommandOptions, global: GlobalOptions): Promise<CloseManyResult> {
+/** Implements run close many for the public runtime surface of this module. */
+export async function runCloseMany(
+  options: CloseManyCommandOptions,
+  global: GlobalOptions,
+): Promise<CloseManyResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   const settings = await readSettings(pmRoot);
 
@@ -491,16 +635,34 @@ export async function runCloseMany(options: CloseManyCommandOptions, global: Glo
     return runCloseManyRollback({ pmRoot, rollbackId, options, global });
   }
 
-  const context = await buildCloseManyPlanContext({ pmRoot, settings, options, global });
+  const context = await buildCloseManyPlanContext({
+    pmRoot,
+    settings,
+    options,
+    global,
+  });
 
   if (dryRun) {
     return buildCloseManyDryRunResult(context);
   }
 
-  const closableIds = new Set(context.planRows.filter((row) => row.action === "close").map((row) => row.id));
+  const closableIds = new Set(
+    context.planRows
+      .filter((row) => row.action === "close")
+      .map((row) => row.id),
+  );
   const nowValue = nowIso();
-  const checkpointId = createCheckpointId(CLOSE_MANY_CHECKPOINT_SUBDIR, nowValue);
-  const checkpointInfo = await resolveCloseManyCheckpointInfo({ context, options, closableIds, checkpointId, nowValue });
+  const checkpointId = createCheckpointId(
+    CLOSE_MANY_CHECKPOINT_SUBDIR,
+    nowValue,
+  );
+  const checkpointInfo = await resolveCloseManyCheckpointInfo({
+    context,
+    options,
+    closableIds,
+    checkpointId,
+    nowValue,
+  });
 
   const closeOptions: CloseCommandOptions = {
     author: options.author,
@@ -526,7 +688,9 @@ export async function runCloseMany(options: CloseManyCommandOptions, global: Glo
     dry_run: false,
     ...(context.reason !== undefined ? { reason: context.reason } : {}),
     filters: context.listed.filters,
-    ...(context.validateCloseMode ? { validate_close: context.validateCloseMode } : {}),
+    ...(context.validateCloseMode
+      ? { validate_close: context.validateCloseMode }
+      : {}),
     ...(checkpointInfo ? { checkpoint: checkpointInfo } : {}),
     closed_count: rows.filter((row) => row.status === "closed").length,
     skipped_count: rows.filter((row) => row.status === "skipped").length,
@@ -536,6 +700,7 @@ export async function runCloseMany(options: CloseManyCommandOptions, global: Glo
   };
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   activeListOptions,
   buildActiveChildrenByParent,

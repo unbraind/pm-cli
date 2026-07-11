@@ -39,13 +39,21 @@ export const CONTENT_FIELD_ORDER: readonly ContentField[] = [
 
 /** Minimal structural shape needed: the collection arrays + optional body. */
 export interface ContentFieldItem {
+  /** Value that configures or reports notes for this contract. */
   notes?: unknown[];
+  /** Value that configures or reports learnings for this contract. */
   learnings?: unknown[];
+  /** Value that configures or reports files for this contract. */
   files?: unknown[];
+  /** Value that configures or reports docs for this contract. */
   docs?: unknown[];
+  /** Value that configures or reports tests for this contract. */
   tests?: unknown[];
+  /** Value that configures or reports comments for this contract. */
   comments?: unknown[];
+  /** Value that configures or reports dependencies for this contract. */
   dependencies?: unknown[];
+  /** Value that configures or reports body for this contract. */
   body?: string;
   [key: string]: unknown;
 }
@@ -60,10 +68,7 @@ function hasBody(body: unknown): boolean {
   return typeof body === "string" && body.trim().length > 0;
 }
 
-/**
- * True when at least one entry in the `tests` array carries a non-empty string
- * `command`. Tolerant of non-object / non-string entries.
- */
+/** True when at least one entry in the `tests` array carries a non-empty string `command`. Tolerant of non-object / non-string entries. */
 function hasLinkedCommand(tests: unknown): boolean {
   if (!Array.isArray(tests)) {
     return false;
@@ -77,15 +82,11 @@ function hasLinkedCommand(tests: unknown): boolean {
   });
 }
 
-/**
- * True when the given content field carries context on this item.
- * - collection fields: `Array.isArray && length > 0`
- * - "deps": maps to the `dependencies` array
- * - "body": `typeof body === "string" && body.trim().length > 0`
- * - "linked_command": `tests` array has at least one entry with a non-empty
- *   string `command`
- */
-export function isContentFieldPresent(item: ContentFieldItem, field: ContentField): boolean {
+/** True when the given content field carries context on this item. - collection fields: `Array.isArray && length > 0` - "deps": maps to the `dependencies` array - "body": `typeof body === "string" && body.trim().length > 0` - "linked_command": `tests` array has at least one entry with a non-empty string `command` */
+export function isContentFieldPresent(
+  item: ContentFieldItem,
+  field: ContentField,
+): boolean {
   switch (field) {
     case "notes":
       return hasEntries(item.notes);
@@ -116,7 +117,9 @@ export function isContentFieldPresent(item: ContentFieldItem, field: ContentFiel
 export type ContentFieldSelection = "present" | "absent";
 
 /** Map of content fields to a present/absent requirement. */
-export type ContentFieldFilters = Partial<Record<ContentField, ContentFieldSelection>>;
+export type ContentFieldFilters = Partial<
+  Record<ContentField, ContentFieldSelection>
+>;
 
 /** True when at least one content-field selection is requested. */
 export function hasContentFieldFilter(filters: ContentFieldFilters): boolean {
@@ -129,7 +132,10 @@ export function hasContentFieldFilter(filters: ContentFieldFilters): boolean {
  * AND semantics across all requested fields: each requested field must match
  * its present/absent requirement. When no filter is requested the item passes.
  */
-export function itemMatchesContentFilters(item: ContentFieldItem, filters: ContentFieldFilters): boolean {
+export function itemMatchesContentFilters(
+  item: ContentFieldItem,
+  filters: ContentFieldFilters,
+): boolean {
   for (const field of CONTENT_FIELD_ORDER) {
     const selection = filters[field];
     if (selection === undefined) {
@@ -157,13 +163,13 @@ export function filterByContentFields<T extends ContentFieldItem>(
   return items.filter((item) => itemMatchesContentFilters(item, filters));
 }
 
-/**
- * Whether a content-field filter set requires the heavy collections to be
- * loaded. True when any non-body field is requested (collections + tests'
- * linked command all live in the heavy front-matter arrays).
- */
-export function contentFiltersNeedCollections(filters: ContentFieldFilters): boolean {
-  return CONTENT_FIELD_ORDER.some((field) => field !== "body" && filters[field] !== undefined);
+/** Whether a content-field filter set requires the heavy collections to be loaded. True when any non-body field is requested (collections + tests' linked command all live in the heavy front-matter arrays). */
+export function contentFiltersNeedCollections(
+  filters: ContentFieldFilters,
+): boolean {
+  return CONTENT_FIELD_ORDER.some(
+    (field) => field !== "body" && filters[field] !== undefined,
+  );
 }
 
 /** Whether a content-field filter set requires the item body to be loaded. */
@@ -177,7 +183,9 @@ export function contentFiltersNeedBody(filters: ContentFieldFilters): boolean {
 
 /** Utilization of a single content field: present vs total, with a rounded percent. */
 export interface ContentFieldUtilization {
+  /** Value that configures or reports present for this contract. */
   present: number;
+  /** Value that configures or reports total for this contract. */
   total: number;
   /** present/total * 100, rounded to one decimal; 100 when total is 0. */
   percent: number;
@@ -185,6 +193,7 @@ export interface ContentFieldUtilization {
 
 /** Per-field utilization report for pm stats --field-utilization. */
 export interface ContentFieldUtilizationReport {
+  /** Value that configures or reports total items for this contract. */
   total_items: number;
   /** Utilization keyed by content field (includes body and linked_command). */
   fields: Record<ContentField, ContentFieldUtilization>;
@@ -194,10 +203,7 @@ export interface ContentFieldUtilizationReport {
   empty_body: ContentFieldUtilization;
 }
 
-/**
- * Round present/total into a one-decimal percentage. Matches the convention in
- * metadata-coverage.ts: a zero population reports 100 (nothing missing).
- */
+/** Round present/total into a one-decimal percentage. Matches the convention in metadata-coverage.ts: a zero population reports 100 (nothing missing). */
 function roundPercent(present: number, total: number): number {
   if (total === 0) {
     return 100;
@@ -205,7 +211,10 @@ function roundPercent(present: number, total: number): number {
   return Math.round((present / total) * 1000) / 10;
 }
 
-function emptyUtilizationFields(): Record<ContentField, ContentFieldUtilization> {
+function emptyUtilizationFields(): Record<
+  ContentField,
+  ContentFieldUtilization
+> {
   const record = {} as Record<ContentField, ContentFieldUtilization>;
   for (const field of CONTENT_FIELD_ORDER) {
     record[field] = { present: 0, total: 0, percent: 100 };
@@ -213,11 +222,7 @@ function emptyUtilizationFields(): Record<ContentField, ContentFieldUtilization>
   return record;
 }
 
-/**
- * Compute content-field utilization across a list of items. For each field we
- * report how many items populate it out of the total, plus a rounded
- * percentage. Convenience `body_populated`/`empty_body` aliases mirror GH-241.
- */
+/** Compute content-field utilization across a list of items. For each field we report how many items populate it out of the total, plus a rounded percentage. Convenience `body_populated`/`empty_body` aliases mirror GH-241. */
 export function computeContentFieldUtilization(
   items: readonly ContentFieldItem[],
 ): ContentFieldUtilizationReport {

@@ -9,28 +9,37 @@ import type {
   RegisteredExtensionFlagDefinitions,
 } from "../core/extensions/index.js";
 
-/**
- * Documents the extension command argument help descriptor payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the extension command argument help descriptor payload exchanged by command, SDK, and package integrations. */
 export interface ExtensionCommandArgumentHelpDescriptor {
+  /** Value that configures or reports name for this contract. */
   name: string;
+  /** Value that configures or reports required for this contract. */
   required: boolean;
+  /** Value that configures or reports variadic for this contract. */
   variadic: boolean;
+  /** Value that configures or reports description for this contract. */
   description?: string;
 }
 
-/**
- * Documents the extension command help descriptor payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the extension command help descriptor payload exchanged by command, SDK, and package integrations. */
 export interface ExtensionCommandHelpDescriptor {
+  /** Value that configures or reports command for this contract. */
   command: string;
+  /** Value that configures or reports action for this contract. */
   action: string;
+  /** Value that configures or reports description for this contract. */
   description?: string;
+  /** Value that configures or reports intent for this contract. */
   intent?: string;
+  /** Value that configures or reports examples for this contract. */
   examples: string[];
+  /** Value that configures or reports failure hints for this contract. */
   failure_hints: string[];
+  /** Value that configures or reports arguments for this contract. */
   arguments: ExtensionCommandArgumentHelpDescriptor[];
+  /** Value that configures or reports flags for this contract. */
   flags: Array<Record<string, unknown>>;
+  /** Value that configures or reports source for this contract. */
   source?: {
     layer: "global" | "project";
     name: string;
@@ -38,27 +47,35 @@ export interface ExtensionCommandHelpDescriptor {
   };
 }
 
-/**
- * Documents the help option summary payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the help option summary payload exchanged by command, SDK, and package integrations. */
 export interface HelpOptionSummary {
+  /** Value that configures or reports flags for this contract. */
   flags: string;
+  /** Value that configures or reports long for this contract. */
   long: string | null;
+  /** Value that configures or reports short for this contract. */
   short: string | null;
+  /** Value that configures or reports description for this contract. */
   description: string;
+  /** Value that configures or reports takes value for this contract. */
   takes_value: boolean;
+  /** Value that configures or reports value required for this contract. */
   value_required: boolean;
+  /** Value that configures or reports value name for this contract. */
   value_name: string | null;
+  /** Value that configures or reports variadic for this contract. */
   variadic: boolean;
+  /** Value that configures or reports required for this contract. */
   required: boolean;
+  /** Value that configures or reports aliases for this contract. */
   aliases: string[];
+  /** Value that configures or reports alias for for this contract. */
   alias_for: string | null;
+  /** Fallback value used when callers do not provide an override. */
   default_value?: unknown;
 }
 
-/**
- * Implements normalize extension command path for the public runtime surface of this module.
- */
+/** Implements normalize extension command path for the public runtime surface of this module. */
 export function normalizeExtensionCommandPath(commandPath: string): string {
   return commandPath
     .trim()
@@ -80,7 +97,9 @@ function toOptionalBoolean(value: unknown): boolean | undefined {
   return typeof value === "boolean" ? value : undefined;
 }
 
-function formatDynamicExtensionFlagHelpLine(definition: Record<string, unknown>): string | null {
+function formatDynamicExtensionFlagHelpLine(
+  definition: Record<string, unknown>,
+): string | null {
   const visible = toOptionalBoolean(definition.visible);
   if (visible === false) {
     return null;
@@ -91,10 +110,15 @@ function formatDynamicExtensionFlagHelpLine(definition: Record<string, unknown>)
   }
 
   const shortName = toNonEmptyFlagString(definition.short);
-  const shortPrefix = shortName && shortName.startsWith("-") && !shortName.startsWith("--") ? `${shortName}, ` : "";
+  const shortPrefix =
+    shortName && shortName.startsWith("-") && !shortName.startsWith("--")
+      ? `${shortName}, `
+      : "";
   const valueName = toNonEmptyFlagString(definition.value_name);
   const valueSuffix = valueName ? ` <${valueName}>` : "";
-  const description = toNonEmptyFlagString(definition.description) ?? "Extension-provided option.";
+  const description =
+    toNonEmptyFlagString(definition.description) ??
+    "Extension-provided option.";
   const markers: string[] = [];
   if (toOptionalBoolean(definition.required) === true) {
     markers.push("required");
@@ -106,7 +130,9 @@ function formatDynamicExtensionFlagHelpLine(definition: Record<string, unknown>)
   return `${shortPrefix}${longName}${valueSuffix}  ${description}${markerSuffix}`;
 }
 
-function buildDynamicExtensionFlagHelp(definitions: Array<Record<string, unknown>>): string | null {
+function buildDynamicExtensionFlagHelp(
+  definitions: Array<Record<string, unknown>>,
+): string | null {
   const lines = [
     ...new Set(
       definitions
@@ -120,15 +146,15 @@ function buildDynamicExtensionFlagHelp(definitions: Array<Record<string, unknown
   return `\nExtension-provided flags:\n  ${lines.join("\n  ")}`;
 }
 
-/**
- * Implements collect dynamic extension flag help by command for the public runtime surface of this module.
- */
+/** Implements collect dynamic extension flag help by command for the public runtime surface of this module. */
 export function collectDynamicExtensionFlagHelpByCommand(
   registrations: RegisteredExtensionFlagDefinitions[],
 ): Map<string, string> {
   const grouped = new Map<string, Array<Record<string, unknown>>>();
   for (const registration of registrations) {
-    const commandPath = normalizeExtensionCommandPath(registration.target_command);
+    const commandPath = normalizeExtensionCommandPath(
+      registration.target_command,
+    );
     if (commandPath.length === 0) {
       continue;
     }
@@ -137,7 +163,9 @@ export function collectDynamicExtensionFlagHelpByCommand(
     grouped.set(commandPath, existing);
   }
 
-  const entries = [...grouped.entries()].sort(([left], [right]) => left.localeCompare(right));
+  const entries = [...grouped.entries()].sort(([left], [right]) =>
+    left.localeCompare(right),
+  );
   const helpByCommand = new Map<string, string>();
   for (const [commandPath, definitions] of entries) {
     const helpText = buildDynamicExtensionFlagHelp(definitions);
@@ -149,14 +177,19 @@ export function collectDynamicExtensionFlagHelpByCommand(
   return helpByCommand;
 }
 
-function normalizeExtensionCommandAction(commandPath: string, action: string | undefined): string {
+function normalizeExtensionCommandAction(
+  commandPath: string,
+  action: string | undefined,
+): string {
   if (typeof action !== "string" || action.trim().length === 0) {
     return commandPath.replace(/\s+/g, "-");
   }
   return action.trim().toLowerCase();
 }
 
-function normalizeExtensionCommandStringList(values: string[] | undefined): string[] {
+function normalizeExtensionCommandStringList(
+  values: string[] | undefined,
+): string[] {
   if (!Array.isArray(values)) {
     return [];
   }
@@ -177,7 +210,14 @@ function normalizeExtensionCommandStringList(values: string[] | undefined): stri
 }
 
 function normalizeExtensionCommandArguments(
-  values: Array<{ name?: unknown; required?: unknown; variadic?: unknown; description?: unknown }> | undefined,
+  values:
+    | Array<{
+        name?: unknown;
+        required?: unknown;
+        variadic?: unknown;
+        description?: unknown;
+      }>
+    | undefined,
 ): ExtensionCommandArgumentHelpDescriptor[] {
   if (!Array.isArray(values)) {
     return [];
@@ -193,29 +233,40 @@ function normalizeExtensionCommandArguments(
         required: value.required === true,
         variadic: value.variadic === true,
       };
-      if (typeof value.description === "string" && value.description.trim().length > 0) {
+      if (
+        typeof value.description === "string" &&
+        value.description.trim().length > 0
+      ) {
         normalized.description = value.description.trim();
       }
       return normalized;
     })
-    .filter((entry): entry is ExtensionCommandArgumentHelpDescriptor => entry !== null);
+    .filter(
+      (entry): entry is ExtensionCommandArgumentHelpDescriptor =>
+        entry !== null,
+    );
 }
 
 function collectExtensionDefinitionsByCommand(
   commandDefinitions: RegisteredExtensionCommandDefinition[],
 ): Map<string, ExtensionCommandHelpDescriptor> {
-  const definitionsByCommand = new Map<string, ExtensionCommandHelpDescriptor>();
+  const definitionsByCommand = new Map<
+    string,
+    ExtensionCommandHelpDescriptor
+  >();
   for (const definition of commandDefinitions) {
     const commandPath = normalizeExtensionCommandPath(definition.command);
     if (commandPath.length === 0) {
       continue;
     }
     const description =
-      typeof definition.description === "string" && definition.description.trim().length > 0
+      typeof definition.description === "string" &&
+      definition.description.trim().length > 0
         ? definition.description.trim()
         : undefined;
     const intent =
-      typeof definition.intent === "string" && definition.intent.trim().length > 0
+      typeof definition.intent === "string" &&
+      definition.intent.trim().length > 0
         ? definition.intent.trim()
         : undefined;
     definitionsByCommand.set(commandPath, {
@@ -224,7 +275,9 @@ function collectExtensionDefinitionsByCommand(
       description,
       intent,
       examples: normalizeExtensionCommandStringList(definition.examples),
-      failure_hints: normalizeExtensionCommandStringList(definition.failure_hints),
+      failure_hints: normalizeExtensionCommandStringList(
+        definition.failure_hints,
+      ),
       arguments: normalizeExtensionCommandArguments(definition.arguments),
       flags: [],
       source: {
@@ -242,7 +295,9 @@ function collectExtensionFlagsByCommand(
 ): Map<string, Array<Record<string, unknown>>> {
   const flagsByCommand = new Map<string, Array<Record<string, unknown>>>();
   for (const registration of flagRegistrations) {
-    const commandPath = normalizeExtensionCommandPath(registration.target_command);
+    const commandPath = normalizeExtensionCommandPath(
+      registration.target_command,
+    );
     if (commandPath.length === 0) {
       continue;
     }
@@ -274,19 +329,24 @@ function collectExtensionHelpCommandSet(
   return commandSet;
 }
 
-/**
- * Implements collect extension command help descriptors for the public runtime surface of this module.
- */
+/** Implements collect extension command help descriptors for the public runtime surface of this module. */
 export function collectExtensionCommandHelpDescriptors(
   commandHandlers: string[],
   commandDefinitions: RegisteredExtensionCommandDefinition[],
   flagRegistrations: RegisteredExtensionFlagDefinitions[],
 ): Map<string, ExtensionCommandHelpDescriptor> {
-  const definitionsByCommand = collectExtensionDefinitionsByCommand(commandDefinitions);
+  const definitionsByCommand =
+    collectExtensionDefinitionsByCommand(commandDefinitions);
   const flagsByCommand = collectExtensionFlagsByCommand(flagRegistrations);
-  const commandSet = collectExtensionHelpCommandSet(commandHandlers, definitionsByCommand, flagsByCommand);
+  const commandSet = collectExtensionHelpCommandSet(
+    commandHandlers,
+    definitionsByCommand,
+    flagsByCommand,
+  );
   const descriptors = new Map<string, ExtensionCommandHelpDescriptor>();
-  const sortedCommands = [...commandSet].sort((left, right) => left.localeCompare(right));
+  const sortedCommands = [...commandSet].sort((left, right) =>
+    left.localeCompare(right),
+  );
   for (const commandPath of sortedCommands) {
     const definition = definitionsByCommand.get(commandPath);
     const flags = flagsByCommand.get(commandPath) ?? [];
@@ -310,7 +370,9 @@ export function collectExtensionCommandHelpDescriptors(
   return descriptors;
 }
 
-function buildExtensionArgumentToken(argument: ExtensionCommandArgumentHelpDescriptor): string {
+function buildExtensionArgumentToken(
+  argument: ExtensionCommandArgumentHelpDescriptor,
+): string {
   const variadicSuffix = argument.variadic ? "..." : "";
   if (argument.required) {
     return `<${argument.name}${variadicSuffix}>`;
@@ -318,29 +380,45 @@ function buildExtensionArgumentToken(argument: ExtensionCommandArgumentHelpDescr
   return `[${argument.name}${variadicSuffix}]`;
 }
 
-/**
- * Implements apply dynamic extension arguments for the public runtime surface of this module.
- */
-export function applyDynamicExtensionArguments(command: Command, descriptor: ExtensionCommandHelpDescriptor): void {
+/** Implements apply dynamic extension arguments for the public runtime surface of this module. */
+export function applyDynamicExtensionArguments(
+  command: Command,
+  descriptor: ExtensionCommandHelpDescriptor,
+): void {
   for (const argument of descriptor.arguments) {
-    command.argument(buildExtensionArgumentToken(argument), argument.description ?? "Extension argument.");
+    command.argument(
+      buildExtensionArgumentToken(argument),
+      argument.description ?? "Extension argument.",
+    );
   }
 }
 
-function normalizeDynamicExtensionOptionNames(definition: Record<string, unknown>): string[] | null {
+function normalizeDynamicExtensionOptionNames(
+  definition: Record<string, unknown>,
+): string[] | null {
   const visible = toOptionalBoolean(definition.visible);
   if (visible === false) {
     return null;
   }
   const longName = toNonEmptyFlagString(definition.long);
   const shortName = toNonEmptyFlagString(definition.short);
-  const normalizedShort = shortName && shortName.startsWith("-") && !shortName.startsWith("--") ? shortName : null;
-  const normalizedLong = longName && longName.startsWith("--") && longName.length > 2 ? longName : null;
-  const optionNames = [normalizedShort, normalizedLong].filter((entry): entry is string => entry !== null);
+  const normalizedShort =
+    shortName && shortName.startsWith("-") && !shortName.startsWith("--")
+      ? shortName
+      : null;
+  const normalizedLong =
+    longName && longName.startsWith("--") && longName.length > 2
+      ? longName
+      : null;
+  const optionNames = [normalizedShort, normalizedLong].filter(
+    (entry): entry is string => entry !== null,
+  );
   return optionNames.length > 0 ? optionNames : null;
 }
 
-function formatDynamicExtensionOptionFlags(definition: Record<string, unknown>): string | null {
+function formatDynamicExtensionOptionFlags(
+  definition: Record<string, unknown>,
+): string | null {
   const optionNames = normalizeDynamicExtensionOptionNames(definition);
   if (!optionNames) {
     return null;
@@ -350,20 +428,32 @@ function formatDynamicExtensionOptionFlags(definition: Record<string, unknown>):
   return `${optionNames.join(", ")}${optionValueSuffix}`;
 }
 
-function formatDynamicExtensionParseOptionFlags(definition: Record<string, unknown>): string | null {
+function formatDynamicExtensionParseOptionFlags(
+  definition: Record<string, unknown>,
+): string | null {
   const optionNames = normalizeDynamicExtensionOptionNames(definition);
   if (!optionNames) {
     return null;
   }
-  const valueType = toNonEmptyFlagString(definition.value_type) ?? toNonEmptyFlagString(definition.type);
+  const valueType =
+    toNonEmptyFlagString(definition.value_type) ??
+    toNonEmptyFlagString(definition.type);
   const valueName = toNonEmptyFlagString(definition.value_name);
-  const requiresValue = valueType !== "boolean" && (valueName !== null || valueType !== null || toOptionalBoolean(definition.required) === true);
+  const requiresValue =
+    valueType !== "boolean" &&
+    (valueName !== null ||
+      valueType !== null ||
+      toOptionalBoolean(definition.required) === true);
   const valueSuffix = requiresValue ? ` <${valueName ?? "value"}>` : "";
   return `${optionNames.join(", ")}${valueSuffix}`;
 }
 
-function formatDynamicExtensionOptionDescription(definition: Record<string, unknown>): string {
-  const description = toNonEmptyFlagString(definition.description) ?? "Extension-provided option.";
+function formatDynamicExtensionOptionDescription(
+  definition: Record<string, unknown>,
+): string {
+  const description =
+    toNonEmptyFlagString(definition.description) ??
+    "Extension-provided option.";
   const markers: string[] = [];
   if (toOptionalBoolean(definition.required) === true) {
     markers.push("required");
@@ -375,7 +465,10 @@ function formatDynamicExtensionOptionDescription(definition: Record<string, unkn
   return `${description}${markerSuffix}`;
 }
 
-function commandAlreadyHasOption(command: Command, definition: Record<string, unknown>): boolean {
+function commandAlreadyHasOption(
+  command: Command,
+  definition: Record<string, unknown>,
+): boolean {
   const longName = toNonEmptyFlagString(definition.long);
   const shortName = toNonEmptyFlagString(definition.short);
   return command.options.some((option) => {
@@ -387,10 +480,11 @@ function commandAlreadyHasOption(command: Command, definition: Record<string, un
   });
 }
 
-/**
- * Implements apply dynamic extension flag options for the public runtime surface of this module.
- */
-export function applyDynamicExtensionFlagOptions(command: Command, definitions: Array<Record<string, unknown>>): void {
+/** Implements apply dynamic extension flag options for the public runtime surface of this module. */
+export function applyDynamicExtensionFlagOptions(
+  command: Command,
+  definitions: Array<Record<string, unknown>>,
+): void {
   for (const definition of definitions) {
     if (commandAlreadyHasOption(command, definition)) {
       continue;
@@ -415,18 +509,30 @@ export function buildResidualDynamicExtensionFlagHelp(
   command: Command,
   definitions: Array<Record<string, unknown>>,
 ): string | null {
-  return buildDynamicExtensionFlagHelp(definitions.filter((definition) => !commandAlreadyHasOption(command, definition)));
+  return buildDynamicExtensionFlagHelp(
+    definitions.filter(
+      (definition) => !commandAlreadyHasOption(command, definition),
+    ),
+  );
 }
 
-function buildDynamicExtensionHelpOptionSummary(definition: Record<string, unknown>): HelpOptionSummary | null {
+function buildDynamicExtensionHelpOptionSummary(
+  definition: Record<string, unknown>,
+): HelpOptionSummary | null {
   const flags = formatDynamicExtensionOptionFlags(definition);
   if (!flags) {
     return null;
   }
   const longName = toNonEmptyFlagString(definition.long);
   const shortName = toNonEmptyFlagString(definition.short);
-  const normalizedLong = longName && longName.startsWith("--") && longName.length > 2 ? longName : null;
-  const normalizedShort = shortName && shortName.startsWith("-") && !shortName.startsWith("--") ? shortName : null;
+  const normalizedLong =
+    longName && longName.startsWith("--") && longName.length > 2
+      ? longName
+      : null;
+  const normalizedShort =
+    shortName && shortName.startsWith("-") && !shortName.startsWith("--")
+      ? shortName
+      : null;
   const valueName = toNonEmptyFlagString(definition.value_name);
   const required = toOptionalBoolean(definition.required) === true;
   return {
@@ -444,10 +550,10 @@ function buildDynamicExtensionHelpOptionSummary(definition: Record<string, unkno
   };
 }
 
-/**
- * Implements build dynamic extension help option summaries for the public runtime surface of this module.
- */
-export function buildDynamicExtensionHelpOptionSummaries(descriptor: ExtensionCommandHelpDescriptor | undefined): HelpOptionSummary[] {
+/** Implements build dynamic extension help option summaries for the public runtime surface of this module. */
+export function buildDynamicExtensionHelpOptionSummaries(
+  descriptor: ExtensionCommandHelpDescriptor | undefined,
+): HelpOptionSummary[] {
   if (!descriptor) {
     return [];
   }
@@ -464,10 +570,11 @@ export function buildDynamicExtensionHelpOptionSummaries(descriptor: ExtensionCo
   return summaries;
 }
 
-/**
- * Implements merge help option summaries for the public runtime surface of this module.
- */
-export function mergeHelpOptionSummaries(base: HelpOptionSummary[], extension: HelpOptionSummary[]): HelpOptionSummary[] {
+/** Implements merge help option summaries for the public runtime surface of this module. */
+export function mergeHelpOptionSummaries(
+  base: HelpOptionSummary[],
+  extension: HelpOptionSummary[],
+): HelpOptionSummary[] {
   if (extension.length === 0) {
     return base;
   }
@@ -483,10 +590,10 @@ export function mergeHelpOptionSummaries(base: HelpOptionSummary[], extension: H
   return merged;
 }
 
-/**
- * Implements build dynamic extension command metadata help for the public runtime surface of this module.
- */
-export function buildDynamicExtensionCommandMetadataHelp(descriptor: ExtensionCommandHelpDescriptor): string | null {
+/** Implements build dynamic extension command metadata help for the public runtime surface of this module. */
+export function buildDynamicExtensionCommandMetadataHelp(
+  descriptor: ExtensionCommandHelpDescriptor,
+): string | null {
   const lines: string[] = [];
   if (descriptor.intent) {
     lines.push(`Intent: ${descriptor.intent}`);
@@ -512,9 +619,7 @@ export function buildDynamicExtensionCommandMetadataHelp(descriptor: ExtensionCo
   return `\nExtension command metadata:\n  ${lines.join("\n  ")}`;
 }
 
-/**
- * Implements command aliases for the public runtime surface of this module.
- */
+/** Implements command aliases for the public runtime surface of this module. */
 export function commandAliases(command: Command): string[] {
   const commandRecord = command as unknown as {
     aliases?: () => string[];
@@ -522,7 +627,10 @@ export function commandAliases(command: Command): string[] {
     _aliases?: string[];
   };
   if (typeof commandRecord.aliases === "function") {
-    return commandRecord.aliases().map((value) => value.trim().toLowerCase()).filter((value) => value.length > 0);
+    return commandRecord
+      .aliases()
+      .map((value) => value.trim().toLowerCase())
+      .filter((value) => value.length > 0);
   }
   if (typeof commandRecord.alias === "function") {
     const alias = commandRecord.alias();
@@ -531,15 +639,18 @@ export function commandAliases(command: Command): string[] {
     }
   }
   if (Array.isArray(commandRecord._aliases)) {
-    return commandRecord._aliases.map((value) => value.trim().toLowerCase()).filter((value) => value.length > 0);
+    return commandRecord._aliases
+      .map((value) => value.trim().toLowerCase())
+      .filter((value) => value.length > 0);
   }
   return [];
 }
 
-/**
- * Implements find direct child command for the public runtime surface of this module.
- */
-export function findDirectChildCommand(parent: Command, name: string): Command | null {
+/** Implements find direct child command for the public runtime surface of this module. */
+export function findDirectChildCommand(
+  parent: Command,
+  name: string,
+): Command | null {
   const normalizedTarget = name.trim().toLowerCase();
   return (
     parent.commands.find((entry) => {
@@ -551,10 +662,11 @@ export function findDirectChildCommand(parent: Command, name: string): Command |
   );
 }
 
-/**
- * Implements find command by path for the public runtime surface of this module.
- */
-export function findCommandByPath(root: Command, pathParts: string[]): Command | null {
+/** Implements find command by path for the public runtime surface of this module. */
+export function findCommandByPath(
+  root: Command,
+  pathParts: string[],
+): Command | null {
   let current: Command = root;
   for (const part of pathParts) {
     const next = findDirectChildCommand(current, part);
@@ -566,10 +678,11 @@ export function findCommandByPath(root: Command, pathParts: string[]): Command |
   return current;
 }
 
-/**
- * Implements ensure command path for the public runtime surface of this module.
- */
-export function ensureCommandPath(root: Command, pathParts: string[]): Command | null {
+/** Implements ensure command path for the public runtime surface of this module. */
+export function ensureCommandPath(
+  root: Command,
+  pathParts: string[],
+): Command | null {
   if (pathParts.length === 0) {
     return null;
   }

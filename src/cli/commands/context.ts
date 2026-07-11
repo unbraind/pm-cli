@@ -7,8 +7,15 @@ import { SETTINGS_DEFAULTS, EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { compareTimestampStrings, nowIso } from "../../core/shared/time.js";
-import { isTerminalStatus, normalizeStatusForRegistry, normalizeStatusInput } from "../../core/item/status.js";
-import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
+import {
+  isTerminalStatus,
+  normalizeStatusForRegistry,
+  normalizeStatusInput,
+} from "../../core/item/status.js";
+import {
+  resolveRuntimeStatusRegistry,
+  type RuntimeStatusRegistry,
+} from "../../core/schema/runtime-schema.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type {
@@ -19,9 +26,16 @@ import type {
   ItemStatus,
   PmSettings,
 } from "../../types/index.js";
-import { CONTEXT_DEPTH_VALUES, CONTEXT_SECTION_VALUES } from "../../types/index.js";
+import {
+  CONTEXT_DEPTH_VALUES,
+  CONTEXT_SECTION_VALUES,
+} from "../../types/index.js";
 import { parseIntegerLimit } from "../shared-parsers.js";
-import { runCalendar, type CalendarOptions, type CalendarRow } from "./calendar.js";
+import {
+  runCalendar,
+  type CalendarOptions,
+  type CalendarRow,
+} from "./calendar.js";
 import { runList, type ListOptions } from "./list.js";
 import { runActivity, type CompactActivityEntry } from "./activity.js";
 import {
@@ -36,40 +50,58 @@ import {
 // Output format
 // ---------------------------------------------------------------------------
 
+/** Supported values accepted by the context output contract. */
 export const CONTEXT_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;
-/**
- * Restricts context output format values accepted by command, SDK, and storage contracts.
- */
+/** Restricts context output format values accepted by command, SDK, and storage contracts. */
 export type ContextOutputFormat = (typeof CONTEXT_OUTPUT_VALUES)[number];
 
 // ---------------------------------------------------------------------------
 // Options
 // ---------------------------------------------------------------------------
 
-/**
- * Documents the context options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the context options payload exchanged by command, SDK, and package integrations. */
 export interface ContextOptions {
+  /** Value that configures or reports date for this contract. */
   date?: string;
+  /** Value that configures or reports from for this contract. */
   from?: string;
+  /** Value that configures or reports to for this contract. */
   to?: string;
+  /** Value that configures or reports past for this contract. */
   past?: boolean;
+  /** Schema type that determines the shape and validation rules for this value. */
   type?: string;
+  /** Value that configures or reports tag for this contract. */
   tag?: string;
+  /** Value that configures or reports priority for this contract. */
   priority?: string;
+  /** Value that configures or reports assignee for this contract. */
   assignee?: string;
+  /** Value that configures or reports assignee filter for this contract. */
   assigneeFilter?: string;
+  /** Value that configures or reports sprint for this contract. */
   sprint?: string;
+  /** Value that configures or reports release for this contract. */
   release?: string;
+  /** Value that configures or reports limit for this contract. */
   limit?: string;
+  /** Value that configures or reports max items for this contract. */
   maxItems?: string;
+  /** Value that configures or reports format for this contract. */
   format?: string;
+  /** Value that configures or reports depth for this contract. */
   depth?: string;
+  /** Value that configures or reports fields for this contract. */
   fields?: string;
+  /** Value that configures or reports section for this contract. */
   section?: string[];
+  /** Value that configures or reports activity limit for this contract. */
   activityLimit?: string;
+  /** Value that configures or reports stale threshold for this contract. */
   staleThreshold?: string;
+  /** Value that configures or reports parent for this contract. */
   parent?: string;
+  /** Value that configures or reports explain ranking for this contract. */
   explainRanking?: boolean;
   [key: string]: unknown;
 }
@@ -78,23 +110,35 @@ export interface ContextOptions {
 // Focus item (unchanged from original)
 // ---------------------------------------------------------------------------
 
-/**
- * Documents the context focus item payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the context focus item payload exchanged by command, SDK, and package integrations. */
 export interface ContextFocusItem {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports title for this contract. */
   title: string;
+  /** Schema type that determines the shape and validation rules for this value. */
   type: string;
+  /** Lifecycle state reported for status. */
   status: ItemStatus;
+  /** Value that configures or reports priority for this contract. */
   priority: number;
+  /** Value that configures or reports order for this contract. */
   order: number | null;
+  /** Value that configures or reports deadline for this contract. */
   deadline: string | null;
+  /** Value that configures or reports assignee for this contract. */
   assignee: string | null;
+  /** Value that configures or reports tags for this contract. */
   tags: string[];
+  /** ISO 8601 timestamp recording when updated occurred. */
   updated_at: string;
+  /** Value that configures or reports parent for this contract. */
   parent: string | null;
+  /** Value that configures or reports children total for this contract. */
   children_total?: number;
+  /** Value that configures or reports children closed for this contract. */
   children_closed?: number;
+  /** Value that configures or reports completion pct for this contract. */
   completion_pct?: number;
 }
 
@@ -102,110 +146,141 @@ export interface ContextFocusItem {
 // Section data types
 // ---------------------------------------------------------------------------
 
-/**
- * Documents the hierarchy child payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the hierarchy child payload exchanged by command, SDK, and package integrations. */
 export interface HierarchyChild {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports title for this contract. */
   title: string;
+  /** Schema type that determines the shape and validation rules for this value. */
   type: string;
+  /** Lifecycle state reported for status. */
   status: ItemStatus;
+  /** Value that configures or reports children total for this contract. */
   children_total: number;
+  /** Value that configures or reports children closed for this contract. */
   children_closed: number;
 }
 
-/**
- * Documents the hierarchy node payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the hierarchy node payload exchanged by command, SDK, and package integrations. */
 export interface HierarchyNode {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports title for this contract. */
   title: string;
+  /** Schema type that determines the shape and validation rules for this value. */
   type: string;
+  /** Lifecycle state reported for status. */
   status: ItemStatus;
+  /** Value that configures or reports children total for this contract. */
   children_total: number;
+  /** Value that configures or reports children closed for this contract. */
   children_closed: number;
+  /** Value that configures or reports children open for this contract. */
   children_open: number;
+  /** Value that configures or reports children in progress for this contract. */
   children_in_progress: number;
+  /** Value that configures or reports children blocked for this contract. */
   children_blocked: number;
+  /** Value that configures or reports children for this contract. */
   children: HierarchyChild[];
 }
 
-/**
- * Documents the progress entry payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the progress entry payload exchanged by command, SDK, and package integrations. */
 export interface ProgressEntry {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports title for this contract. */
   title: string;
+  /** Schema type that determines the shape and validation rules for this value. */
   type: string;
+  /** Value that configures or reports total for this contract. */
   total: number;
+  /** Value that configures or reports closed for this contract. */
   closed: number;
+  /** Value that configures or reports open for this contract. */
   open: number;
+  /** Value that configures or reports in progress for this contract. */
   in_progress: number;
+  /** Value that configures or reports blocked for this contract. */
   blocked: number;
+  /** Value that configures or reports completion pct for this contract. */
   completion_pct: number;
 }
 
-/**
- * Documents the blocker entry payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the blocker entry payload exchanged by command, SDK, and package integrations. */
 export interface BlockerEntry {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports title for this contract. */
   title: string;
+  /** Value that configures or reports blocked by for this contract. */
   blocked_by: string | null;
+  /** Value that configures or reports blocked by title for this contract. */
   blocked_by_title: string | null;
+  /** Lifecycle state reported for blocked bythe record. */
   blocked_by_status: ItemStatus | null;
+  /** Value that configures or reports blocked reason for this contract. */
   blocked_reason: string | null;
+  /** Value that configures or reports unblock note for this contract. */
   unblock_note: string | null;
 }
 
-/**
- * Documents the hot file payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the hot file payload exchanged by command, SDK, and package integrations. */
 export interface HotFile {
+  /** Filesystem path used for path resolution. */
   path: string;
+  /** Value that configures or reports references for this contract. */
   references: number;
+  /** Value that configures or reports items for this contract. */
   items: string[];
 }
 
-/**
- * Documents the workload entry payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the workload entry payload exchanged by command, SDK, and package integrations. */
 export interface WorkloadEntry {
+  /** Value that configures or reports assignee for this contract. */
   assignee: string | null;
+  /** Value that configures or reports active for this contract. */
   active: number;
+  /** Value that configures or reports in progress for this contract. */
   in_progress: number;
+  /** Value that configures or reports items for this contract. */
   items: string[];
 }
 
-/**
- * Documents the stale entry payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the stale entry payload exchanged by command, SDK, and package integrations. */
 export interface StaleEntry {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports title for this contract. */
   title: string;
+  /** Lifecycle state reported for status. */
   status: ItemStatus;
+  /** ISO 8601 timestamp recording when updated occurred. */
   updated_at: string;
+  /** Value that configures or reports stale days for this contract. */
   stale_days: number;
 }
 
-/**
- * Documents the recent context item payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the recent context item payload exchanged by command, SDK, and package integrations. */
 export interface RecentContextItem extends ContextFocusItem {
+  /** ISO 8601 timestamp recording when created occurred. */
   created_at?: string;
 }
 
-/**
- * Documents the test health summary payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the test health summary payload exchanged by command, SDK, and package integrations. */
 export interface TestHealthSummary {
+  /** Value that configures or reports items with tests for this contract. */
   items_with_tests: number;
+  /** Value that configures or reports items with recent runs for this contract. */
   items_with_recent_runs: number;
+  /** Value that configures or reports recent runs for this contract. */
   recent_runs: {
     passed: number;
     failed: number;
     skipped: number;
   };
+  /** Value that configures or reports items failing for this contract. */
   items_failing: string[];
 }
 
@@ -239,14 +314,17 @@ interface ContextSummary {
 // Result
 // ---------------------------------------------------------------------------
 
-/**
- * Documents the context result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the context result payload exchanged by command, SDK, and package integrations. */
 export interface ContextResult {
+  /** Value that configures or reports output default for this contract. */
   output_default: "toon";
+  /** Value that configures or reports now for this contract. */
   now: string;
+  /** Value that configures or reports depth for this contract. */
   depth: ContextDepth;
+  /** Value that configures or reports sections included for this contract. */
   sections_included: ContextSectionName[];
+  /** Value that configures or reports window for this contract. */
   window: {
     anchor: string;
     start: string | null;
@@ -255,6 +333,7 @@ export interface ContextResult {
     from: string | null;
     to: string | null;
   };
+  /** Value that configures or reports filters for this contract. */
   filters: {
     type: string | null;
     tag: string | null;
@@ -267,35 +346,56 @@ export interface ContextResult {
     parent: string | null;
     runtime_filters?: Record<string, unknown>;
   };
+  /** Value that configures or reports summary for this contract. */
   summary: ContextSummary;
+  /** Value that configures or reports high level for this contract. */
   high_level: ContextFocusItem[];
+  /** Value that configures or reports low level for this contract. */
   low_level: ContextFocusItem[];
+  /** Value that configures or reports blocked fallback for this contract. */
   blocked_fallback: ContextFocusItem[];
+  /** Value that configures or reports agenda for this contract. */
   agenda: {
     summary: ContextAgendaSummary;
     events: CalendarRow[];
   };
+  /** Value that configures or reports hierarchy for this contract. */
   hierarchy?: HierarchyNode[];
+  /** Value that configures or reports activity for this contract. */
   activity?: CompactActivityEntry[];
+  /** Value that configures or reports progress for this contract. */
   progress?: ProgressEntry[];
+  /** Value that configures or reports blockers for this contract. */
   blockers?: BlockerEntry[];
+  /** Value that configures or reports recently created for this contract. */
   recently_created?: RecentContextItem[];
+  /** Value that configures or reports unparented for this contract. */
   unparented?: ContextFocusItem[];
+  /** Value that configures or reports files for this contract. */
   files?: HotFile[];
+  /** Value that configures or reports workload for this contract. */
   workload?: WorkloadEntry[];
+  /** Value that configures or reports staleness for this contract. */
   staleness?: StaleEntry[];
+  /** Value that configures or reports tests for this contract. */
   tests?: TestHealthSummary;
+  /** Value that configures or reports suggestions for this contract. */
   suggestions?: string[];
   /** Focus-row field subset requested via --fields; null/omitted means full rows. */
   focus_fields?: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings?: string[];
+  /** Value that configures or reports ranking for this contract. */
   ranking?: ContextRankingSummary;
 }
 
 /** Compact explainability envelope shared by context and next JSON results. */
 export interface ContextRankingSummary {
+  /** Value that configures or reports model for this contract. */
   model: string;
+  /** Value that configures or reports available signals for this contract. */
   available_signals: ContextRelevanceSignalName[];
+  /** Value that configures or reports items for this contract. */
   items: Array<{
     id: string;
     rank: number;
@@ -312,7 +412,14 @@ export interface ContextRankingSummary {
 const HIGH_LEVEL_TYPES = new Set<string>(["Epic", "Feature"]);
 const DEFAULT_CONTEXT_LIMIT = 10;
 
-const STANDARD_SECTIONS: ContextSectionName[] = ["hierarchy", "activity", "progress", "recently_created", "unparented", "workload"];
+const STANDARD_SECTIONS: ContextSectionName[] = [
+  "hierarchy",
+  "activity",
+  "progress",
+  "recently_created",
+  "unparented",
+  "workload",
+];
 const DEEP_SECTIONS: ContextSectionName[] = [
   ...STANDARD_SECTIONS,
   "blockers",
@@ -323,17 +430,23 @@ const DEEP_SECTIONS: ContextSectionName[] = [
 const LEADING_HYPHEN_DATE = /^(\d{4})-(\d{2})-(\d{2})/;
 const LEADING_COMPACT_DATE = /^(\d{4})(\d{2})(\d{2})(?:[T ]?\d{2}|$)/;
 const COMPACT_DATE = /^(\d{4})(\d{2})(\d{2})$/;
-const COMPACT_DATETIME = /^(\d{4})(\d{2})(\d{2})(?:[T\s]?)(\d{2})(\d{2})(\d{2})?(Z|[+-]\d{2}:?\d{2})?$/i;
+const COMPACT_DATETIME =
+  /^(\d{4})(\d{2})(\d{2})(?:[T\s]?)(\d{2})(\d{2})(\d{2})?(Z|[+-]\d{2}:?\d{2})?$/i;
 
 // ---------------------------------------------------------------------------
 // Parsers
 // ---------------------------------------------------------------------------
 
-function parseOutputFormat(raw: string | undefined): ContextOutputFormat | undefined {
+function parseOutputFormat(
+  raw: string | undefined,
+): ContextOutputFormat | undefined {
   if (!raw) return undefined;
   const normalized = raw.trim().toLowerCase();
   if (!CONTEXT_OUTPUT_VALUES.includes(normalized as ContextOutputFormat)) {
-    throw new PmCliError("Context format must be one of markdown|toon|json", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Context format must be one of markdown|toon|json",
+      EXIT_CODE.USAGE,
+    );
   }
   return normalized as ContextOutputFormat;
 }
@@ -359,11 +472,10 @@ const FOCUS_PROJECTION_FIELDS = new Set<string>([
   "created_at",
 ]);
 
-/**
- * Parses the comma-separated `--fields` value into a validated, de-duplicated
- * focus-row projection list. Returns undefined when no projection was requested.
- */
-export function parseContextFocusFields(raw: string | undefined): string[] | undefined {
+/** Parses the comma-separated `--fields` value into a validated, de-duplicated focus-row projection list. Returns undefined when no projection was requested. */
+export function parseContextFocusFields(
+  raw: string | undefined,
+): string[] | undefined {
   if (raw === undefined) return undefined;
   const fields: string[] = [];
   for (const token of raw.split(",")) {
@@ -378,16 +490,19 @@ export function parseContextFocusFields(raw: string | undefined): string[] | und
     if (!fields.includes(normalized)) fields.push(normalized);
   }
   if (fields.length === 0) {
-    throw new PmCliError("Context --fields requires at least one field name", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Context --fields requires at least one field name",
+      EXIT_CODE.USAGE,
+    );
   }
   return fields;
 }
 
-/**
- * Projects focus rows onto the requested field subset, preserving field order so
- * the rendered/serialized output mirrors the `--fields` argument.
- */
-export function projectContextFocusRows<T extends ContextFocusItem>(rows: T[], fields: string[]): ContextFocusItem[] {
+/** Projects focus rows onto the requested field subset, preserving field order so the rendered/serialized output mirrors the `--fields` argument. */
+export function projectContextFocusRows<T extends ContextFocusItem>(
+  rows: T[],
+  fields: string[],
+): ContextFocusItem[] {
   return rows.map((row) => {
     const projected: Record<string, unknown> = {};
     const source = row as Record<string, unknown>;
@@ -398,13 +513,17 @@ export function projectContextFocusRows<T extends ContextFocusItem>(rows: T[], f
   });
 }
 
-/**
- * Implements resolve context output format for the public runtime surface of this module.
- */
-export function resolveContextOutputFormat(options: ContextOptions, global: GlobalOptions): ContextOutputFormat {
+/** Implements resolve context output format for the public runtime surface of this module. */
+export function resolveContextOutputFormat(
+  options: ContextOptions,
+  global: GlobalOptions,
+): ContextOutputFormat {
   const commandFormat = parseOutputFormat(options.format);
   if (global.json && commandFormat && commandFormat !== "json") {
-    throw new PmCliError("Cannot combine --json with --format markdown|toon", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Cannot combine --json with --format markdown|toon",
+      EXIT_CODE.USAGE,
+    );
   }
   if (global.json) {
     return "json";
@@ -414,25 +533,33 @@ export function resolveContextOutputFormat(options: ContextOptions, global: Glob
 
 // --depth full surfaces the entire backlog: when no explicit --limit is given,
 // every section returns all rows instead of the default top-N sample.
-function parseContextLimit(raw: string | undefined, depth: ContextDepth): number {
-  return parseIntegerLimit(raw, "--limit") ?? (depth === "full" ? Number.MAX_SAFE_INTEGER : DEFAULT_CONTEXT_LIMIT);
+function parseContextLimit(
+  raw: string | undefined,
+  depth: ContextDepth,
+): number {
+  return (
+    parseIntegerLimit(raw, "--limit") ??
+    (depth === "full" ? Number.MAX_SAFE_INTEGER : DEFAULT_CONTEXT_LIMIT)
+  );
 }
 
-/**
- * Implements parse context depth for the public runtime surface of this module.
- */
-export function parseContextDepth(raw: string | undefined, settings: ContextSettings): ContextDepth {
+/** Implements parse context depth for the public runtime surface of this module. */
+export function parseContextDepth(
+  raw: string | undefined,
+  settings: ContextSettings,
+): ContextDepth {
   if (!raw) return settings.default_depth;
   const normalized = raw.trim().toLowerCase();
   if (!CONTEXT_DEPTH_VALUES.includes(normalized as ContextDepth)) {
-    throw new PmCliError(`Context --depth must be one of ${CONTEXT_DEPTH_VALUES.join("|")}`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Context --depth must be one of ${CONTEXT_DEPTH_VALUES.join("|")}`,
+      EXIT_CODE.USAGE,
+    );
   }
   return normalized as ContextDepth;
 }
 
-/**
- * Implements parse context sections for the public runtime surface of this module.
- */
+/** Implements parse context sections for the public runtime surface of this module. */
 export function parseContextSections(
   raw: string[] | undefined,
   depth: ContextDepth,
@@ -462,7 +589,10 @@ export function parseContextSections(
   return pool.filter((section) => settings.sections[section]);
 }
 
-function parseActivityLimit(raw: string | undefined, settings: ContextSettings): number {
+function parseActivityLimit(
+  raw: string | undefined,
+  settings: ContextSettings,
+): number {
   if (!raw) return settings.activity_limit;
   const parsed = parseIntegerLimit(raw, "--activity-limit");
   /* c8 ignore start -- parseIntegerLimit either throws or returns a number; fallback is defensive typing guard */
@@ -470,12 +600,18 @@ function parseActivityLimit(raw: string | undefined, settings: ContextSettings):
   /* c8 ignore stop */
 }
 
-function parseStaleThresholdDays(raw: string | undefined, settings: ContextSettings): number {
+function parseStaleThresholdDays(
+  raw: string | undefined,
+  settings: ContextSettings,
+): number {
   if (!raw) return settings.stale_threshold_days;
   const trimmed = raw.trim().toLowerCase();
   const match = /^(\d+)d?$/.exec(trimmed);
   if (!match) {
-    throw new PmCliError("--stale-threshold must be a number of days (e.g. 7 or 7d)", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--stale-threshold must be a number of days (e.g. 7 or 7d)",
+      EXIT_CODE.USAGE,
+    );
   }
   const days = parseInt(match[1], 10);
   if (days <= 0) {
@@ -488,7 +624,10 @@ function parseStaleThresholdDays(raw: string | undefined, settings: ContextSetti
 // Status helpers
 // ---------------------------------------------------------------------------
 
-function statusRank(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): number {
+function statusRank(
+  status: ItemStatus,
+  statusRegistry: RuntimeStatusRegistry,
+): number {
   const normalizedStatus = normalizeStatusForRegistry(status, statusRegistry);
   const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
   const openStatus = normalizeStatusInput("open", statusRegistry);
@@ -504,33 +643,60 @@ function statusRank(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): 
   return 6;
 }
 
-function isClosedStatus(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
+function isClosedStatus(
+  status: ItemStatus,
+  statusRegistry: RuntimeStatusRegistry,
+): boolean {
   const closeStatus = normalizeStatusInput("closed", statusRegistry);
   return normalizeStatusForRegistry(status, statusRegistry) === closeStatus;
 }
 
-function isInProgressStatus(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
+function isInProgressStatus(
+  status: ItemStatus,
+  statusRegistry: RuntimeStatusRegistry,
+): boolean {
   const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
-  return normalizeStatusForRegistry(status, statusRegistry) === inProgressStatus;
+  return (
+    normalizeStatusForRegistry(status, statusRegistry) === inProgressStatus
+  );
 }
 
-function isOpenStatus(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
+function isOpenStatus(
+  status: ItemStatus,
+  statusRegistry: RuntimeStatusRegistry,
+): boolean {
   const openStatus = normalizeStatusInput("open", statusRegistry);
   return normalizeStatusForRegistry(status, statusRegistry) === openStatus;
 }
 
-function isBlockedStatus(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
-  return statusRegistry.blocked_statuses.has(normalizeStatusForRegistry(status, statusRegistry));
+function isBlockedStatus(
+  status: ItemStatus,
+  statusRegistry: RuntimeStatusRegistry,
+): boolean {
+  return statusRegistry.blocked_statuses.has(
+    normalizeStatusForRegistry(status, statusRegistry),
+  );
 }
 
 // Projection flags belong to list/calendar/activity output shaping and must not
 // leak into runContext's downstream calls, which need full ItemFrontMatter rows.
 // --parent is a context-level subtree scope computed here transitively, so it
 // must not reach runList (whose --parent matches direct children only).
-const LIST_PROJECTION_FLAGS = ["compact", "brief", "fields", "includeBody", "include_body", "parent"] as const;
+const LIST_PROJECTION_FLAGS = [
+  "compact",
+  "brief",
+  "fields",
+  "includeBody",
+  "include_body",
+  "parent",
+] as const;
 
-function stripListProjectionFlags(options: ContextOptions): Record<string, unknown> {
-  const copy: Record<string, unknown> = { ...(options as Record<string, unknown>) };
+function stripListProjectionFlags(
+  options: ContextOptions,
+): Record<string, unknown> {
+  const copy: Record<string, unknown> = {
+    ...(options as Record<string, unknown>),
+  };
   for (const key of LIST_PROJECTION_FLAGS) {
     delete copy[key];
   }
@@ -546,7 +712,10 @@ function stripListProjectionFlags(options: ContextOptions): Record<string, unkno
  * `found` flag is false when the anchor id is absent from the corpus. Exported so
  * sibling read commands (e.g. `pm next`) can apply the same subtree scoping.
  */
-export function collectSubtreeIds(corpus: ItemFrontMatter[], parentId: string): { ids: Set<string>; found: boolean } {
+export function collectSubtreeIds(
+  corpus: ItemFrontMatter[],
+  parentId: string,
+): { ids: Set<string>; found: boolean } {
   const target = parentId.trim().toLowerCase();
   const anchor = corpus.find((item) => item.id.trim().toLowerCase() === target);
   if (!anchor) {
@@ -555,7 +724,11 @@ export function collectSubtreeIds(corpus: ItemFrontMatter[], parentId: string): 
   const childrenByParent = buildChildrenByParent(corpus);
   const descendants = collectDescendants(anchor.id, childrenByParent);
   // Store normalized ids so membership checks are case-insensitive end-to-end.
-  const ids = new Set<string>([anchor.id, ...descendants.map((item) => item.id)].map((id) => id.trim().toLowerCase()));
+  const ids = new Set<string>(
+    [anchor.id, ...descendants.map((item) => item.id)].map((id) =>
+      id.trim().toLowerCase(),
+    ),
+  );
   return { ids, found: true };
 }
 
@@ -563,7 +736,10 @@ function parseContextParent(raw: string | undefined): string | undefined {
   if (raw === undefined) return undefined;
   const trimmed = raw.trim();
   if (trimmed.length === 0) {
-    throw new PmCliError("Context --parent requires an item id", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Context --parent requires an item id",
+      EXIT_CODE.USAGE,
+    );
   }
   return trimmed;
 }
@@ -572,7 +748,10 @@ function parseContextParent(raw: string | undefined): string | undefined {
 // Sorting / mapping helpers (unchanged from original)
 // ---------------------------------------------------------------------------
 
-function compareOptionalOrder(left: number | null | undefined, right: number | null | undefined): number {
+function compareOptionalOrder(
+  left: number | null | undefined,
+  right: number | null | undefined,
+): number {
   const leftValue = left ?? null;
   const rightValue = right ?? null;
   if (leftValue === null && rightValue === null) return 0;
@@ -581,7 +760,10 @@ function compareOptionalOrder(left: number | null | undefined, right: number | n
   return leftValue - rightValue;
 }
 
-function compareOptionalDeadline(left: string | null | undefined, right: string | null | undefined): number {
+function compareOptionalDeadline(
+  left: string | null | undefined,
+  right: string | null | undefined,
+): number {
   const leftValue = left ?? null;
   const rightValue = right ?? null;
   if (leftValue === null && rightValue === null) return 0;
@@ -595,14 +777,20 @@ function daysInUtcMonth(year: number, monthIndex: number): number {
 }
 
 function hasNoInvalidDatePrefix(value: string): boolean {
-  const match = LEADING_HYPHEN_DATE.exec(value) ?? LEADING_COMPACT_DATE.exec(value);
+  const match =
+    LEADING_HYPHEN_DATE.exec(value) ?? LEADING_COMPACT_DATE.exec(value);
   if (!match) {
     return true;
   }
   const year = Number.parseInt(match[1], 10);
   const month = Number.parseInt(match[2], 10);
   const day = Number.parseInt(match[3], 10);
-  return month >= 1 && month <= 12 && day >= 1 && day <= daysInUtcMonth(year, month - 1);
+  return (
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= daysInUtcMonth(year, month - 1)
+  );
 }
 
 function normalizeTimestampCandidate(value: string): string {
@@ -612,9 +800,13 @@ function normalizeTimestampCandidate(value: string): string {
   }
   const compactDateTime = COMPACT_DATETIME.exec(value);
   if (compactDateTime) {
-    const [, year, month, day, hour, minute, secondRaw, offsetRaw] = compactDateTime;
+    const [, year, month, day, hour, minute, secondRaw, offsetRaw] =
+      compactDateTime;
     const second = secondRaw ? `:${secondRaw}` : "";
-    const offset = offsetRaw && offsetRaw.length === 5 && offsetRaw !== "Z" ? `${offsetRaw.slice(0, 3)}:${offsetRaw.slice(3)}` : offsetRaw ?? "";
+    const offset =
+      offsetRaw && offsetRaw.length === 5 && offsetRaw !== "Z"
+        ? `${offsetRaw.slice(0, 3)}:${offsetRaw.slice(3)}`
+        : (offsetRaw ?? "");
     return `${year}-${month}-${day}T${hour}:${minute}${second}${offset}`;
   }
   return value;
@@ -639,7 +831,9 @@ function sortableTimestamp(value: unknown): string {
 
 function dateTokenForTimestamp(value: unknown): string {
   const parsed = parseContextTimestampMs(value);
-  return Number.isFinite(parsed) ? new Date(parsed).toISOString().slice(0, 10) : "unknown";
+  return Number.isFinite(parsed)
+    ? new Date(parsed).toISOString().slice(0, 10)
+    : "unknown";
 }
 
 function normalizedParentId(value: unknown): string | null {
@@ -657,8 +851,14 @@ function normalizedParentId(value: unknown): string | null {
  * Exported as the canonical focus ordering so sibling read commands (e.g.
  * `pm next`) recommend work in the exact same sequence as `pm context`.
  */
-export function compareCriticalItems(left: ItemFrontMatter, right: ItemFrontMatter, statusRegistry: RuntimeStatusRegistry): number {
-  const byStatus = statusRank(left.status, statusRegistry) - statusRank(right.status, statusRegistry);
+export function compareCriticalItems(
+  left: ItemFrontMatter,
+  right: ItemFrontMatter,
+  statusRegistry: RuntimeStatusRegistry,
+): number {
+  const byStatus =
+    statusRank(left.status, statusRegistry) -
+    statusRank(right.status, statusRegistry);
   if (byStatus !== 0) return byStatus;
   const byPriority = left.priority - right.priority;
   if (byPriority !== 0) return byPriority;
@@ -666,32 +866,42 @@ export function compareCriticalItems(left: ItemFrontMatter, right: ItemFrontMatt
   if (byOrder !== 0) return byOrder;
   const byDeadline = compareOptionalDeadline(left.deadline, right.deadline);
   if (byDeadline !== 0) return byDeadline;
-  const byUpdated = compareTimestampStrings(sortableTimestamp(right.updated_at), sortableTimestamp(left.updated_at));
+  const byUpdated = compareTimestampStrings(
+    sortableTimestamp(right.updated_at),
+    sortableTimestamp(left.updated_at),
+  );
   const byId = left.id.localeCompare(right.id);
   return byUpdated !== 0 ? byUpdated : byId;
 }
 
 function normalizedPressure(value: unknown, maximum: number): number {
-  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number.parseFloat(value) : Number.NaN;
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number.parseFloat(value)
+        : Number.NaN;
   if (!Number.isFinite(parsed)) return 0;
   return 1 - Math.min(Math.max(parsed, 0), maximum) / maximum;
 }
 
 function resolveDeadlinePressure(deadline: unknown, nowMs: number): number {
-  const deadlineMs = typeof deadline === "string"
-    ? Date.parse(deadline)
-    : deadline instanceof Date
-      ? deadline.getTime()
-      : typeof deadline === "number"
-        ? deadline
-        : Number.NaN;
+  const deadlineMs =
+    typeof deadline === "string"
+      ? Date.parse(deadline)
+      : deadline instanceof Date
+        ? deadline.getTime()
+        : typeof deadline === "number"
+          ? deadline
+          : Number.NaN;
   if (!Number.isFinite(deadlineMs) || !Number.isFinite(nowMs)) return 0;
   const deadlineDays = (deadlineMs - nowMs) / (24 * 60 * 60 * 1000);
   return deadlineDays <= 0 ? 1 : 1 / (1 + deadlineDays / 30);
 }
 
 function resolveRiskPressure(risk: ItemFrontMatter["risk"]): number {
-  const normalized = typeof risk === "string" ? risk.trim().toLowerCase() : undefined;
+  const normalized =
+    typeof risk === "string" ? risk.trim().toLowerCase() : undefined;
   if (normalized === "critical" || normalized === "high") return 1;
   if (normalized === "medium") return 0.5;
   return normalized === "low" ? 0.1 : 0;
@@ -712,14 +922,26 @@ function buildItemContextRelevanceCandidate(
     params.normalizedAuthor !== undefined &&
     typeof item.assignee === "string" &&
     item.assignee.trim().toLowerCase() === params.normalizedAuthor;
-  const claimFocus = isInProgressStatus(item.status, params.statusRegistry) ? 1 : assignedToAuthor ? 0.75 : 0;
+  const claimFocus = isInProgressStatus(item.status, params.statusRegistry)
+    ? 1
+    : assignedToAuthor
+      ? 0.75
+      : 0;
   const riskPressure = resolveRiskPressure(item.risk);
-  const knowledgeEntries = (item.comments?.length ?? 0) + (item.notes?.length ?? 0) + (item.learnings?.length ?? 0);
+  const knowledgeEntries =
+    (item.comments?.length ?? 0) +
+    (item.notes?.length ?? 0) +
+    (item.learnings?.length ?? 0);
   return {
     id: item.id,
     item,
     signals: {
-      recency: params.itemCount === 1 ? 1 : 1 - (params.recencyRank.get(item.id) as number) / params.recencyDenominator,
+      recency:
+        params.itemCount === 1
+          ? 1
+          : 1 -
+            (params.recencyRank.get(item.id) as number) /
+              params.recencyDenominator,
       graph_proximity: item.parent ? 0.3 : 0,
       claim_focus: claimFocus,
       priority_pressure: normalizedPressure(item.priority, 4),
@@ -731,11 +953,7 @@ function buildItemContextRelevanceCandidate(
   };
 }
 
-/**
- * Derives the metadata signals currently available on compact item rows. More
- * expensive history/index/semantic signals can be added by an extension scorer
- * without changing the public candidate contract.
- */
+/** Derives the metadata signals currently available on compact item rows. More expensive history/index/semantic signals can be added by an extension scorer without changing the public candidate contract. */
 export function buildItemContextRelevanceCandidates(
   items: readonly ItemFrontMatter[],
   statusRegistry: RuntimeStatusRegistry,
@@ -743,24 +961,34 @@ export function buildItemContextRelevanceCandidates(
   author: string | undefined,
 ): ContextRelevanceCandidate<ItemFrontMatter>[] {
   const recencyOrder = [...items].sort(
-    (left, right) => compareTimestampStrings(sortableTimestamp(right.updated_at), sortableTimestamp(left.updated_at)) || left.id.localeCompare(right.id),
+    (left, right) =>
+      compareTimestampStrings(
+        sortableTimestamp(right.updated_at),
+        sortableTimestamp(left.updated_at),
+      ) || left.id.localeCompare(right.id),
   );
-  const recencyRank = new Map(recencyOrder.map((item, index) => [item.id, index]));
+  const recencyRank = new Map(
+    recencyOrder.map((item, index) => [item.id, index]),
+  );
   const recencyDenominator = Math.max(items.length - 1, 1);
   const normalizedAuthor = author?.trim().toLowerCase();
   const nowMs = Date.parse(now);
-  return items.map((item) => buildItemContextRelevanceCandidate(item, {
-    statusRegistry,
-    nowMs,
-    normalizedAuthor,
-    recencyRank,
-    recencyDenominator,
-    itemCount: items.length,
-  }));
+  return items.map((item) =>
+    buildItemContextRelevanceCandidate(item, {
+      statusRegistry,
+      nowMs,
+      normalizedAuthor,
+      recencyRank,
+      recencyDenominator,
+      itemCount: items.length,
+    }),
+  );
 }
 
 /** Project a full scorer report onto the low-token command explanation shape. */
-export function toContextRankingSummary<TItem>(report: ContextRelevanceReport<TItem>): ContextRankingSummary {
+export function toContextRankingSummary<TItem>(
+  report: ContextRelevanceReport<TItem>,
+): ContextRankingSummary {
   return {
     model: report.model,
     available_signals: report.available_signals,
@@ -778,12 +1006,10 @@ function completionPct(closed: number, total: number): number {
   return total > 0 ? Math.round((closed / total) * 100) : 0;
 }
 
-/**
- * Indexes items by their parent id, yielding a parent→direct-children map used by
- * the hierarchy/progress rollups and by focus-row child completion. Items without
- * a parent are skipped. Exported so sibling read commands reuse the same index.
- */
-export function buildChildrenByParent(allItems: ItemFrontMatter[]): Map<string, ItemFrontMatter[]> {
+/** Indexes items by their parent id, yielding a parent→direct-children map used by the hierarchy/progress rollups and by focus-row child completion. Items without a parent are skipped. Exported so sibling read commands reuse the same index. */
+export function buildChildrenByParent(
+  allItems: ItemFrontMatter[],
+): Map<string, ItemFrontMatter[]> {
   const childrenByParent = new Map<string, ItemFrontMatter[]>();
   for (const item of allItems) {
     const parent = normalizedParentId(item.parent);
@@ -823,7 +1049,9 @@ export function toContextFocusItem(
     const descendants = collectDescendants(item.id, childrenByParent);
     const total = descendants.length;
     if (total > 0) {
-      const closed = descendants.filter((desc) => isClosedStatus(desc.status, statusRegistry)).length;
+      const closed = descendants.filter((desc) =>
+        isClosedStatus(desc.status, statusRegistry),
+      ).length;
       focus.children_total = total;
       focus.children_closed = closed;
       focus.completion_pct = completionPct(closed, total);
@@ -858,12 +1086,24 @@ function summarizeAgenda(events: CalendarRow[]): ContextAgendaSummary {
   };
 }
 
-function mergeSortedWarnings(...warningGroups: Array<string[] | undefined>): string[] {
-  return [...new Set(warningGroups.flatMap((group) => group ?? []))].sort((left, right) => left.localeCompare(right));
+function mergeSortedWarnings(
+  ...warningGroups: Array<string[] | undefined>
+): string[] {
+  return [...new Set(warningGroups.flatMap((group) => group ?? []))].sort(
+    (left, right) => left.localeCompare(right),
+  );
 }
 
-function filterTerminalCalendarEvents(events: CalendarRow[], statusRegistry: RuntimeStatusRegistry): CalendarRow[] {
-  return events.filter((event) => !statusRegistry.terminal_statuses.has(normalizeStatusForRegistry(event.item_status, statusRegistry)));
+function filterTerminalCalendarEvents(
+  events: CalendarRow[],
+  statusRegistry: RuntimeStatusRegistry,
+): CalendarRow[] {
+  return events.filter(
+    (event) =>
+      !statusRegistry.terminal_statuses.has(
+        normalizeStatusForRegistry(event.item_status, statusRegistry),
+      ),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -884,7 +1124,9 @@ function buildHierarchy(
   const childrenByParent = buildChildrenByParent(allItems);
 
   const activeHighLevelIds = new Set(
-    activeItems.filter((item) => HIGH_LEVEL_TYPES.has(item.type)).map((item) => item.id),
+    activeItems
+      .filter((item) => HIGH_LEVEL_TYPES.has(item.type))
+      .map((item) => item.id),
   );
 
   const nodes: HierarchyNode[] = [];
@@ -901,7 +1143,8 @@ function buildHierarchy(
     /* c8 ignore start -- chained status-classification branch accounting is noisy under v8 for mixed descendant sets */
     for (const desc of allDescendants) {
       if (isClosedStatus(desc.status, statusRegistry)) closedCount++;
-      else if (isInProgressStatus(desc.status, statusRegistry)) inProgressCount++;
+      else if (isInProgressStatus(desc.status, statusRegistry))
+        inProgressCount++;
       else if (isBlockedStatus(desc.status, statusRegistry)) blockedCount++;
       else if (isOpenStatus(desc.status, statusRegistry)) openCount++;
     }
@@ -912,7 +1155,9 @@ function buildHierarchy(
       .slice(0, limit)
       .map((child) => {
         const grandchildren = collectDescendants(child.id, childrenByParent);
-        const gcClosed = grandchildren.filter((gc) => isClosedStatus(gc.status, statusRegistry)).length;
+        const gcClosed = grandchildren.filter((gc) =>
+          isClosedStatus(gc.status, statusRegistry),
+        ).length;
         return {
           id: child.id,
           title: child.title,
@@ -966,6 +1211,7 @@ function collectDescendants(
   return result;
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   buildActivity,
   buildBlockers,
@@ -1008,7 +1254,10 @@ async function buildActivity(
   activityLimit: number,
   global: GlobalOptions,
 ): Promise<CompactActivityEntry[]> {
-  const result = await runActivity({ compact: true, limit: String(activityLimit) }, global);
+  const result = await runActivity(
+    { compact: true, limit: String(activityLimit) },
+    global,
+  );
   return result.compact_activity ?? [];
 }
 
@@ -1026,7 +1275,9 @@ function buildProgress(
     childrenByParent.set(item.parent, children);
   }
 
-  const activeHighLevel = activeItems.filter((item) => HIGH_LEVEL_TYPES.has(item.type));
+  const activeHighLevel = activeItems.filter((item) =>
+    HIGH_LEVEL_TYPES.has(item.type),
+  );
   const entries: ProgressEntry[] = [];
   for (const parent of activeHighLevel) {
     const descendants = collectDescendants(parent.id, childrenByParent);
@@ -1070,7 +1321,9 @@ function buildBlockers(
   limit: number,
 ): BlockerEntry[] {
   return blockedItems.slice(0, limit).map((item) => {
-    const blockerItem = item.blocked_by ? itemMap.get(item.blocked_by) : undefined;
+    const blockerItem = item.blocked_by
+      ? itemMap.get(item.blocked_by)
+      : undefined;
     return {
       id: item.id,
       title: item.title,
@@ -1123,7 +1376,9 @@ function buildWorkload(
     .map(([assignee, items]) => ({
       assignee,
       active: items.length,
-      in_progress: items.filter((item) => isInProgressStatus(item.status, statusRegistry)).length,
+      in_progress: items.filter((item) =>
+        isInProgressStatus(item.status, statusRegistry),
+      ).length,
       items: items.map((item) => item.id).sort(),
     }))
     .sort((a, b) => b.active - a.active)
@@ -1136,7 +1391,8 @@ function buildStaleness(
   now: string,
   limit: number,
 ): StaleEntry[] {
-  const cutoffMs = new Date(now).getTime() - staleThresholdDays * 24 * 60 * 60 * 1000;
+  const cutoffMs =
+    new Date(now).getTime() - staleThresholdDays * 24 * 60 * 60 * 1000;
 
   return allNonTerminal
     .filter((item) => new Date(item.updated_at).getTime() < cutoffMs)
@@ -1145,7 +1401,10 @@ function buildStaleness(
       title: item.title,
       status: item.status,
       updated_at: item.updated_at,
-      stale_days: Math.floor((new Date(now).getTime() - new Date(item.updated_at).getTime()) / (24 * 60 * 60 * 1000)),
+      stale_days: Math.floor(
+        (new Date(now).getTime() - new Date(item.updated_at).getTime()) /
+          (24 * 60 * 60 * 1000),
+      ),
     }))
     .sort((a, b) => b.stale_days - a.stale_days)
     .slice(0, limit);
@@ -1161,7 +1420,9 @@ function buildRecentlyCreated(
     .map((item) => ({ item, sortKey: sortableTimestamp(item.created_at) }))
     .sort((left, right) => {
       const byCreated = compareTimestampStrings(right.sortKey, left.sortKey);
-      return byCreated !== 0 ? byCreated : left.item.id.localeCompare(right.item.id);
+      return byCreated !== 0
+        ? byCreated
+        : left.item.id.localeCompare(right.item.id);
     })
     .slice(0, limit)
     .map(({ item }) => ({
@@ -1177,15 +1438,16 @@ function buildUnparented(
   limit: number,
 ): ContextFocusItem[] {
   return allNonTerminal
-    .filter((item) => !normalizedParentId(item.parent) && !HIGH_LEVEL_TYPES.has(item.type))
+    .filter(
+      (item) =>
+        !normalizedParentId(item.parent) && !HIGH_LEVEL_TYPES.has(item.type),
+    )
     .sort((left, right) => compareCriticalItems(left, right, statusRegistry))
     .slice(0, limit)
     .map((item) => toContextFocusItem(item, statusRegistry, childrenByParent));
 }
 
-function buildTestHealth(
-  activeItems: ItemFrontMatter[],
-): TestHealthSummary {
+function buildTestHealth(activeItems: ItemFrontMatter[]): TestHealthSummary {
   let itemsWithTests = 0;
   let itemsWithRecentRuns = 0;
   let passed = 0;
@@ -1236,7 +1498,9 @@ function formatFocusLine(item: ContextFocusItem): string {
   const deadlineToken = item.deadline ?? "-";
   const parentToken = item.parent ? ` parent:${item.parent}` : "";
   const progressToken =
-    item.children_total !== undefined && item.children_closed !== undefined && item.completion_pct !== undefined
+    item.children_total !== undefined &&
+    item.children_closed !== undefined &&
+    item.completion_pct !== undefined
       ? ` children:${item.children_closed}/${item.children_total} done:${item.completion_pct}%`
       : "";
   return `${item.id} p${item.priority} ${item.status} ${item.type} order:${orderToken} deadline:${deadlineToken}${parentToken}${progressToken} ${item.title}`;
@@ -1245,7 +1509,10 @@ function formatFocusLine(item: ContextFocusItem): string {
 // Renders a focus row projected to a `--fields` subset as space-separated
 // field:value tokens, mirroring the projection field order. Array values join
 // with commas; missing/null values render as `-`.
-function formatProjectedFocusLine(item: ContextFocusItem, fields: string[]): string {
+function formatProjectedFocusLine(
+  item: ContextFocusItem,
+  fields: string[],
+): string {
   const source = item as unknown as Record<string, unknown>;
   return fields
     .map((field) => {
@@ -1323,11 +1590,21 @@ function pushHierarchySection(lines: string[], result: ContextResult): void {
   }
   lines.push("## Hierarchy");
   for (const node of result.hierarchy) {
-    const pct = node.children_total > 0 ? Math.round((node.children_closed / node.children_total) * 100) : 0;
-    lines.push(`- ${node.id} ${node.type} ${node.status} "${node.title}" [${node.children_closed}/${node.children_total} done ${pct}%]`);
+    const pct =
+      node.children_total > 0
+        ? Math.round((node.children_closed / node.children_total) * 100)
+        : 0;
+    lines.push(
+      `- ${node.id} ${node.type} ${node.status} "${node.title}" [${node.children_closed}/${node.children_total} done ${pct}%]`,
+    );
     for (const child of node.children) {
-      const cpct = child.children_total > 0 ? Math.round((child.children_closed / child.children_total) * 100) : 0;
-      lines.push(`  - ${child.id} ${child.type} ${child.status} "${child.title}" [${child.children_closed}/${child.children_total} done ${cpct}%]`);
+      const cpct =
+        child.children_total > 0
+          ? Math.round((child.children_closed / child.children_total) * 100)
+          : 0;
+      lines.push(
+        `  - ${child.id} ${child.type} ${child.status} "${child.title}" [${child.children_closed}/${child.children_total} done ${cpct}%]`,
+      );
     }
   }
   lines.push("");
@@ -1339,7 +1616,9 @@ function pushProgressSection(lines: string[], result: ContextResult): void {
   }
   lines.push("## Progress");
   for (const entry of result.progress) {
-    lines.push(`- ${entry.id} "${entry.title}" ${entry.completion_pct}% (${entry.closed}/${entry.total} closed, ${entry.in_progress} wip, ${entry.open} open, ${entry.blocked} blocked)`);
+    lines.push(
+      `- ${entry.id} "${entry.title}" ${entry.completion_pct}% (${entry.closed}/${entry.total} closed, ${entry.in_progress} wip, ${entry.open} open, ${entry.blocked} blocked)`,
+    );
   }
   lines.push("");
 }
@@ -1355,7 +1634,11 @@ function pushRecentlyCreatedSection(
   }
   lines.push("## Recently created");
   for (const item of result.recently_created) {
-    lines.push(focusFields ? `- ${renderFocus(item)}` : `- ${dateTokenForTimestamp(item.created_at)} ${formatFocusLine(item)}`);
+    lines.push(
+      focusFields
+        ? `- ${renderFocus(item)}`
+        : `- ${dateTokenForTimestamp(item.created_at)} ${formatFocusLine(item)}`,
+    );
   }
   lines.push("");
 }
@@ -1382,7 +1665,9 @@ function pushActivitySection(lines: string[], result: ContextResult): void {
   lines.push("## Recent activity");
   for (const entry of result.activity) {
     const msg = entry.msg ? ` ${entry.msg}` : "";
-    lines.push(`- ${entry.ts.slice(0, 16)}Z ${entry.id} ${entry.op} by:${entry.author}${msg}`);
+    lines.push(
+      `- ${entry.ts.slice(0, 16)}Z ${entry.id} ${entry.op} by:${entry.author}${msg}`,
+    );
   }
   lines.push("");
 }
@@ -1393,8 +1678,12 @@ function pushBlockersSection(lines: string[], result: ContextResult): void {
   }
   lines.push("## Blockers");
   for (const entry of result.blockers) {
-    const by = entry.blocked_by ? `blocked_by:${entry.blocked_by}(${entry.blocked_by_status ?? "?"})` : "blocked_by:-";
-    const reason = entry.blocked_reason ? ` reason:"${entry.blocked_reason}"` : "";
+    const by = entry.blocked_by
+      ? `blocked_by:${entry.blocked_by}(${entry.blocked_by_status ?? "?"})`
+      : "blocked_by:-";
+    const reason = entry.blocked_reason
+      ? ` reason:"${entry.blocked_reason}"`
+      : "";
     const note = entry.unblock_note ? ` unblock:"${entry.unblock_note}"` : "";
     lines.push(`- ${entry.id} "${entry.title}" ${by}${reason}${note}`);
   }
@@ -1407,7 +1696,9 @@ function pushFilesSection(lines: string[], result: ContextResult): void {
   }
   lines.push("## Hot files");
   for (const file of result.files) {
-    lines.push(`- ${file.path} refs:${file.references} items:[${file.items.join(",")}]`);
+    lines.push(
+      `- ${file.path} refs:${file.references} items:[${file.items.join(",")}]`,
+    );
   }
   lines.push("");
 }
@@ -1419,7 +1710,9 @@ function pushWorkloadSection(lines: string[], result: ContextResult): void {
   lines.push("## Workload");
   for (const entry of result.workload) {
     const who = entry.assignee ?? "(unassigned)";
-    lines.push(`- ${who} active:${entry.active} wip:${entry.in_progress} items:[${entry.items.join(",")}]`);
+    lines.push(
+      `- ${who} active:${entry.active} wip:${entry.in_progress} items:[${entry.items.join(",")}]`,
+    );
   }
   lines.push("");
 }
@@ -1430,7 +1723,9 @@ function pushStalenessSection(lines: string[], result: ContextResult): void {
   }
   lines.push("## Stale items");
   for (const entry of result.staleness) {
-    lines.push(`- ${entry.id} ${entry.status} stale:${entry.stale_days}d last:${entry.updated_at.slice(0, 10)} "${entry.title}"`);
+    lines.push(
+      `- ${entry.id} ${entry.status} stale:${entry.stale_days}d last:${entry.updated_at.slice(0, 10)} "${entry.title}"`,
+    );
   }
   lines.push("");
 }
@@ -1441,15 +1736,22 @@ function pushTestHealthSection(lines: string[], result: ContextResult): void {
   }
   lines.push("## Test health");
   lines.push(`- items_with_tests: ${result.tests.items_with_tests}`);
-  lines.push(`- items_with_recent_runs: ${result.tests.items_with_recent_runs}`);
-  lines.push(`- passed: ${result.tests.recent_runs.passed}, failed: ${result.tests.recent_runs.failed}, skipped: ${result.tests.recent_runs.skipped}`);
+  lines.push(
+    `- items_with_recent_runs: ${result.tests.items_with_recent_runs}`,
+  );
+  lines.push(
+    `- passed: ${result.tests.recent_runs.passed}, failed: ${result.tests.recent_runs.failed}, skipped: ${result.tests.recent_runs.skipped}`,
+  );
   if (result.tests.items_failing.length > 0) {
     lines.push(`- items_failing: [${result.tests.items_failing.join(",")}]`);
   }
   lines.push("");
 }
 
-function pushEmptyContextSuggestions(lines: string[], result: ContextResult): void {
+function pushEmptyContextSuggestions(
+  lines: string[],
+  result: ContextResult,
+): void {
   const isEmpty =
     result.summary.active_items === 0 &&
     result.summary.blocked === 0 &&
@@ -1459,20 +1761,22 @@ function pushEmptyContextSuggestions(lines: string[], result: ContextResult): vo
   }
   lines.push("## Suggestions");
   lines.push("No active work items or upcoming events. Consider:");
-  lines.push("- `pm create --type Task --title \"...\"` to add a new work item");
-  lines.push("- `pm list --status closed --limit 5` to review recent completions");
+  lines.push('- `pm create --type Task --title "..."` to add a new work item');
+  lines.push(
+    "- `pm list --status closed --limit 5` to review recent completions",
+  );
   lines.push("- `pm search <keywords>` to find related past work");
   lines.push("- `pm aggregate` for a full project status overview");
 }
 
-/**
- * Implements render context markdown for the public runtime surface of this module.
- */
+/** Implements render context markdown for the public runtime surface of this module. */
 export function renderContextMarkdown(result: ContextResult): string {
   const lines: string[] = [];
   const focusFields = result.focus_fields;
   const renderFocus = (item: ContextFocusItem): string =>
-    focusFields ? formatProjectedFocusLine(item, focusFields) : formatFocusLine(item);
+    focusFields
+      ? formatProjectedFocusLine(item, focusFields)
+      : formatFocusLine(item);
   lines.push("# pm context");
   lines.push("");
   lines.push(`- now: ${result.now}`);
@@ -1480,12 +1784,18 @@ export function renderContextMarkdown(result: ContextResult): string {
   if (result.filters.parent) {
     lines.push(`- scope: subtree of ${result.filters.parent}`);
   }
-  lines.push(`- active_items: ${result.summary.active_items} (in_progress: ${result.summary.in_progress}, open: ${result.summary.open})`);
+  lines.push(
+    `- active_items: ${result.summary.active_items} (in_progress: ${result.summary.in_progress}, open: ${result.summary.open})`,
+  );
   if (result.summary.total_items !== undefined) {
-    lines.push(`- total_items: ${result.summary.total_items} (closed: ${result.summary.closed ?? 0}, canceled: ${result.summary.canceled ?? 0})`);
+    lines.push(
+      `- total_items: ${result.summary.total_items} (closed: ${result.summary.closed ?? 0}, canceled: ${result.summary.canceled ?? 0})`,
+    );
   }
   lines.push(`- agenda_events: ${result.summary.agenda_events}`);
-  lines.push(`- blocked_fallback_used: ${result.summary.blocked_fallback_used}`);
+  lines.push(
+    `- blocked_fallback_used: ${result.summary.blocked_fallback_used}`,
+  );
   const renderedSections = result.sections_included.filter(
     (section) => section !== "blockers" || (result.blockers?.length ?? 0) > 0,
   );
@@ -1494,8 +1804,20 @@ export function renderContextMarkdown(result: ContextResult): string {
   }
   lines.push("");
 
-  pushContextFocusSection(lines, "High-level focus", result.high_level, "No high-level active items.", renderFocus);
-  pushContextFocusSection(lines, "Low-level focus", result.low_level, "No low-level active items.", renderFocus);
+  pushContextFocusSection(
+    lines,
+    "High-level focus",
+    result.high_level,
+    "No high-level active items.",
+    renderFocus,
+  );
+  pushContextFocusSection(
+    lines,
+    "Low-level focus",
+    result.low_level,
+    "No low-level active items.",
+    renderFocus,
+  );
   pushBlockedFallbackSection(lines, result, renderFocus);
   pushAgendaSection(lines, result);
   pushHierarchySection(lines, result);
@@ -1562,7 +1884,10 @@ interface ContextOptionalSections {
   tests?: TestHealthSummary;
 }
 
-async function resolveContextRuntime(options: ContextOptions, global: GlobalOptions): Promise<ContextRuntime> {
+async function resolveContextRuntime(
+  options: ContextOptions,
+  global: GlobalOptions,
+): Promise<ContextRuntime> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
   /* c8 ignore start -- settings persistence currently always materializes context defaults */
@@ -1576,9 +1901,16 @@ async function resolveContextRuntime(options: ContextOptions, global: GlobalOpti
     statusRegistry,
     depth,
     limit: parseContextLimit(options.limit ?? options.maxItems, depth),
-    sectionsIncluded: parseContextSections(options.section, depth, contextSettings),
+    sectionsIncluded: parseContextSections(
+      options.section,
+      depth,
+      contextSettings,
+    ),
     activityLimit: parseActivityLimit(options.activityLimit, contextSettings),
-    staleThresholdDays: parseStaleThresholdDays(options.staleThreshold, contextSettings),
+    staleThresholdDays: parseStaleThresholdDays(
+      options.staleThreshold,
+      contextSettings,
+    ),
     parentScope: parseContextParent(options.parent),
     focusFields: parseContextFocusFields(options.fields),
     baseListOptions: stripListProjectionFlags(options),
@@ -1587,11 +1919,21 @@ async function resolveContextRuntime(options: ContextOptions, global: GlobalOpti
 
 function contextNeedsAllItems(sectionsIncluded: ContextSectionName[]): boolean {
   return sectionsIncluded.some((section) =>
-    ["hierarchy", "progress", "blockers", "staleness", "recently_created", "unparented"].includes(section),
+    [
+      "hierarchy",
+      "progress",
+      "blockers",
+      "staleness",
+      "recently_created",
+      "unparented",
+    ].includes(section),
   );
 }
 
-function buildUnpaginatedContextListOptions(baseListOptions: Record<string, unknown>, extra: Partial<ListOptions>): ListOptions {
+function buildUnpaginatedContextListOptions(
+  baseListOptions: Record<string, unknown>,
+  extra: Partial<ListOptions>,
+): ListOptions {
   return {
     ...baseListOptions,
     ...extra,
@@ -1607,16 +1949,21 @@ async function loadContextCorpus(
   runtime: ContextRuntime,
 ): Promise<ContextCorpus> {
   const needsAllItems = contextNeedsAllItems(runtime.sectionsIncluded);
-  const listOptions: ListOptions = runtime.parentScope === undefined
-    ? { ...runtime.baseListOptions, excludeTerminal: true }
-    : buildUnpaginatedContextListOptions(runtime.baseListOptions, { excludeTerminal: true });
+  const listOptions: ListOptions =
+    runtime.parentScope === undefined
+      ? { ...runtime.baseListOptions, excludeTerminal: true }
+      : buildUnpaginatedContextListOptions(runtime.baseListOptions, {
+          excludeTerminal: true,
+        });
   const listed = await runList(undefined, listOptions, global);
   let listedFrontMatter = listed.items as ItemFrontMatter[];
   let allItems: ItemFrontMatter[] = listedFrontMatter;
   if (needsAllItems || runtime.parentScope !== undefined) {
     const allListed = await runList(
       undefined,
-      buildUnpaginatedContextListOptions(runtime.baseListOptions, { excludeTerminal: false }),
+      buildUnpaginatedContextListOptions(runtime.baseListOptions, {
+        excludeTerminal: false,
+      }),
       global,
     );
     allItems = allListed.items as ItemFrontMatter[];
@@ -1624,19 +1971,29 @@ async function loadContextCorpus(
   const fullCorpus = allItems;
   const subtreeIds = resolveContextSubtreeIds(runtime.parentScope, fullCorpus);
   if (subtreeIds) {
-    listedFrontMatter = listedFrontMatter.filter((item) => subtreeIds.has(item.id.trim().toLowerCase()));
-    allItems = allItems.filter((item) => subtreeIds.has(item.id.trim().toLowerCase()));
+    listedFrontMatter = listedFrontMatter.filter((item) =>
+      subtreeIds.has(item.id.trim().toLowerCase()),
+    );
+    allItems = allItems.filter((item) =>
+      subtreeIds.has(item.id.trim().toLowerCase()),
+    );
   }
   return { listed, listedFrontMatter, allItems, fullCorpus, subtreeIds };
 }
 
-function resolveContextSubtreeIds(parentScope: string | undefined, fullCorpus: ItemFrontMatter[]): Set<string> | undefined {
+function resolveContextSubtreeIds(
+  parentScope: string | undefined,
+  fullCorpus: ItemFrontMatter[],
+): Set<string> | undefined {
   if (parentScope === undefined) {
     return undefined;
   }
   const subtree = collectSubtreeIds(fullCorpus, parentScope);
   if (!subtree.found) {
-    throw new PmCliError(`Context --parent item not found: ${parentScope}`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Context --parent item not found: ${parentScope}`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   return subtree.ids;
 }
@@ -1650,27 +2007,44 @@ async function resolveContextFocusGroups(
   now: string,
   author: string | undefined,
 ): Promise<ContextFocusGroups> {
-  const structural = [...listedFrontMatter].sort((left, right) => compareCriticalItems(left, right, statusRegistry));
+  const structural = [...listedFrontMatter].sort((left, right) =>
+    compareCriticalItems(left, right, statusRegistry),
+  );
   const ranking = await scoreContextCandidatesWithActiveExtensions(
     "context",
-    buildItemContextRelevanceCandidates(structural, statusRegistry, now, author),
+    buildItemContextRelevanceCandidates(
+      structural,
+      statusRegistry,
+      now,
+      author,
+    ),
   );
   const ranked = ranking.ranked.map((entry) => entry.item);
   const activeStatuses = statusRegistry.active_statuses;
-  const activeItems = ranked.filter((item) => activeStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)));
+  const activeItems = ranked.filter((item) =>
+    activeStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
+  );
   const blockedItems = ranked.filter((item) =>
-    statusRegistry.blocked_statuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
+    statusRegistry.blocked_statuses.has(
+      normalizeStatusForRegistry(item.status, statusRegistry),
+    ),
   );
   const childrenByParent = buildChildrenByParent(allItems);
-  const focusChildrenByParent = contextNeedsAllItems(sectionsIncluded) ? childrenByParent : undefined;
+  const focusChildrenByParent = contextNeedsAllItems(sectionsIncluded)
+    ? childrenByParent
+    : undefined;
   const highLevel = activeItems
     .filter((item) => HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, limit)
-    .map((item) => toContextFocusItem(item, statusRegistry, focusChildrenByParent));
+    .map((item) =>
+      toContextFocusItem(item, statusRegistry, focusChildrenByParent),
+    );
   const lowLevel = activeItems
     .filter((item) => !HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, limit)
-    .map((item) => toContextFocusItem(item, statusRegistry, focusChildrenByParent));
+    .map((item) =>
+      toContextFocusItem(item, statusRegistry, focusChildrenByParent),
+    );
   const blockedFallbackUsed = activeItems.length === 0;
   return {
     activeItems,
@@ -1678,7 +2052,11 @@ async function resolveContextFocusGroups(
     highLevel,
     lowLevel,
     blockedFallback: blockedFallbackUsed
-      ? blockedItems.slice(0, limit).map((item) => toContextFocusItem(item, statusRegistry, focusChildrenByParent))
+      ? blockedItems
+          .slice(0, limit)
+          .map((item) =>
+            toContextFocusItem(item, statusRegistry, focusChildrenByParent),
+          )
       : [],
     blockedFallbackUsed,
     ranking,
@@ -1690,25 +2068,42 @@ async function buildContextAgenda(
   global: GlobalOptions,
   runtime: ContextRuntime,
   subtreeIds: Set<string> | undefined,
-): Promise<{ agenda: Awaited<ReturnType<typeof runCalendar>>; agendaEvents: CalendarRow[]; agendaSummary: ContextAgendaSummary }> {
+): Promise<{
+  agenda: Awaited<ReturnType<typeof runCalendar>>;
+  agendaEvents: CalendarRow[];
+  agendaSummary: ContextAgendaSummary;
+}> {
   const calendarOptions: CalendarOptions = {
     ...runtime.baseListOptions,
     view: "agenda",
     include: "all",
-    limit: runtime.parentScope === undefined ? String(runtime.limit) : undefined,
+    limit:
+      runtime.parentScope === undefined ? String(runtime.limit) : undefined,
   };
   const agenda = await runCalendar(calendarOptions, global);
   const scopedAgenda =
     subtreeIds === undefined
       ? agenda.events
-      : agenda.events.filter((event) => subtreeIds.has(event.item_id.trim().toLowerCase()));
-  const agendaEvents = filterTerminalCalendarEvents(scopedAgenda, runtime.statusRegistry).slice(0, runtime.limit);
+      : agenda.events.filter((event) =>
+          subtreeIds.has(event.item_id.trim().toLowerCase()),
+        );
+  const agendaEvents = filterTerminalCalendarEvents(
+    scopedAgenda,
+    runtime.statusRegistry,
+  ).slice(0, runtime.limit);
   return { agenda, agendaEvents, agendaSummary: summarizeAgenda(agendaEvents) };
 }
 
-function countContextStatus(items: ItemFrontMatter[], status: string | undefined, statusRegistry: RuntimeStatusRegistry): number {
+function countContextStatus(
+  items: ItemFrontMatter[],
+  status: string | undefined,
+  statusRegistry: RuntimeStatusRegistry,
+): number {
   const targetStatus = String(status);
-  return items.filter((item) => normalizeStatusForRegistry(item.status, statusRegistry) === targetStatus).length;
+  return items.filter(
+    (item) =>
+      normalizeStatusForRegistry(item.status, statusRegistry) === targetStatus,
+  ).length;
 }
 
 async function buildOptionalContextSections(params: {
@@ -1722,20 +2117,68 @@ async function buildOptionalContextSections(params: {
   const { runtime, allItems, fullCorpus, focusGroups, now, global } = params;
   const childrenByParent = buildChildrenByParent(allItems);
   const itemMap = new Map(fullCorpus.map((item) => [item.id, item]));
-  const allNonTerminal = allItems.filter((item) => !isTerminalStatus(item.status, runtime.statusRegistry));
-  const has = (section: ContextSectionName) => runtime.sectionsIncluded.includes(section);
+  const allNonTerminal = allItems.filter(
+    (item) => !isTerminalStatus(item.status, runtime.statusRegistry),
+  );
+  const has = (section: ContextSectionName) =>
+    runtime.sectionsIncluded.includes(section);
   return {
-    hierarchy: has("hierarchy") ? buildHierarchy(allItems, focusGroups.activeItems, runtime.statusRegistry, runtime.limit) : undefined,
-    activity: has("activity") ? await buildActivity(runtime.activityLimit, global) : undefined,
-    progress: has("progress") ? buildProgress(allItems, focusGroups.activeItems, runtime.statusRegistry, runtime.limit) : undefined,
-    blockersSection: has("blockers") ? buildBlockers(focusGroups.blockedItems, itemMap, runtime.limit) : undefined,
-    recentlyCreated: has("recently_created")
-      ? buildRecentlyCreated(allNonTerminal, runtime.statusRegistry, childrenByParent, runtime.limit)
+    hierarchy: has("hierarchy")
+      ? buildHierarchy(
+          allItems,
+          focusGroups.activeItems,
+          runtime.statusRegistry,
+          runtime.limit,
+        )
       : undefined,
-    unparented: has("unparented") ? buildUnparented(allNonTerminal, runtime.statusRegistry, childrenByParent, runtime.limit) : undefined,
-    filesSection: has("files") ? buildHotFiles(focusGroups.activeItems, runtime.limit) : undefined,
-    workload: has("workload") ? buildWorkload(focusGroups.activeItems, runtime.statusRegistry, runtime.limit) : undefined,
-    staleness: has("staleness") ? buildStaleness(allNonTerminal, runtime.staleThresholdDays, now, runtime.limit) : undefined,
+    activity: has("activity")
+      ? await buildActivity(runtime.activityLimit, global)
+      : undefined,
+    progress: has("progress")
+      ? buildProgress(
+          allItems,
+          focusGroups.activeItems,
+          runtime.statusRegistry,
+          runtime.limit,
+        )
+      : undefined,
+    blockersSection: has("blockers")
+      ? buildBlockers(focusGroups.blockedItems, itemMap, runtime.limit)
+      : undefined,
+    recentlyCreated: has("recently_created")
+      ? buildRecentlyCreated(
+          allNonTerminal,
+          runtime.statusRegistry,
+          childrenByParent,
+          runtime.limit,
+        )
+      : undefined,
+    unparented: has("unparented")
+      ? buildUnparented(
+          allNonTerminal,
+          runtime.statusRegistry,
+          childrenByParent,
+          runtime.limit,
+        )
+      : undefined,
+    filesSection: has("files")
+      ? buildHotFiles(focusGroups.activeItems, runtime.limit)
+      : undefined,
+    workload: has("workload")
+      ? buildWorkload(
+          focusGroups.activeItems,
+          runtime.statusRegistry,
+          runtime.limit,
+        )
+      : undefined,
+    staleness: has("staleness")
+      ? buildStaleness(
+          allNonTerminal,
+          runtime.staleThresholdDays,
+          now,
+          runtime.limit,
+        )
+      : undefined,
     tests: has("tests") ? buildTestHealth(focusGroups.activeItems) : undefined,
   };
 }
@@ -1751,17 +2194,27 @@ function buildContextSummaryExtras(
   const canceledStatus = normalizeStatusInput("canceled", statusRegistry);
   return {
     total_items: allItems.length,
-    closed: allItems.filter((item) => isClosedStatus(item.status, statusRegistry)).length,
-    canceled: allItems.filter((item) => normalizeStatusForRegistry(item.status, statusRegistry) === canceledStatus).length,
+    closed: allItems.filter((item) =>
+      isClosedStatus(item.status, statusRegistry),
+    ).length,
+    canceled: allItems.filter(
+      (item) =>
+        normalizeStatusForRegistry(item.status, statusRegistry) ===
+        canceledStatus,
+    ).length,
   };
 }
 
-function attachOptionalContextSections(result: ContextResult, sections: ContextOptionalSections): void {
+function attachOptionalContextSections(
+  result: ContextResult,
+  sections: ContextOptionalSections,
+): void {
   if (sections.hierarchy) result.hierarchy = sections.hierarchy;
   if (sections.activity) result.activity = sections.activity;
   if (sections.progress) result.progress = sections.progress;
   if (sections.blockersSection) result.blockers = sections.blockersSection;
-  if (sections.recentlyCreated) result.recently_created = sections.recentlyCreated;
+  if (sections.recentlyCreated)
+    result.recently_created = sections.recentlyCreated;
   if (sections.unparented) result.unparented = sections.unparented;
   if (sections.filesSection) result.files = sections.filesSection;
   if (sections.workload) result.workload = sections.workload;
@@ -1769,24 +2222,41 @@ function attachOptionalContextSections(result: ContextResult, sections: ContextO
   if (sections.tests) result.tests = sections.tests;
 }
 
-function applyContextFocusProjection(result: ContextResult, focusFields: string[] | undefined): void {
+function applyContextFocusProjection(
+  result: ContextResult,
+  focusFields: string[] | undefined,
+): void {
   if (!focusFields) {
     return;
   }
   result.focus_fields = focusFields;
   result.high_level = projectContextFocusRows(result.high_level, focusFields);
   result.low_level = projectContextFocusRows(result.low_level, focusFields);
-  result.blocked_fallback = projectContextFocusRows(result.blocked_fallback, focusFields);
+  result.blocked_fallback = projectContextFocusRows(
+    result.blocked_fallback,
+    focusFields,
+  );
   if (result.recently_created) {
-    result.recently_created = projectContextFocusRows(result.recently_created, focusFields) as RecentContextItem[];
+    result.recently_created = projectContextFocusRows(
+      result.recently_created,
+      focusFields,
+    ) as RecentContextItem[];
   }
   if (result.unparented) {
     result.unparented = projectContextFocusRows(result.unparented, focusFields);
   }
 }
 
-function maybeAttachEmptyContextSuggestions(result: ContextResult, activeItems: ItemFrontMatter[], blockedItems: ItemFrontMatter[]): void {
-  if (activeItems.length > 0 || blockedItems.length > 0 || result.agenda.events.length > 0) {
+function maybeAttachEmptyContextSuggestions(
+  result: ContextResult,
+  activeItems: ItemFrontMatter[],
+  blockedItems: ItemFrontMatter[],
+): void {
+  if (
+    activeItems.length > 0 ||
+    blockedItems.length > 0 ||
+    result.agenda.events.length > 0
+  ) {
     return;
   }
   result.suggestions = [
@@ -1797,10 +2267,11 @@ function maybeAttachEmptyContextSuggestions(result: ContextResult, activeItems: 
   ];
 }
 
-/**
- * Implements run context for the public runtime surface of this module.
- */
-export async function runContext(options: ContextOptions, global: GlobalOptions): Promise<ContextResult> {
+/** Implements run context for the public runtime surface of this module. */
+export async function runContext(
+  options: ContextOptions,
+  global: GlobalOptions,
+): Promise<ContextResult> {
   const runtime = await resolveContextRuntime(options, global);
   const corpus = await loadContextCorpus(options, global, runtime);
   const focusGroups = await resolveContextFocusGroups(
@@ -1812,8 +2283,17 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
     nowIso(),
     process.env.PM_AUTHOR,
   );
-  const agendaContext = await buildContextAgenda(options, global, runtime, corpus.subtreeIds);
-  const warnings = mergeSortedWarnings(corpus.listed.warnings, agendaContext.agenda.warnings, focusGroups.ranking.warnings);
+  const agendaContext = await buildContextAgenda(
+    options,
+    global,
+    runtime,
+    corpus.subtreeIds,
+  );
+  const warnings = mergeSortedWarnings(
+    corpus.listed.warnings,
+    agendaContext.agenda.warnings,
+    focusGroups.ranking.warnings,
+  );
   const inProgressCount = countContextStatus(
     focusGroups.activeItems,
     normalizeStatusInput("in_progress", runtime.statusRegistry),
@@ -1862,7 +2342,9 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
       limit: options.limit ?? options.maxItems ?? null,
       parent: runtime.parentScope ?? null,
       /* c8 ignore next -- listed/calendar runtime filters are always materialized by their command handlers */
-      runtime_filters: (corpus.listed.filters.runtime_filters ?? agendaContext.agenda.filters.runtime_filters ?? {}) as Record<string, unknown>,
+      runtime_filters: (corpus.listed.filters.runtime_filters ??
+        agendaContext.agenda.filters.runtime_filters ??
+        {}) as Record<string, unknown>,
     },
     summary: {
       active_items: focusGroups.activeItems.length,
@@ -1885,10 +2367,15 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   };
 
   attachOptionalContextSections(result, sections);
-  if (options.explainRanking === true) result.ranking = toContextRankingSummary(focusGroups.ranking);
+  if (options.explainRanking === true)
+    result.ranking = toContextRankingSummary(focusGroups.ranking);
   applyContextFocusProjection(result, runtime.focusFields);
   if (warnings.length > 0) result.warnings = warnings;
-  maybeAttachEmptyContextSuggestions(result, focusGroups.activeItems, focusGroups.blockedItems);
+  maybeAttachEmptyContextSuggestions(
+    result,
+    focusGroups.activeItems,
+    focusGroups.blockedItems,
+  );
 
   return result;
 }

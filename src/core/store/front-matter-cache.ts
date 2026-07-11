@@ -6,27 +6,30 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { getActiveExtensionRegistrations, hasActiveOnReadHooks, runActiveOnReadHooks } from "../extensions/index.js";
+import {
+  getActiveExtensionRegistrations,
+  hasActiveOnReadHooks,
+  runActiveOnReadHooks,
+} from "../extensions/index.js";
 import { collectRegisteredItemFieldNames } from "../extensions/item-fields.js";
 import { parseItemDocument } from "../item/item-format.js";
 import { evictOldestMemoEntries } from "../shared/memo.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { ITEM_FILE_EXTENSIONS, getItemFormatFromPath } from "./paths.js";
-import type { ItemDocument, ItemFormat, ItemMetadata, ItemType, RuntimeSchemaSettings } from "../../types/index.js";
+import type {
+  ItemDocument,
+  ItemFormat,
+  ItemMetadata,
+  ItemType,
+  RuntimeSchemaSettings,
+} from "../../types/index.js";
 
 const CACHE_VERSION = 6;
 const CACHE_FILENAME = "metadata-cache.json";
 const BODY_CACHE_FILENAME = "metadata-cache-bodies.json";
 const COLLECTIONS_CACHE_FILENAME = "metadata-cache-collections.json";
 
-/**
- * Heavy "collection" front-matter fields. These arrays dominate the on-disk cache
- * (e.g. a single item's comment thread can be hundreds of KB) yet the hot list path
- * (`pm list`, stats, deps, activity, calendar, close) never reads them. They are
- * stored in a separate collections cache that is parsed only when a caller opts in
- * (`includeCollections`), keeping the always-loaded light cache an order of magnitude
- * smaller and its JSON.parse correspondingly cheaper.
- */
+/** Heavy "collection" front-matter fields. These arrays dominate the on-disk cache (e.g. a single item's comment thread can be hundreds of KB) yet the hot list path (`pm list`, stats, deps, activity, calendar, close) never reads them. They are stored in a separate collections cache that is parsed only when a caller opts in (`includeCollections`), keeping the always-loaded light cache an order of magnitude smaller and its JSON.parse correspondingly cheaper. */
 export const HEAVY_METADATA_KEYS = [
   "comments",
   "notes",
@@ -78,11 +81,7 @@ interface CollectionsCacheEnvelope {
   collections: Record<string, CachedCollections>;
 }
 
-/**
- * Split parsed front-matter into the light scalar/small fields (everything except the
- * heavy collection arrays) and the heavy collection fields. Only keys that are actually
- * present are moved, so an item without comments stays without comments in both tiers.
- */
+/** Split parsed front-matter into the light scalar/small fields (everything except the heavy collection arrays) and the heavy collection fields. Only keys that are actually present are moved, so an item without comments stays without comments in both tiers. */
 function splitHeavyMetadata(metadata: ItemMetadata): {
   light: ItemMetadata;
   heavy: Record<string, unknown>;
@@ -98,25 +97,26 @@ function splitHeavyMetadata(metadata: ItemMetadata): {
   return { light: light as ItemMetadata, heavy };
 }
 
-/**
- * Recombine light metadata with cached heavy collection fields. Key order differs from
- * the on-disk document, but every downstream hash/serialization canonicalizes and
- * sorts keys (`stableStringify`), so the merged record is byte-identical once hashed.
- */
-function mergeHeavyMetadata(light: ItemMetadata, heavy: Record<string, unknown> | undefined): ItemMetadata {
+/** Recombine light metadata with cached heavy collection fields. Key order differs from the on-disk document, but every downstream hash/serialization canonicalizes and sorts keys (`stableStringify`), so the merged record is byte-identical once hashed. */
+function mergeHeavyMetadata(
+  light: ItemMetadata,
+  heavy: Record<string, unknown> | undefined,
+): ItemMetadata {
   if (!heavy || Object.keys(heavy).length === 0) {
     return light;
   }
   return { ...light, ...heavy } as ItemMetadata;
 }
 
-/**
- * Documents the cached document candidate payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the cached document candidate payload exchanged by command, SDK, and package integrations. */
 export interface CachedDocumentCandidate {
+  /** Value that configures or reports metadata for this contract. */
   metadata: ItemMetadata;
+  /** Value that configures or reports body for this contract. */
   body?: string;
+  /** Value that configures or reports item format for this contract. */
   item_format: ItemFormat;
+  /** Filesystem path used for item resolution. */
   item_path: string;
 }
 
@@ -176,7 +176,10 @@ const ENVELOPE_MEMO_MAX_ENTRIES = 24;
 const envelopeMemo = new Map<string, MemoizedEnvelope>();
 
 function memoizeEnvelope(cachePath: string, entry: MemoizedEnvelope): void {
-  if (envelopeMemo.size >= ENVELOPE_MEMO_MAX_ENTRIES && !envelopeMemo.has(cachePath)) {
+  if (
+    envelopeMemo.size >= ENVELOPE_MEMO_MAX_ENTRIES &&
+    !envelopeMemo.has(cachePath)
+  ) {
     evictOldestMemoEntries(envelopeMemo);
   }
   envelopeMemo.set(cachePath, entry);
@@ -194,7 +197,10 @@ async function loadEnvelopeMemoized<T extends MemoizedEnvelope["envelope"]>(
     return null as T;
   }
   const memoized = envelopeMemo.get(cachePath);
-  if (memoized && statMatches(memoized.signature, stat.mtimeMs, stat.ctimeMs, stat.size)) {
+  if (
+    memoized &&
+    statMatches(memoized.signature, stat.mtimeMs, stat.ctimeMs, stat.size)
+  ) {
     // Re-insert on hit so insertion order tracks recency for the LRU half-eviction.
     envelopeMemo.delete(cachePath);
     envelopeMemo.set(cachePath, memoized);
@@ -207,7 +213,11 @@ async function loadEnvelopeMemoized<T extends MemoizedEnvelope["envelope"]>(
     envelope = null as T;
   }
   memoizeEnvelope(cachePath, {
-    signature: { mtime_ms: stat.mtimeMs, ctime_ms: stat.ctimeMs, size: stat.size },
+    signature: {
+      mtime_ms: stat.mtimeMs,
+      ctime_ms: stat.ctimeMs,
+      size: stat.size,
+    },
     envelope,
   });
   return envelope;
@@ -224,27 +234,43 @@ export function clearFrontMatterEnvelopeMemo(): void {
 async function loadCache(pmRoot: string): Promise<CacheEnvelope | null> {
   return await loadEnvelopeMemoized(getCachePath(pmRoot), (raw) => {
     const parsed = JSON.parse(raw) as CacheEnvelope;
-    if (parsed.version !== CACHE_VERSION || typeof parsed.entries !== "object" || parsed.entries === null) {
+    if (
+      parsed.version !== CACHE_VERSION ||
+      typeof parsed.entries !== "object" ||
+      parsed.entries === null
+    ) {
       return null;
     }
     return parsed;
   });
 }
 
-async function loadBodyCache(pmRoot: string): Promise<BodyCacheEnvelope | null> {
+async function loadBodyCache(
+  pmRoot: string,
+): Promise<BodyCacheEnvelope | null> {
   return await loadEnvelopeMemoized(getBodyCachePath(pmRoot), (raw) => {
     const parsed = JSON.parse(raw) as BodyCacheEnvelope;
-    if (parsed.version !== CACHE_VERSION || typeof parsed.bodies !== "object" || parsed.bodies === null) {
+    if (
+      parsed.version !== CACHE_VERSION ||
+      typeof parsed.bodies !== "object" ||
+      parsed.bodies === null
+    ) {
       return null;
     }
     return parsed;
   });
 }
 
-async function loadCollectionsCache(pmRoot: string): Promise<CollectionsCacheEnvelope | null> {
+async function loadCollectionsCache(
+  pmRoot: string,
+): Promise<CollectionsCacheEnvelope | null> {
   return await loadEnvelopeMemoized(getCollectionsCachePath(pmRoot), (raw) => {
     const parsed = JSON.parse(raw) as CollectionsCacheEnvelope;
-    if (parsed.version !== CACHE_VERSION || typeof parsed.collections !== "object" || parsed.collections === null) {
+    if (
+      parsed.version !== CACHE_VERSION ||
+      typeof parsed.collections !== "object" ||
+      parsed.collections === null
+    ) {
       return null;
     }
     return parsed;
@@ -263,7 +289,11 @@ async function persistCache(
   try {
     const stat = await fs.stat(cachePath);
     memoizeEnvelope(cachePath, {
-      signature: { mtime_ms: stat.mtimeMs, ctime_ms: stat.ctimeMs, size: stat.size },
+      signature: {
+        mtime_ms: stat.mtimeMs,
+        ctime_ms: stat.ctimeMs,
+        size: stat.size,
+      },
       envelope,
     });
   } catch {
@@ -289,25 +319,27 @@ export function shouldReplaceCachedDocumentCandidate(
   preferredFormat: ItemFormat | undefined,
 ): boolean {
   if (preferredFormat) {
-    return candidateFormat === preferredFormat && existingFormat !== preferredFormat;
+    return (
+      candidateFormat === preferredFormat && existingFormat !== preferredFormat
+    );
   }
   return candidateFormat === "toon" && existingFormat !== "toon";
 }
 
-/**
- * Decide whether a scanned candidate should be recorded for its item id. An
- * unseen id is always recorded; duplicate ids delegate to the deterministic
- * cross-format preference rule. Keeping the short-circuit in this pure helper
- * makes both outcomes testable without relying on filesystem enumeration or
- * concurrent read completion order.
- */
+/** Decide whether a scanned candidate should be recorded for its item id. An unseen id is always recorded; duplicate ids delegate to the deterministic cross-format preference rule. Keeping the short-circuit in this pure helper makes both outcomes testable without relying on filesystem enumeration or concurrent read completion order. */
 export function shouldRecordCachedDocumentCandidate(
   existingFormat: ItemFormat | undefined,
   candidateFormat: ItemFormat,
   preferredFormat: ItemFormat | undefined,
 ): boolean {
-  return existingFormat === undefined ||
-    shouldReplaceCachedDocumentCandidate(existingFormat, candidateFormat, preferredFormat);
+  return (
+    existingFormat === undefined ||
+    shouldReplaceCachedDocumentCandidate(
+      existingFormat,
+      candidateFormat,
+      preferredFormat,
+    )
+  );
 }
 
 function appendWarning(warnings: string[] | undefined, warning: string): void {
@@ -316,8 +348,17 @@ function appendWarning(warnings: string[] | undefined, warning: string): void {
   }
 }
 
-function statMatches(signature: StatSignature, mtimeMs: number, ctimeMs: number, size: number): boolean {
-  return signature.mtime_ms === mtimeMs && signature.ctime_ms === ctimeMs && signature.size === size;
+function statMatches(
+  signature: StatSignature,
+  mtimeMs: number,
+  ctimeMs: number,
+  size: number,
+): boolean {
+  return (
+    signature.mtime_ms === mtimeMs &&
+    signature.ctime_ms === ctimeMs &&
+    signature.size === size
+  );
 }
 
 interface DocumentCacheMissState {
@@ -330,7 +371,10 @@ interface DocumentCacheMutableState {
   newEntries: Record<string, CachedEntry>;
   newBodies: Record<string, CachedBody>;
   newCollections: Record<string, CachedCollections>;
-  documentsById: Map<string, { candidate: CachedDocumentCandidate; itemFormat: ItemFormat }>;
+  documentsById: Map<
+    string,
+    { candidate: CachedDocumentCandidate; itemFormat: ItemFormat }
+  >;
   misses: DocumentCacheMissState;
 }
 
@@ -370,7 +414,12 @@ async function readItemDirectoryFiles(
     const files = await fs.readdir(dirPath);
     return { folder, dirPath, files };
   } catch (error: unknown) {
-    if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code !== "ENOENT") {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: string }).code !== "ENOENT"
+    ) {
       appendWarning(warnings, `item_list_directory_read_failed:${folder}`);
     }
     return { folder, dirPath, files: [] };
@@ -408,7 +457,10 @@ async function dispatchCachedDocumentReadHooks(
   if (!dispatchReadHooks) {
     return;
   }
-  for (const warning of await runActiveOnReadHooks({ path: filePath, scope: "project" })) {
+  for (const warning of await runActiveOnReadHooks({
+    path: filePath,
+    scope: "project",
+  })) {
     appendWarning(warnings, warning);
   }
 }
@@ -422,7 +474,9 @@ function selectHeavyMetadata(
   if (!includeCollections) {
     return undefined;
   }
-  return collectionsCached && cachedCollections ? cachedCollections.collections : parsedCollections;
+  return collectionsCached && cachedCollections
+    ? cachedCollections.collections
+    : parsedCollections;
 }
 
 async function readCachedDocumentParts(
@@ -436,16 +490,27 @@ async function readCachedDocumentParts(
   const { size } = stat;
   const itemFormat = getItemFormatFromPath(filePath) as ItemFormat;
 
-  await dispatchCachedDocumentReadHooks(filePath, context.warnings, context.dispatchReadHooks);
+  await dispatchCachedDocumentReadHooks(
+    filePath,
+    context.warnings,
+    context.dispatchReadHooks,
+  );
 
   const cachedEntry = context.previousEntries[relativePath];
-  const metadataCached = cachedEntry !== undefined && statMatches(cachedEntry, mtimeMs, ctimeMs, size);
+  const metadataCached =
+    cachedEntry !== undefined &&
+    statMatches(cachedEntry, mtimeMs, ctimeMs, size);
   const cachedBody = context.previousBodies[relativePath];
-  const bodyCached = cachedBody !== undefined && statMatches(cachedBody, mtimeMs, ctimeMs, size);
+  const bodyCached =
+    cachedBody !== undefined && statMatches(cachedBody, mtimeMs, ctimeMs, size);
   const cachedCollections = context.previousCollections[relativePath];
-  const collectionsCached = cachedCollections !== undefined && statMatches(cachedCollections, mtimeMs, ctimeMs, size);
+  const collectionsCached =
+    cachedCollections !== undefined &&
+    statMatches(cachedCollections, mtimeMs, ctimeMs, size);
   const needRead =
-    !metadataCached || (context.includeBody && !bodyCached) || (context.includeCollections && !collectionsCached);
+    !metadataCached ||
+    (context.includeBody && !bodyCached) ||
+    (context.includeCollections && !collectionsCached);
 
   if (!needRead) {
     return {
@@ -454,7 +519,12 @@ async function readCachedDocumentParts(
       size,
       itemFormat,
       lightMetadata: cachedEntry.metadata,
-      heavyMetadata: selectHeavyMetadata(context.includeCollections, collectionsCached, cachedCollections, undefined),
+      heavyMetadata: selectHeavyMetadata(
+        context.includeCollections,
+        collectionsCached,
+        cachedCollections,
+        undefined,
+      ),
       bodyLength: cachedEntry.body_length,
       body: context.includeBody ? cachedBody.body : undefined,
     };
@@ -482,7 +552,12 @@ async function readCachedDocumentParts(
     size,
     itemFormat,
     lightMetadata: metadataCached ? cachedEntry.metadata : split.light,
-    heavyMetadata: selectHeavyMetadata(context.includeCollections, collectionsCached, cachedCollections, split.heavy),
+    heavyMetadata: selectHeavyMetadata(
+      context.includeCollections,
+      collectionsCached,
+      cachedCollections,
+      split.heavy,
+    ),
     bodyLength: metadataCached ? cachedEntry.body_length : parsed.body.length,
     body: context.includeBody ? parsed.body : undefined,
   };
@@ -518,7 +593,9 @@ function recordCachedDocumentCandidate(
     };
   }
 
-  const metadata = context.includeCollections ? mergeHeavyMetadata(parts.lightMetadata, parts.heavyMetadata) : parts.lightMetadata;
+  const metadata = context.includeCollections
+    ? mergeHeavyMetadata(parts.lightMetadata, parts.heavyMetadata)
+    : parts.lightMetadata;
   const existing = context.state.documentsById.get(metadata.id);
   const candidate: CachedDocumentCandidate = {
     metadata,
@@ -526,8 +603,17 @@ function recordCachedDocumentCandidate(
     item_format: parts.itemFormat,
     item_path: filePath,
   };
-  if (shouldRecordCachedDocumentCandidate(existing?.itemFormat, parts.itemFormat, context.preferredFormat)) {
-    context.state.documentsById.set(metadata.id, { candidate, itemFormat: parts.itemFormat });
+  if (
+    shouldRecordCachedDocumentCandidate(
+      existing?.itemFormat,
+      parts.itemFormat,
+      context.preferredFormat,
+    )
+  ) {
+    context.state.documentsById.set(metadata.id, {
+      candidate,
+      itemFormat: parts.itemFormat,
+    });
   }
 }
 
@@ -538,10 +624,17 @@ async function processCachedDocumentFile(
   context: DocumentCacheReadContext,
 ): Promise<void> {
   try {
-    const parts = await readCachedDocumentParts(filePath, relativePath, context);
+    const parts = await readCachedDocumentParts(
+      filePath,
+      relativePath,
+      context,
+    );
     recordCachedDocumentCandidate(filePath, relativePath, context, parts);
   } catch {
-    appendWarning(context.warnings, `item_list_item_read_failed:${folder}/${path.basename(filePath)}`);
+    appendWarning(
+      context.warnings,
+      `item_list_item_read_failed:${folder}/${path.basename(filePath)}`,
+    );
   }
 }
 
@@ -549,21 +642,28 @@ function selectPreviousMetadataEntries(
   existingCache: CacheEnvelope | null,
   contextFingerprint: string,
 ): Record<string, CachedEntry> {
-  return existingCache && existingCache.context_fingerprint === contextFingerprint ? existingCache.entries : {};
+  return existingCache &&
+    existingCache.context_fingerprint === contextFingerprint
+    ? existingCache.entries
+    : {};
 }
 
 function selectPreviousBodyEntries(
   existingBodyCache: BodyCacheEnvelope | null,
   contextFingerprint: string,
 ): Record<string, CachedBody> {
-  return existingBodyCache && existingBodyCache.context_fingerprint === contextFingerprint ? existingBodyCache.bodies : {};
+  return existingBodyCache &&
+    existingBodyCache.context_fingerprint === contextFingerprint
+    ? existingBodyCache.bodies
+    : {};
 }
 
 function selectPreviousCollectionEntries(
   existingCollectionsCache: CollectionsCacheEnvelope | null,
   contextFingerprint: string,
 ): Record<string, CachedCollections> {
-  return existingCollectionsCache && existingCollectionsCache.context_fingerprint === contextFingerprint
+  return existingCollectionsCache &&
+    existingCollectionsCache.context_fingerprint === contextFingerprint
     ? existingCollectionsCache.collections
     : {};
 }
@@ -573,7 +673,10 @@ function createDocumentCacheMutableState(): DocumentCacheMutableState {
     newEntries: {},
     newBodies: {},
     newCollections: {},
-    documentsById: new Map<string, { candidate: CachedDocumentCandidate; itemFormat: ItemFormat }>(),
+    documentsById: new Map<
+      string,
+      { candidate: CachedDocumentCandidate; itemFormat: ItemFormat }
+    >(),
     misses: {
       metadata: false,
       body: false,
@@ -594,7 +697,9 @@ function collectCachedDocumentParseTasks(
       }
       const filePath = path.join(dirPath, file);
       const relativePath = path.relative(context.pmRoot, filePath);
-      parseTasks.push(processCachedDocumentFile(folder, filePath, relativePath, context));
+      parseTasks.push(
+        processCachedDocumentFile(folder, filePath, relativePath, context),
+      );
     }
   }
   return parseTasks;
@@ -607,9 +712,15 @@ async function persistMetadataCacheIfNeeded(params: {
   previousEntries: Record<string, CachedEntry>;
   state: DocumentCacheMutableState;
 }): Promise<void> {
-  const metadataDirty = params.state.misses.metadata ||
-    Object.keys(params.previousEntries).length !== Object.keys(params.state.newEntries).length;
-  if (!metadataDirty && params.existingCache !== null && params.existingCache.context_fingerprint === params.contextFingerprint) {
+  const metadataDirty =
+    params.state.misses.metadata ||
+    Object.keys(params.previousEntries).length !==
+      Object.keys(params.state.newEntries).length;
+  if (
+    !metadataDirty &&
+    params.existingCache !== null &&
+    params.existingCache.context_fingerprint === params.contextFingerprint
+  ) {
     return;
   }
   await persistCache(getCachePath(params.pmRoot), {
@@ -626,8 +737,10 @@ async function persistBodyCacheIfNeeded(params: {
   previousBodies: Record<string, CachedBody>;
   state: DocumentCacheMutableState;
 }): Promise<void> {
-  const bodyDirty = params.state.misses.body ||
-    Object.keys(params.previousBodies).length !== Object.keys(params.state.newBodies).length;
+  const bodyDirty =
+    params.state.misses.body ||
+    Object.keys(params.previousBodies).length !==
+      Object.keys(params.state.newBodies).length;
   if (
     !bodyDirty &&
     params.existingBodyCache !== null &&
@@ -649,12 +762,15 @@ async function persistCollectionsCacheIfNeeded(params: {
   previousCollections: Record<string, CachedCollections>;
   state: DocumentCacheMutableState;
 }): Promise<void> {
-  const collectionsDirty = params.state.misses.collections ||
-    Object.keys(params.previousCollections).length !== Object.keys(params.state.newCollections).length;
+  const collectionsDirty =
+    params.state.misses.collections ||
+    Object.keys(params.previousCollections).length !==
+      Object.keys(params.state.newCollections).length;
   if (
     !collectionsDirty &&
     params.existingCollectionsCache !== null &&
-    params.existingCollectionsCache.context_fingerprint === params.contextFingerprint
+    params.existingCollectionsCache.context_fingerprint ===
+      params.contextFingerprint
   ) {
     return;
   }
@@ -665,29 +781,21 @@ async function persistCollectionsCacheIfNeeded(params: {
   }).catch(() => {});
 }
 
-function sortedCachedDocumentCandidates(state: DocumentCacheMutableState): CachedDocumentCandidate[] {
+function sortedCachedDocumentCandidates(
+  state: DocumentCacheMutableState,
+): CachedDocumentCandidate[] {
   return [...state.documentsById.values()]
-    .sort((left, right) => left.candidate.metadata.id.localeCompare(right.candidate.metadata.id))
+    .sort((left, right) =>
+      left.candidate.metadata.id.localeCompare(right.candidate.metadata.id),
+    )
     .map((entry) => entry.candidate);
 }
 
-/**
- * Documents the list cache options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the list cache options payload exchanged by command, SDK, and package integrations. */
 export interface ListCacheOptions {
-  /**
-   * When false, item bodies are neither loaded from nor written to the separate
-   * body cache. Metadata-only callers (`pm list`, stats, deps, activity, …) skip
-   * the large body cache entirely; only body consumers (search/reindex) pay for it.
-   */
+  /** When false, item bodies are neither loaded from nor written to the separate body cache. Metadata-only callers (`pm list`, stats, deps, activity, …) skip the large body cache entirely; only body consumers (search/reindex) pay for it. */
   includeBody?: boolean;
-  /**
-   * When false, heavy collection fields (comments/notes/learnings/files/tests/
-   * test_runs/docs) are neither loaded from nor written to the separate collections
-   * cache, and are absent from the returned metadata. Light-only callers (`pm list`
-   * compact, stats, deps, activity, calendar, close) skip the large collections cache
-   * entirely. Defaults to true so any caller that does read those fields stays correct.
-   */
+  /** When false, heavy collection fields (comments/notes/learnings/files/tests/ test_runs/docs) are neither loaded from nor written to the separate collections cache, and are absent from the returned metadata. Light-only callers (`pm list` compact, stats, deps, activity, calendar, close) skip the large collections cache entirely. Defaults to true so any caller that does read those fields stays correct. */
   includeCollections?: boolean;
 }
 
@@ -712,19 +820,39 @@ export async function listAllDocumentCandidatesCached(
   const includeBody = options.includeBody !== false;
   const includeCollections = options.includeCollections !== false;
   const extensionFieldNames = resolveActiveExtensionFieldNames();
-  const contextFingerprint = computeContextFingerprint(preferredFormat, typeToFolder, schema, extensionFieldNames);
+  const contextFingerprint = computeContextFingerprint(
+    preferredFormat,
+    typeToFolder,
+    schema,
+    extensionFieldNames,
+  );
 
   const existingCache = await loadCache(pmRoot);
-  const previousEntries = selectPreviousMetadataEntries(existingCache, contextFingerprint);
+  const previousEntries = selectPreviousMetadataEntries(
+    existingCache,
+    contextFingerprint,
+  );
 
   const existingBodyCache = includeBody ? await loadBodyCache(pmRoot) : null;
-  const previousBodies = selectPreviousBodyEntries(existingBodyCache, contextFingerprint);
+  const previousBodies = selectPreviousBodyEntries(
+    existingBodyCache,
+    contextFingerprint,
+  );
 
-  const existingCollectionsCache = includeCollections ? await loadCollectionsCache(pmRoot) : null;
-  const previousCollections = selectPreviousCollectionEntries(existingCollectionsCache, contextFingerprint);
+  const existingCollectionsCache = includeCollections
+    ? await loadCollectionsCache(pmRoot)
+    : null;
+  const previousCollections = selectPreviousCollectionEntries(
+    existingCollectionsCache,
+    contextFingerprint,
+  );
 
   const entries = Object.entries(typeToFolder) as Array<[ItemType, string]>;
-  const dirResults = await Promise.all(entries.map(([, folder]) => readItemDirectoryFiles(pmRoot, folder, warnings)));
+  const dirResults = await Promise.all(
+    entries.map(([, folder]) =>
+      readItemDirectoryFiles(pmRoot, folder, warnings),
+    ),
+  );
 
   const dispatchReadHooks = hasActiveOnReadHooks();
   const state = createDocumentCacheMutableState();
@@ -747,22 +875,38 @@ export async function listAllDocumentCandidatesCached(
 
   // Rewrite a cache file only when its contents changed: any re-parsed (missing or
   // stale) entry, or a different set of keys (additions/deletions).
-  await persistMetadataCacheIfNeeded({ pmRoot, contextFingerprint, existingCache, previousEntries, state });
+  await persistMetadataCacheIfNeeded({
+    pmRoot,
+    contextFingerprint,
+    existingCache,
+    previousEntries,
+    state,
+  });
 
   if (includeBody) {
-    await persistBodyCacheIfNeeded({ pmRoot, contextFingerprint, existingBodyCache, previousBodies, state });
+    await persistBodyCacheIfNeeded({
+      pmRoot,
+      contextFingerprint,
+      existingBodyCache,
+      previousBodies,
+      state,
+    });
   }
 
   if (includeCollections) {
-    await persistCollectionsCacheIfNeeded({ pmRoot, contextFingerprint, existingCollectionsCache, previousCollections, state });
+    await persistCollectionsCacheIfNeeded({
+      pmRoot,
+      contextFingerprint,
+      existingCollectionsCache,
+      previousCollections,
+      state,
+    });
   }
 
   return sortedCachedDocumentCandidates(state);
 }
 
-/**
- * Implements list all documents cached for the public runtime surface of this module.
- */
+/** Implements list all documents cached for the public runtime surface of this module. */
 export async function listAllDocumentsCached(
   pmRoot: string,
   preferredFormat: ItemFormat | undefined,
@@ -770,9 +914,16 @@ export async function listAllDocumentsCached(
   warnings: string[] | undefined,
   schema: RuntimeSchemaSettings | undefined,
 ): Promise<ItemDocument[]> {
-  const candidates = await listAllDocumentCandidatesCached(pmRoot, preferredFormat, typeToFolder, warnings, schema, {
-    includeBody: false,
-  });
+  const candidates = await listAllDocumentCandidatesCached(
+    pmRoot,
+    preferredFormat,
+    typeToFolder,
+    warnings,
+    schema,
+    {
+      includeBody: false,
+    },
+  );
   return candidates.map((candidate) => ({
     metadata: candidate.metadata,
     body: candidate.body ?? "",
@@ -792,10 +943,17 @@ export async function listAllDocumentsCachedLight(
   warnings: string[] | undefined,
   schema: RuntimeSchemaSettings | undefined,
 ): Promise<ItemDocument[]> {
-  const candidates = await listAllDocumentCandidatesCached(pmRoot, preferredFormat, typeToFolder, warnings, schema, {
-    includeBody: false,
-    includeCollections: false,
-  });
+  const candidates = await listAllDocumentCandidatesCached(
+    pmRoot,
+    preferredFormat,
+    typeToFolder,
+    warnings,
+    schema,
+    {
+      includeBody: false,
+      includeCollections: false,
+    },
+  );
   return candidates.map((candidate) => ({
     metadata: candidate.metadata,
     body: candidate.body ?? "",

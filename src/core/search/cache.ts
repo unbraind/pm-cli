@@ -5,7 +5,12 @@
  */
 import path from "node:path";
 import { getActiveExtensionRegistrations } from "../extensions/index.js";
-import { pathExists, readFileIfExists, removeFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
+import {
+  pathExists,
+  readFileIfExists,
+  removeFileIfExists,
+  writeFileAtomic,
+} from "../fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../item/type-registry.js";
 import { toErrorMessage } from "../shared/primitives.js";
 import { locateItem, readLocatedItem } from "../store/item-store.js";
@@ -21,7 +26,12 @@ import { resolveEmbeddingProviders } from "./providers.js";
 import type { EmbeddingProviderConfig } from "./providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "./semantic-defaults.js";
 import { scheduleBackgroundSemanticRefresh } from "./background-refresh.js";
-import { executeVectorDelete, executeVectorReset, executeVectorUpsert, resolveVectorStores } from "./vector-stores.js";
+import {
+  executeVectorDelete,
+  executeVectorReset,
+  executeVectorUpsert,
+  resolveVectorStores,
+} from "./vector-stores.js";
 import type { VectorStoreConfig } from "./vector-stores.js";
 import {
   buildVectorizationEmbeddingIdentity,
@@ -38,81 +48,95 @@ import type {
 import { nowIso } from "../shared/time.js";
 import type { ItemDocument, ItemFrontMatter } from "../../types/index.js";
 
-export const SEARCH_CACHE_ARTIFACT_PATHS = ["index/manifest.json", "search/embeddings.jsonl"] as const;
-export const VECTORIZATION_STATUS_LEDGER_PATH = "search/vectorization-status.json";
+/** Public contract for search cache artifact paths, shared by SDK and presentation-layer consumers. */
+export const SEARCH_CACHE_ARTIFACT_PATHS = [
+  "index/manifest.json",
+  "search/embeddings.jsonl",
+] as const;
+/** Filesystem path used for vectorization status ledger resolution. */
+export const VECTORIZATION_STATUS_LEDGER_PATH =
+  "search/vectorization-status.json";
 
-/**
- * Documents the search cache invalidation result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the search cache invalidation result payload exchanged by command, SDK, and package integrations. */
 export interface SearchCacheInvalidationResult {
+  /** Value that configures or reports invalidated for this contract. */
   invalidated: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
-/**
- * Documents the semantic mutation refresh result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the semantic mutation refresh result payload exchanged by command, SDK, and package integrations. */
 export interface SemanticMutationRefreshResult {
+  /** Value that configures or reports refreshed for this contract. */
   refreshed: string[];
+  /** Value that configures or reports skipped for this contract. */
   skipped: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
-/**
- * Documents the search mutation artifact refresh result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the search mutation artifact refresh result payload exchanged by command, SDK, and package integrations. */
 export interface SearchMutationArtifactRefreshResult extends SearchCacheInvalidationResult {
+  /** Value that configures or reports refreshed for this contract. */
   refreshed: string[];
+  /** Value that configures or reports skipped for this contract. */
   skipped: string[];
   /** True when the semantic refresh was dispatched to a detached background worker. */
   scheduled?: boolean;
 }
 
-/**
- * Documents the refresh search artifacts for mutation options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the refresh search artifacts for mutation options payload exchanged by command, SDK, and package integrations. */
 export interface RefreshSearchArtifactsForMutationOptions {
-  /**
-   * When true and semantic search is active, the (slow) embedding refresh is
-   * dispatched to a detached background worker instead of awaited inline so the
-   * mutation returns immediately. The synchronous keyword-cache invalidation
-   * still runs first. Callers pass this only outside test runners.
-   */
+  /** When true and semantic search is active, the (slow) embedding refresh is dispatched to a detached background worker instead of awaited inline so the mutation returns immediately. The synchronous keyword-cache invalidation still runs first. Callers pass this only outside test runners. */
   background?: boolean;
 }
 
-/**
- * Documents the semantic refresh options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the semantic refresh options payload exchanged by command, SDK, and package integrations. */
 export interface SemanticRefreshOptions {
+  /** Value that configures or reports settings for this contract. */
   settings?: Awaited<ReturnType<typeof readSettings>>;
+  /** Value that configures or reports apply runtime defaults for this contract. */
   apply_runtime_defaults?: boolean;
 }
 
-/**
- * Documents the vectorization status ledger read result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the vectorization status ledger read result payload exchanged by command, SDK, and package integrations. */
 export interface VectorizationStatusLedgerReadResult {
+  /** Value that configures or reports entries for this contract. */
   entries: Record<string, string>;
+  /** Value that configures or reports embedding for this contract. */
   embedding: VectorizationEmbeddingMetadata | null;
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
-function formatInvalidationWarning(relativePath: string, error: unknown): string {
+function formatInvalidationWarning(
+  relativePath: string,
+  error: unknown,
+): string {
   return `search_cache_invalidation_failed:${relativePath}:${String(error)}`;
 }
 
-
 function toUniqueSorted(values: Iterable<string>): string[] {
-  return [...new Set([...values].map((value) => value.trim()).filter((value) => value.length > 0))]
-    .sort((left, right) => left.localeCompare(right));
+  return [
+    ...new Set(
+      [...values]
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
 }
 
 function isValidUpdatedAt(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0 && Number.isFinite(Date.parse(value));
+  return (
+    typeof value === "string" &&
+    value.trim().length > 0 &&
+    Number.isFinite(Date.parse(value))
+  );
 }
 
-function normalizeVectorizationLedgerEntries(entries: Record<string, string>): Record<string, string> {
+function normalizeVectorizationLedgerEntries(
+  entries: Record<string, string>,
+): Record<string, string> {
   const normalized = new Map<string, string>();
   for (const [rawId, rawUpdatedAt] of Object.entries(entries)) {
     const id = rawId.trim();
@@ -121,13 +145,17 @@ function normalizeVectorizationLedgerEntries(entries: Record<string, string>): R
     }
     normalized.set(id, rawUpdatedAt);
   }
-  return Object.fromEntries([...normalized.entries()].sort((left, right) => left[0].localeCompare(right[0])));
+  return Object.fromEntries(
+    [...normalized.entries()].sort((left, right) =>
+      left[0].localeCompare(right[0]),
+    ),
+  );
 }
 
-/**
- * Implements read vectorization status ledger for the public runtime surface of this module.
- */
-export async function readVectorizationStatusLedger(pmRoot: string): Promise<VectorizationStatusLedgerReadResult> {
+/** Implements read vectorization status ledger for the public runtime surface of this module. */
+export async function readVectorizationStatusLedger(
+  pmRoot: string,
+): Promise<VectorizationStatusLedgerReadResult> {
   const ledgerPath = path.join(pmRoot, VECTORIZATION_STATUS_LEDGER_PATH);
   const raw = await readFileIfExists(ledgerPath);
   if (raw === null || raw.trim().length === 0) {
@@ -173,7 +201,11 @@ export async function readVectorizationStatusLedger(pmRoot: string): Promise<Vec
     }
     const id = (entry as { id?: unknown }).id;
     const updatedAt = (entry as { updated_at?: unknown }).updated_at;
-    if (typeof id !== "string" || id.trim().length === 0 || !isValidUpdatedAt(updatedAt)) {
+    if (
+      typeof id !== "string" ||
+      id.trim().length === 0 ||
+      !isValidUpdatedAt(updatedAt)
+    ) {
       return {
         entries: {},
         embedding: null,
@@ -185,7 +217,9 @@ export async function readVectorizationStatusLedger(pmRoot: string): Promise<Vec
 
   let embedding: VectorizationEmbeddingMetadata | null = null;
   try {
-    embedding = normalizeVectorizationEmbeddingMetadata((parsed as { embedding?: unknown }).embedding);
+    embedding = normalizeVectorizationEmbeddingMetadata(
+      (parsed as { embedding?: unknown }).embedding,
+    );
   } catch {
     return {
       entries: {},
@@ -195,15 +229,17 @@ export async function readVectorizationStatusLedger(pmRoot: string): Promise<Vec
   }
 
   return {
-    entries: Object.fromEntries([...mapped.entries()].sort((left, right) => left[0].localeCompare(right[0]))),
+    entries: Object.fromEntries(
+      [...mapped.entries()].sort((left, right) =>
+        left[0].localeCompare(right[0]),
+      ),
+    ),
     embedding,
     warnings: [],
   };
 }
 
-/**
- * Implements write vectorization status ledger for the public runtime surface of this module.
- */
+/** Implements write vectorization status ledger for the public runtime surface of this module. */
 export async function writeVectorizationStatusLedger(
   pmRoot: string,
   entries: Record<string, string>,
@@ -262,15 +298,25 @@ interface SemanticEmbeddingOperationResult {
   warnings: string[];
 }
 
-function buildVectorizationIdentityForProvider(provider: EmbeddingProviderConfig): VectorizationEmbeddingIdentity {
-  const identity = buildVectorizationEmbeddingIdentity(provider.name, provider.model);
+function buildVectorizationIdentityForProvider(
+  provider: EmbeddingProviderConfig,
+): VectorizationEmbeddingIdentity {
+  const identity = buildVectorizationEmbeddingIdentity(
+    provider.name,
+    provider.model,
+  );
   if (!identity) {
-    throw new Error("Embedding provider must include a provider name and model");
+    throw new Error(
+      "Embedding provider must include a provider name and model",
+    );
   }
   return identity;
 }
 
-function buildSkippedSemanticRefreshResult(itemIds: string[], warning: string): SemanticMutationRefreshResult {
+function buildSkippedSemanticRefreshResult(
+  itemIds: string[],
+  warning: string,
+): SemanticMutationRefreshResult {
   return {
     refreshed: [],
     skipped: itemIds,
@@ -284,7 +330,10 @@ async function resolveSemanticRefreshRuntimeContext(
   options: SemanticRefreshOptions,
 ): Promise<SemanticRefreshRuntimeContext | SemanticMutationRefreshResult> {
   if (!options.settings && !(await pathExists(getSettingsPath(pmRoot)))) {
-    return buildSkippedSemanticRefreshResult(normalizedItemIds, "search_semantic_refresh_skipped:settings_not_initialized");
+    return buildSkippedSemanticRefreshResult(
+      normalizedItemIds,
+      "search_semantic_refresh_skipped:settings_not_initialized",
+    );
   }
 
   let settings: Awaited<ReturnType<typeof readSettings>>;
@@ -302,11 +351,17 @@ async function resolveSemanticRefreshRuntimeContext(
 
   const provider = resolveEmbeddingProviders(effectiveSettings).active;
   if (!provider) {
-    return buildSkippedSemanticRefreshResult(normalizedItemIds, "search_semantic_refresh_skipped:provider_unconfigured");
+    return buildSkippedSemanticRefreshResult(
+      normalizedItemIds,
+      "search_semantic_refresh_skipped:provider_unconfigured",
+    );
   }
   const vectorStore = resolveVectorStores(effectiveSettings, pmRoot).active;
   if (!vectorStore) {
-    return buildSkippedSemanticRefreshResult(normalizedItemIds, "search_semantic_refresh_skipped:vector_store_unconfigured");
+    return buildSkippedSemanticRefreshResult(
+      normalizedItemIds,
+      "search_semantic_refresh_skipped:vector_store_unconfigured",
+    );
   }
 
   return {
@@ -330,7 +385,13 @@ async function collectSemanticRefreshWorkload(
   const documents: Array<{ id: string; document: ItemDocument }> = [];
 
   for (const itemId of normalizedItemIds) {
-    const located = await locateItem(pmRoot, itemId, idPrefix, preferredFormat, typeToFolder);
+    const located = await locateItem(
+      pmRoot,
+      itemId,
+      idPrefix,
+      preferredFormat,
+      typeToFolder,
+    );
     if (!located) {
       missing.add(itemId);
       continue;
@@ -344,7 +405,9 @@ async function collectSemanticRefreshWorkload(
       });
     } catch (error: unknown) {
       skipped.add(located.id);
-      warnings.push(`search_semantic_refresh_item_read_failed:${located.id}:${toErrorMessage(error)}`);
+      warnings.push(
+        `search_semantic_refresh_item_read_failed:${located.id}:${toErrorMessage(error)}`,
+      );
     }
   }
 
@@ -374,10 +437,17 @@ async function embedLocatedSemanticVectors(
       fields: corpusFields,
     }),
   );
-  const embeddingResult = await executeEmbeddingBatchesWithRetry(provider, settings, corpusInputs);
+  const embeddingResult = await executeEmbeddingBatchesWithRetry(
+    provider,
+    settings,
+    corpusInputs,
+  );
   return {
     vectors: embeddingResult.vectors,
-    vector_dimension: inferConsistentVectorDimension(embeddingResult.vectors, "Semantic refresh embedding"),
+    vector_dimension: inferConsistentVectorDimension(
+      embeddingResult.vectors,
+      "Semantic refresh embedding",
+    ),
     warnings: embeddingResult.warnings,
   };
 }
@@ -413,7 +483,9 @@ async function resetSemanticVectorStore(
     return {
       refreshed: [],
       skipped: [],
-      warnings: [`search_semantic_refresh_reset_failed:${toErrorMessage(error)}`],
+      warnings: [
+        `search_semantic_refresh_reset_failed:${toErrorMessage(error)}`,
+      ],
     };
   }
 }
@@ -436,15 +508,17 @@ async function pruneMissingSemanticVectors(
     return {
       refreshed: [],
       skipped: missingIds,
-      warnings: [`search_semantic_refresh_delete_failed:${toErrorMessage(error)}`],
+      warnings: [
+        `search_semantic_refresh_delete_failed:${toErrorMessage(error)}`,
+      ],
     };
   }
 }
 
-/**
- * Implements invalidate search cache artifacts for the public runtime surface of this module.
- */
-export async function invalidateSearchCacheArtifacts(pmRoot: string): Promise<SearchCacheInvalidationResult> {
+/** Implements invalidate search cache artifacts for the public runtime surface of this module. */
+export async function invalidateSearchCacheArtifacts(
+  pmRoot: string,
+): Promise<SearchCacheInvalidationResult> {
   const invalidated: string[] = [];
   const warnings: string[] = [];
 
@@ -467,9 +541,7 @@ export async function invalidateSearchCacheArtifacts(pmRoot: string): Promise<Se
   };
 }
 
-/**
- * Implements refresh semantic embeddings for mutated items for the public runtime surface of this module.
- */
+/** Implements refresh semantic embeddings for mutated items for the public runtime surface of this module. */
 export async function refreshSemanticEmbeddingsForMutatedItems(
   pmRoot: string,
   itemIds: string[],
@@ -484,11 +556,18 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
     };
   }
 
-  const runtimeContext = await resolveSemanticRefreshRuntimeContext(pmRoot, normalizedItemIds, options);
+  const runtimeContext = await resolveSemanticRefreshRuntimeContext(
+    pmRoot,
+    normalizedItemIds,
+    options,
+  );
   if (!("settings" in runtimeContext)) {
     return runtimeContext;
   }
-  const typeRegistry = resolveItemTypeRegistry(runtimeContext.settings, getActiveExtensionRegistrations());
+  const typeRegistry = resolveItemTypeRegistry(
+    runtimeContext.settings,
+    getActiveExtensionRegistrations(),
+  );
   const workload = await collectSemanticRefreshWorkload(
     pmRoot,
     runtimeContext.settings.id_prefix,
@@ -501,16 +580,30 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
     workload.documents.length > 0 || workload.missingIds.length > 0
       ? await readVectorizationStatusLedger(pmRoot)
       : { entries: {}, embedding: null, warnings: [] };
-  const embeddingIdentity = buildVectorizationIdentityForProvider(runtimeContext.provider);
+  const embeddingIdentity = buildVectorizationIdentityForProvider(
+    runtimeContext.provider,
+  );
   const nextLedgerBaseEntries = ledgerRead.entries;
-  let refreshedResult: SemanticRefreshOperationResult = { refreshed: [], skipped: [], warnings: [] };
+  let refreshedResult: SemanticRefreshOperationResult = {
+    refreshed: [],
+    skipped: [],
+    warnings: [],
+  };
   let nextEmbeddingMetadata = ledgerRead.embedding;
   if (workload.documents.length > 0) {
-    if (ledgerRead.embedding && hasVectorizationEmbeddingIdentityChanged(ledgerRead.embedding, embeddingIdentity)) {
+    if (
+      ledgerRead.embedding &&
+      hasVectorizationEmbeddingIdentityChanged(
+        ledgerRead.embedding,
+        embeddingIdentity,
+      )
+    ) {
       refreshedResult = {
         refreshed: [],
         skipped: workload.documents.map((entry) => entry.id),
-        warnings: ["search_semantic_refresh_requires_reindex:embedding_identity_changed"],
+        warnings: [
+          "search_semantic_refresh_requires_reindex:embedding_identity_changed",
+        ],
       };
     } else {
       try {
@@ -519,15 +612,30 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
           runtimeContext.provider,
           workload.documents,
         );
-        if (hasVectorizationVectorDimensionChanged(ledgerRead.embedding, embedded.vector_dimension)) {
+        if (
+          hasVectorizationVectorDimensionChanged(
+            ledgerRead.embedding,
+            embedded.vector_dimension,
+          )
+        ) {
           refreshedResult = {
             refreshed: [],
             skipped: workload.documents.map((entry) => entry.id),
-            warnings: [...embedded.warnings, "search_semantic_refresh_requires_reindex:vector_dimension_changed"],
+            warnings: [
+              ...embedded.warnings,
+              "search_semantic_refresh_requires_reindex:vector_dimension_changed",
+            ],
           };
         } else {
-          nextEmbeddingMetadata = buildVectorizationEmbeddingMetadata(embeddingIdentity, embedded.vector_dimension);
-          const upserted = await upsertLocatedSemanticVectors(runtimeContext.vectorStore, workload.documents, embedded.vectors);
+          nextEmbeddingMetadata = buildVectorizationEmbeddingMetadata(
+            embeddingIdentity,
+            embedded.vector_dimension,
+          );
+          const upserted = await upsertLocatedSemanticVectors(
+            runtimeContext.vectorStore,
+            workload.documents,
+            embedded.vectors,
+          );
           refreshedResult = {
             refreshed: upserted.refreshed,
             skipped: upserted.skipped,
@@ -543,7 +651,10 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
       }
     }
   }
-  const pruneResult = await pruneMissingSemanticVectors(runtimeContext.vectorStore, workload.missingIds);
+  const pruneResult = await pruneMissingSemanticVectors(
+    runtimeContext.vectorStore,
+    workload.missingIds,
+  );
   const refreshedIdSet = new Set(refreshedResult.refreshed);
   const refreshedEntries = Object.fromEntries(
     workload.documents
@@ -551,7 +662,10 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
       .map((entry) => [entry.id, entry.document.metadata.updated_at]),
   );
   const ledgerWarnings: string[] = [];
-  if (Object.keys(refreshedEntries).length > 0 || workload.missingIds.length > 0) {
+  if (
+    Object.keys(refreshedEntries).length > 0 ||
+    workload.missingIds.length > 0
+  ) {
     const nextEntries = {
       ...nextLedgerBaseEntries,
       ...normalizeVectorizationLedgerEntries(refreshedEntries),
@@ -560,27 +674,39 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
       delete nextEntries[missingId];
     }
     try {
-      await writeVectorizationStatusLedger(pmRoot, nextEntries, nextEmbeddingMetadata);
+      await writeVectorizationStatusLedger(
+        pmRoot,
+        nextEntries,
+        nextEmbeddingMetadata,
+      );
     } catch (error: unknown) {
-      ledgerWarnings.push(`search_vectorization_status_ledger_write_failed:${toErrorMessage(error)}`);
+      ledgerWarnings.push(
+        `search_vectorization_status_ledger_write_failed:${toErrorMessage(error)}`,
+      );
     }
     ledgerWarnings.push(...ledgerRead.warnings);
   }
 
   return {
-    refreshed: toUniqueSorted([...refreshedResult.refreshed, ...pruneResult.refreshed]),
-    skipped: toUniqueSorted([...workload.skippedIds, ...refreshedResult.skipped, ...pruneResult.skipped]),
-    warnings: [...workload.warnings, ...refreshedResult.warnings, ...pruneResult.warnings, ...ledgerWarnings],
+    refreshed: toUniqueSorted([
+      ...refreshedResult.refreshed,
+      ...pruneResult.refreshed,
+    ]),
+    skipped: toUniqueSorted([
+      ...workload.skippedIds,
+      ...refreshedResult.skipped,
+      ...pruneResult.skipped,
+    ]),
+    warnings: [
+      ...workload.warnings,
+      ...refreshedResult.warnings,
+      ...pruneResult.warnings,
+      ...ledgerWarnings,
+    ],
   };
 }
 
-/**
- * Returns true when a semantic embedding refresh would do real work for these
- * settings (an embedding provider AND a vector store both resolve). Used to
- * decide whether a mutation's refresh is worth dispatching to a background
- * worker — when semantic search is not configured the inline path is already a
- * fast no-op and no child is spawned.
- */
+/** Returns true when a semantic embedding refresh would do real work for these settings (an embedding provider AND a vector store both resolve). Used to decide whether a mutation's refresh is worth dispatching to a background worker — when semantic search is not configured the inline path is already a fast no-op and no child is spawned. */
 export function isSemanticRefreshActive(
   settings: Awaited<ReturnType<typeof readSettings>>,
   applyRuntimeDefaults: boolean,
@@ -588,12 +714,13 @@ export function isSemanticRefreshActive(
   const effectiveSettings = applyRuntimeDefaults
     ? resolveSettingsWithSemanticRuntimeDefaults(settings).settings
     : settings;
-  return Boolean(resolveEmbeddingProviders(effectiveSettings).active && resolveVectorStores(effectiveSettings).active);
+  return Boolean(
+    resolveEmbeddingProviders(effectiveSettings).active &&
+    resolveVectorStores(effectiveSettings).active,
+  );
 }
 
-/**
- * Implements refresh search artifacts for mutation for the public runtime surface of this module.
- */
+/** Implements refresh search artifacts for mutation for the public runtime surface of this module. */
 export async function refreshSearchArtifactsForMutation(
   pmRoot: string,
   itemIds: string[],
@@ -611,7 +738,10 @@ export async function refreshSearchArtifactsForMutation(
   }
 
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    const semanticRefresh = await refreshSemanticEmbeddingsForMutatedItems(pmRoot, normalizedItemIds);
+    const semanticRefresh = await refreshSemanticEmbeddingsForMutatedItems(
+      pmRoot,
+      normalizedItemIds,
+    );
     return {
       invalidated: invalidation.invalidated,
       refreshed: semanticRefresh.refreshed,
@@ -644,27 +774,38 @@ export async function refreshSearchArtifactsForMutation(
     };
   }
 
-  const applyRuntimeDefaults = settings.search.mutation_refresh_policy === "semantic_auto";
+  const applyRuntimeDefaults =
+    settings.search.mutation_refresh_policy === "semantic_auto";
 
   // Keyword cache is already invalidated synchronously above (so keyword search
   // stays immediately correct). When requested, dispatch the slow embedding
   // refresh to a detached worker so the mutation returns instantly; the
   // vector_index_stale health/search warning covers the catch-up window.
-  if (options.background && isSemanticRefreshActive(settings, applyRuntimeDefaults)) {
+  if (
+    options.background &&
+    isSemanticRefreshActive(settings, applyRuntimeDefaults)
+  ) {
     await scheduleBackgroundSemanticRefresh(pmRoot, normalizedItemIds);
     return {
       invalidated: invalidation.invalidated,
       refreshed: [],
       skipped: [],
-      warnings: [...invalidation.warnings, "search_semantic_refresh_scheduled_background"],
+      warnings: [
+        ...invalidation.warnings,
+        "search_semantic_refresh_scheduled_background",
+      ],
       scheduled: true,
     };
   }
 
-  const semanticRefresh = await refreshSemanticEmbeddingsForMutatedItems(pmRoot, normalizedItemIds, {
-    settings,
-    apply_runtime_defaults: applyRuntimeDefaults,
-  });
+  const semanticRefresh = await refreshSemanticEmbeddingsForMutatedItems(
+    pmRoot,
+    normalizedItemIds,
+    {
+      settings,
+      apply_runtime_defaults: applyRuntimeDefaults,
+    },
+  );
   return {
     invalidated: invalidation.invalidated,
     refreshed: semanticRefresh.refreshed,
@@ -673,6 +814,7 @@ export async function refreshSearchArtifactsForMutation(
   };
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   buildSkippedSemanticRefreshResult,
   buildVectorizationIdentityForProvider,

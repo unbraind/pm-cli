@@ -3,37 +3,47 @@
  *
  * Provides CLI runtime support for Guide Topics.
  */
-/**
- * Describes one documentation file surfaced by a progressive-disclosure guide topic.
- */
+/** Describes one documentation file surfaced by a progressive-disclosure guide topic. */
 export interface GuideDocReference {
+  /** Filesystem path used for path resolution. */
   path: string;
+  /** Value that configures or reports purpose for this contract. */
   purpose: string;
+  /** Value that configures or reports optional for this contract. */
   optional?: boolean;
 }
 
-/**
- * Documents the guide workflow template payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the guide workflow template payload exchanged by command, SDK, and package integrations. */
 export interface GuideWorkflowTemplate {
+  /** Value that configures or reports name for this contract. */
   name: string;
+  /** Value that configures or reports goal for this contract. */
   goal: string;
+  /** Value that configures or reports prompt for this contract. */
   prompt: string;
+  /** Value that configures or reports commands for this contract. */
   commands: string[];
 }
 
-/**
- * Documents the guide topic definition payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the guide topic definition payload exchanged by command, SDK, and package integrations. */
 export interface GuideTopicDefinition {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports aliases for this contract. */
   aliases: string[];
+  /** Value that configures or reports title for this contract. */
   title: string;
+  /** Value that configures or reports summary for this contract. */
   summary: string;
+  /** Value that configures or reports intent for this contract. */
   intent: string;
+  /** Value that configures or reports commands for this contract. */
   commands: string[];
+  /** Value that configures or reports workflows for this contract. */
   workflows: GuideWorkflowTemplate[];
+  /** Value that configures or reports docs for this contract. */
   docs: GuideDocReference[];
+  /** Value that configures or reports related for this contract. */
   related: string[];
 }
 
@@ -46,16 +56,18 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     id: "quickstart",
     aliases: ["start", "getting-started", "bootstrap"],
     title: "Quickstart",
-    summary: "Initialize a tracker and run the shortest safe plan -> execute -> close loop.",
-    intent: "Use this when a human or agent needs to start productive work quickly with minimal context load.",
+    summary:
+      "Initialize a tracker and run the shortest safe plan -> execute -> close loop.",
+    intent:
+      "Use this when a human or agent needs to start productive work quickly with minimal context load.",
     commands: [
       "pm init",
       "pm context --limit 10",
       "pm list-open --limit 20",
-      "pm create --create-mode progressive --title \"...\" --description \"...\" --type Task",
+      'pm create --create-mode progressive --title "..." --description "..." --type Task',
       "pm claim <ID>",
       "pm update <ID> --status in_progress",
-      "pm close <ID> \"<reason with evidence>\" --validate-close warn",
+      'pm close <ID> "<reason with evidence>" --validate-close warn',
     ],
     workflows: [
       {
@@ -63,12 +75,22 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
         goal: "Bootstrap without mutating unrelated state.",
         prompt:
           "You are bootstrapping pm work. Use a token-efficient context snapshot first, then select one open item, claim it, and only then mutate.",
-        commands: ["pm context --limit 10", "pm list-open --limit 20", "pm claim <ID>"],
+        commands: [
+          "pm context --limit 10",
+          "pm list-open --limit 20",
+          "pm claim <ID>",
+        ],
       },
     ],
     docs: [
-      { path: "README.md", purpose: "High-level project and install entrypoint." },
-      { path: "docs/QUICKSTART.md", purpose: "Short setup and first-command walkthrough." },
+      {
+        path: "README.md",
+        purpose: "High-level project and install entrypoint.",
+      },
+      {
+        path: "docs/QUICKSTART.md",
+        purpose: "Short setup and first-command walkthrough.",
+      },
       { path: "docs/COMMANDS.md", purpose: "Task-oriented command recipes." },
     ],
     related: ["commands", "workflows", "release"],
@@ -77,8 +99,10 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     id: "commands",
     aliases: ["cli", "operations", "reference"],
     title: "CLI Command Routing",
-    summary: "Find the right command family quickly and use command-scoped help/contracts output.",
-    intent: "Use this when selecting command paths, flags, and output formats for implementation or automation.",
+    summary:
+      "Find the right command family quickly and use command-scoped help/contracts output.",
+    intent:
+      "Use this when selecting command paths, flags, and output formats for implementation or automation.",
     commands: [
       "pm --help",
       "pm <command> --help",
@@ -93,13 +117,22 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
         goal: "Resolve command flags deterministically before mutations.",
         prompt:
           "You are preparing to run a command. Use help and contracts surfaces to verify required/optional flags before execution.",
-        commands: ["pm <command> --help --explain", "pm contracts --command <command> --flags-only"],
+        commands: [
+          "pm <command> --help --explain",
+          "pm contracts --command <command> --flags-only",
+        ],
       },
     ],
     docs: [
       { path: "docs/COMMANDS.md", purpose: "Command grouping and examples." },
-      { path: "docs/CONFIGURATION.md", purpose: "Project/global settings and policy controls." },
-      { path: "docs/TESTING.md", purpose: "Linked-test orchestration and safety guidance." },
+      {
+        path: "docs/CONFIGURATION.md",
+        purpose: "Project/global settings and policy controls.",
+      },
+      {
+        path: "docs/TESTING.md",
+        purpose: "Linked-test orchestration and safety guidance.",
+      },
     ],
     related: ["quickstart", "workflows", "sdk", "extensions"],
   },
@@ -107,14 +140,16 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     id: "workflows",
     aliases: ["developer", "maintainer", "agent"],
     title: "Developer and Agent Workflows",
-    summary: "Apply canonical claim -> execute -> verify -> close workflows with append-only evidence.",
-    intent: "Use this for day-to-day coding-agent execution loops and handoff-safe updates.",
+    summary:
+      "Apply canonical claim -> execute -> verify -> close workflows with append-only evidence.",
+    intent:
+      "Use this for day-to-day coding-agent execution loops and handoff-safe updates.",
     commands: [
       "pm claim <ID>",
       "pm update <ID> --status in_progress",
       "pm files <ID> --add ...",
       "pm test <ID> --add ...",
-      "pm comments <ID> \"...\"",
+      'pm comments <ID> "..."',
       "pm validate --check-resolution --check-history-drift",
       "pm release <ID>",
     ],
@@ -129,14 +164,23 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
           "pm update <ID> --status in_progress",
           "pm files <ID> --add path=<file>,scope=project",
           "pm test <ID> --run --progress",
-          "pm close <ID> \"<evidence>\" --validate-close warn",
+          'pm close <ID> "<evidence>" --validate-close warn',
         ],
       },
     ],
     docs: [
-      { path: "AGENTS.md", purpose: "Repository operating rules and required workflow." },
-      { path: "docs/AGENT_GUIDE.md", purpose: "Agent-oriented usage and context strategy." },
-      { path: "docs/TESTING.md", purpose: "Sandbox-safe test execution rules." },
+      {
+        path: "AGENTS.md",
+        purpose: "Repository operating rules and required workflow.",
+      },
+      {
+        path: "docs/AGENT_GUIDE.md",
+        purpose: "Agent-oriented usage and context strategy.",
+      },
+      {
+        path: "docs/TESTING.md",
+        purpose: "Sandbox-safe test execution rules.",
+      },
     ],
     related: ["quickstart", "commands", "skills"],
   },
@@ -144,8 +188,10 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     id: "sdk",
     aliases: ["api", "typescript-sdk"],
     title: "SDK and Integrations",
-    summary: "Use the published SDK surface for extension authoring and contract-safe integrations.",
-    intent: "Use this when building or reviewing programmatic integrations against @unbrained/pm-cli/sdk.",
+    summary:
+      "Use the published SDK surface for extension authoring and contract-safe integrations.",
+    intent:
+      "Use this when building or reviewing programmatic integrations against @unbrained/pm-cli/sdk.",
     commands: [
       "pm contracts --schema-only",
       "pm contracts --command extension --flags-only",
@@ -165,17 +211,30 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
       },
     ],
     docs: [
-      { path: "docs/SDK.md", purpose: "Public SDK exports and extension authoring references." },
-      { path: "docs/ARCHITECTURE.md", purpose: "Core runtime composition and extension load flow." },
+      {
+        path: "docs/SDK.md",
+        purpose: "Public SDK exports and extension authoring references.",
+      },
+      {
+        path: "docs/ARCHITECTURE.md",
+        purpose: "Core runtime composition and extension load flow.",
+      },
     ],
     related: ["extensions", "commands"],
   },
   {
     id: "extensions",
-    aliases: ["plugins", "extension-authoring", "packages", "package-authoring"],
+    aliases: [
+      "plugins",
+      "extension-authoring",
+      "packages",
+      "package-authoring",
+    ],
     title: "Packages and Extensions",
-    summary: "Install, author, and diagnose packages/extensions with deterministic lifecycle controls.",
-    intent: "Use this for package management, extension capability registration, and runtime diagnostics.",
+    summary:
+      "Install, author, and diagnose packages/extensions with deterministic lifecycle controls.",
+    intent:
+      "Use this for package management, extension capability registration, and runtime diagnostics.",
     commands: [
       "pm install <target> --project",
       "pm upgrade --dry-run",
@@ -200,12 +259,18 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
       },
     ],
     docs: [
-      { path: "docs/EXTENSIONS.md", purpose: "Capability model and lifecycle command usage." },
+      {
+        path: "docs/EXTENSIONS.md",
+        purpose: "Capability model and lifecycle command usage.",
+      },
       {
         path: "docs/examples/starter-extension/README.md",
         purpose: "Starter extension scaffold and local development path.",
       },
-      { path: "docs/SDK.md", purpose: "SDK contracts used by extension implementations." },
+      {
+        path: "docs/SDK.md",
+        purpose: "SDK contracts used by extension implementations.",
+      },
     ],
     related: ["sdk", "commands", "skills"],
   },
@@ -213,8 +278,10 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     id: "skills",
     aliases: ["agent-skills", "agentskills"],
     title: "Agent Skills",
-    summary: "Skill bundles for developer, user, extensions, and sdk workflows aligned to the current CLI.",
-    intent: "Use this when an agent needs reproducible prompts/workflows with strict compatibility metadata.",
+    summary:
+      "Skill bundles for developer, user, extensions, and sdk workflows aligned to the current CLI.",
+    intent:
+      "Use this when an agent needs reproducible prompts/workflows with strict compatibility metadata.",
     commands: [
       "pm guide skills --depth deep",
       "pm contracts --command guide --flags-only",
@@ -230,13 +297,34 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
       },
     ],
     docs: [
-      { path: "docs/AGENT_GUIDE.md", purpose: "Agent-first usage and context model." },
-      { path: "docs/README.md", purpose: "Documentation routing with progressive disclosure." },
-      { path: ".agents/skills/README.md", purpose: "Agent skills index and routing overview." },
-      { path: ".agents/skills/pm-developer/SKILL.md", purpose: "Developer-oriented pm skill workflow." },
-      { path: ".agents/skills/pm-user/SKILL.md", purpose: "User/operator pm skill workflow." },
-      { path: ".agents/skills/pm-extensions/SKILL.md", purpose: "Extension-focused pm skill workflow." },
-      { path: ".agents/skills/pm-sdk/SKILL.md", purpose: "SDK integration pm skill workflow." },
+      {
+        path: "docs/AGENT_GUIDE.md",
+        purpose: "Agent-first usage and context model.",
+      },
+      {
+        path: "docs/README.md",
+        purpose: "Documentation routing with progressive disclosure.",
+      },
+      {
+        path: ".agents/skills/README.md",
+        purpose: "Agent skills index and routing overview.",
+      },
+      {
+        path: ".agents/skills/pm-developer/SKILL.md",
+        purpose: "Developer-oriented pm skill workflow.",
+      },
+      {
+        path: ".agents/skills/pm-user/SKILL.md",
+        purpose: "User/operator pm skill workflow.",
+      },
+      {
+        path: ".agents/skills/pm-extensions/SKILL.md",
+        purpose: "Extension-focused pm skill workflow.",
+      },
+      {
+        path: ".agents/skills/pm-sdk/SKILL.md",
+        purpose: "SDK integration pm skill workflow.",
+      },
     ],
     related: ["workflows", "harnesses", "commands"],
   },
@@ -245,21 +333,38 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     aliases: ["compatibility", "agent-compatibility"],
     title: "Agent Harness Compatibility",
     summary: "Cross-harness compatibility guidance for docs routing.",
-    intent: "Use this when adapting pm docs and SDK contracts for an external automation harness.",
-    commands: ["pm guide skills", "pm guide commands", "pm contracts --runtime-only --availability-only"],
+    intent:
+      "Use this when adapting pm docs and SDK contracts for an external automation harness.",
+    commands: [
+      "pm guide skills",
+      "pm guide commands",
+      "pm contracts --runtime-only --availability-only",
+    ],
     workflows: [
       {
         name: "Harness Mapping",
         goal: "Route each harness to the same canonical skill/docs sources.",
         prompt:
           "Map harness-specific entrypoints to the same pm guide topics and .agents/skills workflows without adding runtime harness-specific code.",
-        commands: ["pm guide harnesses --depth standard", "pm guide skills --depth deep"],
+        commands: [
+          "pm guide harnesses --depth standard",
+          "pm guide skills --depth deep",
+        ],
       },
     ],
     docs: [
-      { path: "docs/AGENT_GUIDE.md", purpose: "Agent context and output-mode conventions." },
-      { path: "docs/README.md", purpose: "Single-source documentation routing entrypoint." },
-      { path: ".agents/skills/HARNESS_COMPATIBILITY.md", purpose: "Harness compatibility matrix and usage notes." },
+      {
+        path: "docs/AGENT_GUIDE.md",
+        purpose: "Agent context and output-mode conventions.",
+      },
+      {
+        path: "docs/README.md",
+        purpose: "Single-source documentation routing entrypoint.",
+      },
+      {
+        path: ".agents/skills/HARNESS_COMPATIBILITY.md",
+        purpose: "Harness compatibility matrix and usage notes.",
+      },
     ],
     related: ["skills", "workflows"],
   },
@@ -267,8 +372,10 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     id: "release",
     aliases: ["gates", "ship", "release-readiness"],
     title: "Release and Staleness Gates",
-    summary: "Run release gates and docs/skills freshness checks before publishing.",
-    intent: "Use this when validating release readiness and preventing docs/skills drift.",
+    summary:
+      "Run release gates and docs/skills freshness checks before publishing.",
+    intent:
+      "Use this when validating release readiness and preventing docs/skills drift.",
     commands: [
       "pnpm build",
       "pnpm test:coverage",
@@ -291,8 +398,14 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     ],
     docs: [
       { path: "docs/RELEASING.md", purpose: "Release flow and safety checks." },
-      { path: "CHANGELOG.md", purpose: "Versioned release history and unreleased notes." },
-      { path: "scripts/release/run-gates.mjs", purpose: "Source of truth for release gate ordering." },
+      {
+        path: "CHANGELOG.md",
+        purpose: "Versioned release history and unreleased notes.",
+      },
+      {
+        path: "scripts/release/run-gates.mjs",
+        purpose: "Source of truth for release gate ordering.",
+      },
     ],
     related: ["commands", "skills", "workflows"],
   },
@@ -306,9 +419,7 @@ for (const topic of GUIDE_TOPICS) {
   }
 }
 
-/**
- * Implements list guide topics for the public runtime surface of this module.
- */
+/** Implements list guide topics for the public runtime surface of this module. */
 export function listGuideTopics(): GuideTopicDefinition[] {
   return GUIDE_TOPICS.map((topic) => ({
     ...topic,
@@ -323,17 +434,15 @@ export function listGuideTopics(): GuideTopicDefinition[] {
   }));
 }
 
-/**
- * Implements list guide topic ids for the public runtime surface of this module.
- */
+/** Implements list guide topic ids for the public runtime surface of this module. */
 export function listGuideTopicIds(): string[] {
   return GUIDE_TOPICS.map((topic) => topic.id);
 }
 
-/**
- * Implements resolve guide topic for the public runtime surface of this module.
- */
-export function resolveGuideTopic(rawTopic: string | undefined): GuideTopicDefinition | null {
+/** Implements resolve guide topic for the public runtime surface of this module. */
+export function resolveGuideTopic(
+  rawTopic: string | undefined,
+): GuideTopicDefinition | null {
   if (!rawTopic) {
     return null;
   }

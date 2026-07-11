@@ -6,7 +6,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { runActiveOnReadHooks, runActiveOnWriteHooks, runActiveServiceOverride } from "../extensions/index.js";
+import {
+  runActiveOnReadHooks,
+  runActiveOnWriteHooks,
+  runActiveServiceOverride,
+} from "../extensions/index.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { toErrorMessage } from "../shared/primitives.js";
@@ -110,10 +114,18 @@ async function readLockInfo(lockPath: string): Promise<LockReadResult> {
 }
 
 function isErrno(error: unknown, code: string): boolean {
-  return typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === code;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === code
+  );
 }
 
-async function emitLockWriteHook(lockPath: string, op: LockWriteOp): Promise<void> {
+async function emitLockWriteHook(
+  lockPath: string,
+  op: LockWriteOp,
+): Promise<void> {
   await runActiveOnWriteHooks({
     path: lockPath,
     scope: "project",
@@ -121,7 +133,11 @@ async function emitLockWriteHook(lockPath: string, op: LockWriteOp): Promise<voi
   });
 }
 
-function buildLockPayload(id: string, owner: string, ttlSeconds: number): LockInfo {
+function buildLockPayload(
+  id: string,
+  owner: string,
+  ttlSeconds: number,
+): LockInfo {
   return {
     id,
     pid: process.pid,
@@ -131,18 +147,29 @@ function buildLockPayload(id: string, owner: string, ttlSeconds: number): LockIn
   };
 }
 
-async function createLockFile(lockPath: string, id: string, owner: string, ttlSeconds: number): Promise<void> {
+async function createLockFile(
+  lockPath: string,
+  id: string,
+  owner: string,
+  ttlSeconds: number,
+): Promise<void> {
   await fs.mkdir(path.dirname(lockPath), { recursive: true });
   const handle = await fs.open(lockPath, "wx");
   try {
-    await handle.writeFile(`${JSON.stringify(buildLockPayload(id, owner, ttlSeconds), null, 2)}\n`, "utf8");
+    await handle.writeFile(
+      `${JSON.stringify(buildLockPayload(id, owner, ttlSeconds), null, 2)}\n`,
+      "utf8",
+    );
   } finally {
     await handle.close();
   }
   await emitLockWriteHook(lockPath, "lock:create");
 }
 
-async function unlinkLockWithHook(lockPath: string, op: "lock:release" | "lock:stale_remove"): Promise<boolean> {
+async function unlinkLockWithHook(
+  lockPath: string,
+  op: "lock:release" | "lock:stale_remove",
+): Promise<boolean> {
   try {
     await fs.unlink(lockPath);
     await emitLockWriteHook(lockPath, op);
@@ -154,8 +181,12 @@ async function unlinkLockWithHook(lockPath: string, op: "lock:release" | "lock:s
 }
 
 function isStaleLock(info: LockInfo | null, ttlSeconds: number): boolean {
-  const createdAtMs = info?.created_at ? Date.parse(info.created_at) : Number.NaN;
-  const ageMs = Number.isFinite(createdAtMs) ? Date.now() - createdAtMs : Number.POSITIVE_INFINITY;
+  const createdAtMs = info?.created_at
+    ? Date.parse(info.created_at)
+    : Number.NaN;
+  const ageMs = Number.isFinite(createdAtMs)
+    ? Date.now() - createdAtMs
+    : Number.POSITIVE_INFINITY;
   return ageMs > ttlSeconds * 1000;
 }
 
@@ -173,7 +204,9 @@ const STALE_CLEANUP_GATE_STALE_MS = 10_000;
 // Bounds PID-reuse false positives: a live recycled PID can delay cleanup, but not indefinitely.
 const STALE_CLEANUP_GATE_MAX_ACTIVE_MS = 5 * 60_000;
 
-function parseNonNegativeIntegerWaitMs(value: string | number | undefined): number | undefined {
+function parseNonNegativeIntegerWaitMs(
+  value: string | number | undefined,
+): number | undefined {
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!/^\d+$/.test(trimmed)) {
@@ -188,12 +221,7 @@ function parseNonNegativeIntegerWaitMs(value: string | number | undefined): numb
   return undefined;
 }
 
-/**
- * Resolves the effective bounded wait budget for a contended lock: the
- * PM_LOCK_WAIT_MS environment override wins when it parses as a non-negative
- * integer, then the caller-provided budget (settings `locks.wait_ms`), then 0
- * (fail-fast, the pre-wait behavior).
- */
+/** Resolves the effective bounded wait budget for a contended lock: the PM_LOCK_WAIT_MS environment override wins when it parses as a non-negative integer, then the caller-provided budget (settings `locks.wait_ms`), then 0 (fail-fast, the pre-wait behavior). */
 function resolveLockWaitMs(waitMs: number | undefined): number {
   const envRaw = process.env.PM_LOCK_WAIT_MS;
   const envParsed = parseNonNegativeIntegerWaitMs(envRaw);
@@ -208,36 +236,57 @@ function resolveLockWaitMs(waitMs: number | undefined): number {
 }
 
 function sleepWithJitter(baseDelayMs: number): Promise<void> {
-  const jitteredMs = Math.max(1, Math.round(baseDelayMs * (0.5 + Math.random())));
+  const jitteredMs = Math.max(
+    1,
+    Math.round(baseDelayMs * (0.5 + Math.random())),
+  );
   return new Promise((resolve) => setTimeout(resolve, jitteredMs));
 }
 
-function buildLockConflictError(id: string, info: LockInfo | null, waitedMs: number): PmCliError {
+function buildLockConflictError(
+  id: string,
+  info: LockInfo | null,
+  waitedMs: number,
+): PmCliError {
   const waitedSuffix = waitedMs > 0 ? ` after waiting ${waitedMs}ms` : "";
-  return new PmCliError(`Item ${id} is locked${lockOwnerSuffix(info)}${waitedSuffix}`, EXIT_CODE.CONFLICT, {
-    code: "lock_conflict",
-    recovery: {
-      retry_after_ms: LOCK_CONFLICT_RETRY_HINT_MS,
+  return new PmCliError(
+    `Item ${id} is locked${lockOwnerSuffix(info)}${waitedSuffix}`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "lock_conflict",
+      recovery: {
+        retry_after_ms: LOCK_CONFLICT_RETRY_HINT_MS,
+      },
     },
-  });
+  );
 }
 
 type LockReleaseOverride = () => Promise<void> | void;
 
-function resolveLockOverrideRelease(result: unknown): LockReleaseOverride | null {
+function resolveLockOverrideRelease(
+  result: unknown,
+): LockReleaseOverride | null {
   if (typeof result === "function") {
     return result as LockReleaseOverride;
   }
   if (typeof result === "object" && result !== null && "release" in result) {
     const release = (result as { release?: unknown }).release;
-    return typeof release === "function" ? (release as LockReleaseOverride) : null;
+    return typeof release === "function"
+      ? (release as LockReleaseOverride)
+      : null;
   }
   return null;
 }
 
-function throwIfStaleLockNeedsForce(id: string, lockInfo: LockReadResult, force: boolean, forceRequired: boolean): void {
+function throwIfStaleLockNeedsForce(
+  id: string,
+  lockInfo: LockReadResult,
+  force: boolean,
+  forceRequired: boolean,
+): void {
   if (!force && forceRequired) {
-    const warningSuffix = lockInfo.warnings.length > 0 ? ` (${lockInfo.warnings.join(",")})` : "";
+    const warningSuffix =
+      lockInfo.warnings.length > 0 ? ` (${lockInfo.warnings.join(",")})` : "";
     throw new PmCliError(
       `Item ${id} lock is stale${warningSuffix}; rerun with --force when supported for this command`,
       EXIT_CODE.CONFLICT,
@@ -258,15 +307,28 @@ function parseStaleCleanupGateOwner(raw: string): StaleCleanupGateOwner | null {
   const candidate = parsed as Record<string, unknown>;
   const pid = candidate.pid;
   const token = candidate.token;
-  if (typeof pid !== "number" || !Number.isInteger(pid) || pid <= 0 || typeof token !== "string" || token.length === 0) {
+  if (
+    typeof pid !== "number" ||
+    !Number.isInteger(pid) ||
+    pid <= 0 ||
+    typeof token !== "string" ||
+    token.length === 0
+  ) {
     return null;
   }
   return { pid, token };
 }
 
-async function readStaleCleanupGateOwner(gatePath: string): Promise<StaleCleanupGateOwner | null> {
+async function readStaleCleanupGateOwner(
+  gatePath: string,
+): Promise<StaleCleanupGateOwner | null> {
   try {
-    return parseStaleCleanupGateOwner(await fs.readFile(path.join(gatePath, STALE_CLEANUP_GATE_OWNER_FILE), "utf8"));
+    return parseStaleCleanupGateOwner(
+      await fs.readFile(
+        path.join(gatePath, STALE_CLEANUP_GATE_OWNER_FILE),
+        "utf8",
+      ),
+    );
   } catch {
     return null;
   }
@@ -284,7 +346,9 @@ function isProcessAlive(pid: number): boolean {
   }
 }
 
-async function removeStaleCleanupGateDirectory(gatePath: string): Promise<boolean> {
+async function removeStaleCleanupGateDirectory(
+  gatePath: string,
+): Promise<boolean> {
   try {
     await fs.rm(gatePath, { recursive: true, force: true });
     return true;
@@ -293,7 +357,10 @@ async function removeStaleCleanupGateDirectory(gatePath: string): Promise<boolea
   }
 }
 
-async function releaseStaleCleanupGate(gatePath: string, token: string): Promise<void> {
+async function releaseStaleCleanupGate(
+  gatePath: string,
+  token: string,
+): Promise<void> {
   const owner = await readStaleCleanupGateOwner(gatePath);
   if (owner === null || owner.token !== token) {
     return;
@@ -301,7 +368,9 @@ async function releaseStaleCleanupGate(gatePath: string, token: string): Promise
   await removeStaleCleanupGateDirectory(gatePath);
 }
 
-async function tryCreateStaleCleanupGate(gatePath: string): Promise<StaleCleanupGateOwner | null> {
+async function tryCreateStaleCleanupGate(
+  gatePath: string,
+): Promise<StaleCleanupGateOwner | null> {
   try {
     await fs.mkdir(gatePath);
   } catch (error: unknown) {
@@ -312,7 +381,11 @@ async function tryCreateStaleCleanupGate(gatePath: string): Promise<StaleCleanup
   }
   const owner = { pid: process.pid, token: randomUUID() };
   try {
-    await fs.writeFile(path.join(gatePath, STALE_CLEANUP_GATE_OWNER_FILE), `${JSON.stringify(owner)}\n`, "utf8");
+    await fs.writeFile(
+      path.join(gatePath, STALE_CLEANUP_GATE_OWNER_FILE),
+      `${JSON.stringify(owner)}\n`,
+      "utf8",
+    );
   } catch {
     await removeStaleCleanupGateDirectory(gatePath);
     return null;
@@ -320,7 +393,9 @@ async function tryCreateStaleCleanupGate(gatePath: string): Promise<StaleCleanup
   return owner;
 }
 
-async function removeExpiredStaleCleanupGate(gatePath: string): Promise<boolean> {
+async function removeExpiredStaleCleanupGate(
+  gatePath: string,
+): Promise<boolean> {
   let gateAgeMs: number;
   try {
     const stats = await fs.stat(gatePath);
@@ -332,13 +407,20 @@ async function removeExpiredStaleCleanupGate(gatePath: string): Promise<boolean>
     return isErrno(error, "ENOENT");
   }
   const owner = await readStaleCleanupGateOwner(gatePath);
-  if (owner !== null && isProcessAlive(owner.pid) && gateAgeMs <= STALE_CLEANUP_GATE_MAX_ACTIVE_MS) {
+  if (
+    owner !== null &&
+    isProcessAlive(owner.pid) &&
+    gateAgeMs <= STALE_CLEANUP_GATE_MAX_ACTIVE_MS
+  ) {
     return false;
   }
   return removeStaleCleanupGateDirectory(gatePath);
 }
 
-async function acquireStaleCleanupGate(lockPath: string, _id: string): Promise<(() => Promise<void>) | null> {
+async function acquireStaleCleanupGate(
+  lockPath: string,
+  _id: string,
+): Promise<(() => Promise<void>) | null> {
   const gatePath = `${lockPath}${STALE_CLEANUP_GATE_SUFFIX}`;
   const owner = await tryCreateStaleCleanupGate(gatePath);
   if (owner !== null) {
@@ -365,7 +447,10 @@ async function removeConfirmedStaleLock(params: {
   startedAtMs: number;
   fallbackLockInfo: LockReadResult;
 }): Promise<StaleLockRemovalResult> {
-  const releaseCleanupGate = await acquireStaleCleanupGate(params.lockPath, params.id);
+  const releaseCleanupGate = await acquireStaleCleanupGate(
+    params.lockPath,
+    params.id,
+  );
   if (releaseCleanupGate === null) {
     return {
       lockInfo: params.fallbackLockInfo,
@@ -375,7 +460,10 @@ async function removeConfirmedStaleLock(params: {
   }
   try {
     const currentLockInfo = await readLockInfo(params.lockPath);
-    if (currentLockInfo.info === null && currentLockInfo.warnings.length === 0) {
+    if (
+      currentLockInfo.info === null &&
+      currentLockInfo.warnings.length === 0
+    ) {
       return {
         lockInfo: currentLockInfo,
         shouldRetryCreate: true,
@@ -389,13 +477,25 @@ async function removeConfirmedStaleLock(params: {
         staleRemovalCounted: false,
       };
     }
-    throwIfStaleLockNeedsForce(params.id, currentLockInfo, params.force, params.forceRequiredForStaleLock);
+    throwIfStaleLockNeedsForce(
+      params.id,
+      currentLockInfo,
+      params.force,
+      params.forceRequiredForStaleLock,
+    );
     if (params.staleRemovals >= MAX_STALE_LOCK_REMOVALS) {
-      throw buildLockConflictError(params.id, currentLockInfo.info, Date.now() - params.startedAtMs);
+      throw buildLockConflictError(
+        params.id,
+        currentLockInfo.info,
+        Date.now() - params.startedAtMs,
+      );
     }
     return {
       lockInfo: currentLockInfo,
-      shouldRetryCreate: await unlinkLockWithHook(params.lockPath, "lock:stale_remove"),
+      shouldRetryCreate: await unlinkLockWithHook(
+        params.lockPath,
+        "lock:stale_remove",
+      ),
       staleRemovalCounted: true,
     };
   } finally {
@@ -403,6 +503,7 @@ async function removeConfirmedStaleLock(params: {
   }
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   parseLockInfo,
   readLockInfo,
@@ -415,10 +516,7 @@ export const _testOnly = {
   removeConfirmedStaleLock,
 };
 
-
-/**
- * Implements acquire lock for the public runtime surface of this module.
- */
+/** Implements acquire lock for the public runtime surface of this module. */
 export async function acquireLock(
   pmRoot: string,
   id: string,
@@ -469,7 +567,10 @@ export async function acquireLock(
       };
     } catch (error: unknown) {
       if (!isErrno(error, "EEXIST")) {
-        throw new PmCliError(`Failed to acquire lock for ${id}: ${toErrorMessage(error)}`, EXIT_CODE.GENERIC_FAILURE);
+        throw new PmCliError(
+          `Failed to acquire lock for ${id}: ${toErrorMessage(error)}`,
+          EXIT_CODE.GENERIC_FAILURE,
+        );
       }
       let lockInfo = await readLockInfo(lockPath);
       if (isStaleLock(lockInfo.info, ttlSeconds)) {
@@ -494,7 +595,11 @@ export async function acquireLock(
       }
       const elapsedMs = Date.now() - startedAtMs;
       if (waitBudgetMs === 0 || elapsedMs >= waitBudgetMs) {
-        throw buildLockConflictError(id, lockInfo.info, waitBudgetMs === 0 ? 0 : elapsedMs);
+        throw buildLockConflictError(
+          id,
+          lockInfo.info,
+          waitBudgetMs === 0 ? 0 : elapsedMs,
+        );
       }
       await sleepWithJitter(Math.min(backoffMs, waitBudgetMs - elapsedMs));
       backoffMs = Math.min(backoffMs * 2, LOCK_WAIT_MAX_DELAY_MS);

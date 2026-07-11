@@ -8,43 +8,44 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { parseOptionalNumber } from "../../core/item/parse.js";
 import { CONFIDENCE_TEXT_VALUES } from "../../types/index.js";
 
-/**
- * Implements normalize risk input for the public runtime surface of this module.
- */
+/** Implements normalize risk input for the public runtime surface of this module. */
 export function normalizeRiskInput(value: string): string {
   const trimmed = value.trim();
   return trimmed.toLowerCase() === "med" ? "medium" : trimmed;
 }
 
-/**
- * Implements normalize severity input for the public runtime surface of this module.
- */
+/** Implements normalize severity input for the public runtime surface of this module. */
 export function normalizeSeverityInput(value: string): string {
   const trimmed = value.trim();
   return trimmed.toLowerCase() === "med" ? "medium" : trimmed;
 }
 
-/**
- * Implements parse confidence input for the public runtime surface of this module.
- */
-export function parseConfidenceInput(value: string): number | "low" | "medium" | "high" {
+/** Implements parse confidence input for the public runtime surface of this module. */
+export function parseConfidenceInput(
+  value: string,
+): number | "low" | "medium" | "high" {
   const trimmed = value.trim().toLowerCase();
   if (trimmed === "med") {
     return "medium";
   }
-  if (CONFIDENCE_TEXT_VALUES.includes(trimmed as (typeof CONFIDENCE_TEXT_VALUES)[number])) {
+  if (
+    CONFIDENCE_TEXT_VALUES.includes(
+      trimmed as (typeof CONFIDENCE_TEXT_VALUES)[number],
+    )
+  ) {
     return trimmed as (typeof CONFIDENCE_TEXT_VALUES)[number];
   }
   const parsed = parseOptionalNumber(value, "confidence");
   if (!Number.isInteger(parsed) || parsed < 0 || parsed > 100) {
-    throw new PmCliError("Confidence must be an integer 0..100 or one of low|med|medium|high", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Confidence must be an integer 0..100 or one of low|med|medium|high",
+      EXIT_CODE.USAGE,
+    );
   }
   return parsed;
 }
 
-/**
- * Implements parse regression input for the public runtime surface of this module.
- */
+/** Implements parse regression input for the public runtime surface of this module. */
 export function parseRegressionInput(value: string): boolean {
   const normalized = value.trim().toLowerCase();
   if (normalized === "true" || normalized === "1") {
@@ -53,5 +54,8 @@ export function parseRegressionInput(value: string): boolean {
   if (normalized === "false" || normalized === "0") {
     return false;
   }
-  throw new PmCliError("Regression must be one of true|false|1|0", EXIT_CODE.USAGE);
+  throw new PmCliError(
+    "Regression must be one of true|false|1|0",
+    EXIT_CODE.USAGE,
+  );
 }

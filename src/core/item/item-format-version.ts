@@ -17,11 +17,7 @@
  */
 import type { ItemMetadata } from "../../types/index.js";
 
-/**
- * The original (and implicit) item front-matter format version. Items missing a
- * `pm_format_version` field are always treated as this version, so the baseline
- * is never written to disk and adds no per-item token cost.
- */
+/** The original (and implicit) item front-matter format version. Items missing a `pm_format_version` field are always treated as this version, so the baseline is never written to disk and adds no per-item token cost. */
 export const BASELINE_ITEM_FORMAT_VERSION = 1;
 
 /**
@@ -40,9 +36,15 @@ export const CURRENT_ITEM_FORMAT_VERSION = 1;
  * an absent, malformed, or sub-baseline value resolves to
  * {@link BASELINE_ITEM_FORMAT_VERSION}.
  */
-export function effectiveItemFormatVersion(metadata: Pick<ItemMetadata, "pm_format_version">): number {
+export function effectiveItemFormatVersion(
+  metadata: Pick<ItemMetadata, "pm_format_version">,
+): number {
   const raw = metadata.pm_format_version;
-  if (typeof raw === "number" && Number.isInteger(raw) && raw >= BASELINE_ITEM_FORMAT_VERSION) {
+  if (
+    typeof raw === "number" &&
+    Number.isInteger(raw) &&
+    raw >= BASELINE_ITEM_FORMAT_VERSION
+  ) {
     return raw;
   }
   return BASELINE_ITEM_FORMAT_VERSION;
@@ -57,17 +59,17 @@ export function effectiveItemFormatVersion(metadata: Pick<ItemMetadata, "pm_form
  * implicit baseline.
  */
 export function normalizeItemFormatVersion(value: unknown): number | undefined {
-  if (typeof value !== "number" || !Number.isInteger(value) || value <= BASELINE_ITEM_FORMAT_VERSION) {
+  if (
+    typeof value !== "number" ||
+    !Number.isInteger(value) ||
+    value <= BASELINE_ITEM_FORMAT_VERSION
+  ) {
     return undefined;
   }
   return value;
 }
 
-/**
- * Relationship between an item's stored format version and the runtime's
- * current version: `outdated` (below current, a migration would rewrite it),
- * `ahead` (above current, written by a newer pm than this one), or `current`.
- */
+/** Relationship between an item's stored format version and the runtime's current version: `outdated` (below current, a migration would rewrite it), `ahead` (above current, written by a newer pm than this one), or `current`. */
 export type ItemFormatVersionStatus = "current" | "outdated" | "ahead";
 
 /**
@@ -94,27 +96,21 @@ export function classifyItemFormatVersion(
  * is stored at, used as input to {@link scanItemFormatVersions}.
  */
 export interface ItemFormatVersionScanEntry {
+  /** Value that configures or reports ref for this contract. */
   ref: string;
+  /** Value that configures or reports version for this contract. */
   version: number;
 }
 
-/**
- * Sorted references partitioned by how their stored format version compares to
- * the runtime's current version. References at the current version are omitted
- * from both lists.
- */
+/** Sorted references partitioned by how their stored format version compares to the runtime's current version. References at the current version are omitted from both lists. */
 export interface ItemFormatVersionScanResult {
+  /** Value that configures or reports outdated for this contract. */
   outdated: string[];
+  /** Value that configures or reports ahead for this contract. */
   ahead: string[];
 }
 
-/**
- * Partition a set of items by format version into `outdated` (need migration)
- * and `ahead` (written by a newer pm) reference lists, each sorted for stable
- * diagnostics. Pushing all comparison branches into this pure, exhaustively
- * tested helper lets `pm health` and `pm validate` emit findings by iterating
- * the result lists, with no version-comparison branching of their own.
- */
+/** Partition a set of items by format version into `outdated` (need migration) and `ahead` (written by a newer pm) reference lists, each sorted for stable diagnostics. Pushing all comparison branches into this pure, exhaustively tested helper lets `pm health` and `pm validate` emit findings by iterating the result lists, with no version-comparison branching of their own. */
 export function scanItemFormatVersions(
   entries: readonly ItemFormatVersionScanEntry[],
   current: number = CURRENT_ITEM_FORMAT_VERSION,

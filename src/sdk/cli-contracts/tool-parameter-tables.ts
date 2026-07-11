@@ -11,6 +11,7 @@ import {
 } from "../../types/index.js";
 import type { PmToolAction } from "./enum-contracts.js";
 
+/** Public contract for pm tool parameter properties, shared by SDK and presentation-layer consumers. */
 export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   json: { type: "boolean", default: true },
   quiet: { type: "boolean" },
@@ -28,7 +29,17 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   query: { type: "string" },
   keywords: { type: "string" },
   fields: { type: "string" },
-  sort: { type: "string", enum: ["priority", "deadline", "updated_at", "created_at", "title", "parent"] },
+  sort: {
+    type: "string",
+    enum: [
+      "priority",
+      "deadline",
+      "updated_at",
+      "created_at",
+      "title",
+      "parent",
+    ],
+  },
   prefix: { type: "string" },
   preset: { type: "string", enum: ["minimal", "default", "strict", "custom"] },
   typePreset: { type: "string", enum: ["agile", "ops", "research"] },
@@ -111,7 +122,9 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   affectedVersion: { type: "string" },
   fixedVersion: { type: "string" },
   component: { type: "string" },
-  regression: { anyOf: [{ type: "boolean" }, { type: "string" }, { type: "number" }] },
+  regression: {
+    anyOf: [{ type: "boolean" }, { type: "string" }, { type: "number" }],
+  },
   customerImpact: { type: "string" },
   definitionOfReady: { type: "string" },
   order: { anyOf: [{ type: "string" }, { type: "number" }] },
@@ -123,7 +136,14 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   whyNow: { type: "string" },
   mode: {
     type: "string",
-    enum: ["keyword", "semantic", "hybrid", "title_exact", "title_fuzzy", "parent_scope"],
+    enum: [
+      "keyword",
+      "semantic",
+      "hybrid",
+      "title_exact",
+      "title_fuzzy",
+      "parent_scope",
+    ],
   },
   semanticWeight: { anyOf: [{ type: "string" }, { type: "number" }] },
   op: { type: "string" },
@@ -219,7 +239,13 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   background: { type: "boolean" },
   runId: { type: "string" },
   stream: {
-    anyOf: [{ type: "boolean" }, { type: "string", enum: ["stdout", "stderr", "both", "rows", "ndjson", "jsonl"] }],
+    anyOf: [
+      { type: "boolean" },
+      {
+        type: "string",
+        enum: ["stdout", "stderr", "both", "rows", "ndjson", "jsonl"],
+      },
+    ],
   },
   tail: { anyOf: [{ type: "string" }, { type: "number" }] },
   addJson: { type: "array", items: { type: "string" } },
@@ -278,14 +304,23 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   skipDrift: { type: "boolean" },
   verboseDiagnostics: { type: "boolean" },
   allAffectedIds: { type: "boolean" },
-  scanMode: { type: "string", enum: ["default", "tracked-all", "tracked-all-strict"] },
+  scanMode: {
+    type: "string",
+    enum: ["default", "tracked-all", "tracked-all-strict"],
+  },
   includePmInternals: { type: "boolean" },
   verboseFileLists: { type: "boolean" },
   strictExit: { type: "boolean" },
   failOnWarn: { type: "boolean" },
   fixHints: { type: "boolean" },
   autoFix: { type: "boolean" },
-  fixScope: { type: "array", items: { type: "string", enum: ["metadata", "resolution", "estimates", "lifecycle"] } },
+  fixScope: {
+    type: "array",
+    items: {
+      type: "string",
+      enum: ["metadata", "resolution", "estimates", "lifecycle"],
+    },
+  },
   pruneMissing: { type: "boolean" },
   checkHistoryDrift: { type: "boolean" },
   checkCommandReferences: { type: "boolean" },
@@ -316,7 +351,10 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   includeUnparented: { type: "boolean" },
   gcScope: {
     type: "array",
-    items: { type: "string", enum: ["index", "embeddings", "runtime", "locks"] },
+    items: {
+      type: "string",
+      enum: ["index", "embeddings", "runtime", "locks"],
+    },
   },
   maxDepth: { anyOf: [{ type: "string" }, { type: "number" }] },
   collapse: { type: "string", enum: ["none", "repeated"] },
@@ -330,7 +368,10 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   defaultStatus: { type: "string" },
   alias: { type: "array", items: { type: "string" } },
   role: { type: "array", items: { type: "string" } },
-  fieldType: { type: "string", enum: ["string", "number", "boolean", "string_array"] },
+  fieldType: {
+    type: "string",
+    enum: ["string", "number", "boolean", "string_array"],
+  },
   commands: { type: "array", items: { type: "string" } },
   cliFlag: { type: "string" },
   required: { type: "boolean" },
@@ -386,12 +427,28 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   threshold: { anyOf: [{ type: "string" }, { type: "number" }] },
   format: { type: "string" },
   depth: { type: "string", enum: ["brief", "standard", "deep", "full"] },
-  section: { type: "array", items: { type: "string", enum: ["hierarchy", "activity", "progress", "blockers", "files", "workload", "staleness", "tests"] } },
+  section: {
+    type: "array",
+    items: {
+      type: "string",
+      enum: [
+        "hierarchy",
+        "activity",
+        "progress",
+        "blockers",
+        "files",
+        "workload",
+        "staleness",
+        "tests",
+      ],
+    },
+  },
   activityLimit: { anyOf: [{ type: "string" }, { type: "number" }] },
   staleThreshold: { type: "string" },
   policy: { type: "string" },
 };
 
+/** Supported values accepted by the plan subcommand contract. */
 export const PLAN_SUBCOMMAND_VALUES = [
   "create",
   "show",
@@ -411,6 +468,7 @@ export const PLAN_SUBCOMMAND_VALUES = [
   "materialize",
 ] as const;
 
+/** Public contract for plan action parameter properties, shared by SDK and presentation-layer consumers. */
 export const PLAN_ACTION_PARAMETER_PROPERTIES: Record<string, unknown> = {
   subcommand: { type: "string", enum: [...PLAN_SUBCOMMAND_VALUES] },
   stepRef: { type: "string" },
@@ -426,7 +484,9 @@ export const PLAN_ACTION_PARAMETER_PROPERTIES: Record<string, unknown> = {
   stepTitle: { type: "string" },
   // pm-6mit: ordered step titles for create (string or array; values are never
   // comma-split). On step subcommands a single value aliases stepTitle.
-  step: { anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }] },
+  step: {
+    anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+  },
   stepBody: { type: "string" },
   stepOwner: { type: "string" },
   stepStatus: { type: "string", enum: [...PLAN_STEP_STATUS_VALUES] },
@@ -439,9 +499,15 @@ export const PLAN_ACTION_PARAMETER_PROPERTIES: Record<string, unknown> = {
   linkNote: { type: "string" },
   promoteToItemDep: { type: "boolean" },
   allowMultipleActive: { type: "boolean" },
-  file: { anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }] },
-  test: { anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }] },
-  doc: { anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }] },
+  file: {
+    anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+  },
+  test: {
+    anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+  },
+  doc: {
+    anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+  },
   decisionText: { type: "string" },
   decision: { type: "string" },
   decisionRationale: { type: "string" },
@@ -458,7 +524,11 @@ export const PLAN_ACTION_PARAMETER_PROPERTIES: Record<string, unknown> = {
   materializeTags: { type: "string" },
 };
 
-export const PLAN_ACTION_PARAMETER_METADATA: Record<string, { description: string; examples?: unknown[] }> = {
+/** Public contract for plan action parameter metadata, shared by SDK and presentation-layer consumers. */
+export const PLAN_ACTION_PARAMETER_METADATA: Record<
+  string,
+  { description: string; examples?: unknown[] }
+> = {
   subcommand: {
     description: "Plan workflow operation to run.",
     examples: ["create", "show", "add-step", "approve"],
@@ -472,7 +542,8 @@ export const PLAN_ACTION_PARAMETER_METADATA: Record<string, { description: strin
     examples: [1, "2"],
   },
   scope: {
-    description: "Short free-text scope statement describing what the Plan covers.",
+    description:
+      "Short free-text scope statement describing what the Plan covers.",
     examples: ["Release readiness audit", "Search package migration"],
   },
   mode: {
@@ -489,16 +560,22 @@ export const PLAN_ACTION_PARAMETER_METADATA: Record<string, { description: strin
     examples: ["path=src/cli.ts,note=implementation surface"],
   },
   test: {
-    description: "Test command link to attach while creating or materializing a Plan.",
+    description:
+      "Test command link to attach while creating or materializing a Plan.",
     examples: ["command=pnpm build,timeout_seconds=300"],
   },
   doc: {
-    description: "Documentation link to attach while creating or materializing a Plan.",
+    description:
+      "Documentation link to attach while creating or materializing a Plan.",
     examples: ["path=docs/SDK.md,note=public API reference"],
   },
 };
 
-export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples?: unknown[] }> = {
+/** Public contract for pm tool parameter metadata, shared by SDK and presentation-layer consumers. */
+export const PM_TOOL_PARAMETER_METADATA: Record<
+  string,
+  { description: string; examples?: unknown[] }
+> = {
   action: {
     description: "Tool action to execute.",
   },
@@ -507,48 +584,61 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: [".agents/pm"],
   },
   scope: {
-    description: "Scope selector for commands that operate on project or global state. Linked files, docs, and tests default to project scope when omitted.",
+    description:
+      "Scope selector for commands that operate on project or global state. Linked files, docs, and tests default to project scope when omitted.",
     examples: ["project", "global"],
   },
   detail: {
-    description: "Detail mode for commands that support concise and deep diagnostics.",
+    description:
+      "Detail mode for commands that support concise and deep diagnostics.",
     examples: ["summary", "deep"],
   },
   trace: {
-    description: "When true for extension-doctor, include actionable registration traces in deep diagnostics.",
+    description:
+      "When true for extension-doctor, include actionable registration traces in deep diagnostics.",
   },
   reload: {
-    description: "When true for extension action payloads, trigger cache-busted extension module reload.",
+    description:
+      "When true for extension action payloads, trigger cache-busted extension module reload.",
   },
   watch: {
-    description: "When true for extension-reload/extension action payloads, enable watch mode semantics.",
+    description:
+      "When true for extension-reload/extension action payloads, enable watch mode semantics.",
   },
   runtimeProbe: {
-    description: "When true for extension-manage, run a doctor-like runtime activation probe for parity fields.",
+    description:
+      "When true for extension-manage, run a doctor-like runtime activation probe for parity fields.",
   },
   fixManagedState: {
-    description: "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
+    description:
+      "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
   },
   isolated: {
-    description: "When true for extension-doctor/package-doctor, ignore global registrations for hermetic project diagnostics.",
+    description:
+      "When true for extension-doctor/package-doctor, ignore global registrations for hermetic project diagnostics.",
   },
   ignoreGlobal: {
-    description: "Alias for isolated on extension-doctor/package-doctor action payloads.",
+    description:
+      "Alias for isolated on extension-doctor/package-doctor action payloads.",
   },
   target: {
-    description: "Positional target argument for the selected action (ID, source, package source, or extension name).",
+    description:
+      "Positional target argument for the selected action (ID, source, package source, or extension name).",
     examples: ["pm-a1b2", ".agents/pm/extensions/sample", "sample-extension"],
   },
   output: {
-    description: "File path for commands that write generated output, such as package/extension describe Markdown references.",
+    description:
+      "File path for commands that write generated output, such as package/extension describe Markdown references.",
     examples: ["docs/pm-package-reference.md"],
   },
   github: {
-    description: "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
+    description:
+      "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
     examples: ["org/repo/extensions/sample"],
   },
   ref: {
-    description: "Git ref/branch/tag used when installing from GitHub shorthand/URL sources.",
+    description:
+      "Git ref/branch/tag used when installing from GitHub shorthand/URL sources.",
     examples: ["main", "v1.0.0"],
   },
   cliOnly: {
@@ -558,20 +648,25 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "Restrict upgrade to managed installable pm packages.",
   },
   repair: {
-    description: "Force npm global reinstall semantics when upgrading the pm CLI/SDK.",
+    description:
+      "Force npm global reinstall semantics when upgrading the pm CLI/SDK.",
   },
   tag: {
-    description: "npm version or dist-tag used for CLI and registry package upgrades.",
+    description:
+      "npm version or dist-tag used for CLI and registry package upgrades.",
     examples: ["latest", "next", "2026.5.11"],
   },
   today: {
-    description: "When true for list actions, include only items updated since local midnight today.",
+    description:
+      "When true for list actions, include only items updated since local midnight today.",
   },
   recent: {
-    description: "When true for list actions, include only items updated in the last seven days.",
+    description:
+      "When true for list actions, include only items updated in the last seven days.",
   },
   packageName: {
-    description: "Override the pm CLI package name for self-upgrade automation and tests.",
+    description:
+      "Override the pm CLI package name for self-upgrade automation and tests.",
     examples: ["@unbrained/pm-cli"],
   },
   json: {
@@ -612,7 +707,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: ["Task", "Feature"],
   },
   subcommand: {
-    description: "Subcommand selector for schema, profile, and telemetry actions.",
+    description:
+      "Subcommand selector for schema, profile, and telemetry actions.",
   },
   name: {
     description:
@@ -633,35 +729,46 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: [["active"], ["terminal", "terminal_done"]],
   },
   fieldType: {
-    description: "Value type for a custom field (schema add-field): string, number, boolean, or string_array.",
+    description:
+      "Value type for a custom field (schema add-field): string, number, boolean, or string_array.",
     examples: ["string", "number", "string_array"],
   },
   commands: {
-    description: "Commands a custom field is wired onto (schema add-field): create, update, update_many, list, search, calendar, context.",
-    examples: [["create", "update"], ["create", "update", "list"]],
+    description:
+      "Commands a custom field is wired onto (schema add-field): create, update, update_many, list, search, calendar, context.",
+    examples: [
+      ["create", "update"],
+      ["create", "update", "list"],
+    ],
   },
   cliFlag: {
-    description: "Override the auto-derived CLI flag for a custom field (schema add-field).",
+    description:
+      "Override the auto-derived CLI flag for a custom field (schema add-field).",
     examples: ["--owner"],
   },
   required: {
     description: "Mark a custom field as always required (schema add-field).",
   },
   requiredOnCreate: {
-    description: "Mark a custom field as required at create time (schema add-field).",
+    description:
+      "Mark a custom field as required at create time (schema add-field).",
   },
   allowUnset: {
-    description: "Whether a custom field may be cleared via --unset (schema add-field); defaults to true.",
+    description:
+      "Whether a custom field may be cleared via --unset (schema add-field); defaults to true.",
   },
   requiredTypes: {
-    description: "Restrict a custom field's requirement to specific item types (schema add-field).",
+    description:
+      "Restrict a custom field's requirement to specific item types (schema add-field).",
     examples: [["Bug"], ["Story", "Spike"]],
   },
   infer: {
-    description: "Infer custom item types from title-prefix conventions (schema add-type); previews unless apply is true.",
+    description:
+      "Infer custom item types from title-prefix conventions (schema add-type); previews unless apply is true.",
   },
   minCount: {
-    description: "Minimum number of items sharing a title prefix for schema add-type inference (default 10).",
+    description:
+      "Minimum number of items sharing a title prefix for schema add-type inference (default 10).",
     examples: [10, 25],
   },
   preset: {
@@ -679,18 +786,21 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "Include the full resolved settings tree in init output.",
   },
   agentGuidance: {
-    description: "Control AGENTS.md/CLAUDE.md guidance behavior during init: ask, add, skip, or status.",
+    description:
+      "Control AGENTS.md/CLAUDE.md guidance behavior during init: ask, add, skip, or status.",
     examples: ["ask", "add", "skip", "status"],
   },
   withPackages: {
-    description: "Install all bundled first-party pm packages during initialization.",
+    description:
+      "Install all bundled first-party pm packages during initialization.",
   },
   createMode: {
     description: "Create required-option policy mode.",
     examples: ["strict", "progressive"],
   },
   schedulePreset: {
-    description: "Schedule-centric create preset for Reminder, Meeting, and Event types.",
+    description:
+      "Schedule-centric create preset for Reminder, Meeting, and Event types.",
     examples: ["lightweight"],
   },
   status: {
@@ -703,23 +813,33 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: [0, 1, "2"],
   },
   order: {
-    description: "Planning order/rank value for create/update, or sort direction (asc|desc) for list-family sorting.",
+    description:
+      "Planning order/rank value for create/update, or sort direction (asc|desc) for list-family sorting.",
     examples: [0, 1, "2", "asc", "desc"],
   },
   sort: {
     description: "List-family sort field selector.",
-    examples: ["priority", "deadline", "updated_at", "created_at", "title", "parent"],
+    examples: [
+      "priority",
+      "deadline",
+      "updated_at",
+      "created_at",
+      "title",
+      "parent",
+    ],
   },
   tags: {
     description: "Comma-delimited tag list.",
     examples: ["pm-cli,agent-ux"],
   },
   addTags: {
-    description: "Tags to add to the existing list without replacing it. Each entry may be CSV or a JSON array.",
+    description:
+      "Tags to add to the existing list without replacing it. Each entry may be CSV or a JSON array.",
     examples: [["agent-ux"], ["fix", "security"]],
   },
   removeTags: {
-    description: "Tags to remove from the existing list. Each entry may be CSV or a JSON array.",
+    description:
+      "Tags to remove from the existing list. Each entry may be CSV or a JSON array.",
     examples: [["stale"], ["legacy", "wontfix"]],
   },
   deadline: {
@@ -727,7 +847,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: ["2026-04-01T00:00:00.000Z", "+1d"],
   },
   reminder: {
-    description: "Repeatable reminder seed entries at=<iso|relative>,text=<text>.",
+    description:
+      "Repeatable reminder seed entries at=<iso|relative>,text=<text>.",
     examples: [["at=+2d,text=Review PR"]],
   },
   event: {
@@ -758,7 +879,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: ["codex-agent"],
   },
   assigneeFilter: {
-    description: "Assignee presence selector for list/calendar/context/comments-audit filters.",
+    description:
+      "Assignee presence selector for list/calendar/context/comments-audit filters.",
     examples: ["assigned", "unassigned"],
   },
   parent: {
@@ -766,24 +888,28 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: ["pm-epic01"],
   },
   blockedLimit: {
-    description: "Cap blocked rows returned by the next action (defaults to the ready --limit).",
+    description:
+      "Cap blocked rows returned by the next action (defaults to the ready --limit).",
     examples: ["3"],
   },
   readyOnly: {
     description: "When true, the next action omits the blocked companion list.",
   },
   unset: {
-    description: "Repeatable list of front-matter fields to clear explicitly during create/update mutations.",
+    description:
+      "Repeatable list of front-matter fields to clear explicitly during create/update mutations.",
     examples: [["deadline", "assignee"], ["close-reason"]],
   },
   clearDeps: {
     description: "When true, clear linked dependencies.",
   },
   replaceDeps: {
-    description: "When true for update, atomically replace dependencies with the supplied --dep values.",
+    description:
+      "When true for update, atomically replace dependencies with the supplied --dep values.",
   },
   replaceTests: {
-    description: "When true for update, atomically replace linked tests with the supplied --test values.",
+    description:
+      "When true for update, atomically replace linked tests with the supplied --test values.",
   },
   clearComments: {
     description: "When true, clear item comments.",
@@ -831,39 +957,51 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: ["create", "update", "close", "update_audit"],
   },
   fullPeriod: {
-    description: "For day/week/month calendar views, include the full anchored period instead of clipping the start to now.",
+    description:
+      "For day/week/month calendar views, include the full anchored period instead of clipping the start to now.",
   },
   progress: {
-    description: "Emit progress diagnostics to stderr for long-running operations.",
+    description:
+      "Emit progress diagnostics to stderr for long-running operations.",
   },
   background: {
     description: "Run linked tests in managed background mode.",
   },
   addJson: {
-    description: "Repeatable JSON object or array input for adding linked-test entries without CSV escaping loss.",
-    examples: [[`{"command":"node scripts/run-tests.mjs test -- tests/unit/output.spec.ts","timeout_seconds":240}`]],
+    description:
+      "Repeatable JSON object or array input for adding linked-test entries without CSV escaping loss.",
+    examples: [
+      [
+        `{"command":"node scripts/run-tests.mjs test -- tests/unit/output.spec.ts","timeout_seconds":240}`,
+      ],
+    ],
   },
   match: {
-    description: "Run only linked tests whose command or path contains this case-insensitive substring.",
+    description:
+      "Run only linked tests whose command or path contains this case-insensitive substring.",
     examples: ["output.spec.ts", "coverage"],
   },
   onlyIndex: {
-    description: "Run only the 1-based linked-test index from pm test <id> --list order.",
+    description:
+      "Run only the 1-based linked-test index from pm test <id> --list order.",
     examples: [1, "2"],
   },
   onlyLast: {
     description: "Run only the most recently added linked-test entry.",
   },
   envSet: {
-    description: "Repeatable runtime environment KEY=VALUE overrides for linked-test execution.",
+    description:
+      "Repeatable runtime environment KEY=VALUE overrides for linked-test execution.",
     examples: [["PORT=0", "PLAYWRIGHT_HTML_OPEN=never"]],
   },
   envClear: {
-    description: "Repeatable runtime environment variable names to clear before linked-test execution.",
+    description:
+      "Repeatable runtime environment variable names to clear before linked-test execution.",
     examples: [["PLAYWRIGHT_BASE_URL"]],
   },
   sharedHostSafe: {
-    description: "Apply additive shared-host-safe runtime defaults during linked-test execution.",
+    description:
+      "Apply additive shared-host-safe runtime defaults during linked-test execution.",
   },
   pmContext: {
     description:
@@ -871,22 +1009,28 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: ["schema", "tracker", "auto"],
   },
   overrideLinkedPmContext: {
-    description: "Force run-level --pm-context to override per-linked-test pm_context_mode metadata for all linked-test entries.",
+    description:
+      "Force run-level --pm-context to override per-linked-test pm_context_mode metadata for all linked-test entries.",
   },
   failOnContextMismatch: {
-    description: "Fail linked PM command runs when source and sandbox tracker item counts differ.",
+    description:
+      "Fail linked PM command runs when source and sandbox tracker item counts differ.",
   },
   failOnSkipped: {
-    description: "Treat skipped linked tests as dependency-failed policy violations.",
+    description:
+      "Treat skipped linked tests as dependency-failed policy violations.",
   },
   failOnEmptyTestRun: {
-    description: "Treat successful linked-test commands that report zero executed tests as failures.",
+    description:
+      "Treat successful linked-test commands that report zero executed tests as failures.",
   },
   requireAssertionsForPm: {
-    description: "Require assertion metadata for linked PM command test entries during run execution.",
+    description:
+      "Require assertion metadata for linked PM command test entries during run execution.",
   },
   checkContext: {
-    description: "Run linked PM command context preflight diagnostics before command execution.",
+    description:
+      "Run linked PM command context preflight diagnostics before command execution.",
   },
   autoPmContext: {
     description:
@@ -900,11 +1044,18 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
       "For history-repair action: scan every stream for drift and repair each drifted stream in one audited pass (mutually exclusive with id).",
   },
   clear: {
-    description: "For focus action: clear the session focused item instead of setting it (mutually exclusive with id).",
+    description:
+      "For focus action: clear the session focused item instead of setting it (mutually exclusive with id).",
   },
   gcScope: {
-    description: "Repeatable gc scope selector values (index, embeddings, runtime, locks, checkpoints).",
-    examples: [["index", "embeddings"], ["runtime"], ["locks"], ["checkpoints"]],
+    description:
+      "Repeatable gc scope selector values (index, embeddings, runtime, locks, checkpoints).",
+    examples: [
+      ["index", "embeddings"],
+      ["runtime"],
+      ["locks"],
+      ["checkpoints"],
+    ],
   },
   storage: {
     description:
@@ -934,24 +1085,30 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: [3, "10"],
   },
   closed: {
-    description: "For history-compact bulk mode, compact only closed (terminal) items' history streams.",
+    description:
+      "For history-compact bulk mode, compact only closed (terminal) items' history streams.",
   },
   allStreams: {
-    description: "For history-compact bulk mode, compact every history stream regardless of lifecycle state.",
+    description:
+      "For history-compact bulk mode, compact every history stream regardless of lifecycle state.",
   },
   limitItems: {
-    description: "Maximum number of filtered items to include in comments-audit output (alias: --limit).",
+    description:
+      "Maximum number of filtered items to include in comments-audit output (alias: --limit).",
     examples: [10, "25"],
   },
   fullHistory: {
-    description: "When true for comments-audit, export full per-item comment history rows; cannot be combined with latest.",
+    description:
+      "When true for comments-audit, export full per-item comment history rows; cannot be combined with latest.",
   },
   latest: {
-    description: "Number of most recent comments to include per item in comments-audit output (use 0 for summary-only item rows).",
+    description:
+      "Number of most recent comments to include per item in comments-audit output (use 0 for summary-only item rows).",
     examples: [0, 1, "3"],
   },
   literal: {
-    description: "Repeatable literal matcher used by history-redact to scrub exact string values.",
+    description:
+      "Repeatable literal matcher used by history-redact to scrub exact string values.",
     examples: ["[redacted_path_prefix]/private/path"],
   },
   regex: {
@@ -960,11 +1117,13 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: ["/192\\\\.168\\\\.[0-9.]+/g", "token=[A-Za-z0-9_-]+"],
   },
   replacement: {
-    description: 'Replacement text used by history-redact (defaults to "[redacted]").',
+    description:
+      'Replacement text used by history-redact (defaults to "[redacted]").',
     examples: ["[scrubbed_path]"],
   },
   validateClose: {
-    description: 'Close-time metadata validation mode ("off", "warn", or "strict").',
+    description:
+      'Close-time metadata validation mode ("off", "warn", or "strict").',
     examples: ["off", "warn", "strict"],
   },
   checkMetadata: {
@@ -981,7 +1140,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "Run active-item lifecycle governance drift checks.",
   },
   checkStaleBlockers: {
-    description: "Include stale blocker-pattern diagnostics in lifecycle checks.",
+    description:
+      "Include stale blocker-pattern diagnostics in lifecycle checks.",
   },
   dependencyCycleSeverity: {
     description: "Set dependency-cycle warning policy for lifecycle checks.",
@@ -995,31 +1155,39 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "Run linked-file and orphaned-file checks.",
   },
   strictDirectories: {
-    description: "Treat optional item-type directories as required health failures.",
+    description:
+      "Treat optional item-type directories as required health failures.",
   },
   checkOnly: {
-    description: "For health action, run read-only diagnostics without refreshing vectors.",
+    description:
+      "For health action, run read-only diagnostics without refreshing vectors.",
   },
   checkTelemetry: {
-    description: "For health action, probe telemetry endpoint health and include network diagnostics.",
+    description:
+      "For health action, probe telemetry endpoint health and include network diagnostics.",
   },
   noRefresh: {
-    description: "For health action, skip vector refresh while still running checks.",
+    description:
+      "For health action, skip vector refresh while still running checks.",
   },
   refreshVectors: {
     description: "For health action, explicitly refresh stale vectors.",
   },
   verboseStaleItems: {
-    description: "For health action, include full stale-item arrays in vectorization details.",
+    description:
+      "For health action, include full stale-item arrays in vectorization details.",
   },
   skipVectors: {
-    description: "For health action, skip vectorization checks for a faster diagnostic run.",
+    description:
+      "For health action, skip vectorization checks for a faster diagnostic run.",
   },
   skipIntegrity: {
-    description: "For health action, skip item/history file integrity checks for a faster diagnostic run.",
+    description:
+      "For health action, skip item/history file integrity checks for a faster diagnostic run.",
   },
   skipDrift: {
-    description: "For health action, skip history drift hash checks for a faster diagnostic run.",
+    description:
+      "For health action, skip history drift hash checks for a faster diagnostic run.",
   },
   scanMode: {
     description: "Select file candidate scan mode for --check-files.",
@@ -1029,19 +1197,24 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "Include PM storage internals in tracked-all candidate scans.",
   },
   verboseFileLists: {
-    description: "For validate action, include full file-path lists for --check-files details.",
+    description:
+      "For validate action, include full file-path lists for --check-files details.",
   },
   verboseDiagnostics: {
-    description: "For validate action, include full diagnostic ID lists instead of compact summaries.",
+    description:
+      "For validate action, include full diagnostic ID lists instead of compact summaries.",
   },
   strictExit: {
-    description: "Return non-zero exit when health/validate/extension-doctor warnings are present.",
+    description:
+      "Return non-zero exit when health/validate/extension-doctor warnings are present.",
   },
   failOnWarn: {
-    description: "Alias for strictExit in health/validate/extension-doctor action payloads.",
+    description:
+      "Alias for strictExit in health/validate/extension-doctor action payloads.",
   },
   fixHints: {
-    description: "For validate action, add a machine-executable fix_hints[] of pm commands to each failing check's details.",
+    description:
+      "For validate action, add a machine-executable fix_hints[] of pm commands to each failing check's details.",
   },
   autoFix: {
     description:
@@ -1063,45 +1236,58 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "Run linked-command PM-ID reference checks.",
   },
   allowAuditNote: {
-    description: "For notes action, allow non-owner append-only note audits without requiring --force.",
+    description:
+      "For notes action, allow non-owner append-only note audits without requiring --force.",
   },
   allowAuditLearning: {
-    description: "For learnings action, allow non-owner append-only learning audits without requiring --force.",
+    description:
+      "For learnings action, allow non-owner append-only learning audits without requiring --force.",
   },
   allowAuditComment: {
-    description: "For comments action, allow non-owner append-only comment audits without requiring --force.",
+    description:
+      "For comments action, allow non-owner append-only comment audits without requiring --force.",
   },
   edit: {
-    description: "For comments action, replace the comment at this 1-based index with the supplied replacement text (add/stdin/file).",
+    description:
+      "For comments action, replace the comment at this 1-based index with the supplied replacement text (add/stdin/file).",
   },
   delete: {
-    description: "For comments action, delete the comment at this 1-based index.",
+    description:
+      "For comments action, delete the comment at this 1-based index.",
   },
   stdin: {
-    description: "When true for comments action, read comment text from piped stdin (supports multiline markdown).",
+    description:
+      "When true for comments action, read comment text from piped stdin (supports multiline markdown).",
   },
   file: {
-    description: "Path to input file for actions that read payload text, such as comments --file.",
+    description:
+      "Path to input file for actions that read payload text, such as comments --file.",
     examples: ["notes/comment.md"],
   },
   allowAuditUpdate: {
-    description: "Allow non-owner metadata-only update audits without requiring --force.",
+    description:
+      "Allow non-owner metadata-only update audits without requiring --force.",
   },
   allowAuditDepUpdate: {
-    description: "Allow non-owner append-only dependency update audits without requiring --force.",
+    description:
+      "Allow non-owner append-only dependency update audits without requiring --force.",
   },
   allowAuditRelease: {
-    description: "Allow non-owner release handoffs that clear assignee metadata without requiring --force.",
+    description:
+      "Allow non-owner release handoffs that clear assignee metadata without requiring --force.",
   },
   preserveSourceIds: {
-    description: "Preserve explicit source IDs during Beads imports instead of normalizing to tracker prefix.",
+    description:
+      "Preserve explicit source IDs during Beads imports instead of normalizing to tracker prefix.",
     examples: [true],
   },
   appendStable: {
-    description: "When true for files action, preserve existing linked-file order and append new links without full-array resorting.",
+    description:
+      "When true for files action, preserve existing linked-file order and append new links without full-array resorting.",
   },
   discover: {
-    description: "When true for files action, use `pm files discover <id>` to scan item text for referenced file paths.",
+    description:
+      "When true for files action, use `pm files discover <id>` to scan item text for referenced file paths.",
   },
   apply: {
     description:
@@ -1137,80 +1323,109 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "Alias for query in search action payloads.",
   },
   includeLinked: {
-    description: "Include readable linked docs/files/tests content in keyword and hybrid lexical scoring.",
+    description:
+      "Include readable linked docs/files/tests content in keyword and hybrid lexical scoring.",
   },
   titleExact: {
-    description: "For search action, require exact normalized title match for the full query string.",
+    description:
+      "For search action, require exact normalized title match for the full query string.",
   },
   phraseExact: {
-    description: "For search action, require exact normalized query phrase match in item text fields.",
+    description:
+      "For search action, require exact normalized query phrase match in item text fields.",
   },
   highlight: {
-    description: "For search action, emit per-field matched-text snippets (wrapped in «…») on each hit. Off by default.",
+    description:
+      "For search action, emit per-field matched-text snippets (wrapped in «…») on each hit. Off by default.",
   },
   includeBody: {
-    description: "When true for list-family actions, include item body text in projected rows.",
+    description:
+      "When true for list-family actions, include item body text in projected rows.",
   },
   noTruncate: {
-    description: "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
+    description:
+      "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
   },
   compact: {
-    description: "Render compact projection output for search and list-family actions.",
+    description:
+      "Render compact projection output for search and list-family actions.",
   },
   brief: {
-    description: "Emit compact low-token output for commands that support terse projections or health details.",
+    description:
+      "Emit compact low-token output for commands that support terse projections or health details.",
     examples: [true],
   },
   full: {
-    description: "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+    description:
+      "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
   },
   fields: {
     description:
       "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
-    examples: ["id,title,status,parent,type", "id,title,score,matched_fields", "id,title,priority,deadline"],
+    examples: [
+      "id,title,status,parent,type",
+      "id,title,score,matched_fields",
+      "id,title,priority,deadline",
+    ],
   },
   groupBy: {
     description:
       "Comma-separated aggregate grouping fields (supported: parent,type,priority,status,assignee,tags,sprint,release).",
-    examples: ["parent,type", "type,status", "priority,assignee", "tags", "sprint,release"],
+    examples: [
+      "parent,type",
+      "type,status",
+      "priority,assignee",
+      "tags",
+      "sprint,release",
+    ],
   },
   count: {
     description: "Enable grouped count output for aggregate action.",
   },
   completion: {
-    description: "For aggregate action, add open/in_progress/closed/other counts and completion_pct per group.",
+    description:
+      "For aggregate action, add open/in_progress/closed/other counts and completion_pct per group.",
   },
   sum: {
-    description: "Numeric field to sum per aggregate group (count and null_count are still returned).",
+    description:
+      "Numeric field to sum per aggregate group (count and null_count are still returned).",
     examples: ["estimated_minutes", "priority"],
   },
   avg: {
-    description: "Numeric field to average per aggregate group (count and null_count are still returned).",
+    description:
+      "Numeric field to average per aggregate group (count and null_count are still returned).",
     examples: ["estimated_minutes", "priority"],
   },
   tree: {
-    description: "When true for list/get actions, render recursive parent/child tree ordering.",
+    description:
+      "When true for list/get actions, render recursive parent/child tree ordering.",
   },
   treeDepth: {
-    description: "Maximum recursion depth for tree output (0 keeps root rows only).",
+    description:
+      "Maximum recursion depth for tree output (0 keeps root rows only).",
     examples: [0, 1, "2"],
   },
   includeUnparented: {
-    description: "Include unparented rows when aggregate grouping includes parent.",
+    description:
+      "Include unparented rows when aggregate grouping includes parent.",
   },
   maxDepth: {
-    description: "Maximum dependency traversal depth for deps action (0 keeps only the root node).",
+    description:
+      "Maximum dependency traversal depth for deps action (0 keeps only the root node).",
     examples: [0, 1, "2"],
   },
   collapse: {
-    description: 'Dependency tree collapse mode for deps action ("none" or "repeated").',
+    description:
+      'Dependency tree collapse mode for deps action ("none" or "repeated").',
     examples: ["none", "repeated"],
   },
   summary: {
-    description: "When true, return the command's compact summary projection (deps counts, health rollup, or contracts command intents).",
+    description:
+      "When true, return the command's compact summary projection (deps counts, health rollup, or contracts command intents).",
   },
   threshold: {
-    description: "Dedupe-audit fuzzy title similarity threshold between 0 and 1.",
+    description:
+      "Dedupe-audit fuzzy title similarity threshold between 0 and 1.",
     examples: [0.5, "0.75"],
   },
   shell: {
@@ -1218,45 +1433,58 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: ["bash"],
   },
   eagerTags: {
-    description: "When true for completion, eagerly embed current tracker tags into generated scripts (legacy mode).",
+    description:
+      "When true for completion, eagerly embed current tracker tags into generated scripts (legacy mode).",
   },
   contractAction: {
     description: "Filter contracts schema to one tool action.",
     examples: ["create", "update"],
   },
   command: {
-    description: "Scope contracts output to one CLI command name; action/schema surfaces narrow by default.",
+    description:
+      "Scope contracts output to one CLI command name; action/schema surfaces narrow by default.",
     examples: ["create", "search", "list"],
   },
   schemaOnly: {
-    description: "When true, contracts action returns schema-focused payloads (mutually exclusive with flagsOnly/availabilityOnly).",
+    description:
+      "When true, contracts action returns schema-focused payloads (mutually exclusive with flagsOnly/availabilityOnly).",
   },
   flagsOnly: {
-    description: "When true, contracts action returns only command flag surface payloads (mutually exclusive projection mode).",
+    description:
+      "When true, contracts action returns only command flag surface payloads (mutually exclusive projection mode).",
   },
   availabilityOnly: {
-    description: "When true, contracts action returns only action availability payloads (mutually exclusive projection mode).",
+    description:
+      "When true, contracts action returns only action availability payloads (mutually exclusive projection mode).",
   },
   runtimeOnly: {
-    description: "When true, contracts action only includes actions invocable in the current runtime.",
+    description:
+      "When true, contracts action only includes actions invocable in the current runtime.",
   },
   activeOnly: {
     description: "Alias for runtimeOnly in contracts action payloads.",
   },
   depth: {
-    description: "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections, full=every section with no per-section row cap).",
+    description:
+      "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections, full=every section with no per-section row cap).",
     examples: ["brief", "standard", "deep", "full"],
   },
   section: {
-    description: "Repeatable section selector for context; overrides --depth when provided.",
-    examples: [["hierarchy", "activity"], ["blockers", "files", "staleness"]],
+    description:
+      "Repeatable section selector for context; overrides --depth when provided.",
+    examples: [
+      ["hierarchy", "activity"],
+      ["blockers", "files", "staleness"],
+    ],
   },
   activityLimit: {
-    description: "Maximum number of recent activity entries to include in context output.",
+    description:
+      "Maximum number of recent activity entries to include in context output.",
     examples: [5, 10, "20"],
   },
   staleThreshold: {
-    description: "Staleness cutoff in days for context staleness section (e.g. 7 or 7d).",
+    description:
+      "Staleness cutoff in days for context staleness section (e.g. 7 or 7d).",
     examples: ["7", "14d", "30"],
   },
 };
@@ -1273,7 +1501,12 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
  * (pm-fq80). The flat provider schema keeps using {@link PM_TOOL_PARAMETER_METADATA}
  * because its single `name` property must cover every action at once.
  */
-export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<Record<PmToolAction, Record<string, { description: string; examples?: unknown[] }>>> = {
+export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
+  Record<
+    PmToolAction,
+    Record<string, { description: string; examples?: unknown[] }>
+  >
+> = {
   schema: {
     name: {
       description:
