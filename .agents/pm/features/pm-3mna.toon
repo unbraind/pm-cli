@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: architecture,"area:config","area:schema","area:sdk"
 created_at: "2026-07-05T04:54:11.971Z"
-updated_at: "2026-07-11T23:16:04.295Z"
+updated_at: "2026-07-11T23:26:47.990Z"
 author: maintainer-agent
 estimated_minutes: 360
 acceptance_criteria: SDK exports typed schema/config/profile/init primitives with the same validation + never-block errors as the CLI; corresponding commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change
@@ -28,9 +28,9 @@ comments[7]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-07-10T17:32:56.449Z",maintainer-agent,"Implementation slicing 2026-07-10 (grounded in current src state). Already public — do NOT redo: profile read-side (presets/plan/describe/lint exported via src/sdk/index.ts), schema runtime registries (resolveRuntimeFieldRegistry/resolveRuntimeStatusRegistry via src/sdk/runtime.ts), and generic PmClient.runTyped wrappers for the schema/config/profile/init actions. The actual gap: domain logic lives in CLI command modules — src/cli/commands/schema.ts (1973 lines), config.ts (1576), init.ts (955) + init-agent-guidance.ts (566), ~5.1k lines total — so SDK consumers reach these domains only through generic action dispatch, not typed primitives. Suggested slices: S1 schema mutation primitives (~150m) — extract add-type/add-field/status-def write paths into src/core/schema (fields-file/item-types-file/status-defs-file already own the file formats); command becomes parse+render. S2 config/settings primitives (~90m) — extract read/write/validate onto src/core/config/nested-settings; preserve the settings validator's unknown-key-stripping semantics (PR#314). S3 init + workspace-discovery primitive (~90m) — single source of truth for discovery; this is where the GH-501/pm-69nl class (init target invisible to discovery) gets fixed at the primitive level — coordinate with pm-69nl, do not duplicate its fix. S4 typed PmClient facades + SDK reference docs/tests (~60m) — replace generic payloads with typed inputs/outputs; each primitive must match the equivalent runAction result shape (semantics oracle, pm-usfg 07-06 note). Order: S1 first (schema gates the pm-w89s universality story); S2/S3 independent; S4 last."
 files[4]{path,scope,note}:
-  src/core/workspace/gitignore.ts,project,Workspace customization primitive
   src/sdk/index.ts,project,SDK barrel exports customization primitive contracts
   src/sdk/runtime.ts,project,SDK runtime exposes init/config/schema/profile customization primitives
+  src/sdk/workspace.ts,project,Public workspace customization primitive
   tests/unit/sdk/sdk-context-primitives.spec.ts,project,SDK customization primitive coverage
 tests[2]:
   - command: node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/unit/sdk/sdk-index.spec.ts
