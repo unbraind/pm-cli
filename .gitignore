@@ -37,3 +37,8 @@ scripts/prod/
 scripts/prod/telemetry/
 scripts/prod/telemetry/**
 .claude/
+
+# pm-cli:runtime-cache:start
+.agents/pm/runtime/
+.agents/pm/search/
+# pm-cli:runtime-cache:end

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: dx,gh-issue,init,onboarding
 created_at: "2026-07-11T18:01:34.472Z"
-updated_at: "2026-07-11T18:02:06.305Z"
+updated_at: "2026-07-11T23:15:59.019Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "pm init (workspace and path-target modes) idempotently writes a canonical fenced ignore block covering .agents/pm/runtime/ and .agents/pm/search/ into the repo .gitignore (creating it if absent), one path per line; Re-running pm init never duplicates or garbles the block (fence markers; existing malformed concatenated lines inside the fence are replaced); pm validate or pm health warns when tracked .agents/pm runtime/search cache files exist in git (the already-tracked case a blanket ignore cannot fix), with a remediation hint (git rm --cached); Docs (init + getting-started) document the ignore block and the tracked-cache remediation"
@@ -14,4 +14,16 @@ risk: low
 confidence: medium
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-69nl,related,"2026-07-11T18:02:06.291Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-11T23:05:12.110Z",codex-root,"Implementation start: selected after live all-status duplicate checks, full metadata/comments/notes/learnings review, GitHub issue/PR/security/dependency inspection, and SDK-first frontier reconciliation. This item is actively edited in the broad schema/config/profile/init SDK promotion bundle; unrelated open items remain unclaimed."
+  "2026-07-11T23:15:35.696Z",codex-root,"Progress evidence: implemented and SDK-exported an idempotent fenced .gitignore primitive; pm init applies it in workspace-discovery, explicit workspace, and .agents/pm tracker-path layouts; repair/idempotence/unit/integration and packed-consumer proof pass. Remaining acceptance work: add health/validate detection for already-tracked cache files before closing."
+files[4]{path,scope,note}:
+  src/cli/commands/init.ts,project,Apply ignore primitive from all workspace-aware init modes
+  src/core/workspace/gitignore.ts,project,Reusable idempotent workspace cache ignore primitive
+  tests/integration/init-path-guard.integration.spec.ts,project,Workspace init integration coverage
+  tests/unit/core/workspace/gitignore.spec.ts,project,Create repair and idempotence coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/init-path-guard.integration.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Document init cache ignore and tracked-cache remediation
 body: ""

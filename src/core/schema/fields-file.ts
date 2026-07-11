@@ -61,6 +61,30 @@ export const BUILTIN_FIELD_KEYS: ReadonlySet<string> = new Set([
   "resolution",
   "expected",
   "actual",
+  "acceptance_criteria",
+  "actual_result",
+  "affected_version",
+  "blocked_by",
+  "blocked_reason",
+  "close_reason",
+  "component",
+  "customer_impact",
+  "definition_of_ready",
+  "environment",
+  "estimated_minutes",
+  "expected_result",
+  "fixed_version",
+  "goal",
+  "impact",
+  "objective",
+  "outcome",
+  "regression",
+  "reporter",
+  "repro_steps",
+  "severity",
+  "unblock_note",
+  "value",
+  "why_now",
 ]);
 
 /** The default commands a field is wired onto when `--commands` is omitted, matching the runtime default in runtime-schema.ts (normalizeRuntimeFieldDefinition). */
@@ -224,7 +248,7 @@ export function normalizeAddFieldInput(
   }
   if (BUILTIN_FIELD_KEYS.has(key)) {
     throw new Error(
-      `Cannot define custom field "${key}": it shadows a built-in field. Built-in fields are reserved.`,
+      `Cannot define custom field "${key}": custom schema field "${key}" collides with built-in item metadata "${key}". Rename the custom field with a project-specific prefix. Reserved fields: ${[...BUILTIN_FIELD_KEYS].sort((left, right) => left.localeCompare(right)).join(", ")}.`,
     );
   }
 
