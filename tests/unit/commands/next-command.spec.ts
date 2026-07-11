@@ -191,6 +191,10 @@ describe("runNext", () => {
       expect(result.decision_needed.map((entry) => entry.id)).toEqual([decision]);
       const optedIn = await runNext({ includeDecisions: true }, { path: context.pmPath });
       expect(optedIn.recommended?.id).toBe(decision);
+      expect(optedIn.decision_needed).toEqual([]);
+
+      const numericPriority = await runNext({ priority: 2 }, { path: context.pmPath });
+      expect(numericPriority.recommended?.id).toBe(p2);
     });
   });
 

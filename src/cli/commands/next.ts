@@ -57,7 +57,7 @@ export interface NextOptions {
   /** Value that configures or reports tag for this contract. */
   tag?: string;
   /** Value that configures or reports priority for this contract. */
-  priority?: string;
+  priority?: string | number;
   /** Value that configures or reports assignee for this contract. */
   assignee?: string;
   /** Value that configures or reports assignee filter for this contract. */
@@ -148,7 +148,7 @@ export interface NextResult {
   filters: {
     type: string | null;
     tag: string | null;
-    priority: string | null;
+    priority: string | number | null;
     assignee: string | null;
     assignee_filter: string | null;
     sprint: string | null;
@@ -314,7 +314,7 @@ export function partitionDecisionEntries(
       : ready.filter(
           (entry) => entry.item.type.trim().toLowerCase() !== "decision",
         ),
-    decisions,
+    decisions: includeDecisions ? [] : decisions,
   };
 }
 
@@ -371,7 +371,10 @@ function nextListOptions(
   return {
     type: options.type,
     tag: options.tag,
-    priority: options.priority,
+    priority:
+      typeof options.priority === "number"
+        ? String(options.priority)
+        : options.priority,
     assignee: options.assignee,
     assigneeFilter: options.assigneeFilter,
     sprint: options.sprint,
@@ -474,6 +477,7 @@ async function rankReadyEntriesWithRelevance(
   childrenByParent: Map<string, ItemFrontMatter[]>,
   statusRegistry: RuntimeStatusRegistry,
   now: string,
+  callerAuthor: string | undefined,
 ): Promise<{
   projectedReady: ActionableEntry[];
   ranking: Awaited<
@@ -494,7 +498,7 @@ async function rankReadyEntriesWithRelevance(
       structuralReady.map((entry) => entry.item),
       statusRegistry,
       now,
-      process.env.PM_AUTHOR,
+      callerAuthor ?? process.env.PM_AUTHOR,
     ),
   );
   const readyById = new Map(
@@ -583,6 +587,7 @@ export async function runNext(
     childrenByParent,
     statusRegistry,
     now,
+    options.callerAuthor,
   );
 
   const readyRows = projectedReady.map((entry, index) =>

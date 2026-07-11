@@ -6,26 +6,28 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,concurrency,multi-agent
 created_at: "2026-07-11T03:05:51.194Z"
-updated_at: "2026-07-11T19:44:11.123Z"
-closed_at: "2026-07-11T19:44:10.091Z"
+updated_at: "2026-07-11T20:06:39.489Z"
+closed_at: "2026-07-11T20:06:38.761Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "pm claim --next accepts the full pm next candidate-filter set (type/tag/priority/assignee-filter/parent/sprint/release) and scopes ranking identically to pm next; on losing the claim race, claim --next advances to the next ready candidate under the same lock semantics, bounded by --max-attempts (default documented); exhausting candidates returns a distinct non-error empty result usable in shell while-loops; contracts/completions/docs/MCP schema updated per new-flag wiring checklist; no second command spelling introduced"
 parent: pm-dj98
 risk: medium
 confidence: high
-resolution: claim --next supports filtered bounded walking and an explicit empty if-available result.
-expected_result: "Fleet workers can scope, atomically claim, and stop cleanly when their lane is exhausted."
-actual_result: "Filtered claims walk bounded candidates; --if-available returns available:false and item:null on exhaustion."
+resolution: Atomic selection now preserves explicit caller identity and numeric SDK options across every layer.
+expected_result: SDK and CLI callers receive identical filtered ranking for the requested author and numeric inputs.
+actual_result: callerAuthor reaches relevance scoring; numeric priority/maxAttempts are normalized and validated.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-114v,related,"2026-07-11T03:05:58.665Z",null,null
   pm-eqk0,related,"2026-07-11T03:05:58.665Z",null,null
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-11T18:21:03.289Z",codex-root,"Implementation start: active in one broad PR because GH-509 candidate filters/race walking, GH-513 ready ranking, and decision-needed separation share the public SDK actionability engine, claim transaction, CLI/MCP contracts, and fleet-worker verification. Live all-status search and full item/dependency/comment history confirmed no duplicate lineage; only these three items are active."
   "2026-07-11T18:28:47.199Z",codex-root,"Implementation checkpoint: claim --next now forwards the full candidate-filter set, exposes max-attempts 1..100, walks ranked race losses, and is available through PmClient.claimNext/top-level claimNext/MCP. Focused typecheck and command suites pass after contract updates."
   "2026-07-11T19:28:24.443Z",codex-root,"Final evidence: focused command/SDK suites pass; full repository coverage passes 5550/5550 at exact 100% statements, branches, functions, and lines; pnpm lint passes ESLint, zero jscpd clones, static quality, 100% docstrings, and token-budget gates; contracts, docs/skills, secret scan, and dependency audit pass. Fresh packed-package temp workspace proves filtered rank 1 selection and bounded atomic claim return the same task."
   "2026-07-11T19:29:31.126Z",codex-root,Final self-review found the exhaustion AC was only throwing or returning a held-item shape. Reopened this item alone to add the explicit --if-available empty success envelope before shipping.
   "2026-07-11T19:44:09.297Z",codex-root,"Exhaustion completion evidence: --if-available now returns available:false, item:null, skipped:true, recommendation:null after zero candidates or a fully-held walk; focused SDK/claim suites pass and full coverage remains 5550/5550 at exact 100/100/100/100."
+  "2026-07-11T20:03:14.500Z",codex-root,"Bot review start: Greptile found callerAuthor was not threaded into relevance scoring; Gemini found numeric maxAttempts/priority SDK inputs could be dropped. Reopened for fixes."
+  "2026-07-11T20:06:37.323Z",codex-root,"Review fixes implemented: explicit callerAuthor now drives relevance affinity; numeric maxAttempts and priority inputs survive SDK/MCP dispatch; ClaimNextOptions documents the 1..100 bound; focused 253-test bundle and strict lint/static gates pass."
 files[6]{path,scope,note}:
   src/cli/commands/claim.ts,project,bounded atomic candidate walk
   src/cli/commands/next.ts,project,shared ranked actionability and decision separation contract
@@ -38,5 +40,5 @@ tests[1]{command,scope,timeout_seconds}:
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI fleet-worker contract
   docs/SDK.md,project,SDK selection primitive documentation
-close_reason: "Completed filtered bounded atomic claim-next, including the non-error empty exhaustion envelope."
+close_reason: Completed review fixes for explicit author affinity and numeric SDK selection inputs.
 body: ""

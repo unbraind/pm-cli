@@ -80,6 +80,7 @@ describe("runClaim/runRelease", () => {
   it("validates the bounded claim-next candidate walk", () => {
     expect(parseClaimNextAttempts(undefined)).toBe(10);
     expect(parseClaimNextAttempts("4")).toBe(4);
+    expect(parseClaimNextAttempts(4)).toBe(4);
     expect(() => parseClaimNextAttempts("0")).toThrow(/1 to 100/);
     expect(() => parseClaimNextAttempts("101")).toThrow(/1 to 100/);
     expect(() => parseClaimNextAttempts("1.5")).toThrow(/1 to 100/);

@@ -636,6 +636,12 @@ export type PmClientFullMutationOptions = Omit<
   "fullChangedFields" | "idOnly"
 >;
 
+/** Options for atomic next-work selection. `maxAttempts` accepts 1 through 100 inclusive and is validated at runtime for both numeric SDK input and CLI-style strings. */
+export interface ClaimNextOptions extends PmClientFullMutationOptions {
+  /** Maximum ranked candidates to attempt, from 1 through 100 inclusive. */
+  maxAttempts?: number | string;
+}
+
 /**
  * Stable defaults applied by {@link PmClient} to every action it runs.
  */
@@ -1182,7 +1188,7 @@ export class PmClient {
 
   /** Atomically claim the highest-ranked available item using the public next-work filters. */
   claimNext(
-    options: PmClientFullMutationOptions = {},
+    options: ClaimNextOptions = {},
   ): Promise<ClaimNextResult> {
     return this.runTyped("claim", {
       next: true,
@@ -1800,7 +1806,7 @@ export function claim(
 
 /** Atomically select and claim ranked work without constructing a reusable client. */
 export function claimNext(
-  options: PmClientFullMutationOptions = {},
+  options: ClaimNextOptions = {},
   clientOptions: PmClientOptions = {},
 ): Promise<ClaimNextResult> {
   return new PmClient(clientOptions).claimNext(options);

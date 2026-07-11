@@ -542,7 +542,8 @@ treats dangling dependency ids as unresolved blockers. Human-gated decisions
 remain visible in `decision_needed` but stay outside the agent-ready queue unless
 the caller explicitly opts in. `PmClient.claimNext()` and top-level `claimNext()`
 compose the same ranking result and atomic claim mutation, accept the next-work
-filters, and bound race-loss candidate walking with `maxAttempts`, so custom SDK
+filters, and bound the race-loss candidate walk with `maxAttempts` (1 through
+100 inclusive), so custom SDK
 tools do not need to reproduce CLI concurrency policy.
 
 Lifecycle convenience methods and the matching top-level functions (`create`,

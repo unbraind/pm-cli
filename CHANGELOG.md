@@ -8,8 +8,8 @@
 
 ### Fixed
 
-- GH-509: pm claim --next lacks candidate filters and race-loss walk — thread next filters + advance to next candidate ([pm-fjxm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fjxm.toon))
 - pm next / claim --next treat human-gated Decision items as claimable agent work — agent lanes can claim ADRs they must never resolve ([pm-eqk0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eqk0.toon))
+- GH-509: pm claim --next lacks candidate filters and race-loss walk — thread next filters + advance to next candidate ([pm-fjxm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fjxm.toon))
 - GH-513: pm next ready\[\] documented as ranked but not priority-ordered; no rank/score exposed ([pm-1mwk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1mwk.toon))
 - Fix red main coverage gate: measure-agent-token-surface.mjs landed without a covering spec ([pm-ksca](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ksca.toon))
 - GH-508: dedupe LegacyNoneCollectionNormalizer tables duplicated between create.ts and update.ts (CodeFactor) ([pm-zuw8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zuw8.toon))

@@ -511,8 +511,7 @@ async function runClaimAction(
   const lifecycleOptions = {
     ...buildLifecycleMutationOptions(options),
     ifAvailable: options.ifAvailable === true,
-    maxAttempts:
-      typeof options.maxAttempts === "string" ? options.maxAttempts : undefined,
+    maxAttempts: options.maxAttempts as string | number | undefined,
   };
   requireClaimTarget(id, options.next === true);
   const result =
@@ -524,8 +523,7 @@ async function runClaimAction(
           {
             type: typeof options.type === "string" ? options.type : undefined,
             tag: typeof options.tag === "string" ? options.tag : undefined,
-            priority:
-              typeof options.priority === "string" ? options.priority : undefined,
+            priority: options.priority as string | number | undefined,
             assigneeFilter:
               typeof options.assigneeFilter === "string"
                 ? options.assigneeFilter

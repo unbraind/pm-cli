@@ -509,6 +509,7 @@ export {
   type SearchHitHighlight,
   type SearchMatchMode,
   type SearchOptions,
+  type ClaimNextOptions,
   type SearchResult,
   type SearchResultItem,
   type SearchVerboseResult,

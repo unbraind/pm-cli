@@ -19,6 +19,9 @@ import { resolveAuthor } from "../../core/shared/author.js";
 import { wrapOwnershipConflict } from "./annotation-command.js";
 import { runNext, type NextRecommendation, type NextOptions } from "./next.js";
 
+/** Stable warning/error code for an exhausted atomic next-work walk. */
+export const NO_AVAILABLE_NEXT_ITEM_CODE = "no_available_next_item";
+
 /** Documents the claim result payload exchanged by command, SDK, and package integrations. */
 export interface ClaimResult {
   /** Value that configures or reports item for this contract. */
@@ -64,7 +67,7 @@ export interface ClaimNextUnavailableResult {
   /** Number of ranked candidates attempted. */
   attempts: number;
   /** Stable machine-readable exhaustion warning. */
-  warnings: ["no_available_next_item"];
+  warnings: [typeof NO_AVAILABLE_NEXT_ITEM_CODE];
 }
 
 /** Result of a successful or deliberately empty atomic next-work claim. */
@@ -109,7 +112,7 @@ export interface ClaimMutationOptions {
   /** Value that configures or reports if available for this contract. */
   ifAvailable?: boolean;
   /** Maximum ranked candidates attempted by `claim --next`. */
-  maxAttempts?: string;
+  maxAttempts?: string | number;
 }
 
 /** Documents the release mutation options payload exchanged by command, SDK, and package integrations. */
@@ -235,7 +238,7 @@ export async function runClaimNext(
 }
 
 /** Parses the bounded candidate walk used by `claim --next`. */
-export function parseClaimNextAttempts(raw: string | undefined): number {
+export function parseClaimNextAttempts(raw: string | number | undefined): number {
   if (raw === undefined) return 10;
   const parsed = Number(raw);
   if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > 100) {
@@ -281,14 +284,14 @@ export async function claimNextFromRecommendations(
       skipped: true,
       recommendation: null,
       attempts,
-      warnings: ["no_available_next_item"],
+      warnings: [NO_AVAILABLE_NEXT_ITEM_CODE],
     };
   }
   throw new PmCliError(
     "No actionable item remained available to claim",
     EXIT_CODE.CONFLICT,
     {
-      code: "no_available_next_item",
+      code: NO_AVAILABLE_NEXT_ITEM_CODE,
       why: "Every ranked candidate was claimed by another agent before this atomic selection completed.",
       nextSteps: [
         "Run pm claim --next again to refresh the ranked candidate set.",
