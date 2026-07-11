@@ -78,6 +78,12 @@ describe("init tracker-path guardrails", () => {
 
       const discovered = context.runCli(["context", "--json"], { expectJson: true, cwd: workspaceRoot });
       expect(discovered.code).toBe(0);
+
+      const nested = path.join(workspaceRoot, "nested");
+      await mkdir(nested, { recursive: true });
+      const nestedInit = context.runCli(["init", "--json", "--yes"], { expectJson: true, cwd: nested });
+      expect(nestedInit.code).toBe(0);
+      await expect(readFile(path.join(nested, ".gitignore"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 

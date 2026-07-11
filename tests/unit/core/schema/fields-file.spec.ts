@@ -46,6 +46,8 @@ describe("normalizeAddFieldInput", () => {
     expect(() => normalizeAddFieldInput({ key: "status" })).toThrow(/collides with built-in item metadata/);
     expect(() => normalizeAddFieldInput({ key: "customer-impact" })).toThrow(/collides with built-in item metadata/);
     expect(() => normalizeAddFieldInput({ key: "expected_result" })).toThrow(/Reserved fields:.*expected_result/);
+    expect(() => normalizeAddFieldInput({ key: "comments" })).toThrow(/Reserved fields:.*comments/);
+    expect(normalizeAddFieldInput({ key: "severity" }).key).toBe("severity");
   });
 
   it("rejects an invalid type", () => {

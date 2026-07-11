@@ -995,14 +995,12 @@ async function ensureInitTypeDirectories(params: {
 function resolveInitWorkspaceRoot(
   target: InitTargetResolution,
 ): string | undefined {
-  if (target.workspace_root) {
-    return target.workspace_root;
-  }
   const trackerRoot = path.resolve(target.tracker_root);
   const agentsRoot = path.dirname(trackerRoot);
-  return path.basename(trackerRoot) === "pm" && path.basename(agentsRoot) === ".agents"
-    ? path.dirname(agentsRoot)
-    : undefined;
+  if (path.basename(trackerRoot) === "pm" && path.basename(agentsRoot) === ".agents") {
+    return path.dirname(agentsRoot);
+  }
+  return target.workspace_root;
 }
 
 async function maybeInstallInitBundledPackages(

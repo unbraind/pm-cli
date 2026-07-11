@@ -12,6 +12,7 @@ import type {
   RuntimeFieldDefinition,
   RuntimeFieldType,
 } from "../../types/index.js";
+import { FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 
 export type {
   RuntimeFieldCommand,
@@ -37,6 +38,7 @@ const RUNTIME_FIELD_COMMAND_SET = new Set<string>(RUNTIME_FIELD_COMMAND_VALUES);
 
 /** Built-in front-matter field names a custom field key must never shadow. A custom key that collides with one of these would let `pm create --<key>` write over reserved metadata, so add-field rejects them up front (symmetric with the built-in-type guard in item-types-file.ts). */
 export const BUILTIN_FIELD_KEYS: ReadonlySet<string> = new Set([
+  ...FRONT_MATTER_KEY_ORDER.filter((key) => key !== "severity"),
   "id",
   "title",
   "type",
@@ -61,29 +63,6 @@ export const BUILTIN_FIELD_KEYS: ReadonlySet<string> = new Set([
   "resolution",
   "expected",
   "actual",
-  "acceptance_criteria",
-  "actual_result",
-  "affected_version",
-  "blocked_by",
-  "blocked_reason",
-  "close_reason",
-  "component",
-  "customer_impact",
-  "definition_of_ready",
-  "environment",
-  "estimated_minutes",
-  "expected_result",
-  "fixed_version",
-  "goal",
-  "impact",
-  "objective",
-  "outcome",
-  "regression",
-  "reporter",
-  "repro_steps",
-  "unblock_note",
-  "value",
-  "why_now",
 ]);
 
 /** The default commands a field is wired onto when `--commands` is omitted, matching the runtime default in runtime-schema.ts (normalizeRuntimeFieldDefinition). */
