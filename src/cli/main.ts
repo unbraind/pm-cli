@@ -394,7 +394,10 @@ function inferMissingFieldsForRecovery(
   invocationArgv: string[],
   existingRecovery: PmCliErrorRecoveryPayload | undefined,
 ): string[] | undefined {
-  if (existingRecovery?.suggested_retry) {
+  if (
+    existingRecovery?.suggested_retry ||
+    rawMessage.includes("failed in extension handler (")
+  ) {
     return undefined;
   }
   const providedFields = extractProvidedOptionFlags(invocationArgv);
@@ -406,6 +409,36 @@ function inferMissingFieldsForRecovery(
     (flag) => !providedSet.has(normalizeLongOptionFlag(flag) ?? flag),
   );
   return trulyMissing && trulyMissing.length > 0 ? trulyMissing : undefined;
+}
+
+function extensionFlagTakesValueForInvocation(
+  invocationArgv: string[],
+  commandName: string | undefined,
+  normalizedMissing: string | undefined,
+  descriptors = activeRuntimeExtensionCommandDescriptors,
+): boolean | undefined {
+  if (!commandName || !normalizedMissing) {
+    return undefined;
+  }
+  const commandTokens = invocationArgv.slice(invocationArgv.indexOf(commandName));
+  const descriptor = [...descriptors.entries()]
+    .filter(([path]) =>
+      path
+        .split(" ")
+        .every((token, index) => commandTokens[index] === token),
+    )
+    .sort(([left], [right]) => right.length - left.length)[0]?.[1];
+  const flag = descriptor?.flags.find(
+    (candidate) =>
+      candidate.long === normalizedMissing ||
+      candidate.short === normalizedMissing,
+  );
+  if (!flag) {
+    return undefined;
+  }
+  return (
+    typeof flag.value_name === "string" && flag.value_name.trim().length > 0
+  );
 }
 
 function resolveRecoverySuggestedRetry(
@@ -432,8 +465,13 @@ function resolveRecoverySuggestedRetry(
         option.flags.split(/[ ,|]+/).includes(normalizedMissing),
       )
     : undefined;
+  const extensionFlagTakesValue = extensionFlagTakesValueForInvocation(
+    invocationArgv,
+    commandName,
+    normalizedMissing,
+  );
   const missingTokens = normalizedMissing
-    ? missingOption?.isBoolean() === true
+    ? missingOption?.isBoolean() === true || extensionFlagTakesValue === false
       ? [normalizedMissing]
       : [normalizedMissing, "<value>"]
     : [];
@@ -1786,6 +1824,43 @@ async function loadRuntimeExtensionDiscoverySnapshot(
   }
 }
 
+function buildCanonicalExtensionAliases(
+  handlers: ReadonlyArray<{
+    command: string;
+    layer: "project" | "global";
+    name: string;
+  }>,
+  definitions: ReadonlyArray<{
+    command: string;
+    layer: "project" | "global";
+    name: string;
+  }>,
+): Map<string, string> {
+  const aliases = new Map<string, string>();
+  for (const handler of handlers) {
+    const alias = normalizeExtensionCommandPath(handler.command);
+    for (const definition of definitions) {
+      if (
+        definition.layer !== handler.layer ||
+        definition.name !== handler.name
+      ) {
+        continue;
+      }
+      const canonical = normalizeExtensionCommandPath(definition.command);
+      const parts = canonical.split(" ");
+      const action = parts.at(-1);
+      if (
+        action &&
+        alias === `${parts[0]}-${action} ${parts.slice(1).join(" ")}`
+      ) {
+        aliases.set(alias, canonical);
+        break;
+      }
+    }
+  }
+  return aliases;
+}
+
 async function loadRuntimeExtensionSnapshot(
   pmRoot: string,
   probe?: RuntimeExtensionActivationProbe,
@@ -1828,10 +1903,15 @@ async function loadRuntimeExtensionSnapshot(
     const commandFlagHelp = collectDynamicExtensionFlagHelpByCommand(
       activationResult.registrations.flags,
     );
+    const canonicalAliases = buildCanonicalExtensionAliases(
+      activationResult.commands.handlers,
+      activationResult.registrations.commands,
+    );
     const commandDescriptors = collectExtensionCommandHelpDescriptors(
       commandHandlers,
       activationResult.registrations.commands,
       activationResult.registrations.flags,
+      canonicalAliases,
     );
     const snapshot: RuntimeExtensionSnapshot = {
       hooks: activationResult.hooks,
@@ -3567,6 +3647,7 @@ export const _testOnly = {
   buildBootstrapActivationProbe,
   buildPostActionTelemetryOutcome,
   buildPmCliRecoveryContext,
+  buildCanonicalExtensionAliases,
   buildRuntimeExtensionDiscoverySnapshotCacheKey,
   buildRuntimeExtensionActivationScope,
   buildRuntimeExtensionSnapshotCacheKey,
@@ -3596,6 +3677,7 @@ export const _testOnly = {
   extensionActivationCommands,
   extensionCapabilities,
   extensionNeedsActivationForProbe,
+  extensionFlagTakesValueForInvocation,
   extensionProvidesTemplatesRuntime,
   hasAnyCapability,
   handleGenericRunPmCliError,

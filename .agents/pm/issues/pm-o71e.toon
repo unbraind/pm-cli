@@ -2,11 +2,12 @@ id: pm-o71e
 title: "GH-505: nested extension failures suggest irrelevant missing flags instead of preserving tracker recovery"
 description: "When an extension command internally invokes another pm command and the nested command fails with a typed error (observed: tracker_not_initialized from 'list-all --limit 10000' inside pm-todos import against an uninitialized --pm-path), the outer command_failed envelope invents an unrelated missing option from the NESTED invocation: missing=['--limit'] + suggested_retry appending '--limit <value>' to the user's todos-import command line. --limit is not an importer flag and cannot fix the failure; the correct recovery (init or fix --pm-path) was already present in the nested error and gets discarded. Agents follow structured suggested_retry verbatim — this sends them toward an invalid command instead of the storage fix. Expected: preserve the nested typed error code/recovery when wrapping extension failures; never infer top-level missing flags from a nested command's fields; omit missing/suggested_retry unless the option belongs to the user-invoked command's contract."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[5]: agent-ux,cli,error-recovery,extensions,gh-issue
 created_at: "2026-07-11T02:49:52.213Z"
-updated_at: "2026-07-11T02:49:52.213Z"
+updated_at: "2026-07-11T05:52:23.737Z"
+assignee: codex-root
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "Wrapped extension failures preserve the nested typed error code and recovery verbatim; missing/suggested_retry only ever reference options in the user-invoked command's contract; repro (todos import against uninitialized --pm-path) yields tracker_not_initialized recovery, not --limit; regression test covers nested-failure wrapping; GH-505 closed with a comment linking the fix"
@@ -14,4 +15,14 @@ risk: medium
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-gdi7,related,"2026-07-11T02:49:52.213Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-07-11T04:45:43.644Z",codex-root,"Implementation start: bundled with GH-503/504/505/507 because flattened aliases, bare importer/exporter contracts, nested typed recovery, and boolean retry arity share extension registration and structured-error surfaces. Duplicate check used pm search --status all; closed prior extension SDK work remains closed."
+  "2026-07-11T04:48:28.830Z",codex-root,"Pause note: root cause investigation reached structured recovery assembly in src/cli/main.ts, but no verified patch is recorded yet. Item remains open and unclaimed."
+  "2026-07-11T05:05:09.028Z",codex-root,"Implementation checkpoint: contract and recovery patches are in the working tree; pnpm typecheck, pnpm lint, and focused CLI/extension suites pass. The first full coverage run was invalidated by a shared-state test and stopped after the test was rewritten as a pure helper assertion; full 100% coverage, temp installed-package proof, Greptile, commit/PR, and review loops remain required. Returning to open and releasing claim because work is paused."
+  "2026-07-11T05:52:23.737Z",codex-root,"Verification evidence: pnpm lint passed (ESLint, zero jscpd clones, static quality and token-budget gates); full coverage passed 5532/5532 with exact 100% statements/branches/functions/lines. Fresh installed-package proof packed @unbrained/pm-cli@2026.7.10, installed it into /tmp/pm-extension-contract-proof, initialized a tracker, installed a TypeScript importer/exporter extension with omitted options, verified generated [file] help, successful positional import, healthy activation, and synthesized command contracts in extension describe."
+files[2]{path,scope,note}:
+  src/cli/main.ts,project,extension-aware structured recovery fidelity
+  tests/unit/cli/cli-main-errors.spec.ts,project,nested extension recovery regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/extensions/extension-loader.spec.ts,project,240
 body: ""

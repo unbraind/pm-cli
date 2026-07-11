@@ -329,11 +329,25 @@ function collectExtensionHelpCommandSet(
   return commandSet;
 }
 
+/** Resolve the canonical nested command behind an auto-generated flattened
+ * extension alias such as `csv-export export` -> `csv export`. Package authors
+ * should not have to duplicate command metadata merely because a compatibility
+ * alias was registered by the host package. */
+function resolveFlattenedAliasDescriptor(
+  commandPath: string,
+  definitionsByCommand: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+  canonicalAliases: ReadonlyMap<string, string>,
+): ExtensionCommandHelpDescriptor | undefined {
+  const canonical = canonicalAliases.get(commandPath);
+  return canonical ? definitionsByCommand.get(canonical) : undefined;
+}
+
 /** Implements collect extension command help descriptors for the public runtime surface of this module. */
 export function collectExtensionCommandHelpDescriptors(
   commandHandlers: string[],
   commandDefinitions: RegisteredExtensionCommandDefinition[],
   flagRegistrations: RegisteredExtensionFlagDefinitions[],
+  canonicalAliases: ReadonlyMap<string, string> = new Map(),
 ): Map<string, ExtensionCommandHelpDescriptor> {
   const definitionsByCommand =
     collectExtensionDefinitionsByCommand(commandDefinitions);
@@ -348,11 +362,21 @@ export function collectExtensionCommandHelpDescriptors(
     left.localeCompare(right),
   );
   for (const commandPath of sortedCommands) {
-    const definition = definitionsByCommand.get(commandPath);
-    const flags = flagsByCommand.get(commandPath) ?? [];
+    const definition =
+      definitionsByCommand.get(commandPath) ??
+      resolveFlattenedAliasDescriptor(
+        commandPath,
+        definitionsByCommand,
+        canonicalAliases,
+      );
+    const flags =
+      flagsByCommand.get(commandPath) ??
+      (definition ? flagsByCommand.get(definition.command) : undefined) ??
+      [];
     if (definition) {
       descriptors.set(commandPath, {
         ...definition,
+        command: commandPath,
         flags,
       });
       continue;

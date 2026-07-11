@@ -521,6 +521,45 @@ describe("extension loader", () => {
     expect([...descriptors.keys()]).toEqual(["tools export"]);
   });
 
+  it("inherits canonical contracts for flattened extension aliases", () => {
+    const descriptors = collectExtensionCommandHelpDescriptors(
+      ["csv-export export"],
+      [{
+        layer: "project",
+        name: "csv",
+        command: "csv export",
+        action: "export",
+        examples: ["pm csv export"],
+        failure_hints: [],
+        arguments: [{ name: "file", required: false }],
+      }],
+      [{ target_command: "csv export", flags: [{ long: "--output", value_name: "path" }] }],
+      new Map([["csv-export export", "csv export"]]),
+    );
+
+    expect(descriptors.get("csv-export export")).toMatchObject({
+      command: "csv-export export",
+      action: "export",
+      arguments: [{ name: "file", required: false }],
+      flags: [{ long: "--output", value_name: "path" }],
+    });
+
+    const unrelated = collectExtensionCommandHelpDescriptors(
+      ["hot-reload reload"],
+      [{
+        layer: "project",
+        name: "other",
+        command: "hot reload",
+        action: "reload",
+        examples: [],
+        failure_hints: [],
+        arguments: [],
+      }],
+      [],
+    );
+    expect(unrelated.get("hot-reload reload")?.source).toBeUndefined();
+  });
+
   it("discovers deterministic effective extension order with project precedence", async () => {
     await withTempPmPath(async (context) => {
       const roots = resolveExtensionRoots(context.pmPath);
@@ -3187,7 +3226,7 @@ describe("extension loader", () => {
     expect(activation.failed).toEqual([]);
     expect(activation.warnings).toEqual([]);
     expect(activation.registration_counts).toEqual({
-      commands: 0,
+      commands: 2,
       flags: 1,
       item_fields: 1,
       migrations: 1,
@@ -3203,7 +3242,10 @@ describe("extension loader", () => {
       "beads jsonl import",
       "todos markdown export",
     ]);
-    expect(activation.registrations.commands).toEqual([]);
+    expect(activation.registrations.commands).toEqual([
+      expect.objectContaining({ command: "beads jsonl import" }),
+      expect.objectContaining({ command: "todos markdown export" }),
+    ]);
     expect(activation.registrations.flags).toEqual([
       {
         layer: "project",
