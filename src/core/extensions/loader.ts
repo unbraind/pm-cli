@@ -2846,23 +2846,25 @@ class ExtensionApiRegistrar implements ExtensionApi {
     commandPath: string,
     options: ImportExportRegistrationOptions | undefined,
   ): void {
-    const resolvedOptions: ImportExportRegistrationOptions = options ?? {
-      description: `${method === "registerImporter" ? "Import" : "Export"} items with the registered extension adapter.`,
-      arguments: [
-        {
-          name: "file",
-          required: false,
-          description: "Optional input or output file path.",
-        },
-      ],
-    };
     if (
-      typeof resolvedOptions !== "object" ||
-      resolvedOptions === null ||
-      Array.isArray(resolvedOptions)
+      options !== undefined &&
+      (typeof options !== "object" || options === null || Array.isArray(options))
     ) {
       throw new TypeError(`${method} options must be an object when provided`);
     }
+    const defaultDescription = `${method === "registerImporter" ? "Import" : "Export"} items with the registered extension adapter.`;
+    const defaultArguments = [
+      {
+        name: "file",
+        required: false,
+        description: "Optional input or output file path.",
+      },
+    ];
+    const resolvedOptions: ImportExportRegistrationOptions = {
+      ...options,
+      description: options?.description ?? defaultDescription,
+      arguments: options?.arguments ?? defaultArguments,
+    };
     assertOptionalStringField(`${method} options.action`, resolvedOptions.action);
     assertOptionalStringField(
       `${method} options.description`,

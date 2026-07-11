@@ -3426,11 +3426,8 @@ describe("extension loader", () => {
                   ],
                 },
               );
-              // Minimal metadata (description only) defaults action from the command path
-              // and omits the absent flags/intent fields.
-              api.registerExporter("jsonl", () => ({ ok: true }), {
-                description: "Export pm items to JSONL.",
-              });
+              // An empty metadata object still receives the usable default contract.
+              api.registerExporter("jsonl", () => ({ ok: true }), {});
             },
           },
         },
@@ -3448,6 +3445,7 @@ describe("extension loader", () => {
       {
         layer: "project",
         name: "registration-rich",
+        source_package: undefined,
         command: "jsonl import",
         action: "jsonl-import",
         examples: ["pm jsonl import --file source.jsonl"],
@@ -3463,14 +3461,20 @@ describe("extension loader", () => {
         action: "jsonl-export",
         examples: [],
         failure_hints: [],
-        arguments: [],
-        description: "Export pm items to JSONL.",
+        arguments: [
+          {
+            name: "file",
+            description: "Optional input or output file path.",
+          },
+        ],
+        description: "Export items with the registered extension adapter.",
       },
     ]);
     expect(activation.registrations.flags).toEqual([
       {
         layer: "project",
         name: "registration-rich",
+        source_package: undefined,
         target_command: "jsonl import",
         flags: [
           {

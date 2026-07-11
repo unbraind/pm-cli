@@ -137,7 +137,7 @@ export function extensionFlagTakesValueForInvocation(
   if (!commandName || !normalizedMissing) {
     return undefined;
   }
-  const commandIndex = invocationArgv.indexOf(commandName);
+  const commandIndex = invocationArgv.lastIndexOf(commandName);
   if (commandIndex < 0) {
     return undefined;
   }

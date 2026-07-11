@@ -457,6 +457,12 @@ describe("CLI main error helpers", () => {
       descriptors,
     )).toBe(false);
     expect(extensionFlagTakesValueForInvocation(
+      ["--name", "todos", "todos", "sync"],
+      "todos",
+      "--allow-empty",
+      descriptors,
+    )).toBe(false);
+    expect(extensionFlagTakesValueForInvocation(
       ["todos", "sync"],
       "todos",
       "--source",
