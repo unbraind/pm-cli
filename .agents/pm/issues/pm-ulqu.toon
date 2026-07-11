@@ -1,0 +1,18 @@
+id: pm-ulqu
+title: "GH-519: close recovery bundle suggests --validate-close \"<value>\" for an enum flag and hides the real resolution-fields blocker"
+description: ""
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,"area:cli",gh-issue
+created_at: "2026-07-11T22:55:46.032Z"
+updated_at: "2026-07-11T22:55:46.032Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "suggested_retry renders enum-valued flags with allowed values inline (--validate-close <off|warn|strict>) instead of a generic <value> placeholder; when strict close validation blocks a close, the FIRST error surfaces missing resolution/expected_result/actual_result with a suggested pm update retry carrying those flags; regression specs cover both the enum rendering and the blocker-first ordering; agent reaches the actionable error in 1 invocation instead of 3"
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-6y58,related,"2026-07-11T22:55:46.032Z",null,null
+  pm-9qcr,related,"2026-07-11T22:55:46.032Z",null,null
+body: "GH-519 (open, enhancement + agent-experience labels, pm 2026.7.11). With governance-require-close-reason + strict close validation, pm close on an item lacking resolution fields emits missing: --validate-close and suggested_retry ... --validate-close \"<value>\". Two defects: (1) --validate-close is a mode enum (off|warn|strict) but renders as a free-text placeholder, so following the suggestion is GUARANTEED to fail with Invalid --validate-close mode; (2) the stated gap misdirects — the real blocker (missing resolution, expected_result, actual_result) only surfaces after two failed retries; three invocations to reach the actionable error. This is the third member of the placeholder-ignores-flag-value-domain family: GH-500/pm-6y58 fixed the BOOLEAN arity literally, GH-507/pm-9qcr fixed extension-contract boolean arity, this is the ENUM domain — recovery rendering still has no notion of a flag's value domain. Consider fixing the class (render from the flag's declared contract domain) rather than a third point patch; pm-srns uniform-output-contract territory is adjacent."

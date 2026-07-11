@@ -1,0 +1,15 @@
+id: pm-x2vx
+title: "GH-515: pm test --add reorders linked tests — --only-last can execute a non-newest command"
+description: ""
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,"area:cli",gh-issue
+created_at: "2026-07-11T22:54:55.183Z"
+updated_at: "2026-07-11T22:54:55.183Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: pm test --add appends deterministically so the newly added test is the tail entry (or an explicit --only-newest selector is added and documented); regression spec reproduces the 4-add reorder from GH-515 (ONE/TWO/THREE/NEWEST) and asserts --only-last runs the just-added command; docs state the selector semantics explicitly
+risk: medium
+confidence: high
+body: "GH-515 (open, filed 2026-07-11 against pm 2026.7.5, extension-free repro with isolated PM_PATH/PM_GLOBAL_PATH). Adding four tests via pm test <id> --add command=\"echo ONE|TWO|THREE|NEWEST\" yields stored order NEWEST,ONE,THREE,TWO — --add places the new command at index 1 while --only-last picks the tail, so 'run the test I just added' executes a stale command instead. Bite: agents add a temporary/safe command then --run --only-last and get an unintended older command (issue author hit a stale provider probe). Fix directions from the issue: (1) make --add append-stable, or (2) add --only-newest/--only-added-last and document that --only-last means last-in-stored-order. Prefer (1): append-stable storage is the least-surprise contract and keeps --only-last meaning both 'tail' and 'newest'."
