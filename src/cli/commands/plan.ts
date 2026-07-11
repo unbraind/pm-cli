@@ -2040,10 +2040,17 @@ async function createMaterializedStepItems(params: {
     }
     const segments = name
       .trim()
+      .replaceAll(/([a-z0-9])([A-Z])/g, "$1 $2")
       .replaceAll(/[^A-Za-z0-9]+/g, " ")
       .split(/\s+/)
       .filter(Boolean)
       .map((segment) => segment.toLowerCase());
+    if (segments.length === 0) {
+      throw new PmCliError(
+        `Invalid --field entry "${specification}"; expected name=value`,
+        EXIT_CODE.USAGE,
+      );
+    }
     const [first, ...rest] = segments;
     materializeFields[
       `${first}${rest.map((segment) => `${segment.slice(0, 1).toUpperCase()}${segment.slice(1)}`).join("")}`

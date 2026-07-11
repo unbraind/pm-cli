@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import { createScriptHarness } from "../../helpers/scriptModule";
@@ -26,7 +27,10 @@ function normalize(filePath: string): string {
 }
 
 /** Resolve a mocked absolute path to the longest matching repo-relative key. */
-function resolveKey(files: Record<string, JsonValue>, filePath: string): string | null {
+function resolveKey(
+  files: Record<string, JsonValue>,
+  filePath: string,
+): string | null {
   const normalized = normalize(filePath);
   const matches = Object.keys(files).filter(
     (key) => normalized === key || normalized.endsWith(`/${key}`),
@@ -41,9 +45,18 @@ function resolveKey(files: Record<string, JsonValue>, filePath: string): string 
 function inSyncFiles(): Record<string, JsonValue> {
   return {
     "package.json": { name: "@unbrained/pm-cli", version: ROOT_VERSION },
-    "packages/pm-alpha/package.json": { name: "@unbrained/pm-alpha", version: ROOT_VERSION },
-    "plugins/pm-claude/.claude-plugin/plugin.json": { name: "pm-claude", version: ROOT_VERSION },
-    "plugins/pm-codex/.codex-plugin/plugin.json": { name: "pm-codex", version: ROOT_VERSION },
+    "packages/pm-alpha/package.json": {
+      name: "@unbrained/pm-alpha",
+      version: ROOT_VERSION,
+    },
+    "plugins/pm-claude/.claude-plugin/plugin.json": {
+      name: "pm-claude",
+      version: ROOT_VERSION,
+    },
+    "plugins/pm-codex/.codex-plugin/plugin.json": {
+      name: "pm-codex",
+      version: ROOT_VERSION,
+    },
     ".claude-plugin/marketplace.json": {
       name: "pm",
       metadata: { version: ROOT_VERSION },
@@ -59,17 +72,34 @@ function inSyncFiles(): Record<string, JsonValue> {
       // `metadata` without a string `version` and non-object/version-less
       // plugin entries exercise the slot-detection false branches.
       metadata: {},
-      plugins: [null, { name: "pm-codex" }, { name: "pm-claude", version: ROOT_VERSION }],
+      plugins: [
+        null,
+        { name: "pm-codex" },
+        { name: "pm-claude", version: ROOT_VERSION },
+      ],
     },
   };
 }
 
 function driftedFiles(): Record<string, JsonValue> {
   const files = inSyncFiles();
-  files["packages/pm-alpha/package.json"] = { name: "@unbrained/pm-alpha", version: "0.1.0" };
-  (files[".claude-plugin/marketplace.json"] as { metadata: { version: string } }).metadata.version = "1.4.1";
-  (files["marketplace.json"] as { plugins: Array<{ version: string }> }).plugins[0].version = "1.4.1";
-  (files[".agents/plugins/marketplace.json"] as { plugins: Array<{ version?: string } | null> }).plugins[2] = {
+  files["packages/pm-alpha/package.json"] = {
+    name: "@unbrained/pm-alpha",
+    version: "0.1.0",
+  };
+  (
+    files[".claude-plugin/marketplace.json"] as {
+      metadata: { version: string };
+    }
+  ).metadata.version = "1.4.1";
+  (
+    files["marketplace.json"] as { plugins: Array<{ version: string }> }
+  ).plugins[0].version = "1.4.1";
+  (
+    files[".agents/plugins/marketplace.json"] as {
+      plugins: Array<{ version?: string } | null>;
+    }
+  ).plugins[2] = {
     version: "1.1.0",
   };
   return files;
@@ -90,8 +120,15 @@ async function runSyncVersionsScenario(scenario: Scenario) {
     writes.push({ path: normalize(filePath), content });
   });
   const readdirSync = vi.fn(() => scenario.packageDirs);
-  const existsSync = vi.fn((filePath: string) => resolveKey(scenario.files, filePath) !== null);
-  vi.doMock("node:fs", () => ({ existsSync, readdirSync, readFileSync, writeFileSync }));
+  const existsSync = vi.fn(
+    (filePath: string) => resolveKey(scenario.files, filePath) !== null,
+  );
+  vi.doMock("node:fs", () => ({
+    existsSync,
+    readdirSync,
+    readFileSync,
+    writeFileSync,
+  }));
 
   const logs: string[] = [];
   const errors: string[] = [];
@@ -105,7 +142,10 @@ async function runSyncVersionsScenario(scenario: Scenario) {
 
   let failure: unknown = null;
   try {
-    await harness.importModule("scripts/sync-versions.mjs", "syncVersionsScenario");
+    await harness.importModule(
+      "scripts/sync-versions.mjs",
+      "syncVersionsScenario",
+    );
   } catch (error) {
     failure = error;
   }
@@ -121,7 +161,9 @@ describe("scripts/sync-versions: check mode", () => {
       packageDirs: ["pm-alpha", "not-a-package"],
     });
     expect(result.failure).toBeNull();
-    expect(result.logs.join("\n")).toContain(`Version sync check passed (${ROOT_VERSION}).`);
+    expect(result.logs.join("\n")).toContain(
+      `Version sync check passed (${ROOT_VERSION}).`,
+    );
     expect(result.writes).toEqual([]);
   });
 
@@ -134,10 +176,18 @@ describe("scripts/sync-versions: check mode", () => {
     expect(result.failure).toEqual(new Error("EXIT:1"));
     const message = result.errors.join("\n");
     expect(message).toContain(`Version drift from root ${ROOT_VERSION}:`);
-    expect(message).toContain(`packages/pm-alpha/package.json version: 0.1.0 -> ${ROOT_VERSION}`);
-    expect(message).toContain(`.claude-plugin/marketplace.json metadata.version: 1.4.1 -> ${ROOT_VERSION}`);
-    expect(message).toContain(`marketplace.json plugins[0].version: 1.4.1 -> ${ROOT_VERSION}`);
-    expect(message).toContain(`.agents/plugins/marketplace.json plugins[2].version: 1.1.0 -> ${ROOT_VERSION}`);
+    expect(message).toContain(
+      `${path.join("packages", "pm-alpha", "package.json")} version: 0.1.0 -> ${ROOT_VERSION}`,
+    );
+    expect(message).toContain(
+      `.claude-plugin/marketplace.json metadata.version: 1.4.1 -> ${ROOT_VERSION}`,
+    );
+    expect(message).toContain(
+      `marketplace.json plugins[0].version: 1.4.1 -> ${ROOT_VERSION}`,
+    );
+    expect(message).toContain(
+      `.agents/plugins/marketplace.json plugins[2].version: 1.1.0 -> ${ROOT_VERSION}`,
+    );
     expect(message).toContain("pnpm version:sync");
     expect(result.writes).toEqual([]);
   });
@@ -153,7 +203,9 @@ describe("scripts/sync-versions: apply mode", () => {
     expect(result.failure).toBeNull();
     expect(result.logs.join("\n")).toContain(`Stamped ${ROOT_VERSION} into:`);
 
-    const writtenPaths = result.writes.map((write) => write.path.split("/").slice(-1)[0]);
+    const writtenPaths = result.writes.map(
+      (write) => write.path.split("/").slice(-1)[0],
+    );
     expect(result.writes).toHaveLength(4);
     expect(writtenPaths).toContain("package.json");
     expect(writtenPaths).toContain("marketplace.json");
@@ -173,7 +225,9 @@ describe("scripts/sync-versions: apply mode", () => {
       packageDirs: ["pm-alpha"],
     });
     expect(result.failure).toBeNull();
-    expect(result.logs.join("\n")).toContain(`All manifests already at ${ROOT_VERSION}.`);
+    expect(result.logs.join("\n")).toContain(
+      `All manifests already at ${ROOT_VERSION}.`,
+    );
     expect(result.writes).toEqual([]);
   });
 });
@@ -186,7 +240,9 @@ describe("scripts/sync-versions: guard rails", () => {
       packageDirs: [],
     });
     expect(result.failure).toEqual(new Error("EXIT:1"));
-    expect(result.errors.join("\n")).toContain('Unknown command "bump". Use "check" or "apply".');
+    expect(result.errors.join("\n")).toContain(
+      'Unknown command "bump". Use "check" or "apply".',
+    );
   });
 
   it("refuses to propagate a non-date-based root version", async () => {
@@ -198,6 +254,8 @@ describe("scripts/sync-versions: guard rails", () => {
       packageDirs: [],
     });
     expect(result.failure).toEqual(new Error("EXIT:1"));
-    expect(result.errors.join("\n")).toContain('Root package.json version "1.2.3" is not date-based');
+    expect(result.errors.join("\n")).toContain(
+      'Root package.json version "1.2.3" is not date-based',
+    );
   });
 });

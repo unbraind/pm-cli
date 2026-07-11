@@ -1351,6 +1351,36 @@ describe("runPlan command family", () => {
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runPlan({
+          subcommand: "materialize",
+          id: planId,
+          options: {
+            steps: "plan-step-001",
+            field: ["-=invalid"],
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
+          global: { ...GLOBAL, path: context.pmPath },
+        }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      const materialized = await runPlan({
+        subcommand: "materialize",
+        id: planId,
+        options: {
+          steps: "plan-step-001",
+          field: ["acceptanceCriteria=camel case preserved"],
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      const item = context.runCli(
+        ["get", materialized.materialized?.[0]?.id ?? "", "--json"],
+        { expectJson: true },
+      );
+      expect(
+        (item.json as { item: { acceptance_criteria?: string } }).item
+          .acceptance_criteria,
+      ).toBe("camel case preserved");
     });
   });
 
