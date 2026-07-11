@@ -1,0 +1,18 @@
+id: pm-9qcr
+title: "GH-507: recovery suggested_retry appends <value> to missing boolean EXTENSION flags (contract arity ignored)"
+description: "When an extension command throws a structured CommandError whose remediation names a declared boolean flag (SDK command contract declares --allow-empty with no value_name), pm correctly identifies the missing flag but renders it value-taking in recovery.suggested_retry: '--allow-empty \"<value>\"'. Expected bare '--allow-empty'. The flag renders correctly as boolean in help and contract metadata — only recovery suggestion generation ignores the extension contract's arity. This is the extension-contract sibling of GH-500/pm-6y58 (FIXED via PR#502 for built-in flag tables): the arity fix does not consult SDK/extension command contracts. Observed with pm-cli 2026.7.10 + pm-todos 'todos sync'."
+type: Issue
+status: open
+priority: 3
+tags[5]: agent-ux,cli,error-recovery,extensions,gh-issue
+created_at: "2026-07-11T02:50:04.830Z"
+updated_at: "2026-07-11T02:50:04.830Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: suggested_retry consults the active extension/SDK command contract for flag arity; boolean extension flags render bare (--allow-empty) while value-taking extension flags keep the placeholder; repro from GH-507 (todos sync guard failure) yields a suggestion that succeeds verbatim; regression test covers boolean + value extension flags; GH-507 closed with a comment linking the fix
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-6y58,related,"2026-07-11T02:50:04.830Z",null,null
+  pm-o71e,related,"2026-07-11T02:50:04.830Z",null,null
+body: ""

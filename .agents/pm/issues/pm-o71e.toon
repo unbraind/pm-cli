@@ -1,0 +1,17 @@
+id: pm-o71e
+title: "GH-505: nested extension failures suggest irrelevant missing flags instead of preserving tracker recovery"
+description: "When an extension command internally invokes another pm command and the nested command fails with a typed error (observed: tracker_not_initialized from 'list-all --limit 10000' inside pm-todos import against an uninitialized --pm-path), the outer command_failed envelope invents an unrelated missing option from the NESTED invocation: missing=['--limit'] + suggested_retry appending '--limit <value>' to the user's todos-import command line. --limit is not an importer flag and cannot fix the failure; the correct recovery (init or fix --pm-path) was already present in the nested error and gets discarded. Agents follow structured suggested_retry verbatim — this sends them toward an invalid command instead of the storage fix. Expected: preserve the nested typed error code/recovery when wrapping extension failures; never infer top-level missing flags from a nested command's fields; omit missing/suggested_retry unless the option belongs to the user-invoked command's contract."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,cli,error-recovery,extensions,gh-issue
+created_at: "2026-07-11T02:49:52.213Z"
+updated_at: "2026-07-11T02:49:52.213Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "Wrapped extension failures preserve the nested typed error code and recovery verbatim; missing/suggested_retry only ever reference options in the user-invoked command's contract; repro (todos import against uninitialized --pm-path) yields tracker_not_initialized recovery, not --limit; regression test covers nested-failure wrapping; GH-505 closed with a comment linking the fix"
+risk: medium
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-gdi7,related,"2026-07-11T02:49:52.213Z",null,null
+body: ""

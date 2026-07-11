@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[2]: "area:quality",refactor
 created_at: "2026-07-04T08:32:10.019Z"
-updated_at: "2026-07-11T00:02:37.037Z"
+updated_at: "2026-07-11T02:51:12.678Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "search.ts split into rendering, query-parsing, and inline-field modules each under the LOC cap; coverage stays at 100 and search output byte-identical on golden queries."
@@ -16,6 +16,8 @@ confidence: high
 comments[2]{created_at,author,text}:
   "2026-07-10T23:16:46.855Z",codex-gpt5,"Implementation evidence: search rendering extraction remains in the broad docstring bundle; shared list/search timestamp predicates removed the final cross-command clone without changing filter semantics. pnpm typecheck, pnpm lint (0 clones), and focused search/list regression suites passed."
   "2026-07-11T00:02:35.336Z",codex-gpt5,"Scope boundary: this PR extracted search rendering and shared list/search timestamp filtering, reducing duplication to zero, but query-parsing and inline-field extraction remain outstanding and the acceptance target of <=1500 LOC per module is not yet met. Returning the item to open so only actively worked items remain in_progress."
+notes[1]{created_at,author,text}:
+  "2026-07-11T02:51:12.677Z",maintainer-agent,"Scope update after PR#506 (2026-07-11): the rendering slice is PARTIALLY done — search-rendering.ts extracted (137 lines) but search.ts is now 3740 physical / ~3330 effective lines (the static gate now counts only non-empty non-comment lines, changed in PR#506 to avoid penalizing docstrings — title's \"3119/3400\" numbers predate both changes). Effective count sits at ~98% of the 3400 cap, so this file is still one feature away from failing the gate. Remaining scope per PR#506 tracker note: query-parser + inline-field decomposition (keep the two parse layers' order from PR#290 intact). Suggested order: (1) inline field:value layer out first — it is the most self-contained and owns the list.ts:489 cross-file clone site; (2) query parser; (3) sweep remaining render helpers into search-rendering.ts."
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/search-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/commands/list-sort-branches.spec.ts,project,300
 body: "## Context\n2026-07-04 code-quality sweep: src/cli/commands/search.ts is 3119 LOC against the 3400 static-gate LOC cap — one feature away from failing the gate — and carries 4 internal jscpd clones plus a cross-file clone with list.ts:489.\n\n## Approach\nSplit along the natural boundaries that already exist in the file: (1) result rendering, (2) query parsing, (3) inline field:value syntax (the second parse layer from PR#290 — keep the two layers' order intact). Follow the established split playbook (PR#396 cli-contracts, 2026-05-25 all-src <2000 LOC pass): extract modules at the same call position, keep the command's public surface byte-identical, and update vitest.config.ts excludes/mirrored test paths if files move.\n\n## Definition of done\nsearch.ts well under the cap (~≤1500 LOC per module); internal clones gone (jscpd clean at current minTokens); search output byte-identical on a golden query set; coverage gate still 100%."

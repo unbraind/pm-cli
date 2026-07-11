@@ -1,0 +1,17 @@
+id: pm-0mjz
+title: "GH-504: importer/exporter registered without options yields an unusable CLI command (no arg/flag contracts)"
+description: "When an extension registers an importer/exporter with only a handler — api.registerImporter('todos', handler) — and omits the optional options argument, the derived '<name> import'/'<name> export' CLI command is completely unusable: positional args are rejected ('Too many arguments'), every flag is rejected ('Unknown option'), and --help shows no flags and no <file> arg. The same handler works via the SDK/MCP action path (runAction with options). Nothing warns the author at registration, doctor has no diagnostic, and the runtime errors give an agent no actionable hint. Adjacent to GH-503 (pm-s9iu) but a distinct code path: here the CANONICAL derived command of an installed importer/exporter carries no contract at all. Candidate remedies from the issue: pass-through/permissive arg mode for contract-less importer commands, a registration-time or doctor warning, and an error hint pointing at the SDK action path."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,cli,extensions,gh-issue,sdk
+created_at: "2026-07-11T02:49:38.183Z"
+updated_at: "2026-07-11T02:49:38.183Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: Bare importer/exporter registrations produce a usable CLI command (positional file arg + generic flag pass-through) OR registration/doctor surfaces an actionable warning and the runtime error names the missing-options cause and the working SDK action path; regression test covers a handler-only registerImporter fixture; GH-504 closed with a comment linking the fix
+risk: medium
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-s9iu,related,"2026-07-11T02:49:38.183Z",null,null
+body: ""
