@@ -6,11 +6,13 @@ status: open
 priority: 2
 tags[4]: "area:storage",benchmark,performance,scale
 created_at: "2026-07-06T21:24:53.754Z"
-updated_at: "2026-07-06T21:24:53.754Z"
+updated_at: "2026-07-11T10:27:04.255Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "Repeatable script/harness generates synthetic workspaces at 10k/100k/1M items (realistic type/status/tag/parent distribution, history streams included); measures p50/p95 wall time, peak RSS, and output token count for context/next/list/search/get/create/claim; baseline numbers recorded on the epic (pm notes) and in a committed report; harness runs from a clean checkout without touching the real workspace"
 parent: pm-9rxu
 risk: low
 confidence: high
+notes[1]{created_at,author,text}:
+  "2026-07-11T10:27:04.254Z",maintainer-agent,"Slicing (S1-S4), performance-program entry point per pm-9rxu delivery order step 1.\n\nS1 generator (~150m): deterministic seeded synthetic-workspace generator at 10k/100k/1M items. Shape distributions derived from THIS workspace (~1.7k items) scaled up: type mix, status partition (~85% closed at maturity), dep-graph fan-in/out, tag cardinality, history-stream lengths, body sizes. Two write modes: SDK-path (exercises real mutation code, honest but slow - fine to 10k) and direct-layout fast mode for 100k/1M (must produce byte-identical layout; verify with pm validate). Lives in scripts/bench/, runs from clean checkout, never touches the real workspace (withTempPmPath pattern - realpath the root, see pm-dprb).\n\nS2 measurement runner (~120m): per-tier runs of the hot paths (context/next/list/search/get/create/claim) capturing p50/p95 wall time, peak RSS, and output token count (reuse the token-counting approach from the closed pm-cu1i gate). Cold vs warm split matters: first-invocation cost vs memoized reads (~2x warm-read effect, PR#421). Emit one JSON report artifact per tier.\n\nS3 published baseline (~60m): commit the report under docs/ + record headline numbers as a note on pm-9rxu; declare per-tier budgets (e.g. context p95 and token ceiling at 1M items) - budgets are the epic's success metric, numbers before optimization.\n\nS4 regression gate (~120m): 10k tier in PR CI (seconds), 100k/1M tiers nightly; fail on budget regression beyond tolerance band. Nightly is the sole oracle for the big tiers (same pattern as the macOS matrix gap, GH-510).\n\nSequencing: S1+S2 are spike-able now with zero deps; S3/S4 gate everything downstream (pm-801d index, pm-dfg0 pagination, pm-0qg5 fan-out, pm-lvyd claim throughput all need before/after numbers). Risk: synthetic-shape realism - mitigated by deriving distributions from the real workspace rather than inventing them."
 body: ""

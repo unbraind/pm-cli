@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags[4]: claude-plugin,distribution,dx,mcp
 created_at: "2026-07-11T10:05:12.199Z"
-updated_at: "2026-07-11T10:19:45.696Z"
+updated_at: "2026-07-11T10:24:44.561Z"
 author: maintainer-agent
+estimated_minutes: 240
 acceptance_criteria: "Marketplace/cache install serves MCP tools via in-process import from ${CLAUDE_PLUGIN_DATA} install (no npx at server start; offline after first session); SessionStart hook uses the same pinned local install instead of npx @latest; DONE via pm-hxsv (2026-07-11): plugin/marketplace/package versions are date-based and release-automation keeps them in lockstep with the root package (scripts/sync-versions.mjs apply in pipeline + version:check CI gate); duplicate version fields retained deliberately but always identical; Plugin ships a package.json pinning @unbrained/pm-cli to the exact version the snapshot was built against, so served tools match the plugin's skills/commands; Smoke test exercises the installed/cache layout (no dist/ ancestor) and asserts the native path, not the npx fallback; docs/CLAUDE_CODE_PLUGIN.md and plugin README updated to match actual resolution behavior"
 value: "Restores the plugin's core promise (native, offline-capable, version-coherent) for every external marketplace user"
 why_now: Verified against official docs as of 2026-07-11; gap widens with every daily npm release while plugin.json stays at 1.4.1
