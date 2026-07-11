@@ -26,14 +26,22 @@ import type {
  */
 
 /** Dedupe + sort a string list: trim, drop blanks, unique, locale-sorted. */
-export function normalizeItemTypeStringList(values: string[] | undefined): string[] {
-  return [...new Set((values ?? []).map((value) => value.trim()).filter((value) => value.length > 0))].sort(
-    (left, right) => left.localeCompare(right),
-  );
+export function normalizeItemTypeStringList(
+  values: string[] | undefined,
+): string[] {
+  return [
+    ...new Set(
+      (values ?? [])
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
 }
 
 /** Normalize one type-option definition, or null when its key is blank. */
-export function normalizeItemTypeOption(option: ItemTypeOptionDefinition): ItemTypeOptionDefinition | null {
+export function normalizeItemTypeOption(
+  option: ItemTypeOptionDefinition,
+): ItemTypeOptionDefinition | null {
   const key = option.key.trim();
   if (key.length === 0) {
     return null;
@@ -45,27 +53,21 @@ export function normalizeItemTypeOption(option: ItemTypeOptionDefinition): ItemT
     values: normalizeItemTypeStringList(option.values),
     required: option.required === true ? true : undefined,
     aliases: aliases.length > 0 ? aliases : undefined,
-    description: description && description.length > 0 ? description : undefined,
+    description:
+      description && description.length > 0 ? description : undefined,
   };
 }
 
-/**
- * Resolves a raw policy `command` value to the canonical "create"/"update" type,
- * or null to drop the policy. Lets each layer plug in its own strictness.
- */
-export type ResolvePolicyCommand = (command: string) => ItemTypeCommandOptionPolicy["command"] | null;
+/** Resolves a raw policy `command` value to the canonical "create"/"update" type, or null to drop the policy. Lets each layer plug in its own strictness. */
+export type ResolvePolicyCommand = (
+  command: string,
+) => ItemTypeCommandOptionPolicy["command"] | null;
 
-/**
- * Pass-through resolver used by settings persistence: the value is already typed
- * "create" | "update" by the settings validator, so it is kept verbatim.
- */
+/** Pass-through resolver used by settings persistence: the value is already typed "create" | "update" by the settings validator, so it is kept verbatim. */
 export const keepPolicyCommand: ResolvePolicyCommand = (command) =>
   command as ItemTypeCommandOptionPolicy["command"];
 
-/**
- * Strict resolver used by the runtime registry: trims + lowercases and rejects
- * anything other than "create"/"update".
- */
+/** Strict resolver used by the runtime registry: trims + lowercases and rejects anything other than "create"/"update". */
 export const strictPolicyCommand: ResolvePolicyCommand = (command) => {
   const normalized = command.trim().toLowerCase();
   return normalized === "create" || normalized === "update" ? normalized : null;
@@ -100,11 +102,17 @@ export function normalizeItemTypeCommandOptionPolicies(
 ): ItemTypeCommandOptionPolicy[] {
   const dedupedByKey = new Map<string, ItemTypeCommandOptionPolicy>();
   for (const policy of policies ?? []) {
-    const normalized = normalizeItemTypeCommandOptionPolicy(policy, resolvePolicyCommand);
+    const normalized = normalizeItemTypeCommandOptionPolicy(
+      policy,
+      resolvePolicyCommand,
+    );
     if (!normalized) {
       continue;
     }
-    dedupedByKey.set(`${normalized.command}:${normalized.option.toLowerCase()}`, normalized);
+    dedupedByKey.set(
+      `${normalized.command}:${normalized.option.toLowerCase()}`,
+      normalized,
+    );
   }
   return [...dedupedByKey.values()].sort((left, right) =>
     left.command === right.command
@@ -113,9 +121,7 @@ export function normalizeItemTypeCommandOptionPolicies(
   );
 }
 
-/**
- * Documents the normalize item type definition options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the normalize item type definition options payload exchanged by command, SDK, and package integrations. */
 export interface NormalizeItemTypeDefinitionOptions {
   /** How to resolve a raw policy `command` value (defaults to {@link keepPolicyCommand}). */
   resolvePolicyCommand?: ResolvePolicyCommand;
@@ -145,16 +151,20 @@ export function normalizeItemTypeDefinition(
   definition: ItemTypeDefinition,
   options: NormalizeItemTypeDefinitionOptions = {},
 ): ItemTypeDefinition | null {
-  const resolvePolicyCommand = options.resolvePolicyCommand ?? keepPolicyCommand;
+  const resolvePolicyCommand =
+    options.resolvePolicyCommand ?? keepPolicyCommand;
   const name = definition.name.trim();
   if (name.length === 0) {
     return null;
   }
 
-  const hasRequiredCreateFields = definition.required_create_fields !== undefined;
-  const hasRequiredCreateRepeatables = definition.required_create_repeatables !== undefined;
+  const hasRequiredCreateFields =
+    definition.required_create_fields !== undefined;
+  const hasRequiredCreateRepeatables =
+    definition.required_create_repeatables !== undefined;
   const hasOptions = definition.options !== undefined;
-  const hasCommandOptionPolicies = definition.command_option_policies !== undefined;
+  const hasCommandOptionPolicies =
+    definition.command_option_policies !== undefined;
 
   const aliases = normalizeItemTypeStringList(definition.aliases);
   const normalizedOptions = (definition.options ?? [])
@@ -172,12 +182,17 @@ export function normalizeItemTypeDefinition(
     default_status: optionalNonEmptyString(definition.default_status),
     folder: optionalNonEmptyString(definition.folder),
     aliases: aliases.length > 0 ? aliases : undefined,
-    required_create_fields: normalizeOptionalStringList(definition.required_create_fields, hasRequiredCreateFields),
+    required_create_fields: normalizeOptionalStringList(
+      definition.required_create_fields,
+      hasRequiredCreateFields,
+    ),
     required_create_repeatables: normalizeOptionalStringList(
       definition.required_create_repeatables,
       hasRequiredCreateRepeatables,
     ),
     options: hasOptions ? normalizedOptions : undefined,
-    command_option_policies: hasCommandOptionPolicies ? commandOptionPolicies : undefined,
+    command_option_policies: hasCommandOptionPolicies
+      ? commandOptionPolicies
+      : undefined,
   };
 }

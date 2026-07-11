@@ -5,8 +5,11 @@
  */
 import { decode as decodeToon } from "@toon-format/toon";
 
-export const TOON_SCALAR_BRACKET_ESCAPE_UPSTREAM_PR = "https://github.com/toon-format/toon/pull/314" as const;
+/** Public contract for toon scalar bracket escape upstream pr, shared by SDK and presentation-layer consumers. */
+export const TOON_SCALAR_BRACKET_ESCAPE_UPSTREAM_PR =
+  "https://github.com/toon-format/toon/pull/314" as const;
 
+/** Public contract for toon scalar bracket escape tracking, shared by SDK and presentation-layer consumers. */
 export const TOON_SCALAR_BRACKET_ESCAPE_TRACKING = {
   dependency: "@toon-format/toon",
   affected_versions: "<=2.3.0",
@@ -15,9 +18,7 @@ export const TOON_SCALAR_BRACKET_ESCAPE_TRACKING = {
     "Remove escapeBracketsInQuotedScalars retry once the upstream strict decoder fix ships in a released @toon-format/toon version and this repository upgrades to it.",
 } as const;
 
-/**
- * Documents the toon decode result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the toon decode result payload exchanged by command, SDK, and package integrations. */
 export interface ToonDecodeResult {
   /** The decoded TOON document. */
   value: unknown;
@@ -55,7 +56,11 @@ function escapeBracketsInQuotedScalars(content: string): string {
     .map((line) => {
       const separatorIndex = line.indexOf(": ");
       const bracketIndex = line.indexOf("[");
-      if (separatorIndex === -1 || bracketIndex === -1 || bracketIndex < separatorIndex) {
+      if (
+        separatorIndex === -1 ||
+        bracketIndex === -1 ||
+        bracketIndex < separatorIndex
+      ) {
         return line;
       }
       const key = line.slice(0, separatorIndex + 2);

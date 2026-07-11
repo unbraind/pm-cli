@@ -22,12 +22,10 @@ import type { RawAddFieldInput } from "../schema/fields-file.js";
 import type { TypeWorkflowDefinition } from "../../types.js";
 import { TYPE_PRESET_DEFINITIONS } from "../schema/type-presets.js";
 
-/**
- * Repeatable create-flag values used to stage a profile template. Mirrors the
- * stored-template option shape (`Record<flag, string | string[]>`) accepted by
- * `pm templates save` without importing the CLI module into core.
- */
-export type ProfileTemplateOptions = Readonly<Record<string, string | readonly string[]>>;
+/** Repeatable create-flag values used to stage a profile template. Mirrors the stored-template option shape (`Record<flag, string | string[]>`) accepted by `pm templates save` without importing the CLI module into core. */
+export type ProfileTemplateOptions = Readonly<
+  Record<string, string | readonly string[]>
+>;
 
 /**
  * A single nested-settings knob a profile stages during apply. The `key` is a
@@ -44,10 +42,7 @@ export interface ProfileConfigEntry {
   summary: string;
 }
 
-/**
- * A named create template a profile stages into `<pmRoot>/templates/<name>.json`
- * so operators can immediately `pm create --template <name>`.
- */
+/** A named create template a profile stages into `<pmRoot>/templates/<name>.json` so operators can immediately `pm create --template <name>`. */
 export interface ProfileTemplateEntry {
   /** Template name (matches the `pm templates` naming rules). */
   name: string;
@@ -55,11 +50,7 @@ export interface ProfileTemplateEntry {
   options: ProfileTemplateOptions;
 }
 
-/**
- * A package the profile recommends but never auto-installs. Apply surfaces these
- * as advisory `pm package install` hints, keeping profile application offline and
- * side-effect-free with respect to the package registry.
- */
+/** A package the profile recommends but never auto-installs. Apply surfaces these as advisory `pm package install` hints, keeping profile application offline and side-effect-free with respect to the package registry. */
 export interface ProfilePackageRecommendation {
   /** Catalog alias or install spec, e.g. `templates` or `npm:@unbrained/pm-templates`. */
   spec: string;
@@ -67,10 +58,7 @@ export interface ProfilePackageRecommendation {
   reason: string;
 }
 
-/**
- * The complete declarative definition of a project profile. Every dimension is
- * optional-by-emptiness: an empty array simply stages nothing for that surface.
- */
+/** The complete declarative definition of a project profile. Every dimension is optional-by-emptiness: an empty array simply stages nothing for that surface. */
 export interface ProjectProfileDefinition {
   /** Stable lowercase profile identifier, e.g. `agile`. */
   name: string;
@@ -106,17 +94,15 @@ export interface ProjectProfileDefinition {
  * while a complete definition (a built-in or `defineProjectProfile`-typed value)
  * also satisfies it.
  */
-export type ProjectProfileRegistrationInput = Pick<ProjectProfileDefinition, "name" | "title"> &
+export type ProjectProfileRegistrationInput = Pick<
+  ProjectProfileDefinition,
+  "name" | "title"
+> &
   Partial<Omit<ProjectProfileDefinition, "name" | "title">>;
 
-/**
- * Ordered list of first-party profile names. Drives CLI help, completion,
- * contracts, and the `pm profile list` ordering.
- */
+/** Ordered list of first-party profile names. Drives CLI help, completion, contracts, and the `pm profile list` ordering. */
 export const PROFILE_NAMES = ["agile", "ops", "research"] as const;
-/**
- * Restricts profile name values accepted by command, SDK, and storage contracts.
- */
+/** Restricts profile name values accepted by command, SDK, and storage contracts. */
 export type ProfileName = (typeof PROFILE_NAMES)[number];
 
 /**
@@ -130,14 +116,16 @@ export const BUILTIN_PROFILES: Record<ProfileName, ProjectProfileDefinition> = {
   agile: {
     name: "agile",
     title: "Agile delivery",
-    summary: "Story/Spike delivery with a review stage, story points, and acceptance ownership.",
+    summary:
+      "Story/Spike delivery with a review stage, story points, and acceptance ownership.",
     types: TYPE_PRESET_DEFINITIONS.agile,
     statuses: [
       {
         id: "review",
         roles: ["active"],
         aliases: ["in-review"],
-        description: "Work is implementation-complete and awaiting peer review.",
+        description:
+          "Work is implementation-complete and awaiting peer review.",
       },
     ],
     fields: [
@@ -152,7 +140,8 @@ export const BUILTIN_PROFILES: Record<ProfileName, ProjectProfileDefinition> = {
         key: "acceptance_owner",
         type: "string",
         commands: ["create", "update", "list"],
-        description: "Stakeholder accountable for accepting the delivered story.",
+        description:
+          "Stakeholder accountable for accepting the delivered story.",
         aliases: ["acceptor"],
       },
     ],
@@ -170,8 +159,17 @@ export const BUILTIN_PROFILES: Record<ProfileName, ProjectProfileDefinition> = {
       },
     ],
     config: [
-      { key: "search_provider", value: "bm25", summary: "Offline BM25 lexical search works without an embedding service." },
-      { key: "search_max_results", value: "20", summary: "Sprint-sized result cap for quick triage." },
+      {
+        key: "search_provider",
+        value: "bm25",
+        summary:
+          "Offline BM25 lexical search works without an embedding service.",
+      },
+      {
+        key: "search_max_results",
+        value: "20",
+        summary: "Sprint-sized result cap for quick triage.",
+      },
     ],
     templates: [
       {
@@ -180,21 +178,29 @@ export const BUILTIN_PROFILES: Record<ProfileName, ProjectProfileDefinition> = {
           type: "Story",
           priority: "2",
           tags: "story",
-          acceptanceCriteria: "Story delivers the stated user outcome with tests and docs updated.",
+          acceptanceCriteria:
+            "Story delivers the stated user outcome with tests and docs updated.",
           body: "## As a\n\n## I want\n\n## So that\n\n## Acceptance\n- [ ] \n",
         },
       },
     ],
     packages: [
-      { spec: "templates", reason: "Reusable create templates for recurring story shapes." },
+      {
+        spec: "templates",
+        reason: "Reusable create templates for recurring story shapes.",
+      },
       { spec: "calendar", reason: "Sprint and iteration scheduling views." },
-      { spec: "search-advanced", reason: "Richer retrieval as the backlog grows." },
+      {
+        spec: "search-advanced",
+        reason: "Richer retrieval as the backlog grows.",
+      },
     ],
   },
   ops: {
     name: "ops",
     title: "Operations",
-    summary: "Incident/Runbook response with mitigation and monitoring stages, severity, and service fields.",
+    summary:
+      "Incident/Runbook response with mitigation and monitoring stages, severity, and service fields.",
     types: TYPE_PRESET_DEFINITIONS.ops,
     statuses: [
       {
@@ -207,7 +213,8 @@ export const BUILTIN_PROFILES: Record<ProfileName, ProjectProfileDefinition> = {
         id: "monitoring",
         roles: ["active"],
         aliases: ["observing"],
-        description: "Mitigation applied; monitoring for recurrence before closure.",
+        description:
+          "Mitigation applied; monitoring for recurrence before closure.",
       },
     ],
     fields: [
@@ -215,7 +222,8 @@ export const BUILTIN_PROFILES: Record<ProfileName, ProjectProfileDefinition> = {
         key: "severity",
         type: "string",
         commands: ["create", "update", "list"],
-        description: "Incident severity classification (e.g. sev1, sev2, sev3).",
+        description:
+          "Incident severity classification (e.g. sev1, sev2, sev3).",
         aliases: ["sev"],
       },
       {
@@ -239,8 +247,16 @@ export const BUILTIN_PROFILES: Record<ProfileName, ProjectProfileDefinition> = {
       },
     ],
     config: [
-      { key: "search_provider", value: "bm25", summary: "Offline BM25 lexical search for fast incident lookup." },
-      { key: "search_max_results", value: "25", summary: "Wider result cap to surface related incidents and runbooks." },
+      {
+        key: "search_provider",
+        value: "bm25",
+        summary: "Offline BM25 lexical search for fast incident lookup.",
+      },
+      {
+        key: "search_max_results",
+        value: "25",
+        summary: "Wider result cap to surface related incidents and runbooks.",
+      },
     ],
     templates: [
       {
@@ -249,21 +265,30 @@ export const BUILTIN_PROFILES: Record<ProfileName, ProjectProfileDefinition> = {
           type: "Incident",
           priority: "1",
           tags: "incident",
-          acceptanceCriteria: "Service restored, root cause documented, and follow-ups filed.",
+          acceptanceCriteria:
+            "Service restored, root cause documented, and follow-ups filed.",
           body: "## Impact\n\n## Timeline\n\n## Root cause\n\n## Mitigation\n\n## Follow-ups\n",
         },
       },
     ],
     packages: [
-      { spec: "lifecycle-hooks", reason: "Automate transitions and notifications on incident state changes." },
-      { spec: "governance-audit", reason: "Audit incident metadata completeness and closure quality." },
+      {
+        spec: "lifecycle-hooks",
+        reason:
+          "Automate transitions and notifications on incident state changes.",
+      },
+      {
+        spec: "governance-audit",
+        reason: "Audit incident metadata completeness and closure quality.",
+      },
       { spec: "calendar", reason: "On-call and follow-up scheduling." },
     ],
   },
   research: {
     name: "research",
     title: "Research",
-    summary: "Experiment/Hypothesis investigation with an analysis stage, hypothesis, and method fields.",
+    summary:
+      "Experiment/Hypothesis investigation with an analysis stage, hypothesis, and method fields.",
     types: TYPE_PRESET_DEFINITIONS.research,
     statuses: [
       {
@@ -284,7 +309,8 @@ export const BUILTIN_PROFILES: Record<ProfileName, ProjectProfileDefinition> = {
         key: "method",
         type: "string",
         commands: ["create", "update", "list"],
-        description: "Experimental method or protocol used to evaluate the hypothesis.",
+        description:
+          "Experimental method or protocol used to evaluate the hypothesis.",
         aliases: ["protocol"],
       },
     ],
@@ -302,8 +328,17 @@ export const BUILTIN_PROFILES: Record<ProfileName, ProjectProfileDefinition> = {
       },
     ],
     config: [
-      { key: "search_provider", value: "bm25", summary: "Offline BM25 lexical search across the research corpus." },
-      { key: "search_max_results", value: "50", summary: "Broader recall cap for literature and prior-experiment discovery." },
+      {
+        key: "search_provider",
+        value: "bm25",
+        summary: "Offline BM25 lexical search across the research corpus.",
+      },
+      {
+        key: "search_max_results",
+        value: "50",
+        summary:
+          "Broader recall cap for literature and prior-experiment discovery.",
+      },
     ],
     templates: [
       {
@@ -312,15 +347,25 @@ export const BUILTIN_PROFILES: Record<ProfileName, ProjectProfileDefinition> = {
           type: "Experiment",
           priority: "2",
           tags: "experiment",
-          acceptanceCriteria: "Hypothesis is supported, rejected, or refined with recorded evidence.",
+          acceptanceCriteria:
+            "Hypothesis is supported, rejected, or refined with recorded evidence.",
           body: "## Hypothesis\n\n## Method\n\n## Results\n\n## Conclusion\n",
         },
       },
     ],
     packages: [
-      { spec: "search-advanced", reason: "Semantic retrieval over experiments and findings." },
-      { spec: "templates", reason: "Consistent experiment and hypothesis scaffolds." },
-      { spec: "beads", reason: "Import structured prior work into the tracker." },
+      {
+        spec: "search-advanced",
+        reason: "Semantic retrieval over experiments and findings.",
+      },
+      {
+        spec: "templates",
+        reason: "Consistent experiment and hypothesis scaffolds.",
+      },
+      {
+        spec: "beads",
+        reason: "Import structured prior work into the tracker.",
+      },
     ],
   },
 };
@@ -331,7 +376,9 @@ export const BUILTIN_PROFILES: Record<ProfileName, ProjectProfileDefinition> = {
  * unknown name; CLI layers map it to a USAGE exit code. Accepts hyphen/underscore
  * and casing variations for ergonomics, mirroring {@link normalizeTypePresetName}.
  */
-export function normalizeProfileName(rawValue: string | undefined): ProfileName | undefined {
+export function normalizeProfileName(
+  rawValue: string | undefined,
+): ProfileName | undefined {
   if (rawValue === undefined) {
     return undefined;
   }
@@ -344,17 +391,23 @@ export function normalizeProfileName(rawValue: string | undefined): ProfileName 
   if ((PROFILE_NAMES as readonly string[]).includes(normalized)) {
     return normalized as ProfileName;
   }
-  throw new Error(`Invalid profile "${rawValue}". Allowed: ${PROFILE_NAMES.join(", ")}.`);
+  throw new Error(
+    `Invalid profile "${rawValue}". Allowed: ${PROFILE_NAMES.join(", ")}.`,
+  );
 }
 
 /**
  * Resolves a built-in profile definition by validated name. Throws (via
  * {@link normalizeProfileName}) when the name is missing or unknown.
  */
-export function resolveProfile(rawValue: string | undefined): ProjectProfileDefinition {
+export function resolveProfile(
+  rawValue: string | undefined,
+): ProjectProfileDefinition {
   const name = normalizeProfileName(rawValue);
   if (name === undefined) {
-    throw new Error(`Profile name is required. Allowed: ${PROFILE_NAMES.join(", ")}.`);
+    throw new Error(
+      `Profile name is required. Allowed: ${PROFILE_NAMES.join(", ")}.`,
+    );
   }
   return BUILTIN_PROFILES[name];
 }
@@ -367,15 +420,10 @@ export function listProfiles(): ProjectProfileDefinition[] {
   return PROFILE_NAMES.map((name) => BUILTIN_PROFILES[name]);
 }
 
-/**
- * Whether a resolved profile is core-baked or contributed by an active extension.
- */
+/** Whether a resolved profile is core-baked or contributed by an active extension. */
 export type ProfileSourceKind = "builtin" | "extension";
 
-/**
- * A profile definition paired with where it came from, returned by the merged
- * `pm profile` resolution so callers can label a profile's origin.
- */
+/** A profile definition paired with where it came from, returned by the merged `pm profile` resolution so callers can label a profile's origin. */
 export interface ResolvedProfile {
   /** The profile definition. */
   definition: ProjectProfileDefinition;
@@ -435,7 +483,9 @@ export function normalizeProfileLookupKey(rawValue: string): string {
   return rawValue.trim().toLowerCase().replaceAll("-", "_");
 }
 
-function formatAvailableProfileNames(profiles: readonly ResolvedProfile[]): string {
+function formatAvailableProfileNames(
+  profiles: readonly ResolvedProfile[],
+): string {
   return profiles.map((entry) => entry.definition.name).join(", ");
 }
 
@@ -459,7 +509,9 @@ export function resolveProfileCatalog(
     definition: BUILTIN_PROFILES[name],
     source: "builtin" as const,
   }));
-  const builtinKeys = new Set<string>(PROFILE_NAMES.map((name) => normalizeProfileLookupKey(name)));
+  const builtinKeys = new Set<string>(
+    PROFILE_NAMES.map((name) => normalizeProfileLookupKey(name)),
+  );
   const seen = new Set<string>(builtinKeys);
   const warnings: string[] = [];
   for (const contribution of contributions) {
@@ -477,7 +529,11 @@ export function resolveProfileCatalog(
       continue;
     }
     seen.add(key);
-    profiles.push({ definition: contribution.profile, source: "extension", package: contribution.name });
+    profiles.push({
+      definition: contribution.profile,
+      source: "extension",
+      package: contribution.name,
+    });
   }
   return { profiles, warnings };
 }
@@ -498,12 +554,18 @@ export function resolveProfileEntry(
   // primitive slipping in from an untyped JS caller or parsed payload — so the
   // `.trim()` below never throws.
   if (typeof rawValue !== "string" || rawValue.trim().length === 0) {
-    throw new Error(`Profile name is required. Allowed: ${formatAvailableProfileNames(profiles)}.`);
+    throw new Error(
+      `Profile name is required. Allowed: ${formatAvailableProfileNames(profiles)}.`,
+    );
   }
   const key = normalizeProfileLookupKey(rawValue);
-  const match = profiles.find((entry) => normalizeProfileLookupKey(entry.definition.name) === key);
+  const match = profiles.find(
+    (entry) => normalizeProfileLookupKey(entry.definition.name) === key,
+  );
   if (match === undefined) {
-    throw new Error(`Invalid profile "${rawValue}". Allowed: ${formatAvailableProfileNames(profiles)}.`);
+    throw new Error(
+      `Invalid profile "${rawValue}". Allowed: ${formatAvailableProfileNames(profiles)}.`,
+    );
   }
   return { resolved: match, warnings };
 }

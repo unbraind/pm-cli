@@ -38,7 +38,10 @@ import { createSerialQueue } from "../core/shared/serial-queue.js";
 import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
-import { normalizeListOptions, normalizeUpdateOptions } from "../cli/registration-helpers.js";
+import {
+  normalizeListOptions,
+  normalizeUpdateOptions,
+} from "../cli/registration-helpers.js";
 import { UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "./cli-contracts/commander-mutation-options.js";
 import type { PmToolAction } from "./cli-contracts/enum-contracts.js";
 import {
@@ -118,7 +121,10 @@ import {
 import type { ContextOptions, ContextResult } from "../cli/commands/context.js";
 import type { GetOptions, GetResult } from "../cli/commands/get.js";
 import type { CloseManyCommandOptions } from "../cli/commands/close-many.js";
-import type { AppendCommandOptions, AppendResult } from "../cli/commands/append.js";
+import type {
+  AppendCommandOptions,
+  AppendResult,
+} from "../cli/commands/append.js";
 import type { ClaimResult, ReleaseResult } from "../cli/commands/claim.js";
 import type { CloseResult } from "../cli/commands/close.js";
 import {
@@ -132,22 +138,42 @@ import type { DeleteResult } from "../cli/commands/delete.js";
 import type { ListOptions, ListResult } from "../cli/commands/list.js";
 import type { NextOptions, NextResult } from "../cli/commands/next.js";
 import type { SearchOptions, SearchResult } from "../cli/commands/search.js";
-import type { StatsCommandOptions, StatsResult } from "../cli/commands/stats.js";
+import type {
+  StatsCommandOptions,
+  StatsResult,
+} from "../cli/commands/stats.js";
 import { resolveStartTaskInProgressStatus } from "./start-task-status.js";
 import type { FocusResult } from "../cli/commands/focus.js";
 import type { RestoreResult } from "../cli/commands/restore.js";
 import type { UpdateResult } from "../cli/commands/update.js";
 import type { UpdateManyCommandOptions } from "../cli/commands/update-many.js";
-import type { CommentsCommandOptions, CommentsResult } from "../cli/commands/comments.js";
-import type { ConfigCommandOptions, ConfigResult } from "../cli/commands/config.js";
+import type {
+  CommentsCommandOptions,
+  CommentsResult,
+} from "../cli/commands/comments.js";
+import type {
+  ConfigCommandOptions,
+  ConfigResult,
+} from "../cli/commands/config.js";
 import type { DepsCommandOptions, DepsResult } from "../cli/commands/deps.js";
 import type { DocsCommandOptions, DocsResult } from "../cli/commands/docs.js";
-import type { FilesCommandOptions, FilesDiscoverOptions, FilesDiscoverResult, FilesResult } from "../cli/commands/files.js";
+import type {
+  FilesCommandOptions,
+  FilesDiscoverOptions,
+  FilesDiscoverResult,
+  FilesResult,
+} from "../cli/commands/files.js";
 import type { GcCommandOptions, GcResult } from "../cli/commands/gc.js";
 import type { HealthResult, RunHealthOptions } from "../cli/commands/health.js";
 import type { InitCommandOptions, InitResult } from "../cli/commands/init.js";
-import type { LearningsCommandOptions, LearningsResult } from "../cli/commands/learnings.js";
-import type { NotesCommandOptions, NotesResult } from "../cli/commands/notes.js";
+import type {
+  LearningsCommandOptions,
+  LearningsResult,
+} from "../cli/commands/learnings.js";
+import type {
+  NotesCommandOptions,
+  NotesResult,
+} from "../cli/commands/notes.js";
 import type {
   ProfileApplyCommandOptions,
   ProfileApplyResult,
@@ -182,7 +208,10 @@ import type {
   SchemaShowStatusResult,
   SchemaSubcommand,
 } from "../cli/commands/schema.js";
-import type { ValidateCommandOptions, ValidateResult } from "../cli/commands/validate.js";
+import type {
+  ValidateCommandOptions,
+  ValidateResult,
+} from "../cli/commands/validate.js";
 
 export type {
   ClaimResult,
@@ -201,10 +230,26 @@ export {
   runActiveOnReadHooks,
   runActiveOnWriteHooks,
 } from "../core/extensions/index.js";
-export { pathExists, readFileIfExists, removeFileIfExists, writeFileAtomic } from "../core/fs/fs-utils.js";
-export { appendHistoryEntry, createHistoryEntry } from "../core/history/history.js";
-export { generateItemId, normalizeItemId, normalizeRawItemId } from "../core/item/id.js";
-export { readBooleanOption, readCsvListOption, readStringOption } from "./package-runtime-options.js";
+export {
+  pathExists,
+  readFileIfExists,
+  removeFileIfExists,
+  writeFileAtomic,
+} from "../core/fs/fs-utils.js";
+export {
+  appendHistoryEntry,
+  createHistoryEntry,
+} from "../core/history/history.js";
+export {
+  generateItemId,
+  normalizeItemId,
+  normalizeRawItemId,
+} from "../core/item/id.js";
+export {
+  readBooleanOption,
+  readCsvListOption,
+  readStringOption,
+} from "./package-runtime-options.js";
 export {
   PM_CLI_EXPECTED_ERROR_NAME,
   createPmCliExpectedError,
@@ -262,12 +307,24 @@ export { parseTags } from "../core/item/parse.js";
 export { normalizeStatusInput } from "../core/item/status.js";
 export { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 export { acquireLock } from "../core/lock/lock.js";
-export { resolveRuntimeFieldRegistry, resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
+export {
+  resolveRuntimeFieldRegistry,
+  resolveRuntimeStatusRegistry,
+} from "../core/schema/runtime-schema.js";
 export { EXIT_CODE } from "../core/shared/constants.js";
 export { PmCliError } from "../core/shared/errors.js";
 export { isTimestampLiteral, nowIso } from "../core/shared/time.js";
-export { listAllFrontMatter, locateItem, readLocatedItem } from "../core/store/item-store.js";
-export { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+export {
+  listAllFrontMatter,
+  locateItem,
+  readLocatedItem,
+} from "../core/store/item-store.js";
+export {
+  getHistoryPath,
+  getItemPath,
+  getSettingsPath,
+  resolvePmRoot,
+} from "../core/store/paths.js";
 export { readSettings } from "../core/store/settings.js";
 export {
   runAggregate,
@@ -350,7 +407,11 @@ export {
   type GuideOutputFormat,
   type GuideResult,
 } from "../cli/commands/guide.js";
-export { runCompletion, type CompletionResult, type CompletionShell } from "../cli/commands/completion.js";
+export {
+  runCompletion,
+  type CompletionResult,
+  type CompletionShell,
+} from "../cli/commands/completion.js";
 export {
   runCommentsAudit,
   type CommentsAuditEntry,
@@ -375,8 +436,16 @@ export {
   type DedupeMergeOptions,
   type DedupeMergeResult,
 } from "../cli/commands/dedupe-merge.js";
-export { runNormalize, type NormalizeCommandOptions, type NormalizeResult } from "../cli/commands/normalize.js";
-export { runReindex, type ReindexOptions, type ReindexResult } from "../cli/commands/reindex.js";
+export {
+  runNormalize,
+  type NormalizeCommandOptions,
+  type NormalizeResult,
+} from "../cli/commands/normalize.js";
+export {
+  runReindex,
+  type ReindexOptions,
+  type ReindexResult,
+} from "../cli/commands/reindex.js";
 export {
   loadCreateTemplateOptions,
   runTemplatesList,
@@ -408,7 +477,9 @@ export {
   STATUS_VALUES,
 } from "../types/index.js";
 export type { GlobalOptions } from "../core/shared/command-types.js";
+/** Inputs that customize the package command operation. */
 export type PackageCommandOptions = ExtensionCommandOptions;
+/** Structured result returned by the package command operation. */
 export type PackageCommandResult = ExtensionCommandResult;
 export type {
   Dependency,
@@ -423,34 +494,41 @@ export type {
   PmSettings,
 } from "../types/index.js";
 
-/**
- * Documents the get contracts options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the get contracts options payload exchanged by command, SDK, and package integrations. */
 export interface GetContractsOptions extends ContractsCommandOptions {
+  /** Value that configures or reports pm root for this contract. */
   pmRoot?: string;
+  /** Value that configures or reports cwd for this contract. */
   cwd?: string;
+  /** Value that configures or reports no extensions for this contract. */
   noExtensions?: boolean;
+  /** Value that configures or reports quiet for this contract. */
   quiet?: boolean;
+  /** Value that configures or reports profile for this contract. */
   profile?: boolean;
 }
 
-/**
- * Documents the workspace contracts options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the workspace contracts options payload exchanged by command, SDK, and package integrations. */
 export interface WorkspaceContractsOptions {
+  /** Value that configures or reports extension registrations for this contract. */
   extensionRegistrations?: ExtensionRegistrationRegistry | null;
+  /** Value that configures or reports no extensions for this contract. */
   noExtensions?: boolean;
+  /** Value that configures or reports cwd for this contract. */
   cwd?: string;
 }
 
-/**
- * Documents the workspace contracts payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the workspace contracts payload exchanged by command, SDK, and package integrations. */
 export interface WorkspaceContracts {
+  /** Value that configures or reports types for this contract. */
   types: string[];
+  /** Value that configures or reports statuses for this contract. */
   statuses: string[];
+  /** Lifecycle state reported for openthe record. */
   openStatus: string;
+  /** Lifecycle state reported for closethe record. */
   closeStatus: string;
+  /** Lifecycle state reported for canceledthe record. */
   canceledStatus: string;
 }
 
@@ -459,14 +537,10 @@ export interface WorkspaceContracts {
  */
 export type PmActionName = PmToolAction | (string & {});
 
-/**
- * Plain object option bag forwarded to the same command runners used by MCP.
- */
+/** Plain object option bag forwarded to the same command runners used by MCP. */
 export type PmActionOptions = Record<string, unknown>;
 
-/**
- * Union returned by the generic schema customization helper.
- */
+/** Union returned by the generic schema customization helper. */
 export type SchemaResult =
   | SchemaInspectResult
   | SchemaListResult
@@ -483,33 +557,39 @@ export type SchemaResult =
   | SchemaApplyPresetResult
   | SchemaAddTypeInferResult;
 
-/**
- * Result returned by the SDK `startTask` lifecycle shortcut.
- */
+/** Result returned by the SDK `startTask` lifecycle shortcut. */
 export interface StartTaskResult {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports action for this contract. */
   action: "start_task";
+  /** Value that configures or reports claim for this contract. */
   claim: ClaimResult;
+  /** Value that configures or reports update for this contract. */
   update: UpdateResult;
 }
 
-/**
- * Result returned by the SDK `pauseTask` lifecycle shortcut.
- */
+/** Result returned by the SDK `pauseTask` lifecycle shortcut. */
 export interface PauseTaskResult {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports action for this contract. */
   action: "pause_task";
+  /** Value that configures or reports update for this contract. */
   update: UpdateResult;
+  /** Value that configures or reports release for this contract. */
   release: ReleaseResult;
 }
 
-/**
- * Result returned by the SDK `closeTask` lifecycle shortcut.
- */
+/** Result returned by the SDK `closeTask` lifecycle shortcut. */
 export interface CloseTaskResult {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports action for this contract. */
   action: "close_task";
+  /** Value that configures or reports close for this contract. */
   close: CloseResult;
+  /** Value that configures or reports release for this contract. */
   release: ReleaseResult;
 }
 
@@ -529,34 +609,26 @@ export type PmActionInput = PmActionOptions & {
  * at compile time.
  */
 export type PmClientRunArgs = Omit<PmActionInput, "action"> & {
-  /**
-   * Return full `changed_fields` arrays for mutation actions instead of the
-   * default compact `changed_field_count` projection.
-   */
+  /** Return full `changed_fields` arrays for mutation actions instead of the default compact `changed_field_count` projection. */
   fullChangedFields?: boolean;
   /** Return only mutation item ids when supported by the action. */
   idOnly?: boolean;
   action?: never;
 };
 
-/**
- * Command options accepted by PmClient mutation convenience methods.
- */
+/** Command options accepted by PmClient mutation convenience methods. */
 export type PmClientMutationOptions = PmActionOptions & {
-  /**
-   * Return full `changed_fields` arrays for this mutation instead of the compact
-   * SDK default.
-   */
+  /** Return full `changed_fields` arrays for this mutation instead of the compact SDK default. */
   fullChangedFields?: boolean;
   /** Return only mutation item ids when supported by the action. */
   idOnly?: boolean;
 };
 
-/**
- * Mutation options accepted by typed SDK convenience helpers that always return
- * full command result envelopes.
- */
-export type PmClientFullMutationOptions = Omit<PmClientMutationOptions, "fullChangedFields" | "idOnly">;
+/** Mutation options accepted by typed SDK convenience helpers that always return full command result envelopes. */
+export type PmClientFullMutationOptions = Omit<
+  PmClientMutationOptions,
+  "fullChangedFields" | "idOnly"
+>;
 
 /**
  * Stable defaults applied by {@link PmClient} to every action it runs.
@@ -579,7 +651,9 @@ interface PmClientDefaults {
   noExtensions?: boolean;
 }
 
-function splitFullClientMutationOptions(options: PmClientFullMutationOptions): PmClientRunArgs {
+function splitFullClientMutationOptions(
+  options: PmClientFullMutationOptions,
+): PmClientRunArgs {
   return { fullChangedFields: true, options };
 }
 
@@ -597,145 +671,137 @@ function splitFullClientMutationOptions(options: PmClientFullMutationOptions): P
 export class PmClient {
   private readonly defaults: PmClientDefaults;
 
-  /**
-   * Create a client with workspace, author, and extension-loading defaults.
-   */
+  /** Create a client with workspace, author, and extension-loading defaults. */
   constructor(options: PmClientOptions = {}) {
     this.defaults = {
       ...(options.pmRoot === undefined ? {} : { path: options.pmRoot }),
       ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
       ...(options.author === undefined ? {} : { author: options.author }),
-      ...(options.noExtensions === undefined ? {} : { noExtensions: options.noExtensions }),
+      ...(options.noExtensions === undefined
+        ? {}
+        : { noExtensions: options.noExtensions }),
     };
   }
 
-  /**
-   * Run any native or extension-contributed action through the SDK dispatcher.
-   */
+  /** Run any native or extension-contributed action through the SDK dispatcher. */
   run(action: PmActionName, args: PmClientRunArgs = {}): Promise<unknown> {
     return runAction({ ...this.defaults, ...args, action });
   }
 
-  private runTyped<Result>(action: PmActionName, args: PmClientRunArgs = {}): Promise<Result> {
+  private runTyped<Result>(
+    action: PmActionName,
+    args: PmClientRunArgs = {},
+  ): Promise<Result> {
     return this.run(action, args) as Promise<Result>;
   }
 
-  /**
-   * Return the same context snapshot produced by `pm context`.
-   */
+  /** Return the same context snapshot produced by `pm context`. */
   context(options: ContextOptions = {}): Promise<ContextResult> {
     return this.runTyped("context", { options });
   }
 
-  /**
-   * List items with the MCP/agent compact defaults.
-   */
+  /** List items with the MCP/agent compact defaults. */
   list(options: ListOptions = {}): Promise<ListResult> {
     return this.runTyped("list", { options });
   }
 
-  /**
-   * Search items with the MCP/agent compact defaults.
-   */
+  /** Search items with the MCP/agent compact defaults. */
   search(query: string, options: SearchOptions = {}): Promise<SearchResult> {
     return this.runTyped("search", { query, options });
   }
 
-  /**
-   * Read one item by id.
-   */
+  /** Read one item by id. */
   get(id: string, options: GetOptions = {}): Promise<GetResult> {
     return this.runTyped("get", { id, options });
   }
 
-  /**
-   * Return the ranked next-work recommendation produced by `pm next`.
-   */
+  /** Return the ranked next-work recommendation produced by `pm next`. */
   next(options: NextOptions = {}): Promise<NextResult> {
     return this.runTyped("next", { options });
   }
 
-  /**
-   * Group matching items with the same semantics as `pm aggregate`.
-   */
+  /** Group matching items with the same semantics as `pm aggregate`. */
   aggregate(options: AggregateOptions = {}): Promise<AggregateResult> {
     return this.runTyped("aggregate", { options });
   }
 
-  /**
-   * Return project tracker statistics with the same sections as `pm stats`.
-   */
+  /** Return project tracker statistics with the same sections as `pm stats`. */
   stats(options: StatsCommandOptions = {}): Promise<StatsResult> {
     return this.runTyped("stats", { options });
   }
 
-  /**
-   * List, add, edit, or delete item comments.
-   */
-  comments(id: string, options: CommentsCommandOptions = {}): Promise<CommentsResult> {
+  /** List, add, edit, or delete item comments. */
+  comments(
+    id: string,
+    options: CommentsCommandOptions = {},
+  ): Promise<CommentsResult> {
     return this.runTyped("comments", { id, options });
   }
 
-  /**
-   * List or append private item notes.
-   */
+  /** List or append private item notes. */
   notes(id: string, options: NotesCommandOptions = {}): Promise<NotesResult> {
     return this.runTyped("notes", { id, options });
   }
 
-  /**
-   * List or append durable item learnings.
-   */
-  learnings(id: string, options: LearningsCommandOptions = {}): Promise<LearningsResult> {
+  /** List or append durable item learnings. */
+  learnings(
+    id: string,
+    options: LearningsCommandOptions = {},
+  ): Promise<LearningsResult> {
     return this.runTyped("learnings", { id, options });
   }
 
-  /**
-   * Add, remove, clear, or list linked project files for an item.
-   */
+  /** Add, remove, clear, or list linked project files for an item. */
   files(id: string, options: FilesCommandOptions = {}): Promise<FilesResult> {
     return this.runTyped("files", { id, options });
   }
 
-  /**
-   * Discover and optionally attach changed files for an item.
-   */
-  filesDiscover(id: string, options: FilesDiscoverOptions = {}): Promise<FilesDiscoverResult> {
+  /** Discover and optionally attach changed files for an item. */
+  filesDiscover(
+    id: string,
+    options: FilesDiscoverOptions = {},
+  ): Promise<FilesDiscoverResult> {
     return this.runTyped("files-discover", { id, options });
   }
 
-  /**
-   * Add, remove, clear, or list linked documentation for an item.
-   */
+  /** Add, remove, clear, or list linked documentation for an item. */
   docs(id: string, options: DocsCommandOptions = {}): Promise<DocsResult> {
     return this.runTyped("docs", { id, options });
   }
 
-  /**
-   * Inspect item dependency relationships.
-   */
+  /** Inspect item dependency relationships. */
   deps(id: string, options: DepsCommandOptions = {}): Promise<DepsResult> {
     return this.runTyped("deps", { id, options });
   }
 
-  /**
-   * Append markdown/body text to an item through the mutation pipeline.
-   */
-  append(id: string, body: string, options: PmClientFullMutationOptions = {}): Promise<AppendResult> {
-    return this.runTyped("append", { id, ...splitFullClientMutationOptions({ ...options, body }) });
+  /** Append markdown/body text to an item through the mutation pipeline. */
+  append(
+    id: string,
+    body: string,
+    options: PmClientFullMutationOptions = {},
+  ): Promise<AppendResult> {
+    return this.runTyped("append", {
+      id,
+      ...splitFullClientMutationOptions({ ...options, body }),
+    });
   }
 
-  /**
-   * Initialize a workspace with the same semantics as `pm init`.
-   */
+  /** Initialize a workspace with the same semantics as `pm init`. */
   init(prefix?: string, options: InitCommandOptions = {}): Promise<InitResult> {
-    return this.runTyped("init", { ...(prefix === undefined ? {} : { prefix }), options });
+    return this.runTyped("init", {
+      ...(prefix === undefined ? {} : { prefix }),
+      options,
+    });
   }
 
-  /**
-   * Read or update project/global configuration.
-   */
-  config(scope: string, configAction: string, key?: string, value?: string, options: ConfigCommandOptions = {}): Promise<ConfigResult> {
+  /** Read or update project/global configuration. */
+  config(
+    scope: string,
+    configAction: string,
+    key?: string,
+    value?: string,
+    options: ConfigCommandOptions = {},
+  ): Promise<ConfigResult> {
     return this.runTyped("config", {
       scope,
       configAction,
@@ -745,213 +811,259 @@ export class PmClient {
     });
   }
 
-  /**
-   * Run the schema customization surface.
-   */
-  schema(subcommand: SchemaSubcommand, options: PmActionOptions = {}): Promise<SchemaResult> {
+  /** Run the schema customization surface. */
+  schema(
+    subcommand: SchemaSubcommand,
+    options: PmActionOptions = {},
+  ): Promise<SchemaResult> {
     return this.runTyped("schema", { options: { ...options, subcommand } });
   }
 
-  /**
-   * List built-in, custom, and extension-provided schema types/statuses.
-   */
+  /** List built-in, custom, and extension-provided schema types/statuses. */
   schemaList(): Promise<SchemaListResult> {
     return this.runTyped("schema", { options: { subcommand: "list" } });
   }
 
-  /**
-   * Show a schema item type definition.
-   */
+  /** Show a schema item type definition. */
   schemaShow(name: string): Promise<SchemaShowResult> {
     return this.runTyped("schema", { name, options: { subcommand: "show" } });
   }
 
-  /**
-   * Register or replace a custom item type.
-   */
-  schemaAddType(name: string, options: SchemaAddTypeCommandOptions = {}): Promise<SchemaAddTypeResult> {
-    return this.runTyped("schema", { name, options: { ...options, subcommand: "add-type" } });
+  /** Register or replace a custom item type. */
+  schemaAddType(
+    name: string,
+    options: SchemaAddTypeCommandOptions = {},
+  ): Promise<SchemaAddTypeResult> {
+    return this.runTyped("schema", {
+      name,
+      options: { ...options, subcommand: "add-type" },
+    });
   }
 
-  /**
-   * Remove a custom item type.
-   */
-  schemaRemoveType(name: string, options: SchemaRemoveTypeCommandOptions = {}): Promise<SchemaRemoveTypeResult> {
-    return this.runTyped("schema", { name, options: { ...options, subcommand: "remove-type" } });
+  /** Remove a custom item type. */
+  schemaRemoveType(
+    name: string,
+    options: SchemaRemoveTypeCommandOptions = {},
+  ): Promise<SchemaRemoveTypeResult> {
+    return this.runTyped("schema", {
+      name,
+      options: { ...options, subcommand: "remove-type" },
+    });
   }
 
-  /**
-   * Register or replace a custom status.
-   */
-  schemaAddStatus(name: string, options: SchemaAddStatusCommandOptions = {}): Promise<SchemaAddStatusResult> {
-    return this.runTyped("schema", { name, options: { ...options, subcommand: "add-status" } });
+  /** Register or replace a custom status. */
+  schemaAddStatus(
+    name: string,
+    options: SchemaAddStatusCommandOptions = {},
+  ): Promise<SchemaAddStatusResult> {
+    return this.runTyped("schema", {
+      name,
+      options: { ...options, subcommand: "add-status" },
+    });
   }
 
-  /**
-   * Remove a custom status.
-   */
-  schemaRemoveStatus(name: string, options: SchemaRemoveStatusCommandOptions = {}): Promise<SchemaRemoveStatusResult> {
-    return this.runTyped("schema", { name, options: { ...options, subcommand: "remove-status" } });
+  /** Remove a custom status. */
+  schemaRemoveStatus(
+    name: string,
+    options: SchemaRemoveStatusCommandOptions = {},
+  ): Promise<SchemaRemoveStatusResult> {
+    return this.runTyped("schema", {
+      name,
+      options: { ...options, subcommand: "remove-status" },
+    });
   }
 
-  /**
-   * Register or replace a runtime custom field.
-   */
-  schemaAddField(name: string, options: SchemaAddFieldCommandOptions = {}): Promise<SchemaAddFieldResult> {
-    return this.runTyped("schema", { name, options: { ...options, subcommand: "add-field" } });
+  /** Register or replace a runtime custom field. */
+  schemaAddField(
+    name: string,
+    options: SchemaAddFieldCommandOptions = {},
+  ): Promise<SchemaAddFieldResult> {
+    return this.runTyped("schema", {
+      name,
+      options: { ...options, subcommand: "add-field" },
+    });
   }
 
-  /**
-   * Remove a runtime custom field.
-   */
-  schemaRemoveField(name: string, options: SchemaRemoveFieldCommandOptions = {}): Promise<SchemaRemoveFieldResult> {
-    return this.runTyped("schema", { name, options: { ...options, subcommand: "remove-field" } });
+  /** Remove a runtime custom field. */
+  schemaRemoveField(
+    name: string,
+    options: SchemaRemoveFieldCommandOptions = {},
+  ): Promise<SchemaRemoveFieldResult> {
+    return this.runTyped("schema", {
+      name,
+      options: { ...options, subcommand: "remove-field" },
+    });
   }
 
-  /**
-   * List runtime custom fields.
-   */
+  /** List runtime custom fields. */
   schemaListFields(): Promise<SchemaListFieldsResult> {
     return this.runTyped("schema", { options: { subcommand: "list-fields" } });
   }
 
-  /**
-   * Show one runtime custom field definition.
-   */
+  /** Show one runtime custom field definition. */
   schemaShowField(name: string): Promise<SchemaShowFieldResult> {
-    return this.runTyped("schema", { name, options: { subcommand: "show-field" } });
+    return this.runTyped("schema", {
+      name,
+      options: { subcommand: "show-field" },
+    });
   }
 
-  /**
-   * Apply a built-in type preset to the workspace schema.
-   */
-  schemaApplyPreset(typePreset: string, options: SchemaApplyPresetCommandOptions = {}): Promise<SchemaApplyPresetResult> {
-    return this.runTyped("schema", { typePreset, options: { ...options, subcommand: "apply-preset" } });
+  /** Apply a built-in type preset to the workspace schema. */
+  schemaApplyPreset(
+    typePreset: string,
+    options: SchemaApplyPresetCommandOptions = {},
+  ): Promise<SchemaApplyPresetResult> {
+    return this.runTyped("schema", {
+      typePreset,
+      options: { ...options, subcommand: "apply-preset" },
+    });
   }
 
-  /**
-   * Infer item types from the current tracker and optionally apply them.
-   */
-  schemaInferTypes(options: SchemaAddTypeInferCommandOptions = {}): Promise<SchemaAddTypeInferResult> {
-    return this.runTyped("schema", { options: { ...options, subcommand: "add-type", infer: true } });
+  /** Infer item types from the current tracker and optionally apply them. */
+  schemaInferTypes(
+    options: SchemaAddTypeInferCommandOptions = {},
+  ): Promise<SchemaAddTypeInferResult> {
+    return this.runTyped("schema", {
+      options: { ...options, subcommand: "add-type", infer: true },
+    });
   }
 
-  /**
-   * Show one runtime status definition.
-   */
+  /** Show one runtime status definition. */
   schemaShowStatus(name: string): Promise<SchemaShowStatusResult> {
-    return this.runTyped("schema", { name, options: { subcommand: "show-status" } });
+    return this.runTyped("schema", {
+      name,
+      options: { subcommand: "show-status" },
+    });
   }
 
-  /**
-   * Run the profile customization surface.
-   */
-  profile(subcommand: ProfileSubcommand, options: PmActionOptions = {}): Promise<ProfileResult> {
+  /** Run the profile customization surface. */
+  profile(
+    subcommand: ProfileSubcommand,
+    options: PmActionOptions = {},
+  ): Promise<ProfileResult> {
     return this.runTyped("profile", { options: { ...options, subcommand } });
   }
 
-  /**
-   * List available project profiles.
-   */
+  /** List available project profiles. */
   profileList(): Promise<ProfileListResult> {
     return this.runTyped("profile", { options: { subcommand: "list" } });
   }
 
-  /**
-   * Show a project profile.
-   */
+  /** Show a project profile. */
   profileShow(name: string): Promise<ProfileShowResult> {
     return this.runTyped("profile", { name, options: { subcommand: "show" } });
   }
 
-  /**
-   * Apply a project profile.
-   */
-  profileApply(name: string, options: ProfileApplyCommandOptions = {}): Promise<ProfileApplyResult> {
-    return this.runTyped("profile", { name, options: { ...options, subcommand: "apply" } });
+  /** Apply a project profile. */
+  profileApply(
+    name: string,
+    options: ProfileApplyCommandOptions = {},
+  ): Promise<ProfileApplyResult> {
+    return this.runTyped("profile", {
+      name,
+      options: { ...options, subcommand: "apply" },
+    });
   }
 
-  /**
-   * Lint a project profile.
-   */
+  /** Lint a project profile. */
   profileLint(name: string): Promise<ProfileLintResult> {
     return this.runTyped("profile", { name, options: { subcommand: "lint" } });
   }
 
-  /**
-   * Run project validation checks.
-   */
+  /** Run project validation checks. */
   validate(options: ValidateCommandOptions = {}): Promise<ValidateResult> {
     return this.runTyped("validate", { options });
   }
 
-  /**
-   * Run project health checks.
-   */
+  /** Run project health checks. */
   health(options: RunHealthOptions = {}): Promise<HealthResult> {
     return this.runTyped("health", { options });
   }
 
-  /**
-   * Run tracker cache/runtime garbage collection.
-   */
+  /** Run tracker cache/runtime garbage collection. */
   gc(options: GcCommandOptions = {}): Promise<GcResult> {
     return this.runTyped("gc", { options });
   }
 
-  /**
-   * Create an item using the same mutation path as `pm create`.
-   */
+  /** Create an item using the same mutation path as `pm create`. */
   create(options: PmClientFullMutationOptions = {}): Promise<CreateResult> {
     return this.runTyped("create", splitFullClientMutationOptions(options));
   }
 
-  /**
-   * Update an item using the same mutation path as `pm update`.
-   */
-  update(id: string, options: PmClientFullMutationOptions = {}): Promise<UpdateResult> {
-    return this.runTyped("update", { id, ...splitFullClientMutationOptions(options) });
+  /** Update an item using the same mutation path as `pm update`. */
+  update(
+    id: string,
+    options: PmClientFullMutationOptions = {},
+  ): Promise<UpdateResult> {
+    return this.runTyped("update", {
+      id,
+      ...splitFullClientMutationOptions(options),
+    });
   }
 
-  /**
-   * Close an item using the same mutation path as `pm close`.
-   */
-  close(id: string, reason: string, options: PmClientFullMutationOptions = {}): Promise<CloseResult> {
-    return this.runTyped("close", { id, reason, ...splitFullClientMutationOptions(options) });
+  /** Close an item using the same mutation path as `pm close`. */
+  close(
+    id: string,
+    reason: string,
+    options: PmClientFullMutationOptions = {},
+  ): Promise<CloseResult> {
+    return this.runTyped("close", {
+      id,
+      reason,
+      ...splitFullClientMutationOptions(options),
+    });
   }
 
-  /**
-   * Claim an item using the same mutation path as `pm claim`.
-   */
-  claim(id: string, options: PmClientFullMutationOptions = {}): Promise<ClaimResult> {
-    return this.runTyped("claim", { id, ...splitFullClientMutationOptions(options) });
+  /** Claim an item using the same mutation path as `pm claim`. */
+  claim(
+    id: string,
+    options: PmClientFullMutationOptions = {},
+  ): Promise<ClaimResult> {
+    return this.runTyped("claim", {
+      id,
+      ...splitFullClientMutationOptions(options),
+    });
   }
 
-  /**
-   * Release an item's active claim using the same mutation path as `pm release`.
-   */
-  release(id: string, options: PmClientFullMutationOptions = {}): Promise<ReleaseResult> {
-    return this.runTyped("release", { id, ...splitFullClientMutationOptions(options) });
+  /** Release an item's active claim using the same mutation path as `pm release`. */
+  release(
+    id: string,
+    options: PmClientFullMutationOptions = {},
+  ): Promise<ReleaseResult> {
+    return this.runTyped("release", {
+      id,
+      ...splitFullClientMutationOptions(options),
+    });
   }
 
-  /**
-   * Copy an item using the same mutation path as `pm copy`.
-   */
-  copy(id: string, options: PmClientFullMutationOptions = {}): Promise<CopyResult> {
-    return this.runTyped("copy", { id, ...splitFullClientMutationOptions(options) });
+  /** Copy an item using the same mutation path as `pm copy`. */
+  copy(
+    id: string,
+    options: PmClientFullMutationOptions = {},
+  ): Promise<CopyResult> {
+    return this.runTyped("copy", {
+      id,
+      ...splitFullClientMutationOptions(options),
+    });
   }
 
-  /**
-   * Delete an item using the same mutation path as `pm delete`.
-   */
-  delete(id: string, options: PmClientFullMutationOptions = {}): Promise<DeleteResult> {
-    return this.runTyped("delete", { id, ...splitFullClientMutationOptions(options) });
+  /** Delete an item using the same mutation path as `pm delete`. */
+  delete(
+    id: string,
+    options: PmClientFullMutationOptions = {},
+  ): Promise<DeleteResult> {
+    return this.runTyped("delete", {
+      id,
+      ...splitFullClientMutationOptions(options),
+    });
   }
 
-  /**
-   * Restore an item to a history version or timestamp using `pm restore`.
-   */
-  restore(id: string, target: string, options: PmClientFullMutationOptions = {}): Promise<RestoreResult> {
+  /** Restore an item to a history version or timestamp using `pm restore`. */
+  restore(
+    id: string,
+    target: string,
+    options: PmClientFullMutationOptions = {},
+  ): Promise<RestoreResult> {
     return this.runTyped("restore", {
       fullChangedFields: true,
       id,
@@ -959,170 +1071,208 @@ export class PmClient {
     });
   }
 
-  /**
-   * Set, clear, or read workspace focus using the same path as `pm focus`.
-   */
-  focus(id?: string, options: PmClientFullMutationOptions = {}): Promise<FocusResult> {
-    return this.runTyped("focus", { ...(id === undefined ? {} : { id }), ...splitFullClientMutationOptions(options) });
+  /** Set, clear, or read workspace focus using the same path as `pm focus`. */
+  focus(
+    id?: string,
+    options: PmClientFullMutationOptions = {},
+  ): Promise<FocusResult> {
+    return this.runTyped("focus", {
+      ...(id === undefined ? {} : { id }),
+      ...splitFullClientMutationOptions(options),
+    });
   }
 
-  /**
-   * Claim an item and transition it to the workspace in-progress status.
-   */
-  startTask(id: string, options: PmClientFullMutationOptions = {}): Promise<StartTaskResult> {
-    return this.runTyped("start-task", { id, ...splitFullClientMutationOptions(options) });
+  /** Claim an item and transition it to the workspace in-progress status. */
+  startTask(
+    id: string,
+    options: PmClientFullMutationOptions = {},
+  ): Promise<StartTaskResult> {
+    return this.runTyped("start-task", {
+      id,
+      ...splitFullClientMutationOptions(options),
+    });
   }
 
-  /**
-   * Move an item back to the workspace open status and release the claim.
-   */
-  pauseTask(id: string, options: PmClientFullMutationOptions = {}): Promise<PauseTaskResult> {
-    return this.runTyped("pause-task", { id, ...splitFullClientMutationOptions(options) });
+  /** Move an item back to the workspace open status and release the claim. */
+  pauseTask(
+    id: string,
+    options: PmClientFullMutationOptions = {},
+  ): Promise<PauseTaskResult> {
+    return this.runTyped("pause-task", {
+      id,
+      ...splitFullClientMutationOptions(options),
+    });
   }
 
-  /**
-   * Close an item and release its active assignment.
-   */
-  closeTask(id: string, reason: string, options: PmClientFullMutationOptions = {}): Promise<CloseTaskResult> {
-    return this.runTyped("close-task", { id, reason, ...splitFullClientMutationOptions(options) });
+  /** Close an item and release its active assignment. */
+  closeTask(
+    id: string,
+    reason: string,
+    options: PmClientFullMutationOptions = {},
+  ): Promise<CloseTaskResult> {
+    return this.runTyped("close-task", {
+      id,
+      reason,
+      ...splitFullClientMutationOptions(options),
+    });
   }
 
-  /**
-   * Run the extension lifecycle surface with the same result shape as `pm extension`.
-   */
-  extension(target?: string, options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
-    return this.runTyped("extension", { ...(target === undefined ? {} : { target }), options });
+  /** Run the extension lifecycle surface with the same result shape as `pm extension`. */
+  extension(
+    target?: string,
+    options: ExtensionCommandOptions = {},
+  ): Promise<ExtensionCommandResult> {
+    return this.runTyped("extension", {
+      ...(target === undefined ? {} : { target }),
+      options,
+    });
   }
 
-  /**
-   * List project or global extensions without constructing command-line argv.
-   */
-  extensionList(options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
+  /** List project or global extensions without constructing command-line argv. */
+  extensionList(
+    options: ExtensionCommandOptions = {},
+  ): Promise<ExtensionCommandResult> {
     return this.extension("list", options);
   }
 
-  /**
-   * Enable an installed extension using the same action as `pm extension activate`.
-   */
-  extensionActivate(target: string, options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
+  /** Enable an installed extension using the same action as `pm extension activate`. */
+  extensionActivate(
+    target: string,
+    options: ExtensionCommandOptions = {},
+  ): Promise<ExtensionCommandResult> {
     return this.runTyped("extension-activate", { target, options });
   }
 
-  /**
-   * Disable an installed extension using the same action as `pm extension deactivate`.
-   */
-  extensionDeactivate(target: string, options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
+  /** Disable an installed extension using the same action as `pm extension deactivate`. */
+  extensionDeactivate(
+    target: string,
+    options: ExtensionCommandOptions = {},
+  ): Promise<ExtensionCommandResult> {
     return this.runTyped("extension-deactivate", { target, options });
   }
 
-  /**
-   * Run the package lifecycle surface with package vocabulary preserved.
-   */
-  package(target?: string, options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
+  /** Run the package lifecycle surface with package vocabulary preserved. */
+  package(
+    target?: string,
+    options: PackageCommandOptions = {},
+  ): Promise<PackageCommandResult> {
     return this.runTyped("package", {
       ...(target === undefined ? {} : { target }),
       options: { ...options, vocabulary: "package" },
     });
   }
 
-  /**
-   * List project or global packages through the package lifecycle primitive.
-   */
-  packageList(options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
+  /** List project or global packages through the package lifecycle primitive. */
+  packageList(
+    options: PackageCommandOptions = {},
+  ): Promise<PackageCommandResult> {
     return this.package("list", options);
   }
 
-  /**
-   * Install a package or extension source using the same action as `pm package install`.
-   */
-  packageInstall(target: string, options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
+  /** Install a package or extension source using the same action as `pm package install`. */
+  packageInstall(
+    target: string,
+    options: PackageCommandOptions = {},
+  ): Promise<PackageCommandResult> {
     return this.runTyped("package-install", { target, options });
   }
 
-  /**
-   * Uninstall a package or extension using the same action as `pm package uninstall`.
-   */
-  packageUninstall(target: string, options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
+  /** Uninstall a package or extension using the same action as `pm package uninstall`. */
+  packageUninstall(
+    target: string,
+    options: PackageCommandOptions = {},
+  ): Promise<PackageCommandResult> {
     return this.runTyped("package-uninstall", { target, options });
   }
 
-  /**
-   * Read package lifecycle diagnostics using the same action as `pm package doctor`.
-   */
-  packageDoctor(options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
+  /** Read package lifecycle diagnostics using the same action as `pm package doctor`. */
+  packageDoctor(
+    options: PackageCommandOptions = {},
+  ): Promise<PackageCommandResult> {
     return this.runTyped("package-doctor", { options });
   }
 
-  /**
-   * Inspect managed package state using the same action as `pm package manage`.
-   */
-  packageManage(target?: string, options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
-    return this.runTyped("package-manage", { ...(target === undefined ? {} : { target }), options });
+  /** Inspect managed package state using the same action as `pm package manage`. */
+  packageManage(
+    target?: string,
+    options: PackageCommandOptions = {},
+  ): Promise<PackageCommandResult> {
+    return this.runTyped("package-manage", {
+      ...(target === undefined ? {} : { target }),
+      options,
+    });
   }
 
-  /**
-   * Describe installed package surfaces using the same action as `pm package describe`.
-   */
-  packageDescribe(target?: string, options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
-    return this.runTyped("package-describe", { ...(target === undefined ? {} : { target }), options });
+  /** Describe installed package surfaces using the same action as `pm package describe`. */
+  packageDescribe(
+    target?: string,
+    options: PackageCommandOptions = {},
+  ): Promise<PackageCommandResult> {
+    return this.runTyped("package-describe", {
+      ...(target === undefined ? {} : { target }),
+      options,
+    });
   }
 
-  /**
-   * Reload installed package extensions using the same action as `pm package reload`.
-   */
-  packageReload(options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
+  /** Reload installed package extensions using the same action as `pm package reload`. */
+  packageReload(
+    options: PackageCommandOptions = {},
+  ): Promise<PackageCommandResult> {
     return this.runTyped("package-reload", { options });
   }
 
-  /**
-   * Read bundled package catalog metadata using the same action as `pm package catalog`.
-   */
-  packageCatalog(options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
+  /** Read bundled package catalog metadata using the same action as `pm package catalog`. */
+  packageCatalog(
+    options: PackageCommandOptions = {},
+  ): Promise<PackageCommandResult> {
     return this.runTyped("package-catalog", { options });
   }
 
-  /**
-   * Enable an installed package using the same action as `pm package activate`.
-   */
-  packageActivate(target: string, options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
+  /** Enable an installed package using the same action as `pm package activate`. */
+  packageActivate(
+    target: string,
+    options: PackageCommandOptions = {},
+  ): Promise<PackageCommandResult> {
     return this.runTyped("package-activate", { target, options });
   }
 
-  /**
-   * Disable an installed package using the same action as `pm package deactivate`.
-   */
-  packageDeactivate(target: string, options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
+  /** Disable an installed package using the same action as `pm package deactivate`. */
+  packageDeactivate(
+    target: string,
+    options: PackageCommandOptions = {},
+  ): Promise<PackageCommandResult> {
     return this.runTyped("package-deactivate", { target, options });
   }
 
-  /**
-   * Upgrade the pm CLI and/or managed packages through the public SDK dispatcher.
-   */
-  upgrade(target?: string, options: UpgradeCommandOptions = {}): Promise<UpgradeResult> {
-    return this.runTyped("upgrade", { ...(target === undefined ? {} : { target }), options });
+  /** Upgrade the pm CLI and/or managed packages through the public SDK dispatcher. */
+  upgrade(
+    target?: string,
+    options: UpgradeCommandOptions = {},
+  ): Promise<UpgradeResult> {
+    return this.runTyped("upgrade", {
+      ...(target === undefined ? {} : { target }),
+      options,
+    });
   }
 }
 
-/**
- * Return the same context snapshot produced by `pm context` without constructing
- * a reusable client.
- */
-export function context(options: ContextOptions = {}, clientOptions: PmClientOptions = {}): Promise<ContextResult> {
+/** Return the same context snapshot produced by `pm context` without constructing a reusable client. */
+export function context(
+  options: ContextOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<ContextResult> {
   return new PmClient(clientOptions).context(options);
 }
 
-/**
- * List items with the MCP/agent compact defaults without constructing a
- * reusable client.
- */
-export function list(options: ListOptions = {}, clientOptions: PmClientOptions = {}): Promise<ListResult> {
+/** List items with the MCP/agent compact defaults without constructing a reusable client. */
+export function list(
+  options: ListOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<ListResult> {
   return new PmClient(clientOptions).list(options);
 }
 
-/**
- * Search items with the MCP/agent compact defaults without constructing a
- * reusable client.
- */
+/** Search items with the MCP/agent compact defaults without constructing a reusable client. */
 export function search(
   query: string,
   options: SearchOptions = {},
@@ -1131,25 +1281,24 @@ export function search(
   return new PmClient(clientOptions).search(query, options);
 }
 
-/**
- * Read one item by id without constructing a reusable client.
- */
-export function get(id: string, options: GetOptions = {}, clientOptions: PmClientOptions = {}): Promise<GetResult> {
+/** Read one item by id without constructing a reusable client. */
+export function get(
+  id: string,
+  options: GetOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<GetResult> {
   return new PmClient(clientOptions).get(id, options);
 }
 
-/**
- * Return the ranked next-work recommendation produced by `pm next` without
- * constructing a reusable client.
- */
-export function next(options: NextOptions = {}, clientOptions: PmClientOptions = {}): Promise<NextResult> {
+/** Return the ranked next-work recommendation produced by `pm next` without constructing a reusable client. */
+export function next(
+  options: NextOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<NextResult> {
   return new PmClient(clientOptions).next(options);
 }
 
-/**
- * Group matching items with the same semantics as `pm aggregate` without
- * constructing a reusable client.
- */
+/** Group matching items with the same semantics as `pm aggregate` without constructing a reusable client. */
 export function aggregate(
   options: AggregateOptions = {},
   clientOptions: PmClientOptions = {},
@@ -1157,10 +1306,7 @@ export function aggregate(
   return new PmClient(clientOptions).aggregate(options);
 }
 
-/**
- * Return project tracker statistics with the same sections as `pm stats`
- * without constructing a reusable client.
- */
+/** Return project tracker statistics with the same sections as `pm stats` without constructing a reusable client. */
 export function stats(
   options: StatsCommandOptions = {},
   clientOptions: PmClientOptions = {},
@@ -1168,9 +1314,7 @@ export function stats(
   return new PmClient(clientOptions).stats(options);
 }
 
-/**
- * List, add, edit, or delete item comments without constructing a reusable client.
- */
+/** List, add, edit, or delete item comments without constructing a reusable client. */
 export function comments(
   id: string,
   options: CommentsCommandOptions = {},
@@ -1179,16 +1323,16 @@ export function comments(
   return new PmClient(clientOptions).comments(id, options);
 }
 
-/**
- * List or append private item notes without constructing a reusable client.
- */
-export function notes(id: string, options: NotesCommandOptions = {}, clientOptions: PmClientOptions = {}): Promise<NotesResult> {
+/** List or append private item notes without constructing a reusable client. */
+export function notes(
+  id: string,
+  options: NotesCommandOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<NotesResult> {
   return new PmClient(clientOptions).notes(id, options);
 }
 
-/**
- * List or append durable item learnings without constructing a reusable client.
- */
+/** List or append durable item learnings without constructing a reusable client. */
 export function learnings(
   id: string,
   options: LearningsCommandOptions = {},
@@ -1197,16 +1341,16 @@ export function learnings(
   return new PmClient(clientOptions).learnings(id, options);
 }
 
-/**
- * Manage linked item files without constructing a reusable client.
- */
-export function files(id: string, options: FilesCommandOptions = {}, clientOptions: PmClientOptions = {}): Promise<FilesResult> {
+/** Manage linked item files without constructing a reusable client. */
+export function files(
+  id: string,
+  options: FilesCommandOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<FilesResult> {
   return new PmClient(clientOptions).files(id, options);
 }
 
-/**
- * Discover linked item files without constructing a reusable client.
- */
+/** Discover linked item files without constructing a reusable client. */
 export function filesDiscover(
   id: string,
   options: FilesDiscoverOptions = {},
@@ -1215,23 +1359,25 @@ export function filesDiscover(
   return new PmClient(clientOptions).filesDiscover(id, options);
 }
 
-/**
- * Manage linked item docs without constructing a reusable client.
- */
-export function docs(id: string, options: DocsCommandOptions = {}, clientOptions: PmClientOptions = {}): Promise<DocsResult> {
+/** Manage linked item docs without constructing a reusable client. */
+export function docs(
+  id: string,
+  options: DocsCommandOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<DocsResult> {
   return new PmClient(clientOptions).docs(id, options);
 }
 
-/**
- * Inspect item dependency relationships without constructing a reusable client.
- */
-export function deps(id: string, options: DepsCommandOptions = {}, clientOptions: PmClientOptions = {}): Promise<DepsResult> {
+/** Inspect item dependency relationships without constructing a reusable client. */
+export function deps(
+  id: string,
+  options: DepsCommandOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<DepsResult> {
   return new PmClient(clientOptions).deps(id, options);
 }
 
-/**
- * Append markdown/body text to an item without constructing a reusable client.
- */
+/** Append markdown/body text to an item without constructing a reusable client. */
 export function append(
   id: string,
   body: string,
@@ -1241,16 +1387,16 @@ export function append(
   return new PmClient(clientOptions).append(id, body, options);
 }
 
-/**
- * Initialize a workspace without constructing a reusable client.
- */
-export function init(prefix?: string, options: InitCommandOptions = {}, clientOptions: PmClientOptions = {}): Promise<InitResult> {
+/** Initialize a workspace without constructing a reusable client. */
+export function init(
+  prefix?: string,
+  options: InitCommandOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<InitResult> {
   return new PmClient(clientOptions).init(prefix, options);
 }
 
-/**
- * Read or update configuration without constructing a reusable client.
- */
+/** Read or update configuration without constructing a reusable client. */
 export function config(
   scope: string,
   configAction: string,
@@ -1259,12 +1405,16 @@ export function config(
   options: ConfigCommandOptions = {},
   clientOptions: PmClientOptions = {},
 ): Promise<ConfigResult> {
-  return new PmClient(clientOptions).config(scope, configAction, key, value, options);
+  return new PmClient(clientOptions).config(
+    scope,
+    configAction,
+    key,
+    value,
+    options,
+  );
 }
 
-/**
- * Run the schema customization surface without constructing a reusable client.
- */
+/** Run the schema customization surface without constructing a reusable client. */
 export function schema(
   subcommand: SchemaSubcommand,
   options: PmActionOptions = {},
@@ -1273,23 +1423,22 @@ export function schema(
   return new PmClient(clientOptions).schema(subcommand, options);
 }
 
-/**
- * List schema definitions without constructing a reusable client.
- */
-export function schemaList(clientOptions: PmClientOptions = {}): Promise<SchemaListResult> {
+/** List schema definitions without constructing a reusable client. */
+export function schemaList(
+  clientOptions: PmClientOptions = {},
+): Promise<SchemaListResult> {
   return new PmClient(clientOptions).schemaList();
 }
 
-/**
- * Show a schema item type without constructing a reusable client.
- */
-export function schemaShow(name: string, clientOptions: PmClientOptions = {}): Promise<SchemaShowResult> {
+/** Show a schema item type without constructing a reusable client. */
+export function schemaShow(
+  name: string,
+  clientOptions: PmClientOptions = {},
+): Promise<SchemaShowResult> {
   return new PmClient(clientOptions).schemaShow(name);
 }
 
-/**
- * Register a custom item type without constructing a reusable client.
- */
+/** Register a custom item type without constructing a reusable client. */
 export function schemaAddType(
   name: string,
   options: SchemaAddTypeCommandOptions = {},
@@ -1298,9 +1447,7 @@ export function schemaAddType(
   return new PmClient(clientOptions).schemaAddType(name, options);
 }
 
-/**
- * Remove a custom item type without constructing a reusable client.
- */
+/** Remove a custom item type without constructing a reusable client. */
 export function schemaRemoveType(
   name: string,
   options: SchemaRemoveTypeCommandOptions = {},
@@ -1309,9 +1456,7 @@ export function schemaRemoveType(
   return new PmClient(clientOptions).schemaRemoveType(name, options);
 }
 
-/**
- * Register a custom status without constructing a reusable client.
- */
+/** Register a custom status without constructing a reusable client. */
 export function schemaAddStatus(
   name: string,
   options: SchemaAddStatusCommandOptions = {},
@@ -1320,9 +1465,7 @@ export function schemaAddStatus(
   return new PmClient(clientOptions).schemaAddStatus(name, options);
 }
 
-/**
- * Remove a custom status without constructing a reusable client.
- */
+/** Remove a custom status without constructing a reusable client. */
 export function schemaRemoveStatus(
   name: string,
   options: SchemaRemoveStatusCommandOptions = {},
@@ -1331,9 +1474,7 @@ export function schemaRemoveStatus(
   return new PmClient(clientOptions).schemaRemoveStatus(name, options);
 }
 
-/**
- * Register a custom field without constructing a reusable client.
- */
+/** Register a custom field without constructing a reusable client. */
 export function schemaAddField(
   name: string,
   options: SchemaAddFieldCommandOptions = {},
@@ -1342,9 +1483,7 @@ export function schemaAddField(
   return new PmClient(clientOptions).schemaAddField(name, options);
 }
 
-/**
- * Remove a custom field without constructing a reusable client.
- */
+/** Remove a custom field without constructing a reusable client. */
 export function schemaRemoveField(
   name: string,
   options: SchemaRemoveFieldCommandOptions = {},
@@ -1353,23 +1492,22 @@ export function schemaRemoveField(
   return new PmClient(clientOptions).schemaRemoveField(name, options);
 }
 
-/**
- * List custom fields without constructing a reusable client.
- */
-export function schemaListFields(clientOptions: PmClientOptions = {}): Promise<SchemaListFieldsResult> {
+/** List custom fields without constructing a reusable client. */
+export function schemaListFields(
+  clientOptions: PmClientOptions = {},
+): Promise<SchemaListFieldsResult> {
   return new PmClient(clientOptions).schemaListFields();
 }
 
-/**
- * Show a custom field without constructing a reusable client.
- */
-export function schemaShowField(name: string, clientOptions: PmClientOptions = {}): Promise<SchemaShowFieldResult> {
+/** Show a custom field without constructing a reusable client. */
+export function schemaShowField(
+  name: string,
+  clientOptions: PmClientOptions = {},
+): Promise<SchemaShowFieldResult> {
   return new PmClient(clientOptions).schemaShowField(name);
 }
 
-/**
- * Apply a schema preset without constructing a reusable client.
- */
+/** Apply a schema preset without constructing a reusable client. */
 export function schemaApplyPreset(
   typePreset: string,
   options: SchemaApplyPresetCommandOptions = {},
@@ -1378,9 +1516,7 @@ export function schemaApplyPreset(
   return new PmClient(clientOptions).schemaApplyPreset(typePreset, options);
 }
 
-/**
- * Infer schema types without constructing a reusable client.
- */
+/** Infer schema types without constructing a reusable client. */
 export function schemaInferTypes(
   options: SchemaAddTypeInferCommandOptions = {},
   clientOptions: PmClientOptions = {},
@@ -1388,16 +1524,15 @@ export function schemaInferTypes(
   return new PmClient(clientOptions).schemaInferTypes(options);
 }
 
-/**
- * Show a custom status without constructing a reusable client.
- */
-export function schemaShowStatus(name: string, clientOptions: PmClientOptions = {}): Promise<SchemaShowStatusResult> {
+/** Show a custom status without constructing a reusable client. */
+export function schemaShowStatus(
+  name: string,
+  clientOptions: PmClientOptions = {},
+): Promise<SchemaShowStatusResult> {
   return new PmClient(clientOptions).schemaShowStatus(name);
 }
 
-/**
- * Run the profile customization surface without constructing a reusable client.
- */
+/** Run the profile customization surface without constructing a reusable client. */
 export function profile(
   subcommand: ProfileSubcommand,
   options: PmActionOptions = {},
@@ -1406,23 +1541,22 @@ export function profile(
   return new PmClient(clientOptions).profile(subcommand, options);
 }
 
-/**
- * List profiles without constructing a reusable client.
- */
-export function profileList(clientOptions: PmClientOptions = {}): Promise<ProfileListResult> {
+/** List profiles without constructing a reusable client. */
+export function profileList(
+  clientOptions: PmClientOptions = {},
+): Promise<ProfileListResult> {
   return new PmClient(clientOptions).profileList();
 }
 
-/**
- * Show a profile without constructing a reusable client.
- */
-export function profileShow(name: string, clientOptions: PmClientOptions = {}): Promise<ProfileShowResult> {
+/** Show a profile without constructing a reusable client. */
+export function profileShow(
+  name: string,
+  clientOptions: PmClientOptions = {},
+): Promise<ProfileShowResult> {
   return new PmClient(clientOptions).profileShow(name);
 }
 
-/**
- * Apply a profile without constructing a reusable client.
- */
+/** Apply a profile without constructing a reusable client. */
 export function profileApply(
   name: string,
   options: ProfileApplyCommandOptions = {},
@@ -1431,16 +1565,15 @@ export function profileApply(
   return new PmClient(clientOptions).profileApply(name, options);
 }
 
-/**
- * Lint a profile without constructing a reusable client.
- */
-export function profileLint(name: string, clientOptions: PmClientOptions = {}): Promise<ProfileLintResult> {
+/** Lint a profile without constructing a reusable client. */
+export function profileLint(
+  name: string,
+  clientOptions: PmClientOptions = {},
+): Promise<ProfileLintResult> {
   return new PmClient(clientOptions).profileLint(name);
 }
 
-/**
- * Validate a tracker without constructing a reusable client.
- */
+/** Validate a tracker without constructing a reusable client. */
 export function validate(
   options: ValidateCommandOptions = {},
   clientOptions: PmClientOptions = {},
@@ -1448,30 +1581,31 @@ export function validate(
   return new PmClient(clientOptions).validate(options);
 }
 
-/**
- * Run health checks without constructing a reusable client.
- */
-export function health(options: RunHealthOptions = {}, clientOptions: PmClientOptions = {}): Promise<HealthResult> {
+/** Run health checks without constructing a reusable client. */
+export function health(
+  options: RunHealthOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<HealthResult> {
   return new PmClient(clientOptions).health(options);
 }
 
-/**
- * Run cache/runtime garbage collection without constructing a reusable client.
- */
-export function gc(options: GcCommandOptions = {}, clientOptions: PmClientOptions = {}): Promise<GcResult> {
+/** Run cache/runtime garbage collection without constructing a reusable client. */
+export function gc(
+  options: GcCommandOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<GcResult> {
   return new PmClient(clientOptions).gc(options);
 }
 
-/**
- * Create an item without constructing a reusable client.
- */
-export function create(options: PmClientFullMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<CreateResult> {
+/** Create an item without constructing a reusable client. */
+export function create(
+  options: PmClientFullMutationOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<CreateResult> {
   return new PmClient(clientOptions).create(options);
 }
 
-/**
- * Update an item without constructing a reusable client.
- */
+/** Update an item without constructing a reusable client. */
 export function update(
   id: string,
   options: PmClientFullMutationOptions = {},
@@ -1480,9 +1614,7 @@ export function update(
   return new PmClient(clientOptions).update(id, options);
 }
 
-/**
- * Close an item without constructing a reusable client.
- */
+/** Close an item without constructing a reusable client. */
 export function close(
   id: string,
   reason: string,
@@ -1492,37 +1624,43 @@ export function close(
   return new PmClient(clientOptions).close(id, reason, options);
 }
 
-/**
- * Claim an item without constructing a reusable client.
- */
-export function claim(id: string, options: PmClientFullMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<ClaimResult> {
+/** Claim an item without constructing a reusable client. */
+export function claim(
+  id: string,
+  options: PmClientFullMutationOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<ClaimResult> {
   return new PmClient(clientOptions).claim(id, options);
 }
 
-/**
- * Release an item's active claim without constructing a reusable client.
- */
-export function release(id: string, options: PmClientFullMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<ReleaseResult> {
+/** Release an item's active claim without constructing a reusable client. */
+export function release(
+  id: string,
+  options: PmClientFullMutationOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<ReleaseResult> {
   return new PmClient(clientOptions).release(id, options);
 }
 
-/**
- * Copy an item without constructing a reusable client.
- */
-export function copy(id: string, options: PmClientFullMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<CopyResult> {
+/** Copy an item without constructing a reusable client. */
+export function copy(
+  id: string,
+  options: PmClientFullMutationOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<CopyResult> {
   return new PmClient(clientOptions).copy(id, options);
 }
 
-/**
- * Delete an item without constructing a reusable client.
- */
-export function deleteItem(id: string, options: PmClientFullMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<DeleteResult> {
+/** Delete an item without constructing a reusable client. */
+export function deleteItem(
+  id: string,
+  options: PmClientFullMutationOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<DeleteResult> {
   return new PmClient(clientOptions).delete(id, options);
 }
 
-/**
- * Restore an item without constructing a reusable client.
- */
+/** Restore an item without constructing a reusable client. */
 export function restore(
   id: string,
   target: string,
@@ -1532,30 +1670,34 @@ export function restore(
   return new PmClient(clientOptions).restore(id, target, options);
 }
 
-/**
- * Set, clear, or read workspace focus without constructing a reusable client.
- */
-export function focus(id?: string, options: PmClientFullMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<FocusResult> {
+/** Set, clear, or read workspace focus without constructing a reusable client. */
+export function focus(
+  id?: string,
+  options: PmClientFullMutationOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<FocusResult> {
   return new PmClient(clientOptions).focus(id, options);
 }
 
-/**
- * Claim an item and transition it to in-progress without constructing a client.
- */
-export function startTask(id: string, options: PmClientFullMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<StartTaskResult> {
+/** Claim an item and transition it to in-progress without constructing a client. */
+export function startTask(
+  id: string,
+  options: PmClientFullMutationOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<StartTaskResult> {
   return new PmClient(clientOptions).startTask(id, options);
 }
 
-/**
- * Move an item to open and release it without constructing a client.
- */
-export function pauseTask(id: string, options: PmClientFullMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<PauseTaskResult> {
+/** Move an item to open and release it without constructing a client. */
+export function pauseTask(
+  id: string,
+  options: PmClientFullMutationOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<PauseTaskResult> {
   return new PmClient(clientOptions).pauseTask(id, options);
 }
 
-/**
- * Close an item and release its active assignment without constructing a client.
- */
+/** Close an item and release its active assignment without constructing a client. */
 export function closeTask(
   id: string,
   reason: string,
@@ -1565,9 +1707,7 @@ export function closeTask(
   return new PmClient(clientOptions).closeTask(id, reason, options);
 }
 
-/**
- * Run the extension lifecycle surface without constructing a reusable client.
- */
+/** Run the extension lifecycle surface without constructing a reusable client. */
 export function extension(
   target?: string,
   options: ExtensionCommandOptions = {},
@@ -1576,9 +1716,7 @@ export function extension(
   return new PmClient(clientOptions).extension(target, options);
 }
 
-/**
- * List extensions without constructing a reusable client.
- */
+/** List extensions without constructing a reusable client. */
 export function extensionList(
   options: ExtensionCommandOptions = {},
   clientOptions: PmClientOptions = {},
@@ -1586,9 +1724,7 @@ export function extensionList(
   return new PmClient(clientOptions).extensionList(options);
 }
 
-/**
- * Enable an extension without constructing a reusable client.
- */
+/** Enable an extension without constructing a reusable client. */
 export function extensionActivate(
   target: string,
   options: ExtensionCommandOptions = {},
@@ -1597,9 +1733,7 @@ export function extensionActivate(
   return new PmClient(clientOptions).extensionActivate(target, options);
 }
 
-/**
- * Disable an extension without constructing a reusable client.
- */
+/** Disable an extension without constructing a reusable client. */
 export function extensionDeactivate(
   target: string,
   options: ExtensionCommandOptions = {},
@@ -1608,9 +1742,7 @@ export function extensionDeactivate(
   return new PmClient(clientOptions).extensionDeactivate(target, options);
 }
 
-/**
- * Run the package lifecycle surface without constructing a reusable client.
- */
+/** Run the package lifecycle surface without constructing a reusable client. */
 export function packageLifecycle(
   target?: string,
   options: PackageCommandOptions = {},
@@ -1619,9 +1751,7 @@ export function packageLifecycle(
   return new PmClient(clientOptions).package(target, options);
 }
 
-/**
- * List packages without constructing a reusable client.
- */
+/** List packages without constructing a reusable client. */
 export function packageList(
   options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
@@ -1629,9 +1759,7 @@ export function packageList(
   return new PmClient(clientOptions).packageList(options);
 }
 
-/**
- * Install a package or extension source without constructing a reusable client.
- */
+/** Install a package or extension source without constructing a reusable client. */
 export function packageInstall(
   target: string,
   options: PackageCommandOptions = {},
@@ -1640,9 +1768,7 @@ export function packageInstall(
   return new PmClient(clientOptions).packageInstall(target, options);
 }
 
-/**
- * Uninstall a package or extension without constructing a reusable client.
- */
+/** Uninstall a package or extension without constructing a reusable client. */
 export function packageUninstall(
   target: string,
   options: PackageCommandOptions = {},
@@ -1651,9 +1777,7 @@ export function packageUninstall(
   return new PmClient(clientOptions).packageUninstall(target, options);
 }
 
-/**
- * Read package lifecycle diagnostics without constructing a reusable client.
- */
+/** Read package lifecycle diagnostics without constructing a reusable client. */
 export function packageDoctor(
   options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
@@ -1661,9 +1785,7 @@ export function packageDoctor(
   return new PmClient(clientOptions).packageDoctor(options);
 }
 
-/**
- * Inspect managed package state without constructing a reusable client.
- */
+/** Inspect managed package state without constructing a reusable client. */
 export function packageManage(
   target?: string,
   options: PackageCommandOptions = {},
@@ -1672,9 +1794,7 @@ export function packageManage(
   return new PmClient(clientOptions).packageManage(target, options);
 }
 
-/**
- * Describe package surfaces without constructing a reusable client.
- */
+/** Describe package surfaces without constructing a reusable client. */
 export function packageDescribe(
   target?: string,
   options: PackageCommandOptions = {},
@@ -1683,9 +1803,7 @@ export function packageDescribe(
   return new PmClient(clientOptions).packageDescribe(target, options);
 }
 
-/**
- * Reload package extensions without constructing a reusable client.
- */
+/** Reload package extensions without constructing a reusable client. */
 export function packageReload(
   options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
@@ -1693,9 +1811,7 @@ export function packageReload(
   return new PmClient(clientOptions).packageReload(options);
 }
 
-/**
- * Read bundled package catalog metadata without constructing a reusable client.
- */
+/** Read bundled package catalog metadata without constructing a reusable client. */
 export function packageCatalog(
   options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
@@ -1703,9 +1819,7 @@ export function packageCatalog(
   return new PmClient(clientOptions).packageCatalog(options);
 }
 
-/**
- * Enable a package without constructing a reusable client.
- */
+/** Enable a package without constructing a reusable client. */
 export function packageActivate(
   target: string,
   options: PackageCommandOptions = {},
@@ -1714,9 +1828,7 @@ export function packageActivate(
   return new PmClient(clientOptions).packageActivate(target, options);
 }
 
-/**
- * Disable a package without constructing a reusable client.
- */
+/** Disable a package without constructing a reusable client. */
 export function packageDeactivate(
   target: string,
   options: PackageCommandOptions = {},
@@ -1725,9 +1837,7 @@ export function packageDeactivate(
   return new PmClient(clientOptions).packageDeactivate(target, options);
 }
 
-/**
- * Upgrade the pm CLI and/or managed packages without constructing a reusable client.
- */
+/** Upgrade the pm CLI and/or managed packages without constructing a reusable client. */
 export function upgrade(
   target?: string,
   options: UpgradeCommandOptions = {},
@@ -1769,13 +1879,17 @@ async function resolveWorkspaceExtensionRegistrations(
   settings: Awaited<ReturnType<typeof readSettings>>,
   cwd?: string,
 ): Promise<ExtensionRegistrationRegistry | null> {
-  const cacheKey = buildWorkspaceExtensionRegistrationsCacheKey(pmRoot, settings, cwd);
-  return memoizeWorkspaceExtensionRegistrations(cacheKey, () => loadWorkspaceExtensionRegistrations(pmRoot, settings, cwd));
+  const cacheKey = buildWorkspaceExtensionRegistrationsCacheKey(
+    pmRoot,
+    settings,
+    cwd,
+  );
+  return memoizeWorkspaceExtensionRegistrations(cacheKey, () =>
+    loadWorkspaceExtensionRegistrations(pmRoot, settings, cwd),
+  );
 }
 
-/**
- * Implements get workspace contracts for the public runtime surface of this module.
- */
+/** Implements get workspace contracts for the public runtime surface of this module. */
 export async function getWorkspaceContracts(
   pmRoot: string,
   options: WorkspaceContractsOptions = {},
@@ -1783,8 +1897,17 @@ export async function getWorkspaceContracts(
   const settings = await readSettings(pmRoot);
   const extensionRegistrations =
     options.extensionRegistrations ??
-    (options.noExtensions === true ? null : await resolveWorkspaceExtensionRegistrations(pmRoot, settings, options.cwd));
-  const typeRegistry = resolveItemTypeRegistry(settings, extensionRegistrations);
+    (options.noExtensions === true
+      ? null
+      : await resolveWorkspaceExtensionRegistrations(
+          pmRoot,
+          settings,
+          options.cwd,
+        ));
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    extensionRegistrations,
+  );
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
 
   return {
@@ -1796,9 +1919,7 @@ export async function getWorkspaceContracts(
   };
 }
 
-/**
- * Implements get contracts for the public runtime surface of this module.
- */
+/** Implements get contracts for the public runtime surface of this module. */
 export async function getContracts(
   pmRootOrOptions?: string | GetContractsOptions,
   options: GetContractsOptions = {},
@@ -1819,35 +1940,51 @@ export async function getContracts(
   return runContracts(resolvedOptions, global);
 }
 
-function readString(args: Record<string, unknown>, key: string): string | undefined {
+function readString(
+  args: Record<string, unknown>,
+  key: string,
+): string | undefined {
   const value = args[key];
-  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+  return typeof value === "string" && value.trim().length > 0
+    ? value
+    : undefined;
 }
 
-function readScalarString(args: Record<string, unknown>, key: string): string | undefined {
+function readScalarString(
+  args: Record<string, unknown>,
+  key: string,
+): string | undefined {
   const value = args[key];
   if (typeof value === "string") {
     return value.trim().length > 0 ? value : undefined;
   }
-  return typeof value === "number" && Number.isFinite(value) ? String(value) : undefined;
+  return typeof value === "number" && Number.isFinite(value)
+    ? String(value)
+    : undefined;
 }
 
-function readScalarStringAllowBlank(args: Record<string, unknown>, key: string): string | undefined {
+function readScalarStringAllowBlank(
+  args: Record<string, unknown>,
+  key: string,
+): string | undefined {
   const value = args[key];
   if (typeof value === "string") {
     return value;
   }
-  return typeof value === "number" && Number.isFinite(value) ? String(value) : undefined;
+  return typeof value === "number" && Number.isFinite(value)
+    ? String(value)
+    : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-/**
- * Read a required non-empty string from an action argument bag.
- */
-export function readRequiredString(args: Record<string, unknown>, key: string): string {
+/** Read a required non-empty string from an action argument bag. */
+export function readRequiredString(
+  args: Record<string, unknown>,
+  key: string,
+): string {
   const value = readString(args, key);
   if (!value) {
     throw new PmCliError(`Missing required argument: ${key}`, 64);
@@ -1865,7 +2002,13 @@ function globalOptions(args: Record<string, unknown>): GlobalOptions {
   };
 }
 
-const ARRAY_TO_CSV_FIELDS = new Set(["tags", "blockedBy", "blocked_by", "skills", "fields"]);
+const ARRAY_TO_CSV_FIELDS = new Set([
+  "tags",
+  "blockedBy",
+  "blocked_by",
+  "skills",
+  "fields",
+]);
 
 const SCALAR_TO_ARRAY_FIELDS = new Set([
   "comment",
@@ -1913,8 +2056,10 @@ function normalizeMcpOptionsArrays(
   action?: string,
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
-  const promoteAddRemove = action !== undefined && ARRAY_ADD_REMOVE_ACTIONS.has(action);
-  const preserveStandaloneNote = action === "files" || action === "files-discover" || action === "docs";
+  const promoteAddRemove =
+    action !== undefined && ARRAY_ADD_REMOVE_ACTIONS.has(action);
+  const preserveStandaloneNote =
+    action === "files" || action === "files-discover" || action === "docs";
   for (const [key, value] of Object.entries(options)) {
     if (Array.isArray(value) && ARRAY_TO_CSV_FIELDS.has(key)) {
       result[key] = value.join(",");
@@ -1928,7 +2073,11 @@ function normalizeMcpOptionsArrays(
       result[key] = [value];
       continue;
     }
-    if (typeof value === "string" && promoteAddRemove && (key === "add" || key === "remove")) {
+    if (
+      typeof value === "string" &&
+      promoteAddRemove &&
+      (key === "add" || key === "remove")
+    ) {
       result[key] = [value];
       continue;
     }
@@ -1937,7 +2086,10 @@ function normalizeMcpOptionsArrays(
   return result;
 }
 
-function optionsWithAuthor(args: Record<string, unknown>, action?: string): Record<string, unknown> {
+function optionsWithAuthor(
+  args: Record<string, unknown>,
+  action?: string,
+): Record<string, unknown> {
   const baseOptions = asRecordClone(args.options);
   const hoistedTopLevel: Record<string, unknown> = {};
   const hoistKey = (key: string): void => {
@@ -1981,10 +2133,15 @@ function optionsWithAuthor(args: Record<string, unknown>, action?: string): Reco
     // schema/config cases, which read args before options — no hoist needed.)
     hoistKey("body");
   }
-  const options = normalizeMcpOptionsArrays({ ...hoistedTopLevel, ...baseOptions }, action);
+  const options = normalizeMcpOptionsArrays(
+    { ...hoistedTopLevel, ...baseOptions },
+    action,
+  );
   const author = readString(args, "author");
   const authorFromAssignee =
-    action !== undefined && LIFECYCLE_AUTHOR_ALIAS_ACTIONS.has(action) ? readString(args, "assignee") ?? readString(options, "assignee") : undefined;
+    action !== undefined && LIFECYCLE_AUTHOR_ALIAS_ACTIONS.has(action)
+      ? (readString(args, "assignee") ?? readString(options, "assignee"))
+      : undefined;
   if (author && options.author === undefined) {
     return { ...options, author };
   }
@@ -1998,7 +2155,9 @@ function optionsWithAuthor(args: Record<string, unknown>, action?: string): Reco
 // as `addNote` (the shared `note` parameter is the array-typed create/update
 // note seed). Translate it onto the runner's `note` option; an explicit
 // options.note (pm_run callers) wins.
-function withAddNoteOption(options: Record<string, unknown>): Record<string, unknown> {
+function withAddNoteOption(
+  options: Record<string, unknown>,
+): Record<string, unknown> {
   if (options.addNote === undefined) {
     return options;
   }
@@ -2010,9 +2169,15 @@ function withAddNoteOption(options: Record<string, unknown>): Record<string, unk
   return next;
 }
 
-function withFilesDiscoveryOptions(options: Record<string, unknown>): Record<string, unknown> {
+function withFilesDiscoveryOptions(
+  options: Record<string, unknown>,
+): Record<string, unknown> {
   const next: Record<string, unknown> = { ...options };
-  if (next.discoveryNote !== undefined && next.note === undefined && typeof next.discoveryNote === "string") {
+  if (
+    next.discoveryNote !== undefined &&
+    next.note === undefined &&
+    typeof next.discoveryNote === "string"
+  ) {
     next.note = next.discoveryNote;
   }
   delete next.discover;
@@ -2024,7 +2189,9 @@ function normalizeActionName(value: string): string {
   const chunks: string[] = [];
   let lastWasSeparator = true;
   for (const character of value.trim().toLowerCase()) {
-    const isAlphaNumeric = (character >= "a" && character <= "z") || (character >= "0" && character <= "9");
+    const isAlphaNumeric =
+      (character >= "a" && character <= "z") ||
+      (character >= "0" && character <= "9");
     if (isAlphaNumeric) {
       chunks.push(character);
       lastWasSeparator = false;
@@ -2049,10 +2216,15 @@ function readStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return [];
   }
-  return value.map((entry) => String(entry)).filter((entry) => entry.length > 0);
+  return value
+    .map((entry) => String(entry))
+    .filter((entry) => entry.length > 0);
 }
 
-function extensionOptionsFromArgs(args: Record<string, unknown>, options: Record<string, unknown>): Record<string, unknown> {
+function extensionOptionsFromArgs(
+  args: Record<string, unknown>,
+  options: Record<string, unknown>,
+): Record<string, unknown> {
   const reserved = new Set([
     "action",
     "args",
@@ -2104,10 +2276,7 @@ type ActiveExtensionRuntime = {
   pmRoot: string;
 };
 
-/**
- * Publishes empty active extension registries so built-in fallback actions cannot
- * observe stale or partially published extension state from a failed activation cycle.
- */
+/** Publishes empty active extension registries so built-in fallback actions cannot observe stale or partially published extension state from a failed activation cycle. */
 function resetActiveExtensionRegistries(): void {
   setActiveExtensionHooks(createEmptyExtensionHookRegistry());
   setActiveExtensionCommands(createEmptyExtensionCommandRegistry());
@@ -2149,7 +2318,9 @@ async function withActiveExtensions<T>(
   return extensionActivationQueue.enqueue(async () =>
     explicitCwd === undefined
       ? await withActiveExtensionsExclusively(global, resolutionCwd, run)
-      : await withCwd(explicitCwd, () => withActiveExtensionsExclusively(global, resolutionCwd, run)),
+      : await withCwd(explicitCwd, () =>
+          withActiveExtensionsExclusively(global, resolutionCwd, run),
+        ),
   );
 }
 
@@ -2180,11 +2351,24 @@ async function withActiveExtensionsExclusively<T>(
     return run(null);
   }
   let active: ActiveExtensionRuntime | null = null;
-  let activated: { loadResult: Awaited<ReturnType<typeof loadExtensions>>; activationResult: ExtensionActivationResult } | undefined;
+  let activated:
+    | {
+        loadResult: Awaited<ReturnType<typeof loadExtensions>>;
+        activationResult: ExtensionActivationResult;
+      }
+    | undefined;
   try {
     const settings = await readSettings(pmRoot);
-    const loadResult = await loadExtensions({ pmRoot, settings, cwd, noExtensions: false });
-    const activationResult = await activateExtensions({ ...loadResult, loaded: loadResult.loaded });
+    const loadResult = await loadExtensions({
+      pmRoot,
+      settings,
+      cwd,
+      noExtensions: false,
+    });
+    const activationResult = await activateExtensions({
+      ...loadResult,
+      loaded: loadResult.loaded,
+    });
     // Record the teardown handle BEFORE publishing the registries so a throw from any
     // setActive* setter still runs deactivateExtensions for resources opened during
     // activate() instead of silently leaking them.
@@ -2196,14 +2380,21 @@ async function withActiveExtensionsExclusively<T>(
     setActiveExtensionServices(activationResult.services);
     setActiveExtensionRenderers(activationResult.renderers);
     setActiveExtensionRegistrations(activationResult.registrations);
-    active = { registrations: activationResult.registrations, commands: activationResult.commands, pmRoot };
+    active = {
+      registrations: activationResult.registrations,
+      commands: activationResult.commands,
+      pmRoot,
+    };
   } catch (error) {
     resetActiveExtensionRegistries();
     // CLI parity (loadRuntimeExtensionSnapshot): a load/activate failure must never
     // break a built-in action — fall back to running with no active extensions. Surface
     // the cause on stderr so a broken extension is diagnosable instead of being silently
     // indistinguishable from a workspace that simply has no extensions.
-    console.error("[pm-sdk] extension activation failed; continuing without active extensions:", error);
+    console.error(
+      "[pm-sdk] extension activation failed; continuing without active extensions:",
+      error,
+    );
   }
   try {
     return await run(active);
@@ -2216,7 +2407,10 @@ async function withActiveExtensionsExclusively<T>(
     // activation never completed (nothing was set up); guarded so an unexpected throw
     // cannot escape the finally.
     if (activated) {
-      await deactivateExtensions(activated.loadResult, activated.activationResult).catch(() => undefined);
+      await deactivateExtensions(
+        activated.loadResult,
+        activated.activationResult,
+      ).catch(() => undefined);
     }
   }
 }
@@ -2239,9 +2433,14 @@ async function dispatchActiveExtensionAction(
     throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
   }
   const normalizedAction = normalizeActionName(action);
-  const definition = active.registrations.commands.find((entry) => normalizeActionName(entry.action) === normalizedAction);
-  const command = definition?.command ??
-    active.commands.handlers.find((entry) => normalizeActionName(entry.command) === normalizedAction)?.command;
+  const definition = active.registrations.commands.find(
+    (entry) => normalizeActionName(entry.action) === normalizedAction,
+  );
+  const command =
+    definition?.command ??
+    active.commands.handlers.find(
+      (entry) => normalizeActionName(entry.command) === normalizedAction,
+    )?.command;
   if (!command) {
     throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
   }
@@ -2253,8 +2452,14 @@ async function dispatchActiveExtensionAction(
     pm_root: active.pmRoot,
   });
   if (!handlerResult.handled) {
-    const suffix = handlerResult.warnings.length > 0 ? ` (${handlerResult.warnings.join(", ")})` : "";
-    throw new PmCliError(`Unsupported native pm action: ${action}${suffix}`, 64);
+    const suffix =
+      handlerResult.warnings.length > 0
+        ? ` (${handlerResult.warnings.join(", ")})`
+        : "";
+    throw new PmCliError(
+      `Unsupported native pm action: ${action}${suffix}`,
+      64,
+    );
   }
   return handlerResult.result;
 }
@@ -2272,19 +2477,20 @@ async function withCwd<T>(cwd: string, run: () => Promise<T>): Promise<T> {
   }
 }
 
-/**
- * Mutation tools (create/update/close/append/update-many) return a verbose
- * `changed_fields` array. On the agent path we drop it to a `changed_field_count`
- * by default for token efficiency, restoring the full array only when the caller
- * explicitly passes the MCP-level fullChangedFields=true control. Mutation options
- * are forwarded unchanged so runtime fields named `full` remain valid user data.
- */
-function withMutationCompaction(args: Record<string, unknown>, options?: Record<string, unknown> | null): {
+/** Mutation tools (create/update/close/append/update-many) return a verbose `changed_fields` array. On the agent path we drop it to a `changed_field_count` by default for token efficiency, restoring the full array only when the caller explicitly passes the MCP-level fullChangedFields=true control. Mutation options are forwarded unchanged so runtime fields named `full` remain valid user data. */
+function withMutationCompaction(
+  args: Record<string, unknown>,
+  options?: Record<string, unknown> | null,
+): {
   changedFields: "full" | "compact";
   idOnly: boolean;
   runnerOptions: Record<string, unknown>;
 } {
-  return { changedFields: args.fullChangedFields === true ? "full" : "compact", idOnly: args.idOnly === true, runnerOptions: { ...options } };
+  return {
+    changedFields: args.fullChangedFields === true ? "full" : "compact",
+    idOnly: args.idOnly === true,
+    runnerOptions: { ...options },
+  };
 }
 
 function mutationListOptions(options: Record<string, unknown>): ListOptions {
@@ -2300,7 +2506,9 @@ function mutationListOptions(options: Record<string, unknown>): ListOptions {
     createdBefore: readScalarString(options, "filterCreatedBefore"),
     ids: readScalarStringAllowBlank(options, "ids"),
     assignee: readScalarString(options, "filterAssignee"),
-    assigneeFilter: readScalarString(options, "filterAssigneeFilter") ?? readScalarString(options, "filterAssignee_filter"),
+    assigneeFilter:
+      readScalarString(options, "filterAssigneeFilter") ??
+      readScalarString(options, "filterAssignee_filter"),
     parent: readScalarString(options, "filterParent"),
     sprint: readScalarString(options, "filterSprint"),
     release: readScalarString(options, "filterRelease"),
@@ -2309,21 +2517,39 @@ function mutationListOptions(options: Record<string, unknown>): ListOptions {
   };
 }
 
-function closeManyOptionsFromFlat(options: Record<string, unknown>): CloseManyCommandOptions {
+function closeManyOptionsFromFlat(
+  options: Record<string, unknown>,
+): CloseManyCommandOptions {
   return {
     status: readString(options, "filterStatus"),
-    list: isRecord(options.list) ? normalizeListOptions(options.list) : mutationListOptions(options),
+    list: isRecord(options.list)
+      ? normalizeListOptions(options.list)
+      : mutationListOptions(options),
     reason: readString(options, "reason"),
     resolution: readString(options, "resolution"),
-    expectedResult: readString(options, "expectedResult") ?? readString(options, "expected_result") ?? readString(options, "expected"),
-    actualResult: readString(options, "actualResult") ?? readString(options, "actual_result") ?? readString(options, "actual"),
-    validateClose: readString(options, "validateClose") ?? readString(options, "validate_close"),
+    expectedResult:
+      readString(options, "expectedResult") ??
+      readString(options, "expected_result") ??
+      readString(options, "expected"),
+    actualResult:
+      readString(options, "actualResult") ??
+      readString(options, "actual_result") ??
+      readString(options, "actual"),
+    validateClose:
+      readString(options, "validateClose") ??
+      readString(options, "validate_close"),
     author: readString(options, "author"),
     message: readString(options, "message"),
     force: options.force === true ? true : undefined,
-    dryRun: options.dryRun === true || options.dry_run === true ? true : undefined,
+    dryRun:
+      options.dryRun === true || options.dry_run === true ? true : undefined,
     rollback: readString(options, "rollback"),
-    checkpoint: options.checkpoint === false || options.noCheckpoint === true || options.no_checkpoint === true ? false : undefined,
+    checkpoint:
+      options.checkpoint === false ||
+      options.noCheckpoint === true ||
+      options.no_checkpoint === true
+        ? false
+        : undefined,
   };
 }
 
@@ -2357,7 +2583,9 @@ const UPDATE_MANY_FLAT_CONTROL_KEYS = new Set([
   "no_checkpoint",
 ]);
 
-function updateManyUpdateOptionsFromFlat(options: Record<string, unknown>): Record<string, unknown> {
+function updateManyUpdateOptionsFromFlat(
+  options: Record<string, unknown>,
+): Record<string, unknown> {
   const update: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(options)) {
     if (UPDATE_MANY_FLAT_CONTROL_KEYS.has(key)) {
@@ -2368,8 +2596,13 @@ function updateManyUpdateOptionsFromFlat(options: Record<string, unknown>): Reco
   return normalizeMcpUpdateOptions(update);
 }
 
-function normalizeMcpUpdateOptions(options: Record<string, unknown>): Record<string, unknown> {
-  const normalizedInput: Record<string, unknown> = normalizeMcpOptionsArrays(options, "update-many");
+function normalizeMcpUpdateOptions(
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  const normalizedInput: Record<string, unknown> = normalizeMcpOptionsArrays(
+    options,
+    "update-many",
+  );
   for (const contract of UPDATE_COMMANDER_STRING_OPTION_CONTRACTS) {
     for (const key of contract.keys) {
       const value = normalizedInput[key];
@@ -2381,25 +2614,43 @@ function normalizeMcpUpdateOptions(options: Record<string, unknown>): Record<str
   return normalizeUpdateOptions(normalizedInput);
 }
 
-function updateManyOptionsFromFlat(options: Record<string, unknown>): UpdateManyCommandOptions {
+function updateManyOptionsFromFlat(
+  options: Record<string, unknown>,
+): UpdateManyCommandOptions {
   if (isRecord(options.list) || isRecord(options.update)) {
-    const updateSource = isRecord(options.update) ? options.update : updateManyUpdateOptionsFromFlat(options);
+    const updateSource = isRecord(options.update)
+      ? options.update
+      : updateManyUpdateOptionsFromFlat(options);
     return {
       status: readScalarString(options, "filterStatus"),
-      list: isRecord(options.list) ? normalizeListOptions(options.list) : mutationListOptions(options),
+      list: isRecord(options.list)
+        ? normalizeListOptions(options.list)
+        : mutationListOptions(options),
       update: normalizeMcpUpdateOptions(updateSource) as never,
-      dryRun: options.dryRun === true || options.dry_run === true ? true : undefined,
+      dryRun:
+        options.dryRun === true || options.dry_run === true ? true : undefined,
       rollback: readString(options, "rollback"),
-      checkpoint: options.checkpoint === false || options.noCheckpoint === true || options.no_checkpoint === true ? false : undefined,
+      checkpoint:
+        options.checkpoint === false ||
+        options.noCheckpoint === true ||
+        options.no_checkpoint === true
+          ? false
+          : undefined,
     };
   }
   return {
     status: readScalarString(options, "filterStatus"),
     list: mutationListOptions(options),
     update: updateManyUpdateOptionsFromFlat(options) as never,
-    dryRun: options.dryRun === true || options.dry_run === true ? true : undefined,
+    dryRun:
+      options.dryRun === true || options.dry_run === true ? true : undefined,
     rollback: readString(options, "rollback"),
-    checkpoint: options.checkpoint === false || options.noCheckpoint === true || options.no_checkpoint === true ? false : undefined,
+    checkpoint:
+      options.checkpoint === false ||
+      options.noCheckpoint === true ||
+      options.no_checkpoint === true
+        ? false
+        : undefined,
   };
 }
 
@@ -2428,12 +2679,30 @@ interface SdkActionAlias {
 
 const LIST_ACTION_ALIASES: Record<string, SdkActionAlias> = {
   "list-all": { action: "list", options: { excludeTerminal: false } },
-  "list-draft": { action: "list", options: { status: "draft", excludeTerminal: false } },
-  "list-open": { action: "list", options: { status: "open", excludeTerminal: false } },
-  "list-in-progress": { action: "list", options: { status: "in_progress", excludeTerminal: false } },
-  "list-blocked": { action: "list", options: { status: "blocked", excludeTerminal: false } },
-  "list-closed": { action: "list", options: { status: "closed", excludeTerminal: false } },
-  "list-canceled": { action: "list", options: { status: "canceled", excludeTerminal: false } },
+  "list-draft": {
+    action: "list",
+    options: { status: "draft", excludeTerminal: false },
+  },
+  "list-open": {
+    action: "list",
+    options: { status: "open", excludeTerminal: false },
+  },
+  "list-in-progress": {
+    action: "list",
+    options: { status: "in_progress", excludeTerminal: false },
+  },
+  "list-blocked": {
+    action: "list",
+    options: { status: "blocked", excludeTerminal: false },
+  },
+  "list-closed": {
+    action: "list",
+    options: { status: "closed", excludeTerminal: false },
+  },
+  "list-canceled": {
+    action: "list",
+    options: { status: "canceled", excludeTerminal: false },
+  },
 };
 
 const EXTENSION_ACTION_ALIASES: Record<string, SdkActionAlias> = {
@@ -2449,23 +2718,65 @@ const EXTENSION_ACTION_ALIASES: Record<string, SdkActionAlias> = {
   "extension-adopt": { action: "extension", options: { adopt: true } },
   "extension-adopt-all": { action: "extension", options: { adoptAll: true } },
   "extension-activate": { action: "extension", options: { activate: true } },
-  "extension-deactivate": { action: "extension", options: { deactivate: true } },
+  "extension-deactivate": {
+    action: "extension",
+    options: { deactivate: true },
+  },
 };
 
 const PACKAGE_ACTION_ALIASES: Record<string, SdkActionAlias> = {
-  "package-init": { action: "package", options: { init: true, vocabulary: "package" } },
-  "package-install": { action: "package", options: { install: true, vocabulary: "package" } },
-  "package-uninstall": { action: "package", options: { uninstall: true, vocabulary: "package" } },
-  "package-explore": { action: "package", options: { explore: true, vocabulary: "package" } },
-  "package-manage": { action: "package", options: { manage: true, vocabulary: "package" } },
-  "package-describe": { action: "package", options: { describe: true, vocabulary: "package" } },
-  "package-reload": { action: "package", options: { reload: true, vocabulary: "package" } },
-  "package-doctor": { action: "package", options: { doctor: true, vocabulary: "package" } },
-  "package-catalog": { action: "package", options: { catalog: true, vocabulary: "package" } },
-  "package-adopt": { action: "package", options: { adopt: true, vocabulary: "package" } },
-  "package-adopt-all": { action: "package", options: { adoptAll: true, vocabulary: "package" } },
-  "package-activate": { action: "package", options: { activate: true, vocabulary: "package" } },
-  "package-deactivate": { action: "package", options: { deactivate: true, vocabulary: "package" } },
+  "package-init": {
+    action: "package",
+    options: { init: true, vocabulary: "package" },
+  },
+  "package-install": {
+    action: "package",
+    options: { install: true, vocabulary: "package" },
+  },
+  "package-uninstall": {
+    action: "package",
+    options: { uninstall: true, vocabulary: "package" },
+  },
+  "package-explore": {
+    action: "package",
+    options: { explore: true, vocabulary: "package" },
+  },
+  "package-manage": {
+    action: "package",
+    options: { manage: true, vocabulary: "package" },
+  },
+  "package-describe": {
+    action: "package",
+    options: { describe: true, vocabulary: "package" },
+  },
+  "package-reload": {
+    action: "package",
+    options: { reload: true, vocabulary: "package" },
+  },
+  "package-doctor": {
+    action: "package",
+    options: { doctor: true, vocabulary: "package" },
+  },
+  "package-catalog": {
+    action: "package",
+    options: { catalog: true, vocabulary: "package" },
+  },
+  "package-adopt": {
+    action: "package",
+    options: { adopt: true, vocabulary: "package" },
+  },
+  "package-adopt-all": {
+    action: "package",
+    options: { adoptAll: true, vocabulary: "package" },
+  },
+  "package-activate": {
+    action: "package",
+    options: { activate: true, vocabulary: "package" },
+  },
+  "package-deactivate": {
+    action: "package",
+    options: { deactivate: true, vocabulary: "package" },
+  },
 };
 
 const SDK_ACTION_ALIASES: Record<string, SdkActionAlias> = {
@@ -2475,7 +2786,10 @@ const SDK_ACTION_ALIASES: Record<string, SdkActionAlias> = {
   ...PACKAGE_ACTION_ALIASES,
 };
 
-function resolveSdkActionInput(args: PmActionInput): { action: string; args: Record<string, unknown> } {
+function resolveSdkActionInput(args: PmActionInput): {
+  action: string;
+  args: Record<string, unknown>;
+} {
   const rawAction = readRequiredString(args, "action");
   const normalizedAction = normalizeActionName(rawAction);
   const alias = getOwnHandler(SDK_ACTION_ALIASES, normalizedAction);
@@ -2485,22 +2799,28 @@ function resolveSdkActionInput(args: PmActionInput): { action: string; args: Rec
     resolvedArgs.options = { ...alias.options, ...asRecordClone(args.options) };
   }
   if (action === "package") {
-    resolvedArgs.options = { ...asRecordClone(resolvedArgs.options), vocabulary: "package" };
+    resolvedArgs.options = {
+      ...asRecordClone(resolvedArgs.options),
+      vocabulary: "package",
+    };
   }
   return { action, args: resolvedArgs };
 }
 
-function shouldInvalidateWorkspaceContractsCacheAfterAction(action: string): boolean {
-  return !WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS.has(normalizeActionName(action));
+function shouldInvalidateWorkspaceContractsCacheAfterAction(
+  action: string,
+): boolean {
+  return !WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS.has(
+    normalizeActionName(action),
+  );
 }
 
-/**
- * Execute one native or extension-contributed pm action in-process.
- */
+/** Execute one native or extension-contributed pm action in-process. */
 export async function runAction(args: PmActionInput): Promise<unknown> {
   const resolved = resolveSdkActionInput(args);
   const global = globalOptions(resolved.args);
-  const invalidateWorkspaceContractsCache = shouldInvalidateWorkspaceContractsCacheAfterAction(resolved.action);
+  const invalidateWorkspaceContractsCache =
+    shouldInvalidateWorkspaceContractsCacheAfterAction(resolved.action);
   // pm-zumn: dispatch every action (built-in and dynamic) inside one extension
   // activation cycle so built-in actions see extension-contributed item types, fields,
   // and profiles, consistent with the CLI. Snapshot the effective resolution cwd HERE,
@@ -2511,8 +2831,17 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
   const explicitCwd = readString(resolved.args, "cwd");
   const resolutionCwd = explicitCwd ?? process.cwd();
   try {
-    return await withActiveExtensions(global, explicitCwd, resolutionCwd, (activeExtensions) =>
-      dispatchAction(resolved.action, resolved.args, global, activeExtensions),
+    return await withActiveExtensions(
+      global,
+      explicitCwd,
+      resolutionCwd,
+      (activeExtensions) =>
+        dispatchAction(
+          resolved.action,
+          resolved.args,
+          global,
+          activeExtensions,
+        ),
     );
   } finally {
     if (invalidateWorkspaceContractsCache) {
@@ -2531,21 +2860,33 @@ interface McpActionDispatchContext {
   activeExtensions: ActiveExtensionRuntime | null;
 }
 
-type McpActionHandler = (ctx: McpActionDispatchContext) => Promise<unknown> | unknown;
+type McpActionHandler = (
+  ctx: McpActionDispatchContext,
+) => Promise<unknown> | unknown;
 
-function getOwnHandler<T>(handlers: Readonly<Record<string, T>>, key: string): T | undefined {
-  return Object.prototype.hasOwnProperty.call(handlers, key) ? handlers[key] : undefined;
+function getOwnHandler<T>(
+  handlers: Readonly<Record<string, T>>,
+  key: string,
+): T | undefined {
+  return Object.prototype.hasOwnProperty.call(handlers, key)
+    ? handlers[key]
+    : undefined;
 }
 
 function readMcpTarget(ctx: McpActionDispatchContext): string | undefined {
   return readString(ctx.args, "target") ?? readString(ctx.options, "target");
 }
 
-function requireMcpItemId(ctx: McpActionDispatchContext, source: Record<string, unknown> = ctx.options): string {
+function requireMcpItemId(
+  ctx: McpActionDispatchContext,
+  source: Record<string, unknown> = ctx.options,
+): string {
   return ctx.id ?? readRequiredString(source, "id");
 }
 
-async function runMcpListAction(ctx: McpActionDispatchContext): Promise<unknown> {
+async function runMcpListAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
   const listOptions: Record<string, unknown> = { ...ctx.options };
   if (
     listOptions.compact === undefined &&
@@ -2566,52 +2907,109 @@ async function runMcpListAction(ctx: McpActionDispatchContext): Promise<unknown>
   );
 }
 
-async function runMcpSearchAction(ctx: McpActionDispatchContext): Promise<unknown> {
+async function runMcpSearchAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
   const searchOptions: Parameters<typeof runSearch>[1] = { ...ctx.options };
-  if (searchOptions.compact === undefined && searchOptions.full === undefined && searchOptions.fields === undefined) {
+  if (
+    searchOptions.compact === undefined &&
+    searchOptions.full === undefined &&
+    searchOptions.fields === undefined
+  ) {
     searchOptions.compact = true;
   }
   return withQuerySummary(
-    (await runSearch(readRequiredString(ctx.args, "query"), searchOptions, ctx.global)) as unknown as Record<string, unknown>,
+    (await runSearch(
+      readRequiredString(ctx.args, "query"),
+      searchOptions,
+      ctx.global,
+    )) as unknown as Record<string, unknown>,
     searchOptions as Record<string, unknown>,
   );
 }
 
-async function runMcpCreateAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
-  return projectMutationResult(await runCreate(runnerOptions as never, ctx.global), { changedFields, idOnly });
+async function runMcpCreateAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
+  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(
+    ctx.args,
+    ctx.options,
+  );
+  return projectMutationResult(
+    await runCreate(runnerOptions as never, ctx.global),
+    { changedFields, idOnly },
+  );
 }
 
-async function runMcpCopyAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
+async function runMcpCopyAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
+  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(
+    ctx.args,
+    ctx.options,
+  );
   const copyOptions: Record<string, unknown> = {
     ...runnerOptions,
-    ...(runnerOptions.title === undefined && typeof ctx.args.title === "string" ? { title: ctx.args.title } : {}),
-    ...(runnerOptions.message === undefined && typeof ctx.args.message === "string" ? { message: ctx.args.message } : {}),
+    ...(runnerOptions.title === undefined && typeof ctx.args.title === "string"
+      ? { title: ctx.args.title }
+      : {}),
+    ...(runnerOptions.message === undefined &&
+    typeof ctx.args.message === "string"
+      ? { message: ctx.args.message }
+      : {}),
   };
-  return projectMutationResult(await runCopy(requireMcpItemId(ctx, copyOptions), copyOptions as never, ctx.global), {
-    changedFields,
-    idOnly,
-  });
+  return projectMutationResult(
+    await runCopy(
+      requireMcpItemId(ctx, copyOptions),
+      copyOptions as never,
+      ctx.global,
+    ),
+    {
+      changedFields,
+      idOnly,
+    },
+  );
 }
 
-async function runMcpUpdateAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
-  return projectMutationResult(await runUpdate(requireMcpItemId(ctx, runnerOptions), runnerOptions as never, ctx.global), {
-    changedFields,
-    idOnly,
-  });
+async function runMcpUpdateAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
+  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(
+    ctx.args,
+    ctx.options,
+  );
+  return projectMutationResult(
+    await runUpdate(
+      requireMcpItemId(ctx, runnerOptions),
+      runnerOptions as never,
+      ctx.global,
+    ),
+    {
+      changedFields,
+      idOnly,
+    },
+  );
 }
 
-async function runMcpCloseAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
+async function runMcpCloseAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
+  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(
+    ctx.args,
+    ctx.options,
+  );
   const closeReason =
     readString(ctx.args, "reason") ??
     readString(ctx.args, "text") ??
     readString(runnerOptions, "reason") ??
     readString(runnerOptions, "text");
   return projectMutationResult(
-    await runClose(requireMcpItemId(ctx, runnerOptions), closeReason, runnerOptions as never, ctx.global),
+    await runClose(
+      requireMcpItemId(ctx, runnerOptions),
+      closeReason,
+      runnerOptions as never,
+      ctx.global,
+    ),
     { changedFields, idOnly },
   );
 }
@@ -2637,21 +3035,32 @@ function runMcpCommentsAction(ctx: McpActionDispatchContext): Promise<unknown> {
 function runMcpFilesAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const fileId = requireMcpItemId(ctx);
   return ctx.options.discover === true
-    ? runFilesDiscover(fileId, withFilesDiscoveryOptions(ctx.options), ctx.global)
+    ? runFilesDiscover(
+        fileId,
+        withFilesDiscoveryOptions(ctx.options),
+        ctx.global,
+      )
     : runFiles(fileId, withAddNoteOption(ctx.options), ctx.global);
 }
 
-function runMcpTelemetryAction(ctx: McpActionDispatchContext): Promise<unknown> {
+function runMcpTelemetryAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
   return runTelemetry(
     {
-      subcommand: readString(ctx.args, "subcommand") ?? readString(ctx.options, "subcommand"),
+      subcommand:
+        readString(ctx.args, "subcommand") ??
+        readString(ctx.options, "subcommand"),
       limit: resolveMcpTelemetryLimit(ctx.args, ctx.options),
     },
     ctx.global,
   );
 }
 
-function resolveMcpTelemetryLimit(args: Record<string, unknown>, options: Record<string, unknown>): number | string | undefined {
+function resolveMcpTelemetryLimit(
+  args: Record<string, unknown>,
+  options: Record<string, unknown>,
+): number | string | undefined {
   if (typeof args.limit === "number" && Number.isFinite(args.limit)) {
     return args.limit;
   }
@@ -2663,7 +3072,11 @@ function resolveMcpTelemetryLimit(args: Record<string, unknown>, options: Record
 
 function runMcpHealthAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const healthOptions: Record<string, unknown> = { ...ctx.options };
-  if (healthOptions.brief === undefined && healthOptions.summary === undefined && healthOptions.full === undefined) {
+  if (
+    healthOptions.brief === undefined &&
+    healthOptions.summary === undefined &&
+    healthOptions.full === undefined
+  ) {
     healthOptions.summary = true;
   }
   return runHealth(ctx.global, healthOptions as never);
@@ -2671,12 +3084,16 @@ function runMcpHealthAction(ctx: McpActionDispatchContext): Promise<unknown> {
 
 function runMcpConfigAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const configAction =
-    readString(ctx.args, "configAction") ?? readString(ctx.options, "configAction") ?? readString(ctx.options, "action");
+    readString(ctx.args, "configAction") ??
+    readString(ctx.options, "configAction") ??
+    readString(ctx.options, "action");
   if (configAction === undefined) {
     throw new PmCliError("Missing required argument: configAction", 64);
   }
   return runConfig(
-    readString(ctx.args, "scope") ?? readString(ctx.options, "scope") ?? "project",
+    readString(ctx.args, "scope") ??
+      readString(ctx.options, "scope") ??
+      "project",
     configAction,
     readString(ctx.args, "key") ?? readString(ctx.options, "key"),
     ctx.options,
@@ -2686,7 +3103,9 @@ function runMcpConfigAction(ctx: McpActionDispatchContext): Promise<unknown> {
 }
 
 function runMcpActivityAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const activityOptions = { ...ctx.options } as Parameters<typeof runActivity>[0] & { full?: unknown };
+  const activityOptions = { ...ctx.options } as Parameters<
+    typeof runActivity
+  >[0] & { full?: unknown };
   if (activityOptions.compact === undefined) {
     activityOptions.compact = activityOptions.full === true ? false : true;
   }
@@ -2694,11 +3113,15 @@ function runMcpActivityAction(ctx: McpActionDispatchContext): Promise<unknown> {
   return runActivity(activityOptions, ctx.global);
 }
 
-function runMcpHistoryRepairAction(ctx: McpActionDispatchContext): Promise<unknown> {
+function runMcpHistoryRepairAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
   const repairAll = ctx.options.all === true;
   const repairId = ctx.id ?? readString(ctx.options, "id");
   assertHistoryRepairTarget(repairId, repairAll);
-  return repairAll ? runHistoryRepairAll(ctx.options, ctx.global) : runHistoryRepair(repairId as string, ctx.options, ctx.global);
+  return repairAll
+    ? runHistoryRepairAll(ctx.options, ctx.global)
+    : runHistoryRepair(repairId as string, ctx.options, ctx.global);
 }
 
 function parseMcpInteger(value: unknown, label: string): number | undefined {
@@ -2718,7 +3141,10 @@ function parseMcpInteger(value: unknown, label: string): number | undefined {
   return undefined;
 }
 
-function parseMcpIntegerPrefix(value: unknown, label: string): number | undefined {
+function parseMcpIntegerPrefix(
+  value: unknown,
+  label: string,
+): number | undefined {
   if (typeof value === "number") {
     if (!Number.isFinite(value) || !Number.isInteger(value)) {
       throw new PmCliError(`${label} must be a finite integer.`, 64);
@@ -2740,13 +3166,23 @@ function parseMcpIntegerPrefix(value: unknown, label: string): number | undefine
 }
 
 function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const subcommand = readString(ctx.args, "subcommand") ?? readRequiredString(ctx.options, "subcommand");
+  const subcommand =
+    readString(ctx.args, "subcommand") ??
+    readRequiredString(ctx.options, "subcommand");
   const planRecord = ctx.options as Record<string, unknown>;
   return runPlan({
     subcommand: subcommand as never,
-    id: typeof ctx.id === "string" ? ctx.id : typeof planRecord.id === "string" ? (planRecord.id as string) : undefined,
+    id:
+      typeof ctx.id === "string"
+        ? ctx.id
+        : typeof planRecord.id === "string"
+          ? (planRecord.id as string)
+          : undefined,
     stepRef: readMcpPlanStepRef(ctx),
-    reorderTo: parseMcpIntegerPrefix(planRecord.reorderTo ?? ctx.args.reorderTo, "plan reorderTo"),
+    reorderTo: parseMcpIntegerPrefix(
+      planRecord.reorderTo ?? ctx.args.reorderTo,
+      "plan reorderTo",
+    ),
     options: ctx.options as never,
     global: ctx.global,
   });
@@ -2769,8 +3205,12 @@ interface McpSchemaContext {
   aliases: string[] | undefined;
 }
 
-function createMcpSchemaContext(ctx: McpActionDispatchContext): McpSchemaContext {
-  const subcommand = readString(ctx.args, "subcommand") ?? readRequiredString(ctx.options, "subcommand");
+function createMcpSchemaContext(
+  ctx: McpActionDispatchContext,
+): McpSchemaContext {
+  const subcommand =
+    readString(ctx.args, "subcommand") ??
+    readRequiredString(ctx.options, "subcommand");
   const aliasSource = ctx.args.alias ?? ctx.options.alias;
   return {
     ctx,
@@ -2778,11 +3218,14 @@ function createMcpSchemaContext(ctx: McpActionDispatchContext): McpSchemaContext
     name: readString(ctx.args, "name") ?? readString(ctx.options, "name"),
     author: readString(ctx.args, "author") ?? readString(ctx.options, "author"),
     force: ctx.args.force === true || ctx.options.force === true,
-    aliases: aliasSource === undefined ? undefined : readStringArray(aliasSource),
+    aliases:
+      aliasSource === undefined ? undefined : readStringArray(aliasSource),
   };
 }
 
-function runMcpSchemaReadOrRemoveAction(schema: McpSchemaContext): Promise<unknown> | unknown | null {
+function runMcpSchemaReadOrRemoveAction(
+  schema: McpSchemaContext,
+): Promise<unknown> | unknown | null {
   const { ctx, subcommand, name, author, force } = schema;
   const simpleHandlers: Record<string, () => Promise<unknown> | unknown> = {
     list: () => runSchemaList(ctx.global),
@@ -2790,32 +3233,58 @@ function runMcpSchemaReadOrRemoveAction(schema: McpSchemaContext): Promise<unkno
     "show-status": () => runSchemaShowStatus(name, ctx.global),
     "list-fields": () => runSchemaListFields(ctx.global),
     "show-field": () => runSchemaShowField(name, ctx.global),
-    "remove-type": () => runSchemaRemoveType(name, { author, force }, ctx.global),
-    "remove-field": () => runSchemaRemoveField(name, { author, force }, ctx.global),
-    "remove-status": () => runSchemaRemoveStatus(name, { author, force }, ctx.global),
+    "remove-type": () =>
+      runSchemaRemoveType(name, { author, force }, ctx.global),
+    "remove-field": () =>
+      runSchemaRemoveField(name, { author, force }, ctx.global),
+    "remove-status": () =>
+      runSchemaRemoveStatus(name, { author, force }, ctx.global),
     "apply-preset": () =>
-      runSchemaApplyPreset(readString(ctx.args, "typePreset") ?? readString(ctx.options, "typePreset"), { author, force }, ctx.global),
+      runSchemaApplyPreset(
+        readString(ctx.args, "typePreset") ??
+          readString(ctx.options, "typePreset"),
+        { author, force },
+        ctx.global,
+      ),
   };
   const handler = getOwnHandler(simpleHandlers, subcommand);
   return handler ? handler() : null;
 }
 
-function runMcpSchemaAddFieldAction(schema: McpSchemaContext): Promise<unknown> {
+function runMcpSchemaAddFieldAction(
+  schema: McpSchemaContext,
+): Promise<unknown> {
   const { ctx, name, author, force, aliases } = schema;
   const commandsSource = ctx.args.commands ?? ctx.options.commands;
-  const requiredTypesSource = ctx.args.requiredTypes ?? ctx.options.requiredTypes;
+  const requiredTypesSource =
+    ctx.args.requiredTypes ?? ctx.options.requiredTypes;
   return runSchemaAddField(
     name,
     {
-      type: readString(ctx.args, "fieldType") ?? readString(ctx.options, "fieldType"),
-      commands: commandsSource === undefined ? undefined : readStringArray(commandsSource),
-      description: readString(ctx.args, "description") ?? readString(ctx.options, "description"),
-      cliFlag: readString(ctx.args, "cliFlag") ?? readString(ctx.options, "cliFlag"),
+      type:
+        readString(ctx.args, "fieldType") ??
+        readString(ctx.options, "fieldType"),
+      commands:
+        commandsSource === undefined
+          ? undefined
+          : readStringArray(commandsSource),
+      description:
+        readString(ctx.args, "description") ??
+        readString(ctx.options, "description"),
+      cliFlag:
+        readString(ctx.args, "cliFlag") ?? readString(ctx.options, "cliFlag"),
       alias: aliases,
       required: ctx.args.required === true || ctx.options.required === true,
-      requiredOnCreate: ctx.args.requiredOnCreate === true || ctx.options.requiredOnCreate === true,
-      allowUnset: !(ctx.args.allowUnset === false || ctx.options.allowUnset === false),
-      requiredTypes: requiredTypesSource === undefined ? undefined : readStringArray(requiredTypesSource),
+      requiredOnCreate:
+        ctx.args.requiredOnCreate === true ||
+        ctx.options.requiredOnCreate === true,
+      allowUnset: !(
+        ctx.args.allowUnset === false || ctx.options.allowUnset === false
+      ),
+      requiredTypes:
+        requiredTypesSource === undefined
+          ? undefined
+          : readStringArray(requiredTypesSource),
       author,
       force,
     },
@@ -2823,7 +3292,9 @@ function runMcpSchemaAddFieldAction(schema: McpSchemaContext): Promise<unknown> 
   );
 }
 
-function runMcpSchemaAddStatusAction(schema: McpSchemaContext): Promise<unknown> {
+function runMcpSchemaAddStatusAction(
+  schema: McpSchemaContext,
+): Promise<unknown> {
   const { ctx, name, author, force, aliases } = schema;
   const roleSource = ctx.args.role ?? ctx.options.role;
   return runSchemaAddStatus(
@@ -2831,8 +3302,13 @@ function runMcpSchemaAddStatusAction(schema: McpSchemaContext): Promise<unknown>
     {
       role: roleSource === undefined ? undefined : readStringArray(roleSource),
       alias: aliases,
-      description: readString(ctx.args, "description") ?? readString(ctx.options, "description"),
-      order: parseMcpInteger(ctx.args.order ?? ctx.options.order, "schema add-status order"),
+      description:
+        readString(ctx.args, "description") ??
+        readString(ctx.options, "description"),
+      order: parseMcpInteger(
+        ctx.args.order ?? ctx.options.order,
+        "schema add-status order",
+      ),
       author,
       force,
     },
@@ -2845,13 +3321,16 @@ function runMcpSchemaAddTypeAction(schema: McpSchemaContext): Promise<unknown> {
   return runSchemaAddType(
     name,
     {
-      description: readString(ctx.args, "description") ?? readString(ctx.options, "description"),
+      description:
+        readString(ctx.args, "description") ??
+        readString(ctx.options, "description"),
       defaultStatus:
         readString(ctx.args, "defaultStatus") ??
         readString(ctx.args, "default_status") ??
         readString(ctx.options, "defaultStatus") ??
         readString(ctx.options, "default_status"),
-      folder: readString(ctx.args, "folder") ?? readString(ctx.options, "folder"),
+      folder:
+        readString(ctx.args, "folder") ?? readString(ctx.options, "folder"),
       alias: aliases,
       author,
       force,
@@ -2860,7 +3339,9 @@ function runMcpSchemaAddTypeAction(schema: McpSchemaContext): Promise<unknown> {
   );
 }
 
-function runMcpSchemaAction(ctx: McpActionDispatchContext): Promise<unknown> | unknown {
+function runMcpSchemaAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> | unknown {
   const schema = createMcpSchemaContext(ctx);
   const simpleResult = runMcpSchemaReadOrRemoveAction(schema);
   if (simpleResult !== null) {
@@ -2876,7 +3357,10 @@ function runMcpSchemaAction(ctx: McpActionDispatchContext): Promise<unknown> | u
     if (ctx.args.infer === true || ctx.options.infer === true) {
       return runSchemaInferTypes(
         {
-          minCount: parseMcpInteger(ctx.args.minCount ?? ctx.options.minCount, "schema infer minCount"),
+          minCount: parseMcpInteger(
+            ctx.args.minCount ?? ctx.options.minCount,
+            "schema infer minCount",
+          ),
           apply: ctx.args.apply === true || ctx.options.apply === true,
           author: schema.author,
           force: schema.force,
@@ -2892,10 +3376,15 @@ function runMcpSchemaAction(ctx: McpActionDispatchContext): Promise<unknown> | u
   );
 }
 
-function runMcpProfileAction(ctx: McpActionDispatchContext): Promise<unknown> | unknown {
-  const subcommand = readString(ctx.args, "subcommand") ?? readRequiredString(ctx.options, "subcommand");
+function runMcpProfileAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> | unknown {
+  const subcommand =
+    readString(ctx.args, "subcommand") ??
+    readRequiredString(ctx.options, "subcommand");
   const normalizedSubcommand = subcommand.trim().toLowerCase();
-  const profileName = readString(ctx.args, "name") ?? readString(ctx.options, "name");
+  const profileName =
+    readString(ctx.args, "name") ?? readString(ctx.options, "name");
   const handlers: Record<string, () => Promise<unknown> | unknown> = {
     list: () => runProfileList(),
     show: () => runProfileShow(profileName),
@@ -2905,7 +3394,8 @@ function runMcpProfileAction(ctx: McpActionDispatchContext): Promise<unknown> | 
         profileName,
         {
           dryRun: ctx.args.dryRun === true || ctx.options.dryRun === true,
-          author: readString(ctx.args, "author") ?? readString(ctx.options, "author"),
+          author:
+            readString(ctx.args, "author") ?? readString(ctx.options, "author"),
           force: ctx.args.force === true || ctx.options.force === true,
         },
         ctx.global,
@@ -2913,7 +3403,10 @@ function runMcpProfileAction(ctx: McpActionDispatchContext): Promise<unknown> | 
   };
   const handler = getOwnHandler(handlers, normalizedSubcommand);
   if (!handler) {
-    throw new PmCliError(`Unknown pm profile subcommand "${subcommand}". Allowed: list, show, apply, lint`, 64);
+    throw new PmCliError(
+      `Unknown pm profile subcommand "${subcommand}". Allowed: list, show, apply, lint`,
+      64,
+    );
   }
   return handler();
 }
@@ -2926,24 +3419,52 @@ function runMcpStatsAction(ctx: McpActionDispatchContext): Promise<unknown> {
     byAssignee: ctx.options.byAssignee === true,
     byTag: ctx.options.byTag === true,
     byPriority: ctx.options.byPriority === true,
-    tagPrefix: typeof ctx.options.tagPrefix === "string" ? ctx.options.tagPrefix : undefined,
+    tagPrefix:
+      typeof ctx.options.tagPrefix === "string"
+        ? ctx.options.tagPrefix
+        : undefined,
   });
 }
 
-async function runMcpAppendAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const { changedFields, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
-  return projectMutationResult(await runAppend(requireMcpItemId(ctx, runnerOptions), runnerOptions as never, ctx.global), {
-    changedFields,
-  });
+async function runMcpAppendAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
+  const { changedFields, runnerOptions } = withMutationCompaction(
+    ctx.args,
+    ctx.options,
+  );
+  return projectMutationResult(
+    await runAppend(
+      requireMcpItemId(ctx, runnerOptions),
+      runnerOptions as never,
+      ctx.global,
+    ),
+    {
+      changedFields,
+    },
+  );
 }
 
-async function runMcpUpdateManyAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const { changedFields, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
-  return projectMutationResult(await runUpdateMany(updateManyOptionsFromFlat(runnerOptions), ctx.global), { changedFields });
+async function runMcpUpdateManyAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
+  const { changedFields, runnerOptions } = withMutationCompaction(
+    ctx.args,
+    ctx.options,
+  );
+  return projectMutationResult(
+    await runUpdateMany(updateManyOptionsFromFlat(runnerOptions), ctx.global),
+    { changedFields },
+  );
 }
 
-async function runMcpCloseManyAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const { changedFields, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
+async function runMcpCloseManyAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
+  const { changedFields, runnerOptions } = withMutationCompaction(
+    ctx.args,
+    ctx.options,
+  );
   const topLevelReason = readString(ctx.args, "reason");
   const closeManyRunnerOptions: Record<string, unknown> =
     topLevelReason !== undefined && runnerOptions.reason === undefined
@@ -2952,58 +3473,131 @@ async function runMcpCloseManyAction(ctx: McpActionDispatchContext): Promise<unk
   if (ctx.force && closeManyRunnerOptions.force === undefined) {
     closeManyRunnerOptions.force = true;
   }
-  return projectMutationResult(await runCloseMany(closeManyOptionsFromFlat(closeManyRunnerOptions), ctx.global), { changedFields });
+  return projectMutationResult(
+    await runCloseMany(
+      closeManyOptionsFromFlat(closeManyRunnerOptions),
+      ctx.global,
+    ),
+    { changedFields },
+  );
 }
 
-async function runMcpRestoreAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
-  const target = readString(runnerOptions, "target") ?? readRequiredString(ctx.args, "target");
-  return projectMutationResult(await runRestore(requireMcpItemId(ctx, runnerOptions), target, runnerOptions, ctx.global), {
-    changedFields,
-    idOnly,
-  });
+async function runMcpRestoreAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
+  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(
+    ctx.args,
+    ctx.options,
+  );
+  const target =
+    readString(runnerOptions, "target") ??
+    readRequiredString(ctx.args, "target");
+  return projectMutationResult(
+    await runRestore(
+      requireMcpItemId(ctx, runnerOptions),
+      target,
+      runnerOptions,
+      ctx.global,
+    ),
+    {
+      changedFields,
+      idOnly,
+    },
+  );
 }
 
-function withoutLifecycleAssigneeAlias(options: Record<string, unknown>): Record<string, unknown> {
+function withoutLifecycleAssigneeAlias(
+  options: Record<string, unknown>,
+): Record<string, unknown> {
   const updateOptions = { ...options };
   delete updateOptions.assignee;
   return updateOptions;
 }
 
-async function runMcpStartTaskAction(ctx: McpActionDispatchContext): Promise<unknown> {
+async function runMcpStartTaskAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
   const pmRoot = resolvePmRoot(process.cwd(), ctx.global.path);
   const settings = await readSettings(pmRoot);
-  const inProgressStatus = resolveStartTaskInProgressStatus(resolveRuntimeStatusRegistry(settings.schema));
+  const inProgressStatus = resolveStartTaskInProgressStatus(
+    resolveRuntimeStatusRegistry(settings.schema),
+  );
   const id = requireMcpItemId(ctx);
   const claimResult = await runClaim(id, ctx.force, ctx.global, ctx.options);
-  const updateResult = await runUpdate(id, { ...withoutLifecycleAssigneeAlias(ctx.options), status: inProgressStatus, force: ctx.force }, ctx.global);
+  const updateResult = await runUpdate(
+    id,
+    {
+      ...withoutLifecycleAssigneeAlias(ctx.options),
+      status: inProgressStatus,
+      force: ctx.force,
+    },
+    ctx.global,
+  );
   return { id, action: "start_task", claim: claimResult, update: updateResult };
 }
 
-async function runMcpPauseTaskAction(ctx: McpActionDispatchContext): Promise<unknown> {
+async function runMcpPauseTaskAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
   const pmRoot = resolvePmRoot(process.cwd(), ctx.global.path);
   const settings = await readSettings(pmRoot);
   const id = requireMcpItemId(ctx);
   const openStatus = resolveRuntimeStatusRegistry(settings.schema).open_status;
-  const updateResult = await runUpdate(id, { ...withoutLifecycleAssigneeAlias(ctx.options), status: openStatus, force: ctx.force }, ctx.global);
-  const releaseResult = await runRelease(id, ctx.force, ctx.global, ctx.options);
-  return { id, action: "pause_task", update: updateResult, release: releaseResult };
+  const updateResult = await runUpdate(
+    id,
+    {
+      ...withoutLifecycleAssigneeAlias(ctx.options),
+      status: openStatus,
+      force: ctx.force,
+    },
+    ctx.global,
+  );
+  const releaseResult = await runRelease(
+    id,
+    ctx.force,
+    ctx.global,
+    ctx.options,
+  );
+  return {
+    id,
+    action: "pause_task",
+    update: updateResult,
+    release: releaseResult,
+  };
 }
 
-async function runMcpCloseTaskAction(ctx: McpActionDispatchContext): Promise<unknown> {
+async function runMcpCloseTaskAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
   const id = requireMcpItemId(ctx);
   const closeReason =
     readString(ctx.args, "reason") ??
     readString(ctx.args, "text") ??
     readString(ctx.options, "reason") ??
     readString(ctx.options, "text");
-  const closeResult = await runClose(id, closeReason, { ...ctx.options, force: ctx.force }, ctx.global);
-  const releaseResult = await runRelease(id, ctx.force, ctx.global, ctx.options);
-  return { id, action: "close_task", close: closeResult, release: releaseResult };
+  const closeResult = await runClose(
+    id,
+    closeReason,
+    { ...ctx.options, force: ctx.force },
+    ctx.global,
+  );
+  const releaseResult = await runRelease(
+    id,
+    ctx.force,
+    ctx.global,
+    ctx.options,
+  );
+  return {
+    id,
+    action: "close_task",
+    close: closeResult,
+    release: releaseResult,
+  };
 }
 
 const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
-  init: (ctx) => runInit(readString(ctx.args, "prefix"), ctx.global, ctx.options),
+  init: (ctx) =>
+    runInit(readString(ctx.args, "prefix"), ctx.global, ctx.options),
   context: (ctx) => runContext(ctx.options, ctx.global),
   next: (ctx) => runNext(ctx.options, ctx.global),
   list: runMcpListAction,
@@ -3011,20 +3605,29 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   search: runMcpSearchAction,
   create: runMcpCreateAction,
   copy: runMcpCopyAction,
-  focus: (ctx) => runFocus(ctx.id, { clear: ctx.options.clear === true || ctx.args.clear === true }, ctx.global),
+  focus: (ctx) =>
+    runFocus(
+      ctx.id,
+      { clear: ctx.options.clear === true || ctx.args.clear === true },
+      ctx.global,
+    ),
   update: runMcpUpdateAction,
   restore: runMcpRestoreAction,
-  claim: (ctx) => runClaim(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
-  release: (ctx) => runRelease(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
+  claim: (ctx) =>
+    runClaim(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
+  release: (ctx) =>
+    runRelease(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
   "start-task": runMcpStartTaskAction,
   "pause-task": runMcpPauseTaskAction,
   "close-task": runMcpCloseTaskAction,
   close: runMcpCloseAction,
   comments: runMcpCommentsAction,
   notes: (ctx) => runNotes(requireMcpItemId(ctx), ctx.options, ctx.global),
-  learnings: (ctx) => runLearnings(requireMcpItemId(ctx), ctx.options, ctx.global),
+  learnings: (ctx) =>
+    runLearnings(requireMcpItemId(ctx), ctx.options, ctx.global),
   files: runMcpFilesAction,
-  docs: (ctx) => runDocs(requireMcpItemId(ctx), withAddNoteOption(ctx.options), ctx.global),
+  docs: (ctx) =>
+    runDocs(requireMcpItemId(ctx), withAddNoteOption(ctx.options), ctx.global),
   test: (ctx) => runTest(requireMcpItemId(ctx), ctx.options, ctx.global),
   "test-all": (ctx) => runTestAll(ctx.options, ctx.global),
   telemetry: runMcpTelemetryAction,
@@ -3036,15 +3639,23 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   aggregate: (ctx) => runAggregate(ctx.options, ctx.global),
   extension: (ctx) => runExtension(readMcpTarget(ctx), ctx.options, ctx.global),
   package: (ctx) => runExtension(readMcpTarget(ctx), ctx.options, ctx.global),
-  install: (ctx) => runExtension(readMcpTarget(ctx), { ...ctx.options, install: true }, ctx.global),
+  install: (ctx) =>
+    runExtension(
+      readMcpTarget(ctx),
+      { ...ctx.options, install: true },
+      ctx.global,
+    ),
   upgrade: (ctx) => runUpgrade(readMcpTarget(ctx), ctx.options, ctx.global),
   delete: (ctx) => runDelete(requireMcpItemId(ctx), ctx.options, ctx.global),
   deps: (ctx) => runDeps(requireMcpItemId(ctx), ctx.options, ctx.global),
-  "files-discover": (ctx) => runFilesDiscover(requireMcpItemId(ctx), ctx.options, ctx.global),
+  "files-discover": (ctx) =>
+    runFilesDiscover(requireMcpItemId(ctx), ctx.options, ctx.global),
   history: (ctx) => runHistory(requireMcpItemId(ctx), ctx.options, ctx.global),
-  "history-redact": (ctx) => runHistoryRedact(requireMcpItemId(ctx), ctx.options, ctx.global),
+  "history-redact": (ctx) =>
+    runHistoryRedact(requireMcpItemId(ctx), ctx.options, ctx.global),
   "history-repair": runMcpHistoryRepairAction,
-  "history-compact": (ctx) => runHistoryCompact(requireMcpItemId(ctx), ctx.options, ctx.global),
+  "history-compact": (ctx) =>
+    runHistoryCompact(requireMcpItemId(ctx), ctx.options, ctx.global),
   plan: runMcpPlanAction,
   schema: runMcpSchemaAction,
   profile: runMcpProfileAction,
@@ -3072,7 +3683,15 @@ async function dispatchAction(
     activeExtensions,
   };
   const handler = getOwnHandler(SDK_ACTION_HANDLERS, action);
-  return handler ? handler(ctx) : dispatchActiveExtensionAction(action, args, options, global, activeExtensions);
+  return handler
+    ? handler(ctx)
+    : dispatchActiveExtensionAction(
+        action,
+        args,
+        options,
+        global,
+        activeExtensions,
+      );
 }
 
 const actionRunnerTestHooks = {
@@ -3099,7 +3718,11 @@ declare global {
   var __pmCliActionRunnerTestHooks: typeof actionRunnerTestHooks | undefined;
 }
 
-if (process.env.NODE_ENV === "test" || process.env.VITEST !== undefined || process.env.VITEST_WORKER_ID !== undefined) {
+if (
+  process.env.NODE_ENV === "test" ||
+  process.env.VITEST !== undefined ||
+  process.env.VITEST_WORKER_ID !== undefined
+) {
   globalThis.__pmCliActionRunnerTestHooks = actionRunnerTestHooks;
 }
 

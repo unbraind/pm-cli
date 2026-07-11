@@ -13,7 +13,11 @@ import { decodeHtmlEntitiesInOptions } from "../core/shared/html-entity-decode.j
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import { asRecordClone } from "../core/shared/primitives.js";
 import { createSerialQueue } from "../core/shared/serial-queue.js";
-import { readRequiredString, runAction, type PmActionInput } from "../sdk/runtime.js";
+import {
+  readRequiredString,
+  runAction,
+  type PmActionInput,
+} from "../sdk/runtime.js";
 import { TOOLS } from "./tool-definitions.js";
 
 interface JsonRpcRequest {
@@ -31,13 +35,17 @@ function resolvePmPackageRoot(): string {
   return fileURLToPath(new URL("../..", import.meta.url));
 }
 
-if (typeof process.env[PM_PACKAGE_ROOT_ENV] !== "string" || process.env[PM_PACKAGE_ROOT_ENV]?.trim().length === 0) {
+if (
+  typeof process.env[PM_PACKAGE_ROOT_ENV] !== "string" ||
+  process.env[PM_PACKAGE_ROOT_ENV]?.trim().length === 0
+) {
   process.env[PM_PACKAGE_ROOT_ENV] = resolvePmPackageRoot();
 }
 
 // Reflect the real package.json version so agents/telemetry can identify the
 // build serving requests (was hard-coded "1.0.0"; see pm-2nvw).
-const PM_MCP_SERVER_VERSION = resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0";
+const PM_MCP_SERVER_VERSION =
+  resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0";
 
 // Tool definitions (TOOLS) live in ./tool-definitions.ts so the `pm contracts`
 // golden-file snapshot can import the surface without loading the server
@@ -58,13 +66,20 @@ const TOOL_DECLARED_KEYS: Map<string, string[]> = new Map(
   }),
 );
 
-function nearestDeclaredKey(unexpected: string, declared: string[]): string | undefined {
+function nearestDeclaredKey(
+  unexpected: string,
+  declared: string[],
+): string | undefined {
   // Cheap did-you-mean: budget grows with key length but stays small so we only
   // suggest genuine near-misses (a single typo / transposition for short keys).
   const limit = Math.max(1, Math.min(3, Math.floor(unexpected.length / 4) + 1));
   let best: { key: string; distance: number } | undefined;
   for (const candidate of declared) {
-    const distance = levenshteinDistanceWithinLimit(unexpected, candidate, limit);
+    const distance = levenshteinDistanceWithinLimit(
+      unexpected,
+      candidate,
+      limit,
+    );
     if (distance === null) {
       continue;
     }
@@ -80,7 +95,10 @@ function nearestDeclaredKey(unexpected: string, declared: string[]): string | un
 // keys there are by-design rather than typos and must not be flagged.
 const UNEXPECTED_KEY_WARNING_EXEMPT_TOOLS = new Set(["pm_run"]);
 
-function detectUnexpectedTopLevelKeys(toolName: string, args: Record<string, unknown>): string[] {
+function detectUnexpectedTopLevelKeys(
+  toolName: string,
+  args: Record<string, unknown>,
+): string[] {
   if (typeof args !== "object" || args === null || Array.isArray(args)) {
     return [];
   }
@@ -106,7 +124,6 @@ function detectUnexpectedTopLevelKeys(toolName: string, args: Record<string, unk
   }
   return warnings;
 }
-
 
 const HANDLERS: Record<string, ToolHandler> = {
   pm_run: (args) => runAction(args as PmActionInput),
@@ -139,11 +156,16 @@ const HANDLERS: Record<string, ToolHandler> = {
   pm_plan: (args) => runAction({ ...args, action: "plan" }),
 };
 
-function resultContent(result: unknown, warnings?: string[]): Record<string, unknown> {
+function resultContent(
+  result: unknown,
+  warnings?: string[],
+): Record<string, unknown> {
   // pm-qxwu: warnings is additive — existing fields (content, structuredContent.result)
   // are never removed or renamed. The warnings array only appears when non-empty.
   const structuredContent: Record<string, unknown> =
-    warnings !== undefined && warnings.length > 0 ? { result, warnings } : { result };
+    warnings !== undefined && warnings.length > 0
+      ? { result, warnings }
+      : { result };
   return {
     content: [
       {
@@ -172,10 +194,10 @@ function errorContent(error: unknown): Record<string, unknown> {
   };
 }
 
-/**
- * Implements handle request for the public runtime surface of this module.
- */
-export async function handleRequest(request: JsonRpcRequest): Promise<Record<string, unknown> | undefined> {
+/** Implements handle request for the public runtime surface of this module. */
+export async function handleRequest(
+  request: JsonRpcRequest,
+): Promise<Record<string, unknown> | undefined> {
   if (!request.id && request.method?.startsWith("notifications/")) {
     return undefined;
   }
@@ -205,7 +227,9 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
   if (request.method === "tools/call") {
     const params = asRecordClone(request.params);
     const name = readRequiredString(params, "name");
-    const handler = Object.prototype.hasOwnProperty.call(HANDLERS, name) ? HANDLERS[name] : undefined;
+    const handler = Object.prototype.hasOwnProperty.call(HANDLERS, name)
+      ? HANDLERS[name]
+      : undefined;
     if (!handler) {
       throw new PmCliError(`Unknown pm MCP tool: ${name}`, 64);
     }
@@ -227,25 +251,33 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
     const result = await handler(args);
     return resultContent(result, warnings);
   }
-  throw new PmCliError(`Unsupported MCP method: ${request.method ?? "(missing)"}`, 64);
+  throw new PmCliError(
+    `Unsupported MCP method: ${request.method ?? "(missing)"}`,
+    64,
+  );
 }
 
-function writeResponse(id: JsonRpcRequest["id"], payload: Record<string, unknown>): void {
-  process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id, result: payload })}\n`);
+function writeResponse(
+  id: JsonRpcRequest["id"],
+  payload: Record<string, unknown>,
+): void {
+  process.stdout.write(
+    `${JSON.stringify({ jsonrpc: "2.0", id, result: payload })}\n`,
+  );
 }
 
 function writeError(id: JsonRpcRequest["id"], error: unknown): void {
   const code = error instanceof PmCliError ? error.exitCode : -32603;
   const message = error instanceof Error ? error.message : String(error);
-  process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id, error: { code, message } })}\n`);
+  process.stdout.write(
+    `${JSON.stringify({ jsonrpc: "2.0", id, error: { code, message } })}\n`,
+  );
 }
 
 // pm-3puw: parse one JSON-RPC line, dispatch it, and write the response. Kept
 // as a standalone async unit so the stdio loop can enqueue it onto a serial
 // queue (process lines in arrival order) and tests can drive it directly.
-/**
- * Implements process rpc line for the public runtime surface of this module.
- */
+/** Implements process rpc line for the public runtime surface of this module. */
 export async function processRpcLine(line: string): Promise<void> {
   if (line.trim().length === 0) {
     return;
@@ -258,8 +290,15 @@ export async function processRpcLine(line: string): Promise<void> {
     writeError(null, new PmCliError(`Parse error: ${message}`, -32700));
     return;
   }
-  if (typeof request !== "object" || request === null || Array.isArray(request)) {
-    writeError(null, new PmCliError("Invalid JSON-RPC request: expected an object", -32600));
+  if (
+    typeof request !== "object" ||
+    request === null ||
+    Array.isArray(request)
+  ) {
+    writeError(
+      null,
+      new PmCliError("Invalid JSON-RPC request: expected an object", -32600),
+    );
     return;
   }
   const shouldRespond = Object.prototype.hasOwnProperty.call(request, "id");
@@ -280,11 +319,12 @@ export async function processRpcLine(line: string): Promise<void> {
   }
 }
 
-/**
- * Implements start mcp server for the public runtime surface of this module.
- */
+/** Implements start mcp server for the public runtime surface of this module. */
 export function startMcpServer(): void {
-  const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
+  const rl = readline.createInterface({
+    input: process.stdin,
+    crlfDelay: Infinity,
+  });
   // pm-3puw: serialize line handling so pipelined requests are processed in
   // arrival order. The previous fire-and-forget handler ran requests
   // concurrently, so a client that pipelined two mutations on the same item
@@ -299,10 +339,11 @@ export function startMcpServer(): void {
 // so argv[1] must be realpath-resolved before comparing against this module's
 // path — a plain equality check made the published `pm-mcp` bin exit 0 without
 // ever starting the server (pm-qtbc).
-/**
- * Implements check whether invoked as mcp main module for the public runtime surface of this module.
- */
-export function isInvokedAsMcpMainModule(argvPath: string | undefined, moduleUrl: string): boolean {
+/** Implements check whether invoked as mcp main module for the public runtime surface of this module. */
+export function isInvokedAsMcpMainModule(
+  argvPath: string | undefined,
+  moduleUrl: string,
+): boolean {
   if (!argvPath) {
     return false;
   }
@@ -317,17 +358,25 @@ export function isInvokedAsMcpMainModule(argvPath: string | undefined, moduleUrl
   }
 }
 
-type RuntimeTestHooks = NonNullable<typeof globalThis.__pmCliActionRunnerTestHooks>;
+type RuntimeTestHooks = NonNullable<
+  typeof globalThis.__pmCliActionRunnerTestHooks
+>;
 type RuntimeTestHookKey = keyof RuntimeTestHooks;
 
-function readRuntimeTestHook<Key extends RuntimeTestHookKey>(key: Key): RuntimeTestHooks[Key] {
+function readRuntimeTestHook<Key extends RuntimeTestHookKey>(
+  key: Key,
+): RuntimeTestHooks[Key] {
   const runtimeTestHooks = globalThis.__pmCliActionRunnerTestHooks;
   if (runtimeTestHooks === undefined) {
-    throw new PmCliError(`MCP runtime test hook "${String(key)}" is only available in test environments.`, 64);
+    throw new PmCliError(
+      `MCP runtime test hook "${String(key)}" is only available in test environments.`,
+      64,
+    );
   }
   return runtimeTestHooks[key];
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   get closeManyOptionsFromFlat() {
     return readRuntimeTestHook("closeManyOptionsFromFlat");

@@ -7,7 +7,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
-import { activateExtensions, getActiveExtensionRegistrations, loadExtensions, runActiveOnReadHooks } from "../../core/extensions/index.js";
+import {
+  activateExtensions,
+  getActiveExtensionRegistrations,
+  loadExtensions,
+  runActiveOnReadHooks,
+} from "../../core/extensions/index.js";
 import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import {
   KNOWN_EXTENSION_CAPABILITIES,
@@ -20,7 +25,10 @@ import {
   readVectorizationStatusLedger,
   refreshSemanticEmbeddingsForMutatedItems,
 } from "../../core/search/cache.js";
-import { resolveEmbeddingProviders, resolveProviderConfigSource } from "../../core/search/providers.js";
+import {
+  resolveEmbeddingProviders,
+  resolveProviderConfigSource,
+} from "../../core/search/providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
 import { collectStaleVectorizationIds } from "../../core/search/staleness.js";
 import {
@@ -28,22 +36,34 @@ import {
   hasVectorizationEmbeddingIdentityChanged,
 } from "../../core/search/vectorization-metadata.js";
 import { resolveVectorStores } from "../../core/search/vector-stores.js";
-import { EXIT_CODE, PM_CORE_REQUIRED_SUBDIRS, PM_OPTIONAL_TYPE_SUBDIRS } from "../../core/shared/constants.js";
+import {
+  EXIT_CODE,
+  PM_CORE_REQUIRED_SUBDIRS,
+  PM_OPTIONAL_TYPE_SUBDIRS,
+} from "../../core/shared/constants.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
-import { effectiveItemFormatVersion, scanItemFormatVersions } from "../../core/item/item-format-version.js";
-import { listAllFrontMatter, listAllFrontMatterWithBody } from "../../core/store/item-store.js";
+import {
+  effectiveItemFormatVersion,
+  scanItemFormatVersions,
+} from "../../core/item/item-format-version.js";
+import {
+  listAllFrontMatter,
+  listAllFrontMatterWithBody,
+} from "../../core/store/item-store.js";
 import {
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
   TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS,
   TELEMETRY_SCHEMA_VERSION,
 } from "../../core/telemetry/runtime.js";
 
-const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(PM_TELEMETRY_SOURCE_CONTEXT_VALUES);
+const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(
+  PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
+);
 import {
   getItemFormatFromPath,
   getSettingsPath,
@@ -53,7 +73,12 @@ import {
 } from "../../core/store/paths.js";
 import { readSettingsWithMetadata } from "../../core/store/settings.js";
 import { buildRemediationMap } from "../../core/diagnostics/remediation.js";
-import type { HistoryCompactPolicy, ItemFormat, ItemMetadata, PmSettings } from "../../types/index.js";
+import type {
+  HistoryCompactPolicy,
+  ItemFormat,
+  ItemMetadata,
+  PmSettings,
+} from "../../types/index.js";
 import { readManagedExtensionState } from "./extension.js";
 import {
   buildCapabilityContractMetadata,
@@ -64,10 +89,9 @@ import {
 type HealthStatus = "ok" | "warn";
 type MigrationRuntimeStatus = "pending" | "failed" | "applied";
 
-/**
- * Documents the health check payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the health check payload exchanged by command, SDK, and package integrations. */
 export interface HealthCheck {
+  /** Value that configures or reports name for this contract. */
   name:
     | "settings"
     | "directories"
@@ -79,18 +103,23 @@ export interface HealthCheck {
     | "integrity"
     | "history_drift"
     | "vectorization";
+  /** Lifecycle state reported for status. */
   status: HealthStatus;
+  /** Value that configures or reports details for this contract. */
   details: Record<string, unknown>;
 }
 
-/**
- * Documents the health result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the health result payload exchanged by command, SDK, and package integrations. */
 export interface HealthResult {
+  /** Whether the operation completed without a blocking failure. */
   ok: boolean;
+  /** Value that configures or reports checks for this contract. */
   checks: HealthCheck[];
+  /** Number of warning entries represented by this result. */
   warning_count?: number;
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** Value that configures or reports projection for this contract. */
   projection?: {
     mode: "brief" | "summary" | "full";
     warning_count: number;
@@ -98,24 +127,35 @@ export interface HealthResult {
     detail_limit: number;
     omitted_checks?: HealthCheck["name"][];
   };
+  /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
 }
 
-/**
- * Documents the run health options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the run health options payload exchanged by command, SDK, and package integrations. */
 export interface RunHealthOptions {
+  /** Value that configures or reports strict directories for this contract. */
   strictDirectories?: boolean;
+  /** Value that configures or reports check only for this contract. */
   checkOnly?: boolean;
+  /** Value that configures or reports check telemetry for this contract. */
   checkTelemetry?: boolean;
+  /** Value that configures or reports no refresh for this contract. */
   noRefresh?: boolean;
+  /** Value that configures or reports refresh vectors for this contract. */
   refreshVectors?: boolean;
+  /** Value that configures or reports verbose stale items for this contract. */
   verboseStaleItems?: boolean;
+  /** Value that configures or reports skip vectors for this contract. */
   skipVectors?: boolean;
+  /** Value that configures or reports skip integrity for this contract. */
   skipIntegrity?: boolean;
+  /** Value that configures or reports skip drift for this contract. */
   skipDrift?: boolean;
+  /** Value that configures or reports full for this contract. */
   full?: boolean;
+  /** Value that configures or reports brief for this contract. */
   brief?: boolean;
+  /** Value that configures or reports summary for this contract. */
   summary?: boolean;
 }
 
@@ -166,29 +206,36 @@ interface ExtensionHealthTriageSummary {
   remediation: string[];
 }
 
-type ItemWithBody = Awaited<ReturnType<typeof listAllFrontMatterWithBody>>[number];
+type ItemWithBody = Awaited<
+  ReturnType<typeof listAllFrontMatterWithBody>
+>[number];
 const STALE_VECTORIZATION_SUMMARY_LIMIT = 25;
 const BRIEF_HEALTH_DETAIL_LIMIT = 8;
-const TELEMETRY_QUEUE_RELATIVE_PATH = path.join("runtime", "telemetry", "events.jsonl");
-const TELEMETRY_STATE_RELATIVE_PATH = path.join("runtime", "telemetry", "state.json");
+const TELEMETRY_QUEUE_RELATIVE_PATH = path.join(
+  "runtime",
+  "telemetry",
+  "events.jsonl",
+);
+const TELEMETRY_STATE_RELATIVE_PATH = path.join(
+  "runtime",
+  "telemetry",
+  "state.json",
+);
 const TELEMETRY_ENDPOINT_PROBE_TIMEOUT_MS = 2_500;
 const TELEMETRY_QUEUE_HIGH_WATER_MARK = 500;
-const TELEMETRY_QUEUE_HIGH_RETRY_THRESHOLD = TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS - 3;
+const TELEMETRY_QUEUE_HIGH_RETRY_THRESHOLD =
+  TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS - 3;
 const TELEMETRY_SERVER_MAX_SCHEMA_VERSION_HEADERS = [
   "x-pm-telemetry-max-schema-version",
   "x-pm-telemetry-max-version",
 ] as const;
 
-/**
- * Advisory warnings are surfaced for visibility but never flip overall health to
- * not-ok. Telemetry is opt-out, non-critical observability: a queued/unreachable
- * telemetry endpoint or corrupt local telemetry state is not a project-health
- * failure and must not block agents that gate on `pm health` `ok`. History
- * over-compaction-threshold warnings are likewise advisory maintenance hints —
- * a deep stream is healthy, just a candidate for `pm history-compact`.
- */
+/** Advisory warnings are surfaced for visibility but never flip overall health to not-ok. Telemetry is opt-out, non-critical observability: a queued/unreachable telemetry endpoint or corrupt local telemetry state is not a project-health failure and must not block agents that gate on `pm health` `ok`. History over-compaction-threshold warnings are likewise advisory maintenance hints — a deep stream is healthy, just a candidate for `pm history-compact`. */
 function isAdvisoryHealthWarning(warning: string): boolean {
-  return warning.startsWith("telemetry_") || warning.startsWith("history_stream_over_compact_threshold:");
+  return (
+    warning.startsWith("telemetry_") ||
+    warning.startsWith("history_stream_over_compact_threshold:")
+  );
 }
 
 function warningCode(value: string): string {
@@ -204,7 +251,10 @@ function normalizeExtensionNameForMatch(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function isExpectedUnmanagedExtension(name: string, directory: string): boolean {
+function isExpectedUnmanagedExtension(
+  name: string,
+  directory: string,
+): boolean {
   const normalizedName = normalizeExtensionNameForMatch(name);
   const normalizedDirectory = normalizeExtensionNameForMatch(directory);
   if (normalizedName.startsWith("builtin-")) {
@@ -222,12 +272,7 @@ async function isDirectory(targetPath: string): Promise<boolean> {
   }
 }
 
-/**
- * Summary of the history-stream directory used by the storage health check.
- * `over_threshold` is populated only when the compaction policy is enabled —
- * counting entries requires reading every stream, so the default (policy-off)
- * path stays a cheap directory listing.
- */
+/** Summary of the history-stream directory used by the storage health check. `over_threshold` is populated only when the compaction policy is enabled — counting entries requires reading every stream, so the default (policy-off) path stays a cheap directory listing. */
 interface HistoryStreamSummary {
   count: number;
   warnings: string[];
@@ -253,7 +298,9 @@ async function countHistoryStreams(
   const overThreshold: string[] = [];
   for (const fileName of historyFiles) {
     const streamPath = path.join(historyDir, fileName);
-    warnings.push(...(await runActiveOnReadHooks({ path: streamPath, scope: "project" })));
+    warnings.push(
+      ...(await runActiveOnReadHooks({ path: streamPath, scope: "project" })),
+    );
     if (!policyActive) {
       continue;
     }
@@ -271,7 +318,12 @@ async function countHistoryStreams(
 
   return {
     count: historyFiles.length,
-    warnings: [...warnings, ...overThreshold.map((id) => `history_stream_over_compact_threshold:${id}`)],
+    warnings: [
+      ...warnings,
+      ...overThreshold.map(
+        (id) => `history_stream_over_compact_threshold:${id}`,
+      ),
+    ],
     over_threshold: overThreshold,
     max_entries: maxEntries,
   };
@@ -281,8 +333,13 @@ function normalizeRelativePath(pmRoot: string, targetPath: string): string {
   return path.relative(pmRoot, targetPath).replaceAll("\\", "/");
 }
 
-async function listItemDocumentPaths(pmRoot: string, typeToFolder: Record<string, string>): Promise<string[]> {
-  const folders = [...new Set(Object.values(typeToFolder))].sort((left, right) => left.localeCompare(right));
+async function listItemDocumentPaths(
+  pmRoot: string,
+  typeToFolder: Record<string, string>,
+): Promise<string[]> {
+  const folders = [...new Set(Object.values(typeToFolder))].sort(
+    (left, right) => left.localeCompare(right),
+  );
   const itemPaths: string[] = [];
   for (const folder of folders) {
     const directoryPath = path.join(pmRoot, folder);
@@ -290,24 +347,42 @@ async function listItemDocumentPaths(pmRoot: string, typeToFolder: Record<string
     try {
       entries = await fs.readdir(directoryPath);
     } catch (error: unknown) {
-      if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT") {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error as { code?: string }).code === "ENOENT"
+      ) {
         continue;
       }
       continue;
     }
     for (const entry of entries) {
-      if (!ITEM_FILE_EXTENSIONS.some((extension) => entry.toLowerCase().endsWith(extension))) {
+      if (
+        !ITEM_FILE_EXTENSIONS.some((extension) =>
+          entry.toLowerCase().endsWith(extension),
+        )
+      ) {
         continue;
       }
       itemPaths.push(path.join(directoryPath, entry));
     }
   }
-  itemPaths.sort((left, right) => normalizeRelativePath(pmRoot, left).localeCompare(normalizeRelativePath(pmRoot, right)));
+  itemPaths.sort((left, right) =>
+    normalizeRelativePath(pmRoot, left).localeCompare(
+      normalizeRelativePath(pmRoot, right),
+    ),
+  );
   return itemPaths;
 }
 
 function shouldReportHistoryDirectoryUnreadable(error: unknown): boolean {
-  return !(typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT");
+  return !(
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "ENOENT"
+  );
 }
 
 async function buildIntegrityCheck(
@@ -317,10 +392,16 @@ async function buildIntegrityCheck(
 ): Promise<{ check: HealthCheck; warnings: string[] }> {
   const itemPaths = await listItemDocumentPaths(pmRoot, typeToFolder);
   const itemUnreadable: string[] = [];
-  const itemConflictMarkers: Array<{ path: string; line: number; marker: string }> = [];
+  const itemConflictMarkers: Array<{
+    path: string;
+    line: number;
+    marker: string;
+  }> = [];
   const itemParseFailures: string[] = [];
   const formatVersionEntries: Array<{ ref: string; version: number }> = [];
-  const extensionFieldNames = collectRegisteredItemFieldNames(getActiveExtensionRegistrations());
+  const extensionFieldNames = collectRegisteredItemFieldNames(
+    getActiveExtensionRegistrations(),
+  );
 
   for (const itemPath of itemPaths) {
     const relativePath = normalizeRelativePath(pmRoot, itemPath);
@@ -341,8 +422,15 @@ async function buildIntegrityCheck(
       continue;
     }
     try {
-      const parsed = parseItemDocument(raw, { format: getItemFormatFromPath(itemPath) as ItemFormat, schema, extensionFieldNames });
-      formatVersionEntries.push({ ref: relativePath, version: effectiveItemFormatVersion(parsed.metadata) });
+      const parsed = parseItemDocument(raw, {
+        format: getItemFormatFromPath(itemPath) as ItemFormat,
+        schema,
+        extensionFieldNames,
+      });
+      formatVersionEntries.push({
+        ref: relativePath,
+        version: effectiveItemFormatVersion(parsed.metadata),
+      });
     } catch {
       itemParseFailures.push(relativePath);
     }
@@ -351,11 +439,17 @@ async function buildIntegrityCheck(
 
   const historyDir = path.join(pmRoot, "history");
   const historyUnreadable: string[] = [];
-  const historyConflictMarkers: Array<{ id: string; line: number; marker: string }> = [];
+  const historyConflictMarkers: Array<{
+    id: string;
+    line: number;
+    marker: string;
+  }> = [];
   const historyInvalidJson: Array<{ id: string; line: number }> = [];
   let historyFiles: string[] = [];
   try {
-    historyFiles = (await fs.readdir(historyDir)).filter((entry) => entry.endsWith(".jsonl")).sort((left, right) => left.localeCompare(right));
+    historyFiles = (await fs.readdir(historyDir))
+      .filter((entry) => entry.endsWith(".jsonl"))
+      .sort((left, right) => left.localeCompare(right));
   } catch (error: unknown) {
     /* c8 ignore start -- ENOENT/non-ENOENT differentiation requires filesystem fault injection */
     if (shouldReportHistoryDirectoryUnreadable(error)) {
@@ -401,17 +495,31 @@ async function buildIntegrityCheck(
 
   const warnings = [
     ...itemUnreadable.map((entry) => `integrity_item_unreadable:${entry}`),
-    ...itemConflictMarkers.map((entry) => `integrity_item_conflict_marker:${entry.path}:L${entry.line}`),
+    ...itemConflictMarkers.map(
+      (entry) => `integrity_item_conflict_marker:${entry.path}:L${entry.line}`,
+    ),
     ...itemParseFailures.map((entry) => `integrity_item_parse_failed:${entry}`),
-    ...historyUnreadable.map((entry) => `integrity_history_unreadable:${entry}`),
-    ...historyConflictMarkers.map((entry) => `integrity_history_conflict_marker:${entry.id}:L${entry.line}`),
-    ...historyInvalidJson.map((entry) => `integrity_history_invalid_json:${entry.id}:L${entry.line}`),
+    ...historyUnreadable.map(
+      (entry) => `integrity_history_unreadable:${entry}`,
+    ),
+    ...historyConflictMarkers.map(
+      (entry) => `integrity_history_conflict_marker:${entry.id}:L${entry.line}`,
+    ),
+    ...historyInvalidJson.map(
+      (entry) => `integrity_history_invalid_json:${entry.id}:L${entry.line}`,
+    ),
     /* c8 ignore start -- outdated-version items are unreachable until CURRENT_ITEM_FORMAT_VERSION advances past the baseline (an effective version below 1 cannot occur); the per-item mapping is covered in item-format-version.spec, and the ahead path below is covered by health-command.spec */
-    ...formatVersionScan.outdated.map((entry) => `integrity_item_outdated_format_version:${entry}`),
+    ...formatVersionScan.outdated.map(
+      (entry) => `integrity_item_outdated_format_version:${entry}`,
+    ),
     /* c8 ignore stop */
-    ...formatVersionScan.ahead.map((entry) => `integrity_item_ahead_format_version:${entry}`),
+    ...formatVersionScan.ahead.map(
+      (entry) => `integrity_item_ahead_format_version:${entry}`,
+    ),
   ];
-  const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+  const normalizedWarnings = [...new Set(warnings)].sort((left, right) =>
+    left.localeCompare(right),
+  );
 
   return {
     check: {
@@ -453,11 +561,15 @@ function hasActivateExport(moduleRecord: Record<string, unknown>): boolean {
   if (typeof defaultExport !== "object" || defaultExport === null) {
     return false;
   }
-  return typeof (defaultExport as Record<string, unknown>).activate === "function";
+  return (
+    typeof (defaultExport as Record<string, unknown>).activate === "function"
+  );
 }
 /* c8 ignore stop */
 
-function summarizeLoadedExtension(extension: LoadedExtension): Record<string, unknown> {
+function summarizeLoadedExtension(
+  extension: LoadedExtension,
+): Record<string, unknown> {
   const summary: Record<string, unknown> = {
     layer: extension.layer,
     directory: extension.directory,
@@ -467,7 +579,9 @@ function summarizeLoadedExtension(extension: LoadedExtension): Record<string, un
     entry: extension.entry,
     priority: extension.priority,
     entry_path: extension.entry_path,
-    has_activate: hasActivateExport(extension.module as Record<string, unknown>),
+    has_activate: hasActivateExport(
+      extension.module as Record<string, unknown>,
+    ),
   };
   /* c8 ignore start -- capability list optionality is exercised by extension load integration suites */
   if (Array.isArray(extension.capabilities)) {
@@ -477,7 +591,10 @@ function summarizeLoadedExtension(extension: LoadedExtension): Record<string, un
   return summary;
 }
 
-function resolveMigrationId(definition: Record<string, unknown>, fallbackIndex: number): string {
+function resolveMigrationId(
+  definition: Record<string, unknown>,
+  fallbackIndex: number,
+): string {
   const explicitId = toNonEmptyStringOrUndefined(definition.id);
   if (explicitId) {
     return explicitId;
@@ -485,7 +602,9 @@ function resolveMigrationId(definition: Record<string, unknown>, fallbackIndex: 
   return `migration-${String(fallbackIndex + 1).padStart(3, "0")}`;
 }
 
-function resolveMigrationStatus(definition: Record<string, unknown>): MigrationRuntimeStatus {
+function resolveMigrationStatus(
+  definition: Record<string, unknown>,
+): MigrationRuntimeStatus {
   const rawStatus = toNonEmptyStringOrUndefined(definition.status);
   const normalized = rawStatus?.toLowerCase();
   if (normalized === "failed") {
@@ -497,12 +616,21 @@ function resolveMigrationStatus(definition: Record<string, unknown>): MigrationR
   return "pending";
 }
 
-function resolveMigrationFailureReason(definition: Record<string, unknown>): string | undefined {
-  return toNonEmptyStringOrUndefined(definition.reason) ?? toNonEmptyStringOrUndefined(definition.error) ?? toNonEmptyStringOrUndefined(definition.message);
+function resolveMigrationFailureReason(
+  definition: Record<string, unknown>,
+): string | undefined {
+  return (
+    toNonEmptyStringOrUndefined(definition.reason) ??
+    toNonEmptyStringOrUndefined(definition.error) ??
+    toNonEmptyStringOrUndefined(definition.message)
+  );
 }
 
 /* c8 ignore start -- comparator tie-break branches are deterministic ordering glue exercised via migration integration tests */
-function compareMigrationEntries(left: MigrationStatusEntry, right: MigrationStatusEntry): number {
+function compareMigrationEntries(
+  left: MigrationStatusEntry,
+  right: MigrationStatusEntry,
+): number {
   const byLayer = (left.layer ?? "").localeCompare(right.layer ?? "");
   if (byLayer !== 0) {
     return byLayer;
@@ -561,8 +689,14 @@ function summarizeMigrationStatuses(
   failed.sort(compareMigrationEntries);
 
   const warnings = [
-    ...failed.map((entry) => `extension_migration_failed:${entry.layer}:${entry.name}:${entry.id}`),
-    ...pending.map((entry) => `extension_migration_pending:${entry.layer}:${entry.name}:${entry.id}`),
+    ...failed.map(
+      (entry) =>
+        `extension_migration_failed:${entry.layer}:${entry.name}:${entry.id}`,
+    ),
+    ...pending.map(
+      (entry) =>
+        `extension_migration_pending:${entry.layer}:${entry.name}:${entry.id}`,
+    ),
   ];
 
   return {
@@ -589,32 +723,45 @@ function buildExtensionHealthTriageSummary(
   unmanagedExpectedExtensions: string[],
   unmanagedActionRequiredExtensions: string[],
 ): ExtensionHealthTriageSummary {
-  const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
-  const warningCodes = [...new Set(normalizedWarnings.map((value) => warningCode(value)))].sort((left, right) =>
+  const normalizedWarnings = [...new Set(warnings)].sort((left, right) =>
     left.localeCompare(right),
   );
-  const unknownCapabilityCount = normalizedWarnings.filter((warning) => warning.startsWith("extension_capability_unknown:")).length;
+  const warningCodes = [
+    ...new Set(normalizedWarnings.map((value) => warningCode(value))),
+  ].sort((left, right) => left.localeCompare(right));
+  const unknownCapabilityCount = normalizedWarnings.filter((warning) =>
+    warning.startsWith("extension_capability_unknown:"),
+  ).length;
   const updateHealthPartial = unmanagedActionRequiredExtensions.length > 0;
   const updateHealthCoverage = updateHealthPartial ? "partial" : "full";
   const remediation: string[] = [];
-  const registrationCollisionRemediation = buildRegistrationCollisionRemediation(normalizedWarnings, {
-    deactivate: "pm extension --deactivate <name> --project/--global",
-    doctor: "pm extension --doctor --project/--global --detail deep --trace",
-  });
+  const registrationCollisionRemediation =
+    buildRegistrationCollisionRemediation(normalizedWarnings, {
+      deactivate: "pm extension --deactivate <name> --project/--global",
+      doctor: "pm extension --doctor --project/--global --detail deep --trace",
+    });
   if (registrationCollisionRemediation) {
     remediation.push(registrationCollisionRemediation);
   }
   if (loadFailureCount > 0) {
-    remediation.push("Run pm extension --explore --project and pm extension --explore --global to inspect load failures.");
+    remediation.push(
+      "Run pm extension --explore --project and pm extension --explore --global to inspect load failures.",
+    );
   }
   if (activationFailureCount > 0) {
-    remediation.push("Review checks[name=extensions].details.activation.failed in pm health --json for activation error details.");
+    remediation.push(
+      "Review checks[name=extensions].details.activation.failed in pm health --json for activation error details.",
+    );
   }
   if (migrationStatus.failed_count > 0 || migrationStatus.pending_count > 0) {
-    remediation.push("Resolve pending/failed extension migrations before write commands; use --force only when policy allows.");
+    remediation.push(
+      "Resolve pending/failed extension migrations before write commands; use --force only when policy allows.",
+    );
   }
   if (managedStateWarningCount > 0) {
-    remediation.push("Run pm extension --manage --project and pm extension --manage --global to refresh managed-state diagnostics.");
+    remediation.push(
+      "Run pm extension --manage --project and pm extension --manage --global to refresh managed-state diagnostics.",
+    );
   }
   if (unknownCapabilityCount > 0) {
     remediation.push(
@@ -622,13 +769,21 @@ function buildExtensionHealthTriageSummary(
         "Review extension_capability_unknown warning details for suggested replacements.",
     );
   }
-  if (normalizedWarnings.some((warning) => warning.startsWith("extension_capability_legacy_alias:"))) {
+  if (
+    normalizedWarnings.some((warning) =>
+      warning.startsWith("extension_capability_legacy_alias:"),
+    )
+  ) {
     remediation.push(
       "Legacy extension capability aliases were auto-remapped to canonical capabilities. " +
         "Update manifests to canonical names (migration/validation -> schema).",
     );
   }
-  if (normalizedWarnings.some((warning) => warning.startsWith("extension_command_definition_legacy_handler_alias:"))) {
+  if (
+    normalizedWarnings.some((warning) =>
+      warning.startsWith("extension_command_definition_legacy_handler_alias:"),
+    )
+  ) {
     remediation.push(
       "Extension command definitions using legacy handler were auto-remapped. " +
         "Update command definitions to use run: (context) => ... for forward compatibility.",
@@ -644,7 +799,9 @@ function buildExtensionHealthTriageSummary(
     );
   }
   if (remediation.length === 0) {
-    remediation.push("No immediate action required. Re-run pm health after extension configuration changes.");
+    remediation.push(
+      "No immediate action required. Re-run pm health after extension configuration changes.",
+    );
   }
   return {
     status: normalizedWarnings.length === 0 ? "ok" : "warn",
@@ -660,7 +817,8 @@ function buildExtensionHealthTriageSummary(
     unmanaged_loaded_extensions: unmanagedLoadedExtensions,
     unmanaged_expected_extension_count: unmanagedExpectedExtensions.length,
     unmanaged_expected_extensions: unmanagedExpectedExtensions,
-    unmanaged_action_required_extension_count: unmanagedActionRequiredExtensions.length,
+    unmanaged_action_required_extension_count:
+      unmanagedActionRequiredExtensions.length,
     unmanaged_action_required_extensions: unmanagedActionRequiredExtensions,
     update_health_coverage: updateHealthCoverage,
     update_health_partial: updateHealthPartial,
@@ -681,7 +839,9 @@ async function buildExtensionCheck(
     cwd: process.cwd(),
     noExtensions: noExtensionsFlag,
   });
-  const loadedSummaries = loadResult.loaded.map((extension) => summarizeLoadedExtension(extension));
+  const loadedSummaries = loadResult.loaded.map((extension) =>
+    summarizeLoadedExtension(extension),
+  );
   const activationResult = await activateExtensions({
     ...loadResult,
     loaded: loadResult.loaded,
@@ -690,7 +850,9 @@ async function buildExtensionCheck(
     readManagedExtensionState(loadResult.roots.project),
     readManagedExtensionState(loadResult.roots.global),
   ]);
-  const migrationStatus = summarizeMigrationStatuses(activationResult.registrations.migrations);
+  const migrationStatus = summarizeMigrationStatuses(
+    activationResult.registrations.migrations,
+  );
   const activationDetails = {
     failed: activationResult.failed,
     warnings: activationResult.warnings,
@@ -719,14 +881,23 @@ async function buildExtensionCheck(
   };
   /* c8 ignore start -- unmanaged/expected grouping matrices are exercised in doctor + extension integration suites */
   const managedProjectNames = new Set(
-    projectManagedState.state.entries.map((entry) => normalizeExtensionNameForMatch(entry.name)),
+    projectManagedState.state.entries.map((entry) =>
+      normalizeExtensionNameForMatch(entry.name),
+    ),
   );
-  const managedGlobalNames = new Set(globalManagedState.state.entries.map((entry) => normalizeExtensionNameForMatch(entry.name)));
+  const managedGlobalNames = new Set(
+    globalManagedState.state.entries.map((entry) =>
+      normalizeExtensionNameForMatch(entry.name),
+    ),
+  );
   const unmanagedLoadedEntries = [
     ...new Map(
       loadResult.loaded
         .filter((entry) => {
-          const managedNames = entry.layer === "project" ? managedProjectNames : managedGlobalNames;
+          const managedNames =
+            entry.layer === "project"
+              ? managedProjectNames
+              : managedGlobalNames;
           return !managedNames.has(normalizeExtensionNameForMatch(entry.name));
         })
         .map((entry) => [
@@ -747,17 +918,23 @@ async function buildExtensionCheck(
     .map((entry) => `${entry.layer}:${entry.name}`)
     .sort((left, right) => left.localeCompare(right));
   const unmanagedExpectedExtensions = unmanagedLoadedEntries
-    .filter((entry) => isExpectedUnmanagedExtension(entry.name, entry.directory))
+    .filter((entry) =>
+      isExpectedUnmanagedExtension(entry.name, entry.directory),
+    )
     .map((entry) => `${entry.layer}:${entry.name}`)
     .sort((left, right) => left.localeCompare(right));
   const unmanagedActionRequiredExtensions = unmanagedLoadedEntries
-    .filter((entry) => !isExpectedUnmanagedExtension(entry.name, entry.directory))
+    .filter(
+      (entry) => !isExpectedUnmanagedExtension(entry.name, entry.directory),
+    )
     .map((entry) => `${entry.layer}:${entry.name}`)
     .sort((left, right) => left.localeCompare(right));
   /* c8 ignore stop */
   const updateCoverageWarnings =
     unmanagedActionRequiredExtensions.length > 0
-      ? [`extension_update_health_partial_coverage:skipped_unmanaged:${unmanagedActionRequiredExtensions.length}`]
+      ? [
+          `extension_update_health_partial_coverage:skipped_unmanaged:${unmanagedActionRequiredExtensions.length}`,
+        ]
       : [];
   const extensionWarnings = [
     ...loadResult.warnings,
@@ -767,7 +944,8 @@ async function buildExtensionCheck(
     ...globalManagedState.warnings,
     ...updateCoverageWarnings,
   ];
-  const capabilityGuidance = collectUnknownCapabilityGuidance(extensionWarnings);
+  const capabilityGuidance =
+    collectUnknownCapabilityGuidance(extensionWarnings);
   const capabilityContract = buildCapabilityContractMetadata();
   const extensionTriage = buildExtensionHealthTriageSummary(
     extensionWarnings,
@@ -775,7 +953,8 @@ async function buildExtensionCheck(
     activationResult.failed.length,
     migrationStatus.summary,
     projectManagedState.warnings.length + globalManagedState.warnings.length,
-    projectManagedState.state.entries.length + globalManagedState.state.entries.length,
+    projectManagedState.state.entries.length +
+      globalManagedState.state.entries.length,
     unmanagedLoadedExtensions,
     unmanagedExpectedExtensions,
     unmanagedActionRequiredExtensions,
@@ -799,7 +978,10 @@ async function buildExtensionCheck(
   };
 }
 
-function summarizeList(values: string[], limit: number): { values: string[]; truncated: boolean } {
+function summarizeList(
+  values: string[],
+  limit: number,
+): { values: string[]; truncated: boolean } {
   if (values.length <= limit) {
     return { values, truncated: false };
   }
@@ -809,7 +991,10 @@ function summarizeList(values: string[], limit: number): { values: string[]; tru
   };
 }
 
-function summarizeRecordList(value: unknown, limit: number): { count: number; sample: unknown[]; truncated: boolean } {
+function summarizeRecordList(
+  value: unknown,
+  limit: number,
+): { count: number; sample: unknown[]; truncated: boolean } {
   if (!Array.isArray(value)) {
     return {
       count: 0,
@@ -841,7 +1026,10 @@ function summarizeExtensionRecord(value: unknown): Record<string, unknown> {
   };
 }
 
-function summarizeExtensionList(value: unknown, limit: number): { count: number; sample: unknown[]; truncated: boolean } {
+function summarizeExtensionList(
+  value: unknown,
+  limit: number,
+): { count: number; sample: unknown[]; truncated: boolean } {
   const summary = summarizeRecordList(value, limit);
   return {
     ...summary,
@@ -849,7 +1037,10 @@ function summarizeExtensionList(value: unknown, limit: number): { count: number;
   };
 }
 
-function summarizeStringList(value: unknown, limit: number): { count: number; sample: string[]; truncated: boolean } {
+function summarizeStringList(
+  value: unknown,
+  limit: number,
+): { count: number; sample: string[]; truncated: boolean } {
   if (!Array.isArray(value)) {
     return {
       count: 0,
@@ -857,7 +1048,9 @@ function summarizeStringList(value: unknown, limit: number): { count: number; sa
       truncated: false,
     };
   }
-  const strings = value.filter((entry): entry is string => typeof entry === "string");
+  const strings = value.filter(
+    (entry): entry is string => typeof entry === "string",
+  );
   return {
     count: strings.length,
     sample: strings.slice(0, limit),
@@ -865,9 +1058,14 @@ function summarizeStringList(value: unknown, limit: number): { count: number; sa
   };
 }
 
-type HealthDetailSummarizer = (details: Record<string, unknown>, limit: number) => Record<string, unknown>;
+type HealthDetailSummarizer = (
+  details: Record<string, unknown>,
+  limit: number,
+) => Record<string, unknown>;
 
-function summarizeActivationMigrationStatus(value: unknown): Record<string, unknown> | null {
+function summarizeActivationMigrationStatus(
+  value: unknown,
+): Record<string, unknown> | null {
   if (typeof value !== "object" || value === null) {
     return null;
   }
@@ -887,8 +1085,12 @@ const HEALTH_DETAIL_SUMMARIZERS = {
     warnings: summarizeStringList(details.warnings, limit),
   }),
   directories: (details, limit) => ({
-    required_count: Array.isArray(details.required) ? details.required.length : 0,
-    optional_count: Array.isArray(details.optional) ? details.optional.length : 0,
+    required_count: Array.isArray(details.required)
+      ? details.required.length
+      : 0,
+    optional_count: Array.isArray(details.optional)
+      ? details.optional.length
+      : 0,
     missing_required: summarizeStringList(details.missing_required, limit),
     missing_optional: summarizeStringList(details.missing_optional, limit),
     missing: summarizeStringList(details.missing, limit),
@@ -912,7 +1114,10 @@ const HEALTH_DETAIL_SUMMARIZERS = {
     env_overrides: details.env_overrides,
   }),
   extensions: (details, limit) => {
-    const activation = typeof details.activation === "object" && details.activation !== null ? (details.activation as Record<string, unknown>) : {};
+    const activation =
+      typeof details.activation === "object" && details.activation !== null
+        ? (details.activation as Record<string, unknown>)
+        : {};
     return {
       disabled_by_flag: details.disabled_by_flag,
       discovered: summarizeExtensionList(details.discovered, limit),
@@ -928,11 +1133,16 @@ const HEALTH_DETAIL_SUMMARIZERS = {
         service_override_count: activation.service_override_count,
         renderer_override_count: activation.renderer_override_count,
         registration_counts: activation.registration_counts,
-        migration_status: summarizeActivationMigrationStatus(activation.migration_status),
+        migration_status: summarizeActivationMigrationStatus(
+          activation.migration_status,
+        ),
       },
       triage: details.triage,
       capability_contract: details.capability_contract,
-      capability_guidance: summarizeRecordList(details.capability_guidance, limit),
+      capability_guidance: summarizeRecordList(
+        details.capability_guidance,
+        limit,
+      ),
     };
   },
   // Storage details are already compact counters; keep the pre-refactor pass-through shape.
@@ -948,11 +1158,23 @@ const HEALTH_DETAIL_SUMMARIZERS = {
     checked_history_streams: details.checked_history_streams,
     counts: details.counts,
     item_unreadable: summarizeStringList(details.item_unreadable, limit),
-    item_conflict_markers: summarizeRecordList(details.item_conflict_markers, limit),
-    item_parse_failures: summarizeStringList(details.item_parse_failures, limit),
+    item_conflict_markers: summarizeRecordList(
+      details.item_conflict_markers,
+      limit,
+    ),
+    item_parse_failures: summarizeStringList(
+      details.item_parse_failures,
+      limit,
+    ),
     history_unreadable: summarizeStringList(details.history_unreadable, limit),
-    history_conflict_markers: summarizeRecordList(details.history_conflict_markers, limit),
-    history_invalid_json: summarizeRecordList(details.history_invalid_json, limit),
+    history_conflict_markers: summarizeRecordList(
+      details.history_conflict_markers,
+      limit,
+    ),
+    history_invalid_json: summarizeRecordList(
+      details.history_invalid_json,
+      limit,
+    ),
     skipped: details.skipped,
   }),
   history_drift: (details, limit) => ({
@@ -969,7 +1191,8 @@ const HEALTH_DETAIL_SUMMARIZERS = {
     semantic_runtime_available: details.semantic_runtime_available,
     compatibility_mode_auto_defaults: details.compatibility_mode_auto_defaults,
     auto_ollama_defaults_applied: details.auto_ollama_defaults_applied,
-    auto_ollama_defaults_skipped_reason: details.auto_ollama_defaults_skipped_reason,
+    auto_ollama_defaults_skipped_reason:
+      details.auto_ollama_defaults_skipped_reason,
     auto_ollama_defaults_remediation: details.auto_ollama_defaults_remediation,
     refresh_policy: details.refresh_policy,
     provider_active: details.provider_active,
@@ -989,14 +1212,20 @@ const HEALTH_DETAIL_SUMMARIZERS = {
 } satisfies Record<HealthCheck["name"], HealthDetailSummarizer>;
 
 /* c8 ignore start -- brief/summary projection matrix branches are validated in projection integration tests */
-function summarizeHealthCheckDetails(check: HealthCheck, limit: number): Record<string, unknown> {
+function summarizeHealthCheckDetails(
+  check: HealthCheck,
+  limit: number,
+): Record<string, unknown> {
   const summarize = HEALTH_DETAIL_SUMMARIZERS[check.name];
   return summarize ? summarize(check.details, limit) : check.details;
 }
 /* c8 ignore stop */
 
 function applyBriefHealthProjection(result: HealthResult): HealthResult {
-  const warningsSummary = summarizeStringList(result.warnings, BRIEF_HEALTH_DETAIL_LIMIT);
+  const warningsSummary = summarizeStringList(
+    result.warnings,
+    BRIEF_HEALTH_DETAIL_LIMIT,
+  );
   return {
     ok: result.ok,
     checks: result.checks.map((check) => ({
@@ -1020,8 +1249,13 @@ function isSkippedHealthCheck(check: HealthCheck): boolean {
 }
 
 function applySummaryHealthProjection(result: HealthResult): HealthResult {
-  const warningsSummary = summarizeStringList(result.warnings, BRIEF_HEALTH_DETAIL_LIMIT);
-  const omittedChecks = result.checks.filter(isSkippedHealthCheck).map((check) => check.name);
+  const warningsSummary = summarizeStringList(
+    result.warnings,
+    BRIEF_HEALTH_DETAIL_LIMIT,
+  );
+  const omittedChecks = result.checks
+    .filter(isSkippedHealthCheck)
+    .map((check) => check.name);
   return {
     ok: result.ok,
     checks: result.checks
@@ -1067,17 +1301,27 @@ function selectStaleItemDetail(
   };
 }
 
-type VectorizationRuntimeDefaults = ReturnType<typeof resolveSettingsWithSemanticRuntimeDefaults>;
-type VectorizationProviderResolution = ReturnType<typeof resolveEmbeddingProviders>;
+type VectorizationRuntimeDefaults = ReturnType<
+  typeof resolveSettingsWithSemanticRuntimeDefaults
+>;
+type VectorizationProviderResolution = ReturnType<
+  typeof resolveEmbeddingProviders
+>;
 type VectorizationStoreResolution = ReturnType<typeof resolveVectorStores>;
-type VectorizationLedger = Awaited<ReturnType<typeof readVectorizationStatusLedger>>;
-type VectorizationRefreshResult = Awaited<ReturnType<typeof refreshSemanticEmbeddingsForMutatedItems>>;
+type VectorizationLedger = Awaited<
+  ReturnType<typeof readVectorizationStatusLedger>
+>;
+type VectorizationRefreshResult = Awaited<
+  ReturnType<typeof refreshSemanticEmbeddingsForMutatedItems>
+>;
 
 interface VectorizationRuntimeSnapshot {
   runtimeDefaults: VectorizationRuntimeDefaults;
   providerResolution: VectorizationProviderResolution;
   vectorStoreResolution: VectorizationStoreResolution;
-  runtimeEmbeddingIdentity: ReturnType<typeof buildVectorizationEmbeddingIdentity> | null;
+  runtimeEmbeddingIdentity: ReturnType<
+    typeof buildVectorizationEmbeddingIdentity
+  > | null;
   semanticRuntimeAvailable: boolean;
 }
 
@@ -1096,7 +1340,11 @@ interface TelemetryRuntimeStateRecord {
 }
 
 function telemetryEnvFlagEnabled(
-  envKey: "PM_TELEMETRY_DISABLED" | "PM_TELEMETRY_OTEL_DISABLED" | "PM_NO_TELEMETRY" | "PM_TELEMETRY_INLINE_FLUSH",
+  envKey:
+    | "PM_TELEMETRY_DISABLED"
+    | "PM_TELEMETRY_OTEL_DISABLED"
+    | "PM_NO_TELEMETRY"
+    | "PM_TELEMETRY_INLINE_FLUSH",
 ): boolean {
   const value = (process.env[envKey] ?? "").trim().toLowerCase();
   return value === "1" || value === "true" || value === "yes" || value === "on";
@@ -1107,7 +1355,9 @@ function telemetrySourceContextOverride(): string | null {
   // Only report an override the runtime actually honours: runtime.ts ignores any
   // value outside the enum and falls back to the inferred context, so health must
   // report null for an unrecognized value rather than implying it took effect.
-  const value = (process.env.PM_TELEMETRY_SOURCE_CONTEXT ?? "").trim().toLowerCase();
+  const value = (process.env.PM_TELEMETRY_SOURCE_CONTEXT ?? "")
+    .trim()
+    .toLowerCase();
   return PM_TELEMETRY_SOURCE_CONTEXT_SET.has(value) ? value : null;
 }
 /* c8 ignore stop */
@@ -1190,17 +1440,30 @@ interface TelemetryEndpointProbeSummary {
 }
 
 function emptyTelemetryQueueSummary(): TelemetryQueueSummary {
-  return { validEntries: 0, invalidRows: 0, totalRows: 0, highRetryEntries: 0, maxAttempts: 0 };
+  return {
+    validEntries: 0,
+    invalidRows: 0,
+    totalRows: 0,
+    highRetryEntries: 0,
+    maxAttempts: 0,
+  };
 }
 
 /* c8 ignore start -- telemetry state corruption and otel-failure branches require runtime-coordinated fixture mutation */
-function parseTelemetryRuntimeState(stateRaw: string | null): { runtimeState: TelemetryRuntimeStateRecord; stateParseFailed: boolean } {
+function parseTelemetryRuntimeState(stateRaw: string | null): {
+  runtimeState: TelemetryRuntimeStateRecord;
+  stateParseFailed: boolean;
+} {
   if (!stateRaw || stateRaw.trim().length === 0) {
     return { runtimeState: {}, stateParseFailed: false };
   }
   try {
     const parsed = JSON.parse(stateRaw) as TelemetryRuntimeStateRecord;
-    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      !Array.isArray(parsed)
+    ) {
       return { runtimeState: parsed, stateParseFailed: false };
     }
     return { runtimeState: {}, stateParseFailed: true };
@@ -1238,19 +1501,25 @@ function collectTelemetryQueueWarnings(
   }
   const lastSuccess = runtimeState.last_successful_flush_at;
   const lastFailure = runtimeState.last_failed_flush_at;
-  const activeFailure = lastFailure && (!lastSuccess || lastFailure > lastSuccess);
+  const activeFailure =
+    lastFailure && (!lastSuccess || lastFailure > lastSuccess);
   const neverFlushed = !lastSuccess;
-  const highWater = queueSummary.validEntries >= TELEMETRY_QUEUE_HIGH_WATER_MARK;
+  const highWater =
+    queueSummary.validEntries >= TELEMETRY_QUEUE_HIGH_WATER_MARK;
   if (activeFailure || neverFlushed || highWater) {
     warnings.push(`telemetry_queue_pending:${queueSummary.validEntries}`);
   }
   if (queueSummary.highRetryEntries > 0) {
-    warnings.push(`telemetry_queue_high_retries:${queueSummary.highRetryEntries}`);
+    warnings.push(
+      `telemetry_queue_high_retries:${queueSummary.highRetryEntries}`,
+    );
   }
   return warnings;
 }
 
-function collectTelemetryEndpointWarnings(endpointProbe: TelemetryEndpointProbeSummary | undefined): string[] {
+function collectTelemetryEndpointWarnings(
+  endpointProbe: TelemetryEndpointProbeSummary | undefined,
+): string[] {
   if (!endpointProbe || endpointProbe.ok !== false) {
     return [];
   }
@@ -1259,16 +1528,31 @@ function collectTelemetryEndpointWarnings(endpointProbe: TelemetryEndpointProbeS
     : ["telemetry_endpoint_probe_failed"];
 }
 
-function collectTelemetrySchemaWarnings(endpointProbe: TelemetryEndpointProbeSummary | undefined): string[] {
-  const parsedMaxSchemaVersion = Number.parseInt(endpointProbe?.max_schema_version ?? "", 10);
-  if (endpointProbe?.ok === true && Number.isInteger(parsedMaxSchemaVersion) && parsedMaxSchemaVersion > TELEMETRY_SCHEMA_VERSION) {
+function collectTelemetrySchemaWarnings(
+  endpointProbe: TelemetryEndpointProbeSummary | undefined,
+): string[] {
+  const parsedMaxSchemaVersion = Number.parseInt(
+    endpointProbe?.max_schema_version ?? "",
+    10,
+  );
+  if (
+    endpointProbe?.ok === true &&
+    Number.isInteger(parsedMaxSchemaVersion) &&
+    parsedMaxSchemaVersion > TELEMETRY_SCHEMA_VERSION
+  ) {
     return [`telemetry_schema_version_behind:${parsedMaxSchemaVersion}`];
   }
   return [];
 }
 
-function collectTelemetryOtelWarnings(settings: PmSettings, runtimeState: TelemetryRuntimeStateRecord): string[] {
-  const pendingOtelSpans = typeof runtimeState.pending_otel_spans === "number" ? runtimeState.pending_otel_spans : 0;
+function collectTelemetryOtelWarnings(
+  settings: PmSettings,
+  runtimeState: TelemetryRuntimeStateRecord,
+): string[] {
+  const pendingOtelSpans =
+    typeof runtimeState.pending_otel_spans === "number"
+      ? runtimeState.pending_otel_spans
+      : 0;
   const lastOtelSuccess = runtimeState.last_otel_success_at;
   const lastOtelFailure = runtimeState.last_otel_failure_at;
   const otelExportFailing =
@@ -1278,29 +1562,45 @@ function collectTelemetryOtelWarnings(settings: PmSettings, runtimeState: Teleme
     // >= so a mixed-outcome batch (success + failure share the same attempt
     // timestamp) still surfaces the warning rather than being masked by the tie.
     (!lastOtelSuccess || (lastOtelFailure as string) >= lastOtelSuccess);
-  return otelExportFailing ? [`telemetry_otel_export_failing:${pendingOtelSpans}`] : [];
+  return otelExportFailing
+    ? [`telemetry_otel_export_failing:${pendingOtelSpans}`]
+    : [];
 }
 
 function buildTelemetryEnvOverrideDetails(): Record<string, unknown> {
   return {
-    telemetry_disabled: telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED") || telemetryEnvFlagEnabled("PM_NO_TELEMETRY"),
+    telemetry_disabled:
+      telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED") ||
+      telemetryEnvFlagEnabled("PM_NO_TELEMETRY"),
     pm_no_telemetry: telemetryEnvFlagEnabled("PM_NO_TELEMETRY"),
-    telemetry_otel_disabled: telemetryEnvFlagEnabled("PM_TELEMETRY_OTEL_DISABLED"),
-    telemetry_inline_flush: telemetryEnvFlagEnabled("PM_TELEMETRY_INLINE_FLUSH"),
+    telemetry_otel_disabled: telemetryEnvFlagEnabled(
+      "PM_TELEMETRY_OTEL_DISABLED",
+    ),
+    telemetry_inline_flush: telemetryEnvFlagEnabled(
+      "PM_TELEMETRY_INLINE_FLUSH",
+    ),
     telemetry_source_context: telemetrySourceContextOverride(),
   };
 }
 /* c8 ignore stop */
 
-function telemetryQueueHasEntries(settings: PmSettings, queueSummary: TelemetryQueueSummary): boolean {
+function telemetryQueueHasEntries(
+  settings: PmSettings,
+  queueSummary: TelemetryQueueSummary,
+): boolean {
   return settings.telemetry.enabled && queueSummary.validEntries > 0;
 }
 
-function isTelemetryQueueDraining(queueHasEntries: boolean, warnings: string[]): boolean {
+function isTelemetryQueueDraining(
+  queueHasEntries: boolean,
+  warnings: string[],
+): boolean {
   return (
     queueHasEntries &&
     warnings.every(
-      (warning) => !warning.startsWith("telemetry_queue_pending:") && !warning.startsWith("telemetry_queue_high_retries:"),
+      (warning) =>
+        !warning.startsWith("telemetry_queue_pending:") &&
+        !warning.startsWith("telemetry_queue_high_retries:"),
     )
   );
 }
@@ -1362,14 +1662,20 @@ async function buildTelemetryCheck(
   const queueRaw = await readFileIfExists(queuePath);
   const queueExists = queueRaw !== null;
   const queueSizeBytes = queueRaw ? Buffer.byteLength(queueRaw, "utf8") : 0;
-  const queueSummary = queueRaw ? parseTelemetryQueue(queueRaw) : emptyTelemetryQueueSummary();
+  const queueSummary = queueRaw
+    ? parseTelemetryQueue(queueRaw)
+    : emptyTelemetryQueueSummary();
 
   const stateRaw = await readFileIfExists(statePath);
-  const { runtimeState, stateParseFailed } = parseTelemetryRuntimeState(stateRaw);
+  const { runtimeState, stateParseFailed } =
+    parseTelemetryRuntimeState(stateRaw);
 
   const endpoint = settings.telemetry.endpoint.trim();
   const endpointDisplay = normalizeEndpointForDisplay(endpoint);
-  const endpointProbe = await maybeProbeTelemetryEndpoint(settings, options.checkTelemetry);
+  const endpointProbe = await maybeProbeTelemetryEndpoint(
+    settings,
+    options.checkTelemetry,
+  );
 
   const warnings: string[] = [];
   if (stateParseFailed) {
@@ -1382,7 +1688,10 @@ async function buildTelemetryCheck(
     ...collectTelemetryOtelWarnings(settings, runtimeState),
   );
   const queueHasEntries = telemetryQueueHasEntries(settings, queueSummary);
-  const pendingOtelSpans = typeof runtimeState.pending_otel_spans === "number" ? runtimeState.pending_otel_spans : 0;
+  const pendingOtelSpans =
+    typeof runtimeState.pending_otel_spans === "number"
+      ? runtimeState.pending_otel_spans
+      : 0;
 
   return {
     check: {
@@ -1421,12 +1730,10 @@ async function buildTelemetryCheck(
   };
 }
 
-/**
- * Read-only locks check (pm-xo1n): surfaces active/stale/unreadable/unparseable
- * lock counts using the exact classification `pm gc --scope locks` acts on, so
- * agents can gate on stale item-claim locks before running gc speculatively.
- */
-async function buildLocksCheck(pmRoot: string): Promise<{ check: HealthCheck; warnings: string[] }> {
+/** Read-only locks check (pm-xo1n): surfaces active/stale/unreadable/unparseable lock counts using the exact classification `pm gc --scope locks` acts on, so agents can gate on stale item-claim locks before running gc speculatively. */
+async function buildLocksCheck(
+  pmRoot: string,
+): Promise<{ check: HealthCheck; warnings: string[] }> {
   /* c8 ignore start -- scan failure branches require filesystem-level fault injection */
   let scan: Awaited<ReturnType<typeof scanLockHealth>>;
   try {
@@ -1478,11 +1785,13 @@ async function buildHistoryDriftCheck(
   items: ItemWithBody[],
 ): Promise<{ check: HealthCheck; warnings: string[] }> {
   const cacheHitVerification = "metadata" as const;
-  const { missingStreams, unreadableStreams, hashMismatches, chainMismatches, driftedItems } = await scanHistoryDrift(
-    pmRoot,
-    items,
-    { cacheHitVerification },
-  );
+  const {
+    missingStreams,
+    unreadableStreams,
+    hashMismatches,
+    chainMismatches,
+    driftedItems,
+  } = await scanHistoryDrift(pmRoot, items, { cacheHitVerification });
   const warnings = [
     ...missingStreams.map((id) => `history_drift_missing_stream:${id}`),
     ...unreadableStreams.map((id) => `history_drift_unreadable_stream:${id}`),
@@ -1514,19 +1823,32 @@ async function buildHistoryDriftCheck(
   };
 }
 
-function buildVectorizationRuntimeSnapshot(settings: PmSettings, pmRoot: string): VectorizationRuntimeSnapshot {
+function buildVectorizationRuntimeSnapshot(
+  settings: PmSettings,
+  pmRoot: string,
+): VectorizationRuntimeSnapshot {
   const runtimeDefaults = resolveSettingsWithSemanticRuntimeDefaults(settings);
-  const providerResolution = resolveEmbeddingProviders(runtimeDefaults.settings);
-  const vectorStoreResolution = resolveVectorStores(runtimeDefaults.settings, pmRoot);
+  const providerResolution = resolveEmbeddingProviders(
+    runtimeDefaults.settings,
+  );
+  const vectorStoreResolution = resolveVectorStores(
+    runtimeDefaults.settings,
+    pmRoot,
+  );
   const runtimeEmbeddingIdentity = providerResolution.active
-    ? buildVectorizationEmbeddingIdentity(providerResolution.active.name, providerResolution.active.model)
+    ? buildVectorizationEmbeddingIdentity(
+        providerResolution.active.name,
+        providerResolution.active.model,
+      )
     : null;
   return {
     runtimeDefaults,
     providerResolution,
     vectorStoreResolution,
     runtimeEmbeddingIdentity,
-    semanticRuntimeAvailable: Boolean(providerResolution.active && vectorStoreResolution.active),
+    semanticRuntimeAvailable: Boolean(
+      providerResolution.active && vectorStoreResolution.active,
+    ),
   };
 }
 
@@ -1544,13 +1866,21 @@ async function refreshStaleVectorizationItems(params: {
   refreshPolicy: VectorRefreshPolicy;
   staleBefore: string[];
 }): Promise<VectorizationRefreshResult> {
-  if (!params.refreshPolicy.enabled || !params.snapshot.semanticRuntimeAvailable || params.staleBefore.length === 0) {
+  if (
+    !params.refreshPolicy.enabled ||
+    !params.snapshot.semanticRuntimeAvailable ||
+    params.staleBefore.length === 0
+  ) {
     return emptyVectorizationRefreshResult();
   }
-  return refreshSemanticEmbeddingsForMutatedItems(params.pmRoot, params.staleBefore, {
-    settings: params.snapshot.runtimeDefaults.settings,
-    apply_runtime_defaults: false,
-  });
+  return refreshSemanticEmbeddingsForMutatedItems(
+    params.pmRoot,
+    params.staleBefore,
+    {
+      settings: params.snapshot.runtimeDefaults.settings,
+      apply_runtime_defaults: false,
+    },
+  );
 }
 
 function vectorizationEmbeddingIdentityChanged(params: {
@@ -1564,8 +1894,11 @@ function vectorizationEmbeddingIdentityChanged(params: {
     params.semanticRuntimeAvailable &&
     Boolean(
       params.ledgerBefore.embedding &&
-        params.runtimeEmbeddingIdentity &&
-        hasVectorizationEmbeddingIdentityChanged(params.ledgerBefore.embedding, params.runtimeEmbeddingIdentity),
+      params.runtimeEmbeddingIdentity &&
+      hasVectorizationEmbeddingIdentityChanged(
+        params.ledgerBefore.embedding,
+        params.runtimeEmbeddingIdentity,
+      ),
     )
   );
 }
@@ -1580,7 +1913,10 @@ function collectVectorizationWarnings(params: {
   embeddingIdentityChanged: boolean;
   staleAfter: string[];
 }): string[] {
-  const warningSet = new Set<string>([...params.ledgerBefore.warnings, ...params.ledgerAfter.warnings]);
+  const warningSet = new Set<string>([
+    ...params.ledgerBefore.warnings,
+    ...params.ledgerAfter.warnings,
+  ]);
   if (params.strictVectorizationWarnings) {
     for (const warning of params.refreshResult.warnings) {
       warningSet.add(warning);
@@ -1589,8 +1925,14 @@ function collectVectorizationWarnings(params: {
   if (params.embeddingIdentityChanged) {
     warningSet.add("vectorization_embedding_identity_changed");
   }
-  if (params.strictVectorizationWarnings && params.semanticRuntimeAvailable && params.staleAfter.length > 0) {
-    warningSet.add(`vectorization_stale_items_remaining:${params.staleAfter.length}`);
+  if (
+    params.strictVectorizationWarnings &&
+    params.semanticRuntimeAvailable &&
+    params.staleAfter.length > 0
+  ) {
+    warningSet.add(
+      `vectorization_stale_items_remaining:${params.staleAfter.length}`,
+    );
   }
   return [...warningSet].sort((left, right) => left.localeCompare(right));
 }
@@ -1601,16 +1943,25 @@ function resolveVectorizationRefreshSkippedReason(
   semanticRuntimeAvailable: boolean,
   staleBefore: string[],
 ): string | null {
-  if (refreshPolicy.enabled && semanticRuntimeAvailable && staleBefore.length > 0) {
+  if (
+    refreshPolicy.enabled &&
+    semanticRuntimeAvailable &&
+    staleBefore.length > 0
+  ) {
     return null;
   }
   if (!refreshPolicy.enabled) {
     return "refresh_disabled";
   }
-  return semanticRuntimeAvailable ? "no_stale_items" : "semantic_runtime_unavailable";
+  return semanticRuntimeAvailable
+    ? "no_stale_items"
+    : "semantic_runtime_unavailable";
 }
 
-function buildVectorizationProviderDetails(settings: PmSettings, snapshot: VectorizationRuntimeSnapshot): Record<string, unknown> {
+function buildVectorizationProviderDetails(
+  settings: PmSettings,
+  snapshot: VectorizationRuntimeSnapshot,
+): Record<string, unknown> {
   const activeProvider = snapshot.providerResolution.active?.name ?? null;
   const activeVectorStore = snapshot.vectorStoreResolution.active?.name ?? null;
   return {
@@ -1619,15 +1970,29 @@ function buildVectorizationProviderDetails(settings: PmSettings, snapshot: Vecto
     // how the active resolution was sourced, so a config audit can tell
     // "auto-detected" apart from a genuine misconfiguration when
     // settings.search.provider / vector_store.adapter are empty strings.
-    provider_configured: typeof settings.search?.provider === "string" ? settings.search.provider : null,
-    provider_source: resolveProviderConfigSource(activeProvider, settings.search?.provider ?? null),
+    provider_configured:
+      typeof settings.search?.provider === "string"
+        ? settings.search.provider
+        : null,
+    provider_source: resolveProviderConfigSource(
+      activeProvider,
+      settings.search?.provider ?? null,
+    ),
     vector_store_active: activeVectorStore,
-    vector_store_configured: typeof settings.vector_store?.adapter === "string" ? settings.vector_store.adapter : null,
-    vector_store_source: resolveProviderConfigSource(activeVectorStore, settings.vector_store?.adapter ?? null),
+    vector_store_configured:
+      typeof settings.vector_store?.adapter === "string"
+        ? settings.vector_store.adapter
+        : null,
+    vector_store_source: resolveProviderConfigSource(
+      activeVectorStore,
+      settings.vector_store?.adapter ?? null,
+    ),
   };
 }
 
-function buildVectorizationRefreshPolicyDetails(refreshPolicy: VectorRefreshPolicy): Record<string, unknown> {
+function buildVectorizationRefreshPolicyDetails(
+  refreshPolicy: VectorRefreshPolicy,
+): Record<string, unknown> {
   return {
     enabled: refreshPolicy.enabled,
     check_only: refreshPolicy.checkOnly,
@@ -1641,7 +2006,9 @@ function vectorizationRefreshAttempted(
   semanticRuntimeAvailable: boolean,
   staleBefore: string[],
 ): boolean {
-  return refreshPolicy.enabled && staleBefore.length > 0 && semanticRuntimeAvailable;
+  return (
+    refreshPolicy.enabled && staleBefore.length > 0 && semanticRuntimeAvailable
+  );
 }
 
 async function buildVectorizationCheck(
@@ -1653,11 +2020,21 @@ async function buildVectorizationCheck(
 ): Promise<{ check: HealthCheck; warnings: string[] }> {
   const snapshot = buildVectorizationRuntimeSnapshot(settings, pmRoot);
   const ledgerBefore = await readVectorizationStatusLedger(pmRoot);
-  const staleBefore = snapshot.semanticRuntimeAvailable ? collectStaleVectorizationIds(items, ledgerBefore.entries) : [];
-  const refreshResult = await refreshStaleVectorizationItems({ pmRoot, snapshot, refreshPolicy, staleBefore });
+  const staleBefore = snapshot.semanticRuntimeAvailable
+    ? collectStaleVectorizationIds(items, ledgerBefore.entries)
+    : [];
+  const refreshResult = await refreshStaleVectorizationItems({
+    pmRoot,
+    snapshot,
+    refreshPolicy,
+    staleBefore,
+  });
   const ledgerAfter = await readVectorizationStatusLedger(pmRoot);
-  const staleAfter = snapshot.semanticRuntimeAvailable ? collectStaleVectorizationIds(items, ledgerAfter.entries) : [];
-  const strictVectorizationWarnings = !snapshot.runtimeDefaults.auto_ollama_defaults_applied;
+  const staleAfter = snapshot.semanticRuntimeAvailable
+    ? collectStaleVectorizationIds(items, ledgerAfter.entries)
+    : [];
+  const strictVectorizationWarnings =
+    !snapshot.runtimeDefaults.auto_ollama_defaults_applied;
   const embeddingIdentityChanged = vectorizationEmbeddingIdentityChanged({
     strictVectorizationWarnings,
     semanticRuntimeAvailable: snapshot.semanticRuntimeAvailable,
@@ -1673,9 +2050,16 @@ async function buildVectorizationCheck(
     embeddingIdentityChanged,
     staleAfter,
   });
-  const staleBeforeDetail = selectStaleItemDetail(staleBefore, verboseStaleItems);
+  const staleBeforeDetail = selectStaleItemDetail(
+    staleBefore,
+    verboseStaleItems,
+  );
   const staleAfterDetail = selectStaleItemDetail(staleAfter, verboseStaleItems);
-  const refreshAttempted = vectorizationRefreshAttempted(refreshPolicy, snapshot.semanticRuntimeAvailable, staleBefore);
+  const refreshAttempted = vectorizationRefreshAttempted(
+    refreshPolicy,
+    snapshot.semanticRuntimeAvailable,
+    staleBefore,
+  );
 
   return {
     check: {
@@ -1683,10 +2067,14 @@ async function buildVectorizationCheck(
       status: warnings.length === 0 ? "ok" : "warn",
       details: {
         semantic_runtime_available: snapshot.semanticRuntimeAvailable,
-        compatibility_mode_auto_defaults: snapshot.runtimeDefaults.auto_ollama_defaults_applied,
-        auto_ollama_defaults_applied: snapshot.runtimeDefaults.auto_ollama_defaults_applied,
-        auto_ollama_defaults_skipped_reason: snapshot.runtimeDefaults.auto_ollama_defaults_skipped_reason ?? null,
-        auto_ollama_defaults_remediation: snapshot.runtimeDefaults.auto_ollama_defaults_remediation ?? null,
+        compatibility_mode_auto_defaults:
+          snapshot.runtimeDefaults.auto_ollama_defaults_applied,
+        auto_ollama_defaults_applied:
+          snapshot.runtimeDefaults.auto_ollama_defaults_applied,
+        auto_ollama_defaults_skipped_reason:
+          snapshot.runtimeDefaults.auto_ollama_defaults_skipped_reason ?? null,
+        auto_ollama_defaults_remediation:
+          snapshot.runtimeDefaults.auto_ollama_defaults_remediation ?? null,
         refresh_policy: buildVectorizationRefreshPolicyDetails(refreshPolicy),
         ...buildVectorizationProviderDetails(settings, snapshot),
         embedding_identity_changed: embeddingIdentityChanged,
@@ -1727,15 +2115,23 @@ function validateSettingsValues(settings: PmSettings): string[] {
   return warnings;
 }
 
-function resolveVectorRefreshPolicy(options: RunHealthOptions): VectorRefreshPolicy {
+function resolveVectorRefreshPolicy(
+  options: RunHealthOptions,
+): VectorRefreshPolicy {
   const checkOnly = options.checkOnly === true;
   const noRefresh = options.noRefresh === true || checkOnly;
   const refreshVectors = options.refreshVectors === true;
   if (refreshVectors && checkOnly) {
-    throw new PmCliError("--check-only cannot be combined with --refresh-vectors", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--check-only cannot be combined with --refresh-vectors",
+      EXIT_CODE.USAGE,
+    );
   }
   if (refreshVectors && options.noRefresh === true) {
-    throw new PmCliError("--no-refresh cannot be combined with --refresh-vectors", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--no-refresh cannot be combined with --refresh-vectors",
+      EXIT_CODE.USAGE,
+    );
   }
   return {
     enabled: refreshVectors || !noRefresh,
@@ -1769,8 +2165,12 @@ function resolveHealthDirectoryLists(typeRegistry: HealthTypeRegistry): {
   optionalDirs: string[];
   optionalDirSet: Set<string>;
 } {
-  const optionalBuiltinDirs = new Set<string>(PM_OPTIONAL_TYPE_SUBDIRS.filter((entry) => entry.length > 0));
-  const requiredDirSet = new Set<string>(PM_CORE_REQUIRED_SUBDIRS.filter((entry) => entry.length > 0));
+  const optionalBuiltinDirs = new Set<string>(
+    PM_OPTIONAL_TYPE_SUBDIRS.filter((entry) => entry.length > 0),
+  );
+  const requiredDirSet = new Set<string>(
+    PM_CORE_REQUIRED_SUBDIRS.filter((entry) => entry.length > 0),
+  );
   const optionalDirSet = new Set<string>();
   for (const folder of typeRegistry.folders) {
     if (optionalBuiltinDirs.has(folder)) {
@@ -1780,8 +2180,12 @@ function resolveHealthDirectoryLists(typeRegistry: HealthTypeRegistry): {
     requiredDirSet.add(folder);
   }
   return {
-    requiredDirs: [...requiredDirSet].sort((left, right) => left.localeCompare(right)),
-    optionalDirs: [...optionalDirSet].sort((left, right) => left.localeCompare(right)),
+    requiredDirs: [...requiredDirSet].sort((left, right) =>
+      left.localeCompare(right),
+    ),
+    optionalDirs: [...optionalDirSet].sort((left, right) =>
+      left.localeCompare(right),
+    ),
     optionalDirSet,
   };
 }
@@ -1791,13 +2195,19 @@ async function scanHealthDirectories(
   typeRegistry: HealthTypeRegistry,
   strictDirectories: boolean,
 ): Promise<HealthDirectoryState> {
-  const { requiredDirs, optionalDirs, optionalDirSet } = resolveHealthDirectoryLists(typeRegistry);
+  const { requiredDirs, optionalDirs, optionalDirSet } =
+    resolveHealthDirectoryLists(typeRegistry);
   const missingRequiredDirs: string[] = [];
   const missingOptionalDirs: string[] = [];
   const hookWarnings: string[] = [];
   for (const relativeDir of [...requiredDirs, ...optionalDirs]) {
     const directoryPath = path.join(pmRoot, relativeDir);
-    hookWarnings.push(...(await runActiveOnReadHooks({ path: directoryPath, scope: "project" })));
+    hookWarnings.push(
+      ...(await runActiveOnReadHooks({
+        path: directoryPath,
+        scope: "project",
+      })),
+    );
     if (await isDirectory(directoryPath)) {
       continue;
     }
@@ -1812,7 +2222,9 @@ async function scanHealthDirectories(
     optionalDirs,
     missingRequiredDirs,
     missingOptionalDirs,
-    missingDirs: strictDirectories ? [...missingRequiredDirs, ...missingOptionalDirs] : [...missingRequiredDirs],
+    missingDirs: strictDirectories
+      ? [...missingRequiredDirs, ...missingOptionalDirs]
+      : [...missingRequiredDirs],
     hookWarnings,
   };
 }
@@ -1820,12 +2232,20 @@ async function scanHealthDirectories(
 function resolveHealthSkipPolicy(options: RunHealthOptions): HealthSkipPolicy {
   const summaryMode = options.summary === true && options.full !== true;
   const fastProjectionCheckOnly =
-    options.checkOnly === true && (options.brief === true || options.summary === true) && options.full !== true;
+    options.checkOnly === true &&
+    (options.brief === true || options.summary === true) &&
+    options.full !== true;
   return {
     summaryMode,
-    skipIntegrity: (options.skipIntegrity === true || fastProjectionCheckOnly) && options.full !== true,
-    skipDrift: (options.skipDrift === true || fastProjectionCheckOnly) && options.full !== true,
-    skipVectors: (options.skipVectors === true || fastProjectionCheckOnly) && options.full !== true,
+    skipIntegrity:
+      (options.skipIntegrity === true || fastProjectionCheckOnly) &&
+      options.full !== true,
+    skipDrift:
+      (options.skipDrift === true || fastProjectionCheckOnly) &&
+      options.full !== true,
+    skipVectors:
+      (options.skipVectors === true || fastProjectionCheckOnly) &&
+      options.full !== true,
   };
 }
 
@@ -1854,8 +2274,16 @@ async function readHealthItems(params: {
   );
 }
 
-function buildSkippedHealthCheck(name: Extract<HealthCheck["name"], "integrity" | "history_drift" | "vectorization">): HealthCheckResult {
-  return { check: { name, status: "ok", details: { skipped: true } }, warnings: [] };
+function buildSkippedHealthCheck(
+  name: Extract<
+    HealthCheck["name"],
+    "integrity" | "history_drift" | "vectorization"
+  >,
+): HealthCheckResult {
+  return {
+    check: { name, status: "ok", details: { skipped: true } },
+    warnings: [],
+  };
 }
 
 function buildSettingsHealthCheck(
@@ -1877,7 +2305,10 @@ function buildSettingsHealthCheck(
   };
 }
 
-function buildDirectoriesHealthCheck(directoryState: HealthDirectoryState, strictDirectories: boolean): HealthCheck {
+function buildDirectoriesHealthCheck(
+  directoryState: HealthDirectoryState,
+  strictDirectories: boolean,
+): HealthCheck {
   return {
     name: "directories",
     status: directoryState.missingDirs.length === 0 ? "ok" : "warn",
@@ -1892,7 +2323,9 @@ function buildDirectoriesHealthCheck(directoryState: HealthDirectoryState, stric
   };
 }
 
-function buildSettingsValuesHealthCheck(settingWarnings: string[]): HealthCheck {
+function buildSettingsValuesHealthCheck(
+  settingWarnings: string[],
+): HealthCheck {
   return {
     name: "settings_values",
     status: settingWarnings.length === 0 ? "ok" : "warn",
@@ -1941,7 +2374,9 @@ function collectHealthWarnings(params: {
   vectorizationCheck: HealthCheckResult;
 }): string[] {
   const warnings = [
-    ...params.directoryState.missingDirs.map((dir) => `missing_directory:${dir}`),
+    ...params.directoryState.missingDirs.map(
+      (dir) => `missing_directory:${dir}`,
+    ),
     ...params.normalizedSettingsReadWarnings,
     ...params.settingWarnings,
     ...params.normalizedItemReadWarnings,
@@ -1958,8 +2393,12 @@ function collectHealthWarnings(params: {
   return [...new Set(warnings)];
 }
 
-function extractHistoryDriftedCount(historyDriftCheck: HealthCheckResult): number {
-  const counts = historyDriftCheck.check.details.counts as { drifted?: unknown } | undefined;
+function extractHistoryDriftedCount(
+  historyDriftCheck: HealthCheckResult,
+): number {
+  const counts = historyDriftCheck.check.details.counts as
+    | { drifted?: unknown }
+    | undefined;
   return typeof counts?.drifted === "number" ? counts.drifted : 0;
 }
 
@@ -1977,11 +2416,15 @@ function buildHealthRemediationSources(params: {
 }): Record<HealthCheck["name"], string[]> {
   return {
     settings: params.normalizedSettingsReadWarnings,
-    directories: params.directoryState.missingDirs.map((dir) => `missing_directory:${dir}`),
+    directories: params.directoryState.missingDirs.map(
+      (dir) => `missing_directory:${dir}`,
+    ),
     settings_values: params.settingWarnings,
     telemetry: params.telemetryCheck.warnings,
     extensions: params.extensionCheck.warnings,
-    storage: params.historySummary.over_threshold.map((id) => `history_stream_over_compact_threshold:${id}`),
+    storage: params.historySummary.over_threshold.map(
+      (id) => `history_stream_over_compact_threshold:${id}`,
+    ),
     locks: params.locksCheck.warnings,
     integrity: params.integrityCheck.warnings,
     history_drift: params.historyDriftCheck.warnings,
@@ -2014,7 +2457,9 @@ function attachHealthRemediationMaps(params: {
   overThresholdCount: number;
 }): void {
   for (const check of params.checks) {
-    const remediationMap = buildRemediationMap(params.remediationSources[check.name]);
+    const remediationMap = buildRemediationMap(
+      params.remediationSources[check.name],
+    );
     rewriteBulkHealthRemediation({
       check,
       remediationMap,
@@ -2027,37 +2472,63 @@ function attachHealthRemediationMaps(params: {
   }
 }
 
-function projectHealthResult(result: HealthResult, options: RunHealthOptions, summaryMode: boolean): HealthResult {
+function projectHealthResult(
+  result: HealthResult,
+  options: RunHealthOptions,
+  summaryMode: boolean,
+): HealthResult {
   if (summaryMode) {
     return applySummaryHealthProjection(result);
   }
   return options.brief === true ? applyBriefHealthProjection(result) : result;
 }
 
-/**
- * Implements run health for the public runtime surface of this module.
- */
-export async function runHealth(global: GlobalOptions, options: RunHealthOptions = {}): Promise<HealthResult> {
+/** Implements run health for the public runtime surface of this module. */
+export async function runHealth(
+  global: GlobalOptions,
+  options: RunHealthOptions = {},
+): Promise<HealthResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settingsPath = getSettingsPath(pmRoot);
   if (!(await pathExists(settingsPath))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
-  const { settings, warnings: settingsReadWarnings } = await readSettingsWithMetadata(pmRoot);
+  const { settings, warnings: settingsReadWarnings } =
+    await readSettingsWithMetadata(pmRoot);
   const normalizedSettingsReadWarnings = [...new Set(settingsReadWarnings)];
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
   const strictDirectories = options.strictDirectories === true;
   const refreshPolicy = resolveVectorRefreshPolicy(options);
-  const directoryState = await scanHealthDirectories(pmRoot, typeRegistry, strictDirectories);
+  const directoryState = await scanHealthDirectories(
+    pmRoot,
+    typeRegistry,
+    strictDirectories,
+  );
   const settingWarnings = validateSettingsValues(settings);
   const telemetryCheck = await buildTelemetryCheck(settings, {
     checkTelemetry: options.checkTelemetry === true,
   });
-  const extensionCheck = await buildExtensionCheck(pmRoot, settings, Boolean(global.noExtensions));
+  const extensionCheck = await buildExtensionCheck(
+    pmRoot,
+    settings,
+    Boolean(global.noExtensions),
+  );
   const skipPolicy = resolveHealthSkipPolicy(options);
   const itemReadWarnings: string[] = [];
-  const items = await readHealthItems({ pmRoot, settings, typeRegistry, skipPolicy, itemReadWarnings });
+  const items = await readHealthItems({
+    pmRoot,
+    settings,
+    typeRegistry,
+    skipPolicy,
+    itemReadWarnings,
+  });
   const itemsWithBody = items as Array<ItemMetadata & { body: string }>;
   const normalizedItemReadWarnings = [...new Set(itemReadWarnings)];
   const historyPolicy = skipPolicy.skipDrift
@@ -2068,20 +2539,37 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
         itemIds: items.map((item) => item.id),
         commandLabel: "health",
       });
-  const historySummary = await countHistoryStreams(pmRoot, settings.history.compact_policy);
+  const historySummary = await countHistoryStreams(
+    pmRoot,
+    settings.history.compact_policy,
+  );
   const locksCheck = await buildLocksCheck(pmRoot);
   const integrityCheck = skipPolicy.skipIntegrity
     ? buildSkippedHealthCheck("integrity")
-    : await buildIntegrityCheck(pmRoot, typeRegistry.type_to_folder, settings.schema);
+    : await buildIntegrityCheck(
+        pmRoot,
+        typeRegistry.type_to_folder,
+        settings.schema,
+      );
   const historyDriftCheck = skipPolicy.skipDrift
     ? buildSkippedHealthCheck("history_drift")
     : await buildHistoryDriftCheck(pmRoot, itemsWithBody);
   const vectorizationCheck = skipPolicy.skipVectors
     ? buildSkippedHealthCheck("vectorization")
-    : await buildVectorizationCheck(pmRoot, settings, itemsWithBody, refreshPolicy, options.verboseStaleItems === true);
+    : await buildVectorizationCheck(
+        pmRoot,
+        settings,
+        itemsWithBody,
+        refreshPolicy,
+        options.verboseStaleItems === true,
+      );
 
   const checks: HealthCheck[] = [
-    buildSettingsHealthCheck(settingsPath, settings, normalizedSettingsReadWarnings),
+    buildSettingsHealthCheck(
+      settingsPath,
+      settings,
+      normalizedSettingsReadWarnings,
+    ),
     buildDirectoriesHealthCheck(directoryState, strictDirectories),
     buildSettingsValuesHealthCheck(settingWarnings),
     telemetryCheck.check,
@@ -2128,7 +2616,9 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
   // state (queue backlog, unreachable endpoint, corrupt local state) is advisory:
   // it must never flip overall project health to not-ok. Such warnings are still
   // surfaced in `warnings` and the telemetry check's own `warn` status.
-  const blockingWarnings = normalizedWarnings.filter((warning) => !isAdvisoryHealthWarning(warning));
+  const blockingWarnings = normalizedWarnings.filter(
+    (warning) => !isAdvisoryHealthWarning(warning),
+  );
   const result: HealthResult = {
     ok: blockingWarnings.length === 0,
     checks,
@@ -2138,6 +2628,7 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
   return projectHealthResult(result, options, skipPolicy.summaryMode);
 }
 
+/** Public contract for test only health command, shared by SDK and presentation-layer consumers. */
 export const _testOnlyHealthCommand = {
   buildExtensionHealthTriageSummary,
   buildCapabilityContractMetadata,

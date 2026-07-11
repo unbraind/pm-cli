@@ -1,15 +1,32 @@
+/**
+ * Runtime contracts and behavior for packages/pm calendar/extensions/calendar/runtime.
+ *
+ * @module packages/pm-calendar/extensions/calendar/runtime
+ */
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { CalendarOptions, CalendarResult } from "@unbrained/pm-cli/sdk/runtime";
-import type { GlobalOptions, ServiceOverrideContext } from "@unbrained/pm-cli/sdk";
+import type {
+  CalendarOptions,
+  CalendarResult,
+} from "@unbrained/pm-cli/sdk/runtime";
+import type {
+  GlobalOptions,
+  ServiceOverrideContext,
+} from "@unbrained/pm-cli/sdk";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 
 interface CalendarCoreModule {
-  runCalendar: (options: CalendarOptions, global: GlobalOptions) => Promise<CalendarResult>;
+  runCalendar: (
+    options: CalendarOptions,
+    global: GlobalOptions,
+  ) => Promise<CalendarResult>;
   renderCalendarMarkdown: (result: CalendarResult) => string;
   renderCalendarToon: (result: CalendarResult) => string;
-  resolveCalendarOutputFormat: (options: CalendarOptions, global: GlobalOptions) => "markdown" | "toon" | "json";
+  resolveCalendarOutputFormat: (
+    options: CalendarOptions,
+    global: GlobalOptions,
+  ) => "markdown" | "toon" | "json";
 }
 
 let calendarCore: CalendarCoreModule | null = null;
@@ -33,9 +50,16 @@ async function loadCalendarCoreModule(): Promise<CalendarCoreModule> {
       `builtin-calendar requires ${PM_PACKAGE_ROOT_ENV} to locate core SDK runtime exports.`,
     );
   }
-  const modulePath = path.join(path.resolve(envRoot.trim()), "dist", "sdk", "runtime.js");
+  const modulePath = path.join(
+    path.resolve(envRoot.trim()),
+    "dist",
+    "sdk",
+    "runtime.js",
+  );
   try {
-    const loaded = (await import(pathToFileURL(modulePath).href)) as Partial<CalendarCoreModule>;
+    const loaded = (await import(
+      pathToFileURL(modulePath).href
+    )) as Partial<CalendarCoreModule>;
     if (
       typeof loaded.runCalendar === "function" &&
       typeof loaded.renderCalendarMarkdown === "function" &&
@@ -63,7 +87,11 @@ function isCalendarResult(value: unknown): value is CalendarResult {
 }
 
 function readObjectPayload(payload: unknown): Record<string, unknown> | null {
-  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
+  if (
+    typeof payload !== "object" ||
+    payload === null ||
+    Array.isArray(payload)
+  ) {
     return null;
   }
   return payload as Record<string, unknown>;
@@ -87,7 +115,11 @@ function readPayloadResult(payload: unknown): unknown {
 
 function readPayloadCommandOptions(payload: unknown): CalendarOptions {
   const commandOptions = readObjectPayload(payload)?.command_options;
-  if (typeof commandOptions === "object" && commandOptions !== null && !Array.isArray(commandOptions)) {
+  if (
+    typeof commandOptions === "object" &&
+    commandOptions !== null &&
+    !Array.isArray(commandOptions)
+  ) {
     return commandOptions as CalendarOptions;
   }
   return {};
@@ -101,13 +133,20 @@ function readPayloadGlobalOptions(payload: unknown): GlobalOptions {
   return {};
 }
 
-export async function runCalendarPackage(options: CalendarOptions, global: GlobalOptions): Promise<CalendarResult> {
+/** Executes the calendar package operation through the package runtime. */
+export async function runCalendarPackage(
+  options: CalendarOptions,
+  global: GlobalOptions,
+): Promise<CalendarResult> {
   const loaded = await ensureCalendarCoreModule();
   loaded.resolveCalendarOutputFormat(options, global);
   return loaded.runCalendar(options, global);
 }
 
-export function renderCalendarPackageOutput(context: ServiceOverrideContext): string | null {
+/** Formats calendar package output data for the selected output mode. */
+export function renderCalendarPackageOutput(
+  context: ServiceOverrideContext,
+): string | null {
   const result = readPayloadResult(context.payload);
   if (!calendarCore || !isCalendarResult(result)) {
     return null;
@@ -117,11 +156,17 @@ export function renderCalendarPackageOutput(context: ServiceOverrideContext): st
       ? (context.options as CalendarOptions)
       : readPayloadCommandOptions(context.payload);
   const global = context.global ?? readPayloadGlobalOptions(context.payload);
-  const outputFormat = calendarCore.resolveCalendarOutputFormat(options, global);
+  const outputFormat = calendarCore.resolveCalendarOutputFormat(
+    options,
+    global,
+  );
   if (outputFormat === "markdown") {
     return `${calendarCore.renderCalendarMarkdown(result)}\n`;
   }
-  if (outputFormat === "json" || readPayloadFormat(context.payload) === "json") {
+  if (
+    outputFormat === "json" ||
+    readPayloadFormat(context.payload) === "json"
+  ) {
     return `${JSON.stringify(result, null, 2)}\n`;
   }
   if (outputFormat === "toon") {
@@ -131,12 +176,7 @@ export function renderCalendarPackageOutput(context: ServiceOverrideContext): st
   return null;
 }
 
-/**
- * Test-only seam exposing the internal payload readers. Their non-object guard
- * arms are defensively present but unreachable through `renderCalendarPackageOutput`
- * (the only caller validates payload via `isCalendarResult` first), so this seam
- * lets the suite drive those branches directly without weakening the runtime guards.
- */
+/** Test-only seam exposing the internal payload readers. Their non-object guard arms are defensively present but unreachable through `renderCalendarPackageOutput` (the only caller validates payload via `isCalendarResult` first), so this seam lets the suite drive those branches directly without weakening the runtime guards. */
 export const _testOnly = {
   readPayloadFormat,
   readPayloadResult,

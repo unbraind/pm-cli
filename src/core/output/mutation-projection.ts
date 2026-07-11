@@ -22,9 +22,7 @@
 /** Controls whether mutation output keeps full changed fields or compact counts. */
 export type ChangedFieldsMode = "full" | "compact";
 
-/**
- * Documents the mutation projection options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the mutation projection options payload exchanged by command, SDK, and package integrations. */
 export interface MutationProjectionOptions {
   /** Defaults to "full" (unchanged output). "compact" drops the array, keeping a count. */
   changedFields?: ChangedFieldsMode;
@@ -46,7 +44,9 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 /** Replace a single envelope's own top-level `changed_fields` array with a count. */
-function compactOwnChangedFields(envelope: Record<string, unknown>): Record<string, unknown> | null {
+function compactOwnChangedFields(
+  envelope: Record<string, unknown>,
+): Record<string, unknown> | null {
   const changedFields = envelope[CHANGED_FIELDS_KEY];
   if (!Array.isArray(changedFields)) {
     return null;
@@ -74,7 +74,10 @@ function isUpdateManyMutationEnvelope(value: Record<string, unknown>): boolean {
   );
 }
 
-function replaceRows(envelope: Record<string, unknown>, rows: unknown[]): Record<string, unknown> {
+function replaceRows(
+  envelope: Record<string, unknown>,
+  rows: unknown[],
+): Record<string, unknown> {
   const projected: Record<string, unknown> =
     Object.getPrototypeOf(envelope) === null ? Object.create(null) : {};
   Object.assign(projected, envelope);
@@ -88,20 +91,30 @@ function projectIdOnlyResult(result: unknown): unknown | null {
   }
   // Plan mutations wrap the mutated subject under "plan" instead of "item";
   // both shapes honor the root --id-only contract (id + status).
-  const subject = isPlainObject(result.item) ? result.item : isPlainObject(result.plan) ? result.plan : null;
+  const subject = isPlainObject(result.item)
+    ? result.item
+    : isPlainObject(result.plan)
+      ? result.plan
+      : null;
   if (subject === null) {
     return null;
   }
   const id = typeof subject.id === "string" ? subject.id : undefined;
-  const status = typeof subject.status === "string" ? subject.status : undefined;
+  const status =
+    typeof subject.status === "string" ? subject.status : undefined;
   if (!id) {
     return null;
   }
   return status ? { id, status } : { id };
 }
 
-function compactUpdateManyRows(envelope: Record<string, unknown>): { projected: Record<string, unknown>; changed: boolean } {
-  const rows = isUpdateManyMutationEnvelope(envelope) ? envelope[ROWS_KEY] : undefined;
+function compactUpdateManyRows(envelope: Record<string, unknown>): {
+  projected: Record<string, unknown>;
+  changed: boolean;
+} {
+  const rows = isUpdateManyMutationEnvelope(envelope)
+    ? envelope[ROWS_KEY]
+    : undefined;
   if (!Array.isArray(rows)) {
     return { projected: envelope, changed: false };
   }
@@ -122,12 +135,11 @@ function compactUpdateManyRows(envelope: Record<string, unknown>): { projected: 
     : { projected: envelope, changed: false };
 }
 
-/**
- * Returns a copy of a mutation result with the envelope `changed_fields` arrays
- * replaced by `changed_field_count` when compact mode is requested. Inputs that are
- * not a mutation envelope (or full mode) are returned unchanged (same reference).
- */
-export function projectMutationResult(result: unknown, options: MutationProjectionOptions = {}): unknown {
+/** Returns a copy of a mutation result with the envelope `changed_fields` arrays replaced by `changed_field_count` when compact mode is requested. Inputs that are not a mutation envelope (or full mode) are returned unchanged (same reference). */
+export function projectMutationResult(
+  result: unknown,
+  options: MutationProjectionOptions = {},
+): unknown {
   if (options.idOnly === true) {
     const idOnly = projectIdOnlyResult(result);
     if (idOnly !== null) {
@@ -143,7 +155,9 @@ export function projectMutationResult(result: unknown, options: MutationProjecti
   let changed = false;
   let projected: Record<string, unknown> = result;
 
-  const compactedTop = isMutationEnvelope(result) ? compactOwnChangedFields(result) : null;
+  const compactedTop = isMutationEnvelope(result)
+    ? compactOwnChangedFields(result)
+    : null;
   if (compactedTop !== null) {
     projected = compactedTop;
     changed = true;

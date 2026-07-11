@@ -39,17 +39,29 @@ import {
   type ExtensionRendererRegistry,
 } from "../core/extensions/index.js";
 import { pathExists } from "../core/fs/fs-utils.js";
-import { resolvePmCliVersion, resolvePmPackageRootFromModule } from "../core/packages/root.js";
 import {
-  resolveItemTypeRegistry,
-} from "../core/item/type-registry.js";
+  resolvePmCliVersion,
+  resolvePmPackageRootFromModule,
+} from "../core/packages/root.js";
+import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import {
   resolveRuntimeFieldRegistry,
   type RuntimeFieldCommand,
 } from "../core/schema/runtime-schema.js";
-import { EXIT_CODE, resolveTelemetryErrorCategory, type TelemetryErrorCategory } from "../core/shared/constants.js";
-import { PmCliError, type PmCliErrorContext, type PmCliErrorRecoveryPayload } from "../core/shared/errors.js";
-import { asRecordOrNull, toNonEmptyStringOrUndefined } from "../core/shared/primitives.js";
+import {
+  EXIT_CODE,
+  resolveTelemetryErrorCategory,
+  type TelemetryErrorCategory,
+} from "../core/shared/constants.js";
+import {
+  PmCliError,
+  type PmCliErrorContext,
+  type PmCliErrorRecoveryPayload,
+} from "../core/shared/errors.js";
+import {
+  asRecordOrNull,
+  toNonEmptyStringOrUndefined,
+} from "../core/shared/primitives.js";
 import { printError, printResult, writeStdout } from "../core/output/output.js";
 import { maybeRunFirstUseTelemetryPrompt } from "../core/telemetry/consent.js";
 import {
@@ -74,7 +86,10 @@ import {
 } from "../core/sentry/helpers.js";
 import { ensureSentryInit } from "../core/sentry/instrument.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
-import { readSettings, readSettingsWithMetadata } from "../core/store/settings.js";
+import {
+  readSettings,
+  readSettingsWithMetadata,
+} from "../core/store/settings.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { PmSettings } from "../types/index.js";
 import {
@@ -159,10 +174,12 @@ function resolvePmPackageRoot(): string {
   return resolvePmPackageRootFromModule(import.meta.url, ["../.."]);
 }
 
-if (typeof process.env[PM_PACKAGE_ROOT_ENV] !== "string" || process.env[PM_PACKAGE_ROOT_ENV]?.trim().length === 0) {
+if (
+  typeof process.env[PM_PACKAGE_ROOT_ENV] !== "string" ||
+  process.env[PM_PACKAGE_ROOT_ENV]?.trim().length === 0
+) {
   process.env[PM_PACKAGE_ROOT_ENV] = resolvePmPackageRoot();
 }
-
 
 interface ActiveExtensionHookContext {
   hooks: ExtensionHookRegistry;
@@ -178,7 +195,9 @@ interface ActiveExtensionHookContext {
 let activeExtensionHookContext: ActiveExtensionHookContext | null = null;
 let activeTelemetryCommandContext: ActiveTelemetryCommand | null = null;
 
-function setActiveExtensionHookContextForTest(context: ActiveExtensionHookContext | null): void {
+function setActiveExtensionHookContextForTest(
+  context: ActiveExtensionHookContext | null,
+): void {
   activeExtensionHookContext = context;
 }
 
@@ -203,8 +222,19 @@ const TELEMETRY_COMMAND_RESOLUTION_SET = new Set<TelemetryCommandResolution>([
   "unknown_failed",
 ]);
 
-const TELEMETRY_RESOLUTION_STAGE_SET = new Set<TelemetryResolutionStage>(["parse", "preflight", "execute", "unknown"]);
-const TELEMETRY_ERROR_CATEGORY_SET = new Set<TelemetryErrorCategory>(["usage", "validation", "conflict", "runtime", "unknown"]);
+const TELEMETRY_RESOLUTION_STAGE_SET = new Set<TelemetryResolutionStage>([
+  "parse",
+  "preflight",
+  "execute",
+  "unknown",
+]);
+const TELEMETRY_ERROR_CATEGORY_SET = new Set<TelemetryErrorCategory>([
+  "usage",
+  "validation",
+  "conflict",
+  "runtime",
+  "unknown",
+]);
 
 interface RuntimeExtensionSnapshot {
   hooks: ExtensionHookRegistry;
@@ -240,9 +270,18 @@ interface RuntimeExtensionActivationProbe {
   allowCommandPrefixMatch?: boolean;
 }
 
-let runtimeExtensionSnapshotCache: { key: string; snapshot: RuntimeExtensionSnapshot | null } | null = null;
-let runtimeExtensionDiscoverySnapshotCache: { key: string; snapshot: RuntimeExtensionDiscoverySnapshot | null } | null = null;
-let activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
+let runtimeExtensionSnapshotCache: {
+  key: string;
+  snapshot: RuntimeExtensionSnapshot | null;
+} | null = null;
+let runtimeExtensionDiscoverySnapshotCache: {
+  key: string;
+  snapshot: RuntimeExtensionDiscoverySnapshot | null;
+} | null = null;
+let activeRuntimeExtensionCommandDescriptors = new Map<
+  string,
+  ExtensionCommandHelpDescriptor
+>();
 const HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS = 250;
 const EXPECTED_HANDLED_ERROR_EXIT_CODES = new Set<number>([
   EXIT_CODE.USAGE,
@@ -264,10 +303,21 @@ type OperationRegistrationModule = {
   registerOperationCommands: typeof RegisterOperationCommandsFn;
 };
 
-const loadSetupRegistrationModule = createLazyModule<SetupRegistrationModule>(() => import("./register-setup.js"));
-const loadListQueryRegistrationModule = createLazyModule<ListQueryRegistrationModule>(() => import("./register-list-query.js"));
-const loadMutationRegistrationModule = createLazyModule<MutationRegistrationModule>(() => import("./register-mutation.js"));
-const loadOperationRegistrationModule = createLazyModule<OperationRegistrationModule>(() => import("./register-operations.js"));
+const loadSetupRegistrationModule = createLazyModule<SetupRegistrationModule>(
+  () => import("./register-setup.js"),
+);
+const loadListQueryRegistrationModule =
+  createLazyModule<ListQueryRegistrationModule>(
+    () => import("./register-list-query.js"),
+  );
+const loadMutationRegistrationModule =
+  createLazyModule<MutationRegistrationModule>(
+    () => import("./register-mutation.js"),
+  );
+const loadOperationRegistrationModule =
+  createLazyModule<OperationRegistrationModule>(
+    () => import("./register-operations.js"),
+  );
 
 function describeUnknownError(error: unknown): string {
   if (error instanceof PmCliError) {
@@ -284,12 +334,16 @@ function readThrownExitCode(error: unknown): number | undefined {
     return undefined;
   }
   const exitCode = (error as { exitCode?: unknown }).exitCode;
-  return typeof exitCode === "number" && Number.isFinite(exitCode) ? exitCode : undefined;
+  return typeof exitCode === "number" && Number.isFinite(exitCode)
+    ? exitCode
+    : undefined;
 }
 
 function normalizeThrownExitCode(exitCode: number): number {
   const normalized = Math.trunc(exitCode);
-  return normalized > EXIT_CODE.SUCCESS ? normalized : EXIT_CODE.GENERIC_FAILURE;
+  return normalized > EXIT_CODE.SUCCESS
+    ? normalized
+    : EXIT_CODE.GENERIC_FAILURE;
 }
 
 function isCommanderError(error: unknown): boolean {
@@ -320,13 +374,17 @@ function renderAttemptedCommand(argv: string[]): string {
   return renderPmCommand(argv);
 }
 
-function inferMissingFieldsFromErrorMessage(message: string): string[] | undefined {
+function inferMissingFieldsFromErrorMessage(
+  message: string,
+): string[] | undefined {
   const matches = message.match(/--[a-zA-Z0-9][a-zA-Z0-9_-]*/g);
   if (!matches || matches.length === 0) {
     return undefined;
   }
   /* c8 ignore next */
-  const normalized = [...new Set(matches.map((entry) => normalizeLongOptionFlag(entry) ?? entry))];
+  const normalized = [
+    ...new Set(matches.map((entry) => normalizeLongOptionFlag(entry) ?? entry)),
+  ];
   /* c8 ignore next */
   return normalized.length > 0 ? normalized : undefined;
 }
@@ -340,9 +398,13 @@ function inferMissingFieldsForRecovery(
     return undefined;
   }
   const providedFields = extractProvidedOptionFlags(invocationArgv);
-  const providedSet = new Set(providedFields.map((flag) => normalizeLongOptionFlag(flag) ?? flag));
+  const providedSet = new Set(
+    providedFields.map((flag) => normalizeLongOptionFlag(flag) ?? flag),
+  );
   const rawInferred = inferMissingFieldsFromErrorMessage(rawMessage);
-  const trulyMissing = rawInferred?.filter((flag) => !providedSet.has(normalizeLongOptionFlag(flag) ?? flag));
+  const trulyMissing = rawInferred?.filter(
+    (flag) => !providedSet.has(normalizeLongOptionFlag(flag) ?? flag),
+  );
   return trulyMissing && trulyMissing.length > 0 ? trulyMissing : undefined;
 }
 
@@ -356,14 +418,24 @@ function resolveRecoverySuggestedRetry(
     return existingRecovery.suggested_retry;
   }
   const missingFlag = inferredMissing?.[0];
-  const normalizedMissing = missingFlag ? normalizeLongOptionFlag(missingFlag) : undefined;
-  const commandName = invocationArgv.find((token) => program.commands.some((candidate) => candidate.name() === token));
-  const command = commandName ? program.commands.find((candidate) => candidate.name() === commandName) : undefined;
+  const normalizedMissing = missingFlag
+    ? normalizeLongOptionFlag(missingFlag)
+    : undefined;
+  const commandName = invocationArgv.find((token) =>
+    program.commands.some((candidate) => candidate.name() === token),
+  );
+  const command = commandName
+    ? program.commands.find((candidate) => candidate.name() === commandName)
+    : undefined;
   const missingOption = normalizedMissing
-    ? command?.options.find((option) => option.flags.split(/[ ,|]+/).includes(normalizedMissing))
+    ? command?.options.find((option) =>
+        option.flags.split(/[ ,|]+/).includes(normalizedMissing),
+      )
     : undefined;
   const missingTokens = normalizedMissing
-    ? missingOption?.isBoolean() === true ? [normalizedMissing] : [normalizedMissing, "<value>"]
+    ? missingOption?.isBoolean() === true
+      ? [normalizedMissing]
+      : [normalizedMissing, "<value>"]
     : [];
   const suggestedRetry = normalizedMissing
     ? renderAttemptedCommand([...invocationArgv, ...missingTokens])
@@ -404,13 +476,20 @@ function buildRecoveryPayload(params: {
 }): PmCliErrorRecoveryPayload {
   const existingRecovery = params.existingRecovery;
   return {
-    attempted_command: existingRecovery?.attempted_command ?? params.attemptedCommand,
-    normalized_args: existingRecovery?.normalized_args ?? [...params.invocationArgv],
+    attempted_command:
+      existingRecovery?.attempted_command ?? params.attemptedCommand,
+    normalized_args: existingRecovery?.normalized_args ?? [
+      ...params.invocationArgv,
+    ],
     /* c8 ignore next */
-    provided_fields: existingRecovery?.provided_fields ?? (params.providedFields.length > 0 ? params.providedFields : undefined),
+    provided_fields:
+      existingRecovery?.provided_fields ??
+      (params.providedFields.length > 0 ? params.providedFields : undefined),
     missing: existingRecovery?.missing ?? params.inferredMissing,
     ...projectExistingRecoveryOptionalFields(existingRecovery),
-    ...(params.suggestedRetry ? { suggested_retry: params.suggestedRetry } : {}),
+    ...(params.suggestedRetry
+      ? { suggested_retry: params.suggestedRetry }
+      : {}),
   };
 }
 
@@ -430,8 +509,17 @@ function buildPmCliRecoveryContext(
   }
   const attemptedCommand = renderAttemptedCommand(invocationArgv);
   const providedFields = extractProvidedOptionFlags(invocationArgv);
-  const inferredMissing = inferMissingFieldsForRecovery(rawMessage, invocationArgv, existingRecovery);
-  const suggestedRetry = resolveRecoverySuggestedRetry(invocationArgv, attemptedCommand, inferredMissing, existingRecovery);
+  const inferredMissing = inferMissingFieldsForRecovery(
+    rawMessage,
+    invocationArgv,
+    existingRecovery,
+  );
+  const suggestedRetry = resolveRecoverySuggestedRetry(
+    invocationArgv,
+    attemptedCommand,
+    inferredMissing,
+    existingRecovery,
+  );
   const recovery = buildRecoveryPayload({
     invocationArgv,
     attemptedCommand,
@@ -447,7 +535,10 @@ function buildPmCliRecoveryContext(
 }
 /* c8 ignore stop */
 
-function readRecordString(record: Record<string, unknown> | null, ...keys: string[]): string | undefined {
+function readRecordString(
+  record: Record<string, unknown> | null,
+  ...keys: string[]
+): string | undefined {
   if (!record) {
     return undefined;
   }
@@ -463,7 +554,10 @@ function readRecordString(record: Record<string, unknown> | null, ...keys: strin
   return undefined;
 }
 
-function readRecordBoolean(record: Record<string, unknown> | null, ...keys: string[]): boolean | undefined {
+function readRecordBoolean(
+  record: Record<string, unknown> | null,
+  ...keys: string[]
+): boolean | undefined {
   if (!record) {
     return undefined;
   }
@@ -476,7 +570,10 @@ function readRecordBoolean(record: Record<string, unknown> | null, ...keys: stri
   return undefined;
 }
 
-function readRecordNumber(record: Record<string, unknown> | null, ...keys: string[]): number | undefined {
+function readRecordNumber(
+  record: Record<string, unknown> | null,
+  ...keys: string[]
+): number | undefined {
   if (!record) {
     return undefined;
   }
@@ -496,24 +593,34 @@ function normalizeTelemetryCommandResolution(
     return undefined;
   }
   const normalized = value.trim().toLowerCase();
-  if (!TELEMETRY_COMMAND_RESOLUTION_SET.has(normalized as TelemetryCommandResolution)) {
+  if (
+    !TELEMETRY_COMMAND_RESOLUTION_SET.has(
+      normalized as TelemetryCommandResolution,
+    )
+  ) {
     return undefined;
   }
   return normalized as TelemetryCommandResolution;
 }
 
-function normalizeTelemetryResolutionStage(value: string | undefined): TelemetryResolutionStage | undefined {
+function normalizeTelemetryResolutionStage(
+  value: string | undefined,
+): TelemetryResolutionStage | undefined {
   if (!value) {
     return undefined;
   }
   const normalized = value.trim().toLowerCase();
-  if (!TELEMETRY_RESOLUTION_STAGE_SET.has(normalized as TelemetryResolutionStage)) {
+  if (
+    !TELEMETRY_RESOLUTION_STAGE_SET.has(normalized as TelemetryResolutionStage)
+  ) {
     return undefined;
   }
   return normalized as TelemetryResolutionStage;
 }
 
-function normalizeTelemetryErrorCategory(value: string | undefined): TelemetryErrorCategory | undefined {
+function normalizeTelemetryErrorCategory(
+  value: string | undefined,
+): TelemetryErrorCategory | undefined {
   if (!value) {
     return undefined;
   }
@@ -525,7 +632,9 @@ function normalizeTelemetryErrorCategory(value: string | undefined): TelemetryEr
 }
 
 /* c8 ignore start */
-function inferPostActionFailureMessage(result: Record<string, unknown> | null): string | undefined {
+function inferPostActionFailureMessage(
+  result: Record<string, unknown> | null,
+): string | undefined {
   const explicit = readRecordString(result, "error", "message");
   if (explicit) {
     return explicit;
@@ -533,14 +642,20 @@ function inferPostActionFailureMessage(result: Record<string, unknown> | null): 
 
   const warnings = result?.warnings;
   if (Array.isArray(warnings)) {
-    const firstWarning = warnings.find((value) => typeof value === "string" && value.trim().length > 0);
+    const firstWarning = warnings.find(
+      (value) => typeof value === "string" && value.trim().length > 0,
+    );
     /* c8 ignore next */
     if (typeof firstWarning === "string") {
       return firstWarning.trim();
     }
   }
 
-  const skippedTriggered = readRecordBoolean(result, "fail_on_skipped_triggered", "failOnSkippedTriggered");
+  const skippedTriggered = readRecordBoolean(
+    result,
+    "fail_on_skipped_triggered",
+    "failOnSkippedTriggered",
+  );
   if (skippedTriggered) {
     return "linked_test_fail_on_skipped_triggered";
   }
@@ -566,7 +681,10 @@ function inferPostActionFailureMessage(result: Record<string, unknown> | null): 
 }
 /* c8 ignore stop */
 
-function inferPostActionErrorCode(ok: boolean, exitCode: number): string | undefined {
+function inferPostActionErrorCode(
+  ok: boolean,
+  exitCode: number,
+): string | undefined {
   if (ok) {
     return undefined;
   }
@@ -594,22 +712,29 @@ function buildPostActionTelemetryOutcome(): TelemetryCommandOutcome {
   const resultExitCode = readRecordNumber(result, "exit_code", "exitCode");
   const exitCode = processExitCode ?? resultExitCode ?? EXIT_CODE.SUCCESS;
   const ok = exitCode === EXIT_CODE.SUCCESS;
-  const errorCode = readRecordString(result, "error_code", "errorCode") ?? inferPostActionErrorCode(ok, exitCode);
+  const errorCode =
+    readRecordString(result, "error_code", "errorCode") ??
+    inferPostActionErrorCode(ok, exitCode);
   const errorCategory =
-    normalizeTelemetryErrorCategory(readRecordString(result, "error_category", "errorCategory")) ??
-    (!ok ? resolveTelemetryErrorCategory(errorCode) : undefined);
+    normalizeTelemetryErrorCategory(
+      readRecordString(result, "error_category", "errorCategory"),
+    ) ?? (!ok ? resolveTelemetryErrorCategory(errorCode) : undefined);
   const errorMessage = !ok
-    ? inferPostActionFailureMessage(result) ?? `command_exit_${exitCode}`
+    ? (inferPostActionFailureMessage(result) ?? `command_exit_${exitCode}`)
     : undefined;
   const commandResolution =
-    normalizeTelemetryCommandResolution(readRecordString(result, "command_resolution", "commandResolution")) ??
+    normalizeTelemetryCommandResolution(
+      readRecordString(result, "command_resolution", "commandResolution"),
+    ) ??
     deriveTelemetryCommandResolution({
       ok,
       errorCode,
       errorCategory,
     });
   const resolutionStage =
-    normalizeTelemetryResolutionStage(readRecordString(result, "resolution_stage", "resolutionStage")) ?? "execute";
+    normalizeTelemetryResolutionStage(
+      readRecordString(result, "resolution_stage", "resolutionStage"),
+    ) ?? "execute";
   return {
     ok,
     error: errorMessage,
@@ -621,9 +746,10 @@ function buildPostActionTelemetryOutcome(): TelemetryCommandOutcome {
   };
 }
 
-
 /* c8 ignore start */
-async function runAndClearAfterCommandHooks(outcome: TelemetryCommandOutcome): Promise<void> {
+async function runAndClearAfterCommandHooks(
+  outcome: TelemetryCommandOutcome,
+): Promise<void> {
   const telemetryRuntime = activeTelemetryCommandContext;
   activeTelemetryCommandContext = null;
   await finishTelemetryCommand(telemetryRuntime, {
@@ -665,10 +791,14 @@ async function runAndClearAfterCommandHooks(outcome: TelemetryCommandOutcome): P
     clearActiveExtensionHooks();
   }
   if (!runtime.globalOptions.json && hookWarnings.length > 0) {
-    printError(`[pm] warning: afterCommand hook_warnings=${formatHookWarnings(hookWarnings)}`);
+    printError(
+      `[pm] warning: afterCommand hook_warnings=${formatHookWarnings(hookWarnings)}`,
+    );
   }
   if (runtime.profileEnabled && hookWarnings.length > 0) {
-    printError(`profile:extensions hook_warnings=${formatHookWarnings(hookWarnings)}`);
+    printError(
+      `profile:extensions hook_warnings=${formatHookWarnings(hookWarnings)}`,
+    );
   }
 }
 
@@ -677,7 +807,9 @@ async function ensureSentryForErrorReporting(): Promise<void> {
 }
 
 function envFlagEnabled(key: string): boolean {
-  return TRUE_LIKE_ENV_VALUES.has((process.env[key] ?? "").trim().toLowerCase());
+  return TRUE_LIKE_ENV_VALUES.has(
+    (process.env[key] ?? "").trim().toLowerCase(),
+  );
 }
 
 function shouldLogHandledErrorToSentry(exitCode: number): boolean {
@@ -724,7 +856,13 @@ async function handleGenericRunPmCliError(params: {
   const message = describeUnknownError(params.error);
   const classification = classifyUnknownError(message);
   if (params.bootstrapGlobal.json) {
-    printError(JSON.stringify(formatUnknownErrorForJson(message, EXIT_CODE.GENERIC_FAILURE), null, 2));
+    printError(
+      JSON.stringify(
+        formatUnknownErrorForJson(message, EXIT_CODE.GENERIC_FAILURE),
+        null,
+        2,
+      ),
+    );
   } else {
     printError(message);
   }
@@ -757,7 +895,9 @@ async function handleGenericRunPmCliError(params: {
   } catch (reportingError) {
     /* c8 ignore next */
     if (!params.bootstrapGlobal.json) {
-      printError(`Failed to report error: ${describeUnknownError(reportingError)}`);
+      printError(
+        `Failed to report error: ${describeUnknownError(reportingError)}`,
+      );
     }
   }
   try {
@@ -773,7 +913,9 @@ async function handleGenericRunPmCliError(params: {
   } catch (hookError) {
     /* c8 ignore next */
     if (!params.bootstrapGlobal.json) {
-      printError(`Failed to run error hooks: ${describeUnknownError(hookError)}`);
+      printError(
+        `Failed to run error hooks: ${describeUnknownError(hookError)}`,
+      );
     }
   }
   try {
@@ -781,7 +923,9 @@ async function handleGenericRunPmCliError(params: {
   } catch (flushError) {
     /* c8 ignore next */
     if (!params.bootstrapGlobal.json) {
-      printError(`Failed to flush error reporting: ${describeUnknownError(flushError)}`);
+      printError(
+        `Failed to flush error reporting: ${describeUnknownError(flushError)}`,
+      );
     }
   }
 }
@@ -813,7 +957,9 @@ function extractCommandScopedOptions(
     }
   }
   if (extensionFlagDefinitions.length > 0) {
-    const extensionOptionKeys = collectLooseCommandOptionKeysForDefinitions(extensionFlagDefinitions);
+    const extensionOptionKeys = collectLooseCommandOptionKeysForDefinitions(
+      extensionFlagDefinitions,
+    );
     const optionsToValidate: Record<string, unknown> = { ...looseOptions };
     for (const key of extensionOptionKeys) {
       /* c8 ignore next */
@@ -821,8 +967,16 @@ function extractCommandScopedOptions(
         optionsToValidate[key] = scoped[key];
       }
     }
-    validateLooseCommandOptionsWithFlagDefinitions(optionsToValidate, extensionFlagDefinitions, getCommandPath(command));
-    return coerceLooseCommandOptionsWithFlagDefinitions(scoped, extensionFlagDefinitions, looseOptions);
+    validateLooseCommandOptionsWithFlagDefinitions(
+      optionsToValidate,
+      extensionFlagDefinitions,
+      getCommandPath(command),
+    );
+    return coerceLooseCommandOptionsWithFlagDefinitions(
+      scoped,
+      extensionFlagDefinitions,
+      looseOptions,
+    );
   }
   return scoped;
 }
@@ -837,7 +991,11 @@ function collectExtensionFlagDefinitionsForCommand(
     return [];
   }
   return registrations.flags
-    .filter((entry) => normalizeExtensionCommandPath(entry.target_command) === normalizedCommandPath)
+    .filter(
+      (entry) =>
+        normalizeExtensionCommandPath(entry.target_command) ===
+        normalizedCommandPath,
+    )
     .flatMap((entry) => entry.flags);
 }
 
@@ -846,7 +1004,10 @@ function collectExtensionFlagDefinitionsForInvocation(
   commandPath: string,
   commandArgs: string[],
 ): Array<Record<string, unknown>> {
-  const exact = collectExtensionFlagDefinitionsForCommand(registrations, commandPath);
+  const exact = collectExtensionFlagDefinitionsForCommand(
+    registrations,
+    commandPath,
+  );
   const pathParts = [commandPath];
   let nestedMatch: Array<Record<string, unknown>> = [];
   for (const arg of commandArgs) {
@@ -854,7 +1015,10 @@ function collectExtensionFlagDefinitionsForInvocation(
       break;
     }
     pathParts.push(arg);
-    const nested = collectExtensionFlagDefinitionsForCommand(registrations, pathParts.join(" "));
+    const nested = collectExtensionFlagDefinitionsForCommand(
+      registrations,
+      pathParts.join(" "),
+    );
     if (nested.length > 0) {
       nestedMatch = nested;
     }
@@ -862,11 +1026,15 @@ function collectExtensionFlagDefinitionsForInvocation(
   return nestedMatch.length > 0 ? nestedMatch : exact;
 }
 
-function dynamicCommandArguments(descriptor: ExtensionCommandHelpDescriptor): ExtensionCommandHelpDescriptor["arguments"] {
+function dynamicCommandArguments(
+  descriptor: ExtensionCommandHelpDescriptor,
+): ExtensionCommandHelpDescriptor["arguments"] {
   return descriptor.arguments ?? [];
 }
 
-function formatDynamicCommandUsage(descriptor: ExtensionCommandHelpDescriptor): string {
+function formatDynamicCommandUsage(
+  descriptor: ExtensionCommandHelpDescriptor,
+): string {
   const argumentSuffix = dynamicCommandArguments(descriptor)
     .map((argument) => {
       const label = argument.variadic ? `${argument.name}...` : argument.name;
@@ -885,7 +1053,9 @@ function formatDynamicCommandUsage(descriptor: ExtensionCommandHelpDescriptor): 
  * and are excluded.
  */
 function isImporterOrExporterCommandPath(
-  registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry> | null,
+  registrations: ReturnType<
+    typeof createEmptyExtensionRegistrationRegistry
+  > | null,
   commandPath: string,
 ): boolean {
   if (!registrations) {
@@ -893,8 +1063,16 @@ function isImporterOrExporterCommandPath(
   }
   const normalized = normalizeExtensionCommandPath(commandPath);
   return (
-    registrations.importers.some((entry) => normalizeExtensionCommandPath(`${entry.importer} import`) === normalized) ||
-    registrations.exporters.some((entry) => normalizeExtensionCommandPath(`${entry.exporter} export`) === normalized)
+    registrations.importers.some(
+      (entry) =>
+        normalizeExtensionCommandPath(`${entry.importer} import`) ===
+        normalized,
+    ) ||
+    registrations.exporters.some(
+      (entry) =>
+        normalizeExtensionCommandPath(`${entry.exporter} export`) ===
+        normalized,
+    )
   );
 }
 
@@ -903,11 +1081,16 @@ function validateDynamicExtensionCommandArgs(
   args: string[],
 ): void {
   const descriptorArguments = dynamicCommandArguments(descriptor);
-  const requiredCount = descriptorArguments.filter((argument) => argument.required).length;
+  const requiredCount = descriptorArguments.filter(
+    (argument) => argument.required,
+  ).length;
   const variadic = descriptorArguments.some((argument) => argument.variadic);
-  const maxCount = variadic ? Number.POSITIVE_INFINITY : descriptorArguments.length;
+  const maxCount = variadic
+    ? Number.POSITIVE_INFINITY
+    : descriptorArguments.length;
   const failureHints = descriptor.failure_hints ?? [];
-  const hintSuffix = failureHints.length > 0 ? ` ${failureHints.join(" ")}` : "";
+  const hintSuffix =
+    failureHints.length > 0 ? ` ${failureHints.join(" ")}` : "";
   if (args.length < requiredCount) {
     throw new PmCliError(
       `Missing required argument for extension command '${descriptor.command}'. Usage: ${formatDynamicCommandUsage(descriptor)}${hintSuffix}`,
@@ -936,10 +1119,16 @@ function validateDynamicExtensionCommandOptions(
   extensionFlagDefinitions: Array<Record<string, unknown>>,
 ): void {
   if (extensionFlagDefinitions.length > 0) {
-    validateLooseCommandOptionsWithFlagDefinitions(options, extensionFlagDefinitions, descriptor.command);
+    validateLooseCommandOptionsWithFlagDefinitions(
+      options,
+      extensionFlagDefinitions,
+      descriptor.command,
+    );
     return;
   }
-  const unknownOptions = Object.keys(options).filter((key) => options[key] !== undefined).sort();
+  const unknownOptions = Object.keys(options)
+    .filter((key) => options[key] !== undefined)
+    .sort();
   if (unknownOptions.length === 0) {
     return;
   }
@@ -959,10 +1148,16 @@ function validateDynamicExtensionCommandInvocation(
     return;
   }
   validateDynamicExtensionCommandArgs(descriptor, args);
-  validateDynamicExtensionCommandOptions(descriptor, options, extensionFlagDefinitions);
+  validateDynamicExtensionCommandOptions(
+    descriptor,
+    options,
+    extensionFlagDefinitions,
+  );
 }
 
-const RUNTIME_FIELD_COMMAND_BY_COMMAND_PATH: Readonly<Record<string, RuntimeFieldCommand>> = {
+const RUNTIME_FIELD_COMMAND_BY_COMMAND_PATH: Readonly<
+  Record<string, RuntimeFieldCommand>
+> = {
   create: "create",
   update: "update",
   "update-many": "update_many",
@@ -980,9 +1175,14 @@ const RUNTIME_FIELD_COMMAND_BY_COMMAND_PATH: Readonly<Record<string, RuntimeFiel
   "templates save": "create",
 };
 
-const runtimeFieldLooseFlagDefinitionCache = new Map<string, Array<Record<string, unknown>>>();
+const runtimeFieldLooseFlagDefinitionCache = new Map<
+  string,
+  Array<Record<string, unknown>>
+>();
 
-function toLooseFieldDefinitionType(fieldType: string): "string" | "number" | "boolean" {
+function toLooseFieldDefinitionType(
+  fieldType: string,
+): "string" | "number" | "boolean" {
   if (fieldType === "number") {
     return "number";
   }
@@ -1000,24 +1200,38 @@ function commandHasShortOption(command: Command, shortFlag: string): boolean {
   return command.options.some((option) => option.short === shortFlag);
 }
 
-function addRuntimeFieldOption(command: Command, flagToken: string, description: string, repeatable: boolean): void {
+function addRuntimeFieldOption(
+  command: Command,
+  flagToken: string,
+  description: string,
+  repeatable: boolean,
+): void {
   const normalizedToken = flagToken.trim();
   if (!normalizedToken) {
     return;
   }
-  const helpText = description.length > 0 ? description : `Runtime schema field (${flagToken})`;
+  const helpText =
+    description.length > 0
+      ? description
+      : `Runtime schema field (${flagToken})`;
   if (normalizedToken.startsWith("-") && !normalizedToken.startsWith("--")) {
     if (commandHasShortOption(command, normalizedToken)) {
       return;
     }
     if (repeatable) {
-      command.option(`${normalizedToken} <value>`, `${helpText} (repeatable)`, collect);
+      command.option(
+        `${normalizedToken} <value>`,
+        `${helpText} (repeatable)`,
+        collect,
+      );
       return;
     }
     command.option(`${normalizedToken} <value>`, helpText);
     return;
   }
-  const longFlag = normalizedToken.startsWith("--") ? normalizedToken : `--${normalizedToken}`;
+  const longFlag = normalizedToken.startsWith("--")
+    ? normalizedToken
+    : `--${normalizedToken}`;
   if (commandHasLongOption(command, longFlag)) {
     return;
   }
@@ -1047,7 +1261,9 @@ async function collectRuntimeFieldLooseFlagDefinitionsForCommand(
   }
   const settings = await readSettings(pmRoot);
   const fieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
-  const definitions = (fieldRegistry.command_to_fields.get(runtimeCommand) ?? []).flatMap((field) => {
+  const definitions = (
+    fieldRegistry.command_to_fields.get(runtimeCommand) ?? []
+  ).flatMap((field) => {
     const flagTokens = [field.cli_flag, ...field.cli_aliases];
     return flagTokens.map((token) => ({
       long: `--${token}`,
@@ -1059,7 +1275,10 @@ async function collectRuntimeFieldLooseFlagDefinitionsForCommand(
   return definitions;
 }
 
-async function registerRuntimeSchemaFieldFlags(rootProgram: Command, invocationArgv: string[]): Promise<void> {
+async function registerRuntimeSchemaFieldFlags(
+  rootProgram: Command,
+  invocationArgv: string[],
+): Promise<void> {
   const bootstrapGlobalOptions = parseBootstrapGlobalOptions(invocationArgv);
   const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
@@ -1089,11 +1308,22 @@ async function registerRuntimeSchemaFieldFlags(rootProgram: Command, invocationA
     if (!command) {
       continue;
     }
-    for (const field of fieldRegistry.command_to_fields.get(mapping.command) ?? []) {
+    for (const field of fieldRegistry.command_to_fields.get(mapping.command) ??
+      []) {
       const description = field.description ?? "";
-      addRuntimeFieldOption(command, field.cli_flag, description, field.repeatable);
+      addRuntimeFieldOption(
+        command,
+        field.cli_flag,
+        description,
+        field.repeatable,
+      );
       for (const alias of field.cli_aliases) {
-        addRuntimeFieldOption(command, alias, `Alias for --${field.cli_flag}`, field.repeatable);
+        addRuntimeFieldOption(
+          command,
+          alias,
+          `Alias for --${field.cli_flag}`,
+          field.repeatable,
+        );
       }
     }
   }
@@ -1112,7 +1342,10 @@ async function maybeAttachCreateUpdatePolicyHelpText(
   }
   try {
     const resolvedSettings = settings ?? (await readSettings(pmRoot));
-    const typeRegistry = resolveItemTypeRegistry(resolvedSettings, registrations);
+    const typeRegistry = resolveItemTypeRegistry(
+      resolvedSettings,
+      registrations,
+    );
     attachCreateUpdatePolicyHelpText(rootProgram, typeRegistry, invocationArgv);
   } catch {
     // Help should remain available even when settings cannot be read.
@@ -1128,19 +1361,28 @@ function defaultPreflightDecision(): PreflightRuntimeDecision {
   };
 }
 
-function buildRuntimeExtensionSnapshotCacheKey(pmRoot: string, activationScope = "all"): string {
-  return activationScope === "all" ? `pm-root:${pmRoot}` : `pm-root:${pmRoot}:activation:${activationScope}`;
+function buildRuntimeExtensionSnapshotCacheKey(
+  pmRoot: string,
+  activationScope = "all",
+): string {
+  return activationScope === "all"
+    ? `pm-root:${pmRoot}`
+    : `pm-root:${pmRoot}:activation:${activationScope}`;
 }
 
 function bootstrapProfileEnabled(invocationArgv: string[]): boolean {
   return invocationArgv.some((token) => token === "--profile");
 }
 
-function buildRuntimeExtensionDiscoverySnapshotCacheKey(pmRoot: string): string {
+function buildRuntimeExtensionDiscoverySnapshotCacheKey(
+  pmRoot: string,
+): string {
   return `pm-root:${pmRoot}`;
 }
 
-function collectLeadingCommandArgs(commandArgs: readonly string[] | undefined): string[] {
+function collectLeadingCommandArgs(
+  commandArgs: readonly string[] | undefined,
+): string[] {
   const leading: string[] = [];
   for (const arg of commandArgs ?? []) {
     if (arg.startsWith("-")) {
@@ -1156,7 +1398,9 @@ function collectLeadingCommandArgs(commandArgs: readonly string[] | undefined): 
 }
 
 /* c8 ignore start */
-function collectActivationCommandCandidates(probe: RuntimeExtensionActivationProbe): string[] {
+function collectActivationCommandCandidates(
+  probe: RuntimeExtensionActivationProbe,
+): string[] {
   /* c8 ignore next */
   const commandPath = normalizeExtensionCommandPath(probe.commandPath ?? "");
   if (commandPath.length === 0) {
@@ -1171,7 +1415,10 @@ function collectActivationCommandCandidates(probe: RuntimeExtensionActivationPro
   return [...new Set(candidates)];
 }
 
-function activationCommandMatchesProbe(command: string, probe: RuntimeExtensionActivationProbe): boolean {
+function activationCommandMatchesProbe(
+  command: string,
+  probe: RuntimeExtensionActivationProbe,
+): boolean {
   const normalized = normalizeExtensionCommandPath(command);
   if (normalized.length === 0) {
     return false;
@@ -1183,30 +1430,57 @@ function activationCommandMatchesProbe(command: string, probe: RuntimeExtensionA
     }
   }
   if (probe.allowCommandPrefixMatch === true) {
-    return candidates.some((candidate) => normalized.startsWith(`${candidate} `));
+    return candidates.some((candidate) =>
+      normalized.startsWith(`${candidate} `),
+    );
   }
   return false;
 }
 
-function extensionActivationCommands(extension: ExtensionDiscoveryResult["effective"][number]): string[] {
+function extensionActivationCommands(
+  extension: ExtensionDiscoveryResult["effective"][number],
+): string[] {
   return extension.activation?.commands ?? [];
 }
 
-function extensionCapabilities(extension: ExtensionDiscoveryResult["effective"][number]): Set<string> {
+function extensionCapabilities(
+  extension: ExtensionDiscoveryResult["effective"][number],
+): Set<string> {
   /* c8 ignore next */
-  return new Set((extension.capabilities ?? []).map((capability) => capability.trim().toLowerCase()));
+  return new Set(
+    (extension.capabilities ?? []).map((capability) =>
+      capability.trim().toLowerCase(),
+    ),
+  );
 }
 
-const GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES = new Set(["hooks", "parser", "preflight", "renderers"]);
+const GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES = new Set([
+  "hooks",
+  "parser",
+  "preflight",
+  "renderers",
+]);
 // Capabilities that register command handlers whose names are not statically
 // known without declared `activation.commands`, so the extension must activate
 // for any command probe. `importers`/`exporters` register their import/export as
 // command handlers, so they belong here alongside commands/schema/services.
-const CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES = new Set(["commands", "schema", "services", "importers"]);
-const SEARCH_EXTENSION_ACTIVATION_COMMANDS = new Set(["reindex", "search", "search-advanced"]);
+const CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES = new Set([
+  "commands",
+  "schema",
+  "services",
+  "importers",
+]);
+const SEARCH_EXTENSION_ACTIVATION_COMMANDS = new Set([
+  "reindex",
+  "search",
+  "search-advanced",
+]);
 const CREATE_TEMPLATE_FLAGS = new Set(["--template"]);
 
-function hasAnyCapability(capabilities: Set<string>, expected: Set<string>): boolean {
+function hasAnyCapability(
+  capabilities: Set<string>,
+  expected: Set<string>,
+): boolean {
   for (const capability of expected) {
     if (capabilities.has(capability)) {
       return true;
@@ -1215,7 +1489,9 @@ function hasAnyCapability(capabilities: Set<string>, expected: Set<string>): boo
   return false;
 }
 
-function commandPathNeedsSearchExtensions(commandPath: string | undefined): boolean {
+function commandPathNeedsSearchExtensions(
+  commandPath: string | undefined,
+): boolean {
   const normalized = normalizeExtensionCommandPath(commandPath ?? "");
   if (normalized.length === 0) {
     return false;
@@ -1225,7 +1501,10 @@ function commandPathNeedsSearchExtensions(commandPath: string | undefined): bool
   return SEARCH_EXTENSION_ACTIVATION_COMMANDS.has(topLevel ?? normalized);
 }
 
-function probeUsesAnyFlag(probe: RuntimeExtensionActivationProbe, flags: Set<string>): boolean {
+function probeUsesAnyFlag(
+  probe: RuntimeExtensionActivationProbe,
+  flags: Set<string>,
+): boolean {
   /* c8 ignore next */
   for (const arg of probe.commandArgs ?? []) {
     if (!arg.startsWith("--")) {
@@ -1240,11 +1519,18 @@ function probeUsesAnyFlag(probe: RuntimeExtensionActivationProbe, flags: Set<str
 }
 /* c8 ignore stop */
 
-function commandPathNeedsTemplateExtensions(probe: RuntimeExtensionActivationProbe): boolean {
-  return normalizeExtensionCommandPath(probe.commandPath ?? "") === "create" && probeUsesAnyFlag(probe, CREATE_TEMPLATE_FLAGS);
+function commandPathNeedsTemplateExtensions(
+  probe: RuntimeExtensionActivationProbe,
+): boolean {
+  return (
+    normalizeExtensionCommandPath(probe.commandPath ?? "") === "create" &&
+    probeUsesAnyFlag(probe, CREATE_TEMPLATE_FLAGS)
+  );
 }
 
-function extensionProvidesTemplatesRuntime(commands: readonly string[]): boolean {
+function extensionProvidesTemplatesRuntime(
+  commands: readonly string[],
+): boolean {
   return commands.some((command) => {
     const normalized = normalizeExtensionCommandPath(command);
     return normalized === "templates" || normalized.startsWith("templates ");
@@ -1257,11 +1543,16 @@ function extensionNeedsActivationForProbe(
 ): boolean {
   const capabilities = extensionCapabilities(extension);
   const commands = extensionActivationCommands(extension);
-  if (commands.some((command) => activationCommandMatchesProbe(command, probe))) {
+  if (
+    commands.some((command) => activationCommandMatchesProbe(command, probe))
+  ) {
     return true;
   }
 
-  if (commandPathNeedsTemplateExtensions(probe) && extensionProvidesTemplatesRuntime(commands)) {
+  if (
+    commandPathNeedsTemplateExtensions(probe) &&
+    extensionProvidesTemplatesRuntime(commands)
+  ) {
     return true;
   }
 
@@ -1272,11 +1563,16 @@ function extensionNeedsActivationForProbe(
   // skipped for its own commands (the conservative tier below is what activates
   // those). A pure search provider has no command-bearing capability, so it falls
   // through to `return false` and stays scoped to search commands.
-  if (capabilities.has("search") && commandPathNeedsSearchExtensions(probe.commandPath)) {
+  if (
+    capabilities.has("search") &&
+    commandPathNeedsSearchExtensions(probe.commandPath)
+  ) {
     return true;
   }
 
-  if (hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES)) {
+  if (
+    hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES)
+  ) {
     return true;
   }
 
@@ -1292,7 +1588,12 @@ function extensionNeedsActivationForProbe(
   // for the probe — the invoked command could be one it registers. Activation
   // stays lazy once the extension declares `activation.commands` (handled by the
   // exact-match path above).
-  if (hasAnyCapability(capabilities, CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES)) {
+  if (
+    hasAnyCapability(
+      capabilities,
+      CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES,
+    )
+  ) {
     return true;
   }
 
@@ -1306,25 +1607,38 @@ function discoveryNeedsActivationForProbe(
   if (discovery.effective.length === 0) {
     return false;
   }
-  const hasCommandProbe = normalizeExtensionCommandPath(probe.commandPath ?? "").length > 0;
+  const hasCommandProbe =
+    normalizeExtensionCommandPath(probe.commandPath ?? "").length > 0;
   if (!hasCommandProbe) {
     return discovery.effective.some((extension) => {
       const capabilities = extensionCapabilities(extension);
       return (
         extensionActivationCommands(extension).length > 0 ||
-        hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES) ||
-        hasAnyCapability(capabilities, CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES) ||
+        hasAnyCapability(
+          capabilities,
+          GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES,
+        ) ||
+        hasAnyCapability(
+          capabilities,
+          CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES,
+        ) ||
         capabilities.has("search")
       );
     });
   }
-  return discovery.effective.some((extension) => extensionNeedsActivationForProbe(extension, probe));
+  return discovery.effective.some((extension) =>
+    extensionNeedsActivationForProbe(extension, probe),
+  );
 }
 
-function buildRuntimeExtensionActivationScope(probe: RuntimeExtensionActivationProbe): string {
+function buildRuntimeExtensionActivationScope(
+  probe: RuntimeExtensionActivationProbe,
+): string {
   const commandPath =
     collectActivationCommandCandidates(probe)
-      .filter((candidate) => candidate.split(" ").every((part) => !part.startsWith("-")))
+      .filter((candidate) =>
+        candidate.split(" ").every((part) => !part.startsWith("-")),
+      )
       .sort((left, right) => right.length - left.length)[0] ??
     normalizeExtensionCommandPath(probe.commandPath ?? "");
   if (commandPath.length === 0) {
@@ -1337,13 +1651,17 @@ function buildRuntimeExtensionActivationScope(probe: RuntimeExtensionActivationP
 
 function buildRuntimeExtensionFilterForProbe(
   probe: RuntimeExtensionActivationProbe,
-): ((extension: ExtensionDiscoveryResult["effective"][number]) => boolean) | undefined {
+):
+  | ((extension: ExtensionDiscoveryResult["effective"][number]) => boolean)
+  | undefined {
   return buildRuntimeExtensionActivationScope(probe) === "all"
     ? undefined
     : (extension) => extensionNeedsActivationForProbe(extension, probe);
 }
 
-function buildBootstrapActivationProbe(invocationArgv: string[]): RuntimeExtensionActivationProbe {
+function buildBootstrapActivationProbe(
+  invocationArgv: string[],
+): RuntimeExtensionActivationProbe {
   const helpRequest = parseBootstrapHelpRequest(invocationArgv);
   if (helpRequest.requested && helpRequest.commandPathTokens.length > 0) {
     const [commandPath, ...commandArgs] = helpRequest.commandPathTokens;
@@ -1355,7 +1673,9 @@ function buildBootstrapActivationProbe(invocationArgv: string[]): RuntimeExtensi
   }
 
   const stripped = stripGlobalBootstrapTokens(invocationArgv);
-  const commandIndex = stripped.findIndex((token) => token.trim().length > 0 && !token.startsWith("-"));
+  const commandIndex = stripped.findIndex(
+    (token) => token.trim().length > 0 && !token.startsWith("-"),
+  );
   if (commandIndex < 0) {
     return {};
   }
@@ -1373,7 +1693,10 @@ function collectParsedActivationCommandArgs(command: Command): string[] {
   if (commandPath === "create") {
     const options = command.optsWithGlobals() as Record<string, unknown>;
     /* c8 ignore next */
-    if (typeof options.template === "string" && options.template.trim().length > 0) {
+    if (
+      typeof options.template === "string" &&
+      options.template.trim().length > 0
+    ) {
       commandArgs.push("--template");
     }
   }
@@ -1381,16 +1704,7 @@ function collectParsedActivationCommandArgs(command: Command): string[] {
 }
 /* c8 ignore stop */
 
-/**
- * Surface settings-read warnings once per command on stderr. readSettings()
- * silently falls back to defaults when settings.json is invalid, so most
- * commands (create/list/search/...) generate the warning but never show it — a
- * typo would change behavior with no explanation. Only the `settings_read_*`
- * codes are surfaced (the corrupt-settings fallbacks: invalid_json /
- * invalid_schema / merge_failed); other informational settings warnings (schema
- * bootstrap, legacy-format coercion) stay quiet. Mirrors the same finding in
- * `pm health`, which also carries a remediation_map for it.
- */
+/** Surface settings-read warnings once per command on stderr. readSettings() silently falls back to defaults when settings.json is invalid, so most commands (create/list/search/...) generate the warning but never show it — a typo would change behavior with no explanation. Only the `settings_read_*` codes are surfaced (the corrupt-settings fallbacks: invalid_json / invalid_schema / merge_failed); other informational settings warnings (schema bootstrap, legacy-format coercion) stay quiet. Mirrors the same finding in `pm health`, which also carries a remediation_map for it. */
 function emitSettingsReadWarnings(warnings: readonly string[]): void {
   for (const warning of warnings) {
     if (warning.startsWith("settings_read_")) {
@@ -1401,7 +1715,10 @@ function emitSettingsReadWarnings(warnings: readonly string[]): void {
   }
 }
 
-function emitExtensionProfile(globalOptions: GlobalOptions, snapshot: RuntimeExtensionSnapshot): void {
+function emitExtensionProfile(
+  globalOptions: GlobalOptions,
+  snapshot: RuntimeExtensionSnapshot,
+): void {
   if (!globalOptions.profile) {
     return;
   }
@@ -1409,7 +1726,9 @@ function emitExtensionProfile(globalOptions: GlobalOptions, snapshot: RuntimeExt
     `profile:extensions loaded=${snapshot.loadedCount} failed=${snapshot.loadFailedCount} warnings=${snapshot.loadWarnings.length} activation_failed=${snapshot.activationFailedCount} hook_counts=before:${snapshot.hooks.beforeCommand.length}|after:${snapshot.hooks.afterCommand.length}|write:${snapshot.hooks.onWrite.length}|read:${snapshot.hooks.onRead.length}|index:${snapshot.hooks.onIndex.length} command_overrides=${snapshot.commands.overrides.length} command_handlers=${snapshot.commands.handlers.length} parser_overrides=${snapshot.parsers.overrides.length} preflight_overrides=${snapshot.preflight.overrides.length} service_overrides=${snapshot.services.overrides.length} renderer_overrides=${snapshot.renderers.overrides.length}`,
   );
   if (snapshot.activationWarnings.length > 0) {
-    printError(`profile:extensions activation_warnings=${formatHookWarnings(snapshot.activationWarnings)}`);
+    printError(
+      `profile:extensions activation_warnings=${formatHookWarnings(snapshot.activationWarnings)}`,
+    );
   }
 }
 
@@ -1421,13 +1740,16 @@ function emitExtensionSkippedProfile(
   if (!profileEnabled) {
     return;
   }
-  const command = normalizeExtensionCommandPath(probe.commandPath ?? "") || "<none>";
+  const command =
+    normalizeExtensionCommandPath(probe.commandPath ?? "") || "<none>";
   printError(
     `profile:extensions activation=skipped command=${command} effective=${snapshot.discovery.effective.length} warnings=${snapshot.discovery.warnings.length} discovery_ms=${snapshot.discoveryMs}`,
   );
 }
 
-async function loadRuntimeExtensionDiscoverySnapshot(pmRoot: string): Promise<RuntimeExtensionDiscoverySnapshot | null> {
+async function loadRuntimeExtensionDiscoverySnapshot(
+  pmRoot: string,
+): Promise<RuntimeExtensionDiscoverySnapshot | null> {
   const cacheKey = buildRuntimeExtensionDiscoverySnapshotCacheKey(pmRoot);
   if (runtimeExtensionDiscoverySnapshotCache?.key === cacheKey) {
     return runtimeExtensionDiscoverySnapshotCache.snapshot;
@@ -1435,7 +1757,8 @@ async function loadRuntimeExtensionDiscoverySnapshot(pmRoot: string): Promise<Ru
 
   try {
     const startedAt = Date.now();
-    const { settings, warnings: settingsReadWarnings } = await readSettingsWithMetadata(pmRoot);
+    const { settings, warnings: settingsReadWarnings } =
+      await readSettingsWithMetadata(pmRoot);
     const discovery = await discoverExtensions({
       pmRoot,
       settings,
@@ -1467,8 +1790,13 @@ async function loadRuntimeExtensionSnapshot(
   pmRoot: string,
   probe?: RuntimeExtensionActivationProbe,
 ): Promise<RuntimeExtensionSnapshot | null> {
-  const activationScope = probe ? buildRuntimeExtensionActivationScope(probe) : "all";
-  const cacheKey = buildRuntimeExtensionSnapshotCacheKey(pmRoot, activationScope);
+  const activationScope = probe
+    ? buildRuntimeExtensionActivationScope(probe)
+    : "all";
+  const cacheKey = buildRuntimeExtensionSnapshotCacheKey(
+    pmRoot,
+    activationScope,
+  );
   if (runtimeExtensionSnapshotCache?.key === cacheKey) {
     return runtimeExtensionSnapshotCache.snapshot;
   }
@@ -1480,16 +1808,26 @@ async function loadRuntimeExtensionSnapshot(
       settings,
       cwd: process.cwd(),
       noExtensions: false,
-      extensionFilter: probe ? buildRuntimeExtensionFilterForProbe(probe) : undefined,
+      extensionFilter: probe
+        ? buildRuntimeExtensionFilterForProbe(probe)
+        : undefined,
     });
     const activationResult = await activateExtensions({
       ...loadResult,
       loaded: loadResult.loaded,
     });
-    const commandHandlers = [...new Set(activationResult.commands.handlers.map((entry) => normalizeExtensionCommandPath(entry.command)))]
+    const commandHandlers = [
+      ...new Set(
+        activationResult.commands.handlers.map((entry) =>
+          normalizeExtensionCommandPath(entry.command),
+        ),
+      ),
+    ]
       .filter((entry) => entry.length > 0)
       .sort((left, right) => left.localeCompare(right));
-    const commandFlagHelp = collectDynamicExtensionFlagHelpByCommand(activationResult.registrations.flags);
+    const commandFlagHelp = collectDynamicExtensionFlagHelpByCommand(
+      activationResult.registrations.flags,
+    );
     const commandDescriptors = collectExtensionCommandHelpDescriptors(
       commandHandlers,
       activationResult.registrations.commands,
@@ -1529,20 +1867,16 @@ async function loadRuntimeExtensionSnapshot(
 }
 
 /* c8 ignore start */
-async function maybeLoadRuntimeExtensions(
-  command: Command,
-): Promise<
-  {
-    hooks: ExtensionHookRegistry;
-    commands: ExtensionCommandRegistry;
-    parsers: ExtensionParserRegistry;
-    preflight: ExtensionPreflightRegistry;
-    services: ExtensionServiceRegistry;
-    renderers: ExtensionRendererRegistry;
-    registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry>;
-    pmRoot: string;
-  } | null
-> {
+async function maybeLoadRuntimeExtensions(command: Command): Promise<{
+  hooks: ExtensionHookRegistry;
+  commands: ExtensionCommandRegistry;
+  parsers: ExtensionParserRegistry;
+  preflight: ExtensionPreflightRegistry;
+  services: ExtensionServiceRegistry;
+  renderers: ExtensionRendererRegistry;
+  registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry>;
+  pmRoot: string;
+} | null> {
   const globalOptions = getGlobalOptions(command);
   if (globalOptions.noExtensions) {
     // Extensions are disabled, so the discovery snapshot that normally carries
@@ -1552,7 +1886,9 @@ async function maybeLoadRuntimeExtensions(
     // defaults.
     const noExtPmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
     if (await pathExists(getSettingsPath(noExtPmRoot))) {
-      emitSettingsReadWarnings((await readSettingsWithMetadata(noExtPmRoot)).warnings);
+      emitSettingsReadWarnings(
+        (await readSettingsWithMetadata(noExtPmRoot)).warnings,
+      );
     }
     return null;
   }
@@ -1571,7 +1907,11 @@ async function maybeLoadRuntimeExtensions(
     commandArgs: collectParsedActivationCommandArgs(command),
   };
   if (!discoveryNeedsActivationForProbe(discoverySnapshot.discovery, probe)) {
-    emitExtensionSkippedProfile(globalOptions.profile, discoverySnapshot, probe);
+    emitExtensionSkippedProfile(
+      globalOptions.profile,
+      discoverySnapshot,
+      probe,
+    );
     return null;
   }
 
@@ -1595,9 +1935,13 @@ async function maybeLoadRuntimeExtensions(
 }
 /* c8 ignore stop */
 
-async function loadRuntimeExtensionCommandDescriptorsForRecovery(pmRoot: string): Promise<Map<string, ExtensionCommandHelpDescriptor>> {
+async function loadRuntimeExtensionCommandDescriptorsForRecovery(
+  pmRoot: string,
+): Promise<Map<string, ExtensionCommandHelpDescriptor>> {
   const snapshot = await loadRuntimeExtensionSnapshot(pmRoot);
-  return snapshot ? new Map(snapshot.commandDescriptors) : activeRuntimeExtensionCommandDescriptors;
+  return snapshot
+    ? new Map(snapshot.commandDescriptors)
+    : activeRuntimeExtensionCommandDescriptors;
 }
 
 async function executeRegisteredRuntimeMigrations(
@@ -1612,7 +1956,8 @@ async function executeRegisteredRuntimeMigrations(
       continue;
     }
 
-    const runtimeDefinition = migration.runtime_definition ?? migration.definition;
+    const runtimeDefinition =
+      migration.runtime_definition ?? migration.definition;
     const run = (runtimeDefinition as { run?: unknown }).run;
     if (typeof run !== "function") {
       continue;
@@ -1637,7 +1982,9 @@ async function executeRegisteredRuntimeMigrations(
     } catch (error: unknown) {
       migration.definition.status = "failed";
       migration.definition.reason = describeUnknownError(error);
-      warnings.push(`extension_migration_failed:${migration.layer}:${migration.name}:${migrationId}`);
+      warnings.push(
+        `extension_migration_failed:${migration.layer}:${migration.name}:${migrationId}`,
+      );
     }
   }
   return warnings;
@@ -1651,7 +1998,10 @@ async function runRequiredExtensionCommand(
   extensionFlagDefinitions: Array<Record<string, unknown>> = [],
 ): Promise<unknown> {
   const commandPath = getCommandPath(command);
-  let commandArgs = stripLooseCommandOptionTokens(command.args.map(String), extensionFlagDefinitions);
+  let commandArgs = stripLooseCommandOptionTokens(
+    command.args.map(String),
+    extensionFlagDefinitions,
+  );
   let commandOptions = { ...options };
   let resolvedGlobalOptions = { ...globalOptions };
   const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
@@ -1663,13 +2013,17 @@ async function runRequiredExtensionCommand(
     pm_root: pmRoot,
   });
   if (globalOptions.profile && parserOverride.warnings.length > 0) {
-    printError(`profile:extensions parser_warnings=${formatHookWarnings(parserOverride.warnings)}`);
+    printError(
+      `profile:extensions parser_warnings=${formatHookWarnings(parserOverride.warnings)}`,
+    );
   }
   commandArgs = parserOverride.context.args;
   commandOptions = parserOverride.context.options;
   resolvedGlobalOptions = parserOverride.context.global;
   validateDynamicExtensionCommandInvocation(
-    activeRuntimeExtensionCommandDescriptors.get(normalizeExtensionCommandPath(commandPath)),
+    activeRuntimeExtensionCommandDescriptors.get(
+      normalizeExtensionCommandPath(commandPath),
+    ),
     commandArgs,
     commandOptions,
     extensionFlagDefinitions,
@@ -1689,8 +2043,13 @@ async function runRequiredExtensionCommand(
     global: resolvedGlobalOptions,
     pm_root: pmRoot,
   });
-  if (resolvedGlobalOptions.profile && extensionCommandResult.warnings.length > 0) {
-    printError(`profile:extensions command_handler_warnings=${formatHookWarnings(extensionCommandResult.warnings)}`);
+  if (
+    resolvedGlobalOptions.profile &&
+    extensionCommandResult.warnings.length > 0
+  ) {
+    printError(
+      `profile:extensions command_handler_warnings=${formatHookWarnings(extensionCommandResult.warnings)}`,
+    );
   }
   if (!extensionCommandResult.handled) {
     if (extensionCommandResult.warnings.length > 0) {
@@ -1703,7 +2062,10 @@ async function runRequiredExtensionCommand(
         EXIT_CODE.GENERIC_FAILURE,
       );
     }
-    throw new PmCliError(`Command "${commandPath}" is provided by extensions and is not currently available.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Command "${commandPath}" is provided by extensions and is not currently available.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   setActiveCommandResult(extensionCommandResult.result);
   return extensionCommandResult.result;
@@ -1716,13 +2078,20 @@ type ActionMutableCommand = Command & {
   [WRAPPED_ACTION_HANDLER]?: boolean;
 };
 
-function resolveActionCommand(actionArgs: unknown[], fallback: Command): Command {
+function resolveActionCommand(
+  actionArgs: unknown[],
+  fallback: Command,
+): Command {
   const possibleCommand = actionArgs[actionArgs.length - 1];
   /* c8 ignore next */
   return possibleCommand instanceof Command ? possibleCommand : fallback;
 }
 
-function maybePrintExtensionProfileWarnings(enabled: boolean | undefined, label: string, warnings: string[]): void {
+function maybePrintExtensionProfileWarnings(
+  enabled: boolean | undefined,
+  label: string,
+  warnings: string[],
+): void {
   if (enabled && warnings.length > 0) {
     printError(`profile:extensions ${label}=${formatHookWarnings(warnings)}`);
   }
@@ -1734,21 +2103,39 @@ function validateDynamicInvocationArgs(params: {
   commandArgs: string[];
   extensionFlagDefinitions: Array<Record<string, unknown>>;
 }): void {
-  const dynamicDescriptor = activeRuntimeExtensionCommandDescriptors.get(normalizeExtensionCommandPath(params.commandPath));
-  if (!dynamicDescriptor || !isImporterOrExporterCommandPath(params.activeRegistrations, params.commandPath)) {
+  const dynamicDescriptor = activeRuntimeExtensionCommandDescriptors.get(
+    normalizeExtensionCommandPath(params.commandPath),
+  );
+  if (
+    !dynamicDescriptor ||
+    !isImporterOrExporterCommandPath(
+      params.activeRegistrations,
+      params.commandPath,
+    )
+  ) {
     return;
   }
   const positionalArgs =
     dynamicCommandArguments(dynamicDescriptor).length === 0
       ? collectLoosePositionalArgs(params.commandArgs)
-      : stripLooseCommandOptionTokens(params.commandArgs, params.extensionFlagDefinitions);
+      : stripLooseCommandOptionTokens(
+          params.commandArgs,
+          params.extensionFlagDefinitions,
+        );
   validateDynamicExtensionCommandArgs(dynamicDescriptor, positionalArgs);
 }
 
-function syncCommanderActionArgs(actionCommand: Command, actionArgs: unknown[], commandArgs: string[]): void {
+function syncCommanderActionArgs(
+  actionCommand: Command,
+  actionArgs: unknown[],
+  commandArgs: string[],
+): void {
   actionCommand.args = [...commandArgs];
   /* c8 ignore next */
-  if ("_processArguments" in actionCommand && typeof actionCommand._processArguments === "function") {
+  if (
+    "_processArguments" in actionCommand &&
+    typeof actionCommand._processArguments === "function"
+  ) {
     actionCommand._processArguments();
   }
   /* c8 ignore next */
@@ -1760,9 +2147,15 @@ function syncCommanderActionArgs(actionCommand: Command, actionArgs: unknown[], 
 function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
   const visit = (entry: Command): void => {
     const actionEntry = entry as ActionMutableCommand;
-    if (typeof actionEntry._actionHandler === "function" && actionEntry[WRAPPED_ACTION_HANDLER] !== true) {
+    if (
+      typeof actionEntry._actionHandler === "function" &&
+      actionEntry[WRAPPED_ACTION_HANDLER] !== true
+    ) {
       const originalAction = actionEntry._actionHandler;
-      actionEntry._actionHandler = async function wrappedActionHandler(this: unknown, ...actionArgs: unknown[]): Promise<unknown> {
+      actionEntry._actionHandler = async function wrappedActionHandler(
+        this: unknown,
+        ...actionArgs: unknown[]
+      ): Promise<unknown> {
         const actionCommand = resolveActionCommand(actionArgs, entry);
         const startedAt = Date.now();
         clearResolvedGlobalOptions(actionCommand);
@@ -1772,13 +2165,22 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         let commandArgs = actionCommand.args.map(String);
         const activeRegistrations = getActiveExtensionRegistrations();
         const extensionFlagDefinitions = activeRegistrations
-          ? collectExtensionFlagDefinitionsForInvocation(activeRegistrations, commandPath, commandArgs)
+          ? collectExtensionFlagDefinitionsForInvocation(
+              activeRegistrations,
+              commandPath,
+              commandArgs,
+            )
           : [];
-        const runtimeFieldFlagDefinitions = await collectRuntimeFieldLooseFlagDefinitionsForCommand(commandPath, pmRoot);
-        let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs, [
-          ...extensionFlagDefinitions,
-          ...runtimeFieldFlagDefinitions,
-        ]);
+        const runtimeFieldFlagDefinitions =
+          await collectRuntimeFieldLooseFlagDefinitionsForCommand(
+            commandPath,
+            pmRoot,
+          );
+        let commandOptions = extractCommandScopedOptions(
+          actionCommand,
+          commandArgs,
+          [...extensionFlagDefinitions, ...runtimeFieldFlagDefinitions],
+        );
         const parserOverride = await runActiveParserOverride({
           command: commandPath,
           args: commandArgs,
@@ -1786,7 +2188,11 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
           global: globalOptions,
           pm_root: pmRoot,
         });
-        maybePrintExtensionProfileWarnings(globalOptions.profile, "parser_warnings", parserOverride.warnings);
+        maybePrintExtensionProfileWarnings(
+          globalOptions.profile,
+          "parser_warnings",
+          parserOverride.warnings,
+        );
         commandArgs = parserOverride.context.args;
         commandOptions = parserOverride.context.options;
         globalOptions = parserOverride.context.global;
@@ -1795,7 +2201,12 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         // only arity validation, so excess positionals could reach handlers.
         // Free-form `registerCommand` commands intentionally accept positionals
         // via context.args, and core commands have no descriptor.
-        validateDynamicInvocationArgs({ activeRegistrations, commandPath, commandArgs, extensionFlagDefinitions });
+        validateDynamicInvocationArgs({
+          activeRegistrations,
+          commandPath,
+          commandArgs,
+          extensionFlagDefinitions,
+        });
         globalOptions = await applyDefaultOutputFormat(globalOptions);
         setResolvedGlobalOptions(actionCommand, globalOptions);
         syncCommanderActionArgs(actionCommand, actionArgs, commandArgs);
@@ -1818,7 +2229,11 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
           global: globalOptions,
           pm_root: pmRoot,
         });
-        maybePrintExtensionProfileWarnings(globalOptions.profile, "command_handler_warnings", extensionCommandResult.warnings);
+        maybePrintExtensionProfileWarnings(
+          globalOptions.profile,
+          "command_handler_warnings",
+          extensionCommandResult.warnings,
+        );
         if (extensionCommandResult.handled) {
           setActiveCommandResult(extensionCommandResult.result);
           printResult(extensionCommandResult.result, {
@@ -1829,7 +2244,9 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
             pmRoot,
           });
           if (globalOptions.profile) {
-            printError(`profile:command=${commandPath} took_ms=${Date.now() - startedAt}`);
+            printError(
+              `profile:command=${commandPath} took_ms=${Date.now() - startedAt}`,
+            );
           }
           return;
         }
@@ -1852,7 +2269,10 @@ async function clearDynamicExtensionCommandState(params?: {
   invocationArgv: string[];
   settings?: PmSettings;
 }): Promise<void> {
-  activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
+  activeRuntimeExtensionCommandDescriptors = new Map<
+    string,
+    ExtensionCommandHelpDescriptor
+  >();
   setActiveExtensionServices({ overrides: [] });
   if (params) {
     await maybeAttachCreateUpdatePolicyHelpText(
@@ -1874,7 +2294,10 @@ function attachDynamicExtensionHelp(
 ): void {
   if (descriptor?.flags && descriptor.flags.length > 0) {
     applyDynamicExtensionFlagOptions(command, descriptor.flags);
-    const residualFlagHelp = buildResidualDynamicExtensionFlagHelp(command, descriptor.flags);
+    const residualFlagHelp = buildResidualDynamicExtensionFlagHelp(
+      command,
+      descriptor.flags,
+    );
     if (residualFlagHelp) {
       command.addHelpText("after", residualFlagHelp);
     }
@@ -1888,7 +2311,10 @@ function attachDynamicExtensionHelp(
 /* v8 ignore stop */
 
 /* c8 ignore start */
-async function registerDynamicExtensionCommandPaths(rootProgram: Command, invocationArgv: string[]): Promise<void> {
+async function registerDynamicExtensionCommandPaths(
+  rootProgram: Command,
+  invocationArgv: string[],
+): Promise<void> {
   const bootstrapGlobalOptions = parseBootstrapGlobalOptions(invocationArgv);
   const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
   if (bootstrapGlobalOptions.noExtensions) {
@@ -1913,7 +2339,11 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
       invocationArgv,
       settings: discoverySnapshot.settings,
     });
-    emitExtensionSkippedProfile(bootstrapProfileEnabled(invocationArgv), discoverySnapshot, probe);
+    emitExtensionSkippedProfile(
+      bootstrapProfileEnabled(invocationArgv),
+      discoverySnapshot,
+      probe,
+    );
     return;
   }
 
@@ -1931,10 +2361,23 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
   // Ensure usage/help/error formatting overrides are available even when parse
   // errors occur before preAction hooks initialize full runtime extension state.
   setActiveExtensionServices(snapshot.services);
-  activeRuntimeExtensionCommandDescriptors = new Map(snapshot.commandDescriptors);
-  await maybeAttachCreateUpdatePolicyHelpText(rootProgram, pmRoot, invocationArgv, snapshot.registrations, snapshot.settings);
+  activeRuntimeExtensionCommandDescriptors = new Map(
+    snapshot.commandDescriptors,
+  );
+  await maybeAttachCreateUpdatePolicyHelpText(
+    rootProgram,
+    pmRoot,
+    invocationArgv,
+    snapshot.registrations,
+    snapshot.settings,
+  );
 
-  const commandPaths = [...new Set([...snapshot.commandHandlers, ...snapshot.commandDescriptors.keys()])]
+  const commandPaths = [
+    ...new Set([
+      ...snapshot.commandHandlers,
+      ...snapshot.commandDescriptors.keys(),
+    ]),
+  ]
     .filter((commandPath) => commandPath.trim().length > 0)
     .sort((left, right) => left.localeCompare(right));
   const registerCommandPath = (commandPath: string): void => {
@@ -1942,9 +2385,16 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
     const descriptor = snapshot.commandDescriptors.get(commandPath);
     const existingCommand = findCommandByPath(rootProgram, pathParts);
     const flagHelp = snapshot.commandFlagHelp.get(commandPath);
-    const metadataHelp = descriptor ? buildDynamicExtensionCommandMetadataHelp(descriptor) : null;
+    const metadataHelp = descriptor
+      ? buildDynamicExtensionCommandMetadataHelp(descriptor)
+      : null;
     if (existingCommand) {
-      attachDynamicExtensionHelp(existingCommand, descriptor, flagHelp, metadataHelp);
+      attachDynamicExtensionHelp(
+        existingCommand,
+        descriptor,
+        flagHelp,
+        metadataHelp,
+      );
       return;
     }
 
@@ -1958,7 +2408,11 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
       applyDynamicExtensionArguments(dynamicCommand, descriptor);
       if (descriptor.flags.length > 0) {
         applyDynamicExtensionFlagOptions(dynamicCommand, descriptor.flags);
-        residualDynamicFlagHelp = buildResidualDynamicExtensionFlagHelp(dynamicCommand, descriptor.flags) ?? undefined;
+        residualDynamicFlagHelp =
+          buildResidualDynamicExtensionFlagHelp(
+            dynamicCommand,
+            descriptor.flags,
+          ) ?? undefined;
       }
     }
     if (residualDynamicFlagHelp) {
@@ -1974,20 +2428,27 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
       .action(async (...actionArgs: unknown[]) => {
         const maybeCommand = actionArgs[actionArgs.length - 1];
         /* c8 ignore next */
-        const command = maybeCommand instanceof Command ? maybeCommand : dynamicCommand;
+        const command =
+          maybeCommand instanceof Command ? maybeCommand : dynamicCommand;
         const globalOptions = getGlobalOptions(command);
         const startedAt = Date.now();
-        const extensionFlagDefinitions = collectExtensionFlagDefinitionsForInvocation(
-          snapshot.registrations,
-          commandPath,
-          command.args.map(String),
-        );
+        const extensionFlagDefinitions =
+          collectExtensionFlagDefinitionsForInvocation(
+            snapshot.registrations,
+            commandPath,
+            command.args.map(String),
+          );
         const scopedOptions = extractCommandScopedOptions(
           command,
           command.args.map(String),
           extensionFlagDefinitions,
         );
-        const result = await runRequiredExtensionCommand(command, scopedOptions, globalOptions, extensionFlagDefinitions);
+        const result = await runRequiredExtensionCommand(
+          command,
+          scopedOptions,
+          globalOptions,
+          extensionFlagDefinitions,
+        );
         await invalidateSearchCachesForMutation(globalOptions, result);
         printResult(result, {
           ...globalOptions,
@@ -1997,7 +2458,9 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
           pmRoot,
         });
         if (globalOptions.profile) {
-          printError(`profile:command=${commandPath} took_ms=${Date.now() - startedAt}`);
+          printError(
+            `profile:command=${commandPath} took_ms=${Date.now() - startedAt}`,
+          );
         }
       });
   };
@@ -2014,7 +2477,9 @@ const CLI_VERSION = resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0";
 const program = new Command();
 program
   .name("pm")
-  .description("Universal, flexible, extensible, agent-optimized project management CLI for any project or programming language.")
+  .description(
+    "Universal, flexible, extensible, agent-optimized project management CLI for any project or programming language.",
+  )
   .version(CLI_VERSION)
   .showHelpAfterError(false)
   .allowExcessArguments(false)
@@ -2028,10 +2493,22 @@ program
   })
   .option("--json", "Output JSON instead of TOON")
   .option("--quiet", "Suppress stdout output")
-  .option("--no-changed-fields", "Omit the changed_fields array from mutation output (keeps changed_field_count)")
-  .option("--id-only", "Print only id and status for single-item mutation output")
-  .option("--pm-path <dir>", "Explicit tracker storage path for this command (preferred over --path)")
-  .option("--path <dir>", "Backward-compatible alias for --pm-path; this is the tracker storage path, not a workspace cwd")
+  .option(
+    "--no-changed-fields",
+    "Omit the changed_fields array from mutation output (keeps changed_field_count)",
+  )
+  .option(
+    "--id-only",
+    "Print only id and status for single-item mutation output",
+  )
+  .option(
+    "--pm-path <dir>",
+    "Explicit tracker storage path for this command (preferred over --path)",
+  )
+  .option(
+    "--path <dir>",
+    "Backward-compatible alias for --pm-path; this is the tracker storage path, not a workspace cwd",
+  )
   .option("--no-extensions", "Disable extension loading")
   .option("--no-pager", "Disable pager integration for help and long output")
   .option("--explain", "Render extended rationale and examples in help output")
@@ -2050,7 +2527,10 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs);
   let globalOptions = { ...bootstrapGlobalOptions };
   await maybeRunFirstUseTelemetryPrompt(commandPath, globalOptions);
-  const fallbackPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
+  const fallbackPmRoot = resolvePmRoot(
+    process.cwd(),
+    bootstrapGlobalOptions.path,
+  );
   const runtimeExtensions = await maybeLoadRuntimeExtensions(actionCommand);
   if (!runtimeExtensions) {
     activeTelemetryCommandContext = await startTelemetryCommand({
@@ -2063,7 +2543,8 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
     });
     sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
       source_context: activeTelemetryCommandContext?.source_context,
-      source_context_source: activeTelemetryCommandContext?.source_context_source,
+      source_context_source:
+        activeTelemetryCommandContext?.source_context_source,
     });
     sentryStartCommandSpan(commandPath);
     await enforceItemFormatWriteGateAndPreflightMigration(
@@ -2088,7 +2569,11 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
     commandPath,
     commandArgs,
   );
-  commandOptions = extractCommandScopedOptions(actionCommand, commandArgs, extensionFlagDefinitions);
+  commandOptions = extractCommandScopedOptions(
+    actionCommand,
+    commandArgs,
+    extensionFlagDefinitions,
+  );
   const parserOverride = await runActiveParserOverride({
     command: commandPath,
     args: commandArgs,
@@ -2098,7 +2583,9 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   });
   /* c8 ignore next */
   if (globalOptions.profile && parserOverride.warnings.length > 0) {
-    printError(`profile:extensions parser_warnings=${formatHookWarnings(parserOverride.warnings)}`);
+    printError(
+      `profile:extensions parser_warnings=${formatHookWarnings(parserOverride.warnings)}`,
+    );
   }
   commandArgs = parserOverride.context.args;
   commandOptions = parserOverride.context.options;
@@ -2114,7 +2601,9 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   });
   /* c8 ignore next */
   if (globalOptions.profile && preflightOverride.warnings.length > 0) {
-    printError(`profile:extensions preflight_warnings=${formatHookWarnings(preflightOverride.warnings)}`);
+    printError(
+      `profile:extensions preflight_warnings=${formatHookWarnings(preflightOverride.warnings)}`,
+    );
   }
   commandArgs = preflightOverride.context.args;
   commandOptions = preflightOverride.context.options;
@@ -2130,12 +2619,19 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
 
   /* c8 ignore next */
   const migrationWarnings = preflightDecision.run_extension_migrations
-    ? await executeRegisteredRuntimeMigrations(runtimeExtensions.registrations.migrations, runtimeExtensions.pmRoot)
+    ? await executeRegisteredRuntimeMigrations(
+        runtimeExtensions.registrations.migrations,
+        runtimeExtensions.pmRoot,
+      )
     : [];
   if (globalOptions.profile && migrationWarnings.length > 0) {
-    printError(`profile:extensions migration_warnings=${formatHookWarnings(migrationWarnings)}`);
+    printError(
+      `profile:extensions migration_warnings=${formatHookWarnings(migrationWarnings)}`,
+    );
   }
-  const migrationBlockers = collectMandatoryMigrationBlockers(runtimeExtensions.registrations.migrations);
+  const migrationBlockers = collectMandatoryMigrationBlockers(
+    runtimeExtensions.registrations.migrations,
+  );
   activeExtensionHookContext = {
     hooks: runtimeExtensions.hooks,
     commandName: commandPath,
@@ -2177,11 +2673,17 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   });
   /* c8 ignore next */
   if (globalOptions.profile && hookWarnings.length > 0) {
-    printError(`profile:extensions hook_warnings=${formatHookWarnings(hookWarnings)}`);
+    printError(
+      `profile:extensions hook_warnings=${formatHookWarnings(hookWarnings)}`,
+    );
   }
   /* c8 ignore next */
   if (preflightDecision.enforce_mandatory_migration_gate) {
-    enforceMandatoryMigrationWriteGate(commandPath, commandOptions, migrationBlockers);
+    enforceMandatoryMigrationWriteGate(
+      commandPath,
+      commandOptions,
+      migrationBlockers,
+    );
   }
 });
 /* c8 ignore stop */
@@ -2365,14 +2867,18 @@ function resolveCoreCommandRegistrationSelection(
   return REGISTER_ALL_CORE_COMMAND_FAMILIES;
 }
 
-function shouldAttachRichHelpTextForInvocation(invocationArgv: string[]): boolean {
+function shouldAttachRichHelpTextForInvocation(
+  invocationArgv: string[],
+): boolean {
   return (
     invocationArgv.length === 0 ||
     parseBootstrapHelpRequest(invocationArgv).requested
   );
 }
 
-const IDEMPOTENT_TOP_LEVEL_REGISTRATION = Symbol("pmCliIdempotentTopLevelRegistration");
+const IDEMPOTENT_TOP_LEVEL_REGISTRATION = Symbol(
+  "pmCliIdempotentTopLevelRegistration",
+);
 
 /**
  * The root `program` is a module-level singleton. Any path that enters
@@ -2391,8 +2897,12 @@ const IDEMPOTENT_TOP_LEVEL_REGISTRATION = Symbol("pmCliIdempotentTopLevelRegistr
  * short-circuits exact duplicates — every first-time registration still flows
  * through Commander untouched.
  */
-function ensureIdempotentTopLevelCommandRegistration(rootProgram: Command): void {
-  const guarded = rootProgram as Command & { [IDEMPOTENT_TOP_LEVEL_REGISTRATION]?: true };
+function ensureIdempotentTopLevelCommandRegistration(
+  rootProgram: Command,
+): void {
+  const guarded = rootProgram as Command & {
+    [IDEMPOTENT_TOP_LEVEL_REGISTRATION]?: true;
+  };
   if (guarded[IDEMPOTENT_TOP_LEVEL_REGISTRATION]) {
     return;
   }
@@ -2406,7 +2916,13 @@ function ensureIdempotentTopLevelCommandRegistration(rootProgram: Command): void
     // Match Commander's own dedup, which collides on an existing command's name
     // OR any of its aliases, so a re-entrant registration can never reach the
     // raw "cannot add command" throw.
-    if (rootProgram.commands.some((existing) => existing.name() === commandName || existing.aliases().includes(commandName))) {
+    if (
+      rootProgram.commands.some(
+        (existing) =>
+          existing.name() === commandName ||
+          existing.aliases().includes(commandName),
+      )
+    ) {
       return new Command(commandName);
     }
     return registerOriginalCommand(nameAndArgs, ...rest);
@@ -2430,19 +2946,26 @@ async function registerCoreCommandFamilies(
       LIST_QUERY_COMMAND_NAMES.has(selection.targetCommandName)
         ? new Set([selection.targetCommandName])
         : undefined;
-    registerListQueryCommands(rootProgram, commandFilter ? { commandFilter } : undefined);
+    registerListQueryCommands(
+      rootProgram,
+      commandFilter ? { commandFilter } : undefined,
+    );
   }
   if (selection.mutation) {
     const { registerMutationCommands } = await loadMutationRegistrationModule();
     registerMutationCommands(rootProgram);
   }
   if (selection.operation) {
-    const { registerOperationCommands } = await loadOperationRegistrationModule();
+    const { registerOperationCommands } =
+      await loadOperationRegistrationModule();
     registerOperationCommands(rootProgram);
   }
 }
 
-function shouldRegisterDynamicExtensionPaths(_rootProgram: Command, invocationArgv: string[]): boolean {
+function shouldRegisterDynamicExtensionPaths(
+  _rootProgram: Command,
+  invocationArgv: string[],
+): boolean {
   if (invocationRequestsVersion(invocationArgv)) {
     return false;
   }
@@ -2475,16 +2998,25 @@ function enforceExplicitRetryForFlagTypos(
   if (!commandName) {
     return;
   }
-  const typoEvent = bootstrapInvocation.trace.find((entry) => entry.reason === "flag_typo");
+  const typoEvent = bootstrapInvocation.trace.find(
+    (entry) => entry.reason === "flag_typo",
+  );
   if (!typoEvent) {
     return;
   }
   const normalizedTokens = Array.isArray(typoEvent.to)
     ? typoEvent.to
     : [String(typoEvent.to ?? "")].filter((entry) => entry.length > 0);
-  const normalizedDisplay = normalizedTokens.length > 0 ? normalizedTokens.join(" ") : "the canonical flag";
-  const mutatingCommand = MUTATION_COMMAND_NAMES.has(commandName) || MUTATING_OPERATION_COMMAND_NAMES.has(commandName);
-  const code = mutatingCommand ? "mutating_flag_typo_requires_retry" : "flag_typo_requires_retry";
+  const normalizedDisplay =
+    normalizedTokens.length > 0
+      ? normalizedTokens.join(" ")
+      : "the canonical flag";
+  const mutatingCommand =
+    MUTATION_COMMAND_NAMES.has(commandName) ||
+    MUTATING_OPERATION_COMMAND_NAMES.has(commandName);
+  const code = mutatingCommand
+    ? "mutating_flag_typo_requires_retry"
+    : "flag_typo_requires_retry";
   const commandScope = mutatingCommand ? "mutating option" : "option";
   throw new PmCliError(
     `Refusing to auto-correct ${commandScope} ${typoEvent.from} to ${normalizedDisplay}. Retry with the canonical flag so the command is explicit.`,
@@ -2492,7 +3024,9 @@ function enforceExplicitRetryForFlagTypos(
     {
       code,
       examples: [renderPmCommand(bootstrapInvocation.argv)],
-      nextSteps: ["Retry the command with the canonical flag shown in examples."],
+      nextSteps: [
+        "Retry the command with the canonical flag shown in examples.",
+      ],
       recovery: {
         normalized_args: [...bootstrapInvocation.argv],
         suggested_retry: renderPmCommand(bootstrapInvocation.argv),
@@ -2565,19 +3099,36 @@ async function prepareExtensionServicesForRunPmCliError(params: {
     return;
   }
   const bootstrapProbe = buildBootstrapActivationProbe(params.invocationArgv);
-  const discoverySnapshot = await loadRuntimeExtensionDiscoverySnapshot(params.bootstrapPmRoot);
-  if (discoverySnapshot && discoveryNeedsActivationForProbe(discoverySnapshot.discovery, bootstrapProbe)) {
-    const bootstrapSnapshot = await loadRuntimeExtensionSnapshot(params.bootstrapPmRoot, bootstrapProbe);
+  const discoverySnapshot = await loadRuntimeExtensionDiscoverySnapshot(
+    params.bootstrapPmRoot,
+  );
+  if (
+    discoverySnapshot &&
+    discoveryNeedsActivationForProbe(
+      discoverySnapshot.discovery,
+      bootstrapProbe,
+    )
+  ) {
+    const bootstrapSnapshot = await loadRuntimeExtensionSnapshot(
+      params.bootstrapPmRoot,
+      bootstrapProbe,
+    );
     setRecoveredExtensionServices(bootstrapSnapshot);
     return;
   }
   if (discoverySnapshot) {
-    emitExtensionSkippedProfile(bootstrapProfileEnabled(params.invocationArgv), discoverySnapshot, bootstrapProbe);
+    emitExtensionSkippedProfile(
+      bootstrapProfileEnabled(params.invocationArgv),
+      discoverySnapshot,
+      bootstrapProbe,
+    );
   }
   setActiveExtensionServices({ overrides: [] });
 }
 
-function setRecoveredExtensionServices(bootstrapSnapshot: Pick<RuntimeExtensionSnapshot, "services"> | null): void {
+function setRecoveredExtensionServices(
+  bootstrapSnapshot: Pick<RuntimeExtensionSnapshot, "services"> | null,
+): void {
   if (!bootstrapSnapshot) {
     setActiveExtensionServices({ overrides: [] });
     return;
@@ -2626,8 +3177,12 @@ async function finishRunPmCliSuccessParse(): Promise<void> {
   process.exitCode = EXIT_CODE.SUCCESS;
 }
 
-async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericExitCode: number | undefined): Promise<boolean> {
-  const hasExplicitExitCode = typeof numericExitCode === "number" && Number.isFinite(numericExitCode);
+async function handleRunPmCliKnownError(
+  context: RunPmCliErrorContext,
+  numericExitCode: number | undefined,
+): Promise<boolean> {
+  const hasExplicitExitCode =
+    typeof numericExitCode === "number" && Number.isFinite(numericExitCode);
   if (
     !(context.error instanceof PmCliError) &&
     (isCommanderError(context.error) || !hasExplicitExitCode)
@@ -2635,24 +3190,37 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
     return false;
   }
   const errorMessage = describeUnknownError(context.error);
-  const exitCode = context.error instanceof PmCliError ? context.error.exitCode : normalizeThrownExitCode(numericExitCode as number);
-  const rawContext = context.error instanceof PmCliError ? context.error.context : undefined;
-  const enrichedContext = buildPmCliRecoveryContext(rawContext, context.invocationArgv, errorMessage);
+  const exitCode =
+    context.error instanceof PmCliError
+      ? context.error.exitCode
+      : normalizeThrownExitCode(numericExitCode as number);
+  const rawContext =
+    context.error instanceof PmCliError ? context.error.context : undefined;
+  const enrichedContext = buildPmCliRecoveryContext(
+    rawContext,
+    context.invocationArgv,
+    errorMessage,
+  );
   const classification = classifyPmCliError(errorMessage, enrichedContext);
   const renderedError = context.jsonErrors
-    ? JSON.stringify(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext), null, 2)
+    ? JSON.stringify(
+        formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext),
+        null,
+        2,
+      )
     : formatPmCliErrorForDisplay(errorMessage, enrichedContext);
   printError(renderedError);
-  const { errorCategory, commandResolution } = await context.emitTelemetryCommandError({
-    command: context.attemptedCommand,
-    errorCode: classification.code,
-    errorMessage: classification.detail,
-    exitCode,
-    options: {
-      bootstrap_global_options: context.bootstrapGlobal,
-    },
-    resolutionStage: "execute",
-  });
+  const { errorCategory, commandResolution } =
+    await context.emitTelemetryCommandError({
+      command: context.attemptedCommand,
+      errorCode: classification.code,
+      errorMessage: classification.detail,
+      exitCode,
+      options: {
+        bootstrap_global_options: context.bootstrapGlobal,
+      },
+      resolutionStage: "execute",
+    });
   const loggedHandledErrorToSentry = await maybeLogHandledCliErrorToSentry({
     command: context.attemptedCommand,
     error_code: classification.code,
@@ -2672,7 +3240,9 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
     resolutionStage: "execute",
   });
   if (loggedHandledErrorToSentry) {
-    sentryCaptureCliError(wrapThrownErrorForSentry(context.error, errorMessage));
+    sentryCaptureCliError(
+      wrapThrownErrorForSentry(context.error, errorMessage),
+    );
     await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
   }
   process.exitCode = exitCode;
@@ -2681,15 +3251,23 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
 
 function resolveUnknownHelpToken(invocationArgv: string[]): string {
   const helpRequest = parseBootstrapHelpRequest(invocationArgv);
-  return helpRequest.commandPathTokens[0] ?? parseBootstrapCommandName(invocationArgv) ?? "<command>";
+  return (
+    helpRequest.commandPathTokens[0] ??
+    parseBootstrapCommandName(invocationArgv) ??
+    "<command>"
+  );
 }
 
-async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code: string | undefined): Promise<void> {
+async function handleUnknownHelpCommandError(
+  context: RunPmCliErrorContext,
+  code: string | undefined,
+): Promise<void> {
   const unknownToken = resolveUnknownHelpToken(context.invocationArgv);
   const unknownMessage = `unknown command '${unknownToken}'`;
-  const recoveryCommandDescriptors = await loadRuntimeExtensionCommandDescriptorsForRecovery(
-    resolvePmRoot(process.cwd(), context.bootstrapGlobal.path),
-  );
+  const recoveryCommandDescriptors =
+    await loadRuntimeExtensionCommandDescriptorsForRecovery(
+      resolvePmRoot(process.cwd(), context.bootstrapGlobal.path),
+    );
   const usageContext = await resolveCommanderUsageContext(
     { message: unknownMessage },
     program,
@@ -2709,17 +3287,18 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
       suggestedRetryCommand: usageContext.suggestedRetryCommand,
     },
   );
-  const { errorCategory, commandResolution } = await context.emitTelemetryCommandError({
-    command: unknownToken,
-    errorCode: classification.code,
-    errorMessage: classification.detail,
-    exitCode: EXIT_CODE.USAGE,
-    options: {
-      bootstrap_global_options: context.bootstrapGlobal,
-      commander_code: code ?? "commander.helpDisplayed",
-    },
-    resolutionStage: "parse",
-  });
+  const { errorCategory, commandResolution } =
+    await context.emitTelemetryCommandError({
+      command: unknownToken,
+      errorCode: classification.code,
+      errorMessage: classification.detail,
+      exitCode: EXIT_CODE.USAGE,
+      options: {
+        bootstrap_global_options: context.bootstrapGlobal,
+        commander_code: code ?? "commander.helpDisplayed",
+      },
+      resolutionStage: "parse",
+    });
   const loggedHandledErrorToSentry = await maybeLogHandledCliErrorToSentry({
     command: unknownToken,
     error_code: classification.code,
@@ -2731,8 +3310,16 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
     source_context: activeTelemetryCommandContext?.source_context,
   });
   const renderedUsage = context.jsonErrors
-    ? await formatCommanderUsageJson({ message: unknownMessage }, program, recoveryCommandDescriptors)
-    : await formatCommanderUsageMessage({ message: unknownMessage }, program, recoveryCommandDescriptors);
+    ? await formatCommanderUsageJson(
+        { message: unknownMessage },
+        program,
+        recoveryCommandDescriptors,
+      )
+    : await formatCommanderUsageMessage(
+        { message: unknownMessage },
+        program,
+        recoveryCommandDescriptors,
+      );
   await finishRunPmCliFailure({
     errorMessage: unknownMessage,
     exitCode: EXIT_CODE.USAGE,
@@ -2748,14 +3335,23 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
   process.exitCode = EXIT_CODE.USAGE;
 }
 
-async function handleRunPmCliHelpDisplayError(context: RunPmCliErrorContext, code: string | undefined, rawMessage: string): Promise<boolean> {
+async function handleRunPmCliHelpDisplayError(
+  context: RunPmCliErrorContext,
+  code: string | undefined,
+  rawMessage: string,
+): Promise<boolean> {
   const isHelpDisplayCode =
-    code === "commander.helpDisplayed" || code === "commander.help" || code === "commander.helpCommand";
+    code === "commander.helpDisplayed" ||
+    code === "commander.help" ||
+    code === "commander.helpCommand";
   if (!isHelpDisplayCode && !rawMessage.includes("(outputHelp)")) {
     return false;
   }
   const helpRequest = parseBootstrapHelpRequest(context.invocationArgv);
-  if (helpRequest.requested && !isKnownHelpCommandPath(program, helpRequest.commandPathTokens)) {
+  if (
+    helpRequest.requested &&
+    !isKnownHelpCommandPath(program, helpRequest.commandPathTokens)
+  ) {
     await handleUnknownHelpCommandError(context, code);
     return true;
   }
@@ -2763,8 +3359,15 @@ async function handleRunPmCliHelpDisplayError(context: RunPmCliErrorContext, cod
   return true;
 }
 
-async function handleRunPmCliCommanderUsageError(context: RunPmCliErrorContext, code: string): Promise<void> {
-  const usageContext = await resolveCommanderUsageContext(context.error, program, activeRuntimeExtensionCommandDescriptors);
+async function handleRunPmCliCommanderUsageError(
+  context: RunPmCliErrorContext,
+  code: string,
+): Promise<void> {
+  const usageContext = await resolveCommanderUsageContext(
+    context.error,
+    program,
+    activeRuntimeExtensionCommandDescriptors,
+  );
   const classification = classifyCommanderError(
     usageContext.message,
     usageContext.commandName,
@@ -2779,17 +3382,18 @@ async function handleRunPmCliCommanderUsageError(context: RunPmCliErrorContext, 
       suggestedRetryCommand: usageContext.suggestedRetryCommand,
     },
   );
-  const { errorCategory, commandResolution } = await context.emitTelemetryCommandError({
-    command: context.attemptedCommand,
-    errorCode: classification.code,
-    errorMessage: classification.detail,
-    exitCode: EXIT_CODE.USAGE,
-    options: {
-      bootstrap_global_options: context.bootstrapGlobal,
-      commander_code: code,
-    },
-    resolutionStage: "parse",
-  });
+  const { errorCategory, commandResolution } =
+    await context.emitTelemetryCommandError({
+      command: context.attemptedCommand,
+      errorCode: classification.code,
+      errorMessage: classification.detail,
+      exitCode: EXIT_CODE.USAGE,
+      options: {
+        bootstrap_global_options: context.bootstrapGlobal,
+        commander_code: code,
+      },
+      resolutionStage: "parse",
+    });
   const loggedHandledErrorToSentry = await maybeLogHandledCliErrorToSentry({
     command: context.attemptedCommand,
     error_code: classification.code,
@@ -2801,8 +3405,16 @@ async function handleRunPmCliCommanderUsageError(context: RunPmCliErrorContext, 
     source_context: activeTelemetryCommandContext?.source_context,
   });
   const renderedUsage = context.jsonErrors
-    ? await formatCommanderUsageJson(context.error, program, activeRuntimeExtensionCommandDescriptors)
-    : await formatCommanderUsageMessage(context.error, program, activeRuntimeExtensionCommandDescriptors);
+    ? await formatCommanderUsageJson(
+        context.error,
+        program,
+        activeRuntimeExtensionCommandDescriptors,
+      )
+    : await formatCommanderUsageMessage(
+        context.error,
+        program,
+        activeRuntimeExtensionCommandDescriptors,
+      );
   await finishRunPmCliFailure({
     errorMessage: usageContext.message,
     exitCode: EXIT_CODE.USAGE,
@@ -2823,16 +3435,23 @@ function shouldHandleRunPmCliCommanderError(error: unknown): boolean {
     return false;
   }
   const code = (error as { code?: unknown }).code;
-  if (typeof code === "string" && (code === "commander.version" || code.startsWith("commander."))) {
+  if (
+    typeof code === "string" &&
+    (code === "commander.version" || code.startsWith("commander."))
+  ) {
     return true;
   }
   const rawMessage = String((error as { message?: unknown }).message ?? "");
   return rawMessage.includes("(outputHelp)");
 }
 
-async function handleRunPmCliCommanderError(context: RunPmCliErrorContext): Promise<void> {
+async function handleRunPmCliCommanderError(
+  context: RunPmCliErrorContext,
+): Promise<void> {
   const code = (context.error as { code?: string }).code;
-  const rawMessage = String((context.error as { message?: unknown }).message ?? "");
+  const rawMessage = String(
+    (context.error as { message?: unknown }).message ?? "",
+  );
   if (await handleRunPmCliHelpDisplayError(context, code, rawMessage)) {
     return;
   }
@@ -2855,7 +3474,8 @@ async function handleRunPmCliError(params: {
     bootstrapGlobal,
     jsonErrors: bootstrapGlobal.json,
     bootstrapPmRoot,
-    attemptedCommand: parseBootstrapCommandName(params.invocationArgv) ?? "<unknown>",
+    attemptedCommand:
+      parseBootstrapCommandName(params.invocationArgv) ?? "<unknown>",
     emitTelemetryCommandError: createTelemetryCommandErrorEmitter({
       invocationArgv: params.invocationArgv,
       bootstrapGlobal,
@@ -2867,7 +3487,9 @@ async function handleRunPmCliError(params: {
     bootstrapGlobal,
     bootstrapPmRoot,
   });
-  if (await handleRunPmCliKnownError(context, readThrownExitCode(params.error))) {
+  if (
+    await handleRunPmCliKnownError(context, readThrownExitCode(params.error))
+  ) {
     return;
   }
   if (shouldHandleRunPmCliCommanderError(params.error)) {
@@ -2882,13 +3504,17 @@ async function handleRunPmCliError(params: {
   });
 }
 
-/**
- * Implements run pm cli for the public runtime surface of this module.
- */
-export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promise<void> {
+/** Implements run pm cli for the public runtime surface of this module. */
+export async function runPmCli(
+  rawArgv: string[] = process.argv.slice(2),
+): Promise<void> {
   const bootstrapInvocation = normalizeBootstrapInvocation(rawArgv);
   const invocationArgv = bootstrapInvocation.argv;
-  const invocationProcessArgv = [process.argv[0], process.argv[1], ...invocationArgv];
+  const invocationProcessArgv = [
+    process.argv[0],
+    process.argv[1],
+    ...invocationArgv,
+  ];
   const isBareInvocation = invocationArgv.length === 0;
   try {
     enforceExplicitRetryForFlagTypos(bootstrapInvocation);
@@ -2899,18 +3525,28 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
     if (shouldAttachRichHelpTextForInvocation(invocationArgv)) {
       attachRichHelpText(program, invocationArgv);
     }
-    const registerDynamicCommands = shouldRegisterDynamicExtensionPaths(program, invocationArgv);
+    const registerDynamicCommands = shouldRegisterDynamicExtensionPaths(
+      program,
+      invocationArgv,
+    );
     if (registerDynamicCommands) {
       await registerDynamicExtensionCommandPaths(program, invocationArgv);
     } else {
-      activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
+      activeRuntimeExtensionCommandDescriptors = new Map<
+        string,
+        ExtensionCommandHelpDescriptor
+      >();
       setActiveExtensionServices({ overrides: [] });
     }
     if (shouldRegisterRuntimeSchemaFlags(invocationArgv)) {
       await registerRuntimeSchemaFieldFlags(program, invocationArgv);
     }
     wrapProgramActionsForExtensionHandlers(program);
-    const renderedBootstrapJsonHelp = await maybeRenderBootstrapJsonHelp(program, invocationArgv, activeRuntimeExtensionCommandDescriptors);
+    const renderedBootstrapJsonHelp = await maybeRenderBootstrapJsonHelp(
+      program,
+      invocationArgv,
+      activeRuntimeExtensionCommandDescriptors,
+    );
     if (renderedBootstrapJsonHelp) {
       return;
     }
@@ -2924,6 +3560,7 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
   }
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   activationCommandMatchesProbe,
   bootstrapProfileEnabled,

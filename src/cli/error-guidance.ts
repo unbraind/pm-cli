@@ -3,7 +3,10 @@
  *
  * Provides CLI runtime support for Error Guidance.
  */
-import type { PmCliErrorContext, PmCliErrorRecoveryPayload } from "../core/shared/errors.js";
+import type {
+  PmCliErrorContext,
+  PmCliErrorRecoveryPayload,
+} from "../core/shared/errors.js";
 import { renderPmCommand } from "./argv-utils.js";
 
 interface GuidanceMessage {
@@ -18,48 +21,69 @@ interface GuidanceMessage {
   recovery?: PmCliErrorRecoveryPayload;
 }
 
-/**
- * Documents the json error envelope payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the json error envelope payload exchanged by command, SDK, and package integrations. */
 export interface JsonErrorEnvelope {
+  /** Schema type that determines the shape and validation rules for this value. */
   type: string;
+  /** Value that configures or reports code for this contract. */
   code: string;
+  /** Value that configures or reports title for this contract. */
   title: string;
+  /** Value that configures or reports detail for this contract. */
   detail: string;
+  /** Value that configures or reports required for this contract. */
   required: string;
+  /** Value that configures or reports exit code for this contract. */
   exit_code: number;
+  /** Value that configures or reports why for this contract. */
   why?: string;
+  /** Value that configures or reports examples for this contract. */
   examples?: string[];
+  /** Value that configures or reports next steps for this contract. */
   next_steps?: string[];
+  /** Value that configures or reports recovery for this contract. */
   recovery?: PmCliErrorRecoveryPayload;
 }
 
-/**
- * Documents the error classification payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the error classification payload exchanged by command, SDK, and package integrations. */
 export interface ErrorClassification {
+  /** Schema type that determines the shape and validation rules for this value. */
   type: string;
+  /** Value that configures or reports code for this contract. */
   code: string;
+  /** Value that configures or reports title for this contract. */
   title: string;
+  /** Value that configures or reports detail for this contract. */
   detail: string;
+  /** Value that configures or reports required for this contract. */
   required: string;
+  /** Value that configures or reports why for this contract. */
   why?: string;
+  /** Value that configures or reports examples for this contract. */
   examples?: string[];
+  /** Value that configures or reports next steps for this contract. */
   next_steps?: string[];
+  /** Value that configures or reports recovery for this contract. */
   recovery?: PmCliErrorRecoveryPayload;
 }
 
-/**
- * Documents the commander guidance context payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the commander guidance context payload exchanged by command, SDK, and package integrations. */
 export interface CommanderGuidanceContext {
+  /** Value that configures or reports unknown command examples for this contract. */
   unknownCommandExamples?: string[];
+  /** Value that configures or reports unknown command next steps for this contract. */
   unknownCommandNextSteps?: string[];
+  /** Value that configures or reports attempted command for this contract. */
   attemptedCommand?: string;
+  /** Value that configures or reports normalized invocation args for this contract. */
   normalizedInvocationArgs?: string[];
+  /** Value that configures or reports provided option flags for this contract. */
   providedOptionFlags?: string[];
+  /** Value that configures or reports unknown option suggestions for this contract. */
   unknownOptionSuggestions?: string[];
+  /** Value that configures or reports unknown option other commands for this contract. */
   unknownOptionOtherCommands?: string[];
+  /** Value that configures or reports suggested retry command for this contract. */
   suggestedRetryCommand?: string;
 }
 
@@ -90,7 +114,9 @@ function errorType(code: string): string {
   return `urn:pm-cli:error:${code}`;
 }
 
-function makeGuidanceMessage(params: Omit<GuidanceMessage, "type">): GuidanceMessage {
+function makeGuidanceMessage(
+  params: Omit<GuidanceMessage, "type">,
+): GuidanceMessage {
   return {
     ...params,
     type: errorType(params.code),
@@ -113,7 +139,10 @@ const GUIDE_SHELL_HINT: PackageCommandHint = {
   packageName: "@unbrained/pm-guide-shell",
   installCommand: "pm install guide-shell",
 };
-const CALENDAR_HINT: PackageCommandHint = { packageName: "@unbrained/pm-calendar", installCommand: "pm install calendar" };
+const CALENDAR_HINT: PackageCommandHint = {
+  packageName: "@unbrained/pm-calendar",
+  installCommand: "pm install calendar",
+};
 const GOVERNANCE_AUDIT_HINT: PackageCommandHint = {
   packageName: "@unbrained/pm-governance-audit",
   installCommand: "pm install governance-audit",
@@ -123,14 +152,19 @@ const SEARCH_ADVANCED_HINT: PackageCommandHint = {
   installCommand: "pm install search-advanced",
 };
 
-const KNOWN_PACKAGE_COMMAND_HINTS: Readonly<Record<string, PackageCommandHint>> = {
+const KNOWN_PACKAGE_COMMAND_HINTS: Readonly<
+  Record<string, PackageCommandHint>
+> = {
   guide: GUIDE_SHELL_HINT,
   shell: GUIDE_SHELL_HINT,
   completion: GUIDE_SHELL_HINT,
   "completion-statuses": GUIDE_SHELL_HINT,
   "completion-tags": GUIDE_SHELL_HINT,
   "completion-types": GUIDE_SHELL_HINT,
-  templates: { packageName: "@unbrained/pm-templates", installCommand: "pm install templates" },
+  templates: {
+    packageName: "@unbrained/pm-templates",
+    installCommand: "pm install templates",
+  },
   calendar: CALENDAR_HINT,
   cal: CALENDAR_HINT,
   "comments-audit": GOVERNANCE_AUDIT_HINT,
@@ -139,10 +173,15 @@ const KNOWN_PACKAGE_COMMAND_HINTS: Readonly<Record<string, PackageCommandHint>> 
   normalize: GOVERNANCE_AUDIT_HINT,
   reindex: SEARCH_ADVANCED_HINT,
   "search-advanced": SEARCH_ADVANCED_HINT,
-  "test-runs": { packageName: "@unbrained/pm-linked-test-adapters", installCommand: "pm install linked-test-adapters" },
+  "test-runs": {
+    packageName: "@unbrained/pm-linked-test-adapters",
+    installCommand: "pm install linked-test-adapters",
+  },
 };
 
-function resolveKnownPackageCommandHint(commandToken: string): PackageCommandHint | undefined {
+function resolveKnownPackageCommandHint(
+  commandToken: string,
+): PackageCommandHint | undefined {
   const primary = commandToken.trim().split(/\s+/)[0]?.toLowerCase();
   if (!primary) {
     return undefined;
@@ -180,7 +219,12 @@ function normalizeRecoveryCandidates(
       command: typeof entry?.command === "string" ? entry.command.trim() : "",
       reason: typeof entry?.reason === "string" ? entry.reason.trim() : "",
     }))
-    .filter((entry) => entry.source.length > 0 && entry.command.length > 0 && entry.reason.length > 0);
+    .filter(
+      (entry) =>
+        entry.source.length > 0 &&
+        entry.command.length > 0 &&
+        entry.reason.length > 0,
+    );
   return normalized.length > 0 ? normalized : undefined;
 }
 
@@ -196,7 +240,12 @@ function assignRecoveryString(
 
 function assignRecoveryStringArray(
   normalized: PmCliErrorRecoveryPayload,
-  key: "normalized_args" | "provided_fields" | "missing" | "missing_required_fields" | "suggested_flags",
+  key:
+    | "normalized_args"
+    | "provided_fields"
+    | "missing"
+    | "missing_required_fields"
+    | "suggested_flags",
   value: unknown,
 ): void {
   const values = normalizeStringArray(value);
@@ -205,7 +254,9 @@ function assignRecoveryStringArray(
   }
 }
 
-function normalizeRecoveryPayload(payload: PmCliErrorRecoveryPayload | undefined): PmCliErrorRecoveryPayload | undefined {
+function normalizeRecoveryPayload(
+  payload: PmCliErrorRecoveryPayload | undefined,
+): PmCliErrorRecoveryPayload | undefined {
   if (!payload || typeof payload !== "object") {
     return undefined;
   }
@@ -213,65 +264,137 @@ function normalizeRecoveryPayload(payload: PmCliErrorRecoveryPayload | undefined
   if (payload.recovery_mode === "compact") {
     normalized.recovery_mode = "compact";
   }
-  assignRecoveryString(normalized, "attempted_command", payload.attempted_command);
-  assignRecoveryStringArray(normalized, "normalized_args", payload.normalized_args);
-  assignRecoveryStringArray(normalized, "provided_fields", payload.provided_fields);
+  assignRecoveryString(
+    normalized,
+    "attempted_command",
+    payload.attempted_command,
+  );
+  assignRecoveryStringArray(
+    normalized,
+    "normalized_args",
+    payload.normalized_args,
+  );
+  assignRecoveryStringArray(
+    normalized,
+    "provided_fields",
+    payload.provided_fields,
+  );
   assignRecoveryStringArray(normalized, "missing", payload.missing);
-  assignRecoveryStringArray(normalized, "missing_required_fields", payload.missing_required_fields);
-  assignRecoveryStringArray(normalized, "suggested_flags", payload.suggested_flags);
+  assignRecoveryStringArray(
+    normalized,
+    "missing_required_fields",
+    payload.missing_required_fields,
+  );
+  assignRecoveryStringArray(
+    normalized,
+    "suggested_flags",
+    payload.suggested_flags,
+  );
   assignRecoveryString(normalized, "suggested_retry", payload.suggested_retry);
-  if (typeof payload.retry_after_ms === "number" && Number.isSafeInteger(payload.retry_after_ms) && payload.retry_after_ms >= 0) {
+  if (
+    typeof payload.retry_after_ms === "number" &&
+    Number.isSafeInteger(payload.retry_after_ms) &&
+    payload.retry_after_ms >= 0
+  ) {
     normalized.retry_after_ms = payload.retry_after_ms;
   }
-  const fallbackCandidates = normalizeRecoveryCandidates(payload.fallback_candidates);
+  const fallbackCandidates = normalizeRecoveryCandidates(
+    payload.fallback_candidates,
+  );
   if (fallbackCandidates) {
     normalized.fallback_candidates = fallbackCandidates;
   }
-  assignRecoveryString(normalized, "next_best_command", payload.next_best_command);
+  assignRecoveryString(
+    normalized,
+    "next_best_command",
+    payload.next_best_command,
+  );
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
-function appendRecoveryTextLine(lines: string[], label: string, value: string | undefined): void {
+function appendRecoveryTextLine(
+  lines: string[],
+  label: string,
+  value: string | undefined,
+): void {
   if (value) {
     lines.push(`  ${label}: ${value}`);
   }
 }
 
-function appendRecoveryListLine(lines: string[], label: string, values: string[] | undefined, separator: string): void {
+function appendRecoveryListLine(
+  lines: string[],
+  label: string,
+  values: string[] | undefined,
+  separator: string,
+): void {
   if (values && values.length > 0) {
     lines.push(`  ${label}: ${values.join(separator)}`);
   }
 }
 
-function renderRecoveryBundle(recovery: PmCliErrorRecoveryPayload | undefined): string[] {
+function renderRecoveryBundle(
+  recovery: PmCliErrorRecoveryPayload | undefined,
+): string[] {
   const normalized = normalizeRecoveryPayload(recovery);
   if (!normalized) {
     return [];
   }
   const lines = ["Recovery bundle:"];
-  appendRecoveryTextLine(lines, "attempted_command", normalized.attempted_command);
-  appendRecoveryListLine(lines, "normalized_args", normalized.normalized_args, " ");
-  appendRecoveryListLine(lines, "provided_fields", normalized.provided_fields, ", ");
+  appendRecoveryTextLine(
+    lines,
+    "attempted_command",
+    normalized.attempted_command,
+  );
+  appendRecoveryListLine(
+    lines,
+    "normalized_args",
+    normalized.normalized_args,
+    " ",
+  );
+  appendRecoveryListLine(
+    lines,
+    "provided_fields",
+    normalized.provided_fields,
+    ", ",
+  );
   appendRecoveryListLine(lines, "missing", normalized.missing, ", ");
-  appendRecoveryListLine(lines, "missing_required_fields", normalized.missing_required_fields, ", ");
-  appendRecoveryListLine(lines, "suggested_flags", normalized.suggested_flags, ", ");
+  appendRecoveryListLine(
+    lines,
+    "missing_required_fields",
+    normalized.missing_required_fields,
+    ", ",
+  );
+  appendRecoveryListLine(
+    lines,
+    "suggested_flags",
+    normalized.suggested_flags,
+    ", ",
+  );
   appendRecoveryTextLine(lines, "suggested_retry", normalized.suggested_retry);
   if (typeof normalized.retry_after_ms === "number") {
     lines.push(`  retry_after_ms: ${normalized.retry_after_ms}`);
   }
-  appendRecoveryTextLine(lines, "next_best_command", normalized.next_best_command);
-  if (normalized.fallback_candidates && normalized.fallback_candidates.length > 0) {
+  appendRecoveryTextLine(
+    lines,
+    "next_best_command",
+    normalized.next_best_command,
+  );
+  if (
+    normalized.fallback_candidates &&
+    normalized.fallback_candidates.length > 0
+  ) {
     lines.push("  fallback_candidates:");
     for (const candidate of normalized.fallback_candidates) {
-      lines.push(`    - ${candidate.source}: ${candidate.command} (${candidate.reason})`);
+      lines.push(
+        `    - ${candidate.source}: ${candidate.command} (${candidate.reason})`,
+      );
     }
   }
   return lines;
 }
 
-/**
- * Implements render guidance message for the public runtime surface of this module.
- */
+/** Implements render guidance message for the public runtime surface of this module. */
 export function renderGuidanceMessage(message: GuidanceMessage): string {
   const lines: string[] = [
     `Error: ${message.title}`,
@@ -302,7 +425,10 @@ export function renderGuidanceMessage(message: GuidanceMessage): string {
   return lines.join("\n");
 }
 
-function guidanceToJsonEnvelope(message: GuidanceMessage, exitCode: number): JsonErrorEnvelope {
+function guidanceToJsonEnvelope(
+  message: GuidanceMessage,
+  exitCode: number,
+): JsonErrorEnvelope {
   const payload: JsonErrorEnvelope = {
     type: message.type,
     code: message.code,
@@ -326,7 +452,9 @@ function guidanceToJsonEnvelope(message: GuidanceMessage, exitCode: number): Jso
   return payload;
 }
 
-function guidanceToClassification(message: GuidanceMessage): ErrorClassification {
+function guidanceToClassification(
+  message: GuidanceMessage,
+): ErrorClassification {
   const payload: ErrorClassification = {
     type: message.type,
     code: message.code,
@@ -363,11 +491,15 @@ function isModuleResolutionErrorMessage(message: string): boolean {
   );
 }
 
-function normalizeContextList(values: string[] | undefined): string[] | undefined {
+function normalizeContextList(
+  values: string[] | undefined,
+): string[] | undefined {
   if (!Array.isArray(values)) {
     return undefined;
   }
-  const normalized = values.map((value) => value.trim()).filter((value) => value.length > 0);
+  const normalized = values
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
   return normalized.length > 0 ? normalized : undefined;
 }
 
@@ -384,12 +516,16 @@ function dedupeStrings(values: string[]): string[] {
   return result;
 }
 
-function inferCommandNameFromRecovery(recovery: PmCliErrorRecoveryPayload | undefined): string | undefined {
+function inferCommandNameFromRecovery(
+  recovery: PmCliErrorRecoveryPayload | undefined,
+): string | undefined {
   const args = recovery?.normalized_args;
   if (!Array.isArray(args) || args.length === 0) {
     return undefined;
   }
-  const firstCommandArg = args.find((arg) => arg.trim().length > 0 && !arg.startsWith("-"));
+  const firstCommandArg = args.find(
+    (arg) => arg.trim().length > 0 && !arg.startsWith("-"),
+  );
   return firstCommandArg?.trim();
 }
 
@@ -404,7 +540,10 @@ function inferAllowedValuesFromMessage(message: string): string[] {
     .filter((entry) => /^[A-Za-z0-9_.-]+$/.test(entry));
 }
 
-function buildAllowedValueRetryCommand(recovery: PmCliErrorRecoveryPayload | undefined, allowedValues: string[]): string | undefined {
+function buildAllowedValueRetryCommand(
+  recovery: PmCliErrorRecoveryPayload | undefined,
+  allowedValues: string[],
+): string | undefined {
   const args = recovery?.normalized_args;
   const fields = recovery?.provided_fields;
   const replacement = allowedValues[0];
@@ -413,7 +552,11 @@ function buildAllowedValueRetryCommand(recovery: PmCliErrorRecoveryPayload | und
   }
   for (const field of fields) {
     const index = args.findIndex((arg) => arg === field);
-    if (index >= 0 && index < args.length - 1 && !args[index + 1]?.startsWith("-")) {
+    if (
+      index >= 0 &&
+      index < args.length - 1 &&
+      !args[index + 1]?.startsWith("-")
+    ) {
       const nextArgs = [...args];
       nextArgs[index + 1] = replacement;
       return renderPmCommand(nextArgs);
@@ -433,8 +576,13 @@ function buildFallbackTitleFromMessage(message: string): string | undefined {
   return `${firstLine.slice(0, 117)}...`;
 }
 
-function normalizeContextValue<Fallback extends string | undefined>(value: unknown, fallback: Fallback): string | Fallback {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : fallback;
+function normalizeContextValue<Fallback extends string | undefined>(
+  value: unknown,
+  fallback: Fallback,
+): string | Fallback {
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim()
+    : fallback;
 }
 
 function applyPmCliErrorContext(
@@ -449,15 +597,23 @@ function applyPmCliErrorContext(
   const code = normalizeContextValue(context.code, guidance.code);
   const type = normalizeContextValue(context.type, errorType(code));
   const examples = normalizeContextList(context.examples) ?? guidance.examples;
-  const nextSteps = normalizeContextList(context.nextSteps) ?? guidance.nextSteps;
-  const fallbackTitle = guidance.code === "command_failed" && context.code ? buildFallbackTitleFromMessage(normalizedRawMessage) : undefined;
-  const recovery = normalizeRecoveryPayload(context.recovery) ?? guidance.recovery;
+  const nextSteps =
+    normalizeContextList(context.nextSteps) ?? guidance.nextSteps;
+  const fallbackTitle =
+    guidance.code === "command_failed" && context.code
+      ? buildFallbackTitleFromMessage(normalizedRawMessage)
+      : undefined;
+  const recovery =
+    normalizeRecoveryPayload(context.recovery) ?? guidance.recovery;
   return {
     ...guidance,
     code,
     type,
     title: fallbackTitle ?? guidance.title,
-    happened: normalizedRawMessage.length > 0 ? normalizedRawMessage : guidance.happened,
+    happened:
+      normalizedRawMessage.length > 0
+        ? normalizedRawMessage
+        : guidance.happened,
     required: normalizeContextValue(context.required, guidance.required),
     why: normalizeContextValue(context.why, guidance.why),
     examples,
@@ -471,7 +627,9 @@ function buildTrackerNotInitializedGuidance(
   message: string,
   context: PmCliErrorContext | undefined,
 ): GuidanceMessage | null {
-  const trackerNotInitialized = message.match(/^Tracker is not initialized at (.+)\. Run pm init first\.$/);
+  const trackerNotInitialized = message.match(
+    /^Tracker is not initialized at (.+)\. Run pm init first\.$/,
+  );
   if (!trackerNotInitialized) {
     return null;
   }
@@ -517,7 +675,7 @@ function buildItemNotFoundGuidance(
       happened,
       required: "Use an existing item ID from current tracker data.",
       why: "Mutation and read commands operate only on known IDs.",
-      examples: ['pm list-open --limit 20', 'pm search "<keyword>" --limit 10'],
+      examples: ["pm list-open --limit 20", 'pm search "<keyword>" --limit 10'],
       nextSteps,
     }),
     rawMessage,
@@ -530,7 +688,10 @@ function buildOwnershipConflictGuidance(
   message: string,
   context: PmCliErrorContext | undefined,
 ): GuidanceMessage | null {
-  if (!message.includes("is assigned to") || !message.includes("Use --force to override")) {
+  if (
+    !message.includes("is assigned to") ||
+    !message.includes("Use --force to override")
+  ) {
     return null;
   }
   return applyPmCliErrorContext(
@@ -547,7 +708,7 @@ function buildOwnershipConflictGuidance(
         'pm comments pm-a1b2 "..." --allow-audit-comment --author "audit-agent"',
         'pm claim pm-a1b2 --author "codex-agent"',
         'pm release pm-a1b2 --allow-audit-release --author "reviewer"',
-        'pm update pm-a1b2 --status in_progress --force',
+        "pm update pm-a1b2 --status in_progress --force",
       ],
       nextSteps: [
         "Use --allow-audit-update for metadata-only non-owner updates (excludes lifecycle/ownership fields).",
@@ -577,9 +738,12 @@ function buildLockConflictGuidance(
       code: "lock_conflict",
       title: "Lock conflict",
       happened: message,
-      required: "Wait for lock release, or use --force where supported if lock is stale and safe to override.",
+      required:
+        "Wait for lock release, or use --force where supported if lock is stale and safe to override.",
       why: "Locking protects item files from concurrent write races.",
-      examples: ['pm update pm-a1b2 --status in_progress --force --author "codex-agent"'],
+      examples: [
+        'pm update pm-a1b2 --status in_progress --force --author "codex-agent"',
+      ],
     }),
     rawMessage,
     context,
@@ -597,7 +761,9 @@ function buildPmMissingRequiredOptionGuidance(
     return null;
   }
   const plural = Boolean(missingRequiredOptions);
-  const missingOptionFlag = !plural ? message.replace(/^Missing required option\s+/, "").trim() : null;
+  const missingOptionFlag = !plural
+    ? message.replace(/^Missing required option\s+/, "").trim()
+    : null;
   const missingOptionLabel = missingOptionFlag ?? "";
   const missingOptionRequired = missingOptionFlag
     ? `Pass ${missingOptionFlag} with a valid value before running the command.`
@@ -605,9 +771,13 @@ function buildPmMissingRequiredOptionGuidance(
   return applyPmCliErrorContext(
     makeGuidanceMessage({
       code: "missing_required_option",
-      title: plural ? "Missing required options" : `Missing required option ${missingOptionLabel}`,
+      title: plural
+        ? "Missing required options"
+        : `Missing required option ${missingOptionLabel}`,
       happened: message,
-      required: plural ? "Provide every required option for this command invocation." : missingOptionRequired,
+      required: plural
+        ? "Provide every required option for this command invocation."
+        : missingOptionRequired,
       why: "Required options define command intent and enforce deterministic write contracts.",
       examples: [
         'pm create --title "Task title" --description "Task details" --type Task --create-mode progressive',
@@ -635,7 +805,8 @@ function buildNoUpdateFieldsGuidance(
     makeGuidanceMessage({
       code: "no_update_fields",
       title: "No update fields supplied",
-      happened: "The update command was called without any field-changing flags.",
+      happened:
+        "The update command was called without any field-changing flags.",
       required:
         "Provide at least one field-changing flag such as --status, --priority, --title, --tags, --description, or --body. Use --message only to label a real mutation.",
       why: "pm update mutates existing item fields; no-op invocations are rejected to avoid ambiguous history.",
@@ -659,18 +830,32 @@ function buildInvalidArgumentGuidance(
   message: string,
   context: PmCliErrorContext | undefined,
 ): GuidanceMessage | null {
-  if (!message.startsWith("Invalid ") && !message.includes(" must be ") && !message.includes(" requires ")) {
+  if (
+    !message.startsWith("Invalid ") &&
+    !message.includes(" must be ") &&
+    !message.includes(" requires ")
+  ) {
     return null;
   }
   const recovery = normalizeRecoveryPayload(context?.recovery);
   const commandName = inferCommandNameFromRecovery(recovery);
-  const helpExample = commandName ? `pm ${commandName} --help` : "pm <command> --help";
+  const helpExample = commandName
+    ? `pm ${commandName} --help`
+    : "pm <command> --help";
   const allowedValues = inferAllowedValuesFromMessage(message);
   const retryExample = buildAllowedValueRetryCommand(recovery, allowedValues);
-  const examples = retryExample ? [retryExample, helpExample] : [helpExample, "pm contracts --command <command> --flags-only --json"];
-  const nextSteps = allowedValues.length > 0
-    ? [`Allowed values: ${allowedValues.join("|")}`, `Run "${helpExample}" to confirm command-specific constraints.`]
-    : ["Check allowed values in command help, then rerun with corrected input."];
+  const examples = retryExample
+    ? [retryExample, helpExample]
+    : [helpExample, "pm contracts --command <command> --flags-only --json"];
+  const nextSteps =
+    allowedValues.length > 0
+      ? [
+          `Allowed values: ${allowedValues.join("|")}`,
+          `Run "${helpExample}" to confirm command-specific constraints.`,
+        ]
+      : [
+          "Check allowed values in command help, then rerun with corrected input.",
+        ];
   return applyPmCliErrorContext(
     makeGuidanceMessage({
       code: "invalid_argument_value",
@@ -686,7 +871,10 @@ function buildInvalidArgumentGuidance(
   );
 }
 
-function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext): GuidanceMessage {
+function buildPmCliErrorGuidance(
+  rawMessage: string,
+  context?: PmCliErrorContext,
+): GuidanceMessage {
   const message = normalizeMessage(rawMessage);
   const guidance =
     buildTrackerNotInitializedGuidance(rawMessage, message, context) ??
@@ -714,7 +902,11 @@ function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext
   );
 }
 
-function commandExampleForRequiredOption(commandName: string | undefined, optionFlag: string, allowedTypes: string): string[] {
+function commandExampleForRequiredOption(
+  commandName: string | undefined,
+  optionFlag: string,
+  allowedTypes: string,
+): string[] {
   if (commandName === "create" && optionFlag.startsWith("--type")) {
     const firstAllowed = allowedTypes.split("|")[0] || "Task";
     return [
@@ -722,7 +914,9 @@ function commandExampleForRequiredOption(commandName: string | undefined, option
     ];
   }
   if (commandName === "update") {
-    return ['pm update pm-a1b2 --status in_progress --message "Start implementation"'];
+    return [
+      'pm update pm-a1b2 --status in_progress --message "Start implementation"',
+    ];
   }
   return [`pm ${commandName ?? "<command>"} --help`];
 }
@@ -733,18 +927,24 @@ function normalizeRequiredOptionLabel(rawValue: string): string {
   return firstLongFlag ?? normalized;
 }
 
-function renderPmCommandFromArgs(argv: string[] | undefined): string | undefined {
+function renderPmCommandFromArgs(
+  argv: string[] | undefined,
+): string | undefined {
   if (!Array.isArray(argv) || argv.length === 0) {
     return undefined;
   }
   return renderPmCommand(argv);
 }
 
-function normalizeOptionFlags(values: string[] | undefined): string[] | undefined {
+function normalizeOptionFlags(
+  values: string[] | undefined,
+): string[] | undefined {
   if (!Array.isArray(values)) {
     return undefined;
   }
-  const normalized = values.map((value) => value.trim()).filter((value) => value.length > 0);
+  const normalized = values
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
   return normalized.length > 0 ? normalized : undefined;
 }
 
@@ -754,11 +954,18 @@ function buildCommanderRecoveryPayload(
 ): PmCliErrorRecoveryPayload | undefined {
   const providedFields = normalizeOptionFlags(context?.providedOptionFlags);
   const normalizedArgs =
-    Array.isArray(context?.normalizedInvocationArgs) && context?.normalizedInvocationArgs.length > 0
+    Array.isArray(context?.normalizedInvocationArgs) &&
+    context?.normalizedInvocationArgs.length > 0
       ? context.normalizedInvocationArgs
       : undefined;
-  const attemptedCommand = typeof context?.attemptedCommand === "string" ? context.attemptedCommand : renderPmCommandFromArgs(normalizedArgs);
-  const retryCommand = typeof context?.suggestedRetryCommand === "string" ? context.suggestedRetryCommand : undefined;
+  const attemptedCommand =
+    typeof context?.attemptedCommand === "string"
+      ? context.attemptedCommand
+      : renderPmCommandFromArgs(normalizedArgs);
+  const retryCommand =
+    typeof context?.suggestedRetryCommand === "string"
+      ? context.suggestedRetryCommand
+      : undefined;
   return normalizeRecoveryPayload({
     attempted_command: attemptedCommand,
     normalized_args: normalizedArgs,
@@ -768,7 +975,10 @@ function buildCommanderRecoveryPayload(
   });
 }
 
-function appendIfMissing(entries: string[], value: string | undefined): string[] {
+function appendIfMissing(
+  entries: string[],
+  value: string | undefined,
+): string[] {
   if (!value || entries.includes(value)) {
     return entries;
   }
@@ -783,7 +993,9 @@ const LINKED_TEST_MUTATION_FLAGS = new Set(["--add", "--add-json", "--remove"]);
 // LINKED_TEST_TWO_TOKEN_KEYS_BY_FLAG in bootstrap-args.ts.
 const LINKED_TEST_RETRY_KEYS = new Set(["command", "cmd", "path"]);
 
-function findLinkedTestMutationFlag(argv: string[] | undefined): string | undefined {
+function findLinkedTestMutationFlag(
+  argv: string[] | undefined,
+): string | undefined {
   if (!Array.isArray(argv)) {
     return undefined;
   }
@@ -800,14 +1012,10 @@ function findLinkedTestMutationFlag(argv: string[] | undefined): string | undefi
   return undefined;
 }
 
-/**
- * Synthesize a copy-pasteable retry for the unquoted linked-test value shape
- * `pm test <id> --add command npm test -- parser` by re-joining the shell-split
- * value tokens into the documented quoted `key=value` form. Only fires when the
- * item id already precedes the flag (so trailing tokens unambiguously belong to
- * the value) and the token after `--add`/`--remove` is an entry-identity key.
- */
-export function buildLinkedTestQuotedRetryCommand(argv: string[] | undefined): string | undefined {
+/** Synthesize a copy-pasteable retry for the unquoted linked-test value shape `pm test <id> --add command npm test -- parser` by re-joining the shell-split value tokens into the documented quoted `key=value` form. Only fires when the item id already precedes the flag (so trailing tokens unambiguously belong to the value) and the token after `--add`/`--remove` is an entry-identity key. */
+export function buildLinkedTestQuotedRetryCommand(
+  argv: string[] | undefined,
+): string | undefined {
   if (!Array.isArray(argv)) {
     return undefined;
   }
@@ -858,7 +1066,9 @@ function buildMissingRequiredOptionGuidance(
   allowedTypes: string,
   context: CommanderGuidanceContext | undefined,
 ): GuidanceMessage | null {
-  const requiredOption = message.match(/required option '([^']+)' not specified/);
+  const requiredOption = message.match(
+    /required option '([^']+)' not specified/,
+  );
   if (!requiredOption) {
     return null;
   }
@@ -867,17 +1077,34 @@ function buildMissingRequiredOptionGuidance(
   const retryCommand = context?.suggestedRetryCommand;
   const providedFlags = normalizeOptionFlags(context?.providedOptionFlags);
   const missing = [optionFlag];
-  const examples = commandExampleForRequiredOption(commandName, optionFlag, allowedTypes);
-  const examplesWithRetry = retryCommand ? appendIfMissing(examples, retryCommand) : examples;
+  const examples = commandExampleForRequiredOption(
+    commandName,
+    optionFlag,
+    allowedTypes,
+  );
+  const examplesWithRetry = retryCommand
+    ? appendIfMissing(examples, retryCommand)
+    : examples;
   const nextStepsBase = isType
-    ? [`Allowed type values: ${allowedTypes}`, `Run "pm ${commandName ?? "create"} --help --type <value>" for type-aware policy details.`]
-    : [`Run "pm ${commandName ?? "<command>"} --help" for required option guidance.`];
+    ? [
+        `Allowed type values: ${allowedTypes}`,
+        `Run "pm ${commandName ?? "create"} --help --type <value>" for type-aware policy details.`,
+      ]
+    : [
+        `Run "pm ${commandName ?? "<command>"} --help" for required option guidance.`,
+      ];
   const nextStepsWithRetry = retryCommand
-    ? appendIfMissing(nextStepsBase, `Replay with preserved arguments: ${retryCommand}`)
+    ? appendIfMissing(
+        nextStepsBase,
+        `Replay with preserved arguments: ${retryCommand}`,
+      )
     : nextStepsBase;
   const nextSteps =
     providedFlags && providedFlags.length > 0
-      ? appendIfMissing(nextStepsWithRetry, `Already provided options: ${providedFlags.join(", ")}`)
+      ? appendIfMissing(
+          nextStepsWithRetry,
+          `Already provided options: ${providedFlags.join(", ")}`,
+        )
       : nextStepsWithRetry;
   return makeGuidanceMessage({
     code: "missing_required_option",
@@ -910,7 +1137,9 @@ function buildMissingRequiredArgumentGuidance(
     required: `Provide ${argumentName} in the expected command position.`,
     why: "Positional arguments identify the target entity or action context for the command.",
     examples: [`pm ${commandName ?? "<command>"} --help`],
-    recovery: buildCommanderRecoveryPayload(context, { missing: [argumentName] }),
+    recovery: buildCommanderRecoveryPayload(context, {
+      missing: [argumentName],
+    }),
   });
 }
 
@@ -923,13 +1152,16 @@ function buildUnsupportedUpdateOptionGuidance(
     code: "unsupported_update_option",
     title: `Unsupported option ${optionName} for update`,
     happened: `pm update does not accept ${optionName} for linked artifact mutations.`,
-    required: "Use dedicated linked-artifact commands instead of pm update for files/docs changes.",
+    required:
+      "Use dedicated linked-artifact commands instead of pm update for files/docs changes.",
     why: "pm update manages scalar item metadata, while linked files/docs are managed by pm files and pm docs.",
     examples: [
       'pm files pm-a1b2 --add "path=src/cli/main.ts,scope=project,note=implementation surface"',
       'pm docs pm-a1b2 --add "path=README.md,scope=project,note=user-facing contract"',
     ],
-    nextSteps: ['Run "pm files --help" and "pm docs --help" for add/remove payload formats.'],
+    nextSteps: [
+      'Run "pm files --help" and "pm docs --help" for add/remove payload formats.',
+    ],
     recovery: buildCommanderRecoveryPayload(context, {
       suggested_flags: suggestions,
     }),
@@ -948,17 +1180,32 @@ function buildUnknownOptionGuidance(
   const optionName = unknownOption[1];
   const suggestions = normalizeOptionFlags(context?.unknownOptionSuggestions);
   const retryCommand = context?.suggestedRetryCommand;
-  if (commandName === "update" && (optionName === "--file" || optionName === "--doc")) {
-    return buildUnsupportedUpdateOptionGuidance(optionName, context, suggestions);
+  if (
+    commandName === "update" &&
+    (optionName === "--file" || optionName === "--doc")
+  ) {
+    return buildUnsupportedUpdateOptionGuidance(
+      optionName,
+      context,
+      suggestions,
+    );
   }
-  const otherCommands = normalizeContextList(context?.unknownOptionOtherCommands);
+  const otherCommands = normalizeContextList(
+    context?.unknownOptionOtherCommands,
+  );
   const nextSteps = [
     "Run command help to confirm the exact option contracts for this command path.",
-    ...(suggestions && suggestions.length > 0 ? [`Nearest supported options: ${suggestions.join(", ")}`] : []),
-    ...(otherCommands && otherCommands.length > 0
-      ? [`${optionName} is a valid option on: ${otherCommands.join(", ")}. If you meant one of those, run that command instead.`]
+    ...(suggestions && suggestions.length > 0
+      ? [`Nearest supported options: ${suggestions.join(", ")}`]
       : []),
-    ...(retryCommand ? [`Replay with suggested correction: ${retryCommand}`] : []),
+    ...(otherCommands && otherCommands.length > 0
+      ? [
+          `${optionName} is a valid option on: ${otherCommands.join(", ")}. If you meant one of those, run that command instead.`,
+        ]
+      : []),
+    ...(retryCommand
+      ? [`Replay with suggested correction: ${retryCommand}`]
+      : []),
   ];
   const examples = [
     ...(retryCommand ? [retryCommand] : []),
@@ -968,7 +1215,8 @@ function buildUnknownOptionGuidance(
     code: "unknown_option",
     title: `Unknown option ${optionName}`,
     happened: `Commander does not recognize option ${optionName} for this command path.`,
-    required: "Use supported options only, or move option to the correct subcommand.",
+    required:
+      "Use supported options only, or move option to the correct subcommand.",
     why: "Option contracts are command-specific and intentionally validated.",
     examples,
     nextSteps,
@@ -988,7 +1236,9 @@ function buildKnownPackageCommandGuidance(
   const installStep = `"${commandToken}" is provided by the ${packageHint.packageName} package. Install it with: ${packageHint.installCommand}`;
   // commander-usage may already append its generic "If this command comes from
   // an optional package…" step for the same alias; keep only the specific one.
-  const nextSteps = baseNextSteps.filter((step) => !step.endsWith(`: ${packageHint.installCommand}`));
+  const nextSteps = baseNextSteps.filter(
+    (step) => !step.endsWith(`: ${packageHint.installCommand}`),
+  );
   return makeGuidanceMessage({
     code: "unknown_command",
     title: `Unknown command ${commandToken}`,
@@ -1011,12 +1261,22 @@ function buildUnknownCommandGuidance(
   }
   const commandToken = unknownCommand[1];
   const runtimeExamples = normalizeContextList(context?.unknownCommandExamples);
-  const runtimeNextSteps = normalizeContextList(context?.unknownCommandNextSteps);
+  const runtimeNextSteps = normalizeContextList(
+    context?.unknownCommandNextSteps,
+  );
   const packageHint = resolveKnownPackageCommandHint(commandToken);
   const baseExamples = runtimeExamples ?? ["pm --help"];
-  const baseNextSteps = runtimeNextSteps ?? ["Verify spelling and active extensions, then rerun."];
+  const baseNextSteps = runtimeNextSteps ?? [
+    "Verify spelling and active extensions, then rerun.",
+  ];
   if (packageHint) {
-    return buildKnownPackageCommandGuidance(commandToken, packageHint, baseExamples, baseNextSteps, context);
+    return buildKnownPackageCommandGuidance(
+      commandToken,
+      packageHint,
+      baseExamples,
+      baseNextSteps,
+      context,
+    );
   }
   return makeGuidanceMessage({
     code: "unknown_command",
@@ -1058,11 +1318,16 @@ function buildLinkedTestValueNotQuotedGuidance(
       `pm test pm-a1b2 --add-json '{"command":"npm test -- parser"}'`,
     ],
     nextSteps: [
-      ...(retryCommand ? [`Replay with the value re-joined into one argument: ${retryCommand}`] : []),
+      ...(retryCommand
+        ? [`Replay with the value re-joined into one argument: ${retryCommand}`]
+        : []),
       "Prefer --add-json for commands containing commas, equals signs, or quotes.",
       'Run "pm test --help" for linked-test entry contracts.',
     ],
-    recovery: buildCommanderRecoveryPayload(context, retryCommand ? { suggested_retry: retryCommand } : {}),
+    recovery: buildCommanderRecoveryPayload(
+      context,
+      retryCommand ? { suggested_retry: retryCommand } : {},
+    ),
   });
 }
 
@@ -1095,11 +1360,16 @@ function buildContextItemArgumentGuidance(
   commandName: string | undefined,
   context: CommanderGuidanceContext | undefined,
 ): GuidanceMessage | null {
-  if (!/too many arguments/i.test(message) || !CONTEXT_GUIDANCE_COMMAND_NAMES.has(commandName ?? "")) {
+  if (
+    !/too many arguments/i.test(message) ||
+    !CONTEXT_GUIDANCE_COMMAND_NAMES.has(commandName ?? "")
+  ) {
     return null;
   }
   const argv = context?.normalizedInvocationArgs ?? [];
-  const commandIndex = argv.findIndex((token) => CONTEXT_GUIDANCE_COMMAND_NAMES.has(token));
+  const commandIndex = argv.findIndex((token) =>
+    CONTEXT_GUIDANCE_COMMAND_NAMES.has(token),
+  );
   const searchIndex = commandIndex === -1 ? 1 : commandIndex + 1;
   const match = message.match(/got \d+:\s*(\S+)/i);
   let positional = match ? match[1].replace(/\.$/, "") : undefined;
@@ -1133,7 +1403,9 @@ function buildContextItemArgumentGuidance(
     required: `Use ${getCommand} for one item's full details, or pm context --parent ${positional} to scope the snapshot to that item's subtree.`,
     why: "Item-level detail (pm get) and workspace-level context (pm context) are separate projections.",
     examples: [getCommand, `pm context --parent ${positional}`],
-    recovery: buildCommanderRecoveryPayload(context, { suggested_retry: getCommand }),
+    recovery: buildCommanderRecoveryPayload(context, {
+      suggested_retry: getCommand,
+    }),
   });
 }
 
@@ -1145,11 +1417,21 @@ function buildCommanderErrorGuidance(
 ): GuidanceMessage {
   const message = normalizeMessage(rawMessage);
   const guidance =
-    buildMissingRequiredOptionGuidance(message, commandName, allowedTypes, context) ??
+    buildMissingRequiredOptionGuidance(
+      message,
+      commandName,
+      allowedTypes,
+      context,
+    ) ??
     buildMissingRequiredArgumentGuidance(message, commandName, context) ??
     buildUnknownOptionGuidance(message, commandName, context) ??
     buildUnknownCommandGuidance(message, context) ??
-    buildLinkedTestValueNotQuotedGuidance(message, commandName, allowedTypes, context) ??
+    buildLinkedTestValueNotQuotedGuidance(
+      message,
+      commandName,
+      allowedTypes,
+      context,
+    ) ??
     buildContextItemArgumentGuidance(message, commandName, context);
   if (guidance) {
     return guidance;
@@ -1166,54 +1448,59 @@ function buildCommanderErrorGuidance(
   });
 }
 
-/**
- * Implements format pm cli error for display for the public runtime surface of this module.
- */
-export function formatPmCliErrorForDisplay(rawMessage: string, context?: PmCliErrorContext): string {
+/** Implements format pm cli error for display for the public runtime surface of this module. */
+export function formatPmCliErrorForDisplay(
+  rawMessage: string,
+  context?: PmCliErrorContext,
+): string {
   return renderGuidanceMessage(buildPmCliErrorGuidance(rawMessage, context));
 }
 
-/**
- * Implements classify pm cli error for the public runtime surface of this module.
- */
-export function classifyPmCliError(rawMessage: string, context?: PmCliErrorContext): ErrorClassification {
+/** Implements classify pm cli error for the public runtime surface of this module. */
+export function classifyPmCliError(
+  rawMessage: string,
+  context?: PmCliErrorContext,
+): ErrorClassification {
   return guidanceToClassification(buildPmCliErrorGuidance(rawMessage, context));
 }
 
-/**
- * Implements format pm cli error for json for the public runtime surface of this module.
- */
-export function formatPmCliErrorForJson(rawMessage: string, exitCode: number, context?: PmCliErrorContext): JsonErrorEnvelope {
-  return guidanceToJsonEnvelope(buildPmCliErrorGuidance(rawMessage, context), exitCode);
+/** Implements format pm cli error for json for the public runtime surface of this module. */
+export function formatPmCliErrorForJson(
+  rawMessage: string,
+  exitCode: number,
+  context?: PmCliErrorContext,
+): JsonErrorEnvelope {
+  return guidanceToJsonEnvelope(
+    buildPmCliErrorGuidance(rawMessage, context),
+    exitCode,
+  );
 }
 
-/**
- * Implements format commander error for display for the public runtime surface of this module.
- */
+/** Implements format commander error for display for the public runtime surface of this module. */
 export function formatCommanderErrorForDisplay(
   rawMessage: string,
   commandName: string | undefined,
   allowedTypes: string,
   context?: CommanderGuidanceContext,
 ): string {
-  return renderGuidanceMessage(buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context));
+  return renderGuidanceMessage(
+    buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context),
+  );
 }
 
-/**
- * Implements classify commander error for the public runtime surface of this module.
- */
+/** Implements classify commander error for the public runtime surface of this module. */
 export function classifyCommanderError(
   rawMessage: string,
   commandName: string | undefined,
   allowedTypes: string,
   context?: CommanderGuidanceContext,
 ): ErrorClassification {
-  return guidanceToClassification(buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context));
+  return guidanceToClassification(
+    buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context),
+  );
 }
 
-/**
- * Implements format commander error for json for the public runtime surface of this module.
- */
+/** Implements format commander error for json for the public runtime surface of this module. */
 export function formatCommanderErrorForJson(
   rawMessage: string,
   commandName: string | undefined,
@@ -1221,13 +1508,17 @@ export function formatCommanderErrorForJson(
   exitCode: number,
   context?: CommanderGuidanceContext,
 ): JsonErrorEnvelope {
-  return guidanceToJsonEnvelope(buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context), exitCode);
+  return guidanceToJsonEnvelope(
+    buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context),
+    exitCode,
+  );
 }
 
-/**
- * Implements format unknown error for json for the public runtime surface of this module.
- */
-export function formatUnknownErrorForJson(rawMessage: string, exitCode: number): JsonErrorEnvelope {
+/** Implements format unknown error for json for the public runtime surface of this module. */
+export function formatUnknownErrorForJson(
+  rawMessage: string,
+  exitCode: number,
+): JsonErrorEnvelope {
   const guidance = buildUnknownErrorGuidance(rawMessage);
   return guidanceToJsonEnvelope(guidance, exitCode);
 }
@@ -1239,9 +1530,14 @@ function buildUnknownErrorGuidance(rawMessage: string): GuidanceMessage {
       code: "module_import_failed",
       title: "Module import failed",
       happened: message,
-      required: "Ensure the active checkout is built and any package or extension entry file exists before retrying.",
+      required:
+        "Ensure the active checkout is built and any package or extension entry file exists before retrying.",
       why: "Node could not resolve an imported module. In pm this usually means an extension/package entrypoint, build artifact, or dependency is missing from the active runtime.",
-      examples: ["pnpm build", "pm package manage --doctor --project", "pm health --check-only --json"],
+      examples: [
+        "pnpm build",
+        "pm package manage --doctor --project",
+        "pm health --check-only --json",
+      ],
       nextSteps: [
         "Rebuild the checkout or package that provides the missing module.",
         "Run package doctor for installed extensions when the failure follows package installation or activation.",
@@ -1260,13 +1556,12 @@ function buildUnknownErrorGuidance(rawMessage: string): GuidanceMessage {
   });
 }
 
-/**
- * Implements classify unknown error for the public runtime surface of this module.
- */
+/** Implements classify unknown error for the public runtime surface of this module. */
 export function classifyUnknownError(rawMessage: string): ErrorClassification {
   return guidanceToClassification(buildUnknownErrorGuidance(rawMessage));
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   applyPmCliErrorContext,
   appendIfMissing,

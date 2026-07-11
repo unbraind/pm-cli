@@ -4,44 +4,55 @@
  * Implements the pm scheduling shortcuts command surface and its agent-facing runtime behavior.
  */
 import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { runCreate, type CreateCommandOptions, type CreateResult } from "./create.js";
+import {
+  runCreate,
+  type CreateCommandOptions,
+  type CreateResult,
+} from "./create.js";
 
-/**
- * GH-217: low-friction creation shortcuts for the scheduling item types
- * (Meeting/Event/Reminder), which sit unused because `pm create --type Event`
- * demands structured `--event`/`--reminder` CSV entries. These commands accept
- * friendly time flags (`--start`, `--duration`, `--end`, `--at`) and translate
- * them into the canonical scheduling fields, then delegate to `runCreate` so the
- * full create pipeline (parent/focus inheritance, governance, hooks, validation)
- * applies unchanged. The `lightweight` schedule preset is applied so progressive
- * scheduling fields are not demanded up front.
- */
+/** GH-217: low-friction creation shortcuts for the scheduling item types (Meeting/Event/Reminder), which sit unused because `pm create --type Event` demands structured `--event`/`--reminder` CSV entries. These commands accept friendly time flags (`--start`, `--duration`, `--end`, `--at`) and translate them into the canonical scheduling fields, then delegate to `runCreate` so the full create pipeline (parent/focus inheritance, governance, hooks, validation) applies unchanged. The `lightweight` schedule preset is applied so progressive scheduling fields are not demanded up front. */
 
 /** Options shared by every scheduling shortcut, forwarded to `runCreate`. */
 export interface SchedulingShortcutCommonOptions {
+  /** Value that configures or reports parent for this contract. */
   parent?: string;
+  /** Value that configures or reports allow missing parent for this contract. */
   allowMissingParent?: boolean;
+  /** Value that configures or reports tags for this contract. */
   tags?: string;
+  /** Value that configures or reports priority for this contract. */
   priority?: string;
+  /** Value that configures or reports body for this contract. */
   body?: string;
+  /** Value that configures or reports description for this contract. */
   description?: string;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
 }
 
 /** Options for `pm meet` and `pm event` (a start time plus a span). */
 export interface MeetingEventShortcutOptions extends SchedulingShortcutCommonOptions {
+  /** Value that configures or reports start for this contract. */
   start?: string;
+  /** Value that configures or reports duration for this contract. */
   duration?: string;
+  /** Value that configures or reports end for this contract. */
   end?: string;
+  /** Value that configures or reports location for this contract. */
   location?: string;
+  /** Value that configures or reports timezone for this contract. */
   timezone?: string;
+  /** Value that configures or reports all day for this contract. */
   allDay?: boolean;
 }
 
 /** Options for `pm remind` (a single point in time). */
 export interface ReminderShortcutOptions extends SchedulingShortcutCommonOptions {
+  /** Value that configures or reports at for this contract. */
   at?: string;
+  /** Value that configures or reports text for this contract. */
   text?: string;
 }
 
@@ -52,26 +63,17 @@ const DEFAULT_START = "now";
 /** Default reminder time applied when `--at` is omitted. */
 const DEFAULT_REMINDER_AT = "+1d";
 
-/**
- * Wrap a free-text value (reminder text, event location) in double quotes so
- * commas and colons survive the CSV round-trip into `--reminder`/`--event`.
- * Backslashes are escaped first, then embedded quotes — escaping quotes alone
- * would let a trailing backslash escape the closing quote and break out of the
- * quoted field (CSV injection). The parser's `unquoteValue` strips the wrapping
- * quotes and unescapes `\"` back to `"`.
- */
+/** Wrap a free-text value (reminder text, event location) in double quotes so commas and colons survive the CSV round-trip into `--reminder`/`--event`. Backslashes are escaped first, then embedded quotes — escaping quotes alone would let a trailing backslash escape the closing quote and break out of the quoted field (CSV injection). The parser's `unquoteValue` strips the wrapping quotes and unescapes `\"` back to `"`. */
 function quoteCsvValue(value: string): string {
-  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"`;
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
-/**
- * Append a `key="value"` pair. EVERY value is double-quoted (not just free-text
- * fields) so a comma or `=` in any token — `start`, `duration`, `at`, etc. —
- * cannot inject extra CSV key/value pairs into the `--event`/`--reminder`
- * entry. The parser's `parseCsvKv` unquotes every value before use, so quoting
- * is transparent to ISO/relative/timezone tokens.
- */
-function appendPair(pairs: string[], key: string, value: string | undefined): void {
+/** Append a `key="value"` pair. EVERY value is double-quoted (not just free-text fields) so a comma or `=` in any token — `start`, `duration`, `at`, etc. — cannot inject extra CSV key/value pairs into the `--event`/`--reminder` entry. The parser's `parseCsvKv` unquotes every value before use, so quoting is transparent to ISO/relative/timezone tokens. */
+function appendPair(
+  pairs: string[],
+  key: string,
+  value: string | undefined,
+): void {
   if (value !== undefined) {
     pairs.push(`${key}=${quoteCsvValue(value)}`);
   }

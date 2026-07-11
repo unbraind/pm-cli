@@ -6,7 +6,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runCheckpointGc } from "../../core/checkpoint/checkpoint-gc.js";
-import { runActiveOnIndexHooks, runActiveOnReadHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import {
+  runActiveOnIndexHooks,
+  runActiveOnReadHooks,
+  runActiveOnWriteHooks,
+} from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { runLockGc } from "../../core/lock/lock-gc.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -16,7 +20,13 @@ import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 
-const GC_SCOPE_VALUES = ["index", "embeddings", "runtime", "locks", "checkpoints"] as const;
+const GC_SCOPE_VALUES = [
+  "index",
+  "embeddings",
+  "runtime",
+  "locks",
+  "checkpoints",
+] as const;
 type GcScope = (typeof GC_SCOPE_VALUES)[number];
 
 interface GcTarget {
@@ -73,53 +83,67 @@ const GC_TARGETS: readonly GcTarget[] = [
   },
 ] as const;
 
-/**
- * Documents the gc command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the gc command options payload exchanged by command, SDK, and package integrations. */
 export interface GcCommandOptions {
+  /** Value that configures or reports dry run for this contract. */
   dryRun?: boolean;
+  /** Value that configures or reports scope for this contract. */
   scope?: string[];
 }
 
-/**
- * Documents the gc locks summary payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the gc locks summary payload exchanged by command, SDK, and package integrations. */
 export interface GcLocksSummary {
+  /** Value that configures or reports scanned for this contract. */
   scanned: number;
+  /** Value that configures or reports removed for this contract. */
   removed: number;
+  /** Value that configures or reports retained for this contract. */
   retained: number;
 }
 
-/**
- * Documents the gc checkpoints summary payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the gc checkpoints summary payload exchanged by command, SDK, and package integrations. */
 export interface GcCheckpointsSummary {
+  /** Value that configures or reports scanned for this contract. */
   scanned: number;
+  /** Value that configures or reports removed for this contract. */
   removed: number;
+  /** Value that configures or reports retained for this contract. */
   retained: number;
+  /** Value that configures or reports retention days for this contract. */
   retention_days: number;
 }
 
-/**
- * Documents the gc result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the gc result payload exchanged by command, SDK, and package integrations. */
 export interface GcResult {
+  /** Whether the operation completed without a blocking failure. */
   ok: boolean;
+  /** Value that configures or reports dry run for this contract. */
   dry_run: boolean;
+  /** Value that configures or reports scope for this contract. */
   scope: GcScope[];
+  /** Value that configures or reports removed for this contract. */
   removed: string[];
+  /** Value that configures or reports retained for this contract. */
   retained: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** Value that configures or reports guidance for this contract. */
   guidance: string[];
   /** Present only when the locks scope was selected. Summarizes the stale-lock sweep. */
   locks?: GcLocksSummary;
   /** Present only when the checkpoints scope was selected. Summarizes the rollback-checkpoint sweep. */
   checkpoints?: GcCheckpointsSummary;
+  /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
 }
 
 function isErrno(error: unknown, code: string): boolean {
-  return typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === code;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === code
+  );
 }
 
 async function removeCacheFile(
@@ -187,7 +211,10 @@ function parseScopes(raw: string[] | undefined): GcScope[] {
     .map((entry) => entry.trim().toLowerCase())
     .filter((entry) => entry.length > 0);
   if (tokens.length === 0) {
-    throw new PmCliError(`--scope requires at least one value (${GC_SCOPE_VALUES.join(",")})`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `--scope requires at least one value (${GC_SCOPE_VALUES.join(",")})`,
+      EXIT_CODE.USAGE,
+    );
   }
   const resolved = new Set<GcScope>();
   for (const token of tokens) {
@@ -211,7 +238,8 @@ function buildGcGuidance(params: {
   if (params.dryRun) {
     guidance.push("Dry-run preview only: no cache artifacts were deleted.");
   }
-  const searchScopeSelected = params.scopes.includes("index") || params.scopes.includes("embeddings");
+  const searchScopeSelected =
+    params.scopes.includes("index") || params.scopes.includes("embeddings");
   const searchArtifactsAffected = params.removed.some(
     (entry) =>
       entry === "index/manifest.json" ||
@@ -227,9 +255,14 @@ function buildGcGuidance(params: {
     );
   }
   if (params.removed.includes("runtime/history-drift-cache.json")) {
-    guidance.push('History drift cache was removed; the next "pm health" run performs a full history-drift re-scan.');
+    guidance.push(
+      'History drift cache was removed; the next "pm health" run performs a full history-drift re-scan.',
+    );
   }
-  if (!params.dryRun && params.removed.some((entry) => entry.startsWith("checkpoints/"))) {
+  if (
+    !params.dryRun &&
+    params.removed.some((entry) => entry.startsWith("checkpoints/"))
+  ) {
     guidance.push(
       'Aged rollback checkpoints were removed; their "pm update-many"/"pm close-many --rollback" windows are no longer recoverable.',
     );
@@ -237,19 +270,25 @@ function buildGcGuidance(params: {
   return guidance;
 }
 
-/**
- * Implements run gc for the public runtime surface of this module.
- */
-export async function runGc(global: GlobalOptions, options: GcCommandOptions = {}): Promise<GcResult> {
+/** Implements run gc for the public runtime surface of this module. */
+export async function runGc(
+  global: GlobalOptions,
+  options: GcCommandOptions = {},
+): Promise<GcResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
   const settings = await readSettings(pmRoot);
   const dryRun = options.dryRun === true;
   const scopes = parseScopes(options.scope);
-  const selectedTargets = GC_TARGETS.filter((target) => scopes.includes(target.scope));
+  const selectedTargets = GC_TARGETS.filter((target) =>
+    scopes.includes(target.scope),
+  );
 
   const removed: string[] = [];
   const retained: string[] = [];
@@ -273,8 +312,14 @@ export async function runGc(global: GlobalOptions, options: GcCommandOptions = {
     const lockResult = await runLockGc(pmRoot, {
       dryRun,
       hooks: {
-        onRead: (lockPath) => runActiveOnReadHooks({ path: lockPath, scope: "project" }),
-        onWrite: (lockPath) => runActiveOnWriteHooks({ path: lockPath, scope: "project", op: "gc:lock_remove" }),
+        onRead: (lockPath) =>
+          runActiveOnReadHooks({ path: lockPath, scope: "project" }),
+        onWrite: (lockPath) =>
+          runActiveOnWriteHooks({
+            path: lockPath,
+            scope: "project",
+            op: "gc:lock_remove",
+          }),
       },
     });
     removed.push(...lockResult.removed);
@@ -298,9 +343,14 @@ export async function runGc(global: GlobalOptions, options: GcCommandOptions = {
       dryRun,
       retentionDays,
       hooks: {
-        onRead: (checkpointPath) => runActiveOnReadHooks({ path: checkpointPath, scope: "project" }),
+        onRead: (checkpointPath) =>
+          runActiveOnReadHooks({ path: checkpointPath, scope: "project" }),
         onWrite: (checkpointPath) =>
-          runActiveOnWriteHooks({ path: checkpointPath, scope: "project", op: "gc:checkpoint_remove" }),
+          runActiveOnWriteHooks({
+            path: checkpointPath,
+            scope: "project",
+            op: "gc:checkpoint_remove",
+          }),
       },
     });
     removed.push(...checkpointResult.removed);

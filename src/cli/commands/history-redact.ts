@@ -4,7 +4,11 @@
  * Implements the pm history redact command surface and its agent-facing runtime behavior.
  */
 import fs from "node:fs/promises";
-import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
+import {
+  pathExists,
+  readFileIfExists,
+  writeFileAtomic,
+} from "../../core/fs/fs-utils.js";
 import { createHistoryEntry } from "../../core/history/history.js";
 import { executeHistoryRewrite } from "../../core/history/history-rewrite.js";
 import {
@@ -17,30 +21,50 @@ import {
   type ReplayDocument,
 } from "../../core/history/replay.js";
 import { normalizeItemId, normalizeRawItemId } from "../../core/item/id.js";
-import { canonicalDocument, serializeItemDocument } from "../../core/item/item-format.js";
+import {
+  canonicalDocument,
+  serializeItemDocument,
+} from "../../core/item/item-format.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import {
+  getActiveExtensionRegistrations,
+  runActiveOnWriteHooks,
+} from "../../core/extensions/index.js";
 import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
-import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import {
+  getHistoryPath,
+  getItemPath,
+  getSettingsPath,
+  resolvePmRoot,
+} from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { resolveAuthor } from "../../core/shared/author.js";
-import type { HistoryEntry, HistoryPatchOp, ItemDocument } from "../../types/index.js";
+import type {
+  HistoryEntry,
+  HistoryPatchOp,
+  ItemDocument,
+} from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
 
-/**
- * Documents the history redact command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the history redact command options payload exchanged by command, SDK, and package integrations. */
 export interface HistoryRedactCommandOptions {
+  /** Value that configures or reports literal for this contract. */
   literal?: string[] | string;
+  /** Value that configures or reports regex for this contract. */
   regex?: string[] | string;
+  /** Value that configures or reports replacement for this contract. */
   replacement?: string;
+  /** Value that configures or reports dry run for this contract. */
   dryRun?: boolean;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Value that configures or reports force for this contract. */
   force?: boolean;
 }
 
@@ -84,27 +108,31 @@ interface HistoryRedactNextItem {
   document: ItemDocument | null;
 }
 
-/**
- * Documents the history subject payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the history subject payload exchanged by command, SDK, and package integrations. */
 export interface HistorySubject {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Filesystem path used for history resolution. */
   historyPath: string;
+  /** Value that configures or reports located for this contract. */
   located: Awaited<ReturnType<typeof locateItem>>;
 }
 
-/**
- * Documents the history redact result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the history redact result payload exchanged by command, SDK, and package integrations. */
 export interface HistoryRedactResult {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports dry run for this contract. */
   dry_run: boolean;
+  /** Value that configures or reports changed for this contract. */
   changed: boolean;
+  /** Value that configures or reports patterns for this contract. */
   patterns: {
     literals: string[];
     regex: string[];
     replacement: string;
   };
+  /** Value that configures or reports history for this contract. */
   history: {
     path: string;
     entries_scanned: number;
@@ -117,6 +145,7 @@ export interface HistoryRedactResult {
     verify_ok: boolean;
     verify_errors: string[];
   };
+  /** Value that configures or reports item for this contract. */
   item: {
     existed_before: boolean;
     exists_after: boolean;
@@ -124,11 +153,15 @@ export interface HistoryRedactResult {
     path_after: string | null;
     changed: boolean;
   };
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
 }
 
-function normalizeStringArrayInput(value: string[] | string | undefined): string[] {
+function normalizeStringArrayInput(
+  value: string[] | string | undefined,
+): string[] {
   if (Array.isArray(value)) {
     return value;
   }
@@ -154,7 +187,10 @@ function normalizeRegexFlags(flags: string): string {
 function parseRegexRule(spec: string): RegexRule {
   const trimmed = spec.trim();
   if (trimmed.length === 0) {
-    throw new PmCliError("history-redact --regex requires a non-empty pattern.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "history-redact --regex requires a non-empty pattern.",
+      EXIT_CODE.USAGE,
+    );
   }
 
   let source = trimmed;
@@ -169,7 +205,10 @@ function parseRegexRule(spec: string): RegexRule {
     /* c8 ignore stop */
   }
   if (source.length === 0) {
-    throw new PmCliError("history-redact --regex cannot use an empty pattern.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "history-redact --regex cannot use an empty pattern.",
+      EXIT_CODE.USAGE,
+    );
   }
   try {
     new RegExp(source, flags);
@@ -194,14 +233,22 @@ function buildRedactionRules(
   literalInput: string[] | string | undefined,
   regexInput: string[] | string | undefined,
 ): RedactionRule[] {
-  const literalRules = [...new Set(normalizeStringArrayInput(literalInput).map((entry) => entry.trim()))]
+  const literalRules = [
+    ...new Set(
+      normalizeStringArrayInput(literalInput).map((entry) => entry.trim()),
+    ),
+  ]
     .filter((entry) => entry.length > 0)
     .map<LiteralRule>((entry) => ({
       kind: "literal",
       value: entry,
       label: entry,
     }));
-  const regexRules = [...new Set(normalizeStringArrayInput(regexInput).map((entry) => entry.trim()))]
+  const regexRules = [
+    ...new Set(
+      normalizeStringArrayInput(regexInput).map((entry) => entry.trim()),
+    ),
+  ]
     .filter((entry) => entry.length > 0)
     .map(parseRegexRule);
 
@@ -223,7 +270,11 @@ function buildRedactionRules(
   return rules;
 }
 
-function applyLiteralRule(value: string, literal: string, replacement: string): { value: string; replacements: number } {
+function applyLiteralRule(
+  value: string,
+  literal: string,
+  replacement: string,
+): { value: string; replacements: number } {
   if (literal.length === 0) {
     return { value, replacements: 0 };
   }
@@ -246,7 +297,11 @@ function applyLiteralRule(value: string, literal: string, replacement: string): 
   };
 }
 
-function applyRegexRule(value: string, rule: RegexRule, replacement: string): { value: string; replacements: number } {
+function applyRegexRule(
+  value: string,
+  rule: RegexRule,
+  replacement: string,
+): { value: string; replacements: number } {
   const regex = new RegExp(rule.source, rule.flags);
   const matches = [...value.matchAll(regex)];
   if (matches.length === 0) {
@@ -258,7 +313,11 @@ function applyRegexRule(value: string, rule: RegexRule, replacement: string): { 
   };
 }
 
-function redactStringValue(value: string, rules: RedactionRule[], replacement: string): { value: string; replacements: number } {
+function redactStringValue(
+  value: string,
+  rules: RedactionRule[],
+  replacement: string,
+): { value: string; replacements: number } {
   let next = value;
   let replacements = 0;
   for (const rule of rules) {
@@ -275,7 +334,11 @@ function redactStringValue(value: string, rules: RedactionRule[], replacement: s
   };
 }
 
-function redactUnknownValue(value: unknown, rules: RedactionRule[], replacement: string): { value: unknown; replacements: number } {
+function redactUnknownValue(
+  value: unknown,
+  rules: RedactionRule[],
+  replacement: string,
+): { value: unknown; replacements: number } {
   if (typeof value === "string") {
     return redactStringValue(value, rules, replacement);
   }
@@ -310,13 +373,20 @@ function redactUnknownValue(value: unknown, rules: RedactionRule[], replacement:
   };
 }
 
-function applyHistoryPatch(current: ReplayDocument, patch: HistoryPatchOp[], entryNumber: number, op: string): ReplayDocument {
+function applyHistoryPatch(
+  current: ReplayDocument,
+  patch: HistoryPatchOp[],
+  entryNumber: number,
+  op: string,
+): ReplayDocument {
   const result = tryApplyReplayPatch(current, patch);
   /* c8 ignore start -- invalid patch replay paths are covered by replay helper tests. */
   if (!result.ok) {
     throw new PmCliError(
       `history-redact failed to apply patch at entry ${entryNumber} (op=${op}): ${
-        result.error instanceof Error ? result.error.message : String(result.error)
+        result.error instanceof Error
+          ? result.error.message
+          : String(result.error)
       }`,
       EXIT_CODE.GENERIC_FAILURE,
     );
@@ -325,7 +395,9 @@ function applyHistoryPatch(current: ReplayDocument, patch: HistoryPatchOp[], ent
   return result.document;
 }
 
-function inspectHistoryIntegrity(entries: HistoryEntry[]): HistoryIntegritySnapshot {
+function inspectHistoryIntegrity(
+  entries: HistoryEntry[],
+): HistoryIntegritySnapshot {
   let replay = structuredClone(EMPTY_REPLAY_DOCUMENT);
   let hashMismatchesBefore = 0;
   let hashMismatchesAfter = 0;
@@ -348,7 +420,11 @@ function inspectHistoryIntegrity(entries: HistoryEntry[]): HistoryIntegritySnaps
   };
 }
 
-function redactHistoryEntry(entry: HistoryEntry, rules: RedactionRule[], replacement: string): {
+function redactHistoryEntry(
+  entry: HistoryEntry,
+  rules: RedactionRule[],
+  replacement: string,
+): {
   entry: HistoryEntry;
   replacements: number;
   changed: boolean;
@@ -358,7 +434,11 @@ function redactHistoryEntry(entry: HistoryEntry, rules: RedactionRule[], replace
   let nextMessage = entry.message;
 
   if (typeof entry.message === "string") {
-    const redactedMessage = redactStringValue(entry.message, rules, replacement);
+    const redactedMessage = redactStringValue(
+      entry.message,
+      rules,
+      replacement,
+    );
     nextMessage = redactedMessage.value;
     replacements += redactedMessage.replacements;
     if (redactedMessage.replacements > 0) {
@@ -372,7 +452,11 @@ function redactHistoryEntry(entry: HistoryEntry, rules: RedactionRule[], replace
       return operation;
     }
     /* c8 ignore stop */
-    const redactedValue = redactUnknownValue(operation.value, rules, replacement);
+    const redactedValue = redactUnknownValue(
+      operation.value,
+      rules,
+      replacement,
+    );
     replacements += redactedValue.replacements;
     if (redactedValue.replacements > 0) {
       changed = true;
@@ -395,7 +479,11 @@ function redactHistoryEntry(entry: HistoryEntry, rules: RedactionRule[], replace
   };
 }
 
-function rewriteHistoryEntries(entries: HistoryEntry[], rules: RedactionRule[], replacement: string): RedactionRewriteResult {
+function rewriteHistoryEntries(
+  entries: HistoryEntry[],
+  rules: RedactionRule[],
+  replacement: string,
+): RedactionRewriteResult {
   let replay = structuredClone(EMPTY_REPLAY_DOCUMENT);
   let entriesChanged = 0;
   let replacements = 0;
@@ -408,7 +496,12 @@ function rewriteHistoryEntries(entries: HistoryEntry[], rules: RedactionRule[], 
       entriesChanged += 1;
     }
     const beforeHash = replayHash(replay);
-    replay = applyHistoryPatch(replay, redacted.entry.patch, index + 1, redacted.entry.op);
+    replay = applyHistoryPatch(
+      replay,
+      redacted.entry.patch,
+      index + 1,
+      redacted.entry.op,
+    );
     const afterHash = replayHash(replay);
     rewrittenEntries.push({
       ...redacted.entry,
@@ -437,7 +530,9 @@ async function loadHistoryRedactCurrentItem(
   if (!subject.located) {
     return { raw: null, path: currentItemPath, document: null };
   }
-  const loaded = await readLocatedItem(subject.located, { schema: settings.schema });
+  const loaded = await readLocatedItem(subject.located, {
+    schema: settings.schema,
+  });
   return { raw: loaded.raw, path: currentItemPath, document: loaded.document };
 }
 
@@ -451,7 +546,10 @@ function resolveHistoryRedactNextItem(params: {
   if (!hasItemMetadata(params.finalDocument)) {
     return { raw: null, path: null, document: null };
   }
-  const canonical = canonicalDocument(replayToItemDocument(params.finalDocument), { schema: params.settings.schema });
+  const canonical = canonicalDocument(
+    replayToItemDocument(params.finalDocument),
+    { schema: params.settings.schema },
+  );
   if (canonical.metadata.id !== params.subject.id) {
     throw new PmCliError(
       `history-redact would change item id from ${params.subject.id} to ${canonical.metadata.id}; narrow your patterns.`,
@@ -460,7 +558,13 @@ function resolveHistoryRedactNextItem(params: {
   }
   return {
     document: canonical,
-    path: getItemPath(params.pmRoot, canonical.metadata.type, params.subject.id, "toon", params.typeToFolder),
+    path: getItemPath(
+      params.pmRoot,
+      canonical.metadata.type,
+      params.subject.id,
+      "toon",
+      params.typeToFolder,
+    ),
     raw: serializeItemDocument(canonical, {
       format: "toon",
       schema: params.settings.schema,
@@ -469,8 +573,14 @@ function resolveHistoryRedactNextItem(params: {
 }
 
 /* v8 ignore start -- message passthrough/plural formatting is deterministic around covered redaction outcomes */
-function buildHistoryRedactMessage(options: HistoryRedactCommandOptions, rewritten: RedactionRewriteResult): string {
-  if (typeof options.message === "string" && options.message.trim().length > 0) {
+function buildHistoryRedactMessage(
+  options: HistoryRedactCommandOptions,
+  rewritten: RedactionRewriteResult,
+): string {
+  if (
+    typeof options.message === "string" &&
+    options.message.trim().length > 0
+  ) {
     return options.message;
   }
   return `history-redact replaced ${rewritten.replacements} match(es) across ${rewritten.entriesChanged} entr${
@@ -492,7 +602,9 @@ function buildHistoryRedactEntries(params: {
     return { rewrittenEntries, auditEntryAdded: false };
   }
   /* c8 ignore next -- fallback replay-to-item conversion runs only when rewritten final metadata is absent. */
-  const finalDocument = params.nextItemDocument ?? replayToItemDocument(params.rewritten.finalDocument);
+  const finalDocument =
+    params.nextItemDocument ??
+    replayToItemDocument(params.rewritten.finalDocument);
   rewrittenEntries.push(
     createHistoryEntry({
       nowIso: nowIso(),
@@ -543,22 +655,39 @@ async function applyHistoryRedactRewrite(params: {
       }
       try {
         /* c8 ignore next -- item-write diff branch requires path and content divergence under lock races. */
-        if (params.nextItem.path && params.nextItem.raw !== null && params.nextItem.raw !== params.currentItem.raw) {
+        if (
+          params.nextItem.path &&
+          params.nextItem.raw !== null &&
+          params.nextItem.raw !== params.currentItem.raw
+        ) {
           await writeFileAtomic(params.nextItem.path, params.nextItem.raw);
         }
-        if (params.currentItem.path && (!params.nextItem.path || params.nextItem.path !== params.currentItem.path)) {
+        if (
+          params.currentItem.path &&
+          (!params.nextItem.path ||
+            params.nextItem.path !== params.currentItem.path)
+        ) {
           await fs.rm(params.currentItem.path, { force: true });
         }
-        await writeFileAtomic(params.subject.historyPath, historyEntriesToRaw(params.rewrittenEntries));
+        await writeFileAtomic(
+          params.subject.historyPath,
+          historyEntriesToRaw(params.rewrittenEntries),
+        );
       } catch (error) {
-        await rollbackHistoryRedactRewrite(params.subject.historyPath, historyRawUnderLock, affectedItemPaths, itemSnapshots);
+        await rollbackHistoryRedactRewrite(
+          params.subject.historyPath,
+          historyRawUnderLock,
+          affectedItemPaths,
+          itemSnapshots,
+        );
         throw error;
       }
     },
-    applyPostRewrite: async () => runHistoryRedactWriteHooks(params.subject.historyPath, [
-      params.nextItem.path,
-      params.currentItem.path,
-    ]),
+    applyPostRewrite: async () =>
+      runHistoryRedactWriteHooks(params.subject.historyPath, [
+        params.nextItem.path,
+        params.currentItem.path,
+      ]),
   });
 }
 
@@ -587,9 +716,14 @@ async function rollbackHistoryRedactRewrite(
   }
 }
 
-async function runHistoryRedactWriteHooks(historyPath: string, itemHookPaths: Array<string | null>): Promise<string[]> {
+async function runHistoryRedactWriteHooks(
+  historyPath: string,
+  itemHookPaths: Array<string | null>,
+): Promise<string[]> {
   const hookWarnings: string[] = [];
-  const uniqueItemHookPaths = new Set(itemHookPaths.filter((itemPath): itemPath is string => itemPath !== null));
+  const uniqueItemHookPaths = new Set(
+    itemHookPaths.filter((itemPath): itemPath is string => itemPath !== null),
+  );
   for (const itemHookPath of uniqueItemHookPaths) {
     hookWarnings.push(
       ...(await runActiveOnWriteHooks({
@@ -609,16 +743,20 @@ async function runHistoryRedactWriteHooks(historyPath: string, itemHookPaths: Ar
   return hookWarnings;
 }
 
-/**
- * Implements resolve history subject for the public runtime surface of this module.
- */
+/** Implements resolve history subject for the public runtime surface of this module. */
 export async function resolveHistorySubject(
   pmRoot: string,
   id: string,
   settings: Awaited<ReturnType<typeof readSettings>>,
   typeToFolder: Record<string, string>,
 ): Promise<HistorySubject> {
-  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
+  const located = await locateItem(
+    pmRoot,
+    id,
+    settings.id_prefix,
+    settings.item_format,
+    typeToFolder,
+  );
   if (located) {
     return {
       id: located.id,
@@ -629,7 +767,10 @@ export async function resolveHistorySubject(
 
   const normalizedId = normalizeItemId(id, settings.id_prefix);
   const rawNormalizedId = normalizeRawItemId(id);
-  const candidateIds = normalizedId === rawNormalizedId ? [normalizedId] : [normalizedId, rawNormalizedId];
+  const candidateIds =
+    normalizedId === rawNormalizedId
+      ? [normalizedId]
+      : [normalizedId, rawNormalizedId];
   for (const candidateId of candidateIds) {
     const historyPath = getHistoryPath(pmRoot, candidateId);
     if (await pathExists(historyPath)) {
@@ -643,9 +784,7 @@ export async function resolveHistorySubject(
   throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
 }
 
-/**
- * Implements run history redact for the public runtime surface of this module.
- */
+/** Implements run history redact for the public runtime surface of this module. */
 export async function runHistoryRedact(
   id: string,
   options: HistoryRedactCommandOptions,
@@ -653,32 +792,59 @@ export async function runHistoryRedact(
 ): Promise<HistoryRedactResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const replacement = typeof options.replacement === "string" && options.replacement.length > 0 ? options.replacement : "[redacted]";
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
+  const replacement =
+    typeof options.replacement === "string" && options.replacement.length > 0
+      ? options.replacement
+      : "[redacted]";
   const rules = buildRedactionRules(options.literal, options.regex);
-  const subject = await resolveHistorySubject(pmRoot, id, settings, typeRegistry.type_to_folder);
+  const subject = await resolveHistorySubject(
+    pmRoot,
+    id,
+    settings,
+    typeRegistry.type_to_folder,
+  );
 
   if (!(await pathExists(subject.historyPath))) {
-    throw new PmCliError(`No history stream exists for ${subject.id}.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `No history stream exists for ${subject.id}.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   const historyRawBeforeLock = await readFileIfExists(subject.historyPath);
-  const historyEntries = await readHistoryEntries(subject.historyPath, subject.id);
+  const historyEntries = await readHistoryEntries(
+    subject.historyPath,
+    subject.id,
+  );
   if (historyEntries.length === 0) {
-    throw new PmCliError(`No history entries exist for ${subject.id}; nothing to redact.`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `No history entries exist for ${subject.id}; nothing to redact.`,
+      EXIT_CODE.USAGE,
+    );
   }
 
   const integritySnapshot = inspectHistoryIntegrity(historyEntries);
   const rewritten = rewriteHistoryEntries(historyEntries, rules, replacement);
-  const preexistingHashMismatches = integritySnapshot.hashMismatchesBefore + integritySnapshot.hashMismatchesAfter;
+  const preexistingHashMismatches =
+    integritySnapshot.hashMismatchesBefore +
+    integritySnapshot.hashMismatchesAfter;
   const dryRun = Boolean(options.dryRun);
   const changed = rewritten.replacements > 0;
   const warnings: string[] = [];
   if (preexistingHashMismatches > 0) {
-    warnings.push(`history_redact_preexisting_hash_mismatches:${preexistingHashMismatches}`);
+    warnings.push(
+      `history_redact_preexisting_hash_mismatches:${preexistingHashMismatches}`,
+    );
   }
   if (!changed) {
     warnings.push("history_redact_no_matches");
@@ -741,8 +907,12 @@ export async function runHistoryRedact(
     dry_run: dryRun,
     changed,
     patterns: {
-      literals: rules.filter((rule): rule is LiteralRule => rule.kind === "literal").map((rule) => rule.value),
-      regex: rules.filter((rule): rule is RegexRule => rule.kind === "regex").map((rule) => `/${rule.source}/${rule.flags}`),
+      literals: rules
+        .filter((rule): rule is LiteralRule => rule.kind === "literal")
+        .map((rule) => rule.value),
+      regex: rules
+        .filter((rule): rule is RegexRule => rule.kind === "regex")
+        .map((rule) => `/${rule.source}/${rule.flags}`),
       replacement,
     },
     history: {
@@ -765,11 +935,14 @@ export async function runHistoryRedact(
       changed: itemChanged,
     },
     /* c8 ignore next -- warning dedupe ordering is covered indirectly by command-level smoke tests. */
-    warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
+    warnings: [...new Set(warnings)].sort((left, right) =>
+      left.localeCompare(right),
+    ),
     generated_at: nowIso(),
   };
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   applyLiteralRule,
   applyRegexRule,

@@ -6,7 +6,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
-import { getActiveExtensionRegistrations, runActiveOnIndexHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import {
+  getActiveExtensionRegistrations,
+  runActiveOnIndexHooks,
+  runActiveOnWriteHooks,
+} from "../../core/extensions/index.js";
 import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import {
   resolveRegisteredSearchProvider,
@@ -23,11 +27,19 @@ import {
   resolveSemanticCorpusCharacterLimit,
 } from "../../core/search/corpus.js";
 import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
-import { readVectorizationStatusLedger, writeVectorizationStatusLedger } from "../../core/search/cache.js";
+import {
+  readVectorizationStatusLedger,
+  writeVectorizationStatusLedger,
+} from "../../core/search/cache.js";
 import { REINDEX_LOCK_ID } from "../../core/search/background-refresh.js";
 import { resolveEmbeddingProviders } from "../../core/search/providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
-import { executeVectorDelete, executeVectorReset, executeVectorUpsert, resolveVectorStores } from "../../core/search/vector-stores.js";
+import {
+  executeVectorDelete,
+  executeVectorReset,
+  executeVectorUpsert,
+  resolveVectorStores,
+} from "../../core/search/vector-stores.js";
 import {
   buildVectorizationEmbeddingIdentity,
   buildVectorizationEmbeddingMetadata,
@@ -43,7 +55,10 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { listAllDocumentCandidatesCached, type CachedDocumentCandidate } from "../../core/store/front-matter-cache.js";
+import {
+  listAllDocumentCandidatesCached,
+  type CachedDocumentCandidate,
+} from "../../core/store/front-matter-cache.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemDocument, PmSettings } from "../../types/index.js";
@@ -54,22 +69,25 @@ const EMBEDDING_MIGRATION_REINDEX_HINT =
   "Provider or model has changed since last index. Run pm reindex --mode semantic to rebuild.";
 type ReindexMode = "keyword" | "semantic" | "hybrid";
 
-/**
- * Documents the reindex options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the reindex options payload exchanged by command, SDK, and package integrations. */
 export interface ReindexOptions {
+  /** Value that configures or reports mode for this contract. */
   mode?: string;
+  /** Value that configures or reports progress for this contract. */
   progress?: boolean;
+  /** Value that configures or reports full for this contract. */
   full?: boolean;
 }
 
-/**
- * Documents the reindex result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the reindex result payload exchanged by command, SDK, and package integrations. */
 export interface ReindexResult {
+  /** Whether the operation completed without a blocking failure. */
   ok: boolean;
+  /** Value that configures or reports mode for this contract. */
   mode: ReindexMode;
+  /** Value that configures or reports total items for this contract. */
   total_items: number;
+  /** Value that configures or reports semantic for this contract. */
   semantic: {
     enabled: boolean;
     stale_items: number;
@@ -78,11 +96,14 @@ export interface ReindexResult {
     vector_upserted: number;
     batches_completed: number;
   };
+  /** Value that configures or reports artifacts for this contract. */
   artifacts: {
     manifest: string;
     embeddings: string;
   };
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
 }
 
@@ -109,7 +130,10 @@ function parseMode(raw: string | undefined): ReindexMode {
   if (normalized === "semantic" || normalized === "hybrid") {
     return normalized;
   }
-  throw new PmCliError("Reindex mode must be one of keyword|semantic|hybrid", EXIT_CODE.USAGE);
+  throw new PmCliError(
+    "Reindex mode must be one of keyword|semantic|hybrid",
+    EXIT_CODE.USAGE,
+  );
 }
 
 async function loadDocumentCandidates(
@@ -119,7 +143,13 @@ async function loadDocumentCandidates(
   schema: PmSettings["schema"],
 ): Promise<{ candidates: CachedDocumentCandidate[]; warnings: string[] }> {
   const warnings: string[] = [];
-  const candidates = await listAllDocumentCandidatesCached(pmRoot, itemFormat, typeToFolder, warnings, schema);
+  const candidates = await listAllDocumentCandidatesCached(
+    pmRoot,
+    itemFormat,
+    typeToFolder,
+    warnings,
+    schema,
+  );
   return {
     candidates,
     warnings,
@@ -133,7 +163,9 @@ async function hydrateDocuments(
   warnings: string[],
   itemIds?: Set<string>,
 ): Promise<ItemDocument[]> {
-  const extensionFieldNames = collectRegisteredItemFieldNames(getActiveExtensionRegistrations());
+  const extensionFieldNames = collectRegisteredItemFieldNames(
+    getActiveExtensionRegistrations(),
+  );
   const hydrated: ItemDocument[] = [];
   for (const candidate of candidates) {
     if (itemIds && !itemIds.has(candidate.metadata.id)) {
@@ -159,7 +191,9 @@ async function hydrateDocuments(
         body: parsed.body,
       });
     } catch {
-      warnings.push(`item_list_item_read_failed:${path.relative(pmRoot, candidate.item_path)}`);
+      warnings.push(
+        `item_list_item_read_failed:${path.relative(pmRoot, candidate.item_path)}`,
+      );
       hydrated.push({
         metadata: candidate.metadata,
         body: "",
@@ -221,7 +255,9 @@ interface ReindexEmbeddingExecutionResult {
 }
 
 interface ReindexSemanticRuntime {
-  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"];
+  activeEmbeddingProvider: ReturnType<
+    typeof resolveEmbeddingProviders
+  >["active"];
   activeVectorStore: ReturnType<typeof resolveVectorStores>["active"];
 }
 
@@ -242,6 +278,7 @@ interface ReindexSemanticPlan {
 
 const toOptionalNonEmptyString = toNonEmptyStringOrUndefined;
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   shouldEmitReindexProgress,
   emitReindexProgress,
@@ -263,20 +300,30 @@ export const _testOnly = {
 
 function resolveExtensionSearchEmbedding(
   settings: PmSettings,
-): { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null {
+): {
+  name: string;
+  embedBatch?: ExtensionEmbedBatch;
+  embed?: ExtensionEmbedOne;
+} | null {
   const registrations = getActiveExtensionRegistrations();
   const providerName = toOptionalNonEmptyString(settings.search?.provider);
   if (!providerName) {
     return null;
   }
-  const registration = resolveRegisteredSearchProvider(registrations, providerName);
+  const registration = resolveRegisteredSearchProvider(
+    registrations,
+    providerName,
+  );
   if (!registration) {
     return null;
   }
-  const runtimeDefinition = registration.runtime_definition ?? registration.definition;
+  const runtimeDefinition =
+    registration.runtime_definition ?? registration.definition;
   const name =
     toOptionalNonEmptyString((runtimeDefinition as { name?: unknown }).name) ??
-    toOptionalNonEmptyString((registration.definition as { name?: unknown }).name);
+    toOptionalNonEmptyString(
+      (registration.definition as { name?: unknown }).name,
+    );
   // resolveRegisteredSearchProvider only matches a registration whose normalized
   // runtime/registered definition name equals providerName, so `name` here is always
   // that non-empty value; the guard exists solely to narrow string | undefined.
@@ -285,8 +332,12 @@ function resolveExtensionSearchEmbedding(
     return null;
   }
   /* c8 ignore stop */
-  const embedBatch = (runtimeDefinition as { embedBatch?: unknown; embed_batch?: unknown }).embedBatch;
-  const embedBatchSnake = (runtimeDefinition as { embedBatch?: unknown; embed_batch?: unknown }).embed_batch;
+  const embedBatch = (
+    runtimeDefinition as { embedBatch?: unknown; embed_batch?: unknown }
+  ).embedBatch;
+  const embedBatchSnake = (
+    runtimeDefinition as { embedBatch?: unknown; embed_batch?: unknown }
+  ).embed_batch;
   const embed = (runtimeDefinition as { embed?: unknown }).embed;
   const resolvedEmbedBatch =
     typeof embedBatch === "function"
@@ -294,7 +345,8 @@ function resolveExtensionSearchEmbedding(
       : typeof embedBatchSnake === "function"
         ? (embedBatchSnake as ExtensionEmbedBatch)
         : undefined;
-  const resolvedEmbed = typeof embed === "function" ? (embed as ExtensionEmbedOne) : undefined;
+  const resolvedEmbed =
+    typeof embed === "function" ? (embed as ExtensionEmbedOne) : undefined;
   if (!resolvedEmbedBatch && !resolvedEmbed) {
     return null;
   }
@@ -305,20 +357,28 @@ function resolveExtensionSearchEmbedding(
   };
 }
 
-function resolveExtensionVectorAdapter(settings: PmSettings): ExtensionVectorAdapter | null {
+function resolveExtensionVectorAdapter(
+  settings: PmSettings,
+): ExtensionVectorAdapter | null {
   const registrations = getActiveExtensionRegistrations();
   const adapterName = toOptionalNonEmptyString(settings.vector_store?.adapter);
   if (!adapterName) {
     return null;
   }
-  const registration = resolveRegisteredVectorStoreAdapter(registrations, adapterName);
+  const registration = resolveRegisteredVectorStoreAdapter(
+    registrations,
+    adapterName,
+  );
   if (!registration) {
     return null;
   }
-  const runtimeDefinition = registration.runtime_definition ?? registration.definition;
+  const runtimeDefinition =
+    registration.runtime_definition ?? registration.definition;
   const adapterDisplayName =
     toOptionalNonEmptyString((runtimeDefinition as { name?: unknown }).name) ??
-    toOptionalNonEmptyString((registration.definition as { name?: unknown }).name);
+    toOptionalNonEmptyString(
+      (registration.definition as { name?: unknown }).name,
+    );
   /* c8 ignore start -- resolveRegisteredVectorStoreAdapter only returns registrations with a normalized runtime or definition name */
   if (!adapterDisplayName) {
     return null;
@@ -328,24 +388,39 @@ function resolveExtensionVectorAdapter(settings: PmSettings): ExtensionVectorAda
   const deleteHandler = (runtimeDefinition as { delete?: unknown }).delete;
   return {
     adapterName: adapterDisplayName,
-    ...(typeof upsert === "function" ? { upsert: upsert as ExtensionVectorUpsert } : {}),
-    ...(typeof deleteHandler === "function" ? { delete: deleteHandler as ExtensionVectorDelete } : {}),
+    ...(typeof upsert === "function"
+      ? { upsert: upsert as ExtensionVectorUpsert }
+      : {}),
+    ...(typeof deleteHandler === "function"
+      ? { delete: deleteHandler as ExtensionVectorDelete }
+      : {}),
   };
 }
 
 function assertVector(value: unknown, context: string): number[] {
-  if (!Array.isArray(value) || value.some((entry) => typeof entry !== "number" || !Number.isFinite(entry))) {
-    throw new PmCliError(`Invalid vector returned by ${context}`, EXIT_CODE.GENERIC_FAILURE);
+  if (
+    !Array.isArray(value) ||
+    value.some((entry) => typeof entry !== "number" || !Number.isFinite(entry))
+  ) {
+    throw new PmCliError(
+      `Invalid vector returned by ${context}`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
   }
   return value;
 }
 
 async function executeExtensionEmbedding(
-  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne },
+  extensionEmbedding: {
+    name: string;
+    embedBatch?: ExtensionEmbedBatch;
+    embed?: ExtensionEmbedOne;
+  },
   settings: PmSettings,
   corpusInputs: string[],
 ): Promise<number[][]> {
-  const model = settings.search?.embedding_model?.trim() || "text-embedding-3-small";
+  const model =
+    settings.search?.embedding_model?.trim() || "text-embedding-3-small";
   if (extensionEmbedding.embedBatch) {
     const vectors = await Promise.resolve(
       extensionEmbedding.embedBatch({
@@ -361,7 +436,10 @@ async function executeExtensionEmbedding(
       );
     }
     return vectors.map((vector, index) =>
-      assertVector(vector, `extension search provider "${extensionEmbedding.name}" embedBatch output at index ${index}`),
+      assertVector(
+        vector,
+        `extension search provider "${extensionEmbedding.name}" embedBatch output at index ${index}`,
+      ),
     );
   }
   if (!extensionEmbedding.embed) {
@@ -379,7 +457,12 @@ async function executeExtensionEmbedding(
         model,
       }),
     );
-    vectors.push(assertVector(vector, `extension search provider "${extensionEmbedding.name}" embed output at index ${index}`));
+    vectors.push(
+      assertVector(
+        vector,
+        `extension search provider "${extensionEmbedding.name}" embed output at index ${index}`,
+      ),
+    );
   }
   return vectors;
 }
@@ -390,13 +473,21 @@ function resolveExtensionEmbeddingModel(settings: PmSettings): string {
 
 function resolveReindexEmbeddingIdentity(
   settings: PmSettings,
-  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"],
+  activeEmbeddingProvider: ReturnType<
+    typeof resolveEmbeddingProviders
+  >["active"],
   extensionEmbedding: { name: string } | null,
 ): VectorizationEmbeddingIdentity {
   const identity = extensionEmbedding
-    ? buildVectorizationEmbeddingIdentity(extensionEmbedding.name, resolveExtensionEmbeddingModel(settings))
+    ? buildVectorizationEmbeddingIdentity(
+        extensionEmbedding.name,
+        resolveExtensionEmbeddingModel(settings),
+      )
     : activeEmbeddingProvider
-      ? buildVectorizationEmbeddingIdentity(activeEmbeddingProvider.name, activeEmbeddingProvider.model)
+      ? buildVectorizationEmbeddingIdentity(
+          activeEmbeddingProvider.name,
+          activeEmbeddingProvider.model,
+        )
       : null;
   if (!identity) {
     throw new PmCliError(
@@ -407,7 +498,10 @@ function resolveReindexEmbeddingIdentity(
   return identity;
 }
 
-function collectLedgerOrphanIds(ledgerEntries: Record<string, string>, currentIds: Set<string>): string[] {
+function collectLedgerOrphanIds(
+  ledgerEntries: Record<string, string>,
+  currentIds: Set<string>,
+): string[] {
   return Object.keys(ledgerEntries)
     .filter((id) => !currentIds.has(id))
     .sort((left, right) => left.localeCompare(right));
@@ -416,14 +510,21 @@ function collectLedgerOrphanIds(ledgerEntries: Record<string, string>, currentId
 async function executeReindexEmbedding(
   settings: PmSettings,
   requestedMode: "keyword" | "semantic" | "hybrid",
-  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"],
-  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null,
+  activeEmbeddingProvider: ReturnType<
+    typeof resolveEmbeddingProviders
+  >["active"],
+  extensionEmbedding: {
+    name: string;
+    embedBatch?: ExtensionEmbedBatch;
+    embed?: ExtensionEmbedOne;
+  } | null,
   documents: ItemDocument[],
   semanticWarnings: string[],
   semanticSummary: ReindexResult["semantic"],
   progressEnabled: boolean,
 ): Promise<ReindexEmbeddingExecutionResult> {
-  const semanticProviderName = extensionEmbedding?.name ?? activeEmbeddingProvider?.name;
+  const semanticProviderName =
+    extensionEmbedding?.name ?? activeEmbeddingProvider?.name;
   const corpusCharacterLimit = resolveSemanticCorpusCharacterLimit(
     semanticProviderName,
     settings.search.embedding_corpus_max_characters,
@@ -440,8 +541,15 @@ async function executeReindexEmbedding(
   let embeddingIdentity: VectorizationEmbeddingIdentity | null = null;
   if (extensionEmbedding) {
     try {
-      vectors = await executeExtensionEmbedding(extensionEmbedding, settings, corpusInputs);
-      embeddingIdentity = buildVectorizationEmbeddingIdentity(extensionEmbedding.name, resolveExtensionEmbeddingModel(settings));
+      vectors = await executeExtensionEmbedding(
+        extensionEmbedding,
+        settings,
+        corpusInputs,
+      );
+      embeddingIdentity = buildVectorizationEmbeddingIdentity(
+        extensionEmbedding.name,
+        resolveExtensionEmbeddingModel(settings),
+      );
     } catch (error: unknown) {
       if (!activeEmbeddingProvider) {
         throw new PmCliError(
@@ -461,22 +569,33 @@ async function executeReindexEmbedding(
         EXIT_CODE.USAGE,
       );
     }
-    const embeddingResult = await executeEmbeddingBatchesWithRetry(activeEmbeddingProvider, settings, corpusInputs, {
-      onProgress: (event) => {
-        if (event.phase === "complete") {
-          semanticSummary.batches_completed = event.batch_index;
-        }
-        emitReindexProgress(
-          progressEnabled,
-          `embedding_batch_${event.phase} batch=${event.batch_index}/${event.batch_total} size=${event.batch_size} completed_inputs=${event.completed_inputs}/${event.total_inputs}`,
-        );
+    const embeddingResult = await executeEmbeddingBatchesWithRetry(
+      activeEmbeddingProvider,
+      settings,
+      corpusInputs,
+      {
+        onProgress: (event) => {
+          if (event.phase === "complete") {
+            semanticSummary.batches_completed = event.batch_index;
+          }
+          emitReindexProgress(
+            progressEnabled,
+            `embedding_batch_${event.phase} batch=${event.batch_index}/${event.batch_total} size=${event.batch_size} completed_inputs=${event.completed_inputs}/${event.total_inputs}`,
+          );
+        },
       },
-    });
+    );
     semanticWarnings.push(...embeddingResult.warnings);
     vectors = embeddingResult.vectors;
-    embeddingIdentity = buildVectorizationEmbeddingIdentity(activeEmbeddingProvider.name, activeEmbeddingProvider.model);
+    embeddingIdentity = buildVectorizationEmbeddingIdentity(
+      activeEmbeddingProvider.name,
+      activeEmbeddingProvider.model,
+    );
   }
-  emitReindexProgress(progressEnabled, `embedding_complete vectors=${vectors.length}`);
+  emitReindexProgress(
+    progressEnabled,
+    `embedding_complete vectors=${vectors.length}`,
+  );
   if (vectors.length !== documents.length) {
     throw new PmCliError(
       `Embedding output size mismatch (expected ${documents.length}, received ${vectors.length})`,
@@ -504,7 +623,12 @@ async function resetVectorStoreForReindex(
   if (extensionVectorAdapter) {
     if (knownIds.length > 0 && extensionVectorAdapter.delete) {
       try {
-        await Promise.resolve(extensionVectorAdapter.delete({ ids: knownIds.sort((left, right) => left.localeCompare(right)), settings }));
+        await Promise.resolve(
+          extensionVectorAdapter.delete({
+            ids: knownIds.sort((left, right) => left.localeCompare(right)),
+            settings,
+          }),
+        );
       } catch (error: unknown) {
         throw new PmCliError(
           `Extension vector adapter "${extensionVectorAdapter.adapterName}" failed to delete vectors during reindex reset: ${error instanceof Error ? error.message : String(error)}`,
@@ -538,7 +662,9 @@ async function pruneReindexOrphanVectors(
   if (extensionVectorAdapter) {
     if (extensionVectorAdapter.delete) {
       try {
-        await Promise.resolve(extensionVectorAdapter.delete({ ids: orphanIds, settings }));
+        await Promise.resolve(
+          extensionVectorAdapter.delete({ ids: orphanIds, settings }),
+        );
       } catch (error: unknown) {
         throw new PmCliError(
           `Extension vector adapter "${extensionVectorAdapter.adapterName}" failed to delete orphan vectors during reindex: ${error instanceof Error ? error.message : String(error)}`,
@@ -559,7 +685,9 @@ async function pruneReindexOrphanVectors(
   }
 }
 
-function createReindexSemanticSummary(mode: ReindexMode): ReindexResult["semantic"] {
+function createReindexSemanticSummary(
+  mode: ReindexMode,
+): ReindexResult["semantic"] {
   return {
     enabled: mode !== "keyword",
     stale_items: 0,
@@ -570,7 +698,11 @@ function createReindexSemanticSummary(mode: ReindexMode): ReindexResult["semanti
   };
 }
 
-function buildReindexManifest(mode: ReindexMode, generatedAt: string, metadataDocuments: ItemDocument[]): {
+function buildReindexManifest(
+  mode: ReindexMode,
+  generatedAt: string,
+  metadataDocuments: ItemDocument[],
+): {
   version: number;
   mode: ReindexMode;
   generated_at: string;
@@ -602,7 +734,11 @@ function assertSemanticRuntimeAvailable(params: {
   requestedMode: ReindexMode;
   pmRoot: string;
   settings: PmSettings;
-  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
+  extensionEmbedding: {
+    name: string;
+    embedBatch?: ExtensionEmbedBatch;
+    embed?: ExtensionEmbedOne;
+  } | null;
   extensionVectorAdapter: ExtensionVectorAdapter | null;
 }): ReindexSemanticRuntime {
   if (params.requestedMode === "keyword") {
@@ -635,7 +771,10 @@ async function loadReindexCorpus(params: {
   pmRoot: string;
   settings: PmSettings;
 }): Promise<ReindexLoadedCorpus> {
-  const typeRegistry = resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations());
+  const typeRegistry = resolveItemTypeRegistry(
+    params.settings,
+    getActiveExtensionRegistrations(),
+  );
   const loadedCandidates = await loadDocumentCandidates(
     params.pmRoot,
     params.settings.item_format,
@@ -656,26 +795,44 @@ async function appendKeywordLedgerWarnings(params: {
   pmRoot: string;
   settings: PmSettings;
   forceFullSemantic: boolean;
-  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
+  extensionEmbedding: {
+    name: string;
+    embedBatch?: ExtensionEmbedBatch;
+    embed?: ExtensionEmbedOne;
+  } | null;
   reindexWarnings: string[];
 }): Promise<void> {
   const ledger = await readVectorizationStatusLedger(params.pmRoot);
   params.reindexWarnings.push(...ledger.warnings);
   if (params.forceFullSemantic) {
-    params.reindexWarnings.push("search_semantic_reindex_full_ignored:mode_keyword");
+    params.reindexWarnings.push(
+      "search_semantic_reindex_full_ignored:mode_keyword",
+    );
   }
   if (!ledger.embedding) {
     return;
   }
   const currentEmbeddingIdentity = (() => {
     try {
-      return resolveReindexEmbeddingIdentity(params.settings, resolveEmbeddingProviders(params.settings).active, params.extensionEmbedding);
+      return resolveReindexEmbeddingIdentity(
+        params.settings,
+        resolveEmbeddingProviders(params.settings).active,
+        params.extensionEmbedding,
+      );
     } catch {
       return null;
     }
   })();
-  if (currentEmbeddingIdentity && hasVectorizationEmbeddingIdentityChanged(ledger.embedding, currentEmbeddingIdentity)) {
-    params.reindexWarnings.push("search_semantic_reindex_requires_rebuild:embedding_identity_changed");
+  if (
+    currentEmbeddingIdentity &&
+    hasVectorizationEmbeddingIdentityChanged(
+      ledger.embedding,
+      currentEmbeddingIdentity,
+    )
+  ) {
+    params.reindexWarnings.push(
+      "search_semantic_reindex_requires_rebuild:embedding_identity_changed",
+    );
     params.reindexWarnings.push(EMBEDDING_MIGRATION_REINDEX_HINT);
   }
 }
@@ -683,8 +840,14 @@ async function appendKeywordLedgerWarnings(params: {
 async function planSemanticReindex(params: {
   pmRoot: string;
   settings: PmSettings;
-  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"];
-  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
+  activeEmbeddingProvider: ReturnType<
+    typeof resolveEmbeddingProviders
+  >["active"];
+  extensionEmbedding: {
+    name: string;
+    embedBatch?: ExtensionEmbedBatch;
+    embed?: ExtensionEmbedOne;
+  } | null;
   documentCandidates: CachedDocumentCandidate[];
   metadataDocuments: ItemDocument[];
   forceFullSemantic: boolean;
@@ -698,20 +861,38 @@ async function planSemanticReindex(params: {
     params.activeEmbeddingProvider,
     params.extensionEmbedding,
   );
-  const currentIds = new Set(params.metadataDocuments.map((document) => document.metadata.id));
+  const currentIds = new Set(
+    params.metadataDocuments.map((document) => document.metadata.id),
+  );
   const orphanIds = collectLedgerOrphanIds(ledger.entries, currentIds);
-  const resetRequired = hasVectorizationEmbeddingIdentityChanged(ledger.embedding, embeddingIdentity);
+  const resetRequired = hasVectorizationEmbeddingIdentityChanged(
+    ledger.embedding,
+    embeddingIdentity,
+  );
   if (params.forceFullSemantic && !resetRequired) {
     params.semanticWarnings.push("search_semantic_reindex_full_rebuild_forced");
   }
   const staleSourceDocuments =
     params.forceFullSemantic || resetRequired
       ? params.metadataDocuments
-      : params.metadataDocuments.filter((document) => ledger.entries[document.metadata.id] !== document.metadata.updated_at);
-  const staleIds = new Set(staleSourceDocuments.map((document) => document.metadata.id));
-  const staleDocuments = staleIds.size > 0
-    ? await hydrateDocuments(params.pmRoot, params.documentCandidates, params.settings.schema, params.reindexWarnings, staleIds)
-    : [];
+      : params.metadataDocuments.filter(
+          (document) =>
+            ledger.entries[document.metadata.id] !==
+            document.metadata.updated_at,
+        );
+  const staleIds = new Set(
+    staleSourceDocuments.map((document) => document.metadata.id),
+  );
+  const staleDocuments =
+    staleIds.size > 0
+      ? await hydrateDocuments(
+          params.pmRoot,
+          params.documentCandidates,
+          params.settings.schema,
+          params.reindexWarnings,
+          staleIds,
+        )
+      : [];
   return {
     ledgerEntries: ledger.entries,
     ledgerEmbedding: ledger.embedding,
@@ -726,16 +907,29 @@ async function rerunSemanticEmbeddingAfterDimensionChange(params: {
   pmRoot: string;
   settings: PmSettings;
   requestedMode: ReindexMode;
-  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"];
-  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
+  activeEmbeddingProvider: ReturnType<
+    typeof resolveEmbeddingProviders
+  >["active"];
+  extensionEmbedding: {
+    name: string;
+    embedBatch?: ExtensionEmbedBatch;
+    embed?: ExtensionEmbedOne;
+  } | null;
   documentCandidates: CachedDocumentCandidate[];
   metadataDocuments: ItemDocument[];
   semanticWarnings: string[];
   reindexWarnings: string[];
   semanticSummary: ReindexResult["semantic"];
   progressEnabled: boolean;
-}): Promise<ReindexEmbeddingExecutionResult & { staleDocuments: ItemDocument[]; vectorDimension: number }> {
-  const staleIds = new Set(params.metadataDocuments.map((document) => document.metadata.id));
+}): Promise<
+  ReindexEmbeddingExecutionResult & {
+    staleDocuments: ItemDocument[];
+    vectorDimension: number;
+  }
+> {
+  const staleIds = new Set(
+    params.metadataDocuments.map((document) => document.metadata.id),
+  );
   const staleDocuments = await hydrateDocuments(
     params.pmRoot,
     params.documentCandidates,
@@ -745,7 +939,10 @@ async function rerunSemanticEmbeddingAfterDimensionChange(params: {
   );
   params.semanticSummary.stale_items = staleDocuments.length;
   params.semanticSummary.unchanged_items = 0;
-  emitReindexProgress(params.progressEnabled, `embedding_dimension_changed reset_items=${staleDocuments.length}`);
+  emitReindexProgress(
+    params.progressEnabled,
+    `embedding_dimension_changed reset_items=${staleDocuments.length}`,
+  );
   const embeddingResult = await executeReindexEmbedding(
     params.settings,
     params.requestedMode,
@@ -759,7 +956,10 @@ async function rerunSemanticEmbeddingAfterDimensionChange(params: {
   return {
     ...embeddingResult,
     staleDocuments,
-    vectorDimension: inferConsistentVectorDimension(embeddingResult.vectors, "Reindex embeddings"),
+    vectorDimension: inferConsistentVectorDimension(
+      embeddingResult.vectors,
+      "Reindex embeddings",
+    ),
   };
 }
 
@@ -767,8 +967,14 @@ async function resolveSemanticEmbeddingForUpsert(params: {
   pmRoot: string;
   settings: PmSettings;
   requestedMode: ReindexMode;
-  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"];
-  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
+  activeEmbeddingProvider: ReturnType<
+    typeof resolveEmbeddingProviders
+  >["active"];
+  extensionEmbedding: {
+    name: string;
+    embedBatch?: ExtensionEmbedBatch;
+    embed?: ExtensionEmbedOne;
+  } | null;
   documentCandidates: CachedDocumentCandidate[];
   metadataDocuments: ItemDocument[];
   staleDocuments: ItemDocument[];
@@ -778,7 +984,13 @@ async function resolveSemanticEmbeddingForUpsert(params: {
   reindexWarnings: string[];
   semanticSummary: ReindexResult["semantic"];
   progressEnabled: boolean;
-}): Promise<ReindexEmbeddingExecutionResult & { staleDocuments: ItemDocument[]; vectorDimension: number; resetRequired: boolean }> {
+}): Promise<
+  ReindexEmbeddingExecutionResult & {
+    staleDocuments: ItemDocument[];
+    vectorDimension: number;
+    resetRequired: boolean;
+  }
+> {
   const embeddingResult = await executeReindexEmbedding(
     params.settings,
     params.requestedMode,
@@ -791,11 +1003,20 @@ async function resolveSemanticEmbeddingForUpsert(params: {
   );
   let vectors = embeddingResult.vectors;
   let actualEmbeddingIdentity = embeddingResult.embeddingIdentity;
-  let vectorDimension = inferConsistentVectorDimension(vectors, "Reindex embeddings");
+  let vectorDimension = inferConsistentVectorDimension(
+    vectors,
+    "Reindex embeddings",
+  );
   const dimensionChanged =
     !params.resetRequired &&
-    (hasVectorizationEmbeddingIdentityChanged(params.ledgerEmbedding, actualEmbeddingIdentity) ||
-      hasVectorizationVectorDimensionChanged(params.ledgerEmbedding, vectorDimension));
+    (hasVectorizationEmbeddingIdentityChanged(
+      params.ledgerEmbedding,
+      actualEmbeddingIdentity,
+    ) ||
+      hasVectorizationVectorDimensionChanged(
+        params.ledgerEmbedding,
+        vectorDimension,
+      ));
   if (!dimensionChanged) {
     return {
       vectors,
@@ -835,16 +1056,27 @@ async function upsertReindexVectors(params: {
   if (params.extensionVectorAdapter) {
     try {
       const adapterName = params.extensionVectorAdapter.adapterName;
-      emitReindexProgress(params.progressEnabled, `vector_upsert_start adapter=${adapterName} points=${params.points.length}`);
+      emitReindexProgress(
+        params.progressEnabled,
+        `vector_upsert_start adapter=${adapterName} points=${params.points.length}`,
+      );
       if (typeof params.extensionVectorAdapter.upsert !== "function") {
         throw new PmCliError(
           `Extension vector adapter "${adapterName}" does not support upserting vectors.`,
           EXIT_CODE.USAGE,
         );
       }
-      await Promise.resolve(params.extensionVectorAdapter.upsert({ points: params.points, settings: params.settings }));
+      await Promise.resolve(
+        params.extensionVectorAdapter.upsert({
+          points: params.points,
+          settings: params.settings,
+        }),
+      );
       params.semanticSummary.vector_upserted = params.points.length;
-      emitReindexProgress(params.progressEnabled, `vector_upsert_complete adapter=${adapterName}`);
+      emitReindexProgress(
+        params.progressEnabled,
+        `vector_upsert_complete adapter=${adapterName}`,
+      );
       return;
     } catch (error: unknown) {
       if (error instanceof PmCliError) {
@@ -859,14 +1091,23 @@ async function upsertReindexVectors(params: {
       params.semanticWarnings.push(
         `Extension vector adapter "${params.extensionVectorAdapter.adapterName}" failed; falling back to built-in vector store (${error instanceof Error ? error.message : String(error)})`,
       );
-      emitReindexProgress(params.progressEnabled, "vector_upsert_fallback built_in_store");
+      emitReindexProgress(
+        params.progressEnabled,
+        "vector_upsert_fallback built_in_store",
+      );
     }
   }
   if (params.activeVectorStore) {
-    emitReindexProgress(params.progressEnabled, `vector_upsert_start adapter=${params.activeVectorStore.name} points=${params.points.length}`);
+    emitReindexProgress(
+      params.progressEnabled,
+      `vector_upsert_start adapter=${params.activeVectorStore.name} points=${params.points.length}`,
+    );
     await executeVectorUpsert(params.activeVectorStore, params.points);
     params.semanticSummary.vector_upserted = params.points.length;
-    emitReindexProgress(params.progressEnabled, `vector_upsert_complete adapter=${params.activeVectorStore.name}`);
+    emitReindexProgress(
+      params.progressEnabled,
+      `vector_upsert_complete adapter=${params.activeVectorStore.name}`,
+    );
     return;
   }
   /* c8 ignore start -- guarded by semantic-mode provider/vector-store preflight above */
@@ -877,14 +1118,20 @@ async function upsertReindexVectors(params: {
   /* c8 ignore stop */
 }
 
-function buildReindexVectorPoints(staleDocuments: ItemDocument[], vectors: number[][]): Array<{
+function buildReindexVectorPoints(
+  staleDocuments: ItemDocument[],
+  vectors: number[][],
+): Array<{
   id: string;
   vector: number[];
   payload: Record<string, unknown>;
 }> {
   return staleDocuments.map((document, index) => ({
     id: document.metadata.id,
-    vector: assertVector(vectors[index], `reindex embeddings output at index ${index}`),
+    vector: assertVector(
+      vectors[index],
+      `reindex embeddings output at index ${index}`,
+    ),
     payload: {
       id: document.metadata.id,
       type: document.metadata.type,
@@ -899,9 +1146,15 @@ async function executeSemanticVectorRefresh(params: {
   pmRoot: string;
   settings: PmSettings;
   requestedMode: ReindexMode;
-  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"];
+  activeEmbeddingProvider: ReturnType<
+    typeof resolveEmbeddingProviders
+  >["active"];
   activeVectorStore: ReturnType<typeof resolveVectorStores>["active"];
-  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
+  extensionEmbedding: {
+    name: string;
+    embedBatch?: ExtensionEmbedBatch;
+    embed?: ExtensionEmbedOne;
+  } | null;
   extensionVectorAdapter: ExtensionVectorAdapter | null;
   documentCandidates: CachedDocumentCandidate[];
   metadataDocuments: ItemDocument[];
@@ -910,8 +1163,14 @@ async function executeSemanticVectorRefresh(params: {
   reindexWarnings: string[];
   semanticSummary: ReindexResult["semantic"];
   progressEnabled: boolean;
-}): Promise<{ staleDocuments: ItemDocument[]; embeddingMetadata: VectorizationEmbeddingMetadata }> {
-  emitReindexProgress(params.progressEnabled, `embedding_start items=${params.plan.staleDocuments.length} unchanged_items=${params.plan.freshDocuments}`);
+}): Promise<{
+  staleDocuments: ItemDocument[];
+  embeddingMetadata: VectorizationEmbeddingMetadata;
+}> {
+  emitReindexProgress(
+    params.progressEnabled,
+    `embedding_start items=${params.plan.staleDocuments.length} unchanged_items=${params.plan.freshDocuments}`,
+  );
   const embedding = await resolveSemanticEmbeddingForUpsert({
     pmRoot: params.pmRoot,
     settings: params.settings,
@@ -948,7 +1207,10 @@ async function executeSemanticVectorRefresh(params: {
       params.semanticWarnings,
     );
   }
-  const points = buildReindexVectorPoints(embedding.staleDocuments, embedding.vectors);
+  const points = buildReindexVectorPoints(
+    embedding.staleDocuments,
+    embedding.vectors,
+  );
   params.semanticSummary.embedded_items = embedding.vectors.length;
   await upsertReindexVectors({
     requestedMode: params.requestedMode,
@@ -962,7 +1224,10 @@ async function executeSemanticVectorRefresh(params: {
   });
   return {
     staleDocuments: embedding.staleDocuments,
-    embeddingMetadata: buildVectorizationEmbeddingMetadata(embedding.embeddingIdentity, embedding.vectorDimension),
+    embeddingMetadata: buildVectorizationEmbeddingMetadata(
+      embedding.embeddingIdentity,
+      embedding.vectorDimension,
+    ),
   };
 }
 
@@ -970,9 +1235,15 @@ async function runSemanticReindex(params: {
   pmRoot: string;
   settings: PmSettings;
   requestedMode: ReindexMode;
-  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"];
+  activeEmbeddingProvider: ReturnType<
+    typeof resolveEmbeddingProviders
+  >["active"];
   activeVectorStore: ReturnType<typeof resolveVectorStores>["active"];
-  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
+  extensionEmbedding: {
+    name: string;
+    embedBatch?: ExtensionEmbedBatch;
+    embed?: ExtensionEmbedOne;
+  } | null;
   extensionVectorAdapter: ExtensionVectorAdapter | null;
   documentCandidates: CachedDocumentCandidate[];
   metadataDocuments: ItemDocument[];
@@ -991,15 +1262,23 @@ async function runSemanticReindex(params: {
   params.semanticSummary.stale_items = plan.staleDocuments.length;
   params.semanticSummary.unchanged_items = plan.freshDocuments;
   const vectorizationLedgerEntries = Object.fromEntries(
-    params.metadataDocuments.map((document) => [document.metadata.id, document.metadata.updated_at]),
+    params.metadataDocuments.map((document) => [
+      document.metadata.id,
+      document.metadata.updated_at,
+    ]),
   );
   emitReindexProgress(
     params.progressEnabled,
     `semantic_stale_items stale=${plan.staleDocuments.length} total=${params.metadataDocuments.length} unchanged=${plan.freshDocuments} full=${params.forceFullSemantic || plan.resetRequired}`,
   );
   if (plan.staleDocuments.length === 0) {
-    emitReindexProgress(params.progressEnabled, `embedding_skipped unchanged_items=${plan.freshDocuments}`);
-    params.semanticWarnings.push(`search_semantic_reindex_skipped_unchanged:count=${plan.freshDocuments}`);
+    emitReindexProgress(
+      params.progressEnabled,
+      `embedding_skipped unchanged_items=${plan.freshDocuments}`,
+    );
+    params.semanticWarnings.push(
+      `search_semantic_reindex_skipped_unchanged:count=${plan.freshDocuments}`,
+    );
     await pruneReindexOrphanVectors(
       params.activeVectorStore,
       params.extensionVectorAdapter,
@@ -1015,9 +1294,13 @@ async function runSemanticReindex(params: {
   }
   const refresh = await executeSemanticVectorRefresh({ ...params, plan });
   if (plan.freshDocuments > 0) {
-    params.semanticWarnings.push(`search_semantic_reindex_skipped_unchanged:count=${plan.freshDocuments}`);
+    params.semanticWarnings.push(
+      `search_semantic_reindex_skipped_unchanged:count=${plan.freshDocuments}`,
+    );
   }
-  const staleDocumentsById = new Map(refresh.staleDocuments.map((document) => [document.metadata.id, document]));
+  const staleDocumentsById = new Map(
+    refresh.staleDocuments.map((document) => [document.metadata.id, document]),
+  );
   return {
     documentsForKeywordArtifacts: params.metadataDocuments.map(
       (document) => staleDocumentsById.get(document.metadata.id) ?? document,
@@ -1041,15 +1324,25 @@ async function writeReindexArtifacts(params: {
   const embeddingsPath = path.join(params.pmRoot, EMBEDDINGS_PATH);
   const keywordCorpusFields = resolveSearchCorpusFields(params.settings);
   const embeddingsLines = params.documentsForKeywordArtifacts
-    .map((document) => JSON.stringify(buildKeywordRecord(document, params.mode, keywordCorpusFields)))
+    .map((document) =>
+      JSON.stringify(
+        buildKeywordRecord(document, params.mode, keywordCorpusFields),
+      ),
+    )
     .join("\n");
   emitReindexProgress(params.progressEnabled, "writing keyword artifacts");
-  await writeFileAtomic(manifestPath, `${JSON.stringify(params.manifest, null, 2)}\n`);
+  await writeFileAtomic(
+    manifestPath,
+    `${JSON.stringify(params.manifest, null, 2)}\n`,
+  );
   await writeFileAtomic(embeddingsPath, `${embeddingsLines}\n`);
   const vectorizationWarnings: string[] = [];
   if (params.mode !== "keyword") {
     try {
-      emitReindexProgress(params.progressEnabled, "writing vectorization status ledger");
+      emitReindexProgress(
+        params.progressEnabled,
+        "writing vectorization status ledger",
+      );
       await writeVectorizationStatusLedger(
         params.pmRoot,
         params.vectorizationLedgerEntries,
@@ -1064,20 +1357,26 @@ async function writeReindexArtifacts(params: {
   return vectorizationWarnings;
 }
 
-/**
- * Implements run reindex for the public runtime surface of this module.
- */
-export async function runReindex(options: ReindexOptions, global: GlobalOptions): Promise<ReindexResult> {
+/** Implements run reindex for the public runtime surface of this module. */
+export async function runReindex(
+  options: ReindexOptions,
+  global: GlobalOptions,
+): Promise<ReindexResult> {
   const requestedMode = parseMode(options.mode);
   const progressEnabled = shouldEmitReindexProgress(options);
   const forceFullSemantic = options.full === true;
   emitReindexProgress(progressEnabled, `start mode=${requestedMode}`);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
-  const settings = resolveSettingsWithSemanticRuntimeDefaults(await readSettings(pmRoot)).settings;
+  const settings = resolveSettingsWithSemanticRuntimeDefaults(
+    await readSettings(pmRoot),
+  ).settings;
   let releaseReindexLock: (() => Promise<void>) | null = null;
   try {
     releaseReindexLock = await acquireLock(
@@ -1109,99 +1408,119 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   }
 
   try {
-  const extensionEmbedding = resolveExtensionSearchEmbedding(settings);
-  const extensionVectorAdapter = resolveExtensionVectorAdapter(settings);
-  const semanticRuntime = assertSemanticRuntimeAvailable({
-    requestedMode,
-    pmRoot,
-    settings,
-    extensionEmbedding,
-    extensionVectorAdapter,
-  });
-  const mode = requestedMode;
-  emitReindexProgress(progressEnabled, "loading item corpus");
-  const corpus = await loadReindexCorpus({ pmRoot, settings });
-  const reindexWarnings = corpus.warnings;
-  const { documentCandidates, metadataDocuments } = corpus;
-  emitReindexProgress(progressEnabled, `loaded_items=${metadataDocuments.length}`);
-  const generatedAt = nowIso();
-  const manifest = buildReindexManifest(mode, generatedAt, metadataDocuments);
-  const manifestPath = path.join(pmRoot, MANIFEST_PATH);
-  const embeddingsPath = path.join(pmRoot, EMBEDDINGS_PATH);
-
-  let documentsForKeywordArtifacts =
-    mode === "keyword"
-      ? await hydrateDocuments(pmRoot, documentCandidates, settings.schema, reindexWarnings)
-      : metadataDocuments;
-  const semanticWarnings: string[] = [];
-  let vectorizationLedgerEntries: Record<string, string> = {};
-  let vectorizationEmbeddingMetadata: VectorizationEmbeddingMetadata | null = null;
-  const semanticSummary = createReindexSemanticSummary(mode);
-  if (mode === "keyword") {
-    await appendKeywordLedgerWarnings({ pmRoot, settings, forceFullSemantic, extensionEmbedding, reindexWarnings });
-  }
-  if (mode !== "keyword") {
-    const semantic = await runSemanticReindex({
+    const extensionEmbedding = resolveExtensionSearchEmbedding(settings);
+    const extensionVectorAdapter = resolveExtensionVectorAdapter(settings);
+    const semanticRuntime = assertSemanticRuntimeAvailable({
+      requestedMode,
       pmRoot,
       settings,
-      requestedMode,
-      activeEmbeddingProvider: semanticRuntime.activeEmbeddingProvider,
-      activeVectorStore: semanticRuntime.activeVectorStore,
       extensionEmbedding,
       extensionVectorAdapter,
-      documentCandidates,
-      metadataDocuments,
+    });
+    const mode = requestedMode;
+    emitReindexProgress(progressEnabled, "loading item corpus");
+    const corpus = await loadReindexCorpus({ pmRoot, settings });
+    const reindexWarnings = corpus.warnings;
+    const { documentCandidates, metadataDocuments } = corpus;
+    emitReindexProgress(
+      progressEnabled,
+      `loaded_items=${metadataDocuments.length}`,
+    );
+    const generatedAt = nowIso();
+    const manifest = buildReindexManifest(mode, generatedAt, metadataDocuments);
+    const manifestPath = path.join(pmRoot, MANIFEST_PATH);
+    const embeddingsPath = path.join(pmRoot, EMBEDDINGS_PATH);
+
+    let documentsForKeywordArtifacts =
+      mode === "keyword"
+        ? await hydrateDocuments(
+            pmRoot,
+            documentCandidates,
+            settings.schema,
+            reindexWarnings,
+          )
+        : metadataDocuments;
+    const semanticWarnings: string[] = [];
+    let vectorizationLedgerEntries: Record<string, string> = {};
+    let vectorizationEmbeddingMetadata: VectorizationEmbeddingMetadata | null =
+      null;
+    const semanticSummary = createReindexSemanticSummary(mode);
+    if (mode === "keyword") {
+      await appendKeywordLedgerWarnings({
+        pmRoot,
+        settings,
+        forceFullSemantic,
+        extensionEmbedding,
+        reindexWarnings,
+      });
+    }
+    if (mode !== "keyword") {
+      const semantic = await runSemanticReindex({
+        pmRoot,
+        settings,
+        requestedMode,
+        activeEmbeddingProvider: semanticRuntime.activeEmbeddingProvider,
+        activeVectorStore: semanticRuntime.activeVectorStore,
+        extensionEmbedding,
+        extensionVectorAdapter,
+        documentCandidates,
+        metadataDocuments,
+        documentsForKeywordArtifacts,
+        forceFullSemantic,
+        reindexWarnings,
+        semanticWarnings,
+        semanticSummary,
+        progressEnabled,
+      });
+      documentsForKeywordArtifacts = semantic.documentsForKeywordArtifacts;
+      vectorizationLedgerEntries = semantic.vectorizationLedgerEntries;
+      vectorizationEmbeddingMetadata = semantic.vectorizationEmbeddingMetadata;
+    }
+    const vectorizationWarnings = await writeReindexArtifacts({
+      pmRoot,
+      mode,
+      manifest,
       documentsForKeywordArtifacts,
-      forceFullSemantic,
-      reindexWarnings,
-      semanticWarnings,
-      semanticSummary,
+      settings,
+      vectorizationLedgerEntries,
+      vectorizationEmbeddingMetadata,
       progressEnabled,
     });
-    documentsForKeywordArtifacts = semantic.documentsForKeywordArtifacts;
-    vectorizationLedgerEntries = semantic.vectorizationLedgerEntries;
-    vectorizationEmbeddingMetadata = semantic.vectorizationEmbeddingMetadata;
-  }
-  const vectorizationWarnings = await writeReindexArtifacts({
-    pmRoot,
-    mode,
-    manifest,
-    documentsForKeywordArtifacts,
-    settings,
-    vectorizationLedgerEntries,
-    vectorizationEmbeddingMetadata,
-    progressEnabled,
-  });
-  const hookWarnings = [
-    ...(await runActiveOnWriteHooks({
-      path: manifestPath,
-      scope: "project",
-      op: "reindex:manifest",
-    })),
-    ...(await runActiveOnWriteHooks({
-      path: embeddingsPath,
-      scope: "project",
-      op: "reindex:embeddings",
-    })),
-    ...(await runActiveOnIndexHooks({
+    const hookWarnings = [
+      ...(await runActiveOnWriteHooks({
+        path: manifestPath,
+        scope: "project",
+        op: "reindex:manifest",
+      })),
+      ...(await runActiveOnWriteHooks({
+        path: embeddingsPath,
+        scope: "project",
+        op: "reindex:embeddings",
+      })),
+      ...(await runActiveOnIndexHooks({
+        mode,
+        total_items: metadataDocuments.length,
+      })),
+    ];
+    emitReindexProgress(progressEnabled, "done");
+
+    return {
+      ok: true,
       mode,
       total_items: metadataDocuments.length,
-    })),
-  ];
-  emitReindexProgress(progressEnabled, "done");
-
-  return {
-    ok: true,
-    mode,
-    total_items: metadataDocuments.length,
-    semantic: semanticSummary,
-    artifacts: {
-      manifest: MANIFEST_PATH,
-      embeddings: EMBEDDINGS_PATH,
-    },
-    warnings: [...reindexWarnings, ...semanticWarnings, ...vectorizationWarnings, ...hookWarnings],
-    generated_at: generatedAt,
-  };
+      semantic: semanticSummary,
+      artifacts: {
+        manifest: MANIFEST_PATH,
+        embeddings: EMBEDDINGS_PATH,
+      },
+      warnings: [
+        ...reindexWarnings,
+        ...semanticWarnings,
+        ...vectorizationWarnings,
+        ...hookWarnings,
+      ],
+      generated_at: generatedAt,
+    };
   } finally {
     await releaseReindexLock?.();
   }

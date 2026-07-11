@@ -4,8 +4,15 @@
  * Resolves configurable schema, fields, statuses, and workflows for Runtime Schema.
  */
 import path from "node:path";
-import { pathExists, readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
-import { DEFAULT_STATUS_DEFINITIONS, DEFAULT_WORKFLOW_DEFINITION } from "../shared/constants.js";
+import {
+  pathExists,
+  readFileIfExists,
+  writeFileAtomic,
+} from "../fs/fs-utils.js";
+import {
+  DEFAULT_STATUS_DEFINITIONS,
+  DEFAULT_WORKFLOW_DEFINITION,
+} from "../shared/constants.js";
 import {
   RUNTIME_FIELD_COMMAND_VALUES,
   RUNTIME_FIELD_TYPE_VALUES,
@@ -27,6 +34,7 @@ import type {
 
 export type { RuntimeFieldCommand } from "../../types/index.js";
 
+/** Fallback runtime schema file paths used when callers do not provide an override. */
 export const DEFAULT_RUNTIME_SCHEMA_FILE_PATHS = Object.freeze({
   types: "schema/types.json",
   statuses: "schema/statuses.json",
@@ -37,99 +45,144 @@ export const DEFAULT_RUNTIME_SCHEMA_FILE_PATHS = Object.freeze({
 // Default lifecycle status model and workflow role mapping live in
 // src/core/shared/constants.ts as the single source of truth (also referenced
 // by SETTINGS_DEFAULTS). Re-exported here under the historical names.
-export const DEFAULT_RUNTIME_WORKFLOW: RuntimeWorkflowDefinition = DEFAULT_WORKFLOW_DEFINITION;
+/** Fallback runtime workflow used when callers do not provide an override. */
+export const DEFAULT_RUNTIME_WORKFLOW: RuntimeWorkflowDefinition =
+  DEFAULT_WORKFLOW_DEFINITION;
 
-export const DEFAULT_RUNTIME_STATUS_DEFINITIONS: ReadonlyArray<RuntimeStatusDefinition> = DEFAULT_STATUS_DEFINITIONS;
+/** Fallback runtime status definitions used when callers do not provide an override. */
+export const DEFAULT_RUNTIME_STATUS_DEFINITIONS: ReadonlyArray<RuntimeStatusDefinition> =
+  DEFAULT_STATUS_DEFINITIONS;
 
-const DEFAULT_RUNTIME_FIELD_COMMANDS: RuntimeFieldCommand[] = ["create", "update"];
+const DEFAULT_RUNTIME_FIELD_COMMANDS: RuntimeFieldCommand[] = [
+  "create",
+  "update",
+];
 
-/**
- * Documents the runtime status definition resolved payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the runtime status definition resolved payload exchanged by command, SDK, and package integrations. */
 export interface RuntimeStatusDefinitionResolved {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports aliases for this contract. */
   aliases: string[];
+  /** Value that configures or reports roles for this contract. */
   roles: RuntimeStatusRole[];
+  /** Value that configures or reports description for this contract. */
   description?: string;
+  /** Value that configures or reports order for this contract. */
   order: number;
 }
 
-/**
- * Documents the runtime field definition resolved payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the runtime field definition resolved payload exchanged by command, SDK, and package integrations. */
 export interface RuntimeFieldDefinitionResolved {
+  /** Value that configures or reports key for this contract. */
   key: string;
+  /** Value that configures or reports metadata key for this contract. */
   metadata_key: string;
+  /** Value that configures or reports cli flag for this contract. */
   cli_flag: string;
+  /** Value that configures or reports cli aliases for this contract. */
   cli_aliases: string[];
+  /** Value that configures or reports description for this contract. */
   description?: string;
+  /** Schema type that determines the shape and validation rules for this value. */
   type: RuntimeFieldType;
+  /** Value that configures or reports commands for this contract. */
   commands: RuntimeFieldCommand[];
+  /** Value that configures or reports repeatable for this contract. */
   repeatable: boolean;
+  /** Value that configures or reports required for this contract. */
   required: boolean;
+  /** Value that configures or reports required on create for this contract. */
   required_on_create: boolean;
+  /** Value that configures or reports required types for this contract. */
   required_types: string[];
+  /** Value that configures or reports allow unset for this contract. */
   allow_unset: boolean;
 }
 
-/**
- * Documents the runtime status registry payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the runtime status registry payload exchanged by command, SDK, and package integrations. */
 export interface RuntimeStatusRegistry {
+  /** Value that configures or reports definitions for this contract. */
   definitions: RuntimeStatusDefinitionResolved[];
+  /** Value that configures or reports by id for this contract. */
   by_id: Map<string, RuntimeStatusDefinitionResolved>;
+  /** Value that configures or reports alias to id for this contract. */
   alias_to_id: Map<string, string>;
+  /** Value that configures or reports terminal statuses for this contract. */
   terminal_statuses: Set<string>;
+  /** Value that configures or reports terminal done statuses for this contract. */
   terminal_done_statuses: Set<string>;
+  /** Value that configures or reports terminal canceled statuses for this contract. */
   terminal_canceled_statuses: Set<string>;
+  /** Value that configures or reports active statuses for this contract. */
   active_statuses: Set<string>;
+  /** Value that configures or reports blocked statuses for this contract. */
   blocked_statuses: Set<string>;
+  /** Value that configures or reports draft statuses for this contract. */
   draft_statuses: Set<string>;
+  /** Lifecycle state reported for openthe record. */
   open_status: string;
+  /** Lifecycle state reported for closethe record. */
   close_status: string;
+  /** Lifecycle state reported for canceledthe record. */
   canceled_status: string;
 }
 
-/**
- * Documents the runtime field registry payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the runtime field registry payload exchanged by command, SDK, and package integrations. */
 export interface RuntimeFieldRegistry {
+  /** Value that configures or reports definitions for this contract. */
   definitions: RuntimeFieldDefinitionResolved[];
+  /** Value that configures or reports by key for this contract. */
   by_key: Map<string, RuntimeFieldDefinitionResolved>;
+  /** Value that configures or reports by cli token for this contract. */
   by_cli_token: Map<string, RuntimeFieldDefinitionResolved>;
+  /** Value that configures or reports command to fields for this contract. */
   command_to_fields: Map<RuntimeFieldCommand, RuntimeFieldDefinitionResolved[]>;
 }
 
-/**
- * Documents the runtime schema file bootstrap result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the runtime schema file bootstrap result payload exchanged by command, SDK, and package integrations. */
 export interface RuntimeSchemaFileBootstrapResult {
+  /** Value that configures or reports created paths for this contract. */
   created_paths: string[];
 }
 
-/**
- * Documents the loaded runtime schema sections payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the loaded runtime schema sections payload exchanged by command, SDK, and package integrations. */
 export interface LoadedRuntimeSchemaSections {
+  /** Value that configures or reports schema for this contract. */
   schema: RuntimeSchemaSettings;
+  /** Value that configures or reports type definitions from file for this contract. */
   type_definitions_from_file: ItemTypeDefinition[] | undefined;
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** Value that configures or reports created paths for this contract. */
   created_paths: string[];
 }
 
 const RUNTIME_STATUS_ROLE_SET = new Set<string>(RUNTIME_STATUS_ROLE_VALUES);
 const RUNTIME_FIELD_TYPE_SET = new Set<string>(RUNTIME_FIELD_TYPE_VALUES);
 const RUNTIME_FIELD_COMMAND_SET = new Set<string>(RUNTIME_FIELD_COMMAND_VALUES);
-const RUNTIME_UNKNOWN_FIELD_POLICY_SET = new Set<string>(RUNTIME_UNKNOWN_FIELD_POLICY_VALUES);
+const RUNTIME_UNKNOWN_FIELD_POLICY_SET = new Set<string>(
+  RUNTIME_UNKNOWN_FIELD_POLICY_VALUES,
+);
 
 function normalizeStringList(values: string[] | undefined): string[] {
   const candidates = Array.isArray(values) ? values : [];
-  return [...new Set(candidates.map((value) => (typeof value === "string" ? value.trim() : "")).filter((value) => value.length > 0))]
-    .sort((left, right) => left.localeCompare(right));
+  return [
+    ...new Set(
+      candidates
+        .map((value) => (typeof value === "string" ? value.trim() : ""))
+        .filter((value) => value.length > 0),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
 }
 
 function normalizeStatusToken(value: unknown): string {
-  return typeof value === "string" ? value.trim().toLowerCase().replaceAll(/[\s-]+/g, "_") : "";
+  return typeof value === "string"
+    ? value
+        .trim()
+        .toLowerCase()
+        .replaceAll(/[\s-]+/g, "_")
+    : "";
 }
 
 function normalizeStatusId(value: unknown): string | undefined {
@@ -145,7 +198,14 @@ function stripFlagPrefix(value: string): string {
 }
 
 function normalizeCliToken(value: unknown): string {
-  return typeof value === "string" ? stripFlagPrefix(value.trim().toLowerCase().replaceAll(/[\s_]+/g, "-")) : "";
+  return typeof value === "string"
+    ? stripFlagPrefix(
+        value
+          .trim()
+          .toLowerCase()
+          .replaceAll(/[\s_]+/g, "-"),
+      )
+    : "";
 }
 
 function keyToDefaultCliFlag(value: string): string {
@@ -174,20 +234,30 @@ function normalizeRuntimeStatusDefinition(
   if (!id) {
     return null;
   }
-  const aliases = normalizeStringList(definition.aliases).map((value) => normalizeStatusToken(value)).filter((value) => value !== id);
-  const roles = normalizeStringList(definition.roles).filter((value): value is RuntimeStatusRole => RUNTIME_STATUS_ROLE_SET.has(value));
+  const aliases = normalizeStringList(definition.aliases)
+    .map((value) => normalizeStatusToken(value))
+    .filter((value) => value !== id);
+  const roles = normalizeStringList(definition.roles).filter(
+    (value): value is RuntimeStatusRole => RUNTIME_STATUS_ROLE_SET.has(value),
+  );
   const description = definition.description?.trim();
-  const order = typeof definition.order === "number" && Number.isFinite(definition.order) ? definition.order : fallbackOrder;
+  const order =
+    typeof definition.order === "number" && Number.isFinite(definition.order)
+      ? definition.order
+      : fallbackOrder;
   return {
     id,
     aliases,
     roles,
-    description: description && description.length > 0 ? description : undefined,
+    description:
+      description && description.length > 0 ? description : undefined,
     order,
   };
 }
 
-function normalizeRuntimeWorkflow(workflow: RuntimeWorkflowDefinition | undefined): RuntimeWorkflowDefinition {
+function normalizeRuntimeWorkflow(
+  workflow: RuntimeWorkflowDefinition | undefined,
+): RuntimeWorkflowDefinition {
   return {
     draft_status: normalizeStatusId(workflow?.draft_status),
     open_status: normalizeStatusId(workflow?.open_status),
@@ -204,7 +274,10 @@ interface TypeWorkflowAccumulatorRecord {
   denyAll: boolean;
 }
 
-function appendTypeWorkflowPair(record: TypeWorkflowAccumulatorRecord, pair: unknown): void {
+function appendTypeWorkflowPair(
+  record: TypeWorkflowAccumulatorRecord,
+  pair: unknown,
+): void {
   if (!Array.isArray(pair) || pair.length !== 2) {
     return;
   }
@@ -213,7 +286,11 @@ function appendTypeWorkflowPair(record: TypeWorkflowAccumulatorRecord, pair: unk
   if (from.length === 0 || to.length === 0) {
     return;
   }
-  if (record.pairs.some((candidate) => candidate[0] === from && candidate[1] === to)) {
+  if (
+    record.pairs.some(
+      (candidate) => candidate[0] === from && candidate[1] === to,
+    )
+  ) {
     return;
   }
   record.pairs.push([from, to]);
@@ -226,7 +303,11 @@ function normalizedTypeWorkflowEntry(
   if (rawType.length === 0 || !Array.isArray(entry?.allowed_transitions)) {
     return null;
   }
-  const record: TypeWorkflowAccumulatorRecord = { type: rawType, pairs: [], denyAll: entry.allowed_transitions.length === 0 };
+  const record: TypeWorkflowAccumulatorRecord = {
+    type: rawType,
+    pairs: [],
+    denyAll: entry.allowed_transitions.length === 0,
+  };
   for (const pair of entry.allowed_transitions) {
     appendTypeWorkflowPair(record, pair);
   }
@@ -274,24 +355,36 @@ function normalizeTypeWorkflowDefinitions(
   return normalized.length > 0 ? normalized : undefined;
 }
 
-function normalizeRuntimeFieldDefinition(definition: RuntimeFieldDefinition): RuntimeFieldDefinitionResolved | null {
+function normalizeRuntimeFieldDefinition(
+  definition: RuntimeFieldDefinition,
+): RuntimeFieldDefinitionResolved | null {
   const key = normalizeStatusToken(definition.key ?? "");
   if (!key) {
     return null;
   }
-  const metadataKey = normalizeStatusToken(definition.metadata_key ?? definition.front_matter_key ?? key);
-  const cliFlag = normalizeCliToken(definition.cli_flag ?? keyToDefaultCliFlag(key));
+  const metadataKey = normalizeStatusToken(
+    definition.metadata_key ?? definition.front_matter_key ?? key,
+  );
+  const cliFlag = normalizeCliToken(
+    definition.cli_flag ?? keyToDefaultCliFlag(key),
+  );
   if (!cliFlag) {
     return null;
   }
   const cliAliases = normalizeStringList(definition.cli_aliases)
     .map((value) => normalizeCliToken(value))
     .filter((value) => value.length > 0 && value !== cliFlag);
-  const typeCandidate = typeof definition.type === "string" ? definition.type.trim().toLowerCase() : "string";
-  const type = RUNTIME_FIELD_TYPE_SET.has(typeCandidate) ? (typeCandidate as RuntimeFieldType) : "string";
+  const typeCandidate =
+    typeof definition.type === "string"
+      ? definition.type.trim().toLowerCase()
+      : "string";
+  const type = RUNTIME_FIELD_TYPE_SET.has(typeCandidate)
+    ? (typeCandidate as RuntimeFieldType)
+    : "string";
   const commands = (() => {
-    const normalized = normalizeStringList(definition.commands).filter((value): value is RuntimeFieldCommand =>
-      RUNTIME_FIELD_COMMAND_SET.has(value),
+    const normalized = normalizeStringList(definition.commands).filter(
+      (value): value is RuntimeFieldCommand =>
+        RUNTIME_FIELD_COMMAND_SET.has(value),
     );
     if (normalized.length > 0) {
       return normalized;
@@ -305,7 +398,8 @@ function normalizeRuntimeFieldDefinition(definition: RuntimeFieldDefinition): Ru
     metadata_key: metadataKey,
     cli_flag: cliFlag,
     cli_aliases: cliAliases,
-    description: description && description.length > 0 ? description : undefined,
+    description:
+      description && description.length > 0 ? description : undefined,
     type,
     commands,
     repeatable: definition.repeatable === true || type === "string_array",
@@ -330,16 +424,23 @@ function normalizeRuntimeStatusDefinitions(
   if (values.length > 0) {
     return values;
   }
-  return sortRuntimeStatusDefinitions(DEFAULT_RUNTIME_STATUS_DEFINITIONS.map((definition, index) =>
-    normalizeRuntimeStatusDefinition(definition, index),
-  ).filter((definition): definition is RuntimeStatusDefinitionResolved => definition !== null));
+  return sortRuntimeStatusDefinitions(
+    DEFAULT_RUNTIME_STATUS_DEFINITIONS.map((definition, index) =>
+      normalizeRuntimeStatusDefinition(definition, index),
+    ).filter(
+      (definition): definition is RuntimeStatusDefinitionResolved =>
+        definition !== null,
+    ),
+  );
 }
 
 function sortRuntimeStatusDefinitions(
   definitions: RuntimeStatusDefinitionResolved[],
 ): RuntimeStatusDefinitionResolved[] {
   return definitions.sort((left, right) =>
-    left.order === right.order ? left.id.localeCompare(right.id) : left.order - right.order,
+    left.order === right.order
+      ? left.id.localeCompare(right.id)
+      : left.order - right.order,
   );
 }
 
@@ -353,32 +454,52 @@ function normalizeRuntimeFieldDefinitions(
       dedupedByKey.set(normalized.key, normalized);
     }
   }
-  return [...dedupedByKey.values()].sort((left, right) => left.key.localeCompare(right.key));
+  return [...dedupedByKey.values()].sort((left, right) =>
+    left.key.localeCompare(right.key),
+  );
 }
 
-function serializeRuntimeStatusDefinition(definition: RuntimeStatusDefinitionResolved): RuntimeStatusDefinition {
+function serializeRuntimeStatusDefinition(
+  definition: RuntimeStatusDefinitionResolved,
+): RuntimeStatusDefinition {
   return {
     id: definition.id,
-    aliases: definition.aliases.length > 0 ? [...definition.aliases] : undefined,
+    aliases:
+      definition.aliases.length > 0 ? [...definition.aliases] : undefined,
     roles: definition.roles.length > 0 ? [...definition.roles] : undefined,
     description: definition.description,
     order: definition.order,
   };
 }
 
-function serializeRuntimeFieldDefinition(definition: RuntimeFieldDefinitionResolved): RuntimeFieldDefinition {
+function serializeRuntimeFieldDefinition(
+  definition: RuntimeFieldDefinitionResolved,
+): RuntimeFieldDefinition {
   return {
     key: definition.key,
-    metadata_key: definition.metadata_key !== definition.key ? definition.metadata_key : undefined,
-    cli_flag: definition.cli_flag !== keyToDefaultCliFlag(definition.key) ? definition.cli_flag : undefined,
-    cli_aliases: definition.cli_aliases.length > 0 ? [...definition.cli_aliases] : undefined,
+    metadata_key:
+      definition.metadata_key !== definition.key
+        ? definition.metadata_key
+        : undefined,
+    cli_flag:
+      definition.cli_flag !== keyToDefaultCliFlag(definition.key)
+        ? definition.cli_flag
+        : undefined,
+    cli_aliases:
+      definition.cli_aliases.length > 0
+        ? [...definition.cli_aliases]
+        : undefined,
     description: definition.description,
     type: definition.type,
     commands: [...definition.commands],
     repeatable: definition.repeatable === true ? true : undefined,
     required: definition.required === true ? true : undefined,
-    required_on_create: definition.required_on_create === true ? true : undefined,
-    required_types: definition.required_types.length > 0 ? [...definition.required_types] : undefined,
+    required_on_create:
+      definition.required_on_create === true ? true : undefined,
+    required_types:
+      definition.required_types.length > 0
+        ? [...definition.required_types]
+        : undefined,
     allow_unset: definition.allow_unset === false ? false : undefined,
   };
 }
@@ -386,25 +507,32 @@ function serializeRuntimeFieldDefinition(definition: RuntimeFieldDefinitionResol
 function normalizeUnknownFieldPolicy(
   policy: RuntimeSchemaSettings["unknown_field_policy"] | undefined,
 ): RuntimeSchemaSettings["unknown_field_policy"] {
-  const candidate = typeof policy === "string" ? policy.trim().toLowerCase() : "allow";
+  const candidate =
+    typeof policy === "string" ? policy.trim().toLowerCase() : "allow";
   return RUNTIME_UNKNOWN_FIELD_POLICY_SET.has(candidate)
-    ? candidate as RuntimeSchemaSettings["unknown_field_policy"]
+    ? (candidate as RuntimeSchemaSettings["unknown_field_policy"])
     : "allow";
 }
 
-/**
- * Implements normalize runtime schema settings for the public runtime surface of this module.
- */
-export function normalizeRuntimeSchemaSettings(schema: Partial<RuntimeSchemaSettings> | undefined): RuntimeSchemaSettings {
+/** Implements normalize runtime schema settings for the public runtime surface of this module. */
+export function normalizeRuntimeSchemaSettings(
+  schema: Partial<RuntimeSchemaSettings> | undefined,
+): RuntimeSchemaSettings {
   const files = {
     ...DEFAULT_RUNTIME_SCHEMA_FILE_PATHS,
     ...schema?.files,
   };
-  const statusesSource = schema?.statuses && schema.statuses.length > 0 ? schema.statuses : DEFAULT_RUNTIME_STATUS_DEFINITIONS;
+  const statusesSource =
+    schema?.statuses && schema.statuses.length > 0
+      ? schema.statuses
+      : DEFAULT_RUNTIME_STATUS_DEFINITIONS;
   const normalizedStatuses = normalizeRuntimeStatusDefinitions(statusesSource);
   const normalizedFields = normalizeRuntimeFieldDefinitions(schema?.fields);
   return {
-    version: typeof schema?.version === "number" && Number.isFinite(schema.version) ? Math.floor(schema.version) : 1,
+    version:
+      typeof schema?.version === "number" && Number.isFinite(schema.version)
+        ? Math.floor(schema.version)
+        : 1,
     files,
     statuses: normalizedStatuses.map(serializeRuntimeStatusDefinition),
     fields: normalizedFields.map(serializeRuntimeFieldDefinition),
@@ -413,7 +541,9 @@ export function normalizeRuntimeSchemaSettings(schema: Partial<RuntimeSchemaSett
       ...normalizeRuntimeWorkflow(schema?.workflow),
     },
     type_workflows: normalizeTypeWorkflowDefinitions(schema?.type_workflows),
-    unknown_field_policy: normalizeUnknownFieldPolicy(schema?.unknown_field_policy),
+    unknown_field_policy: normalizeUnknownFieldPolicy(
+      schema?.unknown_field_policy,
+    ),
   };
 }
 
@@ -445,7 +575,11 @@ function buildWorkflowsFileSeed(): unknown {
   };
 }
 
-function parseOptionalJson(raw: string, warningKey: string, warnings: string[]): unknown | undefined {
+function parseOptionalJson(
+  raw: string,
+  warningKey: string,
+  warnings: string[],
+): unknown | undefined {
   try {
     return JSON.parse(raw) as unknown;
   } catch {
@@ -454,7 +588,9 @@ function parseOptionalJson(raw: string, warningKey: string, warnings: string[]):
   }
 }
 
-function readTypeDefinitionsFromSchemaFile(parsed: unknown): ItemTypeDefinition[] | undefined {
+function readTypeDefinitionsFromSchemaFile(
+  parsed: unknown,
+): ItemTypeDefinition[] | undefined {
   if (Array.isArray(parsed)) {
     return parsed as ItemTypeDefinition[];
   }
@@ -474,7 +610,9 @@ function readTypeDefinitionsFromSchemaFile(parsed: unknown): ItemTypeDefinition[
   return undefined;
 }
 
-function readStatusesFromSchemaFile(parsed: unknown): RuntimeStatusDefinition[] | undefined {
+function readStatusesFromSchemaFile(
+  parsed: unknown,
+): RuntimeStatusDefinition[] | undefined {
   if (Array.isArray(parsed)) {
     return parsed as RuntimeStatusDefinition[];
   }
@@ -491,7 +629,9 @@ function readStatusesFromSchemaFile(parsed: unknown): RuntimeStatusDefinition[] 
   return undefined;
 }
 
-function readFieldsFromSchemaFile(parsed: unknown): RuntimeFieldDefinition[] | undefined {
+function readFieldsFromSchemaFile(
+  parsed: unknown,
+): RuntimeFieldDefinition[] | undefined {
   if (Array.isArray(parsed)) {
     return parsed as RuntimeFieldDefinition[];
   }
@@ -508,21 +648,33 @@ function readFieldsFromSchemaFile(parsed: unknown): RuntimeFieldDefinition[] | u
   return undefined;
 }
 
-function readWorkflowFromSchemaFile(parsed: unknown): RuntimeWorkflowDefinition | undefined {
+function readWorkflowFromSchemaFile(
+  parsed: unknown,
+): RuntimeWorkflowDefinition | undefined {
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     return undefined;
   }
   const record = parsed as Record<string, unknown>;
-  if (typeof record.workflow === "object" && record.workflow !== null && !Array.isArray(record.workflow)) {
+  if (
+    typeof record.workflow === "object" &&
+    record.workflow !== null &&
+    !Array.isArray(record.workflow)
+  ) {
     return record.workflow as RuntimeWorkflowDefinition;
   }
-  if (typeof record.workflows === "object" && record.workflows !== null && !Array.isArray(record.workflows)) {
+  if (
+    typeof record.workflows === "object" &&
+    record.workflows !== null &&
+    !Array.isArray(record.workflows)
+  ) {
     return record.workflows as RuntimeWorkflowDefinition;
   }
   return record as RuntimeWorkflowDefinition;
 }
 
-function readTypeWorkflowsFromSchemaFile(parsed: unknown): TypeWorkflowDefinition[] | undefined {
+function readTypeWorkflowsFromSchemaFile(
+  parsed: unknown,
+): TypeWorkflowDefinition[] | undefined {
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     return undefined;
   }
@@ -533,10 +685,12 @@ function readTypeWorkflowsFromSchemaFile(parsed: unknown): TypeWorkflowDefinitio
   return undefined;
 }
 
-/**
- * Implements file path for schema section for the public runtime surface of this module.
- */
-export function filePathForSchemaSection(pmRoot: string, configuredPath: string | undefined, fallbackPath: string): string {
+/** Implements file path for schema section for the public runtime surface of this module. */
+export function filePathForSchemaSection(
+  pmRoot: string,
+  configuredPath: string | undefined,
+  fallbackPath: string,
+): string {
   const normalized = configuredPath?.trim() || fallbackPath;
   if (path.isAbsolute(normalized)) {
     return normalized;
@@ -544,19 +698,19 @@ export function filePathForSchemaSection(pmRoot: string, configuredPath: string 
   return path.join(pmRoot, normalized);
 }
 
-/**
- * Resolves the active tracker's `schema/types.json` path so user-facing hints
- * (e.g. the invalid-type error) point at the real `--pm-path` location instead
- * of the hardcoded `.agents/pm` default. Mirrors how `pm schema add/remove-type`
- * report their target path.
- */
-export function resolveItemTypesFilePath(pmRoot: string, schema: RuntimeSchemaSettings): string {
-  return filePathForSchemaSection(pmRoot, schema.files.types, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types);
+/** Resolves the active tracker's `schema/types.json` path so user-facing hints (e.g. the invalid-type error) point at the real `--pm-path` location instead of the hardcoded `.agents/pm` default. Mirrors how `pm schema add/remove-type` report their target path. */
+export function resolveItemTypesFilePath(
+  pmRoot: string,
+  schema: RuntimeSchemaSettings,
+): string {
+  return filePathForSchemaSection(
+    pmRoot,
+    schema.files.types,
+    DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types,
+  );
 }
 
-/**
- * Implements ensure runtime schema file scaffold for the public runtime surface of this module.
- */
+/** Implements ensure runtime schema file scaffold for the public runtime surface of this module. */
 export async function ensureRuntimeSchemaFileScaffold(
   pmRoot: string,
   schema: RuntimeSchemaSettings,
@@ -564,19 +718,35 @@ export async function ensureRuntimeSchemaFileScaffold(
   const normalizedSchema = normalizeRuntimeSchemaSettings(schema);
   const specs: Array<{ path: string; seed: unknown }> = [
     {
-      path: filePathForSchemaSection(pmRoot, normalizedSchema.files.types, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types),
+      path: filePathForSchemaSection(
+        pmRoot,
+        normalizedSchema.files.types,
+        DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types,
+      ),
       seed: buildTypesFileSeed(),
     },
     {
-      path: filePathForSchemaSection(pmRoot, normalizedSchema.files.statuses, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.statuses),
+      path: filePathForSchemaSection(
+        pmRoot,
+        normalizedSchema.files.statuses,
+        DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.statuses,
+      ),
       seed: buildStatusesFileSeed(),
     },
     {
-      path: filePathForSchemaSection(pmRoot, normalizedSchema.files.fields, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.fields),
+      path: filePathForSchemaSection(
+        pmRoot,
+        normalizedSchema.files.fields,
+        DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.fields,
+      ),
       seed: buildFieldsFileSeed(),
     },
     {
-      path: filePathForSchemaSection(pmRoot, normalizedSchema.files.workflows, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.workflows),
+      path: filePathForSchemaSection(
+        pmRoot,
+        normalizedSchema.files.workflows,
+        DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.workflows,
+      ),
       seed: buildWorkflowsFileSeed(),
     },
   ];
@@ -593,22 +763,28 @@ export async function ensureRuntimeSchemaFileScaffold(
   };
 }
 
-/**
- * Implements load runtime schema from optional files for the public runtime surface of this module.
- */
+/** Implements load runtime schema from optional files for the public runtime surface of this module. */
 export async function loadRuntimeSchemaFromOptionalFiles(
   pmRoot: string,
   schema: RuntimeSchemaSettings,
 ): Promise<LoadedRuntimeSchemaSections> {
   const normalizedSchema = normalizeRuntimeSchemaSettings(schema);
   const warnings: string[] = [];
-  const typeFilePath = filePathForSchemaSection(pmRoot, normalizedSchema.files.types, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types);
+  const typeFilePath = filePathForSchemaSection(
+    pmRoot,
+    normalizedSchema.files.types,
+    DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types,
+  );
   const statusFilePath = filePathForSchemaSection(
     pmRoot,
     normalizedSchema.files.statuses,
     DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.statuses,
   );
-  const fieldsFilePath = filePathForSchemaSection(pmRoot, normalizedSchema.files.fields, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.fields);
+  const fieldsFilePath = filePathForSchemaSection(
+    pmRoot,
+    normalizedSchema.files.fields,
+    DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.fields,
+  );
   const workflowsFilePath = filePathForSchemaSection(
     pmRoot,
     normalizedSchema.files.workflows,
@@ -621,7 +797,10 @@ export async function loadRuntimeSchemaFromOptionalFiles(
   let loadedWorkflow: RuntimeWorkflowDefinition | undefined;
   let loadedTypeWorkflows: TypeWorkflowDefinition[] | undefined;
 
-  const readAndParse = async (targetPath: string, warningKey: string): Promise<unknown | undefined> => {
+  const readAndParse = async (
+    targetPath: string,
+    warningKey: string,
+  ): Promise<unknown | undefined> => {
     const raw = await readFileIfExists(targetPath);
     if (raw === null) {
       return undefined;
@@ -629,7 +808,10 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     return parseOptionalJson(raw, warningKey, warnings);
   };
 
-  const parsedTypes = await readAndParse(typeFilePath, "runtime_schema_types_invalid_json");
+  const parsedTypes = await readAndParse(
+    typeFilePath,
+    "runtime_schema_types_invalid_json",
+  );
   if (parsedTypes !== undefined) {
     loadedTypeDefinitions = readTypeDefinitionsFromSchemaFile(parsedTypes);
     if (loadedTypeDefinitions === undefined) {
@@ -637,7 +819,10 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     }
   }
 
-  const parsedStatuses = await readAndParse(statusFilePath, "runtime_schema_statuses_invalid_json");
+  const parsedStatuses = await readAndParse(
+    statusFilePath,
+    "runtime_schema_statuses_invalid_json",
+  );
   if (parsedStatuses !== undefined) {
     loadedStatuses = readStatusesFromSchemaFile(parsedStatuses);
     if (loadedStatuses === undefined) {
@@ -645,7 +830,10 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     }
   }
 
-  const parsedFields = await readAndParse(fieldsFilePath, "runtime_schema_fields_invalid_json");
+  const parsedFields = await readAndParse(
+    fieldsFilePath,
+    "runtime_schema_fields_invalid_json",
+  );
   if (parsedFields !== undefined) {
     loadedFields = readFieldsFromSchemaFile(parsedFields);
     if (loadedFields === undefined) {
@@ -653,7 +841,10 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     }
   }
 
-  const parsedWorkflow = await readAndParse(workflowsFilePath, "runtime_schema_workflows_invalid_json");
+  const parsedWorkflow = await readAndParse(
+    workflowsFilePath,
+    "runtime_schema_workflows_invalid_json",
+  );
   if (parsedWorkflow !== undefined) {
     loadedWorkflow = readWorkflowFromSchemaFile(parsedWorkflow);
     if (loadedWorkflow === undefined) {
@@ -672,7 +863,10 @@ export async function loadRuntimeSchemaFromOptionalFiles(
       ...normalizedSchema.workflow,
       ...loadedWorkflow,
     },
-    type_workflows: [...(normalizedSchema.type_workflows ?? []), ...(loadedTypeWorkflows ?? [])],
+    type_workflows: [
+      ...(normalizedSchema.type_workflows ?? []),
+      ...(loadedTypeWorkflows ?? []),
+    ],
   });
 
   return {
@@ -688,7 +882,9 @@ function preferredStatusForRole(
   role: RuntimeStatusRole,
   fallbackValues: string[],
 ): string | undefined {
-  const withRole = definitions.filter((definition) => definition.roles.includes(role));
+  const withRole = definitions.filter((definition) =>
+    definition.roles.includes(role),
+  );
   if (withRole.length > 0) {
     return withRole[0].id;
   }
@@ -703,14 +899,19 @@ function preferredStatusForRole(
   return definitions[0]?.id;
 }
 
-/**
- * Implements resolve runtime status registry for the public runtime surface of this module.
- */
-export function resolveRuntimeStatusRegistry(schema: RuntimeSchemaSettings): RuntimeStatusRegistry {
+/** Implements resolve runtime status registry for the public runtime surface of this module. */
+export function resolveRuntimeStatusRegistry(
+  schema: RuntimeSchemaSettings,
+): RuntimeStatusRegistry {
   const normalizedSchema = normalizeRuntimeSchemaSettings(schema);
-  const definitions = normalizedSchema.statuses.map((definition, index) =>
-    normalizeRuntimeStatusDefinition(definition, index),
-  ).filter((definition): definition is RuntimeStatusDefinitionResolved => definition !== null);
+  const definitions = normalizedSchema.statuses
+    .map((definition, index) =>
+      normalizeRuntimeStatusDefinition(definition, index),
+    )
+    .filter(
+      (definition): definition is RuntimeStatusDefinitionResolved =>
+        definition !== null,
+    );
   const aliasToId = new Map<string, string>();
   const byId = new Map<string, RuntimeStatusDefinitionResolved>();
   for (const definition of definitions) {
@@ -732,7 +933,11 @@ export function resolveRuntimeStatusRegistry(schema: RuntimeSchemaSettings): Run
   const draftStatuses = new Set<string>();
   for (const definition of definitions) {
     const roles = new Set(definition.roles);
-    if (roles.has("terminal") || roles.has("terminal_done") || roles.has("terminal_canceled")) {
+    if (
+      roles.has("terminal") ||
+      roles.has("terminal_done") ||
+      roles.has("terminal_canceled")
+    ) {
       terminalStatuses.add(definition.id);
     }
     if (roles.has("terminal_done")) {
@@ -754,13 +959,24 @@ export function resolveRuntimeStatusRegistry(schema: RuntimeSchemaSettings): Run
   const workflow = normalizedSchema.workflow;
   const openStatus =
     normalizeStatusId(workflow.open_status) ??
-    preferredStatusForRole(definitions, "default_open", ["open", "in_progress", STATUS_VALUES[0]]);
+    preferredStatusForRole(definitions, "default_open", [
+      "open",
+      "in_progress",
+      STATUS_VALUES[0],
+    ]);
   const closeStatus =
     normalizeStatusId(workflow.close_status) ??
-    preferredStatusForRole(definitions, "default_close", ["closed", "done", "complete"]);
+    preferredStatusForRole(definitions, "default_close", [
+      "closed",
+      "done",
+      "complete",
+    ]);
   const canceledStatus =
     normalizeStatusId(workflow.canceled_status) ??
-    preferredStatusForRole(definitions, "default_cancel", ["canceled", "cancelled"]);
+    preferredStatusForRole(definitions, "default_cancel", [
+      "canceled",
+      "cancelled",
+    ]);
 
   return {
     definitions,
@@ -778,10 +994,11 @@ export function resolveRuntimeStatusRegistry(schema: RuntimeSchemaSettings): Run
   };
 }
 
-/**
- * Implements normalize status input with registry for the public runtime surface of this module.
- */
-export function normalizeStatusInputWithRegistry(value: unknown, registry: RuntimeStatusRegistry): string | undefined {
+/** Implements normalize status input with registry for the public runtime surface of this module. */
+export function normalizeStatusInputWithRegistry(
+  value: unknown,
+  registry: RuntimeStatusRegistry,
+): string | undefined {
   const normalized = normalizeStatusToken(value);
   if (!normalized) {
     return undefined;
@@ -789,22 +1006,30 @@ export function normalizeStatusInputWithRegistry(value: unknown, registry: Runti
   return registry.alias_to_id.get(normalized);
 }
 
-/**
- * Implements resolve runtime field registry for the public runtime surface of this module.
- */
-export function resolveRuntimeFieldRegistry(schema: RuntimeSchemaSettings): RuntimeFieldRegistry {
+/** Implements resolve runtime field registry for the public runtime surface of this module. */
+export function resolveRuntimeFieldRegistry(
+  schema: RuntimeSchemaSettings,
+): RuntimeFieldRegistry {
   const normalizedSchema = normalizeRuntimeSchemaSettings(schema);
   const dedupedByKey = new Map<string, RuntimeFieldDefinitionResolved>();
   const normalizedFields = normalizedSchema.fields
     .map((definition) => normalizeRuntimeFieldDefinition(definition))
-    .filter((definition): definition is RuntimeFieldDefinitionResolved => definition !== null);
+    .filter(
+      (definition): definition is RuntimeFieldDefinitionResolved =>
+        definition !== null,
+    );
   for (const normalized of normalizedFields) {
     dedupedByKey.set(normalized.key, normalized);
   }
-  const definitions = [...dedupedByKey.values()].sort((left, right) => left.key.localeCompare(right.key));
+  const definitions = [...dedupedByKey.values()].sort((left, right) =>
+    left.key.localeCompare(right.key),
+  );
   const byKey = new Map<string, RuntimeFieldDefinitionResolved>();
   const byCliToken = new Map<string, RuntimeFieldDefinitionResolved>();
-  const commandToFields = new Map<RuntimeFieldCommand, RuntimeFieldDefinitionResolved[]>();
+  const commandToFields = new Map<
+    RuntimeFieldCommand,
+    RuntimeFieldDefinitionResolved[]
+  >();
   for (const definition of definitions) {
     byKey.set(definition.key, definition);
     byCliToken.set(definition.cli_flag, definition);
@@ -829,17 +1054,18 @@ export function resolveRuntimeFieldRegistry(schema: RuntimeSchemaSettings): Runt
   };
 }
 
-/**
- * Implements runtime field option target for the public runtime surface of this module.
- */
-export function runtimeFieldOptionTarget(field: RuntimeFieldDefinitionResolved): string {
+/** Implements runtime field option target for the public runtime surface of this module. */
+export function runtimeFieldOptionTarget(
+  field: RuntimeFieldDefinitionResolved,
+): string {
   return toCamelCase(field.key);
 }
 
-/**
- * Implements status is terminal for the public runtime surface of this module.
- */
-export function statusIsTerminal(status: string, registry: RuntimeStatusRegistry): boolean {
+/** Implements status is terminal for the public runtime surface of this module. */
+export function statusIsTerminal(
+  status: string,
+  registry: RuntimeStatusRegistry,
+): boolean {
   const normalized = normalizeStatusInputWithRegistry(status, registry);
   if (!normalized) {
     return false;

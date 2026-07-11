@@ -13,9 +13,7 @@
 const BOOLEAN_TRUE_VALUES = new Set(["true", "1", "yes", "on"]);
 const BOOLEAN_FALSE_VALUES = new Set(["false", "0", "no", "off"]);
 
-/**
- * Returns the first non-empty string value found for `key` or any alias.
- */
+/** Returns the first non-empty string value found for `key` or any alias. */
 export function readStringOption(
   options: Record<string, unknown>,
   key: string,
@@ -64,9 +62,7 @@ export function readBooleanOption(
   return undefined;
 }
 
-/**
- * Splits a comma-separated string option into trimmed, non-empty entries.
- */
+/** Splits a comma-separated string option into trimmed, non-empty entries. */
 export function readCsvListOption(
   options: Record<string, unknown>,
   key: string,

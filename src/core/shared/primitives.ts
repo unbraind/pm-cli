@@ -16,31 +16,28 @@ export function toNonEmptyString(value: unknown): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
-/**
- * Implements to non empty string or undefined for the public runtime surface of this module.
- */
-export function toNonEmptyStringOrUndefined(value: unknown): string | undefined {
+/** Implements to non empty string or undefined for the public runtime surface of this module. */
+export function toNonEmptyStringOrUndefined(
+  value: unknown,
+): string | undefined {
   const result = toNonEmptyString(value);
   return result ?? undefined;
 }
 
-/**
- * Implements trim trailing slashes for the public runtime surface of this module.
- */
+/** Implements trim trailing slashes for the public runtime surface of this module. */
 export function trimTrailingSlashes(value: string): string {
   return value.replaceAll(/\/+$/g, "");
 }
 
-/**
- * Implements check whether finite number array for the public runtime surface of this module.
- */
+/** Implements check whether finite number array for the public runtime surface of this module. */
 export function isFiniteNumberArray(value: unknown): value is number[] {
-  return Array.isArray(value) && value.every((entry) => typeof entry === "number" && Number.isFinite(entry));
+  return (
+    Array.isArray(value) &&
+    value.every((entry) => typeof entry === "number" && Number.isFinite(entry))
+  );
 }
 
-/**
- * Implements to error message for the public runtime surface of this module.
- */
+/** Implements to error message for the public runtime surface of this module. */
 export function toErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     const message = error.message.trim();
@@ -49,11 +46,7 @@ export function toErrorMessage(error: unknown): string {
   return String(error);
 }
 
-/**
- * Parse either a finite numeric literal or a non-empty numeric string.
- * Returns `null` for unsupported input types, empty strings, and non-finite
- * numeric values.
- */
+/** Parse either a finite numeric literal or a non-empty numeric string. Returns `null` for unsupported input types, empty strings, and non-finite numeric values. */
 export function coerceFiniteNumber(value: unknown): number | null {
   const parsed =
     typeof value === "number"
@@ -64,9 +57,7 @@ export function coerceFiniteNumber(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-/**
- * Implements coerce positive integer for the public runtime surface of this module.
- */
+/** Implements coerce positive integer for the public runtime surface of this module. */
 export function coercePositiveInteger(value: unknown): number | null {
   const parsed = coerceFiniteNumber(value);
   if (parsed === null || parsed <= 0 || !Number.isInteger(parsed)) {
@@ -75,10 +66,12 @@ export function coercePositiveInteger(value: unknown): number | null {
   return parsed;
 }
 
-/**
- * Implements coerce number in range for the public runtime surface of this module.
- */
-export function coerceNumberInRange(value: unknown, min: number, max: number): number | null {
+/** Implements coerce number in range for the public runtime surface of this module. */
+export function coerceNumberInRange(
+  value: unknown,
+  min: number,
+  max: number,
+): number | null {
   const parsed = coerceFiniteNumber(value);
   if (parsed === null || parsed < min || parsed > max) {
     return null;
@@ -114,24 +107,23 @@ export function asRecordLoose(value: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>;
 }
 
-/**
- * Narrow a value to a property-bearing object or function. Dynamic module
- * exports can be function/class values with static lifecycle properties, so
- * activation boundaries need a wider record shape than plain-object parsing.
- */
-export function asPropertyRecord(value: unknown): Record<string, unknown> | null {
-  if ((typeof value !== "object" && typeof value !== "function") || value === null) {
+/** Narrow a value to a property-bearing object or function. Dynamic module exports can be function/class values with static lifecycle properties, so activation boundaries need a wider record shape than plain-object parsing. */
+export function asPropertyRecord(
+  value: unknown,
+): Record<string, unknown> | null {
+  if (
+    (typeof value !== "object" && typeof value !== "function") ||
+    value === null
+  ) {
     return null;
   }
   return value as Record<string, unknown>;
 }
 
-/**
- * Resolve the module or default export record that owns an `activate` lifecycle
- * function. Accepts object and function/class-shaped exports so runtime loading
- * and SDK tests share the same extension interop rule.
- */
-export function resolveActivatablePropertyRecord(value: unknown): Record<string, unknown> | null {
+/** Resolve the module or default export record that owns an `activate` lifecycle function. Accepts object and function/class-shaped exports so runtime loading and SDK tests share the same extension interop rule. */
+export function resolveActivatablePropertyRecord(
+  value: unknown,
+): Record<string, unknown> | null {
   const moduleRecord = asPropertyRecord(value);
   if (!moduleRecord) {
     return null;

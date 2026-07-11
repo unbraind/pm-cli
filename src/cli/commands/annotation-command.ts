@@ -12,7 +12,11 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import { resolveAuthor } from "../../core/shared/author.js";
-import { locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
+import {
+  locateItem,
+  mutateItem,
+  readLocatedItem,
+} from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { parseLimit } from "../shared-parsers.js";
@@ -57,7 +61,10 @@ interface AnnotationCommandConfig<TKey extends string> {
   conflictGuidance: OwnershipConflictGuidance;
 }
 
-type AnnotationCommandResult<TKey extends string, TEntry extends AnnotationEntry> = {
+type AnnotationCommandResult<
+  TKey extends string,
+  TEntry extends AnnotationEntry,
+> = {
   id: string;
   count: number;
 } & Record<TKey, TEntry[]> & {
@@ -67,37 +74,45 @@ type AnnotationCommandResult<TKey extends string, TEntry extends AnnotationEntry
     limit?: number;
   };
 
-/**
- * Implements limit annotation entries for the public runtime surface of this module.
- */
-export function limitAnnotationEntries<TEntry>(values: TEntry[], limit: number | undefined): TEntry[] {
+/** Implements limit annotation entries for the public runtime surface of this module. */
+export function limitAnnotationEntries<TEntry>(
+  values: TEntry[],
+  limit: number | undefined,
+): TEntry[] {
   if (limit === undefined) return values;
   if (limit === 0) return [];
   return values.slice(Math.max(0, values.length - limit));
 }
 
-/**
- * Implements read annotation entries for the public runtime surface of this module.
- */
-export function readAnnotationEntries<TEntry>(source: Record<string, unknown>, collectionKey: string): TEntry[] {
+/** Implements read annotation entries for the public runtime surface of this module. */
+export function readAnnotationEntries<TEntry>(
+  source: Record<string, unknown>,
+  collectionKey: string,
+): TEntry[] {
   const value = source[collectionKey];
   return Array.isArray(value) ? (value as TEntry[]) : [];
 }
 
-/**
- * Implements parse annotation text input for the public runtime surface of this module.
- */
-export function parseAnnotationTextInput(raw: string, options: { stripPlainTextPrefix?: boolean } = {}): string {
+/** Implements parse annotation text input for the public runtime surface of this module. */
+export function parseAnnotationTextInput(
+  raw: string,
+  options: { stripPlainTextPrefix?: boolean } = {},
+): string {
   const trimmed = raw.trim();
   if (!trimmed) {
     return "";
   }
   const textPrefixMatch = /^(?:[-*+]\s*)?text\s*[:=]/i.exec(trimmed);
-  if (options.stripPlainTextPrefix === true && textPrefixMatch && !trimmed.startsWith("```")) {
+  if (
+    options.stripPlainTextPrefix === true &&
+    textPrefixMatch &&
+    !trimmed.startsWith("```")
+  ) {
     const text = trimmed.slice(textPrefixMatch[0].length).trim();
     return text || trimmed;
   }
-  const looksStructured = /^(?:[-*+]\s*)?text\s*[:=]/im.test(trimmed) || trimmed.startsWith("```");
+  const looksStructured =
+    /^(?:[-*+]\s*)?text\s*[:=]/im.test(trimmed) || trimmed.startsWith("```");
   if (!looksStructured) {
     return trimmed;
   }
@@ -114,10 +129,11 @@ export function parseAnnotationTextInput(raw: string, options: { stripPlainTextP
   }
 }
 
-/**
- * Implements wrap ownership conflict for the public runtime surface of this module.
- */
-export function wrapOwnershipConflict(error: unknown, guidance: OwnershipConflictGuidance): never {
+/** Implements wrap ownership conflict for the public runtime surface of this module. */
+export function wrapOwnershipConflict(
+  error: unknown,
+  guidance: OwnershipConflictGuidance,
+): never {
   if (
     error instanceof PmCliError &&
     error.exitCode === EXIT_CODE.CONFLICT &&
@@ -138,7 +154,10 @@ function annotationStdinHint(collectionKey: string): string {
   return collectionKey === "comments" ? "--stdin" : "--add -";
 }
 
-function assertAnnotationAddValueIsNotFlagLike(raw: string, config: AnnotationCommandConfig<string>): void {
+function assertAnnotationAddValueIsNotFlagLike(
+  raw: string,
+  config: AnnotationCommandConfig<string>,
+): void {
   const emptyFlag = config.input.emptyFlag ?? "--add";
   if (emptyFlag !== "--add") {
     return;
@@ -166,10 +185,11 @@ function assertAnnotationAddValueIsNotFlagLike(raw: string, config: AnnotationCo
   );
 }
 
-/**
- * Implements run annotation command for the public runtime surface of this module.
- */
-export async function runAnnotationCommand<TKey extends string, TEntry extends AnnotationEntry>(
+/** Implements run annotation command for the public runtime surface of this module. */
+export async function runAnnotationCommand<
+  TKey extends string,
+  TEntry extends AnnotationEntry,
+>(
   id: string,
   options: AnnotationCommandOptions,
   global: GlobalOptions,
@@ -177,20 +197,41 @@ export async function runAnnotationCommand<TKey extends string, TEntry extends A
 ): Promise<AnnotationCommandResult<TKey, TEntry>> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
   const limit = parseLimit(options.limit);
 
   if (config.input.mode === "list") {
-    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+    const located = await locateItem(
+      pmRoot,
+      id,
+      settings.id_prefix,
+      settings.item_format,
+      typeRegistry.type_to_folder,
+    );
     if (!located) {
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }
     const loaded = await readLocatedItem(located, { schema: settings.schema });
-    const allEntries = readAnnotationEntries<TEntry>(loaded.document.metadata, config.collectionKey);
-    return renderAnnotationResult(located.id, config.collectionKey, allEntries, limit, options.includeMeta === true);
+    const allEntries = readAnnotationEntries<TEntry>(
+      loaded.document.metadata,
+      config.collectionKey,
+    );
+    return renderAnnotationResult(
+      located.id,
+      config.collectionKey,
+      allEntries,
+      limit,
+      options.includeMeta === true,
+    );
   }
 
   const author = resolveAuthor(options.author, settings.author_default);
@@ -209,8 +250,15 @@ export async function runAnnotationCommand<TKey extends string, TEntry extends A
         force: options.force,
         bypassAssigneeConflict: config.allowAuditBypass,
         mutate(document) {
-          const entries = readAnnotationEntries<TEntry>(document.metadata, config.collectionKey);
-          const arrayIndex = resolveAnnotationIndex(config.input.index, entries.length, config.collectionKey);
+          const entries = readAnnotationEntries<TEntry>(
+            document.metadata,
+            config.collectionKey,
+          );
+          const arrayIndex = resolveAnnotationIndex(
+            config.input.index,
+            entries.length,
+            config.collectionKey,
+          );
           entries.splice(arrayIndex, 1);
           document.metadata[config.collectionKey] = entries as never;
           return { changedFields: [config.collectionKey] };
@@ -219,15 +267,27 @@ export async function runAnnotationCommand<TKey extends string, TEntry extends A
     } catch (error: unknown) {
       wrapOwnershipConflict(error, config.conflictGuidance);
     }
-    const allEntries = readAnnotationEntries<TEntry>(result.item, config.collectionKey);
-    return renderAnnotationResult(result.item.id, config.collectionKey, allEntries, limit, options.includeMeta === true);
+    const allEntries = readAnnotationEntries<TEntry>(
+      result.item,
+      config.collectionKey,
+    );
+    return renderAnnotationResult(
+      result.item.id,
+      config.collectionKey,
+      allEntries,
+      limit,
+      options.includeMeta === true,
+    );
   }
 
   const rawText = config.input.rawValue ?? config.input.value ?? "";
   assertAnnotationAddValueIsNotFlagLike(rawText, config);
   const text = config.parseText(config.input.value ?? "");
   if (!text.trim()) {
-    throw new PmCliError(`${config.input.emptyFlag ?? "--add"} text cannot be empty`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `${config.input.emptyFlag ?? "--add"} text cannot be empty`,
+      EXIT_CODE.USAGE,
+    );
   }
 
   if (config.input.mode === "edit") {
@@ -244,8 +304,15 @@ export async function runAnnotationCommand<TKey extends string, TEntry extends A
         force: options.force,
         bypassAssigneeConflict: config.allowAuditBypass,
         mutate(document) {
-          const entries = readAnnotationEntries<TEntry>(document.metadata, config.collectionKey);
-          const arrayIndex = resolveAnnotationIndex(config.input.index, entries.length, config.collectionKey);
+          const entries = readAnnotationEntries<TEntry>(
+            document.metadata,
+            config.collectionKey,
+          );
+          const arrayIndex = resolveAnnotationIndex(
+            config.input.index,
+            entries.length,
+            config.collectionKey,
+          );
           const existing = entries[arrayIndex];
           entries[arrayIndex] = {
             ...existing,
@@ -259,8 +326,17 @@ export async function runAnnotationCommand<TKey extends string, TEntry extends A
     } catch (error: unknown) {
       wrapOwnershipConflict(error, config.conflictGuidance);
     }
-    const allEntries = readAnnotationEntries<TEntry>(result.item, config.collectionKey);
-    return renderAnnotationResult(result.item.id, config.collectionKey, allEntries, limit, options.includeMeta === true);
+    const allEntries = readAnnotationEntries<TEntry>(
+      result.item,
+      config.collectionKey,
+    );
+    return renderAnnotationResult(
+      result.item.id,
+      config.collectionKey,
+      allEntries,
+      limit,
+      options.includeMeta === true,
+    );
   }
 
   let result: Awaited<ReturnType<typeof mutateItem>>;
@@ -275,7 +351,10 @@ export async function runAnnotationCommand<TKey extends string, TEntry extends A
       force: options.force,
       bypassAssigneeConflict: config.allowAuditBypass,
       mutate(document) {
-        const entries = readAnnotationEntries<TEntry>(document.metadata, config.collectionKey);
+        const entries = readAnnotationEntries<TEntry>(
+          document.metadata,
+          config.collectionKey,
+        );
         entries.push({
           created_at: nowIso(),
           author,
@@ -289,19 +368,31 @@ export async function runAnnotationCommand<TKey extends string, TEntry extends A
     wrapOwnershipConflict(error, config.conflictGuidance);
   }
 
-  const allEntries = readAnnotationEntries<TEntry>(result.item, config.collectionKey);
-  return renderAnnotationResult(result.item.id, config.collectionKey, allEntries, limit, options.includeMeta === true);
+  const allEntries = readAnnotationEntries<TEntry>(
+    result.item,
+    config.collectionKey,
+  );
+  return renderAnnotationResult(
+    result.item.id,
+    config.collectionKey,
+    allEntries,
+    limit,
+    options.includeMeta === true,
+  );
 }
 
-/**
- * Implements resolve annotation index for the public runtime surface of this module.
- */
+/** Implements resolve annotation index for the public runtime surface of this module. */
 export function resolveAnnotationIndex(
   oneBasedIndex: number | undefined,
   count: number,
   collectionKey: string,
 ): number {
-  if (oneBasedIndex === undefined || !Number.isInteger(oneBasedIndex) || oneBasedIndex < 1 || oneBasedIndex > count) {
+  if (
+    oneBasedIndex === undefined ||
+    !Number.isInteger(oneBasedIndex) ||
+    oneBasedIndex < 1 ||
+    oneBasedIndex > count
+  ) {
     const singular = collectionKey.replace(/s$/, "");
     const label = `${singular.charAt(0).toUpperCase()}${singular.slice(1)}`;
     const noun = count === 1 ? `1 ${singular}` : `${count} ${collectionKey}`;
@@ -313,7 +404,10 @@ export function resolveAnnotationIndex(
   return oneBasedIndex - 1;
 }
 
-function renderAnnotationResult<TKey extends string, TEntry extends AnnotationEntry>(
+function renderAnnotationResult<
+  TKey extends string,
+  TEntry extends AnnotationEntry,
+>(
   id: string,
   collectionKey: TKey,
   allEntries: TEntry[],

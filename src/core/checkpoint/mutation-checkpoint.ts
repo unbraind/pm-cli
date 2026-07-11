@@ -18,17 +18,15 @@ import { nowIso } from "../shared/time.js";
 // matched item's pre-mutation updated_at, then restore-to-timestamp on
 // rollback — stays identical across commands and is not duplicated.
 
-/**
- * Documents the mutation checkpoint item payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the mutation checkpoint item payload exchanged by command, SDK, and package integrations. */
 export interface MutationCheckpointItem {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** ISO 8601 timestamp recording when target updated occurred. */
   target_updated_at: string;
 }
 
-/**
- * Documents the loaded mutation checkpoint payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the loaded mutation checkpoint payload exchanged by command, SDK, and package integrations. */
 export interface LoadedMutationCheckpoint {
   /** The full on-disk record so callers can read their command-specific fields. */
   record: Record<string, unknown>;
@@ -36,28 +34,35 @@ export interface LoadedMutationCheckpoint {
   items: MutationCheckpointItem[];
   /** Absolute path the checkpoint was read from. */
   path: string;
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** ISO 8601 timestamp recording when created occurred. */
   created_at: string;
+  /** Value that configures or reports author for this contract. */
   author: string;
 }
 
-/**
- * Documents the checkpoint rollback row payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the checkpoint rollback row payload exchanged by command, SDK, and package integrations. */
 export interface CheckpointRollbackRow {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Lifecycle state reported for status. */
   status: "restored" | "failed";
+  /** Value that configures or reports changed fields for this contract. */
   changed_fields?: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings?: string[];
+  /** Value that configures or reports error for this contract. */
   error?: string;
 }
 
-/**
- * Documents the checkpoint rollback result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the checkpoint rollback result payload exchanged by command, SDK, and package integrations. */
 export interface CheckpointRollbackResult {
+  /** Value that configures or reports rows for this contract. */
   rows: CheckpointRollbackRow[];
+  /** Value that configures or reports restored ids for this contract. */
   restored_ids: string[];
+  /** Number of failed entries represented by this result. */
   failed_count: number;
 }
 
@@ -67,46 +72,52 @@ export type CheckpointRestoreFn = (
   targetUpdatedAt: string,
 ) => Promise<{ changed_fields?: string[]; warnings?: string[] }>;
 
-/**
- * Implements normalize checkpoint id for the public runtime surface of this module.
- */
+/** Implements normalize checkpoint id for the public runtime surface of this module. */
 export function normalizeCheckpointId(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) {
-    throw new PmCliError("--rollback requires a non-empty checkpoint ID", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--rollback requires a non-empty checkpoint ID",
+      EXIT_CODE.USAGE,
+    );
   }
   if (!/^[a-zA-Z0-9._-]+$/.test(trimmed)) {
-    throw new PmCliError("--rollback checkpoint ID must match [a-zA-Z0-9._-]+", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--rollback checkpoint ID must match [a-zA-Z0-9._-]+",
+      EXIT_CODE.USAGE,
+    );
   }
   return trimmed;
 }
 
-/**
- * Implements create checkpoint id for the public runtime surface of this module.
- */
+/** Implements create checkpoint id for the public runtime surface of this module. */
 export function createCheckpointId(prefix: string, nowValue: string): string {
   const compactTimestamp = nowValue.replace(/[-:.TZ]/g, "").slice(0, 14);
   const randomSuffix = Math.random().toString(36).slice(2, 8);
   return `${prefix}-${compactTimestamp}-${randomSuffix}`;
 }
 
-/**
- * Implements checkpoint directory path for the public runtime surface of this module.
- */
-export function checkpointDirectoryPath(pmRoot: string, subdir: string): string {
+/** Implements checkpoint directory path for the public runtime surface of this module. */
+export function checkpointDirectoryPath(
+  pmRoot: string,
+  subdir: string,
+): string {
   return path.join(pmRoot, "checkpoints", subdir);
 }
 
-/**
- * Implements checkpoint file path for the public runtime surface of this module.
- */
-export function checkpointFilePath(pmRoot: string, subdir: string, checkpointId: string): string {
-  return path.join(checkpointDirectoryPath(pmRoot, subdir), `${checkpointId}.json`);
+/** Implements checkpoint file path for the public runtime surface of this module. */
+export function checkpointFilePath(
+  pmRoot: string,
+  subdir: string,
+  checkpointId: string,
+): string {
+  return path.join(
+    checkpointDirectoryPath(pmRoot, subdir),
+    `${checkpointId}.json`,
+  );
 }
 
-/**
- * Implements write mutation checkpoint for the public runtime surface of this module.
- */
+/** Implements write mutation checkpoint for the public runtime surface of this module. */
 export async function writeMutationCheckpoint(
   pmRoot: string,
   subdir: string,
@@ -120,31 +131,47 @@ export async function writeMutationCheckpoint(
   return filePath;
 }
 
-function parseCheckpointItems(record: Record<string, unknown>, checkpointId: string): MutationCheckpointItem[] {
+function parseCheckpointItems(
+  record: Record<string, unknown>,
+  checkpointId: string,
+): MutationCheckpointItem[] {
   if (!Array.isArray(record.items)) {
-    throw new PmCliError(`Checkpoint ${checkpointId} is missing items`, EXIT_CODE.GENERIC_FAILURE);
+    throw new PmCliError(
+      `Checkpoint ${checkpointId} is missing items`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
   }
   return record.items.map((entry) => {
     if (!entry || typeof entry !== "object") {
-      throw new PmCliError(`Checkpoint ${checkpointId} contains an invalid item entry`, EXIT_CODE.GENERIC_FAILURE);
+      throw new PmCliError(
+        `Checkpoint ${checkpointId} contains an invalid item entry`,
+        EXIT_CODE.GENERIC_FAILURE,
+      );
     }
     const row = entry as Record<string, unknown>;
     if (typeof row.id !== "string" || row.id.trim().length === 0) {
-      throw new PmCliError(`Checkpoint ${checkpointId} contains an item entry without ID`, EXIT_CODE.GENERIC_FAILURE);
+      throw new PmCliError(
+        `Checkpoint ${checkpointId} contains an item entry without ID`,
+        EXIT_CODE.GENERIC_FAILURE,
+      );
     }
-    if (typeof row.target_updated_at !== "string" || row.target_updated_at.trim().length === 0) {
+    if (
+      typeof row.target_updated_at !== "string" ||
+      row.target_updated_at.trim().length === 0
+    ) {
       throw new PmCliError(
         `Checkpoint ${checkpointId} contains an item entry without target_updated_at`,
         EXIT_CODE.GENERIC_FAILURE,
       );
     }
-    return { id: row.id.trim(), target_updated_at: row.target_updated_at.trim() };
+    return {
+      id: row.id.trim(),
+      target_updated_at: row.target_updated_at.trim(),
+    };
   });
 }
 
-/**
- * Implements load mutation checkpoint for the public runtime surface of this module.
- */
+/** Implements load mutation checkpoint for the public runtime surface of this module. */
 export async function loadMutationCheckpoint(
   pmRoot: string,
   subdir: string,
@@ -154,7 +181,10 @@ export async function loadMutationCheckpoint(
   const normalizedId = normalizeCheckpointId(rawCheckpointId);
   const filePath = checkpointFilePath(pmRoot, subdir, normalizedId);
   if (!(await pathExists(filePath))) {
-    throw new PmCliError(`Checkpoint ${normalizedId} not found`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Checkpoint ${normalizedId} not found`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   const raw = await readFile(filePath, "utf8");
   let parsed: unknown;
@@ -167,11 +197,17 @@ export async function loadMutationCheckpoint(
     );
   }
   if (!parsed || typeof parsed !== "object") {
-    throw new PmCliError(`Checkpoint ${normalizedId} is invalid`, EXIT_CODE.GENERIC_FAILURE);
+    throw new PmCliError(
+      `Checkpoint ${normalizedId} is invalid`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
   }
   const record = parsed as Record<string, unknown>;
   if (record.schema_version !== schemaVersion) {
-    throw new PmCliError(`Checkpoint ${normalizedId} has unsupported schema version`, EXIT_CODE.GENERIC_FAILURE);
+    throw new PmCliError(
+      `Checkpoint ${normalizedId} has unsupported schema version`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
   }
   const items = parseCheckpointItems(record, normalizedId);
   return {
@@ -181,16 +217,13 @@ export async function loadMutationCheckpoint(
     id: typeof record.id === "string" ? record.id : normalizedId,
     // Defensive recovery for malformed checkpoint metadata; normal writes
     // always include these fields, so fallbacks keep rollback inspectable.
-    created_at: typeof record.created_at === "string" ? record.created_at : nowIso(),
+    created_at:
+      typeof record.created_at === "string" ? record.created_at : nowIso(),
     author: typeof record.author === "string" ? record.author : "unknown",
   };
 }
 
-/**
- * Restore every checkpointed item to its captured pre-mutation timestamp,
- * collecting per-item rows. A single item's failure is recorded and does not
- * abort the remaining restores.
- */
+/** Restore every checkpointed item to its captured pre-mutation timestamp, collecting per-item rows. A single item's failure is recorded and does not abort the remaining restores. */
 export async function restoreCheckpointItems(
   items: MutationCheckpointItem[],
   restore: CheckpointRestoreFn,
@@ -208,7 +241,11 @@ export async function restoreCheckpointItems(
       });
       restoredIds.push(entry.id);
     } catch (error: unknown) {
-      rows.push({ id: entry.id, status: "failed", error: toErrorMessage(error) });
+      rows.push({
+        id: entry.id,
+        status: "failed",
+        error: toErrorMessage(error),
+      });
     }
   }
   return {

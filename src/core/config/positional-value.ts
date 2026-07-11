@@ -15,7 +15,9 @@ export type ConfigPositionalFlag = "format" | "policy" | "criterion";
 
 /** Successful routing of a positional value to a single-value typed flag. */
 export interface ConfigPositionalScalarRouted {
+  /** Value that configures or reports routable for this contract. */
   routable: true;
+  /** Value that configures or reports flag for this contract. */
   flag: "format" | "policy";
   /** Normalized scalar value for single-value flags. */
   value: string;
@@ -23,28 +25,31 @@ export interface ConfigPositionalScalarRouted {
 
 /** Successful routing of a positional value to the criteria-list flag. */
 export interface ConfigPositionalListRouted {
+  /** Value that configures or reports routable for this contract. */
   routable: true;
+  /** Value that configures or reports flag for this contract. */
   flag: "criterion";
   /** Criteria-list flag (`--criterion`) value, supplied as a values array. */
   values: string[];
 }
 
-/**
- * Restricts config positional routed values accepted by command, SDK, and storage contracts.
- */
-export type ConfigPositionalRouted = ConfigPositionalScalarRouted | ConfigPositionalListRouted;
+/** Restricts config positional routed values accepted by command, SDK, and storage contracts. */
+export type ConfigPositionalRouted =
+  | ConfigPositionalScalarRouted
+  | ConfigPositionalListRouted;
 
 /** A key whose value cannot be carried by a single positional (e.g. `context`). */
 export interface ConfigPositionalNotRoutable {
+  /** Value that configures or reports routable for this contract. */
   routable: false;
   /** Human/agent-facing reason + the flags to use instead. */
   reason: string;
 }
 
-/**
- * Restricts config positional result values accepted by command, SDK, and storage contracts.
- */
-export type ConfigPositionalResult = ConfigPositionalRouted | ConfigPositionalNotRoutable;
+/** Restricts config positional result values accepted by command, SDK, and storage contracts. */
+export type ConfigPositionalResult =
+  | ConfigPositionalRouted
+  | ConfigPositionalNotRoutable;
 
 /** Canonical snake-case config keys accepted by the config command and positional router. */
 export type ConfigKey =
@@ -103,17 +108,15 @@ const POLICY_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
   "telemetry_tracking",
 ]);
 
-/**
- * Policy keys whose only valid values are enabled/disabled. For these we accept the
- * intuitive synonyms off/on/true/false. Other policy keys pass through unchanged so
- * their own validators report the precise allowed set.
- */
-const ENABLED_DISABLED_POLICY_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
-  "governance_require_close_reason",
-  "governance_force_required_for_stale_lock",
-  "test_result_tracking",
-  "telemetry_tracking",
-]);
+/** Policy keys whose only valid values are enabled/disabled. For these we accept the intuitive synonyms off/on/true/false. Other policy keys pass through unchanged so their own validators report the precise allowed set. */
+const ENABLED_DISABLED_POLICY_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>(
+  [
+    "governance_require_close_reason",
+    "governance_force_required_for_stale_lock",
+    "test_result_tracking",
+    "telemetry_tracking",
+  ],
+);
 
 const ENABLED_DISABLED_SYNONYMS: Record<string, string> = {
   off: "disabled",
@@ -138,11 +141,7 @@ function toCanonicalKey(keyOrAlias: string): ConfigKey | undefined {
   return undefined;
 }
 
-/**
- * Map an enabled/disabled-style value through its synonyms (case-insensitive). Values
- * that are not synonyms pass through unchanged so the downstream validator can reject
- * them with its own message.
- */
+/** Map an enabled/disabled-style value through its synonyms (case-insensitive). Values that are not synonyms pass through unchanged so the downstream validator can reject them with its own message. */
 function normalizeEnabledDisabled(value: string): string {
   const normalized = value.trim().toLowerCase();
   return ENABLED_DISABLED_SYNONYMS[normalized] ?? value;
@@ -172,7 +171,7 @@ export function resolveConfigPositionalValue(
     return {
       routable: false,
       reason:
-        'Config set context does not accept a positional value. Use --default-depth, --activity-limit, --stale-threshold-days, or --section-<name> flags.',
+        "Config set context does not accept a positional value. Use --default-depth, --activity-limit, --stale-threshold-days, or --section-<name> flags.",
     };
   }
 
@@ -185,6 +184,8 @@ export function resolveConfigPositionalValue(
   }
 
   // policy key
-  const policyValue = ENABLED_DISABLED_POLICY_KEYS.has(key) ? normalizeEnabledDisabled(value) : value;
+  const policyValue = ENABLED_DISABLED_POLICY_KEYS.has(key)
+    ? normalizeEnabledDisabled(value)
+    : value;
   return { routable: true, flag: "policy", value: policyValue };
 }

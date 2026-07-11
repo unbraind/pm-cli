@@ -18,34 +18,39 @@ import type { LinkedTest } from "../../types.js";
 
 export type LinkedTestSelectorKind = "match" | "only-index" | "only-last";
 
-/**
- * Documents the linked test run selector payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the linked test run selector payload exchanged by command, SDK, and package integrations. */
 export interface LinkedTestRunSelector {
+  /** Value that configures or reports match for this contract. */
   match?: string;
+  /** Value that configures or reports only index for this contract. */
   onlyIndex?: number;
+  /** Value that configures or reports only last for this contract. */
   onlyLast?: boolean;
 }
 
-/**
- * Documents the linked test run selection payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the linked test run selection payload exchanged by command, SDK, and package integrations. */
 export interface LinkedTestRunSelection {
+  /** Value that configures or reports selector for this contract. */
   selector: LinkedTestSelectorKind | null;
+  /** Value that configures or reports requested for this contract. */
   requested: string | null;
+  /** Value that configures or reports selected for this contract. */
   selected: LinkedTest[];
   /** 1-based positions of selected entries in the original `--list` order. */
   selected_indexes: number[];
+  /** Number of selected entries represented by this result. */
   selected_count: number;
+  /** Number of skipped entries represented by this result. */
   skipped_count: number;
 }
 
 const MAX_SELECTOR_ENTRY_LABEL_LENGTH = 100;
 
-/**
- * Implements parse only index value for the public runtime surface of this module.
- */
-export function parseOnlyIndexValue(raw: string | number, optionName = "--only-index"): number {
+/** Implements parse only index value for the public runtime surface of this module. */
+export function parseOnlyIndexValue(
+  raw: string | number,
+  optionName = "--only-index",
+): number {
   const value = typeof raw === "number" ? raw : Number(String(raw).trim());
   if (!Number.isInteger(value) || value < 1) {
     throw new PmCliError(
@@ -65,14 +70,16 @@ function summarizeSelectorEntry(entry: LinkedTest): string {
   return `${normalized.slice(0, MAX_SELECTOR_ENTRY_LABEL_LENGTH - 3)}...`;
 }
 
-/**
- * Implements describe linked test entries for the public runtime surface of this module.
- */
+/** Implements describe linked test entries for the public runtime surface of this module. */
 export function describeLinkedTestEntries(tests: LinkedTest[]): string {
-  return tests.map((entry, index) => `${index + 1}. ${summarizeSelectorEntry(entry)}`).join("; ");
+  return tests
+    .map((entry, index) => `${index + 1}. ${summarizeSelectorEntry(entry)}`)
+    .join("; ");
 }
 
-function activeSelectorKinds(selector: LinkedTestRunSelector): LinkedTestSelectorKind[] {
+function activeSelectorKinds(
+  selector: LinkedTestRunSelector,
+): LinkedTestSelectorKind[] {
   const kinds: LinkedTestSelectorKind[] = [];
   if (selector.match !== undefined) {
     kinds.push("match");
@@ -92,10 +99,11 @@ function entryMatchesSubstring(entry: LinkedTest, needle: string): boolean {
   return command.includes(needle) || entryPath.includes(needle);
 }
 
-/**
- * Implements resolve linked test run selection for the public runtime surface of this module.
- */
-export function resolveLinkedTestRunSelection(tests: LinkedTest[], selector: LinkedTestRunSelector): LinkedTestRunSelection {
+/** Implements resolve linked test run selection for the public runtime surface of this module. */
+export function resolveLinkedTestRunSelection(
+  tests: LinkedTest[],
+  selector: LinkedTestRunSelector,
+): LinkedTestRunSelection {
   const kinds = activeSelectorKinds(selector);
   if (kinds.length === 0) {
     return {
@@ -124,7 +132,10 @@ export function resolveLinkedTestRunSelection(tests: LinkedTest[], selector: Lin
     // kind is "match" only when selector.match is defined (see activeSelectorKinds).
     const needle = (selector.match as string).trim().toLowerCase();
     if (needle.length === 0) {
-      throw new PmCliError("--match requires a non-empty substring to match against linked-test command/path values", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "--match requires a non-empty substring to match against linked-test command/path values",
+        EXIT_CODE.USAGE,
+      );
     }
     const selectedIndexes: number[] = [];
     const selected: LinkedTest[] = [];

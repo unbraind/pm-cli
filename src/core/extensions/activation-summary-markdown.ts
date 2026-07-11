@@ -50,12 +50,7 @@ export interface ExtensionSurfaceMarkdownOptions {
    * outside `[1, 6]` throw a {@link RangeError}.
    */
   headingLevel?: number;
-  /**
-   * When `true`, render every surface section even when it has no entries
-   * (emitting `_None._` under the heading) and always emit the capabilities
-   * line. Defaults to `false`, which omits empty sections so the reference lists
-   * only what the package actually contributes.
-   */
+  /** When `true`, render every surface section even when it has no entries (emitting `_None._` under the heading) and always emit the capabilities line. Defaults to `false`, which omits empty sections so the reference lists only what the package actually contributes. */
   includeEmpty?: boolean;
 }
 
@@ -87,26 +82,20 @@ const SURFACE_SECTIONS = [
 ] as const satisfies ReadonlyArray<
   readonly [
     {
-      [K in keyof ExtensionActivationSummary]: ExtensionActivationSummary[K] extends readonly string[] ? K : never;
+      [K in keyof ExtensionActivationSummary]: ExtensionActivationSummary[K] extends readonly string[]
+        ? K
+        : never;
     }[keyof ExtensionActivationSummary],
     string,
   ]
 >;
 
-/**
- * Repeat `#` `level` times to form an ATX heading prefix.
- */
+/** Repeat `#` `level` times to form an ATX heading prefix. */
 function headingPrefix(level: number): string {
   return "#".repeat(level);
 }
 
-/**
- * Render `value` as an inline Markdown code span. Backslash escapes do not work
- * inside CommonMark code spans, so when `value` contains backticks the span is
- * delimited by a run of backticks one longer than the longest internal run, and
- * padded with a space when the value borders a backtick — the CommonMark rule
- * for embedding literal backticks in a code span.
- */
+/** Render `value` as an inline Markdown code span. Backslash escapes do not work inside CommonMark code spans, so when `value` contains backticks the span is delimited by a run of backticks one longer than the longest internal run, and padded with a space when the value borders a backtick — the CommonMark rule for embedding literal backticks in a code span. */
 function code(value: string): string {
   if (!value.includes("`")) {
     return `\`${value}\``;
@@ -122,10 +111,7 @@ function code(value: string): string {
   return `${fence}${pad}${value}${pad}${fence}`;
 }
 
-/**
- * Render the comma-separated capabilities summary line (or `_none registered_`
- * when the activation exercised no known capability).
- */
+/** Render the comma-separated capabilities summary line (or `_none registered_` when the activation exercised no known capability). */
 function renderCapabilitiesLine(capabilities: readonly string[]): string {
   if (capabilities.length === 0) {
     return "Capabilities: _none registered_";
@@ -138,7 +124,11 @@ function renderCapabilitiesLine(capabilities: readonly string[]): string {
  * `entries` is empty, `heading` + `_None._`. Callers decide whether an empty
  * section is rendered at all via {@link ExtensionSurfaceMarkdownOptions.includeEmpty}.
  */
-function renderSection(heading: string, level: number, entries: readonly string[]): string[] {
+function renderSection(
+  heading: string,
+  level: number,
+  entries: readonly string[],
+): string[] {
   const lines = [`${headingPrefix(level)} ${heading}`, ""];
   if (entries.length === 0) {
     lines.push("_None._", "");
@@ -155,14 +145,20 @@ function renderSection(heading: string, level: number, entries: readonly string[
  * per-entry identifier, so they have a bespoke renderer rather than reusing
  * {@link renderSection}.
  */
-function renderPreflightSection(count: number, level: number, includeEmpty: boolean): string[] {
+function renderPreflightSection(
+  count: number,
+  level: number,
+  includeEmpty: boolean,
+): string[] {
   if (count === 0 && !includeEmpty) {
     return [];
   }
   return [
     `${headingPrefix(level)} Preflight overrides`,
     "",
-    count > 0 ? `- ${count} registered (this surface carries no per-entry identifier)` : "_None._",
+    count > 0
+      ? `- ${count} registered (this surface carries no per-entry identifier)`
+      : "_None._",
     "",
   ];
 }
@@ -191,7 +187,11 @@ export function renderExtensionSurfaceMarkdown(
   options: ExtensionSurfaceMarkdownOptions = {},
 ): string {
   const titleLevel = options.headingLevel ?? 2;
-  if (!Number.isInteger(titleLevel) || titleLevel < MIN_HEADING_LEVEL || titleLevel > MAX_HEADING_LEVEL) {
+  if (
+    !Number.isInteger(titleLevel) ||
+    titleLevel < MIN_HEADING_LEVEL ||
+    titleLevel > MAX_HEADING_LEVEL
+  ) {
     throw new RangeError(
       `headingLevel must be an integer in [${MIN_HEADING_LEVEL}, ${MAX_HEADING_LEVEL}], received ${String(options.headingLevel)}`,
     );
@@ -213,10 +213,17 @@ export function renderExtensionSurfaceMarkdown(
     lines.push(...renderSection(heading, sectionLevel, entries));
   }
 
-  lines.push(...renderPreflightSection(summary.preflight_overrides, sectionLevel, includeEmpty));
+  lines.push(
+    ...renderPreflightSection(
+      summary.preflight_overrides,
+      sectionLevel,
+      includeEmpty,
+    ),
+  );
 
   const hasAnySurface =
-    summary.preflight_overrides > 0 || SURFACE_SECTIONS.some(([field]) => summary[field].length > 0);
+    summary.preflight_overrides > 0 ||
+    SURFACE_SECTIONS.some(([field]) => summary[field].length > 0);
   if (!hasAnySurface && !includeEmpty) {
     lines.push("_This extension registers no surfaces._", "");
   }

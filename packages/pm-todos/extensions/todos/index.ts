@@ -1,12 +1,23 @@
+/**
+ * Runtime contracts and behavior for packages/pm todos/extensions/todos/index.
+ *
+ * @module packages/pm-todos/extensions/todos/index
+ */
 import type {
   ExtensionApi,
   GlobalOptions,
   ImportExportContext,
   ImportExportRegistrationOptions,
 } from "@unbrained/pm-cli/sdk";
-import type { TodosExportOptions, TodosExportResult, TodosImportOptions, TodosImportResult } from "./runtime.ts";
+import type {
+  TodosExportOptions,
+  TodosExportResult,
+  TodosImportOptions,
+  TodosImportResult,
+} from "./runtime.ts";
 import { loadPackageRuntimeModule } from "./runtime-loader.ts";
 
+/** Declarative package manifest consumed by the extension loader. */
 export const manifest = {
   name: "builtin-todos-import-export",
   version: "0.1.0",
@@ -16,8 +27,14 @@ export const manifest = {
 };
 
 type RuntimeModule = {
-  runTodosImport?: (options: TodosImportOptions, global: GlobalOptions) => Promise<TodosImportResult>;
-  runTodosExport?: (options: TodosExportOptions, global: GlobalOptions) => Promise<TodosExportResult>;
+  runTodosImport?: (
+    options: TodosImportOptions,
+    global: GlobalOptions,
+  ) => Promise<TodosImportResult>;
+  runTodosExport?: (
+    options: TodosExportOptions,
+    global: GlobalOptions,
+  ) => Promise<TodosExportResult>;
 };
 
 function asOptionalString(value: unknown): string | undefined {
@@ -38,22 +55,33 @@ function toExportOptions(options: Record<string, unknown>): TodosExportOptions {
   };
 }
 
-async function runTodosImportFromRuntime(options: TodosImportOptions, global: GlobalOptions): Promise<TodosImportResult> {
-  const runtime = await loadPackageRuntimeModule() as RuntimeModule;
+async function runTodosImportFromRuntime(
+  options: TodosImportOptions,
+  global: GlobalOptions,
+): Promise<TodosImportResult> {
+  const runtime = (await loadPackageRuntimeModule()) as RuntimeModule;
   if (typeof runtime.runTodosImport !== "function") {
-    throw new Error("Bundled todos runtime module is missing runTodosImport().");
+    throw new Error(
+      "Bundled todos runtime module is missing runTodosImport().",
+    );
   }
   return runtime.runTodosImport(options, global);
 }
 
-async function runTodosExportFromRuntime(options: TodosExportOptions, global: GlobalOptions): Promise<TodosExportResult> {
-  const runtime = await loadPackageRuntimeModule() as RuntimeModule;
+async function runTodosExportFromRuntime(
+  options: TodosExportOptions,
+  global: GlobalOptions,
+): Promise<TodosExportResult> {
+  const runtime = (await loadPackageRuntimeModule()) as RuntimeModule;
   if (typeof runtime.runTodosExport !== "function") {
-    throw new Error("Bundled todos runtime module is missing runTodosExport().");
+    throw new Error(
+      "Bundled todos runtime module is missing runTodosExport().",
+    );
   }
   return runtime.runTodosExport(options, global);
 }
 
+/** Registers this package's commands, actions, and runtime hooks with the host. */
 export function activate(api: ExtensionApi): void {
   // First-party exemplar for the importers capability: registerImporter/
   // registerExporter create the `todos import` / `todos export` command paths,
@@ -61,11 +89,17 @@ export function activate(api: ExtensionApi): void {
   // as the previous registerCommand registration.
   api.registerImporter(
     "todos",
-    async (context: ImportExportContext) => runTodosImportFromRuntime(toImportOptions(context.options), context.global),
+    async (context: ImportExportContext) =>
+      runTodosImportFromRuntime(
+        toImportOptions(context.options),
+        context.global,
+      ),
     {
       action: "todos-import",
       description: "Import Todo markdown files into pm items.",
-      failure_hints: ["This command reads a directory, not a file. Use --folder <path> to point at the Todo markdown directory."],
+      failure_hints: [
+        "This command reads a directory, not a file. Use --folder <path> to point at the Todo markdown directory.",
+      ],
       flags: [
         {
           long: "--folder",
@@ -90,11 +124,17 @@ export function activate(api: ExtensionApi): void {
   );
   api.registerExporter(
     "todos",
-    async (context: ImportExportContext) => runTodosExportFromRuntime(toExportOptions(context.options), context.global),
+    async (context: ImportExportContext) =>
+      runTodosExportFromRuntime(
+        toExportOptions(context.options),
+        context.global,
+      ),
     {
       action: "todos-export",
       description: "Export pm items into Todo markdown files.",
-      failure_hints: ["This command writes a directory of markdown files. Use --folder <path> to choose the destination directory."],
+      failure_hints: [
+        "This command writes a directory of markdown files. Use --folder <path> to choose the destination directory.",
+      ],
       flags: [
         {
           long: "--folder",

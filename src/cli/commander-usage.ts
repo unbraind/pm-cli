@@ -41,6 +41,7 @@ import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import type { ExtensionCommandHelpDescriptor } from "./extension-command-help.js";
 import { normalizeExtensionNameForMatch } from "./commands/extension/shared.js";
 
+/** Supported values accepted by the builtin type help contract. */
 export const BUILTIN_TYPE_HELP_VALUES = BUILTIN_ITEM_TYPE_VALUES.join("|");
 
 const OPTIONAL_PACKAGE_INSTALL_HINTS: Record<string, string> = {
@@ -60,7 +61,10 @@ const OPTIONAL_PACKAGE_INSTALL_HINTS: Record<string, string> = {
   todos: "todos",
 };
 
-const SEMANTIC_UNKNOWN_OPTION_SUGGESTIONS: Record<string, Record<string, string[]>> = {
+const SEMANTIC_UNKNOWN_OPTION_SUGGESTIONS: Record<
+  string,
+  Record<string, string[]>
+> = {
   comments: {
     "--body": ["--add"],
     "--text": ["--add"],
@@ -90,7 +94,10 @@ const SEMANTIC_UNKNOWN_OPTION_SUGGESTIONS: Record<string, Record<string, string[
   },
 };
 
-function getSemanticUnknownOptionSuggestions(commandName: string, unknownOption: string): string[] {
+function getSemanticUnknownOptionSuggestions(
+  commandName: string,
+  unknownOption: string,
+): string[] {
   const commandSuggestions = SEMANTIC_UNKNOWN_OPTION_SUGGESTIONS[commandName];
   if (!commandSuggestions) {
     return [];
@@ -104,18 +111,17 @@ function getSemanticUnknownOptionSuggestions(commandName: string, unknownOption:
   return [];
 }
 
-/**
- * Documents the commander usage context payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the commander usage context payload exchanged by command, SDK, and package integrations. */
 export interface CommanderUsageContext extends CommanderGuidanceContext {
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message: string;
+  /** Value that configures or reports command name for this contract. */
   commandName: string | undefined;
+  /** Value that configures or reports allowed types for this contract. */
   allowedTypes: string;
 }
 
-/**
- * Implements collect runtime command paths for the public runtime surface of this module.
- */
+/** Implements collect runtime command paths for the public runtime surface of this module. */
 export function collectRuntimeCommandPaths(
   root: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
@@ -128,7 +134,9 @@ export function collectRuntimeCommandPaths(
       continue;
     }
     const normalizedPath = normalizeHelpCommandPath(getCommandPath(current));
-    const hasInternalSegment = normalizedPath.split(" ").some((segment) => segment.startsWith("_"));
+    const hasInternalSegment = normalizedPath
+      .split(" ")
+      .some((segment) => segment.startsWith("_"));
     if (normalizedPath.length > 0 && !hasInternalSegment) {
       commandPaths.add(normalizedPath);
     }
@@ -136,7 +144,9 @@ export function collectRuntimeCommandPaths(
   }
   for (const descriptorPath of extensionDescriptors.keys()) {
     const normalizedPath = normalizeHelpCommandPath(descriptorPath);
-    const hasInternalSegment = normalizedPath.split(" ").some((segment) => segment.startsWith("_"));
+    const hasInternalSegment = normalizedPath
+      .split(" ")
+      .some((segment) => segment.startsWith("_"));
     if (normalizedPath.length > 0 && !hasInternalSegment) {
       commandPaths.add(normalizedPath);
     }
@@ -144,10 +154,11 @@ export function collectRuntimeCommandPaths(
   return [...commandPaths].sort((left, right) => left.localeCompare(right));
 }
 
-/**
- * Implements score command path match for the public runtime surface of this module.
- */
-export function scoreCommandPathMatch(commandPath: string, queryToken: string): number {
+/** Implements score command path match for the public runtime surface of this module. */
+export function scoreCommandPathMatch(
+  commandPath: string,
+  queryToken: string,
+): number {
   const normalizedPath = commandPath.trim().toLowerCase();
   const normalizedToken = queryToken.trim().toLowerCase();
   if (normalizedToken.length === 0) {
@@ -170,7 +181,11 @@ export function scoreCommandPathMatch(commandPath: string, queryToken: string): 
   const maxDistance = normalizedToken.length >= 5 ? 2 : 1;
   let bestDistance = Number.POSITIVE_INFINITY;
   for (const segment of pathSegments) {
-    const distance = levenshteinDistanceWithinLimit(segment, normalizedToken, maxDistance);
+    const distance = levenshteinDistanceWithinLimit(
+      segment,
+      normalizedToken,
+      maxDistance,
+    );
     if (distance !== null) {
       bestDistance = Math.min(bestDistance, distance);
     }
@@ -227,7 +242,9 @@ function collectInstalledPackageCommandPathHints(
     const source = descriptor.source;
     if (source) {
       for (const identifier of [source.name, source.package]) {
-        const normalizedIdentifier = normalizePackageCommandAliasToken(identifier ?? "");
+        const normalizedIdentifier = normalizePackageCommandAliasToken(
+          identifier ?? "",
+        );
         if (normalizedIdentifier.length > 0) {
           identifiers.add(normalizedIdentifier);
         }
@@ -254,7 +271,8 @@ function collectKnownLongFlags(
   contractsOverride?: CliFlagContract[],
 ): string[] {
   const flags = new Set<string>();
-  const contracts = contractsOverride ?? resolveSubcommandFlagContractsForCommand(commandName);
+  const contracts =
+    contractsOverride ?? resolveSubcommandFlagContractsForCommand(commandName);
   for (const contract of contracts) {
     if (contract.flag.startsWith("--")) {
       flags.add(normalizeLongFlag(contract.flag));
@@ -268,7 +286,10 @@ function collectKnownLongFlags(
   return [...flags].sort((left, right) => left.localeCompare(right));
 }
 
-function suggestNearestLongFlags(unknownOption: string, knownFlags: string[]): string[] {
+function suggestNearestLongFlags(
+  unknownOption: string,
+  knownFlags: string[],
+): string[] {
   if (!unknownOption.startsWith("--")) {
     return [];
   }
@@ -278,17 +299,29 @@ function suggestNearestLongFlags(unknownOption: string, knownFlags: string[]): s
   }
   const maxDistance = unknownComparable.length >= 8 ? 2 : 1;
   // rank 0 = abbreviation/prefix match (e.g. --desc -> --description), rank 1 = edit-distance typo.
-  const candidates: Array<{ flag: string; rank: number; distance: number }> = [];
+  const candidates: Array<{ flag: string; rank: number; distance: number }> =
+    [];
   for (const flag of knownFlags) {
     const flagComparable = toComparableFlag(flag);
     if (flagComparable === unknownComparable) {
       continue;
     }
-    if (unknownComparable.length >= 3 && flagComparable.startsWith(unknownComparable)) {
-      candidates.push({ flag, rank: 0, distance: flagComparable.length - unknownComparable.length });
+    if (
+      unknownComparable.length >= 3 &&
+      flagComparable.startsWith(unknownComparable)
+    ) {
+      candidates.push({
+        flag,
+        rank: 0,
+        distance: flagComparable.length - unknownComparable.length,
+      });
       continue;
     }
-    const distance = levenshteinDistanceWithinLimit(unknownComparable, flagComparable, maxDistance);
+    const distance = levenshteinDistanceWithinLimit(
+      unknownComparable,
+      flagComparable,
+      maxDistance,
+    );
     if (distance === null || distance <= 0) {
       continue;
     }
@@ -349,19 +382,30 @@ function getCrossCommandFlagIndex(): Map<string, string[]> {
   return crossCommandFlagIndexCache;
 }
 
-function findOtherCommandsForFlag(unknownOption: string, currentCommand: string | undefined): string[] {
+function findOtherCommandsForFlag(
+  unknownOption: string,
+  currentCommand: string | undefined,
+): string[] {
   if (!unknownOption.startsWith("--")) {
     return [];
   }
-  const commands = getCrossCommandFlagIndex().get(normalizeLongFlag(unknownOption));
+  const commands = getCrossCommandFlagIndex().get(
+    normalizeLongFlag(unknownOption),
+  );
   if (!commands) {
     return [];
   }
   const normalizedCurrent = currentCommand?.trim().toLowerCase();
-  return commands.filter((command) => command !== normalizedCurrent).slice(0, 3);
+  return commands
+    .filter((command) => command !== normalizedCurrent)
+    .slice(0, 3);
 }
 
-function rewriteUnknownOptionArgv(argv: string[], unknownOption: string, replacementFlag: string): string[] | undefined {
+function rewriteUnknownOptionArgv(
+  argv: string[],
+  unknownOption: string,
+  replacementFlag: string,
+): string[] | undefined {
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (!token.startsWith("--")) {
@@ -373,7 +417,10 @@ function rewriteUnknownOptionArgv(argv: string[], unknownOption: string, replace
       continue;
     }
     const next = [...argv];
-    next[index] = equalsIndex >= 0 ? `${replacementFlag}${token.slice(equalsIndex)}` : replacementFlag;
+    next[index] =
+      equalsIndex >= 0
+        ? `${replacementFlag}${token.slice(equalsIndex)}`
+        : replacementFlag;
     return next;
   }
   return undefined;
@@ -405,12 +452,16 @@ function scoreRuntimeCommandCandidates(params: {
   for (const commandPath of params.commandPaths) {
     recordCandidateScore(commandPath, scoreAgainstUnknown(commandPath));
   }
-  for (const [aliasToken, canonicalPath] of Object.entries(EXECUTABLE_COMMAND_ALIASES)) {
+  for (const [aliasToken, canonicalPath] of Object.entries(
+    EXECUTABLE_COMMAND_ALIASES,
+  )) {
     recordCandidateScore(canonicalPath, scoreAgainstUnknown(aliasToken));
   }
   return [...scoresByCommandPath.entries()]
     .sort(([leftPath, leftScore], [rightPath, rightScore]) =>
-      leftScore !== rightScore ? leftScore - rightScore : leftPath.localeCompare(rightPath),
+      leftScore !== rightScore
+        ? leftScore - rightScore
+        : leftPath.localeCompare(rightPath),
     )
     .map(([commandPath]) => commandPath);
 }
@@ -430,11 +481,20 @@ function resolveUnknownCommandCandidates(params: {
 }
 
 function resolveUnknownCommandFallbacks(commandPaths: string[]): string[] {
-  const topLevel = [...new Set(commandPaths.map((commandPath) => commandPath.split(" ")[0]).filter((segment) => segment.length > 0))];
+  const topLevel = [
+    ...new Set(
+      commandPaths
+        .map((commandPath) => commandPath.split(" ")[0])
+        .filter((segment) => segment.length > 0),
+    ),
+  ];
   return topLevel.sort((left, right) => left.localeCompare(right));
 }
 
-function buildUnknownCommandExamples(suggestedPaths: string[], hasConcreteCandidates: boolean): string[] {
+function buildUnknownCommandExamples(
+  suggestedPaths: string[],
+  hasConcreteCandidates: boolean,
+): string[] {
   const suggestedExamples = suggestedPaths.map((path) => `pm ${path} --help`);
   if (hasConcreteCandidates) {
     return [...new Set([...suggestedExamples, "pm --help"])];
@@ -442,9 +502,7 @@ function buildUnknownCommandExamples(suggestedPaths: string[], hasConcreteCandid
   return [...new Set(["pm --help", ...suggestedExamples])];
 }
 
-/**
- * Implements build unknown command guidance from runtime for the public runtime surface of this module.
- */
+/** Implements build unknown command guidance from runtime for the public runtime surface of this module. */
 export function buildUnknownCommandGuidanceFromRuntime(
   rawMessage: string,
   root: Command,
@@ -473,10 +531,19 @@ export function buildUnknownCommandGuidanceFromRuntime(
     extensionDescriptors,
   });
   const fallbackTopLevel = resolveUnknownCommandFallbacks(commandPaths);
-  const suggestedPaths = (combinedCandidates.length > 0 ? combinedCandidates : fallbackTopLevel).slice(0, 3);
-  const examples = buildUnknownCommandExamples(suggestedPaths, combinedCandidates.length > 0);
-  const optionalPackageHint = resolveOptionalPackageInstallHint(normalizedUnknown);
-  const didYouMean = combinedCandidates.length > 0 ? `Did you mean: ${suggestedPaths.join(", ")}?` : null;
+  const suggestedPaths = (
+    combinedCandidates.length > 0 ? combinedCandidates : fallbackTopLevel
+  ).slice(0, 3);
+  const examples = buildUnknownCommandExamples(
+    suggestedPaths,
+    combinedCandidates.length > 0,
+  );
+  const optionalPackageHint =
+    resolveOptionalPackageInstallHint(normalizedUnknown);
+  const didYouMean =
+    combinedCandidates.length > 0
+      ? `Did you mean: ${suggestedPaths.join(", ")}?`
+      : null;
 
   return {
     unknownCommandExamples: examples,
@@ -523,24 +590,29 @@ function trimTrailingPunctuationToken(token: string): string {
   return token.slice(0, end);
 }
 
-/**
- * Implements resolve child command by token for the public runtime surface of this module.
- */
-export function resolveChildCommandByToken(parent: Command, token: string): Command | undefined {
+/** Implements resolve child command by token for the public runtime surface of this module. */
+export function resolveChildCommandByToken(
+  parent: Command,
+  token: string,
+): Command | undefined {
   const normalizedToken = token.trim().toLowerCase();
   return parent.commands.find((candidate) => {
     if (candidate.name().trim().toLowerCase() === normalizedToken) {
       return true;
     }
-    const aliases = typeof candidate.aliases === "function" ? candidate.aliases() : [];
-    return aliases.some((alias) => alias.trim().toLowerCase() === normalizedToken);
+    const aliases =
+      typeof candidate.aliases === "function" ? candidate.aliases() : [];
+    return aliases.some(
+      (alias) => alias.trim().toLowerCase() === normalizedToken,
+    );
   });
 }
 
-/**
- * Implements check whether known help command path for the public runtime surface of this module.
- */
-export function isKnownHelpCommandPath(root: Command, commandPathTokens: string[]): boolean {
+/** Implements check whether known help command path for the public runtime surface of this module. */
+export function isKnownHelpCommandPath(
+  root: Command,
+  commandPathTokens: string[],
+): boolean {
   if (commandPathTokens.length === 0) {
     return true;
   }
@@ -557,16 +629,25 @@ export function isKnownHelpCommandPath(root: Command, commandPathTokens: string[
   return matchedAny;
 }
 
-async function resolveAllowedTypesForUsage(bootstrapGlobal: ReturnType<typeof parseBootstrapGlobalOptions>): Promise<string> {
+async function resolveAllowedTypesForUsage(
+  bootstrapGlobal: ReturnType<typeof parseBootstrapGlobalOptions>,
+): Promise<string> {
   try {
     const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
     if (!(await pathExists(getSettingsPath(pmRoot)))) {
       return BUILTIN_TYPE_HELP_VALUES;
     }
     const settings = await readSettings(pmRoot);
-    const extensionRegistrations = bootstrapGlobal.noExtensions ? undefined : getActiveExtensionRegistrations();
-    const typeRegistry = resolveItemTypeRegistry(settings, extensionRegistrations);
-    return typeRegistry.types.length > 0 ? typeRegistry.types.join("|") : BUILTIN_TYPE_HELP_VALUES;
+    const extensionRegistrations = bootstrapGlobal.noExtensions
+      ? undefined
+      : getActiveExtensionRegistrations();
+    const typeRegistry = resolveItemTypeRegistry(
+      settings,
+      extensionRegistrations,
+    );
+    return typeRegistry.types.length > 0
+      ? typeRegistry.types.join("|")
+      : BUILTIN_TYPE_HELP_VALUES;
   } catch {
     /* v8 ignore start -- defensive fallback for corrupted settings during usage-error rendering; command behavior is covered through normal settings paths */
     return BUILTIN_TYPE_HELP_VALUES;
@@ -577,13 +658,20 @@ async function resolveAllowedTypesForUsage(bootstrapGlobal: ReturnType<typeof pa
 function resolveUnknownOptionSuggestions(
   message: string,
   commandName: string | undefined,
-): { match: RegExpMatchArray | null; suggestions: string[] | undefined; otherCommands: string[] } {
+): {
+  match: RegExpMatchArray | null;
+  suggestions: string[] | undefined;
+  otherCommands: string[];
+} {
   const match = message.match(/unknown option '([^']+)'/i);
   const suggestions =
     match && commandName
       ? dedupeStrings([
           ...getSemanticUnknownOptionSuggestions(commandName, match[1]),
-          ...suggestNearestLongFlags(match[1], collectKnownLongFlags(commandName)),
+          ...suggestNearestLongFlags(
+            match[1],
+            collectKnownLongFlags(commandName),
+          ),
         ])
       : undefined;
   return {
@@ -598,46 +686,81 @@ function resolveSuggestedRetryForUnknownOption(
   unknownOptionMatch: RegExpMatchArray | null,
   unknownOptionSuggestions: string[] | undefined,
 ): string | undefined {
-  if (!unknownOptionMatch || !unknownOptionSuggestions || unknownOptionSuggestions.length === 0) {
+  if (
+    !unknownOptionMatch ||
+    !unknownOptionSuggestions ||
+    unknownOptionSuggestions.length === 0
+  ) {
     return undefined;
   }
-  const rewritten = rewriteUnknownOptionArgv(invocationArgv, unknownOptionMatch[1], unknownOptionSuggestions[0]);
+  const rewritten = rewriteUnknownOptionArgv(
+    invocationArgv,
+    unknownOptionMatch[1],
+    unknownOptionSuggestions[0],
+  );
   return rewritten ? renderAttemptedCommand(rewritten) : undefined;
 }
 
-function resolveSuggestedRetryForMissingOption(message: string, invocationArgv: string[]): string | undefined {
-  const missingRequiredOption = message.match(/required option '([^']+)' not specified/i);
+function resolveSuggestedRetryForMissingOption(
+  message: string,
+  invocationArgv: string[],
+): string | undefined {
+  const missingRequiredOption = message.match(
+    /required option '([^']+)' not specified/i,
+  );
   const requiredOptionToken = missingRequiredOption?.[1]
-    ? trimTrailingPunctuationToken(firstWhitespaceSeparatedToken(missingRequiredOption[1].trim()))
+    ? trimTrailingPunctuationToken(
+        firstWhitespaceSeparatedToken(missingRequiredOption[1].trim()),
+      )
     : undefined;
   if (!requiredOptionToken?.startsWith("--")) {
     return undefined;
   }
-  const hasFlag = invocationArgv.some((token) => token === requiredOptionToken || token.startsWith(`${requiredOptionToken}=`));
-  return hasFlag ? undefined : renderAttemptedCommand([...invocationArgv, requiredOptionToken, "<value>"]);
+  const hasFlag = invocationArgv.some(
+    (token) =>
+      token === requiredOptionToken ||
+      token.startsWith(`${requiredOptionToken}=`),
+  );
+  return hasFlag
+    ? undefined
+    : renderAttemptedCommand([
+        ...invocationArgv,
+        requiredOptionToken,
+        "<value>",
+      ]);
 }
 
-/**
- * Implements resolve commander usage context for the public runtime surface of this module.
- */
+/** Implements resolve commander usage context for the public runtime surface of this module. */
 export async function resolveCommanderUsageContext(
   error: unknown,
   rootProgram: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
 ): Promise<CommanderUsageContext> {
-  const rawMessage = typeof error === "object" && error !== null ? (error as { message?: string }).message : undefined;
+  const rawMessage =
+    typeof error === "object" && error !== null
+      ? (error as { message?: string }).message
+      : undefined;
   const message = rawMessage ?? "Invalid command usage";
-  const invocationArgv = normalizeBootstrapInvocation(process.argv.slice(2)).argv;
+  const invocationArgv = normalizeBootstrapInvocation(
+    process.argv.slice(2),
+  ).argv;
   const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
   const commandName = parseBootstrapCommandName(invocationArgv);
   const attemptedCommand = renderAttemptedCommand(invocationArgv);
   const providedOptionFlags = extractProvidedOptionFlags(invocationArgv);
   const allowedTypes = await resolveAllowedTypesForUsage(bootstrapGlobal);
-  const unknownCommandGuidance = buildUnknownCommandGuidanceFromRuntime(message, rootProgram, extensionDescriptors);
+  const unknownCommandGuidance = buildUnknownCommandGuidanceFromRuntime(
+    message,
+    rootProgram,
+    extensionDescriptors,
+  );
   const unknownOption = resolveUnknownOptionSuggestions(message, commandName);
   const suggestedRetryCommand =
-    resolveSuggestedRetryForUnknownOption(invocationArgv, unknownOption.match, unknownOption.suggestions) ??
-    resolveSuggestedRetryForMissingOption(message, invocationArgv);
+    resolveSuggestedRetryForUnknownOption(
+      invocationArgv,
+      unknownOption.match,
+      unknownOption.suggestions,
+    ) ?? resolveSuggestedRetryForMissingOption(message, invocationArgv);
   return {
     message,
     commandName,
@@ -646,21 +769,26 @@ export async function resolveCommanderUsageContext(
     normalizedInvocationArgs: [...invocationArgv],
     providedOptionFlags,
     unknownOptionSuggestions: unknownOption.suggestions,
-    unknownOptionOtherCommands: unknownOption.otherCommands.length > 0 ? unknownOption.otherCommands : undefined,
+    unknownOptionOtherCommands:
+      unknownOption.otherCommands.length > 0
+        ? unknownOption.otherCommands
+        : undefined,
     suggestedRetryCommand,
     ...unknownCommandGuidance,
   };
 }
 
-/**
- * Implements format commander usage message for the public runtime surface of this module.
- */
+/** Implements format commander usage message for the public runtime surface of this module. */
 export async function formatCommanderUsageMessage(
   error: unknown,
   rootProgram: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
 ): Promise<string> {
-  const usageContext = await resolveCommanderUsageContext(error, rootProgram, extensionDescriptors);
+  const usageContext = await resolveCommanderUsageContext(
+    error,
+    rootProgram,
+    extensionDescriptors,
+  );
   const {
     message,
     commandName,
@@ -674,16 +802,21 @@ export async function formatCommanderUsageMessage(
     unknownOptionOtherCommands,
     suggestedRetryCommand,
   } = usageContext;
-  const formatted = formatCommanderErrorForDisplay(message, commandName, allowedTypes, {
-    unknownCommandExamples,
-    unknownCommandNextSteps,
-    attemptedCommand,
-    normalizedInvocationArgs,
-    providedOptionFlags,
-    unknownOptionSuggestions,
-    unknownOptionOtherCommands,
-    suggestedRetryCommand,
-  });
+  const formatted = formatCommanderErrorForDisplay(
+    message,
+    commandName,
+    allowedTypes,
+    {
+      unknownCommandExamples,
+      unknownCommandNextSteps,
+      attemptedCommand,
+      normalizedInvocationArgs,
+      providedOptionFlags,
+      unknownOptionSuggestions,
+      unknownOptionOtherCommands,
+      suggestedRetryCommand,
+    },
+  );
   const serviceOverride = await runActiveServiceOverride("help_format", {
     message: formatted,
     command: commandName,
@@ -695,15 +828,17 @@ export async function formatCommanderUsageMessage(
   return formatted;
 }
 
-/**
- * Implements format commander usage json for the public runtime surface of this module.
- */
+/** Implements format commander usage json for the public runtime surface of this module. */
 export async function formatCommanderUsageJson(
   error: unknown,
   rootProgram: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
 ): Promise<string> {
-  const usageContext = await resolveCommanderUsageContext(error, rootProgram, extensionDescriptors);
+  const usageContext = await resolveCommanderUsageContext(
+    error,
+    rootProgram,
+    extensionDescriptors,
+  );
   const envelope = formatCommanderErrorForJson(
     usageContext.message,
     usageContext.commandName,
@@ -723,6 +858,7 @@ export async function formatCommanderUsageJson(
   return JSON.stringify(envelope, null, 2);
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   collectKnownLongFlags,
   collectInstalledPackageCommandPathHints,

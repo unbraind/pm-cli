@@ -3,13 +3,25 @@
  *
  * Integrates Sentry instrumentation and release diagnostics for Instrument.
  */
+import * as SentryModule from "@sentry/node";
+import type { NodeOptions } from "@sentry/node";
 import { resolvePmCliVersion } from "../packages/root.js";
 
 const OPT_OUT_VALUES = new Set(["1", "true", "yes", "on"]);
 
 function isSentryDisabled(): boolean {
-  if (OPT_OUT_VALUES.has((process.env.PM_SENTRY_DISABLED ?? "").trim().toLowerCase())) return true;
-  if (OPT_OUT_VALUES.has((process.env.PM_TELEMETRY_DISABLED ?? "").trim().toLowerCase())) return true;
+  if (
+    OPT_OUT_VALUES.has(
+      (process.env.PM_SENTRY_DISABLED ?? "").trim().toLowerCase(),
+    )
+  )
+    return true;
+  if (
+    OPT_OUT_VALUES.has(
+      (process.env.PM_TELEMETRY_DISABLED ?? "").trim().toLowerCase(),
+    )
+  )
+    return true;
   if (process.env.VITEST || process.env.VITEST_WORKER_ID) return true;
   return false;
 }
@@ -26,7 +38,8 @@ const FILE_URL_PATH_RE = /file:\/\/\/?[^\s"'`),;]+/giu;
 const WINDOWS_PATH_TOKEN_RE = /\b[A-Za-z]:\\[^\s"'`),;]+/g;
 const PRIVATE_IP_RE =
   /\b(?:10\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|172\.(?:1[6-9]|2\d|3[01])\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|192\.168\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d))\b/g;
-const PATH_FIELD_KEY_PATTERN = /(?:^|[_-])(path|filename|file|module|cwd|dir|directory|location|source|script)s?$/i;
+const PATH_FIELD_KEY_PATTERN =
+  /(?:^|[_-])(path|filename|file|module|cwd|dir|directory|location|source|script)s?$/i;
 /**
  * Upper bound on {@link KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS}. Enforced by a
  * governance test so the allowlist cannot silently accumulate stale filters.
@@ -69,18 +82,28 @@ function looksLikeFilesystemPath(value: string): boolean {
 }
 
 function scrubString(value: string, keyHint?: string): string {
-  if (keyHint && PATH_FIELD_KEY_PATTERN.test(keyHint) && looksLikeFilesystemPath(value)) {
+  if (
+    keyHint &&
+    PATH_FIELD_KEY_PATTERN.test(keyHint) &&
+    looksLikeFilesystemPath(value)
+  ) {
     return "[scrubbed_path]";
   }
   const scrubbed = value
-    .replaceAll(INLINE_SENSITIVE_ASSIGNMENT_RE, (_m, key: string) => `${key}=[scrubbed]`)
+    .replaceAll(
+      INLINE_SENSITIVE_ASSIGNMENT_RE,
+      (_m, key: string) => `${key}=[scrubbed]`,
+    )
     .replaceAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu, "[scrubbed_email]")
     .replaceAll(/bearer\s+[a-z0-9._=-]+/giu, "bearer [scrubbed]")
     .replaceAll(/sntr[ysu]_[A-Za-z0-9_-]+/g, "[scrubbed_sentry_token]")
     .replaceAll(PRIVATE_IP_RE, "[scrubbed_ip]")
     .replaceAll(FILE_URL_PATH_RE, "[scrubbed_path]")
     .replaceAll(WINDOWS_PATH_TOKEN_RE, "[scrubbed_path]")
-    .replaceAll(ABSOLUTE_PATH_TOKEN_RE, (_match: string, prefix: string) => `${prefix}[scrubbed_path]`);
+    .replaceAll(
+      ABSOLUTE_PATH_TOKEN_RE,
+      (_match: string, prefix: string) => `${prefix}[scrubbed_path]`,
+    );
   if (looksLikeFilesystemPath(scrubbed)) {
     return "[scrubbed_path]";
   }
@@ -129,7 +152,9 @@ function scrubStackFrame(frame: Record<string, unknown>): void {
     if (!Array.isArray(context)) {
       continue;
     }
-    frame[key] = context.map((entry) => (typeof entry === "string" ? scrubString(entry, key) : entry));
+    frame[key] = context.map((entry) =>
+      typeof entry === "string" ? scrubString(entry, key) : entry,
+    );
   }
   if (frame.vars && typeof frame.vars === "object") {
     frame.vars = scrubEventData(frame.vars as Record<string, unknown>);
@@ -139,7 +164,7 @@ function scrubStackFrame(frame: Record<string, unknown>): void {
   }
 }
 
-type SentryLike = typeof import("@sentry/node");
+type SentryLike = typeof SentryModule;
 
 let _sentry: SentryLike | undefined;
 let _initDone = false;
@@ -156,7 +181,9 @@ function isKnownNoisyConsoleMessage(value: string): boolean {
   if (normalized.length === 0) {
     return false;
   }
-  return KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS.some((pattern) => normalized.includes(pattern));
+  return KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS.some((pattern) =>
+    normalized.includes(pattern),
+  );
 }
 
 function isKnownNoisyConsoleEvent(event: {
@@ -167,12 +194,19 @@ function isKnownNoisyConsoleEvent(event: {
   if (event.logger !== "console") {
     return false;
   }
-  if (typeof event.message === "string" && isKnownNoisyConsoleMessage(event.message)) {
+  if (
+    typeof event.message === "string" &&
+    isKnownNoisyConsoleMessage(event.message)
+  ) {
     return true;
   }
   return (
     Array.isArray(event.exception?.values) &&
-    event.exception.values.some((entry) => typeof entry.value === "string" && isKnownNoisyConsoleMessage(entry.value))
+    event.exception.values.some(
+      (entry) =>
+        typeof entry.value === "string" &&
+        isKnownNoisyConsoleMessage(entry.value),
+    )
   );
 }
 
@@ -182,18 +216,30 @@ function isExpectedCliErrorEvent(event: {
   extra?: Record<string, unknown>;
   logger?: string;
 }): boolean {
-  if (event.exception?.values?.some((ex) => ex.type === "PmCliError")) return true;
-
-  if (event.exception?.values?.some((ex) => typeof ex.value === "string" && hasPmCliErrorPrefix(ex.value)))
+  if (event.exception?.values?.some((ex) => ex.type === "PmCliError"))
     return true;
 
-  if (event.logger === "console" && typeof event.message === "string" && hasPmCliErrorPrefix(event.message))
+  if (
+    event.exception?.values?.some(
+      (ex) => typeof ex.value === "string" && hasPmCliErrorPrefix(ex.value),
+    )
+  )
+    return true;
+
+  if (
+    event.logger === "console" &&
+    typeof event.message === "string" &&
+    hasPmCliErrorPrefix(event.message)
+  )
     return true;
 
   return false;
 }
 
-function isPmCliErrorBreadcrumb(breadcrumb: { category?: string; message?: string }): boolean {
+function isPmCliErrorBreadcrumb(breadcrumb: {
+  category?: string;
+  message?: string;
+}): boolean {
   return (
     breadcrumb.category === "console" &&
     typeof breadcrumb.message === "string" &&
@@ -201,8 +247,15 @@ function isPmCliErrorBreadcrumb(breadcrumb: { category?: string; message?: strin
   );
 }
 
-function isKnownNoisyConsoleBreadcrumb(breadcrumb: { category?: string; message?: string }): boolean {
-  return breadcrumb.category === "console" && typeof breadcrumb.message === "string" && isKnownNoisyConsoleMessage(breadcrumb.message);
+function isKnownNoisyConsoleBreadcrumb(breadcrumb: {
+  category?: string;
+  message?: string;
+}): boolean {
+  return (
+    breadcrumb.category === "console" &&
+    typeof breadcrumb.message === "string" &&
+    isKnownNoisyConsoleMessage(breadcrumb.message)
+  );
 }
 
 function resolveCliVersion(): string {
@@ -212,7 +265,12 @@ function resolveCliVersion(): string {
 function resolveEnvironment(): string {
   const explicit = process.env.SENTRY_ENVIRONMENT?.trim();
   if (explicit && explicit.length > 0) return explicit;
-  if (process.env.VITEST || process.env.VITEST_WORKER_ID || process.env.NODE_ENV === "test") return "test";
+  if (
+    process.env.VITEST ||
+    process.env.VITEST_WORKER_ID ||
+    process.env.NODE_ENV === "test"
+  )
+    return "test";
   if (process.env.CI) return "ci";
   return "production";
 }
@@ -240,7 +298,9 @@ function resolveTracesSampleRate(): number {
 }
 
 function scrubSentryExceptionValues(event: {
-  exception?: { values?: Array<{ value?: string; stacktrace?: { frames?: unknown[] } }> };
+  exception?: {
+    values?: Array<{ value?: string; stacktrace?: { frames?: unknown[] } }>;
+  };
 }): void {
   if (!event.exception?.values) {
     return;
@@ -257,7 +317,9 @@ function scrubSentryExceptionValues(event: {
   }
 }
 
-function scrubSentryBreadcrumbs(event: { breadcrumbs?: Array<{ message?: string; data?: unknown }> }): void {
+function scrubSentryBreadcrumbs(event: {
+  breadcrumbs?: Array<{ message?: string; data?: unknown }>;
+}): void {
   if (!event.breadcrumbs) {
     return;
   }
@@ -266,12 +328,16 @@ function scrubSentryBreadcrumbs(event: { breadcrumbs?: Array<{ message?: string;
       breadcrumb.message = scrubString(breadcrumb.message);
     }
     if (breadcrumb.data && typeof breadcrumb.data === "object") {
-      breadcrumb.data = scrubEventData(breadcrumb.data as Record<string, unknown>);
+      breadcrumb.data = scrubEventData(
+        breadcrumb.data as Record<string, unknown>,
+      );
     }
   }
 }
 
-function scrubSentryContexts(event: { contexts?: Record<string, unknown> }): void {
+function scrubSentryContexts(event: {
+  contexts?: Record<string, unknown>;
+}): void {
   if (!event.contexts) {
     return;
   }
@@ -290,16 +356,45 @@ function scrubSentryRecordField(event: object, key: string): void {
   }
 }
 
-/**
- * Implements ensure sentry init for the public runtime surface of this module.
- */
+const beforeSend: NonNullable<NodeOptions["beforeSend"]> = (event) => {
+  if (isExpectedCliErrorEvent(event) || isKnownNoisyConsoleEvent(event)) return null;
+  if (event.message) event.message = scrubString(event.message, "message");
+  if (event.transaction) event.transaction = scrubString(event.transaction, "transaction");
+  scrubSentryExceptionValues(event);
+  scrubSentryBreadcrumbs(event);
+  scrubSentryRecordField(event, "extra");
+  scrubSentryContexts(event);
+  for (const key of ["request", "user", "tags"]) scrubSentryRecordField(event, key);
+  return event;
+};
+
+const beforeSendTransaction: NonNullable<NodeOptions["beforeSendTransaction"]> = (event) => {
+  if (event.breadcrumbs) {
+    event.breadcrumbs = event.breadcrumbs.filter(
+      (breadcrumb) => !isPmCliErrorBreadcrumb(breadcrumb) && !isKnownNoisyConsoleBreadcrumb(breadcrumb),
+    );
+    scrubSentryBreadcrumbs(event);
+  }
+  scrubSentryContexts(event);
+  return event;
+};
+
+const beforeBreadcrumb: NonNullable<NodeOptions["beforeBreadcrumb"]> = (breadcrumb) => {
+  if (isPmCliErrorBreadcrumb(breadcrumb) || isKnownNoisyConsoleBreadcrumb(breadcrumb)) return null;
+  if (breadcrumb.message) breadcrumb.message = scrubString(breadcrumb.message, "message");
+  if (breadcrumb.data && typeof breadcrumb.data === "object") {
+    breadcrumb.data = scrubEventData(breadcrumb.data as Record<string, unknown>);
+  }
+  return breadcrumb;
+};
+
+/** Implements ensure sentry init for the public runtime surface of this module. */
 export async function ensureSentryInit(): Promise<SentryLike | undefined> {
   if (_initDone) return _sentry;
   _initDone = true;
 
   if (isSentryDisabled()) return undefined;
 
-  const SentryModule = await import("@sentry/node");
   _sentry = SentryModule;
 
   const dsn = process.env.SENTRY_DSN?.trim() || PM_CLI_SENTRY_DSN;
@@ -333,76 +428,20 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
       },
     },
 
-    beforeSend(event) {
-      if (isExpectedCliErrorEvent(event) || isKnownNoisyConsoleEvent(event)) {
-        return null;
-      }
-      if (event.message) {
-        event.message = scrubString(event.message, "message");
-      }
-      if (event.transaction) {
-        event.transaction = scrubString(event.transaction, "transaction");
-      }
-
-      scrubSentryExceptionValues(event);
-      scrubSentryBreadcrumbs(event);
-      scrubSentryRecordField(event, "extra");
-      scrubSentryContexts(event);
-      scrubSentryRecordField(event, "request");
-      scrubSentryRecordField(event, "user");
-      scrubSentryRecordField(event, "tags");
-
-      return event;
-    },
-
-    beforeSendTransaction(event) {
-      if (event.breadcrumbs) {
-        event.breadcrumbs = event.breadcrumbs.filter(
-          (bc) => !isPmCliErrorBreadcrumb(bc) && !isKnownNoisyConsoleBreadcrumb(bc),
-        );
-        for (const breadcrumb of event.breadcrumbs) {
-          if (breadcrumb.message) {
-            breadcrumb.message = scrubString(breadcrumb.message, "message");
-          }
-          if (breadcrumb.data && typeof breadcrumb.data === "object") {
-            breadcrumb.data = scrubEventData(breadcrumb.data as Record<string, unknown>);
-          }
-        }
-      }
-      if (event.contexts) {
-        for (const [ctxKey, ctx] of Object.entries(event.contexts)) {
-          if (ctx && typeof ctx === "object") {
-            event.contexts![ctxKey] = scrubEventData(ctx as Record<string, unknown>);
-          }
-        }
-      }
-      return event;
-    },
-
-    beforeBreadcrumb(breadcrumb) {
-      if (isPmCliErrorBreadcrumb(breadcrumb) || isKnownNoisyConsoleBreadcrumb(breadcrumb)) {
-        return null;
-      }
-      if (breadcrumb.message) {
-        breadcrumb.message = scrubString(breadcrumb.message, "message");
-      }
-      if (breadcrumb.data && typeof breadcrumb.data === "object") {
-        breadcrumb.data = scrubEventData(breadcrumb.data as Record<string, unknown>);
-      }
-      return breadcrumb;
-    },
+    beforeSend,
+    beforeSendTransaction,
+    beforeBreadcrumb,
   });
 
   return SentryModule;
 }
 
-/**
- * Implements get sentry for the public runtime surface of this module.
- */
+/** Implements get sentry for the public runtime surface of this module. */
 export function getSentry(): SentryLike | undefined {
   return _sentry;
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   isExpectedCliErrorEvent,
   isKnownNoisyConsoleEvent,

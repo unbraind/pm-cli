@@ -11,24 +11,30 @@ const PM_CLI_PACKAGE_NAME = "@unbrained/pm-cli";
 
 function packageJsonNamesPmCli(packageJsonPath: string): boolean {
   try {
-    const parsed = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as { name?: unknown };
+    const parsed = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as {
+      name?: unknown;
+    };
     return parsed.name === PM_CLI_PACKAGE_NAME;
   } catch {
     return false;
   }
 }
 
-/**
- * Implements find pm package root from path for the public runtime surface of this module.
- */
-export function findPmPackageRootFromPath(startPath: string): string | undefined {
-  let current = fs.existsSync(startPath) && fs.statSync(startPath).isDirectory()
-    ? path.resolve(startPath)
-    : path.dirname(path.resolve(startPath));
+/** Implements find pm package root from path for the public runtime surface of this module. */
+export function findPmPackageRootFromPath(
+  startPath: string,
+): string | undefined {
+  let current =
+    fs.existsSync(startPath) && fs.statSync(startPath).isDirectory()
+      ? path.resolve(startPath)
+      : path.dirname(path.resolve(startPath));
 
   while (true) {
     const packageJsonPath = path.join(current, "package.json");
-    if (fs.existsSync(packageJsonPath) && packageJsonNamesPmCli(packageJsonPath)) {
+    if (
+      fs.existsSync(packageJsonPath) &&
+      packageJsonNamesPmCli(packageJsonPath)
+    ) {
       return current;
     }
 
@@ -40,10 +46,11 @@ export function findPmPackageRootFromPath(startPath: string): string | undefined
   }
 }
 
-/**
- * Implements resolve pm package root from module for the public runtime surface of this module.
- */
-export function resolvePmPackageRootFromModule(metaUrl: string, fallbackRelativeSegments: string[] = []): string {
+/** Implements resolve pm package root from module for the public runtime surface of this module. */
+export function resolvePmPackageRootFromModule(
+  metaUrl: string,
+  fallbackRelativeSegments: string[] = [],
+): string {
   const modulePath = fileURLToPath(metaUrl);
   const discovered = findPmPackageRootFromPath(modulePath);
   if (discovered) {
@@ -61,22 +68,31 @@ export function resolvePmPackageRootFromModule(metaUrl: string, fallbackRelative
  * own fallback (the CLI/MCP use `"0.0.0"`). Resolution must never throw, so the
  * hot startup path is safe.
  */
-export function resolvePmCliVersion(metaUrl: string, fallbackRelativeSegments: string[] = []): string | undefined {
+export function resolvePmCliVersion(
+  metaUrl: string,
+  fallbackRelativeSegments: string[] = [],
+): string | undefined {
   try {
-    const packageJsonPath = path.join(resolvePmPackageRootFromModule(metaUrl, fallbackRelativeSegments), "package.json");
+    const packageJsonPath = path.join(
+      resolvePmPackageRootFromModule(metaUrl, fallbackRelativeSegments),
+      "package.json",
+    );
     if (!fs.existsSync(packageJsonPath)) {
       return undefined;
     }
-    const parsed = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as { version?: unknown };
-    return typeof parsed.version === "string" && parsed.version.trim().length > 0 ? parsed.version : undefined;
+    const parsed = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as {
+      version?: unknown;
+    };
+    return typeof parsed.version === "string" &&
+      parsed.version.trim().length > 0
+      ? parsed.version
+      : undefined;
   } catch {
     return undefined;
   }
 }
 
-/**
- * Implements resolve configured pm package root for the public runtime surface of this module.
- */
+/** Implements resolve configured pm package root for the public runtime surface of this module. */
 export function resolveConfiguredPmPackageRoot(
   env: NodeJS.ProcessEnv = process.env,
   envName = "PM_CLI_PACKAGE_ROOT",

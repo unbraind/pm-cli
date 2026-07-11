@@ -4,7 +4,10 @@
  * Implements the pm claim command surface and its agent-facing runtime behavior.
  */
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { resolveRuntimeStatusRegistry, statusIsTerminal } from "../../core/schema/runtime-schema.js";
+import {
+  resolveRuntimeStatusRegistry,
+  statusIsTerminal,
+} from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -16,27 +19,35 @@ import { resolveAuthor } from "../../core/shared/author.js";
 import { wrapOwnershipConflict } from "./annotation-command.js";
 import { runNext, type NextRecommendation, type NextOptions } from "./next.js";
 
-/**
- * Documents the claim result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the claim result payload exchanged by command, SDK, and package integrations. */
 export interface ClaimResult {
+  /** Value that configures or reports item for this contract. */
   item: Record<string, unknown>;
+  /** Value that configures or reports claimed by for this contract. */
   claimed_by: string;
+  /** Value that configures or reports previous assignee for this contract. */
   previous_assignee: string | null;
+  /** Value that configures or reports forced for this contract. */
   forced: boolean;
+  /** Value that configures or reports skipped for this contract. */
   skipped?: boolean;
+  /** Value that configures or reports warnings for this contract. */
   warnings?: string[];
 }
 
 /** Result of atomically selecting and claiming the next caller-available item. */
 export interface ClaimNextResult extends ClaimResult {
+  /** Value that configures or reports recommendation for this contract. */
   recommendation: NextRecommendation;
+  /** Value that configures or reports attempts for this contract. */
   attempts: number;
 }
 
 /** Returns whether a failed claim lost the atomic test-and-set race. */
 export function isAlreadyClaimedError(error: unknown): boolean {
-  return error instanceof PmCliError && error.context?.code === "already_claimed_by";
+  return (
+    error instanceof PmCliError && error.context?.code === "already_claimed_by"
+  );
 }
 
 type ClaimRunner = (
@@ -46,36 +57,37 @@ type ClaimRunner = (
   options: ClaimMutationOptions,
 ) => Promise<ClaimResult>;
 
-/**
- * Documents the release result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the release result payload exchanged by command, SDK, and package integrations. */
 export interface ReleaseResult {
+  /** Value that configures or reports item for this contract. */
   item: Record<string, unknown>;
+  /** Value that configures or reports released by for this contract. */
   released_by: string;
+  /** Value that configures or reports previous assignee for this contract. */
   previous_assignee: string | null;
+  /** Value that configures or reports audit release for this contract. */
   audit_release: boolean;
+  /** Value that configures or reports forced for this contract. */
   forced: boolean;
 }
 
-/**
- * Documents the claim mutation options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the claim mutation options payload exchanged by command, SDK, and package integrations. */
 export interface ClaimMutationOptions {
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Value that configures or reports if available for this contract. */
   ifAvailable?: boolean;
 }
 
-/**
- * Documents the release mutation options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the release mutation options payload exchanged by command, SDK, and package integrations. */
 export interface ReleaseMutationOptions extends ClaimMutationOptions {
+  /** Value that configures or reports allow audit release for this contract. */
   allowAuditRelease?: boolean;
 }
 
-/**
- * Implements run claim for the public runtime surface of this module.
- */
+/** Implements run claim for the public runtime surface of this module. */
 export async function runClaim(
   id: string,
   force: boolean,
@@ -84,7 +96,10 @@ export async function runClaim(
 ): Promise<ClaimResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
@@ -104,12 +119,21 @@ export async function runClaim(
     skipNoop: true,
     mutate(document) {
       const currentAssignee = document.metadata.assignee;
-      const currentAssigneeText = typeof currentAssignee === "string" ? currentAssignee : "";
-      previousAssignee = currentAssigneeText.trim().length > 0 ? currentAssigneeText : null;
-      if (statusIsTerminal(document.metadata.status, statusRegistry) && !force) {
-        throw new PmCliError(`Cannot claim terminal item ${document.metadata.id} without --force`, EXIT_CODE.CONFLICT);
+      const currentAssigneeText =
+        typeof currentAssignee === "string" ? currentAssignee : "";
+      previousAssignee =
+        currentAssigneeText.trim().length > 0 ? currentAssigneeText : null;
+      if (
+        statusIsTerminal(document.metadata.status, statusRegistry) &&
+        !force
+      ) {
+        throw new PmCliError(
+          `Cannot claim terminal item ${document.metadata.id} without --force`,
+          EXIT_CODE.CONFLICT,
+        );
       }
-      const heldByOther = previousAssignee !== null && previousAssignee !== author;
+      const heldByOther =
+        previousAssignee !== null && previousAssignee !== author;
       if (heldByOther && options.ifAvailable === true) {
         skipped = true;
         mutationWarnings.push(`claim_skipped_held_by:${previousAssignee}`);
@@ -140,7 +164,8 @@ export async function runClaim(
 
   return {
     item: toItemRecord(result.item),
-    claimed_by: skipped && previousAssignee !== null ? previousAssignee : author,
+    claimed_by:
+      skipped && previousAssignee !== null ? previousAssignee : author,
     previous_assignee: previousAssignee,
     forced: force,
     ...(skipped ? { skipped: true } : {}),
@@ -148,21 +173,23 @@ export async function runClaim(
   };
 }
 
-/**
- * Selects ranked actionable work and claims the first candidate still available
- * under the item lock. Conflicts caused by parallel claimers advance to the next
- * candidate instead of returning a thundering-herd failure.
- */
+/** Selects ranked actionable work and claims the first candidate still available under the item lock. Conflicts caused by parallel claimers advance to the next candidate instead of returning a thundering-herd failure. */
 export async function runClaimNext(
   force: boolean,
   global: GlobalOptions,
   options: ClaimMutationOptions = {},
   nextOptions: NextOptions = {},
 ): Promise<ClaimNextResult> {
-  const next = await runNext({ ...nextOptions, callerAuthor: options.author, limit: "10" }, global);
+  const next = await runNext(
+    { ...nextOptions, callerAuthor: options.author, limit: "10" },
+    global,
+  );
   const recommendations = [next.recommended, ...next.ready]
     .filter((entry): entry is NextRecommendation => entry !== null)
-    .map((entry) => ({ ...entry, reasons: "reasons" in entry ? entry.reasons : ["ranked ready candidate"] }));
+    .map((entry) => ({
+      ...entry,
+      reasons: "reasons" in entry ? entry.reasons : ["ranked ready candidate"],
+    }));
   return claimNextFromRecommendations(recommendations, force, global, options);
 }
 
@@ -179,7 +206,12 @@ export async function claimNextFromRecommendations(
   for (const recommendation of recommendations) {
     attempts += 1;
     try {
-      const claimed = await claimRunner(recommendation.id, force, global, options);
+      const claimed = await claimRunner(
+        recommendation.id,
+        force,
+        global,
+        options,
+      );
       const result = { ...claimed, recommendation, attempts };
       if (claimed.skipped) lastSkipped = result;
       else return result;
@@ -188,16 +220,20 @@ export async function claimNextFromRecommendations(
     }
   }
   if (lastSkipped) return lastSkipped;
-  throw new PmCliError("No actionable item remained available to claim", EXIT_CODE.CONFLICT, {
-    code: "no_available_next_item",
-    why: "Every ranked candidate was claimed by another agent before this atomic selection completed.",
-    nextSteps: ["Run pm claim --next again to refresh the ranked candidate set."],
-  });
+  throw new PmCliError(
+    "No actionable item remained available to claim",
+    EXIT_CODE.CONFLICT,
+    {
+      code: "no_available_next_item",
+      why: "Every ranked candidate was claimed by another agent before this atomic selection completed.",
+      nextSteps: [
+        "Run pm claim --next again to refresh the ranked candidate set.",
+      ],
+    },
+  );
 }
 
-/**
- * Implements run release for the public runtime surface of this module.
- */
+/** Implements run release for the public runtime surface of this module. */
 export async function runRelease(
   id: string,
   force: boolean,
@@ -206,7 +242,10 @@ export async function runRelease(
 ): Promise<ReleaseResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   const settings = await readSettings(pmRoot);
   const author = resolveAuthor(options.author, settings.author_default);
@@ -234,8 +273,11 @@ export async function runRelease(
     });
   } catch (error: unknown) {
     wrapOwnershipConflict(error, {
-      required: "For audited non-owner handoffs, prefer --allow-audit-release before considering --force.",
-      examples: ['pm release pm-a1b2 --author "reviewer" --allow-audit-release'],
+      required:
+        "For audited non-owner handoffs, prefer --allow-audit-release before considering --force.",
+      examples: [
+        'pm release pm-a1b2 --author "reviewer" --allow-audit-release',
+      ],
       nextSteps: [
         "Use --allow-audit-release for append-only release handoffs that only clear assignee metadata.",
         "Use --force only when an explicit override is approved for broader ownership conflicts.",

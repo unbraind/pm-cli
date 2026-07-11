@@ -3,7 +3,10 @@
  *
  * Resolves configurable schema, fields, statuses, and workflows for Type Workflows.
  */
-import type { RuntimeSchemaSettings, TypeWorkflowDefinition } from "../../types/index.js";
+import type {
+  RuntimeSchemaSettings,
+  TypeWorkflowDefinition,
+} from "../../types/index.js";
 
 /**
  * Per-type allowed-transition support (governance.workflow_enforcement).
@@ -29,45 +32,52 @@ export interface NormalizedTypeWorkflow {
 
 /** Minimal status-registry surface needed to resolve a status token to its id. */
 export interface StatusTokenResolver {
+  /** Value that configures or reports alias to id for this contract. */
   alias_to_id: Map<string, string>;
 }
 
-/**
- * Documents the evaluate transition input payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the evaluate transition input payload exchanged by command, SDK, and package integrations. */
 export interface EvaluateTransitionInput {
+  /** Value that configures or reports type name for this contract. */
   typeName: string;
+  /** Lifecycle state reported for fromthe record. */
   fromStatus: string;
+  /** Lifecycle state reported for tothe record. */
   toStatus: string;
+  /** Value that configures or reports type workflows for this contract. */
   typeWorkflows: NormalizedTypeWorkflow[];
+  /** Value that configures or reports status registry for this contract. */
   statusRegistry?: StatusTokenResolver;
 }
 
-/**
- * Documents the evaluate transition result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the evaluate transition result payload exchanged by command, SDK, and package integrations. */
 export interface EvaluateTransitionResult {
   /** Whether the transition is permitted. */
   allowed: boolean;
   /** Whether a matching per-type rule constrained the transition. */
   hasRule: boolean;
-  /**
-   * Allowed [from, to] pairs for the matched type (normalized ids). Empty when
-   * the type is unrestricted.
-   */
+  /** Allowed [from, to] pairs for the matched type (normalized ids). Empty when the type is unrestricted. */
   allowedTransitions: [string, string][];
 }
 
 /** Normalize a status token the same way runtime-schema statuses are normalized. */
 export function normalizeStatusToken(value: unknown): string {
-  return typeof value === "string" ? value.trim().toLowerCase().replaceAll(/[\s-]+/g, "_") : "";
+  return typeof value === "string"
+    ? value
+        .trim()
+        .toLowerCase()
+        .replaceAll(/[\s-]+/g, "_")
+    : "";
 }
 
 function normalizeTypeName(value: unknown): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
-function resolveStatusId(value: string, statusRegistry: StatusTokenResolver | undefined): string {
+function resolveStatusId(
+  value: string,
+  statusRegistry: StatusTokenResolver | undefined,
+): string {
   const token = normalizeStatusToken(value);
   if (token.length === 0) {
     return "";
@@ -89,8 +99,15 @@ function resolveStatusId(value: string, statusRegistry: StatusTokenResolver | un
 export function resolveTypeWorkflows(
   schema: Pick<RuntimeSchemaSettings, "type_workflows"> | undefined,
 ): NormalizedTypeWorkflow[] {
-  const rawWorkflows: TypeWorkflowDefinition[] = Array.isArray(schema?.type_workflows) ? schema!.type_workflows! : [];
-  const byType = new Map<string, { pairs: [string, string][]; denyAll: boolean }>();
+  const rawWorkflows: TypeWorkflowDefinition[] = Array.isArray(
+    schema?.type_workflows,
+  )
+    ? schema!.type_workflows!
+    : [];
+  const byType = new Map<
+    string,
+    { pairs: [string, string][]; denyAll: boolean }
+  >();
   for (const entry of rawWorkflows) {
     const type = normalizeTypeName(entry?.type);
     if (type.length === 0) {
@@ -115,7 +132,11 @@ export function resolveTypeWorkflows(
       if (from.length === 0 || to.length === 0) {
         continue;
       }
-      if (record.pairs.some((candidate) => candidate[0] === from && candidate[1] === to)) {
+      if (
+        record.pairs.some(
+          (candidate) => candidate[0] === from && candidate[1] === to,
+        )
+      ) {
         continue;
       }
       record.pairs.push([from, to]);
@@ -128,13 +149,14 @@ export function resolveTypeWorkflows(
     .sort((left, right) => left.type.localeCompare(right.type));
 }
 
-/**
- * Evaluate whether a status transition is allowed for the given item type.
- * Returns hasRule=false (allowed) when the type is unrestricted.
- */
-export function evaluateTransition(input: EvaluateTransitionInput): EvaluateTransitionResult {
+/** Evaluate whether a status transition is allowed for the given item type. Returns hasRule=false (allowed) when the type is unrestricted. */
+export function evaluateTransition(
+  input: EvaluateTransitionInput,
+): EvaluateTransitionResult {
   const typeName = normalizeTypeName(input.typeName);
-  const matched = input.typeWorkflows.find((workflow) => workflow.type === typeName);
+  const matched = input.typeWorkflows.find(
+    (workflow) => workflow.type === typeName,
+  );
   if (!matched) {
     return { allowed: true, hasRule: false, allowedTransitions: [] };
   }
@@ -142,20 +164,32 @@ export function evaluateTransition(input: EvaluateTransitionInput): EvaluateTran
   const to = resolveStatusId(input.toStatus, input.statusRegistry);
   // A no-op self-transition is always permitted, even under a restricting rule.
   if (from.length > 0 && from === to) {
-    return { allowed: true, hasRule: true, allowedTransitions: matched.allowed_transitions };
+    return {
+      allowed: true,
+      hasRule: true,
+      allowedTransitions: matched.allowed_transitions,
+    };
   }
   const allowed = matched.allowed_transitions.some((pair) => {
     const ruleFrom = resolveStatusId(pair[0], input.statusRegistry);
     const ruleTo = resolveStatusId(pair[1], input.statusRegistry);
     return ruleFrom === from && ruleTo === to;
   });
-  return { allowed, hasRule: true, allowedTransitions: matched.allowed_transitions };
+  return {
+    allowed,
+    hasRule: true,
+    allowedTransitions: matched.allowed_transitions,
+  };
 }
 
 /** Render the allowed transitions for an error/warning hint. */
-export function describeAllowedTransitions(allowedTransitions: [string, string][]): string {
+export function describeAllowedTransitions(
+  allowedTransitions: [string, string][],
+): string {
   if (allowedTransitions.length === 0) {
     return "(no transitions allowed)";
   }
-  return allowedTransitions.map((pair) => `${pair[0]} -> ${pair[1]}`).join(", ");
+  return allowedTransitions
+    .map((pair) => `${pair[0]} -> ${pair[1]}`)
+    .join(", ");
 }

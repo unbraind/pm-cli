@@ -11,7 +11,13 @@ import { readSettings, writeSettings } from "../store/settings.js";
 
 const TELEMETRY_PROMPT_DISABLE_ENV = "PM_TELEMETRY_PROMPT";
 const TELEMETRY_PROMPT_DISABLE_VALUES = new Set(["0", "false", "no", "off"]);
-const TELEMETRY_PROMPT_SKIPPED_COMMANDS = new Set(["init", "completion", "completion-statuses", "completion-tags", "completion-types"]);
+const TELEMETRY_PROMPT_SKIPPED_COMMANDS = new Set([
+  "init",
+  "completion",
+  "completion-statuses",
+  "completion-tags",
+  "completion-types",
+]);
 
 function parseBooleanLike(value: string | undefined): boolean {
   if (typeof value !== "string") {
@@ -36,7 +42,10 @@ function isTruthyEnvValue(value: string | undefined): boolean {
   return !TELEMETRY_PROMPT_DISABLE_VALUES.has(normalized);
 }
 
-function shouldSkipTelemetryPrompt(commandPath: string, globalOptions: GlobalOptions): boolean {
+function shouldSkipTelemetryPrompt(
+  commandPath: string,
+  globalOptions: GlobalOptions,
+): boolean {
   if (globalOptions.json === true || globalOptions.quiet === true) {
     return true;
   }
@@ -64,7 +73,9 @@ function parseTelemetryPromptAnswer(answer: string): boolean {
   return true;
 }
 
-async function promptTelemetryConsent(currentDefault: boolean): Promise<boolean> {
+async function promptTelemetryConsent(
+  currentDefault: boolean,
+): Promise<boolean> {
   const defaultLabel = currentDefault ? "Y/n" : "y/N";
   const prompt =
     `pm telemetry helps improve reliability and usage diagnostics.\n` +
@@ -83,10 +94,11 @@ async function promptTelemetryConsent(currentDefault: boolean): Promise<boolean>
   }
 }
 
-/**
- * Implements maybe run first use telemetry prompt for the public runtime surface of this module.
- */
-export async function maybeRunFirstUseTelemetryPrompt(commandPath: string, globalOptions: GlobalOptions): Promise<void> {
+/** Implements maybe run first use telemetry prompt for the public runtime surface of this module. */
+export async function maybeRunFirstUseTelemetryPrompt(
+  commandPath: string,
+  globalOptions: GlobalOptions,
+): Promise<void> {
   if (shouldSkipTelemetryPrompt(commandPath, globalOptions)) {
     return;
   }

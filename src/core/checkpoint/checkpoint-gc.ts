@@ -20,9 +20,7 @@ import path from "node:path";
 
 const MILLISECONDS_PER_DAY = 86_400_000;
 
-/**
- * Documents the checkpoint gc scan entry payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the checkpoint gc scan entry payload exchanged by command, SDK, and package integrations. */
 export interface CheckpointGcEntry {
   /** Relative path like "checkpoints/update-many/update-many-20260619-abc123.json". */
   file: string;
@@ -32,36 +30,31 @@ export interface CheckpointGcEntry {
   age_seconds: number | null;
   /** True only when classified as expired (older than the retention window). */
   stale: boolean;
+  /** Value that configures or reports reason for this contract. */
   reason: "expired" | "active" | "unparseable";
 }
 
-/**
- * Documents the checkpoint gc hooks payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the checkpoint gc hooks payload exchanged by command, SDK, and package integrations. */
 export interface CheckpointGcHooks {
+  /** Value that configures or reports on read for this contract. */
   onRead?: (checkpointPath: string) => Promise<string[]> | string[];
+  /** Value that configures or reports on write for this contract. */
   onWrite?: (checkpointPath: string) => Promise<string[]> | string[];
 }
 
-/**
- * Documents the checkpoint gc options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the checkpoint gc options payload exchanged by command, SDK, and package integrations. */
 export interface CheckpointGcOptions {
+  /** Value that configures or reports dry run for this contract. */
   dryRun: boolean;
-  /**
-   * Prune checkpoints older than this many days. Negative values are clamped to
-   * zero (prune everything aged); a non-finite value (NaN/Infinity) disables
-   * pruning entirely so bad input never deletes recoverable checkpoints.
-   */
+  /** Prune checkpoints older than this many days. Negative values are clamped to zero (prune everything aged); a non-finite value (NaN/Infinity) disables pruning entirely so bad input never deletes recoverable checkpoints. */
   retentionDays: number;
   /** Epoch ms; defaults to Date.now() — injectable for deterministic tests. */
   now?: number;
+  /** Value that configures or reports hooks for this contract. */
   hooks?: CheckpointGcHooks;
 }
 
-/**
- * Documents the checkpoint gc result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the checkpoint gc result payload exchanged by command, SDK, and package integrations. */
 export interface CheckpointGcResult {
   /** Number of *.json checkpoint files examined. */
   scanned: number;
@@ -69,6 +62,7 @@ export interface CheckpointGcResult {
   removed: string[];
   /** Relative paths retained (active OR unparseable — never delete what we can't reason about). */
   retained: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
   /** One per scanned checkpoint file, sorted by file name asc. */
   entries: CheckpointGcEntry[];
@@ -76,7 +70,10 @@ export interface CheckpointGcResult {
 
 function isErrno(error: unknown, code: string): boolean {
   return (
-    typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === code
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === code
   );
 }
 
@@ -95,15 +92,11 @@ function readCheckpointCreatedAt(raw: string): string | null {
   return typeof createdAt === "string" ? createdAt : null;
 }
 
-/**
- * Collect relative `checkpoints/<subdir>/<file>.json` (and top-level `<file>.json`)
- * paths under the checkpoints root. Subdirectory reads are resilient to
- * concurrent races: a subdir that vanishes between the parent `readdir` and its
- * own `readdir` (ENOENT) is skipped quietly, and any other read failure (e.g. a
- * permission error) is surfaced as a `checkpoint_subdir_unreadable:<name>`
- * warning rather than aborting the whole sweep.
- */
-async function collectCheckpointFiles(checkpointsDir: string, warnings: string[]): Promise<string[]> {
+/** Collect relative `checkpoints/<subdir>/<file>.json` (and top-level `<file>.json`) paths under the checkpoints root. Subdirectory reads are resilient to concurrent races: a subdir that vanishes between the parent `readdir` and its own `readdir` (ENOENT) is skipped quietly, and any other read failure (e.g. a permission error) is surfaced as a `checkpoint_subdir_unreadable:<name>` warning rather than aborting the whole sweep. */
+async function collectCheckpointFiles(
+  checkpointsDir: string,
+  warnings: string[],
+): Promise<string[]> {
   let dirEntries: Dirent[];
   try {
     dirEntries = await fs.readdir(checkpointsDir, { withFileTypes: true });
@@ -138,10 +131,11 @@ async function collectCheckpointFiles(checkpointsDir: string, warnings: string[]
   return files.sort();
 }
 
-/**
- * Implements run checkpoint gc for the public runtime surface of this module.
- */
-export async function runCheckpointGc(pmRoot: string, options: CheckpointGcOptions): Promise<CheckpointGcResult> {
+/** Implements run checkpoint gc for the public runtime surface of this module. */
+export async function runCheckpointGc(
+  pmRoot: string,
+  options: CheckpointGcOptions,
+): Promise<CheckpointGcResult> {
   const { dryRun, hooks } = options;
   const nowMs = options.now ?? Date.now();
   const retentionMs = Math.max(0, options.retentionDays) * MILLISECONDS_PER_DAY;
@@ -179,7 +173,13 @@ export async function runCheckpointGc(pmRoot: string, options: CheckpointGcOptio
       }
       result.warnings.push(`checkpoint_unreadable:${relName}`);
       result.retained.push(relPath);
-      result.entries.push({ file: relPath, created_at: null, age_seconds: null, stale: false, reason: "unparseable" });
+      result.entries.push({
+        file: relPath,
+        created_at: null,
+        age_seconds: null,
+        stale: false,
+        reason: "unparseable",
+      });
       continue;
     }
 

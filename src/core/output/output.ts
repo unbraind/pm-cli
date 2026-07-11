@@ -12,20 +12,25 @@ import {
 import { EXIT_CODE } from "../shared/constants.js";
 import { projectMutationResult } from "./mutation-projection.js";
 
-/**
- * Documents the output options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the output options payload exchanged by command, SDK, and package integrations. */
 export interface OutputOptions {
+  /** Value that configures or reports json for this contract. */
   json?: boolean;
+  /** Value that configures or reports quiet for this contract. */
   quiet?: boolean;
   /** When true, mutation results drop the verbose changed_fields array (keeps changed_field_count). */
   noChangedFields?: boolean;
   /** When true, single-item mutation results print only id and status. */
   idOnly?: boolean;
+  /** Fallback output format used when callers do not provide an override. */
   defaultOutputFormat?: "toon" | "json";
+  /** Value that configures or reports command for this contract. */
   command?: string;
+  /** Value that configures or reports command args for this contract. */
   commandArgs?: string[];
+  /** Inputs that customize the command operation. */
   commandOptions?: Record<string, unknown>;
+  /** Value that configures or reports pm root for this contract. */
   pmRoot?: string;
 }
 
@@ -55,17 +60,27 @@ function stripNativeOutputMarker<T>(result: T): T {
 }
 
 function isBrokenPipeError(error: unknown): boolean {
-  return typeof error === "object" && error !== null && (error as NodeLikeError).code === "EPIPE";
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as NodeLikeError).code === "EPIPE"
+  );
 }
 
 function markStdoutBrokenPipeExitCode(): void {
-  if (process.exitCode === undefined || process.exitCode === EXIT_CODE.SUCCESS) {
+  if (
+    process.exitCode === undefined ||
+    process.exitCode === EXIT_CODE.SUCCESS
+  ) {
     process.exitCode = EXIT_CODE.SUCCESS;
   }
 }
 
 function markStderrBrokenPipeExitCode(): void {
-  if (process.exitCode === undefined || process.exitCode === EXIT_CODE.SUCCESS) {
+  if (
+    process.exitCode === undefined ||
+    process.exitCode === EXIT_CODE.SUCCESS
+  ) {
     process.exitCode = EXIT_CODE.GENERIC_FAILURE;
   }
 }
@@ -124,23 +139,20 @@ function writeToStream(target: OutputStreamTarget, text: string): boolean {
   }
 }
 
-/**
- * Implements write stdout for the public runtime surface of this module.
- */
+/** Implements write stdout for the public runtime surface of this module. */
 export function writeStdout(text: string): boolean {
   return writeToStream("stdout", text);
 }
 
-/**
- * Implements write stderr for the public runtime surface of this module.
- */
+/** Implements write stderr for the public runtime surface of this module. */
 export function writeStderr(text: string): boolean {
   return writeToStream("stderr", text);
 }
 
 function renderScalar(value: unknown): string {
   if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (typeof value === "number" || typeof value === "boolean")
+    return String(value);
   if (value === null) return "null";
   return JSON.stringify(value);
 }
@@ -218,7 +230,11 @@ function renderDefaultMarkdownResult(value: unknown): string | null {
   if (!isPlainObject(value) || value.output_default !== "markdown") {
     return null;
   }
-  if (typeof value.view !== "string" || !Array.isArray(value.events) || !Array.isArray(value.days)) {
+  if (
+    typeof value.view !== "string" ||
+    !Array.isArray(value.events) ||
+    !Array.isArray(value.days)
+  ) {
     return null;
   }
   const lines = [`# pm calendar (${value.view})`, ""];
@@ -236,15 +252,16 @@ function renderDefaultMarkdownResult(value: unknown): string | null {
     const kind = typeof event.kind === "string" ? event.kind : "event";
     const title = typeof event.item_title === "string" ? event.item_title : "";
     const itemId = typeof event.item_id === "string" ? event.item_id : "";
-    const reminderText = typeof event.reminder_text === "string" && event.reminder_text.length > 0 ? ` ${event.reminder_text}` : "";
+    const reminderText =
+      typeof event.reminder_text === "string" && event.reminder_text.length > 0
+        ? ` ${event.reminder_text}`
+        : "";
     lines.push(`- [${kind}] ${itemId} ${title}${reminderText}`.trim());
   }
   return `${lines.join("\n")}\n`;
 }
 
-/**
- * Implements format output for the public runtime surface of this module.
- */
+/** Implements format output for the public runtime surface of this module. */
 export function formatOutput(result: unknown, options: OutputOptions): string {
   const commandOverride = runActiveCommandOverride(result);
   const nativeOutput = shouldUseNativeOutput(commandOverride.result);
@@ -256,31 +273,41 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
       : options.json === false
         ? "toon"
         : options.defaultOutputFormat === "json"
-        ? "json"
-        : "toon";
-  const serviceOverride = nativeOutput ? { handled: false, result: effectiveResult } : runActiveServiceOverrideSync("output_format", {
-    command: options.command,
-    args: options.commandArgs,
-    command_options: options.commandOptions,
-    global: { ...options },
-    pm_root: options.pmRoot,
-    format,
-    options: { ...options },
-    result: effectiveResult,
-  });
+          ? "json"
+          : "toon";
+  const serviceOverride = nativeOutput
+    ? { handled: false, result: effectiveResult }
+    : runActiveServiceOverrideSync("output_format", {
+        command: options.command,
+        args: options.commandArgs,
+        command_options: options.commandOptions,
+        global: { ...options },
+        pm_root: options.pmRoot,
+        format,
+        options: { ...options },
+        result: effectiveResult,
+      });
   if (serviceOverride.handled && typeof serviceOverride.result === "string") {
-    return serviceOverride.result.endsWith("\n") ? serviceOverride.result : `${serviceOverride.result}\n`;
+    return serviceOverride.result.endsWith("\n")
+      ? serviceOverride.result
+      : `${serviceOverride.result}\n`;
   }
-  const outputResult = serviceOverride.handled ? serviceOverride.result : effectiveResult;
+  const outputResult = serviceOverride.handled
+    ? serviceOverride.result
+    : effectiveResult;
   if (format === "toon") {
     const markdownDefault = renderDefaultMarkdownResult(outputResult);
     if (markdownDefault !== null) {
       return markdownDefault;
     }
   }
-  const rendererOverride = nativeOutput ? { rendered: null } : runActiveRendererOverride(format, outputResult);
+  const rendererOverride = nativeOutput
+    ? { rendered: null }
+    : runActiveRendererOverride(format, outputResult);
   if (rendererOverride.rendered !== null) {
-    return rendererOverride.rendered.endsWith("\n") ? rendererOverride.rendered : `${rendererOverride.rendered}\n`;
+    return rendererOverride.rendered.endsWith("\n")
+      ? rendererOverride.rendered
+      : `${rendererOverride.rendered}\n`;
   }
   if (format === "json") {
     return `${JSON.stringify(outputResult, null, 2)}\n`;
@@ -292,9 +319,7 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
   return `${renderToonValue(compactedToon, 0)}\n`;
 }
 
-/**
- * Implements print result for the public runtime surface of this module.
- */
+/** Implements print result for the public runtime surface of this module. */
 export function printResult(result: unknown, options: OutputOptions): void {
   const projected = options.idOnly
     ? projectMutationResult(result, { idOnly: true })
@@ -308,17 +333,19 @@ export function printResult(result: unknown, options: OutputOptions): void {
   writeStdout(rendered);
 }
 
-/**
- * Implements print error for the public runtime surface of this module.
- */
+/** Implements print error for the public runtime surface of this module. */
 export function printError(message: string): void {
   const override = runActiveServiceOverrideSync("error_format", {
     message,
   });
-  const rendered = override.handled && typeof override.result === "string" ? override.result : message;
+  const rendered =
+    override.handled && typeof override.result === "string"
+      ? override.result
+      : message;
   writeStderr(rendered.endsWith("\n") ? rendered : `${rendered}\n`);
 }
 
+/** Public contract for output test only, shared by SDK and presentation-layer consumers. */
 export const outputTestOnly = {
   compactToonValue,
   renderToonValue,

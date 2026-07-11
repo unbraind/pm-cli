@@ -3,7 +3,11 @@
  *
  * Powers search, embeddings, and semantic retrieval behavior for Corpus.
  */
-import type { ItemDocument, ItemMetadata, PmSettings } from "../../types/index.js";
+import type {
+  ItemDocument,
+  ItemMetadata,
+  PmSettings,
+} from "../../types/index.js";
 import { coercePositiveInteger } from "../shared/primitives.js";
 
 /**
@@ -53,7 +57,9 @@ export const DEFAULT_SEARCH_CORPUS_FIELDS: readonly string[] = [
  * - unset / not an array / empty array → the full default set (backward compatible).
  * - non-empty array → exactly those names (string entries only; trimmed; empties dropped).
  */
-export function resolveSearchCorpusFields(settings: Pick<PmSettings, "search"> | undefined): string[] {
+export function resolveSearchCorpusFields(
+  settings: Pick<PmSettings, "search"> | undefined,
+): string[] {
   const configured = settings?.search?.corpus_fields;
   if (!Array.isArray(configured)) {
     return [...DEFAULT_SEARCH_CORPUS_FIELDS];
@@ -74,29 +80,36 @@ export function resolveSearchCorpusFields(settings: Pick<PmSettings, "search"> |
   return selected.length > 0 ? selected : [...DEFAULT_SEARCH_CORPUS_FIELDS];
 }
 
+/** Fallback semantic corpus input max characters used when callers do not provide an override. */
 export const DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS = 8_000;
+/** Public contract for ollama semantic corpus input max characters, shared by SDK and presentation-layer consumers. */
 export const OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS = 3_200;
-export const SEMANTIC_CORPUS_TRUNCATION_SUFFIX = "...[semantic corpus truncated]";
+/** Public contract for semantic corpus truncation suffix, shared by SDK and presentation-layer consumers. */
+export const SEMANTIC_CORPUS_TRUNCATION_SUFFIX =
+  "...[semantic corpus truncated]";
+/** Public contract for search embedding corpus max characters invalid warning, shared by SDK and presentation-layer consumers. */
 export const SEARCH_EMBEDDING_CORPUS_MAX_CHARACTERS_INVALID_WARNING =
   "search_embedding_corpus_max_characters_invalid:using_provider_default";
 
-function compactParts(parts: Array<string | boolean | number | null | undefined>): string {
+function compactParts(
+  parts: Array<string | boolean | number | null | undefined>,
+): string {
   return parts
-    .map((part) => (part === undefined || part === null ? "" : String(part).trim()))
+    .map((part) =>
+      part === undefined || part === null ? "" : String(part).trim(),
+    )
     .filter((part) => part.length > 0)
     .join(" ");
 }
 
-/**
- * Implements build reminder corpus for the public runtime surface of this module.
- */
+/** Implements build reminder corpus for the public runtime surface of this module. */
 export function buildReminderCorpus(item: ItemMetadata): string[] {
-  return (item.reminders ?? []).map((reminder) => compactParts([reminder.at, reminder.text]));
+  return (item.reminders ?? []).map((reminder) =>
+    compactParts([reminder.at, reminder.text]),
+  );
 }
 
-/**
- * Implements build event corpus for the public runtime surface of this module.
- */
+/** Implements build event corpus for the public runtime surface of this module. */
 export function buildEventCorpus(item: ItemMetadata): string[] {
   return (item.events ?? []).map((event) =>
     compactParts([
@@ -118,22 +131,35 @@ export function buildEventCorpus(item: ItemMetadata): string[] {
   );
 }
 
-/**
- * Implements build plan flat corpus for the public runtime surface of this module.
- */
+/** Implements build plan flat corpus for the public runtime surface of this module. */
 type PlanStepCorpusEntry = NonNullable<ItemMetadata["plan_steps"]>[number];
 
-function appendPlanStepFlatCorpus(segments: Array<string | undefined>, step: PlanStepCorpusEntry): void {
-  segments.push(step.title, step.body, step.status, step.owner, step.evidence, step.blocked_reason, step.superseded_by);
+function appendPlanStepFlatCorpus(
+  segments: Array<string | undefined>,
+  step: PlanStepCorpusEntry,
+): void {
+  segments.push(
+    step.title,
+    step.body,
+    step.status,
+    step.owner,
+    step.evidence,
+    step.blocked_reason,
+    step.superseded_by,
+  );
   for (const link of step.linked_items ?? []) {
     segments.push(`${link.kind} ${link.id}`, link.note);
   }
   for (const file of step.files ?? []) segments.push(file.path, file.note);
-  for (const test of step.tests ?? []) segments.push(test.command, test.path, test.note);
+  for (const test of step.tests ?? [])
+    segments.push(test.command, test.path, test.note);
   for (const doc of step.docs ?? []) segments.push(doc.path, doc.note);
 }
 
-function appendPlanMetadataFlatCorpus(segments: Array<string | undefined>, item: ItemMetadata): void {
+function appendPlanMetadataFlatCorpus(
+  segments: Array<string | undefined>,
+  item: ItemMetadata,
+): void {
   for (const decision of item.plan_decisions ?? []) {
     segments.push(decision.decision, decision.rationale, decision.evidence);
   }
@@ -145,23 +171,31 @@ function appendPlanMetadataFlatCorpus(segments: Array<string | undefined>, item:
   }
 }
 
-/**
- * Implements build plan flat corpus for the public runtime surface of this module.
- */
+/** Implements build plan flat corpus for the public runtime surface of this module. */
 export function buildPlanFlatCorpus(item: ItemMetadata): string {
   const segments: Array<string | undefined> = [];
-  segments.push(item.plan_mode, item.plan_scope, item.plan_harness, item.plan_resume_context);
+  segments.push(
+    item.plan_mode,
+    item.plan_scope,
+    item.plan_harness,
+    item.plan_resume_context,
+  );
   for (const step of item.plan_steps ?? []) {
     appendPlanStepFlatCorpus(segments, step);
   }
   appendPlanMetadataFlatCorpus(segments, item);
-  return segments.filter((segment): segment is string => typeof segment === "string" && segment.length > 0).join(" ");
+  return segments
+    .filter(
+      (segment): segment is string =>
+        typeof segment === "string" && segment.length > 0,
+    )
+    .join(" ");
 }
 
-/**
- * Implements build plan corpus for the public runtime surface of this module.
- */
-export function buildPlanCorpus(item: ItemMetadata): Record<string, unknown> | undefined {
+/** Implements build plan corpus for the public runtime surface of this module. */
+export function buildPlanCorpus(
+  item: ItemMetadata,
+): Record<string, unknown> | undefined {
   const steps = (item.plan_steps ?? []).map((step) =>
     compactParts([
       step.order,
@@ -173,28 +207,44 @@ export function buildPlanCorpus(item: ItemMetadata): Record<string, unknown> | u
       step.evidence,
       step.blocked_reason,
       step.superseded_by,
-      (step.linked_items ?? []).map((link) => compactParts([link.kind, link.id, link.note])).join(" "),
-      (step.files ?? []).map((file) => compactParts([file.path, file.note])).join(" "),
-      (step.tests ?? []).map((test) => compactParts([test.command, test.path, test.note])).join(" "),
-      (step.docs ?? []).map((doc) => compactParts([doc.path, doc.note])).join(" "),
+      (step.linked_items ?? [])
+        .map((link) => compactParts([link.kind, link.id, link.note]))
+        .join(" "),
+      (step.files ?? [])
+        .map((file) => compactParts([file.path, file.note]))
+        .join(" "),
+      (step.tests ?? [])
+        .map((test) => compactParts([test.command, test.path, test.note]))
+        .join(" "),
+      (step.docs ?? [])
+        .map((doc) => compactParts([doc.path, doc.note]))
+        .join(" "),
     ]),
   );
   const decisions = (item.plan_decisions ?? []).map((entry) =>
-    compactParts([entry.decision, entry.rationale, entry.evidence, entry.step_id]),
+    compactParts([
+      entry.decision,
+      entry.rationale,
+      entry.evidence,
+      entry.step_id,
+    ]),
   );
-  const discoveries = (item.plan_discoveries ?? []).map((entry) => compactParts([entry.text, entry.step_id]));
+  const discoveries = (item.plan_discoveries ?? []).map((entry) =>
+    compactParts([entry.text, entry.step_id]),
+  );
   const validation = (item.plan_validation ?? []).map((entry) =>
     compactParts([entry.text, entry.command, entry.expected]),
   );
-  const hasPlanContent =
-    item.plan_mode !== undefined ||
-    item.plan_scope !== undefined ||
-    item.plan_harness !== undefined ||
-    item.plan_resume_context !== undefined ||
-    steps.length > 0 ||
-    decisions.length > 0 ||
-    discoveries.length > 0 ||
-    validation.length > 0;
+  const hasPlanContent = [
+    item.plan_mode,
+    item.plan_scope,
+    item.plan_harness,
+    item.plan_resume_context,
+    ...steps,
+    ...decisions,
+    ...discoveries,
+    ...validation,
+  ].some((entry) => entry !== undefined);
   if (!hasPlanContent) {
     return undefined;
   }
@@ -214,9 +264,7 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-/**
- * Documents the search corpus options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the search corpus options payload exchanged by command, SDK, and package integrations. */
 export interface SearchCorpusOptions {
   /**
    * Field names to include. When omitted, the full default set is used.
@@ -225,44 +273,76 @@ export interface SearchCorpusOptions {
   fields?: string[];
 }
 
-/**
- * Builders for each corpus field. Each returns the value to emit, or `undefined`
- * to omit the field entirely (keeps the corpus compact / token-efficient — we do
- * not emit empty strings, empty arrays, or nulls for the optional structured
- * fields). Always-present fields (title/status/etc.) emit their raw value.
- */
-const CORPUS_FIELD_BUILDERS: Record<string, (document: ItemDocument) => unknown> = {
+/** Builders for each corpus field. Each returns the value to emit, or `undefined` to omit the field entirely (keeps the corpus compact / token-efficient — we do not emit empty strings, empty arrays, or nulls for the optional structured fields). Always-present fields (title/status/etc.) emit their raw value. */
+const CORPUS_FIELD_BUILDERS: Record<
+  string,
+  (document: ItemDocument) => unknown
+> = {
   title: (document) => document.metadata.title,
   description: (document) => document.metadata.description,
   tags: (document) => document.metadata.tags,
   status: (document) => document.metadata.status,
   type: (document) => document.metadata.type,
   priority: (document) =>
-    typeof document.metadata.priority === "number" ? document.metadata.priority : undefined,
-  assignee: (document) => (isNonEmptyString(document.metadata.assignee) ? document.metadata.assignee : undefined),
-  parent: (document) => (isNonEmptyString(document.metadata.parent) ? document.metadata.parent : undefined),
-  goal: (document) => (isNonEmptyString(document.metadata.goal) ? document.metadata.goal : undefined),
-  value: (document) => (isNonEmptyString(document.metadata.value) ? document.metadata.value : undefined),
-  why_now: (document) => (isNonEmptyString(document.metadata.why_now) ? document.metadata.why_now : undefined),
-  risk: (document) => (isNonEmptyString(document.metadata.risk) ? document.metadata.risk : undefined),
+    typeof document.metadata.priority === "number"
+      ? document.metadata.priority
+      : undefined,
+  assignee: (document) =>
+    isNonEmptyString(document.metadata.assignee)
+      ? document.metadata.assignee
+      : undefined,
+  parent: (document) =>
+    isNonEmptyString(document.metadata.parent)
+      ? document.metadata.parent
+      : undefined,
+  goal: (document) =>
+    isNonEmptyString(document.metadata.goal)
+      ? document.metadata.goal
+      : undefined,
+  value: (document) =>
+    isNonEmptyString(document.metadata.value)
+      ? document.metadata.value
+      : undefined,
+  why_now: (document) =>
+    isNonEmptyString(document.metadata.why_now)
+      ? document.metadata.why_now
+      : undefined,
+  risk: (document) =>
+    isNonEmptyString(document.metadata.risk)
+      ? document.metadata.risk
+      : undefined,
   confidence: (document) =>
-    document.metadata.confidence !== undefined && document.metadata.confidence !== null
+    document.metadata.confidence !== undefined &&
+    document.metadata.confidence !== null
       ? document.metadata.confidence
       : undefined,
   estimated_minutes: (document) =>
-    typeof document.metadata.estimated_minutes === "number" ? document.metadata.estimated_minutes : undefined,
+    typeof document.metadata.estimated_minutes === "number"
+      ? document.metadata.estimated_minutes
+      : undefined,
   acceptance_criteria: (document) =>
-    isNonEmptyString(document.metadata.acceptance_criteria) ? document.metadata.acceptance_criteria : undefined,
+    isNonEmptyString(document.metadata.acceptance_criteria)
+      ? document.metadata.acceptance_criteria
+      : undefined,
   resolution: (document) =>
-    isNonEmptyString(document.metadata.resolution) ? document.metadata.resolution : undefined,
+    isNonEmptyString(document.metadata.resolution)
+      ? document.metadata.resolution
+      : undefined,
   expected_result: (document) =>
-    isNonEmptyString(document.metadata.expected_result) ? document.metadata.expected_result : undefined,
+    isNonEmptyString(document.metadata.expected_result)
+      ? document.metadata.expected_result
+      : undefined,
   actual_result: (document) =>
-    isNonEmptyString(document.metadata.actual_result) ? document.metadata.actual_result : undefined,
+    isNonEmptyString(document.metadata.actual_result)
+      ? document.metadata.actual_result
+      : undefined,
   body: (document) => document.body,
-  comments: (document) => (document.metadata.comments ?? []).map((entry) => entry.text),
-  notes: (document) => (document.metadata.notes ?? []).map((entry) => entry.text),
-  learnings: (document) => (document.metadata.learnings ?? []).map((entry) => entry.text),
+  comments: (document) =>
+    (document.metadata.comments ?? []).map((entry) => entry.text),
+  notes: (document) =>
+    (document.metadata.notes ?? []).map((entry) => entry.text),
+  learnings: (document) =>
+    (document.metadata.learnings ?? []).map((entry) => entry.text),
   reminders: (document) => buildReminderCorpus(document.metadata),
   events: (document) => buildEventCorpus(document.metadata),
   dependencies: (document) =>
@@ -273,10 +353,11 @@ const CORPUS_FIELD_BUILDERS: Record<string, (document: ItemDocument) => unknown>
   plan: (document) => buildPlanCorpus(document.metadata),
 };
 
-/**
- * Implements build search corpus for the public runtime surface of this module.
- */
-export function buildSearchCorpus(document: ItemDocument, options: SearchCorpusOptions = {}): Record<string, unknown> {
+/** Implements build search corpus for the public runtime surface of this module. */
+export function buildSearchCorpus(
+  document: ItemDocument,
+  options: SearchCorpusOptions = {},
+): Record<string, unknown> {
   const fields = options.fields ?? DEFAULT_SEARCH_CORPUS_FIELDS;
   const corpus: Record<string, unknown> = {};
   for (const field of fields) {
@@ -293,32 +374,31 @@ export function buildSearchCorpus(document: ItemDocument, options: SearchCorpusO
   return corpus;
 }
 
-/**
- * Implements resolve semantic corpus input character limit for the public runtime surface of this module.
- */
-export function resolveSemanticCorpusInputCharacterLimit(providerName: string | undefined): number {
+/** Implements resolve semantic corpus input character limit for the public runtime surface of this module. */
+export function resolveSemanticCorpusInputCharacterLimit(
+  providerName: string | undefined,
+): number {
   if (providerName?.trim().toLowerCase() === "ollama") {
     return OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS;
   }
   return DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS;
 }
 
-/**
- * Documents the semantic corpus character limit resolution payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the semantic corpus character limit resolution payload exchanged by command, SDK, and package integrations. */
 export interface SemanticCorpusCharacterLimitResolution {
+  /** Value that configures or reports max characters for this contract. */
   maxCharacters: number;
+  /** Value that configures or reports warning for this contract. */
   warning: string | null;
 }
 
-/**
- * Implements resolve semantic corpus character limit for the public runtime surface of this module.
- */
+/** Implements resolve semantic corpus character limit for the public runtime surface of this module. */
 export function resolveSemanticCorpusCharacterLimit(
   providerName: string | undefined,
   configuredMaxCharacters: unknown,
 ): SemanticCorpusCharacterLimitResolution {
-  const providerDefaultLimit = resolveSemanticCorpusInputCharacterLimit(providerName);
+  const providerDefaultLimit =
+    resolveSemanticCorpusInputCharacterLimit(providerName);
   const parsed = coercePositiveInteger(configuredMaxCharacters);
   if (parsed !== null) {
     return {
@@ -335,11 +415,11 @@ export function resolveSemanticCorpusCharacterLimit(
   };
 }
 
-/**
- * Documents the semantic corpus input options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the semantic corpus input options payload exchanged by command, SDK, and package integrations. */
 export interface SemanticCorpusInputOptions {
+  /** Value that configures or reports provider name for this contract. */
   providerName?: string;
+  /** Value that configures or reports max characters for this contract. */
   maxCharacters?: number;
   /**
    * Corpus field names to include. When omitted, the full default set is used
@@ -350,19 +430,27 @@ export interface SemanticCorpusInputOptions {
   fields?: string[];
 }
 
-/**
- * Implements build semantic corpus input for the public runtime surface of this module.
- */
-export function buildSemanticCorpusInput(document: ItemDocument, options: SemanticCorpusInputOptions = {}): string {
-  const serialized = JSON.stringify(buildSearchCorpus(document, { fields: options.fields }));
-  const maxCharacters = resolveSemanticCorpusCharacterLimit(options.providerName, options.maxCharacters)
-    .maxCharacters;
+/** Implements build semantic corpus input for the public runtime surface of this module. */
+export function buildSemanticCorpusInput(
+  document: ItemDocument,
+  options: SemanticCorpusInputOptions = {},
+): string {
+  const serialized = JSON.stringify(
+    buildSearchCorpus(document, { fields: options.fields }),
+  );
+  const maxCharacters = resolveSemanticCorpusCharacterLimit(
+    options.providerName,
+    options.maxCharacters,
+  ).maxCharacters;
   if (serialized.length <= maxCharacters) {
     return serialized;
   }
   if (maxCharacters <= SEMANTIC_CORPUS_TRUNCATION_SUFFIX.length) {
     return SEMANTIC_CORPUS_TRUNCATION_SUFFIX.slice(0, maxCharacters);
   }
-  const keepLength = Math.max(0, maxCharacters - SEMANTIC_CORPUS_TRUNCATION_SUFFIX.length);
+  const keepLength = Math.max(
+    0,
+    maxCharacters - SEMANTIC_CORPUS_TRUNCATION_SUFFIX.length,
+  );
   return `${serialized.slice(0, keepLength)}${SEMANTIC_CORPUS_TRUNCATION_SUFFIX}`;
 }

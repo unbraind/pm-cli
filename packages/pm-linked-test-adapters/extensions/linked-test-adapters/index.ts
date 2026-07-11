@@ -1,3 +1,8 @@
+/**
+ * Runtime contracts and behavior for packages/pm linked test adapters/extensions/linked test adapters/index.
+ *
+ * @module packages/pm-linked-test-adapters/extensions/linked-test-adapters/index
+ */
 import type { CommandDefinition, ExtensionApi } from "@unbrained/pm-cli/sdk";
 import {
   runTestRunsListPackage,
@@ -7,6 +12,7 @@ import {
   runTestRunsStopPackage,
 } from "./runtime.ts";
 
+/** Declarative package manifest consumed by the extension loader. */
 export const manifest = {
   name: "builtin-linked-test-adapters",
   version: "0.1.0",
@@ -38,8 +44,18 @@ function testRunsCommand(): CommandDefinition {
     action: "test-runs-list",
     description: "List background linked-test runs.",
     flags: [
-      { long: "--status", value_name: "value", value_type: "string", description: "Filter by background run status." },
-      { long: "--limit", value_name: "n", value_type: "string", description: "Limit number of runs returned." },
+      {
+        long: "--status",
+        value_name: "value",
+        value_type: "string",
+        description: "Filter by background run status.",
+      },
+      {
+        long: "--limit",
+        value_name: "n",
+        value_type: "string",
+        description: "Limit number of runs returned.",
+      },
     ],
     run: async (context) => {
       assertNoArgs(context.args, "test-runs");
@@ -54,8 +70,18 @@ function testRunsListCommand(): CommandDefinition {
     action: "test-runs-list",
     description: "List background linked-test runs.",
     flags: [
-      { long: "--status", value_name: "value", value_type: "string", description: "Filter by background run status." },
-      { long: "--limit", value_name: "n", value_type: "string", description: "Limit number of runs returned." },
+      {
+        long: "--status",
+        value_name: "value",
+        value_type: "string",
+        description: "Filter by background run status.",
+      },
+      {
+        long: "--limit",
+        value_name: "n",
+        value_type: "string",
+        description: "Limit number of runs returned.",
+      },
     ],
     run: async (context) => {
       assertNoArgs(context.args, "test-runs list");
@@ -68,9 +94,16 @@ function testRunsStatusCommand(): CommandDefinition {
   return {
     name: "test-runs status",
     action: "test-runs-status",
-    description: "Show status and health snapshot for a background linked-test run.",
-    arguments: [{ name: "runId", required: true, description: "Background run id." }],
-    run: async (context) => runTestRunsStatusPackage(assertSingleRunId(context.args, "test-runs status"), context.global),
+    description:
+      "Show status and health snapshot for a background linked-test run.",
+    arguments: [
+      { name: "runId", required: true, description: "Background run id." },
+    ],
+    run: async (context) =>
+      runTestRunsStatusPackage(
+        assertSingleRunId(context.args, "test-runs status"),
+        context.global,
+      ),
   };
 }
 
@@ -79,12 +112,29 @@ function testRunsLogsCommand(): CommandDefinition {
     name: "test-runs logs",
     action: "test-runs-logs",
     description: "Show tailed logs for a background linked-test run.",
-    arguments: [{ name: "runId", required: true, description: "Background run id." }],
-    flags: [
-      { long: "--stream", value_name: "value", value_type: "string", description: "Log stream selector: stdout|stderr|both." },
-      { long: "--tail", value_name: "n", value_type: "string", description: "Tail number of lines per selected stream." },
+    arguments: [
+      { name: "runId", required: true, description: "Background run id." },
     ],
-    run: async (context) => runTestRunsLogsPackage(assertSingleRunId(context.args, "test-runs logs"), context.options, context.global),
+    flags: [
+      {
+        long: "--stream",
+        value_name: "value",
+        value_type: "string",
+        description: "Log stream selector: stdout|stderr|both.",
+      },
+      {
+        long: "--tail",
+        value_name: "n",
+        value_type: "string",
+        description: "Tail number of lines per selected stream.",
+      },
+    ],
+    run: async (context) =>
+      runTestRunsLogsPackage(
+        assertSingleRunId(context.args, "test-runs logs"),
+        context.options,
+        context.global,
+      ),
   };
 }
 
@@ -93,9 +143,22 @@ function testRunsStopCommand(): CommandDefinition {
     name: "test-runs stop",
     action: "test-runs-stop",
     description: "Stop a running background linked-test run.",
-    arguments: [{ name: "runId", required: true, description: "Background run id." }],
-    flags: [{ long: "--force", value_type: "boolean", description: "Force-stop via SIGKILL." }],
-    run: async (context) => runTestRunsStopPackage(assertSingleRunId(context.args, "test-runs stop"), context.options, context.global),
+    arguments: [
+      { name: "runId", required: true, description: "Background run id." },
+    ],
+    flags: [
+      {
+        long: "--force",
+        value_type: "boolean",
+        description: "Force-stop via SIGKILL.",
+      },
+    ],
+    run: async (context) =>
+      runTestRunsStopPackage(
+        assertSingleRunId(context.args, "test-runs stop"),
+        context.options,
+        context.global,
+      ),
   };
 }
 
@@ -103,13 +166,29 @@ function testRunsResumeCommand(): CommandDefinition {
   return {
     name: "test-runs resume",
     action: "test-runs-resume",
-    description: "Resume a terminal background linked-test run by starting a new attempt.",
-    arguments: [{ name: "runId", required: true, description: "Background run id." }],
-    flags: [{ long: "--author", value_name: "value", value_type: "string", description: "Resume author override." }],
-    run: async (context) => runTestRunsResumePackage(assertSingleRunId(context.args, "test-runs resume"), context.options, context.global),
+    description:
+      "Resume a terminal background linked-test run by starting a new attempt.",
+    arguments: [
+      { name: "runId", required: true, description: "Background run id." },
+    ],
+    flags: [
+      {
+        long: "--author",
+        value_name: "value",
+        value_type: "string",
+        description: "Resume author override.",
+      },
+    ],
+    run: async (context) =>
+      runTestRunsResumePackage(
+        assertSingleRunId(context.args, "test-runs resume"),
+        context.options,
+        context.global,
+      ),
   };
 }
 
+/** Registers this package's commands, actions, and runtime hooks with the host. */
 export function activate(api: ExtensionApi): void {
   api.registerCommand(testRunsCommand());
   api.registerCommand(testRunsListCommand());

@@ -1,12 +1,26 @@
+/**
+ * Runtime contracts and behavior for packages/pm guide shell/extensions/guide shell/runtime.
+ *
+ * @module packages/pm-guide-shell/extensions/guide-shell/runtime
+ */
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { GlobalOptions, ServiceOverrideContext } from "@unbrained/pm-cli/sdk";
+import type {
+  GlobalOptions,
+  ServiceOverrideContext,
+} from "@unbrained/pm-cli/sdk";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 
 interface RuntimeSdkModule {
-  runGuide: (options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
-  resolveGuideOutputFormat: (options: Record<string, unknown>, global: GlobalOptions) => "markdown" | "toon" | "json";
+  runGuide: (
+    options: Record<string, unknown>,
+    global: GlobalOptions,
+  ) => Promise<unknown>;
+  resolveGuideOutputFormat: (
+    options: Record<string, unknown>,
+    global: GlobalOptions,
+  ) => "markdown" | "toon" | "json";
   renderGuideMarkdown: (result: unknown) => string;
   runCompletion: (
     shell: string,
@@ -16,7 +30,18 @@ interface RuntimeSdkModule {
     runtime?: {
       item_types?: string[];
       statuses?: string[];
-      command_flags?: Partial<Record<"list" | "create" | "update" | "update-many" | "search" | "calendar" | "context", string[]>>;
+      command_flags?: Partial<
+        Record<
+          | "list"
+          | "create"
+          | "update"
+          | "update-many"
+          | "search"
+          | "calendar"
+          | "context",
+          string[]
+        >
+      >;
     },
   ) => {
     shell: string;
@@ -35,7 +60,9 @@ interface RuntimeSdkModule {
     definitions?: Array<{ name: string; folder: string }>;
     type_to_folder?: Record<string, string>;
   };
-  resolveRuntimeStatusRegistry: (schema: unknown) => { definitions: Array<{ id: string }> };
+  resolveRuntimeStatusRegistry: (schema: unknown) => {
+    definitions: Array<{ id: string }>;
+  };
   resolveRuntimeFieldRegistry: (schema: unknown) => {
     command_to_fields: Map<string, Array<{ cli_flag: string }>>;
   };
@@ -47,9 +74,21 @@ interface RuntimeSdkModule {
     schema?: unknown,
   ) => Promise<Array<{ metadata: { tags?: string[] } }>>;
   getActiveExtensionRegistrations: () => unknown;
-  readStringOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => string | undefined;
-  readBooleanOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => boolean | undefined;
-  readCsvListOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => string[];
+  readStringOption: (
+    options: Record<string, unknown>,
+    key: string,
+    aliases?: string[],
+  ) => string | undefined;
+  readBooleanOption: (
+    options: Record<string, unknown>,
+    key: string,
+    aliases?: string[],
+  ) => boolean | undefined;
+  readCsvListOption: (
+    options: Record<string, unknown>,
+    key: string,
+    aliases?: string[],
+  ) => string[];
 }
 
 interface RuntimeBundle {
@@ -95,10 +134,21 @@ async function loadRuntimeBundle(): Promise<RuntimeBundle> {
       `builtin-guide-shell requires ${PM_PACKAGE_ROOT_ENV} to locate core SDK runtime exports.`,
     );
   }
-  const modulePath = path.join(path.resolve(envRoot.trim()), "dist", "sdk", "runtime.js");
+  const modulePath = path.join(
+    path.resolve(envRoot.trim()),
+    "dist",
+    "sdk",
+    "runtime.js",
+  );
   try {
-    const sdkLoaded = (await import(pathToFileURL(modulePath).href)) as Partial<RuntimeSdkModule>;
-    if (REQUIRED_RUNTIME_SDK_EXPORTS.every((key) => typeof sdkLoaded[key] === "function")) {
+    const sdkLoaded = (await import(
+      pathToFileURL(modulePath).href
+    )) as Partial<RuntimeSdkModule>;
+    if (
+      REQUIRED_RUNTIME_SDK_EXPORTS.every(
+        (key) => typeof sdkLoaded[key] === "function",
+      )
+    ) {
       return {
         sdk: sdkLoaded as RuntimeSdkModule,
       };
@@ -119,14 +169,22 @@ function normalizeGuideOptions(
   const { readStringOption, readBooleanOption } = bundle.sdk;
   const topicFromArgs = args[0];
   return {
-    topic: readStringOption(options, "topic") ?? (typeof topicFromArgs === "string" && topicFromArgs.trim().length > 0 ? topicFromArgs : undefined),
+    topic:
+      readStringOption(options, "topic") ??
+      (typeof topicFromArgs === "string" && topicFromArgs.trim().length > 0
+        ? topicFromArgs
+        : undefined),
     list: readBooleanOption(options, "list") === true ? true : undefined,
     format: readStringOption(options, "format"),
     depth: readStringOption(options, "depth"),
   };
 }
 
-function normalizeCompletionOptions(bundle: RuntimeBundle, args: string[], options: Record<string, unknown>): {
+function normalizeCompletionOptions(
+  bundle: RuntimeBundle,
+  args: string[],
+  options: Record<string, unknown>,
+): {
   shell: string;
   itemTypes: string[];
   tags: string[];
@@ -134,7 +192,10 @@ function normalizeCompletionOptions(bundle: RuntimeBundle, args: string[], optio
 } {
   const { readStringOption, readBooleanOption, readCsvListOption } = bundle.sdk;
   const shellFromOptions = readStringOption(options, "shell");
-  const shellFromArgs = typeof args[0] === "string" && args[0].trim().length > 0 ? args[0].trim() : undefined;
+  const shellFromArgs =
+    typeof args[0] === "string" && args[0].trim().length > 0
+      ? args[0].trim()
+      : undefined;
   return {
     shell: shellFromOptions ?? shellFromArgs ?? "bash",
     itemTypes: readCsvListOption(options, "itemTypes", ["item_types"]),
@@ -143,7 +204,9 @@ function normalizeCompletionOptions(bundle: RuntimeBundle, args: string[], optio
   };
 }
 
-function collectTypeNames(typeRegistry: ReturnType<RuntimeSdkModule["resolveItemTypeRegistry"]>): string[] {
+function collectTypeNames(
+  typeRegistry: ReturnType<RuntimeSdkModule["resolveItemTypeRegistry"]>,
+): string[] {
   const candidates = Array.isArray(typeRegistry.types)
     ? typeRegistry.types
     : Array.isArray(typeRegistry.definitions)
@@ -151,12 +214,23 @@ function collectTypeNames(typeRegistry: ReturnType<RuntimeSdkModule["resolveItem
           .filter((definition) => Boolean(definition))
           .map((definition) => definition.name)
       : [];
-  return [...new Set(candidates.filter((value): value is string => typeof value === "string" && value.trim().length > 0))]
-    .sort((left, right) => left.localeCompare(right));
+  return [
+    ...new Set(
+      candidates.filter(
+        (value): value is string =>
+          typeof value === "string" && value.trim().length > 0,
+      ),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
 }
 
-function collectTypeToFolder(typeRegistry: ReturnType<RuntimeSdkModule["resolveItemTypeRegistry"]>): Record<string, string> {
-  if (typeof typeRegistry.type_to_folder === "object" && typeRegistry.type_to_folder !== null) {
+function collectTypeToFolder(
+  typeRegistry: ReturnType<RuntimeSdkModule["resolveItemTypeRegistry"]>,
+): Record<string, string> {
+  if (
+    typeof typeRegistry.type_to_folder === "object" &&
+    typeRegistry.type_to_folder !== null
+  ) {
     return typeRegistry.type_to_folder;
   }
   return Object.fromEntries(
@@ -172,7 +246,18 @@ async function buildCompletionRuntimeConfig(
 ): Promise<{
   item_types?: string[];
   statuses?: string[];
-  command_flags?: Partial<Record<"list" | "create" | "update" | "update-many" | "search" | "calendar" | "context", string[]>>;
+  command_flags?: Partial<
+    Record<
+      | "list"
+      | "create"
+      | "update"
+      | "update-many"
+      | "search"
+      | "calendar"
+      | "context",
+      string[]
+    >
+  >;
 }> {
   const pmRoot = bundle.sdk.resolvePmRoot(process.cwd(), global.path);
   if (!(await bundle.sdk.pathExists(bundle.sdk.getSettingsPath(pmRoot)))) {
@@ -180,23 +265,40 @@ async function buildCompletionRuntimeConfig(
   }
   const settings = await bundle.sdk.readSettings(pmRoot);
   const registrations = bundle.sdk.getActiveExtensionRegistrations();
-  const typeRegistry = bundle.sdk.resolveItemTypeRegistry(settings, registrations);
+  const typeRegistry = bundle.sdk.resolveItemTypeRegistry(
+    settings,
+    registrations,
+  );
   const itemTypes = collectTypeNames(typeRegistry);
   const schema = (settings as { schema?: unknown }).schema;
-  const statuses = bundle.sdk.resolveRuntimeStatusRegistry(schema).definitions
-    .map((definition) => definition.id)
+  const statuses = bundle.sdk
+    .resolveRuntimeStatusRegistry(schema)
+    .definitions.map((definition) => definition.id)
     .filter((status) => typeof status === "string" && status.trim().length > 0)
     .sort((left, right) => left.localeCompare(right));
   const fieldRegistry = bundle.sdk.resolveRuntimeFieldRegistry(schema);
-  const runtimeCommands = ["list", "create", "update", "update-many", "search", "calendar", "context"] as const;
-  const commandFlags: Partial<Record<(typeof runtimeCommands)[number], string[]>> = {};
+  const runtimeCommands = [
+    "list",
+    "create",
+    "update",
+    "update-many",
+    "search",
+    "calendar",
+    "context",
+  ] as const;
+  const commandFlags: Partial<
+    Record<(typeof runtimeCommands)[number], string[]>
+  > = {};
   for (const command of runtimeCommands) {
     const definitions = fieldRegistry.command_to_fields.get(command) ?? [];
     const flags = [
       ...new Set(
         definitions
           .map((definition) => definition.cli_flag)
-          .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+          .filter(
+            (value): value is string =>
+              typeof value === "string" && value.trim().length > 0,
+          )
           .map((value) => `--${value.trim().replaceAll("_", "-")}`),
       ),
     ].sort((left, right) => left.localeCompare(right));
@@ -207,12 +309,15 @@ async function buildCompletionRuntimeConfig(
   return {
     item_types: itemTypes.length > 0 ? itemTypes : undefined,
     statuses: statuses.length > 0 ? statuses : undefined,
-    command_flags: Object.keys(commandFlags).length > 0 ? commandFlags : undefined,
+    command_flags:
+      Object.keys(commandFlags).length > 0 ? commandFlags : undefined,
   };
 }
 
 function payloadRecord(payload: unknown): Record<string, unknown> | undefined {
-  return typeof payload === "object" && payload !== null && !Array.isArray(payload)
+  return typeof payload === "object" &&
+    payload !== null &&
+    !Array.isArray(payload)
     ? (payload as Record<string, unknown>)
     : undefined;
 }
@@ -226,7 +331,9 @@ function readPayloadResult(payload: unknown): unknown {
   return record && Object.hasOwn(record, "result") ? record.result : payload;
 }
 
-function collectTagsFromItems(items: Array<{ metadata: { tags?: string[] } }>): string[] {
+function collectTagsFromItems(
+  items: Array<{ metadata: { tags?: string[] } }>,
+): string[] {
   const tagSet = new Set<string>();
   for (const item of items) {
     const tags = Array.isArray(item.metadata.tags) ? item.metadata.tags : [];
@@ -239,54 +346,82 @@ function collectTagsFromItems(items: Array<{ metadata: { tags?: string[] } }>): 
   return [...tagSet].sort((left, right) => left.localeCompare(right));
 }
 
-function readStringArrayResult(result: unknown, key: "tags" | "statuses" | "types"): string[] {
+function readStringArrayResult(
+  result: unknown,
+  key: "tags" | "statuses" | "types",
+): string[] {
   if (typeof result !== "object" || result === null) {
     return [];
   }
   const value = (result as Record<string, unknown>)[key];
-  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === "string")
+    : [];
 }
 
-function renderJsonOrWords(payload: unknown, result: unknown, key: "tags" | "statuses" | "types"): string {
+function renderJsonOrWords(
+  payload: unknown,
+  result: unknown,
+  key: "tags" | "statuses" | "types",
+): string {
   if (readPayloadFormat(payload) === "json") {
     return `${JSON.stringify(result, null, 2)}\n`;
   }
   return `${readStringArrayResult(result, key).join(" ")}\n`;
 }
 
-function renderCompletionPackageOutput(payload: unknown, result: unknown): string | null {
+function renderCompletionPackageOutput(
+  payload: unknown,
+  result: unknown,
+): string | null {
   if (readPayloadFormat(payload) === "json") {
     return `${JSON.stringify(result, null, 2)}\n`;
   }
-  if (typeof result === "object" && result !== null && typeof (result as { script?: unknown }).script === "string") {
+  if (
+    typeof result === "object" &&
+    result !== null &&
+    typeof (result as { script?: unknown }).script === "string"
+  ) {
     const script = (result as { script: string }).script;
     return script.endsWith("\n") ? script : `${script}\n`;
   }
   return null;
 }
 
-function renderGuidePackageOutput(bundle: RuntimeBundle, context: ServiceOverrideContext, result: unknown): string | null {
+function renderGuidePackageOutput(
+  bundle: RuntimeBundle,
+  context: ServiceOverrideContext,
+  result: unknown,
+): string | null {
   const options = (context.options ?? {}) as Record<string, unknown>;
   const global = (context.global ?? {}) as GlobalOptions;
   const outputFormat = bundle.sdk.resolveGuideOutputFormat(options, global);
   if (outputFormat === "markdown") {
     return `${bundle.sdk.renderGuideMarkdown(result)}\n`;
   }
-  if (outputFormat === "json" || readPayloadFormat(context.payload) === "json") {
+  if (
+    outputFormat === "json" ||
+    readPayloadFormat(context.payload) === "json"
+  ) {
     return `${JSON.stringify(result, null, 2)}\n`;
   }
   return null;
 }
 
+/** Executes the guide package operation through the package runtime. */
 export async function runGuidePackage(
   args: string[],
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<unknown> {
   const bundle = await ensureRuntimeBundle();
-  return bundle.sdk.runGuide(normalizeGuideOptions(bundle, args, options), global);
+  return bundle.sdk.runGuide(
+    normalizeGuideOptions(bundle, args, options),
+    global,
+  );
 }
 
+/** Executes the completion package operation through the package runtime. */
 export async function runCompletionPackage(
   args: string[],
   options: Record<string, unknown>,
@@ -304,7 +439,10 @@ export async function runCompletionPackage(
   );
 }
 
-export async function runCompletionTagsPackage(global: GlobalOptions): Promise<{ tags: string[]; count: number }> {
+/** Executes the completion tags package operation through the package runtime. */
+export async function runCompletionTagsPackage(
+  global: GlobalOptions,
+): Promise<{ tags: string[]; count: number }> {
   const bundle = await ensureRuntimeBundle();
   const pmRoot = bundle.sdk.resolvePmRoot(process.cwd(), global.path);
   if (!(await bundle.sdk.pathExists(bundle.sdk.getSettingsPath(pmRoot)))) {
@@ -312,13 +450,24 @@ export async function runCompletionTagsPackage(global: GlobalOptions): Promise<{
   }
   const settings = await bundle.sdk.readSettings(pmRoot);
   const registrations = bundle.sdk.getActiveExtensionRegistrations();
-  const typeRegistry = bundle.sdk.resolveItemTypeRegistry(settings, registrations);
+  const typeRegistry = bundle.sdk.resolveItemTypeRegistry(
+    settings,
+    registrations,
+  );
   const typeToFolder = collectTypeToFolder(typeRegistry);
   const schema = (settings as { schema?: unknown }).schema;
-  const itemFormat = ((settings as { item_format?: unknown }).item_format === "json_markdown" ? "json_markdown" : "toon") as
-    | "toon"
-    | "json_markdown";
-  const items = await bundle.sdk.listAllFrontMatter(pmRoot, itemFormat, typeToFolder, undefined, schema);
+  const itemFormat = (
+    (settings as { item_format?: unknown }).item_format === "json_markdown"
+      ? "json_markdown"
+      : "toon"
+  ) as "toon" | "json_markdown";
+  const items = await bundle.sdk.listAllFrontMatter(
+    pmRoot,
+    itemFormat,
+    typeToFolder,
+    undefined,
+    schema,
+  );
   const tags = collectTagsFromItems(items);
   return {
     tags,
@@ -326,13 +475,17 @@ export async function runCompletionTagsPackage(global: GlobalOptions): Promise<{
   };
 }
 
-export async function runCompletionStatusesPackage(global: GlobalOptions): Promise<{ statuses: string[]; count: number }> {
+/** Executes the completion statuses package operation through the package runtime. */
+export async function runCompletionStatusesPackage(
+  global: GlobalOptions,
+): Promise<{ statuses: string[]; count: number }> {
   const bundle = await ensureRuntimeBundle();
   const pmRoot = bundle.sdk.resolvePmRoot(process.cwd(), global.path);
   const settings = await bundle.sdk.readSettings(pmRoot);
   const schema = (settings as { schema?: unknown }).schema;
-  const statuses = bundle.sdk.resolveRuntimeStatusRegistry(schema).definitions
-    .map((definition) => definition.id)
+  const statuses = bundle.sdk
+    .resolveRuntimeStatusRegistry(schema)
+    .definitions.map((definition) => definition.id)
     .filter((status) => typeof status === "string" && status.trim().length > 0)
     .sort((left, right) => left.localeCompare(right));
   return {
@@ -341,12 +494,18 @@ export async function runCompletionStatusesPackage(global: GlobalOptions): Promi
   };
 }
 
-export async function runCompletionTypesPackage(global: GlobalOptions): Promise<{ types: string[]; count: number }> {
+/** Executes the completion types package operation through the package runtime. */
+export async function runCompletionTypesPackage(
+  global: GlobalOptions,
+): Promise<{ types: string[]; count: number }> {
   const bundle = await ensureRuntimeBundle();
   const pmRoot = bundle.sdk.resolvePmRoot(process.cwd(), global.path);
   const settings = await bundle.sdk.readSettings(pmRoot);
   const registrations = bundle.sdk.getActiveExtensionRegistrations();
-  const typeRegistry = bundle.sdk.resolveItemTypeRegistry(settings, registrations);
+  const typeRegistry = bundle.sdk.resolveItemTypeRegistry(
+    settings,
+    registrations,
+  );
   const types = collectTypeNames(typeRegistry);
   return {
     types,
@@ -354,7 +513,10 @@ export async function runCompletionTypesPackage(global: GlobalOptions): Promise<
   };
 }
 
-export function renderGuideShellPackageOutput(context: ServiceOverrideContext): string | null {
+/** Formats guide shell package output data for the selected output mode. */
+export function renderGuideShellPackageOutput(
+  context: ServiceOverrideContext,
+): string | null {
   const bundle = runtimeBundle;
   if (!bundle) {
     return null;

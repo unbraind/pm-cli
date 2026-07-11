@@ -9,39 +9,41 @@ import { pathExists } from "../../../core/fs/fs-utils.js";
 import { isPathWithinDirectory } from "../../../core/fs/path-utils.js";
 import { EXIT_CODE } from "../../../core/shared/constants.js";
 import { PmCliError } from "../../../core/shared/errors.js";
-import { DEFAULT_EXTENSION_PRIORITY, isCanonicalPathWithinDirectory, type ExtensionManifest } from "../../../core/extensions/loader.js";
+import {
+  DEFAULT_EXTENSION_PRIORITY,
+  isCanonicalPathWithinDirectory,
+  type ExtensionManifest,
+} from "../../../core/extensions/loader.js";
 
 export { DEFAULT_EXTENSION_PRIORITY, isCanonicalPathWithinDirectory };
 
-/**
- * Documents the validated extension directory payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the validated extension directory payload exchanged by command, SDK, and package integrations. */
 export interface ValidatedExtensionDirectory {
+  /** Value that configures or reports directory for this contract. */
   directory: string;
+  /** Filesystem path used for manifest resolution. */
   manifest_path: string;
+  /** Filesystem path used for entry resolution. */
   entry_path: string;
+  /** Declarative package manifest consumed by the extension loader. */
   manifest: ExtensionManifest;
 }
 
-/**
- * Implements normalize string list for the public runtime surface of this module.
- */
+/** Implements normalize string list for the public runtime surface of this module. */
 export function normalizeStringList(values: readonly string[]): string[] {
-  return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))].sort((left, right) =>
-    left.localeCompare(right),
-  );
+  return [
+    ...new Set(
+      values.map((value) => value.trim()).filter((value) => value.length > 0),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
 }
 
-/**
- * Implements normalize extension name for match for the public runtime surface of this module.
- */
+/** Implements normalize extension name for match for the public runtime surface of this module. */
 export function normalizeExtensionNameForMatch(value: string): string {
   return value.trim().toLowerCase();
 }
 
-/**
- * Implements normalize managed directory name for the public runtime surface of this module.
- */
+/** Implements normalize managed directory name for the public runtime surface of this module. */
 export function normalizeManagedDirectoryName(name: string): string {
   const normalized = name
     .trim()
@@ -49,12 +51,18 @@ export function normalizeManagedDirectoryName(name: string): string {
     .replace(/[^a-z0-9._-]+/g, "-")
     .replace(/^-+|-+$/g, "");
   if (normalized.length === 0) {
-    throw new PmCliError("Extension manifest name must resolve to a non-empty directory name.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Extension manifest name must resolve to a non-empty directory name.",
+      EXIT_CODE.USAGE,
+    );
   }
   if (normalized === "." || normalized === "..") {
     // Manifest-controlled input must resolve to a dedicated child directory, never
     // the extensions root itself or its parent (path-traversal guard).
-    throw new PmCliError("Extension manifest name must not resolve to \".\" or \"..\".", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      'Extension manifest name must not resolve to "." or "..".',
+      EXIT_CODE.USAGE,
+    );
   }
   return normalized;
 }
@@ -70,32 +78,44 @@ function parseOptionalManifestCapabilities(value: unknown): string[] | null {
   if (value === undefined || value === null) {
     return [];
   }
-  if (!Array.isArray(value) || value.some((entry) => typeof entry !== "string")) {
+  if (
+    !Array.isArray(value) ||
+    value.some((entry) => typeof entry !== "string")
+  ) {
     return null;
   }
   return normalizeStringList(value.map((entry) => String(entry).toLowerCase()));
 }
 
-/**
- * Implements parse extension manifest for the public runtime surface of this module.
- */
+/** Implements parse extension manifest for the public runtime surface of this module. */
 export function parseExtensionManifest(raw: unknown): ExtensionManifest | null {
   if (typeof raw !== "object" || raw === null) {
     return null;
   }
   const candidate = raw as Record<string, unknown>;
-  if (typeof candidate.name !== "string" || candidate.name.trim().length === 0) {
+  if (
+    typeof candidate.name !== "string" ||
+    candidate.name.trim().length === 0
+  ) {
     return null;
   }
-  if (typeof candidate.version !== "string" || candidate.version.trim().length === 0) {
+  if (
+    typeof candidate.version !== "string" ||
+    candidate.version.trim().length === 0
+  ) {
     return null;
   }
-  if (typeof candidate.entry !== "string" || candidate.entry.trim().length === 0) {
+  if (
+    typeof candidate.entry !== "string" ||
+    candidate.entry.trim().length === 0
+  ) {
     return null;
   }
 
   const priority = parseOptionalManifestPriority(candidate.priority);
-  const capabilities = parseOptionalManifestCapabilities(candidate.capabilities);
+  const capabilities = parseOptionalManifestCapabilities(
+    candidate.capabilities,
+  );
   if (priority === null || capabilities === null) {
     return null;
   }
@@ -109,18 +129,23 @@ export function parseExtensionManifest(raw: unknown): ExtensionManifest | null {
   };
 }
 
-/**
- * Implements validate extension directory for the public runtime surface of this module.
- */
-export async function validateExtensionDirectory(directory: string): Promise<ValidatedExtensionDirectory> {
+/** Implements validate extension directory for the public runtime surface of this module. */
+export async function validateExtensionDirectory(
+  directory: string,
+): Promise<ValidatedExtensionDirectory> {
   const manifestPath = path.join(directory, "manifest.json");
   if (!(await pathExists(manifestPath))) {
-    throw new PmCliError(`Extension manifest is missing at "${manifestPath}".`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Extension manifest is missing at "${manifestPath}".`,
+      EXIT_CODE.USAGE,
+    );
   }
 
   let parsedManifest: unknown;
   try {
-    parsedManifest = JSON.parse(await fs.readFile(manifestPath, "utf8")) as unknown;
+    parsedManifest = JSON.parse(
+      await fs.readFile(manifestPath, "utf8"),
+    ) as unknown;
   } catch (error: unknown) {
     throw new PmCliError(
       `Failed to parse extension manifest at "${manifestPath}": ${formatManifestReadError(error)}`,
@@ -130,7 +155,10 @@ export async function validateExtensionDirectory(directory: string): Promise<Val
 
   const manifest = parseExtensionManifest(parsedManifest);
   if (!manifest) {
-    throw new PmCliError(`Extension manifest at "${manifestPath}" is invalid.`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Extension manifest at "${manifestPath}" is invalid.`,
+      EXIT_CODE.USAGE,
+    );
   }
 
   const entryPath = path.resolve(directory, manifest.entry);
@@ -141,7 +169,10 @@ export async function validateExtensionDirectory(directory: string): Promise<Val
     );
   }
   if (!(await pathExists(entryPath))) {
-    throw new PmCliError(`Extension entry file is missing at "${entryPath}".`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Extension entry file is missing at "${entryPath}".`,
+      EXIT_CODE.USAGE,
+    );
   }
   if (!(await isCanonicalPathWithinDirectory(directory, entryPath))) {
     throw new PmCliError(
@@ -162,6 +193,7 @@ function formatManifestReadError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+/** Public contract for test only extension shared, shared by SDK and presentation-layer consumers. */
 export const _testOnlyExtensionShared = {
   formatManifestReadError,
 };

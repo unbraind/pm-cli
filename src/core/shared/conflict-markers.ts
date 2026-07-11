@@ -3,21 +3,22 @@
  *
  * Provides shared primitives and utilities for Conflict Markers.
  */
-/**
- * Describes a detected unresolved merge-conflict marker and its source location.
- */
+/** Describes a detected unresolved merge-conflict marker and its source location. */
 export interface ConflictMarkerMatch {
+  /** Value that configures or reports line for this contract. */
   line: number;
+  /** Value that configures or reports marker for this contract. */
   marker: "<<<<<<<" | "=======" | ">>>>>>>";
+  /** Value that configures or reports text for this contract. */
   text: string;
 }
 
 const CONFLICT_MARKER_PATTERN = /^\s*(<<<<<<<|=======|>>>>>>>)(?:\s.*)?$/;
 
-/**
- * Implements find merge conflict markers for the public runtime surface of this module.
- */
-export function findMergeConflictMarkers(content: string): ConflictMarkerMatch[] {
+/** Implements find merge conflict markers for the public runtime surface of this module. */
+export function findMergeConflictMarkers(
+  content: string,
+): ConflictMarkerMatch[] {
   if (content.length === 0) {
     return [];
   }
@@ -39,10 +40,10 @@ export function findMergeConflictMarkers(content: string): ConflictMarkerMatch[]
   return matches;
 }
 
-/**
- * Implements find first merge conflict marker for the public runtime surface of this module.
- */
-export function findFirstMergeConflictMarker(content: string): ConflictMarkerMatch | undefined {
+/** Implements find first merge conflict marker for the public runtime surface of this module. */
+export function findFirstMergeConflictMarker(
+  content: string,
+): ConflictMarkerMatch | undefined {
   const matches = findMergeConflictMarkers(content);
   return matches[0];
 }

@@ -78,10 +78,10 @@ export interface ProjectProfileDescription {
   packages: ProjectProfilePackageSummary[];
 }
 
-/**
- * Computes the per-dimension counts for a profile.
- */
-export function describeProfileComposition(profile: ProjectProfileDefinition): ProjectProfileComposition {
+/** Computes the per-dimension counts for a profile. */
+export function describeProfileComposition(
+  profile: ProjectProfileDefinition,
+): ProjectProfileComposition {
   return {
     types: profile.types.length,
     statuses: profile.statuses.length,
@@ -102,25 +102,39 @@ export function describeProfileComposition(profile: ProjectProfileDefinition): P
  * @returns The profile's metadata, per-dimension counts, and resolved entry
  *   identifiers.
  */
-export function describeProjectProfile(profile: ProjectProfileDefinition): ProjectProfileDescription {
+export function describeProjectProfile(
+  profile: ProjectProfileDefinition,
+): ProjectProfileDescription {
   return {
     name: profile.name,
     title: profile.title,
     summary: profile.summary,
     composition: describeProfileComposition(profile),
     types: profile.types.map((type) =>
-      lenientIdentifier(() => normalizeAddTypeInput(type).name, () => String(type.name ?? "")),
+      lenientIdentifier(
+        () => normalizeAddTypeInput(type).name,
+        () => String(type.name ?? ""),
+      ),
     ),
     statuses: profile.statuses.map((status) =>
-      lenientIdentifier(() => normalizeAddStatusInput(status).id, () => String(status.id ?? "")),
+      lenientIdentifier(
+        () => normalizeAddStatusInput(status).id,
+        () => String(status.id ?? ""),
+      ),
     ),
     fields: profile.fields.map((field) =>
-      lenientIdentifier(() => normalizeAddFieldInput(field).key, () => String(field.key ?? "")),
+      lenientIdentifier(
+        () => normalizeAddFieldInput(field).key,
+        () => String(field.key ?? ""),
+      ),
     ),
     workflows: profile.workflows.map((workflow) => workflow.type),
     config: profile.config.map((entry) => `${entry.key}=${entry.value}`),
     templates: profile.templates.map((template) => template.name),
-    packages: profile.packages.map((recommendation) => ({ spec: recommendation.spec, reason: recommendation.reason })),
+    packages: profile.packages.map((recommendation) => ({
+      spec: recommendation.spec,
+      reason: recommendation.reason,
+    })),
   };
 }
 

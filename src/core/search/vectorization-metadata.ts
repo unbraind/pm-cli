@@ -5,24 +5,21 @@
  */
 import { toNonEmptyString } from "../shared/primitives.js";
 
-/**
- * Documents the vectorization embedding identity payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the vectorization embedding identity payload exchanged by command, SDK, and package integrations. */
 export interface VectorizationEmbeddingIdentity {
+  /** Value that configures or reports provider for this contract. */
   provider: string;
+  /** Value that configures or reports model for this contract. */
   model: string;
 }
 
-/**
- * Documents the vectorization embedding metadata payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the vectorization embedding metadata payload exchanged by command, SDK, and package integrations. */
 export interface VectorizationEmbeddingMetadata extends VectorizationEmbeddingIdentity {
+  /** Value that configures or reports vector dimension for this contract. */
   vector_dimension: number;
 }
 
-/**
- * Implements build vectorization embedding identity for the public runtime surface of this module.
- */
+/** Implements build vectorization embedding identity for the public runtime surface of this module. */
 export function buildVectorizationEmbeddingIdentity(
   provider: unknown,
   model: unknown,
@@ -38,23 +35,33 @@ export function buildVectorizationEmbeddingIdentity(
   };
 }
 
-/**
- * Implements normalize vectorization embedding metadata for the public runtime surface of this module.
- */
-export function normalizeVectorizationEmbeddingMetadata(value: unknown): VectorizationEmbeddingMetadata | null {
+/** Implements normalize vectorization embedding metadata for the public runtime surface of this module. */
+export function normalizeVectorizationEmbeddingMetadata(
+  value: unknown,
+): VectorizationEmbeddingMetadata | null {
   if (value === undefined || value === null) {
     return null;
   }
   if (typeof value !== "object" || Array.isArray(value)) {
-    throw new Error("Vectorization embedding metadata must be an object when set");
+    throw new Error(
+      "Vectorization embedding metadata must be an object when set",
+    );
   }
   const identity = buildVectorizationEmbeddingIdentity(
     (value as { provider?: unknown }).provider,
     (value as { model?: unknown }).model,
   );
-  const vectorDimension = (value as { vector_dimension?: unknown }).vector_dimension;
-  if (!identity || typeof vectorDimension !== "number" || !Number.isInteger(vectorDimension) || vectorDimension <= 0) {
-    throw new Error("Vectorization embedding metadata must include provider, model, and positive vector_dimension");
+  const vectorDimension = (value as { vector_dimension?: unknown })
+    .vector_dimension;
+  if (
+    !identity ||
+    typeof vectorDimension !== "number" ||
+    !Number.isInteger(vectorDimension) ||
+    vectorDimension <= 0
+  ) {
+    throw new Error(
+      "Vectorization embedding metadata must include provider, model, and positive vector_dimension",
+    );
   }
   return {
     ...identity,
@@ -62,15 +69,15 @@ export function normalizeVectorizationEmbeddingMetadata(value: unknown): Vectori
   };
 }
 
-/**
- * Implements build vectorization embedding metadata for the public runtime surface of this module.
- */
+/** Implements build vectorization embedding metadata for the public runtime surface of this module. */
 export function buildVectorizationEmbeddingMetadata(
   identity: VectorizationEmbeddingIdentity,
   vectorDimension: number,
 ): VectorizationEmbeddingMetadata {
   if (!Number.isInteger(vectorDimension) || vectorDimension <= 0) {
-    throw new Error("Vectorization embedding metadata requires a positive vector dimension");
+    throw new Error(
+      "Vectorization embedding metadata requires a positive vector dimension",
+    );
   }
   return {
     provider: identity.provider,
@@ -79,19 +86,19 @@ export function buildVectorizationEmbeddingMetadata(
   };
 }
 
-/**
- * Implements check whether vectorization embedding identity changed for the public runtime surface of this module.
- */
+/** Implements check whether vectorization embedding identity changed for the public runtime surface of this module. */
 export function hasVectorizationEmbeddingIdentityChanged(
   metadata: VectorizationEmbeddingMetadata | null | undefined,
   identity: VectorizationEmbeddingIdentity,
 ): boolean {
-  return !metadata || metadata.provider !== identity.provider || metadata.model !== identity.model;
+  return (
+    !metadata ||
+    metadata.provider !== identity.provider ||
+    metadata.model !== identity.model
+  );
 }
 
-/**
- * Implements check whether vectorization vector dimension changed for the public runtime surface of this module.
- */
+/** Implements check whether vectorization vector dimension changed for the public runtime surface of this module. */
 export function hasVectorizationVectorDimensionChanged(
   metadata: VectorizationEmbeddingMetadata | null | undefined,
   vectorDimension: number,
@@ -99,10 +106,11 @@ export function hasVectorizationVectorDimensionChanged(
   return Boolean(metadata && metadata.vector_dimension !== vectorDimension);
 }
 
-/**
- * Implements infer consistent vector dimension for the public runtime surface of this module.
- */
-export function inferConsistentVectorDimension(vectors: readonly number[][], context: string): number {
+/** Implements infer consistent vector dimension for the public runtime surface of this module. */
+export function inferConsistentVectorDimension(
+  vectors: readonly number[][],
+  context: string,
+): number {
   if (vectors.length === 0) {
     throw new Error(`${context} returned no vectors`);
   }

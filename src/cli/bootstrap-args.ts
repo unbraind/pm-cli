@@ -3,7 +3,10 @@
  *
  * Provides CLI runtime support for Bootstrap Args.
  */
-import { resolveSubcommandFlagContractsForCommand, type CliFlagContract } from "../sdk/cli-contracts.js";
+import {
+  resolveSubcommandFlagContractsForCommand,
+  type CliFlagContract,
+} from "../sdk/cli-contracts.js";
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 
 function parseBootstrapPathToken(
@@ -47,21 +50,24 @@ function parseBootstrapPathToken(
   };
 }
 
-/**
- * Documents the bootstrap global options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the bootstrap global options payload exchanged by command, SDK, and package integrations. */
 export interface BootstrapGlobalOptions {
+  /** Filesystem path used for path resolution. */
   path?: string;
+  /** Value that configures or reports no extensions for this contract. */
   noExtensions: boolean;
+  /** Value that configures or reports no pager for this contract. */
   noPager: boolean;
+  /** Value that configures or reports json for this contract. */
   json: boolean;
+  /** Value that configures or reports quiet for this contract. */
   quiet: boolean;
 }
 
-/**
- * Implements parse bootstrap global options for the public runtime surface of this module.
- */
-export function parseBootstrapGlobalOptions(argv: string[]): BootstrapGlobalOptions {
+/** Implements parse bootstrap global options for the public runtime surface of this module. */
+export function parseBootstrapGlobalOptions(
+  argv: string[],
+): BootstrapGlobalOptions {
   let legacyPathValue: string | undefined;
   let pmPathValue: string | undefined;
   let noExtensions = false;
@@ -117,9 +123,7 @@ export function parseBootstrapGlobalOptions(argv: string[]): BootstrapGlobalOpti
   };
 }
 
-/**
- * Implements strip global bootstrap tokens for the public runtime surface of this module.
- */
+/** Implements strip global bootstrap tokens for the public runtime surface of this module. */
 export function stripGlobalBootstrapTokens(argv: string[]): string[] {
   const remaining: string[] = [];
   let index = 0;
@@ -154,18 +158,18 @@ export function stripGlobalBootstrapTokens(argv: string[]): string[] {
   return remaining;
 }
 
-/**
- * Documents the bootstrap help request payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the bootstrap help request payload exchanged by command, SDK, and package integrations. */
 export interface BootstrapHelpRequest {
+  /** Value that configures or reports requested for this contract. */
   requested: boolean;
+  /** Value that configures or reports command path tokens for this contract. */
   commandPathTokens: string[];
 }
 
-/**
- * Implements parse bootstrap help request for the public runtime surface of this module.
- */
-export function parseBootstrapHelpRequest(argv: string[]): BootstrapHelpRequest {
+/** Implements parse bootstrap help request for the public runtime surface of this module. */
+export function parseBootstrapHelpRequest(
+  argv: string[],
+): BootstrapHelpRequest {
   const stripped = stripGlobalBootstrapTokens(argv);
   const first = stripped[0]?.trim().toLowerCase();
   if (first === "help") {
@@ -183,7 +187,9 @@ export function parseBootstrapHelpRequest(argv: string[]): BootstrapHelpRequest 
     };
   }
 
-  const helpFlagIndex = stripped.findIndex((token) => token === "--help" || token === "-h");
+  const helpFlagIndex = stripped.findIndex(
+    (token) => token === "--help" || token === "-h",
+  );
   if (helpFlagIndex < 0) {
     return {
       requested: false,
@@ -242,15 +248,16 @@ function findCommandTokenIndex(argv: string[]): number | undefined {
   return undefined;
 }
 
-/**
- * Implements parse bootstrap command name for the public runtime surface of this module.
- */
+/** Implements parse bootstrap command name for the public runtime surface of this module. */
 export function parseBootstrapCommandName(argv: string[]): string | undefined {
   const index = findCommandTokenIndex(argv);
   return index === undefined ? undefined : argv[index].trim().toLowerCase();
 }
 
-function shouldDisablePagerForInvocation(argv: string[], bootstrapGlobal: BootstrapGlobalOptions): boolean {
+function shouldDisablePagerForInvocation(
+  argv: string[],
+  bootstrapGlobal: BootstrapGlobalOptions,
+): boolean {
   if (bootstrapGlobal.noPager) {
     return true;
   }
@@ -261,9 +268,7 @@ function shouldDisablePagerForInvocation(argv: string[], bootstrapGlobal: Bootst
   return helpRequest.requested;
 }
 
-/**
- * Implements apply bootstrap pager policy for the public runtime surface of this module.
- */
+/** Implements apply bootstrap pager policy for the public runtime surface of this module. */
 export function applyBootstrapPagerPolicy(argv: string[]): void {
   const bootstrapGlobal = parseBootstrapGlobalOptions(argv);
   if (!shouldDisablePagerForInvocation(argv, bootstrapGlobal)) {
@@ -272,7 +277,10 @@ export function applyBootstrapPagerPolicy(argv: string[]): void {
   process.env.PAGER = "cat";
   process.env.MANPAGER = "cat";
   process.env.GIT_PAGER = "cat";
-  if (typeof process.env.LESS !== "string" || process.env.LESS.trim().length === 0) {
+  if (
+    typeof process.env.LESS !== "string" ||
+    process.env.LESS.trim().length === 0
+  ) {
     process.env.LESS = "FRX";
   }
 }
@@ -301,9 +309,7 @@ const EXTENSION_ACTION_SYNTAX_TOKENS = new Set<ExtensionSubcommandAction>([
   "deactivate",
 ]);
 
-/**
- * Implements normalize legacy extension action syntax for the public runtime surface of this module.
- */
+/** Implements normalize legacy extension action syntax for the public runtime surface of this module. */
 export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
   const extensionIndex = argv.findIndex((token) => token === "extension");
   if (extensionIndex < 0) {
@@ -313,7 +319,11 @@ export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
   if (!actionToken || actionToken.startsWith("-")) {
     return [...argv];
   }
-  if (!EXTENSION_ACTION_SYNTAX_TOKENS.has(actionToken as ExtensionSubcommandAction)) {
+  if (
+    !EXTENSION_ACTION_SYNTAX_TOKENS.has(
+      actionToken as ExtensionSubcommandAction,
+    )
+  ) {
     return [...argv];
   }
   if (argv.includes("--help") || argv.includes("-h")) {
@@ -323,7 +333,11 @@ export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
   if (argv.includes(forcedActionFlag)) {
     return [...argv];
   }
-  return [...argv.slice(0, extensionIndex + 1), forcedActionFlag, ...argv.slice(extensionIndex + 2)];
+  return [
+    ...argv.slice(0, extensionIndex + 1),
+    forcedActionFlag,
+    ...argv.slice(extensionIndex + 2),
+  ];
 }
 
 type BootstrapNormalizationReason =
@@ -335,16 +349,7 @@ type BootstrapNormalizationReason =
   | "list_merge";
 type BootstrapNormalizationConfidence = "high" | "medium";
 
-/**
- * Executable command aliases: a leading command token here is rewritten to its
- * canonical command BEFORE commander parses, so the alias actually runs instead of
- * merely being suggested. These are the highest-frequency aliases real agents type
- * (telemetry: `pm show <id>` alone is the single most common unknown-command) and
- * each target takes the same positional/flags as the alias (with `--comment`/
- * `--note`/`--learning` flag-aliased to `--add` on the target command). Keeping this
- * in one place means the alias is consistent across registration, commander dispatch,
- * telemetry, and error handling — all of which read the normalized argv.
- */
+/** Executable command aliases: a leading command token here is rewritten to its canonical command BEFORE commander parses, so the alias actually runs instead of merely being suggested. These are the highest-frequency aliases real agents type (telemetry: `pm show <id>` alone is the single most common unknown-command) and each target takes the same positional/flags as the alias (with `--comment`/ `--note`/`--learning` flag-aliased to `--add` on the target command). Keeping this in one place means the alias is consistent across registration, commander dispatch, telemetry, and error handling — all of which read the normalized argv. */
 export const EXECUTABLE_COMMAND_ALIASES: Readonly<Record<string, string>> = {
   show: "get",
   view: "get",
@@ -359,7 +364,10 @@ export const EXECUTABLE_COMMAND_ALIASES: Readonly<Record<string, string>> = {
  * (`pm get show`) is left untouched — and only when it is not preceded by `--` or a
  * value-consuming global flag, mirroring {@link parseBootstrapCommandName}.
  */
-function rewriteCommandAlias(argv: string[], trace: BootstrapNormalizationEvent[]): string[] {
+function rewriteCommandAlias(
+  argv: string[],
+  trace: BootstrapNormalizationEvent[],
+): string[] {
   const index = findCommandTokenIndex(argv);
   if (index === undefined) {
     return argv;
@@ -371,26 +379,34 @@ function rewriteCommandAlias(argv: string[], trace: BootstrapNormalizationEvent[
   }
   const rewritten = [...argv];
   rewritten[index] = canonical;
-  trace.push({ from: token, to: [canonical], reason: "command_alias", confidence: "high" });
+  trace.push({
+    from: token,
+    to: [canonical],
+    reason: "command_alias",
+    confidence: "high",
+  });
   return rewritten;
 }
 
-/**
- * Documents the bootstrap normalization event payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the bootstrap normalization event payload exchanged by command, SDK, and package integrations. */
 export interface BootstrapNormalizationEvent {
+  /** Value that configures or reports from for this contract. */
   from: string;
+  /** Value that configures or reports to for this contract. */
   to: string[];
+  /** Value that configures or reports reason for this contract. */
   reason: BootstrapNormalizationReason;
+  /** Value that configures or reports confidence for this contract. */
   confidence: BootstrapNormalizationConfidence;
 }
 
-/**
- * Documents the bootstrap invocation normalization result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the bootstrap invocation normalization result payload exchanged by command, SDK, and package integrations. */
 export interface BootstrapInvocationNormalizationResult {
+  /** Value that configures or reports argv for this contract. */
   argv: string[];
+  /** Value that configures or reports command name for this contract. */
   commandName: string | undefined;
+  /** Value that configures or reports trace for this contract. */
   trace: BootstrapNormalizationEvent[];
 }
 
@@ -450,7 +466,8 @@ function buildFlagLookup(
   commandName: string | undefined,
   contractsOverride?: CliFlagContract[],
 ): FlagLookup {
-  const contracts = contractsOverride ?? resolveSubcommandFlagContractsForCommand(commandName);
+  const contracts =
+    contractsOverride ?? resolveSubcommandFlagContractsForCommand(commandName);
   const canonicalByNormalized = new Map<string, string | null>();
   const canonicalByCompact = new Map<string, string | null>();
   const canonicalComparablesMap = new Map<string, string>();
@@ -462,8 +479,16 @@ function buildFlagLookup(
     }
     const canonicalFlag = `--${normalizeFlagKeyToken(longCandidates[0])}`;
     for (const candidate of longCandidates) {
-      markUnambiguousFlag(canonicalByNormalized, normalizeFlagKeyToken(candidate), canonicalFlag);
-      markUnambiguousFlag(canonicalByCompact, toComparableFlagKey(candidate), canonicalFlag);
+      markUnambiguousFlag(
+        canonicalByNormalized,
+        normalizeFlagKeyToken(candidate),
+        canonicalFlag,
+      );
+      markUnambiguousFlag(
+        canonicalByCompact,
+        toComparableFlagKey(candidate),
+        canonicalFlag,
+      );
     }
     const comparable = toComparableFlagKey(canonicalFlag);
     if (!canonicalComparablesMap.has(canonicalFlag)) {
@@ -476,10 +501,12 @@ function buildFlagLookup(
   return {
     canonicalByNormalized,
     canonicalByCompact,
-    canonicalComparables: [...canonicalComparablesMap.entries()].map(([canonicalFlag, comparable]) => ({
-      canonicalFlag,
-      comparable,
-    })),
+    canonicalComparables: [...canonicalComparablesMap.entries()].map(
+      ([canonicalFlag, comparable]) => ({
+        canonicalFlag,
+        comparable,
+      }),
+    ),
     listCanonicalFlags,
   };
 }
@@ -487,7 +514,11 @@ function buildFlagLookup(
 function resolveCanonicalFlag(
   rawKey: string,
   lookup: FlagLookup,
-): { flag: string; reason: "flag_alias" | "flag_typo"; confidence: BootstrapNormalizationConfidence } | null {
+): {
+  flag: string;
+  reason: "flag_alias" | "flag_typo";
+  confidence: BootstrapNormalizationConfidence;
+} | null {
   const normalizedKey = normalizeFlagKeyToken(rawKey);
   const direct = lookup.canonicalByNormalized.get(normalizedKey);
   if (typeof direct === "string") {
@@ -511,7 +542,11 @@ function resolveCanonicalFlag(
   let bestFlag: string | undefined;
   let tied = false;
   for (const candidate of lookup.canonicalComparables) {
-    const distance = levenshteinDistanceWithinLimit(comparableKey, candidate.comparable, maxDistance);
+    const distance = levenshteinDistanceWithinLimit(
+      comparableKey,
+      candidate.comparable,
+      maxDistance,
+    );
     if (distance === null) {
       continue;
     }
@@ -525,7 +560,12 @@ function resolveCanonicalFlag(
       tied = true;
     }
   }
-  if (!bestFlag || tied || !Number.isFinite(bestDistance) || bestDistance <= 0) {
+  if (
+    !bestFlag ||
+    tied ||
+    !Number.isFinite(bestDistance) ||
+    bestDistance <= 0
+  ) {
     return null;
   }
   return {
@@ -535,9 +575,7 @@ function resolveCanonicalFlag(
   };
 }
 
-/**
- * Implements list alias plural keys for the public runtime surface of this module.
- */
+/** Implements list alias plural keys for the public runtime surface of this module. */
 export function listAliasPluralKeys(normalizedKey: string): string[] {
   const candidates = [`${normalizedKey}s`];
   if (normalizedKey.endsWith("y") && normalizedKey.length > 1) {
@@ -546,7 +584,9 @@ export function listAliasPluralKeys(normalizedKey: string): string[] {
   return candidates;
 }
 
-function parseBareKeyValueToken(token: string): { key: string; value: string } | null {
+function parseBareKeyValueToken(
+  token: string,
+): { key: string; value: string } | null {
   if (token.includes("://")) {
     return null;
   }
@@ -574,12 +614,16 @@ function normalizeLongOptionToken(
   }
   const equalsIndex = token.indexOf("=");
   const key = equalsIndex >= 0 ? token.slice(0, equalsIndex) : token;
-  const inlineValue = equalsIndex >= 0 ? token.slice(equalsIndex + 1) : undefined;
+  const inlineValue =
+    equalsIndex >= 0 ? token.slice(equalsIndex + 1) : undefined;
   const resolution = resolveCanonicalFlag(key, lookup);
   if (!resolution) {
     return { tokens: [token] };
   }
-  const normalizedToken = inlineValue === undefined ? resolution.flag : `${resolution.flag}=${inlineValue}`;
+  const normalizedToken =
+    inlineValue === undefined
+      ? resolution.flag
+      : `${resolution.flag}=${inlineValue}`;
   if (normalizedToken === token) {
     return { tokens: [token] };
   }
@@ -601,7 +645,9 @@ function normalizeLongOptionToken(
 // (--json/--quiet/--no-extensions/--no-pager/--profile) are boolean.
 const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>(["--pm-path", "--path"]);
 
-function splitCanonicalListToken(token: string): { flag: string; inlineValue?: string } | null {
+function splitCanonicalListToken(
+  token: string,
+): { flag: string; inlineValue?: string } | null {
   if (!token.startsWith("--")) {
     return null;
   }
@@ -633,7 +679,11 @@ interface ValuedListFlagOccurrence {
   value: string;
 }
 
-function copyValueConsumingFlag(argv: string[], index: number, result: (string | null)[]): number {
+function copyValueConsumingFlag(
+  argv: string[],
+  index: number,
+  result: (string | null)[],
+): number {
   result.push(argv[index]);
   const next = argv[index + 1];
   if (typeof next === "string" && next !== "--") {
@@ -711,9 +761,14 @@ function buildListFlagCoalescingSplices(
   const events: BootstrapNormalizationEvent[] = [];
   const splices: Array<{ outputIndex: number; tokens: string[] }> = [];
   for (const [flag, slot] of slots) {
-    const shouldMerge = slot.occurrences >= 2 || (multiValueListFlags.has(flag) && slot.originalTokens.length > 2);
+    const shouldMerge =
+      slot.occurrences >= 2 ||
+      (multiValueListFlags.has(flag) && slot.originalTokens.length > 2);
     if (!shouldMerge) {
-      splices.push({ outputIndex: slot.outputIndex, tokens: slot.originalTokens });
+      splices.push({
+        outputIndex: slot.outputIndex,
+        tokens: slot.originalTokens,
+      });
       continue;
     }
     const mergedToken = `${flag}=${slot.values.join(",")}`;
@@ -728,7 +783,10 @@ function buildListFlagCoalescingSplices(
   return { events, splices };
 }
 
-function applyListFlagSplices(result: (string | null)[], splices: Array<{ outputIndex: number; tokens: string[] }>): void {
+function applyListFlagSplices(
+  result: (string | null)[],
+  splices: Array<{ outputIndex: number; tokens: string[] }>,
+): void {
   splices.sort((a, b) => b.outputIndex - a.outputIndex);
   for (const splice of splices) {
     result.splice(splice.outputIndex, 1, ...splice.tokens);
@@ -781,7 +839,12 @@ export function coalesceRepeatedListFlags(
       continue;
     }
 
-    const occurrence = readListFlagOccurrence(argv, index, parsed, multiValueListFlags);
+    const occurrence = readListFlagOccurrence(
+      argv,
+      index,
+      parsed,
+      multiValueListFlags,
+    );
     if (occurrence.value === undefined) {
       // Value-less occurrence: leave untouched, do not coalesce.
       result.push(token);
@@ -798,36 +861,29 @@ export function coalesceRepeatedListFlags(
 
   // Apply anchor splices from the end so earlier indices stay valid when a
   // single-occurrence anchor expands back into two tokens.
-  const { events, splices } = buildListFlagCoalescingSplices(slots, multiValueListFlags);
+  const { events, splices } = buildListFlagCoalescingSplices(
+    slots,
+    multiValueListFlags,
+  );
   applyListFlagSplices(result, splices);
 
   return { argv: result as string[], events };
 }
 
-/**
- * Linked-test entry keys accepted in the two-token form `pm test <id> --add command
- * "npm test -- parser"` (GH-191). Only entry-identity keys are merged: `command`/`cmd`
- * name the shell command and `path` names the test file, so a single key=value entry is
- * meaningful for them. Other structured keys (scope, env_set, assertions, ...) cannot
- * form a valid standalone entry and are left for the normal parser to reject. `--remove`
- * matches existing entries by `command=`/`path=` only, so `cmd` is excluded there.
- * Key names mirror STRUCTURED_LINKED_TEST_KEYS in src/cli/commands/linked-test-entry.ts.
- */
-const LINKED_TEST_TWO_TOKEN_KEYS_BY_FLAG: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+/** Linked-test entry keys accepted in the two-token form `pm test <id> --add command "npm test -- parser"` (GH-191). Only entry-identity keys are merged: `command`/`cmd` name the shell command and `path` names the test file, so a single key=value entry is meaningful for them. Other structured keys (scope, env_set, assertions, ...) cannot form a valid standalone entry and are left for the normal parser to reject. `--remove` matches existing entries by `command=`/`path=` only, so `cmd` is excluded there. Key names mirror STRUCTURED_LINKED_TEST_KEYS in src/cli/commands/linked-test-entry.ts. */
+const LINKED_TEST_TWO_TOKEN_KEYS_BY_FLAG: ReadonlyMap<
+  string,
+  ReadonlySet<string>
+> = new Map([
   ["--add", new Set(["command", "cmd", "path"])],
   ["--remove", new Set(["command", "path"])],
 ]);
 
-/**
- * Sandbox-safe linked-test commands legitimately start with env assignments
- * (`PM_PATH=... PM_GLOBAL_PATH=... vitest run -- parser`), which look like bare
- * key=value settings tokens. When the two preceding tokens are a linked-test
- * flag plus a bare two-token key (`--add command <value>`), the value must be
- * left intact for mergeLinkedTestTwoTokenEntries instead of being rewritten
- * into a canonical flag (e.g. PM_PATH= -> --pm-path), which would silently
- * corrupt the command into `--add command --pm-path ...`.
- */
-function isLinkedTestTwoTokenValuePosition(commandName: string | undefined, emittedTokens: readonly string[]): boolean {
+/** Sandbox-safe linked-test commands legitimately start with env assignments (`PM_PATH=... PM_GLOBAL_PATH=... vitest run -- parser`), which look like bare key=value settings tokens. When the two preceding tokens are a linked-test flag plus a bare two-token key (`--add command <value>`), the value must be left intact for mergeLinkedTestTwoTokenEntries instead of being rewritten into a canonical flag (e.g. PM_PATH= -> --pm-path), which would silently corrupt the command into `--add command --pm-path ...`. */
+function isLinkedTestTwoTokenValuePosition(
+  commandName: string | undefined,
+  emittedTokens: readonly string[],
+): boolean {
   if (commandName !== "test" || emittedTokens.length < 2) {
     return false;
   }
@@ -841,19 +897,13 @@ function shouldPreserveBareKeyValueToken(
   commandName: string | undefined,
   emittedTokens: readonly string[],
 ): boolean {
-  return commandName === "search" || isLinkedTestTwoTokenValuePosition(commandName, emittedTokens);
+  return (
+    commandName === "search" ||
+    isLinkedTestTwoTokenValuePosition(commandName, emittedTokens)
+  );
 }
 
-/**
- * Accept the two-token linked-test form `pm test <id> --add command "npm test -- parser"`
- * by merging the bare key token and its single quoted value into the documented
- * `--add command=...` shape. Without this merge Commander binds the bare key as the
- * option value and treats the quoted command as an excess positional, failing with
- * "too many arguments" (GH-191). The merge only fires when EXACTLY ONE non-flag token
- * follows the bare key, i.e. the value was quoted into one shell token — an unquoted
- * multi-token value stays ambiguous (it may swallow the item id), still fails fast, and
- * is routed to targeted quoting guidance by the commander error classifier instead.
- */
+/** Accept the two-token linked-test form `pm test <id> --add command "npm test -- parser"` by merging the bare key token and its single quoted value into the documented `--add command=...` shape. Without this merge Commander binds the bare key as the option value and treats the quoted command as an excess positional, failing with "too many arguments" (GH-191). The merge only fires when EXACTLY ONE non-flag token follows the bare key, i.e. the value was quoted into one shell token — an unquoted multi-token value stays ambiguous (it may swallow the item id), still fails fast, and is routed to targeted quoting guidance by the commander error classifier instead. */
 export function mergeLinkedTestTwoTokenEntries(
   argv: string[],
   commandName: string | undefined,
@@ -900,13 +950,16 @@ export function mergeLinkedTestTwoTokenEntries(
   return result;
 }
 
-/**
- * Implements normalize bootstrap invocation for the public runtime surface of this module.
- */
-export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocationNormalizationResult {
+/** Implements normalize bootstrap invocation for the public runtime surface of this module. */
+export function normalizeBootstrapInvocation(
+  argv: string[],
+): BootstrapInvocationNormalizationResult {
   const trace: BootstrapNormalizationEvent[] = [];
   const legacyNormalized = normalizeLegacyExtensionActionSyntax(argv);
-  if (legacyNormalized.length !== argv.length || legacyNormalized.some((token, index) => token !== argv[index])) {
+  if (
+    legacyNormalized.length !== argv.length ||
+    legacyNormalized.some((token, index) => token !== argv[index])
+  ) {
     trace.push({
       from: argv.join(" "),
       to: [...legacyNormalized],
@@ -955,7 +1008,11 @@ export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocatio
     }
     normalizedArgv.push(token);
   }
-  const linkedTestNormalized = mergeLinkedTestTwoTokenEntries(normalizedArgv, commandName, trace);
+  const linkedTestNormalized = mergeLinkedTestTwoTokenEntries(
+    normalizedArgv,
+    commandName,
+    trace,
+  );
   const coalesced = coalesceRepeatedListFlags(
     linkedTestNormalized,
     lookup.listCanonicalFlags,
@@ -987,9 +1044,7 @@ function parseBootstrapCommandPathName(argv: string[]): string | undefined {
   return first;
 }
 
-/**
- * Implements parse bootstrap type value for the public runtime surface of this module.
- */
+/** Implements parse bootstrap type value for the public runtime surface of this module. */
 export function parseBootstrapTypeValue(argv: string[]): string | undefined {
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
@@ -1010,6 +1065,7 @@ export function parseBootstrapTypeValue(argv: string[]): string | undefined {
   return undefined;
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   buildFlagLookup,
   collectLongFlagCandidates,

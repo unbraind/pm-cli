@@ -16,14 +16,18 @@ import {
   printResult,
   writeStdout,
 } from "./registration-helpers.js";
-import { runExtension, type ExtensionCommandResult } from "./commands/extension.js";
+import {
+  runExtension,
+  type ExtensionCommandResult,
+} from "./commands/extension.js";
 import { SCAFFOLD_CAPABILITIES } from "./commands/extension/scaffold.js";
-import { renderExtensionDescribeMarkdown, type ExtensionDescribeResult } from "./commands/extension/describe.js";
+import {
+  renderExtensionDescribeMarkdown,
+  type ExtensionDescribeResult,
+} from "./commands/extension/describe.js";
 import { runConfig } from "./commands/config.js";
 import { runInit, summarizeInitResult } from "./commands/init.js";
 import { runUpgrade } from "./commands/upgrade.js";
-
-
 
 type ExtensionSubcommandAction =
   | "init"
@@ -47,8 +51,10 @@ function normalizeExtensionOptions(
   forcedAction?: ExtensionSubcommandAction,
   vocabulary: LifecycleCommandVocabulary = "extension",
 ): Record<string, unknown> {
-  const isForcedAction = (action: ExtensionSubcommandAction): boolean => forcedAction === action;
-  const readBoolean = (...keys: string[]): boolean => keys.some((key) => options[key] === true);
+  const isForcedAction = (action: ExtensionSubcommandAction): boolean =>
+    forcedAction === action;
+  const readBoolean = (...keys: string[]): boolean =>
+    keys.some((key) => options[key] === true);
   const readString = (...keys: string[]): string | undefined => {
     for (const key of keys) {
       if (typeof options[key] === "string") {
@@ -70,7 +76,9 @@ function normalizeExtensionOptions(
     doctor: isForcedAction("doctor") || readBoolean("doctor"),
     catalog: isForcedAction("catalog") || readBoolean("catalog"),
     adopt: isForcedAction("adopt") || readBoolean("adopt"),
-    adoptAll: isForcedAction("adopt-all") || readBoolean("adoptAll", "adopt_all", "adopt-all"),
+    adoptAll:
+      isForcedAction("adopt-all") ||
+      readBoolean("adoptAll", "adopt_all", "adopt-all"),
     activate: isForcedAction("activate") || readBoolean("activate"),
     deactivate: isForcedAction("deactivate") || readBoolean("deactivate"),
     project: readBoolean("project"),
@@ -87,7 +95,11 @@ function normalizeExtensionOptions(
     trace: readBoolean("trace"),
     watch: readBoolean("watch"),
     runtimeProbe: readBoolean("runtimeProbe", "runtime_probe", "runtime-probe"),
-    fixManagedState: readBoolean("fixManagedState", "fix_managed_state", "fix-managed-state"),
+    fixManagedState: readBoolean(
+      "fixManagedState",
+      "fix_managed_state",
+      "fix-managed-state",
+    ),
     isolated: readBoolean("isolated"),
     ignoreGlobal: readBoolean("ignoreGlobal", "ignore_global", "ignore-global"),
     strictExit: readBoolean("strictExit", "strict_exit", "strict-exit"),
@@ -96,20 +108,26 @@ function normalizeExtensionOptions(
   };
 }
 
-async function looksLikeShellExpandedWildcard(targets: string[]): Promise<boolean> {
+async function looksLikeShellExpandedWildcard(
+  targets: string[],
+): Promise<boolean> {
   // Only ever called by normalizeInstallTargets after it has already returned
   // early for length <= 1, so targets always has more than one entry here.
   const visibleEntries = (await fs.readdir(process.cwd()))
     .filter((entry) => !entry.startsWith("."))
     .sort((left, right) => left.localeCompare(right));
-  const normalizedTargets = [...targets].sort((left, right) => left.localeCompare(right));
+  const normalizedTargets = [...targets].sort((left, right) =>
+    left.localeCompare(right),
+  );
   return (
     visibleEntries.length === normalizedTargets.length &&
     visibleEntries.every((entry, index) => entry === normalizedTargets[index])
   );
 }
 
-async function normalizeInstallTargets(targets: string[] | undefined): Promise<string[] | undefined> {
+async function normalizeInstallTargets(
+  targets: string[] | undefined,
+): Promise<string[] | undefined> {
   // Commander variadic `[targets...]` always yields an array (empty when no
   // targets are given), so a single nullish coalesce covers every input.
   /* c8 ignore start -- commander variadic `[targets...]` always passes an array; the `?? []` arm is an unreachable nullish guard */
@@ -133,19 +151,31 @@ function validateExtensionMarkdownOptions(
 ): void {
   const wantsMarkdown = normalizedOptions.markdown === true;
   if (outputPath !== undefined && outputPath === "") {
-    throw new PmCliError("--output requires a non-empty file path.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--output requires a non-empty file path.",
+      EXIT_CODE.USAGE,
+    );
   }
   if (outputPath !== undefined && !wantsMarkdown) {
-    throw new PmCliError("--output is only supported with --markdown describe output.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--output is only supported with --markdown describe output.",
+      EXIT_CODE.USAGE,
+    );
   }
   if (!wantsMarkdown) {
     return;
   }
   if (globalOptions.json) {
-    throw new PmCliError("Cannot combine --json with --markdown.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Cannot combine --json with --markdown.",
+      EXIT_CODE.USAGE,
+    );
   }
   if (normalizedOptions.describe !== true) {
-    throw new PmCliError("--markdown is only supported by the describe action.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--markdown is only supported by the describe action.",
+      EXIT_CODE.USAGE,
+    );
   }
 }
 
@@ -155,7 +185,10 @@ async function emitExtensionMarkdownResult(params: {
   outputPath: string | undefined;
   globalOptions: GlobalOptions;
 }): Promise<void> {
-  const markdown = renderExtensionDescribeMarkdown(params.result.details as unknown as ExtensionDescribeResult, params.vocabulary);
+  const markdown = renderExtensionDescribeMarkdown(
+    params.result.details as unknown as ExtensionDescribeResult,
+    params.vocabulary,
+  );
   if (params.outputPath !== undefined) {
     const resolvedOutputPath = path.resolve(params.outputPath);
     await fs.mkdir(path.dirname(resolvedOutputPath), { recursive: true });
@@ -176,18 +209,25 @@ function applyExtensionDoctorStrictExit(
   result: { action: string; details?: unknown; warnings: string[] },
   normalizedOptions: Record<string, unknown>,
 ): void {
-  const strictExit = Boolean(normalizedOptions.strictExit) || Boolean(normalizedOptions.failOnWarn);
+  const strictExit =
+    Boolean(normalizedOptions.strictExit) ||
+    Boolean(normalizedOptions.failOnWarn);
   if (result.action !== "doctor" || !strictExit) {
     return;
   }
-  const detailsRecord = result.details !== null && typeof result.details === "object"
-    ? result.details as Record<string, unknown>
-    : {};
-  const summary = detailsRecord.summary !== null && typeof detailsRecord.summary === "object"
-    ? detailsRecord.summary as Record<string, unknown>
-    : null;
-  const summaryStatus = summary && typeof summary.status === "string" ? summary.status : undefined;
-  const shouldFail = result.warnings.length > 0 || (summaryStatus !== undefined && summaryStatus !== "ok");
+  const detailsRecord =
+    result.details !== null && typeof result.details === "object"
+      ? (result.details as Record<string, unknown>)
+      : {};
+  const summary =
+    detailsRecord.summary !== null && typeof detailsRecord.summary === "object"
+      ? (detailsRecord.summary as Record<string, unknown>)
+      : null;
+  const summaryStatus =
+    summary && typeof summary.status === "string" ? summary.status : undefined;
+  const shouldFail =
+    result.warnings.length > 0 ||
+    (summaryStatus !== undefined && summaryStatus !== "ok");
   if (shouldFail) {
     process.exitCode = EXIT_CODE.GENERIC_FAILURE;
   }
@@ -202,13 +242,29 @@ async function executeExtensionCommand(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const normalizedOptions = normalizeExtensionOptions(options, forcedAction, vocabulary);
-  const outputOption = typeof normalizedOptions.output === "string" ? normalizedOptions.output : undefined;
+  const normalizedOptions = normalizeExtensionOptions(
+    options,
+    forcedAction,
+    vocabulary,
+  );
+  const outputOption =
+    typeof normalizedOptions.output === "string"
+      ? normalizedOptions.output
+      : undefined;
   const outputPath = outputOption?.trim();
-  validateExtensionMarkdownOptions(normalizedOptions, globalOptions, outputPath);
+  validateExtensionMarkdownOptions(
+    normalizedOptions,
+    globalOptions,
+    outputPath,
+  );
   const result = await runExtension(target, normalizedOptions, globalOptions);
   if (normalizedOptions.markdown === true) {
-    await emitExtensionMarkdownResult({ result, vocabulary, outputPath, globalOptions });
+    await emitExtensionMarkdownResult({
+      result,
+      vocabulary,
+      outputPath,
+      globalOptions,
+    });
   } else {
     printResult(result, globalOptions);
   }
@@ -221,11 +277,17 @@ async function executeExtensionCommand(
   }
 }
 
-function extractExtensionInstallDetails(result: ExtensionCommandResult): Record<string, unknown> {
-  return result.details !== null && typeof result.details === "object" ? result.details : {};
+function extractExtensionInstallDetails(
+  result: ExtensionCommandResult,
+): Record<string, unknown> {
+  return result.details !== null && typeof result.details === "object"
+    ? result.details
+    : {};
 }
 
-function serializeExtensionInstallError(error: unknown): Record<string, unknown> {
+function serializeExtensionInstallError(
+  error: unknown,
+): Record<string, unknown> {
   if (error instanceof PmCliError) {
     return {
       message: error.message,
@@ -247,24 +309,36 @@ async function executeExtensionInstallCommand(
 ): Promise<void> {
   const normalizedTargets = await normalizeInstallTargets(targets);
   if (normalizedTargets === undefined || normalizedTargets.length <= 1) {
-    await executeExtensionCommand(normalizedTargets?.[0], options, command, "install", vocabulary);
+    await executeExtensionCommand(
+      normalizedTargets?.[0],
+      options,
+      command,
+      "install",
+      vocabulary,
+    );
     return;
   }
 
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const normalizedOptions = normalizeExtensionOptions(options, "install", vocabulary);
-  validateExtensionMarkdownOptions(normalizedOptions, globalOptions, undefined);
-  const hasForcedGithubSource = [normalizedOptions.gh, normalizedOptions.github].some(
-    (value) => typeof value === "string" && value.trim().length > 0,
+  const normalizedOptions = normalizeExtensionOptions(
+    options,
+    "install",
+    vocabulary,
   );
+  validateExtensionMarkdownOptions(normalizedOptions, globalOptions, undefined);
+  const hasForcedGithubSource = [
+    normalizedOptions.gh,
+    normalizedOptions.github,
+  ].some((value) => typeof value === "string" && value.trim().length > 0);
   if (hasForcedGithubSource) {
     throw new PmCliError(
       "Multiple install targets cannot be combined with --gh/--github. Install one GitHub source per command, or pass multiple explicit local, bundled, or npm: targets.",
       EXIT_CODE.USAGE,
       {
         code: "multi_target_github_install_ambiguous",
-        required: "Use exactly one positional target with --gh/--github, or omit --gh/--github when installing multiple targets.",
+        required:
+          "Use exactly one positional target with --gh/--github, or omit --gh/--github when installing multiple targets.",
         examples: [
           "pm install --gh owner/repo",
           "pm install npm:pm-guide-shell pm-todos",
@@ -278,9 +352,15 @@ async function executeExtensionInstallCommand(
   let failureExitCode: number = EXIT_CODE.GENERIC_FAILURE;
   for (const target of normalizedTargets) {
     try {
-      const result = await runExtension(target, normalizedOptions, globalOptions);
+      const result = await runExtension(
+        target,
+        normalizedOptions,
+        globalOptions,
+      );
       const details = extractExtensionInstallDetails(result);
-      const targetWarnings = Array.isArray(result.warnings) ? result.warnings : [];
+      const targetWarnings = Array.isArray(result.warnings)
+        ? result.warnings
+        : [];
       warnings.push(...targetWarnings);
       const targetOk = result.ok === true;
       rows.push({
@@ -302,7 +382,8 @@ async function executeExtensionInstallCommand(
           ? {}
           : {
               error: {
-                message: "Extension install returned ok=false without throwing an error.",
+                message:
+                  "Extension install returned ok=false without throwing an error.",
                 exit_code: EXIT_CODE.GENERIC_FAILURE,
                 code: "extension_install_soft_failed",
               },
@@ -334,7 +415,9 @@ async function executeExtensionInstallCommand(
     installed_count: rows.length - failedCount,
     failed_count: failedCount,
     targets: rows,
-    warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
+    warnings: [...new Set(warnings)].sort((left, right) =>
+      left.localeCompare(right),
+    ),
   };
   printResult(result, globalOptions);
   if (failedCount > 0) {
@@ -359,8 +442,13 @@ function addPackageScopeOptions<T extends Command>(command: T): T {
     .option("--global", "Use global package scope");
 }
 
-function addLifecycleScopeOptions<T extends Command>(command: T, vocabulary: LifecycleCommandVocabulary): T {
-  return vocabulary === "package" ? addPackageScopeOptions(command) : addExtensionScopeOptions(command);
+function addLifecycleScopeOptions<T extends Command>(
+  command: T,
+  vocabulary: LifecycleCommandVocabulary,
+): T {
+  return vocabulary === "package"
+    ? addPackageScopeOptions(command)
+    : addExtensionScopeOptions(command);
 }
 
 function registerLifecycleCommand(
@@ -372,48 +460,108 @@ function registerLifecycleCommand(
   const commandName = vocabulary;
   const lifecycleCommand = program
     .command(commandName)
-    .argument("[target]", `${noun[0]!.toUpperCase()}${noun.slice(1)} source/name or scaffold target path (for --init/--scaffold)`)
+    .argument(
+      "[target]",
+      `${noun[0]!.toUpperCase()}${noun.slice(1)} source/name or scaffold target path (for --init/--scaffold)`,
+    )
     .option("--init", `Generate a starter ${noun} scaffold at target path`)
     .option("--scaffold", "Alias for --init")
-    .option("--capability <kind>", `Capability the --init starter targets (${SCAFFOLD_CAPABILITIES.join("|")}; default commands)`)
-    .option("--install", `Install ${noun} from local path, bundled alias, npm: source, wildcard, or GitHub source`)
+    .option(
+      "--capability <kind>",
+      `Capability the --init starter targets (${SCAFFOLD_CAPABILITIES.join("|")}; default commands)`,
+    )
+    .option(
+      "--install",
+      `Install ${noun} from local path, bundled alias, npm: source, wildcard, or GitHub source`,
+    )
     .option("--uninstall", `Uninstall an installed ${noun}`)
     .option("--explore", `List discovered ${plural} in selected scope`)
     .option("--list", "Alias for --explore")
     .option("--manage", `List managed ${plural} with update-check metadata`)
-    .option("--describe", `Map every surface a loaded ${noun} registers (optionally one by name)`)
-    .option("--markdown", "Render describe output as a Markdown reference document (describe only)")
-    .option("--output <path>", "Write describe Markdown to a file (requires --markdown)")
+    .option(
+      "--describe",
+      `Map every surface a loaded ${noun} registers (optionally one by name)`,
+    )
+    .option(
+      "--markdown",
+      "Render describe output as a Markdown reference document (describe only)",
+    )
+    .option(
+      "--output <path>",
+      "Write describe Markdown to a file (requires --markdown)",
+    )
     .option("--reload", `Reload ${plural} with cache-busted module imports`)
     .option("--watch", "Use watch mode with --reload")
-    .option("--doctor", `Run consolidated ${noun} diagnostics (summary/deep modes)`)
+    .option(
+      "--doctor",
+      `Run consolidated ${noun} diagnostics (summary/deep modes)`,
+    )
     .option("--catalog", `List bundled first-party ${noun} catalog metadata`)
-    .option("--adopt", `Adopt an existing unmanaged ${noun} into managed metadata`)
-    .option("--adopt-all", `Adopt all unmanaged ${plural} into managed metadata`)
+    .option(
+      "--adopt",
+      `Adopt an existing unmanaged ${noun} into managed metadata`,
+    )
+    .option(
+      "--adopt-all",
+      `Adopt all unmanaged ${plural} into managed metadata`,
+    )
     .option("--activate", `Activate a ${noun} in selected scope settings`)
     .option("--deactivate", `Deactivate a ${noun} in selected scope settings`)
     .option("--project", `Use project ${noun} scope (default)`)
     .option("--local", "Alias for --project")
     .option("--global", `Use global ${noun} scope`)
-    .option("--gh <github-source>", "Install from GitHub shorthand source (owner/repo[/path])")
+    .option(
+      "--gh <github-source>",
+      "Install from GitHub shorthand source (owner/repo[/path])",
+    )
     .option("--github <github-source>", "Alias for --gh")
     .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
-    .option("--detail <mode>", `${noun[0]!.toUpperCase()}${noun.slice(1)} diagnostics detail mode (summary|deep)`)
-    .option("--trace", "Include actionable registration traces in doctor deep diagnostics")
-    .option("--runtime-probe", "Opt-in runtime activation probe for manage output parity")
-    .option("--fix-managed-state", `Adopt unmanaged ${plural} before diagnostics/update checks`)
-    .option("--isolated", `Run doctor against project-scope ${plural} only, ignoring global registrations`)
+    .option(
+      "--detail <mode>",
+      `${noun[0]!.toUpperCase()}${noun.slice(1)} diagnostics detail mode (summary|deep)`,
+    )
+    .option(
+      "--trace",
+      "Include actionable registration traces in doctor deep diagnostics",
+    )
+    .option(
+      "--runtime-probe",
+      "Opt-in runtime activation probe for manage output parity",
+    )
+    .option(
+      "--fix-managed-state",
+      `Adopt unmanaged ${plural} before diagnostics/update checks`,
+    )
+    .option(
+      "--isolated",
+      `Run doctor against project-scope ${plural} only, ignoring global registrations`,
+    )
     .option("--ignore-global", "Alias for --isolated")
-    .option("--strict-exit", "Return non-zero exit when doctor warnings are present (ok=false)")
+    .option(
+      "--strict-exit",
+      "Return non-zero exit when doctor warnings are present (ok=false)",
+    )
     .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
     .description(
       vocabulary === "package"
         ? "Manage package lifecycle operations for project or global scope. Backward-compatible with extension packages."
         : "Manage extension lifecycle operations for project or global scope.",
     )
-    .action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
-      await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, undefined, vocabulary);
-    });
+    .action(
+      async (
+        target: string | undefined,
+        _options: Record<string, unknown>,
+        command,
+      ) => {
+        await executeExtensionCommand(
+          target,
+          command.optsWithGlobals() as Record<string, unknown>,
+          command,
+          undefined,
+          vocabulary,
+        );
+      },
+    );
 
   if (vocabulary === "package") {
     lifecycleCommand.alias("packages");
@@ -423,74 +571,165 @@ function registerLifecycleCommand(
     // lifecycle command and its `init` subcommand below); `scaffoldExtensionProject`
     // still rejects extension-mode + declarative as defense-in-depth for the
     // programmatic/MCP path.
-    lifecycleCommand.option("--declarative", "Scaffold the composeExtension blueprint starter (any capability)");
+    lifecycleCommand.option(
+      "--declarative",
+      "Scaffold the composeExtension blueprint starter (any capability)",
+    );
   }
 
   const initCommand = lifecycleCommand
     .command("init")
     .alias("scaffold")
     .argument("<target>", `Scaffold target directory path`)
-    .option("--capability <kind>", `Capability the starter targets (${SCAFFOLD_CAPABILITIES.join("|")}; default commands)`)
+    .option(
+      "--capability <kind>",
+      `Capability the starter targets (${SCAFFOLD_CAPABILITIES.join("|")}; default commands)`,
+    )
     .description(
       vocabulary === "package"
         ? "Generate a starter package scaffold with package metadata, manifest, and entrypoint."
         : "Generate a starter extension scaffold with manifest and entrypoint.",
     );
   if (vocabulary === "package") {
-    initCommand.option("--declarative", "Scaffold the composeExtension blueprint starter (any capability)");
+    initCommand.option(
+      "--declarative",
+      "Scaffold the composeExtension blueprint starter (any capability)",
+    );
   }
-  addLifecycleScopeOptions(initCommand, vocabulary).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "init", vocabulary);
-  });
-
-  addLifecycleScopeOptions(
-    lifecycleCommand
-      .command("install")
-      .argument("[targets...]", `${noun[0]!.toUpperCase()}${noun.slice(1)} source (local path, bundled alias, npm: source, wildcard, or GitHub source)`)
-      .option("--gh <github-source>", "Install from GitHub shorthand source (owner/repo[/path])")
-      .option("--github <github-source>", "Alias for --gh")
-      .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
-      .description(`Install ${noun} from local path, bundled alias, npm: source, wildcard, or GitHub source.`),
-    vocabulary,
-  ).action(async (targets: string[] | undefined, _options: Record<string, unknown>, command) => {
-    await executeExtensionInstallCommand(targets, command.optsWithGlobals() as Record<string, unknown>, command, vocabulary);
-  });
-
-  addLifecycleScopeOptions(
-    lifecycleCommand.command("uninstall").argument("<target>", `${noun[0]!.toUpperCase()}${noun.slice(1)} name`).description(`Uninstall an installed ${noun}.`),
-    vocabulary,
-  ).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "uninstall", vocabulary);
-  });
-
-  addLifecycleScopeOptions(lifecycleCommand.command("explore").description(`List discovered ${plural} in selected scope.`), vocabulary).action(
-    async (_options: Record<string, unknown>, command) => {
-      await executeExtensionCommand(undefined, command.optsWithGlobals() as Record<string, unknown>, command, "explore", vocabulary);
+  addLifecycleScopeOptions(initCommand, vocabulary).action(
+    async (target: string, _options: Record<string, unknown>, command) => {
+      await executeExtensionCommand(
+        target,
+        command.optsWithGlobals() as Record<string, unknown>,
+        command,
+        "init",
+        vocabulary,
+      );
     },
   );
 
   addLifecycleScopeOptions(
     lifecycleCommand
+      .command("install")
+      .argument(
+        "[targets...]",
+        `${noun[0]!.toUpperCase()}${noun.slice(1)} source (local path, bundled alias, npm: source, wildcard, or GitHub source)`,
+      )
+      .option(
+        "--gh <github-source>",
+        "Install from GitHub shorthand source (owner/repo[/path])",
+      )
+      .option("--github <github-source>", "Alias for --gh")
+      .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
+      .description(
+        `Install ${noun} from local path, bundled alias, npm: source, wildcard, or GitHub source.`,
+      ),
+    vocabulary,
+  ).action(
+    async (
+      targets: string[] | undefined,
+      _options: Record<string, unknown>,
+      command,
+    ) => {
+      await executeExtensionInstallCommand(
+        targets,
+        command.optsWithGlobals() as Record<string, unknown>,
+        command,
+        vocabulary,
+      );
+    },
+  );
+
+  addLifecycleScopeOptions(
+    lifecycleCommand
+      .command("uninstall")
+      .argument("<target>", `${noun[0]!.toUpperCase()}${noun.slice(1)} name`)
+      .description(`Uninstall an installed ${noun}.`),
+    vocabulary,
+  ).action(
+    async (target: string, _options: Record<string, unknown>, command) => {
+      await executeExtensionCommand(
+        target,
+        command.optsWithGlobals() as Record<string, unknown>,
+        command,
+        "uninstall",
+        vocabulary,
+      );
+    },
+  );
+
+  addLifecycleScopeOptions(
+    lifecycleCommand
+      .command("explore")
+      .description(`List discovered ${plural} in selected scope.`),
+    vocabulary,
+  ).action(async (_options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(
+      undefined,
+      command.optsWithGlobals() as Record<string, unknown>,
+      command,
+      "explore",
+      vocabulary,
+    );
+  });
+
+  addLifecycleScopeOptions(
+    lifecycleCommand
       .command("manage")
-      .option("--runtime-probe", "Opt-in runtime activation probe for manage output parity")
-      .option("--fix-managed-state", `Adopt unmanaged ${plural} before diagnostics/update checks`)
+      .option(
+        "--runtime-probe",
+        "Opt-in runtime activation probe for manage output parity",
+      )
+      .option(
+        "--fix-managed-state",
+        `Adopt unmanaged ${plural} before diagnostics/update checks`,
+      )
       .description(`List managed ${plural} with update-check metadata.`),
     vocabulary,
   ).action(async (_options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, command.optsWithGlobals() as Record<string, unknown>, command, "manage", vocabulary);
+    await executeExtensionCommand(
+      undefined,
+      command.optsWithGlobals() as Record<string, unknown>,
+      command,
+      "manage",
+      vocabulary,
+    );
   });
 
   addLifecycleScopeOptions(
     lifecycleCommand
       .command("describe")
-      .argument("[target]", `${noun[0]!.toUpperCase()}${noun.slice(1)} name to describe (omit for every loaded ${noun})`)
-      .option("--markdown", "Render the surface map as a Markdown reference document instead of toon/json")
-      .option("--output <path>", "Write Markdown output to a file (requires --markdown)")
-      .description(`Map every surface a loaded ${noun} registers (commands, hooks, item types, providers, overrides, ...).`),
+      .argument(
+        "[target]",
+        `${noun[0]!.toUpperCase()}${noun.slice(1)} name to describe (omit for every loaded ${noun})`,
+      )
+      .option(
+        "--markdown",
+        "Render the surface map as a Markdown reference document instead of toon/json",
+      )
+      .option(
+        "--output <path>",
+        "Write Markdown output to a file (requires --markdown)",
+      )
+      .description(
+        `Map every surface a loaded ${noun} registers (commands, hooks, item types, providers, overrides, ...).`,
+      ),
     vocabulary,
-  ).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "describe", vocabulary);
-  });
+  ).action(
+    async (
+      target: string | undefined,
+      _options: Record<string, unknown>,
+      command,
+    ) => {
+      await executeExtensionCommand(
+        target,
+        command.optsWithGlobals() as Record<string, unknown>,
+        command,
+        "describe",
+        vocabulary,
+      );
+    },
+  );
 
   addLifecycleScopeOptions(
     lifecycleCommand
@@ -499,69 +738,150 @@ function registerLifecycleCommand(
       .description(`Reload ${plural} with cache-busted module imports.`),
     vocabulary,
   ).action(async (_options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, command.optsWithGlobals() as Record<string, unknown>, command, "reload", vocabulary);
+    await executeExtensionCommand(
+      undefined,
+      command.optsWithGlobals() as Record<string, unknown>,
+      command,
+      "reload",
+      vocabulary,
+    );
   });
 
   addLifecycleScopeOptions(
     lifecycleCommand
       .command("doctor")
-      .option("--detail <mode>", `Detail mode for ${noun} diagnostics (summary|deep)`)
-      .option("--trace", "Include actionable registration traces in doctor deep diagnostics")
-      .option("--fix-managed-state", `Adopt unmanaged ${plural} before diagnostics/update checks`)
-      .option("--isolated", `Run doctor against project-scope ${plural} only, ignoring global registrations`)
+      .option(
+        "--detail <mode>",
+        `Detail mode for ${noun} diagnostics (summary|deep)`,
+      )
+      .option(
+        "--trace",
+        "Include actionable registration traces in doctor deep diagnostics",
+      )
+      .option(
+        "--fix-managed-state",
+        `Adopt unmanaged ${plural} before diagnostics/update checks`,
+      )
+      .option(
+        "--isolated",
+        `Run doctor against project-scope ${plural} only, ignoring global registrations`,
+      )
       .option("--ignore-global", "Alias for --isolated")
-      .option("--strict-exit", "Return non-zero exit when doctor warnings are present (ok=false)")
+      .option(
+        "--strict-exit",
+        "Return non-zero exit when doctor warnings are present (ok=false)",
+      )
       .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
-      .description(`Run consolidated ${noun} diagnostics (summary/deep modes).`),
+      .description(
+        `Run consolidated ${noun} diagnostics (summary/deep modes).`,
+      ),
     vocabulary,
   ).action(async (_options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, command.optsWithGlobals() as Record<string, unknown>, command, "doctor", vocabulary);
+    await executeExtensionCommand(
+      undefined,
+      command.optsWithGlobals() as Record<string, unknown>,
+      command,
+      "doctor",
+      vocabulary,
+    );
   });
 
   addLifecycleScopeOptions(
     lifecycleCommand
       .command("catalog")
       .alias("list")
-      .option("--fields <value>", "Render compact comma-separated catalog fields, for example: alias,installed,install_command")
+      .option(
+        "--fields <value>",
+        "Render compact comma-separated catalog fields, for example: alias,installed,install_command",
+      )
       .description(`List bundled first-party ${noun} catalog metadata.`),
     vocabulary,
   ).action(async (_options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, command.optsWithGlobals() as Record<string, unknown>, command, "catalog", vocabulary);
+    await executeExtensionCommand(
+      undefined,
+      command.optsWithGlobals() as Record<string, unknown>,
+      command,
+      "catalog",
+      vocabulary,
+    );
   });
 
   addLifecycleScopeOptions(
     lifecycleCommand
       .command("adopt")
       .argument("<target>", `${noun[0]!.toUpperCase()}${noun.slice(1)} name`)
-      .option("--gh <owner/repo[/path]>", `GitHub provenance shorthand for adopted ${noun}`)
+      .option(
+        "--gh <owner/repo[/path]>",
+        `GitHub provenance shorthand for adopted ${noun}`,
+      )
       .option("--github <owner/repo[/path]>", "Alias for --gh")
       .option("--ref <ref>", "Git ref/branch/tag for GitHub shorthand source")
-      .description(`Adopt an existing unmanaged ${noun} into managed metadata.`),
+      .description(
+        `Adopt an existing unmanaged ${noun} into managed metadata.`,
+      ),
     vocabulary,
-  ).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "adopt", vocabulary);
-  });
+  ).action(
+    async (target: string, _options: Record<string, unknown>, command) => {
+      await executeExtensionCommand(
+        target,
+        command.optsWithGlobals() as Record<string, unknown>,
+        command,
+        "adopt",
+        vocabulary,
+      );
+    },
+  );
 
   addLifecycleScopeOptions(
-    lifecycleCommand.command("adopt-all").description(`Adopt all unmanaged ${plural} into managed metadata.`),
+    lifecycleCommand
+      .command("adopt-all")
+      .description(`Adopt all unmanaged ${plural} into managed metadata.`),
     vocabulary,
   ).action(async (_options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, command.optsWithGlobals() as Record<string, unknown>, command, "adopt-all", vocabulary);
+    await executeExtensionCommand(
+      undefined,
+      command.optsWithGlobals() as Record<string, unknown>,
+      command,
+      "adopt-all",
+      vocabulary,
+    );
   });
 
   addLifecycleScopeOptions(
-    lifecycleCommand.command("activate").argument("<target>", `${noun[0]!.toUpperCase()}${noun.slice(1)} name`).description(`Activate a ${noun} in selected scope settings.`),
+    lifecycleCommand
+      .command("activate")
+      .argument("<target>", `${noun[0]!.toUpperCase()}${noun.slice(1)} name`)
+      .description(`Activate a ${noun} in selected scope settings.`),
     vocabulary,
-  ).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "activate", vocabulary);
-  });
+  ).action(
+    async (target: string, _options: Record<string, unknown>, command) => {
+      await executeExtensionCommand(
+        target,
+        command.optsWithGlobals() as Record<string, unknown>,
+        command,
+        "activate",
+        vocabulary,
+      );
+    },
+  );
 
   addLifecycleScopeOptions(
-    lifecycleCommand.command("deactivate").argument("<target>", `${noun[0]!.toUpperCase()}${noun.slice(1)} name`).description(`Deactivate a ${noun} in selected scope settings.`),
+    lifecycleCommand
+      .command("deactivate")
+      .argument("<target>", `${noun[0]!.toUpperCase()}${noun.slice(1)} name`)
+      .description(`Deactivate a ${noun} in selected scope settings.`),
     vocabulary,
-  ).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "deactivate", vocabulary);
-  });
+  ).action(
+    async (target: string, _options: Record<string, unknown>, command) => {
+      await executeExtensionCommand(
+        target,
+        command.optsWithGlobals() as Record<string, unknown>,
+        command,
+        "deactivate",
+        vocabulary,
+      );
+    },
+  );
 }
 
 async function runInitCommandAction(
@@ -571,29 +891,38 @@ async function runInitCommandAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const result = await runInit(
-    prefix,
-    globalOptions,
-    {
-      preset: typeof options.preset === "string" ? options.preset : undefined,
-      defaults: options.defaults === true || options.yes === true,
-      author: typeof options.author === "string" ? options.author : undefined,
-      agentGuidance: typeof options.agentGuidance === "string" ? options.agentGuidance : undefined,
-      typePreset: typeof options.typePreset === "string" ? options.typePreset : undefined,
-      withPackages: options.withPackages === true,
-      force: options.force === true,
-      workspace: typeof options.workspace === "string" ? options.workspace : undefined,
-    },
-  );
+  const result = await runInit(prefix, globalOptions, {
+    preset: typeof options.preset === "string" ? options.preset : undefined,
+    defaults: options.defaults === true || options.yes === true,
+    author: typeof options.author === "string" ? options.author : undefined,
+    agentGuidance:
+      typeof options.agentGuidance === "string"
+        ? options.agentGuidance
+        : undefined,
+    typePreset:
+      typeof options.typePreset === "string" ? options.typePreset : undefined,
+    withPackages: options.withPackages === true,
+    force: options.force === true,
+    workspace:
+      typeof options.workspace === "string" ? options.workspace : undefined,
+  });
   const verbose = options.verbose === true;
   const emitFullTree = verbose || globalOptions.json === true;
-  printResult(emitFullTree ? result : summarizeInitResult(result), globalOptions);
+  printResult(
+    emitFullTree ? result : summarizeInitResult(result),
+    globalOptions,
+  );
   if (globalOptions.profile) {
     printError(`profile:command=init took_ms=${Date.now() - startedAt}`);
   }
 }
 
-function resolveConfigPositionals(scope: string | undefined, action: string | undefined, key: string | undefined, value: string | undefined): {
+function resolveConfigPositionals(
+  scope: string | undefined,
+  action: string | undefined,
+  key: string | undefined,
+  value: string | undefined,
+): {
   resolvedScope: string;
   resolvedAction: string;
   resolvedKey: string | undefined;
@@ -609,24 +938,61 @@ function resolveConfigPositionals(scope: string | undefined, action: string | un
   };
 }
 
-function buildConfigOptions(options: Record<string, unknown>): Record<string, unknown> {
+function buildConfigOptions(
+  options: Record<string, unknown>,
+): Record<string, unknown> {
   return {
-    criterion: Array.isArray(options.criterion) ? (options.criterion as string[]) : [],
+    criterion: Array.isArray(options.criterion)
+      ? (options.criterion as string[])
+      : [],
     format: typeof options.format === "string" ? options.format : undefined,
     policy: typeof options.policy === "string" ? options.policy : undefined,
     value: typeof options.value === "string" ? options.value : undefined,
     clearCriteria: options.clearCriteria === true,
-    defaultDepth: typeof options.defaultDepth === "string" ? options.defaultDepth : undefined,
-    activityLimit: typeof options.activityLimit === "string" ? options.activityLimit : undefined,
-    staleThresholdDays: typeof options.staleThresholdDays === "string" ? options.staleThresholdDays : undefined,
-    sectionHierarchy: typeof options.sectionHierarchy === "string" ? options.sectionHierarchy : undefined,
-    sectionActivity: typeof options.sectionActivity === "string" ? options.sectionActivity : undefined,
-    sectionProgress: typeof options.sectionProgress === "string" ? options.sectionProgress : undefined,
-    sectionBlockers: typeof options.sectionBlockers === "string" ? options.sectionBlockers : undefined,
-    sectionFiles: typeof options.sectionFiles === "string" ? options.sectionFiles : undefined,
-    sectionWorkload: typeof options.sectionWorkload === "string" ? options.sectionWorkload : undefined,
-    sectionStaleness: typeof options.sectionStaleness === "string" ? options.sectionStaleness : undefined,
-    sectionTests: typeof options.sectionTests === "string" ? options.sectionTests : undefined,
+    defaultDepth:
+      typeof options.defaultDepth === "string"
+        ? options.defaultDepth
+        : undefined,
+    activityLimit:
+      typeof options.activityLimit === "string"
+        ? options.activityLimit
+        : undefined,
+    staleThresholdDays:
+      typeof options.staleThresholdDays === "string"
+        ? options.staleThresholdDays
+        : undefined,
+    sectionHierarchy:
+      typeof options.sectionHierarchy === "string"
+        ? options.sectionHierarchy
+        : undefined,
+    sectionActivity:
+      typeof options.sectionActivity === "string"
+        ? options.sectionActivity
+        : undefined,
+    sectionProgress:
+      typeof options.sectionProgress === "string"
+        ? options.sectionProgress
+        : undefined,
+    sectionBlockers:
+      typeof options.sectionBlockers === "string"
+        ? options.sectionBlockers
+        : undefined,
+    sectionFiles:
+      typeof options.sectionFiles === "string"
+        ? options.sectionFiles
+        : undefined,
+    sectionWorkload:
+      typeof options.sectionWorkload === "string"
+        ? options.sectionWorkload
+        : undefined,
+    sectionStaleness:
+      typeof options.sectionStaleness === "string"
+        ? options.sectionStaleness
+        : undefined,
+    sectionTests:
+      typeof options.sectionTests === "string"
+        ? options.sectionTests
+        : undefined,
   };
 }
 
@@ -640,7 +1006,8 @@ async function runConfigCommandAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { resolvedScope, resolvedAction, resolvedKey, resolvedValue } = resolveConfigPositionals(scope, action, key, value);
+  const { resolvedScope, resolvedAction, resolvedKey, resolvedValue } =
+    resolveConfigPositionals(scope, action, key, value);
   const result = await runConfig(
     resolvedScope,
     resolvedAction,
@@ -655,31 +1022,70 @@ async function runConfigCommandAction(
   }
 }
 
-/**
- * Implements register setup commands for the public runtime surface of this module.
- */
+/** Implements register setup commands for the public runtime surface of this module. */
 export function registerSetupCommands(program: Command): void {
   program
     .command("init")
-    .argument("[prefix-or-path]", "Optional id prefix, or path-like tracker target such as ./pm-sandbox")
-    .option("--preset <value>", "Governance preset for new setups: minimal|default|strict")
-    .option("--defaults", "Use non-interactive setup defaults without opening the wizard")
+    .argument(
+      "[prefix-or-path]",
+      "Optional id prefix, or path-like tracker target such as ./pm-sandbox",
+    )
+    .option(
+      "--preset <value>",
+      "Governance preset for new setups: minimal|default|strict",
+    )
+    .option(
+      "--defaults",
+      "Use non-interactive setup defaults without opening the wizard",
+    )
     .option("-y, --yes", "Alias for --defaults (non-interactive setup)")
-    .option("--author <value>", "Set the default mutation author for this project")
-    .option("--agent-guidance <mode>", "Agent guidance mode: ask|add|skip|status")
-    .option("--type-preset <name>", "Register domain item types during init: agile|ops|research")
-    .option("--with-packages", "Install all bundled first-party packages during initialization")
-    .option("--workspace <dir>", "Initialize repository-local tracker storage at <dir>/.agents/pm")
-    .option("--force", "Allow initializing tracker files directly in a directory that looks like a workspace root")
-    .option("--verbose", "Include the full resolved settings tree in the output (default output is a concise summary)")
-    .description("Initialize pm storage and defaults for the current workspace or a path-like tracker target.")
-    .action(async (prefix: string | undefined, options: Record<string, unknown>, command) => {
-      await runInitCommandAction(prefix, options, command);
-    });
+    .option(
+      "--author <value>",
+      "Set the default mutation author for this project",
+    )
+    .option(
+      "--agent-guidance <mode>",
+      "Agent guidance mode: ask|add|skip|status",
+    )
+    .option(
+      "--type-preset <name>",
+      "Register domain item types during init: agile|ops|research",
+    )
+    .option(
+      "--with-packages",
+      "Install all bundled first-party packages during initialization",
+    )
+    .option(
+      "--workspace <dir>",
+      "Initialize repository-local tracker storage at <dir>/.agents/pm",
+    )
+    .option(
+      "--force",
+      "Allow initializing tracker files directly in a directory that looks like a workspace root",
+    )
+    .option(
+      "--verbose",
+      "Include the full resolved settings tree in the output (default output is a concise summary)",
+    )
+    .description(
+      "Initialize pm storage and defaults for the current workspace or a path-like tracker target.",
+    )
+    .action(
+      async (
+        prefix: string | undefined,
+        options: Record<string, unknown>,
+        command,
+      ) => {
+        await runInitCommandAction(prefix, options, command);
+      },
+    );
 
   program
     .command("config")
-    .argument("[scope]", "Config scope: project|global, or action shorthand list|export|get|set for project scope")
+    .argument(
+      "[scope]",
+      "Config scope: project|global, or action shorthand list|export|get|set for project scope",
+    )
     .argument("[action]", "Config action: get|set|list|export")
     .argument(
       "[key]",
@@ -687,14 +1093,17 @@ export function registerSetupCommands(program: Command): void {
     )
     .argument(
       "[value]",
-      "Optional value for set: routed to the right typed flag by key (e.g. config set telemetry-tracking off, config set item-format toon, config set definition-of-done \"Tests pass\"). Equivalent to --policy/--format/--criterion. context keys still require --default-depth/--section-* flags.",
+      'Optional value for set: routed to the right typed flag by key (e.g. config set telemetry-tracking off, config set item-format toon, config set definition-of-done "Tests pass"). Equivalent to --policy/--format/--criterion. context keys still require --default-depth/--section-* flags.',
     )
     .option(
       "--criterion <text>",
       "Criteria value for definition-of-done, metadata-required-fields, or lifecycle pattern keys (repeatable for set)",
       collect,
     )
-    .option("--clear-criteria", "Clear criteria-list keys for config set operations")
+    .option(
+      "--clear-criteria",
+      "Clear criteria-list keys for config set operations",
+    )
     .option("--format <value>", "Item format for item-format key: toon")
     .option(
       "--policy <value>",
@@ -704,21 +1113,66 @@ export function registerSetupCommands(program: Command): void {
       "--value <value>",
       "Value for nested leaf settings keys (search_provider, search_mutation_refresh_policy, search_query_expansion_enabled, search_rerank_enabled, openai_base_url, ollama_model, vector_store_adapter, vector_store_collection_name, qdrant_url, lancedb_path, etc.). Equivalent to the positional value.",
     )
-    .option("--default-depth <value>", "Context default depth: brief|standard|deep")
+    .option(
+      "--default-depth <value>",
+      "Context default depth: brief|standard|deep",
+    )
     .option("--activity-limit <n>", "Context default activity limit")
     .option("--stale-threshold-days <n>", "Context staleness cutoff in days")
-    .option("--section-hierarchy <value>", "Enable/disable context hierarchy section (true|false)")
-    .option("--section-activity <value>", "Enable/disable context activity section (true|false)")
-    .option("--section-progress <value>", "Enable/disable context progress section (true|false)")
-    .option("--section-blockers <value>", "Enable/disable context blockers section (true|false)")
-    .option("--section-files <value>", "Enable/disable context files section (true|false)")
-    .option("--section-workload <value>", "Enable/disable context workload section (true|false)")
-    .option("--section-staleness <value>", "Enable/disable context staleness section (true|false)")
-    .option("--section-tests <value>", "Enable/disable context tests section (true|false)")
-    .description("Read or update pm settings for the current workspace or global profile.")
-    .action(async (scope: string | undefined, action: string | undefined, key: string | undefined, value: string | undefined, options: Record<string, unknown>, command) => {
-      await runConfigCommandAction(scope, action, key, value, options, command);
-    });
+    .option(
+      "--section-hierarchy <value>",
+      "Enable/disable context hierarchy section (true|false)",
+    )
+    .option(
+      "--section-activity <value>",
+      "Enable/disable context activity section (true|false)",
+    )
+    .option(
+      "--section-progress <value>",
+      "Enable/disable context progress section (true|false)",
+    )
+    .option(
+      "--section-blockers <value>",
+      "Enable/disable context blockers section (true|false)",
+    )
+    .option(
+      "--section-files <value>",
+      "Enable/disable context files section (true|false)",
+    )
+    .option(
+      "--section-workload <value>",
+      "Enable/disable context workload section (true|false)",
+    )
+    .option(
+      "--section-staleness <value>",
+      "Enable/disable context staleness section (true|false)",
+    )
+    .option(
+      "--section-tests <value>",
+      "Enable/disable context tests section (true|false)",
+    )
+    .description(
+      "Read or update pm settings for the current workspace or global profile.",
+    )
+    .action(
+      async (
+        scope: string | undefined,
+        action: string | undefined,
+        key: string | undefined,
+        value: string | undefined,
+        options: Record<string, unknown>,
+        command,
+      ) => {
+        await runConfigCommandAction(
+          scope,
+          action,
+          key,
+          value,
+          options,
+          command,
+        );
+      },
+    );
 
   registerLifecycleCommand(program, "extension");
   registerLifecycleCommand(program, "package");
@@ -726,36 +1180,82 @@ export function registerSetupCommands(program: Command): void {
   addPackageScopeOptions(
     program
       .command("install")
-      .argument("[targets...]", "Package source (local path, bundled alias, npm: source, wildcard, or GitHub source)")
-      .option("--gh <github-source>", "Install from GitHub shorthand source (owner/repo[/path])")
+      .argument(
+        "[targets...]",
+        "Package source (local path, bundled alias, npm: source, wildcard, or GitHub source)",
+      )
+      .option(
+        "--gh <github-source>",
+        "Install from GitHub shorthand source (owner/repo[/path])",
+      )
       .option("--github <github-source>", "Alias for --gh")
       .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
-      .description("Install a pm package into the project package scope by default."),
-  ).action(async (targets: string[] | undefined, _options: Record<string, unknown>, command) => {
-    await executeExtensionInstallCommand(targets, command.optsWithGlobals() as Record<string, unknown>, command, "package");
-  });
+      .description(
+        "Install a pm package into the project package scope by default.",
+      ),
+  ).action(
+    async (
+      targets: string[] | undefined,
+      _options: Record<string, unknown>,
+      command,
+    ) => {
+      await executeExtensionInstallCommand(
+        targets,
+        command.optsWithGlobals() as Record<string, unknown>,
+        command,
+        "package",
+      );
+    },
+  );
 
   addPackageScopeOptions(
     program
       .command("upgrade")
-      .argument("[target]", "Optional managed package name/source to upgrade; omit to upgrade pm CLI and all managed packages")
-      .option("--dry-run", "Plan CLI/package upgrades without running npm or reinstalling packages")
+      .argument(
+        "[target]",
+        "Optional managed package name/source to upgrade; omit to upgrade pm CLI and all managed packages",
+      )
+      .option(
+        "--dry-run",
+        "Plan CLI/package upgrades without running npm or reinstalling packages",
+      )
       .option("--cli-only", "Upgrade only the pm CLI/SDK npm package")
       .option("--packages-only", "Upgrade only managed pm packages")
-      .option("--repair", "Force npm global reinstall when upgrading the pm CLI/SDK")
-      .option("--tag <value>", "npm dist-tag/version for CLI and registry package upgrades")
-      .option("--package-name <value>", "Override the CLI package name for self-upgrade testing")
-      .description("Upgrade the pm CLI/SDK and refresh managed installable pm packages."),
-  ).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
-    const globalOptions = getGlobalOptions(command);
-    const startedAt = Date.now();
-    const result = await runUpgrade(target, command.opts() as Record<string, unknown>, globalOptions);
-    printResult(result, globalOptions);
-    if (!result.ok) {
-      process.exitCode = EXIT_CODE.GENERIC_FAILURE;
-    }
-    if (globalOptions.profile) {
-      printError(`profile:command=upgrade took_ms=${Date.now() - startedAt}`);
-    }
-  });
+      .option(
+        "--repair",
+        "Force npm global reinstall when upgrading the pm CLI/SDK",
+      )
+      .option(
+        "--tag <value>",
+        "npm dist-tag/version for CLI and registry package upgrades",
+      )
+      .option(
+        "--package-name <value>",
+        "Override the CLI package name for self-upgrade testing",
+      )
+      .description(
+        "Upgrade the pm CLI/SDK and refresh managed installable pm packages.",
+      ),
+  ).action(
+    async (
+      target: string | undefined,
+      _options: Record<string, unknown>,
+      command,
+    ) => {
+      const globalOptions = getGlobalOptions(command);
+      const startedAt = Date.now();
+      const result = await runUpgrade(
+        target,
+        command.opts() as Record<string, unknown>,
+        globalOptions,
+      );
+      printResult(result, globalOptions);
+      if (!result.ok) {
+        process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+      }
+      if (globalOptions.profile) {
+        printError(`profile:command=upgrade took_ms=${Date.now() - startedAt}`);
+      }
+    },
+  );
 }

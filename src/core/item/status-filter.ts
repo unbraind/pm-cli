@@ -15,7 +15,9 @@ import { normalizeStatusInput } from "./status.js";
 // runtime workflow has configured as its open/close/cancel anchors, rather than
 // hardcoding the built-in status ids. `cancelled` is accepted as a spelling
 // variant of `canceled`.
-const STATUS_GROUP_ALIASES: Readonly<Record<string, "open_status" | "close_status" | "canceled_status">> = {
+const STATUS_GROUP_ALIASES: Readonly<
+  Record<string, "open_status" | "close_status" | "canceled_status">
+> = {
   open: "open_status",
   closed: "close_status",
   canceled: "canceled_status",
@@ -59,7 +61,9 @@ export function resolveStatusFilterToken(
   return normalizeStatusInput(token, registry);
 }
 
-function collectStatusSuggestionCandidates(registry: RuntimeStatusRegistry): string[] {
+function collectStatusSuggestionCandidates(
+  registry: RuntimeStatusRegistry,
+): string[] {
   const candidates = new Set<string>(Object.keys(STATUS_GROUP_ALIASES));
   for (const definition of registry.definitions) {
     candidates.add(definition.id);
@@ -70,14 +74,21 @@ function collectStatusSuggestionCandidates(registry: RuntimeStatusRegistry): str
   return [...candidates];
 }
 
-function suggestClosestStatus(value: string, registry: RuntimeStatusRegistry): string | undefined {
+function suggestClosestStatus(
+  value: string,
+  registry: RuntimeStatusRegistry,
+): string | undefined {
   // Only ever called for an unresolved, already-non-empty token (parseStatusFilterCsv
   // filters blanks first), so no empty-input guard is needed here.
   const normalized = value.trim().toLowerCase();
   let best: string | undefined;
   let bestDistance = Number.POSITIVE_INFINITY;
   for (const candidate of collectStatusSuggestionCandidates(registry)) {
-    const distance = levenshteinDistanceWithinLimit(normalized, candidate.toLowerCase(), 2);
+    const distance = levenshteinDistanceWithinLimit(
+      normalized,
+      candidate.toLowerCase(),
+      2,
+    );
     if (distance !== null && distance < bestDistance) {
       best = candidate;
       bestDistance = distance;
@@ -86,29 +97,15 @@ function suggestClosestStatus(value: string, registry: RuntimeStatusRegistry): s
   return best;
 }
 
-/**
- * Documents the parse status filter options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the parse status filter options payload exchanged by command, SDK, and package integrations. */
 export interface ParseStatusFilterOptions {
-  /**
-   * When true, an unrecognized token throws a USAGE error with a did-you-mean
-   * hint. When false (default), an unrecognized token is passed through
-   * verbatim so custom/unknown statuses still compare against item values by
-   * their raw string — preserving the long-standing lenient `pm list` behavior.
-   */
+  /** When true, an unrecognized token throws a USAGE error with a did-you-mean hint. When false (default), an unrecognized token is passed through verbatim so custom/unknown statuses still compare against item values by their raw string — preserving the long-standing lenient `pm list` behavior. */
   strict?: boolean;
   /** Flag label used in error messages (default: "--status"). */
   flagLabel?: string;
 }
 
-/**
- * Parse a comma-separated status filter into a de-duplicated list of concrete
- * status ids. A standalone `all` sentinel intentionally resolves to no filter
- * so duplicate-discovery loops can search every lifecycle bucket with the same
- * `--status` flag shape. Shared by `pm list` (lenient) and `pm search`
- * (strict, with a did-you-mean hint on typos) so both surfaces resolve the
- * open/closed/canceled workflow-group aliases identically.
- */
+/** Parse a comma-separated status filter into a de-duplicated list of concrete status ids. A standalone `all` sentinel intentionally resolves to no filter so duplicate-discovery loops can search every lifecycle bucket with the same `--status` flag shape. Shared by `pm list` (lenient) and `pm search` (strict, with a did-you-mean hint on typos) so both surfaces resolve the open/closed/canceled workflow-group aliases identically. */
 export function parseStatusFilterCsv(
   raw: unknown,
   registry: RuntimeStatusRegistry,
@@ -126,7 +123,9 @@ export function parseStatusFilterCsv(
   if (tokens.length === 0) {
     return undefined;
   }
-  const allTokenCount = tokens.filter((token) => token.trim().toLowerCase() === STATUS_ALL_SENTINEL).length;
+  const allTokenCount = tokens.filter(
+    (token) => token.trim().toLowerCase() === STATUS_ALL_SENTINEL,
+  ).length;
   if (allTokenCount > 0) {
     if (tokens.length === 1) {
       return undefined;

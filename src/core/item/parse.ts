@@ -30,9 +30,7 @@ const CONTINUABLE_VALUE_KEYS = new Set([
   "why_now",
 ]);
 
-/**
- * Implements parse tags for the public runtime surface of this module.
- */
+/** Implements parse tags for the public runtime surface of this module. */
 export function parseTags(raw: string): string[] {
   const trimmed = raw.trim();
   if (trimmed === "") {
@@ -47,12 +45,10 @@ export function parseTags(raw: string): string[] {
   return Array.from(new Set(tags)).sort((a, b) => a.localeCompare(b));
 }
 
-/**
- * Merge repeated `--add-tags` / `--remove-tags` values into a single normalized
- * tag list. Each entry can itself be CSV or a JSON array, mirroring the format
- * accepted by `--tags`. Returns a deterministically sorted, deduped list.
- */
-export function collectTagFlagValues(values: readonly string[] | undefined): string[] {
+/** Merge repeated `--add-tags` / `--remove-tags` values into a single normalized tag list. Each entry can itself be CSV or a JSON array, mirroring the format accepted by `--tags`. Returns a deterministically sorted, deduped list. */
+export function collectTagFlagValues(
+  values: readonly string[] | undefined,
+): string[] {
   if (!Array.isArray(values) || values.length === 0) {
     return [];
   }
@@ -68,14 +64,7 @@ export function collectTagFlagValues(values: readonly string[] | undefined): str
   return Array.from(new Set(collected)).sort((a, b) => a.localeCompare(b));
 }
 
-/**
- * Normalize a base tag list to the canonical form pm stores: trimmed,
- * lowercased, non-empty. Existing front-matter tags are almost always already
- * canonical (parseTags lowercases on write), but legacy or hand-edited `.toon`
- * files can carry mixed-case entries — normalizing here keeps additive and
- * subtractive mutations case-insensitive (so `--add-tags beta` dedupes against
- * an existing `Beta`, and `--remove-tags alpha` removes an existing `Alpha`).
- */
+/** Normalize a base tag list to the canonical form pm stores: trimmed, lowercased, non-empty. Existing front-matter tags are almost always already canonical (parseTags lowercases on write), but legacy or hand-edited `.toon` files can carry mixed-case entries — normalizing here keeps additive and subtractive mutations case-insensitive (so `--add-tags beta` dedupes against an existing `Beta`, and `--remove-tags alpha` removes an existing `Alpha`). */
 function normalizeBaseTags(baseTags: readonly string[]): string[] {
   // Defensive: front-matter parsed from corrupted/hand-edited `.toon` (or an
   // external SDK caller) could pass a non-array or non-string entries despite
@@ -90,15 +79,16 @@ function normalizeBaseTags(baseTags: readonly string[]): string[] {
     .filter(Boolean);
 }
 
-/**
- * Apply an additive tag mutation to a base tag list. Used by `pm create` and
- * `pm update` so `--add-tags` extends `--tags` (or the existing tags) without
- * replacing them. Output is sorted + deduped lowercase, matching `parseTags`.
- */
-export function mergeAdditiveTags(baseTags: readonly string[], add: readonly string[] | undefined): string[] {
+/** Apply an additive tag mutation to a base tag list. Used by `pm create` and `pm update` so `--add-tags` extends `--tags` (or the existing tags) without replacing them. Output is sorted + deduped lowercase, matching `parseTags`. */
+export function mergeAdditiveTags(
+  baseTags: readonly string[],
+  add: readonly string[] | undefined,
+): string[] {
   const normalizedBase = normalizeBaseTags(baseTags);
   if (!add || add.length === 0) {
-    return Array.from(new Set(normalizedBase)).sort((a, b) => a.localeCompare(b));
+    return Array.from(new Set(normalizedBase)).sort((a, b) =>
+      a.localeCompare(b),
+    );
   }
   const merged = new Set<string>(normalizedBase);
   for (const tag of collectTagFlagValues(add)) {
@@ -107,14 +97,14 @@ export function mergeAdditiveTags(baseTags: readonly string[], add: readonly str
   return Array.from(merged).sort((a, b) => a.localeCompare(b));
 }
 
-/**
- * Apply a subtractive tag mutation to a base tag list. Used by `pm update` so
- * `--remove-tags x,y` prunes those entries without rewriting the full set.
- * Removal is case-insensitive: both the base list and the removal selectors are
- * normalized to canonical lowercase before matching.
- */
-export function applyTagRemovals(baseTags: readonly string[], remove: readonly string[] | undefined): string[] {
-  const normalizedBase = Array.from(new Set(normalizeBaseTags(baseTags))).sort((a, b) => a.localeCompare(b));
+/** Apply a subtractive tag mutation to a base tag list. Used by `pm update` so `--remove-tags x,y` prunes those entries without rewriting the full set. Removal is case-insensitive: both the base list and the removal selectors are normalized to canonical lowercase before matching. */
+export function applyTagRemovals(
+  baseTags: readonly string[],
+  remove: readonly string[] | undefined,
+): string[] {
+  const normalizedBase = Array.from(new Set(normalizeBaseTags(baseTags))).sort(
+    (a, b) => a.localeCompare(b),
+  );
   if (!remove || remove.length === 0) {
     return normalizedBase;
   }
@@ -142,7 +132,9 @@ function coerceJsonTagArray(trimmed: string): string | null {
   const parsedArray = parsed as unknown[];
   return parsedArray
     .map((entry) =>
-      typeof entry === "string" || typeof entry === "number" || typeof entry === "boolean"
+      typeof entry === "string" ||
+      typeof entry === "number" ||
+      typeof entry === "boolean"
         ? String(entry).replace(/,/g, " ")
         : "",
     )
@@ -186,7 +178,7 @@ function splitCsvSegments(raw: string): string[] {
       escaped = true;
       continue;
     }
-    if (char === "\"") {
+    if (char === '"') {
       inQuotes = !inQuotes;
       current += char;
       continue;
@@ -206,8 +198,8 @@ function splitCsvSegments(raw: string): string[] {
 
 function unquoteValue(value: string): string {
   const trimmed = value.trim();
-  if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
-    return trimmed.slice(1, -1).replace(/\\"/g, "\"");
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    return trimmed.slice(1, -1).replace(/\\"/g, '"');
   }
   return value;
 }
@@ -229,11 +221,15 @@ function findKeyValueDelimiter(segment: string): number {
   return -1;
 }
 
-function buildOptionSpecificKvGuidance(raw: string, optionName: string): string {
+function buildOptionSpecificKvGuidance(
+  raw: string,
+  optionName: string,
+): string {
   if (optionName === "--add" || optionName === "--add-glob") {
-    const looksLikePath = /[./\\]/.test(raw) || /\.[a-z]{1,6}$/i.test(raw.trim());
+    const looksLikePath =
+      /[./\\]/.test(raw) || /\.[a-z]{1,6}$/i.test(raw.trim());
     if (looksLikePath) {
-      return 'For file/doc paths use: path=<file-path>[,scope=project|global]. The scope field is optional and defaults to project (example: path=src/api.ts or path=README.md,scope=project). ';
+      return "For file/doc paths use: path=<file-path>[,scope=project|global]. The scope field is optional and defaults to project (example: path=src/api.ts or path=README.md,scope=project). ";
     }
   }
   if (optionName !== "--event") {
@@ -252,7 +248,8 @@ function buildOptionSpecificKvGuidance(raw: string, optionName: string): string 
 
 function buildInvalidKvMessage(raw: string, optionName: string): string {
   const condensed = raw.replaceAll(/\s+/g, " ").trim();
-  const preview = condensed.length > 160 ? `${condensed.slice(0, 157)}...` : condensed;
+  const preview =
+    condensed.length > 160 ? `${condensed.slice(0, 157)}...` : condensed;
   const optionSpecificGuidance = buildOptionSpecificKvGuidance(raw, optionName);
   return (
     `Invalid ${optionName} value "${preview}". Expected key=value entries separated by commas. ` +
@@ -262,12 +259,19 @@ function buildInvalidKvMessage(raw: string, optionName: string): string {
   );
 }
 
-function parseMarkdownKeyValueLines(raw: string): Record<string, string> | null {
+function parseMarkdownKeyValueLines(
+  raw: string,
+): Record<string, string> | null {
   const normalized = stripCodeFenceEnvelope(raw).trim();
   if (normalized.length === 0) {
     return null;
   }
-  if (!normalized.includes("\n") && !normalized.startsWith("-") && !normalized.startsWith("*") && !normalized.startsWith("+")) {
+  if (
+    !normalized.includes("\n") &&
+    !normalized.startsWith("-") &&
+    !normalized.startsWith("*") &&
+    !normalized.startsWith("+")
+  ) {
     return null;
   }
 
@@ -296,10 +300,11 @@ function parseMarkdownKeyValueLines(raw: string): Record<string, string> | null 
   return result;
 }
 
-/**
- * Implements parse csv kv for the public runtime surface of this module.
- */
-export function parseCsvKv(raw: string, optionName: string): Record<string, string> {
+/** Implements parse csv kv for the public runtime surface of this module. */
+export function parseCsvKv(
+  raw: string,
+  optionName: string,
+): Record<string, string> {
   const trimmed = stripCodeFenceEnvelope(raw).trim();
   if (!trimmed) {
     throw new PmCliError(`${optionName} cannot be empty`, EXIT_CODE.USAGE);
@@ -327,14 +332,18 @@ export function parseCsvKv(raw: string, optionName: string): Record<string, stri
       result[activeKey] = `${result[activeKey]},${segment.trim()}`;
       continue;
     }
-    throw new PmCliError(buildInvalidKvMessage(raw, optionName), EXIT_CODE.USAGE);
+    throw new PmCliError(
+      buildInvalidKvMessage(raw, optionName),
+      EXIT_CODE.USAGE,
+    );
   }
 
   return result;
 }
 
 const WINDOWS_ABSOLUTE_PATH_PATTERN = /^[A-Za-z]:[\\/]/;
-const GENERIC_LEADING_KV_KEY_PATTERN = /^(?:[-*+]\s+)?[A-Za-z_][A-Za-z0-9_.-]*\s*=/;
+const GENERIC_LEADING_KV_KEY_PATTERN =
+  /^(?:[-*+]\s+)?[A-Za-z_][A-Za-z0-9_.-]*\s*=/;
 
 /**
  * Detect a CSV/markdown entry that opens with a generic `key=` token even when
@@ -380,7 +389,9 @@ export function assertNoUnknownCsvKeys(
   allowedKeys: readonly string[],
 ): void {
   const allowed = new Set(allowedKeys.map((key) => key.toLowerCase()));
-  const unknownKeys = Object.keys(kv).filter((key) => !allowed.has(key.toLowerCase()));
+  const unknownKeys = Object.keys(kv).filter(
+    (key) => !allowed.has(key.toLowerCase()),
+  );
   if (unknownKeys.length > 0) {
     throw new PmCliError(
       `${optionName} does not recognize key${unknownKeys.length > 1 ? "s" : ""} ${unknownKeys
@@ -427,17 +438,21 @@ async function readStdinText(optionName: string): Promise<string> {
   });
 }
 
-/**
- * Documents the stdin token resolver payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the stdin token resolver payload exchanged by command, SDK, and package integrations. */
 export interface StdinTokenResolver {
-  resolveValue(value: string | undefined, optionName: string): Promise<string | undefined>;
-  resolveList(values: string[] | undefined, optionName: string): Promise<string[] | undefined>;
+  /** Value that configures or reports resolve value for this contract. */
+  resolveValue(
+    value: string | undefined,
+    optionName: string,
+  ): Promise<string | undefined>;
+  /** Value that configures or reports resolve list for this contract. */
+  resolveList(
+    values: string[] | undefined,
+    optionName: string,
+  ): Promise<string[] | undefined>;
 }
 
-/**
- * Implements create stdin token resolver for the public runtime surface of this module.
- */
+/** Implements create stdin token resolver for the public runtime surface of this module. */
 export function createStdinTokenResolver(): StdinTokenResolver {
   let stdinValuePromise: Promise<string> | undefined;
   let stdinConsumerOption: string | undefined;
@@ -456,7 +471,10 @@ export function createStdinTokenResolver(): StdinTokenResolver {
     return await stdinValuePromise;
   };
 
-  const resolveValue = async (value: string | undefined, optionName: string): Promise<string | undefined> => {
+  const resolveValue = async (
+    value: string | undefined,
+    optionName: string,
+  ): Promise<string | undefined> => {
     if (value === undefined) {
       return undefined;
     }
@@ -466,7 +484,10 @@ export function createStdinTokenResolver(): StdinTokenResolver {
     return await consumeStdin(optionName);
   };
 
-  const resolveList = async (values: string[] | undefined, optionName: string): Promise<string[] | undefined> => {
+  const resolveList = async (
+    values: string[] | undefined,
+    optionName: string,
+  ): Promise<string[] | undefined> => {
     if (!values) {
       return undefined;
     }
@@ -494,17 +515,19 @@ export function createStdinTokenResolver(): StdinTokenResolver {
   };
 }
 
-/**
- * Implements parse optional number for the public runtime surface of this module.
- */
+/** Implements parse optional number for the public runtime surface of this module. */
 export function parseOptionalNumber(raw: string, optionName: string): number {
   const value = Number(raw);
   if (!Number.isFinite(value)) {
-    throw new PmCliError(`Invalid ${optionName} value "${raw}"`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Invalid ${optionName} value "${raw}"`,
+      EXIT_CODE.USAGE,
+    );
   }
   return value;
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   coerceJsonTagArray,
   stripCodeFenceEnvelope,

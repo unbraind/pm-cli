@@ -31,7 +31,10 @@ import type {
   ExtensionServiceName,
   OutputRendererFormat,
 } from "./extension-types.js";
-import { collectUsedExtensionCapabilities, normalizeExtensionName } from "./capability-usage.js";
+import {
+  collectUsedExtensionCapabilities,
+  normalizeExtensionName,
+} from "./capability-usage.js";
 
 /**
  * Canonical lifecycle hook kinds paired with their {@link ExtensionHookRegistry}
@@ -44,7 +47,9 @@ const HOOK_REGISTRY_FIELD_TO_KIND = [
   ["onWrite", "on_write"],
   ["onRead", "on_read"],
   ["onIndex", "on_index"],
-] as const satisfies ReadonlyArray<readonly [keyof ExtensionHookRegistry, string]>;
+] as const satisfies ReadonlyArray<
+  readonly [keyof ExtensionHookRegistry, string]
+>;
 
 /**
  * Flat, name-level enumeration of every surface an activation registered.
@@ -99,11 +104,7 @@ export interface ExtensionActivationSummary {
   service_overrides: ExtensionServiceName[];
   /** Output formats with a renderer override registered via `registerRenderer`. */
   renderer_overrides: OutputRendererFormat[];
-  /**
-   * Count of registered preflight overrides. The surface carries no per-entry
-   * identifier, so this is a `number` rather than `string[]` — the only numeric
-   * field in the summary.
-   */
+  /** Count of registered preflight overrides. The surface carries no per-entry identifier, so this is a `number` rather than `string[]` — the only numeric field in the summary. */
   preflight_overrides: number;
 }
 
@@ -118,11 +119,7 @@ export interface DescribeExtensionActivationOptions {
    * union across every extension in the activation result.
    */
   extensionName?: string;
-  /**
-   * Restrict the summary to a set of extension names. This supports package
-   * aliases that resolve to multiple extensions while keeping the historical
-   * single-name option intact.
-   */
+  /** Restrict the summary to a set of extension names. This supports package aliases that resolve to multiple extensions while keeping the historical single-name option intact. */
   extensionNames?: readonly string[];
 }
 
@@ -151,42 +148,70 @@ export function describeExtensionActivation(
   for (const name of options.extensionNames ?? []) {
     filters.add(normalizeExtensionName(name));
   }
-  const matches = (name: string): boolean => filters.size === 0 || filters.has(normalizeExtensionName(name));
+  const matches = (name: string): boolean =>
+    filters.size === 0 || filters.has(normalizeExtensionName(name));
   const collect = <TEntry extends { name: string }, TValue extends string>(
     entries: readonly TEntry[],
     identify: (entry: TEntry) => TValue,
-  ): TValue[] => sortUnique(entries.filter((entry) => matches(entry.name)).map(identify));
+  ): TValue[] =>
+    sortUnique(entries.filter((entry) => matches(entry.name)).map(identify));
   const collectFlat = <TEntry extends { name: string }>(
     entries: readonly TEntry[],
     expand: (entry: TEntry) => readonly string[],
-  ): string[] => sortUnique(entries.filter((entry) => matches(entry.name)).flatMap(expand));
-  const { registrations, commands, parsers, preflight, services, renderers, hooks } = activation;
+  ): string[] =>
+    sortUnique(entries.filter((entry) => matches(entry.name)).flatMap(expand));
+  const {
+    registrations,
+    commands,
+    parsers,
+    preflight,
+    services,
+    renderers,
+    hooks,
+  } = activation;
   return {
     capabilities: collectUsedExtensionCapabilities(activation, options),
     commands: collect(registrations.commands, (entry) => entry.command),
     command_overrides: collect(commands.overrides, (entry) => entry.command),
     command_handlers: collect(commands.handlers, (entry) => entry.command),
-    hooks: HOOK_REGISTRY_FIELD_TO_KIND.filter(([field]) => hooks[field].some((entry) => matches(entry.name))).map(
-      ([, kind]) => kind,
+    hooks: HOOK_REGISTRY_FIELD_TO_KIND.filter(([field]) =>
+      hooks[field].some((entry) => matches(entry.name)),
+    ).map(([, kind]) => kind),
+    flag_commands: collect(
+      registrations.flags,
+      (entry) => entry.target_command,
     ),
-    flag_commands: collect(registrations.flags, (entry) => entry.target_command),
-    item_types: collectFlat(registrations.item_types, (entry) => entry.types.map((type) => type.name)),
-    item_fields: collectFlat(registrations.item_fields, (entry) => entry.fields.map((field) => field.name)),
+    item_types: collectFlat(registrations.item_types, (entry) =>
+      entry.types.map((type) => type.name),
+    ),
+    item_fields: collectFlat(registrations.item_fields, (entry) =>
+      entry.fields.map((field) => field.name),
+    ),
     migrations: collectFlat(registrations.migrations, (entry) =>
       typeof entry.definition.id === "string" ? [entry.definition.id] : [],
     ),
     profiles: collect(registrations.profiles, (entry) => entry.profile.name),
     importers: collect(registrations.importers, (entry) => entry.importer),
     exporters: collect(registrations.exporters, (entry) => entry.exporter),
-    search_providers: collect(registrations.search_providers, (entry) => entry.definition.name),
-    vector_store_adapters: collect(registrations.vector_store_adapters, (entry) => entry.definition.name),
+    search_providers: collect(
+      registrations.search_providers,
+      (entry) => entry.definition.name,
+    ),
+    vector_store_adapters: collect(
+      registrations.vector_store_adapters,
+      (entry) => entry.definition.name,
+    ),
     parser_overrides: collect(parsers.overrides, (entry) => entry.command),
     service_overrides: collect(services.overrides, (entry) => entry.service),
     renderer_overrides: collect(renderers.overrides, (entry) => entry.format),
-    preflight_overrides: preflight.overrides.filter((entry) => matches(entry.name)).length,
+    preflight_overrides: preflight.overrides.filter((entry) =>
+      matches(entry.name),
+    ).length,
   };
 }
 
-function sortUnique<TValue extends string>(values: readonly TValue[]): TValue[] {
+function sortUnique<TValue extends string>(
+  values: readonly TValue[],
+): TValue[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }

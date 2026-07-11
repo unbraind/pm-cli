@@ -20,14 +20,7 @@
 
 /** Maps a stable diagnostic warning code to the command and summary that resolve it. */
 export interface RemediationEntry {
-  /**
-   * Stable warning-code prefix this entry resolves. A warning matches when it
-   * equals this code or begins with `<code>:`. Registry codes are mutually
-   * exclusive under that colon-boundary rule (no code is a `:`-delimited prefix
-   * of another — e.g. `settings:id_prefix_empty` is distinct from a bare
-   * `settings`, which is intentionally not registered), so `resolveRemediation`
-   * uses first-match with no ordering dependency.
-   */
+  /** Stable warning-code prefix this entry resolves. A warning matches when it equals this code or begins with `<code>:`. Registry codes are mutually exclusive under that colon-boundary rule (no code is a `:`-delimited prefix of another — e.g. `settings:id_prefix_empty` is distinct from a bare `settings`, which is intentionally not registered), so `resolveRemediation` uses first-match with no ordering dependency. */
   readonly code: string;
   /** Executable `pm` command (or imperative) that resolves the finding. May contain an `<id>` placeholder. */
   readonly command: string;
@@ -35,18 +28,14 @@ export interface RemediationEntry {
   readonly summary: string;
 }
 
-/**
- * Registry of every non-extension `pm health` / `pm validate` warning code and
- * its remediation. Extension findings keep their richer, contextual
- * `details.triage.remediation` produced by the extension health triage and are
- * intentionally excluded here (see pm-0hnu: "all non-extension checks").
- */
+/** Registry of every non-extension `pm health` / `pm validate` warning code and its remediation. Extension findings keep their richer, contextual `details.triage.remediation` produced by the extension health triage and are intentionally excluded here (see pm-0hnu: "all non-extension checks"). */
 export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   // --- pm health: directories ---
   {
     code: "missing_directory",
     command: "pm init",
-    summary: "Recreate missing tracker directories (pm init is idempotent and restores the scaffold).",
+    summary:
+      "Recreate missing tracker directories (pm init is idempotent and restores the scaffold).",
   },
   // --- pm health: settings (read/parse) ---
   {
@@ -64,34 +53,40 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   {
     code: "settings_read_merge_failed",
     command: "pm config list --json",
-    summary: "Global/project settings could not be merged; reconcile the conflicting keys in the reported settings files.",
+    summary:
+      "Global/project settings could not be merged; reconcile the conflicting keys in the reported settings files.",
   },
   // --- pm health: settings_values ---
   {
     code: "settings:id_prefix_empty",
     command: "pm config list --json",
-    summary: 'id_prefix is empty; set a non-empty "id_prefix" in settings.json so generated item ids are well-formed.',
+    summary:
+      'id_prefix is empty; set a non-empty "id_prefix" in settings.json so generated item ids are well-formed.',
   },
   {
     code: "settings:locks_ttl_non_positive",
     command: "pm config list --json",
-    summary: 'locks.ttl_seconds must be positive; set a positive "locks.ttl_seconds" in settings.json.',
+    summary:
+      'locks.ttl_seconds must be positive; set a positive "locks.ttl_seconds" in settings.json.',
   },
   // --- pm health: telemetry (advisory) ---
   {
     code: "telemetry_state_invalid_json",
     command: "pm health --check-telemetry",
-    summary: "Local telemetry state file is corrupt; pm recreates it on the next flush. Advisory only.",
+    summary:
+      "Local telemetry state file is corrupt; pm recreates it on the next flush. Advisory only.",
   },
   {
     code: "telemetry_queue_invalid_rows",
     command: "pm health --check-telemetry",
-    summary: "The telemetry queue has unparseable rows; they are skipped on the next flush. Advisory only.",
+    summary:
+      "The telemetry queue has unparseable rows; they are skipped on the next flush. Advisory only.",
   },
   {
     code: "telemetry_queue_pending",
     command: "pm health --check-telemetry",
-    summary: "Telemetry events are queued; they flush automatically on the next reachable command. Advisory only.",
+    summary:
+      "Telemetry events are queued; they flush automatically on the next reachable command. Advisory only.",
   },
   {
     code: "telemetry_queue_high_retries",
@@ -102,17 +97,20 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   {
     code: "telemetry_endpoint_probe_failed",
     command: "pm health --check-telemetry",
-    summary: "The telemetry endpoint is unreachable; events stay queued until it recovers. Advisory only.",
+    summary:
+      "The telemetry endpoint is unreachable; events stay queued until it recovers. Advisory only.",
   },
   {
     code: "telemetry_endpoint_probe_http_status",
     command: "pm health --check-telemetry",
-    summary: "The telemetry endpoint returned a non-success status; events stay queued until it recovers. Advisory only.",
+    summary:
+      "The telemetry endpoint returned a non-success status; events stay queued until it recovers. Advisory only.",
   },
   {
     code: "telemetry_schema_version_behind",
     command: "pm health --check-telemetry",
-    summary: "Client schema is behind server; upgrade pm-cli to emit the latest event shape.",
+    summary:
+      "Client schema is behind server; upgrade pm-cli to emit the latest event shape.",
   },
   {
     code: "telemetry_otel_export_failing",
@@ -124,43 +122,51 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   {
     code: "integrity_item_unreadable",
     command: "pm validate --check-files --verbose-diagnostics",
-    summary: "An item file could not be read; restore or repair the file at the reported path.",
+    summary:
+      "An item file could not be read; restore or repair the file at the reported path.",
   },
   {
     code: "integrity_item_parse_failed",
     command: "pm validate --check-files --verbose-diagnostics",
-    summary: "An item file failed to parse; fix the malformed front matter at the reported path.",
+    summary:
+      "An item file failed to parse; fix the malformed front matter at the reported path.",
   },
   {
     code: "integrity_item_conflict_marker",
     command: "pm validate --check-files --verbose-diagnostics",
-    summary: "An item file contains Git conflict markers; resolve the <<<<<<< / >>>>>>> markers at the reported line.",
+    summary:
+      "An item file contains Git conflict markers; resolve the <<<<<<< / >>>>>>> markers at the reported line.",
   },
   {
     code: "integrity_history_unreadable",
     command: "pm history-repair <id>",
-    summary: "A history stream could not be read; re-anchor the affected item's history chain.",
+    summary:
+      "A history stream could not be read; re-anchor the affected item's history chain.",
   },
   {
     code: "integrity_history_invalid_json",
     command: "pm history-repair <id>",
-    summary: "A history stream contains invalid JSON; re-anchor the affected item's history chain.",
+    summary:
+      "A history stream contains invalid JSON; re-anchor the affected item's history chain.",
   },
   {
     code: "integrity_history_conflict_marker",
     command: "pm history-repair <id>",
-    summary: "A history stream contains Git conflict markers; resolve the markers, then re-anchor the chain.",
+    summary:
+      "A history stream contains Git conflict markers; resolve the markers, then re-anchor the chain.",
   },
   // --- pm health (integrity) + pm validate (format_version): item format version ---
   {
     code: "integrity_item_outdated_format_version",
     command: "pm validate --verbose-diagnostics",
-    summary: "An item predates the current storage format version; a pm storage migration rewrites it. Use --verbose-diagnostics to list the affected items.",
+    summary:
+      "An item predates the current storage format version; a pm storage migration rewrites it. Use --verbose-diagnostics to list the affected items.",
   },
   {
     code: "integrity_item_ahead_format_version",
     command: "npm install -g @unbrained/pm-cli@latest",
-    summary: "An item was written by a newer pm format version than this runtime supports; upgrade pm to read and validate it safely.",
+    summary:
+      "An item was written by a newer pm format version than this runtime supports; upgrade pm to read and validate it safely.",
   },
   // --- pm health: history_drift ---
   // `pm health` rewrites these commands to `pm history-repair --all` in the
@@ -168,28 +174,33 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   {
     code: "history_drift_missing_stream",
     command: "pm history-repair <id>",
-    summary: "The item has no history stream; re-anchor the chain to rebuild it (pm history-repair --all repairs every drifted stream in one pass).",
+    summary:
+      "The item has no history stream; re-anchor the chain to rebuild it (pm history-repair --all repairs every drifted stream in one pass).",
   },
   {
     code: "history_drift_unreadable_stream",
     command: "pm history-repair <id>",
-    summary: "The item's history stream is unreadable; re-anchor the chain (pm history-repair --all repairs every drifted stream in one pass).",
+    summary:
+      "The item's history stream is unreadable; re-anchor the chain (pm history-repair --all repairs every drifted stream in one pass).",
   },
   {
     code: "history_drift_hash_mismatch",
     command: "pm history-repair <id>",
-    summary: "The item's content hash no longer matches its history; re-anchor the chain (pm history-repair --all repairs every drifted stream in one pass).",
+    summary:
+      "The item's content hash no longer matches its history; re-anchor the chain (pm history-repair --all repairs every drifted stream in one pass).",
   },
   {
     code: "history_drift_chain_mismatch",
     command: "pm history-repair <id>",
-    summary: "The item's history chain is broken; re-anchor the chain (pm history-repair --all repairs every drifted stream in one pass).",
+    summary:
+      "The item's history chain is broken; re-anchor the chain (pm history-repair --all repairs every drifted stream in one pass).",
   },
   // --- pm health: storage (history compaction policy) ---
   {
     code: "history_stream_over_compact_threshold",
     command: "pm history-compact <id>",
-    summary: "The history stream exceeds the configured compaction threshold; compact it (pm history-compact --all-streams sweeps every over-threshold stream in one pass).",
+    summary:
+      "The history stream exceeds the configured compaction threshold; compact it (pm history-compact --all-streams sweeps every over-threshold stream in one pass).",
   },
   // --- pm health: locks ---
   {
@@ -221,12 +232,14 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   {
     code: "vectorization_stale_items_remaining",
     command: "pm health --refresh-vectors",
-    summary: "Some items have stale embeddings; refresh vectors so semantic search results stay current.",
+    summary:
+      "Some items have stale embeddings; refresh vectors so semantic search results stay current.",
   },
   {
     code: "vectorization_embedding_identity_changed",
     command: "pm reindex --mode semantic",
-    summary: "Embedding provider/model changed since the last index; run a semantic reindex to rebuild vectors.",
+    summary:
+      "Embedding provider/model changed since the last index; run a semantic reindex to rebuild vectors.",
   },
   // --- pm validate: metadata ---
   // Note: validate_metadata_missing_author has no entry on purpose. `pm update
@@ -237,7 +250,8 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   {
     code: "validate_metadata_missing_acceptance_criteria",
     command: 'pm update <id> --acceptance-criteria "<criteria>"',
-    summary: "Backfill the missing acceptance criteria on the reported item(s).",
+    summary:
+      "Backfill the missing acceptance criteria on the reported item(s).",
   },
   {
     code: "validate_metadata_missing_estimate",
@@ -247,7 +261,8 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   {
     code: "validate_metadata_missing_close_reason",
     command: 'pm update <id> --close-reason "<reason>"',
-    summary: "Backfill the missing close reason on the reported closed item(s).",
+    summary:
+      "Backfill the missing close reason on the reported closed item(s).",
   },
   {
     code: "validate_metadata_missing_reviewer",
@@ -290,7 +305,8 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   {
     code: "validate_resolution_missing_fields",
     command: 'pm update <id> --resolution "<how resolved>"',
-    summary: "Backfill resolution / expected_result / actual_result on the reported closed item(s).",
+    summary:
+      "Backfill resolution / expected_result / actual_result on the reported closed item(s).",
   },
   // --- pm validate: lifecycle ---
   {
@@ -302,7 +318,8 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   {
     code: "validate_lifecycle_active_terminal_parent",
     command: "pm update <id> --parent <active-parent-id>",
-    summary: "Reopen the terminal parent or move the active child under a non-terminal parent.",
+    summary:
+      "Reopen the terminal parent or move the active child under a non-terminal parent.",
   },
   {
     code: "validate_lifecycle_stale_blockers",
@@ -313,12 +330,14 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   {
     code: "validate_lifecycle_dependency_cycles_error",
     command: "pm update <id> --dep-remove <dep-id>",
-    summary: "Break the dependency cycle by removing one edge from the reported cycle.",
+    summary:
+      "Break the dependency cycle by removing one edge from the reported cycle.",
   },
   {
     code: "validate_lifecycle_dependency_cycles",
     command: "pm update <id> --dep-remove <dep-id>",
-    summary: "Break the dependency cycle by removing one edge from the reported cycle.",
+    summary:
+      "Break the dependency cycle by removing one edge from the reported cycle.",
   },
   {
     code: "validate_hierarchy_parent_cycle_error",
@@ -348,45 +367,53 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   {
     code: "validate_files_tracked_all_strict_forces_pm_internals",
     command: "pm validate --check-files --include-pm-internals",
-    summary: "tracked-all-strict scan flagged pm internals; re-run with --include-pm-internals or a softer --scan-mode.",
+    summary:
+      "tracked-all-strict scan flagged pm internals; re-run with --include-pm-internals or a softer --scan-mode.",
   },
   // --- pm validate: history_drift ---
   {
     code: "validate_history_drift_missing_streams",
     command: "pm history-repair <id>",
-    summary: "Re-anchor the history chains of the items missing a history stream.",
+    summary:
+      "Re-anchor the history chains of the items missing a history stream.",
   },
   {
     code: "validate_history_drift_unreadable_streams",
     command: "pm history-repair <id>",
-    summary: "Re-anchor the history chains of the items with an unreadable history stream.",
+    summary:
+      "Re-anchor the history chains of the items with an unreadable history stream.",
   },
   {
     code: "validate_history_drift_hash_mismatches",
     command: "pm history-repair <id>",
-    summary: "Re-anchor the history chains of the items whose content hash drifted.",
+    summary:
+      "Re-anchor the history chains of the items whose content hash drifted.",
   },
   {
     code: "validate_history_drift_chain_mismatches",
     command: "pm history-repair <id>",
-    summary: "Re-anchor the history chains of the items with a broken history chain.",
+    summary:
+      "Re-anchor the history chains of the items with a broken history chain.",
   },
   // --- pm validate: command_references ---
   {
     code: "validate_command_references_stale_pm_ids",
-    command: 'pm update <id> --replace-tests --test "command=<corrected-command>" [--test ...]',
+    command:
+      'pm update <id> --replace-tests --test "command=<corrected-command>" [--test ...]',
     summary:
       "Correct the stale pm-ID inside the item's linked test command (the check scans tests[].command, not the body). --replace-tests overwrites the entire tests list, so re-include the item's other linked tests in the same call.",
   },
   {
     code: "validate_format_version_outdated_items",
     command: "pm validate --verbose-diagnostics",
-    summary: "One or more items predate the current storage format version; a pm storage migration rewrites them. Use --verbose-diagnostics to list the affected items.",
+    summary:
+      "One or more items predate the current storage format version; a pm storage migration rewrites them. Use --verbose-diagnostics to list the affected items.",
   },
   {
     code: "validate_format_version_ahead_items",
     command: "npm install -g @unbrained/pm-cli@latest",
-    summary: "One or more items were written by a newer pm format version than this runtime supports; upgrade pm to read and validate them safely.",
+    summary:
+      "One or more items were written by a newer pm format version than this runtime supports; upgrade pm to read and validate them safely.",
   },
 ]);
 
@@ -407,7 +434,9 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
  * Accepts unknown input defensively (this is an exported helper SDK consumers
  * may call from untyped JS): a non-string `warning` resolves to `undefined`.
  */
-export function resolveRemediation(warning: string): RemediationEntry | undefined {
+export function resolveRemediation(
+  warning: string,
+): RemediationEntry | undefined {
   if (typeof warning !== "string") {
     return undefined;
   }
@@ -420,29 +449,24 @@ export function resolveRemediation(warning: string): RemediationEntry | undefine
   return undefined;
 }
 
-/**
- * Build a compact `remediation_map` (code -> command) for a set of warning
- * tokens. First match wins per code; unknown codes are skipped. Used by
- * `pm health --json` per-check details and as the source of deduped executable
- * commands for `pm validate --fix-hints`.
- */
-export function buildRemediationMap(warnings: Iterable<string>): Record<string, string> {
+/** Build a compact `remediation_map` (code -> command) for a set of warning tokens. First match wins per code; unknown codes are skipped. Used by `pm health --json` per-check details and as the source of deduped executable commands for `pm validate --fix-hints`. */
+export function buildRemediationMap(
+  warnings: Iterable<string>,
+): Record<string, string> {
   const map: Record<string, string> = {};
   for (const warning of warnings) {
     const entry = resolveRemediation(warning);
-    if (entry !== undefined && !Object.prototype.hasOwnProperty.call(map, entry.code)) {
+    if (
+      entry !== undefined &&
+      !Object.prototype.hasOwnProperty.call(map, entry.code)
+    ) {
       map[entry.code] = entry.command;
     }
   }
   return map;
 }
 
-/**
- * Build a deduped, ordered list of executable remediation commands for a set of
- * warning tokens (one command per distinct matched code). Used by
- * `pm validate --fix-hints` for checks that do not already emit per-row
- * remediation commands.
- */
+/** Build a deduped, ordered list of executable remediation commands for a set of warning tokens (one command per distinct matched code). Used by `pm validate --fix-hints` for checks that do not already emit per-row remediation commands. */
 export function buildRemediationCommands(warnings: Iterable<string>): string[] {
   return Object.values(buildRemediationMap(warnings));
 }

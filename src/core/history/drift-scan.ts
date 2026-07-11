@@ -13,31 +13,29 @@ import { hashDocument } from "./history.js";
 import { verifyHistoryChain } from "./replay.js";
 import type { HistoryEntry, ItemMetadata } from "../../types/index.js";
 
-/**
- * Documents the drift scan result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the drift scan result payload exchanged by command, SDK, and package integrations. */
 export interface DriftScanResult {
+  /** Value that configures or reports missing streams for this contract. */
   missingStreams: string[];
+  /** Value that configures or reports unreadable streams for this contract. */
   unreadableStreams: string[];
+  /** Value that configures or reports hash mismatches for this contract. */
   hashMismatches: string[];
+  /** Value that configures or reports chain mismatches for this contract. */
   chainMismatches: string[];
+  /** Value that configures or reports drifted items for this contract. */
   driftedItems: string[];
 }
 
 const DRIFT_CACHE_VERSION = 3;
 const DRIFT_CACHE_FILENAME = "history-drift-cache.json";
 
-/**
- * Controls how cached history stream verification is trusted when the file stat
- * tuple still matches a previous scan.
- */
+/** Controls how cached history stream verification is trusted when the file stat tuple still matches a previous scan. */
 export type DriftCacheHitVerification = "content_hash" | "metadata";
 
-/**
- * Documents the history drift scan options shared by health, validate, and
- * repair callers.
- */
+/** Documents the history drift scan options shared by health, validate, and repair callers. */
 export interface DriftScanOptions {
+  /** Value that configures or reports cache hit verification for this contract. */
   cacheHitVerification?: DriftCacheHitVerification;
 }
 
@@ -59,11 +57,17 @@ function getDriftCachePath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", DRIFT_CACHE_FILENAME);
 }
 
-async function loadDriftCache(pmRoot: string): Promise<DriftCacheEnvelope | null> {
+async function loadDriftCache(
+  pmRoot: string,
+): Promise<DriftCacheEnvelope | null> {
   try {
     const raw = await fs.readFile(getDriftCachePath(pmRoot), "utf8");
     const parsed = JSON.parse(raw) as DriftCacheEnvelope;
-    if (parsed.version !== DRIFT_CACHE_VERSION || typeof parsed.entries !== "object" || parsed.entries === null) {
+    if (
+      parsed.version !== DRIFT_CACHE_VERSION ||
+      typeof parsed.entries !== "object" ||
+      parsed.entries === null
+    ) {
       return null;
     }
     return parsed;
@@ -73,7 +77,12 @@ async function loadDriftCache(pmRoot: string): Promise<DriftCacheEnvelope | null
 }
 
 function isErrno(error: unknown, code: string): boolean {
-  return typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === code;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === code
+  );
 }
 
 interface StreamVerification {
@@ -98,11 +107,10 @@ async function readHistoryContentHash(historyPath: string): Promise<string> {
   return hashContent(raw);
 }
 
-/**
- * Read and fully verify one history stream's hash chain. Returns null for an
- * empty/missing stream (caller records it as a missing stream).
- */
-async function verifyHistoryStream(historyPath: string): Promise<StreamVerification | null> {
+/** Read and fully verify one history stream's hash chain. Returns null for an empty/missing stream (caller records it as a missing stream). */
+async function verifyHistoryStream(
+  historyPath: string,
+): Promise<StreamVerification | null> {
   const raw = await fs.readFile(historyPath, "utf8");
   const contentHash = hashContent(raw);
   if (raw.trim().length === 0) {
@@ -116,7 +124,10 @@ async function verifyHistoryStream(historyPath: string): Promise<StreamVerificat
       continue;
     }
     const parsed = JSON.parse(trimmed) as HistoryEntry;
-    if (typeof parsed.after_hash !== "string" || parsed.after_hash.trim().length === 0) {
+    if (
+      typeof parsed.after_hash !== "string" ||
+      parsed.after_hash.trim().length === 0
+    ) {
       throw new Error("missing after_hash");
     }
     entries.push(parsed);
@@ -134,8 +145,16 @@ async function verifyHistoryStream(historyPath: string): Promise<StreamVerificat
   };
 }
 
-function cacheMetadataMatches(cached: DriftCacheEntry | undefined, stat: Stats): boolean {
-  return cached !== undefined && cached.mtime_ms === stat.mtimeMs && cached.ctime_ms === stat.ctimeMs && cached.size === stat.size;
+function cacheMetadataMatches(
+  cached: DriftCacheEntry | undefined,
+  stat: Stats,
+): boolean {
+  return (
+    cached !== undefined &&
+    cached.mtime_ms === stat.mtimeMs &&
+    cached.ctime_ms === stat.ctimeMs &&
+    cached.size === stat.size
+  );
 }
 
 async function loadFreshStreamVerification(
@@ -165,13 +184,21 @@ async function resolveStreamVerification(params: {
   accumulator: DriftScanAccumulator;
 }): Promise<{ verification: StreamVerification | null; cacheDirty: boolean }> {
   const cachedContentHash =
-    typeof params.cached?.content_hash === "string" && params.cached.content_hash.length > 0
+    typeof params.cached?.content_hash === "string" &&
+    params.cached.content_hash.length > 0
       ? params.cached.content_hash
       : undefined;
-  const canUseCache = cacheMetadataMatches(params.cached, params.stat) && cachedContentHash !== undefined && params.cached !== undefined;
+  const canUseCache =
+    cacheMetadataMatches(params.cached, params.stat) &&
+    cachedContentHash !== undefined &&
+    params.cached !== undefined;
   if (!canUseCache || !params.cached) {
     return {
-      verification: await loadFreshStreamVerification(params.itemId, params.historyPath, params.accumulator),
+      verification: await loadFreshStreamVerification(
+        params.itemId,
+        params.historyPath,
+        params.accumulator,
+      ),
       cacheDirty: true,
     };
   }
@@ -186,7 +213,10 @@ async function resolveStreamVerification(params: {
   } else {
     currentContentHash = cachedContentHash;
   }
-  if (!params.verifyCacheHitByContent || currentContentHash === cachedContentHash) {
+  if (
+    !params.verifyCacheHitByContent ||
+    currentContentHash === cachedContentHash
+  ) {
     return {
       verification: {
         latestAfterHash: params.cached.latest_after_hash,
@@ -197,7 +227,11 @@ async function resolveStreamVerification(params: {
     };
   }
   return {
-    verification: await loadFreshStreamVerification(params.itemId, params.historyPath, params.accumulator),
+    verification: await loadFreshStreamVerification(
+      params.itemId,
+      params.historyPath,
+      params.accumulator,
+    ),
     cacheDirty: true,
   };
 }
@@ -283,11 +317,17 @@ export async function scanHistoryDrift(
     }
   }
 
-  if (cacheDirty || Object.keys(previousEntries).length !== Object.keys(nextEntries).length) {
+  if (
+    cacheDirty ||
+    Object.keys(previousEntries).length !== Object.keys(nextEntries).length
+  ) {
     const cachePath = getDriftCachePath(pmRoot);
     try {
       await fs.mkdir(path.dirname(cachePath), { recursive: true });
-      await writeFileAtomic(cachePath, JSON.stringify({ version: DRIFT_CACHE_VERSION, entries: nextEntries }));
+      await writeFileAtomic(
+        cachePath,
+        JSON.stringify({ version: DRIFT_CACHE_VERSION, entries: nextEntries }),
+      );
     } catch {
       // Best-effort cache write: a failed persist must never fail a health scan.
     }

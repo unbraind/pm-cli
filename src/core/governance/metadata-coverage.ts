@@ -17,20 +17,33 @@ import { toNonEmptyStringOrUndefined } from "../shared/primitives.js";
 
 /** Minimal structural shape this module needs from an item's front matter. */
 export interface CoverageItem {
+  /** Schema type that determines the shape and validation rules for this value. */
   type: string;
+  /** Lifecycle state reported for status. */
   status: string;
+  /** Value that configures or reports assignee for this contract. */
   assignee?: string;
+  /** Value that configures or reports tags for this contract. */
   tags?: string[];
+  /** Value that configures or reports parent for this contract. */
   parent?: string;
+  /** Value that configures or reports priority for this contract. */
   priority?: number;
+  /** Value that configures or reports acceptance criteria for this contract. */
   acceptance_criteria?: string;
+  /** Value that configures or reports estimated minutes for this contract. */
   estimated_minutes?: number;
+  /** Value that configures or reports resolution for this contract. */
   resolution?: string;
+  /** Value that configures or reports reviewer for this contract. */
   reviewer?: string;
+  /** Value that configures or reports risk for this contract. */
   risk?: string;
   /** Confidence is a string-like enum or a numeric score depending on workspace. */
   confidence?: string | number;
+  /** Value that configures or reports sprint for this contract. */
   sprint?: string;
+  /** Value that configures or reports release for this contract. */
   release?: string;
   [key: string]: unknown;
 }
@@ -62,18 +75,27 @@ export const LIFECYCLE_BUCKET_ORDER: readonly LifecycleBucket[] = [
  * runtime status registry via {@link lifecycleClassifierFromStatusRegistry}.
  */
 export interface LifecycleClassifier {
+  /** Value that configures or reports classify for this contract. */
   classify(status: string): LifecycleBucket;
+  /** Whether terminal applies to this operation. */
   isTerminal(status: string): boolean;
 }
 
 /** The subset of a resolved runtime status registry this module consumes. */
 export interface StatusRegistryLike {
+  /** Value that configures or reports alias to id for this contract. */
   alias_to_id: Map<string, string>;
+  /** Value that configures or reports terminal statuses for this contract. */
   terminal_statuses: Set<string>;
+  /** Value that configures or reports terminal canceled statuses for this contract. */
   terminal_canceled_statuses: Set<string>;
+  /** Value that configures or reports blocked statuses for this contract. */
   blocked_statuses: Set<string>;
+  /** Value that configures or reports draft statuses for this contract. */
   draft_statuses: Set<string>;
+  /** Value that configures or reports active statuses for this contract. */
   active_statuses: Set<string>;
+  /** Lifecycle state reported for openthe record. */
   open_status: string;
 }
 
@@ -88,7 +110,9 @@ function normalizeStatus(status: string, registry: StatusRegistryLike): string {
  * Precedence is deliberate and disjoint: canceled → closed → blocked → draft →
  * open → in_progress (active but not the default open status) → other.
  */
-export function lifecycleClassifierFromStatusRegistry(registry: StatusRegistryLike): LifecycleClassifier {
+export function lifecycleClassifierFromStatusRegistry(
+  registry: StatusRegistryLike,
+): LifecycleClassifier {
   return {
     isTerminal(status: string): boolean {
       return registry.terminal_statuses.has(normalizeStatus(status, registry));
@@ -137,7 +161,10 @@ export function isEstimateMissing(item: CoverageItem): boolean {
  * Resolution is only expected on terminal items, so open items are never
  * considered "resolution-missing".
  */
-export function isResolutionMissing(item: CoverageItem, classifier: LifecycleClassifier): boolean {
+export function isResolutionMissing(
+  item: CoverageItem,
+  classifier: LifecycleClassifier,
+): boolean {
   if (!classifier.isTerminal(item.status)) {
     return false;
   }
@@ -178,30 +205,40 @@ export function isReleaseMissing(item: CoverageItem): boolean {
 
 /** Selection flags for {@link filterMissingMetadata}. */
 export interface MissingMetadataFilters {
+  /** Value that configures or reports ac missing for this contract. */
   acMissing?: boolean;
+  /** Value that configures or reports estimates missing for this contract. */
   estimatesMissing?: boolean;
+  /** Value that configures or reports resolution missing for this contract. */
   resolutionMissing?: boolean;
+  /** Value that configures or reports reviewer missing for this contract. */
   reviewerMissing?: boolean;
+  /** Value that configures or reports risk missing for this contract. */
   riskMissing?: boolean;
+  /** Value that configures or reports confidence missing for this contract. */
   confidenceMissing?: boolean;
+  /** Value that configures or reports sprint missing for this contract. */
   sprintMissing?: boolean;
+  /** Value that configures or reports release missing for this contract. */
   releaseMissing?: boolean;
   /** Match items missing ANY of the tracked metadata fields (union). */
   metadataMissing?: boolean;
 }
 
 /** True when any missing-metadata filter is requested. */
-export function hasMissingMetadataFilter(filters: MissingMetadataFilters): boolean {
+export function hasMissingMetadataFilter(
+  filters: MissingMetadataFilters,
+): boolean {
   return Boolean(
     filters.acMissing ||
-      filters.estimatesMissing ||
-      filters.resolutionMissing ||
-      filters.reviewerMissing ||
-      filters.riskMissing ||
-      filters.confidenceMissing ||
-      filters.sprintMissing ||
-      filters.releaseMissing ||
-      filters.metadataMissing,
+    filters.estimatesMissing ||
+    filters.resolutionMissing ||
+    filters.reviewerMissing ||
+    filters.riskMissing ||
+    filters.confidenceMissing ||
+    filters.sprintMissing ||
+    filters.releaseMissing ||
+    filters.metadataMissing,
   );
 }
 
@@ -223,8 +260,15 @@ function itemMatchesSpecificMetadataFilters(
   return checks.every(([requested, matched]) => requested !== true || matched);
 }
 
-function itemMatchesCoreMetadataMissingUnion(item: CoverageItem, classifier: LifecycleClassifier): boolean {
-  return isAcMissing(item) || isEstimateMissing(item) || isResolutionMissing(item, classifier);
+function itemMatchesCoreMetadataMissingUnion(
+  item: CoverageItem,
+  classifier: LifecycleClassifier,
+): boolean {
+  return (
+    isAcMissing(item) ||
+    isEstimateMissing(item) ||
+    isResolutionMissing(item, classifier)
+  );
 }
 
 /**
@@ -249,7 +293,10 @@ export function itemMatchesMissingMetadata(
   if (!itemMatchesSpecificMetadataFilters(item, filters, classifier)) {
     return false;
   }
-  if (filters.metadataMissing && !itemMatchesCoreMetadataMissingUnion(item, classifier)) {
+  if (
+    filters.metadataMissing &&
+    !itemMatchesCoreMetadataMissingUnion(item, classifier)
+  ) {
     return false;
   }
   return true;
@@ -264,7 +311,9 @@ export function filterMissingMetadata<T extends CoverageItem>(
   if (!hasMissingMetadataFilter(filters)) {
     return [...items];
   }
-  return items.filter((item) => itemMatchesMissingMetadata(item, filters, classifier));
+  return items.filter((item) =>
+    itemMatchesMissingMetadata(item, filters, classifier),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -290,6 +339,7 @@ export const COVERAGE_FIELD_ORDER: readonly CoverageField[] = [
 
 /** Coverage of a single field: present vs applicable, with a rounded percent. */
 export interface FieldCoverage {
+  /** Value that configures or reports present for this contract. */
   present: number;
   /** Items for which the field is expected (all items, except resolution = terminal only). */
   applicable: number;
@@ -301,7 +351,9 @@ export interface FieldCoverage {
  * Documents the metadata coverage report payload exchanged by command, SDK, and package integrations.
  */
 export interface MetadataCoverageReport {
+  /** Value that configures or reports overall for this contract. */
   overall: Record<CoverageField, FieldCoverage>;
+  /** Schema type that determines the shape and validation rules for this value. */
   by_type: Record<string, Record<CoverageField, FieldCoverage>>;
 }
 
@@ -321,7 +373,11 @@ function isFieldPresent(item: CoverageItem, field: CoverageField): boolean {
 }
 
 /** Whether a field applies to a given item (resolution only applies to terminal items). */
-function isFieldApplicable(item: CoverageItem, field: CoverageField, classifier: LifecycleClassifier): boolean {
+function isFieldApplicable(
+  item: CoverageItem,
+  field: CoverageField,
+  classifier: LifecycleClassifier,
+): boolean {
   if (field === "resolution") {
     return classifier.isTerminal(item.status);
   }
@@ -360,7 +416,9 @@ function accumulateCoverage(
   }
 }
 
-function finalizePercentages(record: Record<CoverageField, FieldCoverage>): void {
+function finalizePercentages(
+  record: Record<CoverageField, FieldCoverage>,
+): void {
   for (const field of COVERAGE_FIELD_ORDER) {
     const entry = record[field];
     entry.percent = roundPercent(entry.present, entry.applicable);
@@ -380,7 +438,8 @@ export function computeMetadataCoverage(
   const byType: Record<string, Record<CoverageField, FieldCoverage>> = {};
   for (const item of items) {
     accumulateCoverage(overall, item, classifier);
-    const typeRecord = byType[item.type] ?? (byType[item.type] = emptyFieldCoverage());
+    const typeRecord =
+      byType[item.type] ?? (byType[item.type] = emptyFieldCoverage());
     accumulateCoverage(typeRecord, item, classifier);
   }
   finalizePercentages(overall);
@@ -395,7 +454,13 @@ export function computeMetadataCoverage(
 // ---------------------------------------------------------------------------
 
 /** Dimensions a breakdown can group by. */
-export type GroupDimension = "assignee" | "priority" | "tag" | "parent" | "type" | "status";
+export type GroupDimension =
+  | "assignee"
+  | "priority"
+  | "tag"
+  | "parent"
+  | "type"
+  | "status";
 
 /** Explicit labels for empty/blank group keys, by dimension. */
 const EMPTY_GROUP_LABELS: Record<GroupDimension, string> = {
@@ -420,7 +485,9 @@ export interface GroupRow {
   label: string;
   /** Stable structured key (null for the empty/blank group). */
   key: string | null;
+  /** Value that configures or reports buckets for this contract. */
   buckets: Record<LifecycleBucket, number>;
+  /** Value that configures or reports total for this contract. */
   total: number;
 }
 
@@ -428,7 +495,9 @@ export interface GroupRow {
  * Documents the grouped breakdown payload exchanged by command, SDK, and package integrations.
  */
 export interface GroupedBreakdown {
+  /** Value that configures or reports dimension for this contract. */
   dimension: GroupDimension;
+  /** Value that configures or reports rows for this contract. */
   rows: GroupRow[];
   /** Distinct items observed (an item can contribute to multiple tag rows). */
   total_items: number;
@@ -459,7 +528,11 @@ function emptyBuckets(): Record<LifecycleBucket, number> {
  * yield exactly one key (possibly null for blank); tag yields one key per
  * matching tag (or [null] when none match), so an item can span multiple rows.
  */
-function groupKeysForItem(item: CoverageItem, dimension: GroupDimension, options: GroupOptions): (string | null)[] {
+function groupKeysForItem(
+  item: CoverageItem,
+  dimension: GroupDimension,
+  options: GroupOptions,
+): (string | null)[] {
   switch (dimension) {
     case "assignee":
       return [toNonEmptyStringOrUndefined(item.assignee) ?? null];
@@ -475,7 +548,10 @@ function groupKeysForItem(item: CoverageItem, dimension: GroupDimension, options
       const prefix = options.tagPrefix?.trim();
       const tags = Array.isArray(item.tags) ? item.tags : [];
       const matching = tags.filter(
-        (tag) => typeof tag === "string" && tag.length > 0 && (!prefix || tag.startsWith(prefix)),
+        (tag) =>
+          typeof tag === "string" &&
+          tag.length > 0 &&
+          (!prefix || tag.startsWith(prefix)),
       );
       return matching.length > 0 ? matching : [null];
     }

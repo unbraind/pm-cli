@@ -12,10 +12,17 @@ import {
   type MutationCheckpointItem,
 } from "../../core/checkpoint/mutation-checkpoint.js";
 import { toItemRecord } from "../../core/item/item-record.js";
-import { applyTagRemovals, mergeAdditiveTags, parseTags } from "../../core/item/parse.js";
+import {
+  applyTagRemovals,
+  mergeAdditiveTags,
+  parseTags,
+} from "../../core/item/parse.js";
 import { resolvePriority } from "../../core/item/priority.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
-import { resolveItemTypeRegistry, resolveTypeName } from "../../core/item/type-registry.js";
+import {
+  resolveItemTypeRegistry,
+  resolveTypeName,
+} from "../../core/item/type-registry.js";
 import { collectRuntimeUpdateFieldValues } from "../../core/schema/runtime-field-values.js";
 import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
 import {
@@ -77,7 +84,9 @@ const UPDATE_MANY_MUTATION_FLAG_GUIDANCE = [
   "--clear-*",
 ].join(", ");
 
-const UPDATE_OPTION_TO_ITEM_KEY: Partial<Record<keyof UpdateCommandOptions, string>> = {
+const UPDATE_OPTION_TO_ITEM_KEY: Partial<
+  Record<keyof UpdateCommandOptions, string>
+> = {
   title: "title",
   description: "description",
   body: "body",
@@ -128,61 +137,62 @@ interface CollectionMutationPlanDefinition {
   replaceKey?: keyof UpdateCommandOptions;
 }
 
-const COLLECTION_MUTATION_PLAN_DEFINITIONS: CollectionMutationPlanDefinition[] = [
-  {
-    field: "dependencies",
-    addKey: "dep",
-    removeKey: "depRemove",
-    clearKey: "clearDeps",
-    replaceKey: "replaceDeps",
-  },
-  {
-    field: "comments",
-    addKey: "comment",
-    clearKey: "clearComments",
-  },
-  {
-    field: "notes",
-    addKey: "note",
-    clearKey: "clearNotes",
-  },
-  {
-    field: "learnings",
-    addKey: "learning",
-    clearKey: "clearLearnings",
-  },
-  {
-    field: "files",
-    addKey: "file",
-    clearKey: "clearFiles",
-  },
-  {
-    field: "tests",
-    addKey: "test",
-    clearKey: "clearTests",
-    replaceKey: "replaceTests",
-  },
-  {
-    field: "docs",
-    addKey: "doc",
-    clearKey: "clearDocs",
-  },
-  {
-    field: "reminders",
-    addKey: "reminder",
-    clearKey: "clearReminders",
-  },
-  {
-    field: "events",
-    addKey: "event",
-    clearKey: "clearEvents",
-  },
-  {
-    field: "type_options",
-    addKey: "typeOption",
-    clearKey: "clearTypeOptions",
-  },
-];
+const COLLECTION_MUTATION_PLAN_DEFINITIONS: CollectionMutationPlanDefinition[] =
+  [
+    {
+      field: "dependencies",
+      addKey: "dep",
+      removeKey: "depRemove",
+      clearKey: "clearDeps",
+      replaceKey: "replaceDeps",
+    },
+    {
+      field: "comments",
+      addKey: "comment",
+      clearKey: "clearComments",
+    },
+    {
+      field: "notes",
+      addKey: "note",
+      clearKey: "clearNotes",
+    },
+    {
+      field: "learnings",
+      addKey: "learning",
+      clearKey: "clearLearnings",
+    },
+    {
+      field: "files",
+      addKey: "file",
+      clearKey: "clearFiles",
+    },
+    {
+      field: "tests",
+      addKey: "test",
+      clearKey: "clearTests",
+      replaceKey: "replaceTests",
+    },
+    {
+      field: "docs",
+      addKey: "doc",
+      clearKey: "clearDocs",
+    },
+    {
+      field: "reminders",
+      addKey: "reminder",
+      clearKey: "clearReminders",
+    },
+    {
+      field: "events",
+      addKey: "event",
+      clearKey: "clearEvents",
+    },
+    {
+      field: "type_options",
+      addKey: "typeOption",
+      clearKey: "clearTypeOptions",
+    },
+  ];
 
 const UNSET_FIELD_ALIASES: Record<string, string> = {
   close_reason: "close_reason",
@@ -252,15 +262,19 @@ interface UpdateManyCheckpoint {
   items: MutationCheckpointItem[];
 }
 
-/**
- * Documents the update many command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the update many command options payload exchanged by command, SDK, and package integrations. */
 export interface UpdateManyCommandOptions {
+  /** Lifecycle state reported for status. */
   status?: string;
+  /** Value that configures or reports list for this contract. */
   list: ListOptions;
+  /** Value that configures or reports update for this contract. */
   update: UpdateCommandOptions;
+  /** Value that configures or reports dry run for this contract. */
   dryRun?: boolean;
+  /** Value that configures or reports rollback for this contract. */
   rollback?: string;
+  /** Value that configures or reports checkpoint for this contract. */
   checkpoint?: boolean;
 }
 
@@ -291,34 +305,50 @@ interface UpdateManyRollbackResultRow {
   error?: string;
 }
 
-/**
- * Documents the update many result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the update many result payload exchanged by command, SDK, and package integrations. */
 export interface UpdateManyResult {
+  /** Value that configures or reports mode for this contract. */
   mode: "dry_run" | "apply" | "rollback";
+  /** Number of matched entries represented by this result. */
   matched_count: number;
+  /** Value that configures or reports dry run for this contract. */
   dry_run: boolean;
+  /** Value that configures or reports filters for this contract. */
   filters?: Record<string, unknown>;
+  /** Inputs that customize the planned update operation. */
   planned_update_options?: Record<string, unknown>;
+  /** Value that configures or reports item plans for this contract. */
   item_plans?: PlannedItemDiff[];
+  /** Value that configures or reports checkpoint for this contract. */
   checkpoint?: {
     id: string;
     created_at: string;
     path: string;
     rollback_command: string;
   };
+  /** Number of updated entries represented by this result. */
   updated_count?: number;
+  /** Number of skipped entries represented by this result. */
   skipped_count?: number;
+  /** Number of failed entries represented by this result. */
   failed_count?: number;
+  /** Number of restored entries represented by this result. */
   restored_count?: number;
+  /** Value that configures or reports rollback checkpoint id for this contract. */
   rollback_checkpoint_id?: string;
+  /** Value that configures or reports rows for this contract. */
   rows?: UpdateManyApplyResultRow[] | UpdateManyRollbackResultRow[];
+  /** Value that configures or reports ids for this contract. */
   ids: string[];
 }
 
-function sanitizeUpdateOptionsForSummary(options: UpdateCommandOptions): Record<string, unknown> {
+function sanitizeUpdateOptionsForSummary(
+  options: UpdateCommandOptions,
+): Record<string, unknown> {
   const summary: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(options) as Array<[keyof UpdateCommandOptions, unknown]>) {
+  for (const [key, value] of Object.entries(options) as Array<
+    [keyof UpdateCommandOptions, unknown]
+  >) {
     if (NON_MUTATION_UPDATE_OPTION_KEYS.has(key)) {
       continue;
     }
@@ -334,7 +364,10 @@ function hasAnyUpdateMutationInput(options: UpdateCommandOptions): boolean {
   return Object.keys(sanitizeUpdateOptionsForSummary(options)).length > 0;
 }
 
-function toComparablePreviewValue(optionKey: keyof UpdateCommandOptions, value: unknown): unknown {
+function toComparablePreviewValue(
+  optionKey: keyof UpdateCommandOptions,
+  value: unknown,
+): unknown {
   if (value === undefined) {
     return undefined;
   }
@@ -342,7 +375,11 @@ function toComparablePreviewValue(optionKey: keyof UpdateCommandOptions, value: 
     const parsed = Number(String(value).trim());
     return Number.isInteger(parsed) ? parsed : String(value).trim();
   }
-  if (optionKey === "estimatedMinutes" || optionKey === "order" || optionKey === "rank") {
+  if (
+    optionKey === "estimatedMinutes" ||
+    optionKey === "order" ||
+    optionKey === "rank"
+  ) {
     const parsed = Number(String(value).trim());
     return Number.isFinite(parsed) ? parsed : String(value).trim();
   }
@@ -370,7 +407,10 @@ function areValuesEqual(left: unknown, right: unknown): boolean {
   return stableValueEquals(left, right);
 }
 
-function normalizeCollectionBeforeValue(field: string, value: unknown): unknown {
+function normalizeCollectionBeforeValue(
+  field: string,
+  value: unknown,
+): unknown {
   if (value !== undefined) {
     return value;
   }
@@ -390,22 +430,38 @@ function collectionValueCount(field: string, value: unknown): number {
   return 0;
 }
 
-function buildCollectionMutationPlans(row: Record<string, unknown>, update: UpdateCommandOptions): PlannedChange[] {
+function buildCollectionMutationPlans(
+  row: Record<string, unknown>,
+  update: UpdateCommandOptions,
+): PlannedChange[] {
   const changes: PlannedChange[] = [];
   for (const definition of COLLECTION_MUTATION_PLAN_DEFINITIONS) {
     const addValues = update[definition.addKey];
-    const removeValues = definition.removeKey ? update[definition.removeKey] : undefined;
+    const removeValues = definition.removeKey
+      ? update[definition.removeKey]
+      : undefined;
     const addCount = Array.isArray(addValues) ? addValues.length : 0;
     const removeCount = Array.isArray(removeValues) ? removeValues.length : 0;
     const clear = update[definition.clearKey] === true;
-    const replace = definition.replaceKey ? update[definition.replaceKey] === true : false;
+    const replace = definition.replaceKey
+      ? update[definition.replaceKey] === true
+      : false;
     if (!clear && !replace && addCount === 0 && removeCount === 0) {
       continue;
     }
 
-    const before = normalizeCollectionBeforeValue(definition.field, row[definition.field]);
+    const before = normalizeCollectionBeforeValue(
+      definition.field,
+      row[definition.field],
+    );
     const beforeCount = collectionValueCount(definition.field, before);
-    const operation = replace ? "replace" : clear ? "clear_or_reset" : removeCount > 0 ? "merge_remove" : "append";
+    const operation = replace
+      ? "replace"
+      : clear
+        ? "clear_or_reset"
+        : removeCount > 0
+          ? "merge_remove"
+          : "append";
     changes.push({
       field: definition.field,
       before,
@@ -434,17 +490,23 @@ function normalizeExistingTags(value: unknown): string[] {
 // dry-run preview and the apply-mode actionable detection both account for
 // additive/subtractive tag mutations (a --add-tags-only update must NOT be
 // treated as a no-op skip).
-function buildTagMutationPlan(row: Record<string, unknown>, update: UpdateCommandOptions): PlannedChange | undefined {
+function buildTagMutationPlan(
+  row: Record<string, unknown>,
+  update: UpdateCommandOptions,
+): PlannedChange | undefined {
   const hasReplace = update.tags !== undefined;
   const hasAdd = Array.isArray(update.addTags) && update.addTags.length > 0;
-  const hasRemove = Array.isArray(update.removeTags) && update.removeTags.length > 0;
+  const hasRemove =
+    Array.isArray(update.removeTags) && update.removeTags.length > 0;
   if (!hasReplace && !hasAdd && !hasRemove) {
     return undefined;
   }
   const existing = normalizeExistingTags(row.tags);
   const baseTags = hasReplace ? parseTags(update.tags as string) : existing;
   const withAdditions = mergeAdditiveTags(baseTags, update.addTags);
-  const after = applyTagRemovals(withAdditions, update.removeTags).slice().sort((a, b) => a.localeCompare(b));
+  const after = applyTagRemovals(withAdditions, update.removeTags)
+    .slice()
+    .sort((a, b) => a.localeCompare(b));
   const before = existing.slice().sort((a, b) => a.localeCompare(b));
   if (areValuesEqual(before, after)) {
     return undefined;
@@ -464,7 +526,9 @@ function buildPlannedItemDiff(
   if (tagPlan) {
     changes.push(tagPlan);
   }
-  for (const [optionKey, itemKey] of Object.entries(UPDATE_OPTION_TO_ITEM_KEY) as Array<[keyof UpdateCommandOptions, string]>) {
+  for (const [optionKey, itemKey] of Object.entries(
+    UPDATE_OPTION_TO_ITEM_KEY,
+  ) as Array<[keyof UpdateCommandOptions, string]>) {
     const candidate = safeUpdate[optionKey];
     if (candidate === undefined) {
       continue;
@@ -520,13 +584,18 @@ function buildPlannedItemDiff(
   };
 }
 
-function normalizeStatusFilter(value: string | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
+function normalizeStatusFilter(
+  value: string | undefined,
+  statusRegistry: RuntimeStatusRegistry,
+): ItemStatus | undefined {
   if (value === undefined) {
     return undefined;
   }
   const normalized = normalizeStatusInput(value, statusRegistry);
   if (!normalized) {
-    const allowedStatuses = statusRegistry.definitions.map((definition) => definition.id);
+    const allowedStatuses = statusRegistry.definitions.map(
+      (definition) => definition.id,
+    );
     throw new PmCliError(
       `Invalid --filter-status value "${value}". Allowed: ${allowedStatuses.join(", ")}`,
       EXIT_CODE.USAGE,
@@ -537,7 +606,10 @@ function normalizeStatusFilter(value: string | undefined, statusRegistry: Runtim
 
 function rejectBlankIdsFilter(list: ListOptions | undefined): void {
   if (list?.ids != null && String(list.ids).trim().length === 0) {
-    throw new PmCliError("--ids requires at least one non-empty item ID", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--ids requires at least one non-empty item ID",
+      EXIT_CODE.USAGE,
+    );
   }
 }
 
@@ -560,16 +632,28 @@ function assertPlannedUpdateValuesValid(
     resolvePriority(update.priority);
   }
   if (update.type !== undefined) {
-    const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+    const typeRegistry = resolveItemTypeRegistry(
+      settings,
+      getActiveExtensionRegistrations(),
+    );
     if (!resolveTypeName(update.type, typeRegistry)) {
       throw new PmCliError(
-        buildInvalidTypeError(update.type, typeRegistry.types, resolveItemTypesFilePath(pmRoot, settings.schema)),
+        buildInvalidTypeError(
+          update.type,
+          typeRegistry.types,
+          resolveItemTypesFilePath(pmRoot, settings.schema),
+        ),
         EXIT_CODE.USAGE,
       );
     }
   }
-  if (update.status !== undefined && !normalizeStatusInput(update.status, statusRegistry)) {
-    const allowedStatuses = statusRegistry.definitions.map((definition) => definition.id);
+  if (
+    update.status !== undefined &&
+    !normalizeStatusInput(update.status, statusRegistry)
+  ) {
+    const allowedStatuses = statusRegistry.definitions.map(
+      (definition) => definition.id,
+    );
     throw new PmCliError(
       `Invalid --status value "${update.status}". Allowed: ${allowedStatuses.join(", ")}`,
       EXIT_CODE.USAGE,
@@ -592,18 +676,22 @@ async function runUpdateManyRollback(params: {
     params.rollbackId,
     UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION,
   );
-  const restoreMessage = params.options.update?.message ?? `Rollback update-many checkpoint ${checkpoint.id}`;
-  const rollback = await restoreCheckpointItems(checkpoint.items, (id, targetUpdatedAt) =>
-    runRestore(
-      id,
-      targetUpdatedAt,
-      {
-        author: params.options.update?.author,
-        message: restoreMessage,
-        force: params.options.update?.force ?? true,
-      },
-      params.global,
-    ),
+  const restoreMessage =
+    params.options.update?.message ??
+    `Rollback update-many checkpoint ${checkpoint.id}`;
+  const rollback = await restoreCheckpointItems(
+    checkpoint.items,
+    (id, targetUpdatedAt) =>
+      runRestore(
+        id,
+        targetUpdatedAt,
+        {
+          author: params.options.update?.author,
+          message: restoreMessage,
+          force: params.options.update?.force ?? true,
+        },
+        params.global,
+      ),
   );
   return {
     mode: "rollback",
@@ -657,33 +745,46 @@ async function writeUpdateManyCheckpoint(params: {
   };
 }
 
-
-/**
- * Implements run update many for the public runtime surface of this module.
- */
-export async function runUpdateMany(options: UpdateManyCommandOptions, global: GlobalOptions): Promise<UpdateManyResult> {
+/** Implements run update many for the public runtime surface of this module. */
+export async function runUpdateMany(
+  options: UpdateManyCommandOptions,
+  global: GlobalOptions,
+): Promise<UpdateManyResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
 
   const dryRun = options.dryRun === true;
-  const rollbackId = typeof options.rollback === "string" ? options.rollback : undefined;
+  const rollbackId =
+    typeof options.rollback === "string" ? options.rollback : undefined;
   const updateSummary = sanitizeUpdateOptionsForSummary(options.update);
   rejectBlankIdsFilter(options.list);
 
   if (rollbackId) {
     if (dryRun) {
-      throw new PmCliError("--dry-run cannot be combined with --rollback", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "--dry-run cannot be combined with --rollback",
+        EXIT_CODE.USAGE,
+      );
     }
     if (hasListFilters(options.list, options.status)) {
-      throw new PmCliError("Rollback mode does not accept filter options", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "Rollback mode does not accept filter options",
+        EXIT_CODE.USAGE,
+      );
     }
     if (Object.keys(updateSummary).length > 0) {
-      throw new PmCliError("Rollback mode does not accept update mutation flags", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "Rollback mode does not accept update mutation flags",
+        EXIT_CODE.USAGE,
+      );
     }
     return runUpdateManyRollback({ pmRoot, rollbackId, options, global });
   }
@@ -697,11 +798,22 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
 
   // GH-256: validate planned scalar values before listing/checkpointing so
   // dry-run previews and apply both reject globally-invalid enum/format input.
-  assertPlannedUpdateValuesValid(options.update, settings, statusRegistry, pmRoot);
+  assertPlannedUpdateValuesValid(
+    options.update,
+    settings,
+    statusRegistry,
+    pmRoot,
+  );
 
   const statusFilter = normalizeStatusFilter(options.status, statusRegistry);
-  const listed = await runList(statusFilter, { ...options.list, includeBody: true }, global);
-  const planned = listed.items.map((item) => buildPlannedItemDiff(item, options.update, runtimeFieldRegistry));
+  const listed = await runList(
+    statusFilter,
+    { ...options.list, includeBody: true },
+    global,
+  );
+  const planned = listed.items.map((item) =>
+    buildPlannedItemDiff(item, options.update, runtimeFieldRegistry),
+  );
   const actionable = planned.filter((row) => row.changes.length > 0);
   if (dryRun) {
     return {
@@ -734,7 +846,10 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
   }
 
   const nowValue = nowIso();
-  const checkpointId = createCheckpointId(UPDATE_MANY_CHECKPOINT_SUBDIR, nowValue);
+  const checkpointId = createCheckpointId(
+    UPDATE_MANY_CHECKPOINT_SUBDIR,
+    nowValue,
+  );
   const checkpointEnabled = options.checkpoint !== false;
   const checkpointItems: MutationCheckpointItem[] = listed.items
     .filter((item) => actionable.some((candidate) => candidate.id === item.id))
@@ -759,7 +874,8 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
 
   const applyRows: UpdateManyApplyResultRow[] = [];
   const updatedIds: string[] = [];
-  const updateMessage = options.update.message ?? `update-many apply ${checkpointId}`;
+  const updateMessage =
+    options.update.message ?? `update-many apply ${checkpointId}`;
   const actionableById = new Set(actionable.map((row) => row.id));
   for (const item of listed.items) {
     if (!actionableById.has(item.id)) {
@@ -792,8 +908,12 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
     }
   }
 
-  const updatedCount = applyRows.filter((row) => row.status === "updated").length;
-  const skippedCount = applyRows.filter((row) => row.status === "skipped").length;
+  const updatedCount = applyRows.filter(
+    (row) => row.status === "updated",
+  ).length;
+  const skippedCount = applyRows.filter(
+    (row) => row.status === "skipped",
+  ).length;
   const failedCount = applyRows.filter((row) => row.status === "failed").length;
 
   return {
@@ -811,6 +931,7 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
   };
 }
 
+/** Public contract for test only update many command, shared by SDK and presentation-layer consumers. */
 export const _testOnlyUpdateManyCommand = {
   assertPlannedUpdateValuesValid,
   buildCollectionMutationPlans,

@@ -10,7 +10,9 @@
 
 /** Compact echo of filters and projection mode applied to list/search responses. */
 export interface QuerySummary {
+  /** Value that configures or reports filters for this contract. */
   filters: Record<string, unknown>;
+  /** Value that configures or reports projection for this contract. */
   projection: string;
 }
 
@@ -18,12 +20,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-/**
- * Resolve the projection label implied by list/search projection options.
- * Used when the result payload itself carries no projection metadata (the
- * compact summary paths omit it for token efficiency).
- */
-export function resolveQueryProjectionLabel(options: Record<string, unknown>): string {
+/** Resolve the projection label implied by list/search projection options. Used when the result payload itself carries no projection metadata (the compact summary paths omit it for token efficiency). */
+export function resolveQueryProjectionLabel(
+  options: Record<string, unknown>,
+): string {
   if (options.brief === true) {
     return "brief";
   }
@@ -55,11 +55,13 @@ export function withQuerySummary<T extends Record<string, unknown>>(
   options: Record<string, unknown>,
 ): T & { query_summary: QuerySummary } {
   const requestedLabel = resolveQueryProjectionLabel(options);
-  const projection = requestedLabel === "brief"
-    ? requestedLabel
-    : isRecord(result.projection) && typeof result.projection.mode === "string"
-      ? result.projection.mode
-      : requestedLabel;
+  const projection =
+    requestedLabel === "brief"
+      ? requestedLabel
+      : isRecord(result.projection) &&
+          typeof result.projection.mode === "string"
+        ? result.projection.mode
+        : requestedLabel;
   return {
     ...result,
     query_summary: {

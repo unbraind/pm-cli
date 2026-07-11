@@ -12,7 +12,10 @@ import {
   type HistoryCompactBulkSkipReason,
   type HistoryCompactScope,
 } from "../../core/history/history-compact-bulk.js";
-import { executeHistoryRewrite, writeHistoryRawWithRollback } from "../../core/history/history-rewrite.js";
+import {
+  executeHistoryRewrite,
+  writeHistoryRawWithRollback,
+} from "../../core/history/history-rewrite.js";
 import {
   cloneEmptyReplayDocument,
   historyEntriesToRaw,
@@ -45,14 +48,17 @@ import type { HistoryEntry } from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
 import { resolveHistorySubject } from "./history-redact.js";
 
-/**
- * Documents the history compact command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the history compact command options payload exchanged by command, SDK, and package integrations. */
 export interface HistoryCompactCommandOptions {
+  /** Value that configures or reports before for this contract. */
   before?: string;
+  /** Value that configures or reports dry run for this contract. */
   dryRun?: boolean;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Value that configures or reports force for this contract. */
   force?: boolean;
 }
 
@@ -71,13 +77,15 @@ interface HistoryCompactCurrentItem {
   matchedChainBefore: boolean | null;
 }
 
-/**
- * Documents the history compact result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the history compact result payload exchanged by command, SDK, and package integrations. */
 export interface HistoryCompactResult {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports dry run for this contract. */
   dry_run: boolean;
+  /** Value that configures or reports changed for this contract. */
   changed: boolean;
+  /** Value that configures or reports compact boundary for this contract. */
   compact_boundary: {
     kind: HistoryCompactBoundaryKind;
     before: string | null;
@@ -85,6 +93,7 @@ export interface HistoryCompactResult {
     entries_retained: number;
     first_retained_entry: number | null;
   };
+  /** Value that configures or reports history for this contract. */
   history: {
     path: string;
     entries_scanned: number;
@@ -94,16 +103,22 @@ export interface HistoryCompactResult {
     verify_ok: boolean;
     verify_errors: string[];
   };
+  /** Value that configures or reports item for this contract. */
   item: {
     exists: boolean;
     path: string | null;
     matched_chain_before: boolean | null;
   };
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
 }
 
-function parseBeforeBoundary(before: string | undefined, entries: HistoryEntry[]): HistoryCompactBoundary {
+function parseBeforeBoundary(
+  before: string | undefined,
+  entries: HistoryEntry[],
+): HistoryCompactBoundary {
   if (before === undefined) {
     return {
       kind: "default",
@@ -115,12 +130,19 @@ function parseBeforeBoundary(before: string | undefined, entries: HistoryEntry[]
 
   const raw = before.trim();
   if (raw.length === 0) {
-    throw new PmCliError("history-compact --before requires a non-empty value.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "history-compact --before requires a non-empty value.",
+      EXIT_CODE.USAGE,
+    );
   }
 
   if (/^\d+$/.test(raw)) {
     const version = Number.parseInt(raw, 10);
-    if (!Number.isSafeInteger(version) || version < 1 || version > entries.length + 1) {
+    if (
+      !Number.isSafeInteger(version) ||
+      version < 1 ||
+      version > entries.length + 1
+    ) {
       throw new PmCliError(
         `history-compact --before version must be between 1 and ${entries.length + 1}.`,
         EXIT_CODE.USAGE,
@@ -166,12 +188,18 @@ function parseBeforeBoundary(before: string | undefined, entries: HistoryEntry[]
   };
 }
 
-function applyHistoryPatch(current: ReplayDocument, entry: HistoryEntry, entryNumber: number): ReplayDocument {
+function applyHistoryPatch(
+  current: ReplayDocument,
+  entry: HistoryEntry,
+  entryNumber: number,
+): ReplayDocument {
   const result = tryApplyReplayPatch(current, entry.patch);
   if (!result.ok) {
     throw new PmCliError(
       `history-compact failed to apply patch at entry ${entryNumber} (op=${entry.op}): ${
-        result.error instanceof Error ? result.error.message : String(result.error)
+        result.error instanceof Error
+          ? result.error.message
+          : String(result.error)
       }`,
       EXIT_CODE.GENERIC_FAILURE,
     );
@@ -243,19 +271,33 @@ async function loadHistoryCompactCurrentItem(
   settings: Awaited<ReturnType<typeof readSettings>>,
   historyEntries: HistoryEntry[],
 ): Promise<HistoryCompactCurrentItem> {
-  const loadedItem = subject.located ? await readLocatedItem(subject.located, { schema: settings.schema }) : null;
+  const loadedItem = subject.located
+    ? await readLocatedItem(subject.located, { schema: settings.schema })
+    : null;
   if (!loadedItem) {
-    return { loadedItem: null, currentItemRawBeforeLock: null, matchedChainBefore: null };
+    return {
+      loadedItem: null,
+      currentItemRawBeforeLock: null,
+      matchedChainBefore: null,
+    };
   }
   return {
     loadedItem,
     currentItemRawBeforeLock: loadedItem.raw,
-    matchedChainBefore: replayHash(toReplayDocument(loadedItem.document)) === historyEntries[historyEntries.length - 1]?.after_hash,
+    matchedChainBefore:
+      replayHash(toReplayDocument(loadedItem.document)) ===
+      historyEntries[historyEntries.length - 1]?.after_hash,
   };
 }
 
-function buildHistoryCompactMessage(options: HistoryCompactCommandOptions, boundary: HistoryCompactBoundary): string {
-  if (typeof options.message === "string" && options.message.trim().length > 0) {
+function buildHistoryCompactMessage(
+  options: HistoryCompactCommandOptions,
+  boundary: HistoryCompactBoundary,
+): string {
+  if (
+    typeof options.message === "string" &&
+    options.message.trim().length > 0
+  ) {
     return options.message;
   }
   if (boundary.raw === null) {
@@ -268,7 +310,9 @@ function buildHistoryCompactMessage(options: HistoryCompactCommandOptions, bound
   } before ${boundary.raw}.`;
 }
 
-function buildHistoryCompactBaselineMessage(boundary: HistoryCompactBoundary): string {
+function buildHistoryCompactBaselineMessage(
+  boundary: HistoryCompactBoundary,
+): string {
   if (boundary.raw === null) {
     return `history-compact baseline snapshot after compacting ${boundary.compactCount} entr${
       boundary.compactCount === 1 ? "y" : "ies"
@@ -284,13 +328,28 @@ function buildHistoryCompactEntries(params: {
   dryRun: boolean;
   author: string;
   options: HistoryCompactCommandOptions;
-}): { rewrittenEntries: HistoryEntry[]; baselineEntryAdded: boolean; auditEntryAdded: boolean } {
+}): {
+  rewrittenEntries: HistoryEntry[];
+  baselineEntryAdded: boolean;
+  auditEntryAdded: boolean;
+} {
   if (!params.changed) {
-    return { rewrittenEntries: params.historyEntries, baselineEntryAdded: false, auditEntryAdded: false };
+    return {
+      rewrittenEntries: params.historyEntries,
+      baselineEntryAdded: false,
+      auditEntryAdded: false,
+    };
   }
-  const { checkpoint, finalReplay } = replayHistoryAndResolveCheckpoint(params.historyEntries, params.boundary.compactCount);
+  const { checkpoint, finalReplay } = replayHistoryAndResolveCheckpoint(
+    params.historyEntries,
+    params.boundary.compactCount,
+  );
   const retained = params.historyEntries.slice(params.boundary.compactCount);
-  const reanchored = reanchorRetainedEntries(retained, checkpoint, params.boundary.compactCount);
+  const reanchored = reanchorRetainedEntries(
+    retained,
+    checkpoint,
+    params.boundary.compactCount,
+  );
   const baselineEntry = createHistoryEntry({
     nowIso: nowIso(),
     author: params.author,
@@ -312,7 +371,11 @@ function buildHistoryCompactEntries(params: {
       }),
     );
   }
-  return { rewrittenEntries, baselineEntryAdded: true, auditEntryAdded: !params.dryRun };
+  return {
+    rewrittenEntries,
+    baselineEntryAdded: true,
+    auditEntryAdded: !params.dryRun,
+  };
 }
 
 async function applyHistoryCompactRewrite(params: {
@@ -354,9 +417,7 @@ async function applyHistoryCompactRewrite(params: {
   });
 }
 
-/**
- * Implements run history compact for the public runtime surface of this module.
- */
+/** Implements run history compact for the public runtime surface of this module. */
 export async function runHistoryCompact(
   id: string,
   options: HistoryCompactCommandOptions,
@@ -364,20 +425,37 @@ export async function runHistoryCompact(
 ): Promise<HistoryCompactResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const subject = await resolveHistorySubject(pmRoot, id, settings, typeRegistry.type_to_folder);
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
+  const subject = await resolveHistorySubject(
+    pmRoot,
+    id,
+    settings,
+    typeRegistry.type_to_folder,
+  );
   const historyPath = subject.historyPath;
   const historyRawBeforeLock = await readFileIfExists(historyPath);
   if (historyRawBeforeLock === null) {
-    throw new PmCliError(`No history stream exists for ${subject.id}.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `No history stream exists for ${subject.id}.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   const historyEntries = await readHistoryEntries(historyPath, subject.id);
   if (historyEntries.length === 0) {
-    throw new PmCliError(`No history entries exist for ${subject.id}; nothing to compact.`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `No history entries exist for ${subject.id}; nothing to compact.`,
+      EXIT_CODE.USAGE,
+    );
   }
 
   const chainVerification = verifyHistoryChain(historyEntries);
@@ -397,19 +475,24 @@ export async function runHistoryCompact(
     warnings.push("history_compact_noop_before_boundary");
   }
 
-  const currentItem = await loadHistoryCompactCurrentItem(subject, settings, historyEntries);
+  const currentItem = await loadHistoryCompactCurrentItem(
+    subject,
+    settings,
+    historyEntries,
+  );
   if (currentItem.matchedChainBefore === false) {
     warnings.push("history_compact_item_chain_mismatch");
   }
 
-  const { rewrittenEntries, baselineEntryAdded, auditEntryAdded } = buildHistoryCompactEntries({
-    historyEntries,
-    boundary,
-    changed,
-    dryRun,
-    author,
-    options,
-  });
+  const { rewrittenEntries, baselineEntryAdded, auditEntryAdded } =
+    buildHistoryCompactEntries({
+      historyEntries,
+      boundary,
+      changed,
+      dryRun,
+      author,
+      options,
+    });
 
   const rewrittenVerify = verifyHistoryChain(rewrittenEntries);
   if (!rewrittenVerify.ok) {
@@ -437,7 +520,8 @@ export async function runHistoryCompact(
     );
   }
 
-  const firstRetainedEntry = boundary.retainedCount > 0 ? boundary.compactCount + 1 : null;
+  const firstRetainedEntry =
+    boundary.retainedCount > 0 ? boundary.compactCount + 1 : null;
   return {
     id: subject.id,
     dry_run: dryRun,
@@ -463,7 +547,9 @@ export async function runHistoryCompact(
       path: subject.located?.itemPath ?? null,
       matched_chain_before: currentItem.matchedChainBefore,
     },
-    warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
+    warnings: [...new Set(warnings)].sort((left, right) =>
+      left.localeCompare(right),
+    ),
     generated_at: nowIso(),
   };
 }
@@ -471,44 +557,61 @@ export async function runHistoryCompact(
 /** Default entry floor below which a stream is treated as already compact. */
 export const HISTORY_COMPACT_BULK_DEFAULT_MIN_ENTRIES = 3;
 
-/**
- * Documents the bulk history compact command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the bulk history compact command options payload exchanged by command, SDK, and package integrations. */
 export interface HistoryCompactBulkCommandOptions {
+  /** Value that configures or reports ids for this contract. */
   ids?: string[];
+  /** Value that configures or reports scope for this contract. */
   scope?: HistoryCompactScope;
+  /** Value that configures or reports all over for this contract. */
   allOver?: number;
+  /** Value that configures or reports min entries for this contract. */
   minEntries?: number;
+  /** Value that configures or reports dry run for this contract. */
   dryRun?: boolean;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Value that configures or reports force for this contract. */
   force?: boolean;
 }
 
 /** Per-item outcome row in a bulk compaction pass. */
 export interface HistoryCompactBulkItemResult {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports outcome for this contract. */
   outcome: "compacted" | "skipped" | "errored";
+  /** Value that configures or reports entries before for this contract. */
   entries_before: number;
+  /** Value that configures or reports entries after for this contract. */
   entries_after: number | null;
+  /** Value that configures or reports skip reason for this contract. */
   skip_reason: HistoryCompactBulkSkipReason | null;
+  /** Value that configures or reports changed for this contract. */
   changed: boolean;
+  /** Value that configures or reports error for this contract. */
   error: string | null;
 }
 
-/**
- * Documents the bulk history compact result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the bulk history compact result payload exchanged by command, SDK, and package integrations. */
 export interface HistoryCompactBulkResult {
+  /** Value that configures or reports bulk for this contract. */
   bulk: true;
+  /** Value that configures or reports dry run for this contract. */
   dry_run: boolean;
+  /** Value that configures or reports mode for this contract. */
   mode: "ids" | "scan";
+  /** Value that configures or reports scope for this contract. */
   scope: HistoryCompactScope | null;
+  /** Value that configures or reports criteria for this contract. */
   criteria: {
     min_entries: number;
     all_over: number | null;
     policy_threshold_applied: boolean;
   };
+  /** Value that configures or reports totals for this contract. */
   totals: {
     streams_considered: number;
     selected: number;
@@ -516,22 +619,21 @@ export interface HistoryCompactBulkResult {
     items_skipped: number;
     items_errored: number;
   };
+  /** Value that configures or reports results for this contract. */
   results: HistoryCompactBulkItemResult[];
+  /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
 }
 
-/**
- * Enforce the `pm history-compact` target contract shared by the CLI and MCP
- * surfaces: exactly one selection mode — a single item `<id>`, an explicit
- * `--ids` list, or a scan selector (`--all-over` / `--closed` / `--all-streams`).
- */
+/** Enforce the `pm history-compact` target contract shared by the CLI and MCP surfaces: exactly one selection mode — a single item `<id>`, an explicit `--ids` list, or a scan selector (`--all-over` / `--closed` / `--all-streams`). */
 export function assertHistoryCompactTarget(
   id: string | undefined,
   bulk: { ids?: string[]; allOver?: number; scope?: HistoryCompactScope },
 ): void {
   const hasIds = bulk.ids !== undefined && bulk.ids.length > 0;
   const hasScan = bulk.allOver !== undefined || bulk.scope !== undefined;
-  const selectorCount = (id !== undefined ? 1 : 0) + (hasIds ? 1 : 0) + (hasScan ? 1 : 0);
+  const selectorCount =
+    (id !== undefined ? 1 : 0) + (hasIds ? 1 : 0) + (hasScan ? 1 : 0);
   if (selectorCount === 0) {
     throw new PmCliError(
       "history-compact: provide an item <id>, or a bulk selector (--ids, --all-over <N>, --closed, or --all-streams).",
@@ -566,7 +668,10 @@ async function collectHistoryCompactBulkCandidates(params: {
   pmRoot: string;
   settings: Awaited<ReturnType<typeof readSettings>>;
   typeToFolder: Record<string, string>;
-}): Promise<{ candidates: HistoryCompactBulkCandidate[]; preselectionErrors: HistoryCompactBulkItemResult[] }> {
+}): Promise<{
+  candidates: HistoryCompactBulkCandidate[];
+  preselectionErrors: HistoryCompactBulkItemResult[];
+}> {
   const statusRegistry = resolveRuntimeStatusRegistry(params.settings.schema);
   const classifier = lifecycleClassifierFromStatusRegistry(statusRegistry);
   const items = await listAllFrontMatterLight(
@@ -576,7 +681,9 @@ async function collectHistoryCompactBulkCandidates(params: {
     undefined,
     params.settings.schema,
   );
-  const bucketById = new Map(items.map((item) => [item.id, classifier.classify(item.status)] as const));
+  const bucketById = new Map(
+    items.map((item) => [item.id, classifier.classify(item.status)] as const),
+  );
   const historyDir = path.join(params.pmRoot, "history");
   const candidates: HistoryCompactBulkCandidate[] = [];
   const preselectionErrors: HistoryCompactBulkItemResult[] = [];
@@ -592,7 +699,11 @@ async function collectHistoryCompactBulkCandidates(params: {
     try {
       const raw = await fs.readFile(historyPath, "utf8");
       await runActiveOnReadHooks({ path: historyPath, scope: "project" });
-      candidates.push({ id, entries: countHistoryStreamEntries(raw), bucket: bucketById.get(id) ?? null });
+      candidates.push({
+        id,
+        entries: countHistoryStreamEntries(raw),
+        bucket: bucketById.get(id) ?? null,
+      });
     } catch (error) {
       preselectionErrors.push({
         id,
@@ -614,7 +725,12 @@ async function runHistoryCompactBulkRow(params: {
   options: HistoryCompactBulkCommandOptions;
   dryRun: boolean;
   global: GlobalOptions;
-}): Promise<{ result: HistoryCompactBulkItemResult; selected: boolean; compacted: boolean; errored: boolean }> {
+}): Promise<{
+  result: HistoryCompactBulkItemResult;
+  selected: boolean;
+  compacted: boolean;
+  errored: boolean;
+}> {
   if (!params.row.selected) {
     return {
       selected: false,
@@ -693,22 +809,34 @@ export async function runHistoryCompactBulk(
 ): Promise<HistoryCompactBulkResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const { candidates, preselectionErrors } = await collectHistoryCompactBulkCandidates({
-    pmRoot,
+  const typeRegistry = resolveItemTypeRegistry(
     settings,
-    typeToFolder: typeRegistry.type_to_folder,
-  });
+    getActiveExtensionRegistrations(),
+  );
+  const { candidates, preselectionErrors } =
+    await collectHistoryCompactBulkCandidates({
+      pmRoot,
+      settings,
+      typeToFolder: typeRegistry.type_to_folder,
+    });
 
-  const mode: "ids" | "scan" = options.ids !== undefined && options.ids.length > 0 ? "ids" : "scan";
-  const minEntries = options.minEntries ?? HISTORY_COMPACT_BULK_DEFAULT_MIN_ENTRIES;
+  const mode: "ids" | "scan" =
+    options.ids !== undefined && options.ids.length > 0 ? "ids" : "scan";
+  const minEntries =
+    options.minEntries ?? HISTORY_COMPACT_BULK_DEFAULT_MIN_ENTRIES;
   const policy = settings.history.compact_policy;
-  const policyThresholdApplied = mode === "scan" && options.allOver === undefined && policy.enabled;
-  const allOver = options.allOver ?? (policyThresholdApplied ? policy.max_entries : undefined);
+  const policyThresholdApplied =
+    mode === "scan" && options.allOver === undefined && policy.enabled;
+  const allOver =
+    options.allOver ??
+    (policyThresholdApplied ? policy.max_entries : undefined);
 
   const selection = selectHistoryCompactBulkTargets(candidates, {
     ids: options.ids,
@@ -727,7 +855,12 @@ export async function runHistoryCompactBulk(
     items_errored: preselectionErrors.length,
   };
   for (const row of selection) {
-    const outcome = await runHistoryCompactBulkRow({ row, options, dryRun, global });
+    const outcome = await runHistoryCompactBulkRow({
+      row,
+      options,
+      dryRun,
+      global,
+    });
     results.push(outcome.result);
     if (!outcome.selected) {
       totals.items_skipped += 1;

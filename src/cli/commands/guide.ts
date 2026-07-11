@@ -16,50 +16,58 @@ import {
   type GuideTopicDefinition,
 } from "../guide-topics.js";
 
+/** Supported values accepted by the guide output contract. */
 export const GUIDE_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;
-/**
- * Restricts guide output format values accepted by command, SDK, and storage contracts.
- */
+/** Restricts guide output format values accepted by command, SDK, and storage contracts. */
 export type GuideOutputFormat = (typeof GUIDE_OUTPUT_VALUES)[number];
 
+/** Supported values accepted by the guide depth contract. */
 export const GUIDE_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
-/**
- * Restricts guide depth values accepted by command, SDK, and storage contracts.
- */
+/** Restricts guide depth values accepted by command, SDK, and storage contracts. */
 export type GuideDepth = (typeof GUIDE_DEPTH_VALUES)[number];
 
-/**
- * Documents the guide options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the guide options payload exchanged by command, SDK, and package integrations. */
 export interface GuideOptions {
+  /** Value that configures or reports topic for this contract. */
   topic?: string;
+  /** Value that configures or reports list for this contract. */
   list?: boolean;
+  /** Value that configures or reports format for this contract. */
   format?: string;
+  /** Value that configures or reports depth for this contract. */
   depth?: string;
   [key: string]: unknown;
 }
 
-/**
- * Documents the guide doc render payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the guide doc render payload exchanged by command, SDK, and package integrations. */
 export interface GuideDocRender {
+  /** Filesystem path used for path resolution. */
   path: string;
+  /** Value that configures or reports purpose for this contract. */
   purpose: string;
+  /** Value that configures or reports optional for this contract. */
   optional: boolean;
+  /** Value that configures or reports exists for this contract. */
   exists: boolean;
+  /** Number of line entries represented by this result. */
   line_count: number | null;
+  /** Strategy used to control content behavior. */
   content_mode: "none" | "excerpt" | "full";
+  /** Value that configures or reports content for this contract. */
   content: string | null;
+  /** Value that configures or reports truncated for this contract. */
   truncated: boolean;
 }
 
-/**
- * Documents the guide index result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the guide index result payload exchanged by command, SDK, and package integrations. */
 export interface GuideIndexResult {
+  /** Value that configures or reports output default for this contract. */
   output_default: "toon";
+  /** Value that configures or reports mode for this contract. */
   mode: "index";
+  /** Value that configures or reports depth for this contract. */
   depth: GuideDepth;
+  /** Value that configures or reports topics for this contract. */
   topics: Array<{
     id: string;
     aliases: string[];
@@ -70,45 +78,58 @@ export interface GuideIndexResult {
     docs: Array<{ path: string; purpose: string }>;
     related: string[];
   }>;
+  /** Value that configures or reports suggested next steps for this contract. */
   suggested_next_steps: string[];
 }
 
-/**
- * Documents the guide topic result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the guide topic result payload exchanged by command, SDK, and package integrations. */
 export interface GuideTopicResult {
+  /** Value that configures or reports output default for this contract. */
   output_default: "toon";
+  /** Value that configures or reports mode for this contract. */
   mode: "topic";
+  /** Value that configures or reports depth for this contract. */
   depth: GuideDepth;
+  /** Value that configures or reports requested topic for this contract. */
   requested_topic: string;
+  /** Value that configures or reports topic for this contract. */
   topic: GuideTopicDefinition;
+  /** Value that configures or reports docs for this contract. */
   docs: GuideDocRender[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
-/**
- * Restricts guide result values accepted by command, SDK, and storage contracts.
- */
+/** Restricts guide result values accepted by command, SDK, and storage contracts. */
 export type GuideResult = GuideIndexResult | GuideTopicResult;
 
-function parseGuideOutputFormat(raw: string | undefined): GuideOutputFormat | undefined {
+function parseGuideOutputFormat(
+  raw: string | undefined,
+): GuideOutputFormat | undefined {
   if (!raw) {
     return undefined;
   }
   const normalized = raw.trim().toLowerCase();
   if (!GUIDE_OUTPUT_VALUES.includes(normalized as GuideOutputFormat)) {
-    throw new PmCliError("Guide format must be one of markdown|toon|json", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Guide format must be one of markdown|toon|json",
+      EXIT_CODE.USAGE,
+    );
   }
   return normalized as GuideOutputFormat;
 }
 
-/**
- * Implements resolve guide output format for the public runtime surface of this module.
- */
-export function resolveGuideOutputFormat(options: GuideOptions, global: GlobalOptions): GuideOutputFormat {
+/** Implements resolve guide output format for the public runtime surface of this module. */
+export function resolveGuideOutputFormat(
+  options: GuideOptions,
+  global: GlobalOptions,
+): GuideOutputFormat {
   const commandFormat = parseGuideOutputFormat(options.format);
   if (global.json && commandFormat && commandFormat !== "json") {
-    throw new PmCliError("Cannot combine --json with --format markdown|toon", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Cannot combine --json with --format markdown|toon",
+      EXIT_CODE.USAGE,
+    );
   }
   if (global.json) {
     return "json";
@@ -122,20 +143,32 @@ function parseGuideDepth(raw: string | undefined): GuideDepth {
   }
   const normalized = raw.trim().toLowerCase();
   if (!GUIDE_DEPTH_VALUES.includes(normalized as GuideDepth)) {
-    throw new PmCliError("Guide depth must be one of brief|standard|deep", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Guide depth must be one of brief|standard|deep",
+      EXIT_CODE.USAGE,
+    );
   }
   return normalized as GuideDepth;
 }
 
 function resolvePackageRoot(): string {
-  return resolveConfiguredPmPackageRoot(process.env, "PM_CLI_PACKAGE_ROOT", import.meta.url, ["..", "..", ".."]);
+  return resolveConfiguredPmPackageRoot(
+    process.env,
+    "PM_CLI_PACKAGE_ROOT",
+    import.meta.url,
+    ["..", "..", ".."],
+  );
 }
 
 function normalizeLineEndings(value: string): string {
   return value.replaceAll("\r\n", "\n");
 }
 
-function toExcerpt(content: string, maxLines: number, maxCharacters: number): { excerpt: string; truncated: boolean; lineCount: number } {
+function toExcerpt(
+  content: string,
+  maxLines: number,
+  maxCharacters: number,
+): { excerpt: string; truncated: boolean; lineCount: number } {
   const normalized = normalizeLineEndings(content);
   const lines = normalized.split("\n");
   const lineSlice = lines.slice(0, maxLines);
@@ -152,9 +185,17 @@ function toExcerpt(content: string, maxLines: number, maxCharacters: number): { 
   };
 }
 
-async function renderGuideDocs(topic: GuideTopicDefinition, depth: GuideDepth, packageRoot: string): Promise<GuideDocRender[]> {
+async function renderGuideDocs(
+  topic: GuideTopicDefinition,
+  depth: GuideDepth,
+  packageRoot: string,
+): Promise<GuideDocRender[]> {
   const includeContent = depth !== "brief";
-  const contentMode: GuideDocRender["content_mode"] = includeContent ? (depth === "deep" ? "full" : "excerpt") : "none";
+  const contentMode: GuideDocRender["content_mode"] = includeContent
+    ? depth === "deep"
+      ? "full"
+      : "excerpt"
+    : "none";
   const docs: GuideDocRender[] = [];
   for (const doc of topic.docs) {
     const absolutePath = path.resolve(packageRoot, doc.path);
@@ -180,7 +221,8 @@ async function renderGuideDocs(topic: GuideTopicDefinition, depth: GuideDepth, p
           purpose: doc.purpose,
           optional: doc.optional === true,
           exists: true,
-          line_count: normalized.length === 0 ? 0 : normalized.split("\n").length,
+          line_count:
+            normalized.length === 0 ? 0 : normalized.split("\n").length,
           content_mode: "full",
           content: normalized,
           truncated: false,
@@ -212,7 +254,10 @@ async function renderGuideDocs(topic: GuideTopicDefinition, depth: GuideDepth, p
         truncated: false,
       });
       if (!missing) {
-        throw new PmCliError(`Failed to read guide document "${doc.path}".`, EXIT_CODE.GENERIC_FAILURE);
+        throw new PmCliError(
+          `Failed to read guide document "${doc.path}".`,
+          EXIT_CODE.GENERIC_FAILURE,
+        );
       }
     }
   }
@@ -226,7 +271,10 @@ function buildGuideIndex(depth: GuideDepth): GuideIndexResult {
     title: topic.title,
     summary: topic.summary,
     intent: topic.intent,
-    quick_commands: depth === "brief" ? topic.commands.slice(0, 3) : topic.commands.slice(0, 6),
+    quick_commands:
+      depth === "brief"
+        ? topic.commands.slice(0, 3)
+        : topic.commands.slice(0, 6),
     docs: topic.docs.map((doc) => ({ path: doc.path, purpose: doc.purpose })),
     related: topic.related,
   }));
@@ -256,13 +304,17 @@ function ensureGuideTopic(topic: string): GuideTopicDefinition {
   );
 }
 
-/**
- * Implements run guide for the public runtime surface of this module.
- */
-export async function runGuide(options: GuideOptions, global: GlobalOptions): Promise<GuideResult> {
-  const depth = parseGuideDepth(typeof options.depth === "string" ? options.depth : undefined);
+/** Implements run guide for the public runtime surface of this module. */
+export async function runGuide(
+  options: GuideOptions,
+  global: GlobalOptions,
+): Promise<GuideResult> {
+  const depth = parseGuideDepth(
+    typeof options.depth === "string" ? options.depth : undefined,
+  );
   const listRequested = options.list === true;
-  const topicRaw = typeof options.topic === "string" ? options.topic : undefined;
+  const topicRaw =
+    typeof options.topic === "string" ? options.topic : undefined;
   if (listRequested || !topicRaw) {
     return buildGuideIndex(depth);
   }
@@ -285,6 +337,7 @@ export async function runGuide(options: GuideOptions, global: GlobalOptions): Pr
   };
 }
 
+/** Public contract for test only guide, shared by SDK and presentation-layer consumers. */
 export const _testOnlyGuide = {
   ensureGuideTopic,
 };
@@ -293,9 +346,7 @@ function markdownCodeFence(content: string): string {
   return content.replaceAll("```", "``\\`");
 }
 
-/**
- * Implements render guide markdown for the public runtime surface of this module.
- */
+/** Implements render guide markdown for the public runtime surface of this module. */
 export function renderGuideMarkdown(result: GuideResult): string {
   if (result.mode === "index") {
     const lines: string[] = [
@@ -309,7 +360,9 @@ export function renderGuideMarkdown(result: GuideResult): string {
       lines.push(`- \`${topic.id}\` - ${topic.summary}`);
       if (result.depth !== "brief") {
         lines.push(`  - intent: ${topic.intent}`);
-        lines.push(`  - docs: ${topic.docs.map((doc) => `\`${doc.path}\``).join(", ")}`);
+        lines.push(
+          `  - docs: ${topic.docs.map((doc) => `\`${doc.path}\``).join(", ")}`,
+        );
       }
     }
     lines.push("", "## Next steps");
@@ -342,7 +395,11 @@ export function renderGuideMarkdown(result: GuideResult): string {
   }
   lines.push("## Documents");
   for (const doc of result.docs) {
-    const status = doc.exists ? "available" : doc.optional ? "missing (optional)" : "missing (required)";
+    const status = doc.exists
+      ? "available"
+      : doc.optional
+        ? "missing (optional)"
+        : "missing (required)";
     lines.push(`- \`${doc.path}\` - ${doc.purpose} (${status})`);
     if (doc.exists && doc.content_mode !== "none" && doc.content) {
       lines.push("");

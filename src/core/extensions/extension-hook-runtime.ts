@@ -40,7 +40,9 @@ import type {
 type HookName = keyof ExtensionHookRegistry;
 
 async function executeRegisteredHooks<TContext>(
-  entries: Array<RegisteredExtensionHook<(context: TContext) => Promise<void> | void>>,
+  entries: Array<
+    RegisteredExtensionHook<(context: TContext) => Promise<void> | void>
+  >,
   hookName: HookName,
   context: TContext,
 ): Promise<string[]> {
@@ -49,15 +51,15 @@ async function executeRegisteredHooks<TContext>(
     try {
       await entry.run(cloneContextSnapshot(context));
     } catch {
-      warnings.push(`extension_hook_failed:${entry.layer}:${entry.name}:${hookName}`);
+      warnings.push(
+        `extension_hook_failed:${entry.layer}:${entry.name}:${hookName}`,
+      );
     }
   }
   return warnings;
 }
 
-/**
- * Implements run before command hooks for the public runtime surface of this module.
- */
+/** Implements run before command hooks for the public runtime surface of this module. */
 export async function runBeforeCommandHooks(
   hooks: ExtensionHookRegistry,
   context: BeforeCommandHookContext,
@@ -65,9 +67,7 @@ export async function runBeforeCommandHooks(
   return executeRegisteredHooks(hooks.beforeCommand, "beforeCommand", context);
 }
 
-/**
- * Implements run after command hooks for the public runtime surface of this module.
- */
+/** Implements run after command hooks for the public runtime surface of this module. */
 export async function runAfterCommandHooks(
   hooks: ExtensionHookRegistry,
   context: AfterCommandHookContext,
@@ -75,34 +75,31 @@ export async function runAfterCommandHooks(
   return executeRegisteredHooks(hooks.afterCommand, "afterCommand", context);
 }
 
-/**
- * Implements run on write hooks for the public runtime surface of this module.
- */
-export async function runOnWriteHooks(hooks: ExtensionHookRegistry, context: OnWriteHookContext): Promise<string[]> {
+/** Implements run on write hooks for the public runtime surface of this module. */
+export async function runOnWriteHooks(
+  hooks: ExtensionHookRegistry,
+  context: OnWriteHookContext,
+): Promise<string[]> {
   return executeRegisteredHooks(hooks.onWrite, "onWrite", context);
 }
 
-/**
- * Implements run on read hooks for the public runtime surface of this module.
- */
-export async function runOnReadHooks(hooks: ExtensionHookRegistry, context: OnReadHookContext): Promise<string[]> {
+/** Implements run on read hooks for the public runtime surface of this module. */
+export async function runOnReadHooks(
+  hooks: ExtensionHookRegistry,
+  context: OnReadHookContext,
+): Promise<string[]> {
   return executeRegisteredHooks(hooks.onRead, "onRead", context);
 }
 
-/**
- * Implements run on index hooks for the public runtime surface of this module.
- */
-export async function runOnIndexHooks(hooks: ExtensionHookRegistry, context: OnIndexHookContext): Promise<string[]> {
+/** Implements run on index hooks for the public runtime surface of this module. */
+export async function runOnIndexHooks(
+  hooks: ExtensionHookRegistry,
+  context: OnIndexHookContext,
+): Promise<string[]> {
   return executeRegisteredHooks(hooks.onIndex, "onIndex", context);
 }
 
-
-
-/**
- * Normalize an extension handler failure into a single-line, length-bounded
- * message so the real cause can be surfaced to the user/CI without leaking
- * multi-line stack noise or unbounded payloads.
- */
+/** Normalize an extension handler failure into a single-line, length-bounded message so the real cause can be surfaced to the user/CI without leaking multi-line stack noise or unbounded payloads. */
 function describeHandlerError(error: unknown): string {
   let raw = "";
   if (error instanceof Error && typeof error.message === "string") {
@@ -123,12 +120,12 @@ function describeHandlerError(error: unknown): string {
     return "";
   }
   const maxLength = 300;
-  return normalized.length > maxLength ? `${normalized.slice(0, maxLength - 1)}…` : normalized;
+  return normalized.length > maxLength
+    ? `${normalized.slice(0, maxLength - 1)}…`
+    : normalized;
 }
 
-/**
- * Implements run command handler for the public runtime surface of this module.
- */
+/** Implements run command handler for the public runtime surface of this module. */
 export async function runCommandHandler(
   commands: ExtensionCommandRegistry,
   context: CommandHandlerContext,
@@ -142,7 +139,9 @@ export async function runCommandHandler(
     };
   }
 
-  const matched = [...commands.handlers].reverse().find((entry) => entry.command === command);
+  const matched = [...commands.handlers]
+    .reverse()
+    .find((entry) => entry.command === command);
   if (!matched) {
     return {
       handled: false,
@@ -175,16 +174,15 @@ export async function runCommandHandler(
     return {
       handled: false,
       result: null,
-      warnings: [`extension_command_handler_failed:${matched.layer}:${matched.name}:${matched.command}`],
+      warnings: [
+        `extension_command_handler_failed:${matched.layer}:${matched.name}:${matched.command}`,
+      ],
       errorMessage: describeHandlerError(error),
     };
   }
 }
 
-
-/**
- * Implements run parser override for the public runtime surface of this module.
- */
+/** Implements run parser override for the public runtime surface of this module. */
 export async function runParserOverride(
   parsers: ExtensionParserRegistry,
   context: ParserOverrideContext,
@@ -204,7 +202,9 @@ export async function runParserOverride(
     };
   }
 
-  const matched = [...parsers.overrides].reverse().find((entry) => entry.command === command);
+  const matched = [...parsers.overrides]
+    .reverse()
+    .find((entry) => entry.command === command);
   if (!matched) {
     return {
       overridden: false,
@@ -220,18 +220,25 @@ export async function runParserOverride(
   }
 
   try {
-    const delta = (await Promise.resolve(
-      matched.run({
-        command,
-        args: cloneContextSnapshot(context.args),
-        options: cloneCommandOptionsSnapshot(context.options),
-        global: cloneGlobalOptionsSnapshot(context.global),
-        pm_root: context.pm_root,
-      }),
-    )) ?? {};
-    const nextArgs = Array.isArray(delta.args) ? cloneContextSnapshot(delta.args) : cloneContextSnapshot(context.args);
-    const nextOptions = delta.options ? cloneCommandOptionsSnapshot(delta.options) : cloneCommandOptionsSnapshot(context.options);
-    const nextGlobal = delta.global ? cloneGlobalOptionsSnapshot(delta.global) : cloneGlobalOptionsSnapshot(context.global);
+    const delta =
+      (await Promise.resolve(
+        matched.run({
+          command,
+          args: cloneContextSnapshot(context.args),
+          options: cloneCommandOptionsSnapshot(context.options),
+          global: cloneGlobalOptionsSnapshot(context.global),
+          pm_root: context.pm_root,
+        }),
+      )) ?? {};
+    const nextArgs = Array.isArray(delta.args)
+      ? cloneContextSnapshot(delta.args)
+      : cloneContextSnapshot(context.args);
+    const nextOptions = delta.options
+      ? cloneCommandOptionsSnapshot(delta.options)
+      : cloneCommandOptionsSnapshot(context.options);
+    const nextGlobal = delta.global
+      ? cloneGlobalOptionsSnapshot(delta.global)
+      : cloneGlobalOptionsSnapshot(context.global);
     return {
       overridden: true,
       context: {
@@ -253,15 +260,14 @@ export async function runParserOverride(
         global: cloneGlobalOptionsSnapshot(context.global),
         pm_root: context.pm_root,
       },
-      warnings: [`extension_parser_override_failed:${matched.layer}:${matched.name}:${matched.command}`],
+      warnings: [
+        `extension_parser_override_failed:${matched.layer}:${matched.name}:${matched.command}`,
+      ],
     };
   }
 }
 
-
-/**
- * Implements run preflight override for the public runtime surface of this module.
- */
+/** Implements run preflight override for the public runtime surface of this module. */
 export async function runPreflightOverride(
   preflight: ExtensionPreflightRegistry,
   context: PreflightOverrideContext,
@@ -274,7 +280,9 @@ export async function runPreflightOverride(
     global: cloneGlobalOptionsSnapshot(context.global),
     pm_root: context.pm_root,
   };
-  const baseDecision: PreflightRuntimeDecision = cloneContextSnapshot(context.decision);
+  const baseDecision: PreflightRuntimeDecision = cloneContextSnapshot(
+    context.decision,
+  );
   if (!matched) {
     return {
       overridden: false,
@@ -285,21 +293,28 @@ export async function runPreflightOverride(
   }
 
   try {
-    const delta = (await Promise.resolve(
-      matched.run({
-        command: baseContext.command,
-        args: cloneContextSnapshot(baseContext.args),
-        options: cloneCommandOptionsSnapshot(baseContext.options),
-        global: cloneGlobalOptionsSnapshot(baseContext.global),
-        pm_root: baseContext.pm_root,
-        decision: cloneContextSnapshot(baseDecision),
-      }),
-    )) ?? {};
+    const delta =
+      (await Promise.resolve(
+        matched.run({
+          command: baseContext.command,
+          args: cloneContextSnapshot(baseContext.args),
+          options: cloneCommandOptionsSnapshot(baseContext.options),
+          global: cloneGlobalOptionsSnapshot(baseContext.global),
+          pm_root: baseContext.pm_root,
+          decision: cloneContextSnapshot(baseDecision),
+        }),
+      )) ?? {};
     const nextContext: CommandHandlerContext = {
       command: baseContext.command,
-      args: Array.isArray(delta.args) ? cloneContextSnapshot(delta.args) : baseContext.args,
-      options: delta.options ? cloneCommandOptionsSnapshot(delta.options) : baseContext.options,
-      global: delta.global ? cloneGlobalOptionsSnapshot(delta.global) : baseContext.global,
+      args: Array.isArray(delta.args)
+        ? cloneContextSnapshot(delta.args)
+        : baseContext.args,
+      options: delta.options
+        ? cloneCommandOptionsSnapshot(delta.options)
+        : baseContext.options,
+      global: delta.global
+        ? cloneGlobalOptionsSnapshot(delta.global)
+        : baseContext.global,
       pm_root: baseContext.pm_root,
     };
     const nextDecision: PreflightRuntimeDecision = {
@@ -331,13 +346,16 @@ export async function runPreflightOverride(
       overridden: false,
       context: baseContext,
       decision: baseDecision,
-      warnings: [`extension_preflight_override_failed:${matched.layer}:${matched.name}`],
+      warnings: [
+        `extension_preflight_override_failed:${matched.layer}:${matched.name}`,
+      ],
     };
   }
 }
 
-
-function resolveDefaultServiceResult(context: ServiceOverrideContext): ServiceOverrideResult {
+function resolveDefaultServiceResult(
+  context: ServiceOverrideContext,
+): ServiceOverrideResult {
   return {
     handled: false,
     result: context.payload,
@@ -345,14 +363,39 @@ function resolveDefaultServiceResult(context: ServiceOverrideContext): ServiceOv
   };
 }
 
-/**
- * Implements run service override sync for the public runtime surface of this module.
- */
+function matchingServiceOverrides(
+  services: ExtensionServiceRegistry,
+  service: ServiceOverrideContext["service"],
+) {
+  return [...services.overrides]
+    .reverse()
+    .filter((entry) => entry.service === service);
+}
+
+function buildServiceOverrideContext(context: ServiceOverrideContext) {
+  return {
+    service: context.service,
+    command: context.command
+      ? normalizeCommandName(context.command)
+      : undefined,
+    args: context.args ? cloneContextSnapshot(context.args) : undefined,
+    options: context.options
+      ? cloneCommandOptionsSnapshot(context.options)
+      : undefined,
+    global: context.global
+      ? cloneGlobalOptionsSnapshot(context.global)
+      : undefined,
+    pm_root: context.pm_root,
+    payload: cloneContextSnapshot(context.payload),
+  };
+}
+
+/** Implements run service override sync for the public runtime surface of this module. */
 export function runServiceOverrideSync(
   services: ExtensionServiceRegistry,
   context: ServiceOverrideContext,
 ): ServiceOverrideResult {
-  const matches = [...services.overrides].reverse().filter((entry) => entry.service === context.service);
+  const matches = matchingServiceOverrides(services, context.service);
   if (matches.length === 0) {
     return resolveDefaultServiceResult(context);
   }
@@ -360,21 +403,20 @@ export function runServiceOverrideSync(
   const warnings: string[] = [];
   for (const matched of matches) {
     try {
-      const serviceContext = {
-        service: context.service,
-        command: context.command ? normalizeCommandName(context.command) : undefined,
-        args: context.args ? cloneContextSnapshot(context.args) : undefined,
-        options: context.options ? cloneCommandOptionsSnapshot(context.options) : undefined,
-        global: context.global ? cloneGlobalOptionsSnapshot(context.global) : undefined,
-        pm_root: context.pm_root,
-        payload: cloneContextSnapshot(context.payload),
-      };
+      const serviceContext = buildServiceOverrideContext(context);
       const result = matched.run(serviceContext);
       if (result instanceof Promise) {
-        warnings.push(`extension_service_override_async_unsupported:${matched.layer}:${matched.name}:${matched.service}`);
+        warnings.push(
+          `extension_service_override_async_unsupported:${matched.layer}:${matched.name}:${matched.service}`,
+        );
         continue;
       }
-      if (context.service === "output_format" && (result === null || result === undefined || result === serviceContext.payload)) {
+      if (
+        context.service === "output_format" &&
+        (result === null ||
+          result === undefined ||
+          result === serviceContext.payload)
+      ) {
         continue;
       }
       return {
@@ -383,7 +425,9 @@ export function runServiceOverrideSync(
         warnings,
       };
     } catch {
-      warnings.push(`extension_service_override_failed:${matched.layer}:${matched.name}:${matched.service}`);
+      warnings.push(
+        `extension_service_override_failed:${matched.layer}:${matched.name}:${matched.service}`,
+      );
     }
   }
   return {
@@ -393,14 +437,12 @@ export function runServiceOverrideSync(
   };
 }
 
-/**
- * Implements run service override for the public runtime surface of this module.
- */
+/** Implements run service override for the public runtime surface of this module. */
 export async function runServiceOverride(
   services: ExtensionServiceRegistry,
   context: ServiceOverrideContext,
 ): Promise<ServiceOverrideResult> {
-  const matches = [...services.overrides].reverse().filter((entry) => entry.service === context.service);
+  const matches = matchingServiceOverrides(services, context.service);
   if (matches.length === 0) {
     return resolveDefaultServiceResult(context);
   }
@@ -408,17 +450,14 @@ export async function runServiceOverride(
   const warnings: string[] = [];
   for (const matched of matches) {
     try {
-      const serviceContext = {
-        service: context.service,
-        command: context.command ? normalizeCommandName(context.command) : undefined,
-        args: context.args ? cloneContextSnapshot(context.args) : undefined,
-        options: context.options ? cloneCommandOptionsSnapshot(context.options) : undefined,
-        global: context.global ? cloneGlobalOptionsSnapshot(context.global) : undefined,
-        pm_root: context.pm_root,
-        payload: cloneContextSnapshot(context.payload),
-      };
+      const serviceContext = buildServiceOverrideContext(context);
       const result = await Promise.resolve(matched.run(serviceContext));
-      if (context.service === "output_format" && (result === null || result === undefined || result === serviceContext.payload)) {
+      if (
+        context.service === "output_format" &&
+        (result === null ||
+          result === undefined ||
+          result === serviceContext.payload)
+      ) {
         continue;
       }
       return {
@@ -427,7 +466,9 @@ export async function runServiceOverride(
         warnings,
       };
     } catch {
-      warnings.push(`extension_service_override_failed:${matched.layer}:${matched.name}:${matched.service}`);
+      warnings.push(
+        `extension_service_override_failed:${matched.layer}:${matched.name}:${matched.service}`,
+      );
     }
   }
   return {
@@ -437,9 +478,7 @@ export async function runServiceOverride(
   };
 }
 
-/**
- * Implements run command override for the public runtime surface of this module.
- */
+/** Implements run command override for the public runtime surface of this module. */
 export function runCommandOverride(
   commands: ExtensionCommandRegistry,
   context: CommandOverrideContext,
@@ -453,7 +492,9 @@ export function runCommandOverride(
     };
   }
 
-  const matched = [...commands.overrides].reverse().find((entry) => entry.command === command);
+  const matched = [...commands.overrides]
+    .reverse()
+    .find((entry) => entry.command === command);
   if (!matched) {
     return {
       overridden: false,
@@ -477,7 +518,9 @@ export function runCommandOverride(
       return {
         overridden: false,
         result: context.result,
-        warnings: [`extension_command_override_async_unsupported:${matched.layer}:${matched.name}:${matched.command}`],
+        warnings: [
+          `extension_command_override_async_unsupported:${matched.layer}:${matched.name}:${matched.command}`,
+        ],
       };
     }
     return {
@@ -489,20 +532,21 @@ export function runCommandOverride(
     return {
       overridden: false,
       result: context.result,
-      warnings: [`extension_command_override_failed:${matched.layer}:${matched.name}:${matched.command}`],
+      warnings: [
+        `extension_command_override_failed:${matched.layer}:${matched.name}:${matched.command}`,
+      ],
     };
   }
 }
 
-
-/**
- * Implements run renderer override for the public runtime surface of this module.
- */
+/** Implements run renderer override for the public runtime surface of this module. */
 export function runRendererOverride(
   renderers: ExtensionRendererRegistry,
   context: RendererOverrideContext,
 ): RendererOverrideResult {
-  const matched = [...renderers.overrides].reverse().find((entry) => entry.format === context.format);
+  const matched = [...renderers.overrides]
+    .reverse()
+    .find((entry) => entry.format === context.format);
   if (!matched) {
     return {
       overridden: false,
@@ -512,11 +556,17 @@ export function runRendererOverride(
   }
 
   try {
-    const rendererCommand = typeof context.command === "string" ? normalizeCommandName(context.command) : "";
-    const rendererArgs = Array.isArray(context.args) ? cloneContextSnapshot(context.args) : [];
+    const rendererCommand =
+      typeof context.command === "string"
+        ? normalizeCommandName(context.command)
+        : "";
+    const rendererArgs = Array.isArray(context.args)
+      ? cloneContextSnapshot(context.args)
+      : [];
     const rendererOptions = cloneCommandOptionsSnapshot(context.options);
     const rendererGlobal = cloneGlobalOptionsSnapshot(context.global);
-    const rendererPmRoot = typeof context.pm_root === "string" ? context.pm_root : "";
+    const rendererPmRoot =
+      typeof context.pm_root === "string" ? context.pm_root : "";
     const rendered = matched.run({
       format: context.format,
       command: rendererCommand,
@@ -537,7 +587,9 @@ export function runRendererOverride(
       return {
         overridden: false,
         rendered: null,
-        warnings: [`extension_renderer_invalid_result:${matched.layer}:${matched.name}:${matched.format}`],
+        warnings: [
+          `extension_renderer_invalid_result:${matched.layer}:${matched.name}:${matched.format}`,
+        ],
       };
     }
     return {
@@ -549,7 +601,9 @@ export function runRendererOverride(
     return {
       overridden: false,
       rendered: null,
-      warnings: [`extension_renderer_failed:${matched.layer}:${matched.name}:${matched.format}`],
+      warnings: [
+        `extension_renderer_failed:${matched.layer}:${matched.name}:${matched.format}`,
+      ],
     };
   }
 }

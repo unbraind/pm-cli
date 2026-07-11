@@ -13,12 +13,18 @@ import {
   computeActionabilityReport,
   type ActionableEntry,
 } from "../../core/item/actionability.js";
-import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
+import {
+  resolveRuntimeStatusRegistry,
+  type RuntimeStatusRegistry,
+} from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { normalizeStatusInput, normalizeStatusForRegistry } from "../../core/item/status.js";
+import {
+  normalizeStatusInput,
+  normalizeStatusForRegistry,
+} from "../../core/item/status.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus } from "../../types/index.js";
@@ -36,31 +42,41 @@ import {
 import { runList, type ListOptions } from "./list.js";
 import { scoreContextCandidatesWithActiveExtensions } from "../../sdk/context-relevance.js";
 
+/** Supported values accepted by the next output contract. */
 export const NEXT_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;
-/**
- * Restricts `pm next` output format values accepted by command, SDK, and storage contracts.
- */
+/** Restricts `pm next` output format values accepted by command, SDK, and storage contracts. */
 export type NextOutputFormat = (typeof NEXT_OUTPUT_VALUES)[number];
 
 const DEFAULT_NEXT_LIMIT = 5;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-/**
- * Documents the `pm next` options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the `pm next` options payload exchanged by command, SDK, and package integrations. */
 export interface NextOptions {
+  /** Schema type that determines the shape and validation rules for this value. */
   type?: string;
+  /** Value that configures or reports tag for this contract. */
   tag?: string;
+  /** Value that configures or reports priority for this contract. */
   priority?: string;
+  /** Value that configures or reports assignee for this contract. */
   assignee?: string;
+  /** Value that configures or reports assignee filter for this contract. */
   assigneeFilter?: string;
+  /** Value that configures or reports sprint for this contract. */
   sprint?: string;
+  /** Value that configures or reports release for this contract. */
   release?: string;
+  /** Value that configures or reports parent for this contract. */
   parent?: string;
+  /** Value that configures or reports limit for this contract. */
   limit?: string;
+  /** Value that configures or reports blocked limit for this contract. */
   blockedLimit?: string;
+  /** Value that configures or reports ready only for this contract. */
   readyOnly?: boolean;
+  /** Value that configures or reports format for this contract. */
   format?: string;
+  /** Value that configures or reports explain ranking for this contract. */
   explainRanking?: boolean;
   /** Internal caller override used to align claim-next ranking with --author. */
   callerAuthor?: string;
@@ -69,8 +85,11 @@ export interface NextOptions {
 
 /** A blocker reference projected onto the `pm next` output. */
 export interface NextBlockerRef {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports title for this contract. */
   title: string | null;
+  /** Lifecycle state reported for status. */
   status: ItemStatus | null;
 }
 
@@ -80,13 +99,17 @@ export interface NextBlockerRef {
  * would unblock.
  */
 export interface NextActionableItem extends ContextFocusItem {
+  /** Number of open blocker entries represented by this result. */
   open_blocker_count: number;
+  /** Value that configures or reports blockers for this contract. */
   blockers: NextBlockerRef[];
+  /** Value that configures or reports unblocks for this contract. */
   unblocks: string[];
 }
 
 /** The single recommended next item: an actionable row plus its rationale. */
 export interface NextRecommendation extends NextActionableItem {
+  /** Value that configures or reports reasons for this contract. */
   reasons: string[];
 }
 
@@ -99,17 +122,23 @@ interface NextSummary {
   containers: number;
 }
 
-/**
- * Documents the `pm next` result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the `pm next` result payload exchanged by command, SDK, and package integrations. */
 export interface NextResult {
+  /** Value that configures or reports output default for this contract. */
   output_default: "toon";
+  /** Value that configures or reports now for this contract. */
   now: string;
+  /** Value that configures or reports recommended for this contract. */
   recommended: NextRecommendation | null;
+  /** Value that configures or reports ready for this contract. */
   ready: NextActionableItem[];
+  /** Value that configures or reports blocked for this contract. */
   blocked: NextActionableItem[];
+  /** Value that configures or reports held by others for this contract. */
   held_by_others: Array<{ id: string; assignee: string }>;
+  /** Value that configures or reports summary for this contract. */
   summary: NextSummary;
+  /** Value that configures or reports filters for this contract. */
   filters: {
     type: string | null;
     tag: string | null;
@@ -123,29 +152,39 @@ export interface NextResult {
     blocked_limit: number;
     ready_only: boolean;
   };
+  /** Value that configures or reports suggestions for this contract. */
   suggestions?: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings?: string[];
+  /** Value that configures or reports ranking for this contract. */
   ranking?: ContextRankingSummary;
 }
 
-function parseNextOutputFormat(raw: string | undefined): NextOutputFormat | undefined {
+function parseNextOutputFormat(
+  raw: string | undefined,
+): NextOutputFormat | undefined {
   if (!raw) return undefined;
   const normalized = raw.trim().toLowerCase();
   if (!NEXT_OUTPUT_VALUES.includes(normalized as NextOutputFormat)) {
-    throw new PmCliError("Next format must be one of markdown|toon|json", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Next format must be one of markdown|toon|json",
+      EXIT_CODE.USAGE,
+    );
   }
   return normalized as NextOutputFormat;
 }
 
-/**
- * Resolves the effective `pm next` output format from the command `--format` flag
- * and the global `--json` switch, rejecting the contradictory `--json --format
- * markdown|toon` combination. Defaults to `toon`.
- */
-export function resolveNextOutputFormat(options: NextOptions, global: GlobalOptions): NextOutputFormat {
+/** Resolves the effective `pm next` output format from the command `--format` flag and the global `--json` switch, rejecting the contradictory `--json --format markdown|toon` combination. Defaults to `toon`. */
+export function resolveNextOutputFormat(
+  options: NextOptions,
+  global: GlobalOptions,
+): NextOutputFormat {
   const commandFormat = parseNextOutputFormat(options.format);
   if (global.json && commandFormat && commandFormat !== "json") {
-    throw new PmCliError("Cannot combine --json with --format markdown|toon", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Cannot combine --json with --format markdown|toon",
+      EXIT_CODE.USAGE,
+    );
   }
   if (global.json) {
     return "json";
@@ -155,7 +194,11 @@ export function resolveNextOutputFormat(options: NextOptions, global: GlobalOpti
 
 // Per-section row cap. A non-positive or absent value falls back to the default;
 // invalid (non-integer) values throw via parseIntegerLimit.
-function parseNextLimit(raw: string | undefined, flag: string, fallback: number): number {
+function parseNextLimit(
+  raw: string | undefined,
+  flag: string,
+  fallback: number,
+): number {
   const parsed = parseIntegerLimit(raw, flag);
   if (parsed === undefined || parsed <= 0) return fallback;
   return parsed;
@@ -171,7 +214,11 @@ function toNextActionableItem(
   return {
     ...toContextFocusItem(entry.item, statusRegistry, childrenByParent),
     open_blocker_count: entry.open_blockers.length,
-    blockers: entry.open_blockers.map((blocker) => ({ id: blocker.id, title: blocker.title, status: blocker.status })),
+    blockers: entry.open_blockers.map((blocker) => ({
+      id: blocker.id,
+      title: blocker.title,
+      status: blocker.status,
+    })),
     unblocks: entry.unblocks,
   };
 }
@@ -196,16 +243,24 @@ function buildRecommendationReasons(
   if (completedContainer) {
     reasons.push("completed container — governance closeout");
   }
-  reasons.push(`priority p${item.priority}${item.priority === 0 ? " (highest)" : ""}`);
+  reasons.push(
+    `priority p${item.priority}${item.priority === 0 ? " (highest)" : ""}`,
+  );
   if (typeof item.deadline === "string" && item.deadline.trim().length > 0) {
     reasons.push(describeDeadline(item.deadline, now));
   }
-  reasons.push(collectBlockedByIds(item).length > 0 ? "all blockers resolved" : "no blockers");
+  reasons.push(
+    collectBlockedByIds(item).length > 0
+      ? "all blockers resolved"
+      : "no blockers",
+  );
   if (typeof item.parent === "string" && item.parent.trim().length > 0) {
     reasons.push(`advances ${item.parent.trim()}`);
   }
   if (entry.unblocks.length > 0) {
-    reasons.push(`unblocks ${entry.unblocks.length} item(s): ${entry.unblocks.join(", ")}`);
+    reasons.push(
+      `unblocks ${entry.unblocks.length} item(s): ${entry.unblocks.join(", ")}`,
+    );
   }
   return reasons;
 }
@@ -214,12 +269,18 @@ function partitionCallerOwnedReady(
   ready: ActionableEntry[],
   fallbackAuthor: string,
   explicitAuthor?: string,
-): { available: ActionableEntry[]; held: Array<{ id: string; assignee: string }> } {
-  const caller = (explicitAuthor ?? process.env.PM_AUTHOR ?? fallbackAuthor).trim() || "unknown";
+): {
+  available: ActionableEntry[];
+  held: Array<{ id: string; assignee: string }>;
+} {
+  const caller =
+    (explicitAuthor ?? process.env.PM_AUTHOR ?? fallbackAuthor).trim() ||
+    "unknown";
   const available: ActionableEntry[] = [];
   const held: Array<{ id: string; assignee: string }> = [];
   for (const entry of ready) {
-    const assignee = typeof entry.item.assignee === "string" ? entry.item.assignee.trim() : "";
+    const assignee =
+      typeof entry.item.assignee === "string" ? entry.item.assignee.trim() : "";
     const isForeignWork = assignee.length > 0 && assignee !== caller;
     if (isForeignWork) held.push({ id: entry.item.id, assignee });
     else available.push(entry);
@@ -244,27 +305,42 @@ function describeDeadline(deadline: string, now: string): string {
   /* c8 ignore stop */
   const dateToken = new Date(deadlineMs).toISOString().slice(0, 10);
   const nowToken = new Date(Date.parse(now)).toISOString().slice(0, 10);
-  const days = Math.round((Date.parse(dateToken) - Date.parse(nowToken)) / MS_PER_DAY);
+  const days = Math.round(
+    (Date.parse(dateToken) - Date.parse(nowToken)) / MS_PER_DAY,
+  );
   if (days < 0) return `deadline ${dateToken} (overdue ${-days}d)`;
   if (days === 0) return `deadline ${dateToken} (due today)`;
   return `deadline ${dateToken} (in ${days}d)`;
 }
 
-function inProgressReadyCount(ready: NextActionableItem[], statusRegistry: RuntimeStatusRegistry): number {
+function inProgressReadyCount(
+  ready: NextActionableItem[],
+  statusRegistry: RuntimeStatusRegistry,
+): number {
   const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
-  return ready.filter((item) => normalizeStatusForRegistry(item.status, statusRegistry) === inProgressStatus).length;
+  return ready.filter(
+    (item) =>
+      normalizeStatusForRegistry(item.status, statusRegistry) ===
+      inProgressStatus,
+  ).length;
 }
 
 // Returns true when an otherwise-ready item still has terminal descendants. Such
 // rows are useful governance closeout context, but concrete leaf work should rank
 // ahead of them in the default agent loop.
-function hasCompletedDescendants(item: ItemFrontMatter, childrenByParent: Map<string, ItemFrontMatter[]>): boolean {
+function hasCompletedDescendants(
+  item: ItemFrontMatter,
+  childrenByParent: Map<string, ItemFrontMatter[]>,
+): boolean {
   return (childrenByParent.get(item.id.trim().toLowerCase()) ?? []).length > 0;
 }
 
 // Strips projection/pagination flags so the corpus reads stay full: limits are
 // per-section display caps applied after classification, never corpus filters.
-function nextListOptions(options: NextOptions, extra: Partial<ListOptions>): ListOptions {
+function nextListOptions(
+  options: NextOptions,
+  extra: Partial<ListOptions>,
+): ListOptions {
   return {
     type: options.type,
     tag: options.tag,
@@ -284,8 +360,14 @@ function rankNextReadyEntries(
   statusRegistry: RuntimeStatusRegistry,
 ): ActionableEntry[] {
   return [...ready].sort((left, right) => {
-    const leftCompletedContainer = hasCompletedDescendants(left.item, childrenByParent);
-    const rightCompletedContainer = hasCompletedDescendants(right.item, childrenByParent);
+    const leftCompletedContainer = hasCompletedDescendants(
+      left.item,
+      childrenByParent,
+    );
+    const rightCompletedContainer = hasCompletedDescendants(
+      right.item,
+      childrenByParent,
+    );
     if (leftCompletedContainer !== rightCompletedContainer) {
       return Number(leftCompletedContainer) - Number(rightCompletedContainer);
     }
@@ -314,12 +396,17 @@ function buildNextRecommendation(params: {
   };
 }
 
-function buildNextSuggestions(recommended: NextRecommendation | null, blockedRows: NextActionableItem[]): string[] | undefined {
+function buildNextSuggestions(
+  recommended: NextRecommendation | null,
+  blockedRows: NextActionableItem[],
+): string[] | undefined {
   if (recommended !== null) {
     return undefined;
   }
   if (blockedRows.length > 0) {
-    const blockedWithReferences = blockedRows.find((item) => item.blockers.length > 0);
+    const blockedWithReferences = blockedRows.find(
+      (item) => item.blockers.length > 0,
+    );
     return [
       blockedWithReferences
         ? `${blockedRows.length} item(s) are blocked; unblock the top one by closing ${blockedWithReferences.blockers.map((blocker) => blocker.id).join(", ")}`
@@ -345,9 +432,14 @@ function filterCandidatesByParentScope(
   }
   const subtree = collectSubtreeIds(corpus, parentScope);
   if (!subtree.found) {
-    throw new PmCliError(`Next --parent item not found: ${parentScope}`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Next --parent item not found: ${parentScope}`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
-  return candidates.filter((item) => subtree.ids.has(item.id.trim().toLowerCase()));
+  return candidates.filter((item) =>
+    subtree.ids.has(item.id.trim().toLowerCase()),
+  );
 }
 
 async function rankReadyEntriesWithRelevance(
@@ -357,11 +449,18 @@ async function rankReadyEntriesWithRelevance(
   now: string,
 ): Promise<{
   projectedReady: ActionableEntry[];
-  ranking: Awaited<ReturnType<typeof scoreContextCandidatesWithActiveExtensions<ItemFrontMatter>>>;
+  ranking: Awaited<
+    ReturnType<
+      typeof scoreContextCandidatesWithActiveExtensions<ItemFrontMatter>
+    >
+  >;
   completedContainer: boolean;
 }> {
-  const concreteReady = rankedReady.filter((entry) => !hasCompletedDescendants(entry.item, childrenByParent));
-  const structuralReady = concreteReady.length > 0 ? concreteReady : rankedReady;
+  const concreteReady = rankedReady.filter(
+    (entry) => !hasCompletedDescendants(entry.item, childrenByParent),
+  );
+  const structuralReady =
+    concreteReady.length > 0 ? concreteReady : rankedReady;
   const ranking = await scoreContextCandidatesWithActiveExtensions(
     "next",
     buildItemContextRelevanceCandidates(
@@ -371,53 +470,92 @@ async function rankReadyEntriesWithRelevance(
       process.env.PM_AUTHOR,
     ),
   );
-  const readyById = new Map(structuralReady.map((entry) => [entry.item.id, entry]));
+  const readyById = new Map(
+    structuralReady.map((entry) => [entry.item.id, entry]),
+  );
   const projectedReady = ranking.ranked
     .map((entry) => readyById.get(entry.id))
     .filter((entry): entry is ActionableEntry => entry !== undefined);
-  return { projectedReady, ranking, completedContainer: concreteReady.length === 0 };
+  return {
+    projectedReady,
+    ranking,
+    completedContainer: concreteReady.length === 0,
+  };
 }
 
-/**
- * Implements `pm next`: computes the ranked ready/blocked actionable queues and a
- * single recommended next item with rationale for the public runtime surface.
- */
-export async function runNext(options: NextOptions, global: GlobalOptions): Promise<NextResult> {
+/** Implements `pm next`: computes the ranked ready/blocked actionable queues and a single recommended next item with rationale for the public runtime surface. */
+export async function runNext(
+  options: NextOptions,
+  global: GlobalOptions,
+): Promise<NextResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const now = nowIso();
   const limit = parseNextLimit(options.limit, "--limit", DEFAULT_NEXT_LIMIT);
-  const blockedLimit = parseNextLimit(options.blockedLimit, "--blocked-limit", limit);
+  const blockedLimit = parseNextLimit(
+    options.blockedLimit,
+    "--blocked-limit",
+    limit,
+  );
   const readyOnly = options.readyOnly === true;
-  const parentScope = typeof options.parent === "string" ? options.parent.trim() : "";
+  const parentScope =
+    typeof options.parent === "string" ? options.parent.trim() : "";
 
   // Active (non-terminal) candidates honor the caller's filters; the corpus is the
   // FULL, UNFILTERED set (every status, every item) so blocker and descendant
   // resolution still sees items outside the caller's filters or --parent subtree —
   // otherwise a real blocker assigned to someone else (or a parent of a different
   // type) would be missing and the blocked item misread as ready.
-  const candidatesList = await runList(undefined, nextListOptions(options, { excludeTerminal: true }), global);
-  const corpusList = await runList(undefined, { excludeTerminal: false, noTruncate: true }, global);
-  const candidates = filterCandidatesByParentScope(candidatesList.items as ItemFrontMatter[], corpusList.items as ItemFrontMatter[], parentScope);
+  const candidatesList = await runList(
+    undefined,
+    nextListOptions(options, { excludeTerminal: true }),
+    global,
+  );
+  const corpusList = await runList(
+    undefined,
+    { excludeTerminal: false, noTruncate: true },
+    global,
+  );
+  const candidates = filterCandidatesByParentScope(
+    candidatesList.items as ItemFrontMatter[],
+    corpusList.items as ItemFrontMatter[],
+    parentScope,
+  );
   const corpus = corpusList.items as ItemFrontMatter[];
 
   const report = computeActionabilityReport(candidates, corpus, statusRegistry);
   const childrenByParent = buildChildrenByParent(corpus);
-  const callerPartition = partitionCallerOwnedReady(report.ready, settings.author_default, options.callerAuthor);
-  const rankedReady = rankNextReadyEntries(callerPartition.available, childrenByParent, statusRegistry);
+  const callerPartition = partitionCallerOwnedReady(
+    report.ready,
+    settings.author_default,
+    options.callerAuthor,
+  );
+  const rankedReady = rankNextReadyEntries(
+    callerPartition.available,
+    childrenByParent,
+    statusRegistry,
+  );
   const rankedBlocked = [...report.blocked].sort((left, right) =>
     compareCriticalItems(left.item, right.item, statusRegistry),
   );
-  const { projectedReady, ranking: readyRanking, completedContainer } = await rankReadyEntriesWithRelevance(
+  const {
+    projectedReady,
+    ranking: readyRanking,
+    completedContainer,
+  } = await rankReadyEntriesWithRelevance(
     rankedReady,
     childrenByParent,
     statusRegistry,
     now,
   );
 
-  const readyRows = projectedReady.map((entry) => toNextActionableItem(entry, statusRegistry, childrenByParent));
-  const blockedRows = rankedBlocked.map((entry) => toNextActionableItem(entry, statusRegistry, childrenByParent));
+  const readyRows = projectedReady.map((entry) =>
+    toNextActionableItem(entry, statusRegistry, childrenByParent),
+  );
+  const blockedRows = rankedBlocked.map((entry) =>
+    toNextActionableItem(entry, statusRegistry, childrenByParent),
+  );
 
   const recommended = buildNextRecommendation({
     projectedReady,
@@ -457,11 +595,16 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
     },
   };
 
-  const warnings = [...new Set([...(candidatesList.warnings ?? []), ...(corpusList.warnings ?? []), ...(readyRanking.warnings ?? [])])].sort((a, b) =>
-    a.localeCompare(b),
-  );
+  const warnings = [
+    ...new Set([
+      ...(candidatesList.warnings ?? []),
+      ...(corpusList.warnings ?? []),
+      ...(readyRanking.warnings ?? []),
+    ]),
+  ].sort((a, b) => a.localeCompare(b));
   if (warnings.length > 0) result.warnings = warnings;
-  if (options.explainRanking === true) result.ranking = toContextRankingSummary(readyRanking);
+  if (options.explainRanking === true)
+    result.ranking = toContextRankingSummary(readyRanking);
 
   result.suggestions = buildNextSuggestions(recommended, blockedRows);
 
@@ -533,6 +676,7 @@ export function renderNextMarkdown(result: NextResult): string {
 function formatNextLine(item: NextActionableItem): string {
   const deadlineToken = item.deadline ?? "-";
   const parentToken = item.parent ? ` parent:${item.parent}` : "";
-  const unblocksToken = item.unblocks.length > 0 ? ` unblocks:${item.unblocks.length}` : "";
+  const unblocksToken =
+    item.unblocks.length > 0 ? ` unblocks:${item.unblocks.length}` : "";
   return `${item.id} p${item.priority} ${item.status} ${item.type} deadline:${deadlineToken}${parentToken}${unblocksToken} ${item.title}`;
 }

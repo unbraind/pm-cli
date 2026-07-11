@@ -20,123 +20,129 @@ import {
 } from "../shared/primitives.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 
-/**
- * Restricts vector store name values accepted by command, SDK, and storage contracts.
- */
+/** Restricts vector store name values accepted by command, SDK, and storage contracts. */
 export type VectorStoreName = "qdrant" | "lancedb";
 
-/**
- * Documents the qdrant vector store config payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the qdrant vector store config payload exchanged by command, SDK, and package integrations. */
 export interface QdrantVectorStoreConfig {
+  /** Value that configures or reports name for this contract. */
   name: "qdrant";
+  /** Value that configures or reports url for this contract. */
   url: string;
+  /** Value that configures or reports collection name for this contract. */
   collection_name?: string;
+  /** Value that configures or reports api key for this contract. */
   api_key?: string;
 }
 
-/**
- * Documents the lance db vector store config payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the lance db vector store config payload exchanged by command, SDK, and package integrations. */
 export interface LanceDbVectorStoreConfig {
+  /** Value that configures or reports name for this contract. */
   name: "lancedb";
+  /** Filesystem path used for path resolution. */
   path: string;
+  /** Value that configures or reports collection name for this contract. */
   collection_name?: string;
 }
 
-/**
- * Restricts vector store config values accepted by command, SDK, and storage contracts.
- */
-export type VectorStoreConfig = QdrantVectorStoreConfig | LanceDbVectorStoreConfig;
+/** Restricts vector store config values accepted by command, SDK, and storage contracts. */
+export type VectorStoreConfig =
+  | QdrantVectorStoreConfig
+  | LanceDbVectorStoreConfig;
 
-/**
- * Documents the vector store resolution payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the vector store resolution payload exchanged by command, SDK, and package integrations. */
 export interface VectorStoreResolution {
+  /** Value that configures or reports active for this contract. */
   active: VectorStoreConfig | null;
+  /** Value that configures or reports available for this contract. */
   available: VectorStoreConfig[];
 }
 
-/**
- * Documents the vector store request target payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the vector store request target payload exchanged by command, SDK, and package integrations. */
 export interface VectorStoreRequestTarget {
+  /** Value that configures or reports store for this contract. */
   store: VectorStoreName;
+  /** Value that configures or reports query target for this contract. */
   query_target: string;
+  /** Value that configures or reports upsert target for this contract. */
   upsert_target: string;
 }
 
-/**
- * Documents the vector query plan payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the vector query plan payload exchanged by command, SDK, and package integrations. */
 export interface VectorQueryPlan {
+  /** Value that configures or reports target for this contract. */
   target: VectorStoreRequestTarget;
+  /** Value that configures or reports method for this contract. */
   method: "POST" | "LOCAL";
+  /** Value that configures or reports headers for this contract. */
   headers: Record<string, string>;
+  /** Value that configures or reports body for this contract. */
   body: Record<string, unknown>;
 }
 
-/**
- * Documents the vector record payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the vector record payload exchanged by command, SDK, and package integrations. */
 export interface VectorRecord {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports vector for this contract. */
   vector: number[];
+  /** Value that configures or reports payload for this contract. */
   payload?: Record<string, unknown>;
 }
 
-/**
- * Documents the vector upsert plan payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the vector upsert plan payload exchanged by command, SDK, and package integrations. */
 export interface VectorUpsertPlan {
+  /** Value that configures or reports target for this contract. */
   target: VectorStoreRequestTarget;
+  /** Value that configures or reports method for this contract. */
   method: "POST" | "LOCAL";
+  /** Value that configures or reports headers for this contract. */
   headers: Record<string, string>;
+  /** Value that configures or reports body for this contract. */
   body: Record<string, unknown>;
 }
 
-/**
- * Documents the vector delete plan payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the vector delete plan payload exchanged by command, SDK, and package integrations. */
 export interface VectorDeletePlan {
+  /** Value that configures or reports target for this contract. */
   target: VectorStoreRequestTarget;
+  /** Value that configures or reports method for this contract. */
   method: "POST" | "LOCAL";
+  /** Value that configures or reports headers for this contract. */
   headers: Record<string, string>;
+  /** Value that configures or reports body for this contract. */
   body: Record<string, unknown>;
 }
 
-/**
- * Documents the vector query hit payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the vector query hit payload exchanged by command, SDK, and package integrations. */
 export interface VectorQueryHit {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports score for this contract. */
   score: number;
+  /** Value that configures or reports payload for this contract. */
   payload?: Record<string, unknown>;
 }
 
-/**
- * Documents the vector upsert result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the vector upsert result payload exchanged by command, SDK, and package integrations. */
 export interface VectorUpsertResult {
+  /** Lifecycle state reported for status. */
   status: string;
 }
 
-/**
- * Restricts vector http response values accepted by command, SDK, and storage contracts.
- */
+/** Restricts vector http response values accepted by command, SDK, and storage contracts. */
 export type VectorHttpResponse = SearchHttpResponse;
 
-/**
- * Restricts vector request fetcher values accepted by command, SDK, and storage contracts.
- */
+/** Restricts vector request fetcher values accepted by command, SDK, and storage contracts. */
 export type VectorRequestFetcher = SearchHttpFetcher<VectorHttpResponse>;
 
-/**
- * Documents the execute vector request options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the execute vector request options payload exchanged by command, SDK, and package integrations. */
 export interface ExecuteVectorRequestOptions {
+  /** Elapsed time in milliseconds for timeout. */
   timeout_ms?: number;
+  /** Value that configures or reports fetcher for this contract. */
   fetcher?: VectorRequestFetcher;
+  /** Value that configures or reports warnings for this contract. */
   warnings?: string[];
 }
 
@@ -169,8 +175,11 @@ interface LanceDbLocalTableCacheEntry {
 const lanceDbLocalTables = new Map<string, LanceDbLocalTableCacheEntry>();
 
 function resolveStoreCollectionName(store: VectorStoreConfig): string {
-  const candidate = toNonEmptyString(store.collection_name) ?? DEFAULT_COLLECTION;
-  return candidate.replaceAll(COLLECTION_SANITIZE_PATTERN, "_").slice(0, MAX_COLLECTION_NAME_LENGTH);
+  const candidate =
+    toNonEmptyString(store.collection_name) ?? DEFAULT_COLLECTION;
+  return candidate
+    .replaceAll(COLLECTION_SANITIZE_PATTERN, "_")
+    .slice(0, MAX_COLLECTION_NAME_LENGTH);
 }
 
 function normalizeVector(value: unknown): number[] {
@@ -197,26 +206,36 @@ function normalizeQdrantQueryResponse(payload: unknown): VectorQueryHit[] {
     const idCandidate = typeof idValue === "number" ? String(idValue) : idValue;
     const id = toNonEmptyString(idCandidate);
     if (!id) {
-      throw new Error(`Qdrant query response entry at index ${index} is missing a non-empty id`);
+      throw new Error(
+        `Qdrant query response entry at index ${index} is missing a non-empty id`,
+      );
     }
 
     const score = (entry as { score?: unknown }).score;
     if (typeof score !== "number" || !Number.isFinite(score)) {
-      throw new TypeError(`Qdrant query response entry at index ${index} is missing a finite numeric score`);
+      throw new TypeError(
+        `Qdrant query response entry at index ${index} is missing a finite numeric score`,
+      );
     }
 
     const payloadValue = (entry as { payload?: unknown }).payload;
     if (
       payloadValue !== undefined &&
-      (typeof payloadValue !== "object" || payloadValue === null || Array.isArray(payloadValue))
+      (typeof payloadValue !== "object" ||
+        payloadValue === null ||
+        Array.isArray(payloadValue))
     ) {
-      throw new Error(`Qdrant query response entry at index ${index} must provide payload as an object when set`);
+      throw new Error(
+        `Qdrant query response entry at index ${index} must provide payload as an object when set`,
+      );
     }
 
     return {
       id,
       score,
-      ...(payloadValue ? { payload: payloadValue as Record<string, unknown> } : {}),
+      ...(payloadValue
+        ? { payload: payloadValue as Record<string, unknown> }
+        : {}),
     };
   });
   hits.sort((left, right) => {
@@ -229,11 +248,15 @@ function normalizeQdrantQueryResponse(payload: unknown): VectorQueryHit[] {
 }
 
 function normalizeQdrantUpsertResponse(payload: unknown): VectorUpsertResult {
-  const nestedStatus = toNonEmptyString((payload as { result?: { status?: unknown } }).result?.status);
+  const nestedStatus = toNonEmptyString(
+    (payload as { result?: { status?: unknown } }).result?.status,
+  );
   if (nestedStatus) {
     return { status: nestedStatus };
   }
-  const topLevelStatus = toNonEmptyString((payload as { status?: unknown }).status);
+  const topLevelStatus = toNonEmptyString(
+    (payload as { status?: unknown }).status,
+  );
   if (topLevelStatus) {
     return { status: topLevelStatus };
   }
@@ -263,26 +286,28 @@ async function executeRemoteVectorPlan(
   });
 }
 
-function resolveQdrantStore(settings: VectorSettingsInput): QdrantVectorStoreConfig | null {
+function resolveQdrantStore(
+  settings: VectorSettingsInput,
+): QdrantVectorStoreConfig | null {
   const url = toNonEmptyString(settings.vector_store?.qdrant?.url);
   if (!url) {
     return null;
   }
-  const collectionName = toNonEmptyString(settings.vector_store?.collection_name);
+  const collectionName = toNonEmptyString(
+    settings.vector_store?.collection_name,
+  );
   const apiKey = toNonEmptyString(settings.vector_store?.qdrant?.api_key);
   return {
     name: "qdrant",
     url,
-    ...(collectionName && collectionName !== DEFAULT_COLLECTION ? { collection_name: collectionName } : {}),
+    ...(collectionName && collectionName !== DEFAULT_COLLECTION
+      ? { collection_name: collectionName }
+      : {}),
     ...(apiKey ? { api_key: apiKey } : {}),
   };
 }
 
-/**
- * Derive the workspace root a workspace-relative store path is anchored to.
- * A conventional pm root (`<workspace>/.agents/pm`) maps to `<workspace>`;
- * an explicit bare root (`--path <dir>`) anchors to the root itself.
- */
+/** Derive the workspace root a workspace-relative store path is anchored to. A conventional pm root (`<workspace>/.agents/pm`) maps to `<workspace>`; an explicit bare root (`--path <dir>`) anchors to the root itself. */
 function resolveWorkspaceRootFromPmRoot(pmRoot: string): string {
   const resolved = resolve(pmRoot);
   const parent = dirname(resolved);
@@ -292,30 +317,34 @@ function resolveWorkspaceRootFromPmRoot(pmRoot: string): string {
   return resolved;
 }
 
-/**
- * Anchor a relative lancedb path (settings store workspace-relative paths such
- * as the `.agents/pm/search/lancedb/` default) to the pm workspace root instead
- * of the process cwd. Without this, any pm invocation from a workspace
- * subdirectory (including detached background refresh children inheriting the
- * parent cwd) silently creates a second vector store under that subdirectory.
- */
-function anchorLanceDbStorePath(storePath: string, pmRoot: string | undefined): string {
+/** Anchor a relative lancedb path (settings store workspace-relative paths such as the `.agents/pm/search/lancedb/` default) to the pm workspace root instead of the process cwd. Without this, any pm invocation from a workspace subdirectory (including detached background refresh children inheriting the parent cwd) silently creates a second vector store under that subdirectory. */
+function anchorLanceDbStorePath(
+  storePath: string,
+  pmRoot: string | undefined,
+): string {
   if (!pmRoot || isAbsolute(storePath)) {
     return storePath;
   }
   return resolve(resolveWorkspaceRootFromPmRoot(pmRoot), storePath);
 }
 
-function resolveLanceDbStore(settings: VectorSettingsInput, pmRoot?: string): LanceDbVectorStoreConfig | null {
+function resolveLanceDbStore(
+  settings: VectorSettingsInput,
+  pmRoot?: string,
+): LanceDbVectorStoreConfig | null {
   const lancedbPath = toNonEmptyString(settings.vector_store?.lancedb?.path);
   if (!lancedbPath) {
     return null;
   }
-  const collectionName = toNonEmptyString(settings.vector_store?.collection_name);
+  const collectionName = toNonEmptyString(
+    settings.vector_store?.collection_name,
+  );
   return {
     name: "lancedb",
     path: anchorLanceDbStorePath(lancedbPath, pmRoot),
-    ...(collectionName && collectionName !== DEFAULT_COLLECTION ? { collection_name: collectionName } : {}),
+    ...(collectionName && collectionName !== DEFAULT_COLLECTION
+      ? { collection_name: collectionName }
+      : {}),
   };
 }
 
@@ -326,12 +355,21 @@ function normalizeVectorRecords(records: VectorRecord[]): VectorRecord[] {
   return records.map((record, index) => {
     const id = toNonEmptyString(record.id);
     if (!id) {
-      throw new Error(`Vector upsert record at index ${index} is missing a non-empty id`);
+      throw new Error(
+        `Vector upsert record at index ${index} is missing a non-empty id`,
+      );
     }
     const vector = normalizeVector(record.vector);
     const payload = record.payload;
-    if (payload !== undefined && (typeof payload !== "object" || payload === null || Array.isArray(payload))) {
-      throw new Error(`Vector upsert record at index ${index} must provide payload as an object when set`);
+    if (
+      payload !== undefined &&
+      (typeof payload !== "object" ||
+        payload === null ||
+        Array.isArray(payload))
+    ) {
+      throw new Error(
+        `Vector upsert record at index ${index} must provide payload as an object when set`,
+      );
     }
     return {
       id,
@@ -349,7 +387,9 @@ function normalizeVectorDeleteIds(ids: string[]): string[] {
     .map((id, index) => {
       const normalized = toNonEmptyString(id);
       if (!normalized) {
-        throw new Error(`Vector delete id at index ${index} is missing a non-empty value`);
+        throw new Error(
+          `Vector delete id at index ${index} is missing a non-empty value`,
+        );
       }
       return normalized;
     })
@@ -364,14 +404,19 @@ function normalizeVectorDeleteIds(ids: string[]): string[] {
 }
 
 function resolveQdrantDeleteTarget(upsertTarget: string): string {
-  return upsertTarget.replace(/\/points\?wait=true$/, "/points/delete?wait=true");
+  return upsertTarget.replace(
+    /\/points\?wait=true$/,
+    "/points/delete?wait=true",
+  );
 }
 
 function resolveQdrantCollectionTarget(upsertTarget: string): string {
   return upsertTarget.replace(/\/points\?wait=true$/, "");
 }
 
-function buildQdrantJsonHeaders(store: QdrantVectorStoreConfig): Record<string, string> {
+function buildQdrantJsonHeaders(
+  store: QdrantVectorStoreConfig,
+): Record<string, string> {
   return {
     "content-type": "application/json",
     ...(store.api_key ? { "api-key": store.api_key } : {}),
@@ -387,17 +432,30 @@ function getLanceDbSnapshotPath(storePath: string, table: string): string {
 }
 
 function isNodeErrorWithCode(error: unknown, code: string): boolean {
-  return typeof error === "object" && error !== null && (error as { code?: unknown }).code === code;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === code
+  );
 }
 
-function normalizeSnapshotRecord(entry: unknown, index: number, snapshotPath: string): VectorRecord {
+function normalizeSnapshotRecord(
+  entry: unknown,
+  index: number,
+  snapshotPath: string,
+): VectorRecord {
   const id = toNonEmptyString((entry as { id?: unknown }).id);
   if (!id) {
-    throw new Error(`LanceDB local snapshot '${snapshotPath}' record at index ${index} is missing a non-empty id`);
+    throw new Error(
+      `LanceDB local snapshot '${snapshotPath}' record at index ${index} is missing a non-empty id`,
+    );
   }
   const vector = normalizeVector((entry as { vector?: unknown }).vector);
   const payload = (entry as { payload?: unknown }).payload;
-  if (payload !== undefined && (typeof payload !== "object" || payload === null || Array.isArray(payload))) {
+  if (
+    payload !== undefined &&
+    (typeof payload !== "object" || payload === null || Array.isArray(payload))
+  ) {
     throw new Error(
       `LanceDB local snapshot '${snapshotPath}' record '${id}' must provide payload as an object when set`,
     );
@@ -409,15 +467,23 @@ function normalizeSnapshotRecord(entry: unknown, index: number, snapshotPath: st
   };
 }
 
-function parseLanceDbSnapshot(snapshotPath: string, expectedTable: string, raw: string): Map<string, VectorRecord> {
+function parseLanceDbSnapshot(
+  snapshotPath: string,
+  expectedTable: string,
+  raw: string,
+): Map<string, VectorRecord> {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw) as unknown;
   } catch (error) {
-    throw new Error(`LanceDB local snapshot at '${snapshotPath}' is not valid JSON: ${toErrorMessage(error)}`);
+    throw new Error(
+      `LanceDB local snapshot at '${snapshotPath}' is not valid JSON: ${toErrorMessage(error)}`,
+    );
   }
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new Error(`LanceDB local snapshot at '${snapshotPath}' must be a JSON object`);
+    throw new Error(
+      `LanceDB local snapshot at '${snapshotPath}' must be a JSON object`,
+    );
   }
 
   const version = (parsed as { version?: unknown }).version;
@@ -429,7 +495,9 @@ function parseLanceDbSnapshot(snapshotPath: string, expectedTable: string, raw: 
 
   const table = toNonEmptyString((parsed as { table?: unknown }).table);
   if (!table) {
-    throw new Error(`LanceDB local snapshot at '${snapshotPath}' must include a non-empty table value`);
+    throw new Error(
+      `LanceDB local snapshot at '${snapshotPath}' must include a non-empty table value`,
+    );
   }
   if (table !== expectedTable) {
     throw new Error(
@@ -439,18 +507,26 @@ function parseLanceDbSnapshot(snapshotPath: string, expectedTable: string, raw: 
 
   const recordsValue = (parsed as { records?: unknown }).records;
   if (!Array.isArray(recordsValue)) {
-    throw new TypeError(`LanceDB local snapshot at '${snapshotPath}' must include a records array`);
+    throw new TypeError(
+      `LanceDB local snapshot at '${snapshotPath}' must include a records array`,
+    );
   }
 
   const tableRecords = new Map<string, VectorRecord>();
   for (let index = 0; index < recordsValue.length; index += 1) {
-    const record = normalizeSnapshotRecord(recordsValue[index], index, snapshotPath);
+    const record = normalizeSnapshotRecord(
+      recordsValue[index],
+      index,
+      snapshotPath,
+    );
     tableRecords.set(record.id, record);
   }
   return tableRecords;
 }
 
-async function readLanceDbSnapshotStats(snapshotPath: string): Promise<{ mtimeMs: number; size: number } | null> {
+async function readLanceDbSnapshotStats(
+  snapshotPath: string,
+): Promise<{ mtimeMs: number; size: number } | null> {
   try {
     const stats = await stat(snapshotPath);
     return { mtimeMs: stats.mtimeMs, size: stats.size };
@@ -469,7 +545,11 @@ function resolveMissingLanceDbSnapshotCache(
   if (!cached) {
     return null;
   }
-  if (cached.mtimeMs === null && cached.size === null && cached.records.size === 0) {
+  if (
+    cached.mtimeMs === null &&
+    cached.size === null &&
+    cached.records.size === 0
+  ) {
     return cached.records;
   }
   const loaded = new Map<string, VectorRecord>();
@@ -483,13 +563,16 @@ function cachedLanceDbSnapshotMatches(
 ): cached is LanceDbLocalTableCacheEntry {
   return (
     cached !== undefined &&
-      snapshotStats !== null &&
-      cached.mtimeMs === snapshotStats.mtimeMs &&
-      cached.size === snapshotStats.size
+    snapshotStats !== null &&
+    cached.mtimeMs === snapshotStats.mtimeMs &&
+    cached.size === snapshotStats.size
   );
 }
 
-async function loadLanceDbLocalTable(storePath: string, table: string): Promise<Map<string, VectorRecord>> {
+async function loadLanceDbLocalTable(
+  storePath: string,
+  table: string,
+): Promise<Map<string, VectorRecord>> {
   const key = getLanceDbLocalTableKey(storePath, table);
   const snapshotPath = getLanceDbSnapshotPath(storePath, table);
   const snapshotStats = await readLanceDbSnapshotStats(snapshotPath);
@@ -522,7 +605,9 @@ async function loadLanceDbLocalTable(storePath: string, table: string): Promise<
   return loaded;
 }
 
-function buildSnapshotRecords(table: Map<string, VectorRecord>): VectorRecord[] {
+function buildSnapshotRecords(
+  table: Map<string, VectorRecord>,
+): VectorRecord[] {
   const records = [...table.values()];
   records.sort((left, right) => left.id.localeCompare(right.id));
   return records.map((record) => ({
@@ -537,12 +622,18 @@ async function removeSnapshotFile(snapshotPath: string): Promise<void> {
     await unlink(snapshotPath);
   } catch (error) {
     if (!isNodeErrorWithCode(error, "ENOENT")) {
-      throw new Error(`LanceDB local snapshot delete failed at '${snapshotPath}': ${toErrorMessage(error)}`);
+      throw new Error(
+        `LanceDB local snapshot delete failed at '${snapshotPath}': ${toErrorMessage(error)}`,
+      );
     }
   }
 }
 
-async function persistLanceDbLocalTable(storePath: string, tableName: string, table: Map<string, VectorRecord>): Promise<void> {
+async function persistLanceDbLocalTable(
+  storePath: string,
+  tableName: string,
+  table: Map<string, VectorRecord>,
+): Promise<void> {
   const snapshotPath = getLanceDbSnapshotPath(storePath, tableName);
   if (table.size === 0) {
     await removeSnapshotFile(snapshotPath);
@@ -570,11 +661,16 @@ async function persistLanceDbLocalTable(storePath: string, tableName: string, ta
   try {
     await writeFileAtomic(snapshotPath, serialized);
   } catch (error) {
-    throw new Error(`LanceDB local snapshot write failed at '${snapshotPath}': ${toErrorMessage(error)}`);
+    throw new Error(
+      `LanceDB local snapshot write failed at '${snapshotPath}': ${toErrorMessage(error)}`,
+    );
   }
 }
 
-async function resetLanceDbLocalTable(storePath: string, tableName: string): Promise<void> {
+async function resetLanceDbLocalTable(
+  storePath: string,
+  tableName: string,
+): Promise<void> {
   const key = getLanceDbLocalTableKey(storePath, tableName);
   const snapshotPath = getLanceDbSnapshotPath(storePath, tableName);
   await removeSnapshotFile(snapshotPath);
@@ -602,19 +698,23 @@ function cosineSimilarity(left: number[], right: number[]): number {
   return dotProd / (leftNorm * rightNorm);
 }
 
-/**
- * Implements resolve vector stores for the public runtime surface of this module.
- */
-export function resolveVectorStores(settings: PmSettings | VectorSettingsInput, pmRoot?: string): VectorStoreResolution {
+/** Implements resolve vector stores for the public runtime surface of this module. */
+export function resolveVectorStores(
+  settings: PmSettings | VectorSettingsInput,
+  pmRoot?: string,
+): VectorStoreResolution {
   const qdrant = resolveQdrantStore(settings);
   const lancedb = resolveLanceDbStore(settings, pmRoot);
-  const available = [qdrant, lancedb].filter((entry): entry is VectorStoreConfig => entry !== null);
+  const available = [qdrant, lancedb].filter(
+    (entry): entry is VectorStoreConfig => entry !== null,
+  );
   // Honor `settings.vector_store.adapter` when set: if both built-in stores
   // are configured, the preferred adapter wins; otherwise fall back to the
   // first available entry (preserves the previous tie-break: qdrant > lancedb).
   // Match case-insensitively so "Qdrant" / "LanceDB" / "lancedb" all work.
   const preferredName = toNonEmptyString(
-    (settings as { vector_store?: { adapter?: unknown } }).vector_store?.adapter,
+    (settings as { vector_store?: { adapter?: unknown } }).vector_store
+      ?.adapter,
   );
   const preferredKey = preferredName ? preferredName.toLowerCase() : null;
   const preferred = preferredKey
@@ -626,10 +726,10 @@ export function resolveVectorStores(settings: PmSettings | VectorSettingsInput, 
   };
 }
 
-/**
- * Implements resolve vector store request target for the public runtime surface of this module.
- */
-export function resolveVectorStoreRequestTarget(store: VectorStoreConfig): VectorStoreRequestTarget {
+/** Implements resolve vector store request target for the public runtime surface of this module. */
+export function resolveVectorStoreRequestTarget(
+  store: VectorStoreConfig,
+): VectorStoreRequestTarget {
   const collectionName = resolveStoreCollectionName(store);
   if (store.name === "qdrant") {
     const baseUrl = trimTrailingSlashes(store.url);
@@ -649,10 +749,12 @@ export function resolveVectorStoreRequestTarget(store: VectorStoreConfig): Vecto
   };
 }
 
-/**
- * Implements build vector query plan for the public runtime surface of this module.
- */
-export function buildVectorQueryPlan(store: VectorStoreConfig, vector: number[], limit: number): VectorQueryPlan {
+/** Implements build vector query plan for the public runtime surface of this module. */
+export function buildVectorQueryPlan(
+  store: VectorStoreConfig,
+  vector: number[],
+  limit: number,
+): VectorQueryPlan {
   const target = resolveVectorStoreRequestTarget(store);
   const normalizedVector = normalizeVector(vector);
   const normalizedLimit = normalizeLimit(limit);
@@ -680,10 +782,11 @@ export function buildVectorQueryPlan(store: VectorStoreConfig, vector: number[],
   };
 }
 
-/**
- * Implements build vector upsert plan for the public runtime surface of this module.
- */
-export function buildVectorUpsertPlan(store: VectorStoreConfig, records: VectorRecord[]): VectorUpsertPlan {
+/** Implements build vector upsert plan for the public runtime surface of this module. */
+export function buildVectorUpsertPlan(
+  store: VectorStoreConfig,
+  records: VectorRecord[],
+): VectorUpsertPlan {
   const target = resolveVectorStoreRequestTarget(store);
   const normalizedRecords = normalizeVectorRecords(records);
   if (store.name === "qdrant") {
@@ -707,10 +810,11 @@ export function buildVectorUpsertPlan(store: VectorStoreConfig, records: VectorR
   };
 }
 
-/**
- * Implements build vector delete plan for the public runtime surface of this module.
- */
-export function buildVectorDeletePlan(store: VectorStoreConfig, ids: string[]): VectorDeletePlan {
+/** Implements build vector delete plan for the public runtime surface of this module. */
+export function buildVectorDeletePlan(
+  store: VectorStoreConfig,
+  ids: string[],
+): VectorDeletePlan {
   const target = resolveVectorStoreRequestTarget(store);
   const normalizedIds = normalizeVectorDeleteIds(ids);
   if (store.name === "qdrant") {
@@ -734,9 +838,7 @@ export function buildVectorDeletePlan(store: VectorStoreConfig, ids: string[]): 
   };
 }
 
-/**
- * Implements execute vector query for the public runtime surface of this module.
- */
+/** Implements execute vector query for the public runtime surface of this module. */
 export async function executeVectorQuery(
   store: VectorStoreConfig,
   vector: number[],
@@ -751,7 +853,10 @@ export async function executeVectorQuery(
       vector: number[];
       limit: number;
     };
-    const table = await loadLanceDbLocalTable(lanceDbStore.path, queryBody.table);
+    const table = await loadLanceDbLocalTable(
+      lanceDbStore.path,
+      queryBody.table,
+    );
     if (table.size === 0) {
       return [];
     }
@@ -783,7 +888,10 @@ export async function executeVectorQuery(
     });
     return hits.slice(0, queryLimit);
   }
-  const timeoutMs = normalizeSearchHttpTimeoutMs(options.timeout_ms, "Vector request");
+  const timeoutMs = normalizeSearchHttpTimeoutMs(
+    options.timeout_ms,
+    "Vector request",
+  );
   const fetcher = resolveSearchHttpFetcher(options.fetcher, "Vector request");
   const payload = await executeRemoteVectorPlan(
     plan.target.query_target,
@@ -799,9 +907,7 @@ export async function executeVectorQuery(
   return normalizeQdrantQueryResponse(payload);
 }
 
-/**
- * Implements execute vector upsert for the public runtime surface of this module.
- */
+/** Implements execute vector upsert for the public runtime surface of this module. */
 export async function executeVectorUpsert(
   store: VectorStoreConfig,
   records: VectorRecord[],
@@ -815,12 +921,18 @@ export async function executeVectorUpsert(
       records: VectorRecord[];
     };
     const key = getLanceDbLocalTableKey(lanceDbStore.path, upsertBody.table);
-    const table = await loadLanceDbLocalTable(lanceDbStore.path, upsertBody.table);
+    const table = await loadLanceDbLocalTable(
+      lanceDbStore.path,
+      upsertBody.table,
+    );
     for (const record of upsertBody.records) {
       table.set(record.id, record);
     }
     await persistLanceDbLocalTable(lanceDbStore.path, upsertBody.table, table);
-    const snapshotPath = getLanceDbSnapshotPath(lanceDbStore.path, upsertBody.table);
+    const snapshotPath = getLanceDbSnapshotPath(
+      lanceDbStore.path,
+      upsertBody.table,
+    );
     const snapshotStats = await stat(snapshotPath);
     lanceDbLocalTables.set(key, {
       records: table,
@@ -829,7 +941,10 @@ export async function executeVectorUpsert(
     });
     return { status: "ok" };
   }
-  const timeoutMs = normalizeSearchHttpTimeoutMs(options.timeout_ms, "Vector request");
+  const timeoutMs = normalizeSearchHttpTimeoutMs(
+    options.timeout_ms,
+    "Vector request",
+  );
   const fetcher = resolveSearchHttpFetcher(options.fetcher, "Vector request");
   const payload = await executeRemoteVectorPlan(
     plan.target.upsert_target,
@@ -845,9 +960,7 @@ export async function executeVectorUpsert(
   return normalizeQdrantUpsertResponse(payload);
 }
 
-/**
- * Implements execute vector delete for the public runtime surface of this module.
- */
+/** Implements execute vector delete for the public runtime surface of this module. */
 export async function executeVectorDelete(
   store: VectorStoreConfig,
   ids: string[],
@@ -861,7 +974,10 @@ export async function executeVectorDelete(
       ids: string[];
     };
     const key = getLanceDbLocalTableKey(lanceDbStore.path, deleteBody.table);
-    const table = await loadLanceDbLocalTable(lanceDbStore.path, deleteBody.table);
+    const table = await loadLanceDbLocalTable(
+      lanceDbStore.path,
+      deleteBody.table,
+    );
     if (table.size === 0) {
       return { status: "ok" };
     }
@@ -872,7 +988,10 @@ export async function executeVectorDelete(
     if (table.size === 0) {
       lanceDbLocalTables.delete(key);
     } else {
-      const snapshotPath = getLanceDbSnapshotPath(lanceDbStore.path, deleteBody.table);
+      const snapshotPath = getLanceDbSnapshotPath(
+        lanceDbStore.path,
+        deleteBody.table,
+      );
       const snapshotStats = await stat(snapshotPath);
       lanceDbLocalTables.set(key, {
         records: table,
@@ -882,7 +1001,10 @@ export async function executeVectorDelete(
     }
     return { status: "ok" };
   }
-  const timeoutMs = normalizeSearchHttpTimeoutMs(options.timeout_ms, "Vector request");
+  const timeoutMs = normalizeSearchHttpTimeoutMs(
+    options.timeout_ms,
+    "Vector request",
+  );
   const fetcher = resolveSearchHttpFetcher(options.fetcher, "Vector request");
   const payload = await executeRemoteVectorPlan(
     resolveQdrantDeleteTarget(plan.target.upsert_target),
@@ -898,9 +1020,7 @@ export async function executeVectorDelete(
   return normalizeQdrantUpsertResponse(payload);
 }
 
-/**
- * Implements execute vector reset for the public runtime surface of this module.
- */
+/** Implements execute vector reset for the public runtime surface of this module. */
 export async function executeVectorReset(
   store: VectorStoreConfig,
   knownIds: string[] = [],
@@ -913,11 +1033,18 @@ export async function executeVectorReset(
   }
   if (vectorDimension !== undefined) {
     if (!Number.isInteger(vectorDimension) || vectorDimension <= 0) {
-      throw new Error("Vector reset dimension must be a positive integer when provided");
+      throw new Error(
+        "Vector reset dimension must be a positive integer when provided",
+      );
     }
     const target = resolveVectorStoreRequestTarget(store);
-    const collectionTarget = resolveQdrantCollectionTarget(target.upsert_target);
-    const timeoutMs = normalizeSearchHttpTimeoutMs(options.timeout_ms, "Vector request");
+    const collectionTarget = resolveQdrantCollectionTarget(
+      target.upsert_target,
+    );
+    const timeoutMs = normalizeSearchHttpTimeoutMs(
+      options.timeout_ms,
+      "Vector request",
+    );
     const fetcher = resolveSearchHttpFetcher(options.fetcher, "Vector request");
     const headers = buildQdrantJsonHeaders(store);
     try {
@@ -955,7 +1082,9 @@ export async function executeVectorReset(
     );
     return normalizeQdrantUpsertResponse(payload);
   }
-  const idsToDelete = knownIds.map((id) => id.trim()).filter((id) => id.length > 0);
+  const idsToDelete = knownIds
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0);
   if (idsToDelete.length === 0) {
     return { status: "ok" };
   }

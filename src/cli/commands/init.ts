@@ -7,8 +7,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
-import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
-import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
+import {
+  getActiveExtensionRegistrations,
+  runActiveOnWriteHooks,
+} from "../../core/extensions/index.js";
+import {
+  pathExists,
+  readFileIfExists,
+  writeFileAtomic,
+} from "../../core/fs/fs-utils.js";
 import { normalizePrefix } from "../../core/item/id.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
@@ -28,7 +35,12 @@ import {
   TYPE_PRESET_NAMES,
   type TypePresetName,
 } from "../../core/schema/type-presets.js";
-import { EXIT_CODE, GOVERNANCE_PRESET_DEFAULTS, PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS } from "../../core/shared/constants.js";
+import {
+  EXIT_CODE,
+  GOVERNANCE_PRESET_DEFAULTS,
+  PM_REQUIRED_SUBDIRS,
+  SETTINGS_DEFAULTS,
+} from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
@@ -43,110 +55,137 @@ import {
   type InitAgentGuidanceSummary,
 } from "./init-agent-guidance.js";
 
-/**
- * Documents the init installed packages summary payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the init installed packages summary payload exchanged by command, SDK, and package integrations. */
 export interface InitInstalledPackagesSummary {
+  /** Value that configures or reports installed all for this contract. */
   installed_all: boolean;
+  /** Number of installed entries represented by this result. */
   installed_count: number;
+  /** Value that configures or reports packages for this contract. */
   packages: Array<{
     alias: string;
     ok: boolean;
   }>;
 }
 
-/**
- * Restricts init type preset name values accepted by command, SDK, and storage contracts.
- */
+/** Restricts init type preset name values accepted by command, SDK, and storage contracts. */
 export type InitTypePresetName = TypePresetName;
 
-/**
- * Documents the init registered type preset summary payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the init registered type preset summary payload exchanged by command, SDK, and package integrations. */
 export interface InitRegisteredTypePresetSummary {
+  /** Value that configures or reports name for this contract. */
   name: InitTypePresetName;
+  /** Value that configures or reports registered for this contract. */
   registered: string[];
+  /** Value that configures or reports updated for this contract. */
   updated: string[];
+  /** Value that configures or reports file for this contract. */
   file: string;
 }
 
-/**
- * Documents the init agent-guidance summary plus generated next-step hints returned by init.
- */
-export type InitAgentGuidanceResult = InitAgentGuidanceSummary & { next_steps: string[] };
+/** Documents the init agent-guidance summary plus generated next-step hints returned by init. */
+export type InitAgentGuidanceResult = InitAgentGuidanceSummary & {
+  next_steps: string[];
+};
 
 /** Describes how init resolved the tracker and optional workspace target. */
 export interface InitTargetResolution {
+  /** Value that configures or reports mode for this contract. */
   mode: "workspace-discovery" | "tracker-path" | "workspace-path";
+  /** Value that configures or reports tracker root for this contract. */
   tracker_root: string;
+  /** Value that configures or reports workspace root for this contract. */
   workspace_root?: string;
 }
 
-/**
- * Documents the init result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the init result payload exchanged by command, SDK, and package integrations. */
 export interface InitResult {
+  /** Whether the operation completed without a blocking failure. */
   ok: boolean;
+  /** Filesystem path used for path resolution. */
   path: string;
+  /** Value that configures or reports target for this contract. */
   target: InitTargetResolution;
+  /** Value that configures or reports settings for this contract. */
   settings: PmSettings;
+  /** Value that configures or reports created dirs for this contract. */
   created_dirs: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** Value that configures or reports governance preset for this contract. */
   governance_preset: GovernancePreset;
+  /** Value that configures or reports wizard used for this contract. */
   wizard_used: boolean;
+  /** Value that configures or reports registered type preset for this contract. */
   registered_type_preset?: InitRegisteredTypePresetSummary;
+  /** Value that configures or reports installed packages for this contract. */
   installed_packages?: InitInstalledPackagesSummary;
+  /** Value that configures or reports next steps for this contract. */
   next_steps: string[];
+  /** Value that configures or reports agent guidance for this contract. */
   agent_guidance: InitAgentGuidanceResult;
 }
 
-/**
- * Documents the init command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the init command options payload exchanged by command, SDK, and package integrations. */
 export interface InitCommandOptions {
+  /** Value that configures or reports preset for this contract. */
   preset?: string;
+  /** Value that configures or reports defaults for this contract. */
   defaults?: boolean;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Value that configures or reports with packages for this contract. */
   withPackages?: boolean;
+  /** Value that configures or reports agent guidance for this contract. */
   agentGuidance?: string;
+  /** Value that configures or reports type preset for this contract. */
   typePreset?: string;
+  /** Value that configures or reports force for this contract. */
   force?: boolean;
+  /** Value that configures or reports workspace for this contract. */
   workspace?: string;
 }
 
-/**
- * Concise projection of an InitResult for the default (toon) renderer. It keeps
- * every piece of information that only init can surface — the resolved path, id
- * prefix, governance preset, telemetry capture level, created-directory count,
- * the full warnings list (including `already_exists:` markers), agent-guidance
- * summary, and next steps — but replaces the verbose full settings tree (~190
- * lines) with a compact `settings` summary. Use --verbose for the full tree.
- */
+/** Concise projection of an InitResult for the default (toon) renderer. It keeps every piece of information that only init can surface — the resolved path, id prefix, governance preset, telemetry capture level, created-directory count, the full warnings list (including `already_exists:` markers), agent-guidance summary, and next steps — but replaces the verbose full settings tree (~190 lines) with a compact `settings` summary. Use --verbose for the full tree. */
 export interface InitConciseResult {
+  /** Whether the operation completed without a blocking failure. */
   ok: boolean;
+  /** Filesystem path used for path resolution. */
   path: string;
+  /** Value that configures or reports target for this contract. */
   target: InitTargetResolution;
+  /** Value that configures or reports id prefix for this contract. */
   id_prefix: string;
+  /** Value that configures or reports governance preset for this contract. */
   governance_preset: GovernancePreset;
+  /** Value that configures or reports telemetry for this contract. */
   telemetry: {
     enabled: boolean;
     capture_level: string;
   };
+  /** Value that configures or reports output format for this contract. */
   output_format: string;
+  /** Number of created dirs entries represented by this result. */
   created_dirs_count: number;
+  /** Value that configures or reports created dirs for this contract. */
   created_dirs: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** Value that configures or reports wizard used for this contract. */
   wizard_used: boolean;
+  /** Value that configures or reports registered type preset for this contract. */
   registered_type_preset?: InitRegisteredTypePresetSummary;
+  /** Value that configures or reports installed packages for this contract. */
   installed_packages?: InitInstalledPackagesSummary;
+  /** Value that configures or reports next steps for this contract. */
   next_steps: string[];
+  /** Value that configures or reports agent guidance for this contract. */
   agent_guidance: InitAgentGuidanceResult;
+  /** Value that configures or reports hint for this contract. */
   hint: string;
 }
 
-/**
- * Implements summarize init result for the public runtime surface of this module.
- */
+/** Implements summarize init result for the public runtime surface of this module. */
 export function summarizeInitResult(result: InitResult): InitConciseResult {
   return {
     ok: result.ok,
@@ -163,14 +202,19 @@ export function summarizeInitResult(result: InitResult): InitConciseResult {
     created_dirs: result.created_dirs,
     warnings: result.warnings,
     wizard_used: result.wizard_used,
-    ...(result.registered_type_preset ? { registered_type_preset: result.registered_type_preset } : {}),
-    ...(result.installed_packages ? { installed_packages: result.installed_packages } : {}),
+    ...(result.registered_type_preset
+      ? { registered_type_preset: result.registered_type_preset }
+      : {}),
+    ...(result.installed_packages
+      ? { installed_packages: result.installed_packages }
+      : {}),
     next_steps: result.next_steps,
     agent_guidance: result.agent_guidance,
     hint: "Re-run with --verbose for the full settings tree.",
   };
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   normalizeInitGovernancePreset,
   normalizeInitTypePreset,
@@ -190,7 +234,8 @@ export const _testOnly = {
 };
 
 type InitReadlineInterface = ReturnType<typeof readline.createInterface>;
-let createInitReadlineInterface = (): InitReadlineInterface => readline.createInterface({ input, output });
+let createInitReadlineInterface = (): InitReadlineInterface =>
+  readline.createInterface({ input, output });
 
 interface InitNormalizedOptions {
   presetFromOption: BuiltinGovernancePreset | undefined;
@@ -208,8 +253,11 @@ interface InitSettingsResolution {
   wizardUsed: boolean;
 }
 
-function setInitReadlineFactoryForTests(factory: (() => InitReadlineInterface) | undefined): void {
-  createInitReadlineInterface = factory ?? (() => readline.createInterface({ input, output }));
+function setInitReadlineFactoryForTests(
+  factory: (() => InitReadlineInterface) | undefined,
+): void {
+  createInitReadlineInterface =
+    factory ?? (() => readline.createInterface({ input, output }));
 }
 
 function cloneDefaults(): PmSettings {
@@ -217,8 +265,14 @@ function cloneDefaults(): PmSettings {
 }
 
 type BuiltinGovernancePreset = Exclude<GovernancePreset, "custom">;
-const BUILTIN_GOVERNANCE_PRESETS: BuiltinGovernancePreset[] = ["minimal", "default", "strict"];
-function normalizeInitGovernancePreset(rawValue: string | undefined): BuiltinGovernancePreset | undefined {
+const BUILTIN_GOVERNANCE_PRESETS: BuiltinGovernancePreset[] = [
+  "minimal",
+  "default",
+  "strict",
+];
+function normalizeInitGovernancePreset(
+  rawValue: string | undefined,
+): BuiltinGovernancePreset | undefined {
   if (rawValue === undefined) {
     return undefined;
   }
@@ -226,7 +280,11 @@ function normalizeInitGovernancePreset(rawValue: string | undefined): BuiltinGov
   if (normalized.length === 0) {
     throw new PmCliError("--preset must not be empty", EXIT_CODE.USAGE);
   }
-  if (normalized === "minimal" || normalized === "default" || normalized === "strict") {
+  if (
+    normalized === "minimal" ||
+    normalized === "default" ||
+    normalized === "strict"
+  ) {
     return normalized;
   }
   if (normalized === "lite" || normalized === "minimum") {
@@ -238,7 +296,9 @@ function normalizeInitGovernancePreset(rawValue: string | undefined): BuiltinGov
   );
 }
 
-function normalizeInitTypePreset(rawValue: string | undefined): InitTypePresetName | undefined {
+function normalizeInitTypePreset(
+  rawValue: string | undefined,
+): InitTypePresetName | undefined {
   if (rawValue === undefined) {
     return undefined;
   }
@@ -258,7 +318,9 @@ function normalizeInitTypePreset(rawValue: string | undefined): InitTypePresetNa
   }
 }
 
-function normalizeOptionalInitAuthor(rawValue: string | undefined): string | undefined {
+function normalizeOptionalInitAuthor(
+  rawValue: string | undefined,
+): string | undefined {
   if (rawValue === undefined) {
     return undefined;
   }
@@ -277,7 +339,12 @@ function isPathLikeInitTarget(rawValue: string | undefined): boolean {
   if (trimmed.length === 0) {
     return false;
   }
-  return path.isAbsolute(trimmed) || trimmed.startsWith(".") || trimmed.includes("/") || trimmed.includes("\\");
+  return (
+    path.isAbsolute(trimmed) ||
+    trimmed.startsWith(".") ||
+    trimmed.includes("/") ||
+    trimmed.includes("\\")
+  );
 }
 
 function resolveInitInvocation(
@@ -285,7 +352,11 @@ function resolveInitInvocation(
   global: GlobalOptions,
   prefixArg: string | undefined,
   workspaceArg?: string,
-): { pmRoot: string; prefixArg: string | undefined; target: InitTargetResolution } {
+): {
+  pmRoot: string;
+  prefixArg: string | undefined;
+  target: InitTargetResolution;
+} {
   const normalizedWorkspace = workspaceArg?.trim();
   if (workspaceArg !== undefined && normalizedWorkspace?.length === 0) {
     throw new PmCliError("--workspace must not be empty", EXIT_CODE.USAGE);
@@ -302,7 +373,11 @@ function resolveInitInvocation(
     return {
       pmRoot,
       prefixArg,
-      target: { mode: "workspace-path", tracker_root: pmRoot, workspace_root: workspaceRoot },
+      target: {
+        mode: "workspace-path",
+        tracker_root: pmRoot,
+        workspace_root: workspaceRoot,
+      },
     };
   }
   if (global.path === undefined && isPathLikeInitTarget(prefixArg)) {
@@ -317,13 +392,20 @@ function resolveInitInvocation(
   return {
     pmRoot,
     prefixArg,
-    target: global.path === undefined
-      ? { mode: "workspace-discovery", tracker_root: pmRoot, workspace_root: cwd }
-      : { mode: "tracker-path", tracker_root: pmRoot },
+    target:
+      global.path === undefined
+        ? {
+            mode: "workspace-discovery",
+            tracker_root: pmRoot,
+            workspace_root: cwd,
+          }
+        : { mode: "tracker-path", tracker_root: pmRoot },
   };
 }
 
-function normalizeInitAgentGuidanceMode(rawValue: string | undefined): InitAgentGuidanceMode {
+function normalizeInitAgentGuidanceMode(
+  rawValue: string | undefined,
+): InitAgentGuidanceMode {
   if (rawValue === undefined) {
     return "ask";
   }
@@ -331,7 +413,12 @@ function normalizeInitAgentGuidanceMode(rawValue: string | undefined): InitAgent
   if (normalized.length === 0) {
     throw new PmCliError("--agent-guidance must not be empty", EXIT_CODE.USAGE);
   }
-  if (normalized === "ask" || normalized === "add" || normalized === "skip" || normalized === "status") {
+  if (
+    normalized === "ask" ||
+    normalized === "add" ||
+    normalized === "skip" ||
+    normalized === "status"
+  ) {
     return normalized;
   }
   throw new PmCliError(
@@ -354,7 +441,10 @@ function parseYesNoChoice(answer: string, currentDefault: boolean): boolean {
   return currentDefault;
 }
 
-function applyGovernancePreset(settings: PmSettings, preset: BuiltinGovernancePreset): void {
+function applyGovernancePreset(
+  settings: PmSettings,
+  preset: BuiltinGovernancePreset,
+): void {
   const knobs = GOVERNANCE_PRESET_DEFAULTS[preset];
   settings.governance = {
     preset,
@@ -364,11 +454,15 @@ function applyGovernancePreset(settings: PmSettings, preset: BuiltinGovernancePr
   settings.validation.metadata_profile = knobs.metadata_profile;
 }
 
-function isInstalledPackageEntry(value: unknown): value is { alias?: unknown; ok?: unknown } {
+function isInstalledPackageEntry(
+  value: unknown,
+): value is { alias?: unknown; ok?: unknown } {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function summarizeInstalledPackages(result: ExtensionCommandResult): InitInstalledPackagesSummary {
+function summarizeInstalledPackages(
+  result: ExtensionCommandResult,
+): InitInstalledPackagesSummary {
   const details = result.details as {
     installed_all?: unknown;
     installed_count?: unknown;
@@ -379,7 +473,8 @@ function summarizeInstalledPackages(result: ExtensionCommandResult): InitInstall
   };
   return {
     installed_all: details.installed_all === true,
-    installed_count: typeof details.installed_count === "number" ? details.installed_count : 0,
+    installed_count:
+      typeof details.installed_count === "number" ? details.installed_count : 0,
     packages: Array.isArray(details.packages)
       ? details.packages.filter(isInstalledPackageEntry).map((entry) => ({
           alias: typeof entry.alias === "string" ? entry.alias : "",
@@ -395,7 +490,11 @@ async function registerInitTypePreset(
   preset: InitTypePresetName,
 ): Promise<InitRegisteredTypePresetSummary> {
   const schema = normalizeRuntimeSchemaSettings(settings.schema);
-  const typesPath = filePathForSchemaSection(pmRoot, schema.files.types, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types);
+  const typesPath = filePathForSchemaSection(
+    pmRoot,
+    schema.files.types,
+    DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types,
+  );
   const parsed = parseItemTypesFile(await readFileIfExists(typesPath));
   let nextFile = parsed;
   const registered: string[] = [];
@@ -430,7 +529,11 @@ async function isLikelyWorkspaceRoot(candidate: string): Promise<boolean> {
   return false;
 }
 
-async function assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot: string, explicitTrackerTarget: boolean, force: boolean): Promise<void> {
+async function assertExplicitTrackerPathIsNotWorkspaceRoot(
+  pmRoot: string,
+  explicitTrackerTarget: boolean,
+  force: boolean,
+): Promise<void> {
   if (!explicitTrackerTarget || force) {
     return;
   }
@@ -465,7 +568,10 @@ async function assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot: string, expli
   );
 }
 
-async function ensureInitDirectories(pmRoot: string, subdirs: readonly string[]): Promise<{
+async function ensureInitDirectories(
+  pmRoot: string,
+  subdirs: readonly string[],
+): Promise<{
   createdDirs: string[];
   warnings: string[];
 }> {
@@ -491,7 +597,10 @@ async function ensureInitDirectories(pmRoot: string, subdirs: readonly string[])
   return { createdDirs, warnings };
 }
 
-async function runInitWizard(initialPrefix: string, telemetryDefault: boolean): Promise<{
+async function runInitWizard(
+  initialPrefix: string,
+  telemetryDefault: boolean,
+): Promise<{
   prefix: string;
   preset: BuiltinGovernancePreset;
   telemetry_enabled: boolean;
@@ -499,19 +608,37 @@ async function runInitWizard(initialPrefix: string, telemetryDefault: boolean): 
   const rl = createInitReadlineInterface();
   try {
     output.write("pm init setup wizard (agent-optimized)\n");
-    output.write("This walkthrough is non-destructive and each choice can be changed later with pm config.\n\n");
+    output.write(
+      "This walkthrough is non-destructive and each choice can be changed later with pm config.\n\n",
+    );
 
     output.write("1/3 Item ID prefix\n");
-    output.write("Prefix is prepended to generated IDs (for example pm-a1b2).\n");
-    const prefixAnswer = await rl.question(`Item ID prefix [${initialPrefix}]: `);
-    const resolvedPrefix = prefixAnswer.trim().length > 0 ? normalizePrefix(prefixAnswer) : initialPrefix;
+    output.write(
+      "Prefix is prepended to generated IDs (for example pm-a1b2).\n",
+    );
+    const prefixAnswer = await rl.question(
+      `Item ID prefix [${initialPrefix}]: `,
+    );
+    const resolvedPrefix =
+      prefixAnswer.trim().length > 0
+        ? normalizePrefix(prefixAnswer)
+        : initialPrefix;
 
     output.write("\n2/3 Governance preset\n");
-    output.write("minimal: no ownership blocking, progressive create defaults, close validation off.\n");
-    output.write("default: ownership conflict warnings, progressive create defaults, close validation warn.\n");
-    output.write("strict: ownership blocking, strict create defaults, close validation strict.\n");
-    const presetAnswer = await rl.question("Governance preset [minimal/default/strict] (default: minimal): ");
-    const presetChoice = presetAnswer.trim().length > 0 ? presetAnswer.trim() : "minimal";
+    output.write(
+      "minimal: no ownership blocking, progressive create defaults, close validation off.\n",
+    );
+    output.write(
+      "default: ownership conflict warnings, progressive create defaults, close validation warn.\n",
+    );
+    output.write(
+      "strict: ownership blocking, strict create defaults, close validation strict.\n",
+    );
+    const presetAnswer = await rl.question(
+      "Governance preset [minimal/default/strict] (default: minimal): ",
+    );
+    const presetChoice =
+      presetAnswer.trim().length > 0 ? presetAnswer.trim() : "minimal";
     // The wizard is forgiving: a typo'd/unknown preset defaults to minimal with a
     // notice instead of throwing and aborting an in-progress interactive setup.
     // normalizeInitGovernancePreset returns a concrete preset for valid input and
@@ -519,16 +646,27 @@ async function runInitWizard(initialPrefix: string, telemetryDefault: boolean): 
     // always a BuiltinGovernancePreset on the success path.
     let resolvedPreset: BuiltinGovernancePreset = "minimal";
     try {
-      resolvedPreset = normalizeInitGovernancePreset(presetChoice) as BuiltinGovernancePreset;
+      resolvedPreset = normalizeInitGovernancePreset(
+        presetChoice,
+      ) as BuiltinGovernancePreset;
     } catch {
-      output.write(`Unrecognized governance preset "${presetChoice}"; using minimal.\n`);
+      output.write(
+        `Unrecognized governance preset "${presetChoice}"; using minimal.\n`,
+      );
     }
 
     output.write("\n3/3 Project telemetry\n");
-    output.write("Telemetry helps improve reliability and can be disabled anytime via pm config.\n");
+    output.write(
+      "Telemetry helps improve reliability and can be disabled anytime via pm config.\n",
+    );
     const telemetryLabel = telemetryDefault ? "Y/n" : "y/N";
-    const telemetryAnswer = await rl.question(`Enable telemetry for this project? [${telemetryLabel}] `);
-    const telemetryEnabled = parseYesNoChoice(telemetryAnswer, telemetryDefault);
+    const telemetryAnswer = await rl.question(
+      `Enable telemetry for this project? [${telemetryLabel}] `,
+    );
+    const telemetryEnabled = parseYesNoChoice(
+      telemetryAnswer,
+      telemetryDefault,
+    );
 
     output.write("\n");
     return {
@@ -541,7 +679,9 @@ async function runInitWizard(initialPrefix: string, telemetryDefault: boolean): 
   }
 }
 
-function normalizeInitCommandOptions(options: InitCommandOptions): InitNormalizedOptions {
+function normalizeInitCommandOptions(
+  options: InitCommandOptions,
+): InitNormalizedOptions {
   return {
     presetFromOption: normalizeInitGovernancePreset(options.preset),
     useDefaults: options.defaults === true,
@@ -560,19 +700,32 @@ function collectExistingSettingsPendingChanges(params: {
   authorFromOption: string | undefined;
 }): string[] {
   const pendingChanges: string[] = [];
-  if (params.prefixArg !== undefined && params.settings.id_prefix !== params.normalizedPrefix) {
+  if (
+    params.prefixArg !== undefined &&
+    params.settings.id_prefix !== params.normalizedPrefix
+  ) {
     pendingChanges.push("id_prefix");
   }
-  if (params.presetFromOption !== undefined && params.settings.governance.preset !== params.presetFromOption) {
+  if (
+    params.presetFromOption !== undefined &&
+    params.settings.governance.preset !== params.presetFromOption
+  ) {
     pendingChanges.push("governance_preset");
   }
-  if (params.authorFromOption !== undefined && params.settings.author_default !== params.authorFromOption) {
+  if (
+    params.authorFromOption !== undefined &&
+    params.settings.author_default !== params.authorFromOption
+  ) {
     pendingChanges.push("author_default");
   }
   return pendingChanges;
 }
 
-function assertExistingSettingsUpdateAllowed(settingsPath: string, pendingChanges: string[], force: boolean): void {
+function assertExistingSettingsUpdateAllowed(
+  settingsPath: string,
+  pendingChanges: string[],
+  force: boolean,
+): void {
   if (pendingChanges.length === 0 || force) {
     return;
   }
@@ -606,17 +759,28 @@ function applyExistingSettingsUpdates(params: {
   warnings: string[];
 }): boolean {
   let changed = false;
-  if (params.prefixArg !== undefined && params.settings.id_prefix !== params.normalizedPrefix) {
+  if (
+    params.prefixArg !== undefined &&
+    params.settings.id_prefix !== params.normalizedPrefix
+  ) {
     params.settings.id_prefix = params.normalizedPrefix;
     params.warnings.push(`updated:id_prefix:${params.normalizedPrefix}`);
     changed = true;
   }
-  if (params.presetFromOption !== undefined && params.settings.governance.preset !== params.presetFromOption) {
+  if (
+    params.presetFromOption !== undefined &&
+    params.settings.governance.preset !== params.presetFromOption
+  ) {
     applyGovernancePreset(params.settings, params.presetFromOption);
-    params.warnings.push(`updated:governance_preset:${params.presetFromOption}`);
+    params.warnings.push(
+      `updated:governance_preset:${params.presetFromOption}`,
+    );
     changed = true;
   }
-  if (params.authorFromOption !== undefined && params.settings.author_default !== params.authorFromOption) {
+  if (
+    params.authorFromOption !== undefined &&
+    params.settings.author_default !== params.authorFromOption
+  ) {
     params.settings.author_default = params.authorFromOption;
     params.warnings.push(`updated:author_default:${params.authorFromOption}`);
     changed = true;
@@ -642,7 +806,11 @@ async function loadExistingInitSettings(params: {
     presetFromOption: params.normalizedOptions.presetFromOption,
     authorFromOption: params.normalizedOptions.authorFromOption,
   });
-  assertExistingSettingsUpdateAllowed(params.settingsPath, pendingChanges, params.options.force === true);
+  assertExistingSettingsUpdateAllowed(
+    params.settingsPath,
+    pendingChanges,
+    params.options.force === true,
+  );
   if (
     applyExistingSettingsUpdates({
       settings,
@@ -678,7 +846,10 @@ async function createNewInitSettings(params: {
     process.stdin.isTTY === true &&
     process.stdout.isTTY === true
   ) {
-    const wizardChoices = await runInitWizard(normalizedPrefix, SETTINGS_DEFAULTS.telemetry.enabled);
+    const wizardChoices = await runInitWizard(
+      normalizedPrefix,
+      SETTINGS_DEFAULTS.telemetry.enabled,
+    );
     normalizedPrefix = wizardChoices.prefix;
     chosenPreset = wizardChoices.preset;
     chosenTelemetryEnabled = wizardChoices.telemetry_enabled;
@@ -757,7 +928,10 @@ async function ensureInitRuntimeSchemaFiles(
 }> {
   const createdDirs: string[] = [];
   const warnings: string[] = [];
-  const runtimeSchemaScaffold = await ensureRuntimeSchemaFileScaffold(pmRoot, settings.schema);
+  const runtimeSchemaScaffold = await ensureRuntimeSchemaFileScaffold(
+    pmRoot,
+    settings.schema,
+  );
   for (const createdPath of runtimeSchemaScaffold.created_paths) {
     createdDirs.push(createdPath);
     warnings.push(
@@ -780,7 +954,11 @@ async function maybeRegisterInitTypePreset(params: {
   if (params.typePreset === undefined) {
     return undefined;
   }
-  const registeredTypePreset = await registerInitTypePreset(params.pmRoot, params.settings, params.typePreset);
+  const registeredTypePreset = await registerInitTypePreset(
+    params.pmRoot,
+    params.settings,
+    params.typePreset,
+  );
   params.warnings.push(`registered_type_preset:${params.typePreset}`);
   params.warnings.push(
     ...(await runActiveOnWriteHooks({
@@ -798,9 +976,17 @@ async function ensureInitTypeDirectories(params: {
   createdDirs: string[];
   warnings: string[];
 }): Promise<void> {
-  const typeRegistry = resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations());
-  const customTypeFolders = typeRegistry.folders.filter((folder) => !(PM_REQUIRED_SUBDIRS as readonly string[]).includes(folder));
-  const scaffold = await ensureInitDirectories(params.pmRoot, customTypeFolders);
+  const typeRegistry = resolveItemTypeRegistry(
+    params.settings,
+    getActiveExtensionRegistrations(),
+  );
+  const customTypeFolders = typeRegistry.folders.filter(
+    (folder) => !(PM_REQUIRED_SUBDIRS as readonly string[]).includes(folder),
+  );
+  const scaffold = await ensureInitDirectories(
+    params.pmRoot,
+    customTypeFolders,
+  );
   params.createdDirs.push(...scaffold.createdDirs);
   params.warnings.push(...scaffold.warnings);
 }
@@ -814,10 +1000,16 @@ async function maybeInstallInitBundledPackages(
   if (!installBundledPackages) {
     return undefined;
   }
-  const packageInstallResult = await runExtension("all", { install: true, project: true }, { ...global, path: pmRoot });
+  const packageInstallResult = await runExtension(
+    "all",
+    { install: true, project: true },
+    { ...global, path: pmRoot },
+  );
   warnings.push(...packageInstallResult.warnings);
   const installedPackages = summarizeInstalledPackages(packageInstallResult);
-  const failedAliases = installedPackages.packages.filter((entry) => !entry.ok).map((entry) => entry.alias);
+  const failedAliases = installedPackages.packages
+    .filter((entry) => !entry.ok)
+    .map((entry) => entry.alias);
   if (!installedPackages.installed_all || failedAliases.length > 0) {
     throw new PmCliError(
       `pm init --with-packages did not install all bundled packages successfully${failedAliases.length > 0 ? `: ${failedAliases.join(", ")}` : "."}`,
@@ -833,10 +1025,13 @@ function buildInitNextSteps(params: {
   agentGuidanceNextSteps: string[];
   target: InitTargetResolution;
 }): string[] {
-  const pmCommand = (args: string[]): string => renderPmCommand([
-    ...(params.target.mode === "workspace-discovery" ? [] : ["--pm-path", params.target.tracker_root]),
-    ...args,
-  ]);
+  const pmCommand = (args: string[]): string =>
+    renderPmCommand([
+      ...(params.target.mode === "workspace-discovery"
+        ? []
+        : ["--pm-path", params.target.tracker_root]),
+      ...args,
+    ]);
   const nextSteps: string[] = [
     `Create your first item: ${pmCommand(["create", "--type", "Task", "--title", "<title>"])}`,
     `List active items: ${pmCommand(["list"])}`,
@@ -846,20 +1041,30 @@ function buildInitNextSteps(params: {
     nextSteps.push(
       `Add optional packages for richer workflows: ${pmCommand(["install", "calendar", "--project"])}, ${pmCommand(["install", "templates", "--project"])}, ${pmCommand(["install", "guide-shell", "--project"])}`,
     );
-    nextSteps.push(`Or install everything bundled: ${pmCommand(["init", "--with-packages"])} (idempotent on re-run)`);
+    nextSteps.push(
+      `Or install everything bundled: ${pmCommand(["init", "--with-packages"])} (idempotent on re-run)`,
+    );
   } else {
-    nextSteps.push(`Explore newly-available commands: ${pmCommand(["cal"])}, ${pmCommand(["templates"])}, ${pmCommand(["guide"])}`);
+    nextSteps.push(
+      `Explore newly-available commands: ${pmCommand(["cal"])}, ${pmCommand(["templates"])}, ${pmCommand(["guide"])}`,
+    );
   }
   if (params.registeredTypePreset) {
     nextSteps.push(
       `Inspect registered preset types: ${pmCommand(["schema", "list"])}, ${pmCommand(["schema", "show", params.registeredTypePreset.registered[0] ?? params.registeredTypePreset.updated[0]])}`,
     );
   }
-  nextSteps.push("Set PM_AUTHOR=<your-agent-id> so mutations attribute to the right caller.");
+  nextSteps.push(
+    "Set PM_AUTHOR=<your-agent-id> so mutations attribute to the right caller.",
+  );
   for (const guidanceNextStep of params.agentGuidanceNextSteps) {
-    const scopedGuidance = params.target.mode === "workspace-discovery"
-      ? guidanceNextStep
-      : guidanceNextStep.replace(/\bpm (?=[a-z])/g, () => `${pmCommand([])} `);
+    const scopedGuidance =
+      params.target.mode === "workspace-discovery"
+        ? guidanceNextStep
+        : guidanceNextStep.replace(
+            /\bpm (?=[a-z])/g,
+            () => `${pmCommand([])} `,
+          );
     if (!nextSteps.includes(scopedGuidance)) {
       nextSteps.push(scopedGuidance);
     }
@@ -867,19 +1072,26 @@ function buildInitNextSteps(params: {
   return nextSteps;
 }
 
-/**
- * Implements run init for the public runtime surface of this module.
- */
+/** Implements run init for the public runtime surface of this module. */
 export async function runInit(
   prefixArg: string | undefined,
   global: GlobalOptions,
   options: InitCommandOptions = {},
 ): Promise<InitResult> {
   const cwd = process.cwd();
-  const invocation = resolveInitInvocation(cwd, global, prefixArg, options.workspace);
+  const invocation = resolveInitInvocation(
+    cwd,
+    global,
+    prefixArg,
+    options.workspace,
+  );
   const pmRoot = invocation.pmRoot;
   prefixArg = invocation.prefixArg;
-  await assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot, invocation.target.mode === "tracker-path", options.force === true);
+  await assertExplicitTrackerPathIsNotWorkspaceRoot(
+    pmRoot,
+    invocation.target.mode === "tracker-path",
+    options.force === true,
+  );
   const createdDirs: string[] = [];
   const warnings: string[] = [];
   const baseDirs = await ensureInitDirectories(pmRoot, PM_REQUIRED_SUBDIRS);
@@ -947,7 +1159,9 @@ export async function runInit(
     warnings,
     governance_preset: settings.governance.preset,
     wizard_used: settingsResolution.wizardUsed,
-    ...(registeredTypePreset ? { registered_type_preset: registeredTypePreset } : {}),
+    ...(registeredTypePreset
+      ? { registered_type_preset: registeredTypePreset }
+      : {}),
     ...(installedPackages ? { installed_packages: installedPackages } : {}),
     next_steps: nextSteps,
     agent_guidance: agentGuidance,

@@ -13,9 +13,7 @@ import { PmCliError } from "../core/shared/errors.js";
 import { printError, printResult, writeStdout } from "../core/output/output.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
-import {
-  setActiveCommandResult,
-} from "../core/extensions/index.js";
+import { setActiveCommandResult } from "../core/extensions/index.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { ItemStatus } from "../types/index.js";
 import {
@@ -42,11 +40,7 @@ import type {
 } from "./commands/index.js";
 import type { runList, runActivity } from "./commands/index.js";
 
-export {
-  printError,
-  printResult,
-  writeStdout,
-};
+export { printError, printResult, writeStdout };
 
 function readJoinedRepeatedOption(
   options: Record<string, unknown>,
@@ -66,7 +60,10 @@ function readJoinedRepeatedOption(
       values.push(value);
       continue;
     }
-    if (!Array.isArray(value) || !value.every((entry) => typeof entry === "string")) {
+    if (
+      !Array.isArray(value) ||
+      !value.every((entry) => typeof entry === "string")
+    ) {
       return undefined;
     }
     if (observedArrays.has(value)) {
@@ -90,7 +87,9 @@ interface CommandOptionsReader {
 }
 
 function commandOptionsReader(command: unknown): CommandOptionsReader {
-  return typeof command === "object" && command !== null ? command as CommandOptionsReader : {};
+  return typeof command === "object" && command !== null
+    ? (command as CommandOptionsReader)
+    : {};
 }
 
 // Resolves the alias contract for a normalize target, falling back to a
@@ -105,53 +104,54 @@ function resolveCommanderContract(
   /* c8 ignore stop */
 }
 
-/**
- * Implements set resolved global options for the public runtime surface of this module.
- */
-export function setResolvedGlobalOptions(command: Command, globalOptions: GlobalOptions): void {
-  (command as CommandWithResolvedGlobals)[RESOLVED_GLOBAL_OPTIONS] = { ...globalOptions };
+/** Implements set resolved global options for the public runtime surface of this module. */
+export function setResolvedGlobalOptions(
+  command: Command,
+  globalOptions: GlobalOptions,
+): void {
+  (command as CommandWithResolvedGlobals)[RESOLVED_GLOBAL_OPTIONS] = {
+    ...globalOptions,
+  };
 }
 
-/**
- * Implements clear resolved global options for the public runtime surface of this module.
- */
+/** Implements clear resolved global options for the public runtime surface of this module. */
 export function clearResolvedGlobalOptions(command: Command): void {
   delete (command as CommandWithResolvedGlobals)[RESOLVED_GLOBAL_OPTIONS];
 }
 
-/**
- * Implements get global options for the public runtime surface of this module.
- */
+/** Implements get global options for the public runtime surface of this module. */
 export function getGlobalOptions(command: Command): GlobalOptions {
-  const resolved = (command as CommandWithResolvedGlobals)[RESOLVED_GLOBAL_OPTIONS];
+  const resolved = (command as CommandWithResolvedGlobals)[
+    RESOLVED_GLOBAL_OPTIONS
+  ];
   if (resolved) {
     return { ...resolved };
   }
   const reader = commandOptionsReader(command);
-  const opts = typeof reader.optsWithGlobals === "function"
-    ? reader.optsWithGlobals()
-    : typeof reader.opts === "function"
-      ? reader.opts()
-      : {};
+  const opts =
+    typeof reader.optsWithGlobals === "function"
+      ? reader.optsWithGlobals()
+      : typeof reader.opts === "function"
+        ? reader.opts()
+        : {};
   return {
     json: opts.json === true ? true : undefined,
     quiet: Boolean(opts.quiet),
     noChangedFields: opts.changedFields === false,
     idOnly: opts.idOnly === true,
-    path: typeof opts.pmPath === "string"
-      ? opts.pmPath
-      : typeof opts.path === "string"
-        ? opts.path
-        : undefined,
+    path:
+      typeof opts.pmPath === "string"
+        ? opts.pmPath
+        : typeof opts.path === "string"
+          ? opts.path
+          : undefined,
     noExtensions: opts.extensions === false,
     noPager: Boolean(opts.noPager),
     profile: Boolean(opts.profile),
   };
 }
 
-/**
- * Implements get command path for the public runtime surface of this module.
- */
+/** Implements get command path for the public runtime surface of this module. */
 export function getCommandPath(command: Command): string {
   const parts: string[] = [];
   let current: Command | null = command;
@@ -162,10 +162,10 @@ export function getCommandPath(command: Command): string {
   return parts.join(" ");
 }
 
-/**
- * Implements apply default output format for the public runtime surface of this module.
- */
-export async function applyDefaultOutputFormat(globalOptions: GlobalOptions): Promise<GlobalOptions> {
+/** Implements apply default output format for the public runtime surface of this module. */
+export async function applyDefaultOutputFormat(
+  globalOptions: GlobalOptions,
+): Promise<GlobalOptions> {
   if (globalOptions.json === true) {
     return globalOptions;
   }
@@ -180,16 +180,21 @@ export async function applyDefaultOutputFormat(globalOptions: GlobalOptions): Pr
   };
 }
 
-/**
- * Implements collect for the public runtime surface of this module.
- */
-export function collect(value: string, previous: string[] | undefined): string[] {
+/** Implements collect for the public runtime surface of this module. */
+export function collect(
+  value: string,
+  previous: string[] | undefined,
+): string[] {
   const next = previous ?? [];
   next.push(value);
   return next;
 }
 
-function pushOptionalValueFlag(args: string[], flag: string, value: unknown): void {
+function pushOptionalValueFlag(
+  args: string[],
+  flag: string,
+  value: unknown,
+): void {
   if (typeof value !== "string") {
     return;
   }
@@ -200,13 +205,21 @@ function pushOptionalValueFlag(args: string[], flag: string, value: unknown): vo
   args.push(flag, trimmed);
 }
 
-function pushOptionalBooleanFlag(args: string[], flag: string, value: unknown): void {
+function pushOptionalBooleanFlag(
+  args: string[],
+  flag: string,
+  value: unknown,
+): void {
   if (value === true) {
     args.push(flag);
   }
 }
 
-function pushRepeatableValueFlag(args: string[], flag: string, values: unknown): void {
+function pushRepeatableValueFlag(
+  args: string[],
+  flag: string,
+  values: unknown,
+): void {
   if (!Array.isArray(values)) {
     return;
   }
@@ -222,33 +235,48 @@ function pushRepeatableValueFlag(args: string[], flag: string, values: unknown):
   }
 }
 
-function optionTrue(options: Record<string, unknown>, key: string): true | undefined {
+function optionTrue(
+  options: Record<string, unknown>,
+  key: string,
+): true | undefined {
   return options[key] === true ? true : undefined;
 }
 
-function optionFalse(options: Record<string, unknown>, key: string): true | undefined {
+function optionFalse(
+  options: Record<string, unknown>,
+  key: string,
+): true | undefined {
   return options[key] === false ? true : undefined;
 }
 
-/**
- * Reads an option value when Commander supplied it as a string.
- */
-export function readOptionString(options: Record<string, unknown>, key: string): string | undefined {
+/** Reads an option value when Commander supplied it as a string. */
+export function readOptionString(
+  options: Record<string, unknown>,
+  key: string,
+): string | undefined {
   return typeof options[key] === "string" ? options[key] : undefined;
 }
 
-/**
- * Adds a Commander option that remains parseable but hidden from human help.
- */
-export function addHiddenOption(command: Command, flags: string, description: string): void {
+/** Adds a Commander option that remains parseable but hidden from human help. */
+export function addHiddenOption(
+  command: Command,
+  flags: string,
+  description: string,
+): void {
   command.addOption(new Option(flags, description).hideHelp());
 }
 
-function anyOptionTrue(options: Record<string, unknown>, keys: readonly string[]): true | undefined {
+function anyOptionTrue(
+  options: Record<string, unknown>,
+  keys: readonly string[],
+): true | undefined {
   return keys.some((key) => options[key] === true) ? true : undefined;
 }
 
-function copyUnknownOptions(target: Record<string, unknown>, source: Record<string, unknown>): void {
+function copyUnknownOptions(
+  target: Record<string, unknown>,
+  source: Record<string, unknown>,
+): void {
   for (const [key, value] of Object.entries(source)) {
     if (key === "__proto__" || key === "constructor" || key === "prototype") {
       continue;
@@ -260,10 +288,11 @@ function copyUnknownOptions(target: Record<string, unknown>, source: Record<stri
   }
 }
 
-/**
- * Implements build background test command args for the public runtime surface of this module.
- */
-export function buildBackgroundTestCommandArgs(id: string, options: Record<string, unknown>): string[] {
+/** Implements build background test command args for the public runtime surface of this module. */
+export function buildBackgroundTestCommandArgs(
+  id: string,
+  options: Record<string, unknown>,
+): string[] {
   const args: string[] = ["test", id, "--run", "--json", "--progress"];
   pushRepeatableValueFlag(args, "--add", options.add);
   pushRepeatableValueFlag(args, "--add-json", options.addJson);
@@ -271,57 +300,65 @@ export function buildBackgroundTestCommandArgs(id: string, options: Record<strin
   pushOptionalValueFlag(args, "--match", options.match);
   pushOptionalValueFlag(args, "--only-index", options.onlyIndex);
   pushOptionalBooleanFlag(args, "--only-last", options.onlyLast);
-  pushOptionalValueFlag(args, "--timeout", options.timeout);
-  pushRepeatableValueFlag(args, "--env-set", options.envSet);
-  pushRepeatableValueFlag(args, "--env-clear", options.envClear);
-  pushOptionalBooleanFlag(args, "--shared-host-safe", options.sharedHostSafe);
-  pushOptionalValueFlag(args, "--pm-context", options.pmContext);
-  pushOptionalBooleanFlag(args, "--override-linked-pm-context", options.overrideLinkedPmContext);
-  pushOptionalBooleanFlag(args, "--fail-on-context-mismatch", options.failOnContextMismatch);
-  pushOptionalBooleanFlag(args, "--fail-on-skipped", options.failOnSkipped);
-  pushOptionalBooleanFlag(args, "--fail-on-empty-test-run", options.failOnEmptyTestRun);
-  pushOptionalBooleanFlag(args, "--require-assertions-for-pm", options.requireAssertionsForPm);
-  pushOptionalBooleanFlag(args, "--check-context", options.checkContext);
-  pushOptionalBooleanFlag(args, "--auto-pm-context", options.autoPmContext);
+  pushSharedBackgroundTestCommandArgs(args, options);
   pushOptionalValueFlag(args, "--author", options.author);
   pushOptionalValueFlag(args, "--message", options.message);
   pushOptionalBooleanFlag(args, "--force", options.force);
   return args;
 }
 
-/**
- * Implements build background test all command args for the public runtime surface of this module.
- */
-export function buildBackgroundTestAllCommandArgs(options: Record<string, unknown>): string[] {
-  const args: string[] = ["test-all", "--json", "--progress"];
-  pushOptionalValueFlag(args, "--status", options.status);
-  pushOptionalValueFlag(args, "--limit", options.limit);
-  pushOptionalValueFlag(args, "--offset", options.offset);
+function pushSharedBackgroundTestCommandArgs(
+  args: string[],
+  options: Record<string, unknown>,
+): void {
   pushOptionalValueFlag(args, "--timeout", options.timeout);
   pushRepeatableValueFlag(args, "--env-set", options.envSet);
   pushRepeatableValueFlag(args, "--env-clear", options.envClear);
   pushOptionalBooleanFlag(args, "--shared-host-safe", options.sharedHostSafe);
   pushOptionalValueFlag(args, "--pm-context", options.pmContext);
-  pushOptionalBooleanFlag(args, "--override-linked-pm-context", options.overrideLinkedPmContext);
-  pushOptionalBooleanFlag(args, "--fail-on-context-mismatch", options.failOnContextMismatch);
+  pushOptionalBooleanFlag(
+    args,
+    "--override-linked-pm-context",
+    options.overrideLinkedPmContext,
+  );
+  pushOptionalBooleanFlag(
+    args,
+    "--fail-on-context-mismatch",
+    options.failOnContextMismatch,
+  );
   pushOptionalBooleanFlag(args, "--fail-on-skipped", options.failOnSkipped);
-  pushOptionalBooleanFlag(args, "--fail-on-empty-test-run", options.failOnEmptyTestRun);
-  pushOptionalBooleanFlag(args, "--require-assertions-for-pm", options.requireAssertionsForPm);
+  pushOptionalBooleanFlag(
+    args,
+    "--fail-on-empty-test-run",
+    options.failOnEmptyTestRun,
+  );
+  pushOptionalBooleanFlag(
+    args,
+    "--require-assertions-for-pm",
+    options.requireAssertionsForPm,
+  );
   pushOptionalBooleanFlag(args, "--check-context", options.checkContext);
   pushOptionalBooleanFlag(args, "--auto-pm-context", options.autoPmContext);
+}
+
+/** Implements build background test all command args for the public runtime surface of this module. */
+export function buildBackgroundTestAllCommandArgs(
+  options: Record<string, unknown>,
+): string[] {
+  const args: string[] = ["test-all", "--json", "--progress"];
+  pushOptionalValueFlag(args, "--status", options.status);
+  pushOptionalValueFlag(args, "--limit", options.limit);
+  pushOptionalValueFlag(args, "--offset", options.offset);
+  pushSharedBackgroundTestCommandArgs(args, options);
   return args;
 }
 
-/**
- * Implements format hook warnings for the public runtime surface of this module.
- */
+/** Implements format hook warnings for the public runtime surface of this module. */
 export function formatHookWarnings(warnings: string[]): string {
   return warnings.join(",");
 }
 
-/**
- * Implements normalize create options for the public runtime surface of this module.
- */
+/** Implements normalize create options for the public runtime surface of this module. */
 export function normalizeCreateOptions(
   commandOptions: Record<string, unknown>,
   options: { requireType?: boolean } = {},
@@ -329,12 +366,18 @@ export function normalizeCreateOptions(
   const readCreateString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
       commandOptions,
-      resolveCommanderContract(CREATE_COMMANDER_STRING_OPTION_CONTRACTS, target),
+      resolveCommanderContract(
+        CREATE_COMMANDER_STRING_OPTION_CONTRACTS,
+        target,
+      ),
     );
   const readCreateList = (target: string): string[] | undefined =>
     readStringArrayFromCommanderOptions(
       commandOptions,
-      resolveCommanderContract(CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, target),
+      resolveCommanderContract(
+        CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
+        target,
+      ),
     );
 
   const type = readCreateString("type");
@@ -361,7 +404,10 @@ export function normalizeCreateOptions(
     estimatedMinutes: readCreateString("estimatedMinutes"),
     acceptanceCriteria: readJoinedRepeatedOption(
       commandOptions,
-      resolveCommanderContract(CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, "acceptanceCriteria"),
+      resolveCommanderContract(
+        CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
+        "acceptanceCriteria",
+      ),
     ),
     definitionOfReady: readCreateString("definitionOfReady"),
     order: readCreateString("order"),
@@ -376,7 +422,8 @@ export function normalizeCreateOptions(
     message: readCreateString("message"),
     assignee: readCreateString("assignee"),
     parent: readCreateString("parent"),
-    allowMissingParent: optionTrue(commandOptions, "allowMissingParent") === true,
+    allowMissingParent:
+      optionTrue(commandOptions, "allowMissingParent") === true,
     reviewer: readCreateString("reviewer"),
     risk: readCreateString("risk"),
     confidence: readCreateString("confidence"),
@@ -419,24 +466,30 @@ export function normalizeCreateOptions(
     clearReminders: optionTrue(commandOptions, "clearReminders"),
     clearEvents: optionTrue(commandOptions, "clearEvents"),
     clearTypeOptions: optionTrue(commandOptions, "clearTypeOptions"),
-  }
+  };
   copyUnknownOptions(normalized, commandOptions);
   return normalized as CreateCommandOptions;
 }
 
-/**
- * Implements normalize update options for the public runtime surface of this module.
- */
-export function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record<string, unknown> {
+/** Implements normalize update options for the public runtime surface of this module. */
+export function normalizeUpdateOptions(
+  commandOptions: Record<string, unknown>,
+): Record<string, unknown> {
   const readUpdateString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
       commandOptions,
-      resolveCommanderContract(UPDATE_COMMANDER_STRING_OPTION_CONTRACTS, target),
+      resolveCommanderContract(
+        UPDATE_COMMANDER_STRING_OPTION_CONTRACTS,
+        target,
+      ),
     );
   const readUpdateList = (target: string): string[] | undefined =>
     readStringArrayFromCommanderOptions(
       commandOptions,
-      resolveCommanderContract(UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, target),
+      resolveCommanderContract(
+        UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
+        target,
+      ),
     );
 
   const normalized: Record<string, unknown> = {
@@ -454,7 +507,10 @@ export function normalizeUpdateOptions(commandOptions: Record<string, unknown>):
     estimatedMinutes: readUpdateString("estimatedMinutes"),
     acceptanceCriteria: readJoinedRepeatedOption(
       commandOptions,
-      resolveCommanderContract(UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, "acceptanceCriteria"),
+      resolveCommanderContract(
+        UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
+        "acceptanceCriteria",
+      ),
     ),
     definitionOfReady: readUpdateString("definitionOfReady"),
     order: readUpdateString("order"),
@@ -468,8 +524,14 @@ export function normalizeUpdateOptions(commandOptions: Record<string, unknown>):
     author: readUpdateString("author"),
     message: readUpdateString("message"),
     force: Boolean(commandOptions.force),
-    allowAuditUpdate: anyOptionTrue(commandOptions, ["allowAuditUpdate", "allow_audit_update"]),
-    allowAuditDepUpdate: anyOptionTrue(commandOptions, ["allowAuditDepUpdate", "allow_audit_dep_update"]),
+    allowAuditUpdate: anyOptionTrue(commandOptions, [
+      "allowAuditUpdate",
+      "allow_audit_update",
+    ]),
+    allowAuditDepUpdate: anyOptionTrue(commandOptions, [
+      "allowAuditDepUpdate",
+      "allow_audit_dep_update",
+    ]),
     assignee: readUpdateString("assignee"),
     parent: readUpdateString("parent"),
     reviewer: readUpdateString("reviewer"),
@@ -517,7 +579,7 @@ export function normalizeUpdateOptions(commandOptions: Record<string, unknown>):
     clearReminders: optionTrue(commandOptions, "clearReminders"),
     clearEvents: optionTrue(commandOptions, "clearEvents"),
     clearTypeOptions: optionTrue(commandOptions, "clearTypeOptions"),
-  }
+  };
   copyUnknownOptions(normalized, commandOptions);
   return normalized;
 }
@@ -575,10 +637,10 @@ const UPDATE_MANY_CONTROL_OPTION_KEYS = new Set<string>([
   "checkpoint",
 ]);
 
-/**
- * Implements extract update many mutation option source for the public runtime surface of this module.
- */
-export function extractUpdateManyMutationOptionSource(commandOptions: Record<string, unknown>): Record<string, unknown> {
+/** Implements extract update many mutation option source for the public runtime surface of this module. */
+export function extractUpdateManyMutationOptionSource(
+  commandOptions: Record<string, unknown>,
+): Record<string, unknown> {
   const mutationOptions: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(commandOptions)) {
     if (UPDATE_MANY_CONTROL_OPTION_KEYS.has(key)) {
@@ -589,8 +651,14 @@ export function extractUpdateManyMutationOptionSource(commandOptions: Record<str
   return mutationOptions;
 }
 
-function readListOptionString(options: Record<string, unknown>, target: string): string | undefined {
-  const contract = resolveCommanderContract(LIST_COMMANDER_STRING_OPTION_CONTRACTS, target);
+function readListOptionString(
+  options: Record<string, unknown>,
+  target: string,
+): string | undefined {
+  const contract = resolveCommanderContract(
+    LIST_COMMANDER_STRING_OPTION_CONTRACTS,
+    target,
+  );
   const stringValue = readFirstStringFromCommanderOptions(options, contract);
   if (stringValue !== undefined) {
     return stringValue;
@@ -616,7 +684,9 @@ function readListOptionString(options: Record<string, unknown>, target: string):
 // `--no-*` while keeping the raw alias keys accounted for before passthrough.
 // Spread into normalizeListOptions and normalizeSearchOptions at the same
 // position so key order is preserved.
-function readSelectionFilterOptionFields(options: Record<string, unknown>): Record<string, true | undefined> {
+function readSelectionFilterOptionFields(
+  options: Record<string, unknown>,
+): Record<string, true | undefined> {
   const filterFilesMissing = optionTrue(options, "filterFilesMissing");
   const filterDocsMissing = optionTrue(options, "filterDocsMissing");
   return {
@@ -648,10 +718,10 @@ function readSelectionFilterOptionFields(options: Record<string, unknown>): Reco
   };
 }
 
-/**
- * Implements normalize list options for the public runtime surface of this module.
- */
-export function normalizeListOptions(options: Record<string, unknown>): ListOptions {
+/** Implements normalize list options for the public runtime surface of this module. */
+export function normalizeListOptions(
+  options: Record<string, unknown>,
+): ListOptions {
   const normalized: Record<string, unknown> = {
     status: readListOptionString(options, "status"),
     type: readListOptionString(options, "type"),
@@ -685,27 +755,31 @@ export function normalizeListOptions(options: Record<string, unknown>): ListOpti
     tree: optionTrue(options, "tree"),
     treeDepth: readListOptionString(options, "treeDepth"),
     filterAcMissing: optionTrue(options, "filterAcMissing"),
-    filterEstimatesMissing: anyOptionTrue(options, ["filterEstimatesMissing", "filterEstimateMissing"]),
+    filterEstimatesMissing: anyOptionTrue(options, [
+      "filterEstimatesMissing",
+      "filterEstimateMissing",
+    ]),
     filterResolutionMissing: optionTrue(options, "filterResolutionMissing"),
     filterMetadataMissing: optionTrue(options, "filterMetadataMissing"),
     // Governance-missing (GH-236) + content presence/absence (GH-242) filters.
     ...readSelectionFilterOptionFields(options),
-  }
+  };
   copyUnknownOptions(normalized, options);
   return normalized as ListOptions;
 }
 
-/**
- * Implements normalize aggregate options for the public runtime surface of this module.
- */
-export function normalizeAggregateOptions(options: Record<string, unknown>): AggregateOptions {
+/** Implements normalize aggregate options for the public runtime surface of this module. */
+export function normalizeAggregateOptions(
+  options: Record<string, unknown>,
+): AggregateOptions {
   return {
     groupBy: typeof options.groupBy === "string" ? options.groupBy : undefined,
     count: options.count === true ? true : undefined,
     completion: options.completion === true ? true : undefined,
     sum: typeof options.sum === "string" ? options.sum : undefined,
     avg: typeof options.avg === "string" ? options.avg : undefined,
-    includeUnparented: options.includeUnparented === true || options.include_unparented === true,
+    includeUnparented:
+      options.includeUnparented === true || options.include_unparented === true,
     status: typeof options.status === "string" ? options.status : undefined,
     type: readListOptionString(options, "type"),
     tag: readListOptionString(options, "tag"),
@@ -722,10 +796,12 @@ export function normalizeAggregateOptions(options: Record<string, unknown>): Agg
 
 type ListCommandResult = Awaited<ReturnType<typeof runList>>;
 
-/**
- * Implements print list json stream for the public runtime surface of this module.
- */
-export function printListJsonStream(commandName: string, result: ListCommandResult, globalOptions: GlobalOptions): void {
+/** Implements print list json stream for the public runtime surface of this module. */
+export function printListJsonStream(
+  commandName: string,
+  result: ListCommandResult,
+  globalOptions: GlobalOptions,
+): void {
   setActiveCommandResult(result);
   if (globalOptions.quiet) {
     return;
@@ -745,18 +821,22 @@ export function printListJsonStream(commandName: string, result: ListCommandResu
     return;
   }
   for (const item of result.items) {
-    if (!writeStdout(`${JSON.stringify({ type: "item", command: commandName, item })}\n`)) {
+    if (
+      !writeStdout(
+        `${JSON.stringify({ type: "item", command: commandName, item })}\n`,
+      )
+    ) {
       return;
     }
   }
-  writeStdout(`${JSON.stringify({ type: "end", command: commandName, count: result.count })}\n`);
+  writeStdout(
+    `${JSON.stringify({ type: "end", command: commandName, count: result.count })}\n`,
+  );
 }
 
 type ActivityCommandResult = Awaited<ReturnType<typeof runActivity>>;
 
-/**
- * Implements print activity json stream for the public runtime surface of this module.
- */
+/** Implements print activity json stream for the public runtime surface of this module. */
 export function printActivityJsonStream(
   result: ActivityCommandResult,
   options: {
@@ -789,28 +869,45 @@ export function printActivityJsonStream(
   if (!writeStdout(`${JSON.stringify(metaPayload)}\n`)) {
     return;
   }
-  const entries = result.compact && result.compact_activity ? result.compact_activity : result.activity;
+  const entries =
+    result.compact && result.compact_activity
+      ? result.compact_activity
+      : result.activity;
   for (const entry of entries) {
-    if (!writeStdout(`${JSON.stringify({ type: "entry", command: "activity", entry })}\n`)) {
+    if (
+      !writeStdout(
+        `${JSON.stringify({ type: "entry", command: "activity", entry })}\n`,
+      )
+    ) {
       return;
     }
   }
-  writeStdout(`${JSON.stringify({ type: "end", command: "activity", count: result.count })}\n`);
+  writeStdout(
+    `${JSON.stringify({ type: "end", command: "activity", count: result.count })}\n`,
+  );
 }
 
-/**
- * Implements normalize search options for the public runtime surface of this module.
- */
-export function normalizeSearchOptions(options: Record<string, unknown>): Record<string, unknown> {
+/** Implements normalize search options for the public runtime surface of this module. */
+export function normalizeSearchOptions(
+  options: Record<string, unknown>,
+): Record<string, unknown> {
   const readSearchString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
       options,
-      resolveCommanderContract(SEARCH_COMMANDER_STRING_OPTION_CONTRACTS, target),
+      resolveCommanderContract(
+        SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
+        target,
+      ),
     );
-  const readSearchStringOrNumber = (target: string): string | number | undefined => {
+  const readSearchStringOrNumber = (
+    target: string,
+  ): string | number | undefined => {
     const candidate = readFirstValueFromCommanderOptions(
       options,
-      resolveCommanderContract(SEARCH_COMMANDER_STRING_OPTION_CONTRACTS, target),
+      resolveCommanderContract(
+        SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
+        target,
+      ),
     );
     if (typeof candidate === "string") {
       return candidate;
@@ -823,10 +920,14 @@ export function normalizeSearchOptions(options: Record<string, unknown>): Record
   const fields = readSearchString("fields");
   const compactRequested = options.compact === true;
   const fullRequested = options.full === true;
-  const defaultCompact = !compactRequested && !fullRequested && fields === undefined;
-  const mode = options.semantic === true ? "semantic"
-    : options.hybrid === true ? "hybrid"
-    : readSearchString("mode");
+  const defaultCompact =
+    !compactRequested && !fullRequested && fields === undefined;
+  const mode =
+    options.semantic === true
+      ? "semantic"
+      : options.hybrid === true
+        ? "hybrid"
+        : readSearchString("mode");
   const normalized: Record<string, unknown> = {
     mode,
     matchMode: readSearchString("matchMode"),
@@ -858,14 +959,12 @@ export function normalizeSearchOptions(options: Record<string, unknown>): Record
     // Governance-missing (GH-236) + content presence/absence (GH-242) filters,
     // mirroring normalizeListOptions via the shared field slice.
     ...readSelectionFilterOptionFields(options),
-  }
+  };
   copyUnknownOptions(normalized, options);
   return normalized;
 }
 
-/**
- * Implements normalize search keywords input for the public runtime surface of this module.
- */
+/** Implements normalize search keywords input for the public runtime surface of this module. */
 export function normalizeSearchKeywordsInput(keywords: string[]): string {
   const query = keywords
     .map((entry) => entry.trim())
@@ -877,10 +976,7 @@ export function normalizeSearchKeywordsInput(keywords: string[]): string {
   return query;
 }
 
-
-/**
- * Implements normalize activity options for the public runtime surface of this module.
- */
+/** Implements normalize activity options for the public runtime surface of this module. */
 export function normalizeActivityOptions(options: Record<string, unknown>): {
   id?: string;
   op?: string;
@@ -893,7 +989,10 @@ export function normalizeActivityOptions(options: Record<string, unknown>): {
   const readActivityString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
       options,
-      resolveCommanderContract(ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS, target),
+      resolveCommanderContract(
+        ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
+        target,
+      ),
     );
   return {
     id: readActivityString("id"),
@@ -902,16 +1001,24 @@ export function normalizeActivityOptions(options: Record<string, unknown>): {
     from: readActivityString("from"),
     to: readActivityString("to"),
     limit: readActivityString("limit"),
-    compact: options.full === true ? false : options.compact === false ? false : true,
+    compact:
+      options.full === true ? false : options.compact === false ? false : true,
   };
 }
 
-const ACTIVITY_STREAM_ENABLED_VALUES = new Set(["", "rows", "ndjson", "jsonl", "true", "1", "yes", "on"]);
+const ACTIVITY_STREAM_ENABLED_VALUES = new Set([
+  "",
+  "rows",
+  "ndjson",
+  "jsonl",
+  "true",
+  "1",
+  "yes",
+  "on",
+]);
 const ACTIVITY_STREAM_DISABLED_VALUES = new Set(["false", "off", "none", "0"]);
 
-/**
- * Implements resolve activity stream mode for the public runtime surface of this module.
- */
+/** Implements resolve activity stream mode for the public runtime surface of this module. */
 export function resolveActivityStreamMode(raw: unknown): boolean {
   if (raw === true) {
     return true;
@@ -928,21 +1035,29 @@ export function resolveActivityStreamMode(raw: unknown): boolean {
       return false;
     }
   }
-  throw new PmCliError("Activity --stream accepts rows|ndjson|jsonl (or no value)", EXIT_CODE.USAGE);
+  throw new PmCliError(
+    "Activity --stream accepts rows|ndjson|jsonl (or no value)",
+    EXIT_CODE.USAGE,
+  );
 }
 
-/**
- * Implements normalize context options for the public runtime surface of this module.
- */
-export function normalizeContextOptions(options: Record<string, unknown>): ContextOptions {
+/** Implements normalize context options for the public runtime surface of this module. */
+export function normalizeContextOptions(
+  options: Record<string, unknown>,
+): ContextOptions {
   const readContextString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
       options,
-      resolveCommanderContract(CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS, target),
+      resolveCommanderContract(
+        CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,
+        target,
+      ),
     );
   const sectionRaw = options.section;
   const section: string[] | undefined = Array.isArray(sectionRaw)
-    ? (sectionRaw as string[]).filter((v) => typeof v === "string" && v.trim().length > 0)
+    ? (sectionRaw as string[]).filter(
+        (v) => typeof v === "string" && v.trim().length > 0,
+      )
     : typeof sectionRaw === "string" && sectionRaw.trim().length > 0
       ? [sectionRaw]
       : undefined;
@@ -983,7 +1098,9 @@ export function normalizeContextOptions(options: Record<string, unknown>): Conte
  * the boolean `--ready-only` switch. Unknown keys are passed through untouched so
  * downstream filtering still sees them.
  */
-export function normalizeNextOptions(options: Record<string, unknown>): NextOptions {
+export function normalizeNextOptions(
+  options: Record<string, unknown>,
+): NextOptions {
   const readNextString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
       options,
@@ -1000,7 +1117,10 @@ export function normalizeNextOptions(options: Record<string, unknown>): NextOpti
     parent: readNextString("parent"),
     limit: readNextString("limit"),
     blockedLimit: readNextString("blockedLimit"),
-    readyOnly: options.readyOnly === true || options.ready_only === true ? true : undefined,
+    readyOnly:
+      options.readyOnly === true || options.ready_only === true
+        ? true
+        : undefined,
     format: readNextString("format"),
   };
   for (const [key, value] of Object.entries(options)) {
@@ -1056,19 +1176,27 @@ function collectMutationItemIds(result: unknown): string[] {
   return [...ids].sort((left, right) => left.localeCompare(right));
 }
 
-/**
- * Implements invalidate search caches for mutation for the public runtime surface of this module.
- */
-export async function invalidateSearchCachesForMutation(globalOptions: GlobalOptions, result?: unknown): Promise<void> {
+/** Implements invalidate search caches for mutation for the public runtime surface of this module. */
+export async function invalidateSearchCachesForMutation(
+  globalOptions: GlobalOptions,
+  result?: unknown,
+): Promise<void> {
   const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
-  const refreshResult = await refreshSearchArtifactsForMutation(pmRoot, collectMutationItemIds(result), {
-    background: !shouldRunSearchRefreshInForeground(),
-  });
+  const refreshResult = await refreshSearchArtifactsForMutation(
+    pmRoot,
+    collectMutationItemIds(result),
+    {
+      background: !shouldRunSearchRefreshInForeground(),
+    },
+  );
   if (globalOptions.profile && refreshResult.warnings.length > 0) {
-    printError(`profile:search_refresh_warnings=${formatHookWarnings(refreshResult.warnings)}`);
+    printError(
+      `profile:search_refresh_warnings=${formatHookWarnings(refreshResult.warnings)}`,
+    );
   }
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   collectMutationItemIds,
 };

@@ -24,7 +24,12 @@ function setSpanAttribute(
   if (value === undefined) {
     return;
   }
-  const attributeTarget = span as unknown as { setAttribute?: (attrKey: string, attrValue: string | number | boolean) => void };
+  const attributeTarget = span as unknown as {
+    setAttribute?: (
+      attrKey: string,
+      attrValue: string | number | boolean,
+    ) => void;
+  };
   if (typeof attributeTarget.setAttribute === "function") {
     attributeTarget.setAttribute(key, value);
   }
@@ -53,8 +58,16 @@ function setSentryCommandFinishTags(
   }
   setSentryTagIfPresent(Sentry, "pm.error_code", metadata?.error_code);
   setSentryTagIfPresent(Sentry, "pm.error_category", metadata?.error_category);
-  setSentryTagIfPresent(Sentry, "pm.command_resolution", metadata?.command_resolution);
-  setSentryTagIfPresent(Sentry, "pm.resolution_stage", metadata?.resolution_stage);
+  setSentryTagIfPresent(
+    Sentry,
+    "pm.command_resolution",
+    metadata?.command_resolution,
+  );
+  setSentryTagIfPresent(
+    Sentry,
+    "pm.resolution_stage",
+    metadata?.resolution_stage,
+  );
 }
 
 function setCommandSpanFinishAttributes(
@@ -73,9 +86,7 @@ function setCommandSpanFinishAttributes(
   setSpanAttribute(span, "pm.resolution_stage", metadata?.resolution_stage);
 }
 
-/**
- * Implements sentry set command context for the public runtime surface of this module.
- */
+/** Implements sentry set command context for the public runtime surface of this module. */
 export function sentrySetCommandContext(
   command: string,
   args: string[],
@@ -92,7 +103,10 @@ export function sentrySetCommandContext(
   Sentry.setTag("pm.command", command);
   Sentry.setTag("pm.command_root", taxonomy.command_root);
   Sentry.setTag("pm.command_family", taxonomy.command_family);
-  if (typeof metadata?.source_context === "string" && metadata.source_context.trim().length > 0) {
+  if (
+    typeof metadata?.source_context === "string" &&
+    metadata.source_context.trim().length > 0
+  ) {
     Sentry.setTag("pm.source_context", metadata.source_context);
   }
 
@@ -124,9 +138,7 @@ export function sentrySetCommandContext(
   });
 }
 
-/**
- * Implements sentry start command span for the public runtime surface of this module.
- */
+/** Implements sentry start command span for the public runtime surface of this module. */
 export function sentryStartCommandSpan(command: string): void {
   const Sentry = getSentry();
   if (!Sentry) return;
@@ -138,9 +150,7 @@ export function sentryStartCommandSpan(command: string): void {
   });
 }
 
-/**
- * Implements sentry finish command span for the public runtime surface of this module.
- */
+/** Implements sentry finish command span for the public runtime surface of this module. */
 export function sentryFinishCommandSpan(
   ok: boolean,
   error?: string,
@@ -154,20 +164,28 @@ export function sentryFinishCommandSpan(
 ): void {
   if (!activeCommandSpan) return;
   const normalizedOk = ok ? "true" : "false";
-  const normalizedExitCode = typeof metadata?.exit_code === "number" ? String(metadata.exit_code) : undefined;
+  const normalizedExitCode =
+    typeof metadata?.exit_code === "number"
+      ? String(metadata.exit_code)
+      : undefined;
   const Sentry = getSentry();
   if (Sentry) {
     setSentryCommandFinishTags(Sentry, normalizedOk, metadata);
   }
-  setCommandSpanFinishAttributes(activeCommandSpan, normalizedOk, normalizedExitCode, metadata);
-  activeCommandSpan.setStatus(ok ? { code: 1 } : { code: 2, message: error ?? "command_failed" });
+  setCommandSpanFinishAttributes(
+    activeCommandSpan,
+    normalizedOk,
+    normalizedExitCode,
+    metadata,
+  );
+  activeCommandSpan.setStatus(
+    ok ? { code: 1 } : { code: 2, message: error ?? "command_failed" },
+  );
   activeCommandSpan.end();
   activeCommandSpan = undefined;
 }
 
-/**
- * Implements sentry capture cli error for the public runtime surface of this module.
- */
+/** Implements sentry capture cli error for the public runtime surface of this module. */
 export function sentryCaptureCliError(error: unknown): void {
   if (!shouldCaptureCliError(error)) return;
 
@@ -176,10 +194,16 @@ export function sentryCaptureCliError(error: unknown): void {
 
   if (error instanceof Error) {
     const extras: Record<string, unknown> = {};
-    if ("exitCode" in error && typeof (error as { exitCode: unknown }).exitCode === "number") {
+    if (
+      "exitCode" in error &&
+      typeof (error as { exitCode: unknown }).exitCode === "number"
+    ) {
       extras.exit_code = (error as { exitCode: number }).exitCode;
     }
-    if ("context" in error && typeof (error as { context: unknown }).context === "object") {
+    if (
+      "context" in error &&
+      typeof (error as { context: unknown }).context === "object"
+    ) {
       extras.error_context = (error as { context: unknown }).context;
     }
     Sentry.captureException(error, { extra: extras });
@@ -188,9 +212,7 @@ export function sentryCaptureCliError(error: unknown): void {
   }
 }
 
-/**
- * Implements sentry log cli usage error for the public runtime surface of this module.
- */
+/** Implements sentry log cli usage error for the public runtime surface of this module. */
 export function sentryLogCliUsageError(params: {
   command: string;
   error_code: string;
@@ -222,8 +244,13 @@ export function sentryLogCliUsageError(params: {
     "pm.resolution_stage": resolvedResolutionStage,
     "pm.source_context": params.source_context ?? "",
   };
-  const loggerCandidate = (Sentry as unknown as { logger?: { warn?: (message: string, attributes?: Record<string, unknown>) => void } })
-    .logger;
+  const loggerCandidate = (
+    Sentry as unknown as {
+      logger?: {
+        warn?: (message: string, attributes?: Record<string, unknown>) => void;
+      };
+    }
+  ).logger;
   if (loggerCandidate && typeof loggerCandidate.warn === "function") {
     loggerCandidate.warn("pm_cli_usage_error", payload);
     return;
@@ -244,9 +271,7 @@ export function sentryLogCliUsageError(params: {
   });
 }
 
-/**
- * Implements should capture cli error for the public runtime surface of this module.
- */
+/** Implements should capture cli error for the public runtime surface of this module. */
 export function shouldCaptureCliError(error: unknown): boolean {
   if (error instanceof PmCliError) {
     return false;
@@ -269,9 +294,7 @@ export function shouldCaptureCliError(error: unknown): boolean {
   return true;
 }
 
-/**
- * Implements sentry flush for the public runtime surface of this module.
- */
+/** Implements sentry flush for the public runtime surface of this module. */
 export async function sentryFlush(timeoutMs = 3000): Promise<void> {
   const Sentry = getSentry();
   if (!Sentry) return;

@@ -29,13 +29,21 @@ import type { PmMaxVersionExceededModeSetting } from "../extensions/extension-ty
 
 /** Validated, unknown-key-stripped settings input (pre-merge), matching the legacy zod inference. */
 export interface ParsedSettings {
+  /** Value that configures or reports version for this contract. */
   version: number;
+  /** Value that configures or reports id prefix for this contract. */
   id_prefix: string;
+  /** Value that configures or reports author default for this contract. */
   author_default: string;
+  /** Value that configures or reports item format for this contract. */
   item_format?: "toon" | "json_markdown";
+  /** Value that configures or reports locks for this contract. */
   locks: { ttl_seconds: number; wait_ms?: number };
+  /** Value that configures or reports checkpoints for this contract. */
   checkpoints?: { retention_days?: number };
+  /** Value that configures or reports output for this contract. */
   output: { default_format: "toon" | "json" };
+  /** Value that configures or reports history for this contract. */
   history?: {
     missing_stream: "auto_create" | "strict_error";
     compact_policy?: {
@@ -44,6 +52,7 @@ export interface ParsedSettings {
       trigger?: "health_warn" | "auto";
     };
   };
+  /** Value that configures or reports validation for this contract. */
   validation?: {
     sprint_release_format: "warn" | "strict_error";
     parent_reference?: "warn" | "strict_error";
@@ -55,9 +64,13 @@ export interface ParsedSettings {
     lifecycle_closure_like_actual_result_patterns?: string[];
     estimate_defaults_by_type?: Record<string, number>;
   };
+  /** Value that configures or reports governance for this contract. */
   governance?: Partial<GovernanceSettings>;
+  /** Value that configures or reports workflow for this contract. */
   workflow?: { definition_of_done: string[] };
+  /** Value that configures or reports testing for this contract. */
   testing?: { record_results_to_items: boolean };
+  /** Value that configures or reports telemetry for this contract. */
   telemetry?: {
     enabled: boolean;
     first_run_prompt_completed?: boolean;
@@ -66,9 +79,13 @@ export interface ParsedSettings {
     installation_id?: string;
     retention_days?: number;
   };
+  /** Value that configures or reports agent guidance for this contract. */
   agent_guidance?: Partial<AgentGuidanceSettings>;
+  /** Value that configures or reports item types for this contract. */
   item_types?: { definitions: ItemTypeDefinition[] };
+  /** Value that configures or reports schema for this contract. */
   schema?: Partial<RuntimeSchemaSettings>;
+  /** Value that configures or reports context for this contract. */
   context?: {
     default_depth?: "brief" | "standard" | "deep";
     activity_limit?: number;
@@ -84,6 +101,7 @@ export interface ParsedSettings {
       tests?: boolean;
     };
   };
+  /** Value that configures or reports extensions for this contract. */
   extensions: {
     enabled: string[];
     disabled: string[];
@@ -91,6 +109,7 @@ export interface ParsedSettings {
       pm_max_version_exceeded_mode?: PmMaxVersionExceededModeSetting;
     };
   };
+  /** Value that configures or reports search for this contract. */
   search: {
     score_threshold: number;
     hybrid_semantic_weight?: number;
@@ -102,7 +121,10 @@ export interface ParsedSettings {
     scanner_max_batch_retries: number;
     provider?: string;
     corpus_fields?: string[];
-    mutation_refresh_policy?: "cache_only" | "semantic_configured" | "semantic_auto";
+    mutation_refresh_policy?:
+      | "cache_only"
+      | "semantic_configured"
+      | "semantic_auto";
     query_expansion?: {
       enabled?: boolean;
       provider?: string;
@@ -117,10 +139,12 @@ export interface ParsedSettings {
       b?: number;
     };
   };
+  /** Value that configures or reports providers for this contract. */
   providers: {
     openai: { base_url: string; api_key: string; model: string };
     ollama: { base_url: string; model: string };
   };
+  /** Value that configures or reports vector store for this contract. */
   vector_store: {
     adapter?: string;
     collection_name?: string;
@@ -129,10 +153,10 @@ export interface ParsedSettings {
   };
 }
 
-/**
- * Restricts settings validation result values accepted by command, SDK, and storage contracts.
- */
-export type SettingsValidationResult = { success: true; data: ParsedSettings } | { success: false };
+/** Restricts settings validation result values accepted by command, SDK, and storage contracts. */
+export type SettingsValidationResult =
+  | { success: true; data: ParsedSettings }
+  | { success: false };
 
 type Outcome<T> = { ok: true; value: T } | { ok: false };
 type Check<T> = (input: unknown) => Outcome<T>;
@@ -140,16 +164,23 @@ type Check<T> = (input: unknown) => Outcome<T>;
 // Generic over `never` so it is assignable to every `Outcome<T>`.
 const FAIL: Outcome<never> = { ok: false };
 
-const vString: Check<string> = (input) => (typeof input === "string" ? { ok: true, value: input } : FAIL);
-const vBoolean: Check<boolean> = (input) => (typeof input === "boolean" ? { ok: true, value: input } : FAIL);
+const vString: Check<string> = (input) =>
+  typeof input === "string" ? { ok: true, value: input } : FAIL;
+const vBoolean: Check<boolean> = (input) =>
+  typeof input === "boolean" ? { ok: true, value: input } : FAIL;
 
-function vNumber(options: { int?: boolean; positive?: boolean; min?: number } = {}): Check<number> {
+function vNumber(
+  options: { int?: boolean; positive?: boolean; min?: number } = {},
+): Check<number> {
   return (input) => {
     // `Number.isFinite` rejects non-numbers, NaN, and ±Infinity in one check.
     if (typeof input !== "number" || !Number.isFinite(input)) {
       return FAIL;
     }
-    if (options.int && (!Number.isInteger(input) || !Number.isSafeInteger(input))) {
+    if (
+      options.int &&
+      (!Number.isInteger(input) || !Number.isSafeInteger(input))
+    ) {
       return FAIL;
     }
     if (options.positive && input <= 0) {
@@ -187,14 +218,11 @@ function vArray<T>(item: Check<T>): Check<T[]> {
 }
 
 function vOptional<T>(inner: Check<T>): Check<T | undefined> {
-  return (input) => (input === undefined ? { ok: true, value: undefined } : inner(input));
+  return (input) =>
+    input === undefined ? { ok: true, value: undefined } : inner(input);
 }
 
-/**
- * A plain object with arbitrary string keys whose values each pass `valueCheck`.
- * Rejects arrays and null. Used for free-form maps like
- * `validation.estimate_defaults_by_type` (item-type -> default minutes).
- */
+/** A plain object with arbitrary string keys whose values each pass `valueCheck`. Rejects arrays and null. Used for free-form maps like `validation.estimate_defaults_by_type` (item-type -> default minutes). */
 function vRecordOf<T>(valueCheck: Check<T>): Check<Record<string, T>> {
   return (input) => {
     if (typeof input !== "object" || input === null || Array.isArray(input)) {
@@ -212,7 +240,9 @@ function vRecordOf<T>(valueCheck: Check<T>): Check<Record<string, T>> {
   };
 }
 
-function vObject(shape: Record<string, Check<unknown>>): Check<Record<string, unknown>> {
+function vObject(
+  shape: Record<string, Check<unknown>>,
+): Check<Record<string, unknown>> {
   return (input) => {
     if (typeof input !== "object" || input === null || Array.isArray(input)) {
       return FAIL;
@@ -327,7 +357,9 @@ const runtimeSchemaSettings = vOptional(
       }),
     ),
     type_workflows: vOptional(vArray(typeWorkflowDefinition)),
-    unknown_field_policy: vOptional(vLiteral(...RUNTIME_UNKNOWN_FIELD_POLICY_VALUES)),
+    unknown_field_policy: vOptional(
+      vLiteral(...RUNTIME_UNKNOWN_FIELD_POLICY_VALUES),
+    ),
   }),
 );
 
@@ -382,7 +414,9 @@ const extensionPolicy = vOptional(
     pm_max_version_exceeded_mode: vOptional(pmMaxVersionExceededMode),
     require_provenance: vOptional(vBoolean),
     trusted_extensions: vOptional(vArray(vString)),
-    default_sandbox_profile: vOptional(vLiteral("none", "restricted", "strict")),
+    default_sandbox_profile: vOptional(
+      vLiteral("none", "restricted", "strict"),
+    ),
     allowed_extensions: vOptional(vArray(vString)),
     blocked_extensions: vOptional(vArray(vString)),
     allowed_capabilities: vOptional(vArray(vString)),
@@ -404,8 +438,15 @@ const settingsCheck = vObject({
   id_prefix: vString,
   author_default: vString,
   item_format: vOptional(vLiteral("toon", "json_markdown")),
-  locks: vObject({ ttl_seconds: vNumber({ int: true }), wait_ms: vOptional(vNumber({ int: true, min: 0 })) }),
-  checkpoints: vOptional(vObject({ retention_days: vOptional(vNumber({ int: true, positive: true })) })),
+  locks: vObject({
+    ttl_seconds: vNumber({ int: true }),
+    wait_ms: vOptional(vNumber({ int: true, min: 0 })),
+  }),
+  checkpoints: vOptional(
+    vObject({
+      retention_days: vOptional(vNumber({ int: true, positive: true })),
+    }),
+  ),
   output: vObject({ default_format: vLiteral("toon", "json") }),
   history: vOptional(
     vObject({
@@ -426,10 +467,14 @@ const settingsCheck = vObject({
       metadata_profile: vOptional(vLiteral("core", "strict", "custom")),
       metadata_required_fields: vOptional(vArray(vString)),
       lifecycle_stale_blocker_reason_patterns: vOptional(vArray(vString)),
-      lifecycle_closure_like_blocked_reason_patterns: vOptional(vArray(vString)),
+      lifecycle_closure_like_blocked_reason_patterns: vOptional(
+        vArray(vString),
+      ),
       lifecycle_closure_like_resolution_patterns: vOptional(vArray(vString)),
       lifecycle_closure_like_actual_result_patterns: vOptional(vArray(vString)),
-      estimate_defaults_by_type: vOptional(vRecordOf(vNumber({ int: true, positive: true }))),
+      estimate_defaults_by_type: vOptional(
+        vRecordOf(vNumber({ int: true, positive: true })),
+      ),
     }),
   ),
   governance: governanceSettings,
@@ -493,7 +538,9 @@ const settingsCheck = vObject({
     scanner_max_batch_retries: vNumber({ int: true }),
     provider: vOptional(vString),
     corpus_fields: vOptional(vArray(vString)),
-    mutation_refresh_policy: vOptional(vLiteral("cache_only", "semantic_configured", "semantic_auto")),
+    mutation_refresh_policy: vOptional(
+      vLiteral("cache_only", "semantic_configured", "semantic_auto"),
+    ),
     query_expansion: vOptional(
       vObject({
         enabled: vOptional(vBoolean),

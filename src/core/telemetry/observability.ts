@@ -5,14 +5,14 @@
  */
 import { EXIT_CODE, type TelemetryErrorCategory } from "../shared/constants.js";
 
-/**
- * Restricts telemetry resolution stage values accepted by command, SDK, and storage contracts.
- */
-export type TelemetryResolutionStage = "parse" | "preflight" | "execute" | "unknown";
+/** Restricts telemetry resolution stage values accepted by command, SDK, and storage contracts. */
+export type TelemetryResolutionStage =
+  | "parse"
+  | "preflight"
+  | "execute"
+  | "unknown";
 
-/**
- * Restricts telemetry command resolution values accepted by command, SDK, and storage contracts.
- */
+/** Restricts telemetry command resolution values accepted by command, SDK, and storage contracts. */
 export type TelemetryCommandResolution =
   | "success"
   | "nonexistent_command"
@@ -27,15 +27,25 @@ export type TelemetryCommandResolution =
   | "runtime_failed"
   | "unknown_failed";
 
-/**
- * Documents the telemetry command taxonomy payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the telemetry command taxonomy payload exchanged by command, SDK, and package integrations. */
 export interface TelemetryCommandTaxonomy {
+  /** Filesystem path used for command resolution. */
   command_path: string;
+  /** Value that configures or reports command root for this contract. */
   command_root: string;
+  /** Value that configures or reports command leaf for this contract. */
   command_leaf: string;
+  /** Value that configures or reports command depth for this contract. */
   command_depth: number;
-  command_family: "setup" | "query" | "mutation" | "testing" | "extension" | "diagnostics" | "other";
+  /** Value that configures or reports command family for this contract. */
+  command_family:
+    | "setup"
+    | "query"
+    | "mutation"
+    | "testing"
+    | "extension"
+    | "diagnostics"
+    | "other";
 }
 
 interface InferTelemetryErrorCodeParams {
@@ -50,7 +60,14 @@ interface TelemetryErrorMessageClassifier {
   matches: (message: string) => boolean;
 }
 
-const SETUP_ROOT_COMMANDS = new Set(["init", "config", "completion", "completion-statuses", "completion-tags", "completion-types"]);
+const SETUP_ROOT_COMMANDS = new Set([
+  "init",
+  "config",
+  "completion",
+  "completion-statuses",
+  "completion-tags",
+  "completion-types",
+]);
 const QUERY_ROOT_COMMANDS = new Set([
   "list",
   "list-all",
@@ -92,14 +109,26 @@ const MUTATION_ROOT_COMMANDS = new Set([
   "pause-task",
   "close-task",
 ]);
-const TESTING_ROOT_COMMANDS = new Set(["test", "test-all", "test-runs", "test-verify", "trace-test", "test-ping"]);
-const DIAGNOSTICS_ROOT_COMMANDS = new Set(["health", "validate", "normalize", "reindex", "gc", "telemetry", "extension-doctor"]);
+const TESTING_ROOT_COMMANDS = new Set([
+  "test",
+  "test-all",
+  "test-runs",
+  "test-verify",
+  "trace-test",
+  "test-ping",
+]);
+const DIAGNOSTICS_ROOT_COMMANDS = new Set([
+  "health",
+  "validate",
+  "normalize",
+  "reindex",
+  "gc",
+  "telemetry",
+  "extension-doctor",
+]);
 
 function normalizeCommandPath(commandPath: string): string {
-  return commandPath
-    .trim()
-    .replaceAll(/\s+/g, " ")
-    .toLowerCase();
+  return commandPath.trim().replaceAll(/\s+/g, " ").toLowerCase();
 }
 
 function normalizeErrorCode(errorCode: string | undefined): string | undefined {
@@ -107,41 +136,73 @@ function normalizeErrorCode(errorCode: string | undefined): string | undefined {
   return normalized && normalized.length > 0 ? normalized : undefined;
 }
 
-const TELEMETRY_ERROR_MESSAGE_CLASSIFIERS: readonly TelemetryErrorMessageClassifier[] = [
-  { code: "unknown_command", matches: (message) => message.includes("unknown command") },
-  { code: "unknown_option", matches: (message) => message.includes("unknown option") },
-  {
-    code: "missing_required_option",
-    matches: (message) => message.includes("missing required options") || message.includes("missing required option"),
-  },
-  { code: "missing_required_argument", matches: (message) => message.includes("missing required argument") },
-  { code: "no_update_fields", matches: (message) => message.includes("no update flags provided") },
-  {
-    code: "ownership_conflict",
-    matches: (message) => message.includes("is assigned to") && message.includes("use --force"),
-  },
-  { code: "lock_conflict", matches: (message) => message.includes("is locked") },
-  {
-    code: "terminal_state_conflict",
-    matches: (message) => message.includes("already terminal") && message.includes("use --force"),
-  },
-  { code: "tracker_not_initialized", matches: (message) => message.includes("tracker is not initialized") },
-  { code: "item_not_found", matches: (message) => message.includes(" not found") },
-  {
-    code: "close_through_update",
-    matches: (message) =>
-      message.includes("use \"pm close <id> <text>\" to close an item") ||
-      (message.includes("invalid --status value") && message.includes("\"closed\"")),
-  },
-  {
-    code: "invalid_argument_value",
-    matches: (message) => message.startsWith("invalid ") || message.includes(" must be ") || message.includes(" requires "),
-  },
-  {
-    code: "invalid_command_usage",
-    matches: (message) => message.includes("either as positional") && message.includes("not both"),
-  },
-];
+const TELEMETRY_ERROR_MESSAGE_CLASSIFIERS: readonly TelemetryErrorMessageClassifier[] =
+  [
+    {
+      code: "unknown_command",
+      matches: (message) => message.includes("unknown command"),
+    },
+    {
+      code: "unknown_option",
+      matches: (message) => message.includes("unknown option"),
+    },
+    {
+      code: "missing_required_option",
+      matches: (message) =>
+        message.includes("missing required options") ||
+        message.includes("missing required option"),
+    },
+    {
+      code: "missing_required_argument",
+      matches: (message) => message.includes("missing required argument"),
+    },
+    {
+      code: "no_update_fields",
+      matches: (message) => message.includes("no update flags provided"),
+    },
+    {
+      code: "ownership_conflict",
+      matches: (message) =>
+        message.includes("is assigned to") && message.includes("use --force"),
+    },
+    {
+      code: "lock_conflict",
+      matches: (message) => message.includes("is locked"),
+    },
+    {
+      code: "terminal_state_conflict",
+      matches: (message) =>
+        message.includes("already terminal") && message.includes("use --force"),
+    },
+    {
+      code: "tracker_not_initialized",
+      matches: (message) => message.includes("tracker is not initialized"),
+    },
+    {
+      code: "item_not_found",
+      matches: (message) => message.includes(" not found"),
+    },
+    {
+      code: "close_through_update",
+      matches: (message) =>
+        message.includes('use "pm close <id> <text>" to close an item') ||
+        (message.includes("invalid --status value") &&
+          message.includes('"closed"')),
+    },
+    {
+      code: "invalid_argument_value",
+      matches: (message) =>
+        message.startsWith("invalid ") ||
+        message.includes(" must be ") ||
+        message.includes(" requires "),
+    },
+    {
+      code: "invalid_command_usage",
+      matches: (message) =>
+        message.includes("either as positional") &&
+        message.includes("not both"),
+    },
+  ];
 
 const TELEMETRY_EXIT_CODE_FALLBACKS: ReadonlyMap<number, string> = new Map([
   [EXIT_CODE.USAGE, "invalid_command_usage"],
@@ -150,14 +211,15 @@ const TELEMETRY_EXIT_CODE_FALLBACKS: ReadonlyMap<number, string> = new Map([
   [EXIT_CODE.DEPENDENCY_FAILED, "dependency_failed"],
 ]);
 
-/**
- * Implements derive telemetry command taxonomy for the public runtime surface of this module.
- */
-export function deriveTelemetryCommandTaxonomy(commandPath: string): TelemetryCommandTaxonomy {
+/** Implements derive telemetry command taxonomy for the public runtime surface of this module. */
+export function deriveTelemetryCommandTaxonomy(
+  commandPath: string,
+): TelemetryCommandTaxonomy {
   const normalizedPath = normalizeCommandPath(commandPath);
   // tokens always has at least one element (the fallback ["<unknown>"]), so the
   // first/last lookups are never undefined.
-  const tokens = normalizedPath.length > 0 ? normalizedPath.split(" ") : ["<unknown>"];
+  const tokens =
+    normalizedPath.length > 0 ? normalizedPath.split(" ") : ["<unknown>"];
   const root = tokens[0] as string;
   const leaf = tokens[tokens.length - 1] as string;
 
@@ -185,10 +247,10 @@ export function deriveTelemetryCommandTaxonomy(commandPath: string): TelemetryCo
   };
 }
 
-/**
- * Implements infer telemetry error code for the public runtime surface of this module.
- */
-export function inferTelemetryErrorCode(params: InferTelemetryErrorCodeParams): string | undefined {
+/** Implements infer telemetry error code for the public runtime surface of this module. */
+export function inferTelemetryErrorCode(
+  params: InferTelemetryErrorCodeParams,
+): string | undefined {
   if (params.ok) {
     return undefined;
   }
@@ -208,16 +270,16 @@ export function inferTelemetryErrorCode(params: InferTelemetryErrorCodeParams): 
     }
   }
 
-  const exitCode = Number.isFinite(params.exitCode) ? Math.max(0, Math.trunc(params.exitCode as number)) : undefined;
+  const exitCode = Number.isFinite(params.exitCode)
+    ? Math.max(0, Math.trunc(params.exitCode as number))
+    : undefined;
   if (exitCode !== undefined) {
     return TELEMETRY_EXIT_CODE_FALLBACKS.get(exitCode) ?? "command_failed";
   }
   return "command_failed";
 }
 
-/**
- * Implements derive telemetry command resolution for the public runtime surface of this module.
- */
+/** Implements derive telemetry command resolution for the public runtime surface of this module. */
 export function deriveTelemetryCommandResolution(params: {
   ok: boolean;
   errorCode?: string;

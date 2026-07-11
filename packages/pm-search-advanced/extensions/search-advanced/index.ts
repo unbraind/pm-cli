@@ -1,3 +1,8 @@
+/**
+ * Runtime contracts and behavior for packages/pm search advanced/extensions/search advanced/index.
+ *
+ * @module packages/pm-search-advanced/extensions/search-advanced/index
+ */
 import type {
   CommandDefinition,
   ExtensionApi,
@@ -6,8 +11,12 @@ import type {
   SearchProviderHit,
   SearchProviderQueryContext,
 } from "@unbrained/pm-cli/sdk";
-import { runAdvancedReindexPackage, runAdvancedSearchPackage } from "./runtime.ts";
+import {
+  runAdvancedReindexPackage,
+  runAdvancedSearchPackage,
+} from "./runtime.ts";
 
+/** Declarative package manifest consumed by the extension loader. */
 export const manifest = {
   name: "builtin-search-advanced",
   version: "0.1.0",
@@ -16,10 +25,7 @@ export const manifest = {
   capabilities: ["commands", "schema", "search"],
 };
 
-/**
- * Provider name selected via `pm config set search.provider search-advanced-local`.
- * Core search invokes the registered `query` when this name is configured.
- */
+/** Provider name selected via `pm config set search.provider search-advanced-local`. Core search invokes the registered `query` when this name is configured. */
 export const SEARCH_ADVANCED_LOCAL_PROVIDER = "search-advanced-local";
 
 const SEARCH_FIELD_WEIGHTS = { title: 3, tags: 2, description: 1 } as const;
@@ -39,17 +45,29 @@ function scoreDocumentForQuery(
   if (!metadata || typeof metadata.id !== "string") {
     return { score: 0, matched_fields: [] };
   }
-  const fields: Array<{ field: keyof typeof SEARCH_FIELD_WEIGHTS; tokens: string[] }> = [
-    { field: "title", tokens: tokenizeSearchText(typeof metadata.title === "string" ? metadata.title : "") },
+  const fields: Array<{
+    field: keyof typeof SEARCH_FIELD_WEIGHTS;
+    tokens: string[];
+  }> = [
+    {
+      field: "title",
+      tokens: tokenizeSearchText(
+        typeof metadata.title === "string" ? metadata.title : "",
+      ),
+    },
     {
       field: "tags",
       tokens: Array.isArray(metadata.tags)
-        ? metadata.tags.flatMap((tag) => (tag == null ? [] : tokenizeSearchText(String(tag))))
+        ? metadata.tags.flatMap((tag) =>
+            tag == null ? [] : tokenizeSearchText(String(tag)),
+          )
         : [],
     },
     {
       field: "description",
-      tokens: tokenizeSearchText(typeof metadata.description === "string" ? metadata.description : ""),
+      tokens: tokenizeSearchText(
+        typeof metadata.description === "string" ? metadata.description : "",
+      ),
     },
   ];
   let score = 0;
@@ -70,13 +88,7 @@ function scoreDocumentForQuery(
   return { score, matched_fields: matched };
 }
 
-/**
- * First-party exemplar SearchProvider: a deterministic, dependency-free local
- * lexical ranker over the in-memory document corpus. Core search calls `query`
- * when `settings.search.provider === "search-advanced-local"`. Authors building
- * embedding-backed providers (for example Ollama or a hosted model) implement
- * `embed`/`embedBatch` on this same SearchProviderDefinition shape instead.
- */
+/** First-party exemplar SearchProvider: a deterministic, dependency-free local lexical ranker over the in-memory document corpus. Core search calls `query` when `settings.search.provider === "search-advanced-local"`. Authors building embedding-backed providers (for example Ollama or a hosted model) implement `embed`/`embedBatch` on this same SearchProviderDefinition shape instead. */
 export function searchAdvancedLocalProvider(): SearchProviderDefinition {
   return {
     name: SEARCH_ADVANCED_LOCAL_PROVIDER,
@@ -87,12 +99,18 @@ export function searchAdvancedLocalProvider(): SearchProviderDefinition {
       }
       const hits: SearchProviderHit[] = [];
       for (const document of context.documents) {
-        const { score, matched_fields } = scoreDocumentForQuery(queryTokens, document);
+        const { score, matched_fields } = scoreDocumentForQuery(
+          queryTokens,
+          document,
+        );
         if (score > 0) {
           hits.push({ id: document.metadata.id, score, matched_fields });
         }
       }
-      return hits.sort((left, right) => right.score - left.score || left.id.localeCompare(right.id));
+      return hits.sort(
+        (left, right) =>
+          right.score - left.score || left.id.localeCompare(right.id),
+      );
     },
   };
 }
@@ -137,7 +155,8 @@ const searchAdvancedFlags = [
   {
     long: "--phrase-exact",
     value_type: "boolean",
-    description: "Require exact phrase match across searchable document fields.",
+    description:
+      "Require exact phrase match across searchable document fields.",
   },
   {
     long: "--phrase_exact",
@@ -231,13 +250,15 @@ const reindexFlags = [
   {
     long: "--eval",
     value_type: "boolean",
-    description: "Run golden-query relevance eval and append nDCG@5 summary output.",
+    description:
+      "Run golden-query relevance eval and append nDCG@5 summary output.",
   },
   {
     long: "--eval-fixtures",
     value_name: "path",
     value_type: "string",
-    description: "Path to reindex eval fixtures JSON (default: tests/search-eval/golden-queries.json).",
+    description:
+      "Path to reindex eval fixtures JSON (default: tests/search-eval/golden-queries.json).",
   },
   {
     long: "--eval_fixtures",
@@ -251,9 +272,18 @@ function searchAdvancedCommand(): CommandDefinition {
   return {
     name: "search-advanced",
     action: "search-advanced",
-    description: "Enable optional semantic and hybrid search modes via package runtime.",
-    arguments: [{ name: "keywords", required: true, variadic: true, description: "Query tokens." }],
-    run: async (context) => runAdvancedSearchPackage(context.args, context.options, context.global),
+    description:
+      "Enable optional semantic and hybrid search modes via package runtime.",
+    arguments: [
+      {
+        name: "keywords",
+        required: true,
+        variadic: true,
+        description: "Query tokens.",
+      },
+    ],
+    run: async (context) =>
+      runAdvancedSearchPackage(context.args, context.options, context.global),
   };
 }
 
@@ -261,12 +291,15 @@ function reindexCommand(): CommandDefinition {
   return {
     name: "reindex",
     action: "reindex",
-    description: "Rebuild search artifacts for keyword, semantic, and hybrid modes.",
+    description:
+      "Rebuild search artifacts for keyword, semantic, and hybrid modes.",
     flags: [...reindexFlags],
-    run: async (context) => runAdvancedReindexPackage(context.options, context.global),
+    run: async (context) =>
+      runAdvancedReindexPackage(context.options, context.global),
   };
 }
 
+/** Registers this package's commands, actions, and runtime hooks with the host. */
 export function activate(api: ExtensionApi): void {
   api.registerFlags("search-advanced", [...searchAdvancedFlags]);
   api.registerCommand(searchAdvancedCommand());

@@ -4,7 +4,10 @@
  * Implements extension runtime contracts and governance for Item Fields.
  */
 import type { ExtensionRegistrationRegistry } from "./loader.js";
-import { normalizeItemFieldType, type KnownItemFieldType } from "./item-field-types.js";
+import {
+  normalizeItemFieldType,
+  type KnownItemFieldType,
+} from "./item-field-types.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 
@@ -27,8 +30,13 @@ export const RESERVED_ITEM_FIELD_NAMES: ReadonlySet<string> = Object.freeze({
   values(): IterableIterator<string> {
     return reservedItemFieldNames.values();
   },
-  forEach(callback: (value: string, value2: string, set: ReadonlySet<string>) => void, thisArg?: unknown): void {
-    reservedItemFieldNames.forEach((value) => callback.call(thisArg, value, value, RESERVED_ITEM_FIELD_NAMES));
+  forEach(
+    callback: (value: string, value2: string, set: ReadonlySet<string>) => void,
+    thisArg?: unknown,
+  ): void {
+    reservedItemFieldNames.forEach((value) =>
+      callback.call(thisArg, value, value, RESERVED_ITEM_FIELD_NAMES),
+    );
   },
   [Symbol.iterator](): IterableIterator<string> {
     return reservedItemFieldNames.values();
@@ -62,7 +70,10 @@ function parseFieldAssignment(raw: string): { key: string; value: string } {
   const trimmed = raw.trim();
   const separatorIndex = trimmed.indexOf("=");
   if (separatorIndex <= 0) {
-    throw new PmCliError(`--field entries must use name=value syntax, received: ${raw}`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `--field entries must use name=value syntax, received: ${raw}`,
+      EXIT_CODE.USAGE,
+    );
   }
   // `separatorIndex > 0` guarantees a non-`=` first character on the already
   // trimmed string, so the trimmed key is always non-empty here.
@@ -71,33 +82,55 @@ function parseFieldAssignment(raw: string): { key: string; value: string } {
   return { key, value };
 }
 
-function parseJsonFieldValue(raw: string, fieldName: string, expectedType: "array" | "object"): unknown {
+function parseJsonFieldValue(
+  raw: string,
+  fieldName: string,
+  expectedType: "array" | "object",
+): unknown {
   try {
     const parsed = JSON.parse(raw);
     if (expectedType === "array" && Array.isArray(parsed)) {
       return parsed;
     }
-    if (expectedType === "object" && typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+    if (
+      expectedType === "object" &&
+      typeof parsed === "object" &&
+      parsed !== null &&
+      !Array.isArray(parsed)
+    ) {
       return parsed;
     }
   } catch {
     // Fall through to the typed usage error below.
   }
-  throw new PmCliError(`--field ${fieldName}=... must be valid JSON ${expectedType}`, EXIT_CODE.USAGE);
+  throw new PmCliError(
+    `--field ${fieldName}=... must be valid JSON ${expectedType}`,
+    EXIT_CODE.USAGE,
+  );
 }
 
-function coerceRegisteredFieldValue(fieldName: string, fieldType: "string" | "number" | "boolean" | "array" | "object", raw: string): unknown {
+function coerceRegisteredFieldValue(
+  fieldName: string,
+  fieldType: "string" | "number" | "boolean" | "array" | "object",
+  raw: string,
+): unknown {
   if (fieldType === "string") {
     return raw;
   }
   if (fieldType === "number") {
     const trimmed = raw.trim();
     if (trimmed.length === 0) {
-      throw new PmCliError(`--field ${fieldName}=... must be a number`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `--field ${fieldName}=... must be a number`,
+        EXIT_CODE.USAGE,
+      );
     }
     const parsed = Number(trimmed);
     if (!Number.isFinite(parsed)) {
-      throw new PmCliError(`--field ${fieldName}=... must be a number`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `--field ${fieldName}=... must be a number`,
+        EXIT_CODE.USAGE,
+      );
     }
     return parsed;
   }
@@ -109,15 +142,24 @@ function coerceRegisteredFieldValue(fieldName: string, fieldType: "string" | "nu
     if (normalized === "false" || normalized === "0" || normalized === "no") {
       return false;
     }
-    throw new PmCliError(`--field ${fieldName}=... must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `--field ${fieldName}=... must be one of true|false|1|0|yes|no`,
+      EXIT_CODE.USAGE,
+    );
   }
   return parseJsonFieldValue(raw, fieldName, fieldType);
 }
 
 function collectRegisteredFieldDefinitions(
   registrations: ExtensionRegistrationRegistry | null,
-): Map<string, { name: string; type: "string" | "number" | "boolean" | "array" | "object" }> {
-  const definitions = new Map<string, { name: string; type: "string" | "number" | "boolean" | "array" | "object" }>();
+): Map<
+  string,
+  { name: string; type: "string" | "number" | "boolean" | "array" | "object" }
+> {
+  const definitions = new Map<
+    string,
+    { name: string; type: "string" | "number" | "boolean" | "array" | "object" }
+  >();
   if (!registrations) {
     return definitions;
   }
@@ -135,7 +177,9 @@ function collectRegisteredFieldDefinitions(
           EXIT_CODE.USAGE,
           {
             code: "extension_item_field_type_conflict",
-            nextSteps: ["Make every active extension declaration for this field use the same type."],
+            nextSteps: [
+              "Make every active extension declaration for this field use the same type.",
+            ],
           },
         );
       }
@@ -149,22 +193,28 @@ function assertNotReservedItemFieldName(fieldName: string): void {
   if (!RESERVED_ITEM_FIELD_NAMES.has(fieldName)) {
     return;
   }
-  throw new PmCliError(`Extension item field "${fieldName}" collides with reserved item metadata`, EXIT_CODE.USAGE, {
-    code: "extension_item_field_reserved",
-    nextSteps: ["Rename the extension item field, preferably with an extension-specific prefix."],
-  });
+  throw new PmCliError(
+    `Extension item field "${fieldName}" collides with reserved item metadata`,
+    EXIT_CODE.USAGE,
+    {
+      code: "extension_item_field_reserved",
+      nextSteps: [
+        "Rename the extension item field, preferably with an extension-specific prefix.",
+      ],
+    },
+  );
 }
 
-/**
- * Implements collect registered item field names for the public runtime surface of this module.
- */
-export function collectRegisteredItemFieldNames(registrations: ExtensionRegistrationRegistry | null): string[] {
-  return [...collectRegisteredFieldDefinitions(registrations).keys()].sort((left, right) => left.localeCompare(right));
+/** Implements collect registered item field names for the public runtime surface of this module. */
+export function collectRegisteredItemFieldNames(
+  registrations: ExtensionRegistrationRegistry | null,
+): string[] {
+  return [...collectRegisteredFieldDefinitions(registrations).keys()].sort(
+    (left, right) => left.localeCompare(right),
+  );
 }
 
-/**
- * Implements parse registered item field assignments for the public runtime surface of this module.
- */
+/** Implements parse registered item field assignments for the public runtime surface of this module. */
 export function parseRegisteredItemFieldAssignments(
   rawFields: string[] | undefined,
   registrations: ExtensionRegistrationRegistry | null,
@@ -178,22 +228,38 @@ export function parseRegisteredItemFieldAssignments(
     const { key, value } = parseFieldAssignment(raw);
     const definition = definitions.get(key);
     if (!definition) {
-      const known = [...definitions.keys()].sort((left, right) => left.localeCompare(right));
-      throw new PmCliError(`--field ${key} is not declared by an active extension item-field registration`, EXIT_CODE.USAGE, {
-        code: "extension_item_field_unknown",
-        recovery: { provided_fields: known },
-        nextSteps: known.length > 0
-          ? [`Use one of the declared fields: ${known.join(", ")}`]
-          : ["Activate an extension that calls registerItemFields before setting extension fields."],
-      });
+      const known = [...definitions.keys()].sort((left, right) =>
+        left.localeCompare(right),
+      );
+      throw new PmCliError(
+        `--field ${key} is not declared by an active extension item-field registration`,
+        EXIT_CODE.USAGE,
+        {
+          code: "extension_item_field_unknown",
+          recovery: { provided_fields: known },
+          nextSteps:
+            known.length > 0
+              ? [`Use one of the declared fields: ${known.join(", ")}`]
+              : [
+                  "Activate an extension that calls registerItemFields before setting extension fields.",
+                ],
+        },
+      );
     }
     assertNotReservedItemFieldName(definition.name);
-    values[definition.name] = coerceRegisteredFieldValue(definition.name, definition.type, value);
+    values[definition.name] = coerceRegisteredFieldValue(
+      definition.name,
+      definition.type,
+      value,
+    );
   }
   return values;
 }
 
-function isValidFieldType(value: unknown, expectedType: "string" | "number" | "boolean" | "array" | "object"): boolean {
+function isValidFieldType(
+  value: unknown,
+  expectedType: "string" | "number" | "boolean" | "array" | "object",
+): boolean {
   if (expectedType === "string") {
     return typeof value === "string";
   }
@@ -209,16 +275,17 @@ function isValidFieldType(value: unknown, expectedType: "string" | "number" | "b
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isAllowedFieldValue(value: unknown, allowed: unknown[] | undefined): boolean {
+function isAllowedFieldValue(
+  value: unknown,
+  allowed: unknown[] | undefined,
+): boolean {
   if (!allowed || allowed.length === 0) {
     return true;
   }
   return allowed.some((candidate) => Object.is(candidate, value));
 }
 
-/**
- * Implements apply registered item field defaults and validation for the public runtime surface of this module.
- */
+/** Implements apply registered item field defaults and validation for the public runtime surface of this module. */
 export function applyRegisteredItemFieldDefaultsAndValidation(
   frontMatter: Record<string, unknown>,
   registrations: ExtensionRegistrationRegistry | null,
@@ -249,12 +316,18 @@ export function applyRegisteredItemFieldDefaultsAndValidation(
       }
       const expectedType = normalizeFieldType(definition.type);
       if (expectedType && !isValidFieldType(currentValue, expectedType)) {
-        throw new TypeError(`Item field "${fieldName}" must be of type ${expectedType}`);
+        throw new TypeError(
+          `Item field "${fieldName}" must be of type ${expectedType}`,
+        );
       }
 
-      const allowedValues = Array.isArray(definition.values) ? definition.values : undefined;
+      const allowedValues = Array.isArray(definition.values)
+        ? definition.values
+        : undefined;
       if (!isAllowedFieldValue(currentValue, allowedValues)) {
-        throw new TypeError(`Item field "${fieldName}" must match one of the configured allowed values`);
+        throw new TypeError(
+          `Item field "${fieldName}" must match one of the configured allowed values`,
+        );
       }
     }
   }

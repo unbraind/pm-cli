@@ -8,12 +8,7 @@ import {
   type RuntimeStatusRegistry,
 } from "../../core/schema/runtime-schema.js";
 
-/**
- * GH-216: a contextual next-step hint that nudges agents toward the
- * underutilized `in_progress` lifecycle state instead of jumping straight from
- * `open` to `closed`. The suggestion is intentionally non-binding (no governance
- * enforcement) and only surfaces when a richer transition genuinely exists.
- */
+/** GH-216: a contextual next-step hint that nudges agents toward the underutilized `in_progress` lifecycle state instead of jumping straight from `open` to `closed`. The suggestion is intentionally non-binding (no governance enforcement) and only surfaces when a richer transition genuinely exists. */
 export interface LifecycleTransitionSuggestion {
   /** Ready-to-run command that advances the item to the suggested status. */
   command: string;
@@ -21,12 +16,7 @@ export interface LifecycleTransitionSuggestion {
   to_status: string;
 }
 
-/**
- * Item types whose lifecycle does not follow the
- * `open -> in_progress -> closed` work path. Scheduling/reference types are
- * tracked or scheduled rather than "worked", so a `start-task` nudge would be
- * noise. Compared case-insensitively against the resolved item type.
- */
+/** Item types whose lifecycle does not follow the `open -> in_progress -> closed` work path. Scheduling/reference types are tracked or scheduled rather than "worked", so a `start-task` nudge would be noise. Compared case-insensitively against the resolved item type. */
 const NON_WORKABLE_TYPES = new Set([
   "event",
   "meeting",
@@ -57,7 +47,10 @@ export function suggestNextLifecycleTransition(
   if (status !== statusRegistry.open_status) {
     return undefined;
   }
-  const inProgress = normalizeStatusInputWithRegistry("in_progress", statusRegistry);
+  const inProgress = normalizeStatusInputWithRegistry(
+    "in_progress",
+    statusRegistry,
+  );
   if (inProgress === undefined || inProgress === statusRegistry.open_status) {
     return undefined;
   }

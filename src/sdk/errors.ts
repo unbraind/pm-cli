@@ -48,11 +48,15 @@ export interface CreatePmCliExpectedErrorOptions {
 
 function normalizeExpectedErrorExitCode(value: number): number {
   if (!Number.isFinite(value)) {
-    throw new TypeError("createPmCliExpectedError options.exitCode must be a finite number");
+    throw new TypeError(
+      "createPmCliExpectedError options.exitCode must be a finite number",
+    );
   }
   const normalized = Math.trunc(value);
   if (normalized <= EXIT_CODE.SUCCESS) {
-    throw new TypeError("createPmCliExpectedError options.exitCode must be a positive exit code");
+    throw new TypeError(
+      "createPmCliExpectedError options.exitCode must be a positive exit code",
+    );
   }
   return normalized;
 }
@@ -69,7 +73,9 @@ export function createPmCliExpectedError(
   options: CreatePmCliExpectedErrorOptions = {},
 ): PmCliExpectedError {
   if (typeof message !== "string" || message.trim().length === 0) {
-    throw new TypeError("createPmCliExpectedError message must be a non-empty string");
+    throw new TypeError(
+      "createPmCliExpectedError message must be a non-empty string",
+    );
   }
   const error = new PmCliError(
     message,
@@ -87,13 +93,16 @@ export function createPmCliExpectedError(
   return error;
 }
 
-/**
- * Implements check whether pm cli expected error for the public runtime surface of this module.
- */
-export function isPmCliExpectedError(error: unknown): error is PmCliExpectedError {
+/** Implements check whether pm cli expected error for the public runtime surface of this module. */
+export function isPmCliExpectedError(
+  error: unknown,
+): error is PmCliExpectedError {
   if (!(error instanceof Error) || error.name !== PM_CLI_EXPECTED_ERROR_NAME) {
     return false;
   }
   const candidate = error as Partial<PmCliExpectedError>;
-  return typeof candidate.exitCode === "number" && Number.isFinite(candidate.exitCode);
+  return (
+    typeof candidate.exitCode === "number" &&
+    Number.isFinite(candidate.exitCode)
+  );
 }

@@ -24,9 +24,7 @@ export type BodyFileReader = (path: string) => Promise<string>;
 
 const defaultBodyFileReader: BodyFileReader = (path) => readFile(path, "utf8");
 
-/**
- * Implements resolve body file content for the public runtime surface of this module.
- */
+/** Implements resolve body file content for the public runtime surface of this module. */
 export async function resolveBodyFileContent(
   bodyFile: string,
   inlineBody: string | undefined,
@@ -42,7 +40,9 @@ export async function resolveBodyFileContent(
         code: "body_file_conflicts_with_body",
         required: "Choose exactly one body source.",
         why: "Both --body and --body-file set the item body; allowing both would make the effective body ambiguous.",
-        nextSteps: ["Re-run with only --body <text> or only --body-file <path>."],
+        nextSteps: [
+          "Re-run with only --body <text> or only --body-file <path>.",
+        ],
       },
     );
   }
@@ -72,7 +72,10 @@ export async function resolveBodyFileContent(
         code: "body_file_unreadable",
         required: "Point --body-file at an existing, readable file.",
         why: `The body content is loaded from the file at the supplied path, so an unreadable path cannot produce a body${errno ? ` (underlying error: ${errno})` : ""}.`,
-        nextSteps: [`Verify the path: ls -l "${path}"`, "Or pass the body inline with --body <text>."],
+        nextSteps: [
+          `Verify the path: ls -l "${path}"`,
+          "Or pass the body inline with --body <text>.",
+        ],
       },
     );
   }

@@ -1,3 +1,8 @@
+/**
+ * Runtime contracts and behavior for packages/pm linked test adapters/extensions/linked test adapters/runtime.
+ *
+ * @module packages/pm-linked-test-adapters/extensions/linked-test-adapters/runtime
+ */
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type { GlobalOptions } from "@unbrained/pm-cli/sdk";
@@ -7,13 +12,36 @@ const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 interface RuntimeSdkModule {
   EXIT_CODE: { USAGE: number };
   PmCliError: new (message: string, exitCode?: number) => Error;
-  runTestRunsList: (options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
+  runTestRunsList: (
+    options: Record<string, unknown>,
+    global: GlobalOptions,
+  ) => Promise<unknown>;
   runTestRunsStatus: (runId: string, global: GlobalOptions) => Promise<unknown>;
-  runTestRunsLogs: (runId: string, options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
-  runTestRunsStop: (runId: string, options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
-  runTestRunsResume: (runId: string, options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
-  readStringOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => string | undefined;
-  readBooleanOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => boolean | undefined;
+  runTestRunsLogs: (
+    runId: string,
+    options: Record<string, unknown>,
+    global: GlobalOptions,
+  ) => Promise<unknown>;
+  runTestRunsStop: (
+    runId: string,
+    options: Record<string, unknown>,
+    global: GlobalOptions,
+  ) => Promise<unknown>;
+  runTestRunsResume: (
+    runId: string,
+    options: Record<string, unknown>,
+    global: GlobalOptions,
+  ) => Promise<unknown>;
+  readStringOption: (
+    options: Record<string, unknown>,
+    key: string,
+    aliases?: string[],
+  ) => string | undefined;
+  readBooleanOption: (
+    options: Record<string, unknown>,
+    key: string,
+    aliases?: string[],
+  ) => boolean | undefined;
 }
 
 interface RuntimeBundle {
@@ -41,9 +69,16 @@ async function loadRuntimeBundle(): Promise<RuntimeBundle> {
       `builtin-linked-test-adapters requires ${PM_PACKAGE_ROOT_ENV} to locate core SDK runtime exports.`,
     );
   }
-  const modulePath = path.join(path.resolve(envRoot.trim()), "dist", "sdk", "runtime.js");
+  const modulePath = path.join(
+    path.resolve(envRoot.trim()),
+    "dist",
+    "sdk",
+    "runtime.js",
+  );
   try {
-    const sdkLoaded = (await import(pathToFileURL(modulePath).href)) as Partial<RuntimeSdkModule>;
+    const sdkLoaded = (await import(
+      pathToFileURL(modulePath).href
+    )) as Partial<RuntimeSdkModule>;
     if (
       typeof sdkLoaded.runTestRunsList === "function" &&
       typeof sdkLoaded.runTestRunsStatus === "function" &&
@@ -68,14 +103,22 @@ async function loadRuntimeBundle(): Promise<RuntimeBundle> {
   );
 }
 
-function requireRunId(bundle: RuntimeBundle, commandName: string, args: string[]): string {
+function requireRunId(
+  bundle: RuntimeBundle,
+  commandName: string,
+  args: string[],
+): string {
   const runId = args[0];
   if (typeof runId === "string" && runId.trim().length > 0) {
     return runId.trim();
   }
-  throw new bundle.sdk.PmCliError(`${commandName} requires a runId argument.`, bundle.sdk.EXIT_CODE.USAGE);
+  throw new bundle.sdk.PmCliError(
+    `${commandName} requires a runId argument.`,
+    bundle.sdk.EXIT_CODE.USAGE,
+  );
 }
 
+/** Executes the test runs list package operation through the package runtime. */
 export async function runTestRunsListPackage(
   options: Record<string, unknown>,
   global: GlobalOptions,
@@ -90,11 +133,19 @@ export async function runTestRunsListPackage(
   );
 }
 
-export async function runTestRunsStatusPackage(args: string[], global: GlobalOptions): Promise<unknown> {
+/** Executes the test runs status package operation through the package runtime. */
+export async function runTestRunsStatusPackage(
+  args: string[],
+  global: GlobalOptions,
+): Promise<unknown> {
   const bundle = await ensureRuntimeBundle();
-  return bundle.sdk.runTestRunsStatus(requireRunId(bundle, "test-runs status", args), global);
+  return bundle.sdk.runTestRunsStatus(
+    requireRunId(bundle, "test-runs status", args),
+    global,
+  );
 }
 
+/** Executes the test runs logs package operation through the package runtime. */
 export async function runTestRunsLogsPackage(
   args: string[],
   options: Record<string, unknown>,
@@ -111,6 +162,7 @@ export async function runTestRunsLogsPackage(
   );
 }
 
+/** Executes the test runs stop package operation through the package runtime. */
 export async function runTestRunsStopPackage(
   args: string[],
   options: Record<string, unknown>,
@@ -126,6 +178,7 @@ export async function runTestRunsStopPackage(
   );
 }
 
+/** Executes the test runs resume package operation through the package runtime. */
 export async function runTestRunsResumePackage(
   args: string[],
   options: Record<string, unknown>,

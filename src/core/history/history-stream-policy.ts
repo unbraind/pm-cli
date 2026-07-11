@@ -26,26 +26,34 @@ interface HistoryStreamPolicyManyParams {
   commandLabel: string;
 }
 
-/**
- * Documents the history stream policy result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the history stream policy result payload exchanged by command, SDK, and package integrations. */
 export interface HistoryStreamPolicyResult {
+  /** Value that configures or reports auto created ids for this contract. */
   auto_created_ids: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
 
 function toSortedUniqueItemIds(itemIds: string[]): string[] {
-  return [...new Set(itemIds.filter((value) => value.trim().length > 0))].sort((left, right) => left.localeCompare(right));
+  return [...new Set(itemIds.filter((value) => value.trim().length > 0))].sort(
+    (left, right) => left.localeCompare(right),
+  );
 }
 
-function strictMissingStreamError(itemId: string, commandLabel: string): PmCliError {
+function strictMissingStreamError(
+  itemId: string,
+  commandLabel: string,
+): PmCliError {
   return new PmCliError(
     `Missing history stream for ${itemId}. ${commandLabel} requires history streams when settings.history.missing_stream is strict_error.`,
     EXIT_CODE.NOT_FOUND,
   );
 }
 
-async function createStream(historyPath: string, commandLabel: string): Promise<string[]> {
+async function createStream(
+  historyPath: string,
+  commandLabel: string,
+): Promise<string[]> {
   await ensureDir(path.dirname(historyPath));
   const handle = await fs.open(historyPath, "a");
   await handle.close();
@@ -56,10 +64,10 @@ async function createStream(historyPath: string, commandLabel: string): Promise<
   });
 }
 
-/**
- * Implements enforce history stream policy for item for the public runtime surface of this module.
- */
-export async function enforceHistoryStreamPolicyForItem(params: HistoryStreamPolicyParams): Promise<HistoryStreamPolicyResult> {
+/** Implements enforce history stream policy for item for the public runtime surface of this module. */
+export async function enforceHistoryStreamPolicyForItem(
+  params: HistoryStreamPolicyParams,
+): Promise<HistoryStreamPolicyResult> {
   return enforceHistoryStreamPolicyForItems({
     pmRoot: params.pmRoot,
     settings: params.settings,
@@ -68,9 +76,7 @@ export async function enforceHistoryStreamPolicyForItem(params: HistoryStreamPol
   });
 }
 
-/**
- * Implements enforce history stream policy for items for the public runtime surface of this module.
- */
+/** Implements enforce history stream policy for items for the public runtime surface of this module. */
 export async function enforceHistoryStreamPolicyForItems(
   params: HistoryStreamPolicyManyParams,
 ): Promise<HistoryStreamPolicyResult> {

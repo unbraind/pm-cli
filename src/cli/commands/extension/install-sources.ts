@@ -14,7 +14,10 @@ import { resolvePmPackageRootFromModule } from "../../../core/packages/root.js";
 import { pathExists } from "../../../core/fs/fs-utils.js";
 import { isPathWithinDirectory } from "../../../core/fs/path-utils.js";
 import { EXIT_CODE } from "../../../core/shared/constants.js";
-import { PmCliError, type PmCliErrorContext } from "../../../core/shared/errors.js";
+import {
+  PmCliError,
+  type PmCliErrorContext,
+} from "../../../core/shared/errors.js";
 import { listBundledPackageAliases } from "./bundled-catalog.js";
 
 const execFileAsync = promisify(execFile);
@@ -43,7 +46,10 @@ interface NpmInstallSource {
   spec: string;
 }
 
-type InstallSource = LocalInstallSource | GithubInstallSource | NpmInstallSource;
+type InstallSource =
+  | LocalInstallSource
+  | GithubInstallSource
+  | NpmInstallSource;
 
 interface ResolvedInstallSource {
   source: InstallSource;
@@ -55,7 +61,11 @@ interface ResolvedInstallSource {
   cleanup?: () => Promise<void>;
 }
 
-function parseGithubPathSpec(pathSpec: string, input: string, refOverride?: string): GithubInstallSource | null {
+function parseGithubPathSpec(
+  pathSpec: string,
+  input: string,
+  refOverride?: string,
+): GithubInstallSource | null {
   const segments = pathSpec
     .split("/")
     .map((segment) => segment.trim())
@@ -91,16 +101,29 @@ function parseGithubPathSpec(pathSpec: string, input: string, refOverride?: stri
   };
 }
 
-function parseNpmInstallSource(normalizedInput: string, forceGithub: boolean, refOverride: string | undefined): InstallSource {
+function parseNpmInstallSource(
+  normalizedInput: string,
+  forceGithub: boolean,
+  refOverride: string | undefined,
+): InstallSource {
   const spec = normalizedInput.slice("npm:".length).trim();
   if (spec.length === 0) {
-    throw new PmCliError('npm package source must include a package spec after "npm:".', EXIT_CODE.USAGE);
+    throw new PmCliError(
+      'npm package source must include a package spec after "npm:".',
+      EXIT_CODE.USAGE,
+    );
   }
   if (forceGithub) {
-    throw new PmCliError('Options "--gh/--github" cannot be combined with npm: package sources.', EXIT_CODE.USAGE);
+    throw new PmCliError(
+      'Options "--gh/--github" cannot be combined with npm: package sources.',
+      EXIT_CODE.USAGE,
+    );
   }
   if (refOverride) {
-    throw new PmCliError('Option "--ref" cannot be combined with npm: package sources.', EXIT_CODE.USAGE);
+    throw new PmCliError(
+      'Option "--ref" cannot be combined with npm: package sources.',
+      EXIT_CODE.USAGE,
+    );
   }
   return {
     kind: "npm",
@@ -109,18 +132,29 @@ function parseNpmInstallSource(normalizedInput: string, forceGithub: boolean, re
   };
 }
 
-/**
- * Implements parse extension install source for the public runtime surface of this module.
- */
-export function parseExtensionInstallSource(input: string, options: { forceGithub?: boolean; ref?: string } = {}): InstallSource {
+/** Implements parse extension install source for the public runtime surface of this module. */
+export function parseExtensionInstallSource(
+  input: string,
+  options: { forceGithub?: boolean; ref?: string } = {},
+): InstallSource {
   const normalizedInput = input.trim();
   if (normalizedInput.length === 0) {
-    throw new PmCliError("Extension source is required for --install.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Extension source is required for --install.",
+      EXIT_CODE.USAGE,
+    );
   }
-  const refOverride = typeof options.ref === "string" && options.ref.trim().length > 0 ? options.ref.trim() : undefined;
+  const refOverride =
+    typeof options.ref === "string" && options.ref.trim().length > 0
+      ? options.ref.trim()
+      : undefined;
 
   if (normalizedInput.startsWith("npm:")) {
-    return parseNpmInstallSource(normalizedInput, options.forceGithub === true, refOverride);
+    return parseNpmInstallSource(
+      normalizedInput,
+      options.forceGithub === true,
+      refOverride,
+    );
   }
 
   const maybeGithubByUrl = (() => {
@@ -139,19 +173,35 @@ export function parseExtensionInstallSource(input: string, options: { forceGithu
     return maybeGithubByUrl;
   }
 
-  const strippedDomainInput = normalizedInput.startsWith("github.com/") ? normalizedInput.slice("github.com/".length) : null;
+  const strippedDomainInput = normalizedInput.startsWith("github.com/")
+    ? normalizedInput.slice("github.com/".length)
+    : null;
   if (strippedDomainInput) {
-    const parsed = parseGithubPathSpec(strippedDomainInput, normalizedInput, refOverride);
+    const parsed = parseGithubPathSpec(
+      strippedDomainInput,
+      normalizedInput,
+      refOverride,
+    );
     if (!parsed) {
-      throw new PmCliError(`Invalid GitHub source "${normalizedInput}".`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `Invalid GitHub source "${normalizedInput}".`,
+        EXIT_CODE.USAGE,
+      );
     }
     return parsed;
   }
 
   if (options.forceGithub) {
-    const parsed = parseGithubPathSpec(normalizedInput, normalizedInput, refOverride);
+    const parsed = parseGithubPathSpec(
+      normalizedInput,
+      normalizedInput,
+      refOverride,
+    );
     if (!parsed) {
-      throw new PmCliError(`Invalid GitHub shorthand "${normalizedInput}".`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `Invalid GitHub shorthand "${normalizedInput}".`,
+        EXIT_CODE.USAGE,
+      );
     }
     return parsed;
   }
@@ -170,9 +220,7 @@ export function parseExtensionInstallSource(input: string, options: { forceGithu
   };
 }
 
-/**
- * Implements run git command for the public runtime surface of this module.
- */
+/** Implements run git command for the public runtime surface of this module. */
 export async function runGitCommand(
   args: string[],
   execRunner: typeof execFileAsync = execFileAsync,
@@ -182,24 +230,35 @@ export async function runGitCommand(
     return (result.stdout ?? "").trim();
   } catch (error: unknown) {
     /* c8 ignore start -- stderr-vs-error-message precedence is validated in integration command-runner paths */
-    const stderr = typeof error === "object" && error !== null && "stderr" in error ? String((error as { stderr: unknown }).stderr) : "";
-    const message = stderr.trim().length > 0 ? stderr.trim() : error instanceof Error ? error.message : String(error);
+    const stderr =
+      typeof error === "object" && error !== null && "stderr" in error
+        ? String((error as { stderr: unknown }).stderr)
+        : "";
+    const message =
+      stderr.trim().length > 0
+        ? stderr.trim()
+        : error instanceof Error
+          ? error.message
+          : String(error);
     /* c8 ignore stop */
-    throw new PmCliError(`Git command failed: git ${args.join(" ")}\n${message}`, EXIT_CODE.GENERIC_FAILURE);
+    throw new PmCliError(
+      `Git command failed: git ${args.join(" ")}\n${message}`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
   }
 }
 
-/**
- * Implements resolve npm command name for the public runtime surface of this module.
- */
-export function resolveNpmCommandName(platform: NodeJS.Platform = process.platform): "npm" | "npm.cmd" {
+/** Implements resolve npm command name for the public runtime surface of this module. */
+export function resolveNpmCommandName(
+  platform: NodeJS.Platform = process.platform,
+): "npm" | "npm.cmd" {
   return platform === "win32" ? "npm.cmd" : "npm";
 }
 
-/**
- * Implements should run npm command in shell for the public runtime surface of this module.
- */
-export function shouldRunNpmCommandInShell(platform: NodeJS.Platform = process.platform): boolean {
+/** Implements should run npm command in shell for the public runtime surface of this module. */
+export function shouldRunNpmCommandInShell(
+  platform: NodeJS.Platform = process.platform,
+): boolean {
   return platform === "win32";
 }
 
@@ -210,18 +269,35 @@ async function runNpmCommand(
 ): Promise<string> {
   const npmCommand = resolveNpmCommandName();
   try {
-    const result = await execRunner(npmCommand, args, { cwd, encoding: "utf8", shell: shouldRunNpmCommandInShell() });
+    const result = await execRunner(npmCommand, args, {
+      cwd,
+      encoding: "utf8",
+      shell: shouldRunNpmCommandInShell(),
+    });
     return (result.stdout ?? "").trim();
   } catch (error: unknown) {
-    const stderr = typeof error === "object" && error !== null && "stderr" in error ? String((error as { stderr: unknown }).stderr) : "";
-    const message = stderr.trim().length > 0 ? stderr.trim() : error instanceof Error ? error.message : String(error);
-    throw new PmCliError(`npm command failed: ${npmCommand} ${args.join(" ")}\n${message}`, EXIT_CODE.GENERIC_FAILURE);
+    const stderr =
+      typeof error === "object" && error !== null && "stderr" in error
+        ? String((error as { stderr: unknown }).stderr)
+        : "";
+    const message =
+      stderr.trim().length > 0
+        ? stderr.trim()
+        : error instanceof Error
+          ? error.message
+          : String(error);
+    throw new PmCliError(
+      `npm command failed: ${npmCommand} ${args.join(" ")}\n${message}`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
   }
 }
 
 function npmPackageNameFromSpec(spec: string): string {
   const trimmed = spec.trim();
-  const withoutAlias = trimmed.includes("@file:") ? trimmed.slice(0, trimmed.lastIndexOf("@file:")) : trimmed;
+  const withoutAlias = trimmed.includes("@file:")
+    ? trimmed.slice(0, trimmed.lastIndexOf("@file:"))
+    : trimmed;
   if (withoutAlias.startsWith("@")) {
     const scoped = withoutAlias.match(/^(@[^/@\s]+\/[^/@\s]+)/);
     return scoped?.[1] ?? withoutAlias;
@@ -230,9 +306,7 @@ function npmPackageNameFromSpec(spec: string): string {
   return unscoped?.[1] ?? withoutAlias;
 }
 
-/**
- * Implements check whether npm not found error for the public runtime surface of this module.
- */
+/** Implements check whether npm not found error for the public runtime surface of this module. */
 export function isNpmNotFoundError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   const normalized = message.toLowerCase();
@@ -243,9 +317,7 @@ export function isNpmNotFoundError(error: unknown): boolean {
   );
 }
 
-/**
- * Implements check whether npm pack not found error for the public runtime surface of this module.
- */
+/** Implements check whether npm pack not found error for the public runtime surface of this module. */
 export function isNpmPackNotFoundError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   const normalized = message.toLowerCase();
@@ -254,12 +326,12 @@ export function isNpmPackNotFoundError(error: unknown): boolean {
 
 function isFirstPartyPmPackageName(packageName: string): boolean {
   const normalized = packageName.trim().toLowerCase();
-  return normalized.startsWith("@unbrained/pm-") || normalized.startsWith("pm-");
+  return (
+    normalized.startsWith("@unbrained/pm-") || normalized.startsWith("pm-")
+  );
 }
 
-/**
- * Implements build npm not found recovery for the public runtime surface of this module.
- */
+/** Implements build npm not found recovery for the public runtime surface of this module. */
 export function buildNpmNotFoundRecovery(spec: string): {
   message: string;
   context: PmCliErrorContext;
@@ -267,17 +339,24 @@ export function buildNpmNotFoundRecovery(spec: string): {
   const packageName = npmPackageNameFromSpec(spec);
   const isFirstPartyPackage = isFirstPartyPmPackageName(packageName);
   const repoName = packageName.replace(/^.*\//, "");
-  const githubSource = isFirstPartyPackage ? `github.com/unbraind/${repoName}` : undefined;
-  const nextBestCommand = githubSource ? `pm install --project ${githubSource}` : undefined;
+  const githubSource = isFirstPartyPackage
+    ? `github.com/unbraind/${repoName}`
+    : undefined;
+  const nextBestCommand = githubSource
+    ? `pm install --project ${githubSource}`
+    : undefined;
   return {
     message: isFirstPartyPackage
       ? `npm package "${spec}" was not found in the registry. If this is an unpublished first-party pm package, install its GitHub repository instead.`
       : `npm package "${spec}" was not found in the registry.`,
     context: {
       code: "npm_package_not_found",
-      required: "Use an install source that exists, or publish the npm package before installing it with npm:<name>.",
+      required:
+        "Use an install source that exists, or publish the npm package before installing it with npm:<name>.",
       why: "Classifying npm 404s avoids repeated registry retries and gives agents a deterministic fallback path.",
-      examples: nextBestCommand ? [nextBestCommand, `pm package catalog --project --json`] : [`npm view ${packageName}`, `pm package catalog --project --json`],
+      examples: nextBestCommand
+        ? [nextBestCommand, `pm package catalog --project --json`]
+        : [`npm view ${packageName}`, `pm package catalog --project --json`],
       nextSteps: nextBestCommand
         ? [
             `Try ${nextBestCommand} if the repository exists.`,
@@ -296,7 +375,8 @@ export function buildNpmNotFoundRecovery(spec: string): {
                 {
                   source: githubSource,
                   command: nextBestCommand,
-                  reason: "canonical first-party GitHub repository fallback for unpublished pm packages",
+                  reason:
+                    "canonical first-party GitHub repository fallback for unpublished pm packages",
                 },
               ],
               next_best_command: nextBestCommand,
@@ -307,18 +387,25 @@ export function buildNpmNotFoundRecovery(spec: string): {
   };
 }
 
-/**
- * Implements wrap npm pack resolution error for the public runtime surface of this module.
- */
-export function wrapNpmPackResolutionError(spec: string, error: unknown): PmCliError | null {
+/** Implements wrap npm pack resolution error for the public runtime surface of this module. */
+export function wrapNpmPackResolutionError(
+  spec: string,
+  error: unknown,
+): PmCliError | null {
   if (!isNpmPackNotFoundError(error)) {
     return null;
   }
   const recovery = buildNpmNotFoundRecovery(spec);
-  return new PmCliError(recovery.message, EXIT_CODE.NOT_FOUND, recovery.context);
+  return new PmCliError(
+    recovery.message,
+    EXIT_CODE.NOT_FOUND,
+    recovery.context,
+  );
 }
 
-async function resolveLocalNpmPackagePath(spec: string): Promise<string | null> {
+async function resolveLocalNpmPackagePath(
+  spec: string,
+): Promise<string | null> {
   if (path.isAbsolute(spec) || spec.startsWith(".") || spec.startsWith("..")) {
     const absolutePath = path.resolve(process.cwd(), spec);
     return (await pathExists(absolutePath)) ? absolutePath : null;
@@ -366,10 +453,11 @@ async function resolveNpmPackSpec(spec: string): Promise<string> {
   return spec;
 }
 
-/**
- * Implements normalize npm local file alias spec for the public runtime surface of this module.
- */
-export function normalizeNpmLocalFileAliasSpec(spec: string, cwd: string = process.cwd()): string {
+/** Implements normalize npm local file alias spec for the public runtime surface of this module. */
+export function normalizeNpmLocalFileAliasSpec(
+  spec: string,
+  cwd: string = process.cwd(),
+): string {
   const marker = "@file:";
   const markerIndex = spec.lastIndexOf(marker);
   if (markerIndex <= 0) {
@@ -405,15 +493,28 @@ export function normalizeNpmLocalFileAliasSpec(spec: string, cwd: string = proce
     // of crashing the CLI on an uncaught exception.
     return spec;
   }
-  const nativePath = /^\/[A-Za-z]:/.test(decodedPath) ? decodedPath.slice(1) : decodedPath;
+  const nativePath = /^\/[A-Za-z]:/.test(decodedPath)
+    ? decodedPath.slice(1)
+    : decodedPath;
   return `${packageName}@${nativePath}`;
 }
 
-function parsePackedNpmPackage(stdout: string, packDirectory: string): { tarball: string; package?: string; version?: string } {
+function parsePackedNpmPackage(
+  stdout: string,
+  packDirectory: string,
+): { tarball: string; package?: string; version?: string } {
   try {
-    const parsed = JSON.parse(stdout) as Array<{ filename?: unknown; name?: unknown; version?: unknown }>;
+    const parsed = JSON.parse(stdout) as Array<{
+      filename?: unknown;
+      name?: unknown;
+      version?: unknown;
+    }>;
     const first = Array.isArray(parsed) ? parsed[0] : undefined;
-    if (first && typeof first.filename === "string" && first.filename.trim().length > 0) {
+    if (
+      first &&
+      typeof first.filename === "string" &&
+      first.filename.trim().length > 0
+    ) {
       return {
         tarball: path.resolve(packDirectory, first.filename),
         package: typeof first.name === "string" ? first.name : undefined,
@@ -429,7 +530,10 @@ function parsePackedNpmPackage(stdout: string, packDirectory: string): { tarball
     .filter((line) => line.length > 0)
     .at(-1);
   if (!lastLine) {
-    throw new PmCliError("npm pack did not report a tarball filename.", EXIT_CODE.GENERIC_FAILURE);
+    throw new PmCliError(
+      "npm pack did not report a tarball filename.",
+      EXIT_CODE.GENERIC_FAILURE,
+    );
   }
   return {
     tarball: path.resolve(packDirectory, lastLine),
@@ -458,17 +562,29 @@ async function resolveNpmSourceDirectoryWithRunner(
   if (localPackageRoot) {
     const packageJsonPath = path.join(localPackageRoot, "package.json");
     const packageJson = (await pathExists(packageJsonPath))
-      ? JSON.parse(await fs.readFile(packageJsonPath, "utf8")) as { name?: unknown; version?: unknown }
+      ? (JSON.parse(await fs.readFile(packageJsonPath, "utf8")) as {
+          name?: unknown;
+          version?: unknown;
+        })
       : {};
     return {
-      directory: await resolvePackageExtensionDirectory(localPackageRoot, source.input),
-      package: typeof packageJson.name === "string" ? packageJson.name : undefined,
-      version: typeof packageJson.version === "string" ? packageJson.version : undefined,
+      directory: await resolvePackageExtensionDirectory(
+        localPackageRoot,
+        source.input,
+      ),
+      package:
+        typeof packageJson.name === "string" ? packageJson.name : undefined,
+      version:
+        typeof packageJson.version === "string"
+          ? packageJson.version
+          : undefined,
       cleanup: async () => {},
     };
   }
 
-  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-npm-package-source-"));
+  const tempRoot = await fs.mkdtemp(
+    path.join(os.tmpdir(), "pm-npm-package-source-"),
+  );
   const packDirectory = path.join(tempRoot, "pack");
   const extractDirectory = path.join(tempRoot, "extract");
   await fs.mkdir(packDirectory, { recursive: true });
@@ -476,12 +592,25 @@ async function resolveNpmSourceDirectoryWithRunner(
 
   try {
     const packSpec = await resolveNpmPackSpec(source.spec);
-    const packStdout = await npmRunner(["pack", packSpec, "--json", "--pack-destination", packDirectory]);
+    const packStdout = await npmRunner([
+      "pack",
+      packSpec,
+      "--json",
+      "--pack-destination",
+      packDirectory,
+    ]);
     const packed = parsePackedNpmPackage(packStdout, packDirectory);
-    await execFileAsync("tar", ["-xzf", packed.tarball, "-C", extractDirectory], { encoding: "utf8" });
+    await execFileAsync(
+      "tar",
+      ["-xzf", packed.tarball, "-C", extractDirectory],
+      { encoding: "utf8" },
+    );
     const packageRoot = path.join(extractDirectory, "package");
     await installNpmPackageRuntimeDependencies(packageRoot);
-    const directory = await resolvePackageExtensionDirectory(packageRoot, source.input);
+    const directory = await resolvePackageExtensionDirectory(
+      packageRoot,
+      source.input,
+    );
     return {
       directory,
       package: packed.package,
@@ -500,7 +629,9 @@ async function resolveNpmSourceDirectoryWithRunner(
   }
 }
 
-async function installNpmPackageRuntimeDependencies(packageRoot: string): Promise<void> {
+async function installNpmPackageRuntimeDependencies(
+  packageRoot: string,
+): Promise<void> {
   const packageJsonPath = path.join(packageRoot, "package.json");
   if (!(await pathExists(packageJsonPath))) {
     return;
@@ -516,7 +647,11 @@ async function installNpmPackageRuntimeDependencies(packageRoot: string): Promis
     return;
   }
 
-  const manifest = parsed as { dependencies?: unknown; optionalDependencies?: unknown; peerDependencies?: unknown };
+  const manifest = parsed as {
+    dependencies?: unknown;
+    optionalDependencies?: unknown;
+    peerDependencies?: unknown;
+  };
   const dependencySpecs = runtimeDependencyInstallSpecs(manifest);
   const shouldLinkHostedPmCli = hasHostedPmCliDependency(manifest);
   if (dependencySpecs.length === 0 && !shouldLinkHostedPmCli) {
@@ -527,7 +662,11 @@ async function installNpmPackageRuntimeDependencies(packageRoot: string): Promis
   delete runtimeOnlyManifest.devDependencies;
   const installManifest = { ...runtimeOnlyManifest };
   removeHostedPmCliDependency(installManifest);
-  await fs.writeFile(packageJsonPath, `${JSON.stringify(installManifest, null, 2)}\n`, "utf8");
+  await fs.writeFile(
+    packageJsonPath,
+    `${JSON.stringify(installManifest, null, 2)}\n`,
+    "utf8",
+  );
   try {
     await Promise.all([
       fs.rm(path.join(packageRoot, "package-lock.json"), { force: true }),
@@ -554,7 +693,11 @@ async function installNpmPackageRuntimeDependencies(packageRoot: string): Promis
       await linkHostedPmCliDependency(packageRoot);
     }
   } finally {
-    await fs.writeFile(packageJsonPath, `${JSON.stringify(runtimeOnlyManifest, null, 2)}\n`, "utf8");
+    await fs.writeFile(
+      packageJsonPath,
+      `${JSON.stringify(runtimeOnlyManifest, null, 2)}\n`,
+      "utf8",
+    );
   }
 }
 
@@ -563,8 +706,16 @@ function hasHostedPmCliDependency(manifest: {
   optionalDependencies?: unknown;
   peerDependencies?: unknown;
 }): boolean {
-  for (const dependencyMap of [manifest.dependencies, manifest.optionalDependencies, manifest.peerDependencies]) {
-    if (typeof dependencyMap === "object" && dependencyMap !== null && PM_CLI_PACKAGE_NAME in dependencyMap) {
+  for (const dependencyMap of [
+    manifest.dependencies,
+    manifest.optionalDependencies,
+    manifest.peerDependencies,
+  ]) {
+    if (
+      typeof dependencyMap === "object" &&
+      dependencyMap !== null &&
+      PM_CLI_PACKAGE_NAME in dependencyMap
+    ) {
       return true;
     }
   }
@@ -572,7 +723,11 @@ function hasHostedPmCliDependency(manifest: {
 }
 
 function removeHostedPmCliDependency(manifest: Record<string, unknown>): void {
-  for (const field of ["dependencies", "optionalDependencies", "peerDependencies"] as const) {
+  for (const field of [
+    "dependencies",
+    "optionalDependencies",
+    "peerDependencies",
+  ] as const) {
     const dependencyMap = manifest[field];
     if (typeof dependencyMap !== "object" || dependencyMap === null) {
       continue;
@@ -588,16 +743,24 @@ function removeHostedPmCliDependency(manifest: Record<string, unknown>): void {
 }
 
 async function linkHostedPmCliDependency(packageRoot: string): Promise<void> {
-  const hostPackageRoot = resolvePmPackageRootFromModule(import.meta.url, ["../../../.."]);
+  const hostPackageRoot = resolvePmPackageRootFromModule(import.meta.url, [
+    "../../../..",
+  ]);
   const [scope, packageName] = PM_CLI_PACKAGE_NAME.split("/");
   const scopedDirectory = path.join(packageRoot, "node_modules", scope);
   const linkPath = path.join(scopedDirectory, packageName);
   await fs.mkdir(scopedDirectory, { recursive: true });
   await fs.rm(linkPath, { recursive: true, force: true });
-  await fs.symlink(hostPackageRoot, linkPath, resolveDirectorySymlinkType(process.platform));
+  await fs.symlink(
+    hostPackageRoot,
+    linkPath,
+    resolveDirectorySymlinkType(process.platform),
+  );
 }
 
-function resolveDirectorySymlinkType(platform: NodeJS.Platform): "dir" | "junction" {
+function resolveDirectorySymlinkType(
+  platform: NodeJS.Platform,
+): "dir" | "junction" {
   return platform === "win32" ? "junction" : "dir";
 }
 
@@ -607,7 +770,11 @@ function runtimeDependencyInstallSpecs(manifest: {
   peerDependencies?: unknown;
 }): string[] {
   const specs = new Map<string, string>();
-  for (const dependencyMap of [manifest.dependencies, manifest.optionalDependencies, manifest.peerDependencies]) {
+  for (const dependencyMap of [
+    manifest.dependencies,
+    manifest.optionalDependencies,
+    manifest.peerDependencies,
+  ]) {
     if (typeof dependencyMap !== "object" || dependencyMap === null) {
       continue;
     }
@@ -626,14 +793,19 @@ function runtimeDependencyInstallSpecs(manifest: {
   return [...specs.values()];
 }
 
-async function resolvePackageExtensionDirectory(packageRoot: string, sourceLabel: string): Promise<string> {
+async function resolvePackageExtensionDirectory(
+  packageRoot: string,
+  sourceLabel: string,
+): Promise<string> {
   const discovered = await collectPackageExtensionDirectories(packageRoot);
   if (discovered.length === 1) {
     return discovered[0];
   }
   if (discovered.length > 1) {
     const choices = discovered
-      .map((entry) => path.relative(packageRoot, entry).replaceAll(path.sep, "/"))
+      .map((entry) =>
+        path.relative(packageRoot, entry).replaceAll(path.sep, "/"),
+      )
       .sort((left, right) => left.localeCompare(right));
     throw new PmCliError(
       `Package source "${sourceLabel}" contains multiple extension manifests. Provide an explicit extension path. Candidates: ${choices.join(", ")}`,
@@ -646,14 +818,23 @@ async function resolvePackageExtensionDirectory(packageRoot: string, sourceLabel
   );
 }
 
-async function resolveGithubSourceDirectory(cloneDirectory: string, source: GithubInstallSource): Promise<{ directory: string; resolved_subpath?: string }> {
+async function resolveGithubSourceDirectory(
+  cloneDirectory: string,
+  source: GithubInstallSource,
+): Promise<{ directory: string; resolved_subpath?: string }> {
   const candidatePaths: string[] = [];
   /* c8 ignore start -- subpath candidate expansion permutations are covered by source-resolution integration suites */
   if (source.subpath) {
     candidatePaths.push(source.subpath);
-    candidatePaths.push(path.posix.join(".agents/pm/extensions", source.subpath));
-    candidatePaths.push(path.posix.join(".custom/pm-extensions", source.subpath));
-    candidatePaths.push(path.posix.join(".custom/pm-extension", source.subpath));
+    candidatePaths.push(
+      path.posix.join(".agents/pm/extensions", source.subpath),
+    );
+    candidatePaths.push(
+      path.posix.join(".custom/pm-extensions", source.subpath),
+    );
+    candidatePaths.push(
+      path.posix.join(".custom/pm-extension", source.subpath),
+    );
   }
   /* c8 ignore stop */
 
@@ -673,21 +854,26 @@ async function resolveGithubSourceDirectory(cloneDirectory: string, source: Gith
     return { directory: cloneDirectory, resolved_subpath: "." };
   }
 
-  const discoveredDirectory = await resolvePackageExtensionDirectory(cloneDirectory, source.input);
+  const discoveredDirectory = await resolvePackageExtensionDirectory(
+    cloneDirectory,
+    source.input,
+  );
   return {
     directory: discoveredDirectory,
-    resolved_subpath: path.relative(cloneDirectory, discoveredDirectory).replaceAll(path.sep, "/"),
+    resolved_subpath: path
+      .relative(cloneDirectory, discoveredDirectory)
+      .replaceAll(path.sep, "/"),
   };
 }
 
-/**
- * Bare package-ish names (no path separators, or a single-scope npm name) that
- * miss local resolution are almost always intended as npm or bundled installs,
- * so the not-found error must route agents to those sources instead of dead-ending.
- */
+/** Bare package-ish names (no path separators, or a single-scope npm name) that miss local resolution are almost always intended as npm or bundled installs, so the not-found error must route agents to those sources instead of dead-ending. */
 function looksLikeBarePackageName(input: string): boolean {
   const trimmed = input.trim();
-  if (trimmed.length === 0 || trimmed.startsWith(".") || trimmed.startsWith("~")) {
+  if (
+    trimmed.length === 0 ||
+    trimmed.startsWith(".") ||
+    trimmed.startsWith("~")
+  ) {
     return false;
   }
   if (trimmed.startsWith("@")) {
@@ -696,7 +882,9 @@ function looksLikeBarePackageName(input: string): boolean {
   return !trimmed.includes("/") && !trimmed.includes("\\");
 }
 
-async function buildLocalSourceNotFoundError(source: LocalInstallSource): Promise<PmCliError> {
+async function buildLocalSourceNotFoundError(
+  source: LocalInstallSource,
+): Promise<PmCliError> {
   const baseMessage = `Local extension source does not exist: "${source.absolute_path}".`;
   const input = source.input.trim();
   if (!looksLikeBarePackageName(input)) {
@@ -705,9 +893,10 @@ async function buildLocalSourceNotFoundError(source: LocalInstallSource): Promis
   let bundledAliases: string[] = [];
   try {
     const envPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
-    const cacheKey = typeof envPackageRoot === "string" && envPackageRoot.trim().length > 0
-      ? path.resolve(envPackageRoot.trim())
-      : "";
+    const cacheKey =
+      typeof envPackageRoot === "string" && envPackageRoot.trim().length > 0
+        ? path.resolve(envPackageRoot.trim())
+        : "";
     if (bundledPackageAliasesCache?.key !== cacheKey) {
       bundledPackageAliasesCache = {
         key: cacheKey,
@@ -743,10 +932,10 @@ async function buildLocalSourceNotFoundError(source: LocalInstallSource): Promis
   );
 }
 
-/**
- * Implements resolve install source for the public runtime surface of this module.
- */
-export async function resolveInstallSource(source: InstallSource): Promise<ResolvedInstallSource> {
+/** Implements resolve install source for the public runtime surface of this module. */
+export async function resolveInstallSource(
+  source: InstallSource,
+): Promise<ResolvedInstallSource> {
   if (source.kind === "local") {
     let localStats;
     try {
@@ -755,9 +944,15 @@ export async function resolveInstallSource(source: InstallSource): Promise<Resol
       throw await buildLocalSourceNotFoundError(source);
     }
     if (!localStats.isDirectory()) {
-      throw new PmCliError(`Local extension source must be a directory: "${source.absolute_path}".`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `Local extension source must be a directory: "${source.absolute_path}".`,
+        EXIT_CODE.USAGE,
+      );
     }
-    const directory = await resolvePackageExtensionDirectory(source.absolute_path, source.input);
+    const directory = await resolvePackageExtensionDirectory(
+      source.absolute_path,
+      source.input,
+    );
     return {
       source,
       directory,
@@ -770,13 +965,17 @@ export async function resolveInstallSource(source: InstallSource): Promise<Resol
       source,
       directory: resolved.directory,
       cleanup: resolved.cleanup,
-      resolved_subpath: path.relative(path.dirname(resolved.directory), resolved.directory).replaceAll(path.sep, "/"),
+      resolved_subpath: path
+        .relative(path.dirname(resolved.directory), resolved.directory)
+        .replaceAll(path.sep, "/"),
       npm_package: resolved.package,
       npm_version: resolved.version,
     };
   }
 
-  const cloneDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "pm-extension-source-"));
+  const cloneDirectory = await fs.mkdtemp(
+    path.join(os.tmpdir(), "pm-extension-source-"),
+  );
   const cloneArgs = ["clone", "--depth", "1"];
   if (source.ref) {
     cloneArgs.push("--branch", source.ref);
@@ -785,7 +984,12 @@ export async function resolveInstallSource(source: InstallSource): Promise<Resol
 
   try {
     await runGitCommand(cloneArgs);
-    const commit = await runGitCommand(["-C", cloneDirectory, "rev-parse", "HEAD"]);
+    const commit = await runGitCommand([
+      "-C",
+      cloneDirectory,
+      "rev-parse",
+      "HEAD",
+    ]);
     const resolved = await resolveGithubSourceDirectory(cloneDirectory, source);
     return {
       source,
@@ -802,17 +1006,22 @@ export async function resolveInstallSource(source: InstallSource): Promise<Resol
   }
 }
 
-/**
- * Implements are directories equivalent for the public runtime surface of this module.
- */
-export async function areDirectoriesEquivalent(left: string, right: string): Promise<boolean> {
+/** Implements are directories equivalent for the public runtime surface of this module. */
+export async function areDirectoriesEquivalent(
+  left: string,
+  right: string,
+): Promise<boolean> {
   if (!(await pathExists(left)) || !(await pathExists(right))) {
     return false;
   }
-  const [leftRealPath, rightRealPath] = await Promise.all([fs.realpath(left), fs.realpath(right)]);
+  const [leftRealPath, rightRealPath] = await Promise.all([
+    fs.realpath(left),
+    fs.realpath(right),
+  ]);
   return leftRealPath === rightRealPath;
 }
 
+/** Public contract for test only install sources, shared by SDK and presentation-layer consumers. */
 export const _testOnlyInstallSources = {
   installNpmPackageRuntimeDependencies,
   npmPackageNameFromSpec,

@@ -1,3 +1,8 @@
+/**
+ * Runtime contracts and behavior for packages/pm beads/extensions/beads/index.
+ *
+ * @module packages/pm-beads/extensions/beads/index
+ */
 import type {
   ExtensionApi,
   GlobalOptions,
@@ -7,6 +12,7 @@ import type {
 import type { BeadsImportOptions, BeadsImportResult } from "./runtime.ts";
 import { loadPackageRuntimeModule } from "./runtime-loader.ts";
 
+/** Declarative package manifest consumed by the extension loader. */
 export const manifest = {
   name: "builtin-beads-import",
   version: "0.1.0",
@@ -16,7 +22,10 @@ export const manifest = {
 };
 
 type RuntimeModule = {
-  runBeadsImport?: (options: BeadsImportOptions, global: GlobalOptions) => Promise<BeadsImportResult>;
+  runBeadsImport?: (
+    options: BeadsImportOptions,
+    global: GlobalOptions,
+  ) => Promise<BeadsImportResult>;
 };
 
 function asOptionalString(value: unknown): string | undefined {
@@ -27,7 +36,9 @@ function asBoolean(value: unknown): boolean | undefined {
   return typeof value === "boolean" ? value : undefined;
 }
 
-function toBeadsImportOptions(options: Record<string, unknown>): BeadsImportOptions {
+function toBeadsImportOptions(
+  options: Record<string, unknown>,
+): BeadsImportOptions {
   return {
     file: asOptionalString(options.file),
     author: asOptionalString(options.author),
@@ -36,21 +47,31 @@ function toBeadsImportOptions(options: Record<string, unknown>): BeadsImportOpti
   };
 }
 
-async function runBeadsImportFromRuntime(options: BeadsImportOptions, global: GlobalOptions): Promise<BeadsImportResult> {
-  const runtime = await loadPackageRuntimeModule() as RuntimeModule;
+async function runBeadsImportFromRuntime(
+  options: BeadsImportOptions,
+  global: GlobalOptions,
+): Promise<BeadsImportResult> {
+  const runtime = (await loadPackageRuntimeModule()) as RuntimeModule;
   if (typeof runtime.runBeadsImport !== "function") {
-    throw new Error("Bundled beads runtime module is missing runBeadsImport().");
+    throw new Error(
+      "Bundled beads runtime module is missing runBeadsImport().",
+    );
   }
   return runtime.runBeadsImport(options, global);
 }
 
+/** Registers this package's commands, actions, and runtime hooks with the host. */
 export function activate(api: ExtensionApi): void {
   // First-party exemplar for the importers capability: registerImporter creates
   // the `beads import` command path, and the options object keeps the command
   // description + flags discoverable in help and runtime contracts.
   api.registerImporter(
     "beads",
-    async (context: ImportExportContext) => runBeadsImportFromRuntime(toBeadsImportOptions(context.options), context.global),
+    async (context: ImportExportContext) =>
+      runBeadsImportFromRuntime(
+        toBeadsImportOptions(context.options),
+        context.global,
+      ),
     {
       action: "beads-import",
       description: "Import Beads JSONL records into pm items.",
@@ -76,7 +97,8 @@ export function activate(api: ExtensionApi): void {
         {
           long: "--preserve-source-ids",
           value_type: "boolean",
-          description: "Preserve source IDs from Beads payload records when possible.",
+          description:
+            "Preserve source IDs from Beads payload records when possible.",
         },
       ],
     } satisfies ImportExportRegistrationOptions,

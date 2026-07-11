@@ -5,13 +5,20 @@
  */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { resolveItemTypeRegistry, resolveTypeName } from "../../core/item/type-registry.js";
+import {
+  resolveItemTypeRegistry,
+  resolveTypeName,
+} from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { splitCommaList } from "../../core/shared/split-comma-list.js";
 import { nowIso } from "../../core/shared/time.js";
-import { locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
+import {
+  locateItem,
+  mutateItem,
+  readLocatedItem,
+} from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type {
@@ -37,8 +44,13 @@ import {
   PLAN_STEP_LINK_KIND_VALUES,
   PLAN_STEP_STATUS_VALUES,
 } from "../../types/index.js";
-import { runCreate, type CreateCommandOptions, type CreateResult } from "./create.js";
+import {
+  runCreate,
+  type CreateCommandOptions,
+  type CreateResult,
+} from "./create.js";
 
+/** Public contract for plan subcommands, shared by SDK and presentation-layer consumers. */
 export const PLAN_SUBCOMMANDS = [
   "create",
   "show",
@@ -57,146 +69,225 @@ export const PLAN_SUBCOMMANDS = [
   "approve",
   "materialize",
 ] as const;
-/**
- * Restricts plan subcommand values accepted by command, SDK, and storage contracts.
- */
+/** Restricts plan subcommand values accepted by command, SDK, and storage contracts. */
 export type PlanSubcommand = (typeof PLAN_SUBCOMMANDS)[number];
 
+/** Supported values accepted by the plan show depth contract. */
 export const PLAN_SHOW_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
-/**
- * Restricts plan show depth values accepted by command, SDK, and storage contracts.
- */
+/** Restricts plan show depth values accepted by command, SDK, and storage contracts. */
 export type PlanShowDepth = (typeof PLAN_SHOW_DEPTH_VALUES)[number];
 
-/**
- * Documents the plan command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the plan command options payload exchanged by command, SDK, and package integrations. */
 export interface PlanCommandOptions {
+  /** Value that configures or reports title for this contract. */
   title?: string;
+  /** Value that configures or reports description for this contract. */
   description?: string;
+  /** Value that configures or reports scope for this contract. */
   scope?: string;
+  /** Value that configures or reports parent for this contract. */
   parent?: string;
+  /** Value that configures or reports related for this contract. */
   related?: string | string[];
+  /** Value that configures or reports blocks for this contract. */
   blocks?: string | string[];
+  /** Value that configures or reports blocked by for this contract. */
   blockedBy?: string | string[];
+  /** Value that configures or reports harness for this contract. */
   harness?: string;
+  /** Value that configures or reports mode for this contract. */
   mode?: string;
+  /** Value that configures or reports resume context for this contract. */
   resumeContext?: string;
+  /** Value that configures or reports tags for this contract. */
   tags?: string;
+  /** Value that configures or reports priority for this contract. */
   priority?: string;
+  /** Value that configures or reports body for this contract. */
   body?: string;
+  /** Value that configures or reports claim for this contract. */
   claim?: boolean;
+  /** Value that configures or reports from search for this contract. */
   fromSearch?: string;
+  /** Value that configures or reports step title for this contract. */
   stepTitle?: string;
-  /**
-   * pm-6mit: repeatable --step values. On create each value seeds one ordered
-   * step (argv order; values are never comma-split so titles may contain
-   * commas). On other subcommands a single value aliases stepTitle.
-   */
+  /** pm-6mit: repeatable --step values. On create each value seeds one ordered step (argv order; values are never comma-split so titles may contain commas). On other subcommands a single value aliases stepTitle. */
   step?: string | string[];
+  /** Value that configures or reports step body for this contract. */
   stepBody?: string;
+  /** Value that configures or reports step owner for this contract. */
   stepOwner?: string;
+  /** Lifecycle state reported for stepthe record. */
   stepStatus?: string;
+  /** Value that configures or reports step evidence for this contract. */
   stepEvidence?: string;
+  /** Value that configures or reports step blocked reason for this contract. */
   stepBlockedReason?: string;
+  /** Value that configures or reports step replacement for this contract. */
   stepReplacement?: string;
+  /** Value that configures or reports depends on for this contract. */
   dependsOn?: string | string[];
+  /** Value that configures or reports link for this contract. */
   link?: string | string[];
+  /** Value that configures or reports link kind for this contract. */
   linkKind?: string;
+  /** Value that configures or reports link note for this contract. */
   linkNote?: string;
+  /** Value that configures or reports promote to item dep for this contract. */
   promoteToItemDep?: boolean;
+  /** Value that configures or reports allow multiple active for this contract. */
   allowMultipleActive?: boolean;
+  /** Value that configures or reports file for this contract. */
   file?: string | string[];
+  /** Value that configures or reports test for this contract. */
   test?: string | string[];
+  /** Value that configures or reports doc for this contract. */
   doc?: string | string[];
+  /** Value that configures or reports decision text for this contract. */
   decisionText?: string;
+  /** Value that configures or reports decision for this contract. */
   decision?: string;
+  /** Value that configures or reports decision rationale for this contract. */
   decisionRationale?: string;
+  /** Value that configures or reports decision evidence for this contract. */
   decisionEvidence?: string;
+  /** Value that configures or reports discovery text for this contract. */
   discoveryText?: string;
+  /** Value that configures or reports discovery for this contract. */
   discovery?: string;
+  /** Value that configures or reports validation text for this contract. */
   validationText?: string;
+  /** Value that configures or reports validation for this contract. */
   validation?: string;
+  /** Value that configures or reports validation command for this contract. */
   validationCommand?: string;
+  /** Value that configures or reports validation expected for this contract. */
   validationExpected?: string;
+  /** Value that configures or reports depth for this contract. */
   depth?: string;
+  /** Value that configures or reports fields for this contract. */
   fields?: string;
+  /** Value that configures or reports steps for this contract. */
   steps?: string;
+  /** Value that configures or reports template for this contract. */
   template?: string;
+  /** Schema type that determines the shape and validation rules for this value. */
   materializeType?: string;
+  /** Value that configures or reports materialize parent for this contract. */
   materializeParent?: string;
+  /** Value that configures or reports materialize tags for this contract. */
   materializeTags?: string;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Value that configures or reports force for this contract. */
   force?: boolean;
 }
 
-/**
- * Documents the plan command result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the plan command result payload exchanged by command, SDK, and package integrations. */
 export interface PlanCommandResult {
+  /** Value that configures or reports action for this contract. */
   action: PlanSubcommand;
+  /** Value that configures or reports plan for this contract. */
   plan: PlanResultPlan;
+  /** Value that configures or reports step for this contract. */
   step?: PlanStep;
+  /** Value that configures or reports current step for this contract. */
   current_step?: PlanStep | undefined;
+  /** Value that configures or reports next actions for this contract. */
   next_actions?: string[];
+  /** Value that configures or reports materialized for this contract. */
   materialized?: { id: string; type: string; from_step: string }[];
   // pm-fl0c #10 (2026-05-28): steps that pm plan materialize intentionally
   // skipped (already-completed or already-materialized via an `implements`
   // link). Surfacing these makes `--steps all` idempotent without users
   // having to read history to find out what was done.
-  materialize_skipped?: { from_step: string; reason: "already_completed" | "already_materialized"; existing_id?: string }[];
+  /** Value that configures or reports materialize skipped for this contract. */
+  materialize_skipped?: {
+    from_step: string;
+    reason: "already_completed" | "already_materialized";
+    existing_id?: string;
+  }[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
 }
 
-/**
- * Documents the plan result plan payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the plan result plan payload exchanged by command, SDK, and package integrations. */
 export interface PlanResultPlan {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports title for this contract. */
   title: string;
+  /** Lifecycle state reported for status. */
   status: string;
+  /** Value that configures or reports mode for this contract. */
   mode: PlanMode;
+  /** Value that configures or reports scope for this contract. */
   scope?: string;
+  /** Value that configures or reports harness for this contract. */
   harness?: PlanHarness;
+  /** Value that configures or reports parent for this contract. */
   parent?: string;
+  /** Value that configures or reports resume context for this contract. */
   resume_context?: string;
+  /** Value that configures or reports steps summary for this contract. */
   steps_summary: PlanStepSummary;
-  current_step?: { id: string; order: number; title: string; status: PlanStepStatus } | undefined;
-  blocked_steps?: { id: string; order: number; title: string; blocked_reason?: string }[];
+  /** Value that configures or reports current step for this contract. */
+  current_step?:
+    | { id: string; order: number; title: string; status: PlanStepStatus }
+    | undefined;
+  /** Value that configures or reports blocked steps for this contract. */
+  blocked_steps?: {
+    id: string;
+    order: number;
+    title: string;
+    blocked_reason?: string;
+  }[];
+  /** Value that configures or reports steps for this contract. */
   steps?: PlanStep[];
+  /** Value that configures or reports decisions for this contract. */
   decisions?: PlanDecision[];
+  /** Value that configures or reports discoveries for this contract. */
   discoveries?: PlanDiscovery[];
+  /** Value that configures or reports validation for this contract. */
   validation?: PlanValidationCheck[];
+  /** Value that configures or reports linked items for this contract. */
   linked_items?: { id: string; kind: DependencyKind }[];
 }
 
-/**
- * Documents the plan step summary payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the plan step summary payload exchanged by command, SDK, and package integrations. */
 export interface PlanStepSummary {
+  /** Value that configures or reports total for this contract. */
   total: number;
+  /** Value that configures or reports pending for this contract. */
   pending: number;
+  /** Value that configures or reports in progress for this contract. */
   in_progress: number;
+  /** Value that configures or reports blocked for this contract. */
   blocked: number;
+  /** Value that configures or reports completed for this contract. */
   completed: number;
+  /** Value that configures or reports skipped for this contract. */
   skipped: number;
+  /** Value that configures or reports superseded for this contract. */
   superseded: number;
-  /**
-   * Whole-percent step-completion progress (`round(completed / total * 100)`),
-   * surfaced so agents see plan progress without recomputing it (GH-158 #5).
-   */
+  /** Whole-percent step-completion progress (`round(completed / total * 100)`), surfaced so agents see plan progress without recomputing it (GH-158 #5). */
   completion_pct: number;
 }
 
 const STEP_ID_PREFIX = "plan-step-";
 const DEFAULT_PLAN_MODE: PlanMode = "draft";
 
-export const PLAN_TEMPLATE_NAMES = ["bug-investigation", "feature-implementation", "refactoring-sprint"] as const;
-/**
- * Restricts plan template names accepted by `pm plan create --template` (GH-158 #2).
- */
+/** Public contract for plan template names, shared by SDK and presentation-layer consumers. */
+export const PLAN_TEMPLATE_NAMES = [
+  "bug-investigation",
+  "feature-implementation",
+  "refactoring-sprint",
+] as const;
+/** Restricts plan template names accepted by `pm plan create --template` (GH-158 #2). */
 export type PlanTemplateName = (typeof PLAN_TEMPLATE_NAMES)[number];
 
 interface PlanTemplateStepSeed {
@@ -209,69 +300,116 @@ interface PlanTemplateStepSeed {
 // ready-to-execute plan instead of an empty shell (GH-158 #2).
 const PLAN_TEMPLATES: Record<PlanTemplateName, PlanTemplateStepSeed[]> = {
   "bug-investigation": [
-    { title: "Reproduce the bug", body: "Capture exact steps, inputs, and the observed vs expected behavior." },
-    { title: "Locate the root cause", body: "Trace the failure to the responsible code path with evidence." },
-    { title: "Write a failing test", body: "Add a regression test that fails for the current bug." },
-    { title: "Implement the fix", body: "Apply the minimal change that makes the failing test pass." },
-    { title: "Verify and document", body: "Run the full suite and record the resolution and verification." },
+    {
+      title: "Reproduce the bug",
+      body: "Capture exact steps, inputs, and the observed vs expected behavior.",
+    },
+    {
+      title: "Locate the root cause",
+      body: "Trace the failure to the responsible code path with evidence.",
+    },
+    {
+      title: "Write a failing test",
+      body: "Add a regression test that fails for the current bug.",
+    },
+    {
+      title: "Implement the fix",
+      body: "Apply the minimal change that makes the failing test pass.",
+    },
+    {
+      title: "Verify and document",
+      body: "Run the full suite and record the resolution and verification.",
+    },
   ],
   "feature-implementation": [
-    { title: "Clarify requirements & acceptance criteria", body: "Confirm scope, edge cases, and done-conditions." },
-    { title: "Design the approach", body: "Decide the data model, interfaces, and integration points." },
-    { title: "Implement the change", body: "Build the feature behind the agreed design." },
+    {
+      title: "Clarify requirements & acceptance criteria",
+      body: "Confirm scope, edge cases, and done-conditions.",
+    },
+    {
+      title: "Design the approach",
+      body: "Decide the data model, interfaces, and integration points.",
+    },
+    {
+      title: "Implement the change",
+      body: "Build the feature behind the agreed design.",
+    },
     { title: "Add tests", body: "Cover the new behavior and its edge cases." },
-    { title: "Update docs & changelog", body: "Document the feature and surface it to users." },
+    {
+      title: "Update docs & changelog",
+      body: "Document the feature and surface it to users.",
+    },
   ],
   "refactoring-sprint": [
-    { title: "Map the current structure & risks", body: "Inventory the code to change and its blast radius." },
-    { title: "Add characterization tests", body: "Lock in current behavior before refactoring." },
-    { title: "Refactor incrementally", body: "Apply small, reversible steps keeping tests green." },
-    { title: "Verify behavior is unchanged", body: "Run the full suite and compare against the baseline." },
-    { title: "Clean up & document", body: "Remove dead code and record the new structure." },
+    {
+      title: "Map the current structure & risks",
+      body: "Inventory the code to change and its blast radius.",
+    },
+    {
+      title: "Add characterization tests",
+      body: "Lock in current behavior before refactoring.",
+    },
+    {
+      title: "Refactor incrementally",
+      body: "Apply small, reversible steps keeping tests green.",
+    },
+    {
+      title: "Verify behavior is unchanged",
+      body: "Run the full suite and compare against the baseline.",
+    },
+    {
+      title: "Clean up & document",
+      body: "Remove dead code and record the new structure.",
+    },
   ],
 };
 
-/**
- * Resolves the ordered step seeds for a built-in plan template, rejecting
- * unknown names with the allowed set so agents can self-correct.
- */
+/** Resolves the ordered step seeds for a built-in plan template, rejecting unknown names with the allowed set so agents can self-correct. */
 export function resolvePlanTemplateSteps(raw: string): PlanTemplateStepSeed[] {
   const normalized = raw.trim().toLowerCase();
-  const template = Object.prototype.hasOwnProperty.call(PLAN_TEMPLATES, normalized)
+  const template = Object.prototype.hasOwnProperty.call(
+    PLAN_TEMPLATES,
+    normalized,
+  )
     ? PLAN_TEMPLATES[normalized as PlanTemplateName]
     : undefined;
   if (!template) {
-    throw new PmCliError(`Unknown plan template "${raw}". Allowed: ${PLAN_TEMPLATE_NAMES.join(", ")}`, EXIT_CODE.USAGE, {
-      code: "unknown_plan_template",
-      examples: [`pm plan create --title "Fix login crash" --template ${PLAN_TEMPLATE_NAMES[0]}`],
-    });
+    throw new PmCliError(
+      `Unknown plan template "${raw}". Allowed: ${PLAN_TEMPLATE_NAMES.join(", ")}`,
+      EXIT_CODE.USAGE,
+      {
+        code: "unknown_plan_template",
+        examples: [
+          `pm plan create --title "Fix login crash" --template ${PLAN_TEMPLATE_NAMES[0]}`,
+        ],
+      },
+    );
   }
   return template.map((step) => ({ ...step }));
 }
 
-/**
- * Computes whole-percent step completion (`round(completed / total * 100)`),
- * returning 0 for an empty plan so the field is always a stable number.
- */
+/** Computes whole-percent step completion (`round(completed / total * 100)`), returning 0 for an empty plan so the field is always a stable number. */
 function planCompletionPct(completed: number, total: number): number {
   return total > 0 ? Math.round((completed / total) * 100) : 0;
 }
 
 /* c8 ignore start -- detailed plan helper branches are validated through broader plan workflow integration tests. */
-function resolveAuthor(candidate: string | undefined, fallback: string): string {
+function resolveAuthor(
+  candidate: string | undefined,
+  fallback: string,
+): string {
   const resolved = candidate ?? process.env.PM_AUTHOR ?? fallback;
   const trimmed = resolved.trim();
   return trimmed.length > 0 ? trimmed : "unknown";
 }
 
-/**
- * pm-6mit: ordered step titles from repeated --step values. Unlike toArray
- * this NEVER comma-splits — each --step value is one full step title, so
- * titles containing commas survive intact (also why --step must not be
- * list:true in contracts: the bootstrap coalescer would comma-join values).
- */
+/** pm-6mit: ordered step titles from repeated --step values. Unlike toArray this NEVER comma-splits — each --step value is one full step title, so titles containing commas survive intact (also why --step must not be list:true in contracts: the bootstrap coalescer would comma-join values). */
 function toOrderedStepTitles(value: unknown): string[] {
-  const values = Array.isArray(value) ? value : value === undefined || value === null ? [] : [value];
+  const values = Array.isArray(value)
+    ? value
+    : value === undefined || value === null
+      ? []
+      : [value];
   return values
     .filter((entry) => entry !== undefined && entry !== null)
     .map((entry) => (typeof entry === "string" ? entry : String(entry)).trim())
@@ -279,7 +417,8 @@ function toOrderedStepTitles(value: unknown): string[] {
 }
 
 function toArray(value: string | string[] | undefined): string[] {
-  if (Array.isArray(value)) return value.flatMap((entry) => splitCommaList(entry, { unique: false }));
+  if (Array.isArray(value))
+    return value.flatMap((entry) => splitCommaList(entry, { unique: false }));
   if (typeof value === "string" && value.trim().length > 0) {
     return splitCommaList(value, { unique: false });
   }
@@ -287,12 +426,17 @@ function toArray(value: string | string[] | undefined): string[] {
 }
 
 function toSpecArray(value: string | string[] | undefined): string[] {
-  if (Array.isArray(value)) return value.map((entry) => entry.trim()).filter(Boolean);
-  if (typeof value === "string" && value.trim().length > 0) return [value.trim()];
+  if (Array.isArray(value))
+    return value.map((entry) => entry.trim()).filter(Boolean);
+  if (typeof value === "string" && value.trim().length > 0)
+    return [value.trim()];
   return [];
 }
 
-function asPlanMode(value: string | undefined, fallback: PlanMode = DEFAULT_PLAN_MODE): PlanMode {
+function asPlanMode(
+  value: string | undefined,
+  fallback: PlanMode = DEFAULT_PLAN_MODE,
+): PlanMode {
   if (value === undefined) return fallback;
   const normalized = value.trim().toLowerCase();
   const found = PLAN_MODE_VALUES.find((entry) => entry === normalized);
@@ -305,7 +449,10 @@ function asPlanMode(value: string | undefined, fallback: PlanMode = DEFAULT_PLAN
   return found;
 }
 
-function asStepStatus(value: string | undefined, fallback: PlanStepStatus = "pending"): PlanStepStatus {
+function asStepStatus(
+  value: string | undefined,
+  fallback: PlanStepStatus = "pending",
+): PlanStepStatus {
   if (value === undefined) return fallback;
   const normalized = value.trim().toLowerCase();
   const found = PLAN_STEP_STATUS_VALUES.find((entry) => entry === normalized);
@@ -318,10 +465,15 @@ function asStepStatus(value: string | undefined, fallback: PlanStepStatus = "pen
   return found;
 }
 
-function asLinkKind(value: string | undefined, fallback: PlanStepLinkKind = "related"): PlanStepLinkKind {
+function asLinkKind(
+  value: string | undefined,
+  fallback: PlanStepLinkKind = "related",
+): PlanStepLinkKind {
   if (value === undefined) return fallback;
   const normalized = value.trim().toLowerCase();
-  const found = PLAN_STEP_LINK_KIND_VALUES.find((entry) => entry === normalized);
+  const found = PLAN_STEP_LINK_KIND_VALUES.find(
+    (entry) => entry === normalized,
+  );
   if (!found) {
     throw new PmCliError(
       `Invalid step link kind "${value}". Allowed: ${PLAN_STEP_LINK_KIND_VALUES.join(", ")}`,
@@ -367,7 +519,10 @@ function parsePlanFields(raw: string | undefined): string[] | null {
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0);
   if (fields.length === 0) {
-    throw new PmCliError("Plan --fields requires a comma-separated list of plan field names", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Plan --fields requires a comma-separated list of plan field names",
+      EXIT_CODE.USAGE,
+    );
   }
   return fields;
 }
@@ -391,12 +546,17 @@ const PLAN_FIELD_KEYS = new Set<keyof PlanResultPlan>([
   "linked_items",
 ]);
 
-function projectPlanForFields(plan: PlanResultPlan, fields: string[]): PlanResultPlan {
+function projectPlanForFields(
+  plan: PlanResultPlan,
+  fields: string[],
+): PlanResultPlan {
   const source = plan as unknown as Record<string, unknown>;
   const projected: Record<string, unknown> = {};
   const unknownFields: string[] = [];
   for (const field of fields) {
-    const normalized = field.startsWith("plan.") ? field.slice("plan.".length) : field;
+    const normalized = field.startsWith("plan.")
+      ? field.slice("plan.".length)
+      : field;
     if (normalized.length === 0) {
       continue;
     }
@@ -409,16 +569,20 @@ function projectPlanForFields(plan: PlanResultPlan, fields: string[]): PlanResul
     }
   }
   if (unknownFields.length > 0) {
-    throw new PmCliError(`Unknown Plan --fields value(s): ${unknownFields.join(", ")}`, EXIT_CODE.USAGE, {
-      nextSteps: [
-        `Use --fields ${[...PLAN_FIELD_KEYS].join(",")}`,
-        "Run pm plan show <id> --depth brief for compact default fields.",
-      ],
-      recovery: {
-        provided_fields: unknownFields,
-        suggested_retry: `pm plan show <id> --fields ${[...PLAN_FIELD_KEYS].join(",")}`,
+    throw new PmCliError(
+      `Unknown Plan --fields value(s): ${unknownFields.join(", ")}`,
+      EXIT_CODE.USAGE,
+      {
+        nextSteps: [
+          `Use --fields ${[...PLAN_FIELD_KEYS].join(",")}`,
+          "Run pm plan show <id> --depth brief for compact default fields.",
+        ],
+        recovery: {
+          provided_fields: unknownFields,
+          suggested_retry: `pm plan show <id> --fields ${[...PLAN_FIELD_KEYS].join(",")}`,
+        },
       },
-    });
+    );
   }
   return projected as unknown as PlanResultPlan;
 }
@@ -430,9 +594,14 @@ function parsePairList(raw: string, label: string): Record<string, string> {
     if (trimmed.length === 0) continue;
     const equalsIndex = trimmed.indexOf("=");
     if (equalsIndex <= 0) {
-      throw new PmCliError(`Invalid ${label} entry "${trimmed}"; expected key=value`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `Invalid ${label} entry "${trimmed}"; expected key=value`,
+        EXIT_CODE.USAGE,
+      );
     }
-    out[trimmed.slice(0, equalsIndex).trim().toLowerCase()] = trimmed.slice(equalsIndex + 1).trim();
+    out[trimmed.slice(0, equalsIndex).trim().toLowerCase()] = trimmed
+      .slice(equalsIndex + 1)
+      .trim();
   }
   return out;
 }
@@ -443,7 +612,8 @@ function parseStepFile(spec: string): PlanStepFile {
     throw new PmCliError("--file requires path=<value>", EXIT_CODE.USAGE);
   }
   const file: PlanStepFile = { path: fields.path };
-  if (fields.scope === "global" || fields.scope === "project") file.scope = fields.scope;
+  if (fields.scope === "global" || fields.scope === "project")
+    file.scope = fields.scope;
   if (fields.note) file.note = fields.note;
   return file;
 }
@@ -451,7 +621,10 @@ function parseStepFile(spec: string): PlanStepFile {
 function parseStepTest(spec: string): PlanStepTest {
   const fields = parsePairList(spec, "--test");
   if (!fields.command && !fields.path) {
-    throw new PmCliError("--test requires at least command=<value> or path=<value>", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--test requires at least command=<value> or path=<value>",
+      EXIT_CODE.USAGE,
+    );
   }
   const test: PlanStepTest = {};
   if (fields.command) test.command = fields.command;
@@ -466,7 +639,8 @@ function parseStepDoc(spec: string): PlanStepDoc {
     throw new PmCliError("--doc requires path=<value>", EXIT_CODE.USAGE);
   }
   const doc: PlanStepDoc = { path: fields.path };
-  if (fields.scope === "global" || fields.scope === "project") doc.scope = fields.scope;
+  if (fields.scope === "global" || fields.scope === "project")
+    doc.scope = fields.scope;
   if (fields.note) doc.note = fields.note;
   return doc;
 }
@@ -491,12 +665,19 @@ function summarizeSteps(steps: PlanStep[]): PlanStepSummary {
 
 function newStepId(existing: PlanStep[]): string {
   const used = new Set(existing.map((step) => step.id));
-  for (let cursor = existing.length + 1; cursor < existing.length + 1024; cursor += 1) {
+  for (
+    let cursor = existing.length + 1;
+    cursor < existing.length + 1024;
+    cursor += 1
+  ) {
     const candidate = `${STEP_ID_PREFIX}${String(cursor).padStart(3, "0")}`;
     if (!used.has(candidate)) return candidate;
   }
   /* c8 ignore next -- step id allocation only fails if 1024 consecutive ids are taken. */
-  throw new PmCliError("Could not allocate step id (limit reached)", EXIT_CODE.GENERIC_FAILURE);
+  throw new PmCliError(
+    "Could not allocate step id (limit reached)",
+    EXIT_CODE.GENERIC_FAILURE,
+  );
 }
 
 function resolveStepRef(steps: PlanStep[], ref: string): PlanStep {
@@ -516,7 +697,11 @@ function resolveStepRef(steps: PlanStep[], ref: string): PlanStep {
 
 interface MaterializeTargetResolution {
   targets: PlanStep[];
-  skipped: { from_step: string; reason: "already_completed" | "already_materialized"; existing_id?: string }[];
+  skipped: {
+    from_step: string;
+    reason: "already_completed" | "already_materialized";
+    existing_id?: string;
+  }[];
 }
 
 // pm-fl0c #10 (2026-05-28): skip steps whose status is "completed" and steps
@@ -526,26 +711,48 @@ interface MaterializeTargetResolution {
 // through (the user asked by ID) but the skip-reason is recorded.
 function classifyMaterializeSkip(
   step: PlanStep,
-): { reason: "already_completed" | "already_materialized"; existing_id?: string } | undefined {
+):
+  | {
+      reason: "already_completed" | "already_materialized";
+      existing_id?: string;
+    }
+  | undefined {
   if (step.status === "completed") {
     return { reason: "already_completed" };
   }
-  const existingImplements = (step.linked_items ?? []).find((link) => link.kind === "implements");
+  const existingImplements = (step.linked_items ?? []).find(
+    (link) => link.kind === "implements",
+  );
   if (existingImplements) {
-    return { reason: "already_materialized", existing_id: existingImplements.id };
+    return {
+      reason: "already_materialized",
+      existing_id: existingImplements.id,
+    };
   }
   return undefined;
 }
 
-function resolveMaterializeTargets(steps: PlanStep[], refs: string[]): MaterializeTargetResolution {
+function resolveMaterializeTargets(
+  steps: PlanStep[],
+  refs: string[],
+): MaterializeTargetResolution {
   const allRefs = refs.filter((ref) => ref.trim().toLowerCase() === "all");
   const targets: PlanStep[] = [];
-  const skipped: { from_step: string; reason: "already_completed" | "already_materialized"; existing_id?: string }[] = [];
+  const skipped: {
+    from_step: string;
+    reason: "already_completed" | "already_materialized";
+    existing_id?: string;
+  }[] = [];
   if (allRefs.length > 0) {
     if (refs.length > allRefs.length) {
-      throw new PmCliError("pm plan materialize --steps all cannot be combined with other step refs", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "pm plan materialize --steps all cannot be combined with other step refs",
+        EXIT_CODE.USAGE,
+      );
     }
-    for (const step of steps.slice().sort((left, right) => left.order - right.order)) {
+    for (const step of steps
+      .slice()
+      .sort((left, right) => left.order - right.order)) {
       const skip = classifyMaterializeSkip(step);
       if (skip) {
         skipped.push({ from_step: step.id, ...skip });
@@ -570,7 +777,10 @@ function resolveMaterializeTargets(steps: PlanStep[], refs: string[]): Materiali
   return { targets, skipped };
 }
 
-function resolvePlanLogText(kind: "decision" | "discovery" | "validation", options: PlanCommandOptions): string | undefined {
+function resolvePlanLogText(
+  kind: "decision" | "discovery" | "validation",
+  options: PlanCommandOptions,
+): string | undefined {
   const canonical =
     kind === "decision"
       ? options.decisionText
@@ -587,18 +797,32 @@ function resolvePlanLogText(kind: "decision" | "discovery" | "validation", optio
 }
 
 function findCurrentStep(steps: PlanStep[]): PlanStep | undefined {
-  return steps.find((step) => step.status === "in_progress")
-    ?? steps.find((step) => step.status === "pending");
+  return (
+    steps.find((step) => step.status === "in_progress") ??
+    steps.find((step) => step.status === "pending")
+  );
 }
 
-function blockedSteps(steps: PlanStep[]): { id: string; order: number; title: string; blocked_reason?: string }[] {
+function blockedSteps(
+  steps: PlanStep[],
+): { id: string; order: number; title: string; blocked_reason?: string }[] {
   return steps
     .filter((step) => step.status === "blocked")
-    .map((step) => ({ id: step.id, order: step.order, title: step.title, blocked_reason: step.blocked_reason }));
+    .map((step) => ({
+      id: step.id,
+      order: step.order,
+      title: step.title,
+      blocked_reason: step.blocked_reason,
+    }));
 }
 
-function projectPlan(item: ItemMetadata, depth: PlanShowDepth = "brief"): PlanResultPlan {
-  const steps = (item.plan_steps ?? []).slice().sort((left, right) => left.order - right.order);
+function projectPlan(
+  item: ItemMetadata,
+  depth: PlanShowDepth = "brief",
+): PlanResultPlan {
+  const steps = (item.plan_steps ?? [])
+    .slice()
+    .sort((left, right) => left.order - right.order);
   const summary = summarizeSteps(steps);
   const current = findCurrentStep(steps);
   const projection: PlanResultPlan = {
@@ -612,10 +836,18 @@ function projectPlan(item: ItemMetadata, depth: PlanShowDepth = "brief"): PlanRe
     resume_context: item.plan_resume_context,
     steps_summary: summary,
     current_step: current
-      ? { id: current.id, order: current.order, title: current.title, status: current.status }
+      ? {
+          id: current.id,
+          order: current.order,
+          title: current.title,
+          status: current.status,
+        }
       : undefined,
     blocked_steps: blockedSteps(steps),
-    linked_items: (item.dependencies ?? []).map((dep) => ({ id: dep.id, kind: dep.kind })),
+    linked_items: (item.dependencies ?? []).map((dep) => ({
+      id: dep.id,
+      kind: dep.kind,
+    })),
   };
   if (depth === "standard" || depth === "deep") {
     projection.steps = steps;
@@ -645,7 +877,10 @@ function nextActionsFor(planId: string, plan: PlanResultPlan): string[] {
   if (plan.mode === "draft" || plan.mode === "research") {
     tips.push(`pm plan approve ${planId} --message "ready to execute"`);
   }
-  if (plan.steps_summary.completed === plan.steps_summary.total && plan.steps_summary.total > 0) {
+  if (
+    plan.steps_summary.completed === plan.steps_summary.total &&
+    plan.steps_summary.total > 0
+  ) {
     tips.push(`pm close ${planId} "plan complete"`);
   }
   return tips;
@@ -678,35 +913,58 @@ interface PlanWriteContext {
 async function loadContext(global: GlobalOptions): Promise<PlanWriteContext> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   const settings = await readSettings(pmRoot);
   return { pmRoot, settings };
 }
 
-async function readPlanItem(ctx: PlanWriteContext, id: string): Promise<{ document: ItemDocument; itemId: string }> {
-  const typeRegistry = resolveItemTypeRegistry(ctx.settings, getActiveExtensionRegistrations());
-  const located = await locateItem(ctx.pmRoot, id, ctx.settings.id_prefix, ctx.settings.item_format, typeRegistry.type_to_folder);
+async function readPlanItem(
+  ctx: PlanWriteContext,
+  id: string,
+): Promise<{ document: ItemDocument; itemId: string }> {
+  const typeRegistry = resolveItemTypeRegistry(
+    ctx.settings,
+    getActiveExtensionRegistrations(),
+  );
+  const located = await locateItem(
+    ctx.pmRoot,
+    id,
+    ctx.settings.id_prefix,
+    ctx.settings.item_format,
+    typeRegistry.type_to_folder,
+  );
   if (!located) {
     throw new PmCliError(`Plan ${id} not found`, EXIT_CODE.NOT_FOUND);
   }
-  const loaded = await readLocatedItem(located, { schema: ctx.settings.schema });
+  const loaded = await readLocatedItem(located, {
+    schema: ctx.settings.schema,
+  });
   ensurePlanItem(loaded.document.metadata);
   return { document: loaded.document, itemId: located.id };
 }
 
-function buildPlanCreateDependencies(options: PlanCommandOptions): string[] | undefined {
+function buildPlanCreateDependencies(
+  options: PlanCommandOptions,
+): string[] | undefined {
   const deps: string[] = [];
   if (options.parent) {
     deps.push(`id=${options.parent.trim()},kind=parent`);
   }
-  for (const ref of toArray(options.related)) deps.push(`id=${ref},kind=related`);
+  for (const ref of toArray(options.related))
+    deps.push(`id=${ref},kind=related`);
   for (const ref of toArray(options.blocks)) deps.push(`id=${ref},kind=blocks`);
-  for (const ref of toArray(options.blockedBy)) deps.push(`id=${ref},kind=blocked_by`);
+  for (const ref of toArray(options.blockedBy))
+    deps.push(`id=${ref},kind=blocked_by`);
   return deps.length > 0 ? deps : undefined;
 }
 
-function buildInitialValidation(options: PlanCommandOptions): PlanValidationCheck | undefined {
+function buildInitialValidation(
+  options: PlanCommandOptions,
+): PlanValidationCheck | undefined {
   const text = options.validationText?.trim();
   const command = options.validationCommand?.trim();
   const expected = options.validationExpected?.trim();
@@ -721,7 +979,8 @@ function buildInitialValidation(options: PlanCommandOptions): PlanValidationChec
 }
 
 function hasPlanStepDetailOptions(options: PlanCommandOptions): boolean {
-  return Boolean(options.stepBody?.trim()) ||
+  return (
+    Boolean(options.stepBody?.trim()) ||
     Boolean(options.stepOwner?.trim()) ||
     Boolean(options.stepStatus?.trim()) ||
     Boolean(options.stepEvidence?.trim()) ||
@@ -731,7 +990,8 @@ function hasPlanStepDetailOptions(options: PlanCommandOptions): boolean {
     toArray(options.link).length > 0 ||
     toSpecArray(options.file).length > 0 ||
     toSpecArray(options.test).length > 0 ||
-    toSpecArray(options.doc).length > 0;
+    toSpecArray(options.doc).length > 0
+  );
 }
 
 function resolveInitialStepSeed(options: PlanCommandOptions): {
@@ -742,7 +1002,9 @@ function resolveInitialStepSeed(options: PlanCommandOptions): {
 } {
   const stepTitleFlag = options.stepTitle?.trim() || undefined;
   const repeatedStepTitles = toOrderedStepTitles(options.step);
-  const templateSteps = options.template?.trim() ? resolvePlanTemplateSteps(options.template) : [];
+  const templateSteps = options.template?.trim()
+    ? resolvePlanTemplateSteps(options.template)
+    : [];
   return {
     repeatedStepTitles,
     stepTitleFlag,
@@ -759,7 +1021,10 @@ function assertInitialStepSeedAllowed(
   seed: ReturnType<typeof resolveInitialStepSeed>,
   hasPerStepDetailOptions: boolean,
 ): void {
-  if ((seed.stepTitleFlag || seed.repeatedStepTitles.length > 0) && seed.templateSteps.length > 0) {
+  if (
+    (seed.stepTitleFlag || seed.repeatedStepTitles.length > 0) &&
+    seed.templateSteps.length > 0
+  ) {
     throw new PmCliError(
       "pm plan create --template cannot be combined with --step-title or --step; choose one step seeding source",
       EXIT_CODE.USAGE,
@@ -787,7 +1052,10 @@ function assertInitialStepSeedAllowed(
   }
 }
 
-function buildSingleInitialStep(options: PlanCommandOptions, title: string): PlanStep {
+function buildSingleInitialStep(
+  options: PlanCommandOptions,
+  title: string,
+): PlanStep {
   const status = asStepStatus(options.stepStatus, "pending");
   const linkedItems = buildLinkInputs(options, "depends_on");
   const files = toSpecArray(options.file).map(parseStepFile);
@@ -802,7 +1070,10 @@ function buildSingleInitialStep(options: PlanCommandOptions, title: string): Pla
     status,
     owner: options.stepOwner?.trim() || undefined,
     evidence: options.stepEvidence?.trim() || undefined,
-    blocked_reason: status === "blocked" ? options.stepBlockedReason?.trim() || "" : undefined,
+    blocked_reason:
+      status === "blocked"
+        ? options.stepBlockedReason?.trim() || ""
+        : undefined,
     linked_items: linkedItems.length > 0 ? linkedItems : undefined,
     files: files.length > 0 ? files : undefined,
     tests: tests.length > 0 ? tests : undefined,
@@ -813,7 +1084,10 @@ function buildSingleInitialStep(options: PlanCommandOptions, title: string): Pla
   };
 }
 
-function buildInitialSteps(options: PlanCommandOptions): { steps: PlanStep[]; hasPerStepDetailOptions: boolean } {
+function buildInitialSteps(options: PlanCommandOptions): {
+  steps: PlanStep[];
+  hasPerStepDetailOptions: boolean;
+} {
   const seed = resolveInitialStepSeed(options);
   const hasDetailOptions = hasPlanStepDetailOptions(options);
   assertInitialStepSeedAllowed(seed, hasDetailOptions);
@@ -821,7 +1095,10 @@ function buildInitialSteps(options: PlanCommandOptions): { steps: PlanStep[]; ha
     return { steps: [], hasPerStepDetailOptions: hasDetailOptions };
   }
   if (seed.stepTitles.length === 1) {
-    return { steps: [buildSingleInitialStep(options, seed.stepTitles[0])], hasPerStepDetailOptions: hasDetailOptions };
+    return {
+      steps: [buildSingleInitialStep(options, seed.stepTitles[0])],
+      hasPerStepDetailOptions: hasDetailOptions,
+    };
   }
   const now = nowIso();
   return {
@@ -838,6 +1115,59 @@ function buildInitialSteps(options: PlanCommandOptions): { steps: PlanStep[]; ha
   };
 }
 
+function seedCreatedPlanMetadata(
+  document: ItemDocument,
+  options: PlanCommandOptions,
+  mode: PlanMode,
+  harness: PlanHarness | undefined,
+): { changedFields: string[] } {
+  const changedFields = ["plan_mode"];
+  document.metadata.plan_mode = mode;
+  if (harness) {
+    document.metadata.plan_harness = harness;
+    changedFields.push("plan_harness");
+  }
+  const scope = options.scope?.trim();
+  if (scope) {
+    document.metadata.plan_scope = scope;
+    changedFields.push("plan_scope");
+  }
+  const resumeContext = options.resumeContext?.trim();
+  if (resumeContext) {
+    document.metadata.plan_resume_context = resumeContext;
+    changedFields.push("plan_resume_context");
+  }
+  document.metadata.plan_steps ??= [];
+  return { changedFields };
+}
+
+function seedCreatedPlanSteps(
+  document: ItemDocument,
+  initialSteps: PlanStep[],
+  initialValidation: PlanValidationCheck | undefined,
+): { changedFields: string[] } {
+  ensurePlanItem(document.metadata);
+  document.metadata.plan_steps = initialSteps;
+  if (!initialValidation) return { changedFields: ["plan_steps"] };
+  document.metadata.plan_validation = [
+    ...(document.metadata.plan_validation ?? []),
+    initialValidation,
+  ];
+  return { changedFields: ["plan_steps", "plan_validation"] };
+}
+
+function seedCreatedPlanValidation(
+  document: ItemDocument,
+  initialValidation: PlanValidationCheck,
+): { changedFields: string[] } {
+  ensurePlanItem(document.metadata);
+  document.metadata.plan_validation = [
+    ...(document.metadata.plan_validation ?? []),
+    initialValidation,
+  ];
+  return { changedFields: ["plan_validation"] };
+}
+
 async function planCreate(
   options: PlanCommandOptions,
   global: GlobalOptions,
@@ -847,14 +1177,17 @@ async function planCreate(
   if (!title) {
     throw new PmCliError("pm plan create requires --title", EXIT_CODE.USAGE, {
       code: "missing_required_option",
-      examples: ['pm plan create --title "Refactor lock retry" --scope pm-a1b2'],
+      examples: [
+        'pm plan create --title "Refactor lock retry" --scope pm-a1b2',
+      ],
     });
   }
   const mode = asPlanMode(options.mode, DEFAULT_PLAN_MODE);
   const harness = asHarness(options.harness);
   const fromSearch = options.fromSearch?.trim();
 
-  const description = options.description?.trim() ?? options.scope?.trim() ?? title;
+  const description =
+    options.description?.trim() ?? options.scope?.trim() ?? title;
   const createOptions: CreateCommandOptions = {
     title,
     description,
@@ -865,7 +1198,9 @@ async function planCreate(
     parent: options.parent,
     dep: buildPlanCreateDependencies(options),
     author: options.author,
-    message: options.message ?? (fromSearch ? `plan create (search: ${fromSearch})` : `plan create`),
+    message:
+      options.message ??
+      (fromSearch ? `plan create (search: ${fromSearch})` : `plan create`),
   };
 
   const createResult: CreateResult = await runCreate(createOptions, global);
@@ -879,30 +1214,15 @@ async function planCreate(
     author: resolveAuthor(options.author, ctx.settings.author_default),
     message: "seed plan metadata",
     mutate(doc) {
-      const changed: string[] = [];
-      doc.metadata.plan_mode = mode;
-      changed.push("plan_mode");
-      if (harness) {
-        doc.metadata.plan_harness = harness;
-        changed.push("plan_harness");
-      }
-      if (options.scope?.trim()) {
-        doc.metadata.plan_scope = options.scope.trim();
-        changed.push("plan_scope");
-      }
-      if (options.resumeContext?.trim()) {
-        doc.metadata.plan_resume_context = options.resumeContext.trim();
-        changed.push("plan_resume_context");
-      }
-      doc.metadata.plan_steps = doc.metadata.plan_steps ?? [];
-      return { changedFields: changed };
+      return seedCreatedPlanMetadata(doc, options, mode, harness);
     },
   });
 
   let finalMetadata: ItemMetadata = seedResult.item;
   let initialStep: PlanStep | undefined;
   const initialValidation = buildInitialValidation(options);
-  const { steps: initialSteps, hasPerStepDetailOptions } = buildInitialSteps(options);
+  const { steps: initialSteps, hasPerStepDetailOptions } =
+    buildInitialSteps(options);
   if (initialSteps.length > 0) {
     initialStep = initialSteps[0];
     const stepped = await mutateItem({
@@ -916,12 +1236,7 @@ async function planCreate(
           ? `plan create initial step "${initialSteps[0].title}"`
           : `plan create ${initialSteps.length} initial steps`,
       mutate(doc) {
-        ensurePlanItem(doc.metadata);
-        doc.metadata.plan_steps = initialSteps;
-        if (initialValidation) {
-          doc.metadata.plan_validation = [...(doc.metadata.plan_validation ?? []), initialValidation];
-        }
-        return { changedFields: initialValidation ? ["plan_steps", "plan_validation"] : ["plan_steps"] };
+        return seedCreatedPlanSteps(doc, initialSteps, initialValidation);
       },
     });
     finalMetadata = stepped.item;
@@ -934,17 +1249,21 @@ async function planCreate(
       author: resolveAuthor(options.author, ctx.settings.author_default),
       message: "plan create initial validation",
       mutate(doc) {
-        ensurePlanItem(doc.metadata);
-        doc.metadata.plan_validation = [...(doc.metadata.plan_validation ?? []), initialValidation];
-        return { changedFields: ["plan_validation"] };
+        return seedCreatedPlanValidation(doc, initialValidation);
       },
     });
     finalMetadata = validated.item;
   } else if (hasPerStepDetailOptions) {
-    throw new PmCliError("pm plan create step options require --step-title (or a single --step)", EXIT_CODE.USAGE, {
-      code: "missing_required_option",
-      examples: ['pm plan create --title "Execution plan" --step-title "Read the code"'],
-    });
+    throw new PmCliError(
+      "pm plan create step options require --step-title (or a single --step)",
+      EXIT_CODE.USAGE,
+      {
+        code: "missing_required_option",
+        examples: [
+          'pm plan create --title "Execution plan" --step-title "Read the code"',
+        ],
+      },
+    );
   }
   if (options.claim) {
     const claimed = await mutateItem({
@@ -955,7 +1274,10 @@ async function planCreate(
       author: resolveAuthor(options.author, ctx.settings.author_default),
       message: "plan claim by author",
       mutate(doc) {
-        doc.metadata.assignee = resolveAuthor(options.author, ctx.settings.author_default);
+        doc.metadata.assignee = resolveAuthor(
+          options.author,
+          ctx.settings.author_default,
+        );
         return { changedFields: ["assignee"] };
       },
     });
@@ -981,8 +1303,12 @@ async function planShow(
   const depth = asDepth(options.depth);
   const fields = parsePlanFields(options.fields);
   const { document, itemId } = await readPlanItem(ctx, id);
-  const fullPlan = projectPlan(document.metadata, fields === null ? depth : "deep");
-  const plan = fields === null ? fullPlan : projectPlanForFields(fullPlan, fields);
+  const fullPlan = projectPlan(
+    document.metadata,
+    fields === null ? depth : "deep",
+  );
+  const plan =
+    fields === null ? fullPlan : projectPlanForFields(fullPlan, fields);
   return {
     action: "show",
     plan,
@@ -998,11 +1324,19 @@ interface MutateStepArgs {
   ctx: PlanWriteContext;
   op: string;
   message: string;
-  mutator(steps: PlanStep[], doc: ItemDocument): { changedSteps: string[]; current?: PlanStep; resultStep?: PlanStep };
+  mutator(
+    steps: PlanStep[],
+    doc: ItemDocument,
+  ): { changedSteps: string[]; current?: PlanStep; resultStep?: PlanStep };
 }
 
-async function mutatePlanSteps(args: MutateStepArgs): Promise<{ document: ItemDocument; resultStep?: PlanStep; itemId: string }> {
-  const author = resolveAuthor(args.options.author, args.ctx.settings.author_default);
+async function mutatePlanSteps(
+  args: MutateStepArgs,
+): Promise<{ document: ItemDocument; resultStep?: PlanStep; itemId: string }> {
+  const author = resolveAuthor(
+    args.options.author,
+    args.ctx.settings.author_default,
+  );
   let resultStep: PlanStep | undefined;
   const result = await mutateItem({
     pmRoot: args.ctx.pmRoot,
@@ -1028,7 +1362,10 @@ async function mutatePlanSteps(args: MutateStepArgs): Promise<{ document: ItemDo
       if (changedFields.length === 0 && outcome.changedSteps.length === 0) {
         return { changedFields: [] };
       }
-      return { changedFields: changedFields.length > 0 ? changedFields : ["plan_steps"] };
+      return {
+        changedFields:
+          changedFields.length > 0 ? changedFields : ["plan_steps"],
+      };
     },
   });
   return {
@@ -1045,7 +1382,10 @@ async function planAddStep(
 ): Promise<PlanCommandResult> {
   const title = options.stepTitle?.trim();
   if (!title) {
-    throw new PmCliError("pm plan add-step requires --step-title", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "pm plan add-step requires --step-title",
+      EXIT_CODE.USAGE,
+    );
   }
   const status = asStepStatus(options.stepStatus, "pending");
   const allowMultipleActive = options.allowMultipleActive === true;
@@ -1058,7 +1398,12 @@ async function planAddStep(
     message: `plan add-step "${title}"`,
     mutator(steps) {
       const order = steps.length + 1;
-      assertInProgressStepAllowed(steps, undefined, status, allowMultipleActive);
+      assertInProgressStepAllowed(
+        steps,
+        undefined,
+        status,
+        allowMultipleActive,
+      );
       const step = buildAddedPlanStep(steps, options, { order, title, status });
       steps.push(step);
       return { changedSteps: [step.id], resultStep: step };
@@ -1085,7 +1430,9 @@ function assertInProgressStepAllowed(
   if (desiredStatus !== "in_progress" || allowMultipleActive) {
     return;
   }
-  const activeStep = steps.find((step) => step.id !== currentStepId && step.status === "in_progress");
+  const activeStep = steps.find(
+    (step) => step.id !== currentStepId && step.status === "in_progress",
+  );
   if (!activeStep) {
     return;
   }
@@ -1113,7 +1460,10 @@ function buildAddedPlanStep(
     status: seed.status,
     owner: options.stepOwner?.trim() || undefined,
     evidence: options.stepEvidence?.trim() || undefined,
-    blocked_reason: seed.status === "blocked" ? options.stepBlockedReason?.trim() || "" : undefined,
+    blocked_reason:
+      seed.status === "blocked"
+        ? options.stepBlockedReason?.trim() || ""
+        : undefined,
     linked_items: linkedItems.length > 0 ? linkedItems : undefined,
     files: files.length > 0 ? files : undefined,
     tests: tests.length > 0 ? tests : undefined,
@@ -1124,11 +1474,22 @@ function buildAddedPlanStep(
   };
 }
 
-function buildLinkInputs(options: PlanCommandOptions, fallbackKind: PlanStepLinkKind): PlanStepLink[] {
-  const dependsOn = toArray(options.dependsOn).map((id) => ({ id, kind: fallbackKind } as PlanStepLink));
-  const related = toArray(options.related).map((id) => ({ id, kind: "related" } as PlanStepLink));
-  const blocks = toArray(options.blocks).map((id) => ({ id, kind: "blocks" } as PlanStepLink));
-  const blockedBy = toArray(options.blockedBy).map((id) => ({ id, kind: "blocked_by" } as PlanStepLink));
+function buildLinkInputs(
+  options: PlanCommandOptions,
+  fallbackKind: PlanStepLinkKind,
+): PlanStepLink[] {
+  const dependsOn = toArray(options.dependsOn).map(
+    (id) => ({ id, kind: fallbackKind }) as PlanStepLink,
+  );
+  const related = toArray(options.related).map(
+    (id) => ({ id, kind: "related" }) as PlanStepLink,
+  );
+  const blocks = toArray(options.blocks).map(
+    (id) => ({ id, kind: "blocks" }) as PlanStepLink,
+  );
+  const blockedBy = toArray(options.blockedBy).map(
+    (id) => ({ id, kind: "blocked_by" }) as PlanStepLink,
+  );
   const explicit = toArray(options.link);
   const explicitKind = asLinkKind(options.linkKind, fallbackKind);
   const note = options.linkNote?.trim();
@@ -1144,7 +1505,12 @@ async function planUpdateStep(
   id: string,
   options: PlanCommandOptions,
   ctx: PlanWriteContext,
-  args: { stepRef: string; finalStatus?: PlanStepStatus; op: string; allowMultipleActive?: boolean },
+  args: {
+    stepRef: string;
+    finalStatus?: PlanStepStatus;
+    op: string;
+    allowMultipleActive?: boolean;
+  },
 ): Promise<PlanCommandResult> {
   const { document, resultStep, itemId } = await mutatePlanSteps({
     id,
@@ -1155,9 +1521,17 @@ async function planUpdateStep(
     mutator(steps, doc) {
       const step = resolveStepRef(steps, args.stepRef);
       const now = nowIso();
-      const desiredStatus = args.finalStatus ?? asStepStatus(options.stepStatus, step.status);
-      const allowMultipleActive = options.allowMultipleActive === true || args.allowMultipleActive === true;
-      assertInProgressStepAllowed(steps, step.status === "in_progress" ? step.id : undefined, desiredStatus, allowMultipleActive);
+      const desiredStatus =
+        args.finalStatus ?? asStepStatus(options.stepStatus, step.status);
+      const allowMultipleActive =
+        options.allowMultipleActive === true ||
+        args.allowMultipleActive === true;
+      assertInProgressStepAllowed(
+        steps,
+        step.status === "in_progress" ? step.id : undefined,
+        desiredStatus,
+        allowMultipleActive,
+      );
       applyStepUpdates(step, options, desiredStatus, now);
       doc.metadata.updated_at = now;
       return { changedSteps: [step.id], resultStep: step };
@@ -1165,7 +1539,12 @@ async function planUpdateStep(
   });
   const plan = projectPlan(document.metadata, "standard");
   return {
-    action: args.op === "plan_complete_step" ? "complete-step" : args.op === "plan_block_step" ? "block-step" : "update-step",
+    action:
+      args.op === "plan_complete_step"
+        ? "complete-step"
+        : args.op === "plan_block_step"
+          ? "block-step"
+          : "update-step",
     plan,
     step: resultStep,
     next_actions: nextActionsFor(itemId, plan),
@@ -1192,7 +1571,11 @@ function assertBlockedStepReason(
   options: PlanCommandOptions,
   desiredStatus: PlanStepStatus,
 ): void {
-  if (desiredStatus !== "blocked" || options.stepBlockedReason?.trim() || step.blocked_reason) {
+  if (
+    desiredStatus !== "blocked" ||
+    options.stepBlockedReason?.trim() ||
+    step.blocked_reason
+  ) {
     return;
   }
   throw new PmCliError(
@@ -1201,7 +1584,10 @@ function assertBlockedStepReason(
   );
 }
 
-function applyStepFieldUpdates(step: PlanStep, options: PlanCommandOptions): void {
+function applyStepFieldUpdates(
+  step: PlanStep,
+  options: PlanCommandOptions,
+): void {
   const title = options.stepTitle?.trim();
   if (title) {
     step.title = title;
@@ -1223,7 +1609,11 @@ function applyStepFieldUpdates(step: PlanStep, options: PlanCommandOptions): voi
   }
 }
 
-function applyStepCompletionTimestamp(step: PlanStep, desiredStatus: PlanStepStatus, now: string): void {
+function applyStepCompletionTimestamp(
+  step: PlanStep,
+  desiredStatus: PlanStepStatus,
+  now: string,
+): void {
   if (desiredStatus === "completed" && !step.completed_at) {
     step.completed_at = now;
     return;
@@ -1309,9 +1699,15 @@ async function planLink(
   ctx: PlanWriteContext,
   stepRef: string,
 ): Promise<PlanCommandResult> {
-  const newLinks = buildLinkInputs(options, asLinkKind(options.linkKind, "related"));
+  const newLinks = buildLinkInputs(
+    options,
+    asLinkKind(options.linkKind, "related"),
+  );
   if (newLinks.length === 0) {
-    throw new PmCliError("pm plan link requires at least one --link/--related/--blocks/--blocked-by/--depends-on id", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "pm plan link requires at least one --link/--related/--blocks/--blocked-by/--depends-on id",
+      EXIT_CODE.USAGE,
+    );
   }
   const promoteToItemDep = options.promoteToItemDep === true;
   const { document, itemId, resultStep } = await mutatePlanSteps({
@@ -1335,7 +1731,8 @@ async function planLink(
       step.updated_at = nowIso();
       if (promoteToItemDep) {
         const deps = doc.metadata.dependencies ?? [];
-        const depKey = (dep: { id: string; kind: string }) => `${dep.kind}:${dep.id}`;
+        const depKey = (dep: { id: string; kind: string }) =>
+          `${dep.kind}:${dep.id}`;
         const seenDeps = new Set(deps.map(depKey));
         for (const link of newLinks) {
           const candidate = {
@@ -1372,7 +1769,10 @@ async function planUnlink(
 ): Promise<PlanCommandResult> {
   const removeIds = toArray(options.link);
   if (removeIds.length === 0) {
-    throw new PmCliError("pm plan unlink requires --link <id> to remove", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "pm plan unlink requires --link <id> to remove",
+      EXIT_CODE.USAGE,
+    );
   }
   const { document, itemId, resultStep } = await mutatePlanSteps({
     id,
@@ -1382,7 +1782,9 @@ async function planUnlink(
     message: options.message ?? `plan unlink ${stepRef}`,
     mutator(steps) {
       const step = resolveStepRef(steps, stepRef);
-      const filtered = (step.linked_items ?? []).filter((link) => !removeIds.includes(link.id));
+      const filtered = (step.linked_items ?? []).filter(
+        (link) => !removeIds.includes(link.id),
+      );
       step.linked_items = filtered.length > 0 ? filtered : undefined;
       step.updated_at = nowIso();
       return { changedSteps: [step.id], resultStep: step };
@@ -1409,16 +1811,20 @@ async function planAppendLog(
   if (!logText) {
     const canonical = `--${kind}-text`;
     const shorthand = `--${kind}`;
-    throw new PmCliError(`pm plan ${kind} requires ${canonical}`, EXIT_CODE.USAGE, {
-      code: "missing_required_option",
-      examples: [
-        `pm plan ${kind} <plan-id> ${canonical} "..."`,
-        `pm plan ${kind} <plan-id> ${shorthand} "..."`,
-      ],
-      recovery: {
-        suggested_retry: `pm plan ${kind} <plan-id> ${canonical} <value>`,
+    throw new PmCliError(
+      `pm plan ${kind} requires ${canonical}`,
+      EXIT_CODE.USAGE,
+      {
+        code: "missing_required_option",
+        examples: [
+          `pm plan ${kind} <plan-id> ${canonical} "..."`,
+          `pm plan ${kind} <plan-id> ${shorthand} "..."`,
+        ],
+        recovery: {
+          suggested_retry: `pm plan ${kind} <plan-id> ${canonical} <value>`,
+        },
       },
-    });
+    );
   }
   const author = resolveAuthor(options.author, ctx.settings.author_default);
   const { document, itemId } = await mutatePlanSteps({
@@ -1474,7 +1880,10 @@ async function planResume(
 ): Promise<PlanCommandResult> {
   const text = options.resumeContext?.trim();
   if (!text) {
-    throw new PmCliError("pm plan resume requires --resume-context <text>", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "pm plan resume requires --resume-context <text>",
+      EXIT_CODE.USAGE,
+    );
   }
   const { document, itemId } = await mutatePlanSteps({
     id,
@@ -1525,7 +1934,11 @@ async function planApprove(
 }
 
 function buildMaterializeSkippedWarnings(
-  materializeSkipped: { from_step: string; reason: "already_completed" | "already_materialized"; existing_id?: string }[],
+  materializeSkipped: {
+    from_step: string;
+    reason: "already_completed" | "already_materialized";
+    existing_id?: string;
+  }[],
 ): string[] {
   return materializeSkipped.map(
     (entry) =>
@@ -1535,7 +1948,11 @@ function buildMaterializeSkippedWarnings(
 
 function buildMaterializeNoopResult(
   planRead: { document: ItemDocument; itemId: string },
-  materializeSkipped: { from_step: string; reason: "already_completed" | "already_materialized"; existing_id?: string }[],
+  materializeSkipped: {
+    from_step: string;
+    reason: "already_completed" | "already_materialized";
+    existing_id?: string;
+  }[],
 ): PlanCommandResult {
   const plan = projectPlan(planRead.document.metadata, "standard");
   return {
@@ -1549,14 +1966,21 @@ function buildMaterializeNoopResult(
   };
 }
 
-function buildMaterializeDependencies(parent: string, planItemId: string, step: PlanStep): string[] {
+function buildMaterializeDependencies(
+  parent: string,
+  planItemId: string,
+  step: PlanStep,
+): string[] {
   const deps = [
     `id=${parent},kind=parent`,
     `id=${planItemId},kind=discovered_from`,
   ];
   for (const link of step.linked_items ?? []) {
     const realKind: DependencyKind =
-      link.kind === "blocked_by" || link.kind === "blocks" || link.kind === "related" || link.kind === "discovered_from"
+      link.kind === "blocked_by" ||
+      link.kind === "blocks" ||
+      link.kind === "related" ||
+      link.kind === "discovered_from"
         ? link.kind
         : "related";
     deps.push(`id=${link.id},kind=${realKind}`);
@@ -1583,12 +2007,22 @@ async function createMaterializedStepItems(params: {
         parent: params.parent,
         tags: params.tags,
         author: params.options.author,
-        message: params.options.message ?? `materialized from plan ${params.planItemId} step ${step.id}`,
-        dep: buildMaterializeDependencies(params.parent, params.planItemId, step),
+        message:
+          params.options.message ??
+          `materialized from plan ${params.planItemId} step ${step.id}`,
+        dep: buildMaterializeDependencies(
+          params.parent,
+          params.planItemId,
+          step,
+        ),
       },
       { ...({} as GlobalOptions), path: params.pmRoot } as GlobalOptions,
     );
-    materialized.push({ id: created.item.id, type: params.resolvedTypeName, from_step: step.id });
+    materialized.push({
+      id: created.item.id,
+      type: params.resolvedTypeName,
+      from_step: step.id,
+    });
   }
   return materialized;
 }
@@ -1608,7 +2042,11 @@ function linkMaterializedStepItems(
       continue;
     }
     const links = step.linked_items ?? [];
-    links.push({ id: matched.id, kind: "implements", note: `materialized as ${matched.type}` });
+    links.push({
+      id: matched.id,
+      kind: "implements",
+      note: `materialized as ${matched.type}`,
+    });
     step.linked_items = links;
     step.updated_at = nowIso();
   }
@@ -1621,25 +2059,40 @@ async function planMaterialize(
 ): Promise<PlanCommandResult> {
   const stepRefs = toArray(options.steps);
   if (stepRefs.length === 0) {
-    throw new PmCliError("pm plan materialize requires --steps <ids|orders|all>", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "pm plan materialize requires --steps <ids|orders|all>",
+      EXIT_CODE.USAGE,
+    );
   }
   const targetType = options.materializeType?.trim() || "Task";
-  const typeRegistry = resolveItemTypeRegistry(ctx.settings, getActiveExtensionRegistrations());
+  const typeRegistry = resolveItemTypeRegistry(
+    ctx.settings,
+    getActiveExtensionRegistrations(),
+  );
   const resolvedTypeName = resolveTypeName(targetType, typeRegistry);
   if (!resolvedTypeName) {
-    throw new PmCliError(`Invalid --materialize-type "${targetType}"`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Invalid --materialize-type "${targetType}"`,
+      EXIT_CODE.USAGE,
+    );
   }
   const parent = options.materializeParent?.trim() || id;
   const tags = options.materializeTags;
 
   const planRead = await readPlanItem(ctx, id);
   const steps = (planRead.document.metadata.plan_steps ?? []).slice();
-  const { targets, skipped: materializeSkipped } = resolveMaterializeTargets(steps, stepRefs);
+  const { targets, skipped: materializeSkipped } = resolveMaterializeTargets(
+    steps,
+    stepRefs,
+  );
   if (targets.length === 0) {
     if (materializeSkipped.length > 0) {
       return buildMaterializeNoopResult(planRead, materializeSkipped);
     }
-    throw new PmCliError("No matching plan steps found for --steps", EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      "No matching plan steps found for --steps",
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
   const materialized = await createMaterializedStepItems({
@@ -1668,7 +2121,9 @@ async function planMaterialize(
     action: "materialize",
     plan,
     materialized,
-    ...(materializeSkipped.length > 0 ? { materialize_skipped: materializeSkipped } : {}),
+    ...(materializeSkipped.length > 0
+      ? { materialize_skipped: materializeSkipped }
+      : {}),
     next_actions: nextActionsFor(itemId, plan),
     warnings: buildMaterializeSkippedWarnings(materializeSkipped),
     generated_at: nowIso(),
@@ -1676,19 +2131,25 @@ async function planMaterialize(
 }
 
 /* c8 ignore stop */
-/**
- * Documents the plan dispatch input payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the plan dispatch input payload exchanged by command, SDK, and package integrations. */
 export interface PlanDispatchInput {
+  /** Value that configures or reports subcommand for this contract. */
   subcommand: PlanSubcommand;
+  /** Stable identifier used to reference this record across commands and storage. */
   id?: string;
+  /** Value that configures or reports step ref for this contract. */
   stepRef?: string;
+  /** Value that configures or reports reorder to for this contract. */
   reorderTo?: number;
+  /** Value that configures or reports options for this contract. */
   options: PlanCommandOptions;
+  /** Value that configures or reports global for this contract. */
   global: GlobalOptions;
 }
 
-function normalizePlanStepAliasInput(input: PlanDispatchInput): PlanDispatchInput {
+function normalizePlanStepAliasInput(
+  input: PlanDispatchInput,
+): PlanDispatchInput {
   if (input.subcommand === "create") {
     return input;
   }
@@ -1700,43 +2161,73 @@ function normalizePlanStepAliasInput(input: PlanDispatchInput): PlanDispatchInpu
     );
   }
   if (stepValues.length === 1 && !input.options.stepTitle?.trim()) {
-    return { ...input, options: { ...input.options, stepTitle: stepValues[0] } };
+    return {
+      ...input,
+      options: { ...input.options, stepTitle: stepValues[0] },
+    };
   }
   return input;
 }
 
-function requirePlanId(input: PlanDispatchInput, label: PlanSubcommand): string {
+function requirePlanId(
+  input: PlanDispatchInput,
+  label: PlanSubcommand,
+): string {
   if (!input.id) {
-    throw new PmCliError(`pm plan ${label} requires a plan id`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `pm plan ${label} requires a plan id`,
+      EXIT_CODE.USAGE,
+    );
   }
   return input.id;
 }
 
-function requirePlanStepRef(input: PlanDispatchInput, label: PlanSubcommand): { id: string; stepRef: string } {
+function requirePlanStepRef(
+  input: PlanDispatchInput,
+  label: PlanSubcommand,
+): { id: string; stepRef: string } {
   const id = requirePlanId(input, label);
   if (!input.stepRef) {
-    throw new PmCliError(`pm plan ${label} requires <plan-id> <step>`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `pm plan ${label} requires <plan-id> <step>`,
+      EXIT_CODE.USAGE,
+    );
   }
   return { id, stepRef: input.stepRef };
 }
 
-function requireReorderTarget(input: PlanDispatchInput): { id: string; stepRef: string; reorderTo: number } {
+function requireReorderTarget(input: PlanDispatchInput): {
+  id: string;
+  stepRef: string;
+  reorderTo: number;
+} {
   const target = requirePlanStepRef(input, "reorder-step");
   if (input.reorderTo === undefined) {
-    throw new PmCliError("pm plan reorder-step requires <plan-id> <step> <new-order>", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "pm plan reorder-step requires <plan-id> <step> <new-order>",
+      EXIT_CODE.USAGE,
+    );
   }
   return { ...target, reorderTo: input.reorderTo };
 }
 
-type PlanDispatcher = (input: PlanDispatchInput, ctx: PlanWriteContext) => Promise<PlanCommandResult>;
+type PlanDispatcher = (
+  input: PlanDispatchInput,
+  ctx: PlanWriteContext,
+) => Promise<PlanCommandResult>;
 
 const PLAN_DISPATCHERS: Record<PlanSubcommand, PlanDispatcher> = {
   create: (input, ctx) => planCreate(input.options, input.global, ctx),
-  show: (input, ctx) => planShow(requirePlanId(input, "show"), input.options, ctx),
-  "add-step": (input, ctx) => planAddStep(requirePlanId(input, "add-step"), input.options, ctx),
+  show: (input, ctx) =>
+    planShow(requirePlanId(input, "show"), input.options, ctx),
+  "add-step": (input, ctx) =>
+    planAddStep(requirePlanId(input, "add-step"), input.options, ctx),
   "update-step": (input, ctx) => {
     const target = requirePlanStepRef(input, "update-step");
-    return planUpdateStep(target.id, input.options, ctx, { stepRef: target.stepRef, op: "plan_update_step" });
+    return planUpdateStep(target.id, input.options, ctx, {
+      stepRef: target.stepRef,
+      op: "plan_update_step",
+    });
   },
   "complete-step": (input, ctx) => {
     const target = requirePlanStepRef(input, "complete-step");
@@ -1756,7 +2247,13 @@ const PLAN_DISPATCHERS: Record<PlanSubcommand, PlanDispatcher> = {
   },
   "reorder-step": (input, ctx) => {
     const target = requireReorderTarget(input);
-    return planReorderStep(target.id, input.options, ctx, target.stepRef, target.reorderTo);
+    return planReorderStep(
+      target.id,
+      input.options,
+      ctx,
+      target.stepRef,
+      target.reorderTo,
+    );
   },
   "remove-step": (input, ctx) => {
     const target = requirePlanStepRef(input, "remove-step");
@@ -1770,27 +2267,54 @@ const PLAN_DISPATCHERS: Record<PlanSubcommand, PlanDispatcher> = {
     const target = requirePlanStepRef(input, "unlink");
     return planUnlink(target.id, input.options, ctx, target.stepRef);
   },
-  decision: (input, ctx) => planAppendLog(requirePlanId(input, "decision"), input.options, ctx, "decision"),
-  discovery: (input, ctx) => planAppendLog(requirePlanId(input, "discovery"), input.options, ctx, "discovery"),
-  validation: (input, ctx) => planAppendLog(requirePlanId(input, "validation"), input.options, ctx, "validation"),
-  resume: (input, ctx) => planResume(requirePlanId(input, "resume"), input.options, ctx),
-  approve: (input, ctx) => planApprove(requirePlanId(input, "approve"), input.options, ctx),
-  materialize: (input, ctx) => planMaterialize(requirePlanId(input, "materialize"), input.options, ctx),
+  decision: (input, ctx) =>
+    planAppendLog(
+      requirePlanId(input, "decision"),
+      input.options,
+      ctx,
+      "decision",
+    ),
+  discovery: (input, ctx) =>
+    planAppendLog(
+      requirePlanId(input, "discovery"),
+      input.options,
+      ctx,
+      "discovery",
+    ),
+  validation: (input, ctx) =>
+    planAppendLog(
+      requirePlanId(input, "validation"),
+      input.options,
+      ctx,
+      "validation",
+    ),
+  resume: (input, ctx) =>
+    planResume(requirePlanId(input, "resume"), input.options, ctx),
+  approve: (input, ctx) =>
+    planApprove(requirePlanId(input, "approve"), input.options, ctx),
+  materialize: (input, ctx) =>
+    planMaterialize(requirePlanId(input, "materialize"), input.options, ctx),
 };
 
 function resolvePlanDispatcher(subcommand: PlanSubcommand): PlanDispatcher {
   const dispatcher = PLAN_DISPATCHERS[subcommand];
   if (!dispatcher) {
-    throw new PmCliError(`Unknown pm plan subcommand "${subcommand}"`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Unknown pm plan subcommand "${subcommand}"`,
+      EXIT_CODE.USAGE,
+    );
   }
   return dispatcher;
 }
 
-/**
- * Implements run plan for the public runtime surface of this module.
- */
-export async function runPlan(input: PlanDispatchInput): Promise<PlanCommandResult> {
+/** Implements run plan for the public runtime surface of this module. */
+export async function runPlan(
+  input: PlanDispatchInput,
+): Promise<PlanCommandResult> {
   const ctx = await loadContext(input.global);
   const normalizedInput = normalizePlanStepAliasInput(input);
-  return resolvePlanDispatcher(normalizedInput.subcommand)(normalizedInput, ctx);
+  return resolvePlanDispatcher(normalizedInput.subcommand)(
+    normalizedInput,
+    ctx,
+  );
 }

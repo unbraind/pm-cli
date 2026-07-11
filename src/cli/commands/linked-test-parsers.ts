@@ -26,18 +26,28 @@ import type { LinkedTest, LinkScope } from "../../types/index.js";
  * before. Error strings and parsing semantics are identical to both originals.
  */
 
-export const LINKED_TEST_PROTECTED_ENV_KEYS = new Set(["PM_PATH", "PM_GLOBAL_PATH", "FORCE_COLOR"]);
+export const LINKED_TEST_PROTECTED_ENV_KEYS = new Set([
+  "PM_PATH",
+  "PM_GLOBAL_PATH",
+  "FORCE_COLOR",
+]);
+/** Public contract for linked test env name pattern, shared by SDK and presentation-layer consumers. */
 export const LINKED_TEST_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
-export const LINKED_TEST_PM_CONTEXT_MODE_VALUES = ["schema", "tracker", "auto"] as const;
-/**
- * Restricts linked test pm context mode values accepted by command, SDK, and storage contracts.
- */
-export type LinkedTestPmContextMode = (typeof LINKED_TEST_PM_CONTEXT_MODE_VALUES)[number];
+/** Supported values accepted by the linked test pm context mode contract. */
+export const LINKED_TEST_PM_CONTEXT_MODE_VALUES = [
+  "schema",
+  "tracker",
+  "auto",
+] as const;
+/** Restricts linked test pm context mode values accepted by command, SDK, and storage contracts. */
+export type LinkedTestPmContextMode =
+  (typeof LINKED_TEST_PM_CONTEXT_MODE_VALUES)[number];
 
-/**
- * Implements parse linked test env set for the public runtime surface of this module.
- */
-export function parseLinkedTestEnvSet(raw: string | undefined, optionName: string): Record<string, string> | undefined {
+/** Implements parse linked test env set for the public runtime surface of this module. */
+export function parseLinkedTestEnvSet(
+  raw: string | undefined,
+  optionName: string,
+): Record<string, string> | undefined {
   if (!raw) {
     return undefined;
   }
@@ -46,7 +56,10 @@ export function parseLinkedTestEnvSet(raw: string | undefined, optionName: strin
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0);
   if (assignments.length === 0) {
-    throw new PmCliError(`${optionName} env_set must include at least one KEY=VALUE assignment`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `${optionName} env_set must include at least one KEY=VALUE assignment`,
+      EXIT_CODE.USAGE,
+    );
   }
   const envSet: Record<string, string> = {};
   for (const assignment of assignments) {
@@ -60,10 +73,16 @@ export function parseLinkedTestEnvSet(raw: string | undefined, optionName: strin
     const key = assignment.slice(0, separatorIndex).trim();
     const value = assignment.slice(separatorIndex + 1);
     if (!LINKED_TEST_ENV_NAME_PATTERN.test(key)) {
-      throw new PmCliError(`${optionName} env_set key "${key}" is invalid`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `${optionName} env_set key "${key}" is invalid`,
+        EXIT_CODE.USAGE,
+      );
     }
     if (LINKED_TEST_PROTECTED_ENV_KEYS.has(key.toUpperCase())) {
-      throw new PmCliError(`${optionName} env_set key "${key}" is reserved for sandbox safety`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `${optionName} env_set key "${key}" is reserved for sandbox safety`,
+        EXIT_CODE.USAGE,
+      );
     }
     envSet[key] = value;
   }
@@ -72,32 +91,44 @@ export function parseLinkedTestEnvSet(raw: string | undefined, optionName: strin
   /* c8 ignore stop */
 }
 
-/**
- * Implements parse linked test env clear for the public runtime surface of this module.
- */
-export function parseLinkedTestEnvClear(raw: string | undefined, optionName: string): string[] | undefined {
+/** Implements parse linked test env clear for the public runtime surface of this module. */
+export function parseLinkedTestEnvClear(
+  raw: string | undefined,
+  optionName: string,
+): string[] | undefined {
   if (!raw) {
     return undefined;
   }
   const keys = splitCommaList(raw, { separators: /[;,\n]/ });
   if (keys.length === 0) {
-    throw new PmCliError(`${optionName} env_clear must include at least one environment variable name`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `${optionName} env_clear must include at least one environment variable name`,
+      EXIT_CODE.USAGE,
+    );
   }
   for (const key of keys) {
     if (!LINKED_TEST_ENV_NAME_PATTERN.test(key)) {
-      throw new PmCliError(`${optionName} env_clear key "${key}" is invalid`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `${optionName} env_clear key "${key}" is invalid`,
+        EXIT_CODE.USAGE,
+      );
     }
     if (LINKED_TEST_PROTECTED_ENV_KEYS.has(key.toUpperCase())) {
-      throw new PmCliError(`${optionName} env_clear key "${key}" is reserved for sandbox safety`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `${optionName} env_clear key "${key}" is reserved for sandbox safety`,
+        EXIT_CODE.USAGE,
+      );
     }
   }
   return keys;
 }
 
-/**
- * Implements parse linked test boolean for the public runtime surface of this module.
- */
-export function parseLinkedTestBoolean(raw: string | undefined, optionName: string, fieldLabel: string): boolean | undefined {
+/** Implements parse linked test boolean for the public runtime surface of this module. */
+export function parseLinkedTestBoolean(
+  raw: string | undefined,
+  optionName: string,
+  fieldLabel: string,
+): boolean | undefined {
   if (!raw) {
     return undefined;
   }
@@ -108,12 +139,13 @@ export function parseLinkedTestBoolean(raw: string | undefined, optionName: stri
   if (value === "false" || value === "0" || value === "no") {
     return false;
   }
-  throw new PmCliError(`${optionName} ${fieldLabel} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
+  throw new PmCliError(
+    `${optionName} ${fieldLabel} must be one of true|false|1|0|yes|no`,
+    EXIT_CODE.USAGE,
+  );
 }
 
-/**
- * Implements parse linked test context mode for the public runtime surface of this module.
- */
+/** Implements parse linked test context mode for the public runtime surface of this module. */
 export function parseLinkedTestContextMode(
   raw: string | undefined,
   optionName: string,
@@ -122,7 +154,9 @@ export function parseLinkedTestContextMode(
     return undefined;
   }
   const value = raw.trim().toLowerCase();
-  if ((LINKED_TEST_PM_CONTEXT_MODE_VALUES as readonly string[]).includes(value)) {
+  if (
+    (LINKED_TEST_PM_CONTEXT_MODE_VALUES as readonly string[]).includes(value)
+  ) {
     return value as LinkedTest["pm_context_mode"];
   }
   throw new PmCliError(
@@ -131,10 +165,10 @@ export function parseLinkedTestContextMode(
   );
 }
 
-/**
- * Implements parse linked test string list for the public runtime surface of this module.
- */
-export function parseLinkedTestStringList(raw: string | undefined): string[] | undefined {
+/** Implements parse linked test string list for the public runtime surface of this module. */
+export function parseLinkedTestStringList(
+  raw: string | undefined,
+): string[] | undefined {
   if (!raw) {
     return undefined;
   }
@@ -142,10 +176,12 @@ export function parseLinkedTestStringList(raw: string | undefined): string[] | u
   return values.length > 0 ? values : undefined;
 }
 
-/**
- * Implements parse linked test regex list for the public runtime surface of this module.
- */
-export function parseLinkedTestRegexList(raw: string | undefined, optionName: string, fieldLabel: string): string[] | undefined {
+/** Implements parse linked test regex list for the public runtime surface of this module. */
+export function parseLinkedTestRegexList(
+  raw: string | undefined,
+  optionName: string,
+  fieldLabel: string,
+): string[] | undefined {
   const values = parseLinkedTestStringList(raw);
   if (!values || values.length === 0) {
     return undefined;
@@ -166,24 +202,29 @@ export function parseLinkedTestRegexList(raw: string | undefined, optionName: st
   return values;
 }
 
-/**
- * Implements parse linked test min lines for the public runtime surface of this module.
- */
-export function parseLinkedTestMinLines(raw: string | undefined, optionName: string): number | undefined {
+/** Implements parse linked test min lines for the public runtime surface of this module. */
+export function parseLinkedTestMinLines(
+  raw: string | undefined,
+  optionName: string,
+): number | undefined {
   if (!raw) {
     return undefined;
   }
   const parsed = parseOptionalNumber(raw, "assert_stdout_min_lines");
   if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new PmCliError(`${optionName} assert_stdout_min_lines must be an integer >= 0`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `${optionName} assert_stdout_min_lines must be an integer >= 0`,
+      EXIT_CODE.USAGE,
+    );
   }
   return parsed;
 }
 
-/**
- * Implements parse linked test assertion equals map for the public runtime surface of this module.
- */
-export function parseLinkedTestAssertionEqualsMap(raw: string | undefined, optionName: string): Record<string, string> | undefined {
+/** Implements parse linked test assertion equals map for the public runtime surface of this module. */
+export function parseLinkedTestAssertionEqualsMap(
+  raw: string | undefined,
+  optionName: string,
+): Record<string, string> | undefined {
   if (!raw) {
     return undefined;
   }
@@ -192,7 +233,10 @@ export function parseLinkedTestAssertionEqualsMap(raw: string | undefined, optio
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0);
   if (assignments.length === 0) {
-    throw new PmCliError(`${optionName} assert_json_field_equals must include at least one path=value assignment`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `${optionName} assert_json_field_equals must include at least one path=value assignment`,
+      EXIT_CODE.USAGE,
+    );
   }
   const values: Record<string, string> = {};
   for (const assignment of assignments) {
@@ -206,7 +250,10 @@ export function parseLinkedTestAssertionEqualsMap(raw: string | undefined, optio
     const key = assignment.slice(0, separatorIndex).trim();
     const value = assignment.slice(separatorIndex + 1).trim();
     if (key.length === 0 || value.length === 0) {
-      throw new PmCliError(`${optionName} assert_json_field_equals entries must include non-empty path and value`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `${optionName} assert_json_field_equals entries must include non-empty path and value`,
+        EXIT_CODE.USAGE,
+      );
     }
     values[key] = value;
   }
@@ -215,10 +262,11 @@ export function parseLinkedTestAssertionEqualsMap(raw: string | undefined, optio
   /* c8 ignore stop */
 }
 
-/**
- * Implements parse linked test assertion gte map for the public runtime surface of this module.
- */
-export function parseLinkedTestAssertionGteMap(raw: string | undefined, optionName: string): Record<string, number> | undefined {
+/** Implements parse linked test assertion gte map for the public runtime surface of this module. */
+export function parseLinkedTestAssertionGteMap(
+  raw: string | undefined,
+  optionName: string,
+): Record<string, number> | undefined {
   if (!raw) {
     return undefined;
   }
@@ -227,7 +275,10 @@ export function parseLinkedTestAssertionGteMap(raw: string | undefined, optionNa
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0);
   if (assignments.length === 0) {
-    throw new PmCliError(`${optionName} assert_json_field_gte must include at least one path=value assignment`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `${optionName} assert_json_field_gte must include at least one path=value assignment`,
+      EXIT_CODE.USAGE,
+    );
   }
   const values: Record<string, number> = {};
   for (const assignment of assignments) {
@@ -241,11 +292,17 @@ export function parseLinkedTestAssertionGteMap(raw: string | undefined, optionNa
     const key = assignment.slice(0, separatorIndex).trim();
     const valueRaw = assignment.slice(separatorIndex + 1).trim();
     if (key.length === 0 || valueRaw.length === 0) {
-      throw new PmCliError(`${optionName} assert_json_field_gte entries must include non-empty path and value`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `${optionName} assert_json_field_gte entries must include non-empty path and value`,
+        EXIT_CODE.USAGE,
+      );
     }
     const value = Number.parseFloat(valueRaw);
     if (!Number.isFinite(value)) {
-      throw new PmCliError(`${optionName} assert_json_field_gte value for "${key}" must be numeric`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `${optionName} assert_json_field_gte value for "${key}" must be numeric`,
+        EXIT_CODE.USAGE,
+      );
     }
     values[key] = value;
   }
@@ -271,7 +328,10 @@ function isPlainObject(value: unknown): value is JsonRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function normalizeJsonEntryKeys(entry: JsonRecord, fail: (message: string) => PmCliError): JsonRecord {
+function normalizeJsonEntryKeys(
+  entry: JsonRecord,
+  fail: (message: string) => PmCliError,
+): JsonRecord {
   const normalized: JsonRecord = {};
   const unknownKeys: string[] = [];
   for (const [key, value] of Object.entries(entry)) {
@@ -281,7 +341,9 @@ function normalizeJsonEntryKeys(entry: JsonRecord, fail: (message: string) => Pm
       continue;
     }
     if (Object.hasOwn(normalized, normalizedKey)) {
-      throw fail(`provides key "${key}" more than once after case normalization`);
+      throw fail(
+        `provides key "${key}" more than once after case normalization`,
+      );
     }
     normalized[normalizedKey] = value;
   }
@@ -293,7 +355,11 @@ function normalizeJsonEntryKeys(entry: JsonRecord, fail: (message: string) => Pm
   return normalized;
 }
 
-function readJsonEntryString(entry: JsonRecord, key: string, fail: (message: string) => PmCliError): string | undefined {
+function readJsonEntryString(
+  entry: JsonRecord,
+  key: string,
+  fail: (message: string) => PmCliError,
+): string | undefined {
   if (!Object.hasOwn(entry, key)) {
     return undefined;
   }
@@ -307,7 +373,11 @@ function readJsonEntryString(entry: JsonRecord, key: string, fail: (message: str
   return value;
 }
 
-function readJsonEntryStringList(entry: JsonRecord, key: string, fail: (message: string) => PmCliError): string[] | undefined {
+function readJsonEntryStringList(
+  entry: JsonRecord,
+  key: string,
+  fail: (message: string) => PmCliError,
+): string[] | undefined {
   if (!Object.hasOwn(entry, key)) {
     return undefined;
   }
@@ -323,7 +393,11 @@ function readJsonEntryStringList(entry: JsonRecord, key: string, fail: (message:
   return values.length > 0 ? values : undefined;
 }
 
-function readJsonEntryRegexList(entry: JsonRecord, key: string, fail: (message: string) => PmCliError): string[] | undefined {
+function readJsonEntryRegexList(
+  entry: JsonRecord,
+  key: string,
+  fail: (message: string) => PmCliError,
+): string[] | undefined {
   const values = readJsonEntryStringList(entry, key, fail);
   if (!values) {
     return undefined;
@@ -341,7 +415,11 @@ function readJsonEntryRegexList(entry: JsonRecord, key: string, fail: (message: 
   return values;
 }
 
-function readJsonEntryNumber(value: unknown, key: string, fail: (message: string) => PmCliError): number {
+function readJsonEntryNumber(
+  value: unknown,
+  key: string,
+  fail: (message: string) => PmCliError,
+): number {
   const parsed =
     typeof value === "number"
       ? value
@@ -354,15 +432,28 @@ function readJsonEntryNumber(value: unknown, key: string, fail: (message: string
   return parsed;
 }
 
-function readJsonEntryTimeoutSeconds(entry: JsonRecord, fail: (message: string) => PmCliError): number | undefined {
+function readJsonEntryTimeoutSeconds(
+  entry: JsonRecord,
+  fail: (message: string) => PmCliError,
+): number | undefined {
   const timeoutSecondsRaw = entry.timeout_seconds;
   const timeoutAliasRaw = entry.timeout;
   if (timeoutSecondsRaw === undefined && timeoutAliasRaw === undefined) {
     return undefined;
   }
-  const timeoutSeconds = timeoutSecondsRaw === undefined ? undefined : readJsonEntryNumber(timeoutSecondsRaw, "timeout_seconds", fail);
-  const timeoutAlias = timeoutAliasRaw === undefined ? undefined : readJsonEntryNumber(timeoutAliasRaw, "timeout", fail);
-  if (timeoutSeconds !== undefined && timeoutAlias !== undefined && timeoutSeconds !== timeoutAlias) {
+  const timeoutSeconds =
+    timeoutSecondsRaw === undefined
+      ? undefined
+      : readJsonEntryNumber(timeoutSecondsRaw, "timeout_seconds", fail);
+  const timeoutAlias =
+    timeoutAliasRaw === undefined
+      ? undefined
+      : readJsonEntryNumber(timeoutAliasRaw, "timeout", fail);
+  if (
+    timeoutSeconds !== undefined &&
+    timeoutAlias !== undefined &&
+    timeoutSeconds !== timeoutAlias
+  ) {
     throw fail("timeout and timeout_seconds must match when both are provided");
   }
   const timeout = timeoutSeconds ?? (timeoutAlias as number);
@@ -372,7 +463,10 @@ function readJsonEntryTimeoutSeconds(entry: JsonRecord, fail: (message: string) 
   return timeout;
 }
 
-function readJsonEntryScope(entry: JsonRecord, fail: (message: string) => PmCliError): LinkScope {
+function readJsonEntryScope(
+  entry: JsonRecord,
+  fail: (message: string) => PmCliError,
+): LinkScope {
   const value = readJsonEntryString(entry, "scope", fail);
   if (value === undefined) {
     return "project";
@@ -383,7 +477,10 @@ function readJsonEntryScope(entry: JsonRecord, fail: (message: string) => PmCliE
   return value as LinkScope;
 }
 
-function readJsonEntryEnvSet(entry: JsonRecord, fail: (message: string) => PmCliError): Record<string, string> | undefined {
+function readJsonEntryEnvSet(
+  entry: JsonRecord,
+  fail: (message: string) => PmCliError,
+): Record<string, string> | undefined {
   if (!Object.hasOwn(entry, "env_set")) {
     return undefined;
   }
@@ -392,7 +489,9 @@ function readJsonEntryEnvSet(entry: JsonRecord, fail: (message: string) => PmCli
     return undefined;
   }
   if (!isPlainObject(value)) {
-    throw fail('field "env_set" must be a JSON object mapping environment names to string values');
+    throw fail(
+      'field "env_set" must be a JSON object mapping environment names to string values',
+    );
   }
   const envSet: Record<string, string> = {};
   for (const [key, entryValue] of Object.entries(value)) {
@@ -410,7 +509,10 @@ function readJsonEntryEnvSet(entry: JsonRecord, fail: (message: string) => PmCli
   return Object.keys(envSet).length > 0 ? envSet : undefined;
 }
 
-function readJsonEntryEnvClear(entry: JsonRecord, fail: (message: string) => PmCliError): string[] | undefined {
+function readJsonEntryEnvClear(
+  entry: JsonRecord,
+  fail: (message: string) => PmCliError,
+): string[] | undefined {
   const keys = readJsonEntryStringList(entry, "env_clear", fail);
   if (!keys) {
     return undefined;
@@ -420,13 +522,19 @@ function readJsonEntryEnvClear(entry: JsonRecord, fail: (message: string) => PmC
       throw fail(`field "env_clear" key "${key}" is invalid`);
     }
     if (LINKED_TEST_PROTECTED_ENV_KEYS.has(key.toUpperCase())) {
-      throw fail(`field "env_clear" key "${key}" is reserved for sandbox safety`);
+      throw fail(
+        `field "env_clear" key "${key}" is reserved for sandbox safety`,
+      );
     }
   }
   return keys;
 }
 
-function readJsonEntryBoolean(entry: JsonRecord, key: string, fail: (message: string) => PmCliError): boolean | undefined {
+function readJsonEntryBoolean(
+  entry: JsonRecord,
+  key: string,
+  fail: (message: string) => PmCliError,
+): boolean | undefined {
   if (!Object.hasOwn(entry, key)) {
     return undefined;
   }
@@ -440,7 +548,10 @@ function readJsonEntryBoolean(entry: JsonRecord, key: string, fail: (message: st
   return value;
 }
 
-function readJsonEntryMinLines(entry: JsonRecord, fail: (message: string) => PmCliError): number | undefined {
+function readJsonEntryMinLines(
+  entry: JsonRecord,
+  fail: (message: string) => PmCliError,
+): number | undefined {
   if (!Object.hasOwn(entry, "assert_stdout_min_lines")) {
     return undefined;
   }
@@ -455,7 +566,10 @@ function readJsonEntryMinLines(entry: JsonRecord, fail: (message: string) => PmC
   return parsed;
 }
 
-function readJsonEntryEqualsMap(entry: JsonRecord, fail: (message: string) => PmCliError): Record<string, string> | undefined {
+function readJsonEntryEqualsMap(
+  entry: JsonRecord,
+  fail: (message: string) => PmCliError,
+): Record<string, string> | undefined {
   if (!Object.hasOwn(entry, "assert_json_field_equals")) {
     return undefined;
   }
@@ -464,22 +578,35 @@ function readJsonEntryEqualsMap(entry: JsonRecord, fail: (message: string) => Pm
     return undefined;
   }
   if (!isPlainObject(value)) {
-    throw fail('field "assert_json_field_equals" must be a JSON object mapping field paths to expected values');
+    throw fail(
+      'field "assert_json_field_equals" must be a JSON object mapping field paths to expected values',
+    );
   }
   const values: Record<string, string> = {};
   for (const [key, entryValue] of Object.entries(value)) {
     if (key.trim().length === 0) {
-      throw fail('field "assert_json_field_equals" keys must be non-empty field paths');
+      throw fail(
+        'field "assert_json_field_equals" keys must be non-empty field paths',
+      );
     }
-    if (typeof entryValue !== "string" && typeof entryValue !== "number" && typeof entryValue !== "boolean") {
-      throw fail(`field "assert_json_field_equals" value for "${key}" must be a string, number, or boolean`);
+    if (
+      typeof entryValue !== "string" &&
+      typeof entryValue !== "number" &&
+      typeof entryValue !== "boolean"
+    ) {
+      throw fail(
+        `field "assert_json_field_equals" value for "${key}" must be a string, number, or boolean`,
+      );
     }
     values[key] = String(entryValue);
   }
   return Object.keys(values).length > 0 ? values : undefined;
 }
 
-function readJsonEntryGteMap(entry: JsonRecord, fail: (message: string) => PmCliError): Record<string, number> | undefined {
+function readJsonEntryGteMap(
+  entry: JsonRecord,
+  fail: (message: string) => PmCliError,
+): Record<string, number> | undefined {
   if (!Object.hasOwn(entry, "assert_json_field_gte")) {
     return undefined;
   }
@@ -488,27 +615,46 @@ function readJsonEntryGteMap(entry: JsonRecord, fail: (message: string) => PmCli
     return undefined;
   }
   if (!isPlainObject(value)) {
-    throw fail('field "assert_json_field_gte" must be a JSON object mapping field paths to numeric minimums');
+    throw fail(
+      'field "assert_json_field_gte" must be a JSON object mapping field paths to numeric minimums',
+    );
   }
   const values: Record<string, number> = {};
   for (const [key, entryValue] of Object.entries(value)) {
     if (key.trim().length === 0) {
-      throw fail('field "assert_json_field_gte" keys must be non-empty field paths');
+      throw fail(
+        'field "assert_json_field_gte" keys must be non-empty field paths',
+      );
     }
-    values[key] = readJsonEntryNumber(entryValue, `assert_json_field_gte.${key}`, fail);
+    values[key] = readJsonEntryNumber(
+      entryValue,
+      `assert_json_field_gte.${key}`,
+      fail,
+    );
   }
   return Object.keys(values).length > 0 ? values : undefined;
 }
 
-function parseLinkedTestJsonEntry(rawEntry: unknown, label: string, optionName: string): LinkedTest {
-  const fail = (message: string): PmCliError => new PmCliError(`${optionName} ${label} ${message}`, EXIT_CODE.USAGE);
+function parseLinkedTestJsonEntry(
+  rawEntry: unknown,
+  label: string,
+  optionName: string,
+): LinkedTest {
+  const fail = (message: string): PmCliError =>
+    new PmCliError(`${optionName} ${label} ${message}`, EXIT_CODE.USAGE);
   if (!isPlainObject(rawEntry)) {
-    throw fail(`must be a JSON object with linked-test fields. Allowed keys: ${STRUCTURED_LINKED_TEST_KEYS.join(", ")}.`);
+    throw fail(
+      `must be a JSON object with linked-test fields. Allowed keys: ${STRUCTURED_LINKED_TEST_KEYS.join(", ")}.`,
+    );
   }
   const entry = normalizeJsonEntryKeys(rawEntry, fail);
   const commandValue = readJsonEntryString(entry, "command", fail);
   const cmdAlias = readJsonEntryString(entry, "cmd", fail);
-  if (commandValue !== undefined && cmdAlias !== undefined && commandValue !== cmdAlias) {
+  if (
+    commandValue !== undefined &&
+    cmdAlias !== undefined &&
+    commandValue !== cmdAlias
+  ) {
     throw fail("command and cmd must match when both are provided");
   }
   const command = commandValue ?? cmdAlias;
@@ -516,35 +662,67 @@ function parseLinkedTestJsonEntry(rawEntry: unknown, label: string, optionName: 
     throw fail('requires a non-empty "command" string');
   }
   const pathValue = readJsonEntryString(entry, "path", fail);
-  const pmContextModeValue = readJsonEntryString(entry, "pm_context_mode", fail);
-  if (pmContextModeValue !== undefined && !(LINKED_TEST_PM_CONTEXT_MODE_VALUES as readonly string[]).includes(pmContextModeValue)) {
-    throw fail(`field "pm_context_mode" must be one of: ${LINKED_TEST_PM_CONTEXT_MODE_VALUES.join(", ")}`);
+  const pmContextModeValue = readJsonEntryString(
+    entry,
+    "pm_context_mode",
+    fail,
+  );
+  if (
+    pmContextModeValue !== undefined &&
+    !(LINKED_TEST_PM_CONTEXT_MODE_VALUES as readonly string[]).includes(
+      pmContextModeValue,
+    )
+  ) {
+    throw fail(
+      `field "pm_context_mode" must be one of: ${LINKED_TEST_PM_CONTEXT_MODE_VALUES.join(", ")}`,
+    );
   }
   const noteValue = readJsonEntryString(entry, "note", fail);
   return {
     command,
-    path: pathValue !== undefined && pathValue.length > 0 ? pathValue : undefined,
+    path:
+      pathValue !== undefined && pathValue.length > 0 ? pathValue : undefined,
     scope: readJsonEntryScope(entry, fail),
     timeout_seconds: readJsonEntryTimeoutSeconds(entry, fail),
     pm_context_mode: pmContextModeValue as LinkedTest["pm_context_mode"],
     env_set: readJsonEntryEnvSet(entry, fail),
     env_clear: readJsonEntryEnvClear(entry, fail),
     shared_host_safe: readJsonEntryBoolean(entry, "shared_host_safe", fail),
-    assert_stdout_contains: readJsonEntryStringList(entry, "assert_stdout_contains", fail),
-    assert_stdout_regex: readJsonEntryRegexList(entry, "assert_stdout_regex", fail),
-    assert_stderr_contains: readJsonEntryStringList(entry, "assert_stderr_contains", fail),
-    assert_stderr_regex: readJsonEntryRegexList(entry, "assert_stderr_regex", fail),
+    assert_stdout_contains: readJsonEntryStringList(
+      entry,
+      "assert_stdout_contains",
+      fail,
+    ),
+    assert_stdout_regex: readJsonEntryRegexList(
+      entry,
+      "assert_stdout_regex",
+      fail,
+    ),
+    assert_stderr_contains: readJsonEntryStringList(
+      entry,
+      "assert_stderr_contains",
+      fail,
+    ),
+    assert_stderr_regex: readJsonEntryRegexList(
+      entry,
+      "assert_stderr_regex",
+      fail,
+    ),
     assert_stdout_min_lines: readJsonEntryMinLines(entry, fail),
     assert_json_field_equals: readJsonEntryEqualsMap(entry, fail),
     assert_json_field_gte: readJsonEntryGteMap(entry, fail),
-    note: noteValue !== undefined && noteValue.trim().length > 0 ? noteValue.trim() : undefined,
+    note:
+      noteValue !== undefined && noteValue.trim().length > 0
+        ? noteValue.trim()
+        : undefined,
   };
 }
 
-/**
- * Implements parse linked test json entries for the public runtime surface of this module.
- */
-export function parseLinkedTestJsonEntries(raw: string, optionName: string): LinkedTest[] {
+/** Implements parse linked test json entries for the public runtime surface of this module. */
+export function parseLinkedTestJsonEntries(
+  raw: string,
+  optionName: string,
+): LinkedTest[] {
   const trimmed = raw.trim();
   if (trimmed.length === 0) {
     throw new PmCliError(
@@ -564,13 +742,21 @@ export function parseLinkedTestJsonEntries(raw: string, optionName: string): Lin
   }
   const entries = Array.isArray(parsed) ? parsed : [parsed];
   if (entries.length === 0) {
-    throw new PmCliError(`${optionName} array must include at least one linked-test entry object`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `${optionName} array must include at least one linked-test entry object`,
+      EXIT_CODE.USAGE,
+    );
   }
   return entries.map((entry, index) =>
-    parseLinkedTestJsonEntry(entry, entries.length > 1 ? `entry ${index + 1}` : "entry", optionName),
+    parseLinkedTestJsonEntry(
+      entry,
+      entries.length > 1 ? `entry ${index + 1}` : "entry",
+      optionName,
+    ),
   );
 }
 
+/** Public contract for test only linked test parsers, shared by SDK and presentation-layer consumers. */
 export const _testOnlyLinkedTestParsers = {
   parseLinkedTestJsonEntry,
 };

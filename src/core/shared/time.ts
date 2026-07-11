@@ -10,20 +10,19 @@ import { EXIT_CODE } from "./constants.js";
 const RELATIVE_DEADLINE = /^([+-]?)(\d+)([hdwm])$/i;
 const COMPOUND_RELATIVE_DEADLINE = /^[+-]?\d+[hdwm](?:[+-]\d+[hdwm])+$/i;
 const COMPACT_DATE = /^(\d{4})(\d{2})(\d{2})$/;
-const COMPACT_DATETIME = /^(\d{4})(\d{2})(\d{2})(?:[T\s]?)(\d{2})(\d{2})(\d{2})?([.,]\d{1,3})?(Z|[+-]\d{2}:?\d{2})?$/i;
-const HYPHEN_TIME = /^(\d{4}-\d{2}-\d{2})[T\s](\d{2})-(\d{2})(?:-(\d{2}))?([.,]\d{1,3})?(Z|[+-]\d{2}:?\d{2})?$/i;
-const COMPACT_TIME = /^(\d{4}-\d{2}-\d{2})[T\s](\d{2})(\d{2})(\d{2})?([.,]\d{1,3})?(Z|[+-]\d{2}:?\d{2})?$/i;
+const COMPACT_DATETIME =
+  /^(\d{4})(\d{2})(\d{2})(?:[T\s]?)(\d{2})(\d{2})(\d{2})?([.,]\d{1,3})?(Z|[+-]\d{2}:?\d{2})?$/i;
+const HYPHEN_TIME =
+  /^(\d{4}-\d{2}-\d{2})[T\s](\d{2})-(\d{2})(?:-(\d{2}))?([.,]\d{1,3})?(Z|[+-]\d{2}:?\d{2})?$/i;
+const COMPACT_TIME =
+  /^(\d{4}-\d{2}-\d{2})[T\s](\d{2})(\d{2})(\d{2})?([.,]\d{1,3})?(Z|[+-]\d{2}:?\d{2})?$/i;
 
-/**
- * Implements now iso for the public runtime surface of this module.
- */
+/** Implements now iso for the public runtime surface of this module. */
 export function nowIso(): string {
   return new Date().toISOString();
 }
 
-/**
- * Implements check whether timestamp literal for the public runtime surface of this module.
- */
+/** Implements check whether timestamp literal for the public runtime surface of this module. */
 export function isTimestampLiteral(input: string): boolean {
   return Number.isFinite(Date.parse(input));
 }
@@ -51,16 +50,67 @@ function parseTimestampMsMemoized(value: string): number {
   return parsed;
 }
 
-/**
- * Implements compare timestamp strings for the public runtime surface of this module.
- */
+/** Implements compare timestamp strings for the public runtime surface of this module. */
 export function compareTimestampStrings(left: string, right: string): number {
   const leftMs = parseTimestampMsMemoized(left);
   const rightMs = parseTimestampMsMemoized(right);
-  if (Number.isFinite(leftMs) && Number.isFinite(rightMs) && leftMs !== rightMs) {
+  if (
+    Number.isFinite(leftMs) &&
+    Number.isFinite(rightMs) &&
+    leftMs !== rightMs
+  ) {
     return leftMs - rightMs;
   }
   return left.localeCompare(right);
+}
+
+/** Timestamp-bearing record accepted by shared inclusive bound filtering. */
+export interface TimestampedRecord {
+  /** Optional deadline timestamp. */
+  deadline?: string;
+  /** Last-update timestamp. */
+  updated_at: string;
+  /** Creation timestamp. */
+  created_at: string;
+}
+
+/** Inclusive timestamp bounds shared by list and search filtering. */
+export interface TimestampFilterBounds {
+  /** Inclusive upper deadline bound. */
+  deadlineBefore?: string;
+  /** Inclusive lower deadline bound. */
+  deadlineAfter?: string;
+  /** Inclusive lower update-time bound. */
+  updatedAfter?: string;
+  /** Inclusive upper update-time bound. */
+  updatedBefore?: string;
+  /** Inclusive lower creation-time bound. */
+  createdAfter?: string;
+  /** Inclusive upper creation-time bound. */
+  createdBefore?: string;
+}
+
+/** Return whether a timestamp-bearing record satisfies every configured bound. */
+export function matchesTimestampFilters(
+  item: TimestampedRecord,
+  filters: TimestampFilterBounds,
+): boolean {
+  return !(
+    (filters.deadlineBefore &&
+      (!item.deadline ||
+        compareTimestampStrings(item.deadline, filters.deadlineBefore) > 0)) ||
+    (filters.deadlineAfter &&
+      (!item.deadline ||
+        compareTimestampStrings(item.deadline, filters.deadlineAfter) < 0)) ||
+    (filters.updatedAfter &&
+      compareTimestampStrings(item.updated_at, filters.updatedAfter) < 0) ||
+    (filters.updatedBefore &&
+      compareTimestampStrings(item.updated_at, filters.updatedBefore) > 0) ||
+    (filters.createdAfter &&
+      compareTimestampStrings(item.created_at, filters.createdAfter) < 0) ||
+    (filters.createdBefore &&
+      compareTimestampStrings(item.created_at, filters.createdBefore) > 0)
+  );
 }
 
 function normalizeFraction(raw: string | undefined): string {
@@ -77,7 +127,11 @@ function normalizeOffset(raw: string | undefined): string {
   return raw;
 }
 
-function pushTimestampCandidate(candidates: string[], input: string, value: string | undefined): void {
+function pushTimestampCandidate(
+  candidates: string[],
+  input: string,
+  value: string | undefined,
+): void {
   if (!value) return;
   if (value === input) return;
   if (candidates.includes(value)) return;
@@ -86,7 +140,8 @@ function pushTimestampCandidate(candidates: string[], input: string, value: stri
 
 function normalizeTimestampCandidates(input: string): string[] {
   const candidates: string[] = [];
-  const push = (value: string | undefined): void => pushTimestampCandidate(candidates, input, value);
+  const push = (value: string | undefined): void =>
+    pushTimestampCandidate(candidates, input, value);
 
   const compactDate = COMPACT_DATE.exec(input);
   if (compactDate) {
@@ -96,7 +151,17 @@ function normalizeTimestampCandidates(input: string): string[] {
 
   const compactDateTime = COMPACT_DATETIME.exec(input);
   if (compactDateTime) {
-    const [, year, month, day, hour, minute, secondRaw, fractionRaw, offsetRaw] = compactDateTime;
+    const [
+      ,
+      year,
+      month,
+      day,
+      hour,
+      minute,
+      secondRaw,
+      fractionRaw,
+      offsetRaw,
+    ] = compactDateTime;
     const second = secondRaw ? `:${secondRaw}` : "";
     push(
       `${year}-${month}-${day}T${hour}:${minute}${second}${normalizeFraction(fractionRaw)}${normalizeOffset(offsetRaw)}`,
@@ -105,16 +170,22 @@ function normalizeTimestampCandidates(input: string): string[] {
 
   const hyphenTime = HYPHEN_TIME.exec(input);
   if (hyphenTime) {
-    const [, datePart, hour, minute, secondRaw, fractionRaw, offsetRaw] = hyphenTime;
+    const [, datePart, hour, minute, secondRaw, fractionRaw, offsetRaw] =
+      hyphenTime;
     const second = secondRaw ? `:${secondRaw}` : "";
-    push(`${datePart}T${hour}:${minute}${second}${normalizeFraction(fractionRaw)}${normalizeOffset(offsetRaw)}`);
+    push(
+      `${datePart}T${hour}:${minute}${second}${normalizeFraction(fractionRaw)}${normalizeOffset(offsetRaw)}`,
+    );
   }
 
   const compactTime = COMPACT_TIME.exec(input);
   if (compactTime) {
-    const [, datePart, hour, minute, secondRaw, fractionRaw, offsetRaw] = compactTime;
+    const [, datePart, hour, minute, secondRaw, fractionRaw, offsetRaw] =
+      compactTime;
     const second = secondRaw ? `:${secondRaw}` : "";
-    push(`${datePart}T${hour}:${minute}${second}${normalizeFraction(fractionRaw)}${normalizeOffset(offsetRaw)}`);
+    push(
+      `${datePart}T${hour}:${minute}${second}${normalizeFraction(fractionRaw)}${normalizeOffset(offsetRaw)}`,
+    );
   }
 
   const datePrefixLength = 10;
@@ -206,16 +277,14 @@ const MONTH_NAMES = [
 const LEADING_HYPHEN_DATE = /^(\d{4})-(\d{2})-(\d{2})/;
 const LEADING_COMPACT_DATE = /^(\d{4})(\d{2})(\d{2})(?:[T ]?\d{2}|$)/;
 
-/**
- * Reject literal calendar dates whose day cannot exist (e.g. `2026-02-30`, which JS
- * `Date` silently rolls forward to March 2). Without this, agents that pass an
- * impossible deadline get a silently-wrong stored date instead of an actionable
- * error. Only triggers on a leading literal date; relative tokens, "now", and pure
- * times are untouched. Month 00 / >12 is also rejected with a clear message rather
- * than falling through to the generic "invalid value" path.
- */
-function assertRealCalendarDate(originalInput: string, trimmed: string, fieldLabel: string): void {
-  const match = LEADING_HYPHEN_DATE.exec(trimmed) ?? LEADING_COMPACT_DATE.exec(trimmed);
+/** Reject literal calendar dates whose day cannot exist (e.g. `2026-02-30`, which JS `Date` silently rolls forward to March 2). Without this, agents that pass an impossible deadline get a silently-wrong stored date instead of an actionable error. Only triggers on a leading literal date; relative tokens, "now", and pure times are untouched. Month 00 / >12 is also rejected with a clear message rather than falling through to the generic "invalid value" path. */
+function assertRealCalendarDate(
+  originalInput: string,
+  trimmed: string,
+  fieldLabel: string,
+): void {
+  const match =
+    LEADING_HYPHEN_DATE.exec(trimmed) ?? LEADING_COMPACT_DATE.exec(trimmed);
   if (!match) {
     return;
   }
@@ -242,16 +311,15 @@ function addUtcMonths(now: Date, amount: number): Date {
   const result = new Date(now.getTime());
   const startDay = result.getUTCDate();
   const targetMonthIndex = result.getUTCMonth() + amount;
-  const targetYear = result.getUTCFullYear() + Math.floor(targetMonthIndex / 12);
+  const targetYear =
+    result.getUTCFullYear() + Math.floor(targetMonthIndex / 12);
   const targetMonth = ((targetMonthIndex % 12) + 12) % 12;
   const day = Math.min(startDay, daysInUtcMonth(targetYear, targetMonth));
   result.setUTCFullYear(targetYear, targetMonth, day);
   return result;
 }
 
-/**
- * Implements resolve iso or relative for the public runtime surface of this module.
- */
+/** Implements resolve iso or relative for the public runtime surface of this module. */
 export function resolveIsoOrRelative(
   input: string,
   now: Date = new Date(),
@@ -269,7 +337,12 @@ export function resolveIsoOrRelative(
     if (unit === "m") {
       return addUtcMonths(now, amount).toISOString();
     }
-    const msPerUnit = unit === "h" ? 60 * 60 * 1000 : unit === "d" ? 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+    const msPerUnit =
+      unit === "h"
+        ? 60 * 60 * 1000
+        : unit === "d"
+          ? 24 * 60 * 60 * 1000
+          : 7 * 24 * 60 * 60 * 1000;
     return new Date(now.getTime() + amount * msPerUnit).toISOString();
   }
 
@@ -277,7 +350,8 @@ export function resolveIsoOrRelative(
 
   const timestamp = parseTimestampWithFallbacks(trimmed);
   if (!Number.isFinite(timestamp)) {
-    const normalizedLabel = fieldLabel.trim().length > 0 ? fieldLabel.trim() : "deadline";
+    const normalizedLabel =
+      fieldLabel.trim().length > 0 ? fieldLabel.trim() : "deadline";
     const guidance = COMPOUND_RELATIVE_DEADLINE.test(trimmed)
       ? "Compound relative expressions like +3d+1h are not supported; use a single relative token (for example +3d) or an ISO/date string."
       : 'Use ISO/date string input, "now", or relative +6h/-6h/+1d/-1d/+2w/-2w/+6m/-6m.';
@@ -289,6 +363,7 @@ export function resolveIsoOrRelative(
   return new Date(timestamp).toISOString();
 }
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   normalizeOffset,
   pushTimestampCandidate,

@@ -59,12 +59,14 @@ const LIST_BOOLEAN_FILTER_KEYS = [
 ] as const satisfies readonly (keyof ListOptions)[];
 
 function isActiveListFilterValue(value: unknown): boolean {
-  return value != null && (typeof value !== "string" || value.split(",").some((entry) => entry.trim().length > 0));
+  return (
+    value != null &&
+    (typeof value !== "string" ||
+      value.split(",").some((entry) => entry.trim().length > 0))
+  );
 }
 
-/**
- * Implements check whether list filters for the public runtime surface of this module.
- */
+/** Implements check whether list filters for the public runtime surface of this module. */
 export function hasListFilters(
   list: ListOptions | undefined,
   status: string | undefined,
@@ -77,13 +79,12 @@ export function hasListFilters(
     ...(includePagination ? [list?.limit, list?.offset] : []),
   ];
   return (
-    valueCandidates.some(isActiveListFilterValue) || LIST_BOOLEAN_FILTER_KEYS.some((key) => list?.[key] === true)
+    valueCandidates.some(isActiveListFilterValue) ||
+    LIST_BOOLEAN_FILTER_KEYS.some((key) => list?.[key] === true)
   );
 }
 
-/**
- * Restricts list query filters values accepted by command, SDK, and storage contracts.
- */
+/** Restricts list query filters values accepted by command, SDK, and storage contracts. */
 export type ListQueryFilters = Pick<
   ListOptions,
   | "type"
@@ -98,9 +99,7 @@ export type ListQueryFilters = Pick<
   | "release"
 >;
 
-/**
- * Implements build list query filters for the public runtime surface of this module.
- */
+/** Implements build list query filters for the public runtime surface of this module. */
 export function buildListQueryFilters(filters: ListQueryFilters): ListOptions {
   return {
     type: filters.type,

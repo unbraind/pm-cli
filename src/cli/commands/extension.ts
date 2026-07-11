@@ -9,7 +9,12 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { activateExtensions, createSerialQueue, loadExtensions, nextExtensionReloadToken } from "../../core/extensions/index.js";
+import {
+  activateExtensions,
+  createSerialQueue,
+  loadExtensions,
+  nextExtensionReloadToken,
+} from "../../core/extensions/index.js";
 import { resolveExtensionRoots } from "../../core/extensions/loader.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
@@ -96,9 +101,7 @@ const EXTENSION_INSTALL_LOCK_ATTEMPTS = 120;
 const EXTENSION_INSTALL_LOCK_DELAY_MS = 250;
 const EXTENSION_INSTALL_LOCK_STALE_MS = 120_000;
 
-/**
- * Restricts extension command action values accepted by command, SDK, and storage contracts.
- */
+/** Restricts extension command action values accepted by command, SDK, and storage contracts. */
 export type ExtensionCommandAction =
   | "install"
   | "uninstall"
@@ -130,9 +133,15 @@ const LIFECYCLE_ACTION_TARGETS = [
   ["adopt-all", "adopt-all", "--adopt-all"],
   ["activate", "activate", "--activate"],
   ["deactivate", "deactivate", "--deactivate"],
-] as const satisfies readonly (readonly [string, ExtensionCommandAction, `--${string}`])[];
+] as const satisfies readonly (readonly [
+  string,
+  ExtensionCommandAction,
+  `--${string}`,
+])[];
 
-const LIFECYCLE_ACTION_FLAG_HINT = LIFECYCLE_ACTION_TARGETS.map(([, , flag]) => flag)
+const LIFECYCLE_ACTION_FLAG_HINT = LIFECYCLE_ACTION_TARGETS.map(
+  ([, , flag]) => flag,
+)
   .filter((flag, index, flags) => flags.indexOf(flag) === index)
   .join(", ");
 const LIFECYCLE_ACTION_FLAGS: Record<ExtensionCommandAction, `--${string}`> = {
@@ -150,146 +159,227 @@ const LIFECYCLE_ACTION_FLAGS: Record<ExtensionCommandAction, `--${string}`> = {
   deactivate: "--deactivate",
   init: "--init",
 };
-/**
- * Restricts extension scope values accepted by command, SDK, and storage contracts.
- */
+/** Restricts extension scope values accepted by command, SDK, and storage contracts. */
 export type ExtensionScope = "project" | "global";
-/**
- * Restricts extension activation status values accepted by command, SDK, and storage contracts.
- */
-export type ExtensionActivationStatus = "ok" | "failed" | "not_loaded" | "unknown";
+/** Restricts extension activation status values accepted by command, SDK, and storage contracts. */
+export type ExtensionActivationStatus =
+  | "ok"
+  | "failed"
+  | "not_loaded"
+  | "unknown";
 
-/**
- * Documents the extension command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the extension command options payload exchanged by command, SDK, and package integrations. */
 export interface ExtensionCommandOptions {
+  /** Value that configures or reports install for this contract. */
   install?: boolean;
+  /** Value that configures or reports uninstall for this contract. */
   uninstall?: boolean;
+  /** Value that configures or reports explore for this contract. */
   explore?: boolean;
+  /** Value that configures or reports manage for this contract. */
   manage?: boolean;
+  /** Value that configures or reports describe for this contract. */
   describe?: boolean;
+  /** Value that configures or reports markdown for this contract. */
   markdown?: boolean;
+  /** Value that configures or reports output for this contract. */
   output?: string;
+  /** Value that configures or reports reload for this contract. */
   reload?: boolean;
+  /** Value that configures or reports doctor for this contract. */
   doctor?: boolean;
+  /** Value that configures or reports catalog for this contract. */
   catalog?: boolean;
+  /** Value that configures or reports init for this contract. */
   init?: boolean;
+  /** Value that configures or reports scaffold for this contract. */
   scaffold?: boolean;
+  /** Value that configures or reports strict exit for this contract. */
   strictExit?: boolean;
+  /** Value that configures or reports fail on warn for this contract. */
   failOnWarn?: boolean;
+  /** Value that configures or reports adopt for this contract. */
   adopt?: boolean;
+  /** Value that configures or reports adopt all for this contract. */
   adoptAll?: boolean;
+  /** Registers this package's commands, actions, and runtime hooks with the host. */
   activate?: boolean;
+  /** Value that configures or reports deactivate for this contract. */
   deactivate?: boolean;
+  /** Value that configures or reports project for this contract. */
   project?: boolean;
+  /** Value that configures or reports local for this contract. */
   local?: boolean;
+  /** Value that configures or reports global for this contract. */
   global?: boolean;
+  /** Value that configures or reports gh for this contract. */
   gh?: string;
+  /** Value that configures or reports github for this contract. */
   github?: string;
+  /** Value that configures or reports ref for this contract. */
   ref?: string;
+  /** Value that configures or reports detail for this contract. */
   detail?: string;
+  /** Value that configures or reports trace for this contract. */
   trace?: boolean;
+  /** Value that configures or reports watch for this contract. */
   watch?: boolean;
+  /** Value that configures or reports runtime probe for this contract. */
   runtimeProbe?: boolean;
+  /** Value that configures or reports fix managed state for this contract. */
   fixManagedState?: boolean;
+  /** Value that configures or reports isolated for this contract. */
   isolated?: boolean;
+  /** Value that configures or reports ignore global for this contract. */
   ignoreGlobal?: boolean;
+  /** Value that configures or reports fields for this contract. */
   fields?: string;
+  /** Value that configures or reports capability for this contract. */
   capability?: string;
+  /** Value that configures or reports declarative for this contract. */
   declarative?: boolean;
+  /** Value that configures or reports vocabulary for this contract. */
   vocabulary?: "extension" | "package";
 }
 
-/**
- * Documents the managed extension summary payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the managed extension summary payload exchanged by command, SDK, and package integrations. */
 export interface ManagedExtensionSummary {
+  /** Value that configures or reports name for this contract. */
   name: string;
+  /** Value that configures or reports directory for this contract. */
   directory: string;
+  /** Value that configures or reports version for this contract. */
   version: string;
+  /** Value that configures or reports entry for this contract. */
   entry: string;
+  /** Value that configures or reports scope for this contract. */
   scope: ExtensionScope;
   // Backward-compatible alias for configured enabled state. Prefer `enabled`.
+  /** Value that configures or reports active for this contract. */
   active: boolean;
+  /** Whether enabled applies to this operation. */
   enabled: boolean;
+  /** Value that configures or reports runtime active for this contract. */
   runtime_active: boolean | null;
+  /** Lifecycle state reported for activationthe record. */
   activation_status: ExtensionActivationStatus;
+  /** Value that configures or reports command paths for this contract. */
   command_paths?: string[];
+  /** Value that configures or reports action paths for this contract. */
   action_paths?: string[];
+  /** Value that configures or reports managed for this contract. */
   managed: boolean;
+  /** Value that configures or reports source for this contract. */
   source?: ManagedExtensionSource;
+  /** Value that configures or reports update available for this contract. */
   update_available?: boolean | null;
+  /** ISO 8601 timestamp recording when last update check occurred. */
   last_update_check_at?: string;
+  /** Value that configures or reports last update remote commit for this contract. */
   last_update_remote_commit?: string;
+  /** Value that configures or reports update error for this contract. */
   update_error?: string;
+  /** Lifecycle state reported for update checkthe record. */
   update_check_status: ExtensionUpdateCheckStatus;
+  /** Value that configures or reports update check reason for this contract. */
   update_check_reason: string;
 }
 
-/**
- * Documents the extension command result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the extension command result payload exchanged by command, SDK, and package integrations. */
 export interface ExtensionCommandResult {
+  /** Whether the operation completed without a blocking failure. */
   ok: boolean;
+  /** Value that configures or reports action for this contract. */
   action: ExtensionCommandAction;
+  /** Value that configures or reports scope for this contract. */
   scope: ExtensionScope;
+  /** Value that configures or reports roots for this contract. */
   roots: {
     project: string;
     global: string;
     selected: string;
     settings_root: string;
   };
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** Value that configures or reports details for this contract. */
   details: Record<string, unknown>;
 }
 
 const NATIVE_OUTPUT_MARKER = "__pm_native_output";
 
-/**
- * Documents the extension triage summary payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the extension triage summary payload exchanged by command, SDK, and package integrations. */
 export interface ExtensionTriageSummary {
+  /** Lifecycle state reported for status. */
   status: "ok" | "warn";
+  /** Number of warning entries represented by this result. */
   warning_count: number;
+  /** Value that configures or reports warning codes for this contract. */
   warning_codes: string[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** Number of policy warning entries represented by this result. */
   policy_warning_count: number;
+  /** Number of policy violation entries represented by this result. */
   policy_violation_count: number;
+  /** Number of policy blocked entries represented by this result. */
   policy_blocked_count: number;
+  /** Value that configures or reports total extensions for this contract. */
   total_extensions: number;
+  /** Value that configures or reports managed total for this contract. */
   managed_total: number;
+  /** Value that configures or reports enabled total for this contract. */
   enabled_total: number;
+  /** Value that configures or reports active total for this contract. */
   active_total: number;
+  /** Value that configures or reports update available total for this contract. */
   update_available_total: number;
+  /** Value that configures or reports update health coverage for this contract. */
   update_health_coverage: "full" | "partial";
+  /** Value that configures or reports update health partial for this contract. */
   update_health_partial: boolean;
+  /** Number of unmanaged loaded extension entries represented by this result. */
   unmanaged_loaded_extension_count: number;
+  /** Value that configures or reports unmanaged loaded extensions for this contract. */
   unmanaged_loaded_extensions: string[];
+  /** Number of unmanaged expected extension entries represented by this result. */
   unmanaged_expected_extension_count: number;
+  /** Value that configures or reports unmanaged expected extensions for this contract. */
   unmanaged_expected_extensions: string[];
+  /** Number of unmanaged action required extension entries represented by this result. */
   unmanaged_action_required_extension_count: number;
+  /** Value that configures or reports unmanaged action required extensions for this contract. */
   unmanaged_action_required_extensions: string[];
+  /** Value that configures or reports update check status totals for this contract. */
   update_check_status_totals: Record<ExtensionUpdateCheckStatus, number>;
+  /** Value that configures or reports update check failed total for this contract. */
   update_check_failed_total: number;
+  /** Value that configures or reports top warnings for this contract. */
   top_warnings: string[];
+  /** Value that configures or reports remediation for this contract. */
   remediation: string[];
+  /** Value that configures or reports collision plan for this contract. */
   collision_plan?: ExtensionCollisionPlan;
 }
 
-/**
- * Documents the extension collision plan payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the extension collision plan payload exchanged by command, SDK, and package integrations. */
 export interface ExtensionCollisionPlan {
+  /** Lifecycle state reported for status. */
   status: "ok" | "conflicts_detected";
+  /** Number of collision entries represented by this result. */
   collision_count: number;
+  /** Number of extension entries represented by this result. */
   extension_count: number;
+  /** Value that configures or reports next best command for this contract. */
   next_best_command: string;
+  /** Value that configures or reports collisions for this contract. */
   collisions: Array<{
     code: string;
     surface: string;
     winner: { layer: ExtensionScope; name: string };
     displaced: { layer: ExtensionScope; name: string };
   }>;
+  /** Value that configures or reports remediation candidates for this contract. */
   remediation_candidates: Array<{
     action: "deactivate";
     extension: string;
@@ -302,19 +392,20 @@ export interface ExtensionCollisionPlan {
   }>;
 }
 
-/**
- * Restricts extension update check status values accepted by command, SDK, and storage contracts.
- */
-export type ExtensionUpdateCheckStatus = "checked" | "skipped_unmanaged" | "skipped_non_github" | "failed" | "not_checked";
+/** Restricts extension update check status values accepted by command, SDK, and storage contracts. */
+export type ExtensionUpdateCheckStatus =
+  | "checked"
+  | "skipped_unmanaged"
+  | "skipped_non_github"
+  | "failed"
+  | "not_checked";
 
 interface ExtensionUpdateCheckResolution {
   status: ExtensionUpdateCheckStatus;
   reason: string;
 }
 
-/**
- * Restricts extension doctor detail mode values accepted by command, SDK, and storage contracts.
- */
+/** Restricts extension doctor detail mode values accepted by command, SDK, and storage contracts. */
 export type ExtensionDoctorDetailMode = "summary" | "deep";
 
 const EXTENSION_POLICY_ROOT_LIST_FIELDS = [
@@ -366,8 +457,10 @@ const DEFAULT_EXTENSION_POLICY_DETAILS: PmSettings["extensions"]["policy"] = {
   extension_overrides: [],
 };
 
-type ExtensionPolicyRootListField = (typeof EXTENSION_POLICY_ROOT_LIST_FIELDS)[number];
-type ExtensionPolicyOverrideListField = (typeof EXTENSION_POLICY_OVERRIDE_LIST_FIELDS)[number];
+type ExtensionPolicyRootListField =
+  (typeof EXTENSION_POLICY_ROOT_LIST_FIELDS)[number];
+type ExtensionPolicyOverrideListField =
+  (typeof EXTENSION_POLICY_OVERRIDE_LIST_FIELDS)[number];
 
 interface ExtensionPolicyOverrideDetails {
   name: string;
@@ -432,7 +525,9 @@ function appendNonEmptyPolicyLists(
 }
 
 function buildExtensionPolicyOverrideDetails(
-  override: NonNullable<PmSettings["extensions"]["policy"]["extension_overrides"]>[number],
+  override: NonNullable<
+    PmSettings["extensions"]["policy"]["extension_overrides"]
+  >[number],
 ): ExtensionPolicyOverrideDetails | null {
   const name = typeof override.name === "string" ? override.name.trim() : "";
   if (name.length === 0) {
@@ -458,16 +553,22 @@ function buildExtensionPolicyOverrideDetails(
   return appendNonEmptyPolicyLists(details, lists);
 }
 
-function buildExtensionPolicyDetails(policy: PmSettings["extensions"]["policy"] | null | undefined): ExtensionPolicyDetails {
+function buildExtensionPolicyDetails(
+  policy: PmSettings["extensions"]["policy"] | null | undefined,
+): ExtensionPolicyDetails {
   const safePolicy = policy ?? DEFAULT_EXTENSION_POLICY_DETAILS;
   const rootLists = normalizePolicyRootLists(policy);
   const overrides = (safePolicy.extension_overrides ?? [])
     .map((override) => buildExtensionPolicyOverrideDetails(override))
-    .filter((override): override is ExtensionPolicyOverrideDetails => override !== null)
+    .filter(
+      (override): override is ExtensionPolicyOverrideDetails =>
+        override !== null,
+    )
     .sort((left, right) => left.name.localeCompare(right.name));
   return {
     mode: safePolicy.mode ?? DEFAULT_EXTENSION_POLICY_DETAILS.mode,
-    trust_mode: safePolicy.trust_mode ?? DEFAULT_EXTENSION_POLICY_DETAILS.trust_mode,
+    trust_mode:
+      safePolicy.trust_mode ?? DEFAULT_EXTENSION_POLICY_DETAILS.trust_mode,
     require_provenance: safePolicy.require_provenance === true,
     trusted_extensions: rootLists.trusted_extensions,
     default_sandbox_profile: safePolicy.default_sandbox_profile ?? "none",
@@ -496,7 +597,12 @@ function isRetriableExtensionInstallCopyError(error: unknown): boolean {
 }
 
 function isErrnoCode(error: unknown, code: string): boolean {
-  return typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === code;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === code
+  );
 }
 
 function sleep(ms: number): Promise<void> {
@@ -505,39 +611,47 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
-/**
- * Ensure the installed extension directory carries a `package.json` with
- * `"type": "module"`. Extension entrypoints are ESM TypeScript; without a
- * nearby package.json Node resolves the module type from the HOST project's
- * package.json, so installs into `"type": "commonjs"` projects fail activation
- * with `extension_load_failed` (pm-r0m4). Extensions that ship their own
- * package.json are left untouched.
- */
-async function ensureExtensionModuleTypeMarker(destinationDirectory: string): Promise<void> {
+/** Ensure the installed extension directory carries a `package.json` with `"type": "module"`. Extension entrypoints are ESM TypeScript; without a nearby package.json Node resolves the module type from the HOST project's package.json, so installs into `"type": "commonjs"` projects fail activation with `extension_load_failed` (pm-r0m4). Extensions that ship their own package.json are left untouched. */
+async function ensureExtensionModuleTypeMarker(
+  destinationDirectory: string,
+): Promise<void> {
   const markerPath = path.join(destinationDirectory, "package.json");
   if (await pathExists(markerPath)) {
     return;
   }
-  await fs.writeFile(markerPath, `${JSON.stringify({ type: "module" }, null, 2)}\n`, "utf8");
+  await fs.writeFile(
+    markerPath,
+    `${JSON.stringify({ type: "module" }, null, 2)}\n`,
+    "utf8",
+  );
 }
 
-/**
- * Implements copy extension directory for install for the public runtime surface of this module.
- */
+/** Implements copy extension directory for install for the public runtime surface of this module. */
 export async function copyExtensionDirectoryForInstall(
   sourceDirectory: string,
   destinationDirectory: string,
   copyDirectory: typeof fs.cp = fs.cp,
 ): Promise<void> {
-  for (let attempt = 1; attempt <= EXTENSION_INSTALL_COPY_ATTEMPTS; attempt += 1) {
+  for (
+    let attempt = 1;
+    attempt <= EXTENSION_INSTALL_COPY_ATTEMPTS;
+    attempt += 1
+  ) {
     try {
       if (await pathExists(destinationDirectory)) {
         await fs.rm(destinationDirectory, { recursive: true, force: true });
       }
-      await copyExtensionDirectoryWithoutSelfNesting(sourceDirectory, destinationDirectory, copyDirectory);
+      await copyExtensionDirectoryWithoutSelfNesting(
+        sourceDirectory,
+        destinationDirectory,
+        copyDirectory,
+      );
       return;
     } catch (error: unknown) {
-      if (!isRetriableExtensionInstallCopyError(error) || attempt === EXTENSION_INSTALL_COPY_ATTEMPTS) {
+      if (
+        !isRetriableExtensionInstallCopyError(error) ||
+        attempt === EXTENSION_INSTALL_COPY_ATTEMPTS
+      ) {
         throw error;
       }
       await sleep(EXTENSION_INSTALL_LOCK_DELAY_MS);
@@ -556,15 +670,26 @@ async function copyExtensionDirectoryWithoutSelfNesting(
     return;
   }
   if (!isPathWithinDirectory(resolvedSource, resolvedDestination)) {
-    await copyDirectory(sourceDirectory, destinationDirectory, { recursive: true, force: true });
+    await copyDirectory(sourceDirectory, destinationDirectory, {
+      recursive: true,
+      force: true,
+    });
     return;
   }
 
-  const stagingRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-extension-copy-"));
+  const stagingRoot = await fs.mkdtemp(
+    path.join(os.tmpdir(), "pm-extension-copy-"),
+  );
   const stagedDirectory = path.join(stagingRoot, "extension");
   try {
-    await copyDirectory(sourceDirectory, stagedDirectory, { recursive: true, force: true });
-    await copyDirectory(stagedDirectory, destinationDirectory, { recursive: true, force: true });
+    await copyDirectory(sourceDirectory, stagedDirectory, {
+      recursive: true,
+      force: true,
+    });
+    await copyDirectory(stagedDirectory, destinationDirectory, {
+      recursive: true,
+      force: true,
+    });
   } finally {
     await fs.rm(stagingRoot, { recursive: true, force: true });
   }
@@ -580,12 +705,25 @@ async function withExtensionInstallLock<T>(
     stale_ms?: number;
   },
 ): Promise<T> {
-  const lockRoot = path.join(settingsRoot, "runtime", "extension-install-locks");
+  const lockRoot = path.join(
+    settingsRoot,
+    "runtime",
+    "extension-install-locks",
+  );
   const lockPath = path.join(lockRoot, `${destinationDirectoryName}.lock`);
   await fs.mkdir(lockRoot, { recursive: true });
-  const attempts = Math.max(1, Math.floor(options?.attempts ?? EXTENSION_INSTALL_LOCK_ATTEMPTS));
-  const delayMs = Math.max(0, Math.floor(options?.delay_ms ?? EXTENSION_INSTALL_LOCK_DELAY_MS));
-  const staleMs = Math.max(0, Math.floor(options?.stale_ms ?? EXTENSION_INSTALL_LOCK_STALE_MS));
+  const attempts = Math.max(
+    1,
+    Math.floor(options?.attempts ?? EXTENSION_INSTALL_LOCK_ATTEMPTS),
+  );
+  const delayMs = Math.max(
+    0,
+    Math.floor(options?.delay_ms ?? EXTENSION_INSTALL_LOCK_DELAY_MS),
+  );
+  const staleMs = Math.max(
+    0,
+    Math.floor(options?.stale_ms ?? EXTENSION_INSTALL_LOCK_STALE_MS),
+  );
 
   let acquired = false;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -626,7 +764,9 @@ async function withExtensionInstallLock<T>(
   try {
     return await run();
   } finally {
-    await fs.rm(lockPath, { recursive: true, force: true }).catch(() => undefined);
+    await fs
+      .rm(lockPath, { recursive: true, force: true })
+      .catch(() => undefined);
   }
 }
 
@@ -635,17 +775,28 @@ async function resolveInstalledExtensionCandidate(
   extensionTarget: string,
 ): Promise<ManagedExtensionSummary | undefined> {
   const lookupValues = [extensionTarget];
-  const bundledAliasManifestName = await resolveBundledAliasManifestName(extensionTarget);
+  const bundledAliasManifestName =
+    await resolveBundledAliasManifestName(extensionTarget);
   if (bundledAliasManifestName) {
     lookupValues.push(bundledAliasManifestName);
   }
-  const normalizedLookups = [...new Set(lookupValues.map((value) => normalizeExtensionNameForMatch(value)).filter((value) => value.length > 0))];
+  const normalizedLookups = [
+    ...new Set(
+      lookupValues
+        .map((value) => normalizeExtensionNameForMatch(value))
+        .filter((value) => value.length > 0),
+    ),
+  ];
   for (const lookup of normalizedLookups) {
-    const byName = installed.find((entry) => normalizeExtensionNameForMatch(entry.name) === lookup);
+    const byName = installed.find(
+      (entry) => normalizeExtensionNameForMatch(entry.name) === lookup,
+    );
     if (byName) {
       return byName;
     }
-    const byDirectory = installed.find((entry) => normalizeExtensionNameForMatch(entry.directory) === lookup);
+    const byDirectory = installed.find(
+      (entry) => normalizeExtensionNameForMatch(entry.directory) === lookup,
+    );
     if (byDirectory) {
       return byDirectory;
     }
@@ -676,11 +827,17 @@ function ensureActivated(settings: PmSettings, name: string): boolean {
   if (enabled.size > 0) {
     enabled.add(normalizedName);
   }
-  settings.extensions.enabled = [...enabled].sort((left, right) => left.localeCompare(right));
-  settings.extensions.disabled = [...disabled].sort((left, right) => left.localeCompare(right));
+  settings.extensions.enabled = [...enabled].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  settings.extensions.disabled = [...disabled].sort((left, right) =>
+    left.localeCompare(right),
+  );
   return (
-    settings.extensions.enabled.join("\u0000") !== previousEnabled.join("\u0000") ||
-    settings.extensions.disabled.join("\u0000") !== previousDisabled.join("\u0000")
+    settings.extensions.enabled.join("\u0000") !==
+      previousEnabled.join("\u0000") ||
+    settings.extensions.disabled.join("\u0000") !==
+      previousDisabled.join("\u0000")
   );
 }
 
@@ -692,11 +849,17 @@ function ensureDeactivated(settings: PmSettings, name: string): boolean {
   const previousDisabled = [...disabled];
   enabled.delete(normalizedName);
   disabled.add(normalizedName);
-  settings.extensions.enabled = [...enabled].sort((left, right) => left.localeCompare(right));
-  settings.extensions.disabled = [...disabled].sort((left, right) => left.localeCompare(right));
+  settings.extensions.enabled = [...enabled].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  settings.extensions.disabled = [...disabled].sort((left, right) =>
+    left.localeCompare(right),
+  );
   return (
-    settings.extensions.enabled.join("\u0000") !== previousEnabled.join("\u0000") ||
-    settings.extensions.disabled.join("\u0000") !== previousDisabled.join("\u0000")
+    settings.extensions.enabled.join("\u0000") !==
+      previousEnabled.join("\u0000") ||
+    settings.extensions.disabled.join("\u0000") !==
+      previousDisabled.join("\u0000")
   );
 }
 
@@ -708,24 +871,42 @@ function clearExtensionState(settings: PmSettings, name: string): boolean {
   const previousDisabled = [...disabled];
   enabled.delete(normalizedName);
   disabled.delete(normalizedName);
-  settings.extensions.enabled = [...enabled].sort((left, right) => left.localeCompare(right));
-  settings.extensions.disabled = [...disabled].sort((left, right) => left.localeCompare(right));
+  settings.extensions.enabled = [...enabled].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  settings.extensions.disabled = [...disabled].sort((left, right) =>
+    left.localeCompare(right),
+  );
   return (
-    settings.extensions.enabled.join("\u0000") !== previousEnabled.join("\u0000") ||
-    settings.extensions.disabled.join("\u0000") !== previousDisabled.join("\u0000")
+    settings.extensions.enabled.join("\u0000") !==
+      previousEnabled.join("\u0000") ||
+    settings.extensions.disabled.join("\u0000") !==
+      previousDisabled.join("\u0000")
   );
 }
 
-function suggestLifecycleActionTarget(target: string): { action: ExtensionCommandAction; flag: `--${string}` } | null {
+function suggestLifecycleActionTarget(
+  target: string,
+): { action: ExtensionCommandAction; flag: `--${string}` } | null {
   const normalizedTarget = target.trim().toLowerCase();
-  const exactMatch = LIFECYCLE_ACTION_TARGETS.find(([candidate]) => candidate === normalizedTarget);
+  const exactMatch = LIFECYCLE_ACTION_TARGETS.find(
+    ([candidate]) => candidate === normalizedTarget,
+  );
   if (exactMatch) {
     return { action: exactMatch[1], flag: exactMatch[2] };
   }
   const maxDistance = normalizedTarget.length <= 4 ? 1 : 2;
-  let nearest: { action: ExtensionCommandAction; flag: `--${string}`; distance: number } | null = null;
+  let nearest: {
+    action: ExtensionCommandAction;
+    flag: `--${string}`;
+    distance: number;
+  } | null = null;
   for (const [candidate, action, flag] of LIFECYCLE_ACTION_TARGETS) {
-    const distance = levenshteinDistanceWithinLimit(normalizedTarget, candidate, maxDistance);
+    const distance = levenshteinDistanceWithinLimit(
+      normalizedTarget,
+      candidate,
+      maxDistance,
+    );
     if (distance === null) {
       continue;
     }
@@ -737,10 +918,15 @@ function suggestLifecycleActionTarget(target: string): { action: ExtensionComman
       nearest = { action, flag, distance };
     }
   }
-  return nearest === null ? null : { action: nearest.action, flag: nearest.flag };
+  return nearest === null
+    ? null
+    : { action: nearest.action, flag: nearest.flag };
 }
 
-function buildUnknownLifecycleActionError(target: string, options: ExtensionCommandOptions): PmCliError {
+function buildUnknownLifecycleActionError(
+  target: string,
+  options: ExtensionCommandOptions,
+): PmCliError {
   const noun = options.vocabulary === "package" ? "package" : "extension";
   const suggestion = suggestLifecycleActionTarget(target);
   if (!suggestion) {
@@ -790,16 +976,15 @@ const EXTENSION_ACTION_FLAG_SELECTORS = [
   ["adoptAll", "adopt-all"],
   ["activate", "activate"],
   ["deactivate", "deactivate"],
-] as const satisfies readonly (readonly [keyof ExtensionCommandOptions, ExtensionCommandAction])[];
+] as const satisfies readonly (readonly [
+  keyof ExtensionCommandOptions,
+  ExtensionCommandAction,
+])[];
 
-/**
- * Map a bare positional token (already trimmed and lower-cased) to the lifecycle
- * action it implies for `pm extension <token>` / `pm package <token>`: the
- * `doctor`/`reload`/`catalog`/`init`/`scaffold`/`explore`/`manage` keywords, with
- * `list` and the empty string both meaning `explore`. Returns `null` for anything
- * else so the caller can raise a did-you-mean error.
- */
-function resolveImplicitActionFromTarget(normalizedTarget: string): ExtensionCommandAction | null {
+/** Map a bare positional token (already trimmed and lower-cased) to the lifecycle action it implies for `pm extension <token>` / `pm package <token>`: the `doctor`/`reload`/`catalog`/`init`/`scaffold`/`explore`/`manage` keywords, with `list` and the empty string both meaning `explore`. Returns `null` for anything else so the caller can raise a did-you-mean error. */
+function resolveImplicitActionFromTarget(
+  normalizedTarget: string,
+): ExtensionCommandAction | null {
   if (normalizedTarget === "doctor") {
     return "doctor";
   }
@@ -824,24 +1009,34 @@ function resolveImplicitActionFromTarget(normalizedTarget: string): ExtensionCom
   return null;
 }
 
-function resolveAction(target: string | undefined, options: ExtensionCommandOptions): ExtensionCommandAction {
+function resolveAction(
+  target: string | undefined,
+  options: ExtensionCommandOptions,
+): ExtensionCommandAction {
   const selected = [
     ...new Set(
-      EXTENSION_ACTION_FLAG_SELECTORS.filter(([flag]) => options[flag] === true).map(([, mappedAction]) => mappedAction),
+      EXTENSION_ACTION_FLAG_SELECTORS.filter(
+        ([flag]) => options[flag] === true,
+      ).map(([, mappedAction]) => mappedAction),
     ),
   ];
   if (selected.length === 0) {
     if (target === undefined) {
       return "explore";
     }
-    const implicitAction = resolveImplicitActionFromTarget(target.trim().toLowerCase());
+    const implicitAction = resolveImplicitActionFromTarget(
+      target.trim().toLowerCase(),
+    );
     if (implicitAction) {
       return implicitAction;
     }
     throw buildUnknownLifecycleActionError(target, options);
   }
   if (selected.length > 1) {
-    throw new PmCliError("Extension action flags are mutually exclusive.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Extension action flags are mutually exclusive.",
+      EXIT_CODE.USAGE,
+    );
   }
   return selected[0];
 }
@@ -850,11 +1045,16 @@ function resolveScope(options: ExtensionCommandOptions): ExtensionScope {
   const projectLike = options.project === true || options.local === true;
   const global = options.global === true;
   if (projectLike && global) {
-    throw new PmCliError('Options "--project/--local" and "--global" are mutually exclusive.', EXIT_CODE.USAGE);
+    throw new PmCliError(
+      'Options "--project/--local" and "--global" are mutually exclusive.',
+      EXIT_CODE.USAGE,
+    );
   }
   return global ? "global" : "project";
 }
-function resolveUpdateCheckResolution(managedEntry: ManagedExtensionRecord | undefined): ExtensionUpdateCheckResolution {
+function resolveUpdateCheckResolution(
+  managedEntry: ManagedExtensionRecord | undefined,
+): ExtensionUpdateCheckResolution {
   if (!managedEntry) {
     return {
       status: "skipped_unmanaged",
@@ -867,14 +1067,20 @@ function resolveUpdateCheckResolution(managedEntry: ManagedExtensionRecord | und
       reason: `managed_source_kind_${managedEntry.source.kind}`,
     };
   }
-  const updateError = typeof managedEntry.update_error === "string" ? managedEntry.update_error.trim() : "";
+  const updateError =
+    typeof managedEntry.update_error === "string"
+      ? managedEntry.update_error.trim()
+      : "";
   if (updateError.length > 0) {
     return {
       status: "failed",
       reason: updateError,
     };
   }
-  if (typeof managedEntry.last_update_check_at === "string" && managedEntry.last_update_check_at.trim().length > 0) {
+  if (
+    typeof managedEntry.last_update_check_at === "string" &&
+    managedEntry.last_update_check_at.trim().length > 0
+  ) {
     if (managedEntry.update_available === true) {
       return {
         status: "checked",
@@ -906,7 +1112,13 @@ function resolveUpdateCheckResolution(managedEntry: ManagedExtensionRecord | und
  * `activation_status: "unknown"`) so a later runtime probe can overlay live state.
  */
 function buildInstalledExtensionSummary(
-  identity: { name: string; directory: string; version: string; entry: string; enabled: boolean },
+  identity: {
+    name: string;
+    directory: string;
+    version: string;
+    entry: string;
+    enabled: boolean;
+  },
   scope: ExtensionScope,
   managedEntry: ManagedExtensionRecord | undefined,
   updateCheck: ExtensionUpdateCheckResolution,
@@ -954,8 +1166,14 @@ async function listInstalledExtensions(
   const managedByName = new Map<string, ManagedExtensionRecord>();
   const managedByDirectory = new Map<string, ManagedExtensionRecord>();
   for (const managedEntry of state.entries) {
-    managedByName.set(normalizeExtensionNameForMatch(managedEntry.name), managedEntry);
-    managedByDirectory.set(normalizeExtensionNameForMatch(managedEntry.directory), managedEntry);
+    managedByName.set(
+      normalizeExtensionNameForMatch(managedEntry.name),
+      managedEntry,
+    );
+    managedByDirectory.set(
+      normalizeExtensionNameForMatch(managedEntry.directory),
+      managedEntry,
+    );
   }
 
   const warnings: string[] = [];
@@ -965,7 +1183,9 @@ async function listInstalledExtensions(
     const manifestPath = path.join(extensionDirectory, "manifest.json");
     if (!(await pathExists(manifestPath))) {
       warnings.push(`extension_manifest_missing:${scope}:${directoryName}`);
-      const managedEntry = managedByDirectory.get(normalizeExtensionNameForMatch(directoryName));
+      const managedEntry = managedByDirectory.get(
+        normalizeExtensionNameForMatch(directoryName),
+      );
       summaries.push(
         buildInstalledExtensionSummary(
           {
@@ -973,7 +1193,9 @@ async function listInstalledExtensions(
             directory: directoryName,
             version: managedEntry?.manifest_version ?? "unknown",
             entry: managedEntry?.manifest_entry ?? "unknown",
-            enabled: managedEntry ? isExtensionEnabled(settings, managedEntry.name) : false,
+            enabled: managedEntry
+              ? isExtensionEnabled(settings, managedEntry.name)
+              : false,
           },
           scope,
           managedEntry,
@@ -985,9 +1207,13 @@ async function listInstalledExtensions(
 
     let rawManifest: unknown;
     try {
-      rawManifest = JSON.parse(await fs.readFile(manifestPath, "utf8")) as unknown;
+      rawManifest = JSON.parse(
+        await fs.readFile(manifestPath, "utf8"),
+      ) as unknown;
     } catch {
-      warnings.push(`extension_manifest_invalid_json:${scope}:${directoryName}`);
+      warnings.push(
+        `extension_manifest_invalid_json:${scope}:${directoryName}`,
+      );
       continue;
     }
     const manifest = parseExtensionManifest(rawManifest);
@@ -1014,7 +1240,9 @@ async function listInstalledExtensions(
     );
   }
   return {
-    extensions: summaries.sort((left, right) => left.name.localeCompare(right.name)),
+    extensions: summaries.sort((left, right) =>
+      left.name.localeCompare(right.name),
+    ),
     warnings: warnings.sort((left, right) => left.localeCompare(right)),
   };
 }
@@ -1024,7 +1252,9 @@ interface GithubUpdateStatus {
   remote_commit?: string;
   error?: string;
 }
-type ActivationFailureEntry = Awaited<ReturnType<typeof activateExtensions>>["failed"][number];
+type ActivationFailureEntry = Awaited<
+  ReturnType<typeof activateExtensions>
+>["failed"][number];
 
 const extensionRuntimeProbeQueue = createSerialQueue();
 
@@ -1051,18 +1281,32 @@ function summarizeRuntimeCommandPathsForExtension(
   installed: ManagedExtensionSummary[],
 ): { command_paths: string[]; action_paths: string[] } {
   const normalizedName = normalizeExtensionNameForMatch(extensionName);
-  const entry = installed.find((candidate) => normalizeExtensionNameForMatch(candidate.name) === normalizedName);
+  const entry = installed.find(
+    (candidate) =>
+      normalizeExtensionNameForMatch(candidate.name) === normalizedName,
+  );
   return {
-    command_paths: [...(entry?.command_paths ?? [])].sort((left, right) => left.localeCompare(right)),
-    action_paths: [...(entry?.action_paths ?? [])].sort((left, right) => left.localeCompare(right)),
+    command_paths: [...(entry?.command_paths ?? [])].sort((left, right) =>
+      left.localeCompare(right),
+    ),
+    action_paths: [...(entry?.action_paths ?? [])].sort((left, right) =>
+      left.localeCompare(right),
+    ),
   };
 }
 
-function resolveCommandDiscoveryPackageName(extensionName: string, source: ManagedExtensionSource): string {
+function resolveCommandDiscoveryPackageName(
+  extensionName: string,
+  source: ManagedExtensionSource,
+): string {
   if (typeof source.package === "string" && source.package.trim().length > 0) {
     return source.package.trim();
   }
-  if (source.kind === "builtin" && typeof source.name === "string" && source.name.trim().length > 0) {
+  if (
+    source.kind === "builtin" &&
+    typeof source.name === "string" &&
+    source.name.trim().length > 0
+  ) {
     return source.name.trim();
   }
   return extensionName;
@@ -1074,11 +1318,18 @@ function buildInstallCommandDiscovery(
   commandSummary: { command_paths: string[]; action_paths: string[] },
   activationFailure?: ActivationFailureDiagnostic,
 ): Record<string, unknown> {
-  const helpCommands = commandSummary.command_paths.map((commandPath) => `pm ${commandPath} --help`);
-  const sdkDependencyMissing = activationFailure?.error.toLowerCase().includes("@unbrained/pm-cli") === true;
-  const nextSteps = commandSummary.command_paths.length > 0
-    ? [...helpCommands]
-    : ["Run pm package doctor --project --detail deep if expected package commands are missing."];
+  const helpCommands = commandSummary.command_paths.map(
+    (commandPath) => `pm ${commandPath} --help`,
+  );
+  const sdkDependencyMissing =
+    activationFailure?.error.toLowerCase().includes("@unbrained/pm-cli") ===
+    true;
+  const nextSteps =
+    commandSummary.command_paths.length > 0
+      ? [...helpCommands]
+      : [
+          "Run pm package doctor --project --detail deep if expected package commands are missing.",
+        ];
   if (sdkDependencyMissing) {
     nextSteps.unshift(
       "Install @unbrained/pm-cli in the target workspace so declarative package runtime imports resolve, then reinstall the package.",
@@ -1095,15 +1346,21 @@ function buildInstallCommandDiscovery(
   };
 }
 
-function summarizeActivationFailureForDiagnostics(failure: ActivationFailureEntry): ActivationFailureDiagnostic {
+function summarizeActivationFailureForDiagnostics(
+  failure: ActivationFailureEntry,
+): ActivationFailureDiagnostic {
   const trace = failure.trace
     ? {
         method: failure.trace.method,
         registration_index: failure.trace.registration_index,
         expected_schema: failure.trace.expected_schema,
         ...(failure.trace.command ? { command: failure.trace.command } : {}),
-        ...(failure.trace.capability ? { capability: failure.trace.capability } : {}),
-        ...(failure.trace.missing_capability ? { missing_capability: failure.trace.missing_capability } : {}),
+        ...(failure.trace.capability
+          ? { capability: failure.trace.capability }
+          : {}),
+        ...(failure.trace.missing_capability
+          ? { missing_capability: failure.trace.missing_capability }
+          : {}),
         ...(failure.trace.hint ? { hint: failure.trace.hint } : {}),
       }
     : undefined;
@@ -1112,16 +1369,24 @@ function summarizeActivationFailureForDiagnostics(failure: ActivationFailureEntr
     name: failure.name,
     entry_path: failure.entry_path,
     error: failure.error,
-    ...(failure.trace?.missing_capability ? { missing_capability: failure.trace.missing_capability } : {}),
+    ...(failure.trace?.missing_capability
+      ? { missing_capability: failure.trace.missing_capability }
+      : {}),
     ...(failure.trace?.hint ? { hint: failure.trace.hint } : {}),
     ...(trace ? { trace } : {}),
   };
 }
 
-function collectActivationFailureDiagnostics(failures: ActivationFailureEntry[]): ActivationFailureDiagnostic[] {
+function collectActivationFailureDiagnostics(
+  failures: ActivationFailureEntry[],
+): ActivationFailureDiagnostic[] {
   return failures
     .map((failure) => summarizeActivationFailureForDiagnostics(failure))
-    .sort((left, right) => `${left.layer}:${left.name}`.localeCompare(`${right.layer}:${right.name}`));
+    .sort((left, right) =>
+      `${left.layer}:${left.name}`.localeCompare(
+        `${right.layer}:${right.name}`,
+      ),
+    );
 }
 
 function findActivationFailureByName(
@@ -1145,9 +1410,14 @@ function resolveInstallRuntimeActivationStatus(
 ): ExtensionActivationStatus {
   const runtimeInstalledExtension = runtimeInstalled.find(
     (entry) =>
-      entry.scope === scope && normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(extensionName),
+      entry.scope === scope &&
+      normalizeExtensionNameForMatch(entry.name) ===
+        normalizeExtensionNameForMatch(extensionName),
   );
-  return runtimeInstalledExtension?.activation_status ?? (installActivationFailure ? "failed" : "unknown");
+  return (
+    runtimeInstalledExtension?.activation_status ??
+    (installActivationFailure ? "failed" : "unknown")
+  );
 }
 
 async function probeRuntimeCommandPathsForInstall(
@@ -1160,11 +1430,16 @@ async function probeRuntimeCommandPathsForInstall(
   warnings: string[];
   activation_failures: ActivationFailureDiagnostic[];
   extensions_disabled: boolean;
-  item_type_registrations: Awaited<ReturnType<typeof activateExtensions>>["registrations"]["item_types"];
+  item_type_registrations: Awaited<
+    ReturnType<typeof activateExtensions>
+  >["registrations"]["item_types"];
 }> {
   return extensionRuntimeProbeQueue.enqueue(async () => {
     const originalPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
-    process.env.PM_CLI_PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+    process.env.PM_CLI_PACKAGE_ROOT = path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "../../..",
+    );
     try {
       const loadResult = await loadExtensions({
         pmRoot,
@@ -1188,7 +1463,11 @@ async function probeRuntimeCommandPathsForInstall(
         ...collectActivationFailureDiagnostics(activationResult.failed),
       ];
       return {
-        installed: applyDoctorRuntimeActivationState(refreshedInstalled, loadResult, activationResult),
+        installed: applyDoctorRuntimeActivationState(
+          refreshedInstalled,
+          loadResult,
+          activationResult,
+        ),
         warnings: [...loadResult.warnings, ...activationResult.warnings],
         activation_failures: runtimeFailures,
         extensions_disabled: loadResult.disabled_by_flag,
@@ -1217,8 +1496,13 @@ async function checkGithubUpdate(
     };
   }
   try {
-    const ref = source.ref && source.ref.trim().length > 0 ? source.ref.trim() : "HEAD";
-    const output = await gitCommandRunner(["ls-remote", source.repository, ref]);
+    const ref =
+      source.ref && source.ref.trim().length > 0 ? source.ref.trim() : "HEAD";
+    const output = await gitCommandRunner([
+      "ls-remote",
+      source.repository,
+      ref,
+    ]);
     const firstLine = output
       .split(/\r?\n/)
       .map((line) => line.trim())
@@ -1283,7 +1567,9 @@ async function adoptUnmanagedExtensions(
   installedExtensions: ManagedExtensionSummary[],
   state: ManagedExtensionState,
 ): Promise<AdoptUnmanagedExtensionsResult> {
-  const unmanagedCandidates = installedExtensions.filter((entry) => !entry.managed);
+  const unmanagedCandidates = installedExtensions.filter(
+    (entry) => !entry.managed,
+  );
   const sortedCandidates = [...unmanagedCandidates].sort((left, right) => {
     const byName = left.name.localeCompare(right.name);
     if (byName !== 0) {
@@ -1331,11 +1617,15 @@ async function adoptUnmanagedExtensions(
     state: nextState,
     adopted_entries: adoptedEntries,
     unmanaged_candidates: sortedCandidates,
-    already_managed_count: installedExtensions.length - unmanagedCandidates.length,
+    already_managed_count:
+      installedExtensions.length - unmanagedCandidates.length,
   };
 }
 
-function resolveExtensionRootsForScope(scope: ExtensionScope, global: GlobalOptions): {
+function resolveExtensionRootsForScope(
+  scope: ExtensionScope,
+  global: GlobalOptions,
+): {
   pm_root: string;
   scope: ExtensionScope;
   settings_root: string;
@@ -1344,7 +1634,8 @@ function resolveExtensionRootsForScope(scope: ExtensionScope, global: GlobalOpti
 } {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const roots = resolveExtensionRoots(pmRoot, process.cwd());
-  const settingsRoot = scope === "global" ? resolveGlobalPmRoot(process.cwd()) : pmRoot;
+  const settingsRoot =
+    scope === "global" ? resolveGlobalPmRoot(process.cwd()) : pmRoot;
   const selectedRoot = scope === "global" ? roots.global : roots.project;
   return {
     pm_root: pmRoot,
@@ -1355,9 +1646,18 @@ function resolveExtensionRootsForScope(scope: ExtensionScope, global: GlobalOpti
   };
 }
 
-function resolveGithubOption(options: ExtensionCommandOptions): string | undefined {
-  if (typeof options.gh === "string" && typeof options.github === "string" && options.gh.trim() !== options.github.trim()) {
-    throw new PmCliError('Options "--gh" and "--github" must match when both are provided.', EXIT_CODE.USAGE);
+function resolveGithubOption(
+  options: ExtensionCommandOptions,
+): string | undefined {
+  if (
+    typeof options.gh === "string" &&
+    typeof options.github === "string" &&
+    options.gh.trim() !== options.github.trim()
+  ) {
+    throw new PmCliError(
+      'Options "--gh" and "--github" must match when both are provided.',
+      EXIT_CODE.USAGE,
+    );
   }
   if (typeof options.gh === "string" && options.gh.trim().length > 0) {
     return options.gh.trim();
@@ -1372,7 +1672,11 @@ function getLifecycleActionFlag(action: ExtensionCommandAction): `--${string}` {
   return LIFECYCLE_ACTION_FLAGS[action];
 }
 
-function requireTarget(target: string | undefined, action: ExtensionCommandAction, options: ExtensionCommandOptions = {}): string {
+function requireTarget(
+  target: string | undefined,
+  action: ExtensionCommandAction,
+  options: ExtensionCommandOptions = {},
+): string {
   const normalized = target?.trim();
   if (!normalized) {
     if (action === "init") {
@@ -1393,7 +1697,11 @@ function requireTarget(target: string | undefined, action: ExtensionCommandActio
       {
         code: "missing_lifecycle_target",
         required: `Provide a ${targetName} target for ${action}.`,
-        examples: [`pm ${noun} ${action} ${commandTarget}`, command, `pm ${noun} --help`],
+        examples: [
+          `pm ${noun} ${action} ${commandTarget}`,
+          command,
+          `pm ${noun} --help`,
+        ],
         recovery: {
           attempted_command: `pm ${noun} ${action}`,
           suggested_retry: command,
@@ -1419,12 +1727,18 @@ function collectGlobalOutputOverrideDoctorWarnings(
     if (entry.service !== "output_format") {
       continue;
     }
-    warnings.push(`extension_output_service_override_global:${entry.service}:${entry.layer}:${entry.name}`);
+    warnings.push(
+      `extension_output_service_override_global:${entry.service}:${entry.layer}:${entry.name}`,
+    );
   }
   for (const entry of activationResult.renderers.overrides) {
-    warnings.push(`extension_output_renderer_override_global:${entry.format}:${entry.layer}:${entry.name}`);
+    warnings.push(
+      `extension_output_renderer_override_global:${entry.format}:${entry.layer}:${entry.name}`,
+    );
   }
-  return [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+  return [...new Set(warnings)].sort((left, right) =>
+    left.localeCompare(right),
+  );
 }
 
 /**
@@ -1449,12 +1763,16 @@ function collectSchemaNarrowActivationDoctorWarnings(
   const schemaContributors = new Set<string>();
   for (const entry of activationResult.registrations.item_types) {
     if (entry.types.length > 0) {
-      schemaContributors.add(`${entry.layer}:${normalizeExtensionNameForMatch(entry.name)}`);
+      schemaContributors.add(
+        `${entry.layer}:${normalizeExtensionNameForMatch(entry.name)}`,
+      );
     }
   }
   for (const entry of activationResult.registrations.item_fields) {
     if (entry.fields.length > 0) {
-      schemaContributors.add(`${entry.layer}:${normalizeExtensionNameForMatch(entry.name)}`);
+      schemaContributors.add(
+        `${entry.layer}:${normalizeExtensionNameForMatch(entry.name)}`,
+      );
     }
   }
   const warnings: string[] = [];
@@ -1462,11 +1780,19 @@ function collectSchemaNarrowActivationDoctorWarnings(
     if ((extension.activation?.commands ?? []).length === 0) {
       continue;
     }
-    if (schemaContributors.has(`${extension.layer}:${normalizeExtensionNameForMatch(extension.name)}`)) {
-      warnings.push(`extension_schema_narrow_activation:${extension.layer}:${extension.name}`);
+    if (
+      schemaContributors.has(
+        `${extension.layer}:${normalizeExtensionNameForMatch(extension.name)}`,
+      )
+    ) {
+      warnings.push(
+        `extension_schema_narrow_activation:${extension.layer}:${extension.name}`,
+      );
     }
   }
-  return [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+  return [...new Set(warnings)].sort((left, right) =>
+    left.localeCompare(right),
+  );
 }
 
 /**
@@ -1483,27 +1809,37 @@ interface ExtensionActionContext {
   warnings: string[];
   options: ExtensionCommandOptions;
   global: GlobalOptions;
-  withResult: (details: Record<string, unknown>, ok?: boolean) => ExtensionCommandResult;
+  withResult: (
+    details: Record<string, unknown>,
+    ok?: boolean,
+  ) => ExtensionCommandResult;
 }
 
-/**
- * Reject option/action combinations that are only meaningful for a specific
- * lifecycle action — `--trace`/`--strict-exit`/`--fail-on-warn` require `--doctor`,
- * `--watch` requires `--reload`, `--runtime-probe` requires `--manage`,
- * `--fix-managed-state` requires `--manage`/`--doctor`, and
- * `--capability`/`--declarative` require `--init`/`--scaffold`. Each guard pairs a
- * "flag is set" predicate with the action(s) that permit it and throws a USAGE
- * error on the first mismatch.
- */
-function assertExtensionActionOptionScope(action: ExtensionCommandAction, options: ExtensionCommandOptions): void {
-  const guards: Array<{ triggered: boolean; allowed: boolean; message: string }> = [
+/** Reject option/action combinations that are only meaningful for a specific lifecycle action — `--trace`/`--strict-exit`/`--fail-on-warn` require `--doctor`, `--watch` requires `--reload`, `--runtime-probe` requires `--manage`, `--fix-managed-state` requires `--manage`/`--doctor`, and `--capability`/`--declarative` require `--init`/`--scaffold`. Each guard pairs a "flag is set" predicate with the action(s) that permit it and throws a USAGE error on the first mismatch. */
+function assertExtensionActionOptionScope(
+  action: ExtensionCommandAction,
+  options: ExtensionCommandOptions,
+): void {
+  const guards: Array<{
+    triggered: boolean;
+    allowed: boolean;
+    message: string;
+  }> = [
     {
       triggered: options.strictExit === true || options.failOnWarn === true,
       allowed: action === "doctor",
       message: "--strict-exit and --fail-on-warn are only valid with --doctor.",
     },
-    { triggered: options.trace === true, allowed: action === "doctor", message: "--trace is only valid with --doctor." },
-    { triggered: options.watch === true, allowed: action === "reload", message: "--watch is only valid with --reload." },
+    {
+      triggered: options.trace === true,
+      allowed: action === "doctor",
+      message: "--trace is only valid with --doctor.",
+    },
+    {
+      triggered: options.watch === true,
+      allowed: action === "reload",
+      message: "--watch is only valid with --reload.",
+    },
     {
       triggered: options.runtimeProbe === true,
       allowed: action === "manage",
@@ -1538,12 +1874,7 @@ function assertExtensionActionOptionScope(action: ExtensionCommandAction, option
 }
 
 /* c8 ignore start -- alias-normalization matrix is covered by resolveAction tests; this only rewrites positional aliases */
-/**
- * Collapse a positional target that merely repeats the action keyword
- * (`pm extension doctor`, `reload`, `catalog`, or `init`/`scaffold`) to
- * `undefined` so the action handlers treat it as "no target" rather than an
- * extension name; otherwise the original target is returned unchanged.
- */
+/** Collapse a positional target that merely repeats the action keyword (`pm extension doctor`, `reload`, `catalog`, or `init`/`scaffold`) to `undefined` so the action handlers treat it as "no target" rather than an extension name; otherwise the original target is returned unchanged. */
 function resolveNormalizedExtensionTarget(
   target: string | undefined,
   action: ExtensionCommandAction,
@@ -1586,29 +1917,41 @@ export async function runExtension(
 ): Promise<ExtensionCommandResult> {
   const action = resolveAction(target, options);
   assertExtensionActionOptionScope(action, options);
-  const normalizedTarget = resolveNormalizedExtensionTarget(target, action, options);
+  const normalizedTarget = resolveNormalizedExtensionTarget(
+    target,
+    action,
+    options,
+  );
   const scope = resolveScope(options);
   const resolvedRoots = resolveExtensionRootsForScope(scope, global);
   const warnings: string[] = [];
-  const withResult = (details: Record<string, unknown>, ok = true): ExtensionCommandResult => {
+  const withResult = (
+    details: Record<string, unknown>,
+    ok = true,
+  ): ExtensionCommandResult => {
     const result: ExtensionCommandResult = {
       ok,
       action,
       scope,
-      roots: action === "catalog" && typeof options.fields === "string" && options.fields.trim().length > 0
-        ? {
-            project: "project",
-            global: "global",
-            selected: scope,
-            settings_root: "project",
-          }
-        : {
-            project: resolvedRoots.roots.project,
-            global: resolvedRoots.roots.global,
-            selected: resolvedRoots.selected_root,
-            settings_root: resolvedRoots.settings_root,
-          },
-      warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
+      roots:
+        action === "catalog" &&
+        typeof options.fields === "string" &&
+        options.fields.trim().length > 0
+          ? {
+              project: "project",
+              global: "global",
+              selected: scope,
+              settings_root: "project",
+            }
+          : {
+              project: resolvedRoots.roots.project,
+              global: resolvedRoots.roots.global,
+              selected: resolvedRoots.selected_root,
+              settings_root: resolvedRoots.settings_root,
+            },
+      warnings: [...new Set(warnings)].sort((left, right) =>
+        left.localeCompare(right),
+      ),
       details,
     };
     if (action === "doctor") {
@@ -1633,11 +1976,19 @@ export async function runExtension(
   return EXTENSION_ACTION_HANDLERS[action](ctx);
 }
 
-async function runExtensionInitAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
+async function runExtensionInitAction(
+  ctx: ExtensionActionContext,
+): Promise<ExtensionCommandResult> {
   const { action, normalizedTarget, options, withResult } = ctx;
   const githubOption = resolveGithubOption(options);
-  if (githubOption !== undefined || (typeof options.ref === "string" && options.ref.trim().length > 0)) {
-    throw new PmCliError('Action "init" does not accept --gh/--github/--ref options.', EXIT_CODE.USAGE);
+  if (
+    githubOption !== undefined ||
+    (typeof options.ref === "string" && options.ref.trim().length > 0)
+  ) {
+    throw new PmCliError(
+      'Action "init" does not accept --gh/--github/--ref options.',
+      EXIT_CODE.USAGE,
+    );
   }
   const scaffoldTarget = requireTarget(normalizedTarget, action, options);
   const scaffold = await scaffoldExtensionProject(
@@ -1650,9 +2001,13 @@ async function runExtensionInitAction(ctx: ExtensionActionContext): Promise<Exte
   // Forward-slash the path for the copy-pasteable `cd` hint: Windows cmd.exe /
   // PowerShell reject the doubled backslashes JSON.stringify emits, while both
   // shells (and POSIX) accept forward slashes.
-  const quotedShellTargetPath = JSON.stringify(scaffold.target_path.replace(/\\/g, "/"));
+  const quotedShellTargetPath = JSON.stringify(
+    scaffold.target_path.replace(/\\/g, "/"),
+  );
   return withResult({
-    scaffolded: scaffold.created_directory || scaffold.files.some((entry) => entry.status === "created"),
+    scaffolded:
+      scaffold.created_directory ||
+      scaffold.files.some((entry) => entry.status === "created"),
     extension: {
       name: scaffold.extension_name,
       command: scaffold.command_name,
@@ -1668,27 +2023,47 @@ async function runExtensionInitAction(ctx: ExtensionActionContext): Promise<Exte
       // >=22.18), so there is no compile/build step — install dependencies, then
       // install the scaffold directly.
       ...(options.vocabulary === "package"
-        ? [`Install dependencies: cd ${quotedShellTargetPath}, then run "npm install"`]
+        ? [
+            `Install dependencies: cd ${quotedShellTargetPath}, then run "npm install"`,
+          ]
         : [
             `Install type-check dependencies: cd ${quotedShellTargetPath}, then run "npm install -D typescript @types/node @unbrained/pm-cli"`,
           ]),
       ...(options.vocabulary === "package" && options.declarative === true
-        ? ["Ensure the target workspace can resolve @unbrained/pm-cli before installing this declarative package."]
+        ? [
+            "Ensure the target workspace can resolve @unbrained/pm-cli before installing this declarative package.",
+          ]
         : []),
       `Install the scaffold: ${options.vocabulary === "package" ? "pm install --project" : "pm extension --install --project"} ${quotedTargetPath}`,
       `Smoke-test command path: pm ${scaffold.command_name}`,
       ...(options.vocabulary === "package"
-        ? [`Validate the package: cd ${quotedShellTargetPath}, then run "npm run typecheck" and "npm test"`]
-        : [`Type-check the source (optional): cd ${quotedShellTargetPath}, then run "npx tsc --noEmit"`]),
+        ? [
+            `Validate the package: cd ${quotedShellTargetPath}, then run "npm run typecheck" and "npm test"`,
+          ]
+        : [
+            `Type-check the source (optional): cd ${quotedShellTargetPath}, then run "npx tsc --noEmit"`,
+          ]),
       `Run diagnostics: ${options.vocabulary === "package" ? "pm package doctor" : "pm extension --doctor"} --project --detail summary`,
     ],
   });
 }
 
-async function runExtensionReloadAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
-  const { normalizedTarget, resolvedRoots, warnings, options, global, withResult } = ctx;
+async function runExtensionReloadAction(
+  ctx: ExtensionActionContext,
+): Promise<ExtensionCommandResult> {
+  const {
+    normalizedTarget,
+    resolvedRoots,
+    warnings,
+    options,
+    global,
+    withResult,
+  } = ctx;
   if (normalizedTarget !== undefined) {
-    throw new PmCliError('Action "reload" does not accept a target argument.', EXIT_CODE.USAGE);
+    throw new PmCliError(
+      'Action "reload" does not accept a target argument.',
+      EXIT_CODE.USAGE,
+    );
   }
   const settings = await readSettings(resolvedRoots.settings_root);
   const reloadToken = nextExtensionReloadToken();
@@ -1711,7 +2086,10 @@ async function runExtensionReloadAction(ctx: ExtensionActionContext): Promise<Ex
     },
     loaded_count: reloaded.loaded.length,
     failed_count: reloaded.failed.length,
-    activated_count: Math.max(0, reloaded.loaded.length - activation.failed.length),
+    activated_count: Math.max(
+      0,
+      reloaded.loaded.length - activation.failed.length,
+    ),
     activation_failed_count: activation.failed.length,
     loaded_extensions: reloaded.loaded.map((entry) => ({
       name: entry.name,
@@ -1730,26 +2108,32 @@ async function runExtensionReloadAction(ctx: ExtensionActionContext): Promise<Ex
     })),
   };
   if (options.watch === true) {
-    warnings.push("extension_reload_watch_hint:watch_mode_requested_non_interactive_single_pass_only");
+    warnings.push(
+      "extension_reload_watch_hint:watch_mode_requested_non_interactive_single_pass_only",
+    );
   }
   return withResult(details);
 }
 
-async function runExtensionCatalogAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
+async function runExtensionCatalogAction(
+  ctx: ExtensionActionContext,
+): Promise<ExtensionCommandResult> {
   const { normalizedTarget, scope, options, global, withResult } = ctx;
-  if (typeof normalizedTarget === "string" && normalizedTarget.length > 0 && normalizedTarget !== "catalog") {
-    throw new PmCliError('Action "catalog" does not accept a package target.', EXIT_CODE.USAGE);
+  if (
+    typeof normalizedTarget === "string" &&
+    normalizedTarget.length > 0 &&
+    normalizedTarget !== "catalog"
+  ) {
+    throw new PmCliError(
+      'Action "catalog" does not accept a package target.',
+      EXIT_CODE.USAGE,
+    );
   }
   return withResult(await buildBundledPackageCatalog(scope, global, options));
 }
 
 /* c8 ignore start -- source-shape branch combinations are exercised in install-source focused tests */
-/**
- * Build the persisted managed-source record for an install from its resolved
- * shape: a bundled builtin alias, a local path, an npm package, or (the default) a
- * GitHub repository, capturing the location/commit/subpath provenance the manage
- * and upgrade flows later read back.
- */
+/** Build the persisted managed-source record for an install from its resolved shape: a bundled builtin alias, a local path, an npm package, or (the default) a GitHub repository, capturing the location/commit/subpath provenance the manage and upgrade flows later read back. */
 function buildInstallManagedSource(
   bundledAliasName: string | null,
   bundledPackageName: string | null,
@@ -1795,13 +2179,7 @@ function buildInstallManagedSource(
 }
 /* c8 ignore stop */
 
-/**
- * Run the install body while holding the per-destination install lock: read
- * settings and managed state, copy the validated extension into the scope root
- * unless it is already installed in place, upsert the managed entry and activation
- * state, scaffold any contributed item-type folders, runtime-probe the freshly
- * installed command paths, and return the install result envelope.
- */
+/** Run the install body while holding the per-destination install lock: read settings and managed state, copy the validated extension into the scope root unless it is already installed in place, upsert the managed entry and activation state, scaffold any contributed item-type folders, runtime-probe the freshly installed command paths, and return the install result envelope. */
 async function performExtensionInstallUnderLock(
   ctx: ExtensionActionContext,
   input: {
@@ -1814,30 +2192,58 @@ async function performExtensionInstallUnderLock(
   },
 ): Promise<ExtensionCommandResult> {
   const { scope, resolvedRoots, warnings, global, withResult } = ctx;
-  const { validated, destinationDirectoryName, bundledAliasName, bundledPackageName, installSource, resolvedSource } = input;
+  const {
+    validated,
+    destinationDirectoryName,
+    bundledAliasName,
+    bundledPackageName,
+    installSource,
+    resolvedSource,
+  } = input;
   const settings = await readSettings(resolvedRoots.settings_root);
-  const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+  const managedStateRead = await readManagedExtensionState(
+    resolvedRoots.selected_root,
+  );
   warnings.push(...managedStateRead.warnings);
-  const destinationDirectory = path.join(resolvedRoots.selected_root, destinationDirectoryName);
+  const destinationDirectory = path.join(
+    resolvedRoots.selected_root,
+    destinationDirectoryName,
+  );
   const destinationExists = await pathExists(destinationDirectory);
-  const installInPlace = await areDirectoriesEquivalent(validated.directory, destinationDirectory);
+  const installInPlace = await areDirectoriesEquivalent(
+    validated.directory,
+    destinationDirectory,
+  );
 
   await fs.mkdir(resolvedRoots.selected_root, { recursive: true });
   if (!installInPlace) {
-    await copyExtensionDirectoryForInstall(validated.directory, destinationDirectory);
+    await copyExtensionDirectoryForInstall(
+      validated.directory,
+      destinationDirectory,
+    );
   }
   await ensureExtensionModuleTypeMarker(destinationDirectory);
 
-  const sourceRecord = buildInstallManagedSource(bundledAliasName, bundledPackageName, installSource, resolvedSource);
+  const sourceRecord = buildInstallManagedSource(
+    bundledAliasName,
+    bundledPackageName,
+    installSource,
+    resolvedSource,
+  );
 
   const now = nowIso();
   const existingManagedEntry = managedStateRead.state.entries.find(
-    (entry) => normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name),
+    (entry) =>
+      normalizeExtensionNameForMatch(entry.name) ===
+      normalizeExtensionNameForMatch(validated.manifest.name),
   );
   const sourceUnchanged =
     existingManagedEntry !== undefined &&
     existingManagedEntry.manifest_version === validated.manifest.version &&
-    managedExtensionSourcesEquivalent(existingManagedEntry.source, sourceRecord);
+    managedExtensionSourcesEquivalent(
+      existingManagedEntry.source,
+      sourceRecord,
+    );
   const managedState = upsertManagedEntry(managedStateRead.state, {
     name: validated.manifest.name,
     directory: destinationDirectoryName,
@@ -1853,9 +2259,18 @@ async function performExtensionInstallUnderLock(
 
   const activationChanged = ensureActivated(settings, validated.manifest.name);
   if (activationChanged) {
-    await writeSettings(resolvedRoots.settings_root, settings, "settings:write");
+    await writeSettings(
+      resolvedRoots.settings_root,
+      settings,
+      "settings:write",
+    );
   }
-  const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
+  const refreshedInstalled = await listInstalledExtensions(
+    resolvedRoots.selected_root,
+    scope,
+    settings,
+    managedState,
+  );
   warnings.push(...refreshedInstalled.warnings);
   const runtimeProbe = await probeRuntimeCommandPathsForInstall(
     resolvedRoots.pm_root,
@@ -1873,12 +2288,26 @@ async function performExtensionInstallUnderLock(
   // belong to; a global install is not tied to one tracker, so its folders are
   // created lazily on first use in each project.
   const installedItemTypeDefinitions = runtimeProbe.item_type_registrations
-    .filter((entry) => normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name))
-    .flatMap((entry) => entry.types.map((type) => ({ name: type.name, folder: type.folder })));
+    .filter(
+      (entry) =>
+        normalizeExtensionNameForMatch(entry.name) ===
+        normalizeExtensionNameForMatch(validated.manifest.name),
+    )
+    .flatMap((entry) =>
+      entry.types.map((type) => ({ name: type.name, folder: type.folder })),
+    );
   if (scope === "project" && installedItemTypeDefinitions.length > 0) {
-    await ensureTypeFolderScaffold(resolvedRoots.pm_root, installedItemTypeDefinitions, warnings, "install:type-folder");
+    await ensureTypeFolderScaffold(
+      resolvedRoots.pm_root,
+      installedItemTypeDefinitions,
+      warnings,
+      "install:type-folder",
+    );
   }
-  const commandSummary = summarizeRuntimeCommandPathsForExtension(validated.manifest.name, runtimeProbe.installed);
+  const commandSummary = summarizeRuntimeCommandPathsForExtension(
+    validated.manifest.name,
+    runtimeProbe.installed,
+  );
   const installActivationFailure = findActivationFailureByName(
     validated.manifest.name,
     runtimeProbe.activation_failures,
@@ -1891,10 +2320,11 @@ async function performExtensionInstallUnderLock(
     installActivationFailure,
   );
   const activated =
-    !runtimeProbe.extensions_disabled &&
-    runtimeActivationStatus !== "failed";
+    !runtimeProbe.extensions_disabled && runtimeActivationStatus !== "failed";
   if (!activated) {
-    warnings.push(`extension_install_activation_failed:${scope}:${validated.manifest.name}:${runtimeActivationStatus}`);
+    warnings.push(
+      `extension_install_activation_failed:${scope}:${validated.manifest.name}:${runtimeActivationStatus}`,
+    );
   }
   const verification = {
     status: activated ? "ok" : "degraded",
@@ -1910,86 +2340,137 @@ async function performExtensionInstallUnderLock(
     },
   };
 
-  return withResult({
-    extension: {
-      name: validated.manifest.name,
-      version: validated.manifest.version,
-      entry: validated.manifest.entry,
-      capabilities: validated.manifest.capabilities,
-      directory: destinationDirectoryName,
+  return withResult(
+    {
+      extension: {
+        name: validated.manifest.name,
+        version: validated.manifest.version,
+        entry: validated.manifest.entry,
+        capabilities: validated.manifest.capabilities,
+        directory: destinationDirectoryName,
+      },
+      source: sourceRecord,
+      destination_path: destinationDirectory,
+      overwritten: destinationExists && !installInPlace,
+      installed_in_place: installInPlace,
+      activated,
+      settings_changed: activationChanged,
+      runtime_activation_status: runtimeActivationStatus,
+      command_paths: commandSummary.command_paths,
+      action_paths: commandSummary.action_paths,
+      command_discovery: buildInstallCommandDiscovery(
+        validated.manifest.name,
+        sourceRecord,
+        commandSummary,
+        installActivationFailure,
+      ),
+      verification,
+      activation_diagnostics: {
+        failed_count: runtimeProbe.activation_failures.length,
+        failed: runtimeProbe.activation_failures,
+        installed_extension_failed: installActivationFailure ?? null,
+      },
     },
-    source: sourceRecord,
-    destination_path: destinationDirectory,
-    overwritten: destinationExists && !installInPlace,
-    installed_in_place: installInPlace,
     activated,
-    settings_changed: activationChanged,
-    runtime_activation_status: runtimeActivationStatus,
-    command_paths: commandSummary.command_paths,
-    action_paths: commandSummary.action_paths,
-    command_discovery: buildInstallCommandDiscovery(
-      validated.manifest.name,
-      sourceRecord,
-      commandSummary,
-      installActivationFailure,
-    ),
-    verification,
-    activation_diagnostics: {
-      failed_count: runtimeProbe.activation_failures.length,
-      failed: runtimeProbe.activation_failures,
-      installed_extension_failed: installActivationFailure ?? null,
-    },
-  }, activated);
+  );
 }
 
-async function runExtensionInstallAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
-  const { action, normalizedTarget, resolvedRoots, warnings, options, global, withResult } = ctx;
+async function runExtensionInstallAction(
+  ctx: ExtensionActionContext,
+): Promise<ExtensionCommandResult> {
+  const {
+    action,
+    normalizedTarget,
+    resolvedRoots,
+    warnings,
+    options,
+    global,
+    withResult,
+  } = ctx;
   const githubOption = resolveGithubOption(options);
-  const explicitSourceInput = githubOption ?? requireTarget(normalizedTarget, action, options);
-  if (typeof githubOption !== "string" && isBundledPackageInstallAllTarget(explicitSourceInput)) {
+  const explicitSourceInput =
+    githubOption ?? requireTarget(normalizedTarget, action, options);
+  if (
+    typeof githubOption !== "string" &&
+    isBundledPackageInstallAllTarget(explicitSourceInput)
+  ) {
     if (typeof options.ref === "string" && options.ref.trim().length > 0) {
-      throw new PmCliError('Action "install all" does not accept --ref.', EXIT_CODE.USAGE);
+      throw new PmCliError(
+        'Action "install all" does not accept --ref.',
+        EXIT_CODE.USAGE,
+      );
     }
     const aliases = await listBundledPackageAliases();
-    const packages: Array<{ alias: string; result: ExtensionCommandResult }> = [];
+    const packages: Array<{ alias: string; result: ExtensionCommandResult }> =
+      [];
     for (const alias of aliases) {
       packages.push({
         alias,
-        result: await runExtension(alias, { ...options, install: true }, global),
+        result: await runExtension(
+          alias,
+          { ...options, install: true },
+          global,
+        ),
       });
     }
     for (const entry of packages) {
       warnings.push(...entry.result.warnings);
     }
     const installedAll = packages.every((entry) => entry.result.ok);
-    return withResult({
-      installed_all: installedAll,
-      installed_count: packages.filter((entry) => entry.result.ok).length,
-      failed_count: packages.filter((entry) => !entry.result.ok).length,
-      packages: packages.map((entry) => ({
-        alias: entry.alias,
-        ok: entry.result.ok,
-        extension: (entry.result.details as { extension?: unknown }).extension,
-        source: (entry.result.details as { source?: unknown }).source,
-        destination_path: (entry.result.details as { destination_path?: unknown }).destination_path,
-        activated: (entry.result.details as { activated?: unknown }).activated,
-        settings_changed: (entry.result.details as { settings_changed?: unknown }).settings_changed,
-        command_paths: (entry.result.details as { command_paths?: unknown }).command_paths,
-        action_paths: (entry.result.details as { action_paths?: unknown }).action_paths,
-        command_discovery: (entry.result.details as { command_discovery?: unknown }).command_discovery,
-        verification: (entry.result.details as { verification?: unknown }).verification,
-        runtime_activation_status: (entry.result.details as { runtime_activation_status?: unknown }).runtime_activation_status,
-        activation_diagnostics: (entry.result.details as { activation_diagnostics?: unknown }).activation_diagnostics,
-        warnings: entry.result.warnings,
-      })),
-    }, installedAll);
+    return withResult(
+      {
+        installed_all: installedAll,
+        installed_count: packages.filter((entry) => entry.result.ok).length,
+        failed_count: packages.filter((entry) => !entry.result.ok).length,
+        packages: packages.map((entry) => ({
+          alias: entry.alias,
+          ok: entry.result.ok,
+          extension: (entry.result.details as { extension?: unknown })
+            .extension,
+          source: (entry.result.details as { source?: unknown }).source,
+          destination_path: (
+            entry.result.details as { destination_path?: unknown }
+          ).destination_path,
+          activated: (entry.result.details as { activated?: unknown })
+            .activated,
+          settings_changed: (
+            entry.result.details as { settings_changed?: unknown }
+          ).settings_changed,
+          command_paths: (entry.result.details as { command_paths?: unknown })
+            .command_paths,
+          action_paths: (entry.result.details as { action_paths?: unknown })
+            .action_paths,
+          command_discovery: (
+            entry.result.details as { command_discovery?: unknown }
+          ).command_discovery,
+          verification: (entry.result.details as { verification?: unknown })
+            .verification,
+          runtime_activation_status: (
+            entry.result.details as { runtime_activation_status?: unknown }
+          ).runtime_activation_status,
+          activation_diagnostics: (
+            entry.result.details as { activation_diagnostics?: unknown }
+          ).activation_diagnostics,
+          warnings: entry.result.warnings,
+        })),
+      },
+      installedAll,
+    );
   }
   /* c8 ignore start -- github/local alias-source split is exercised in install-action integration tests */
   const bundledAliasSource =
-    typeof githubOption === "string" ? null : await resolveBundledExtensionAliasSource(explicitSourceInput);
+    typeof githubOption === "string"
+      ? null
+      : await resolveBundledExtensionAliasSource(explicitSourceInput);
   /* c8 ignore stop */
-  const bundledAliasName = bundledAliasSource === null ? null : explicitSourceInput.trim().toLowerCase();
-  const bundledPackageName = bundledAliasName === null ? null : await resolveBundledPackageNpmName(bundledAliasName);
+  const bundledAliasName =
+    bundledAliasSource === null
+      ? null
+      : explicitSourceInput.trim().toLowerCase();
+  const bundledPackageName =
+    bundledAliasName === null
+      ? null
+      : await resolveBundledPackageNpmName(bundledAliasName);
   const sourceInput = bundledAliasSource ?? explicitSourceInput;
   /* c8 ignore start -- install-source branch combinations are covered in install-sources focused tests */
   const installSource = parseExtensionInstallSource(sourceInput, {
@@ -1999,17 +2480,24 @@ async function runExtensionInstallAction(ctx: ExtensionActionContext): Promise<E
   /* c8 ignore stop */
   const resolvedSource = await resolveInstallSource(installSource);
   try {
-    const validated = await validateExtensionDirectory(resolvedSource.directory);
-    const destinationDirectoryName = normalizeManagedDirectoryName(validated.manifest.name);
-    return await withExtensionInstallLock(resolvedRoots.settings_root, destinationDirectoryName, () =>
-      performExtensionInstallUnderLock(ctx, {
-        validated,
-        destinationDirectoryName,
-        bundledAliasName,
-        bundledPackageName,
-        installSource,
-        resolvedSource,
-      }),
+    const validated = await validateExtensionDirectory(
+      resolvedSource.directory,
+    );
+    const destinationDirectoryName = normalizeManagedDirectoryName(
+      validated.manifest.name,
+    );
+    return await withExtensionInstallLock(
+      resolvedRoots.settings_root,
+      destinationDirectoryName,
+      () =>
+        performExtensionInstallUnderLock(ctx, {
+          validated,
+          destinationDirectoryName,
+          bundledAliasName,
+          bundledPackageName,
+          installSource,
+          resolvedSource,
+        }),
     );
   } finally {
     /* c8 ignore start -- cleanup hooks are only present for transient install sources */
@@ -2020,19 +2508,44 @@ async function runExtensionInstallAction(ctx: ExtensionActionContext): Promise<E
   }
 }
 
-async function runExtensionAdoptAllAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
-  const { normalizedTarget, scope, resolvedRoots, warnings, options, withResult } = ctx;
+async function runExtensionAdoptAllAction(
+  ctx: ExtensionActionContext,
+): Promise<ExtensionCommandResult> {
+  const {
+    normalizedTarget,
+    scope,
+    resolvedRoots,
+    warnings,
+    options,
+    withResult,
+  } = ctx;
   if (normalizedTarget !== undefined) {
-    throw new PmCliError('Action "adopt-all" does not accept a target argument.', EXIT_CODE.USAGE);
+    throw new PmCliError(
+      'Action "adopt-all" does not accept a target argument.',
+      EXIT_CODE.USAGE,
+    );
   }
   const githubOption = resolveGithubOption(options);
-  if (githubOption !== undefined || (typeof options.ref === "string" && options.ref.trim().length > 0)) {
-    throw new PmCliError('Action "adopt-all" does not accept --gh/--github/--ref options.', EXIT_CODE.USAGE);
+  if (
+    githubOption !== undefined ||
+    (typeof options.ref === "string" && options.ref.trim().length > 0)
+  ) {
+    throw new PmCliError(
+      'Action "adopt-all" does not accept --gh/--github/--ref options.',
+      EXIT_CODE.USAGE,
+    );
   }
   const settings = await readSettings(resolvedRoots.settings_root);
-  const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+  const managedStateRead = await readManagedExtensionState(
+    resolvedRoots.selected_root,
+  );
   warnings.push(...managedStateRead.warnings);
-  const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
+  const installed = await listInstalledExtensions(
+    resolvedRoots.selected_root,
+    scope,
+    settings,
+    managedStateRead.state,
+  );
   warnings.push(...installed.warnings);
   const adoption = await adoptUnmanagedExtensions(
     resolvedRoots.selected_root,
@@ -2040,21 +2553,35 @@ async function runExtensionAdoptAllAction(ctx: ExtensionActionContext): Promise<
     installed.extensions,
     managedStateRead.state,
   );
-  const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, adoption.state);
+  const refreshedInstalled = await listInstalledExtensions(
+    resolvedRoots.selected_root,
+    scope,
+    settings,
+    adoption.state,
+  );
   warnings.push(...refreshedInstalled.warnings);
-  const triage = buildExtensionTriageSummary(scope, warnings, refreshedInstalled.extensions, options);
+  const triage = buildExtensionTriageSummary(
+    scope,
+    warnings,
+    refreshedInstalled.extensions,
+    options,
+  );
   warnings.push(...triage.warnings);
   /* c8 ignore start -- refresh-entry optional metadata is display-only and exercised indirectly */
   const adoptedDetails = adoption.adopted_entries.map((entry) => {
     const refreshedEntry =
       refreshedInstalled.extensions.find(
         (candidate) =>
-          normalizeExtensionNameForMatch(candidate.name) === normalizeExtensionNameForMatch(entry.name) &&
-          normalizeExtensionNameForMatch(candidate.directory) === normalizeExtensionNameForMatch(entry.directory),
+          normalizeExtensionNameForMatch(candidate.name) ===
+            normalizeExtensionNameForMatch(entry.name) &&
+          normalizeExtensionNameForMatch(candidate.directory) ===
+            normalizeExtensionNameForMatch(entry.directory),
       ) ??
       /* c8 ignore next 3 -- fallback only matters if a manifest renames between adopt and refresh */
       refreshedInstalled.extensions.find(
-        (candidate) => normalizeExtensionNameForMatch(candidate.directory) === normalizeExtensionNameForMatch(entry.directory),
+        (candidate) =>
+          normalizeExtensionNameForMatch(candidate.directory) ===
+          normalizeExtensionNameForMatch(entry.directory),
       );
     return {
       ...entry,
@@ -2077,18 +2604,41 @@ async function runExtensionAdoptAllAction(ctx: ExtensionActionContext): Promise<
   /* c8 ignore stop */
 }
 
-async function runExtensionAdoptAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
-  const { action, normalizedTarget, scope, resolvedRoots, warnings, options, withResult } = ctx;
+async function runExtensionAdoptAction(
+  ctx: ExtensionActionContext,
+): Promise<ExtensionCommandResult> {
+  const {
+    action,
+    normalizedTarget,
+    scope,
+    resolvedRoots,
+    warnings,
+    options,
+    withResult,
+  } = ctx;
   const extensionTarget = requireTarget(normalizedTarget, action, options);
   const githubOption = resolveGithubOption(options);
   const settings = await readSettings(resolvedRoots.settings_root);
-  const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+  const managedStateRead = await readManagedExtensionState(
+    resolvedRoots.selected_root,
+  );
   warnings.push(...managedStateRead.warnings);
-  const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
+  const installed = await listInstalledExtensions(
+    resolvedRoots.selected_root,
+    scope,
+    settings,
+    managedStateRead.state,
+  );
   warnings.push(...installed.warnings);
-  const candidate = await resolveInstalledExtensionCandidate(installed.extensions, extensionTarget);
+  const candidate = await resolveInstalledExtensionCandidate(
+    installed.extensions,
+    extensionTarget,
+  );
   if (!candidate) {
-    throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Installed extension "${extensionTarget}" was not found in ${scope} scope.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   if (candidate.managed) {
     return withResult({
@@ -2101,7 +2651,10 @@ async function runExtensionAdoptAction(ctx: ExtensionActionContext): Promise<Ext
     });
   }
 
-  const extensionDirectory = path.join(resolvedRoots.selected_root, candidate.directory);
+  const extensionDirectory = path.join(
+    resolvedRoots.selected_root,
+    candidate.directory,
+  );
   const validated = await validateExtensionDirectory(extensionDirectory);
   const now = nowIso();
   const sourceRecord: ManagedExtensionSource =
@@ -2118,7 +2671,10 @@ async function runExtensionAdoptAction(ctx: ExtensionActionContext): Promise<Ext
           });
           /* c8 ignore start -- forceGithub guarantees a github-kind install source */
           if (parsed.kind !== "github") {
-            throw new PmCliError(`Invalid GitHub shorthand "${githubOption}".`, EXIT_CODE.USAGE);
+            throw new PmCliError(
+              `Invalid GitHub shorthand "${githubOption}".`,
+              EXIT_CODE.USAGE,
+            );
           }
           /* c8 ignore stop */
           /* c8 ignore start -- github subpath defaults are validated in install-source parser tests */
@@ -2146,15 +2702,24 @@ async function runExtensionAdoptAction(ctx: ExtensionActionContext): Promise<Ext
     source: sourceRecord,
   });
   await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
-  const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
+  const refreshedInstalled = await listInstalledExtensions(
+    resolvedRoots.selected_root,
+    scope,
+    settings,
+    managedState,
+  );
   warnings.push(...refreshedInstalled.warnings);
   /* c8 ignore start -- fallback only matters if a manifest renames between adopt and refresh */
   const refreshedEntry =
     refreshedInstalled.extensions.find(
-      (entry) => normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name),
+      (entry) =>
+        normalizeExtensionNameForMatch(entry.name) ===
+        normalizeExtensionNameForMatch(validated.manifest.name),
     ) ??
     refreshedInstalled.extensions.find(
-      (entry) => normalizeExtensionNameForMatch(entry.directory) === normalizeExtensionNameForMatch(candidate.directory),
+      (entry) =>
+        normalizeExtensionNameForMatch(entry.directory) ===
+        normalizeExtensionNameForMatch(candidate.directory),
     );
   /* c8 ignore stop */
 
@@ -2174,19 +2739,45 @@ async function runExtensionAdoptAction(ctx: ExtensionActionContext): Promise<Ext
   /* c8 ignore stop */
 }
 
-async function runExtensionUninstallAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
-  const { action, normalizedTarget, scope, resolvedRoots, warnings, options, withResult } = ctx;
+async function resolveRequiredInstalledExtension(ctx: ExtensionActionContext) {
+  const { action, normalizedTarget, scope, resolvedRoots, warnings, options } =
+    ctx;
   const extensionTarget = requireTarget(normalizedTarget, action, options);
   const settings = await readSettings(resolvedRoots.settings_root);
-  const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+  const managedStateRead = await readManagedExtensionState(
+    resolvedRoots.selected_root,
+  );
   warnings.push(...managedStateRead.warnings);
-  const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
+  const installed = await listInstalledExtensions(
+    resolvedRoots.selected_root,
+    scope,
+    settings,
+    managedStateRead.state,
+  );
   warnings.push(...installed.warnings);
-  const candidate = await resolveInstalledExtensionCandidate(installed.extensions, extensionTarget);
+  const candidate = await resolveInstalledExtensionCandidate(
+    installed.extensions,
+    extensionTarget,
+  );
   if (!candidate) {
-    throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Installed extension "${extensionTarget}" was not found in ${scope} scope.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
-  const destinationDirectory = path.join(resolvedRoots.selected_root, candidate.directory);
+  return { settings, managedStateRead, candidate };
+}
+
+async function runExtensionUninstallAction(
+  ctx: ExtensionActionContext,
+): Promise<ExtensionCommandResult> {
+  const { resolvedRoots, withResult } = ctx;
+  const { settings, managedStateRead, candidate } =
+    await resolveRequiredInstalledExtension(ctx);
+  const destinationDirectory = path.join(
+    resolvedRoots.selected_root,
+    candidate.directory,
+  );
   await fs.rm(destinationDirectory, { recursive: true, force: true });
 
   const updatedState: ManagedExtensionState = {
@@ -2195,8 +2786,10 @@ async function runExtensionUninstallAction(ctx: ExtensionActionContext): Promise
     /* c8 ignore start -- uninstall filter keeps both name+directory guards for legacy managed-state migrations */
     entries: managedStateRead.state.entries.filter(
       (entry) =>
-        normalizeExtensionNameForMatch(entry.name) !== normalizeExtensionNameForMatch(candidate.name) &&
-        normalizeExtensionNameForMatch(entry.directory) !== normalizeExtensionNameForMatch(candidate.directory),
+        normalizeExtensionNameForMatch(entry.name) !==
+          normalizeExtensionNameForMatch(candidate.name) &&
+        normalizeExtensionNameForMatch(entry.directory) !==
+          normalizeExtensionNameForMatch(candidate.directory),
     ),
     /* c8 ignore stop */
   };
@@ -2204,7 +2797,11 @@ async function runExtensionUninstallAction(ctx: ExtensionActionContext): Promise
 
   const stateChanged = clearExtensionState(settings, candidate.name);
   if (stateChanged) {
-    await writeSettings(resolvedRoots.settings_root, settings, "settings:write");
+    await writeSettings(
+      resolvedRoots.settings_root,
+      settings,
+      "settings:write",
+    );
   }
 
   return withResult({
@@ -2218,22 +2815,22 @@ async function runExtensionUninstallAction(ctx: ExtensionActionContext): Promise
   });
 }
 
-async function runExtensionActivateDeactivateAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
-  const { action, normalizedTarget, scope, resolvedRoots, warnings, options, withResult } = ctx;
-  const extensionTarget = requireTarget(normalizedTarget, action, options);
-  const settings = await readSettings(resolvedRoots.settings_root);
-  const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
-  warnings.push(...managedStateRead.warnings);
-  const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
-  warnings.push(...installed.warnings);
-  const candidate = await resolveInstalledExtensionCandidate(installed.extensions, extensionTarget);
-  if (!candidate) {
-    throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
-  }
+async function runExtensionActivateDeactivateAction(
+  ctx: ExtensionActionContext,
+): Promise<ExtensionCommandResult> {
+  const { action, resolvedRoots, withResult } = ctx;
+  const { settings, candidate } = await resolveRequiredInstalledExtension(ctx);
 
-  const settingsChanged = action === "activate" ? ensureActivated(settings, candidate.name) : ensureDeactivated(settings, candidate.name);
+  const settingsChanged =
+    action === "activate"
+      ? ensureActivated(settings, candidate.name)
+      : ensureDeactivated(settings, candidate.name);
   if (settingsChanged) {
-    await writeSettings(resolvedRoots.settings_root, settings, "settings:write");
+    await writeSettings(
+      resolvedRoots.settings_root,
+      settings,
+      "settings:write",
+    );
   }
 
   return withResult({
@@ -2250,12 +2847,7 @@ async function runExtensionActivateDeactivateAction(ctx: ExtensionActionContext)
   });
 }
 
-/**
- * Assemble the doctor remediation hints: the triage remediations, vocabulary-aware
- * advice to inspect load failures and activation failures, and a note when a
- * managed-state fix adopted entries. Blank entries are trimmed and the list is
- * de-duplicated.
- */
+/** Assemble the doctor remediation hints: the triage remediations, vocabulary-aware advice to inspect load failures and activation failures, and a note when a managed-state fix adopted entries. Blank entries are trimmed and the list is de-duplicated. */
 function buildDoctorRemediation(
   baseRemediation: string[],
   loadFailureCount: number,
@@ -2272,28 +2864,34 @@ function buildDoctorRemediation(
         /* c8 ignore start -- vocabulary-specific remediation branches are copy-only variants */
         ...(loadFailureCount > 0
           ? [
-            vocabulary === "package"
-              ? "Run pm package explore --project and pm package explore --global to inspect load failures."
-              : "Run pm extension --explore --project and pm extension --explore --global to inspect load failures.",
-          ]
+              vocabulary === "package"
+                ? "Run pm package explore --project and pm package explore --global to inspect load failures."
+                : "Run pm extension --explore --project and pm extension --explore --global to inspect load failures.",
+            ]
           : []),
         ...(activationFailureCount > 0
           ? [
-            vocabulary === "package"
-              ? "Review activation failures in pm package doctor --detail deep output."
-              : "Review activation failures in pm extension --doctor --detail deep output.",
-          ]
+              vocabulary === "package"
+                ? "Review activation failures in pm package doctor --detail deep output."
+                : "Review activation failures in pm extension --doctor --detail deep output.",
+            ]
           : []),
         /* c8 ignore stop */
         ...(managedStateFix && managedStateFix.adopted_entries.length > 0
-          ? [`Managed-state fix adopted ${managedStateFix.adopted_entries.length} extension(s).`]
+          ? [
+              `Managed-state fix adopted ${managedStateFix.adopted_entries.length} extension(s).`,
+            ]
           : []),
-      ].map((entry) => entry.trim()).filter((entry) => entry.length > 0),
+      ]
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
     ),
   ];
 }
 
-function hasGlobalLayerDiagnostics(loadResult: Awaited<ReturnType<typeof loadExtensions>>): boolean {
+function hasGlobalLayerDiagnostics(
+  loadResult: Awaited<ReturnType<typeof loadExtensions>>,
+): boolean {
   return (
     loadResult.loaded.some((entry) => entry.layer === "global") ||
     loadResult.failed.some((entry) => entry.layer === "global") ||
@@ -2307,7 +2905,11 @@ function buildDoctorIsolationHint(
   vocabulary: ExtensionCommandOptions["vocabulary"],
   loadResult: Awaited<ReturnType<typeof loadExtensions>>,
 ): string | null {
-  if (scope !== "project" || isolated || !hasGlobalLayerDiagnostics(loadResult)) {
+  if (
+    scope !== "project" ||
+    isolated ||
+    !hasGlobalLayerDiagnostics(loadResult)
+  ) {
     return null;
   }
   const noun = vocabulary === "package" ? "package" : "extension";
@@ -2326,10 +2928,7 @@ interface DoctorIsolationMetadata {
   pm_global_path_recipe: string | null;
 }
 
-/**
- * Build the doctor isolation block shared by summary and details output so the
- * over-the-wire payload stays identical for extension and package vocabulary.
- */
+/** Build the doctor isolation block shared by summary and details output so the over-the-wire payload stays identical for extension and package vocabulary. */
 function buildDoctorIsolationMetadata(
   scope: ExtensionScope,
   isolated: boolean,
@@ -2356,24 +2955,50 @@ function buildDoctorIsolationMetadata(
   };
 }
 
-async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
-  const { normalizedTarget, scope, resolvedRoots, warnings, options, global, withResult } = ctx;
+async function runExtensionDoctorAction(
+  ctx: ExtensionActionContext,
+): Promise<ExtensionCommandResult> {
+  const {
+    normalizedTarget,
+    scope,
+    resolvedRoots,
+    warnings,
+    options,
+    global,
+    withResult,
+  } = ctx;
   if (normalizedTarget && normalizedTarget.trim().length > 0) {
-    throw new PmCliError('Action "doctor" does not accept a target argument.', EXIT_CODE.USAGE);
+    throw new PmCliError(
+      'Action "doctor" does not accept a target argument.',
+      EXIT_CODE.USAGE,
+    );
   }
   const isolated = options.isolated === true || options.ignoreGlobal === true;
   if (isolated && scope === "global") {
-    throw new PmCliError("--isolated and --ignore-global are only valid with project-scope doctor diagnostics.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--isolated and --ignore-global are only valid with project-scope doctor diagnostics.",
+      EXIT_CODE.USAGE,
+    );
   }
   const detailMode = parseDoctorDetailMode(options.detail);
   const includeTrace = options.trace === true;
   if (includeTrace && detailMode !== "deep") {
-    throw new PmCliError("--trace requires --detail deep with --doctor.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--trace requires --detail deep with --doctor.",
+      EXIT_CODE.USAGE,
+    );
   }
   const settings = await readSettings(resolvedRoots.settings_root);
-  const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+  const managedStateRead = await readManagedExtensionState(
+    resolvedRoots.selected_root,
+  );
   warnings.push(...managedStateRead.warnings);
-  const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
+  const installed = await listInstalledExtensions(
+    resolvedRoots.selected_root,
+    scope,
+    settings,
+    managedStateRead.state,
+  );
   warnings.push(...installed.warnings);
   let managedState = managedStateRead.state;
   const managedStateFix =
@@ -2388,7 +3013,12 @@ async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<Ex
   if (managedStateFix) {
     managedState = managedStateFix.state;
   }
-  const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
+  const refreshedInstalled = await listInstalledExtensions(
+    resolvedRoots.selected_root,
+    scope,
+    settings,
+    managedState,
+  );
   warnings.push(...refreshedInstalled.warnings);
 
   const loadResult = await loadExtensions({
@@ -2405,15 +3035,31 @@ async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<Ex
   warnings.push(...loadResult.warnings);
   warnings.push(...classifyDoctorLoadFailureWarnings(loadResult.failed));
   warnings.push(...activationResult.warnings);
-  warnings.push(...classifyDoctorActivationFailureWarnings(activationResult.failed));
-  warnings.push(...classifyUnusedCapabilityWarnings(loadResult, activationResult));
+  warnings.push(
+    ...classifyDoctorActivationFailureWarnings(activationResult.failed),
+  );
+  warnings.push(
+    ...classifyUnusedCapabilityWarnings(loadResult, activationResult),
+  );
   warnings.push(...collectGlobalOutputOverrideDoctorWarnings(activationResult));
-  warnings.push(...collectSchemaNarrowActivationDoctorWarnings(loadResult, activationResult));
-  const runtimeInstalledExtensions = applyDoctorRuntimeActivationState(refreshedInstalled.extensions, loadResult, activationResult);
+  warnings.push(
+    ...collectSchemaNarrowActivationDoctorWarnings(
+      loadResult,
+      activationResult,
+    ),
+  );
+  const runtimeInstalledExtensions = applyDoctorRuntimeActivationState(
+    refreshedInstalled.extensions,
+    loadResult,
+    activationResult,
+  );
   const doctorConsistency = buildDoctorConsistencySummary(
     scope,
     runtimeInstalledExtensions,
-    loadResult.loaded.map((entry) => ({ layer: entry.layer, name: entry.name })),
+    loadResult.loaded.map((entry) => ({
+      layer: entry.layer,
+      name: entry.name,
+    })),
     loadResult.failed.map((entry) => ({ name: entry.name })),
     loadResult.disabled_by_flag,
   );
@@ -2423,7 +3069,12 @@ async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<Ex
     .map((entry) => `extension_update_check_failed:${entry.name}`);
   warnings.push(...updateCheckWarnings);
 
-  const triage = buildExtensionTriageSummary(scope, warnings, runtimeInstalledExtensions, options);
+  const triage = buildExtensionTriageSummary(
+    scope,
+    warnings,
+    runtimeInstalledExtensions,
+    options,
+  );
   warnings.push(...triage.warnings);
   const normalizedWarnings = [...triage.warnings];
   const policySummary = {
@@ -2449,10 +3100,16 @@ async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<Ex
     blocked_services_count: loadResult.policy.blocked_services.length,
     extension_override_count: loadResult.policy.extension_overrides.length,
   };
-  const capabilityGuidance = collectUnknownCapabilityGuidance(normalizedWarnings);
+  const capabilityGuidance =
+    collectUnknownCapabilityGuidance(normalizedWarnings);
   const capabilityContract = buildCapabilityContractMetadata();
   const warningCodes = triage.warning_codes;
-  const isolationHint = buildDoctorIsolationHint(scope, isolated, options.vocabulary, loadResult);
+  const isolationHint = buildDoctorIsolationHint(
+    scope,
+    isolated,
+    options.vocabulary,
+    loadResult,
+  );
   const remediation = buildDoctorRemediation(
     triage.remediation,
     loadResult.failed.length,
@@ -2461,7 +3118,12 @@ async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<Ex
     managedStateFix,
     isolationHint,
   );
-  const isolation = buildDoctorIsolationMetadata(scope, isolated, options.vocabulary, loadResult);
+  const isolation = buildDoctorIsolationMetadata(
+    scope,
+    isolated,
+    options.vocabulary,
+    loadResult,
+  );
 
   const summary = {
     status: triage.status,
@@ -2469,29 +3131,50 @@ async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<Ex
     warning_count: triage.warning_count,
     warning_codes: warningCodes,
     total_extensions: runtimeInstalledExtensions.length,
-    managed_total: runtimeInstalledExtensions.filter((entry) => entry.managed).length,
-    enabled_total: runtimeInstalledExtensions.filter((entry) => entry.enabled).length,
-    active_total: runtimeInstalledExtensions.filter((entry) => entry.active).length,
+    managed_total: runtimeInstalledExtensions.filter((entry) => entry.managed)
+      .length,
+    enabled_total: runtimeInstalledExtensions.filter((entry) => entry.enabled)
+      .length,
+    active_total: runtimeInstalledExtensions.filter((entry) => entry.active)
+      .length,
     unmanaged_loaded_extension_count: triage.unmanaged_loaded_extension_count,
-    unmanaged_action_required_extension_count: triage.unmanaged_action_required_extension_count,
-    unmanaged_expected_extension_count: triage.unmanaged_expected_extension_count,
-    runtime_active_total: runtimeInstalledExtensions.filter((entry) => entry.runtime_active === true).length,
+    unmanaged_action_required_extension_count:
+      triage.unmanaged_action_required_extension_count,
+    unmanaged_expected_extension_count:
+      triage.unmanaged_expected_extension_count,
+    runtime_active_total: runtimeInstalledExtensions.filter(
+      (entry) => entry.runtime_active === true,
+    ).length,
     activation_status_totals: {
-      ok: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "ok").length,
-      failed: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "failed").length,
-      not_loaded: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "not_loaded").length,
-      unknown: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "unknown").length,
+      ok: runtimeInstalledExtensions.filter(
+        (entry) => entry.activation_status === "ok",
+      ).length,
+      failed: runtimeInstalledExtensions.filter(
+        (entry) => entry.activation_status === "failed",
+      ).length,
+      not_loaded: runtimeInstalledExtensions.filter(
+        (entry) => entry.activation_status === "not_loaded",
+      ).length,
+      unknown: runtimeInstalledExtensions.filter(
+        (entry) => entry.activation_status === "unknown",
+      ).length,
     },
     unknown_capability_count: capabilityGuidance.length,
     capability_contract_version: capabilityContract.version,
-    update_available_total: runtimeInstalledExtensions.filter((entry) => entry.update_available === true).length,
+    update_available_total: runtimeInstalledExtensions.filter(
+      (entry) => entry.update_available === true,
+    ).length,
     update_health_coverage: triage.update_health_coverage,
     update_health_partial: triage.update_health_partial,
-    update_check_failed_total: runtimeInstalledExtensions.filter((entry) => entry.update_check_status === "failed").length,
+    update_check_failed_total: runtimeInstalledExtensions.filter(
+      (entry) => entry.update_check_status === "failed",
+    ).length,
     load_failure_count: loadResult.failed.length,
     activation_failure_count: activationResult.failed.length,
-    blocking_failure_count: loadResult.failed.length + activationResult.failed.length,
-    has_blocking_failures: loadResult.failed.length + activationResult.failed.length > 0,
+    blocking_failure_count:
+      loadResult.failed.length + activationResult.failed.length,
+    has_blocking_failures:
+      loadResult.failed.length + activationResult.failed.length > 0,
     consistency_warning_count: doctorConsistency.warnings.length,
     trace_enabled: includeTrace,
     isolation,
@@ -2505,13 +3188,17 @@ async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<Ex
         applied: managedStateFix.adopted_entries.length > 0,
         adopted_count: managedStateFix.adopted_entries.length,
         already_managed_count: managedStateFix.already_managed_count,
-        adopted_extensions: managedStateFix.adopted_entries.map((entry) => entry.name),
+        adopted_extensions: managedStateFix.adopted_entries.map(
+          (entry) => entry.name,
+        ),
       }
     : {
         requested: false,
         applied: false,
         adopted_count: 0,
-        already_managed_count: refreshedInstalled.extensions.filter((entry) => entry.managed).length,
+        already_managed_count: refreshedInstalled.extensions.filter(
+          (entry) => entry.managed,
+        ).length,
         adopted_extensions: [] as string[],
       };
 
@@ -2595,8 +3282,18 @@ async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<Ex
   return withResult(details);
 }
 
-async function runExtensionDescribeAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
-  const { normalizedTarget, scope, resolvedRoots, warnings, options, global, withResult } = ctx;
+async function runExtensionDescribeAction(
+  ctx: ExtensionActionContext,
+): Promise<ExtensionCommandResult> {
+  const {
+    normalizedTarget,
+    scope,
+    resolvedRoots,
+    warnings,
+    options,
+    global,
+    withResult,
+  } = ctx;
   const settings = await readSettings(resolvedRoots.settings_root);
   const loadResult = await loadExtensions({
     pmRoot: resolvedRoots.pm_root,
@@ -2607,19 +3304,31 @@ async function runExtensionDescribeAction(ctx: ExtensionActionContext): Promise<
   const activationResult = await activateExtensions(loadResult);
   warnings.push(...loadResult.warnings);
   warnings.push(...activationResult.warnings);
-  const describeResult = buildExtensionDescribeResult(normalizedTarget, loadResult, activationResult);
-  if (normalizedTarget !== undefined && describeResult.extensions.length === 0) {
+  const describeResult = buildExtensionDescribeResult(
+    normalizedTarget,
+    loadResult,
+    activationResult,
+  );
+  if (
+    normalizedTarget !== undefined &&
+    describeResult.extensions.length === 0
+  ) {
     const noun = options.vocabulary === "package" ? "package" : "extension";
     const loadedNames = [
       ...new Set(
         loadResult.loaded.map((entry) =>
-          options.vocabulary === "package" && typeof entry.source_package === "string" && entry.source_package.trim().length > 0
+          options.vocabulary === "package" &&
+          typeof entry.source_package === "string" &&
+          entry.source_package.trim().length > 0
             ? entry.source_package.trim()
             : entry.name,
         ),
       ),
     ].sort((left, right) => left.localeCompare(right));
-    const loadedHint = loadedNames.length > 0 ? ` Loaded ${noun} names: ${loadedNames.join(", ")}.` : "";
+    const loadedHint =
+      loadedNames.length > 0
+        ? ` Loaded ${noun} names: ${loadedNames.join(", ")}.`
+        : "";
     throw new PmCliError(
       `No loaded ${noun} named "${normalizedTarget}" was found in ${scope} scope.${loadedHint} Run pm ${noun} explore to list discovered ${noun}s.`,
       EXIT_CODE.NOT_FOUND,
@@ -2634,13 +3343,32 @@ async function runExtensionDescribeAction(ctx: ExtensionActionContext): Promise<
 }
 
 /* c8 ignore start -- explore/manage action split is validated by dedicated command-action tests */
-async function runExtensionExploreManageAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
-  const { action, scope, resolvedRoots, warnings, options, global, withResult } = ctx;
+async function runExtensionExploreManageAction(
+  ctx: ExtensionActionContext,
+): Promise<ExtensionCommandResult> {
+  const {
+    action,
+    scope,
+    resolvedRoots,
+    warnings,
+    options,
+    global,
+    withResult,
+  } = ctx;
   const settings = await readSettings(resolvedRoots.settings_root);
-  const configuredPolicy = buildExtensionPolicyDetails(settings.extensions.policy);
-  const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+  const configuredPolicy = buildExtensionPolicyDetails(
+    settings.extensions.policy,
+  );
+  const managedStateRead = await readManagedExtensionState(
+    resolvedRoots.selected_root,
+  );
   warnings.push(...managedStateRead.warnings);
-  const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
+  const installed = await listInstalledExtensions(
+    resolvedRoots.selected_root,
+    scope,
+    settings,
+    managedStateRead.state,
+  );
   warnings.push(...installed.warnings);
 
   let managedState = managedStateRead.state;
@@ -2680,7 +3408,12 @@ async function runExtensionExploreManageAction(ctx: ExtensionActionContext): Pro
     await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
   }
 
-  const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
+  const refreshedInstalled = await listInstalledExtensions(
+    resolvedRoots.selected_root,
+    scope,
+    settings,
+    managedState,
+  );
   warnings.push(...refreshedInstalled.warnings);
   if (action === "manage") {
     const updateWarnings = refreshedInstalled.extensions
@@ -2704,15 +3437,26 @@ async function runExtensionExploreManageAction(ctx: ExtensionActionContext): Pro
     });
     warnings.push(...loadResult.warnings);
     warnings.push(...activationResult.warnings);
-    runtimeInstalledExtensions = applyDoctorRuntimeActivationState(refreshedInstalled.extensions, loadResult, activationResult);
-    runtimeActivationFailures = collectActivationFailureDiagnostics(activationResult.failed);
+    runtimeInstalledExtensions = applyDoctorRuntimeActivationState(
+      refreshedInstalled.extensions,
+      loadResult,
+      activationResult,
+    );
+    runtimeActivationFailures = collectActivationFailureDiagnostics(
+      activationResult.failed,
+    );
     runtimeProbeSummary = {
       requested: true,
       executed: true,
-      reason: action === "explore" ? "explore_defaults_to_runtime_probe" : "runtime_probe_requested",
+      reason:
+        action === "explore"
+          ? "explore_defaults_to_runtime_probe"
+          : "runtime_probe_requested",
       load_failure_count: loadResult.failed.length,
       activation_failure_count: activationResult.failed.length,
-      warning_count: [...new Set([...loadResult.warnings, ...activationResult.warnings])].length,
+      warning_count: [
+        ...new Set([...loadResult.warnings, ...activationResult.warnings]),
+      ].length,
       policy: loadResult.policy,
     };
   } else if (action === "manage") {
@@ -2722,13 +3466,21 @@ async function runExtensionExploreManageAction(ctx: ExtensionActionContext): Pro
     };
   }
 
-  const triage = buildExtensionTriageSummary(scope, warnings, runtimeInstalledExtensions, options);
+  const triage = buildExtensionTriageSummary(
+    scope,
+    warnings,
+    runtimeInstalledExtensions,
+    options,
+  );
   warnings.push(...triage.warnings);
   const details: Record<string, unknown> = {
     total: runtimeInstalledExtensions.length,
-    managed_total: runtimeInstalledExtensions.filter((entry) => entry.managed).length,
-    enabled_total: runtimeInstalledExtensions.filter((entry) => entry.enabled).length,
-    active_total: runtimeInstalledExtensions.filter((entry) => entry.active).length,
+    managed_total: runtimeInstalledExtensions.filter((entry) => entry.managed)
+      .length,
+    enabled_total: runtimeInstalledExtensions.filter((entry) => entry.enabled)
+      .length,
+    active_total: runtimeInstalledExtensions.filter((entry) => entry.active)
+      .length,
     extensions: runtimeInstalledExtensions,
     triage,
     policy: configuredPolicy,
@@ -2750,7 +3502,9 @@ async function runExtensionExploreManageAction(ctx: ExtensionActionContext): Pro
             requested: true,
             applied: managedStateFix.adopted_entries.length > 0,
             adopted_count: managedStateFix.adopted_entries.length,
-            adopted_extensions: managedStateFix.adopted_entries.map((entry) => entry.name),
+            adopted_extensions: managedStateFix.adopted_entries.map(
+              (entry) => entry.name,
+            ),
             already_managed_count: managedStateFix.already_managed_count,
           }
         : {
@@ -2758,7 +3512,9 @@ async function runExtensionExploreManageAction(ctx: ExtensionActionContext): Pro
             applied: false,
             adopted_count: 0,
             adopted_extensions: [],
-            already_managed_count: runtimeInstalledExtensions.filter((entry) => entry.managed).length,
+            already_managed_count: runtimeInstalledExtensions.filter(
+              (entry) => entry.managed,
+            ).length,
           };
   }
   return withResult(details);
@@ -2788,6 +3544,7 @@ const EXTENSION_ACTION_HANDLERS: Record<
   deactivate: runExtensionActivateDeactivateAction,
 };
 
+/** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   adoptUnmanagedExtensions,
   buildExtensionPolicyDetails,

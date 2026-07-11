@@ -236,6 +236,15 @@ describe("static-quality-gate", () => {
       expect(dirViol[0].file_count).toBeGreaterThanOrEqual(dirViol[1].file_count);
     });
 
+    it("checkFileLength excludes documentation-only and blank lines from the implementation budget", async () => {
+      mockUtils("/repo");
+      mockFs({
+        readFileSync: vi.fn(() => "/**\n * Public contract documentation.\n */\n\nexport const value = 1;\n") as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      expect(mod.checkFileLength(["/repo/src/documented.ts"], 1, 1)).toEqual([]);
+    });
+
     it("checkDuplicateChunks: dup, skip-blank, same-file, cap, and overlapping-duplicate guard", async () => {
       mockUtils("/repo");
       const dupBlock = ["line one here", "line two here", "line three here", "line four here", "line five here"].join(

@@ -24,11 +24,14 @@
  */
 
 /** Supported coercion shapes for nested settings exposed through `pm config`. */
-export type NestedSettingKind = "string" | "boolean" | "integer" | "number" | "ratio";
+export type NestedSettingKind =
+  | "string"
+  | "boolean"
+  | "integer"
+  | "number"
+  | "ratio";
 
-/**
- * Documents the nested setting descriptor payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the nested setting descriptor payload exchanged by command, SDK, and package integrations. */
 export interface NestedSettingDescriptor {
   /** CLI key (snake_case). Kebab-case form is accepted by normalizing `-` → `_`. */
   key: string;
@@ -42,32 +45,26 @@ export interface NestedSettingDescriptor {
   choices?: readonly string[];
   /** Require a non-empty trimmed string value for string settings. */
   non_empty?: boolean;
-  /**
-   * Optional minimum value for `integer` / `number` kinds. When set,
-   * `parseNestedSettingValue` rejects values strictly below `min`. Useful for
-   * settings where 0 would be silently ignored by the runtime (batch sizes,
-   * timeouts, max-results limits).
-   */
+  /** Optional minimum value for `integer` / `number` kinds. When set, `parseNestedSettingValue` rejects values strictly below `min`. Useful for settings where 0 would be silently ignored by the runtime (batch sizes, timeouts, max-results limits). */
   min?: number;
 }
 
-/**
- * Search/provider/vector-store leaves. Order is the display order in
- * `pm config list` and in error hints.
- */
+/** Search/provider/vector-store leaves. Order is the display order in `pm config list` and in error hints. */
 export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
   {
     key: "search_provider",
     path: "search.provider",
     kind: "string",
-    summary: "Search embedding provider name (e.g. openai, ollama, or an extension provider).",
+    summary:
+      "Search embedding provider name (e.g. openai, ollama, or an extension provider).",
   },
   {
     key: "search_mutation_refresh_policy",
     path: "search.mutation_refresh_policy",
     kind: "string",
     choices: ["cache_only", "semantic_configured", "semantic_auto"],
-    summary: "Mutation-time search refresh policy: cache_only, semantic_configured, or semantic_auto.",
+    summary:
+      "Mutation-time search refresh policy: cache_only, semantic_configured, or semantic_auto.",
   },
   {
     key: "search_query_expansion_enabled",
@@ -79,7 +76,8 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     key: "search_query_expansion_provider",
     path: "search.query_expansion.provider",
     kind: "string",
-    summary: "Query expansion provider name (built-in openai/ollama or extension provider).",
+    summary:
+      "Query expansion provider name (built-in openai/ollama or extension provider).",
   },
   {
     key: "search_rerank_enabled",
@@ -98,13 +96,15 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     path: "search.rerank.top_k",
     kind: "integer",
     min: 1,
-    summary: "Number of top hybrid candidates to rerank when rerank is enabled.",
+    summary:
+      "Number of top hybrid candidates to rerank when rerank is enabled.",
   },
   {
     key: "search_embedding_model",
     path: "search.embedding_model",
     kind: "string",
-    summary: "Default embedding model name (overrides provider-specific model when set).",
+    summary:
+      "Default embedding model name (overrides provider-specific model when set).",
   },
   {
     key: "search_embedding_corpus_max_characters",
@@ -137,7 +137,8 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     key: "search_hybrid_semantic_weight",
     path: "search.hybrid_semantic_weight",
     kind: "ratio",
-    summary: "Hybrid mode semantic weight in [0, 1] (1-weight goes to keyword).",
+    summary:
+      "Hybrid mode semantic weight in [0, 1] (1-weight goes to keyword).",
   },
   {
     key: "search_max_results",
@@ -151,13 +152,15 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     path: "search.bm25.k1",
     kind: "number",
     min: 0,
-    summary: "Offline BM25 term-frequency saturation (k1); higher saturates repeated terms slower (default 1.2).",
+    summary:
+      "Offline BM25 term-frequency saturation (k1); higher saturates repeated terms slower (default 1.2).",
   },
   {
     key: "search_bm25_b",
     path: "search.bm25.b",
     kind: "ratio",
-    summary: "Offline BM25 document-length normalization (b) in [0, 1]; 0 disables, 1 fully normalizes (default 0.75).",
+    summary:
+      "Offline BM25 document-length normalization (b) in [0, 1]; 0 disables, 1 fully normalizes (default 0.75).",
   },
   {
     key: "openai_base_url",
@@ -193,14 +196,16 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     key: "vector_store_adapter",
     path: "vector_store.adapter",
     kind: "string",
-    summary: "Vector store adapter name (lancedb, qdrant, or an extension adapter).",
+    summary:
+      "Vector store adapter name (lancedb, qdrant, or an extension adapter).",
   },
   {
     key: "vector_store_collection_name",
     path: "vector_store.collection_name",
     kind: "string",
     non_empty: true,
-    summary: "Vector collection/table name shared by Qdrant and LanceDB adapters.",
+    summary:
+      "Vector collection/table name shared by Qdrant and LanceDB adapters.",
   },
   {
     key: "qdrant_url",
@@ -228,28 +233,31 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     path: "id_prefix",
     kind: "string",
     non_empty: true,
-    summary: "Prefix for generated item IDs (e.g. \"pm\" produces pm-xxxx).",
+    summary: 'Prefix for generated item IDs (e.g. "pm" produces pm-xxxx).',
   },
   {
     key: "author_default",
     path: "author_default",
     kind: "string",
     non_empty: true,
-    summary: "Default author recorded on mutations when --author is not supplied.",
+    summary:
+      "Default author recorded on mutations when --author is not supplied.",
   },
   {
     key: "output_default_format",
     path: "output.default_format",
     kind: "string",
     choices: ["toon", "json"],
-    summary: "Default output format for commands that support it: toon or json.",
+    summary:
+      "Default output format for commands that support it: toon or json.",
   },
   {
     key: "locks_ttl_seconds",
     path: "locks.ttl_seconds",
     kind: "integer",
     min: 1,
-    summary: "Claim/lock time-to-live in seconds before a stale lock can be reclaimed.",
+    summary:
+      "Claim/lock time-to-live in seconds before a stale lock can be reclaimed.",
   },
   {
     key: "locks_wait_ms",
@@ -264,14 +272,16 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     path: "checkpoints.retention_days",
     kind: "integer",
     min: 1,
-    summary: "Age in days above which pm gc --scope checkpoints prunes bulk-mutation rollback checkpoints.",
+    summary:
+      "Age in days above which pm gc --scope checkpoints prunes bulk-mutation rollback checkpoints.",
   },
   {
     key: "schema_unknown_field_policy",
     path: "schema.unknown_field_policy",
     kind: "string",
     choices: ["allow", "warn", "reject"],
-    summary: "How item I/O handles metadata keys not in the field registry: allow, warn, or reject.",
+    summary:
+      "How item I/O handles metadata keys not in the field registry: allow, warn, or reject.",
   },
   // History compaction policy leaves (pm health advisory + pm history-compact
   // bulk-sweep default threshold). Disabled by default; enabling makes large
@@ -280,21 +290,24 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     key: "history_compact_policy_enabled",
     path: "history.compact_policy.enabled",
     kind: "boolean",
-    summary: "Enable the history-compaction advisory: pm health warns on over-threshold streams.",
+    summary:
+      "Enable the history-compaction advisory: pm health warns on over-threshold streams.",
   },
   {
     key: "history_compact_policy_max_entries",
     path: "history.compact_policy.max_entries",
     kind: "integer",
     min: 1,
-    summary: "Entry count above which a history stream is flagged (and the default pm history-compact --all-over threshold).",
+    summary:
+      "Entry count above which a history stream is flagged (and the default pm history-compact --all-over threshold).",
   },
   {
     key: "history_compact_policy_trigger",
     path: "history.compact_policy.trigger",
     kind: "string",
     choices: ["health_warn", "auto"],
-    summary: "History-compaction policy intent: health_warn (advisory only) or auto (scheduled sweeps expected).",
+    summary:
+      "History-compaction policy intent: health_warn (advisory only) or auto (scheduled sweeps expected).",
   },
 ];
 
@@ -305,13 +318,10 @@ const DESCRIPTOR_BY_KEY: ReadonlyMap<string, NestedSettingDescriptor> = new Map(
   ]),
 );
 
-/**
- * Map a raw user-supplied key (kebab case, snake case, or the dotted settings
- * path surfaced by `pm config list`) onto a known nested-leaf descriptor.
- * Returns `undefined` when the key is not a nested leaf, letting callers fall
- * back to the regular ConfigKey path.
- */
-export function resolveNestedSettingDescriptor(raw: string | undefined): NestedSettingDescriptor | undefined {
+/** Map a raw user-supplied key (kebab case, snake case, or the dotted settings path surfaced by `pm config list`) onto a known nested-leaf descriptor. Returns `undefined` when the key is not a nested leaf, letting callers fall back to the regular ConfigKey path. */
+export function resolveNestedSettingDescriptor(
+  raw: string | undefined,
+): NestedSettingDescriptor | undefined {
   if (typeof raw !== "string") {
     return undefined;
   }
@@ -324,28 +334,42 @@ export function resolveNestedSettingDescriptor(raw: string | undefined): NestedS
 
 /** Recoverable parsed value with the descriptor it satisfied. */
 export interface NestedSettingParsedValue {
+  /** Value that configures or reports descriptor for this contract. */
   descriptor: NestedSettingDescriptor;
+  /** Value that configures or reports value for this contract. */
   value: string | number | boolean;
 }
 
 /** Throwable validation error returned as a structured result. */
 export interface NestedSettingParseError {
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message: string;
 }
 
-/**
- * Restricts nested setting parse result values accepted by command, SDK, and storage contracts.
- */
+/** Restricts nested setting parse result values accepted by command, SDK, and storage contracts. */
 export type NestedSettingParseResult =
   | { ok: true; parsed: NestedSettingParsedValue }
   | { ok: false; error: NestedSettingParseError };
 
-function parseNestedBooleanValue(descriptor: NestedSettingDescriptor, rawValue: string): NestedSettingParseResult {
+function parseNestedBooleanValue(
+  descriptor: NestedSettingDescriptor,
+  rawValue: string,
+): NestedSettingParseResult {
   const normalized = rawValue.trim().toLowerCase();
-  if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on") {
+  if (
+    normalized === "true" ||
+    normalized === "1" ||
+    normalized === "yes" ||
+    normalized === "on"
+  ) {
     return { ok: true, parsed: { descriptor, value: true } };
   }
-  if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off") {
+  if (
+    normalized === "false" ||
+    normalized === "0" ||
+    normalized === "no" ||
+    normalized === "off"
+  ) {
     return { ok: true, parsed: { descriptor, value: false } };
   }
   return {
@@ -364,7 +388,9 @@ function parseNestedStringValue(
   if (descriptor.non_empty === true && trimmed.length === 0) {
     return {
       ok: false,
-      error: { message: `Config set ${descriptor.key} requires a non-empty value` },
+      error: {
+        message: `Config set ${descriptor.key} requires a non-empty value`,
+      },
     };
   }
   if (descriptor.choices && !descriptor.choices.includes(trimmed)) {
@@ -386,14 +412,18 @@ function parseFiniteNestedNumber(
   if (trimmed.length === 0) {
     return {
       ok: false,
-      error: { message: `Config set ${descriptor.key} requires a non-empty value` },
+      error: {
+        message: `Config set ${descriptor.key} requires a non-empty value`,
+      },
     };
   }
   const parsed = Number(trimmed);
   if (!Number.isFinite(parsed)) {
     return {
       ok: false,
-      error: { message: `Config set ${descriptor.key} requires a finite number, got "${rawValue}"` },
+      error: {
+        message: `Config set ${descriptor.key} requires a finite number, got "${rawValue}"`,
+      },
     };
   }
   return { ok: true, value: parsed };
@@ -407,7 +437,9 @@ function parseNestedIntegerValue(
   if (!Number.isInteger(value) || value < 0) {
     return {
       ok: false,
-      error: { message: `Config set ${descriptor.key} requires a non-negative integer, got "${rawValue}"` },
+      error: {
+        message: `Config set ${descriptor.key} requires a non-negative integer, got "${rawValue}"`,
+      },
     };
   }
   if (descriptor.min !== undefined && value < descriptor.min) {
@@ -429,7 +461,9 @@ function parseNestedRatioValue(
   if (value < 0 || value > 1) {
     return {
       ok: false,
-      error: { message: `Config set ${descriptor.key} requires a number in [0, 1], got "${rawValue}"` },
+      error: {
+        message: `Config set ${descriptor.key} requires a number in [0, 1], got "${rawValue}"`,
+      },
     };
   }
   return { ok: true, parsed: { descriptor, value } };
@@ -443,7 +477,9 @@ function parseNestedNumberValue(
   if (descriptor.min !== undefined && value < descriptor.min) {
     return {
       ok: false,
-      error: { message: `Config set ${descriptor.key} requires a number >= ${descriptor.min}, got "${rawValue}"` },
+      error: {
+        message: `Config set ${descriptor.key} requires a number >= ${descriptor.min}, got "${rawValue}"`,
+      },
     };
   }
   return { ok: true, parsed: { descriptor, value } };
@@ -460,7 +496,12 @@ export function parseNestedSettingValue(
   rawValue: string,
 ): NestedSettingParseResult {
   if (typeof rawValue !== "string") {
-    return { ok: false, error: { message: `Config set ${descriptor.key} requires a string value` } };
+    return {
+      ok: false,
+      error: {
+        message: `Config set ${descriptor.key} requires a string value`,
+      },
+    };
   }
   const trimmed = rawValue.trim();
   if (descriptor.kind === "boolean") {
@@ -499,17 +540,17 @@ export function readNestedSettingValue(
     }
     cursor = (cursor as Record<string, unknown>)[segment];
   }
-  if (typeof cursor === "string" || typeof cursor === "number" || typeof cursor === "boolean") {
+  if (
+    typeof cursor === "string" ||
+    typeof cursor === "number" ||
+    typeof cursor === "boolean"
+  ) {
     return cursor;
   }
   return null;
 }
 
-/**
- * Set a leaf value on a settings object by walking the descriptor's dotted
- * path. Missing intermediate objects are created. Returns `true` when the
- * value actually changed.
- */
+/** Set a leaf value on a settings object by walking the descriptor's dotted path. Missing intermediate objects are created. Returns `true` when the value actually changed. */
 export function writeNestedSettingValue(
   settings: Record<string, unknown>,
   descriptor: NestedSettingDescriptor,
@@ -520,7 +561,11 @@ export function writeNestedSettingValue(
   for (let index = 0; index < segments.length - 1; index += 1) {
     const segment = segments[index];
     const existing = cursor[segment];
-    if (typeof existing !== "object" || existing === null || Array.isArray(existing)) {
+    if (
+      typeof existing !== "object" ||
+      existing === null ||
+      Array.isArray(existing)
+    ) {
       const next: Record<string, unknown> = {};
       cursor[segment] = next;
       cursor = next;

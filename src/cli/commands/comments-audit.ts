@@ -8,52 +8,74 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
-import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
+import {
+  resolveRuntimeStatusRegistry,
+  type RuntimeStatusRegistry,
+} from "../../core/schema/runtime-schema.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { type Comment, type ItemStatus } from "../../types/index.js";
 import { runList } from "./list.js";
 
-/**
- * Documents the comments audit options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the comments audit options payload exchanged by command, SDK, and package integrations. */
 export interface CommentsAuditOptions {
+  /** Lifecycle state reported for status. */
   status?: string;
+  /** Schema type that determines the shape and validation rules for this value. */
   type?: string;
+  /** Value that configures or reports tag for this contract. */
   tag?: string;
+  /** Value that configures or reports priority for this contract. */
   priority?: string;
+  /** Value that configures or reports parent for this contract. */
   parent?: string;
+  /** Value that configures or reports sprint for this contract. */
   sprint?: string;
+  /** Value that configures or reports release for this contract. */
   release?: string;
+  /** Value that configures or reports assignee for this contract. */
   assignee?: string;
+  /** Value that configures or reports assignee filter for this contract. */
   assigneeFilter?: string;
+  /** Value that configures or reports limit for this contract. */
   limit?: string;
+  /** Value that configures or reports limit items for this contract. */
   limitItems?: string;
+  /** Value that configures or reports latest for this contract. */
   latest?: string;
+  /** Value that configures or reports full history for this contract. */
   fullHistory?: boolean;
 }
 
-/**
- * Documents the comments audit entry payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the comments audit entry payload exchanged by command, SDK, and package integrations. */
 export interface CommentsAuditEntry {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports title for this contract. */
   title: string;
+  /** Schema type that determines the shape and validation rules for this value. */
   type: string;
+  /** Lifecycle state reported for status. */
   status: ItemStatus;
+  /** Value that configures or reports assignee for this contract. */
   assignee: string | null;
+  /** ISO 8601 timestamp recording when updated occurred. */
   updated_at: string;
+  /** Number of comment entries represented by this result. */
   comment_count: number;
+  /** Value that configures or reports comments for this contract. */
   comments: Comment[];
 }
 
-/**
- * Documents the comments audit result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the comments audit result payload exchanged by command, SDK, and package integrations. */
 export interface CommentsAuditResult {
+  /** Value that configures or reports items for this contract. */
   items: CommentsAuditEntry[];
+  /** Value that configures or reports count for this contract. */
   count: number;
+  /** Value that configures or reports summary for this contract. */
   summary: CommentsAuditSummary;
+  /** Value that configures or reports filters for this contract. */
   filters: {
     status: ItemStatus | null;
     type: string | null;
@@ -68,19 +90,22 @@ export interface CommentsAuditResult {
     latest: number | null;
     full_history: boolean;
   };
+  /** Value that configures or reports export for this contract. */
   export: {
     mode: "latest" | "full_history";
     row_count: number;
   };
+  /** Value that configures or reports rows for this contract. */
   rows?: CommentsAuditHistoryRow[];
+  /** Value that configures or reports now for this contract. */
   now: string;
+  /** Value that configures or reports warnings for this contract. */
   warnings?: string[];
 }
 
-/**
- * Documents the comments audit summary payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the comments audit summary payload exchanged by command, SDK, and package integrations. */
 export interface CommentsAuditSummary {
+  /** Value that configures or reports totals for this contract. */
   totals: {
     items_scanned: number;
     items_with_comments: number;
@@ -88,45 +113,65 @@ export interface CommentsAuditSummary {
     comments_total: number;
     comments_exported: number;
   };
+  /** Value that configures or reports coverage for this contract. */
   coverage: {
     items_with_comments_ratio: number;
     items_with_comments_percent: number;
   };
+  /** Schema type that determines the shape and validation rules for this value. */
   by_type: CommentsAuditTypeSummary[];
 }
 
-/**
- * Documents the comments audit type summary payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the comments audit type summary payload exchanged by command, SDK, and package integrations. */
 export interface CommentsAuditTypeSummary {
+  /** Schema type that determines the shape and validation rules for this value. */
   type: string;
+  /** Value that configures or reports items scanned for this contract. */
   items_scanned: number;
+  /** Value that configures or reports items with comments for this contract. */
   items_with_comments: number;
+  /** Value that configures or reports zero comment items for this contract. */
   zero_comment_items: number;
+  /** Value that configures or reports comments total for this contract. */
   comments_total: number;
+  /** Value that configures or reports comments exported for this contract. */
   comments_exported: number;
+  /** Value that configures or reports items with comments ratio for this contract. */
   items_with_comments_ratio: number;
+  /** Value that configures or reports items with comments percent for this contract. */
   items_with_comments_percent: number;
 }
 
-/**
- * Documents the comments audit history row payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the comments audit history row payload exchanged by command, SDK, and package integrations. */
 export interface CommentsAuditHistoryRow {
+  /** Value that configures or reports item id for this contract. */
   item_id: string;
+  /** Value that configures or reports item title for this contract. */
   item_title: string;
+  /** Schema type that determines the shape and validation rules for this value. */
   item_type: string;
+  /** Lifecycle state reported for itemthe record. */
   item_status: ItemStatus;
+  /** Value that configures or reports item assignee for this contract. */
   item_assignee: string | null;
+  /** ISO 8601 timestamp recording when item updated occurred. */
   item_updated_at: string;
+  /** Value that configures or reports comment index for this contract. */
   comment_index: number;
+  /** Number of comment entries represented by this result. */
   comment_count: number;
+  /** ISO 8601 timestamp recording when created occurred. */
   created_at: string;
+  /** Value that configures or reports author for this contract. */
   author: string;
+  /** Value that configures or reports text for this contract. */
   text: string;
 }
 
-function parseStatus(raw: string | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
+function parseStatus(
+  raw: string | undefined,
+  statusRegistry: RuntimeStatusRegistry,
+): ItemStatus | undefined {
   if (raw === undefined) {
     return undefined;
   }
@@ -140,13 +185,19 @@ function parseStatus(raw: string | undefined, statusRegistry: RuntimeStatusRegis
   return normalized;
 }
 
-function parseNonNegativeInteger(raw: string | undefined, flag: string): number | undefined {
+function parseNonNegativeInteger(
+  raw: string | undefined,
+  flag: string,
+): number | undefined {
   if (raw === undefined) {
     return undefined;
   }
   const parsed = Number(raw);
   if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new PmCliError(`${flag} must be a non-negative integer`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `${flag} must be a non-negative integer`,
+      EXIT_CODE.USAGE,
+    );
   }
   return parsed;
 }
@@ -181,7 +232,10 @@ function toHistoryRows(items: CommentsAuditEntry[]): CommentsAuditHistoryRow[] {
   return rows;
 }
 
-function ratioPercent(numerator: number, denominator: number): { ratio: number; percent: number } {
+function ratioPercent(
+  numerator: number,
+  denominator: number,
+): { ratio: number; percent: number } {
   if (denominator <= 0) {
     return {
       ratio: 0,
@@ -195,12 +249,22 @@ function ratioPercent(numerator: number, denominator: number): { ratio: number; 
   };
 }
 
-function buildCommentsAuditSummary(items: CommentsAuditEntry[]): CommentsAuditSummary {
+function buildCommentsAuditSummary(
+  items: CommentsAuditEntry[],
+): CommentsAuditSummary {
   const itemsScanned = items.length;
-  const itemsWithComments = items.filter((entry) => entry.comment_count > 0).length;
+  const itemsWithComments = items.filter(
+    (entry) => entry.comment_count > 0,
+  ).length;
   const zeroCommentItems = itemsScanned - itemsWithComments;
-  const commentsTotal = items.reduce((sum, entry) => sum + entry.comment_count, 0);
-  const commentsExported = items.reduce((sum, entry) => sum + entry.comments.length, 0);
+  const commentsTotal = items.reduce(
+    (sum, entry) => sum + entry.comment_count,
+    0,
+  );
+  const commentsExported = items.reduce(
+    (sum, entry) => sum + entry.comments.length,
+    0,
+  );
   const overallCoverage = ratioPercent(itemsWithComments, itemsScanned);
   const byTypeAccumulator = new Map<
     string,
@@ -230,7 +294,10 @@ function buildCommentsAuditSummary(items: CommentsAuditEntry[]): CommentsAuditSu
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([type, stats]) => {
       const zeroCount = stats.items_scanned - stats.items_with_comments;
-      const coverage = ratioPercent(stats.items_with_comments, stats.items_scanned);
+      const coverage = ratioPercent(
+        stats.items_with_comments,
+        stats.items_scanned,
+      );
       return {
         type,
         items_scanned: stats.items_scanned,
@@ -266,21 +333,37 @@ function resolveCommentsAuditLimits(options: CommentsAuditOptions): {
   const fullHistory = options.fullHistory === true;
   const latestParsed = parseNonNegativeInteger(options.latest, "--latest");
   if (fullHistory && latestParsed !== undefined) {
-    throw new PmCliError("--full-history cannot be combined with --latest", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--full-history cannot be combined with --latest",
+      EXIT_CODE.USAGE,
+    );
   }
-  const limitItemsPrimary = parseNonNegativeInteger(options.limitItems, "--limit-items");
+  const limitItemsPrimary = parseNonNegativeInteger(
+    options.limitItems,
+    "--limit-items",
+  );
   const limitItemsAlias = parseNonNegativeInteger(options.limit, "--limit");
-  if (limitItemsPrimary !== undefined && limitItemsAlias !== undefined && limitItemsPrimary !== limitItemsAlias) {
-    throw new PmCliError("--limit and --limit-items must match when both are provided", EXIT_CODE.USAGE);
+  if (
+    limitItemsPrimary !== undefined &&
+    limitItemsAlias !== undefined &&
+    limitItemsPrimary !== limitItemsAlias
+  ) {
+    throw new PmCliError(
+      "--limit and --limit-items must match when both are provided",
+      EXIT_CODE.USAGE,
+    );
   }
   return {
     fullHistory,
-    latest: fullHistory ? undefined : latestParsed ?? 1,
+    latest: fullHistory ? undefined : (latestParsed ?? 1),
     limitItems: limitItemsPrimary ?? limitItemsAlias,
   };
 }
 
-function toCommentsAuditEntry(item: Awaited<ReturnType<typeof runList>>["items"][number], latest: number | undefined): CommentsAuditEntry {
+function toCommentsAuditEntry(
+  item: Awaited<ReturnType<typeof runList>>["items"][number],
+  latest: number | undefined,
+): CommentsAuditEntry {
   const comments = item.comments ?? [];
   return {
     id: item.id,
@@ -317,15 +400,17 @@ function buildCommentsAuditFilters(
   };
 }
 
-/**
- * Implements run comments audit for the public runtime surface of this module.
- */
-export async function runCommentsAudit(options: CommentsAuditOptions, global: GlobalOptions): Promise<CommentsAuditResult> {
+/** Implements run comments audit for the public runtime surface of this module. */
+export async function runCommentsAudit(
+  options: CommentsAuditOptions,
+  global: GlobalOptions,
+): Promise<CommentsAuditResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const status = parseStatus(options.status, statusRegistry);
-  const { fullHistory, latest, limitItems } = resolveCommentsAuditLimits(options);
+  const { fullHistory, latest, limitItems } =
+    resolveCommentsAuditLimits(options);
 
   const listed = await runList(
     status,
@@ -345,20 +430,31 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
 
   const items = listed.items.map((item) => toCommentsAuditEntry(item, latest));
   const rows = fullHistory ? toHistoryRows(items) : undefined;
-  const latestRowCount = items.reduce((sum, entry) => sum + entry.comments.length, 0);
+  const latestRowCount = items.reduce(
+    (sum, entry) => sum + entry.comments.length,
+    0,
+  );
 
   return {
     items,
     count: items.length,
     summary: buildCommentsAuditSummary(items),
-    filters: buildCommentsAuditFilters(options, status, limitItems, latest, fullHistory),
+    filters: buildCommentsAuditFilters(
+      options,
+      status,
+      limitItems,
+      latest,
+      fullHistory,
+    ),
     export: {
       mode: fullHistory ? "full_history" : "latest",
       /* c8 ignore next -- rows is always materialized from toHistoryRows() when fullHistory=true. */
-      row_count: fullHistory ? rows?.length ?? 0 : latestRowCount,
+      row_count: fullHistory ? (rows?.length ?? 0) : latestRowCount,
     },
     ...(rows ? { rows } : {}),
     now: listed.now ?? nowIso(),
-    ...(listed.warnings && listed.warnings.length > 0 ? { warnings: listed.warnings } : {}),
+    ...(listed.warnings && listed.warnings.length > 0
+      ? { warnings: listed.warnings }
+      : {}),
   };
 }

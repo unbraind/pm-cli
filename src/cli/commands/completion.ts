@@ -41,17 +41,16 @@ import {
 import { BUILTIN_ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
 import { listGuideTopicIds } from "../guide-topics.js";
 
-/**
- * Restricts completion shell values accepted by command, SDK, and storage contracts.
- */
+/** Restricts completion shell values accepted by command, SDK, and storage contracts. */
 export type CompletionShell = "bash" | "zsh" | "fish";
 
-/**
- * Documents the completion result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the completion result payload exchanged by command, SDK, and package integrations. */
 export interface CompletionResult {
+  /** Value that configures or reports shell for this contract. */
   shell: CompletionShell;
+  /** Value that configures or reports script for this contract. */
   script: string;
+  /** Value that configures or reports setup hint for this contract. */
   setup_hint: string;
 }
 
@@ -59,14 +58,22 @@ const VALID_SHELLS: CompletionShell[] = ["bash", "zsh", "fish"];
 const DEFAULT_ITEM_TYPES = [...BUILTIN_ITEM_TYPE_VALUES];
 const DEFAULT_STATUS_VALUES = [...STATUS_VALUES];
 
-type CompletionFlagCommand = "list" | "create" | "update" | "update-many" | "search" | "calendar" | "context";
+type CompletionFlagCommand =
+  | "list"
+  | "create"
+  | "update"
+  | "update-many"
+  | "search"
+  | "calendar"
+  | "context";
 
-/**
- * Documents the completion runtime config payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the completion runtime config payload exchanged by command, SDK, and package integrations. */
 export interface CompletionRuntimeConfig {
+  /** Value that configures or reports item types for this contract. */
   item_types?: string[];
+  /** Value that configures or reports statuses for this contract. */
   statuses?: string[];
+  /** Value that configures or reports command flags for this contract. */
   command_flags?: Partial<Record<CompletionFlagCommand, string[]>>;
 }
 
@@ -100,13 +107,19 @@ const PLAN_SUBCOMMANDS_LIST =
 const COMPLETION_FLAGS = toCompletionFlagString(COMPLETION_FLAG_CONTRACTS);
 const COMPLETION_SHELL_CHOICES = `${COMPLETION_FLAGS} bash zsh fish`;
 const GUIDE_TOPIC_CHOICES = joinCompletionValues(listGuideTopicIds());
-const LIFECYCLE_ACTIONS = "init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate";
-const EXTENSION_LIFECYCLE_FLAGS = toCompletionFlagString(EXTENSION_FLAG_CONTRACTS);
+const LIFECYCLE_ACTIONS =
+  "init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate";
+const EXTENSION_LIFECYCLE_FLAGS = toCompletionFlagString(
+  EXTENSION_FLAG_CONTRACTS,
+);
 const PACKAGE_LIFECYCLE_FLAGS = toCompletionFlagString(PACKAGE_FLAG_CONTRACTS);
 
-const MUTATION_FLAGS = "--author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
-const DELETE_MUTATION_FLAGS = "--dry-run --author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
-const CLOSE_MUTATION_FLAGS = "--author --message --validate-close --duplicate-of --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
+const MUTATION_FLAGS =
+  "--author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
+const DELETE_MUTATION_FLAGS =
+  "--dry-run --author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
+const CLOSE_MUTATION_FLAGS =
+  "--author --message --validate-close --duplicate-of --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
 const RELEASE_MUTATION_FLAGS =
   "--allow-audit-release --author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
 
@@ -127,8 +140,14 @@ const COMMAND_COMPLETION_DESCRIPTIONS = [
   ["list-blocked", "List blocked items with optional filters"],
   ["list-closed", "List closed items with optional filters"],
   ["list-canceled", "List canceled items with optional filters"],
-  ["aggregate", "Aggregate grouped item counts and numeric stats for governance queries"],
-  ["dedupe-audit", "Audit potential duplicate items and emit merge suggestions"],
+  [
+    "aggregate",
+    "Aggregate grouped item counts and numeric stats for governance queries",
+  ],
+  [
+    "dedupe-audit",
+    "Audit potential duplicate items and emit merge suggestions",
+  ],
   ["guide", "Browse local progressive-disclosure guides"],
   ["calendar", "Show calendar views for deadlines and reminders"],
   ["cal", "Alias for calendar"],
@@ -139,23 +158,53 @@ const COMMAND_COMPLETION_DESCRIPTIONS = [
   ["search", "Search items with keyword, semantic, or hybrid modes"],
   ["reindex", "Rebuild search artifacts"],
   ["history", "Show item history entries"],
-  ["history-compact", "Compact history streams into a synthetic baseline + retained tail"],
-  ["history-redact", "Redact sensitive literals/patterns and recompute history hashes"],
-  ["history-repair", "Re-anchor a drifted history chain so pm health/validate report ok"],
-  ["schema", "Manage custom item types and statuses in .agents/pm/schema/*.json"],
-  ["profile", "List, show, apply, and lint project profiles (archetype schema/config/template/package bundles)"],
-  ["plan", "Agent-optimized Plan item workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)"],
+  [
+    "history-compact",
+    "Compact history streams into a synthetic baseline + retained tail",
+  ],
+  [
+    "history-redact",
+    "Redact sensitive literals/patterns and recompute history hashes",
+  ],
+  [
+    "history-repair",
+    "Re-anchor a drifted history chain so pm health/validate report ok",
+  ],
+  [
+    "schema",
+    "Manage custom item types and statuses in .agents/pm/schema/*.json",
+  ],
+  [
+    "profile",
+    "List, show, apply, and lint project profiles (archetype schema/config/template/package bundles)",
+  ],
+  [
+    "plan",
+    "Agent-optimized Plan item workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)",
+  ],
   ["activity", "Show recent activity across items"],
   ["restore", "Restore an item to an earlier state"],
   ["update", "Update item fields and metadata"],
-  ["update-many", "Bulk-update matched items with dry-run and rollback checkpoints"],
-  ["normalize", "Normalize lifecycle metadata with dry-run planning or apply mode"],
+  [
+    "update-many",
+    "Bulk-update matched items with dry-run and rollback checkpoints",
+  ],
+  [
+    "normalize",
+    "Normalize lifecycle metadata with dry-run planning or apply mode",
+  ],
   ["close", "Close an item (reason requirement follows governance settings)"],
-  ["close-many", "Bulk-close matched items with an optional shared reason and rollback checkpoint"],
+  [
+    "close-many",
+    "Bulk-close matched items with an optional shared reason and rollback checkpoint",
+  ],
   ["delete", "Delete an item and record the change"],
   ["append", "Append text to an item body"],
   ["comments", "List or add comments for an item"],
-  ["comments-audit", "Audit latest comments or full history across filtered items"],
+  [
+    "comments-audit",
+    "Audit latest comments or full history across filtered items",
+  ],
   ["notes", "List or add notes for an item"],
   ["learnings", "List or add learnings for an item"],
   ["files", "Manage linked files"],
@@ -185,51 +234,92 @@ const COMMAND_COMPLETION_DESCRIPTIONS = [
 const FISH_COMMAND_DESCRIPTION_OVERRIDES = new Map<string, string>([
   ["calendar", "Show deadline/reminder calendar views"],
   ["schema", "Inspect and manage runtime schema"],
-  ["profile", "List, show, apply, and lint project profiles (archetype bundles)"],
-  ["plan", "Agent-optimized Plan workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)"],
+  [
+    "profile",
+    "List, show, apply, and lint project profiles (archetype bundles)",
+  ],
+  [
+    "plan",
+    "Agent-optimized Plan workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)",
+  ],
   ["start-task", "Lifecycle alias to claim and set in-progress"],
 ]);
 
-const GLOBAL_FLAGS = GLOBAL_FLAG_CONTRACTS.flatMap((entry) => [entry.short, entry.flag, ...(entry.aliases ?? [])])
+const GLOBAL_FLAGS = GLOBAL_FLAG_CONTRACTS.flatMap((entry) => [
+  entry.short,
+  entry.flag,
+  ...(entry.aliases ?? []),
+])
   .filter((value): value is string => Boolean(value))
   .join(" ");
 
 function joinCompletionValues(values: string[]): string {
-  return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))]
+  return [
+    ...new Set(
+      values.map((value) => value.trim()).filter((value) => value.length > 0),
+    ),
+  ]
     .sort((left, right) => left.localeCompare(right))
     .join(" ");
 }
 
 function joinCompletionValuesInOrder(values: string[]): string {
-  return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))].join(" ");
+  return [
+    ...new Set(
+      values.map((value) => value.trim()).filter((value) => value.length > 0),
+    ),
+  ].join(" ");
 }
 
 function shellDoubleQuote(value: string): string {
-  return value.replaceAll("\\", "\\\\").replaceAll('"', '\\"').replaceAll("$", "\\$").replaceAll("`", "\\`");
+  return value
+    .replaceAll("\\", "\\\\")
+    .replaceAll('"', '\\"')
+    .replaceAll("$", "\\$")
+    .replaceAll("`", "\\`");
 }
 
-function completionTypeValues(itemTypes: string[], runtime: CompletionRuntimeConfig): string {
-  return joinCompletionValuesInOrder(itemTypes.length > 0 ? itemTypes : (runtime.item_types ?? DEFAULT_ITEM_TYPES));
+function completionTypeValues(
+  itemTypes: string[],
+  runtime: CompletionRuntimeConfig,
+): string {
+  return joinCompletionValuesInOrder(
+    itemTypes.length > 0
+      ? itemTypes
+      : (runtime.item_types ?? DEFAULT_ITEM_TYPES),
+  );
 }
 
 function completionStatusValues(runtime: CompletionRuntimeConfig): string {
   return joinCompletionValues(runtime.statuses ?? DEFAULT_STATUS_VALUES);
 }
 
-function mergeFlagStrings(baseFlags: string, runtimeFlags: string[] | undefined): string {
-  const merged = [...baseFlags.split(/\s+/u).filter((value) => value.length > 0), ...(runtimeFlags ?? [])];
+function mergeFlagStrings(
+  baseFlags: string,
+  runtimeFlags: string[] | undefined,
+): string {
+  const merged = [
+    ...baseFlags.split(/\s+/u).filter((value) => value.length > 0),
+    ...(runtimeFlags ?? []),
+  ];
   return joinCompletionValues(merged);
 }
 
-function normalizeRuntimeCompletionFlags(runtimeFlags: string[] | undefined): string[] {
+function normalizeRuntimeCompletionFlags(
+  runtimeFlags: string[] | undefined,
+): string[] {
   const normalized = (runtimeFlags ?? [])
     .map((value) => value.trim())
     .filter((value) => value.startsWith("--") && value.length > 2)
     .map((value) => `--${value.slice(2).replaceAll("_", "-")}`);
-  return [...new Set(normalized)].sort((left, right) => left.localeCompare(right));
+  return [...new Set(normalized)].sort((left, right) =>
+    left.localeCompare(right),
+  );
 }
 
-function renderZshRuntimeFieldFlagSpecs(runtimeFlags: string[] | undefined): string {
+function renderZshRuntimeFieldFlagSpecs(
+  runtimeFlags: string[] | undefined,
+): string {
   const normalized = normalizeRuntimeCompletionFlags(runtimeFlags);
   if (normalized.length === 0) {
     return "";
@@ -237,25 +327,33 @@ function renderZshRuntimeFieldFlagSpecs(runtimeFlags: string[] | undefined): str
   return `${normalized.map((flag) => `            '${flag}[Runtime schema field flag]:value' \\`).join("\n")}\n`;
 }
 
-function renderZshArgumentSpecs(specs: readonly string[], options: { readonly trailingContinuation?: boolean } = {}): string {
+function renderZshArgumentSpecs(
+  specs: readonly string[],
+  options: { readonly trailingContinuation?: boolean } = {},
+): string {
   const trailingContinuation = options.trailingContinuation ?? true;
   const lastSpecIndex = specs.length - 1;
   return specs
-    .map((spec, index) => `            ${spec}${trailingContinuation || index !== lastSpecIndex ? " \\" : ""}`)
+    .map(
+      (spec, index) =>
+        `            ${spec}${trailingContinuation || index !== lastSpecIndex ? " \\" : ""}`,
+    )
     .join("\n");
 }
 
 function renderZshCommandDescriptions(): string {
-  return COMMAND_COMPLETION_DESCRIPTIONS
-    .map(([command, description]) => `    '${command}:${description}'`)
-    .join("\n");
+  return COMMAND_COMPLETION_DESCRIPTIONS.map(
+    ([command, description]) => `    '${command}:${description}'`,
+  ).join("\n");
 }
 
 function renderFishCommandDescriptions(): string {
-  return COMMAND_COMPLETION_DESCRIPTIONS
-    .filter(([command]) => command !== "help")
+  return COMMAND_COMPLETION_DESCRIPTIONS.filter(
+    ([command]) => command !== "help",
+  )
     .map(([command, description]) => {
-      const fishDescription = FISH_COMMAND_DESCRIPTION_OVERRIDES.get(command) ?? description;
+      const fishDescription =
+        FISH_COMMAND_DESCRIPTION_OVERRIDES.get(command) ?? description;
       return `complete -c pm -n __pm_no_subcommand -a ${command.padEnd(16)} -d '${fishDescription}'`;
     })
     .join("\n");
@@ -273,28 +371,55 @@ function renderZshPresenceFilterSpecs(options: {
     "sprint-missing[Select only items missing sprint]",
     "release-missing[Select only items missing release]",
   ];
-  const contentMissingAliasSpecs = options.includeContentMissingAliases === true
-    ? [
-      "files-missing[Alias for --no-files]",
-      "docs-missing[Alias for --no-docs]",
-    ]
-    : [];
+  const contentMissingAliasSpecs =
+    options.includeContentMissingAliases === true
+      ? [
+          "files-missing[Alias for --no-files]",
+          "docs-missing[Alias for --no-docs]",
+        ]
+      : [];
   const pairedSpecs = [
-    ["has-notes[Select only items that have notes]", "no-notes[Select only items with no notes]"],
-    ["has-learnings[Select only items that have learnings]", "no-learnings[Select only items with no learnings]"],
-    ["has-files[Select only items that have linked files]", "no-files[Select only items with no linked files]"],
-    ["has-docs[Select only items that have linked docs]", "no-docs[Select only items with no linked docs]"],
-    ["has-tests[Select only items that have linked tests]", "no-tests[Select only items with no linked tests]"],
-    ["has-comments[Select only items that have comments]", "no-comments[Select only items with no comments]"],
-    ["has-deps[Select only items that have dependencies]", "no-deps[Select only items with no dependencies]"],
-    ["has-body[Select only items with non-empty body]", "empty-body[Select only items with empty body]"],
+    [
+      "has-notes[Select only items that have notes]",
+      "no-notes[Select only items with no notes]",
+    ],
+    [
+      "has-learnings[Select only items that have learnings]",
+      "no-learnings[Select only items with no learnings]",
+    ],
+    [
+      "has-files[Select only items that have linked files]",
+      "no-files[Select only items with no linked files]",
+    ],
+    [
+      "has-docs[Select only items that have linked docs]",
+      "no-docs[Select only items with no linked docs]",
+    ],
+    [
+      "has-tests[Select only items that have linked tests]",
+      "no-tests[Select only items with no linked tests]",
+    ],
+    [
+      "has-comments[Select only items that have comments]",
+      "no-comments[Select only items with no comments]",
+    ],
+    [
+      "has-deps[Select only items that have dependencies]",
+      "no-deps[Select only items with no dependencies]",
+    ],
+    [
+      "has-body[Select only items with non-empty body]",
+      "empty-body[Select only items with empty body]",
+    ],
     [
       "has-linked-command[Select only items that have a linked command]",
       "no-linked-command[Select only items with no linked command]",
     ],
   ];
   return renderZshArgumentSpecs([
-    ...[...missingSpecs, ...contentMissingAliasSpecs].map((spec) => `'--${options.missingPrefix}${spec}'`),
+    ...[...missingSpecs, ...contentMissingAliasSpecs].map(
+      (spec) => `'--${options.missingPrefix}${spec}'`,
+    ),
     ...pairedSpecs.flatMap(([positive, negative]) => [
       `'--${options.pairedPrefix}${positive}'`,
       `'--${options.pairedPrefix}${negative}'`,
@@ -326,35 +451,44 @@ const ZSH_MUTATION_COLLECTION_ARGUMENT_SPECS = [
 ];
 
 function renderZshScheduleItemSpecs(kind: "reminder" | "event"): string {
-  const leadingSpecs = kind === "reminder"
-    ? [
-        "'--at[Reminder time (default +1d)]:at'",
-        "'--text[Reminder text (defaults to title)]:text'",
-      ]
-    : [
-        "'--start[Start time (ISO, now, or relative)]:start'",
-        "'--duration[Duration from start (default 1h)]:duration'",
-        "'--end[End time (overrides --duration)]:end'",
-        "'--location[Location]:location'",
-        "'--timezone[IANA timezone]:timezone'",
-        "'--all-day[Mark as an all-day event]'",
-      ];
-  return renderZshArgumentSpecs([
-    ...leadingSpecs,
-    "'--parent[Parent item id]:parent'",
-    "'--allow-missing-parent[Permit a parent id that does not exist yet]'",
-    "'--tags[Comma-separated tags]:tags'",
-    "'(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)'",
-    "'(-b --body)'{-b,--body}'[Item body]:body'",
-    "'(-d --description)'{-d,--description}'[Short description]:description'",
-    "'--author[Mutation author]:author'",
-    "'--message[History message]:message'",
-    "'--json[Output JSON]'",
-    "'--quiet[Suppress stdout]'",
-  ], { trailingContinuation: false });
+  const leadingSpecs =
+    kind === "reminder"
+      ? [
+          "'--at[Reminder time (default +1d)]:at'",
+          "'--text[Reminder text (defaults to title)]:text'",
+        ]
+      : [
+          "'--start[Start time (ISO, now, or relative)]:start'",
+          "'--duration[Duration from start (default 1h)]:duration'",
+          "'--end[End time (overrides --duration)]:end'",
+          "'--location[Location]:location'",
+          "'--timezone[IANA timezone]:timezone'",
+          "'--all-day[Mark as an all-day event]'",
+        ];
+  return renderZshArgumentSpecs(
+    [
+      ...leadingSpecs,
+      "'--parent[Parent item id]:parent'",
+      "'--allow-missing-parent[Permit a parent id that does not exist yet]'",
+      "'--tags[Comma-separated tags]:tags'",
+      "'(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)'",
+      "'(-b --body)'{-b,--body}'[Item body]:body'",
+      "'(-d --description)'{-d,--description}'[Short description]:description'",
+      "'--author[Mutation author]:author'",
+      "'--message[History message]:message'",
+      "'--json[Output JSON]'",
+      "'--quiet[Suppress stdout]'",
+    ],
+    { trailingContinuation: false },
+  );
 }
 
-function renderZshBulkSelectionFilterSpecs(action: "applying updates" | "closing", statusChoices: string, typeChoices: string, tagChoices: string): string {
+function renderZshBulkSelectionFilterSpecs(
+  action: "applying updates" | "closing",
+  statusChoices: string,
+  typeChoices: string,
+  tagChoices: string,
+): string {
   return renderZshArgumentSpecs([
     `'--filter-status[Filter by status before ${action}]:(${statusChoices})'`,
     `'--filter-type[Filter by type before ${action}]:(${typeChoices})'`,
@@ -374,21 +508,32 @@ function renderZshBulkSelectionFilterSpecs(action: "applying updates" | "closing
   ]);
 }
 
-function renderFishRuntimeFieldFlagSpecs(commands: string[], runtimeFlags: string[] | undefined): string {
-  const normalizedFlags = normalizeRuntimeCompletionFlags(runtimeFlags).map((flag) => flag.slice(2));
+function renderFishRuntimeFieldFlagSpecs(
+  commands: string[],
+  runtimeFlags: string[] | undefined,
+): string {
+  const normalizedFlags = normalizeRuntimeCompletionFlags(runtimeFlags).map(
+    (flag) => flag.slice(2),
+  );
   if (commands.length === 0 || normalizedFlags.length === 0) {
     return "";
   }
   const lines: string[] = [];
   for (const command of commands) {
     for (const flag of normalizedFlags) {
-      lines.push(`complete -c pm -n '__fish_seen_subcommand_from ${command}' -l ${flag} -d 'Runtime schema field flag' -r`);
+      lines.push(
+        `complete -c pm -n '__fish_seen_subcommand_from ${command}' -l ${flag} -d 'Runtime schema field flag' -r`,
+      );
     }
   }
   return `${lines.join("\n")}\n`;
 }
 
-function renderBashDynamicChoiceResolver(kind: "status" | "type", command: "completion-statuses" | "completion-types", fallback: string): string[] {
+function renderBashDynamicChoiceResolver(
+  kind: "status" | "type",
+  command: "completion-statuses" | "completion-types",
+  fallback: string,
+): string[] {
   const envKind = kind.toUpperCase();
   const cacheVar = `PM_COMPLETION_${envKind}_CACHE`;
   const cacheTsVar = `PM_COMPLETION_${envKind}_CACHE_TS`;
@@ -397,7 +542,7 @@ function renderBashDynamicChoiceResolver(kind: "status" | "type", command: "comp
   return [
     `_pm_completion_${kind}_choices() {`,
     "  local now ttl cache_ts resolved",
-    "  now=\"$(date +%s 2>/dev/null || echo 0)\"",
+    '  now="$(date +%s 2>/dev/null || echo 0)"',
     `  ttl="\${${ttlVar}:-120}"`,
     `  cache_ts="\${${cacheTsVar}:-0}"`,
     `  if [[ -n "\${${cacheVar}:-}" && "$now" -ne 0 && $((now - cache_ts)) -lt "$ttl" ]]; then`,
@@ -405,7 +550,7 @@ function renderBashDynamicChoiceResolver(kind: "status" | "type", command: "comp
     "    return 0",
     "  fi",
     `  resolved="$(pm ${command} 2>/dev/null)"`,
-    "  if [[ -z \"$resolved\" ]]; then",
+    '  if [[ -z "$resolved" ]]; then',
     `    resolved="${escapedFallback}"`,
     "  fi",
     `  ${cacheVar}="$resolved"`,
@@ -415,7 +560,11 @@ function renderBashDynamicChoiceResolver(kind: "status" | "type", command: "comp
   ];
 }
 
-function renderZshDynamicChoiceResolver(kind: "status" | "type", command: "completion-statuses" | "completion-types", fallback: string): string {
+function renderZshDynamicChoiceResolver(
+  kind: "status" | "type",
+  command: "completion-statuses" | "completion-types",
+  fallback: string,
+): string {
   const envKind = kind.toUpperCase();
   const cacheVar = `PM_COMPLETION_${envKind}_CACHE`;
   const cacheTsVar = `PM_COMPLETION_${envKind}_CACHE_TS`;
@@ -442,7 +591,11 @@ _pm_${kind}_choices() {
 `;
 }
 
-function renderFishDynamicChoiceResolver(kind: "status" | "type", command: "completion-statuses" | "completion-types", fallback: string): string {
+function renderFishDynamicChoiceResolver(
+  kind: "status" | "type",
+  command: "completion-statuses" | "completion-types",
+  fallback: string,
+): string {
   const envKind = kind.toUpperCase();
   const escapedFallback = fallback.replaceAll("'", "\\'");
   return `
@@ -473,9 +626,7 @@ end
 `;
 }
 
-/**
- * Implements generate bash script for the public runtime surface of this module.
- */
+/** Implements generate bash script for the public runtime surface of this module. */
 export function generateBashScript(
   itemTypes: string[] = [],
   tags: string[] = [],
@@ -488,23 +639,55 @@ export function generateBashScript(
   const statusValues = completionStatusValues(runtime);
   const tagValues = joinCompletionValues(tags);
   const listFlags = mergeFlagStrings(LIST_FLAGS, runtime.command_flags?.list);
-  const createFlags = mergeFlagStrings(CREATE_FLAGS, runtime.command_flags?.create);
-  const updateFlags = mergeFlagStrings(UPDATE_FLAGS, runtime.command_flags?.update);
-  const updateManyFlags = mergeFlagStrings(UPDATE_MANY_FLAGS, runtime.command_flags?.["update-many"]);
+  const createFlags = mergeFlagStrings(
+    CREATE_FLAGS,
+    runtime.command_flags?.create,
+  );
+  const updateFlags = mergeFlagStrings(
+    UPDATE_FLAGS,
+    runtime.command_flags?.update,
+  );
+  const updateManyFlags = mergeFlagStrings(
+    UPDATE_MANY_FLAGS,
+    runtime.command_flags?.["update-many"],
+  );
   const normalizeFlags = NORMALIZE_FLAGS;
-  const searchFlags = mergeFlagStrings(SEARCH_FLAGS, runtime.command_flags?.search);
-  const calendarFlags = mergeFlagStrings(CALENDAR_FLAGS, runtime.command_flags?.calendar);
-  const contextFlags = mergeFlagStrings(CONTEXT_FLAGS, runtime.command_flags?.context);
+  const searchFlags = mergeFlagStrings(
+    SEARCH_FLAGS,
+    runtime.command_flags?.search,
+  );
+  const calendarFlags = mergeFlagStrings(
+    CALENDAR_FLAGS,
+    runtime.command_flags?.calendar,
+  );
+  const contextFlags = mergeFlagStrings(
+    CONTEXT_FLAGS,
+    runtime.command_flags?.context,
+  );
   const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
   // Note: "${...}" inside regular (non-template) strings are literal characters,
   // not JS interpolation. Only backtick template literals interpolate ${...}.
-  const compgen = (flags: string): string => `$(compgen -W "${flags}" -- "$cur")`;
+  const compgen = (flags: string): string =>
+    `$(compgen -W "${flags}" -- "$cur")`;
   return [
     "# bash completion for pm",
-    '# Source this file or add \'eval "$(pm completion bash)"\' to ~/.bashrc',
+    "# Source this file or add 'eval \"$(pm completion bash)\"' to ~/.bashrc",
     "",
-    ...(useDynamicTypeExpansion ? [...renderBashDynamicChoiceResolver("type", "completion-types", typeValues), ""] : []),
-    ...renderBashDynamicChoiceResolver("status", "completion-statuses", statusValues),
+    ...(useDynamicTypeExpansion
+      ? [
+          ...renderBashDynamicChoiceResolver(
+            "type",
+            "completion-types",
+            typeValues,
+          ),
+          "",
+        ]
+      : []),
+    ...renderBashDynamicChoiceResolver(
+      "status",
+      "completion-statuses",
+      statusValues,
+    ),
     "",
     "_pm_completion() {",
     "  local cur prev words cword",
@@ -540,7 +723,7 @@ export function generateBashScript(
         ]
       : [
           '  if [[ "$prev" == "--tag" || "$prev" == "--tags" ]]; then',
-          '    local now ttl cache_ts tag_values',
+          "    local now ttl cache_ts tag_values",
           '    now="$(date +%s 2>/dev/null || echo 0)"',
           '    ttl="${PM_COMPLETION_TAG_TTL:-120}"',
           '    cache_ts="${PM_COMPLETION_TAG_CACHE_TS:-0}"',
@@ -586,8 +769,8 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(normalizeFlags)})`,
     "      ;;",
     "    calendar|cal)",
-      `      COMPREPLY=(${compgen(calendarFlags)})`,
-      "      ;;",
+    `      COMPREPLY=(${compgen(calendarFlags)})`,
+    "      ;;",
     "    context|ctx)",
     `      COMPREPLY=(${compgen(contextFlags)})`,
     "      ;;",
@@ -728,9 +911,7 @@ export function generateBashScript(
   ].join("\n");
 }
 
-/**
- * Implements generate zsh script for the public runtime surface of this module.
- */
+/** Implements generate zsh script for the public runtime surface of this module. */
 export function generateZshScript(
   itemTypes: string[] = [],
   tags: string[] = [],
@@ -741,26 +922,49 @@ export function generateZshScript(
   const useDynamicTypeExpansion = itemTypes.length === 0;
   const typeFallbackChoices = completionTypeValues(itemTypes, runtime);
   const statusFallbackChoices = completionStatusValues(runtime);
-  const typeChoices = useDynamicTypeExpansion ? '${(f)"$(_pm_type_choices)"}' : typeFallbackChoices;
+  const typeChoices = useDynamicTypeExpansion
+    ? '${(f)"$(_pm_type_choices)"}'
+    : typeFallbackChoices;
   const statusChoices = '${(f)"$(_pm_status_choices)"}';
   const guideTopicChoices = GUIDE_TOPIC_CHOICES;
   const tagChoices = joinCompletionValues(tags);
   const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
-  const zshTagChoices = useEagerTagExpansion ? tagChoices : '${(f)"$(_pm_tag_choices)"}';
-  const zshListRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.list);
-  const zshCreateRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.create);
-  const zshUpdateRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.update);
-  const zshUpdateManyRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.["update-many"]);
-  const zshSearchRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.search);
-  const zshCalendarRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.calendar);
-  const zshContextRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.context);
+  const zshTagChoices = useEagerTagExpansion
+    ? tagChoices
+    : '${(f)"$(_pm_tag_choices)"}';
+  const zshListRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(
+    runtime.command_flags?.list,
+  );
+  const zshCreateRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(
+    runtime.command_flags?.create,
+  );
+  const zshUpdateRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(
+    runtime.command_flags?.update,
+  );
+  const zshUpdateManyRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(
+    runtime.command_flags?.["update-many"],
+  );
+  const zshSearchRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(
+    runtime.command_flags?.search,
+  );
+  const zshCalendarRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(
+    runtime.command_flags?.calendar,
+  );
+  const zshContextRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(
+    runtime.command_flags?.context,
+  );
   const zshPresenceFilterFlags = renderZshPresenceFilterSpecs({
     missingPrefix: "filter-",
     pairedPrefix: "",
     includeContentMissingAliases: true,
   });
-  const zshBulkPresenceFilterFlags = renderZshPresenceFilterSpecs({ missingPrefix: "filter-", pairedPrefix: "filter-" });
-  const zshMutationCollectionFlags = renderZshArgumentSpecs(ZSH_MUTATION_COLLECTION_ARGUMENT_SPECS);
+  const zshBulkPresenceFilterFlags = renderZshPresenceFilterSpecs({
+    missingPrefix: "filter-",
+    pairedPrefix: "filter-",
+  });
+  const zshMutationCollectionFlags = renderZshArgumentSpecs(
+    ZSH_MUTATION_COLLECTION_ARGUMENT_SPECS,
+  );
   const dynamicTagResolver = useEagerTagExpansion
     ? ""
     : `
@@ -1704,34 +1908,59 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
 compdef _pm pm`;
 }
 
-/**
- * Implements generate fish script for the public runtime surface of this module.
- */
+/** Implements generate fish script for the public runtime surface of this module. */
 export function generateFishScript(
   itemTypes: string[] = [],
   tags: string[] = [],
   eagerTagExpansion = false,
   runtime: CompletionRuntimeConfig = {},
 ): string {
-  const listCommandNames = ALL_COMMANDS.filter((command) => command === "list" || command.startsWith("list-"));
+  const listCommandNames = ALL_COMMANDS.filter(
+    (command) => command === "list" || command.startsWith("list-"),
+  );
   const listCmds = listCommandNames.join(" ");
   const noSubcommandList = ALL_COMMANDS.join(" ");
   const useDynamicTypeExpansion = itemTypes.length === 0;
   const typeFallbackChoices = completionTypeValues(itemTypes, runtime);
   const statusFallbackChoices = completionStatusValues(runtime);
-  const typeChoices = useDynamicTypeExpansion ? "(__pm_type_choices)" : typeFallbackChoices;
+  const typeChoices = useDynamicTypeExpansion
+    ? "(__pm_type_choices)"
+    : typeFallbackChoices;
   const statusChoices = "(__pm_status_choices)";
   const guideTopicChoices = GUIDE_TOPIC_CHOICES;
   const tagChoices = joinCompletionValues(tags);
   const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
-  const fishTagChoices = useEagerTagExpansion ? `'${tagChoices}'` : "'(__pm_tag_choices)'";
-  const fishListRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(listCommandNames, runtime.command_flags?.list);
-  const fishCreateRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(["create"], runtime.command_flags?.create);
-  const fishUpdateRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(["update"], runtime.command_flags?.update);
-  const fishUpdateManyRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(["update-many"], runtime.command_flags?.["update-many"]);
-  const fishSearchRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(["search"], runtime.command_flags?.search);
-  const fishCalendarRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(["calendar", "cal"], runtime.command_flags?.calendar);
-  const fishContextRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(["context", "ctx"], runtime.command_flags?.context);
+  const fishTagChoices = useEagerTagExpansion
+    ? `'${tagChoices}'`
+    : "'(__pm_tag_choices)'";
+  const fishListRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(
+    listCommandNames,
+    runtime.command_flags?.list,
+  );
+  const fishCreateRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(
+    ["create"],
+    runtime.command_flags?.create,
+  );
+  const fishUpdateRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(
+    ["update"],
+    runtime.command_flags?.update,
+  );
+  const fishUpdateManyRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(
+    ["update-many"],
+    runtime.command_flags?.["update-many"],
+  );
+  const fishSearchRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(
+    ["search"],
+    runtime.command_flags?.search,
+  );
+  const fishCalendarRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(
+    ["calendar", "cal"],
+    runtime.command_flags?.calendar,
+  );
+  const fishContextRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(
+    ["context", "ctx"],
+    runtime.command_flags?.context,
+  );
   const dynamicTagResolver = useEagerTagExpansion
     ? ""
     : `
@@ -2642,9 +2871,7 @@ const SETUP_HINTS: Record<CompletionShell, string> = {
   fish: "Run: pm completion fish > ~/.config/fish/completions/pm.fish",
 };
 
-/**
- * Implements run completion for the public runtime surface of this module.
- */
+/** Implements run completion for the public runtime surface of this module. */
 export function runCompletion(
   shell: string,
   itemTypes: string[] = [],

@@ -14,22 +14,13 @@
 
 /** Minimal structural shape needed to detect duplicate issue codes. */
 export interface IssueCodeItem {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports title for this contract. */
   title?: string | null;
-  /**
-   * The id of this item's parent, when it is a child in a hierarchy. Used to
-   * suppress false positives where a child intentionally reuses its parent's
-   * code prefix (the `PARENT` + `PARENT-T0n` task-breakdown convention, GH-275):
-   * when an item's parent is another item in the same code group, the shared
-   * code is by design and the child does not constitute a collision.
-   */
+  /** The id of this item's parent, when it is a child in a hierarchy. Used to suppress false positives where a child intentionally reuses its parent's code prefix (the `PARENT` + `PARENT-T0n` task-breakdown convention, GH-275): when an item's parent is another item in the same code group, the shared code is by design and the child does not constitute a collision. */
   parent?: string | null;
-  /**
-   * The id of the canonical item this one was closed as a duplicate of, when
-   * set. A closed-as-duplicate item has already been adjudicated, so it is
-   * excluded from collision detection entirely (GH-278) — re-flagging a
-   * resolved duplicate is permanent noise that erodes trust in `validate`.
-   */
+  /** The id of the canonical item this one was closed as a duplicate of, when set. A closed-as-duplicate item has already been adjudicated, so it is excluded from collision detection entirely (GH-278) — re-flagging a resolved duplicate is permanent noise that erodes trust in `validate`. */
   duplicate_of?: string | null;
 }
 
@@ -66,7 +57,9 @@ const ISSUE_CODE_PATTERN = /^([A-Z][A-Z0-9]*-\d+)\b/;
  * Accepts unknown-ish input defensively (exported helper SDK consumers may call
  * from untyped JS): a non-string or empty title resolves to `null`.
  */
-export function extractIssueCode(title: string | null | undefined): string | null {
+export function extractIssueCode(
+  title: string | null | undefined,
+): string | null {
   if (typeof title !== "string") {
     return null;
   }
@@ -79,7 +72,9 @@ export function extractIssueCode(title: string | null | undefined): string | nul
 }
 
 /** Test whether a value is a usable (non-empty after trim) item-id reference. */
-function isNonEmptyIdReference(value: string | null | undefined): value is string {
+function isNonEmptyIdReference(
+  value: string | null | undefined,
+): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
@@ -107,8 +102,13 @@ function isNonEmptyIdReference(value: string | null | undefined): value is strin
  * given (id) is used; duplicate ids (should not occur for a valid corpus) are
  * de-duplicated so an item never inflates its own code's count.
  */
-export function findDuplicateIssueCodes(items: readonly IssueCodeItem[]): DuplicateIssueCode[] {
-  const byCode = new Map<string, Array<{ id: string; title: string; parent: string | null }>>();
+export function findDuplicateIssueCodes(
+  items: readonly IssueCodeItem[],
+): DuplicateIssueCode[] {
+  const byCode = new Map<
+    string,
+    Array<{ id: string; title: string; parent: string | null }>
+  >();
   for (const item of items) {
     // A non-string title can never carry a code, so skip it before extraction;
     // this also guarantees every stored title below is a real string.
@@ -129,7 +129,11 @@ export function findDuplicateIssueCodes(items: readonly IssueCodeItem[]): Duplic
       byCode.set(code, entries);
     }
     if (!entries.some((entry) => entry.id === item.id)) {
-      entries.push({ id: item.id, title: item.title, parent: isNonEmptyIdReference(item.parent) ? item.parent.trim() : null });
+      entries.push({
+        id: item.id,
+        title: item.title,
+        parent: isNonEmptyIdReference(item.parent) ? item.parent.trim() : null,
+      });
     }
   }
 
@@ -148,12 +152,15 @@ export function findDuplicateIssueCodes(items: readonly IssueCodeItem[]): Duplic
     // the canonical id (e.g. an upper-case `id_prefix`) still matches.
     const idsInGroup = new Set(entries.map((entry) => entry.id.toLowerCase()));
     const collisionEntries = entries.filter(
-      (entry) => entry.parent === null || !idsInGroup.has(entry.parent.toLowerCase()),
+      (entry) =>
+        entry.parent === null || !idsInGroup.has(entry.parent.toLowerCase()),
     );
     if (collisionEntries.length < 2) {
       continue;
     }
-    const sorted = [...collisionEntries].sort((left, right) => left.id.localeCompare(right.id));
+    const sorted = [...collisionEntries].sort((left, right) =>
+      left.id.localeCompare(right.id),
+    );
     duplicates.push({
       code,
       count: sorted.length,

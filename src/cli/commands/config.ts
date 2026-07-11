@@ -4,7 +4,10 @@
  * Implements the pm config command surface and its agent-facing runtime behavior.
  */
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { resolveConfigPositionalValue, type ConfigKey } from "../../core/config/positional-value.js";
+import {
+  resolveConfigPositionalValue,
+  type ConfigKey,
+} from "../../core/config/positional-value.js";
 import {
   NESTED_SETTING_DESCRIPTORS,
   parseNestedSettingValue,
@@ -16,7 +19,10 @@ import {
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { normalizeParentReferencePolicy } from "../../core/item/parent-reference-policy.js";
 import { normalizeSprintReleaseFormatPolicy } from "../../core/item/sprint-release-format.js";
-import { resolveItemTypeRegistry, resolveTypeName } from "../../core/item/type-registry.js";
+import {
+  resolveItemTypeRegistry,
+  resolveTypeName,
+} from "../../core/item/type-registry.js";
 import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
 import { resolveItemTypesFilePath } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -28,7 +34,10 @@ import {
   resolveGlobalPmRoot,
   resolvePmRoot,
 } from "../../core/store/paths.js";
-import { readSettingsWithMetadata, writeSettings } from "../../core/store/settings.js";
+import {
+  readSettingsWithMetadata,
+  writeSettings,
+} from "../../core/store/settings.js";
 import type {
   ContextDepth,
   GovernanceCloseValidationDefault,
@@ -138,46 +147,65 @@ interface ConfigKeyDescriptor {
   value: ConfigValue;
 }
 
-/**
- * Documents the config command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the config command options payload exchanged by command, SDK, and package integrations. */
 export interface ConfigCommandOptions {
+  /** Value that configures or reports criterion for this contract. */
   criterion?: string[];
+  /** Value that configures or reports format for this contract. */
   format?: string;
+  /** Value that configures or reports policy for this contract. */
   policy?: string;
+  /** Value that configures or reports value for this contract. */
   value?: string;
+  /** Value that configures or reports clear criteria for this contract. */
   clearCriteria?: boolean;
+  /** Fallback depth used when callers do not provide an override. */
   defaultDepth?: string;
+  /** Value that configures or reports activity limit for this contract. */
   activityLimit?: string;
+  /** Value that configures or reports stale threshold days for this contract. */
   staleThresholdDays?: string;
+  /** Value that configures or reports section hierarchy for this contract. */
   sectionHierarchy?: string;
+  /** Value that configures or reports section activity for this contract. */
   sectionActivity?: string;
+  /** Value that configures or reports section progress for this contract. */
   sectionProgress?: string;
+  /** Value that configures or reports section blockers for this contract. */
   sectionBlockers?: string;
+  /** Value that configures or reports section files for this contract. */
   sectionFiles?: string;
+  /** Value that configures or reports section workload for this contract. */
   sectionWorkload?: string;
+  /** Value that configures or reports section staleness for this contract. */
   sectionStaleness?: string;
+  /** Value that configures or reports section tests for this contract. */
   sectionTests?: string;
 }
 
-/**
- * Documents the nested setting result value payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the nested setting result value payload exchanged by command, SDK, and package integrations. */
 export interface NestedSettingResultValue {
+  /** Value that configures or reports key for this contract. */
   key: string;
+  /** Filesystem path used for path resolution. */
   path: string;
+  /** Value that configures or reports kind for this contract. */
   kind: NestedSettingDescriptor["kind"];
+  /** Value that configures or reports value for this contract. */
   value: string | number | boolean | null;
 }
 
-/**
- * Documents the config result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the config result payload exchanged by command, SDK, and package integrations. */
 export interface ConfigResult {
+  /** Value that configures or reports scope for this contract. */
   scope: ConfigScope;
+  /** Value that configures or reports key for this contract. */
   key?: ConfigKey | string;
+  /** Value that configures or reports criteria for this contract. */
   criteria?: string[];
+  /** Value that configures or reports format for this contract. */
   format?: ItemFormat;
+  /** Value that configures or reports policy for this contract. */
   policy?:
     | HistoryMissingStreamPolicy
     | SprintReleaseFormatPolicy
@@ -193,13 +221,21 @@ export interface ConfigResult {
     | TestResultTrackingPolicy
     | TelemetryTrackingPolicy
     | string;
+  /** Value that configures or reports nested setting for this contract. */
   nested_setting?: NestedSettingResultValue;
+  /** Configuration controlling nested behavior. */
   nested_settings?: NestedSettingResultValue[];
+  /** Value that configures or reports keys for this contract. */
   keys?: ConfigKeyDescriptor[];
+  /** Value that configures or reports values for this contract. */
   values?: Record<ConfigKey, ConfigValue>;
+  /** Value that configures or reports count for this contract. */
   count?: number;
+  /** Configuration controlling context behavior. */
   context_settings?: ContextConfigValue;
+  /** Whether explicit item format applies to this operation. */
   has_explicit_item_format?: boolean;
+  /** Value that configures or reports migration for this contract. */
   migration?: {
     target_format: ItemFormat;
     scanned: number;
@@ -207,19 +243,37 @@ export interface ConfigResult {
     removed: string[];
     warnings: string[];
   };
+  /** Filesystem path used for settings resolution. */
   settings_path: string;
+  /** Value that configures or reports changed for this contract. */
   changed: boolean;
+  /** Value that configures or reports warnings for this contract. */
   warnings?: string[];
 }
 
 const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
   definition_of_done: ["definition-of-done", "definition_of_done"],
   item_format: ["item-format", "item_format"],
-  history_missing_stream_policy: ["history-missing-stream-policy", "history_missing_stream_policy"],
-  sprint_release_format_policy: ["sprint-release-format-policy", "sprint_release_format_policy"],
-  parent_reference_policy: ["parent-reference-policy", "parent_reference_policy"],
-  metadata_validation_profile: ["metadata-validation-profile", "metadata_validation_profile"],
-  metadata_required_fields: ["metadata-required-fields", "metadata_required_fields"],
+  history_missing_stream_policy: [
+    "history-missing-stream-policy",
+    "history_missing_stream_policy",
+  ],
+  sprint_release_format_policy: [
+    "sprint-release-format-policy",
+    "sprint_release_format_policy",
+  ],
+  parent_reference_policy: [
+    "parent-reference-policy",
+    "parent_reference_policy",
+  ],
+  metadata_validation_profile: [
+    "metadata-validation-profile",
+    "metadata_validation_profile",
+  ],
+  metadata_required_fields: [
+    "metadata-required-fields",
+    "metadata_required_fields",
+  ],
   lifecycle_stale_blocker_reason_patterns: [
     "lifecycle-stale-blocker-reason-patterns",
     "lifecycle_stale_blocker_reason_patterns",
@@ -237,8 +291,14 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
     "lifecycle_closure_like_actual_result_patterns",
   ],
   governance_preset: ["governance-preset", "governance_preset"],
-  governance_ownership_enforcement: ["governance-ownership-enforcement", "governance_ownership_enforcement"],
-  governance_create_mode_default: ["governance-create-mode-default", "governance_create_mode_default"],
+  governance_ownership_enforcement: [
+    "governance-ownership-enforcement",
+    "governance_ownership_enforcement",
+  ],
+  governance_create_mode_default: [
+    "governance-create-mode-default",
+    "governance_create_mode_default",
+  ],
   governance_close_validation_default: [
     "governance-close-validation-default",
     "governance_close_validation_default",
@@ -247,9 +307,18 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
     "governance-require-close-reason",
     "governance_require_close_reason",
   ],
-  governance_create_default_type: ["governance-create-default-type", "governance_create_default_type"],
-  governance_workflow_enforcement: ["governance-workflow-enforcement", "governance_workflow_enforcement"],
-  governance_parent_reference_policy: ["governance-parent-reference-policy", "governance_parent_reference_policy"],
+  governance_create_default_type: [
+    "governance-create-default-type",
+    "governance_create_default_type",
+  ],
+  governance_workflow_enforcement: [
+    "governance-workflow-enforcement",
+    "governance_workflow_enforcement",
+  ],
+  governance_parent_reference_policy: [
+    "governance-parent-reference-policy",
+    "governance_parent_reference_policy",
+  ],
   governance_metadata_validation_profile: [
     "governance-metadata-validation-profile",
     "governance_metadata_validation_profile",
@@ -266,14 +335,15 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
 // Canonical kebab-case forms (first alias entry per key). Used for the invalid-key
 // hint so agents see ~21 keys instead of all ~45 kebab+snake variants; snake_case
 // forms stay fully accepted as input via CONFIG_KEY_VALUES/normalizeKey.
-const CANONICAL_CONFIG_KEYS: readonly string[] = (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map(
-  (candidate) => CONFIG_KEY_ALIASES[candidate][0],
-);
-const CONFIG_KEY_BY_ALIAS: Readonly<Record<string, ConfigKey>> = Object.fromEntries(
-  (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).flatMap((key) =>
-    CONFIG_KEY_ALIASES[key].map((alias) => [alias, key] as const),
-  ),
-) as Readonly<Record<string, ConfigKey>>;
+const CANONICAL_CONFIG_KEYS: readonly string[] = (
+  Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]
+).map((candidate) => CONFIG_KEY_ALIASES[candidate][0]);
+const CONFIG_KEY_BY_ALIAS: Readonly<Record<string, ConfigKey>> =
+  Object.fromEntries(
+    (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).flatMap((key) =>
+      CONFIG_KEY_ALIASES[key].map((alias) => [alias, key] as const),
+    ),
+  ) as Readonly<Record<string, ConfigKey>>;
 
 const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
   definition_of_done: "Definition of Done criteria list.",
@@ -281,7 +351,8 @@ const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
   history_missing_stream_policy: "Missing history stream handling policy.",
   sprint_release_format_policy: "Sprint/release format validation policy.",
   parent_reference_policy: "Parent reference validation policy.",
-  metadata_validation_profile: "Validate metadata profile policy (core|strict|custom).",
+  metadata_validation_profile:
+    "Validate metadata profile policy (core|strict|custom).",
   metadata_required_fields: "Validate custom metadata required-fields list.",
   lifecycle_stale_blocker_reason_patterns:
     "Validate lifecycle stale-blocker reason substring patterns (criteria list).",
@@ -291,16 +362,26 @@ const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
     "Validate lifecycle closure-like resolution substring patterns (criteria list).",
   lifecycle_closure_like_actual_result_patterns:
     "Validate lifecycle closure-like actual_result substring patterns (criteria list).",
-  governance_preset: "Governance preset policy (minimal|default|strict|custom).",
-  governance_ownership_enforcement: "Governance ownership enforcement policy (none|warn|strict).",
-  governance_create_mode_default: "Governance default create mode (progressive|strict).",
-  governance_close_validation_default: "Governance default close validation mode (off|warn|strict).",
-  governance_require_close_reason: "Governance close-reason requirement policy (enabled|disabled).",
-  governance_create_default_type: "Governance default item type for `pm create` when --type is omitted.",
-  governance_workflow_enforcement: "Governance per-type transition enforcement mode (off|warn|strict).",
-  governance_parent_reference_policy: "Governance parent reference policy (warn|strict_error).",
-  governance_metadata_validation_profile: "Governance metadata validation profile (core|strict|custom).",
-  governance_force_required_for_stale_lock: "Governance stale-lock force policy (enabled|disabled).",
+  governance_preset:
+    "Governance preset policy (minimal|default|strict|custom).",
+  governance_ownership_enforcement:
+    "Governance ownership enforcement policy (none|warn|strict).",
+  governance_create_mode_default:
+    "Governance default create mode (progressive|strict).",
+  governance_close_validation_default:
+    "Governance default close validation mode (off|warn|strict).",
+  governance_require_close_reason:
+    "Governance close-reason requirement policy (enabled|disabled).",
+  governance_create_default_type:
+    "Governance default item type for `pm create` when --type is omitted.",
+  governance_workflow_enforcement:
+    "Governance per-type transition enforcement mode (off|warn|strict).",
+  governance_parent_reference_policy:
+    "Governance parent reference policy (warn|strict_error).",
+  governance_metadata_validation_profile:
+    "Governance metadata validation profile (core|strict|custom).",
+  governance_force_required_for_stale_lock:
+    "Governance stale-lock force policy (enabled|disabled).",
   test_result_tracking: "Item-level linked test result persistence policy.",
   telemetry_tracking: "Telemetry usage reporting policy.",
   context: "Context command settings (depth, section toggles, limits).",
@@ -327,7 +408,9 @@ type GovernanceValidationConfigKey =
   | "governance_parent_reference_policy"
   | "governance_metadata_validation_profile"
   | "governance_workflow_enforcement";
-type GovernancePresetOrTypeConfigKey = "governance_preset" | "governance_create_default_type";
+type GovernancePresetOrTypeConfigKey =
+  | "governance_preset"
+  | "governance_create_default_type";
 
 const CRITERIA_CONFIG_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
   "metadata_required_fields",
@@ -337,31 +420,38 @@ const TRACKING_CONFIG_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
   "test_result_tracking",
   "telemetry_tracking",
 ]);
-const GOVERNANCE_BOOLEAN_CONFIG_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
-  "governance_require_close_reason",
-  "governance_force_required_for_stale_lock",
-]);
-const GOVERNANCE_POLICY_CONFIG_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
-  "governance_ownership_enforcement",
-  "governance_create_mode_default",
-  "governance_close_validation_default",
-]);
-const GOVERNANCE_VALIDATION_CONFIG_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
-  "governance_parent_reference_policy",
-  "governance_metadata_validation_profile",
-  "governance_workflow_enforcement",
-]);
-const GOVERNANCE_PRESET_OR_TYPE_CONFIG_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
-  "governance_preset",
-  "governance_create_default_type",
-]);
+const GOVERNANCE_BOOLEAN_CONFIG_KEYS: ReadonlySet<ConfigKey> =
+  new Set<ConfigKey>([
+    "governance_require_close_reason",
+    "governance_force_required_for_stale_lock",
+  ]);
+const GOVERNANCE_POLICY_CONFIG_KEYS: ReadonlySet<ConfigKey> =
+  new Set<ConfigKey>([
+    "governance_ownership_enforcement",
+    "governance_create_mode_default",
+    "governance_close_validation_default",
+  ]);
+const GOVERNANCE_VALIDATION_CONFIG_KEYS: ReadonlySet<ConfigKey> =
+  new Set<ConfigKey>([
+    "governance_parent_reference_policy",
+    "governance_metadata_validation_profile",
+    "governance_workflow_enforcement",
+  ]);
+const GOVERNANCE_PRESET_OR_TYPE_CONFIG_KEYS: ReadonlySet<ConfigKey> =
+  new Set<ConfigKey>(["governance_preset", "governance_create_default_type"]);
 
-const isCriteriaValueConfigKey = (key: ConfigKey): key is CriteriaConfigKey => CRITERIA_CONFIG_KEYS.has(key);
-const isGovernancePolicyConfigKey = (key: ConfigKey): key is GovernancePolicyConfigKey =>
-  GOVERNANCE_POLICY_CONFIG_KEYS.has(key);
-const isGovernanceValidationConfigKey = (key: ConfigKey): key is GovernanceValidationConfigKey =>
+const isCriteriaValueConfigKey = (key: ConfigKey): key is CriteriaConfigKey =>
+  CRITERIA_CONFIG_KEYS.has(key);
+const isGovernancePolicyConfigKey = (
+  key: ConfigKey,
+): key is GovernancePolicyConfigKey => GOVERNANCE_POLICY_CONFIG_KEYS.has(key);
+const isGovernanceValidationConfigKey = (
+  key: ConfigKey,
+): key is GovernanceValidationConfigKey =>
   GOVERNANCE_VALIDATION_CONFIG_KEYS.has(key);
-const isGovernancePresetOrTypeConfigKey = (key: ConfigKey): key is GovernancePresetOrTypeConfigKey =>
+const isGovernancePresetOrTypeConfigKey = (
+  key: ConfigKey,
+): key is GovernancePresetOrTypeConfigKey =>
   GOVERNANCE_PRESET_OR_TYPE_CONFIG_KEYS.has(key);
 
 function isCriteriaConfigKey(key: ConfigKey): boolean {
@@ -379,10 +469,18 @@ function normalizeScope(value: string): ConfigScope {
 }
 
 function normalizeAction(value: string): ConfigAction {
-  if (value === "get" || value === "set" || value === "list" || value === "export") {
+  if (
+    value === "get" ||
+    value === "set" ||
+    value === "list" ||
+    value === "export"
+  ) {
     return value;
   }
-  throw new PmCliError(`Invalid config action "${value}". Allowed: get, set, list, export`, EXIT_CODE.USAGE);
+  throw new PmCliError(
+    `Invalid config action "${value}". Allowed: get, set, list, export`,
+    EXIT_CODE.USAGE,
+  );
 }
 
 function normalizeKey(value: string): ConfigKey {
@@ -390,17 +488,26 @@ function normalizeKey(value: string): ConfigKey {
   if (key) {
     return key;
   }
-  const nestedKeys = NESTED_SETTING_DESCRIPTORS.map((descriptor) => descriptor.key).join(", ");
+  const nestedKeys = NESTED_SETTING_DESCRIPTORS.map(
+    (descriptor) => descriptor.key,
+  ).join(", ");
   throw new PmCliError(
     `Invalid config key "${value}". Supported: ${CANONICAL_CONFIG_KEYS.join(", ")} (underscore variants also accepted). Nested leaf settings: ${nestedKeys}.`,
     EXIT_CODE.USAGE,
   );
 }
 
-function normalizeCriteria(values: string[] | undefined, clearCriteria: boolean | undefined): string[] {
-  const normalized = [...new Set((values ?? []).map((value) => value.trim()).filter((value) => value.length > 0))].sort(
-    (left, right) => left.localeCompare(right),
-  );
+function normalizeCriteria(
+  values: string[] | undefined,
+  clearCriteria: boolean | undefined,
+): string[] {
+  const normalized = [
+    ...new Set(
+      (values ?? [])
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
   if (clearCriteria) {
     if (normalized.length > 0) {
       throw new PmCliError(
@@ -430,10 +537,15 @@ function normalizeItemFormat(value: string | undefined): ItemFormat {
       EXIT_CODE.USAGE,
     );
   }
-  throw new PmCliError("Config set item-format requires --format toon", EXIT_CODE.USAGE);
+  throw new PmCliError(
+    "Config set item-format requires --format toon",
+    EXIT_CODE.USAGE,
+  );
 }
 
-function normalizeHistoryMissingStreamPolicy(value: string | undefined): HistoryMissingStreamPolicy {
+function normalizeHistoryMissingStreamPolicy(
+  value: string | undefined,
+): HistoryMissingStreamPolicy {
   const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
   if (normalized === "auto_create" || normalized === "strict_error") {
     return normalized;
@@ -444,7 +556,9 @@ function normalizeHistoryMissingStreamPolicy(value: string | undefined): History
   );
 }
 
-function normalizeTestResultTrackingPolicy(value: string | undefined): TestResultTrackingPolicy {
+function normalizeTestResultTrackingPolicy(
+  value: string | undefined,
+): TestResultTrackingPolicy {
   const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
   if (normalized === "enabled" || normalized === "disabled") {
     return normalized;
@@ -455,7 +569,9 @@ function normalizeTestResultTrackingPolicy(value: string | undefined): TestResul
   );
 }
 
-function normalizeTelemetryTrackingPolicy(value: string | undefined): TelemetryTrackingPolicy {
+function normalizeTelemetryTrackingPolicy(
+  value: string | undefined,
+): TelemetryTrackingPolicy {
   const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
   if (normalized === "enabled" || normalized === "disabled") {
     return normalized;
@@ -466,9 +582,15 @@ function normalizeTelemetryTrackingPolicy(value: string | undefined): TelemetryT
   );
 }
 
-function normalizeValidateMetadataProfile(value: string | undefined): ValidateMetadataProfile {
+function normalizeValidateMetadataProfile(
+  value: string | undefined,
+): ValidateMetadataProfile {
   const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
-  if (normalized === "core" || normalized === "strict" || normalized === "custom") {
+  if (
+    normalized === "core" ||
+    normalized === "strict" ||
+    normalized === "custom"
+  ) {
     return normalized;
   }
   throw new PmCliError(
@@ -477,9 +599,16 @@ function normalizeValidateMetadataProfile(value: string | undefined): ValidateMe
   );
 }
 
-function normalizeGovernancePreset(value: string | undefined): GovernancePreset {
+function normalizeGovernancePreset(
+  value: string | undefined,
+): GovernancePreset {
   const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
-  if (normalized === "minimal" || normalized === "default" || normalized === "strict" || normalized === "custom") {
+  if (
+    normalized === "minimal" ||
+    normalized === "default" ||
+    normalized === "strict" ||
+    normalized === "custom"
+  ) {
     return normalized;
   }
   throw new PmCliError(
@@ -488,9 +617,15 @@ function normalizeGovernancePreset(value: string | undefined): GovernancePreset 
   );
 }
 
-function normalizeGovernanceOwnershipEnforcement(value: string | undefined): GovernanceOwnershipEnforcement {
+function normalizeGovernanceOwnershipEnforcement(
+  value: string | undefined,
+): GovernanceOwnershipEnforcement {
   const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
-  if (normalized === "none" || normalized === "warn" || normalized === "strict") {
+  if (
+    normalized === "none" ||
+    normalized === "warn" ||
+    normalized === "strict"
+  ) {
     return normalized;
   }
   throw new PmCliError(
@@ -499,7 +634,9 @@ function normalizeGovernanceOwnershipEnforcement(value: string | undefined): Gov
   );
 }
 
-function normalizeGovernanceCreateModeDefault(value: string | undefined): GovernanceCreateModeDefault {
+function normalizeGovernanceCreateModeDefault(
+  value: string | undefined,
+): GovernanceCreateModeDefault {
   const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
   if (normalized === "progressive" || normalized === "strict") {
     return normalized;
@@ -510,9 +647,15 @@ function normalizeGovernanceCreateModeDefault(value: string | undefined): Govern
   );
 }
 
-function normalizeGovernanceCloseValidationDefault(value: string | undefined): GovernanceCloseValidationDefault {
+function normalizeGovernanceCloseValidationDefault(
+  value: string | undefined,
+): GovernanceCloseValidationDefault {
   const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
-  if (normalized === "off" || normalized === "warn" || normalized === "strict") {
+  if (
+    normalized === "off" ||
+    normalized === "warn" ||
+    normalized === "strict"
+  ) {
     return normalized;
   }
   if (normalized === "none" || normalized === "disabled") {
@@ -524,10 +667,18 @@ function normalizeGovernanceCloseValidationDefault(value: string | undefined): G
   );
 }
 
-function normalizeGovernanceWorkflowEnforcement(value: unknown): GovernanceWorkflowEnforcement {
+function normalizeGovernanceWorkflowEnforcement(
+  value: unknown,
+): GovernanceWorkflowEnforcement {
   const normalized =
-    typeof value === "string" ? value.trim().toLowerCase().replaceAll("-", "_") : undefined;
-  if (normalized === "off" || normalized === "warn" || normalized === "strict") {
+    typeof value === "string"
+      ? value.trim().toLowerCase().replaceAll("-", "_")
+      : undefined;
+  if (
+    normalized === "off" ||
+    normalized === "warn" ||
+    normalized === "strict"
+  ) {
     return normalized;
   }
   if (normalized === "none" || normalized === "disabled") {
@@ -565,7 +716,10 @@ function normalizeGovernanceRequireCloseReasonPolicy(
   );
 }
 
-function normalizePolicyForConflict(key: ConfigKey | undefined, value: string): string {
+function normalizePolicyForConflict(
+  key: ConfigKey | undefined,
+  value: string,
+): string {
   switch (key) {
     case "history_missing_stream_policy":
       return normalizeHistoryMissingStreamPolicy(value);
@@ -600,7 +754,10 @@ function normalizePolicyForConflict(key: ConfigKey | undefined, value: string): 
   }
 }
 
-const METADATA_REQUIRED_FIELD_ALIAS_MAP: Record<string, ValidateMetadataRequiredField> = {
+const METADATA_REQUIRED_FIELD_ALIAS_MAP: Record<
+  string,
+  ValidateMetadataRequiredField
+> = {
   author: "author",
   acceptance_criteria: "acceptance_criteria",
   "acceptance-criteria": "acceptance_criteria",
@@ -631,7 +788,13 @@ function normalizeMetadataRequiredFields(
   values: string[] | undefined,
   clearCriteria: boolean | undefined,
 ): ValidateMetadataRequiredField[] {
-  const normalized = [...new Set((values ?? []).map((value) => value.trim()).filter((value) => value.length > 0))];
+  const normalized = [
+    ...new Set(
+      (values ?? [])
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0),
+    ),
+  ];
   if (clearCriteria) {
     if (normalized.length > 0) {
       throw new PmCliError(
@@ -647,8 +810,12 @@ function normalizeMetadataRequiredFields(
       EXIT_CODE.USAGE,
     );
   }
-  const lowered = normalized.map((value) => value.toLowerCase().replaceAll("-", "_"));
-  const unsupported = lowered.filter((value) => METADATA_REQUIRED_FIELD_ALIAS_MAP[value] === undefined);
+  const lowered = normalized.map((value) =>
+    value.toLowerCase().replaceAll("-", "_"),
+  );
+  const unsupported = lowered.filter(
+    (value) => METADATA_REQUIRED_FIELD_ALIAS_MAP[value] === undefined,
+  );
   if (unsupported.length > 0) {
     throw new PmCliError(
       `Config set metadata-required-fields received unsupported values: ${unsupported.join(", ")}. ` +
@@ -656,9 +823,16 @@ function normalizeMetadataRequiredFields(
       EXIT_CODE.USAGE,
     );
   }
-  return [...new Set(lowered.map((value) => METADATA_REQUIRED_FIELD_ALIAS_MAP[value] as ValidateMetadataRequiredField))].sort(
-    (left, right) => left.localeCompare(right),
-  );
+  return [
+    ...new Set(
+      lowered.map(
+        (value) =>
+          METADATA_REQUIRED_FIELD_ALIAS_MAP[
+            value
+          ] as ValidateMetadataRequiredField,
+      ),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
 }
 
 function normalizeLifecyclePatternCriteria(
@@ -666,9 +840,13 @@ function normalizeLifecyclePatternCriteria(
   values: string[] | undefined,
   clearCriteria: boolean | undefined,
 ): string[] {
-  const normalized = [...new Set((values ?? []).map((value) => value.trim().toLowerCase()).filter((value) => value.length > 0))].sort(
-    (left, right) => left.localeCompare(right),
-  );
+  const normalized = [
+    ...new Set(
+      (values ?? [])
+        .map((value) => value.trim().toLowerCase())
+        .filter((value) => value.length > 0),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
   if (clearCriteria) {
     if (normalized.length > 0) {
       throw new PmCliError(
@@ -691,41 +869,52 @@ function normalizeWarnings(values: string[]): string[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
 
-function normalizeKeyForAction(action: ConfigAction, value: string | undefined): ConfigKey | undefined {
+function normalizeKeyForAction(
+  action: ConfigAction,
+  value: string | undefined,
+): ConfigKey | undefined {
   if (action === "list" || action === "export") {
     if (typeof value === "string" && value.trim().length > 0) {
-      throw new PmCliError(`Config action "${action}" does not accept <key>`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `Config action "${action}" does not accept <key>`,
+        EXIT_CODE.USAGE,
+      );
     }
     return undefined;
   }
   if (typeof value !== "string" || value.trim().length === 0) {
-    throw new PmCliError(`Config action "${action}" requires <key>`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Config action "${action}" requires <key>`,
+      EXIT_CODE.USAGE,
+    );
   }
   return normalizeKey(value);
 }
 
-/**
- * Narrows the `ConfigKey | undefined` carried into the get/set branches back to
- * a concrete `ConfigKey`. By the time those branches run, `normalizeKeyForAction`
- * has already thrown on a missing key and nested settings have returned earlier,
- * so the `undefined` case is unreachable at runtime — the throw is a defensive
- * type-narrowing guard only.
- */
-function assertConfigKeyDefined(key: ConfigKey | undefined): asserts key is ConfigKey {
+/** Narrows the `ConfigKey | undefined` carried into the get/set branches back to a concrete `ConfigKey`. By the time those branches run, `normalizeKeyForAction` has already thrown on a missing key and nested settings have returned earlier, so the `undefined` case is unreachable at runtime — the throw is a defensive type-narrowing guard only. */
+function assertConfigKeyDefined(
+  key: ConfigKey | undefined,
+): asserts key is ConfigKey {
   /* c8 ignore next 3 -- defensive: get/set always carry a key (see normalizeKeyForAction). */
   if (!key) {
     throw new PmCliError("Config action requires <key>", EXIT_CODE.USAGE);
   }
 }
 
-const CONFIG_VALUE_READERS: Readonly<Record<ConfigKey, (settings: PmSettings) => ConfigValue>> = {
+const CONFIG_VALUE_READERS: Readonly<
+  Record<ConfigKey, (settings: PmSettings) => ConfigValue>
+> = {
   definition_of_done: (settings) => [...settings.workflow.definition_of_done],
   item_format: (settings) => settings.item_format,
   history_missing_stream_policy: (settings) => settings.history.missing_stream,
-  sprint_release_format_policy: (settings) => settings.validation.sprint_release_format,
+  sprint_release_format_policy: (settings) =>
+    settings.validation.sprint_release_format,
   parent_reference_policy: (settings) => settings.validation.parent_reference,
-  metadata_validation_profile: (settings) => settings.validation.metadata_profile,
-  metadata_required_fields: (settings) => [...settings.validation.metadata_required_fields],
+  metadata_validation_profile: (settings) =>
+    settings.validation.metadata_profile,
+  metadata_required_fields: (settings) => [
+    ...settings.validation.metadata_required_fields,
+  ],
   lifecycle_stale_blocker_reason_patterns: (settings) => [
     ...settings.validation.lifecycle_stale_blocker_reason_patterns,
   ],
@@ -739,18 +928,28 @@ const CONFIG_VALUE_READERS: Readonly<Record<ConfigKey, (settings: PmSettings) =>
     ...settings.validation.lifecycle_closure_like_actual_result_patterns,
   ],
   governance_preset: (settings) => settings.governance.preset,
-  governance_ownership_enforcement: (settings) => settings.governance.ownership_enforcement,
-  governance_create_mode_default: (settings) => settings.governance.create_mode_default,
-  governance_close_validation_default: (settings) => settings.governance.close_validation_default,
-  governance_require_close_reason: (settings) => settings.governance.require_close_reason ? "enabled" : "disabled",
-  governance_create_default_type: (settings) => settings.governance.create_default_type ?? "",
-  governance_workflow_enforcement: (settings) => settings.governance.workflow_enforcement ?? "off",
-  governance_parent_reference_policy: (settings) => settings.governance.parent_reference,
-  governance_metadata_validation_profile: (settings) => settings.governance.metadata_profile,
+  governance_ownership_enforcement: (settings) =>
+    settings.governance.ownership_enforcement,
+  governance_create_mode_default: (settings) =>
+    settings.governance.create_mode_default,
+  governance_close_validation_default: (settings) =>
+    settings.governance.close_validation_default,
+  governance_require_close_reason: (settings) =>
+    settings.governance.require_close_reason ? "enabled" : "disabled",
+  governance_create_default_type: (settings) =>
+    settings.governance.create_default_type ?? "",
+  governance_workflow_enforcement: (settings) =>
+    settings.governance.workflow_enforcement ?? "off",
+  governance_parent_reference_policy: (settings) =>
+    settings.governance.parent_reference,
+  governance_metadata_validation_profile: (settings) =>
+    settings.governance.metadata_profile,
   governance_force_required_for_stale_lock: (settings) =>
     settings.governance.force_required_for_stale_lock ? "enabled" : "disabled",
-  test_result_tracking: (settings) => settings.testing.record_results_to_items ? "enabled" : "disabled",
-  telemetry_tracking: (settings) => settings.telemetry.enabled ? "enabled" : "disabled",
+  test_result_tracking: (settings) =>
+    settings.testing.record_results_to_items ? "enabled" : "disabled",
+  telemetry_tracking: (settings) =>
+    settings.telemetry.enabled ? "enabled" : "disabled",
   context: (settings) => ({
     default_depth: settings.context.default_depth,
     activity_limit: settings.context.activity_limit,
@@ -778,10 +977,16 @@ async function resolveSettingsTarget(
   global: GlobalOptions,
 ): Promise<{ pmRoot: string; settingsPath: string }> {
   const cwd = process.cwd();
-  const pmRoot = scope === "project" ? resolvePmRoot(cwd, global.path) : resolveGlobalPmRoot(cwd);
+  const pmRoot =
+    scope === "project"
+      ? resolvePmRoot(cwd, global.path)
+      : resolveGlobalPmRoot(cwd);
   const settingsPath = getSettingsPath(pmRoot);
   if (scope === "project" && !(await pathExists(settingsPath))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   return { pmRoot, settingsPath };
 }
@@ -789,8 +994,20 @@ async function resolveSettingsTarget(
 function parseSectionToggle(raw: string | undefined): boolean | undefined {
   if (raw === undefined) return undefined;
   const normalized = raw.trim().toLowerCase();
-  if (normalized === "true" || normalized === "enabled" || normalized === "on" || normalized === "1") return true;
-  if (normalized === "false" || normalized === "disabled" || normalized === "off" || normalized === "0") return false;
+  if (
+    normalized === "true" ||
+    normalized === "enabled" ||
+    normalized === "on" ||
+    normalized === "1"
+  )
+    return true;
+  if (
+    normalized === "false" ||
+    normalized === "disabled" ||
+    normalized === "off" ||
+    normalized === "0"
+  )
+    return false;
   throw new PmCliError(
     `Context section toggle must be true|false|enabled|disabled, got "${raw}"`,
     EXIT_CODE.USAGE,
@@ -824,7 +1041,10 @@ async function applyContextConfig(
   if (options.activityLimit !== undefined) {
     const parsed = parseInt(options.activityLimit.trim(), 10);
     if (isNaN(parsed) || parsed <= 0) {
-      throw new PmCliError("Context --activity-limit must be a positive integer", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "Context --activity-limit must be a positive integer",
+        EXIT_CODE.USAGE,
+      );
     }
     if (ctx.activity_limit !== parsed) {
       ctx.activity_limit = parsed;
@@ -835,7 +1055,10 @@ async function applyContextConfig(
   if (options.staleThresholdDays !== undefined) {
     const parsed = parseInt(options.staleThresholdDays.trim(), 10);
     if (isNaN(parsed) || parsed <= 0) {
-      throw new PmCliError("Context --stale-threshold-days must be a positive integer", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "Context --stale-threshold-days must be a positive integer",
+        EXIT_CODE.USAGE,
+      );
     }
     if (ctx.stale_threshold_days !== parsed) {
       ctx.stale_threshold_days = parsed;
@@ -869,18 +1092,21 @@ async function applyContextConfig(
     await writeSettings(target.pmRoot, settings, "config:set:context");
   }
 
-  return withWarnings({
-    scope,
-    key: "context",
-    context_settings: {
-      default_depth: ctx.default_depth,
-      activity_limit: ctx.activity_limit,
-      stale_threshold_days: ctx.stale_threshold_days,
-      sections: { ...ctx.sections },
+  return withWarnings(
+    {
+      scope,
+      key: "context",
+      context_settings: {
+        default_depth: ctx.default_depth,
+        activity_limit: ctx.activity_limit,
+        stale_threshold_days: ctx.stale_threshold_days,
+        sections: { ...ctx.sections },
+      },
+      settings_path: target.settingsPath,
+      changed,
     },
-    settings_path: target.settingsPath,
-    changed,
-  }, warnings);
+    warnings,
+  );
 }
 
 function applyNestedSettingPositionalValue(
@@ -897,13 +1123,7 @@ function applyNestedSettingPositionalValue(
   return { ...options, value: valueValue };
 }
 
-/**
- * Route an intuitive `pm config set <key> <value>` positional value onto the typed
- * flag it belongs to (--format/--policy/--criterion), applying enabled/disabled
- * synonyms. Returns the (possibly augmented) options. The typed-flag forms keep
- * working exactly as before: a positional value is only injected when its flag was
- * not already supplied, and a conflicting explicit flag is a clear error.
- */
+/** Route an intuitive `pm config set <key> <value>` positional value onto the typed flag it belongs to (--format/--policy/--criterion), applying enabled/disabled synonyms. Returns the (possibly augmented) options. The typed-flag forms keep working exactly as before: a positional value is only injected when its flag was not already supplied, and a conflicting explicit flag is a clear error. */
 function applyPositionalValue(
   action: ConfigAction,
   keyValue: string | undefined,
@@ -922,7 +1142,10 @@ function applyPositionalValue(
     );
   }
   if (typeof keyValue !== "string" || keyValue.trim().length === 0) {
-    throw new PmCliError('Config action "set" requires <key> before a positional <value>.', EXIT_CODE.USAGE);
+    throw new PmCliError(
+      'Config action "set" requires <key> before a positional <value>.',
+      EXIT_CODE.USAGE,
+    );
   }
 
   if (nestedSetting) {
@@ -983,25 +1206,40 @@ interface ConfigExecutionContext {
 }
 
 function buildConfigListResult(context: ConfigExecutionContext): ConfigResult {
-  const keys = (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map((candidate) => ({
-    key: candidate,
-    aliases: CONFIG_KEY_ALIASES[candidate],
-    value_kind: candidate === "context"
-      ? ("object" as const)
-      : isCriteriaConfigKey(candidate) ? ("string_array" as const) : ("enum" as const),
-    set_flags:
-      candidate === "context"
-        ? ["--default-depth", "--activity-limit", "--stale-threshold-days", "--section-<name>"]
-        : isCriteriaConfigKey(candidate) ? ["--criterion", "--clear-criteria"] : candidate === "item_format" ? ["--format"] : ["--policy"],
-    summary: CONFIG_KEY_SUMMARIES[candidate],
-    value: readConfigValue(context.settings, candidate),
-  }));
-  const nestedSettings: NestedSettingResultValue[] = NESTED_SETTING_DESCRIPTORS.map((descriptor) => ({
-    key: descriptor.key,
-    path: descriptor.path,
-    kind: descriptor.kind,
-    value: readNestedSettingValue(context.settings, descriptor),
-  }));
+  const keys = (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map(
+    (candidate) => ({
+      key: candidate,
+      aliases: CONFIG_KEY_ALIASES[candidate],
+      value_kind:
+        candidate === "context"
+          ? ("object" as const)
+          : isCriteriaConfigKey(candidate)
+            ? ("string_array" as const)
+            : ("enum" as const),
+      set_flags:
+        candidate === "context"
+          ? [
+              "--default-depth",
+              "--activity-limit",
+              "--stale-threshold-days",
+              "--section-<name>",
+            ]
+          : isCriteriaConfigKey(candidate)
+            ? ["--criterion", "--clear-criteria"]
+            : candidate === "item_format"
+              ? ["--format"]
+              : ["--policy"],
+      summary: CONFIG_KEY_SUMMARIES[candidate],
+      value: readConfigValue(context.settings, candidate),
+    }),
+  );
+  const nestedSettings: NestedSettingResultValue[] =
+    NESTED_SETTING_DESCRIPTORS.map((descriptor) => ({
+      key: descriptor.key,
+      path: descriptor.path,
+      kind: descriptor.kind,
+      value: readNestedSettingValue(context.settings, descriptor),
+    }));
   return withWarnings(
     {
       scope: context.scope,
@@ -1015,9 +1253,14 @@ function buildConfigListResult(context: ConfigExecutionContext): ConfigResult {
   );
 }
 
-function buildConfigExportResult(context: ConfigExecutionContext): ConfigResult {
+function buildConfigExportResult(
+  context: ConfigExecutionContext,
+): ConfigResult {
   const values = Object.fromEntries(
-    (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map((key) => [key, readConfigValue(context.settings, key)]),
+    (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map((key) => [
+      key,
+      readConfigValue(context.settings, key),
+    ]),
   ) as Record<ConfigKey, ConfigValue>;
   return withWarnings(
     {
@@ -1030,7 +1273,10 @@ function buildConfigExportResult(context: ConfigExecutionContext): ConfigResult 
   );
 }
 
-function buildConfigGetResult(context: ConfigExecutionContext, key: ConfigKey): ConfigResult {
+function buildConfigGetResult(
+  context: ConfigExecutionContext,
+  key: ConfigKey,
+): ConfigResult {
   const value = readConfigValue(context.settings, key);
   const base = {
     scope: context.scope,
@@ -1049,12 +1295,18 @@ function buildConfigGetResult(context: ConfigExecutionContext, key: ConfigKey): 
     );
   }
   if (key === "context") {
-    return withWarnings({ ...base, context_settings: value as ContextConfigValue }, context.warnings);
+    return withWarnings(
+      { ...base, context_settings: value as ContextConfigValue },
+      context.warnings,
+    );
   }
   if (Array.isArray(value)) {
     return withWarnings({ ...base, criteria: value }, context.warnings);
   }
-  return withWarnings({ ...base, policy: value as ConfigResult["policy"] }, context.warnings);
+  return withWarnings(
+    { ...base, policy: value as ConfigResult["policy"] },
+    context.warnings,
+  );
 }
 
 async function buildNestedSettingResult(
@@ -1064,7 +1316,10 @@ async function buildNestedSettingResult(
   options: ConfigCommandOptions,
 ): Promise<ConfigResult> {
   if (action === "get") {
-    const currentValue = readNestedSettingValue(context.settings, nestedSetting);
+    const currentValue = readNestedSettingValue(
+      context.settings,
+      nestedSetting,
+    );
     return withWarnings(
       {
         scope: context.scope,
@@ -1099,7 +1354,11 @@ async function buildNestedSettingResult(
     parsed.parsed.value,
   );
   if (changed) {
-    await writeSettings(context.target.pmRoot, context.settings, `config:set:${nestedSetting.path}`);
+    await writeSettings(
+      context.target.pmRoot,
+      context.settings,
+      `config:set:${nestedSetting.path}`,
+    );
   }
   return withWarnings(
     {
@@ -1128,11 +1387,9 @@ async function writeConfigSettingsIfChanged(
   }
 }
 
-function hasGovernanceValidationMirrorChange<T extends ParentReferencePolicy | ValidateMetadataProfile>(
-  governanceValue: T,
-  validationValue: T,
-  nextPolicy: T,
-): boolean {
+function hasGovernanceValidationMirrorChange<
+  T extends ParentReferencePolicy | ValidateMetadataProfile,
+>(governanceValue: T, validationValue: T, nextPolicy: T): boolean {
   return governanceValue !== nextPolicy || validationValue !== nextPolicy;
 }
 
@@ -1172,12 +1429,20 @@ function buildCriteriaResult(
   );
 }
 
-async function setItemFormatConfig(context: ConfigExecutionContext, options: ConfigCommandOptions): Promise<ConfigResult> {
+async function setItemFormatConfig(
+  context: ConfigExecutionContext,
+  options: ConfigCommandOptions,
+): Promise<ConfigResult> {
   const nextFormat = normalizeItemFormat(options.format);
-  const changed = context.settings.item_format !== nextFormat || !context.metadata.has_explicit_item_format;
+  const changed =
+    context.settings.item_format !== nextFormat ||
+    !context.metadata.has_explicit_item_format;
   let migration: ConfigResult["migration"] = undefined;
   if (changed) {
-    const typeRegistry = resolveItemTypeRegistry(context.settings, getActiveExtensionRegistrations());
+    const typeRegistry = resolveItemTypeRegistry(
+      context.settings,
+      getActiveExtensionRegistrations(),
+    );
     const migrated = await migrateItemFilesToFormat(
       context.target.pmRoot,
       nextFormat,
@@ -1193,7 +1458,11 @@ async function setItemFormatConfig(context: ConfigExecutionContext, options: Con
       warnings: migrated.warnings,
     };
     context.settings.item_format = nextFormat;
-    await writeSettings(context.target.pmRoot, context.settings, "config:set:item_format");
+    await writeSettings(
+      context.target.pmRoot,
+      context.settings,
+      "config:set:item_format",
+    );
   }
   return withWarnings(
     {
@@ -1218,15 +1487,34 @@ async function setValidationConfig(
     const nextPolicy = normalizeHistoryMissingStreamPolicy(options.policy);
     const changed = context.settings.history.missing_stream !== nextPolicy;
     context.settings.history.missing_stream = nextPolicy;
-    await writeConfigSettingsIfChanged(context, changed, "config:set:history_missing_stream_policy");
-    return buildPolicyResult(context, key, context.settings.history.missing_stream, changed);
+    await writeConfigSettingsIfChanged(
+      context,
+      changed,
+      "config:set:history_missing_stream_policy",
+    );
+    return buildPolicyResult(
+      context,
+      key,
+      context.settings.history.missing_stream,
+      changed,
+    );
   }
   if (key === "sprint_release_format_policy") {
     const nextPolicy = normalizeSprintReleaseFormatPolicy(options.policy);
-    const changed = context.settings.validation.sprint_release_format !== nextPolicy;
+    const changed =
+      context.settings.validation.sprint_release_format !== nextPolicy;
     context.settings.validation.sprint_release_format = nextPolicy;
-    await writeConfigSettingsIfChanged(context, changed, "config:set:sprint_release_format_policy");
-    return buildPolicyResult(context, key, context.settings.validation.sprint_release_format, changed);
+    await writeConfigSettingsIfChanged(
+      context,
+      changed,
+      "config:set:sprint_release_format_policy",
+    );
+    return buildPolicyResult(
+      context,
+      key,
+      context.settings.validation.sprint_release_format,
+      changed,
+    );
   }
   if (key === "parent_reference_policy") {
     const nextPolicy = normalizeParentReferencePolicy(options.policy);
@@ -1237,8 +1525,17 @@ async function setValidationConfig(
     context.settings.validation.parent_reference = nextPolicy;
     context.settings.governance.preset = "custom";
     context.settings.governance.parent_reference = nextPolicy;
-    await writeConfigSettingsIfChanged(context, changed, "config:set:parent_reference_policy");
-    return buildPolicyResult(context, key, context.settings.validation.parent_reference, changed);
+    await writeConfigSettingsIfChanged(
+      context,
+      changed,
+      "config:set:parent_reference_policy",
+    );
+    return buildPolicyResult(
+      context,
+      key,
+      context.settings.validation.parent_reference,
+      changed,
+    );
   }
   const nextPolicy = normalizeValidateMetadataProfile(options.policy);
   const changed =
@@ -1248,8 +1545,17 @@ async function setValidationConfig(
   context.settings.validation.metadata_profile = nextPolicy;
   context.settings.governance.preset = "custom";
   context.settings.governance.metadata_profile = nextPolicy;
-  await writeConfigSettingsIfChanged(context, changed, "config:set:metadata_validation_profile");
-  return buildPolicyResult(context, key, context.settings.validation.metadata_profile, changed);
+  await writeConfigSettingsIfChanged(
+    context,
+    changed,
+    "config:set:metadata_validation_profile",
+  );
+  return buildPolicyResult(
+    context,
+    key,
+    context.settings.validation.metadata_profile,
+    changed,
+  );
 }
 
 async function setCriteriaConfig(
@@ -1258,19 +1564,37 @@ async function setCriteriaConfig(
   options: ConfigCommandOptions,
 ): Promise<ConfigResult> {
   if (key === "metadata_required_fields") {
-    const nextCriteria = normalizeMetadataRequiredFields(options.criterion, options.clearCriteria);
+    const nextCriteria = normalizeMetadataRequiredFields(
+      options.criterion,
+      options.clearCriteria,
+    );
     const changed =
-      nextCriteria.length !== context.settings.validation.metadata_required_fields.length ||
-      nextCriteria.some((value, index) => value !== context.settings.validation.metadata_required_fields[index]);
+      nextCriteria.length !==
+        context.settings.validation.metadata_required_fields.length ||
+      nextCriteria.some(
+        (value, index) =>
+          value !== context.settings.validation.metadata_required_fields[index],
+      );
     context.settings.validation.metadata_required_fields = nextCriteria;
-    await writeConfigSettingsIfChanged(context, changed, "config:set:metadata_required_fields");
-    return buildCriteriaResult(context, key, [...context.settings.validation.metadata_required_fields], changed);
+    await writeConfigSettingsIfChanged(
+      context,
+      changed,
+      "config:set:metadata_required_fields",
+    );
+    return buildCriteriaResult(
+      context,
+      key,
+      [...context.settings.validation.metadata_required_fields],
+      changed,
+    );
   }
 
   const lifecycleTargets: Record<LifecyclePatternConfigKey, string[]> = {
-    lifecycle_stale_blocker_reason_patterns: context.settings.validation.lifecycle_stale_blocker_reason_patterns,
+    lifecycle_stale_blocker_reason_patterns:
+      context.settings.validation.lifecycle_stale_blocker_reason_patterns,
     lifecycle_closure_like_blocked_reason_patterns:
-      context.settings.validation.lifecycle_closure_like_blocked_reason_patterns,
+      context.settings.validation
+        .lifecycle_closure_like_blocked_reason_patterns,
     lifecycle_closure_like_resolution_patterns:
       context.settings.validation.lifecycle_closure_like_resolution_patterns,
     lifecycle_closure_like_actual_result_patterns:
@@ -1278,7 +1602,11 @@ async function setCriteriaConfig(
   };
   const currentCriteria = lifecycleTargets[key];
 
-  const nextCriteria = normalizeLifecyclePatternCriteria(key, options.criterion, options.clearCriteria);
+  const nextCriteria = normalizeLifecyclePatternCriteria(
+    key,
+    options.criterion,
+    options.clearCriteria,
+  );
   const changed =
     nextCriteria.length !== currentCriteria.length ||
     nextCriteria.some((value, index) => value !== currentCriteria[index]);
@@ -1296,17 +1624,36 @@ async function setGovernancePresetOrTypeConfig(
     const nextPolicy = normalizeGovernancePreset(options.policy);
     const changed = context.settings.governance.preset !== nextPolicy;
     context.settings.governance.preset = nextPolicy;
-    await writeConfigSettingsIfChanged(context, changed, "config:set:governance_preset");
-    return buildPolicyResult(context, key, context.settings.governance.preset, changed);
+    await writeConfigSettingsIfChanged(
+      context,
+      changed,
+      "config:set:governance_preset",
+    );
+    return buildPolicyResult(
+      context,
+      key,
+      context.settings.governance.preset,
+      changed,
+    );
   }
 
   const policyProvided = typeof options.policy === "string";
   const rawType = policyProvided ? options.policy!.trim() : "";
   if (policyProvided && rawType.length === 0) {
-    const changed = context.settings.governance.create_default_type !== undefined;
+    const changed =
+      context.settings.governance.create_default_type !== undefined;
     delete context.settings.governance.create_default_type;
-    await writeConfigSettingsIfChanged(context, changed, "config:set:governance_create_default_type");
-    return buildPolicyResult(context, key, context.settings.governance.create_default_type ?? "", changed);
+    await writeConfigSettingsIfChanged(
+      context,
+      changed,
+      "config:set:governance_create_default_type",
+    );
+    return buildPolicyResult(
+      context,
+      key,
+      context.settings.governance.create_default_type ?? "",
+      changed,
+    );
   }
   if (rawType.length === 0) {
     throw new PmCliError(
@@ -1314,18 +1661,38 @@ async function setGovernancePresetOrTypeConfig(
       EXIT_CODE.USAGE,
     );
   }
-  const typeRegistry = resolveItemTypeRegistry(context.settings, getActiveExtensionRegistrations());
+  const typeRegistry = resolveItemTypeRegistry(
+    context.settings,
+    getActiveExtensionRegistrations(),
+  );
   const resolvedType = resolveTypeName(rawType, typeRegistry);
   if (!resolvedType) {
     throw new PmCliError(
-      buildInvalidTypeError(rawType, typeRegistry.types, resolveItemTypesFilePath(context.target.pmRoot, context.settings.schema)),
+      buildInvalidTypeError(
+        rawType,
+        typeRegistry.types,
+        resolveItemTypesFilePath(
+          context.target.pmRoot,
+          context.settings.schema,
+        ),
+      ),
       EXIT_CODE.USAGE,
     );
   }
-  const changed = context.settings.governance.create_default_type !== resolvedType;
+  const changed =
+    context.settings.governance.create_default_type !== resolvedType;
   context.settings.governance.create_default_type = resolvedType;
-  await writeConfigSettingsIfChanged(context, changed, "config:set:governance_create_default_type");
-  return buildPolicyResult(context, key, context.settings.governance.create_default_type, changed);
+  await writeConfigSettingsIfChanged(
+    context,
+    changed,
+    "config:set:governance_create_default_type",
+  );
+  return buildPolicyResult(
+    context,
+    key,
+    context.settings.governance.create_default_type,
+    changed,
+  );
 }
 
 async function setGovernancePolicyConfig(
@@ -1340,8 +1707,17 @@ async function setGovernancePolicyConfig(
       context.settings.governance.ownership_enforcement !== nextPolicy;
     context.settings.governance.preset = "custom";
     context.settings.governance.ownership_enforcement = nextPolicy;
-    await writeConfigSettingsIfChanged(context, changed, "config:set:governance_ownership_enforcement");
-    return buildPolicyResult(context, key, context.settings.governance.ownership_enforcement, changed);
+    await writeConfigSettingsIfChanged(
+      context,
+      changed,
+      "config:set:governance_ownership_enforcement",
+    );
+    return buildPolicyResult(
+      context,
+      key,
+      context.settings.governance.ownership_enforcement,
+      changed,
+    );
   }
   if (key === "governance_create_mode_default") {
     const nextPolicy = normalizeGovernanceCreateModeDefault(options.policy);
@@ -1350,8 +1726,17 @@ async function setGovernancePolicyConfig(
       context.settings.governance.create_mode_default !== nextPolicy;
     context.settings.governance.preset = "custom";
     context.settings.governance.create_mode_default = nextPolicy;
-    await writeConfigSettingsIfChanged(context, changed, "config:set:governance_create_mode_default");
-    return buildPolicyResult(context, key, context.settings.governance.create_mode_default, changed);
+    await writeConfigSettingsIfChanged(
+      context,
+      changed,
+      "config:set:governance_create_mode_default",
+    );
+    return buildPolicyResult(
+      context,
+      key,
+      context.settings.governance.create_mode_default,
+      changed,
+    );
   }
   const nextPolicy = normalizeGovernanceCloseValidationDefault(options.policy);
   const changed =
@@ -1359,8 +1744,17 @@ async function setGovernancePolicyConfig(
     context.settings.governance.close_validation_default !== nextPolicy;
   context.settings.governance.preset = "custom";
   context.settings.governance.close_validation_default = nextPolicy;
-  await writeConfigSettingsIfChanged(context, changed, "config:set:governance_close_validation_default");
-  return buildPolicyResult(context, key, context.settings.governance.close_validation_default, changed);
+  await writeConfigSettingsIfChanged(
+    context,
+    changed,
+    "config:set:governance_close_validation_default",
+  );
+  return buildPolicyResult(
+    context,
+    key,
+    context.settings.governance.close_validation_default,
+    changed,
+  );
 }
 
 async function setGovernanceValidationConfig(
@@ -1380,8 +1774,17 @@ async function setGovernanceValidationConfig(
     context.settings.governance.preset = "custom";
     context.settings.governance.parent_reference = nextPolicy;
     context.settings.validation.parent_reference = nextPolicy;
-    await writeConfigSettingsIfChanged(context, changed, "config:set:governance_parent_reference_policy");
-    return buildPolicyResult(context, key, context.settings.governance.parent_reference, changed);
+    await writeConfigSettingsIfChanged(
+      context,
+      changed,
+      "config:set:governance_parent_reference_policy",
+    );
+    return buildPolicyResult(
+      context,
+      key,
+      context.settings.governance.parent_reference,
+      changed,
+    );
   }
   if (key === "governance_metadata_validation_profile") {
     const nextPolicy = normalizeValidateMetadataProfile(options.policy);
@@ -1395,14 +1798,33 @@ async function setGovernanceValidationConfig(
     context.settings.governance.preset = "custom";
     context.settings.governance.metadata_profile = nextPolicy;
     context.settings.validation.metadata_profile = nextPolicy;
-    await writeConfigSettingsIfChanged(context, changed, "config:set:governance_metadata_validation_profile");
-    return buildPolicyResult(context, key, context.settings.governance.metadata_profile, changed);
+    await writeConfigSettingsIfChanged(
+      context,
+      changed,
+      "config:set:governance_metadata_validation_profile",
+    );
+    return buildPolicyResult(
+      context,
+      key,
+      context.settings.governance.metadata_profile,
+      changed,
+    );
   }
   const nextPolicy = normalizeGovernanceWorkflowEnforcement(options.policy);
-  const changed = (context.settings.governance.workflow_enforcement ?? "off") !== nextPolicy;
+  const changed =
+    (context.settings.governance.workflow_enforcement ?? "off") !== nextPolicy;
   context.settings.governance.workflow_enforcement = nextPolicy;
-  await writeConfigSettingsIfChanged(context, changed, "config:set:governance_workflow_enforcement");
-  return buildPolicyResult(context, key, context.settings.governance.workflow_enforcement, changed);
+  await writeConfigSettingsIfChanged(
+    context,
+    changed,
+    "config:set:governance_workflow_enforcement",
+  );
+  return buildPolicyResult(
+    context,
+    key,
+    context.settings.governance.workflow_enforcement,
+    changed,
+  );
 }
 
 async function setGovernanceBooleanConfig(
@@ -1411,25 +1833,45 @@ async function setGovernanceBooleanConfig(
   options: ConfigCommandOptions,
 ): Promise<ConfigResult> {
   if (key === "governance_require_close_reason") {
-    const nextPolicy = normalizeGovernanceRequireCloseReasonPolicy(options.policy);
+    const nextPolicy = normalizeGovernanceRequireCloseReasonPolicy(
+      options.policy,
+    );
     const nextEnabled = nextPolicy === "enabled";
-    const changed = context.settings.governance.require_close_reason !== nextEnabled;
+    const changed =
+      context.settings.governance.require_close_reason !== nextEnabled;
     context.settings.governance.require_close_reason = nextEnabled;
-    await writeConfigSettingsIfChanged(context, changed, "config:set:governance_require_close_reason");
-    return buildPolicyResult(context, key, context.settings.governance.require_close_reason ? "enabled" : "disabled", changed);
+    await writeConfigSettingsIfChanged(
+      context,
+      changed,
+      "config:set:governance_require_close_reason",
+    );
+    return buildPolicyResult(
+      context,
+      key,
+      context.settings.governance.require_close_reason ? "enabled" : "disabled",
+      changed,
+    );
   }
-  const nextPolicy = normalizeGovernanceForceRequiredForStaleLockPolicy(options.policy);
+  const nextPolicy = normalizeGovernanceForceRequiredForStaleLockPolicy(
+    options.policy,
+  );
   const nextEnabled = nextPolicy === "enabled";
   const changed =
     context.settings.governance.preset !== "custom" ||
     context.settings.governance.force_required_for_stale_lock !== nextEnabled;
   context.settings.governance.preset = "custom";
   context.settings.governance.force_required_for_stale_lock = nextEnabled;
-  await writeConfigSettingsIfChanged(context, changed, "config:set:governance_force_required_for_stale_lock");
+  await writeConfigSettingsIfChanged(
+    context,
+    changed,
+    "config:set:governance_force_required_for_stale_lock",
+  );
   return buildPolicyResult(
     context,
     key,
-    context.settings.governance.force_required_for_stale_lock ? "enabled" : "disabled",
+    context.settings.governance.force_required_for_stale_lock
+      ? "enabled"
+      : "disabled",
     changed,
   );
 }
@@ -1442,10 +1884,20 @@ async function setTrackingConfig(
   if (key === "test_result_tracking") {
     const nextPolicy = normalizeTestResultTrackingPolicy(options.policy);
     const nextEnabled = nextPolicy === "enabled";
-    const changed = context.settings.testing.record_results_to_items !== nextEnabled;
+    const changed =
+      context.settings.testing.record_results_to_items !== nextEnabled;
     context.settings.testing.record_results_to_items = nextEnabled;
-    await writeConfigSettingsIfChanged(context, changed, "config:set:test_result_tracking");
-    return buildPolicyResult(context, key, context.settings.testing.record_results_to_items ? "enabled" : "disabled", changed);
+    await writeConfigSettingsIfChanged(
+      context,
+      changed,
+      "config:set:test_result_tracking",
+    );
+    return buildPolicyResult(
+      context,
+      key,
+      context.settings.testing.record_results_to_items ? "enabled" : "disabled",
+      changed,
+    );
   }
   const nextPolicy = normalizeTelemetryTrackingPolicy(options.policy);
   const nextEnabled = nextPolicy === "enabled";
@@ -1454,8 +1906,17 @@ async function setTrackingConfig(
     !context.settings.telemetry.first_run_prompt_completed;
   context.settings.telemetry.enabled = nextEnabled;
   context.settings.telemetry.first_run_prompt_completed = true;
-  await writeConfigSettingsIfChanged(context, changed, "config:set:telemetry_tracking");
-  return buildPolicyResult(context, key, context.settings.telemetry.enabled ? "enabled" : "disabled", changed);
+  await writeConfigSettingsIfChanged(
+    context,
+    changed,
+    "config:set:telemetry_tracking",
+  );
+  return buildPolicyResult(
+    context,
+    key,
+    context.settings.telemetry.enabled ? "enabled" : "disabled",
+    changed,
+  );
 }
 
 async function setDefinitionOfDoneConfig(
@@ -1463,13 +1924,29 @@ async function setDefinitionOfDoneConfig(
   key: ConfigKey,
   options: ConfigCommandOptions,
 ): Promise<ConfigResult> {
-  const nextCriteria = normalizeCriteria(options.criterion, options.clearCriteria);
+  const nextCriteria = normalizeCriteria(
+    options.criterion,
+    options.clearCriteria,
+  );
   const changed =
-    nextCriteria.length !== context.settings.workflow.definition_of_done.length ||
-    nextCriteria.some((value, index) => value !== context.settings.workflow.definition_of_done[index]);
+    nextCriteria.length !==
+      context.settings.workflow.definition_of_done.length ||
+    nextCriteria.some(
+      (value, index) =>
+        value !== context.settings.workflow.definition_of_done[index],
+    );
   context.settings.workflow.definition_of_done = nextCriteria;
-  await writeConfigSettingsIfChanged(context, changed, "config:set:definition_of_done");
-  return buildCriteriaResult(context, key, [...context.settings.workflow.definition_of_done], changed);
+  await writeConfigSettingsIfChanged(
+    context,
+    changed,
+    "config:set:definition_of_done",
+  );
+  return buildCriteriaResult(
+    context,
+    key,
+    [...context.settings.workflow.definition_of_done],
+    changed,
+  );
 }
 
 async function setConfigValue(
@@ -1478,13 +1955,22 @@ async function setConfigValue(
   options: ConfigCommandOptions,
 ): Promise<ConfigResult> {
   if (options.clearCriteria === true && !isCriteriaConfigKey(key)) {
-    throw new PmCliError("--clear-criteria is only supported with config set criteria-list keys", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--clear-criteria is only supported with config set criteria-list keys",
+      EXIT_CODE.USAGE,
+    );
   }
   if (key === "item_format") {
     return setItemFormatConfig(context, options);
   }
   if (key === "context") {
-    return applyContextConfig(context.settings, options, context.target, context.scope, context.warnings);
+    return applyContextConfig(
+      context.settings,
+      options,
+      context.target,
+      context.scope,
+      context.warnings,
+    );
   }
   if (key === "definition_of_done") {
     return setDefinitionOfDoneConfig(context, key, options);
@@ -1510,9 +1996,7 @@ async function setConfigValue(
   return setValidationConfig(context, key as ValidationConfigKey, options);
 }
 
-/**
- * Implements run config for the public runtime surface of this module.
- */
+/** Implements run config for the public runtime surface of this module. */
 export async function runConfig(
   scopeValue: string,
   actionValue: string,
@@ -1524,11 +2008,26 @@ export async function runConfig(
   const scope = normalizeScope(scopeValue);
   const action = normalizeAction(actionValue);
   const nestedSetting =
-    (action === "get" || action === "set") ? resolveNestedSettingDescriptor(keyValue) : undefined;
-  const key = nestedSetting ? undefined : normalizeKeyForAction(action, keyValue);
-  const routedOptions = applyPositionalValue(action, keyValue, key, nestedSetting, valueValue, options);
+    action === "get" || action === "set"
+      ? resolveNestedSettingDescriptor(keyValue)
+      : undefined;
+  const key = nestedSetting
+    ? undefined
+    : normalizeKeyForAction(action, keyValue);
+  const routedOptions = applyPositionalValue(
+    action,
+    keyValue,
+    key,
+    nestedSetting,
+    valueValue,
+    options,
+  );
   const target = await resolveSettingsTarget(scope, global);
-  const { settings, metadata, warnings: settingsReadWarnings } = await readSettingsWithMetadata(target.pmRoot);
+  const {
+    settings,
+    metadata,
+    warnings: settingsReadWarnings,
+  } = await readSettingsWithMetadata(target.pmRoot);
   const context: ConfigExecutionContext = {
     scope,
     target,
@@ -1538,7 +2037,12 @@ export async function runConfig(
   };
 
   if (nestedSetting) {
-    return buildNestedSettingResult(context, action, nestedSetting, routedOptions);
+    return buildNestedSettingResult(
+      context,
+      action,
+      nestedSetting,
+      routedOptions,
+    );
   }
   if (action === "list") {
     return buildConfigListResult(context);
@@ -1548,9 +2052,12 @@ export async function runConfig(
   }
 
   assertConfigKeyDefined(key);
-  return action === "get" ? buildConfigGetResult(context, key) : setConfigValue(context, key, routedOptions);
+  return action === "get"
+    ? buildConfigGetResult(context, key)
+    : setConfigValue(context, key, routedOptions);
 }
 
+/** Public contract for test only config command, shared by SDK and presentation-layer consumers. */
 export const _testOnlyConfigCommand = {
   hasGovernanceValidationMirrorChange,
   applyPositionalValue,

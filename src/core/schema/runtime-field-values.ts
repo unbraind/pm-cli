@@ -5,7 +5,11 @@
  */
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
-import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved, type RuntimeFieldRegistry } from "./runtime-schema.js";
+import {
+  runtimeFieldOptionTarget,
+  type RuntimeFieldDefinitionResolved,
+  type RuntimeFieldRegistry,
+} from "./runtime-schema.js";
 
 function toCamelToken(value: string): string {
   const segments = value
@@ -21,18 +25,20 @@ function toCamelToken(value: string): string {
   return `${first}${rest.map((segment) => `${segment.slice(0, 1).toUpperCase()}${segment.slice(1)}`).join("")}`;
 }
 
-function resolveCandidateOptionKeys(definition: RuntimeFieldDefinitionResolved): string[] {
-  return [...new Set([
-    runtimeFieldOptionTarget(definition),
-    toCamelToken(definition.key),
-    toCamelToken(definition.cli_flag),
-    ...definition.cli_aliases.map((alias) => toCamelToken(alias)),
-  ])];
+function resolveCandidateOptionKeys(
+  definition: RuntimeFieldDefinitionResolved,
+): string[] {
+  return [
+    ...new Set([
+      runtimeFieldOptionTarget(definition),
+      toCamelToken(definition.key),
+      toCamelToken(definition.cli_flag),
+      ...definition.cli_aliases.map((alias) => toCamelToken(alias)),
+    ]),
+  ];
 }
 
-/**
- * Implements read runtime field option value for the public runtime surface of this module.
- */
+/** Implements read runtime field option value for the public runtime surface of this module. */
 export function readRuntimeFieldOptionValue(
   options: Record<string, unknown>,
   definition: RuntimeFieldDefinitionResolved,
@@ -89,7 +95,10 @@ function parseBooleanValue(raw: unknown, label: string): boolean {
       return false;
     }
   }
-  throw new PmCliError(`${label} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
+  throw new PmCliError(
+    `${label} must be one of true|false|1|0|yes|no`,
+    EXIT_CODE.USAGE,
+  );
 }
 
 function parseNumberValue(raw: unknown, label: string): number {
@@ -104,9 +113,7 @@ function parseNumberValue(raw: unknown, label: string): number {
   return parsed;
 }
 
-/**
- * Implements coerce runtime field value for the public runtime surface of this module.
- */
+/** Implements coerce runtime field value for the public runtime surface of this module. */
 export function coerceRuntimeFieldValue(
   definition: RuntimeFieldDefinitionResolved,
   rawValue: unknown,
@@ -124,7 +131,9 @@ export function coerceRuntimeFieldValue(
     return values;
   }
 
-  const scalarRaw = Array.isArray(rawValue) ? rawValue[rawValue.length - 1] : rawValue;
+  const scalarRaw = Array.isArray(rawValue)
+    ? rawValue[rawValue.length - 1]
+    : rawValue;
   if (scalarRaw === undefined) {
     return undefined;
   }
@@ -137,7 +146,10 @@ export function coerceRuntimeFieldValue(
   return typeof scalarRaw === "string" ? scalarRaw : String(scalarRaw);
 }
 
-function shouldRequireFieldOnCreate(definition: RuntimeFieldDefinitionResolved, itemTypeName: string | undefined): boolean {
+function shouldRequireFieldOnCreate(
+  definition: RuntimeFieldDefinitionResolved,
+  itemTypeName: string | undefined,
+): boolean {
   if (!definition.required && !definition.required_on_create) {
     return false;
   }
@@ -147,12 +159,12 @@ function shouldRequireFieldOnCreate(definition: RuntimeFieldDefinitionResolved, 
   if (!itemTypeName) {
     return false;
   }
-  return definition.required_types.map((value) => value.toLowerCase()).includes(itemTypeName.trim().toLowerCase());
+  return definition.required_types
+    .map((value) => value.toLowerCase())
+    .includes(itemTypeName.trim().toLowerCase());
 }
 
-/**
- * Implements collect runtime create field values for the public runtime surface of this module.
- */
+/** Implements collect runtime create field values for the public runtime surface of this module. */
 export function collectRuntimeCreateFieldValues(
   options: Record<string, unknown>,
   fieldRegistry: RuntimeFieldRegistry,
@@ -160,7 +172,8 @@ export function collectRuntimeCreateFieldValues(
 ): { values: Record<string, unknown>; missing_required_flags: string[] } {
   const values: Record<string, unknown> = {};
   const missingRequiredFlags: string[] = [];
-  for (const definition of fieldRegistry.command_to_fields.get("create") ?? []) {
+  for (const definition of fieldRegistry.command_to_fields.get("create") ??
+    []) {
     const rawValue = readRuntimeFieldOptionValue(options, definition);
     if (rawValue === undefined) {
       if (shouldRequireFieldOnCreate(definition, itemTypeName)) {
@@ -168,24 +181,29 @@ export function collectRuntimeCreateFieldValues(
       }
       continue;
     }
-    values[definition.metadata_key] = coerceRuntimeFieldValue(definition, rawValue);
+    values[definition.metadata_key] = coerceRuntimeFieldValue(
+      definition,
+      rawValue,
+    );
   }
   return {
     values,
-    missing_required_flags: [...new Set(missingRequiredFlags)].sort((left, right) => left.localeCompare(right)),
+    missing_required_flags: [...new Set(missingRequiredFlags)].sort(
+      (left, right) => left.localeCompare(right),
+    ),
   };
 }
 
-/**
- * Implements collect runtime update field values for the public runtime surface of this module.
- */
+/** Implements collect runtime update field values for the public runtime surface of this module. */
 export function collectRuntimeUpdateFieldValues(
   options: Record<string, unknown>,
   fieldRegistry: RuntimeFieldRegistry,
   commands: Array<"update" | "update_many"> | null | undefined = ["update"],
 ): Record<string, unknown> {
   const values: Record<string, unknown> = {};
-  const definitions = (commands ?? ["update"]).flatMap((command) => fieldRegistry.command_to_fields.get(command) ?? []);
+  const definitions = (commands ?? ["update"]).flatMap(
+    (command) => fieldRegistry.command_to_fields.get(command) ?? [],
+  );
   const seen = new Set<string>();
   for (const definition of definitions) {
     const rawValue = readRuntimeFieldOptionValue(options, definition);
@@ -196,7 +214,10 @@ export function collectRuntimeUpdateFieldValues(
       continue;
     }
     seen.add(definition.metadata_key);
-    values[definition.metadata_key] = coerceRuntimeFieldValue(definition, rawValue);
+    values[definition.metadata_key] = coerceRuntimeFieldValue(
+      definition,
+      rawValue,
+    );
   }
   return values;
 }

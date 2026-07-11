@@ -6,11 +6,19 @@
 import { readFileSync, statSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { PM_DIRNAME, SETTINGS_FILENAME, TYPE_TO_FOLDER } from "../shared/constants.js";
+import {
+  PM_DIRNAME,
+  SETTINGS_FILENAME,
+  TYPE_TO_FOLDER,
+} from "../shared/constants.js";
 import { toDefaultFolder } from "../item/type-registry.js";
 import type { ItemFormat, ItemType } from "../../types/index.js";
 
-export const ITEM_FILE_EXTENSION_BY_FORMAT: Record<ItemFormat, ".md" | ".toon"> = {
+/** Public contract for item file extension by format, shared by SDK and presentation-layer consumers. */
+export const ITEM_FILE_EXTENSION_BY_FORMAT: Record<
+  ItemFormat,
+  ".md" | ".toon"
+> = {
   json_markdown: ".md",
   toon: ".toon",
 };
@@ -20,7 +28,10 @@ const ITEM_FORMAT_BY_EXTENSION = {
   ".toon": "toon",
 } as const satisfies Record<string, ItemFormat>;
 
-export const ITEM_FILE_EXTENSIONS: Array<keyof typeof ITEM_FORMAT_BY_EXTENSION> = [".md", ".toon"];
+/** Public contract for item file extensions, shared by SDK and presentation-layer consumers. */
+export const ITEM_FILE_EXTENSIONS: Array<
+  keyof typeof ITEM_FORMAT_BY_EXTENSION
+> = [".md", ".toon"];
 
 function pathExists(pathValue: string): boolean {
   try {
@@ -39,7 +50,11 @@ function pathExists(pathValue: string): boolean {
 function isPmSettingsFile(settingsPath: string): boolean {
   try {
     const parsed: unknown = JSON.parse(readFileSync(settingsPath, "utf8"));
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
       return false;
     }
     return "id_prefix" in parsed || "item_format" in parsed;
@@ -61,7 +76,10 @@ function discoverPmRootFromAncestors(cwd: string): string | undefined {
     // pm_root handed to extensions — fall back to a non-existent
     // <cwd>/.agents/pm (GH-495).
     const rootLayoutSettingsPath = path.join(current, SETTINGS_FILENAME);
-    if (pathExists(rootLayoutSettingsPath) && isPmSettingsFile(rootLayoutSettingsPath)) {
+    if (
+      pathExists(rootLayoutSettingsPath) &&
+      isPmSettingsFile(rootLayoutSettingsPath)
+    ) {
       return current;
     }
     const parent = path.dirname(current);
@@ -72,9 +90,7 @@ function discoverPmRootFromAncestors(cwd: string): string | undefined {
   }
 }
 
-/**
- * Implements resolve pm root for the public runtime surface of this module.
- */
+/** Implements resolve pm root for the public runtime surface of this module. */
 export function resolvePmRoot(cwd: string, cliPath?: string): string {
   const envPath = process.env.PM_PATH;
   const explicitPath = cliPath?.trim() || envPath?.trim();
@@ -103,33 +119,32 @@ export function resolvePmRoot(cwd: string, cliPath?: string): string {
   return path.resolve(cwd, selected);
 }
 
-/**
- * Implements resolve global pm root for the public runtime surface of this module.
- */
+/** Implements resolve global pm root for the public runtime surface of this module. */
 export function resolveGlobalPmRoot(cwd: string): string {
   const envPath = process.env.PM_GLOBAL_PATH?.trim();
-  const selected = envPath && envPath.length > 0 ? envPath : path.join(os.homedir(), ".pm-cli");
+  const selected =
+    envPath && envPath.length > 0
+      ? envPath
+      : path.join(os.homedir(), ".pm-cli");
   return path.resolve(cwd, selected);
 }
 
-/**
- * Implements get settings path for the public runtime surface of this module.
- */
+/** Implements get settings path for the public runtime surface of this module. */
 export function getSettingsPath(pmRoot: string): string {
   return path.join(pmRoot, SETTINGS_FILENAME);
 }
 
-/**
- * Implements get type dir path for the public runtime surface of this module.
- */
-export function getTypeDirPath(pmRoot: string, type: ItemType, typeToFolder: Record<string, string> = TYPE_TO_FOLDER): string {
+/** Implements get type dir path for the public runtime surface of this module. */
+export function getTypeDirPath(
+  pmRoot: string,
+  type: ItemType,
+  typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
+): string {
   const folder = typeToFolder[type] ?? toDefaultFolder(type);
   return path.join(pmRoot, folder);
 }
 
-/**
- * Implements get item path for the public runtime surface of this module.
- */
+/** Implements get item path for the public runtime surface of this module. */
 export function getItemPath(
   pmRoot: string,
   type: ItemType,
@@ -137,98 +152,77 @@ export function getItemPath(
   itemFormat: ItemFormat = "toon",
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
 ): string {
-  return path.join(getTypeDirPath(pmRoot, type, typeToFolder), `${id}${ITEM_FILE_EXTENSION_BY_FORMAT[itemFormat]}`);
+  return path.join(
+    getTypeDirPath(pmRoot, type, typeToFolder),
+    `${id}${ITEM_FILE_EXTENSION_BY_FORMAT[itemFormat]}`,
+  );
 }
 
-/**
- * Implements get item format from path for the public runtime surface of this module.
- */
+/** Implements get item format from path for the public runtime surface of this module. */
 export function getItemFormatFromPath(itemPath: string): ItemFormat | null {
   const normalizedItemPath = itemPath.replaceAll("\\", "/");
-  const extension = path.posix.extname(normalizedItemPath).toLowerCase() as keyof typeof ITEM_FORMAT_BY_EXTENSION;
+  const extension = path.posix
+    .extname(normalizedItemPath)
+    .toLowerCase() as keyof typeof ITEM_FORMAT_BY_EXTENSION;
   return ITEM_FORMAT_BY_EXTENSION[extension] ?? null;
 }
 
-/**
- * Implements get history path for the public runtime surface of this module.
- */
+/** Implements get history path for the public runtime surface of this module. */
 export function getHistoryPath(pmRoot: string, id: string): string {
   return path.join(pmRoot, "history", `${id}.jsonl`);
 }
 
-/**
- * Implements get lock path for the public runtime surface of this module.
- */
+/** Implements get lock path for the public runtime surface of this module. */
 export function getLockPath(pmRoot: string, id: string): string {
   return path.join(pmRoot, "locks", `${id}.lock`);
 }
 
-/**
- * Implements get runtime path for the public runtime surface of this module.
- */
+/** Implements get runtime path for the public runtime surface of this module. */
 export function getRuntimePath(pmRoot: string): string {
   return path.join(pmRoot, "runtime");
 }
 
-/**
- * Implements get test runs path for the public runtime surface of this module.
- */
+/** Implements get test runs path for the public runtime surface of this module. */
 export function getTestRunsPath(pmRoot: string): string {
   return path.join(getRuntimePath(pmRoot), "test-runs");
 }
 
-/**
- * Implements get test runs records path for the public runtime surface of this module.
- */
+/** Implements get test runs records path for the public runtime surface of this module. */
 export function getTestRunsRecordsPath(pmRoot: string): string {
   return path.join(getTestRunsPath(pmRoot), "runs");
 }
 
-/**
- * Implements get test run record path for the public runtime surface of this module.
- */
+/** Implements get test run record path for the public runtime surface of this module. */
 export function getTestRunRecordPath(pmRoot: string, runId: string): string {
   return path.join(getTestRunsRecordsPath(pmRoot), `${runId}.json`);
 }
 
-/**
- * Implements get test runs stdout path for the public runtime surface of this module.
- */
+/** Implements get test runs stdout path for the public runtime surface of this module. */
 export function getTestRunsStdoutPath(pmRoot: string): string {
   return path.join(getTestRunsPath(pmRoot), "stdout");
 }
 
-/**
- * Implements get test runs stderr path for the public runtime surface of this module.
- */
+/** Implements get test runs stderr path for the public runtime surface of this module. */
 export function getTestRunsStderrPath(pmRoot: string): string {
   return path.join(getTestRunsPath(pmRoot), "stderr");
 }
 
-/**
- * Implements get test run stdout path for the public runtime surface of this module.
- */
+/** Implements get test run stdout path for the public runtime surface of this module. */
 export function getTestRunStdoutPath(pmRoot: string, runId: string): string {
   return path.join(getTestRunsStdoutPath(pmRoot), `${runId}.log`);
 }
 
-/**
- * Implements get test run stderr path for the public runtime surface of this module.
- */
+/** Implements get test run stderr path for the public runtime surface of this module. */
 export function getTestRunStderrPath(pmRoot: string, runId: string): string {
   return path.join(getTestRunsStderrPath(pmRoot), `${runId}.log`);
 }
 
-/**
- * Implements get test runs results path for the public runtime surface of this module.
- */
+/** Implements get test runs results path for the public runtime surface of this module. */
 export function getTestRunsResultsPath(pmRoot: string): string {
   return path.join(getTestRunsPath(pmRoot), "results");
 }
 
-/**
- * Implements get test run result path for the public runtime surface of this module.
- */
+/** Implements get test run result path for the public runtime surface of this module. */
 export function getTestRunResultPath(pmRoot: string, runId: string): string {
   return path.join(getTestRunsResultsPath(pmRoot), `${runId}.json`);
 }

@@ -15,14 +15,13 @@
 
 /** Minimal item shape required to compare vectorization freshness. */
 export interface ItemWithUpdatedAt {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** ISO 8601 timestamp recording when updated occurred. */
   updated_at: string;
 }
 
-/**
- * Return the sorted list of item IDs whose current `updated_at` does not
- * match the ledger entry. Missing ledger entries count as stale.
- */
+/** Return the sorted list of item IDs whose current `updated_at` does not match the ledger entry. Missing ledger entries count as stale. */
 export function collectStaleVectorizationIds<T extends ItemWithUpdatedAt>(
   items: readonly T[],
   ledgerEntries: Readonly<Record<string, string>> | null | undefined,

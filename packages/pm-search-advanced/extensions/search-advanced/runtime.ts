@@ -1,3 +1,8 @@
+/**
+ * Runtime contracts and behavior for packages/pm search advanced/extensions/search advanced/runtime.
+ *
+ * @module packages/pm-search-advanced/extensions/search-advanced/runtime
+ */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -10,10 +15,18 @@ import type {
 } from "@unbrained/pm-cli/sdk/runtime";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
-const DEFAULT_EVAL_FIXTURES_PATH = path.join("tests", "search-eval", "golden-queries.json");
+const DEFAULT_EVAL_FIXTURES_PATH = path.join(
+  "tests",
+  "search-eval",
+  "golden-queries.json",
+);
 const DEFAULT_EVAL_MIN_NDCG_AT_5 = 0.7;
 const EVAL_RANK_CUTOFF = 5;
-const VALID_EVAL_SEARCH_MODES = new Set(["keyword", "semantic", "hybrid"] as const);
+const VALID_EVAL_SEARCH_MODES = new Set([
+  "keyword",
+  "semantic",
+  "hybrid",
+] as const);
 
 type EvalSearchMode = "keyword" | "semantic" | "hybrid";
 
@@ -22,10 +35,25 @@ interface SearchRuntimeSdkModule {
     USAGE: number;
   };
   PmCliError: new (message: string, exitCode?: number) => Error;
-  runSearch: (query: string, options: SearchOptions, global: GlobalOptions) => Promise<SearchResult>;
-  runReindex: (options: ReindexOptions, global: GlobalOptions) => Promise<ReindexResult>;
-  readStringOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => string | undefined;
-  readBooleanOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => boolean | undefined;
+  runSearch: (
+    query: string,
+    options: SearchOptions,
+    global: GlobalOptions,
+  ) => Promise<SearchResult>;
+  runReindex: (
+    options: ReindexOptions,
+    global: GlobalOptions,
+  ) => Promise<ReindexResult>;
+  readStringOption: (
+    options: Record<string, unknown>,
+    key: string,
+    aliases?: string[],
+  ) => string | undefined;
+  readBooleanOption: (
+    options: Record<string, unknown>,
+    key: string,
+    aliases?: string[],
+  ) => boolean | undefined;
 }
 
 const sdk = await loadSearchSdkModule();
@@ -98,9 +126,16 @@ async function loadSearchSdkModule(): Promise<SearchRuntimeSdkModule> {
       `builtin-search-advanced requires ${PM_PACKAGE_ROOT_ENV} to locate core SDK runtime exports.`,
     );
   }
-  const modulePath = path.join(path.resolve(envRoot.trim()), "dist", "sdk", "runtime.js");
+  const modulePath = path.join(
+    path.resolve(envRoot.trim()),
+    "dist",
+    "sdk",
+    "runtime.js",
+  );
   try {
-    const loaded = (await import(pathToFileURL(modulePath).href)) as Partial<SearchRuntimeSdkModule>;
+    const loaded = (await import(
+      pathToFileURL(modulePath).href
+    )) as Partial<SearchRuntimeSdkModule>;
     if (
       typeof loaded.runSearch === "function" &&
       typeof loaded.runReindex === "function" &&
@@ -177,30 +212,50 @@ function resolveSearchQuery(args: string[]): string {
   return query;
 }
 
-function normalizeAdvancedSearchOptions(rawOptions: Record<string, unknown>, args: string[]): SearchOptions {
+function normalizeAdvancedSearchOptions(
+  rawOptions: Record<string, unknown>,
+  args: string[],
+): SearchOptions {
   const fields = readStringOption(rawOptions, "fields");
   const compactRequested = readBooleanOption(rawOptions, "compact") === true;
   const fullRequested = readBooleanOption(rawOptions, "full") === true;
-  const defaultCompact = !compactRequested && !fullRequested && fields === undefined;
+  const defaultCompact =
+    !compactRequested && !fullRequested && fields === undefined;
   const explicitMode = readStringOption(rawOptions, "mode");
   const argFlags = new Set(args.map((value) => value?.trim() ?? ""));
   const mode =
     explicitMode ??
-    (readBooleanOption(rawOptions, "semantic") === true || argFlags.has("--semantic")
+    (readBooleanOption(rawOptions, "semantic") === true ||
+    argFlags.has("--semantic")
       ? "semantic"
-      : readBooleanOption(rawOptions, "hybrid") === true || argFlags.has("--hybrid")
+      : readBooleanOption(rawOptions, "hybrid") === true ||
+          argFlags.has("--hybrid")
         ? "hybrid"
         : "keyword");
   return {
     mode,
-    includeLinked: readBooleanOption(rawOptions, "includeLinked", ["include_linked"]) === true ? true : undefined,
-    titleExact: readBooleanOption(rawOptions, "titleExact", ["title_exact"]) === true ? true : undefined,
-    phraseExact: readBooleanOption(rawOptions, "phraseExact", ["phrase_exact"]) === true ? true : undefined,
+    includeLinked:
+      readBooleanOption(rawOptions, "includeLinked", ["include_linked"]) ===
+      true
+        ? true
+        : undefined,
+    titleExact:
+      readBooleanOption(rawOptions, "titleExact", ["title_exact"]) === true
+        ? true
+        : undefined,
+    phraseExact:
+      readBooleanOption(rawOptions, "phraseExact", ["phrase_exact"]) === true
+        ? true
+        : undefined,
     type: readStringOption(rawOptions, "type"),
     tag: readStringOption(rawOptions, "tag"),
     priority: readStringOption(rawOptions, "priority"),
-    deadlineBefore: readStringOption(rawOptions, "deadlineBefore", ["deadline_before"]),
-    deadlineAfter: readStringOption(rawOptions, "deadlineAfter", ["deadline_after"]),
+    deadlineBefore: readStringOption(rawOptions, "deadlineBefore", [
+      "deadline_before",
+    ]),
+    deadlineAfter: readStringOption(rawOptions, "deadlineAfter", [
+      "deadline_after",
+    ]),
     limit: readStringOption(rawOptions, "limit"),
     fields,
     compact: compactRequested || defaultCompact ? true : undefined,
@@ -208,26 +263,40 @@ function normalizeAdvancedSearchOptions(rawOptions: Record<string, unknown>, arg
   };
 }
 
-function normalizeReindexOptions(rawOptions: Record<string, unknown>): ReindexOptions {
+function normalizeReindexOptions(
+  rawOptions: Record<string, unknown>,
+): ReindexOptions {
   return {
     mode: readStringOption(rawOptions, "mode"),
     full: readBooleanOption(rawOptions, "full") === true ? true : undefined,
-    progress: readBooleanOption(rawOptions, "progress") === true ? true : undefined,
+    progress:
+      readBooleanOption(rawOptions, "progress") === true ? true : undefined,
   };
 }
 
 function normalizeEvalFixturePath(rawPath: string | undefined): string {
-  const candidate = typeof rawPath === "string" ? rawPath : DEFAULT_EVAL_FIXTURES_PATH;
+  const candidate =
+    typeof rawPath === "string" ? rawPath : DEFAULT_EVAL_FIXTURES_PATH;
   return path.resolve(process.cwd(), candidate);
 }
 
-function normalizeReindexRuntimeOptions(rawOptions: Record<string, unknown>): ReindexRuntimeOptions {
+function normalizeReindexRuntimeOptions(
+  rawOptions: Record<string, unknown>,
+): ReindexRuntimeOptions {
   const reindex = normalizeReindexOptions(rawOptions);
   const evalEnabled = readBooleanOption(rawOptions, "eval") === true;
-  const evalFixturePath = readStringOption(rawOptions, "evalFixtures", ["eval_fixtures"]);
+  const evalFixturePath = readStringOption(rawOptions, "evalFixtures", [
+    "eval_fixtures",
+  ]);
   if (!evalEnabled) {
-    if (typeof evalFixturePath === "string" && evalFixturePath.trim().length > 0) {
-      throw new PmCliError("`--eval-fixtures` requires `--eval`.", EXIT_CODE.USAGE);
+    if (
+      typeof evalFixturePath === "string" &&
+      evalFixturePath.trim().length > 0
+    ) {
+      throw new PmCliError(
+        "`--eval-fixtures` requires `--eval`.",
+        EXIT_CODE.USAGE,
+      );
     }
     return { reindex };
   }
@@ -250,7 +319,11 @@ function roundMetric(value: number): number {
   return Math.round(value * 10_000) / 10_000;
 }
 
-function toCompactExpectedIds(value: unknown, fixtureLabel: string, fixturesPath: string): string[] {
+function toCompactExpectedIds(
+  value: unknown,
+  fixtureLabel: string,
+  fixturesPath: string,
+): string[] {
   if (!Array.isArray(value) || value.length === 0) {
     throw new PmCliError(
       `Reindex eval fixture ${fixtureLabel} in ${fixturesPath} must provide a non-empty expected_top_ids array.`,
@@ -270,11 +343,16 @@ function toCompactExpectedIds(value: unknown, fixtureLabel: string, fixturesPath
   return [...new Set(expectedIds)];
 }
 
-function normalizeFixtureMode(rawMode: unknown, fixtureLabel: string, fixturesPath: string): EvalSearchMode {
+function normalizeFixtureMode(
+  rawMode: unknown,
+  fixtureLabel: string,
+  fixturesPath: string,
+): EvalSearchMode {
   if (rawMode === undefined) {
     return "keyword";
   }
-  const normalized = typeof rawMode === "string" ? rawMode.trim().toLowerCase() : "";
+  const normalized =
+    typeof rawMode === "string" ? rawMode.trim().toLowerCase() : "";
   if (VALID_EVAL_SEARCH_MODES.has(normalized as EvalSearchMode)) {
     return normalized as EvalSearchMode;
   }
@@ -284,7 +362,11 @@ function normalizeFixtureMode(rawMode: unknown, fixtureLabel: string, fixturesPa
   );
 }
 
-function normalizeFixtureThreshold(rawValue: unknown, fixtureLabel: string, fixturesPath: string): number {
+function normalizeFixtureThreshold(
+  rawValue: unknown,
+  fixtureLabel: string,
+  fixturesPath: string,
+): number {
   if (rawValue === undefined) {
     return DEFAULT_EVAL_MIN_NDCG_AT_5;
   }
@@ -298,7 +380,11 @@ function normalizeFixtureThreshold(rawValue: unknown, fixtureLabel: string, fixt
   return parsed;
 }
 
-function normalizeFixtureEntry(rawFixture: unknown, index: number, fixturesPath: string): SearchEvalFixture {
+function normalizeFixtureEntry(
+  rawFixture: unknown,
+  index: number,
+  fixturesPath: string,
+): SearchEvalFixture {
   if (!rawFixture || typeof rawFixture !== "object") {
     throw new PmCliError(
       `Reindex eval fixture at index ${index + 1} in ${fixturesPath} must be an object.`,
@@ -306,7 +392,8 @@ function normalizeFixtureEntry(rawFixture: unknown, index: number, fixturesPath:
     );
   }
   const fixture = rawFixture as SearchEvalFixtureInput;
-  const rawQuery = typeof fixture.query === "string" ? fixture.query.trim() : "";
+  const rawQuery =
+    typeof fixture.query === "string" ? fixture.query.trim() : "";
   if (rawQuery.length === 0) {
     throw new PmCliError(
       `Reindex eval fixture at index ${index + 1} in ${fixturesPath} must provide a non-empty query.`,
@@ -314,17 +401,31 @@ function normalizeFixtureEntry(rawFixture: unknown, index: number, fixturesPath:
     );
   }
   const fallbackName = `fixture-${index + 1}`;
-  const fixtureName = typeof fixture.name === "string" && fixture.name.trim().length > 0 ? fixture.name.trim() : fallbackName;
+  const fixtureName =
+    typeof fixture.name === "string" && fixture.name.trim().length > 0
+      ? fixture.name.trim()
+      : fallbackName;
   return {
     name: fixtureName,
     query: rawQuery,
     mode: normalizeFixtureMode(fixture.mode, fixtureName, fixturesPath),
-    expected_top_ids: toCompactExpectedIds(fixture.expected_top_ids, fixtureName, fixturesPath),
-    min_ndcg_at_5: normalizeFixtureThreshold(fixture.min_ndcg_at_5, fixtureName, fixturesPath),
+    expected_top_ids: toCompactExpectedIds(
+      fixture.expected_top_ids,
+      fixtureName,
+      fixturesPath,
+    ),
+    min_ndcg_at_5: normalizeFixtureThreshold(
+      fixture.min_ndcg_at_5,
+      fixtureName,
+      fixturesPath,
+    ),
   };
 }
 
-function normalizeFixtureCollection(parsed: unknown, fixturesPath: string): SearchEvalFixture[] {
+function normalizeFixtureCollection(
+  parsed: unknown,
+  fixturesPath: string,
+): SearchEvalFixture[] {
   const parsedObject = parsed as { fixtures?: unknown } | null;
   const candidateFixtures = Array.isArray(parsed)
     ? parsed
@@ -338,28 +439,44 @@ function normalizeFixtureCollection(parsed: unknown, fixturesPath: string): Sear
     );
   }
   if (candidateFixtures.length === 0) {
-    throw new PmCliError(`Reindex eval fixtures at ${fixturesPath} must contain at least one fixture.`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Reindex eval fixtures at ${fixturesPath} must contain at least one fixture.`,
+      EXIT_CODE.USAGE,
+    );
   }
-  return candidateFixtures.map((entry, index) => normalizeFixtureEntry(entry, index, fixturesPath));
+  return candidateFixtures.map((entry, index) =>
+    normalizeFixtureEntry(entry, index, fixturesPath),
+  );
 }
 
-async function loadEvalFixtures(fixturesPath: string): Promise<SearchEvalFixture[]> {
+async function loadEvalFixtures(
+  fixturesPath: string,
+): Promise<SearchEvalFixture[]> {
   let rawText = "";
   try {
     rawText = await readFile(fixturesPath, "utf8");
   } catch {
-    throw new PmCliError(`Unable to read reindex eval fixtures at ${fixturesPath}.`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Unable to read reindex eval fixtures at ${fixturesPath}.`,
+      EXIT_CODE.USAGE,
+    );
   }
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawText);
   } catch {
-    throw new PmCliError(`Reindex eval fixtures at ${fixturesPath} must be valid JSON.`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Reindex eval fixtures at ${fixturesPath} must be valid JSON.`,
+      EXIT_CODE.USAGE,
+    );
   }
   return normalizeFixtureCollection(parsed, fixturesPath);
 }
 
-function computeNdcgAt5(actualIds: readonly string[], expectedIds: readonly string[]): number {
+function computeNdcgAt5(
+  actualIds: readonly string[],
+  expectedIds: readonly string[],
+): number {
   const expectedTop = expectedIds.slice(0, EVAL_RANK_CUTOFF);
   const relevanceById = new Map<string, number>();
   for (let index = 0; index < expectedTop.length; index += 1) {
@@ -369,11 +486,17 @@ function computeNdcgAt5(actualIds: readonly string[], expectedIds: readonly stri
     const relevance = relevanceById.get(id) ?? 0;
     return sum + toScoreAtRank(relevance, index);
   }, 0);
-  const idealDcg = expectedTop.reduce((sum, _id, index) => sum + toScoreAtRank(expectedTop.length - index, index), 0);
+  const idealDcg = expectedTop.reduce(
+    (sum, _id, index) => sum + toScoreAtRank(expectedTop.length - index, index),
+    0,
+  );
   return dcg / idealDcg;
 }
 
-async function runFixtureEvaluation(fixture: SearchEvalFixture, global: GlobalOptions): Promise<SearchEvalResult> {
+async function runFixtureEvaluation(
+  fixture: SearchEvalFixture,
+  global: GlobalOptions,
+): Promise<SearchEvalResult> {
   const searchResult = await runSearch(
     fixture.query,
     {
@@ -383,8 +506,12 @@ async function runFixtureEvaluation(fixture: SearchEvalFixture, global: GlobalOp
     },
     global,
   );
-  const actualTopIds = searchResult.items.map((item) => (item as { id: string }).id).slice(0, EVAL_RANK_CUTOFF);
-  const ndcgAt5 = roundMetric(computeNdcgAt5(actualTopIds, fixture.expected_top_ids));
+  const actualTopIds = searchResult.items
+    .map((item) => (item as { id: string }).id)
+    .slice(0, EVAL_RANK_CUTOFF);
+  const ndcgAt5 = roundMetric(
+    computeNdcgAt5(actualTopIds, fixture.expected_top_ids),
+  );
   const minNdcgAt5 = roundMetric(fixture.min_ndcg_at_5);
   return {
     fixture: fixture.name,
@@ -400,11 +527,18 @@ async function runFixtureEvaluation(fixture: SearchEvalFixture, global: GlobalOp
   };
 }
 
-async function runReindexEvaluation(fixturesPath: string, global: GlobalOptions): Promise<ReindexEvalSummary> {
+async function runReindexEvaluation(
+  fixturesPath: string,
+  global: GlobalOptions,
+): Promise<ReindexEvalSummary> {
   const fixtures = await loadEvalFixtures(fixturesPath);
-  const results: SearchEvalResult[] = await Promise.all(fixtures.map((fixture) => runFixtureEvaluation(fixture, global)));
+  const results: SearchEvalResult[] = await Promise.all(
+    fixtures.map((fixture) => runFixtureEvaluation(fixture, global)),
+  );
   const passCount = results.filter((result) => result.passed).length;
-  const averageNdcg = roundMetric(results.reduce((sum, result) => sum + result.ndcg_at_5, 0) / results.length);
+  const averageNdcg = roundMetric(
+    results.reduce((sum, result) => sum + result.ndcg_at_5, 0) / results.length,
+  );
   return {
     enabled: true,
     fixtures_path: fixturesPath,
@@ -419,14 +553,20 @@ async function runReindexEvaluation(fixturesPath: string, global: GlobalOptions)
   };
 }
 
+/** Executes the advanced search package operation through the package runtime. */
 export async function runAdvancedSearchPackage(
   args: string[],
   rawOptions: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<SearchResult> {
-  return runSearch(resolveSearchQuery(args), normalizeAdvancedSearchOptions(rawOptions, args), global);
+  return runSearch(
+    resolveSearchQuery(args),
+    normalizeAdvancedSearchOptions(rawOptions, args),
+    global,
+  );
 }
 
+/** Executes the advanced reindex package operation through the package runtime. */
 export async function runAdvancedReindexPackage(
   rawOptions: Record<string, unknown>,
   global: GlobalOptions,
@@ -436,6 +576,9 @@ export async function runAdvancedReindexPackage(
   if (!options.eval) {
     return reindexResult;
   }
-  const evalSummary = await runReindexEvaluation(options.eval.fixturesPath, global);
+  const evalSummary = await runReindexEvaluation(
+    options.eval.fixturesPath,
+    global,
+  );
   return { ...reindexResult, eval: evalSummary };
 }

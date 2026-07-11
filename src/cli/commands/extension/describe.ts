@@ -16,18 +16,19 @@
  * as `explore`/`doctor` already do) and hands the results here, so the same
  * builder is trivially unit-testable against synthetic activations.
  */
-import { describeExtensionActivation, type ExtensionActivationSummary } from "../../../core/extensions/activation-summary.js";
+import {
+  describeExtensionActivation,
+  type ExtensionActivationSummary,
+} from "../../../core/extensions/activation-summary.js";
 import { renderExtensionSurfaceMarkdown } from "../../../core/extensions/activation-summary-markdown.js";
-import type { ExtensionActivationResult, ExtensionLayer, ExtensionLoadResult } from "../../../core/extensions/loader.js";
+import type {
+  ExtensionActivationResult,
+  ExtensionLayer,
+  ExtensionLoadResult,
+} from "../../../core/extensions/loader.js";
 import { normalizeExtensionNameForMatch } from "./shared.js";
 
-/**
- * Runtime state of a described extension. `ok` loaded and activated cleanly,
- * `failed` loaded but threw during `activate`, and `not_loaded` failed to import
- * at all -- the latter two register nothing, so their `surfaces` are empty and
- * the status explains why (rather than implying the extension contributes
- * nothing).
- */
+/** Runtime state of a described extension. `ok` loaded and activated cleanly, `failed` loaded but threw during `activate`, and `not_loaded` failed to import at all -- the latter two register nothing, so their `surfaces` are empty and the status explains why (rather than implying the extension contributes nothing). */
 export type ExtensionDescribeActivationStatus = "ok" | "failed" | "not_loaded";
 
 /**
@@ -41,10 +42,15 @@ export type ExtensionDescribeActivationStatus = "ok" | "failed" | "not_loaded";
  * physical entries.
  */
 export interface ExtensionSurfaceDescription {
+  /** Value that configures or reports name for this contract. */
   name: string;
+  /** Value that configures or reports layer for this contract. */
   layer: ExtensionLayer;
+  /** Value that configures or reports version for this contract. */
   version: string;
+  /** Lifecycle state reported for activationthe record. */
   activation_status: ExtensionDescribeActivationStatus;
+  /** Value that configures or reports surfaces for this contract. */
   surfaces: ExtensionActivationSummary;
 }
 
@@ -55,18 +61,17 @@ export interface ExtensionSurfaceDescription {
  * the described entries so callers need not re-measure `extensions`.
  */
 export interface ExtensionDescribeResult {
+  /** Value that configures or reports target for this contract. */
   target: string | null;
+  /** Value that configures or reports total for this contract. */
   total: number;
+  /** Value that configures or reports extensions for this contract. */
   extensions: ExtensionSurfaceDescription[];
+  /** Value that configures or reports union for this contract. */
   union: ExtensionActivationSummary;
 }
 
-/**
- * Compose a collision-free identity key for an extension from its layer and
- * normalized name. The two parts are joined with a colon; the layer prefix is
- * always a colon-free enum value, so distinct (layer, name) pairs never collide
- * even when a name itself contains a colon.
- */
+/** Compose a collision-free identity key for an extension from its layer and normalized name. The two parts are joined with a colon; the layer prefix is always a colon-free enum value, so distinct (layer, name) pairs never collide even when a name itself contains a colon. */
 function layerNameKey(layer: ExtensionLayer, name: string): string {
   return `${layer}:${normalizeExtensionNameForMatch(name)}`;
 }
@@ -91,27 +96,42 @@ export function buildExtensionDescribeResult(
   loadResult: ExtensionLoadResult,
   activationResult: ExtensionActivationResult,
 ): ExtensionDescribeResult {
-  const activationFailedKeys = new Set(activationResult.failed.map((entry) => layerNameKey(entry.layer, entry.name)));
+  const activationFailedKeys = new Set(
+    activationResult.failed.map((entry) =>
+      layerNameKey(entry.layer, entry.name),
+    ),
+  );
   const candidates: ExtensionSurfaceDescription[] = [
     ...loadResult.loaded.map((entry) => ({
       name: entry.name,
       layer: entry.layer,
       version: entry.version,
-      activation_status: activationFailedKeys.has(layerNameKey(entry.layer, entry.name))
+      activation_status: activationFailedKeys.has(
+        layerNameKey(entry.layer, entry.name),
+      )
         ? ("failed" as const)
         : ("ok" as const),
-      surfaces: describeExtensionActivation(activationResult, { extensionName: entry.name }),
+      surfaces: describeExtensionActivation(activationResult, {
+        extensionName: entry.name,
+      }),
     })),
     ...loadResult.failed.map((entry) => ({
       name: entry.name,
       layer: entry.layer,
       version: "unknown",
       activation_status: "not_loaded" as const,
-      surfaces: describeExtensionActivation(activationResult, { extensionName: entry.name }),
+      surfaces: describeExtensionActivation(activationResult, {
+        extensionName: entry.name,
+      }),
     })),
-  ].sort((left, right) => left.name.localeCompare(right.name) || left.layer.localeCompare(right.layer));
+  ].sort(
+    (left, right) =>
+      left.name.localeCompare(right.name) ||
+      left.layer.localeCompare(right.layer),
+  );
 
-  const normalizedTarget = typeof target === "string" ? normalizeExtensionNameForMatch(target) : null;
+  const normalizedTarget =
+    typeof target === "string" ? normalizeExtensionNameForMatch(target) : null;
   const matchedNames =
     normalizedTarget === null
       ? null
@@ -119,19 +139,23 @@ export function buildExtensionDescribeResult(
           loadResult.loaded
             .filter(
               (entry) =>
-                normalizeExtensionNameForMatch(entry.name) === normalizedTarget ||
+                normalizeExtensionNameForMatch(entry.name) ===
+                  normalizedTarget ||
                 (typeof entry.source_package === "string" &&
-                  normalizeExtensionNameForMatch(entry.source_package) === normalizedTarget),
+                  normalizeExtensionNameForMatch(entry.source_package) ===
+                    normalizedTarget),
             )
             .map((entry) => normalizeExtensionNameForMatch(entry.name))
             .concat(normalizedTarget),
         );
   const extensions =
-    matchedNames === null ? candidates : candidates.filter((entry) => matchedNames.has(normalizeExtensionNameForMatch(entry.name)));
-  const unionOptions =
     matchedNames === null
-      ? {}
-      : { extensionNames: [...matchedNames] };
+      ? candidates
+      : candidates.filter((entry) =>
+          matchedNames.has(normalizeExtensionNameForMatch(entry.name)),
+        );
+  const unionOptions =
+    matchedNames === null ? {} : { extensionNames: [...matchedNames] };
 
   return {
     target: typeof target === "string" ? target.trim() : null,
@@ -147,7 +171,10 @@ export function buildExtensionDescribeResult(
  * surfaces (activation failed / never loaded) rather than assuming it
  * contributes nothing.
  */
-const ACTIVATION_STATUS_LABELS: Record<ExtensionDescribeActivationStatus, string> = {
+const ACTIVATION_STATUS_LABELS: Record<
+  ExtensionDescribeActivationStatus,
+  string
+> = {
   ok: "loaded",
   failed: "activation failed",
   not_loaded: "not loaded",
@@ -167,11 +194,21 @@ const ACTIVATION_STATUS_LABELS: Record<ExtensionDescribeActivationStatus, string
  * target is already a not-found error upstream, so this is the "nothing loaded"
  * case) the document is the title plus a single explanatory note.
  */
-export function renderExtensionDescribeMarkdown(result: ExtensionDescribeResult, noun: string): string {
+export function renderExtensionDescribeMarkdown(
+  result: ExtensionDescribeResult,
+  noun: string,
+): string {
   const titleNoun = `${noun[0]!.toUpperCase()}${noun.slice(1)}`;
   const lines = [`# ${titleNoun} surface reference`, ""];
-  lines.push(result.target === null ? `Scope: all loaded ${noun}s` : `Scope: \`${result.target}\``);
-  lines.push(`Described: ${result.total} ${noun}${result.total === 1 ? "" : "s"}`, "");
+  lines.push(
+    result.target === null
+      ? `Scope: all loaded ${noun}s`
+      : `Scope: \`${result.target}\``,
+  );
+  lines.push(
+    `Described: ${result.total} ${noun}${result.total === 1 ? "" : "s"}`,
+    "",
+  );
 
   if (result.extensions.length === 0) {
     lines.push(`_No ${noun}s are loaded._`, "");
@@ -182,11 +219,21 @@ export function renderExtensionDescribeMarkdown(result: ExtensionDescribeResult,
     const title = `${entry.name} (${entry.layer} v${entry.version}, ${ACTIVATION_STATUS_LABELS[entry.activation_status]})`;
     // renderExtensionSurfaceMarkdown already ends with a newline; the join adds a
     // single blank line between sections, so no extra "" separator is pushed.
-    lines.push(renderExtensionSurfaceMarkdown(entry.surfaces, { title, headingLevel: 2 }));
+    lines.push(
+      renderExtensionSurfaceMarkdown(entry.surfaces, {
+        title,
+        headingLevel: 2,
+      }),
+    );
   }
 
   if (result.extensions.length > 1) {
-    lines.push(renderExtensionSurfaceMarkdown(result.union, { title: `Union across all described ${noun}s`, headingLevel: 2 }));
+    lines.push(
+      renderExtensionSurfaceMarkdown(result.union, {
+        title: `Union across all described ${noun}s`,
+        headingLevel: 2,
+      }),
+    );
   }
 
   return `${lines.join("\n").trimEnd()}\n`;

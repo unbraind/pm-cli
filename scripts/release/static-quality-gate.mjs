@@ -53,12 +53,17 @@ export function checkFileLength(files, maxSrcLines, maxTestLines) {
   const violations = [];
   for (const absolutePath of files) {
     const relativePath = relativeToRepo(absolutePath);
-    const lineCount = loadText(absolutePath).split(/\r?\n/).length;
+    const physicalLines = loadText(absolutePath).split(/\r?\n/);
+    // Measure implementation size. Public TSDoc has its own mandatory 100%
+    // gates, so counting comment-only and blank lines here would make the two
+    // quality contracts conflict and incentivize less useful documentation.
+    const lineCount = physicalLines.filter((line) => normalizeLine(line).length > 0).length;
     const maxLines = relativePath.startsWith("tests/") ? maxTestLines : maxSrcLines;
     if (lineCount > maxLines) {
       violations.push({
         path: relativePath,
         line_count: lineCount,
+        physical_line_count: physicalLines.length,
         max_lines: maxLines,
       });
     }

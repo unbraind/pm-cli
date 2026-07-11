@@ -6,14 +6,20 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
-import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
+import {
+  resolveRuntimeStatusRegistry,
+  type RuntimeStatusRegistry,
+} from "../../core/schema/runtime-schema.js";
 import {
   DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS,
   EXIT_CODE,
 } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { toErrorMessage, toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
+import {
+  toErrorMessage,
+  toNonEmptyStringOrUndefined,
+} from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -29,10 +35,16 @@ interface LifecyclePatternSettingsSource {
   };
 }
 
-type LifecyclePatternFieldKey = "blocked_reason" | "resolution" | "actual_result";
+type LifecyclePatternFieldKey =
+  | "blocked_reason"
+  | "resolution"
+  | "actual_result";
 
 interface LifecyclePatternPolicy {
-  closure_like_metadata_field_patterns: Record<LifecyclePatternFieldKey, string[]>;
+  closure_like_metadata_field_patterns: Record<
+    LifecyclePatternFieldKey,
+    string[]
+  >;
 }
 
 interface NormalizeRuleCount {
@@ -64,37 +76,55 @@ interface NormalizeApplyResultRow {
   error?: string;
 }
 
-/**
- * Documents the normalize command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the normalize command options payload exchanged by command, SDK, and package integrations. */
 export interface NormalizeCommandOptions {
+  /** Lifecycle state reported for status. */
   status?: string;
+  /** Value that configures or reports list for this contract. */
   list: ListOptions;
+  /** Value that configures or reports dry run for this contract. */
   dryRun?: boolean;
+  /** Value that configures or reports apply for this contract. */
   apply?: boolean;
+  /** Value that configures or reports author for this contract. */
   author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Value that configures or reports force for this contract. */
   force?: boolean;
+  /** Value that configures or reports allow audit update for this contract. */
   allowAuditUpdate?: boolean;
 }
 
-/**
- * Documents the normalize result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the normalize result payload exchanged by command, SDK, and package integrations. */
 export interface NormalizeResult {
+  /** Value that configures or reports mode for this contract. */
   mode: "dry_run" | "apply";
+  /** Value that configures or reports dry run for this contract. */
   dry_run: boolean;
+  /** Number of matched entries represented by this result. */
   matched_count: number;
+  /** Value that configures or reports filters for this contract. */
   filters: Record<string, unknown>;
+  /** Value that configures or reports rules for this contract. */
   rules: string[];
+  /** Value that configures or reports rule counts for this contract. */
   rule_counts: NormalizeRuleCount[];
+  /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** Value that configures or reports item plans for this contract. */
   item_plans: NormalizeItemPlan[];
+  /** Number of updated entries represented by this result. */
   updated_count?: number;
+  /** Number of skipped entries represented by this result. */
   skipped_count?: number;
+  /** Number of failed entries represented by this result. */
   failed_count?: number;
+  /** Value that configures or reports rows for this contract. */
   rows?: NormalizeApplyResultRow[];
+  /** Value that configures or reports ids for this contract. */
   ids: string[];
+  /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
 }
 
@@ -151,20 +181,34 @@ function sanitizeBeforeValue(value: unknown): unknown {
   return value;
 }
 
-function normalizeLifecyclePatternList(values: readonly string[] | undefined): string[] {
+function normalizeLifecyclePatternList(
+  values: readonly string[] | undefined,
+): string[] {
   /* c8 ignore start -- settings schema always materializes lifecycle arrays before command execution. */
-  return [...new Set((values ?? []).map((value) => value.trim().toLowerCase()).filter((value) => value.length > 0))].sort(
-    (left, right) => left.localeCompare(right),
-  );
+  return [
+    ...new Set(
+      (values ?? [])
+        .map((value) => value.trim().toLowerCase())
+        .filter((value) => value.length > 0),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
   /* c8 ignore stop */
 }
 
-function resolveLifecyclePatternPolicy(settings: LifecyclePatternSettingsSource): LifecyclePatternPolicy {
+function resolveLifecyclePatternPolicy(
+  settings: LifecyclePatternSettingsSource,
+): LifecyclePatternPolicy {
   return {
     closure_like_metadata_field_patterns: {
-      blocked_reason: normalizeLifecyclePatternList(settings.validation.lifecycle_closure_like_blocked_reason_patterns),
-      resolution: normalizeLifecyclePatternList(settings.validation.lifecycle_closure_like_resolution_patterns),
-      actual_result: normalizeLifecyclePatternList(settings.validation.lifecycle_closure_like_actual_result_patterns),
+      blocked_reason: normalizeLifecyclePatternList(
+        settings.validation.lifecycle_closure_like_blocked_reason_patterns,
+      ),
+      resolution: normalizeLifecyclePatternList(
+        settings.validation.lifecycle_closure_like_resolution_patterns,
+      ),
+      actual_result: normalizeLifecyclePatternList(
+        settings.validation.lifecycle_closure_like_actual_result_patterns,
+      ),
     },
   };
 }
@@ -177,14 +221,22 @@ function toMeaningfulCloseReason(value: unknown): string | undefined {
   return normalized;
 }
 
-function normalizeStatusFilter(value: string | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
+function normalizeStatusFilter(
+  value: string | undefined,
+  statusRegistry: RuntimeStatusRegistry,
+): ItemStatus | undefined {
   if (value === undefined) {
     return undefined;
   }
   const normalized = normalizeStatusInput(value, statusRegistry);
   if (!normalized) {
-    const allowedStatuses = statusRegistry.definitions.map((definition) => definition.id);
-    throw new PmCliError(`Invalid --filter-status value "${value}". Allowed: ${allowedStatuses.join(", ")}`, EXIT_CODE.USAGE);
+    const allowedStatuses = statusRegistry.definitions.map(
+      (definition) => definition.id,
+    );
+    throw new PmCliError(
+      `Invalid --filter-status value "${value}". Allowed: ${allowedStatuses.join(", ")}`,
+      EXIT_CODE.USAGE,
+    );
   }
   return normalized;
 }
@@ -214,15 +266,24 @@ function buildClosedBackfillValue(
   return `Actual closure outcome normalized from closed status because ${closureEvidenceSuffix}`;
 }
 
-function isTerminalStatus(item: ListedItem, statusRegistry: RuntimeStatusRegistry): boolean {
+function isTerminalStatus(
+  item: ListedItem,
+  statusRegistry: RuntimeStatusRegistry,
+): boolean {
   /* c8 ignore next -- normalizeStatusInput currently resolves all command-level status values. */
-  const normalized = normalizeStatusInput(item.status, statusRegistry) ?? item.status;
+  const normalized =
+    normalizeStatusInput(item.status, statusRegistry) ?? item.status;
   return statusRegistry.terminal_statuses.has(normalized);
 }
 
-function isTerminalDoneStatus(item: ListedItem, terminalDoneStatuses: ReadonlySet<string>, statusRegistry: RuntimeStatusRegistry): boolean {
+function isTerminalDoneStatus(
+  item: ListedItem,
+  terminalDoneStatuses: ReadonlySet<string>,
+  statusRegistry: RuntimeStatusRegistry,
+): boolean {
   /* c8 ignore next -- normalizeStatusInput currently resolves all command-level status values. */
-  const normalized = normalizeStatusInput(item.status, statusRegistry) ?? item.status;
+  const normalized =
+    normalizeStatusInput(item.status, statusRegistry) ?? item.status;
   return terminalDoneStatuses.has(normalized);
 }
 
@@ -239,14 +300,17 @@ function buildNormalizePlan(
 
   if (!isTerminalStatus(item, statusRegistry)) {
     for (const definition of ACTIVE_CLEAR_FIELD_RULES) {
-      const currentValue = toNonEmptyStringOrUndefined(itemRecord[definition.field]);
+      const currentValue = toNonEmptyStringOrUndefined(
+        itemRecord[definition.field],
+      );
       if (!currentValue) {
         continue;
       }
       const normalized = normalizeComparableText(currentValue);
-      const hasClosurePattern = lifecyclePatterns.closure_like_metadata_field_patterns[definition.field].some((pattern) =>
-        normalized.includes(pattern),
-      );
+      const hasClosurePattern =
+        lifecyclePatterns.closure_like_metadata_field_patterns[
+          definition.field
+        ].some((pattern) => normalized.includes(pattern));
       if (!hasClosurePattern && !isLowSignalText(currentValue)) {
         continue;
       }
@@ -277,11 +341,16 @@ function buildNormalizePlan(
   if (isTerminalDoneStatus(item, terminalDoneStatuses, statusRegistry)) {
     const closeReason = toMeaningfulCloseReason(itemRecord.close_reason);
     for (const definition of CLOSED_BACKFILL_FIELD_RULES) {
-      const currentValue = toNonEmptyStringOrUndefined(itemRecord[definition.field]);
+      const currentValue = toNonEmptyStringOrUndefined(
+        itemRecord[definition.field],
+      );
       if (currentValue && !isLowSignalText(currentValue)) {
         continue;
       }
-      const replacement = buildClosedBackfillValue(definition.field, closeReason);
+      const replacement = buildClosedBackfillValue(
+        definition.field,
+        closeReason,
+      );
       updates[definition.optionKey] = replacement;
       changes.push({
         field: definition.field,
@@ -293,11 +362,17 @@ function buildNormalizePlan(
   }
 
   if (unsetFields.size > 0) {
-    updates.unset = [...unsetFields].sort((left, right) => left.localeCompare(right));
+    updates.unset = [...unsetFields].sort((left, right) =>
+      left.localeCompare(right),
+    );
   }
 
   /* c8 ignore start -- secondary comparator arm only fires for two changes sharing one field; active-clear and closed-backfill rules are mutually exclusive per item so this is unreachable in practice. */
-  changes.sort((left, right) => left.field.localeCompare(right.field) || left.rule.localeCompare(right.rule));
+  changes.sort(
+    (left, right) =>
+      left.field.localeCompare(right.field) ||
+      left.rule.localeCompare(right.rule),
+  );
   /* c8 ignore stop */
   return {
     id: item.id,
@@ -306,7 +381,9 @@ function buildNormalizePlan(
   };
 }
 
-function summarizeRuleCounts(itemPlans: NormalizeItemPlan[]): NormalizeRuleCount[] {
+function summarizeRuleCounts(
+  itemPlans: NormalizeItemPlan[],
+): NormalizeRuleCount[] {
   const counts = new Map<string, number>();
   for (const plan of itemPlans) {
     const planRules = new Set(plan.changes.map((change) => change.rule));
@@ -325,25 +402,33 @@ function toNormalizeWarnings(ruleCounts: NormalizeRuleCount[]): string[] {
     .sort((left, right) => left.localeCompare(right));
 }
 
-
-/**
- * Implements run normalize for the public runtime surface of this module.
- */
-export async function runNormalize(options: NormalizeCommandOptions, global: GlobalOptions): Promise<NormalizeResult> {
+/** Implements run normalize for the public runtime surface of this module. */
+export async function runNormalize(
+  options: NormalizeCommandOptions,
+  global: GlobalOptions,
+): Promise<NormalizeResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   /* c8 ignore next -- tracker bootstrap failure path is validated in broader CLI tests. */
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
 
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const lifecyclePatternPolicy = resolveLifecyclePatternPolicy(settings as unknown as LifecyclePatternSettingsSource);
+  const lifecyclePatternPolicy = resolveLifecyclePatternPolicy(
+    settings as unknown as LifecyclePatternSettingsSource,
+  );
   const statusFilter = normalizeStatusFilter(options.status, statusRegistry);
   const dryRun = options.apply === true ? false : true;
 
   if (options.apply === true && options.dryRun === true) {
-    throw new PmCliError("--dry-run cannot be combined with --apply", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--dry-run cannot be combined with --apply",
+      EXIT_CODE.USAGE,
+    );
   }
 
   const listed = await runList(
@@ -356,17 +441,30 @@ export async function runNormalize(options: NormalizeCommandOptions, global: Glo
     global,
   );
 
-  const terminalDoneStatuses = new Set<string>(statusRegistry.terminal_done_statuses);
+  const terminalDoneStatuses = new Set<string>(
+    statusRegistry.terminal_done_statuses,
+  );
   terminalDoneStatuses.add(statusRegistry.close_status);
-  const sortedItems = [...listed.items].sort((left, right) => left.id.localeCompare(right.id));
-  const planned = sortedItems.map((item) => buildNormalizePlan(item, statusRegistry, terminalDoneStatuses, lifecyclePatternPolicy));
+  const sortedItems = [...listed.items].sort((left, right) =>
+    left.id.localeCompare(right.id),
+  );
+  const planned = sortedItems.map((item) =>
+    buildNormalizePlan(
+      item,
+      statusRegistry,
+      terminalDoneStatuses,
+      lifecyclePatternPolicy,
+    ),
+  );
   const ruleCounts = summarizeRuleCounts(planned);
   const warnings = toNormalizeWarnings(ruleCounts);
   const itemPlans = planned.map((plan) => ({
     id: plan.id,
     changes: plan.changes,
   }));
-  const rules = [...new Set(ruleCounts.map((entry) => entry.rule))].sort((left, right) => left.localeCompare(right));
+  const rules = [...new Set(ruleCounts.map((entry) => entry.rule))].sort(
+    (left, right) => left.localeCompare(right),
+  );
   /* c8 ignore next -- list responses in normalize command tests always carry a `now` timestamp. */
   const generatedAt = listed.now ?? nowIso();
 
@@ -388,8 +486,13 @@ export async function runNormalize(options: NormalizeCommandOptions, global: Glo
   const applyRows: NormalizeApplyResultRow[] = [];
   const updatedIds: string[] = [];
   const applyMessage =
-    typeof options.message === "string" && options.message.trim().length > 0 ? options.message : "normalize apply";
-  const updateBaseOptions: Pick<UpdateCommandOptions, "author" | "message" | "force" | "allowAuditUpdate"> = {
+    typeof options.message === "string" && options.message.trim().length > 0
+      ? options.message
+      : "normalize apply";
+  const updateBaseOptions: Pick<
+    UpdateCommandOptions,
+    "author" | "message" | "force" | "allowAuditUpdate"
+  > = {
     author: options.author,
     message: applyMessage,
     /* c8 ignore next -- false/undefined forms are normalized before reaching this assembly. */
@@ -431,8 +534,12 @@ export async function runNormalize(options: NormalizeCommandOptions, global: Glo
     }
   }
 
-  const updatedCount = applyRows.filter((row) => row.status === "updated").length;
-  const skippedCount = applyRows.filter((row) => row.status === "skipped").length;
+  const updatedCount = applyRows.filter(
+    (row) => row.status === "updated",
+  ).length;
+  const skippedCount = applyRows.filter(
+    (row) => row.status === "skipped",
+  ).length;
   const failedCount = applyRows.filter((row) => row.status === "failed").length;
 
   return {

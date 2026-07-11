@@ -27,16 +27,13 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { runSearch } from "./search.js";
 
-/**
- * Relative location (under the pm root) of the default golden-query set. A
- * git-tracked, human-curated file so relevance ground truth lives alongside the
- * tracker it evaluates.
- */
-export const DEFAULT_EVAL_QUERIES_RELATIVE_PATH = path.join("search", "eval-queries.json");
+/** Relative location (under the pm root) of the default golden-query set. A git-tracked, human-curated file so relevance ground truth lives alongside the tracker it evaluates. */
+export const DEFAULT_EVAL_QUERIES_RELATIVE_PATH = path.join(
+  "search",
+  "eval-queries.json",
+);
 
-/**
- * Documents the eval command options payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the eval command options payload exchanged by command, SDK, and package integrations. */
 export interface EvalOptions {
   /** Default retrieval mode for queries that do not set their own (keyword|semantic|hybrid). */
   mode?: string;
@@ -52,28 +49,38 @@ export interface EvalOptions {
 
 /** Per-query relevance report row emitted by {@link runEval}. */
 export interface EvalQueryReport {
+  /** Value that configures or reports query for this contract. */
   query: string;
+  /** Value that configures or reports mode for this contract. */
   mode: EvalSearchMode;
+  /** Value that configures or reports relevant total for this contract. */
   relevant_total: number;
+  /** Value that configures or reports retrieved relevant for this contract. */
   retrieved_relevant: number;
+  /** Value that configures or reports ndcg for this contract. */
   ndcg: number;
+  /** Value that configures or reports mrr for this contract. */
   mrr: number;
+  /** Value that configures or reports precision for this contract. */
   precision: number;
+  /** Value that configures or reports recall for this contract. */
   recall: number;
 }
 
-/**
- * Documents the eval result payload exchanged by command, SDK, and package integrations.
- */
+/** Documents the eval result payload exchanged by command, SDK, and package integrations. */
 export interface EvalResult {
+  /** Value that configures or reports k for this contract. */
   k: number;
+  /** Number of query entries represented by this result. */
   query_count: number;
+  /** Value that configures or reports aggregate for this contract. */
   aggregate: {
     ndcg: number;
     mrr: number;
     precision: number;
     recall: number;
   };
+  /** Value that configures or reports queries for this contract. */
   queries: EvalQueryReport[];
   /** Present only when `--fail-under` was supplied. */
   fail_under?: number;
@@ -81,7 +88,11 @@ export interface EvalResult {
   passed: boolean;
 }
 
-const VALID_EVAL_MODES: ReadonlySet<string> = new Set<EvalSearchMode>(["keyword", "semantic", "hybrid"]);
+const VALID_EVAL_MODES: ReadonlySet<string> = new Set<EvalSearchMode>([
+  "keyword",
+  "semantic",
+  "hybrid",
+]);
 
 function parseEvalMode(raw: string | undefined): EvalSearchMode {
   if (raw === undefined) {
@@ -89,7 +100,10 @@ function parseEvalMode(raw: string | undefined): EvalSearchMode {
   }
   const normalized = raw.trim().toLowerCase();
   if (!VALID_EVAL_MODES.has(normalized)) {
-    throw new PmCliError("Eval --mode must be one of keyword|semantic|hybrid", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Eval --mode must be one of keyword|semantic|hybrid",
+      EXIT_CODE.USAGE,
+    );
   }
   return normalized as EvalSearchMode;
 }
@@ -100,7 +114,10 @@ function parseEvalK(raw: string | number | undefined): number {
   }
   const parsed = coercePositiveInteger(raw);
   if (parsed === null) {
-    throw new PmCliError("Eval --k must be a positive integer", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Eval --k must be a positive integer",
+      EXIT_CODE.USAGE,
+    );
   }
   return parsed;
 }
@@ -111,7 +128,10 @@ function parseFailUnder(raw: string | number | undefined): number | undefined {
   }
   const parsed = typeof raw === "number" ? raw : Number(String(raw).trim());
   if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
-    throw new PmCliError("Eval --fail-under must be a number in the range [0, 1]", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Eval --fail-under must be a number in the range [0, 1]",
+      EXIT_CODE.USAGE,
+    );
   }
   return parsed;
 }
@@ -121,20 +141,27 @@ function roundMetric(value: number): number {
   return Math.round(value * 10_000) / 10_000;
 }
 
-async function loadEvalQuerySet(queriesPath: string): Promise<ReturnType<typeof parseEvalQuerySet>> {
+async function loadEvalQuerySet(
+  queriesPath: string,
+): Promise<ReturnType<typeof parseEvalQuerySet>> {
   let raw: string;
   try {
     raw = await fs.readFile(queriesPath, "utf8");
   } catch {
-    throw new PmCliError(`Eval query set not found at ${queriesPath}`, EXIT_CODE.NOT_FOUND, {
-      examples: [
-        'echo \'[{"query":"offline search","relevant_ids":["pm-75k9"]}]\' > ' + queriesPath,
-        "pm eval --queries ./my-eval.json",
-      ],
-      nextSteps: [
-        "Create a git-tracked golden-query JSON file (an array of {query, relevant_ids, mode?} objects), then re-run pm eval.",
-      ],
-    });
+    throw new PmCliError(
+      `Eval query set not found at ${queriesPath}`,
+      EXIT_CODE.NOT_FOUND,
+      {
+        examples: [
+          'echo \'[{"query":"offline search","relevant_ids":["pm-75k9"]}]\' > ' +
+            queriesPath,
+          "pm eval --queries ./my-eval.json",
+        ],
+        nextSteps: [
+          "Create a git-tracked golden-query JSON file (an array of {query, relevant_ids, mode?} objects), then re-run pm eval.",
+        ],
+      },
+    );
   }
   let parsed: unknown;
   try {
@@ -164,10 +191,16 @@ async function loadEvalQuerySet(queriesPath: string): Promise<ReturnType<typeof 
  * aggregate nDCG@k cleared the threshold; the CLI layer maps a failed gate to a
  * non-zero exit code.
  */
-export async function runEval(options: EvalOptions, global: GlobalOptions): Promise<EvalResult> {
+export async function runEval(
+  options: EvalOptions,
+  global: GlobalOptions,
+): Promise<EvalResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
   }
   const k = parseEvalK(options.k);
   const defaultMode = parseEvalMode(options.mode);
@@ -191,7 +224,11 @@ export async function runEval(options: EvalOptions, global: GlobalOptions): Prom
     const rankedIds = searchResult.items
       .map((item) => (item as { id?: unknown }).id)
       .filter((id): id is string => typeof id === "string");
-    const metrics = evaluateRanking(rankedIds, new Set(evalQuery.relevant_ids), k);
+    const metrics = evaluateRanking(
+      rankedIds,
+      new Set(evalQuery.relevant_ids),
+      k,
+    );
     rawMetrics.push(metrics);
     reports.push({
       query: evalQuery.query,

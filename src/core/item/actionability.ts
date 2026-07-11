@@ -26,16 +26,13 @@ function normalizeItemId(id: string): string {
   return id.trim().toLowerCase();
 }
 
-/**
- * Collects the blocker item ids declared by an item: the legacy scalar
- * `blocked_by` field plus every `blocked_by` dependency edge. Ids are trimmed,
- * de-duplicated, and returned in stable lexicographic order. This is the single
- * source of truth for "what must close before this item can proceed", shared by
- * `pm next` readiness classification and the close-time auto-unblock sweep.
- */
-export function collectBlockedByIds(item: Pick<ItemFrontMatter, "blocked_by" | "dependencies">): string[] {
+/** Collects the blocker item ids declared by an item: the legacy scalar `blocked_by` field plus every `blocked_by` dependency edge. Ids are trimmed, de-duplicated, and returned in stable lexicographic order. This is the single source of truth for "what must close before this item can proceed", shared by `pm next` readiness classification and the close-time auto-unblock sweep. */
+export function collectBlockedByIds(
+  item: Pick<ItemFrontMatter, "blocked_by" | "dependencies">,
+): string[] {
   const ids = new Set<string>();
-  const scalar = typeof item.blocked_by === "string" ? item.blocked_by.trim() : "";
+  const scalar =
+    typeof item.blocked_by === "string" ? item.blocked_by.trim() : "";
   if (scalar.length > 0) {
     ids.add(scalar);
   }
@@ -53,20 +50,17 @@ export function collectBlockedByIds(item: Pick<ItemFrontMatter, "blocked_by" | "
 
 /** A blocker reference resolved against the corpus and annotated with its state. */
 export interface ResolvedBlocker {
+  /** Stable identifier used to reference this record across commands and storage. */
   id: string;
+  /** Value that configures or reports title for this contract. */
   title: string | null;
+  /** Lifecycle state reported for status. */
   status: ItemStatus | null;
   /** True when the blocker no longer gates work because the referenced item is terminal. */
   resolved: boolean;
 }
 
-/**
- * Resolves an item's declared blockers against a corpus index, annotating each
- * with the blocker's title/status and whether it still gates work. Unknown ids
- * remain unresolved: silently treating a typo as satisfied would dispatch work
- * whose prerequisite was never completed. Terminal referenced items alone are
- * resolved.
- */
+/** Resolves an item's declared blockers against a corpus index, annotating each with the blocker's title/status and whether it still gates work. Unknown ids remain unresolved: silently treating a typo as satisfied would dispatch work whose prerequisite was never completed. Terminal referenced items alone are resolved. */
 export function resolveItemBlockers(
   item: Pick<ItemFrontMatter, "blocked_by" | "dependencies">,
   itemsById: Map<string, ItemFrontMatter>,
@@ -88,6 +82,7 @@ export function resolveItemBlockers(
 
 /** A classified actionable item plus the context an agent needs to act on it. */
 export interface ActionableEntry {
+  /** Value that configures or reports item for this contract. */
   item: ItemFrontMatter;
   /** Blockers that still gate the item (resolved blockers are filtered out). */
   open_blockers: ResolvedBlocker[];
@@ -107,23 +102,18 @@ export interface ActionabilityReport {
   container_count: number;
 }
 
-/**
- * Resolves the registry's active status set, falling back to just the canonical
- * open status when a custom schema declares none — the same safety net `pm
- * context` applies so the report never misclassifies every item as inactive.
- */
-function resolveActiveStatusSet(statusRegistry: RuntimeStatusRegistry): Set<string> {
+/** Resolves the registry's active status set, falling back to just the canonical open status when a custom schema declares none — the same safety net `pm context` applies so the report never misclassifies every item as inactive. */
+function resolveActiveStatusSet(
+  statusRegistry: RuntimeStatusRegistry,
+): Set<string> {
   /* c8 ignore start -- fallback applies only to custom schemas that intentionally define zero active statuses */
-  return statusRegistry.active_statuses.size > 0 ? statusRegistry.active_statuses : new Set<string>([statusRegistry.open_status]);
+  return statusRegistry.active_statuses.size > 0
+    ? statusRegistry.active_statuses
+    : new Set<string>([statusRegistry.open_status]);
   /* c8 ignore stop */
 }
 
-/**
- * Returns whether an item has any non-terminal descendant by walking the
- * parent→children index depth-first, short-circuiting on the first one found.
- * Such an item is a container (its real work lives in its children), so `pm next`
- * skips it and recommends a leaf instead. Cycle-safe via a visited set.
- */
+/** Returns whether an item has any non-terminal descendant by walking the parent→children index depth-first, short-circuiting on the first one found. Such an item is a container (its real work lives in its children), so `pm next` skips it and recommends a leaf instead. Cycle-safe via a visited set. */
 function hasOpenDescendant(
   rootId: string,
   childrenByParent: Map<string, ItemFrontMatter[]>,
@@ -147,12 +137,7 @@ function hasOpenDescendant(
   return false;
 }
 
-/**
- * Indexes the corpus into a by-id map, a parent→children map, and a reverse
- * blocker map (blocker id → ids of items it blocks). Built once per report so
- * blocker resolution, descendant counting, and downstream "unblocks" lookups
- * share the same passes over the corpus.
- */
+/** Indexes the corpus into a by-id map, a parent→children map, and a reverse blocker map (blocker id → ids of items it blocks). Built once per report so blocker resolution, descendant counting, and downstream "unblocks" lookups share the same passes over the corpus. */
 function indexCorpus(corpus: ItemFrontMatter[]): {
   itemsById: Map<string, ItemFrontMatter>;
   childrenByParent: Map<string, ItemFrontMatter[]>;
@@ -199,34 +184,59 @@ export function computeActionabilityReport(
   statusRegistry: RuntimeStatusRegistry,
 ): ActionabilityReport {
   const { itemsById, childrenByParent, blockedByReverse } = indexCorpus(corpus);
-  const activeStatuses = new Set([...resolveActiveStatusSet(statusRegistry), ...statusRegistry.blocked_statuses]);
+  const activeStatuses = new Set([
+    ...resolveActiveStatusSet(statusRegistry),
+    ...statusRegistry.blocked_statuses,
+  ]);
   // Ids of corpus items still in flight, used to keep only the non-terminal
   // dependents in each item's downstream "unblocks" list.
   const nonTerminalIds = new Set(
-    corpus.filter((entry) => !isTerminalStatus(entry.status, statusRegistry)).map((entry) => normalizeItemId(entry.id)),
+    corpus
+      .filter((entry) => !isTerminalStatus(entry.status, statusRegistry))
+      .map((entry) => normalizeItemId(entry.id)),
   );
   const ready: ActionableEntry[] = [];
   const blocked: ActionableEntry[] = [];
   let activeCount = 0;
   let containerCount = 0;
   for (const item of candidates) {
-    if (!activeStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry))) continue;
+    if (
+      !activeStatuses.has(
+        normalizeStatusForRegistry(item.status, statusRegistry),
+      )
+    )
+      continue;
     activeCount += 1;
     if (hasOpenDescendant(item.id, childrenByParent, statusRegistry)) {
       containerCount += 1;
       continue;
     }
-    const openBlockers = resolveItemBlockers(item, itemsById, statusRegistry).filter((blocker) => !blocker.resolved);
+    const openBlockers = resolveItemBlockers(
+      item,
+      itemsById,
+      statusRegistry,
+    ).filter((blocker) => !blocker.resolved);
     const unblocks = (blockedByReverse.get(normalizeItemId(item.id)) ?? [])
       .filter((dependentId) => nonTerminalIds.has(normalizeItemId(dependentId)))
       .sort((left, right) => left.localeCompare(right));
-    const entry: ActionableEntry = { item, open_blockers: openBlockers, unblocks };
-    const lifecycleBlocked = statusRegistry.blocked_statuses.has(normalizeStatusForRegistry(item.status, statusRegistry));
+    const entry: ActionableEntry = {
+      item,
+      open_blockers: openBlockers,
+      unblocks,
+    };
+    const lifecycleBlocked = statusRegistry.blocked_statuses.has(
+      normalizeStatusForRegistry(item.status, statusRegistry),
+    );
     if (openBlockers.length === 0 && !lifecycleBlocked) {
       ready.push(entry);
     } else {
       blocked.push(entry);
     }
   }
-  return { ready, blocked, active_count: activeCount, container_count: containerCount };
+  return {
+    ready,
+    blocked,
+    active_count: activeCount,
+    container_count: containerCount,
+  };
 }
