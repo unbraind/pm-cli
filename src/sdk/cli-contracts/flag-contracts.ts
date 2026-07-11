@@ -775,6 +775,15 @@ export const CLAIM_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--force" },
   { flag: "--if-available" },
   { flag: "--next" },
+  { flag: "--type" },
+  { flag: "--tag" },
+  { flag: "--priority" },
+  { flag: "--assignee-filter" },
+  { flag: "--parent" },
+  { flag: "--sprint" },
+  { flag: "--release" },
+  { flag: "--max-attempts" },
+  { flag: "--include-decisions" },
 ];
 
 /** Public contract for restore flag contracts, shared by SDK and presentation-layer consumers. */

@@ -215,10 +215,15 @@ export async function runClaimNext(
   nextOptions: NextOptions = {},
 ): Promise<ClaimNextResult> {
   const maxAttempts = parseClaimNextAttempts(options.maxAttempts);
+  const settings = await readSettings(resolvePmRoot(process.cwd(), global.path));
+  const claimOptions = {
+    ...options,
+    author: resolveAuthor(options.author, settings.author_default),
+  };
   const next = await runNext(
     {
       ...nextOptions,
-      callerAuthor: options.author,
+      callerAuthor: claimOptions.author,
       limit: String(maxAttempts),
     },
     global,
@@ -233,7 +238,7 @@ export async function runClaimNext(
     recommendations.slice(0, maxAttempts),
     force,
     global,
-    options,
+    claimOptions,
   );
 }
 
@@ -287,14 +292,21 @@ export async function claimNextFromRecommendations(
       warnings: [NO_AVAILABLE_NEXT_ITEM_CODE],
     };
   }
+  const noCandidatesMatched = attempts === 0;
   throw new PmCliError(
-    "No actionable item remained available to claim",
-    EXIT_CODE.CONFLICT,
+    noCandidatesMatched
+      ? "No actionable items matched the selection filters"
+      : "No actionable item remained available to claim",
+    noCandidatesMatched ? EXIT_CODE.NOT_FOUND : EXIT_CODE.CONFLICT,
     {
       code: NO_AVAILABLE_NEXT_ITEM_CODE,
-      why: "Every ranked candidate was claimed by another agent before this atomic selection completed.",
+      why: noCandidatesMatched
+        ? "No ready items matched the specified filters or selection criteria."
+        : "Every ranked candidate was claimed by another agent before this atomic selection completed.",
       nextSteps: [
-        "Run pm claim --next again to refresh the ranked candidate set.",
+        noCandidatesMatched
+          ? "Verify the filters or run pm next to inspect all ready work."
+          : "Run pm claim --next again to refresh the ranked candidate set.",
       ],
     },
   );

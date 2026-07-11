@@ -892,7 +892,20 @@ describe("public sdk entrypoint", () => {
     expect(flagsFor("gc")).toEqual(expect.arrayContaining(["--dry-run"]));
     expect(flagsFor("stats")).toEqual(expect.arrayContaining(["--storage"]));
     expect(flagsFor("contracts")).toEqual(expect.arrayContaining(["--flags-only"]));
-    expect(flagsFor("claim")).toEqual(expect.arrayContaining(["--message"]));
+    expect(flagsFor("claim")).toEqual(
+      expect.arrayContaining([
+        "--message",
+        "--type",
+        "--tag",
+        "--priority",
+        "--assignee-filter",
+        "--parent",
+        "--sprint",
+        "--release",
+        "--max-attempts",
+        "--include-decisions",
+      ]),
+    );
     expect(contractsFor("claim")).toEqual(
       expect.arrayContaining([expect.objectContaining({ flag: "--author", aliases: expect.arrayContaining(["--assignee"]) })]),
     );

@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -207,10 +207,35 @@ describe("runClaim/runRelease", () => {
         warnings: ["no_available_next_item"],
       });
       await expect(runClaimNext(false, { path: context.pmPath }, { author: "nobody" })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.NOT_FOUND,
         context: expect.objectContaining({ code: "no_available_next_item" }),
       });
       const missingId = context.runCli(["claim", "--json"]);
       expect(missingId.code).toBe(EXIT_CODE.USAGE);
+    });
+  });
+
+  it("uses the configured default author in an empty if-available envelope", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        author_default?: string;
+      };
+      settings.author_default = "settings-author";
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      const previousAuthor = process.env.PM_AUTHOR;
+      delete process.env.PM_AUTHOR;
+      try {
+        const empty = await runClaimNext(
+          false,
+          { path: context.pmPath },
+          { ifAvailable: true },
+        );
+        expect(empty.claimed_by).toBe("settings-author");
+      } finally {
+        if (previousAuthor === undefined) delete process.env.PM_AUTHOR;
+        else process.env.PM_AUTHOR = previousAuthor;
+      }
     });
   });
 

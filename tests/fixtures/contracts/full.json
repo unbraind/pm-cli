@@ -1069,6 +1069,33 @@
         },
         {
           "flag": "--next"
+        },
+        {
+          "flag": "--type"
+        },
+        {
+          "flag": "--tag"
+        },
+        {
+          "flag": "--priority"
+        },
+        {
+          "flag": "--assignee-filter"
+        },
+        {
+          "flag": "--parent"
+        },
+        {
+          "flag": "--sprint"
+        },
+        {
+          "flag": "--release"
+        },
+        {
+          "flag": "--max-attempts"
+        },
+        {
+          "flag": "--include-decisions"
         }
       ],
       "provider": "core"
