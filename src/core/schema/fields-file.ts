@@ -81,7 +81,6 @@ export const BUILTIN_FIELD_KEYS: ReadonlySet<string> = new Set([
   "regression",
   "reporter",
   "repro_steps",
-  "severity",
   "unblock_note",
   "value",
   "why_now",
