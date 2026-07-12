@@ -7,6 +7,9 @@
   "scripts/bundle-cli.mjs": {
     "preserve-caught-error": {
       "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
     }
   },
   "scripts/contracts-snapshot.mjs": {
@@ -22,6 +25,9 @@
   "scripts/gen-package-runtime-loaders.mjs": {
     "no-useless-assignment": {
       "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
     }
   },
   "scripts/gen-plugin-mcp-wrappers.mjs": {
@@ -29,8 +35,28 @@
       "count": 1
     }
   },
+  "scripts/generate-release-notes.mjs": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "scripts/release-version.mjs": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "scripts/release/static-quality-gate.mjs": {
+    "sonarjs/cognitive-complexity": {
+      "count": 2
+    }
+  },
   "scripts/smoke-claude-plugin.mjs": {
     "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "scripts/smoke-cleanup.mjs": {
+    "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
@@ -44,18 +70,40 @@
       "count": 1
     }
   },
+  "src/cli/bootstrap-args.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 2
+    }
+  },
+  "src/cli/commands/calendar.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
   "src/cli/commands/completion.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "complexity": {
+      "count": 2
     }
   },
   "src/cli/commands/config.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
     }
   },
   "src/cli/commands/contracts.ts": {
     "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
@@ -67,11 +115,17 @@
   "src/cli/commands/create.ts": {
     "no-useless-assignment": {
       "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
     }
   },
   "src/cli/commands/extension.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 2
+    },
+    "complexity": {
+      "count": 1
     },
     "no-useless-assignment": {
       "count": 1
@@ -80,21 +134,51 @@
   "src/cli/commands/guide.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 2
     }
   },
   "src/cli/commands/health.ts": {
     "no-useless-assignment": {
       "count": 3
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/history.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
     }
   },
   "src/cli/commands/normalize.ts": {
     "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/plan.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/profile.ts": {
+    "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
   "src/cli/commands/reindex.ts": {
     "no-useless-assignment": {
       "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 2
     }
   },
   "src/cli/commands/schema.ts": {
@@ -103,16 +187,61 @@
     },
     "no-useless-assignment": {
       "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 2
+    }
+  },
+  "src/cli/commands/shared-unset-fields.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/templates.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
     }
   },
   "src/cli/commands/test.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 6
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/update-many.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 2
+    }
+  },
+  "src/cli/commands/update.ts": {
+    "complexity": {
+      "count": 1
     }
   },
   "src/cli/commands/validate.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 6
+    }
+  },
+  "src/cli/error-guidance.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/extension-command-options.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 3
     }
   },
   "src/cli/main.ts": {
@@ -128,13 +257,99 @@
       "count": 2
     }
   },
+  "src/core/checkpoint/checkpoint-gc.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 2
+    }
+  },
+  "src/core/extensions/extension-policy.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/core/extensions/item-fields.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/core/extensions/loader.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 2
+    }
+  },
+  "src/core/fs/fs-utils.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/core/governance/issue-codes.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/core/history/history-diff.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
   "src/core/history/history-rewrite.ts": {
     "preserve-caught-error": {
       "count": 1
     }
   },
+  "src/core/history/history.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 2
+    }
+  },
+  "src/core/item/item-format.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 2
+    }
+  },
+  "src/core/item/type-registry.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/core/lock/lock-gc.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/core/lock/lock.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/core/output/output.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/core/profile/profile-lint.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/core/schema/status-defs-file.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/core/schema/type-workflows.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
   "src/core/search/cache.ts": {
     "no-useless-assignment": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
@@ -153,8 +368,16 @@
       "count": 1
     }
   },
+  "src/core/shared/levenshtein.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
   "src/core/store/item-format-migration.ts": {
     "no-useless-assignment": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
@@ -166,11 +389,20 @@
   "src/core/store/settings.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "complexity": {
+      "count": 1
     }
   },
   "src/core/test/background-runs.ts": {
+    "complexity": {
+      "count": 1
+    },
     "no-useless-assignment": {
       "count": 2
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
     }
   },
   "src/sdk/package-import-adapters.ts": {
@@ -311,6 +543,11 @@
       "count": 1
     }
   },
+  "tests/unit/docs-examples/sdk-app-embedding.spec.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
   "tests/unit/docs-examples/sdk-contract-consumer.spec.ts": {
     "complexity": {
       "count": 1
@@ -328,6 +565,11 @@
   },
   "tests/unit/extensions/extension-scaffold-define-guidance.spec.ts": {
     "complexity": {
+      "count": 1
+    }
+  },
+  "tests/unit/packages/package-manifest.spec.ts": {
+    "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },

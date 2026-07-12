@@ -1,17 +1,25 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
+import sonarjs from "eslint-plugin-sonarjs";
 import unicorn from "eslint-plugin-unicorn";
 
-// Cyclomatic-complexity ceiling for the "Complex Method" no-regression gate.
-// Calibrated to CodeFactor's "Complex Method" detector (which flags methods at
-// cyclomatic complexity >= 18): `max: 17` makes ESLint error on any function at
-// CC >= 18, so a newly-introduced complex method fails `pnpm lint` in CI.
+// Complexity ceilings for the "Complex Method" no-regression gate: no function
+// may exceed 16 on EITHER metric.
+// - `complexity` (cyclomatic) alone proved insufficient: CodeFactor filed
+//   GH-518 against a method with cyclomatic 14 but cognitive complexity 22
+//   (deep nesting), while a flat cyclomatic-16 sibling in the same file was
+//   never flagged. The detector CodeFactor runs is nesting-weighted, so the
+//   gate must bound cognitive complexity too.
+// - `sonarjs/cognitive-complexity` at 16 is therefore the load-bearing half
+//   of the CodeFactor calibration; the cyclomatic ceiling keeps flat-but-
+//   branchy functions honest.
 // Pre-existing violations are grandfathered in `eslint-suppressions.json`;
 // ESLint fails the run when a suppression goes stale (prune with
 // `pnpm lint:eslint:prune`), so the baseline can only shrink, and the static
 // quality gate enforces a hard budget on its size so it can never grow.
 const CODEFACTOR_MAINTAINABILITY_RULES = {
-  complexity: ["error", { max: 17 }],
+  complexity: ["error", { max: 16 }],
+  "sonarjs/cognitive-complexity": ["error", 16],
   "no-unsafe-optional-chaining": "error",
   "unicorn/no-thenable": "error",
   "unicorn/no-useless-fallback-in-spread": "error",
@@ -59,7 +67,7 @@ export default [
   {
     languageOptions: { globals: NODE_GLOBALS },
     linterOptions: { reportUnusedDisableDirectives: "error" },
-    plugins: { unicorn },
+    plugins: { sonarjs, unicorn },
     rules: CODEFACTOR_MAINTAINABILITY_RULES,
   },
   {
