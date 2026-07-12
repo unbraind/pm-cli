@@ -49,6 +49,7 @@ export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContrac
     { target: "release", keys: ["release"] },
     { target: "limit", keys: ["limit"] },
     { target: "offset", keys: ["offset"] },
+    { target: "after", keys: ["after"] },
     { target: "fields", keys: ["fields"] },
     { target: "sort", keys: ["sort"] },
     { target: "order", keys: ["order"] },
@@ -78,6 +79,7 @@ export const SEARCH_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContr
     { target: "parent", keys: ["parent"] },
     { target: "fields", keys: ["fields"] },
     { target: "limit", keys: ["limit"] },
+    { target: "after", keys: ["after"] },
   ];
 
 /** Public contract for calendar commander string option contracts, shared by SDK and presentation-layer consumers. */
@@ -127,6 +129,7 @@ export const CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasCont
     { target: "release", keys: ["release"] },
     { target: "parent", keys: ["parent"] },
     { target: "limit", keys: ["limit", "maxItems", "max_items"] },
+    { target: "after", keys: ["after"] },
     { target: "format", keys: ["format"] },
     { target: "depth", keys: ["depth"] },
     { target: "fields", keys: ["fields"] },

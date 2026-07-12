@@ -20,11 +20,11 @@ import type {
   ItemDocument,
   ItemFormat,
   ItemMetadata,
-  ItemType,
   RuntimeSchemaSettings,
 } from "../../types/index.js";
 
-const CACHE_VERSION = 6;
+const CACHE_VERSION = 7;
+const DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS = 10_000;
 const CACHE_FILENAME = "metadata-cache.json";
 const BODY_CACHE_FILENAME = "metadata-cache-bodies.json";
 const COLLECTIONS_CACHE_FILENAME = "metadata-cache-collections.json";
@@ -63,9 +63,16 @@ interface CachedCollections extends StatSignature {
   collections: Record<string, unknown>;
 }
 
+interface DirectorySignature extends StatSignature {
+  exists: boolean;
+}
+
+type DirectorySignatures = Record<string, DirectorySignature>;
+
 interface CacheEnvelope {
   version: number;
   context_fingerprint: string;
+  directory_signatures: DirectorySignatures;
   entries: Record<string, CachedEntry>;
 }
 
@@ -426,6 +433,62 @@ async function readItemDirectoryFiles(
   }
 }
 
+async function readDirectorySignature(
+  pmRoot: string,
+  folder: string,
+): Promise<[string, DirectorySignature]> {
+  try {
+    const stat = await fs.stat(path.join(pmRoot, folder));
+    return [
+      folder,
+      {
+        exists: true,
+        mtime_ms: stat.mtimeMs,
+        ctime_ms: stat.ctimeMs,
+        size: stat.size,
+      },
+    ];
+  } catch {
+    return [
+      folder,
+      { exists: false, mtime_ms: 0, ctime_ms: 0, size: 0 },
+    ];
+  }
+}
+
+async function readDirectorySignatures(
+  pmRoot: string,
+  folders: readonly string[],
+): Promise<DirectorySignatures> {
+  return Object.fromEntries(
+    await Promise.all(
+      folders.map(async (folder) => await readDirectorySignature(pmRoot, folder)),
+    ),
+  );
+}
+
+function directorySignaturesMatch(
+  left: DirectorySignatures | undefined,
+  right: DirectorySignatures,
+): boolean {
+  if (!left || Object.keys(left).length !== Object.keys(right).length) {
+    return false;
+  }
+  return Object.entries(right).every(([folder, signature]) => {
+    const previous = left[folder];
+    return (
+      previous !== undefined &&
+      previous.exists === signature.exists &&
+      statMatches(
+        previous,
+        signature.mtime_ms,
+        signature.ctime_ms,
+        signature.size,
+      )
+    );
+  });
+}
+
 function isItemDocumentFile(file: string): boolean {
   return ITEM_FILE_EXTENSIONS.some((ext) => file.toLowerCase().endsWith(ext));
 }
@@ -710,12 +773,17 @@ async function persistMetadataCacheIfNeeded(params: {
   contextFingerprint: string;
   existingCache: CacheEnvelope | null;
   previousEntries: Record<string, CachedEntry>;
+  directorySignatures: DirectorySignatures;
   state: DocumentCacheMutableState;
 }): Promise<void> {
   const metadataDirty =
     params.state.misses.metadata ||
     Object.keys(params.previousEntries).length !==
-      Object.keys(params.state.newEntries).length;
+      Object.keys(params.state.newEntries).length ||
+    !directorySignaturesMatch(
+      params.existingCache?.directory_signatures,
+      params.directorySignatures,
+    );
   if (
     !metadataDirty &&
     params.existingCache !== null &&
@@ -726,6 +794,7 @@ async function persistMetadataCacheIfNeeded(params: {
   await persistCache(getCachePath(params.pmRoot), {
     version: CACHE_VERSION,
     context_fingerprint: params.contextFingerprint,
+    directory_signatures: params.directorySignatures,
     entries: params.state.newEntries,
   }).catch(() => {});
 }
@@ -797,6 +866,133 @@ export interface ListCacheOptions {
   includeBody?: boolean;
   /** When false, heavy collection fields (comments/notes/learnings/files/tests/ test_runs/docs) are neither loaded from nor written to the separate collections cache, and are absent from the returned metadata. Light-only callers (`pm list` compact, stats, deps, activity, calendar, close) skip the large collections cache entirely. Defaults to true so any caller that does read those fields stays correct. */
   includeCollections?: boolean;
+  /** Force canonical item enumeration and stat validation even when a fresh derived index is available. Validation, repair, migration, and equivalence tests use this correctness path. */
+  forceSourceScan?: boolean;
+  /** Minimum item count required before the directory-signature derived-index fast path is used. Defaults to 10,000 so small workspaces preserve per-file external-edit detection; tests and specialized SDK hosts may lower it explicitly. */
+  derivedIndexMinimumItems?: number;
+}
+
+function cacheTierMatchesContext(
+  envelope: BodyCacheEnvelope | CollectionsCacheEnvelope | null,
+  contextFingerprint: string,
+): boolean {
+  return envelope?.context_fingerprint === contextFingerprint;
+}
+
+function hasEveryDerivedIndexPart(
+  keys: readonly string[],
+  includeBody: boolean,
+  includeCollections: boolean,
+  previousBodies: Record<string, CachedBody>,
+  previousCollections: Record<string, CachedCollections>,
+): boolean {
+  return keys.every(
+    (key) =>
+      (!includeBody || previousBodies[key] !== undefined) &&
+      (!includeCollections || previousCollections[key] !== undefined),
+  );
+}
+
+function candidatesFromDerivedIndex(params: {
+  pmRoot: string;
+  preferredFormat: ItemFormat | undefined;
+  includeBody: boolean;
+  includeCollections: boolean;
+  previousEntries: Record<string, CachedEntry>;
+  previousBodies: Record<string, CachedBody>;
+  previousCollections: Record<string, CachedCollections>;
+}): CachedDocumentCandidate[] {
+  const candidatesById = new Map<
+    string,
+    { candidate: CachedDocumentCandidate; itemFormat: ItemFormat }
+  >();
+  for (const [relativePath, entry] of Object.entries(params.previousEntries)) {
+    const itemFormat = getItemFormatFromPath(relativePath);
+    if (!itemFormat) {
+      continue;
+    }
+    const metadata = params.includeCollections
+      ? mergeHeavyMetadata(
+          entry.metadata,
+          params.previousCollections[relativePath]?.collections,
+        )
+      : entry.metadata;
+    const existing = candidatesById.get(metadata.id);
+    if (
+      shouldRecordCachedDocumentCandidate(
+        existing?.itemFormat,
+        itemFormat,
+        params.preferredFormat,
+      )
+    ) {
+      candidatesById.set(metadata.id, {
+        itemFormat,
+        candidate: {
+          metadata,
+          body: params.includeBody
+            ? params.previousBodies[relativePath]?.body
+            : undefined,
+          item_format: itemFormat,
+          item_path: path.join(params.pmRoot, relativePath),
+        },
+      });
+    }
+  }
+  return [...candidatesById.values()]
+    .sort((left, right) =>
+      left.candidate.metadata.id.localeCompare(right.candidate.metadata.id),
+    )
+    .map((entry) => entry.candidate);
+}
+
+function canUseDerivedIndex(params: {
+  forceSourceScan: boolean;
+  contextFingerprint: string;
+  existingCache: CacheEnvelope | null;
+  existingBodyCache: BodyCacheEnvelope | null;
+  existingCollectionsCache: CollectionsCacheEnvelope | null;
+  directorySignatures: DirectorySignatures;
+  entryKeys: readonly string[];
+  minimumIndexedItems: number;
+  includeBody: boolean;
+  includeCollections: boolean;
+  previousBodies: Record<string, CachedBody>;
+  previousCollections: Record<string, CachedCollections>;
+}): boolean {
+  if (
+    params.forceSourceScan ||
+    hasActiveOnReadHooks() ||
+    params.existingCache?.context_fingerprint !== params.contextFingerprint ||
+    params.entryKeys.length < params.minimumIndexedItems ||
+    !directorySignaturesMatch(
+      params.existingCache.directory_signatures,
+      params.directorySignatures,
+    )
+  ) {
+    return false;
+  }
+  const requiredTiersMatch = [
+    !params.includeBody ||
+      cacheTierMatchesContext(
+        params.existingBodyCache,
+        params.contextFingerprint,
+      ),
+    !params.includeCollections ||
+      cacheTierMatchesContext(
+        params.existingCollectionsCache,
+        params.contextFingerprint,
+      ),
+  ];
+  return (
+    requiredTiersMatch.every(Boolean) &&
+    hasEveryDerivedIndexPart(
+      params.entryKeys,
+      params.includeBody,
+      params.includeCollections,
+      params.previousBodies,
+      params.previousCollections,
+    )
+  );
 }
 
 /**
@@ -847,9 +1043,47 @@ export async function listAllDocumentCandidatesCached(
     contextFingerprint,
   );
 
-  const entries = Object.entries(typeToFolder) as Array<[ItemType, string]>;
+  const folders = [...new Set(Object.values(typeToFolder))];
+  const directorySignaturesBefore = await readDirectorySignatures(
+    pmRoot,
+    folders,
+  );
+  const entryKeys = Object.keys(previousEntries);
+  const minimumIndexedItems = Math.max(
+    1,
+    Math.floor(
+      options.derivedIndexMinimumItems ?? DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS,
+    ),
+  );
+  if (
+    canUseDerivedIndex({
+      forceSourceScan: options.forceSourceScan === true,
+      contextFingerprint,
+      existingCache,
+      existingBodyCache,
+      existingCollectionsCache,
+      directorySignatures: directorySignaturesBefore,
+      entryKeys,
+      minimumIndexedItems,
+      includeBody,
+      includeCollections,
+      previousBodies,
+      previousCollections,
+    })
+  ) {
+    return candidatesFromDerivedIndex({
+      pmRoot,
+      preferredFormat,
+      includeBody,
+      includeCollections,
+      previousEntries,
+      previousBodies,
+      previousCollections,
+    });
+  }
+
   const dirResults = await Promise.all(
-    entries.map(([, folder]) =>
+    folders.map((folder) =>
       readItemDirectoryFiles(pmRoot, folder, warnings),
     ),
   );
@@ -873,6 +1107,17 @@ export async function listAllDocumentCandidatesCached(
 
   await Promise.all(collectCachedDocumentParseTasks(dirResults, context));
 
+  const directorySignaturesAfter = await readDirectorySignatures(
+    pmRoot,
+    folders,
+  );
+  const stableDirectorySignatures = directorySignaturesMatch(
+    directorySignaturesBefore,
+    directorySignaturesAfter,
+  )
+    ? directorySignaturesAfter
+    : {};
+
   // Rewrite a cache file only when its contents changed: any re-parsed (missing or
   // stale) entry, or a different set of keys (additions/deletions).
   await persistMetadataCacheIfNeeded({
@@ -880,6 +1125,7 @@ export async function listAllDocumentCandidatesCached(
     contextFingerprint,
     existingCache,
     previousEntries,
+    directorySignatures: stableDirectorySignatures,
     state,
   });
 

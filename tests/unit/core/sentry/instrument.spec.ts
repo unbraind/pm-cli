@@ -17,12 +17,16 @@ const rootMock = vi.hoisted(() => ({
   resolvePmCliVersion: vi.fn<() => string | null>(() => null),
 }));
 
-vi.mock("@sentry/node", () => sentryNodeMock);
 vi.mock("../../../../src/core/packages/root.js", () => rootMock);
 
 import { _testOnly, ensureSentryInit } from "../../../../src/core/sentry/instrument.js";
 
-const { scrubEventData, resetSentryStateForTests } = _testOnly;
+const {
+  scrubEventData,
+  resetSentryStateForTests,
+  setSentryLoaderForTests,
+} = _testOnly;
+let sentryLoaderMock: ReturnType<typeof vi.fn>;
 
 describe("instrument residual branches", () => {
   const originalEnv = { ...process.env };
@@ -38,6 +42,8 @@ describe("instrument residual branches", () => {
     delete process.env.VITEST_WORKER_ID;
     delete process.env.NODE_ENV;
     resetSentryStateForTests();
+    sentryLoaderMock = vi.fn(() => sentryNodeMock as never);
+    setSentryLoaderForTests(sentryLoaderMock as never);
     sentryNodeMock.init.mockClear();
     rootMock.resolvePmCliVersion.mockReset();
     rootMock.resolvePmCliVersion.mockReturnValue(null);
@@ -46,6 +52,7 @@ describe("instrument residual branches", () => {
   afterEach(() => {
     process.env = { ...originalEnv };
     resetSentryStateForTests();
+    setSentryLoaderForTests();
   });
 
   it("treats PM_TELEMETRY_DISABLED as an opt-out without importing Sentry", async () => {
@@ -53,6 +60,12 @@ describe("instrument residual branches", () => {
 
     await expect(ensureSentryInit()).resolves.toBeUndefined();
     expect(sentryNodeMock.init).not.toHaveBeenCalled();
+    expect(sentryLoaderMock).not.toHaveBeenCalled();
+  });
+
+  it("loads the installed Sentry CommonJS export through the production loader", () => {
+    const loaded = _testOnly.defaultSentryLoader();
+    expect(loaded).toMatchObject({ init: expect.any(Function), flush: expect.any(Function) });
   });
 
   it("treats a worker id alone (no VITEST flag) as disabled", async () => {
@@ -62,6 +75,7 @@ describe("instrument residual branches", () => {
 
     await expect(ensureSentryInit()).resolves.toBeUndefined();
     expect(sentryNodeMock.init).not.toHaveBeenCalled();
+    expect(sentryLoaderMock).not.toHaveBeenCalled();
   });
 
   it("falls back to 0.0.0 release when the CLI version cannot be resolved", async () => {
@@ -168,6 +182,7 @@ describe("instrument residual branches", () => {
     // without re-importing or re-initializing.
     const second = await ensureSentryInit();
     expect(second).toBe(first);
+    expect(sentryLoaderMock).toHaveBeenCalledTimes(1);
     expect(sentryNodeMock.init).not.toHaveBeenCalled();
   });
 });

@@ -124,6 +124,8 @@ interface NextSummary {
   in_progress: number;
   candidates: number;
   containers: number;
+  decision_needed: number;
+  held_by_others: number;
 }
 
 /** Documents the `pm next` result payload exchanged by command, SDK, and package integrations. */
@@ -165,6 +167,11 @@ export interface NextResult {
   warnings?: string[];
   /** Value that configures or reports ranking for this contract. */
   ranking?: ContextRankingSummary;
+  /** Explicit marker and complete counts for queues truncated by the shared section limit. */
+  truncation?: {
+    decision_needed_total?: number;
+    held_by_others_total?: number;
+  };
 }
 
 function parseNextOutputFormat(
@@ -452,6 +459,21 @@ function buildNextSuggestions(
   ];
 }
 
+function buildNextTruncation(
+  decisionCount: number,
+  heldCount: number,
+  limit: number,
+): NextResult["truncation"] {
+  const truncation: NonNullable<NextResult["truncation"]> = {};
+  if (decisionCount > limit) {
+    truncation.decision_needed_total = decisionCount;
+  }
+  if (heldCount > limit) {
+    truncation.held_by_others_total = heldCount;
+  }
+  return Object.keys(truncation).length > 0 ? truncation : undefined;
+}
+
 function filterCandidatesByParentScope(
   candidates: ItemFrontMatter[],
   corpus: ItemFrontMatter[],
@@ -607,15 +629,20 @@ export async function runNext(
     now,
     completedContainer,
   });
+  const truncation = buildNextTruncation(
+    decisionRows.length,
+    callerPartition.held.length,
+    limit,
+  );
 
   const result: NextResult = {
     output_default: "toon",
     now,
     recommended,
     ready: readyRows.slice(1, limit + 1),
-    decision_needed: decisionRows,
+    decision_needed: decisionRows.slice(0, limit),
     blocked: readyOnly ? [] : blockedRows.slice(0, blockedLimit),
-    held_by_others: callerPartition.held,
+    held_by_others: callerPartition.held.slice(0, limit),
     summary: {
       recommended: recommended !== null,
       ready: readyRows.length,
@@ -623,6 +650,8 @@ export async function runNext(
       in_progress: inProgressReadyCount(readyRows, statusRegistry),
       candidates: report.active_count,
       containers: report.container_count,
+      decision_needed: decisionRows.length,
+      held_by_others: callerPartition.held.length,
     },
     filters: {
       type: options.type ?? null,
@@ -638,6 +667,7 @@ export async function runNext(
       ready_only: readyOnly,
       include_decisions: options.includeDecisions === true,
     },
+    truncation,
   };
 
   const warnings = [

@@ -1339,7 +1339,15 @@ describe("release readiness runtime coverage", () => {
 
       const listResult = context.runCli(["list-open", "--limit", "20", "--json"], { expectJson: true });
       expect(listResult.code).toBe(0);
-      expectTopLevelKeyOrder(listResult.json, ["items", "count", "filters", "projection", "sorting", "now"]);
+      expectTopLevelKeyOrder(listResult.json, [
+        "items",
+        "count",
+        "applied_limit",
+        "filters",
+        "projection",
+        "sorting",
+        "now",
+      ]);
 
       const installCalendar = context.runCli(["install", "calendar", "--project", "--json"], { expectJson: true });
       expect(installCalendar.code).toBe(0);
@@ -1365,13 +1373,21 @@ describe("release readiness runtime coverage", () => {
         "low_level",
         "blocked_fallback",
         "agenda",
+        "applied_limit",
       ]);
 
       const searchResult = context.runCli(["search", "--limit", "20", "runtime", "--json"], {
         expectJson: true,
       });
       expect(searchResult.code).toBe(0);
-      expectTopLevelKeyOrder(searchResult.json, ["query", "mode", "items", "count", "filters"]);
+      expectTopLevelKeyOrder(searchResult.json, [
+        "query",
+        "mode",
+        "items",
+        "count",
+        "applied_limit",
+        "filters",
+      ]);
       expect((searchResult.json as { mode?: string }).mode).toBe("keyword");
 
       const explicitKeywordSearch = context.runCli(["search", "runtime", "--mode", "keyword", "--json"], {
@@ -1404,7 +1420,16 @@ describe("release readiness runtime coverage", () => {
         },
       );
       expect(searchAdvancedResult.code).toBe(0);
-      expectTopLevelKeyOrder(searchAdvancedResult.json, ["query", "mode", "items", "count", "filters", "projection", "now"]);
+      expectTopLevelKeyOrder(searchAdvancedResult.json, [
+        "query",
+        "mode",
+        "items",
+        "count",
+        "applied_limit",
+        "filters",
+        "projection",
+        "now",
+      ]);
       expect((searchAdvancedResult.json as { query?: string }).query).toBe("runtime");
       expect((searchAdvancedResult.json as { projection?: { fields?: string[] } }).projection?.fields).toEqual([
         "id",

@@ -239,6 +239,16 @@ function setupExtensionVectorAdapterScenario(options: {
 }
 
 describe("runSearch", () => {
+  it("rejects count mode combined with a continuation cursor", async () => {
+    await expect(
+      runSearch(
+        "auth",
+        { count: true, after: "cursor" },
+        { path: "/tmp/pm-search" },
+      ),
+    ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+  });
+
   beforeEach(() => {
     pathExistsMock.mockReset();
     readSettingsMock.mockReset();

@@ -151,7 +151,7 @@ describe("front matter cache", () => {
       await fs.mkdir(path.join(pmRoot, "runtime"), { recursive: true });
       await fs.writeFile(
         path.join(pmRoot, "runtime", "metadata-cache-collections.json"),
-        JSON.stringify({ version: 6, context_fingerprint: "mismatch", collections: 42 }),
+        JSON.stringify({ version: 7, context_fingerprint: "mismatch", collections: 42 }),
         "utf8",
       );
 
@@ -351,6 +351,252 @@ describe("front matter cache", () => {
       expect(deduped).toHaveLength(1);
       expect(deduped[0]?.item_format).toBe("toon");
       expect(deduped[0]?.body).toBe("toon body");
+    });
+  });
+
+  it("serves large-workspace candidates from directory-validated derived indexes and falls back after directory mutation", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+      const firstPath = path.join(tasksDir, "pm-index-first.toon");
+      const firstMetadata: ItemMetadata = {
+        ...makeTaskMetadata({
+          id: "pm-index-first",
+          title: "Indexed first task",
+        }),
+        comments: [
+          {
+            created_at: "2026-07-12T00:00:00.000Z",
+            author: "cache-test",
+            text: "preserved collection",
+          },
+        ],
+      };
+      await fs.writeFile(
+        firstPath,
+        serializeItemDocument(
+          { metadata: firstMetadata, body: "indexed body" },
+          { format: "toon" },
+        ),
+        "utf8",
+      );
+
+      const typeToFolder = { Task: "tasks" };
+      await listAllDocumentCandidatesCached(
+        pmRoot,
+        "toon",
+        typeToFolder,
+        [],
+        undefined,
+        { derivedIndexMinimumItems: 1 },
+      );
+
+      const statSpy = vi.spyOn(fs, "stat");
+      const readdirSpy = vi.spyOn(fs, "readdir");
+      const indexed = await listAllDocumentCandidatesCached(
+        pmRoot,
+        "toon",
+        typeToFolder,
+        [],
+        undefined,
+        { derivedIndexMinimumItems: 1 },
+      );
+      expect(indexed).toHaveLength(1);
+      expect(indexed[0]?.body).toBe("indexed body");
+      expect(indexed[0]?.metadata.comments?.[0]?.text).toBe(
+        "preserved collection",
+      );
+      expect(readdirSpy).not.toHaveBeenCalled();
+      expect(
+        statSpy.mock.calls.some(([target]) => String(target) === firstPath),
+      ).toBe(false);
+      statSpy.mockRestore();
+      readdirSpy.mockRestore();
+
+      const secondMetadata = makeTaskMetadata({
+        id: "pm-index-second",
+        title: "Directory invalidation task",
+      });
+      await fs.writeFile(
+        path.join(tasksDir, "pm-index-second.toon"),
+        serializeItemDocument(
+          { metadata: secondMetadata, body: "second body" },
+          { format: "toon" },
+        ),
+        "utf8",
+      );
+      const rebuilt = await listAllDocumentCandidatesCached(
+        pmRoot,
+        "toon",
+        typeToFolder,
+        [],
+        undefined,
+        { derivedIndexMinimumItems: 1 },
+      );
+      expect(rebuilt.map((candidate) => candidate.metadata.id)).toEqual([
+        "pm-index-first",
+        "pm-index-second",
+      ]);
+
+      const cachePath = path.join(
+        pmRoot,
+        "runtime",
+        "metadata-cache.json",
+      );
+      const envelope = JSON.parse(
+        await fs.readFile(cachePath, "utf8"),
+      ) as {
+        entries: Record<string, unknown>;
+      };
+      envelope.entries["tasks/not-an-item.txt"] =
+        envelope.entries["tasks/pm-index-first.toon"];
+      await fs.writeFile(cachePath, JSON.stringify(envelope), "utf8");
+      clearFrontMatterEnvelopeMemo();
+
+      const indexedAndSorted = await listAllDocumentCandidatesCached(
+        pmRoot,
+        "toon",
+        typeToFolder,
+        [],
+        undefined,
+        {
+          derivedIndexMinimumItems: 1,
+          includeBody: false,
+          includeCollections: false,
+        },
+      );
+      expect(indexedAndSorted.map((candidate) => candidate.metadata.id)).toEqual([
+        "pm-index-first",
+        "pm-index-second",
+      ]);
+    });
+  });
+
+  it("supports forced source scans and rebuilds missing derived-index tiers", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+      const itemPath = path.join(tasksDir, "pm-index-scan.toon");
+      const metadata = makeTaskMetadata({
+        id: "pm-index-scan",
+        title: "Forced scan task",
+      });
+      await fs.writeFile(
+        itemPath,
+        serializeItemDocument(
+          { metadata, body: "original body" },
+          { format: "toon" },
+        ),
+        "utf8",
+      );
+      const typeToFolder = { Task: "tasks" };
+      await listAllDocumentCandidatesCached(
+        pmRoot,
+        "toon",
+        typeToFolder,
+        [],
+        undefined,
+        {
+          includeBody: false,
+          includeCollections: false,
+          derivedIndexMinimumItems: 1,
+        },
+      );
+
+      const withRebuiltBodyTier = await listAllDocumentCandidatesCached(
+        pmRoot,
+        "toon",
+        typeToFolder,
+        [],
+        undefined,
+        { derivedIndexMinimumItems: 1 },
+      );
+      expect(withRebuiltBodyTier[0]?.body).toBe("original body");
+
+      await fs.writeFile(
+        itemPath,
+        serializeItemDocument(
+          { metadata, body: "forced scan body" },
+          { format: "toon" },
+        ),
+        "utf8",
+      );
+      const forced = await listAllDocumentCandidatesCached(
+        pmRoot,
+        "toon",
+        typeToFolder,
+        [],
+        undefined,
+        { derivedIndexMinimumItems: 1, forceSourceScan: true },
+      );
+      expect(forced[0]?.body).toBe("forced scan body");
+    });
+  });
+
+  it("discards directory signatures when an item directory changes during a scan", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+      await fs.writeFile(
+        path.join(tasksDir, "pm-race-first.toon"),
+        serializeItemDocument(
+          {
+            metadata: makeTaskMetadata({ id: "pm-race-first" }),
+            body: "first",
+          },
+          { format: "toon" },
+        ),
+        "utf8",
+      );
+
+      const realReaddir = fs.readdir;
+      let mutated = false;
+      const readdirSpy = vi.spyOn(fs, "readdir").mockImplementation(
+        (async (...args: Parameters<typeof fs.readdir>) => {
+          const entries = await realReaddir(...args);
+          if (!mutated && String(args[0]) === tasksDir) {
+            mutated = true;
+            await fs.writeFile(
+              path.join(tasksDir, "pm-race-second.toon"),
+              serializeItemDocument(
+                {
+                  metadata: makeTaskMetadata({ id: "pm-race-second" }),
+                  body: "second",
+                },
+                { format: "toon" },
+              ),
+              "utf8",
+            );
+          }
+          return entries;
+        }) as typeof fs.readdir,
+      );
+
+      const first = await listAllDocumentCandidatesCached(
+        pmRoot,
+        "toon",
+        { Task: "tasks" },
+        [],
+        undefined,
+        { derivedIndexMinimumItems: 1 },
+      );
+      expect(first.map((candidate) => candidate.metadata.id)).toEqual([
+        "pm-race-first",
+      ]);
+      readdirSpy.mockRestore();
+
+      const rebuilt = await listAllDocumentCandidatesCached(
+        pmRoot,
+        "toon",
+        { Task: "tasks" },
+        [],
+        undefined,
+        { derivedIndexMinimumItems: 1 },
+      );
+      expect(rebuilt.map((candidate) => candidate.metadata.id)).toEqual([
+        "pm-race-first",
+        "pm-race-second",
+      ]);
     });
   });
 });

@@ -126,6 +126,7 @@ import type {
   PmSettings,
 } from "../../types/index.js";
 import type { SharedItemFilterOptions } from "./item-filter-options.js";
+import { resolveSearchPage } from "./search-pagination.js";
 
 /** Documents the search options payload exchanged by command, SDK, and package integrations. */
 export interface SearchOptions extends SharedItemFilterOptions {
@@ -147,6 +148,8 @@ export interface SearchOptions extends SharedItemFilterOptions {
   phraseExact?: boolean;
   /** Value that configures or reports limit for this contract. */
   limit?: string;
+  /** Opaque cursor returned by a previous search page. */
+  after?: string;
   /** Value that configures or reports compact for this contract. */
   compact?: boolean;
   /** Value that configures or reports full for this contract. */
@@ -328,6 +331,14 @@ interface SearchResultBase {
   // truncation. Lets callers see how many matched before the (now-default)
   // keyword limit dropped rows. Only emitted when it differs from count.
   total?: number;
+  /** Whether additional ranked hits remain after this page. */
+  has_more?: boolean;
+  /** Opaque continuation cursor when additional hits remain. */
+  next_cursor?: string;
+  /** Effective page size for this response. */
+  applied_limit?: number;
+  /** Explicit marker that the response is a bounded page. */
+  truncated?: true;
   // --count mode: count-only response carries the matched total and skips the
   // hit rows entirely (items is empty). `count` reflects the same total.
   count_only?: boolean;
@@ -3588,6 +3599,12 @@ function buildSearchResultForHits(
   total: number,
   limitedCount: number,
   effectiveProjection: SearchProjectionConfig,
+  pageExtras: {
+    has_more?: boolean;
+    next_cursor?: string;
+    applied_limit: number;
+    truncated?: true;
+  },
 ): SearchResult {
   const truncationExtras = limitedCount < total ? { total } : {};
   if (
@@ -3601,6 +3618,7 @@ function buildSearchResultForHits(
         items: projectedItems,
         count: projectedItems.length,
         ...truncationExtras,
+        ...pageExtras,
         filters: buildCompactSearchFilterSummary({
           mode: response.effectiveMode,
           matchMode: response.matchMode,
@@ -3626,6 +3644,7 @@ function buildSearchResultForHits(
     items: projectedItems,
     count: projectedItems.length,
     ...truncationExtras,
+    ...pageExtras,
     filters: buildVerboseSearchFilters({
       effectiveMode: response.effectiveMode,
       matchMode: response.matchMode,
@@ -3648,12 +3667,22 @@ function buildSearchResultForHits(
   };
 }
 
+function assertSearchPagingOptions(options: SearchOptions): void {
+  if (options.after !== undefined && options.count === true) {
+    throw new PmCliError(
+      "Search --after cannot be combined with --count.",
+      EXIT_CODE.USAGE,
+    );
+  }
+}
+
 /** Implements run search for the public runtime surface of this module. */
 export async function runSearch(
   rawQuery: string,
   rawOptions: SearchOptions,
   global: GlobalOptions,
 ): Promise<SearchResult> {
+  assertSearchPagingOptions(rawOptions);
   const prepared = prepareSearchInput(rawQuery, rawOptions);
   const runtime = await resolveSearchRuntimeContext(prepared, global);
   const corpus = await loadFilteredSearchCorpus(prepared, runtime);
@@ -3721,20 +3750,26 @@ export async function runSearch(
   );
   const sorted = sortHits(thresholded, runtime.statusRegistry);
   const total = sorted.length;
-  const resolvedLimit = prepared.limit ?? runtime.maxResults;
-  const limited = sorted.slice(0, resolvedLimit);
+  const page = resolveSearchPage({
+    sorted,
+    query: prepared.query,
+    mode: modeResult.effectiveMode,
+    searchOptions: prepared.options,
+    limit: prepared.limit ?? runtime.maxResults,
+  });
   const response = { ...responseBase, effectiveMode: modeResult.effectiveMode };
   if (prepared.countOnly) {
     return buildCountOnlySearchResult(response, total);
   }
   const { hits: projectedHits, projection: effectiveProjection } =
-    attachSearchHighlights(prepared, corpus.filteredDocuments, limited);
+    attachSearchHighlights(prepared, corpus.filteredDocuments, page.limited);
   const projectedItems = projectSearchHits(projectedHits, effectiveProjection);
   return buildSearchResultForHits(
     response,
     projectedItems,
     total,
-    limited.length,
+    page.limited.length,
     effectiveProjection,
+    page.pageExtras,
   );
 }

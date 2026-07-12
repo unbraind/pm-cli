@@ -1,4 +1,5 @@
 import type { Breadcrumb, Event as SentryEvent } from "@sentry/node";
+import type * as InstrumentModule from "../../../../src/core/sentry/instrument.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const sentryNodeMock = vi.hoisted(() => ({
@@ -7,12 +8,10 @@ const sentryNodeMock = vi.hoisted(() => ({
   captureConsoleIntegration: vi.fn((options: unknown) => ({ name: "captureConsoleIntegration", options })),
 }));
 
-vi.mock("@sentry/node", () => sentryNodeMock);
-
 // Partially mock instrument.js so the runtime span/capture helpers can be
 // driven against a fake Sentry client; _testOnly and everything else stay real.
 vi.mock("../../../../src/core/sentry/instrument.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../../../src/core/sentry/instrument.js")>();
+  const actual = await importOriginal<typeof InstrumentModule>();
   return { ...actual, getSentry: vi.fn(actual.getSentry) };
 });
 
@@ -40,7 +39,9 @@ const {
   KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS,
   MAX_KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS,
   resetSentryStateForTests,
+  setSentryLoaderForTests,
 } = _testOnly;
+let sentryLoaderMock: ReturnType<typeof vi.fn>;
 const PRIVATE_TEST_IP = ["192", "168", "42", "17"].join(".");
 const TEST_LOCAL_PATH = ["/home", "example", "project"].join("/");
 type SentryEventPayload = SentryEvent;
@@ -364,6 +365,8 @@ describe("ensureSentryInit", () => {
     delete process.env.VITEST_WORKER_ID;
     delete process.env.NODE_ENV;
     resetSentryStateForTests();
+    sentryLoaderMock = vi.fn(() => sentryNodeMock as never);
+    setSentryLoaderForTests(sentryLoaderMock as never);
     sentryNodeMock.init.mockClear();
     sentryNodeMock.extraErrorDataIntegration.mockClear();
     sentryNodeMock.captureConsoleIntegration.mockClear();
@@ -372,6 +375,7 @@ describe("ensureSentryInit", () => {
   afterEach(() => {
     process.env = { ...originalEnv };
     resetSentryStateForTests();
+    setSentryLoaderForTests();
   });
 
   it("returns undefined and does not import Sentry when disabled", async () => {
@@ -381,6 +385,7 @@ describe("ensureSentryInit", () => {
     await expect(ensureSentryInit()).resolves.toBeUndefined();
 
     expect(sentryNodeMock.init).not.toHaveBeenCalled();
+    expect(sentryLoaderMock).not.toHaveBeenCalled();
   });
 
   it("initializes Sentry once with sanitized beforeSend and beforeBreadcrumb hooks", async () => {
@@ -394,6 +399,7 @@ describe("ensureSentryInit", () => {
     await ensureSentryInit();
     expect(getSentry()).toMatchObject({ init: sentryNodeMock.init });
 
+    expect(sentryLoaderMock).toHaveBeenCalledTimes(1);
     expect(sentryNodeMock.init).toHaveBeenCalledTimes(1);
     expect(sentryNodeMock.extraErrorDataIntegration).toHaveBeenCalledWith({ depth: 4 });
     expect(sentryNodeMock.captureConsoleIntegration).toHaveBeenCalledWith({ levels: ["warn", "error"] });

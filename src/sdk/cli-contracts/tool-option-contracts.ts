@@ -109,6 +109,7 @@ export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   ...cloneOptionContracts(TOOL_CONTENT_PRESENCE_OPTION_CONTRACTS),
   { param: "limit", flag: "--limit" },
   { param: "offset", flag: "--offset" },
+  { param: "after", flag: "--after" },
   { param: "fields", flag: "--fields" },
   { param: "sort", flag: "--sort" },
   { param: "order", flag: "--order" },
@@ -145,6 +146,7 @@ export const TOOL_SEARCH_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   ...cloneOptionContracts(TOOL_CONTENT_PRESENCE_OPTION_CONTRACTS),
   { param: "fields", flag: "--fields" },
   { param: "limit", flag: "--limit" },
+  { param: "after", flag: "--after" },
 ];
 
 /** Public contract for tool shared create update option contracts, shared by SDK and presentation-layer consumers. */
@@ -377,6 +379,7 @@ export const TOOL_CALENDAR_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "recurrenceLookbackDays", flag: "--recurrence-lookback-days" },
   { param: "occurrenceLimit", flag: "--occurrence-limit" },
   { param: "limit", flag: "--limit" },
+  { param: "after", flag: "--after" },
   { param: "format", flag: "--format" },
 ];
 

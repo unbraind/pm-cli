@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: ci,release,telemetry
 created_at: "2026-07-12T06:09:21.399Z"
-updated_at: "2026-07-12T06:09:21.399Z"
+updated_at: "2026-07-12T15:41:03.738Z"
 author: maintainer-agent
 estimated_minutes: 150
 acceptance_criteria: Build emits a chunk manifest; boot-time resolution failures inside dist/cli-bundle are re-raised as a distinct handled bundle-integrity error code with reinstall hint; sentry-telemetry-gate classifies only that code as expected-handled environment noise; regression test proves a genuine missing-module error still blocks the gate; docs note the torn-install signature
@@ -14,4 +14,6 @@ risk: medium
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-7zs0,related,"2026-07-12T06:09:21.399Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-12T15:41:03.738Z",maintainer-agent,"Live reliability evidence 2026-07-12: PM-CLI-10 remains the second 14-day Sentry gate blocker; latest event is handled=true ERR_MODULE_NOT_FOUND from the operator host on release 2026.7.12 and matches this item's torn-install signature. Current build/packed-consumer and 10k/100k performance dogfood do not reproduce it. Resolving the already-triaged event group pending this item's distinct bundle-integrity code fix; genuine module failures remain blocking by design."
 body: ""

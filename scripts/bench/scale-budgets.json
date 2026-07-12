@@ -1,0 +1,164 @@
+{
+  "version": 1,
+  "description": "Measured regression budgets. Product targets remain p95 <= 1000ms and <= 5000 estimated tokens per command at every scale tier.",
+  "tiers": {
+    "10000": {
+      "headroom": 1.25,
+      "transports": {
+        "cli": {
+          "list": {
+            "max_latency_ms": 793,
+            "max_peak_rss_bytes": 232565760,
+            "max_estimated_tokens": 1092
+          },
+          "get": {
+            "max_latency_ms": 717,
+            "max_peak_rss_bytes": 231669760,
+            "max_estimated_tokens": 322
+          },
+          "next": {
+            "max_latency_ms": 1327,
+            "max_peak_rss_bytes": 300533760,
+            "max_estimated_tokens": 5530
+          },
+          "context": {
+            "max_latency_ms": 1229,
+            "max_peak_rss_bytes": 292771840,
+            "max_estimated_tokens": 1610
+          },
+          "search": {
+            "max_latency_ms": 1053,
+            "max_peak_rss_bytes": 283980800,
+            "max_estimated_tokens": 1155
+          },
+          "create": {
+            "max_latency_ms": 285,
+            "max_peak_rss_bytes": 115184640,
+            "max_estimated_tokens": 187
+          },
+          "claim": {
+            "max_latency_ms": 395,
+            "max_peak_rss_bytes": 118031360,
+            "max_estimated_tokens": 379
+          }
+        },
+        "sdk": {
+          "list": {
+            "max_latency_ms": 532,
+            "max_peak_rss_bytes": 347827200,
+            "max_estimated_tokens": 1028
+          },
+          "get": {
+            "max_latency_ms": 284,
+            "max_peak_rss_bytes": 443837440,
+            "max_estimated_tokens": 288
+          },
+          "next": {
+            "max_latency_ms": 823,
+            "max_peak_rss_bytes": 497136640,
+            "max_estimated_tokens": 3613
+          },
+          "context": {
+            "max_latency_ms": 689,
+            "max_peak_rss_bytes": 530432000,
+            "max_estimated_tokens": 1110
+          },
+          "search": {
+            "max_latency_ms": 537,
+            "max_peak_rss_bytes": 534312960,
+            "max_estimated_tokens": 765
+          },
+          "create": {
+            "max_latency_ms": 9,
+            "max_peak_rss_bytes": 534476800,
+            "max_estimated_tokens": 140
+          },
+          "claim": {
+            "max_latency_ms": 7,
+            "max_peak_rss_bytes": 534476800,
+            "max_estimated_tokens": 294
+          }
+        }
+      }
+    },
+    "100000": {
+      "headroom": 1.25,
+      "transports": {
+        "cli": {
+          "list": {
+            "max_latency_ms": 2335,
+            "max_peak_rss_bytes": 490624000,
+            "max_estimated_tokens": 1098
+          },
+          "get": {
+            "max_latency_ms": 1593,
+            "max_peak_rss_bytes": 515891200,
+            "max_estimated_tokens": 322
+          },
+          "next": {
+            "max_latency_ms": 4655,
+            "max_peak_rss_bytes": 720384000,
+            "max_estimated_tokens": 5568
+          },
+          "context": {
+            "max_latency_ms": 4650,
+            "max_peak_rss_bytes": 702387200,
+            "max_estimated_tokens": 1615
+          },
+          "search": {
+            "max_latency_ms": 4330,
+            "max_peak_rss_bytes": 617666560,
+            "max_estimated_tokens": 1202
+          },
+          "create": {
+            "max_latency_ms": 853,
+            "max_peak_rss_bytes": 187048960,
+            "max_estimated_tokens": 187
+          },
+          "claim": {
+            "max_latency_ms": 1017,
+            "max_peak_rss_bytes": 191406080,
+            "max_estimated_tokens": 379
+          }
+        },
+        "sdk": {
+          "list": {
+            "max_latency_ms": 1000,
+            "max_peak_rss_bytes": 1218606080,
+            "max_estimated_tokens": 1034
+          },
+          "get": {
+            "max_latency_ms": 505,
+            "max_peak_rss_bytes": 1461939200,
+            "max_estimated_tokens": 288
+          },
+          "next": {
+            "max_latency_ms": 2288,
+            "max_peak_rss_bytes": 1952128000,
+            "max_estimated_tokens": 3650
+          },
+          "context": {
+            "max_latency_ms": 2493,
+            "max_peak_rss_bytes": 1968424960,
+            "max_estimated_tokens": 1115
+          },
+          "search": {
+            "max_latency_ms": 1958,
+            "max_peak_rss_bytes": 1571911680,
+            "max_estimated_tokens": 795
+          },
+          "create": {
+            "max_latency_ms": 10,
+            "max_peak_rss_bytes": 1572439040,
+            "max_estimated_tokens": 140
+          },
+          "claim": {
+            "max_latency_ms": 9,
+            "max_peak_rss_bytes": 1572439040,
+            "max_estimated_tokens": 294
+          }
+        }
+      }
+    }
+  }
+}

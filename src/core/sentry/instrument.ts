@@ -3,8 +3,8 @@
  *
  * Integrates Sentry instrumentation and release diagnostics for Instrument.
  */
-import * as SentryModule from "@sentry/node";
-import type { NodeOptions } from "@sentry/node";
+import { createRequire } from "node:module";
+import type * as SentryModuleTypes from "@sentry/node";
 import { resolvePmCliVersion } from "../packages/root.js";
 
 const OPT_OUT_VALUES = new Set(["1", "true", "yes", "on"]);
@@ -164,10 +164,16 @@ function scrubStackFrame(frame: Record<string, unknown>): void {
   }
 }
 
-type SentryLike = typeof SentryModule;
+type SentryLike = typeof SentryModuleTypes;
+type NodeOptions = SentryModuleTypes.NodeOptions;
+
+const requireFromInstrument = createRequire(import.meta.url);
+const defaultSentryLoader = (): SentryLike =>
+  requireFromInstrument("@sentry/node") as SentryLike;
 
 let _sentry: SentryLike | undefined;
 let _initDone = false;
+let _loadSentry = defaultSentryLoader;
 
 const PM_CLI_SENTRY_DSN =
   "https://bf7ad2ec76c0051c2ee94e48e8bd6868@o4510603477712896.ingest.de.sentry.io/4511316775338064";
@@ -395,6 +401,7 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
 
   if (isSentryDisabled()) return undefined;
 
+  const SentryModule = _loadSentry();
   _sentry = SentryModule;
 
   const dsn = process.env.SENTRY_DSN?.trim() || PM_CLI_SENTRY_DSN;
@@ -452,6 +459,10 @@ export const _testOnly = {
   resolveTracesSampleRate,
   KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS,
   MAX_KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS,
+  defaultSentryLoader,
+  setSentryLoaderForTests(loader?: () => SentryLike) {
+    _loadSentry = loader ?? defaultSentryLoader;
+  },
   resetSentryStateForTests() {
     _sentry = undefined;
     _initDone = false;
