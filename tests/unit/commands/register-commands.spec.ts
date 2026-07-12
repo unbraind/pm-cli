@@ -1568,13 +1568,18 @@ describe("mutation command actions", () => {
 
     await runCli("notes", "pm-1", "--add", "note text");
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1).add).toBe("note text");
+    await runCli("notes", "pm-1", "--delete", "2");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1).delete).toBe(2);
     await expect(runCli("notes", "pm-1", "a", "--add", "b")).rejects.toThrow("not both");
 
     await runCli("learnings", "pm-1", "lesson", "--allow-audit-learning");
     const learningsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runLearnings) as never, 1);
     expect(learningsOptions.add).toBe("lesson");
     expect(learningsOptions.allowAuditComment).toBe(true);
+    await runCli("learnings", "pm-1", "--delete", "3");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runLearnings) as never, 1).delete).toBe(3);
     await expect(runCli("learnings", "pm-1", "a", "--add", "b")).rejects.toThrow("not both");
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(7);
   });
 
   it("maps files/docs link management and discover routing", async () => {
