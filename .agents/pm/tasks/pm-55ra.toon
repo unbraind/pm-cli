@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: context,relevance,scale,token-efficiency
 created_at: "2026-07-06T23:50:39.960Z"
-updated_at: "2026-07-09T11:40:51.062Z"
+updated_at: "2026-07-12T19:07:34.082Z"
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "pm context and pm next accept or derive an explicit token budget; packer preserves high-scoring required items, avoids near-duplicate context clusters, degrades projection depth before item omission, and reports budget accounting in json/debug output; behavior is measured by pm-cu1i token corpus and pm-atfm quality judgments; large-workspace output remains bounded by contract."
@@ -20,4 +20,6 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-h3no,blocked_by,"2026-07-09T11:40:51.038Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-06T23:50:39.960Z",codex-agent,"Duplicate check: searched all statuses for token budget packer/projection degradation/context ranking; existing items cover token measurement and pagination, but no packer implementation item existed."
+notes[1]{created_at,author,text}:
+  "2026-07-12T19:07:34.082Z",maintainer-agent,"Scope addition 2026-07-12 (pm-4k6b algorithms (18)+(19), definitions on that ledger): the packer surface owns (a) the explicit latency-budget parameter with threshold-algorithm early termination and a disclosed completeness certificate + degradation ladder in the envelope (algorithm 18), and (b) the task-set profile table keyed by triggering intent, with active-profile disclosure and safety-signal mask-immunity (algorithm 19). Learned-profile graduation is pm-uwfs (wave 4), not here."
 body: ""
