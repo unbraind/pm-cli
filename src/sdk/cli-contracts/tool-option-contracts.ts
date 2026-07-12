@@ -409,6 +409,7 @@ export const TOOL_CONTEXT_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "release", flag: "--release" },
   { param: "parent", flag: "--parent" },
   { param: "limit", flag: "--limit" },
+  { param: "after", flag: "--after" },
   { param: "format", flag: "--format" },
   { param: "depth", flag: "--depth" },
   { param: "fields", flag: "--fields" },

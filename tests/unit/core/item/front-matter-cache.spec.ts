@@ -521,6 +521,15 @@ describe("front matter cache", () => {
         ),
         "utf8",
       );
+      const directEditRequiresReindex = await listAllDocumentCandidatesCached(
+        pmRoot,
+        "toon",
+        typeToFolder,
+        [],
+        undefined,
+        { derivedIndexMinimumItems: 1 },
+      );
+      expect(directEditRequiresReindex[0]?.body).toBe("original body");
       const forced = await listAllDocumentCandidatesCached(
         pmRoot,
         "toon",

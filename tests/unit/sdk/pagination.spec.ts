@@ -134,5 +134,12 @@ describe("SDK query pagination", () => {
         readId: (row) => row.id,
       }),
     ).toEqual({ rows: rows.slice(2), has_more: false });
+    expect(
+      paginateQueryRows(rows, {
+        fingerprint,
+        limit: 0,
+        readId: (row) => row.id,
+      }),
+    ).toEqual({ rows: [], has_more: false });
   });
 });

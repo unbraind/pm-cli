@@ -227,6 +227,14 @@ async function assertSafeWorkspaceRoot(workspaceRoot, force) {
   if (entries.length > 0 && !force) {
     throw new Error(`Benchmark workspace is not empty: ${resolved}; pass --force to replace it`);
   }
+  if (
+    entries.length > 0 &&
+    !(await pathExists(path.join(resolved, FIXTURE_MANIFEST)))
+  ) {
+    throw new Error(
+      `Refusing to replace non-fixture directory: ${resolved}; choose an empty output directory`,
+    );
+  }
   if (force) await rm(resolved, { recursive: true, force: true });
 }
 

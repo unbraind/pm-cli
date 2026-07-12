@@ -178,7 +178,8 @@ export function paginateQueryRows<T>(
     options.readId,
   );
   const pageRows = rows.slice(pageStart, pageStart + options.limit);
-  const hasMore = pageStart + pageRows.length < rows.length;
+  const hasMore =
+    pageRows.length > 0 && pageStart + pageRows.length < rows.length;
   const lastRow = pageRows.at(-1);
   return {
     rows: pageRows,

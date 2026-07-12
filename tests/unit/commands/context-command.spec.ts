@@ -1432,6 +1432,13 @@ describe("context command module", () => {
       expect(scopedIds).toEqual([childId, epicId].sort());
       expect(scoped.summary.total_items).toBe(2);
 
+      const zero = await runContext(
+        { parent: epicId, limit: "0" },
+        { path: context.pmPath },
+      );
+      expect(zero.has_more).toBeUndefined();
+      expect(zero.next_cursor).toBeUndefined();
+
       const markdown = renderContextMarkdown(scoped);
       expect(markdown).toContain(`- scope: subtree of ${epicId}`);
 

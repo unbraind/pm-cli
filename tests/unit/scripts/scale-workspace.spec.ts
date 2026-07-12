@@ -115,12 +115,29 @@ describe("scale workspace generator", () => {
       await expect(
         generateSyntheticWorkspace({ workspaceRoot, itemCount: 1, mode: "direct" }),
       ).rejects.toThrow(/not empty/);
-      const manifest = await generateSyntheticWorkspace({
-        workspaceRoot,
+      await expect(
+        generateSyntheticWorkspace({
+          workspaceRoot,
+          itemCount: 1,
+          force: true,
+        }),
+      ).rejects.toThrow(/non-fixture directory/);
+
+      const replaceableRoot = path.join(tempRoot, "replaceable-fixture");
+      await generateSyntheticWorkspace({
+        workspaceRoot: replaceableRoot,
         itemCount: 1,
-        force: true,
       });
-      expect(manifest.item_count).toBe(1);
+      await writeFile(path.join(replaceableRoot, "stale.txt"), "stale", "utf8");
+      await expect(
+        generateSyntheticWorkspace({
+          workspaceRoot: replaceableRoot,
+          itemCount: 2,
+          force: true,
+        }),
+      ).resolves.toMatchObject({ item_count: 2 });
+      await expect(readFile(path.join(replaceableRoot, "stale.txt"), "utf8"))
+        .rejects.toThrow();
     });
   });
 

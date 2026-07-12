@@ -1551,7 +1551,7 @@ function pageAndProjectListItems(
       : ordered.slice(offset, offset + limit);
   const projected = projectListItems(limited, projection, treeEnabled);
   const totalMatched = ordered.length;
-  const hasMore = offset + limited.length < totalMatched;
+  const hasMore = limited.length > 0 && offset + limited.length < totalMatched;
   const nextCursor =
     hasMore && limited.length > 0
       ? encodeQueryCursor(

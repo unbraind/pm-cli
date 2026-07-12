@@ -25,6 +25,7 @@ export function createSearchCursorFingerprint(options: {
   delete normalizedOptions.full;
   delete normalizedOptions.fields;
   delete normalizedOptions.highlight;
+  delete normalizedOptions.format;
   return createQueryFingerprint("search", {
     query: options.query.trim(),
     mode: options.mode,

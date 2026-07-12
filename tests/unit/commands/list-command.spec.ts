@@ -1398,6 +1398,11 @@ describe("runList", () => {
       expect(limited.total).toBe(4);
       expect(limited.next_cursor).toBeTypeOf("string");
 
+      const zero = await runList(undefined, { limit: "0" }, { path: context.pmPath });
+      expect(zero.count).toBe(0);
+      expect(zero.has_more).toBeUndefined();
+      expect(zero.next_cursor).toBeUndefined();
+
       const continued = await runList(
         undefined,
         { limit: "1", after: limited.next_cursor },

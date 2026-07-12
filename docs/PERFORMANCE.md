@@ -26,7 +26,7 @@ PM_PATH=/tmp/pm-scale/.agents/pm PM_GLOBAL_PATH=/tmp/pm-scale-global pm validate
 
 Named tiers are `smoke` (100), `ci` (10,000), `large` (100,000), and `million` (1,000,000). The `ci` name describes the fixture size for compatibility with existing benchmark data; these performance workloads run locally and are intentionally absent from GitHub Actions. `direct` writes bounded batches for large fixtures; `sdk` uses the public SDK atomic-write and history primitives. Both modes serialize the same deterministic item and history bytes.
 
-The fixture models built-in item types, open/in-progress/blocked/closed/canceled states, parents, dependencies, tags, bodies, comments, notes, learnings, and one valid history stream per item. It refuses to generate inside this repository and requires `--force` before replacing a non-empty target.
+The fixture models built-in item types, open/in-progress/blocked/closed/canceled states, parents, dependencies, tags, bodies, comments, notes, learnings, and one valid history stream per item. It refuses to generate inside this repository. `--force` replaces a non-empty target only when that target already contains the scale-fixture manifest, so a mistyped arbitrary directory is never recursively removed.
 
 ## Benchmark runner
 

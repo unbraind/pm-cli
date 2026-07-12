@@ -426,6 +426,7 @@ export interface ContextRankingSummary {
 
 const HIGH_LEVEL_TYPES = new Set<string>(["Epic", "Feature"]);
 const DEFAULT_CONTEXT_LIMIT = 10;
+const CONTEXT_SCALE_THRESHOLD = 10_000;
 
 const STANDARD_SECTIONS: ContextSectionName[] = [
   "hierarchy",
@@ -559,7 +560,7 @@ function parseContextLimit(
 }
 
 function resolveContextLimitAtScale(limit: number, itemCount: number): number {
-  return itemCount >= 10_000 && limit === Number.MAX_SAFE_INTEGER
+  return itemCount >= CONTEXT_SCALE_THRESHOLD && limit === Number.MAX_SAFE_INTEGER
     ? DEFAULT_CONTEXT_LIMIT
     : limit;
 }
@@ -2065,7 +2066,10 @@ async function resolveContextFocusGroups(
   const focusPage = useBoundedPage
     ? activeItems.slice(pageStart, pageStart + limit)
     : activeItems;
-  const hasMore = useBoundedPage && pageStart + focusPage.length < activeItems.length;
+  const hasMore =
+    useBoundedPage &&
+    focusPage.length > 0 &&
+    pageStart + focusPage.length < activeItems.length;
   const nextCursor =
     hasMore && focusPage.length > 0
       ? encodeQueryCursor(
@@ -2119,27 +2123,16 @@ async function resolveContextFocusGroups(
 }
 
 function buildContextCursorFingerprint(options: ContextOptions): string {
-  return createQueryFingerprint("context", {
-    date: options.date,
-    from: options.from,
-    to: options.to,
-    past: options.past,
-    type: options.type,
-    tag: options.tag,
-    priority: options.priority,
-    assignee: options.assignee,
-    assignee_filter: options.assigneeFilter,
-    sprint: options.sprint,
-    release: options.release,
-    parent: options.parent,
-    depth: options.depth,
-    fields: options.fields,
-    section: [...new Set(options.section ?? [])].sort((left, right) =>
-      left.localeCompare(right),
-    ),
-    activity_limit: options.activityLimit,
-    stale_threshold: options.staleThreshold,
-  });
+  const normalizedOptions: Record<string, unknown> = { ...options };
+  delete normalizedOptions.after;
+  delete normalizedOptions.limit;
+  delete normalizedOptions.format;
+  delete normalizedOptions.fields;
+  delete normalizedOptions.section;
+  delete normalizedOptions.activityLimit;
+  delete normalizedOptions.staleThreshold;
+  delete normalizedOptions.explainRanking;
+  return createQueryFingerprint("context", normalizedOptions);
 }
 
 function shouldPageContextFocus(
@@ -2150,7 +2143,7 @@ function shouldPageContextFocus(
     options.limit !== undefined ||
     options.maxItems !== undefined ||
     options.after !== undefined ||
-    corpusItemCount >= 10_000
+    corpusItemCount >= CONTEXT_SCALE_THRESHOLD
   );
 }
 
