@@ -423,6 +423,8 @@ describe("runComments", () => {
       }),
     }));
     vi.doMock("../../../src/sdk/annotations.js", () => ({
+      isErrnoError: (error: unknown) =>
+        typeof error === "object" && error !== null && "code" in error,
       parseAnnotationTextInput: vi.fn((raw: string) => raw),
       runAnnotationCommand: vi.fn(),
     }));
