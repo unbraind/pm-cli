@@ -8,6 +8,7 @@ import { Command } from "commander";
 import {
   activateExtensions,
   clearActiveExtensionHooks,
+  resetActiveExtensionRuntimeState,
   createEmptyExtensionRegistrationRegistry,
   discoverExtensions,
   getActiveCommandResult,
@@ -3524,6 +3525,18 @@ async function handleRunPmCliError(params: {
 export async function runPmCli(
   rawArgv: string[] = process.argv.slice(2),
 ): Promise<void> {
+  // The runtime-extension snapshot caches dedupe discovery work within a
+  // single invocation only. Reset them on entry so long-lived embeddings
+  // (in-process test runners, future SDK hosts) observe the same fresh
+  // extension state a one-shot `pm` process would — e.g. an extension
+  // installed by the previous invocation must be visible to this one.
+  runtimeExtensionSnapshotCache = null;
+  runtimeExtensionDiscoverySnapshotCache = null;
+  activeRuntimeExtensionCommandDescriptors = new Map<
+    string,
+    ExtensionCommandHelpDescriptor
+  >();
+  resetActiveExtensionRuntimeState();
   const bootstrapInvocation = normalizeBootstrapInvocation(rawArgv);
   const invocationArgv = bootstrapInvocation.argv;
   const invocationProcessArgv = [

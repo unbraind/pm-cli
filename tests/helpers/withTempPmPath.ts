@@ -4,6 +4,7 @@ import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { runInit } from "../../src/cli/commands/init.js";
 import { runDirectDistCli, runInProcessDistCli, type DirectCliRunResult } from "./cliRunner.js";
+import { disposeBridgeWorkerForTestContext, runWorkerCli } from "./cliWorkerBridge.js";
 
 export type CliRunResult = DirectCliRunResult;
 
@@ -228,10 +229,23 @@ function runNodeCli(
   options?: { expectJson?: boolean; cwd?: string; input?: string },
 ): CliRunResult {
   const normalizedArgs = normalizeLegacyCreateArgsForTests(args);
-  return runDirectDistCli(normalizedArgs, {
-    cwd: options?.cwd,
+  // Default to the synchronous worker bridge (single dist import per vitest
+  // fork) — it removes the per-call `spawnSync` Node-boot tax that dominated
+  // the suite runtime. Calls that need real process semantics (stdin input,
+  // custom cwd) and explicit opt-outs (PM_TEST_CLI_RUNNER=spawn) keep the
+  // original spawn runner.
+  const needsRealProcess =
+    options?.cwd !== undefined || options?.input !== undefined || process.env.PM_TEST_CLI_RUNNER === "spawn";
+  if (needsRealProcess) {
+    return runDirectDistCli(normalizedArgs, {
+      cwd: options?.cwd,
+      env,
+      input: options?.input,
+      expectJson: options?.expectJson,
+    });
+  }
+  return runWorkerCli(normalizedArgs, {
     env,
-    input: options?.input,
     expectJson: options?.expectJson,
   });
 }
@@ -341,6 +355,7 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
       runCliInProcess,
     });
   } finally {
+    disposeBridgeWorkerForTestContext();
     restoreTempPmEnv(previousEnv);
     await removeTempRoot(tempRoot);
   }

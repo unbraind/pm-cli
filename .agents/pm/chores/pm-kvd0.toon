@@ -1,0 +1,30 @@
+id: pm-kvd0
+title: "Local test/coverage dev loop 17+min: replace per-call spawnSync CLI runner with synchronous worker-thread bridge"
+description: "User escalation 2026-07-12: local suite runtime grew from <5min to 17+min. pm-7rlp (closed) removed the 1,704 init-time spawns and sharded CI coverage (CI back to 5-6min), but the LOCAL run still executes ~1,507 static runCli call sites (more at runtime via loops) through spawnSync(node dist/cli.js) — a fresh Node boot + full ESM bundle load (~210ms unloaded, multiplied under 8-way fork contention) per CLI assertion. Worst files measured: validate-command 330s, release-readiness-runtime 264s, update-command 255s, help-runtime 249s. Fix: tests/helpers/cliWorkerBridge.{ts,worker.mjs} — one persistent worker thread per vitest fork imports dist/cli/main.js ONCE and executes invocations in-process; the main thread keeps runCli's synchronous contract via Atomics.wait + receiveMessageOnPort (zero changes to 68 spec files); spawn fallback retained for cwd/stdin-input calls, worker death, timeout, and PM_TEST_CLI_RUNNER=spawn opt-out. Depends on the pm-8fxc cache reset (stale extension snapshot would otherwise break install->use tests). Evidence: help-runtime.spec 250s -> 15s (41/41)."
+type: Chore
+status: closed
+priority: 1
+tags[3]: "area:tests",dev-loop,performance
+created_at: "2026-07-12T11:56:25.669Z"
+updated_at: "2026-07-12T13:00:17.379Z"
+closed_at: "2026-07-12T12:56:24.574Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: runCli keeps its synchronous signature with zero spec-file edits; full suite passes; local test-mode wall time reduced by at least 3x from the 17+min baseline; spawn semantics preserved for cwd/input call sites and via PM_TEST_CLI_RUNNER=spawn escape hatch
+risk: medium
+confidence: high
+resolution: fixed
+expected_result: runCli keeps its synchronous signature with zero spec-file edits; full suite passes; local test-mode wall time reduced by at least 3x from the 17+min baseline
+actual_result: "Sync worker bridge shipped (Atomics.wait + receiveMessageOnPort, single dist import per worker, taint-based reuse across test contexts with route-independent extension/schema taint detection, spawn fallback for cwd/stdin/timeout/worker-death). Full suite 5563/5563 green in 4m19s vitest wall (baseline 17-25+min, worst files 330s->~30s; help-runtime 250s->15s). One iteration of per-test disposal measured 9m45s before taint-based reuse landed 4m19s."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-7rlp,related,"2026-07-12T11:56:25.669Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-12T13:00:17.379Z",maintainer-agent,"Coverage-mode evidence: node scripts/run-tests.mjs coverage (skip-build) = 5563/5563, all 100% global thresholds met, exit 0, real 4m55.7s — both modes now under 5min vs 17-25min baseline. New src lines (runPmCli entry reset + resetActiveExtensionRuntimeState) covered by the existing gate."
+files[3]{path,scope,note}:
+  tests/helpers/cliWorkerBridge.ts,project,main-thread sync bridge (Atomics.wait + receiveMessageOnPort)
+  tests/helpers/cliWorkerBridge.worker.mjs,project,"worker: single dist import, env/argv/stdio patching, process.exit guard"
+  tests/helpers/withTempPmPath.ts,project,"runCli routing: bridge by default, spawn for cwd/input/opt-out"
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test,project,900
+close_reason: "Local dev-loop restored: spawn tax removed via sync worker bridge; 5563/5563 green at 4m19s vs 17-25min baseline (>4x). Residual re-entrancy defect tracked as pm-qfdd."
+body: ""

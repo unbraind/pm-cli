@@ -118,6 +118,27 @@ export function getActiveExtensionRegistrations(): ExtensionRegistrationRegistry
   return activeExtensionRegistrations;
 }
 
+/**
+ * Clear every module-level active-extension registry in one step.
+ *
+ * The actives describe the CURRENT invocation only. One-shot `pm` processes
+ * reset them for free by exiting; long-lived embeddings (in-process test
+ * runners, future SDK hosts) must call this at invocation entry, otherwise an
+ * extension activated by a previous invocation leaks into workspaces where it
+ * is not installed (e.g. a stale command registration rejecting core flags).
+ */
+export function resetActiveExtensionRuntimeState(): void {
+  activeExtensionHooks = null;
+  activeExtensionCommands = null;
+  activeExtensionParsers = null;
+  activeExtensionPreflight = null;
+  activeExtensionServices = null;
+  activeExtensionRenderers = null;
+  activeExtensionRegistrations = null;
+  activeCommandContext = null;
+  activeCommandResult = null;
+}
+
 /** Implements set active command context for the public runtime surface of this module. */
 export function setActiveCommandContext(
   context: Omit<CommandOverrideContext, "result"> | null,

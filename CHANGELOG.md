@@ -8,7 +8,12 @@
 
 ### Fixed
 
+- Runtime-extension snapshot caches go stale in long-lived in-process embeddings (install invisible to next invocation) ([pm-8fxc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8fxc.toon))
 - GH-518: reduce Complex Method in src/cli/commands/next.ts (CodeFactor, PR\#517 rank rendering) ([pm-2gvp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2gvp.toon))
+
+### Other
+
+- Local test/coverage dev loop 17+min: replace per-call spawnSync CLI runner with synchronous worker-thread bridge ([pm-kvd0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-kvd0.toon))
 
 ## 2026.7.12 - 2026-07-12
 

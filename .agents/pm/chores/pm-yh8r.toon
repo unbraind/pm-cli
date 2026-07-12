@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-07-11T10:47:52.058Z"
-updated_at: "2026-07-12T09:50:08.937Z"
+updated_at: "2026-07-12T11:57:15.418Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "main.ts, extensions/loader.ts, sdk/runtime.ts, register-mutation.ts, completion.ts each at or under 80% of the 3400 effective-line gate; splits are behavior-preserving (byte-identical outputs on goldens, contract tests green); vitest.config mirrored test paths updated; jscpd clean; coverage gate holds 100%; no decomposition of files fenced to other owners"
@@ -15,9 +15,10 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-jt3b,related,"2026-07-11T10:47:52.058Z",null,null
   pm-usfg,related,"2026-07-11T10:47:52.058Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-12T08:31:29.065Z",codex-root,"Implementation start: live frontier confirms sdk/runtime.ts has 12 effective lines of headroom; this active item owns a behavior-preserving per-domain dispatch split bundled with pm-3mna and pm-zwpp."
   "2026-07-12T09:50:05.795Z",codex-root,"Evidence: annotation extraction removed one CLI-private domain module and 13 private-core baseline imports while keeping the static boundary gate green. The broader sdk/runtime.ts per-domain dispatch decomposition remains open and is not claimed complete."
+  "2026-07-12T11:57:15.410Z",maintainer-agent,"Census delta 2026-07-12: src/cli/main.ts 3369->3376/3400 (+7 effective, canonical normalizeLine method) — reset-on-entry seam for runtime-extension snapshot caches (pm-8fxc fix inside runPmCli). sdk/runtime.ts steady 3388/3400 after PR#524 (annotation kernel landed as NEW src/sdk/annotations.ts — precedent that new SDK domains can bypass the runtime.ts cap; see pm-usfg frontier note). Decomposition seam priorities unchanged."
 notes[2]{created_at,author,text}:
   "2026-07-12T08:20:08.773Z",maintainer-agent,"2026-07-12 census refresh (same method: static-quality-gate normalizeLine over src/**/*.ts, cap 3400). Delta vs the 07-11 body census:\n- sdk/runtime.ts 3236 -> 3388 (99.6% of cap, 12 effective lines of headroom) — now the #1 at-risk file, overtaking main.ts (3369, unchanged). Growth is the SDK-first slices themselves: PR#512 (plan), PR#517 (ranked atomic selection), PR#520 (schema boundaries) all land action surface here.\n- SEQUENCING CONSEQUENCE: pm-3mna S1 (next SDK slice, current recommended frontier) cannot merge without blowing the gate. The runtime.ts seam owned here (per-domain action tables + shared dispatch kernel, runAction semantics-oracle preserved) must land FIRST — either as a standalone prep PR or as 3mna S1's first commit. Coordination note posted on pm-usfg.\n- context.ts crossed 2000 (2011) — watch, not owned here (context belongs to pm-oslr slice relief first).\n- create.ts 2851->2789, update.ts 2758->2697 (PR#523 relief); register-mutation 3037, completion 2818 (+5/+9 noise); search.ts/loader.ts/extension.ts/validate.ts unchanged.\n- Files >=3000: 7; >=2000: 17. Priority bumped 2->1 on the strength of the runtime.ts headroom."
   "2026-07-12T08:43:58.354Z",codex-root,"Execution rule from user escalation (23rd recurrence): this active delivery lane must not stop at partial implementation, local verification, commit, PR creation, pending checks, or pending bot review. Continue through the requested green reviewed PR, merge, merged-head/release/Sentry/telemetry proof, tracker closure, claim release, and return to main; only a genuine exhausted blocker permits stopping."
