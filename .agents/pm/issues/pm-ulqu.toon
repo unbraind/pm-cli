@@ -6,10 +6,11 @@ status: open
 priority: 2
 tags[3]: agent-ux,"area:cli",gh-issue
 created_at: "2026-07-11T22:55:46.032Z"
-updated_at: "2026-07-11T22:55:46.032Z"
+updated_at: "2026-07-12T19:39:36.074Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "suggested_retry renders enum-valued flags with allowed values inline (--validate-close <off|warn|strict>) instead of a generic <value> placeholder; when strict close validation blocks a close, the FIRST error surfaces missing resolution/expected_result/actual_result with a suggested pm update retry carrying those flags; regression specs cover both the enum rendering and the blocker-first ordering; agent reaches the actionable error in 1 invocation instead of 3"
+parent: pm-mpbb
 risk: low
 confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:

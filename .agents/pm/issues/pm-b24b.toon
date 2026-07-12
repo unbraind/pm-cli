@@ -6,10 +6,11 @@ status: open
 priority: 1
 tags[3]: agent-ux,ci,windows
 created_at: "2026-07-12T07:11:22.870Z"
-updated_at: "2026-07-12T13:35:09.550Z"
+updated_at: "2026-07-12T19:39:35.453Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "quoteCommandArg (or a platform-aware wrapper) renders native Windows paths in scoped init hints copy-paste-valid for cmd/PowerShell (no doubled backslashes); the 5 failing specs (4x init-command.spec.ts, 1x init-path-guard.integration.spec.ts) pass on windows-latest Node 24 without weakening the POSIX replacement-sensitive quoting expectations; tests/unit/commands/init-command.spec.ts + tests/integration/init-path-guard.integration.spec.ts pinned into the CI windows-regression suite list (class 8) so this class fails per-PR, not nightly-only; next Nightly Validation windows leg green"
+parent: pm-mpbb
 risk: medium
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:

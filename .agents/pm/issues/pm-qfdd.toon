@@ -6,10 +6,11 @@ status: open
 priority: 2
 tags[4]: "area:cli",defect-class,re-entrancy,sdk-first
 created_at: "2026-07-12T12:25:25.346Z"
-updated_at: "2026-07-12T12:25:38.968Z"
+updated_at: "2026-07-12T19:39:39.607Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "runPmCli invocations are fully re-entrant in one process: dynamic extension commands/flags registered by invocation N are invisible to invocation N+1 unless re-discovered from the active workspace; existing one-shot CLI behavior and startup latency unchanged; test bridge no longer needs per-test worker disposal"
+parent: pm-usfg
 risk: medium
 confidence: medium
 dependencies[2]{id,kind,created_at,author,source_kind}:

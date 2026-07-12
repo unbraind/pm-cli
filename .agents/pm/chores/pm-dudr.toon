@@ -6,10 +6,11 @@ status: open
 priority: 3
 tags[3]: claude-plugin,docs,hygiene
 created_at: "2026-07-11T10:05:30.442Z"
-updated_at: "2026-07-11T10:24:43.843Z"
+updated_at: "2026-07-12T19:39:37.278Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "All five spec-alignment gaps closed against the official plugin docs: .mcp.json note key corrected; metadata.* nesting matches schema; commands/ renamed to skills/; displayName + $schema present; root marketplace.json duplicate removed; plugin still validates --strict"
+parent: pm-ugqx
 risk: low
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:

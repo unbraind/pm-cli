@@ -6,10 +6,11 @@ status: open
 priority: 2
 tags[3]: ci,release,telemetry
 created_at: "2026-07-12T06:09:21.399Z"
-updated_at: "2026-07-12T18:10:50.206Z"
+updated_at: "2026-07-12T19:39:37.820Z"
 author: maintainer-agent
 estimated_minutes: 150
 acceptance_criteria: Build emits a chunk manifest; boot-time resolution failures inside dist/cli-bundle are re-raised as a distinct handled bundle-integrity error code with reinstall hint; sentry-telemetry-gate classifies only that code as expected-handled environment noise; regression test proves a genuine missing-module error still blocks the gate; docs note the torn-install signature
+parent: pm-u9d0
 risk: medium
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:

@@ -4,12 +4,13 @@ description: "Inter-file half of the 2026-07-12 too-many/too-long directive (int
 type: Chore
 status: open
 priority: 2
-tags: []
+tags[2]: "area:quality",refactor
 created_at: "2026-07-12T19:14:42.057Z"
-updated_at: "2026-07-12T19:14:50.815Z"
+updated_at: "2026-07-12T19:39:49.642Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: Every tracked source directory holds ≤~20 direct files or carries a documented exemption in this body; all moves land as import-specifier-only refactors with full gates green per tranche and byte-identical CLI/MCP/contract surface; pm files links updated for moved paths on open items in the same tranche; vitest/eslint-suppressions/coverage/package.json/workflow/docs references updated within the moving tranche
+parent: pm-92if
 risk: medium
 confidence: 75
 dependencies[1]{id,kind,created_at,author,source_kind}:

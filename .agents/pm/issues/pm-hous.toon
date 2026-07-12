@@ -6,10 +6,11 @@ status: open
 priority: 2
 tags[4]: dx,gh-issue,init,onboarding
 created_at: "2026-07-11T18:01:34.472Z"
-updated_at: "2026-07-12T06:11:43.742Z"
+updated_at: "2026-07-12T19:39:35.733Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "pm init (workspace and path-target modes) idempotently writes a canonical fenced ignore block covering .agents/pm/runtime/ and .agents/pm/search/ into the repo .gitignore (creating it if absent), one path per line; Re-running pm init never duplicates or garbles the block (fence markers; existing malformed concatenated lines inside the fence are replaced); pm validate or pm health warns when tracked .agents/pm runtime/search cache files exist in git (the already-tracked case a blanket ignore cannot fix), with a remediation hint (git rm --cached); Docs (init + getting-started) document the ignore block and the tracked-cache remediation"
+parent: pm-mpbb
 risk: low
 confidence: medium
 dependencies[1]{id,kind,created_at,author,source_kind}:

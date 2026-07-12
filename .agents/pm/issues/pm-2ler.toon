@@ -6,10 +6,11 @@ status: open
 priority: 2
 tags[3]: agent-ux,legacy-data,validate
 created_at: "2026-07-10T21:27:32.454Z"
-updated_at: "2026-07-10T21:27:32.454Z"
+updated_at: "2026-07-12T19:39:38.817Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: active vs legacy(closed/canceled holder) dangling counts reported separately; warning code driven by active count only; no-active-blocker sentinel identified in details; remediation hints never suggest mutating closed items; existing dependency_references tests extended
+parent: pm-33cw
 risk: low
 confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:

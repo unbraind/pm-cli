@@ -6,10 +6,11 @@ status: open
 priority: 3
 tags[5]: ecosystem,extensions,pm-changelog,sdk,typescript
 created_at: "2026-07-10T11:46:08.582Z"
-updated_at: "2026-07-10T11:46:08.582Z"
+updated_at: "2026-07-12T19:39:37.558Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "pm-changelog npm tarball ships .ts source with manifest entry pointing at a .ts module loadable via the pm CLI native type-stripping loader (pm-2p7a capability); pm install npm:pm-changelog --project vendors TS-only (no dist/, no source maps); changelog:pm and changelog:pm:check pass end-to-end against the TS-entry install; pm_min_version gates installs on a CLI version with .ts entry support; migration note for existing vendored installs"
+parent: pm-ugqx
 risk: medium
 confidence: medium
 dependencies[2]{id,kind,created_at,author,source_kind}:
