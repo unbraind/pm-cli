@@ -167,6 +167,7 @@ describe("PR review loop helper", () => {
     expect(() => parseArgs(["inventory", undefined as never, "531"])).toThrow("exit");
     expect(() => resolveTarget({ repo: "invalid", pr: "0" })).toThrow("exit");
     expect(() => main(["react"])).toThrow("exit");
+    expect(() => main(["react", "--node-id", "node-1", "--reaction", "INVALID"])).toThrow("exit");
     expect(() => main(["reply-inline", "--repo", "unbraind/pm-cli", "--pr", "531"])).toThrow("exit");
     expect(() => main(["reply-top", "--repo", "unbraind/pm-cli", "--pr", "531"])).toThrow("exit");
     expect(() => main(["unknown"])).toThrow("exit");

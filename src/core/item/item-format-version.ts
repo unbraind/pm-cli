@@ -1,7 +1,7 @@
 /**
  * @module core/item/item-format-version
  *
- * Tracks the on-disk item item-metadata format version so a future breaking
+ * Tracks the on-disk item-metadata format version so a future breaking
  * storage change can tell already-current items apart from items that a staged
  * migration must rewrite, without re-parsing and structurally guessing every
  * file. The version is an explicit, monotonically increasing integer stamped in
@@ -17,7 +17,7 @@
  */
 import type { ItemMetadata } from "../../types/index.js";
 
-/** The original (and implicit) item item-metadata format version. Items missing a `pm_format_version` field are always treated as this version, so the baseline is never written to disk and adds no per-item token cost. */
+/** The original (and implicit) item-metadata format version. Items missing a `pm_format_version` field are always treated as this version, so the baseline is never written to disk and adds no per-item token cost. */
 export const BASELINE_ITEM_FORMAT_VERSION = 1;
 
 /**

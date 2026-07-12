@@ -85,6 +85,10 @@ query ThreadComments($threadId: ID!, $cursor: String) {
   }
 }`;
 
+const validReactions = new Set([
+  "THUMBS_UP", "THUMBS_DOWN", "LAUGH", "HOORAY", "CONFUSED", "HEART", "ROCKET", "EYES",
+]);
+
 function graphql(executeGh, query, variables) {
   const args = ["api", "graphql", "-f", `query=${query}`];
   for (const [key, value] of Object.entries(variables)) {
@@ -167,6 +171,7 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
     write(JSON.stringify({ repository: target.repo, pullRequest }, null, 2));
   } else if (command === "react") {
     if (!options["node-id"] || !options.reaction) usage("react requires --node-id and --reaction.");
+    if (!validReactions.has(options.reaction)) usage(`Invalid reaction: ${options.reaction}`);
     const mutation = `mutation($subjectId: ID!, $content: ReactionContent!) {
     addReaction(input: { subjectId: $subjectId, content: $content }) { reaction { content } }
   }`;

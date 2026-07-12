@@ -11,7 +11,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { isLegacyNoneToken } from "./legacy-none-tokens.js";
 
-/** Describes one command option that can be removed from item item metadata through `--unset`. */
+/** Describes one command option that can be removed from item metadata through `--unset`. */
 export interface CommandUnsetFieldDefinition {
   /** Value that configures or reports canonical for this contract. */
   canonical: string;
