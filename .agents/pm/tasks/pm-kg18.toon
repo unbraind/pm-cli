@@ -1,0 +1,24 @@
+id: pm-kg18
+title: "S4: purge audit surface from default SDK contracts, MCP tool definitions, completion, help, and docs; package declares its own contracts; re-measure token surface"
+description: "Systematic sweep after S1-S3 land: remove every audit entry from src/sdk/cli-contracts/ (flag-contracts.ts dedupe/comments audit tables ~256/~286 and all allow-audit entries ~314-336/~809/~1203-1348; tool-option-contracts.ts:285-286; tool-parameter-tables.ts; tool-schema.ts), mcp/tool-definitions.ts, help-content.ts, diagnostics/remediation.ts, profile-presets.ts, shell completion (bash+zsh+fish), and the 12 docs/ files that document the commands/flags as core (COMMANDS.md, SDK.md, EXTENSIONS.md, AGENT_GUIDE.md, ARCHITECTURE.md, CONFIGURATION.md, ONBOARDING.md, SDK_PRIMITIVE_INVENTORY.md, README.md, plugin docs). The package declares equivalent contracts extension-side (pm-s9iu fix shipped the machinery — flattened aliases must not drop contracts). Run pnpm contracts:update; reconcile the tool-count assertion in its 4 places; re-run scripts/measure-agent-token-surface.mjs and record the before/after delta as a note on the pm-mpbb ledger. New-command-wiring checklist in reverse: grep -rn for each removed name across src/ docs/ and clear every site. Blocked by S1+S2+S3."
+type: Task
+status: open
+priority: 1
+tags[5]: bare-core,docs,mcp,packages,sdk
+created_at: "2026-07-12T19:55:01.279Z"
+updated_at: "2026-07-12T19:56:04.689Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: "grep -riE 'allow-audit|dedupe-audit|comments-audit|--audit' over src/ returns only enforcement-side and package-dispatch references; contracts:update clean; tool-count assertions green in all 4 places; completion scripts and docs carry no core audit surface; package README documents the full surface instead; token-surface before/after measured and noted on pm-mpbb"
+parent: pm-vjk3
+risk: medium
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-27mv,blocked_by,"2026-07-12T19:55:38.717Z",null,null
+  pm-79fr,blocked_by,"2026-07-12T19:55:38.717Z",null,null
+  pm-7dcf,blocked_by,"2026-07-12T19:55:38.717Z",null,null
+files[3]{path,scope,note}:
+  src/mcp/tool-definitions.ts,project,"pm_files description audit wording :392"
+  src/sdk/cli-contracts/flag-contracts.ts,project,all audit flag-contract entries
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,"allowAudit* MCP param mappings :285-286"
+body: ""

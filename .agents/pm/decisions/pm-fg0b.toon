@@ -1,0 +1,16 @@
+id: pm-fg0b
+title: "Decision: extension-point mechanism and bare-core fallback semantics for extracted audit flags (D1+D2 of pm-vjk3)"
+description: "Maintainer decision gating S2/S3 of the audit-extraction phase-2 program (pm-vjk3). D1: how the plugin owns audit flags on core commands — (a) registerFlags(targetCommand) + registerCommand override for pm files/docs --audit handling, (b) package-owned subcommands (e.g. files-audit report under the package namespace), or (c) hybrid: registerFlags for allow-audit-* pass-through booleans + command override only where handler logic is needed. Also: add 'audit' alias to pm-governance-audit pm.aliases? D2: with the plugin absent, do non-owner audit-gated mutations fall back to --force only or hard-block; does the SDK retain a programmatic allowAuditBypass option (not a CLI flag); breaking-change posture for deleting runDedupeAudit/runCommentsAudit/runDedupeMerge/runNormalize from public SDK exports (first-party covered by same-cut lockstep + pm_min_version bump; external consumers lose the exports). Recommendation from filing pass: D1=(c) hybrid; D2=keep programmatic SDK option + --force fallback, document as breaking in the release notes item type."
+type: Decision
+status: open
+priority: 1
+tags[5]: cli,decision,governance,packages,sdk
+created_at: "2026-07-12T19:53:55.623Z"
+updated_at: "2026-07-12T19:55:37.596Z"
+author: maintainer-agent
+estimated_minutes: 30
+acceptance_criteria: D1 mechanism chosen and recorded with rationale; D2 bare-core fallback + SDK programmatic-option posture chosen and recorded; audit alias yes/no recorded; S2 (pm-27mv) and S3 (pm-7dcf) unblocked or re-scoped per the decision
+parent: pm-vjk3
+risk: medium
+confidence: medium
+body: ""
