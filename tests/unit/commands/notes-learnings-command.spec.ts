@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import type * as NodeFsPromises from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -62,6 +63,41 @@ describe("annotation source resolution", () => {
     expect(isErrnoError({ code: "ENOENT" })).toBe(true);
     expect(isErrnoError(new Error("plain failure"))).toBe(false);
     expect(isErrnoError(null)).toBe(false);
+  });
+
+  it("reports blank, missing, and unreadable annotation file sources", async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-annotation-source-"));
+    try {
+      await expect(resolveAnnotationInput({ file: "   " }, "note")).rejects.toThrow(
+        "--file path cannot be empty",
+      );
+      await expect(resolveAnnotationInput({ file: path.join(tempDir, "missing.md") }, "note")).rejects.toThrow(
+        "--file path not found",
+      );
+      await expect(resolveAnnotationInput({ file: tempDir }, "note")).rejects.toThrow(
+        "Failed to read --file path",
+      );
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it("stringifies non-Error annotation file read failures", async () => {
+    await vi.resetModules();
+    vi.doMock("node:fs/promises", async (importOriginal) => ({
+      ...(await importOriginal<typeof NodeFsPromises>()),
+      readFile: vi.fn(async () => {
+        throw "annotation-read-failure";
+      }),
+    }));
+    const { resolveAnnotationInput: resolveMockedAnnotationInput } = await import(
+      "../../../src/sdk/annotations.js"
+    );
+    await expect(resolveMockedAnnotationInput({ file: "entry.md" }, "note")).rejects.toThrow(
+      'Failed to read --file path "entry.md": annotation-read-failure',
+    );
+    vi.doUnmock("node:fs/promises");
+    await vi.resetModules();
   });
 });
 
