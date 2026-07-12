@@ -1065,8 +1065,11 @@ export function checkCodeFactorComplexity(maxComplexity, changedPaths = collectC
 // (`eslint-suppressions.json`). ESLint itself fails when a suppression goes
 // stale, so the baseline can only shrink; this budget makes growth impossible
 // without a loud, reviewable edit to this gate script. Lower it as the
-// baseline burns down — never raise it.
-export const MAX_ESLINT_SUPPRESSIONS = 104;
+// baseline burns down — never raise it except when a NEW rule is added to the
+// gate and its pre-existing violations are grandfathered in the same change
+// (as with sonarjs/cognitive-complexity <= 16, re-baselined 104 -> 180; the
+// burn-down of that slice is tracked on the pm-92if epic).
+export const MAX_ESLINT_SUPPRESSIONS = 180;
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);

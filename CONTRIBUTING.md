@@ -87,9 +87,13 @@ pnpm lint           # eslint (recommended + complexity + maintainability) + jscp
 `typescript-eslint` recommended, and the CodeFactor-calibrated maintainability
 rules over *all* surfaces including tests, with
 `reportUnusedDisableDirectives: "error"` so stale inline disables fail the run.
-It also enforces a cyclomatic-complexity ceiling (`complexity` max 17 — a
-function at CC ≥ 18 fails), calibrated to CodeFactor's "Complex Method"
-detector. The full set of pre-existing violations is grandfathered in
+It also enforces twin complexity ceilings — no function may exceed **16** on
+either metric: `complexity` (cyclomatic) max 16 and
+`sonarjs/cognitive-complexity` max 16. The cognitive ceiling is the
+load-bearing half of the CodeFactor "Complex Method" calibration: CodeFactor's
+detector is nesting-weighted, and GH-518 proved a cyclomatic-14 method can
+still be flagged (cognitive 22) while a flat cyclomatic-16 function passes.
+The full set of pre-existing violations is grandfathered in
 `eslint-suppressions.json` (ESLint native bulk suppressions), so:
 
 - A **new** complex method (or making an existing one worse) fails `pnpm lint` in

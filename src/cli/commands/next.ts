@@ -662,59 +662,31 @@ export async function runNext(
  * `--ready-only`) the blocked queue annotated with each item's open blockers.
  */
 export function renderNextMarkdown(result: NextResult): string {
-  const lines: string[] = ["# pm next", ""];
-  lines.push(`- now: ${result.now}`);
+  const lines: string[] = ["# pm next", "", ...renderNextSummaryLines(result)];
+  lines.push(...renderNextSection("Recommended", renderNextRecommendedRows(result.recommended), "No ready work."));
   lines.push(
-    `- ready: ${result.summary.ready} (in_progress: ${result.summary.in_progress}), blocked: ${result.summary.blocked}, candidates: ${result.summary.candidates}`,
+    ...renderNextSection(
+      "Decision needed",
+      (result.decision_needed ?? []).map((item) => `- ${formatNextLine(item)}`),
+      "No human-gated decisions.",
+    ),
   );
-  if (result.filters.parent) {
-    lines.push(`- scope: subtree of ${result.filters.parent}`);
-  }
-  lines.push("");
-
-  lines.push("## Recommended");
-  if (result.recommended) {
-    lines.push(`- ${formatNextLine(result.recommended)}`);
-    lines.push(`  why: ${result.recommended.reasons.join("; ")}`);
-  } else {
-    lines.push("No ready work.");
-  }
-  lines.push("");
-
-  lines.push("## Decision needed");
-  const decisionNeeded = result.decision_needed ?? [];
-  if (decisionNeeded.length === 0) {
-    lines.push("No human-gated decisions.");
-  } else {
-    for (const item of decisionNeeded) lines.push(`- ${formatNextLine(item)}`);
-  }
-  lines.push("");
-
-  lines.push("## Ready");
-  if (result.ready.length === 0) {
-    lines.push("No ready items.");
-  } else {
-    for (const item of result.ready) {
-      lines.push(`- ${formatNextLine(item)}`);
-    }
-  }
-  lines.push("");
-
+  lines.push(
+    ...renderNextSection(
+      "Ready",
+      result.ready.map((item) => `- ${formatNextLine(item)}`),
+      "No ready items.",
+    ),
+  );
   if (!result.filters.ready_only) {
-    lines.push("## Blocked");
-    if (result.blocked.length === 0) {
-      lines.push("No blocked items.");
-    } else {
-      for (const item of result.blocked) {
-        const by = item.blockers
-          .map((blocker) => `${blocker.id}(${blocker.status ?? "?"})`)
-          .join(", ");
-        lines.push(`- ${formatNextLine(item)} blocked_by:${by}`);
-      }
-    }
-    lines.push("");
+    lines.push(
+      ...renderNextSection(
+        "Blocked",
+        result.blocked.map((item) => `- ${formatNextBlockedLine(item)}`),
+        "No blocked items.",
+      ),
+    );
   }
-
   if (result.suggestions && result.suggestions.length > 0) {
     lines.push("## Suggestions");
     for (const suggestion of result.suggestions) {
@@ -723,6 +695,44 @@ export function renderNextMarkdown(result: NextResult): string {
   }
 
   return lines.join("\n").trimEnd();
+}
+
+// Renders the top-of-report summary bullet block (timestamp, queue counts,
+// optional subtree scope) followed by its separating blank line.
+function renderNextSummaryLines(result: NextResult): string[] {
+  const lines = [
+    `- now: ${result.now}`,
+    `- ready: ${result.summary.ready} (in_progress: ${result.summary.in_progress}), blocked: ${result.summary.blocked}, candidates: ${result.summary.candidates}`,
+  ];
+  if (result.filters.parent) {
+    lines.push(`- scope: subtree of ${result.filters.parent}`);
+  }
+  lines.push("");
+  return lines;
+}
+
+// Renders the recommendation rows (item line + rationale) or nothing when no
+// candidate is ready, letting the shared section helper supply the empty state.
+function renderNextRecommendedRows(recommended: NextResult["recommended"]): string[] {
+  if (!recommended) {
+    return [];
+  }
+  return [`- ${formatNextLine(recommended)}`, `  why: ${recommended.reasons.join("; ")}`];
+}
+
+// Renders one markdown queue section: the `##` header, then either the rows or
+// the section's empty-state message, closed by a separating blank line.
+function renderNextSection(header: string, rows: string[], emptyMessage: string): string[] {
+  return [`## ${header}`, ...(rows.length === 0 ? [emptyMessage] : rows), ""];
+}
+
+// Formats a blocked row: the standard actionable line annotated with each open
+// blocker's id and current status.
+function formatNextBlockedLine(item: NextResult["blocked"][number]): string {
+  const by = item.blockers
+    .map((blocker) => `${blocker.id}(${blocker.status ?? "?"})`)
+    .join(", ");
+  return `${formatNextLine(item)} blocked_by:${by}`;
 }
 
 // Formats a single actionable row: id, priority, status, type, deadline, parent,
