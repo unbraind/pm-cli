@@ -117,13 +117,21 @@ async function resolveCommentInput(
   options: CommentsCommandOptions,
   stdinResolver: ReturnType<typeof createStdinTokenResolver>,
 ): Promise<ResolvedCommentInput> {
-  const hasEdit = options.edit !== undefined;
-  const hasDelete = options.delete !== undefined;
+  const editIndex = options.edit;
+  const deleteIndex = options.delete;
+  const hasEdit = editIndex !== undefined;
+  const hasDelete = deleteIndex !== undefined;
   if (hasEdit && hasDelete) {
     throw new PmCliError(
       "Specify only one of --edit or --delete",
       EXIT_CODE.USAGE,
     );
+  }
+  if (editIndex !== undefined && (!Number.isInteger(editIndex) || editIndex < 1)) {
+    throw new PmCliError("--edit must be a positive integer", EXIT_CODE.USAGE);
+  }
+  if (deleteIndex !== undefined && (!Number.isInteger(deleteIndex) || deleteIndex < 1)) {
+    throw new PmCliError("--delete must be a positive integer", EXIT_CODE.USAGE);
   }
 
   if (hasDelete) {
@@ -134,7 +142,7 @@ async function resolveCommentInput(
         EXIT_CODE.USAGE,
       );
     }
-    return { mode: "delete", index: options.delete };
+    return { mode: "delete", index: deleteIndex };
   }
 
   if (hasEdit) {
@@ -147,7 +155,7 @@ async function resolveCommentInput(
     }
     return {
       mode: "edit",
-      index: options.edit,
+      index: editIndex,
       value: textSource.value,
       emptyFlag: textSource.emptyFlag,
     };

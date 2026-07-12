@@ -175,8 +175,8 @@ export function parseAnnotationTextInput(
   }
 }
 
-/** Returns whether an unknown file-system failure exposes a Node errno code. */
-export function isErrnoError(error: unknown): error is NodeJS.ErrnoException {
+/** Returns whether an unknown file-system failure exposes an errno-like code. */
+export function isErrnoError(error: unknown): error is { code?: unknown } {
   return typeof error === "object" && error !== null && "code" in error;
 }
 

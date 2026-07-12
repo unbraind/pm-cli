@@ -4,6 +4,7 @@
  * Defines public SDK APIs and package-author helpers for Index.
  */
 export {
+  isErrnoError,
   limitAnnotationEntries,
   parseAnnotationTextInput,
   readAnnotationEntries,

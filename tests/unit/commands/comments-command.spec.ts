@@ -933,6 +933,15 @@ describe("runComments edit/delete (GH-243)", () => {
     });
   });
 
+  it("validates repair indices before reading comment replacement sources", async () => {
+    await expect(runComments("pm-invalid-edit", { edit: 0, file: "missing.md" }, {})).rejects.toThrow(
+      "--edit must be a positive integer",
+    );
+    await expect(runComments("pm-invalid-delete", { delete: -1, stdin: true }, {})).rejects.toThrow(
+      "--delete must be a positive integer",
+    );
+  });
+
   it("resolves edit replacement text from --stdin and --file sources", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "comments-edit-sources");

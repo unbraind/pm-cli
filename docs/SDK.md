@@ -582,9 +582,11 @@ changed files/docs/tests, or inspect the item graph. `pm.filesDiscover` exposes
 the same file-candidate discovery used by the CLI, so a custom tool can present
 reviewable link suggestions instead of scraping git output itself.
 Comments, notes, and learnings share the exported annotation kernel, including
-plain/stdin/file input resolution, one-based edit/delete semantics, ownership
-guidance, history mutation metadata, and stable list pagination. Package authors
-can build custom annotation presentation layers without importing CLI modules.
+plain/stdin/file input resolution for CLI and embedded SDK calls, one-based
+edit/delete semantics, ownership guidance, history mutation metadata, and stable
+list pagination. MCP tool actions intentionally omit file input to prevent host
+filesystem access. Package authors can build custom annotation presentation
+layers without importing CLI modules.
 
 Customization convenience methods are the SDK baseline for project-specific pm
 tools. `pm.init` stages a tracker, `pm.config` reads/writes settings,
