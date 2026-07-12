@@ -1,0 +1,18 @@
+id: pm-96vo
+title: "GH-526: aggregate --sum/--avg accept unknown field names and silently report 0"
+description: "GH-526 (2026-07-12, repro with --no-extensions on 2026.7.12): pm aggregate --group-by validates its argument against a known field list and fails fast, but --sum/--avg accept any string and silently emit sum:0 / omit avg with null_count==count as the only signal. A realistic typo (--sum estimated_minute) pastes a silently-wrong 0 into governance reports. Fix: validate --sum/--avg field names against the summable-numeric domain (built-ins + registered numeric custom fields) with the existing Invalid-argument-value error shape; if free-form custom fields must stay allowed, emit an explicit unknown_field marker/warning when the field resolves to zero known occurrences. Sibling contrast: pm-bvns shipped the aggregation feature itself (closed — do not touch). Same fail-fast-over-silent-success principle as the dep colon-shorthand fix (pm-zazb)."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,aggregate,cli,gh-issue,validation
+created_at: "2026-07-12T18:52:48.595Z"
+updated_at: "2026-07-12T18:52:48.595Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "Unknown --sum/--avg field names are rejected with the same 'Invalid argument value' error shape as --group-by, listing known numeric fields including registered numeric custom fields; valid built-in and custom numeric fields keep aggregating; spec covers the estimated_minute typo case producing a hard error instead of sum:0; docs/contracts updated if help text changes"
+parent: pm-mpbb
+risk: medium
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-bvns,related,"2026-07-12T18:52:48.595Z",null,null
+body: ""
