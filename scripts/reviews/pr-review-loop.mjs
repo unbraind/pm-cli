@@ -3,22 +3,24 @@
 import { execFileSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
-function runGh(args, input) {
-  return execFileSync("gh", args, {
+export function runGh(args, input, executeFile = execFileSync) {
+  return executeFile("gh", args, {
     encoding: "utf8",
     input,
     stdio: [input === undefined ? "inherit" : "pipe", "pipe", "inherit"],
   }).trim();
 }
 
-function usage(message) {
-  if (message) console.error(message);
-  console.error(`Usage:
+export function usage(message, dependencies = {}) {
+  const writeError = dependencies.error ?? console.error;
+  const exit = dependencies.exit ?? process.exit;
+  if (message) writeError(message);
+  writeError(`Usage:
   node scripts/reviews/pr-review-loop.mjs inventory [--pr <number>] [--repo <owner/name>]
   node scripts/reviews/pr-review-loop.mjs react --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...>
   node scripts/reviews/pr-review-loop.mjs reply-inline --comment-id <id> --body <text> [--pr <number>] [--repo <owner/name>]
   node scripts/reviews/pr-review-loop.mjs reply-top --body <text> [--pr <number>] [--repo <owner/name>]`);
-  process.exit(2);
+  exit(2);
 }
 
 export function parseArgs(argv) {
@@ -96,6 +98,7 @@ export function fetchReviewInventory(target, executeGh = runGh) {
   const reviews = [];
   const reviewThreads = [];
   const cursors = { commentCursor: undefined, reviewCursor: undefined, threadCursor: undefined };
+  const exhausted = { commentCursor: false, reviewCursor: false, threadCursor: false };
   let pullRequestHeader;
   let hasNextPage = true;
 
@@ -117,9 +120,14 @@ export function fetchReviewInventory(target, executeGh = runGh) {
     reviews.push(...page.reviews.nodes);
     reviewThreads.push(...page.reviewThreads.nodes);
     const connections = [page.comments, page.reviews, page.reviewThreads];
-    [cursors.commentCursor, cursors.reviewCursor, cursors.threadCursor] = connections.map(
-      (connection) => connection.pageInfo.endCursor,
-    );
+    const cursorKeys = ["commentCursor", "reviewCursor", "threadCursor"];
+    connections.forEach((connection, index) => {
+      const key = cursorKeys[index];
+      if (!exhausted[key]) {
+        cursors[key] = connection.pageInfo.endCursor;
+        exhausted[key] = !connection.pageInfo.hasNextPage;
+      }
+    });
     hasNextPage = connections.some((connection) => connection.pageInfo.hasNextPage);
   }
 
@@ -182,6 +190,8 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main();
+export function runCliIfDirect(argv = process.argv, moduleUrl = import.meta.url, executeMain = main) {
+  if (argv[1] && moduleUrl === pathToFileURL(argv[1]).href) executeMain();
 }
+
+runCliIfDirect();

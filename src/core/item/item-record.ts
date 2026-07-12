@@ -19,8 +19,8 @@ import type { ItemMetadata } from "../../types/index.js";
  * This is a compile-time-only widening: the returned value is the very same
  * object reference, with no runtime transformation. (It is intentionally
  * distinct from the runtime `asRecord*` guards in `core/shared/primitives.ts`,
- * which validate `typeof` at runtime.) `ItemMetadata` is an alias of
- * `ItemMetadata`, so item-metadata values are accepted as-is.
+ * which validate `typeof` at runtime.) `ItemMetadata` is the canonical type,
+ * so item-metadata values are accepted as-is.
  */
 export function toItemRecord(item: ItemMetadata): Record<string, unknown> {
   return item as unknown as Record<string, unknown>;

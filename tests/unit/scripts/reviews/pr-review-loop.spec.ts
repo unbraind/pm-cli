@@ -6,6 +6,9 @@ import {
   main,
   parseArgs,
   resolveTarget,
+  runCliIfDirect,
+  runGh,
+  usage,
 } from "../../../../scripts/reviews/pr-review-loop.mjs";
 
 function connection(nodes: unknown[], hasNextPage = false, endCursor: string | null = null) {
@@ -44,7 +47,7 @@ describe("PR review loop helper", () => {
           headRefOid: "abc123",
           updatedAt: "2026-07-12T00:00:00Z",
           comments: connection([{ id: "comment-1" }], true, "comment-cursor"),
-          reviews: connection([{ id: "review-1" }]),
+          reviews: connection([{ id: "review-1" }], true, "review-cursor-1"),
           reviewThreads: connection([{
             id: "thread-1",
             comments: connection([{ id: "thread-comment-1" }], true, "thread-comment-cursor"),
@@ -57,8 +60,19 @@ describe("PR review loop helper", () => {
           url: "https://github.com/unbraind/pm-cli/pull/531",
           headRefOid: "abc123",
           updatedAt: "2026-07-12T00:00:00Z",
-          comments: connection([{ id: "comment-2" }]),
-          reviews: connection([]),
+          comments: connection([{ id: "comment-2" }], true, "comment-cursor-2"),
+          reviews: connection([{ id: "review-2" }], false, "review-cursor-2"),
+          reviewThreads: connection([]),
+        } } },
+      }))
+      .mockReturnValueOnce(JSON.stringify({
+        data: { repository: { pullRequest: {
+          number: 531,
+          url: "https://github.com/unbraind/pm-cli/pull/531",
+          headRefOid: "abc123",
+          updatedAt: "2026-07-12T00:00:00Z",
+          comments: connection([{ id: "comment-3" }]),
+          reviews: connection([], false, null),
           reviewThreads: connection([]),
         } } },
       }))
@@ -71,15 +85,16 @@ describe("PR review loop helper", () => {
       executeGh,
     );
 
-    expect(result.comments.nodes).toEqual([{ id: "comment-1" }, { id: "comment-2" }]);
-    expect(result.reviews.nodes).toEqual([{ id: "review-1" }]);
+    expect(result.comments.nodes).toEqual([{ id: "comment-1" }, { id: "comment-2" }, { id: "comment-3" }]);
+    expect(result.reviews.nodes).toEqual([{ id: "review-1" }, { id: "review-2" }]);
     expect(result.reviewThreads.nodes[0]?.comments.nodes).toEqual([
       { id: "thread-comment-1" },
       { id: "thread-comment-2" },
     ]);
-    expect(executeGh).toHaveBeenCalledTimes(3);
+    expect(executeGh).toHaveBeenCalledTimes(4);
     expect(executeGh.mock.calls[1]?.[0]).toContain("commentCursor=comment-cursor");
-    expect(executeGh.mock.calls[2]?.[0]).toContain("threadId=thread-1");
+    expect(executeGh.mock.calls[2]?.[0]).toContain("reviewCursor=review-cursor-2");
+    expect(executeGh.mock.calls[3]?.[0]).toContain("threadId=thread-1");
   });
 
   it("dispatches inventory, reactions, and both reply forms through injected gh", () => {
@@ -115,5 +130,57 @@ describe("PR review loop helper", () => {
     expect(executeGh.mock.calls[2]?.[0]).toEqual([
       "pr", "comment", "531", "--repo", "unbraind/pm-cli", "--body", "done",
     ]);
+  });
+
+  it("runs gh with the expected stdio modes and trims its output", () => {
+    const executeFile = vi.fn().mockReturnValue(" result\n");
+    expect(runGh(["pr", "view"], undefined, executeFile)).toBe("result");
+    expect(runGh(["api"], "payload", executeFile)).toBe("result");
+    expect(executeFile.mock.calls[0]?.[2]).toMatchObject({
+      encoding: "utf8", input: undefined, stdio: ["inherit", "pipe", "inherit"],
+    });
+    expect(executeFile.mock.calls[1]?.[2]).toMatchObject({
+      encoding: "utf8", input: "payload", stdio: ["pipe", "pipe", "inherit"],
+    });
+  });
+
+  it("renders usage with and without a specific error", () => {
+    const error = vi.fn();
+    const exit = vi.fn();
+    usage("bad input", { error, exit });
+    usage(undefined, { error, exit });
+    expect(error.mock.calls[0]?.[0]).toBe("bad input");
+    expect(error.mock.calls.filter(([value]) => String(value).startsWith("Usage:"))).toHaveLength(2);
+    expect(exit).toHaveBeenNthCalledWith(1, 2);
+    expect(exit).toHaveBeenNthCalledWith(2, 2);
+  });
+
+  it("rejects invalid arguments, targets, and command requirements", () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation((() => {
+      throw new Error("exit");
+    }) as never);
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(() => parseArgs(["inventory", "--pr"])).toThrow("exit");
+    expect(() => parseArgs(["inventory", "pr", "531"])).toThrow("exit");
+    expect(() => parseArgs(["inventory", undefined as never, "531"])).toThrow("exit");
+    expect(() => resolveTarget({ repo: "invalid", pr: "0" })).toThrow("exit");
+    expect(() => main(["react"])).toThrow("exit");
+    expect(() => main(["reply-inline", "--repo", "unbraind/pm-cli", "--pr", "531"])).toThrow("exit");
+    expect(() => main(["reply-top", "--repo", "unbraind/pm-cli", "--pr", "531"])).toThrow("exit");
+    expect(() => main(["unknown"])).toThrow("exit");
+
+    expect(error).toHaveBeenCalled();
+    exit.mockRestore();
+    error.mockRestore();
+  });
+
+  it("runs the CLI entrypoint only for direct execution", () => {
+    const executeMain = vi.fn();
+    const scriptPath = "/tmp/review-loop.mjs";
+    runCliIfDirect(["node", scriptPath], "file:///tmp/review-loop.mjs", executeMain);
+    runCliIfDirect(["node", scriptPath], "file:///tmp/importer.mjs", executeMain);
+    runCliIfDirect(["node"], "file:///tmp/review-loop.mjs", executeMain);
+    expect(executeMain).toHaveBeenCalledTimes(1);
   });
 });
