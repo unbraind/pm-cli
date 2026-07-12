@@ -21983,6 +21983,23 @@
             ],
             "type": "string"
           },
+          "file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "File link to attach while creating or materializing a Plan.",
+            "examples": [
+              "path=src/cli.ts,note=implementation surface"
+            ]
+          },
           "force": {
             "description": "Force.",
             "type": "boolean"
@@ -22472,13 +22489,6 @@
             "description": "For comments, notes, and learnings actions, replace the annotation at this 1-based index with supplied replacement text.",
             "minimum": 1,
             "type": "integer"
-          },
-          "file": {
-            "description": "CLI-only path to an input file for commands that read payload text; tool actions exclude host file access.",
-            "examples": [
-              "notes/comment.md"
-            ],
-            "type": "string"
           },
           "force": {
             "description": "Force.",
