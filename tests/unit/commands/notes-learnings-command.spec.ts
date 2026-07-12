@@ -1,5 +1,6 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import type * as NodeFsPromises from "node:fs/promises";
+import type * as ItemParseModule from "../../../src/core/item/parse.js";
 import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -97,6 +98,29 @@ describe("annotation source resolution", () => {
       'Failed to read --file path "entry.md": annotation-read-failure',
     );
     vi.doUnmock("node:fs/promises");
+    await vi.resetModules();
+  });
+
+  it("normalizes nullish annotation stdin resolver values", async () => {
+    await vi.resetModules();
+    vi.doMock("../../../src/core/item/parse.js", async (importOriginal) => ({
+      ...(await importOriginal<typeof ItemParseModule>()),
+      createStdinTokenResolver: () => ({
+        resolveValue: vi.fn(async () => undefined),
+      }),
+    }));
+    const { resolveAnnotationInput: resolveMockedAnnotationInput } = await import(
+      "../../../src/sdk/annotations.js"
+    );
+    await expect(resolveMockedAnnotationInput({ add: "-" }, "note")).resolves.toMatchObject({
+      mode: "add",
+      value: "",
+    });
+    await expect(resolveMockedAnnotationInput({ stdin: true }, "note")).resolves.toMatchObject({
+      mode: "add",
+      value: "",
+    });
+    vi.doUnmock("../../../src/core/item/parse.js");
     await vi.resetModules();
   });
 });
