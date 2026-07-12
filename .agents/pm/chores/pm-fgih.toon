@@ -1,0 +1,18 @@
+id: pm-fgih
+title: "Cursor fingerprints: replace per-command presentation-flag deny-lists with contract-declared semantic classification in sdk/pagination"
+description: ""
+type: Chore
+status: open
+priority: 3
+tags[3]: agent-ux,perf,sdk
+created_at: "2026-07-12T19:24:49.130Z"
+updated_at: "2026-07-12T19:25:23.329Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: "Single shared helper (or flag-contract metadata) classifies each query flag as cursor-semantic vs presentation; list/context/search fingerprints are built from that declaration instead of local delete-lists; Adding a new presentation-only flag to list/search/context cannot invalidate an in-flight cursor without a test failing (contract test covers the classification); The three existing deny-list sites (buildListCursorFingerprint, buildContextCursorFingerprint area, createSearchCursorFingerprint) are converged with zero behavior change for currently-valid cursors"
+parent: pm-9rxu
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-dfg0,related,"2026-07-12T19:25:23.313Z",null,null
+body: "## Evidence (pass #75 review of the PR#525 pagination surface)\n\nThe versioned-cursor contract (src/sdk/pagination.ts, shipped via pm-dfg0/PR#525) binds each cursor to a query fingerprint. Each command builds that fingerprint by copying its whole options object and hand-deleting presentation-only flags:\n\n- src/cli/commands/list.ts buildListCursorFingerprint — deletes after/limit/offset/noTruncate/includeBody/compact/brief/full/fields\n- src/cli/commands/context.ts (~line 2127) — deletes after/limit/maxItems/format/fields/section/activityLimit/staleThreshold\n- src/cli/commands/search-pagination.ts createSearchCursorFingerprint — deletes after/limit/compact/full/fields/highlight/format\n\nThree independently maintained deny-lists, three slightly different vocabularies (context deletes `format`, list does not — benign today only because list's options object happens not to carry it). next.ts uses no cursor (bounded slice + summary counts), so it is unaffected.\n\n## Failure mode\n\nAny future presentation-only flag added to list/search/context that is not also added to the local deny-list becomes part of the fingerprint. An agent that toggles such a flag between page 1 and page 2 gets `invalid_query_cursor` and must restart pagination from scratch — pure retry tax of the class the pm-mpbb ledger tracks (derive behavior from the declared contract, not per-site literals; same family as pm-ulqu enum-domain rendering).\n\n## Direction (class fix, not a point patch)\n\nPrefer declaring cursor semantics once next to the flag definition: flag-contract metadata in src/sdk/cli-contracts (e.g. `cursor_semantics: \"semantic\" | \"presentation\"`), with a shared sdk/pagination helper that builds the fingerprint from the declared semantic subset. A contract test should fail when a new query flag ships without a classification. Alternative (weaker): explicit per-command allow-list objects. Zero behavior change for currently-valid cursors is required (fingerprint inputs for existing flag sets must stay byte-identical or a cursor-version bump must ship with it)."
