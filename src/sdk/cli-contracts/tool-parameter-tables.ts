@@ -1261,19 +1261,19 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   edit: {
     description:
-      "For comments action, replace the comment at this 1-based index with the supplied replacement text (add/stdin/file).",
+      "For comments, notes, and learnings actions, replace the annotation at this 1-based index with supplied replacement text.",
   },
   delete: {
     description:
-      "For comments action, delete the comment at this 1-based index.",
+      "For comments, notes, and learnings actions, delete the annotation at this 1-based index.",
   },
   stdin: {
     description:
-      "When true for comments action, read comment text from piped stdin (supports multiline markdown).",
+      "For comments, notes, and learnings actions, read annotation text from piped stdin (supports multiline markdown).",
   },
   file: {
     description:
-      "Path to input file for actions that read payload text, such as comments --file.",
+      "CLI-only path to an input file for commands that read payload text; tool actions exclude host file access.",
     examples: ["notes/comment.md"],
   },
   allowAuditUpdate: {

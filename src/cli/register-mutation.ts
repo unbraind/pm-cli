@@ -1661,6 +1661,10 @@ async function runNotesAction(
     id,
     {
       add,
+      stdin: options.stdin === true,
+      file: readOptionString(options, "file"),
+      edit: typeof options.edit === "number" ? options.edit : undefined,
+      delete: typeof options.delete === "number" ? options.delete : undefined,
       limit: readOptionString(options, "limit"),
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
@@ -1671,7 +1675,13 @@ async function runNotesAction(
     },
     globalOptions,
   );
-  if (typeof add === "string") {
+  if (
+    typeof add === "string" ||
+    options.stdin === true ||
+    typeof options.file === "string" ||
+    typeof options.edit === "number" ||
+    typeof options.delete === "number"
+  ) {
     await invalidateSearchCachesForMutation(globalOptions, result);
   }
   printResult(result, globalOptions);
@@ -1694,6 +1704,10 @@ async function runLearningsAction(
     id,
     {
       add,
+      stdin: options.stdin === true,
+      file: readOptionString(options, "file"),
+      edit: typeof options.edit === "number" ? options.edit : undefined,
+      delete: typeof options.delete === "number" ? options.delete : undefined,
       limit: readOptionString(options, "limit"),
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
@@ -1704,7 +1718,13 @@ async function runLearningsAction(
     },
     globalOptions,
   );
-  if (typeof add === "string") {
+  if (
+    typeof add === "string" ||
+    options.stdin === true ||
+    typeof options.file === "string" ||
+    typeof options.edit === "number" ||
+    typeof options.delete === "number"
+  ) {
     await invalidateSearchCachesForMutation(globalOptions, result);
   }
   printResult(result, globalOptions);
@@ -3017,6 +3037,24 @@ export function registerMutationCommands(program: Command): void {
       "--add <text>",
       "Add one note entry (plain text fallback, text=<value>, markdown pairs, or - for stdin; CSV-like key fragments are preserved as plain text unless text is explicit)",
     )
+    .option(
+      "--stdin",
+      "Read note text from stdin (supports multiline markdown)",
+    )
+    .option(
+      "--file <path>",
+      "Read note text from file (supports multiline markdown)",
+    )
+    .option(
+      "--edit <index>",
+      "Replace the note at 1-based <index> (replacement text from positional [text], --add, --stdin, or --file)",
+      parsePositiveIntOption("--edit"),
+    )
+    .option(
+      "--delete <index>",
+      "Delete the note at 1-based <index>",
+      parsePositiveIntOption("--delete"),
+    )
     .option("--limit <n>", "Return only latest n notes")
     .option(
       "--author [value]",
@@ -3032,7 +3070,7 @@ export function registerMutationCommands(program: Command): void {
       "Backward-compatible alias for --allow-audit-note",
     )
     .option("--force", "Force ownership override")
-    .description("List or add notes for an item.")
+    .description("List, add, edit, or delete notes for an item.")
     .action(runNotesAction);
 
   program
@@ -3045,6 +3083,24 @@ export function registerMutationCommands(program: Command): void {
     .option(
       "--add <text>",
       "Add one learning entry (plain text fallback, text=<value>, markdown pairs, or - for stdin; CSV-like key fragments are preserved as plain text unless text is explicit)",
+    )
+    .option(
+      "--stdin",
+      "Read learning text from stdin (supports multiline markdown)",
+    )
+    .option(
+      "--file <path>",
+      "Read learning text from file (supports multiline markdown)",
+    )
+    .option(
+      "--edit <index>",
+      "Replace the learning at 1-based <index> (replacement text from positional [text], --add, --stdin, or --file)",
+      parsePositiveIntOption("--edit"),
+    )
+    .option(
+      "--delete <index>",
+      "Delete the learning at 1-based <index>",
+      parsePositiveIntOption("--delete"),
     )
     .option("--limit <n>", "Return only latest n learnings")
     .option(
@@ -3061,7 +3117,7 @@ export function registerMutationCommands(program: Command): void {
       "Backward-compatible alias for --allow-audit-learning",
     )
     .option("--force", "Force ownership override")
-    .description("List or add learnings for an item.")
+    .description("List, add, edit, or delete learnings for an item.")
     .action(runLearningsAction);
 
   const filesCommand = program

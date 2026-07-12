@@ -54,23 +54,6 @@
       ]
     },
     {
-      "source": "src/cli/commands/annotation-command.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/item/parse.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/shared/author.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
       "source": "src/cli/commands/append.ts",
       "imports": [
         "src/core/fs/fs-utils.ts",
@@ -668,7 +651,6 @@
     {
       "source": "src/cli/commands/learnings.ts",
       "imports": [
-        "src/core/item/parse.ts",
         "src/core/shared/command-types.ts"
       ]
     },
@@ -783,7 +765,6 @@
     {
       "source": "src/cli/commands/notes.ts",
       "imports": [
-        "src/core/item/parse.ts",
         "src/core/shared/command-types.ts"
       ]
     },
@@ -1288,7 +1269,8 @@
       "imports": [
         "src/core/item/type-registry.ts",
         "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts"
+        "src/core/shared/errors.ts",
+        "src/core/shared/numeric-parsers.ts"
       ]
     },
     {

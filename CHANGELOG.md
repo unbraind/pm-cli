@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Notes/learnings repair parity: add --edit/--delete (and a real --stdin/--file input source) matching comments, so bad annotation entries are fixable via the CLI ([pm-a2h3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-a2h3.toon))
+
 ### Fixed
 
 - GH-518: reduce Complex Method in src/cli/commands/next.ts (CodeFactor, PR\#517 rank rendering) ([pm-2gvp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2gvp.toon))

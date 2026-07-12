@@ -805,10 +805,10 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --limit --full-history --latest --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    notes)",
-    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-note --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --author --message --allow-audit-note --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    learnings)",
-    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-learning --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --author --message --allow-audit-learning --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    files)",
     `      COMPREPLY=(${compgen("discover --add --add-glob --remove --migrate --list --apply --note --append-stable --validate-paths --audit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1574,6 +1574,10 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
         notes)
           _arguments \\
             '--add[Add one entry (plain text, text=<value>, markdown pairs, or - for stdin)]:text' \\
+            '--stdin[Read entry text from stdin]' \\
+            '--file[Read entry text from file]:path' \\
+            '--edit[Replace the entry at a 1-based index]:index' \\
+            '--delete[Delete the entry at a 1-based index]:index' \\
             '--limit[Return only latest n entries]:number' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
@@ -1586,6 +1590,10 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
         learnings)
           _arguments \\
             '--add[Add one entry (plain text, text=<value>, markdown pairs, or - for stdin)]:text' \\
+            '--stdin[Read entry text from stdin]' \\
+            '--file[Read entry text from file]:path' \\
+            '--edit[Replace the entry at a 1-based index]:index' \\
+            '--delete[Delete the entry at a 1-based index]:index' \\
             '--limit[Return only latest n entries]:number' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\

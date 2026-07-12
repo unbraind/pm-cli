@@ -1,4 +1,6 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import type * as NodeFsPromises from "node:fs/promises";
+import type * as ItemParseModule from "../../../src/core/item/parse.js";
 import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -7,6 +9,10 @@ import { runLearnings } from "../../../src/cli/commands/learnings.js";
 import { runNotes } from "../../../src/cli/commands/notes.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import {
+  isErrnoError,
+  resolveAnnotationInput,
+} from "../../../src/sdk/annotations.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
@@ -29,6 +35,95 @@ const TARGETS: LogCommandTarget[] = [
     run: runLearnings,
   },
 ];
+
+describe("annotation source resolution", () => {
+  it("validates edit and delete indices before reading replacement sources", async () => {
+    for (const index of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      await expect(resolveAnnotationInput({ edit: index, add: "replacement" }, "note")).rejects.toThrow(
+        "--edit must be a positive integer",
+      );
+      await expect(resolveAnnotationInput({ delete: index }, "note")).rejects.toThrow(
+        "--delete must be a positive integer",
+      );
+    }
+  });
+
+  it("rejects mutually exclusive operations and text sources without consuming stdin", async () => {
+    await expect(resolveAnnotationInput({ edit: 1, delete: 1 }, "note")).rejects.toThrow(
+      "Specify only one of --edit or --delete",
+    );
+    await expect(resolveAnnotationInput({ delete: 1, stdin: true }, "note")).rejects.toThrow(
+      "--delete cannot be combined with replacement text",
+    );
+    await expect(resolveAnnotationInput({ add: "inline", file: "entry.md" }, "note")).rejects.toThrow(
+      "using only one input source",
+    );
+  });
+
+  it("classifies errno-shaped failures without assuming every object is an errno", () => {
+    expect(isErrnoError({ code: "ENOENT" })).toBe(true);
+    expect(isErrnoError(new Error("plain failure"))).toBe(false);
+    expect(isErrnoError(null)).toBe(false);
+  });
+
+  it("reports blank, missing, and unreadable annotation file sources", async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-annotation-source-"));
+    try {
+      await expect(resolveAnnotationInput({ file: "   " }, "note")).rejects.toThrow(
+        "--file path cannot be empty",
+      );
+      await expect(resolveAnnotationInput({ file: path.join(tempDir, "missing.md") }, "note")).rejects.toThrow(
+        "--file path not found",
+      );
+      await expect(resolveAnnotationInput({ file: tempDir }, "note")).rejects.toThrow(
+        "Failed to read --file path",
+      );
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it("stringifies non-Error annotation file read failures", async () => {
+    await vi.resetModules();
+    vi.doMock("node:fs/promises", async (importOriginal) => ({
+      ...(await importOriginal<typeof NodeFsPromises>()),
+      readFile: vi.fn(async () => {
+        throw "annotation-read-failure";
+      }),
+    }));
+    const { resolveAnnotationInput: resolveMockedAnnotationInput } = await import(
+      "../../../src/sdk/annotations.js"
+    );
+    await expect(resolveMockedAnnotationInput({ file: "entry.md" }, "note")).rejects.toThrow(
+      'Failed to read --file path "entry.md": annotation-read-failure',
+    );
+    vi.doUnmock("node:fs/promises");
+    await vi.resetModules();
+  });
+
+  it("normalizes nullish annotation stdin resolver values", async () => {
+    await vi.resetModules();
+    vi.doMock("../../../src/core/item/parse.js", async (importOriginal) => ({
+      ...(await importOriginal<typeof ItemParseModule>()),
+      createStdinTokenResolver: () => ({
+        resolveValue: vi.fn(async () => undefined),
+      }),
+    }));
+    const { resolveAnnotationInput: resolveMockedAnnotationInput } = await import(
+      "../../../src/sdk/annotations.js"
+    );
+    await expect(resolveMockedAnnotationInput({ add: "-" }, "note")).resolves.toMatchObject({
+      mode: "add",
+      value: "",
+    });
+    await expect(resolveMockedAnnotationInput({ stdin: true }, "note")).resolves.toMatchObject({
+      mode: "add",
+      value: "",
+    });
+    vi.doUnmock("../../../src/core/item/parse.js");
+    await vi.resetModules();
+  });
+});
 
 function createTask(context: TempPmContext, title: string): string {
   return createTestItemId(context, {
@@ -240,6 +335,40 @@ describe.each(TARGETS)("run%s", (target) => {
 
       const flagShapedResult = await target.run(id, { add: "-" }, { path: context.pmPath });
       expect(extractEntries(target, flagShapedResult).at(-1)?.text).toBe("--some-option");
+    });
+  });
+
+  it("adds from explicit stdin and files, then edits and deletes with history-safe indices", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, `${target.name}-repair-parity`);
+      const stdin = new PassThrough();
+      stdin.end("entry from explicit stdin\n");
+      Object.defineProperty(stdin, "isTTY", { value: false, configurable: true });
+      vi.spyOn(process, "stdin", "get").mockReturnValue(stdin as unknown as NodeJS.ReadStream);
+      await target.run(id, { stdin: true }, { path: context.pmPath });
+
+      const filePath = path.join(context.pmPath, `${target.name}.md`);
+      await writeFile(filePath, "entry from file\n", "utf8");
+      await target.run(id, { file: filePath }, { path: context.pmPath });
+      const edited = await target.run(
+        id,
+        { edit: 1, add: "corrected entry", message: "repair annotation" },
+        { path: context.pmPath },
+      );
+      expect(extractEntries(target, edited)[0]).toMatchObject({ text: "corrected entry" });
+      expect(extractEntries(target, edited)[0]).toHaveProperty("edited_at");
+
+      const deleted = await target.run(id, { delete: 2 }, { path: context.pmPath });
+      expect(extractEntries(target, deleted).map((entry) => entry.text)).toEqual(["corrected entry"]);
+
+      await expect(target.run(id, { edit: 1 }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--edit requires replacement text"),
+      });
+      await expect(target.run(id, { delete: 1, add: "invalid" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--delete cannot be combined"),
+      });
     });
   });
 

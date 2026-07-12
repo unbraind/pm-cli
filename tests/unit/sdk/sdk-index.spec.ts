@@ -698,6 +698,9 @@ describe("public sdk entrypoint", () => {
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.schema.required).toEqual(["subcommand"]);
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.schema.optional).toEqual(expect.arrayContaining(["name"]));
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.upgrade.optional).toEqual(expect.arrayContaining(["dryRun"]));
+    for (const action of ["comments", "notes", "learnings"] as const) {
+      expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS[action].optional).not.toContain("file");
+    }
   });
 
   it("materializes strict and provider-compatible tool schemas through the sdk barrel", () => {

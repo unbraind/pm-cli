@@ -1568,13 +1568,22 @@ describe("mutation command actions", () => {
 
     await runCli("notes", "pm-1", "--add", "note text");
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1).add).toBe("note text");
+    await runCli("notes", "pm-1", "--delete", "2");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1).delete).toBe(2);
     await expect(runCli("notes", "pm-1", "a", "--add", "b")).rejects.toThrow("not both");
 
     await runCli("learnings", "pm-1", "lesson", "--allow-audit-learning");
     const learningsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runLearnings) as never, 1);
     expect(learningsOptions.add).toBe("lesson");
     expect(learningsOptions.allowAuditComment).toBe(true);
+    await runCli("learnings", "pm-1", "--edit", "2", "revised lesson");
+    const learningEditOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runLearnings) as never, 1);
+    expect(learningEditOptions.edit).toBe(2);
+    expect(learningEditOptions.add).toBe("revised lesson");
+    await runCli("learnings", "pm-1", "--delete", "3");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runLearnings) as never, 1).delete).toBe(3);
     await expect(runCli("learnings", "pm-1", "a", "--add", "b")).rejects.toThrow("not both");
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(8);
   });
 
   it("maps files/docs link management and discover routing", async () => {
@@ -2248,17 +2257,18 @@ describe("mutation command actions", () => {
     await runCli("comments", "pm-1", "--file", "/tmp/comment.md");
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runComments) as never, 1).file).toBe("/tmp/comment.md");
 
-    await runCli("notes", "pm-1", "--add", "noted", "--limit", "3", "--author", "agent", "--message", "m");
+    await runCli("notes", "pm-1", "--edit", "2", "--file", "/tmp/note.md", "--limit", "3", "--author", "agent", "--message", "m");
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1)).toMatchObject({
-      add: "noted",
+      edit: 2,
+      file: "/tmp/note.md",
       limit: "3",
       author: "agent",
       message: "m",
     });
 
-    await runCli("learnings", "pm-1", "--add", "learned", "--limit", "2", "--author", "agent", "--message", "m");
+    await runCli("learnings", "pm-1", "--delete", "1", "--limit", "2", "--author", "agent", "--message", "m");
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runLearnings) as never, 1)).toMatchObject({
-      add: "learned",
+      delete: 1,
       limit: "2",
       author: "agent",
       message: "m",

@@ -1,67 +1,113 @@
 /**
- * @module cli/commands/annotation-command
+ * @module sdk/annotations
  *
  * Implements the pm annotation command command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { parseCsvKv } from "../../core/item/parse.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { nowIso } from "../../core/shared/time.js";
-import { resolveAuthor } from "../../core/shared/author.js";
+import { readFile } from "node:fs/promises";
+import { pathExists } from "../core/fs/fs-utils.js";
+import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
+import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
+import { createStdinTokenResolver, parseCsvKv } from "../core/item/parse.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
+import type { GlobalOptions } from "../core/shared/command-types.js";
+import { PmCliError } from "../core/shared/errors.js";
+import { parseLimit } from "../core/shared/numeric-parsers.js";
+import { nowIso } from "../core/shared/time.js";
+import { resolveAuthor } from "../core/shared/author.js";
 import {
   locateItem,
   mutateItem,
   readLocatedItem,
-} from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
-import { parseLimit } from "../shared-parsers.js";
+} from "../core/store/item-store.js";
+import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import { readSettings } from "../core/store/settings.js";
 
-interface AnnotationEntry {
+/** Common persisted shape shared by comments, notes, and learnings. */
+export interface AnnotationEntry {
+  /** Creation timestamp for the persisted entry. */
   created_at: string;
+  /** Stable author attribution recorded with the entry. */
   author: string;
+  /** Human-readable annotation body. */
   text: string;
+  /** Last edit timestamp when the entry was changed in place. */
   edited_at?: string;
 }
 
-interface AnnotationCommandOptions {
+/** Common options accepted by annotation primitive operations. */
+export interface AnnotationCommandOptions {
+  /** Maximum number of newest entries returned. */
   limit?: string;
+  /** Author override for mutation attribution. */
   author?: string;
+  /** Optional history message describing the mutation. */
   message?: string;
+  /** Whether to override an active ownership conflict. */
   force?: boolean;
+  /** Whether list results include paging metadata. */
   includeMeta?: boolean;
 }
 
-interface AnnotationInput {
+/** Presentation-layer inputs accepted by the shared annotation source resolver. */
+export interface AnnotationSourceOptions {
+  /** Inline annotation text or the stdin token (`-`). */
+  add?: string;
+  /** Read annotation text directly from stdin. */
+  stdin?: boolean;
+  /** Read annotation text from a UTF-8 file. */
+  file?: string;
+  /** One-based entry index to replace. */
+  edit?: number;
+  /** One-based entry index to delete. */
+  delete?: number;
+}
+
+/** Normalized annotation operation supplied by a presentation layer. */
+export interface AnnotationInput {
+  /** Normalized operation selected by the presentation layer. */
   mode: "list" | "add" | "stdin" | "file" | "edit" | "delete";
+  /** Resolved annotation text. */
   value?: string;
+  /** Original input used for flag-like value validation. */
   rawValue?: string;
+  /** Flag name used in validation messages. */
   emptyFlag?: string;
+  /** One-based entry index for edit and delete operations. */
   index?: number;
 }
 
-interface OwnershipConflictGuidance {
+/** Agent-facing recovery guidance for ownership conflicts. */
+export interface OwnershipConflictGuidance {
+  /** Actionable requirement shown to the caller. */
   required: string;
+  /** Copyable retry examples. */
   examples: string[];
+  /** Ordered recovery guidance. */
   nextSteps: string[];
 }
 
-interface AnnotationCommandConfig<TKey extends string> {
+/** Domain configuration for one annotation collection primitive. */
+export interface AnnotationCommandConfig<TKey extends string> {
+  /** Normalized annotation operation. */
   input: AnnotationInput;
+  /** Metadata collection that stores this annotation family. */
   collectionKey: TKey;
+  /** History operation used for additions. */
   op: Parameters<typeof mutateItem>[0]["op"];
+  /** History operation used for edits. */
   editOp?: Parameters<typeof mutateItem>[0]["op"];
+  /** History operation used for deletions. */
   deleteOp?: Parameters<typeof mutateItem>[0]["op"];
+  /** Domain parser that normalizes resolved text. */
   parseText: (raw: string) => string;
+  /** Whether this operation may bypass ownership for audit annotations. */
   allowAuditBypass: boolean;
+  /** Recovery guidance for ownership conflicts. */
   conflictGuidance: OwnershipConflictGuidance;
 }
 
-type AnnotationCommandResult<
+/** Structured result returned by an annotation primitive. */
+export type AnnotationCommandResult<
   TKey extends string,
   TEntry extends AnnotationEntry,
 > = {
@@ -127,6 +173,112 @@ export function parseAnnotationTextInput(
   } catch {
     return trimmed;
   }
+}
+
+/** Returns whether an unknown file-system failure exposes an errno-like code. */
+export function isErrnoError(error: unknown): error is { code?: unknown } {
+  return typeof error === "object" && error !== null && "code" in error;
+}
+
+async function resolveAnnotationTextSource(
+  options: AnnotationSourceOptions,
+  noun: string,
+): Promise<
+  { value: string; rawValue?: string; emptyFlag: string } | undefined
+> {
+  const sourceCount =
+    Number(options.add !== undefined) +
+    Number(options.stdin === true) +
+    Number(typeof options.file === "string");
+  if (sourceCount > 1) {
+    throw new PmCliError(
+      `Specify ${noun} text using only one input source: --add, --stdin, or --file`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  const stdinResolver = createStdinTokenResolver();
+  if (options.add !== undefined) {
+    return {
+      value: (await stdinResolver.resolveValue(options.add, "--add")) ?? "",
+      rawValue: options.add,
+      emptyFlag: "--add",
+    };
+  }
+  if (options.stdin === true) {
+    return {
+      value: (await stdinResolver.resolveValue("-", "--stdin")) ?? "",
+      emptyFlag: "--stdin",
+    };
+  }
+  if (typeof options.file !== "string") return undefined;
+  const filePath = options.file.trim();
+  if (!filePath) {
+    throw new PmCliError("--file path cannot be empty", EXIT_CODE.USAGE);
+  }
+  try {
+    return { value: await readFile(filePath, "utf8"), emptyFlag: "--file" };
+  } catch (error: unknown) {
+    if (isErrnoError(error) && error.code === "ENOENT") {
+      throw new PmCliError(
+        `--file path not found: ${filePath}`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new PmCliError(
+      `Failed to read --file path "${filePath}": ${detail}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+}
+
+/** Resolves mutually exclusive annotation input flags into one normalized SDK operation. */
+export async function resolveAnnotationInput(
+  options: AnnotationSourceOptions,
+  noun: string,
+): Promise<AnnotationInput> {
+  if (options.edit !== undefined && options.delete !== undefined) {
+    throw new PmCliError(
+      "Specify only one of --edit or --delete",
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (options.delete !== undefined) {
+    if (
+      options.add !== undefined ||
+      options.stdin === true ||
+      typeof options.file === "string"
+    ) {
+      throw new PmCliError(
+        "--delete cannot be combined with replacement text",
+        EXIT_CODE.USAGE,
+      );
+    }
+    if (!Number.isInteger(options.delete) || options.delete < 1) {
+      throw new PmCliError(
+        "--delete must be a positive integer",
+        EXIT_CODE.USAGE,
+      );
+    }
+    return { mode: "delete", index: options.delete };
+  }
+  if (
+    options.edit !== undefined &&
+    (!Number.isInteger(options.edit) || options.edit < 1)
+  ) {
+    throw new PmCliError("--edit must be a positive integer", EXIT_CODE.USAGE);
+  }
+  const resolved = await resolveAnnotationTextSource(options, noun);
+  if (options.edit !== undefined) {
+    if (!resolved) {
+      throw new PmCliError(
+        "--edit requires replacement text from --add, --stdin, or --file",
+        EXIT_CODE.USAGE,
+      );
+    }
+    return { mode: "edit", index: options.edit, ...resolved };
+  }
+  return resolved ? { mode: "add", ...resolved } : { mode: "list" };
 }
 
 /** Implements wrap ownership conflict for the public runtime surface of this module. */

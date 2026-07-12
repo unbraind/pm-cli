@@ -10,7 +10,7 @@ import {
   resolveAnnotationIndex,
   runAnnotationCommand,
   wrapOwnershipConflict,
-} from "../../../src/cli/commands/annotation-command.js";
+} from "../../../src/sdk/annotations.js";
 import { runComments } from "../../../src/cli/commands/comments.js";
 import { runCommentsAudit } from "../../../src/cli/commands/comments-audit.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
@@ -392,7 +392,7 @@ describe("runComments", () => {
         resolveValue: vi.fn(async () => undefined),
       }),
     }));
-    vi.doMock("../../../src/cli/commands/annotation-command.js", () => ({
+    vi.doMock("../../../src/sdk/annotations.js", () => ({
       parseAnnotationTextInput: parseInputMock,
       runAnnotationCommand: runAnnotationMock,
     }));
@@ -406,7 +406,7 @@ describe("runComments", () => {
     expect((stdinInput as unknown as { value?: string }).value).toBe("");
 
     vi.doUnmock("../../../src/core/item/parse.js");
-    vi.doUnmock("../../../src/cli/commands/annotation-command.js");
+    vi.doUnmock("../../../src/sdk/annotations.js");
     await vi.resetModules();
   });
 
@@ -422,7 +422,9 @@ describe("runComments", () => {
         resolveValue: vi.fn(async (value: string | undefined) => value),
       }),
     }));
-    vi.doMock("../../../src/cli/commands/annotation-command.js", () => ({
+    vi.doMock("../../../src/sdk/annotations.js", () => ({
+      isErrnoError: (error: unknown) =>
+        typeof error === "object" && error !== null && "code" in error,
       parseAnnotationTextInput: vi.fn((raw: string) => raw),
       runAnnotationCommand: vi.fn(),
     }));
@@ -434,7 +436,7 @@ describe("runComments", () => {
 
     vi.doUnmock("node:fs/promises");
     vi.doUnmock("../../../src/core/item/parse.js");
-    vi.doUnmock("../../../src/cli/commands/annotation-command.js");
+    vi.doUnmock("../../../src/sdk/annotations.js");
     await vi.resetModules();
   });
 
@@ -929,6 +931,15 @@ describe("runComments edit/delete (GH-243)", () => {
         message: "--edit requires replacement text via positional [text], --add, --stdin, or --file",
       });
     });
+  });
+
+  it("validates repair indices before reading comment replacement sources", async () => {
+    await expect(runComments("pm-invalid-edit", { edit: 0, file: "missing.md" }, {})).rejects.toThrow(
+      "--edit must be a positive integer",
+    );
+    await expect(runComments("pm-invalid-delete", { delete: -1, stdin: true }, {})).rejects.toThrow(
+      "--delete must be a positive integer",
+    );
   });
 
   it("resolves edit replacement text from --stdin and --file sources", async () => {
