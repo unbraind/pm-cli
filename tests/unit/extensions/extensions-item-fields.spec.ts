@@ -148,14 +148,14 @@ describe("extensions item field runtime wiring", () => {
   it("rejects extension field names that collide with reserved metadata", () => {
     expect(() =>
       parseRegisteredItemFieldAssignments(["id=pm-other"], withFields([{ name: "id", type: "string" }])),
-    ).toThrow('Extension item field "id" collides with reserved item metadata');
+    ).toThrow('Extension item field "id" collides with built-in item metadata "id"');
 
     expect(() =>
       applyRegisteredItemFieldDefaultsAndValidation(
         {},
         withFields([{ name: "updated_at", type: "string", default: "2026-01-01T00:00:00.000Z" }]),
       ),
-    ).toThrow('Extension item field "updated_at" collides with reserved item metadata');
+    ).toThrow('Extension item field "updated_at" collides with built-in item metadata "updated_at"');
   });
 
   it("skips invalid field names and unknown field types", () => {

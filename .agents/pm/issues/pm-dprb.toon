@@ -2,11 +2,12 @@ id: pm-dprb
 title: "GH-510: macOS nightly red — withTempPmPath skips realpath canonicalization; init-path-guard probe-root assertion fails (/var vs /private/var)"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: ci,flake-class,macos,tests
 created_at: "2026-07-11T09:55:36.355Z"
-updated_at: "2026-07-11T09:56:01.549Z"
+updated_at: "2026-07-11T23:15:33.557Z"
+closed_at: "2026-07-11T23:15:31.641Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: tests/helpers/withTempPmPath.ts canonicalizes mkdtemp output (fs.realpath) before use; init-path-guard.integration.spec.ts passes on macos-latest/Node 24; remaining test-side mkdtemp call sites swept for the same trap; next Nightly Validation run green on all matrices
@@ -15,4 +16,12 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-gf6f,related,"2026-07-11T09:56:01.533Z",null,null
   pm-kvev,related,"2026-07-11T09:56:01.533Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-11T23:05:14.061Z",codex-root,"Implementation start: selected after live all-status duplicate checks, full metadata/comments/notes/learnings review, GitHub issue/PR/security/dependency inspection, and SDK-first frontier reconciliation. This item is actively edited in the broad schema/config/profile/init SDK promotion bundle; unrelated open items remain unclaimed."
+  "2026-07-11T23:15:29.326Z",codex-root,"Evidence: shared withTempPmPath now realpath-canonicalizes mkdtemp output once at the source. The full init-path-guard integration suite passed, including root-layout probe identity, and type/lint/static gates passed."
+files[1]{path,scope,note}:
+  tests/helpers/withTempPmPath.ts,project,Canonicalize macOS temporary workspace roots
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/init-path-guard.integration.spec.ts,project,240
+close_reason: Canonicalized shared temporary PM roots with fs.realpath; init path guard regression suite passes.
 body: "## Evidence (Nightly Validation run 29142565592, commit 4b6ca51d, 2026-07-11)\n- Only macos-latest / Node 24 red; 269/270 test files pass. Single failure: `tests/integration/init-path-guard.integration.spec.ts:167` (the GH-495 root-layout regression test).\n- Assertion diff: expected `pm_root: /var/folders/.../pm-cli-test-BX16dC/root-layout-ws`, received `/private/var/folders/...` — macOS `/var` is a symlink to `/private/var`; `pm probe root --json` returns the canonical (realpath'd) root, the test compares against the logical mkdtemp path.\n- Deterministic, NOT a flake: first nightly containing the test (merged with the GH-495 fix after the 07-10 nightly ran). PR CI matrices do not cover macOS, so it only surfaces nightly.\n\n## Root cause\n`tests/helpers/withTempPmPath.ts:314` creates the workspace via `mkdtemp(path.join(os.tmpdir(), \"pm-cli-test-\"))` WITHOUT canonicalizing. The identical class was fixed by pm-gf6f (\"fixed macOS realpath mismatch by canonicalizing mkdtemp output\") but only inside the extension-command unit spec — the shared integration helper never got the fix, so every future integration test comparing absolute paths re-inherits the trap.\n\n## Fix shape\nCanonicalize once at the source: `tempRoot = await realpath(await mkdtemp(...))` in withTempPmPath. Product behavior is correct (probe returning the canonical root is desirable identity semantics); this is test-infrastructure-side only. Sweep other `mkdtemp` sites under tests/ for the same omission while there."

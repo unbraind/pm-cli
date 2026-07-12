@@ -194,7 +194,7 @@ function assertNotReservedItemFieldName(fieldName: string): void {
     return;
   }
   throw new PmCliError(
-    `Extension item field "${fieldName}" collides with reserved item metadata`,
+    `Extension item field "${fieldName}" collides with built-in item metadata "${fieldName}"; rename the extension field with an extension-specific prefix. Reserved fields: ${[...RESERVED_ITEM_FIELD_NAMES].sort((left, right) => left.localeCompare(right)).join(", ")}.`,
     EXIT_CODE.USAGE,
     {
       code: "extension_item_field_reserved",

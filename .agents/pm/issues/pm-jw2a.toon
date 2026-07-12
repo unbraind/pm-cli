@@ -1,0 +1,24 @@
+id: pm-jw2a
+title: Restore 100% SDK workspace read-error coverage
+description: PR #520 coverage aggregation exposed the unexpected-read-error branch in the new public workspace primitive as uncovered. Add a real filesystem failure regression so the SDK preserves the strict 100/100/100/100 gate.
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-07-11T23:53:13.175Z"
+updated_at: "2026-07-11T23:53:38.491Z"
+closed_at: "2026-07-11T23:53:37.815Z"
+author: codex-root
+acceptance_criteria: A real filesystem read failure is propagated and merged coverage remains 100/100/100/100.
+parent: pm-hous
+comments[2]{created_at,author,text}:
+  "2026-07-11T23:53:13.175Z",codex-root,"Duplicate check: searched all statuses for workspace gitignore coverage read error; no existing item covers this CI-discovered branch regression."
+  "2026-07-11T23:53:37.016Z",codex-root,"Evidence: real EISDIR/EACCES filesystem failure regression passes and covers the previously missed unexpected read-error propagation branch."
+files[1]{path,scope,note}:
+  tests/unit/core/workspace/gitignore.spec.ts,project,Exercise unexpected SDK workspace read failures
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrh0t3zr-8m36qe,test,passed,"2026-07-11T23:53:30.499Z","2026-07-11T23:53:36.375Z","2026-07-11T23:53:36.375Z",1,0,0
+close_reason: Unexpected SDK workspace read failures now have real filesystem regression coverage; focused test passed.
+body: ""

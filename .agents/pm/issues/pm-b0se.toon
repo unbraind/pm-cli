@@ -2,14 +2,20 @@ id: pm-b0se
 title: "GH-516: pm init seeds unrelated managed packages into fresh PM_GLOBAL_PATH workspaces"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "area:cli","area:packages",bug,gh-issue
 created_at: "2026-07-11T22:55:13.007Z"
-updated_at: "2026-07-11T22:55:13.007Z"
+updated_at: "2026-07-11T23:20:18.736Z"
+closed_at: "2026-07-11T23:07:20.145Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "plain pm init with a fresh empty PM_GLOBAL_PATH creates a package-free project (no managed packages seeded without --with-packages or an explicit package/profile option); installing exactly one local package yields exactly one project-managed package in pm package doctor --project --isolated output; integration test initializes with an empty temp PM_GLOBAL_PATH, installs one package, and asserts isolated doctor reports only that package; root cause identified for how pm-github/pm-graph from the operator environment leaked in despite isolation claims"
 risk: medium
 confidence: medium
+comments[3]{created_at,author,text}:
+  "2026-07-11T23:05:09.996Z",codex-root,"Implementation start: selected after live all-status duplicate checks, full metadata/comments/notes/learnings review, GitHub issue/PR/security/dependency inspection, and SDK-first frontier reconciliation. This item is actively edited in the broad schema/config/profile/init SDK promotion bundle; unrelated open items remain unclaimed."
+  "2026-07-11T23:07:19.320Z",codex-root,"Live verification correction: current main is hermetic. In a fresh cwd with fresh PM_GLOBAL_PATH, plain init created no managed package file. Installing exactly <repo>/packages/pm-guide-shell --project then running package doctor --project --isolated --detail deep reported total_extensions=1, managed_total=1, active_total=1, isolation.isolated=true, global_extensions_included=false, and global_diagnostics_present=false. No pm-github/pm-graph leakage reproduced."
+  "2026-07-11T23:20:18.735Z",codex-root,"CI follow-up: redacted the host-specific absolute package proof path through audited history-redact after the secret/path gate flagged it; replacement preserves portable evidence as <repo>/packages/pm-guide-shell and re-anchors the hash chain."
+close_reason: Already fixed on current main; isolated fresh-workspace package install/doctor proof reports exactly one project package and no global leakage.
 body: "GH-516 (open, bug label, pm 2026.7.11). Repro: fresh mktemp workspace, PM_GLOBAL_PATH=<fresh dir>, pm init --json, install ONE local package (pm-changelog) --project, then pm package doctor --project --isolated --detail deep — installed_extensions contains pm-changelog PLUS pm-github and pm-graph (pm-graph's source referencing an unrelated prior temp workspace), total_extensions:3 all activation-ok, while details.isolation simultaneously claims isolated:true and global_extensions_included:false. Impact: hermetic package integration tests and agent sandboxes are nondeterministic — the doctor's own remediation recipe (PM_GLOBAL_PATH=$(mktemp -d)) cannot be trusted, and unrelated local source paths leak into freshly initialized project managed-state. Direction per issue: make ALL global package/default discovery honor PM_GLOBAL_PATH consistently during init; keep first-party seeding strictly behind --with-packages. Note the isolation-flag lie (isolated:true while leaking) is the sharpest wedge for root-causing."

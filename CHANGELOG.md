@@ -8,6 +8,11 @@
 
 ### Fixed
 
+- Restore 100% SDK workspace read-error coverage ([pm-jw2a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jw2a.toon))
+- GH-510: macOS nightly red — withTempPmPath skips realpath canonicalization; init-path-guard probe-root assertion fails (/var vs /private/var) ([pm-dprb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dprb.toon))
+- GH-454: schema add-field accepts reserved built-in names silently; collision error names no partner ([pm-b9ov](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b9ov.toon))
+- GH-516: pm init seeds unrelated managed packages into fresh PM_GLOBAL_PATH workspaces ([pm-b0se](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b0se.toon))
+- GH-448: boolean custom field is silently never persisted (data-loss class) ([pm-sjfs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sjfs.toon))
 - GH-509: pm claim --next lacks candidate filters and race-loss walk — thread next filters + advance to next candidate ([pm-fjxm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fjxm.toon))
 - Prevent Decision items from entering agent work lanes by default; allow explicit maintainer opt-in ([pm-eqk0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eqk0.toon))
 - GH-513: pm next ready\[\] documented as ranked but not priority-ordered; no rank/score exposed ([pm-1mwk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1mwk.toon))

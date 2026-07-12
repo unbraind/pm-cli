@@ -3,6 +3,13 @@
  *
  * Defines public SDK APIs and package-author helpers for Runtime.
  */
+export {
+  PM_GITIGNORE_END,
+  PM_GITIGNORE_START,
+  ensurePmGitignore,
+  getPmGitignoreBlock,
+  type EnsurePmGitignoreResult,
+} from "./workspace.js";
 import path from "node:path";
 import {
   createEmptyExtensionCommandRegistry,

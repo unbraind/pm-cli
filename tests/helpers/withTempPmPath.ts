@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, realpath, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -312,7 +312,9 @@ function restoreTempPmEnv(snapshot: TempPmEnvSnapshot): void {
 }
 
 export async function withTempPmPath<T>(callback: (context: TempPmContext) => Promise<T>): Promise<T> {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-cli-test-"));
+  const tempRoot = await realpath(
+    await mkdtemp(path.join(os.tmpdir(), "pm-cli-test-")),
+  );
   const pmPath = path.join(tempRoot, ".agents", "pm");
   const env = buildTempPmEnv(tempRoot, pmPath);
 

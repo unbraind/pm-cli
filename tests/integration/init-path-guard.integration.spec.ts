@@ -74,9 +74,16 @@ describe("init tracker-path guardrails", () => {
         settings: { id_prefix: "acme-" },
       });
       expect(JSON.parse(await readFile(path.join(trackerRoot, "settings.json"), "utf8"))).toMatchObject({ id_prefix: "acme-" });
+      expect(await readFile(path.join(workspaceRoot, ".gitignore"), "utf8")).toContain(".agents/pm/runtime/\n.agents/pm/search/");
 
       const discovered = context.runCli(["context", "--json"], { expectJson: true, cwd: workspaceRoot });
       expect(discovered.code).toBe(0);
+
+      const nested = path.join(workspaceRoot, "nested");
+      await mkdir(nested, { recursive: true });
+      const nestedInit = context.runCli(["init", "--json", "--yes"], { expectJson: true, cwd: nested });
+      expect(nestedInit.code).toBe(0);
+      await expect(readFile(path.join(nested, ".gitignore"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 

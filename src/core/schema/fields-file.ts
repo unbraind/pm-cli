@@ -12,6 +12,7 @@ import type {
   RuntimeFieldDefinition,
   RuntimeFieldType,
 } from "../../types/index.js";
+import { FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 
 export type {
   RuntimeFieldCommand,
@@ -37,6 +38,7 @@ const RUNTIME_FIELD_COMMAND_SET = new Set<string>(RUNTIME_FIELD_COMMAND_VALUES);
 
 /** Built-in front-matter field names a custom field key must never shadow. A custom key that collides with one of these would let `pm create --<key>` write over reserved metadata, so add-field rejects them up front (symmetric with the built-in-type guard in item-types-file.ts). */
 export const BUILTIN_FIELD_KEYS: ReadonlySet<string> = new Set([
+  ...FRONT_MATTER_KEY_ORDER.filter((key) => key !== "severity"),
   "id",
   "title",
   "type",
@@ -224,7 +226,7 @@ export function normalizeAddFieldInput(
   }
   if (BUILTIN_FIELD_KEYS.has(key)) {
     throw new Error(
-      `Cannot define custom field "${key}": it shadows a built-in field. Built-in fields are reserved.`,
+      `Cannot define custom field "${key}": custom schema field "${key}" collides with built-in item metadata "${key}". Rename the custom field with a project-specific prefix. Reserved fields: ${[...BUILTIN_FIELD_KEYS].sort((left, right) => left.localeCompare(right)).join(", ")}.`,
     );
   }
 

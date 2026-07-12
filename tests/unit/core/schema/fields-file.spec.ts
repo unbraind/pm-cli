@@ -43,7 +43,11 @@ describe("normalizeAddFieldInput", () => {
   });
 
   it("rejects a key that shadows a built-in field", () => {
-    expect(() => normalizeAddFieldInput({ key: "status" })).toThrow(/shadows a built-in field/);
+    expect(() => normalizeAddFieldInput({ key: "status" })).toThrow(/collides with built-in item metadata/);
+    expect(() => normalizeAddFieldInput({ key: "customer-impact" })).toThrow(/collides with built-in item metadata/);
+    expect(() => normalizeAddFieldInput({ key: "expected_result" })).toThrow(/Reserved fields:.*expected_result/);
+    expect(() => normalizeAddFieldInput({ key: "comments" })).toThrow(/Reserved fields:.*comments/);
+    expect(normalizeAddFieldInput({ key: "severity" }).key).toBe("severity");
   });
 
   it("rejects an invalid type", () => {
@@ -102,6 +106,7 @@ describe("normalizeAddFieldInput", () => {
 
   it("exposes the built-in field key set", () => {
     expect(BUILTIN_FIELD_KEYS.has("title")).toBe(true);
+    expect(BUILTIN_FIELD_KEYS.has("customer_impact")).toBe(true);
     expect(BUILTIN_FIELD_KEYS.has("severity_level")).toBe(false);
   });
 });

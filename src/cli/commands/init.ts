@@ -45,6 +45,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings, writeSettings } from "../../core/store/settings.js";
+import { ensurePmGitignore } from "../../sdk/workspace.js";
 import type { GovernancePreset, PmSettings } from "../../types/index.js";
 import { renderPmCommand } from "../argv-utils.js";
 import { runExtension, type ExtensionCommandResult } from "./extension.js";
@@ -991,6 +992,17 @@ async function ensureInitTypeDirectories(params: {
   params.warnings.push(...scaffold.warnings);
 }
 
+function resolveInitWorkspaceRoot(
+  target: InitTargetResolution,
+): string | undefined {
+  const trackerRoot = path.resolve(target.tracker_root);
+  const agentsRoot = path.dirname(trackerRoot);
+  if (path.basename(trackerRoot) === "pm" && path.basename(agentsRoot) === ".agents") {
+    return path.dirname(agentsRoot);
+  }
+  return target.workspace_root;
+}
+
 async function maybeInstallInitBundledPackages(
   installBundledPackages: boolean,
   global: GlobalOptions,
@@ -1136,6 +1148,13 @@ export async function runInit(
   }
 
   await ensureInitTypeDirectories({ pmRoot, settings, createdDirs, warnings });
+  const workspaceRoot = resolveInitWorkspaceRoot(invocation.target);
+  if (workspaceRoot) {
+    const gitignore = await ensurePmGitignore(workspaceRoot);
+    if (gitignore.changed) {
+      warnings.push(`updated:gitignore:${gitignore.path}`);
+    }
+  }
   const installedPackages = await maybeInstallInitBundledPackages(
     normalizedOptions.installBundledPackages,
     global,
