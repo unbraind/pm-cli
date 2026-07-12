@@ -5,27 +5,12 @@
  */
 import { PmCliError } from "../core/shared/errors.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
+export { parseLimit } from "../core/shared/numeric-parsers.js";
 import {
   resolveTypeName,
   type ItemTypeRegistry,
 } from "../core/item/type-registry.js";
 import type { ItemType } from "../types/index.js";
-
-/** Implements parse limit for the public runtime surface of this module. */
-export function parseLimit(
-  raw: string | undefined,
-  label = "--limit",
-): number | undefined {
-  if (raw === undefined) return undefined;
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new PmCliError(
-      `${label} must be a non-negative number`,
-      EXIT_CODE.USAGE,
-    );
-  }
-  return Math.floor(parsed);
-}
 
 /** Implements parse integer limit for the public runtime surface of this module. */
 export function parseIntegerLimit(

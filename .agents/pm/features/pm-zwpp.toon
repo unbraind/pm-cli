@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[2]: architecture,"area:sdk"
 created_at: "2026-07-05T04:54:09.993Z"
-updated_at: "2026-07-12T09:50:03.276Z"
+updated_at: "2026-07-12T10:18:11.879Z"
 author: maintainer-agent
 estimated_minutes: 360
 acceptance_criteria: SDK exports typed facet primitives with identical validation/governance to the CLI; facet commands consume only these primitives; docstrings + SDK reference docs; zero behavior change (facet specs green)
@@ -18,7 +18,7 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-muhw,blocked_by,"2026-07-05T04:55:05.894Z",null,null
   pm-2ler,related,"2026-07-10T21:31:11.022Z",null,null
   pm-a2h3,related,"2026-07-10T21:31:11.022Z",null,null
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-05T08:02:33.801Z",codex-sdk-agent,"Scope alignment evidence: PR #431 review caught that linked-test execution belongs to pm-oslr, not this annotation primitive item. Updated acceptance criteria through pm update to keep pm-zwpp focused on SDK facet primitives, docstrings, SDK reference docs, and behavior-parity facet specs."
   "2026-07-07T20:44:47.005Z",codex-agent,"Implementation start: wide SDK/context primitive PR. Live duplicate/context check covered pm search --status all, pm context, in-progress SDK items, and closed read/lifecycle primitive lineage; this item owns annotation/link primitives only and explicitly excludes linked-test execution per existing notes."
   "2026-07-07T22:45:27.684Z",claude-code-agent,"Evidence: SDK review follow-up tightened public helper contracts: schema() now returns the full SchemaResult union, show/lint helpers require names at compile time, and docs examples match FilesCommandOptions/DocsCommandOptions. Focused SDK tests and installed-package SDK proof passed."
@@ -27,20 +27,26 @@ comments[8]{created_at,author,text}:
   "2026-07-08T06:06:36.363Z",codex,"Evidence: release and quality gates refreshed after the SDK typing hardening: pnpm changelog:pm:check unchanged using pm-changelog 2026.7.6; Sentry/telemetry gate ok with critical=0 high=0 and telemetry finish_error_rate_pct=0.39."
   "2026-07-12T08:31:36.475Z",codex-root,"Implementation start: active wide SDK bundle promotes the shared comments/notes/learnings annotation kernel and re-points CLI presentation handlers; linked-test execution remains explicitly out of scope."
   "2026-07-12T09:50:00.208Z",codex-root,"Evidence: S1 annotation kernel completed and moved from CLI-private annotation-command.ts to public src/sdk/annotations.ts; comments/notes/learnings presentation layers consume it and the SDK boundary baseline dropped the deleted module plus two parse imports. Broader files/docs/deps promotion slices remain open and are not claimed complete."
+  "2026-07-12T10:17:42.545Z",codex-root,"Review evidence: addressed PR #524 feedback by validating positive edit/delete indices before source I/O, centralizing parseLimit below CLI/SDK, sharing errno classification, using typed mutation cache checks, excluding host file paths from MCP annotation contracts, generalizing annotation contract descriptions, documenting all public kernel helpers, and adding regression coverage."
 notes[3]{created_at,author,text}:
   "2026-07-05T05:09:50.883Z",maintainer-agent,"Scope note (audit 2026-07-05): this promotion also owns the append (body-append) primitive — it is an annotation-family write like notes/comments. Execution of linked tests is explicitly NOT here; that is pm-oslr."
   "2026-07-10T21:30:53.189Z",maintainer-agent,"Implementation slicing 2026-07-10 (grounded in current src state). Already public — do NOT redo: typed one-shot facades comments/notes/learnings/files/filesDiscover/docs/deps/append are exported from src/sdk/index.ts with typed *CommandOptions/*Result types, plus per-facet PmClient methods. The actual gap: those facades dispatch via PmClient.runTyped -> runAction back into src/cli/commands/* handlers, so the domain logic is command-side — annotation-command.ts shared engine (337 lines; comments/notes/learnings ALL route through runAnnotationCommand) + comments.ts (168) / notes.ts (59) / learnings.ts (63) / files.ts (409, incl. discover) / docs.ts (58) / deps.ts (327) / append.ts (78), ~1.5k lines total. Persistence already lives in core (item-store front matter); what moves is validation/governance/orchestration. Suggested slices: S1 annotation kernel (~120m) — promote the runAnnotationCommand engine to a core annotations module; one slice covers three facets at once; preserve the `.text` JSON body-field contract and `--add -` stdin semantics; this primitive is where pm-a2h3 (notes/learnings --edit/--delete parity) lands — coordinate, do not duplicate. S2 files/docs link primitives (~90m) — files.ts is the largest facet (409); keep discover's path-normalization behavior byte-identical (validate files baselines 154/123 depend on it). S3 deps mutation primitive (~90m) — deps.ts (327); this primitive must own referential-integrity semantics end to end: PR#502's dependency_references check, the create/update dangling-id behavior, and pm-2ler's active-vs-legacy split all read what this layer writes — coordinate with pm-2ler. S4 typed facade re-pointing + SDK reference docs/tests (~60m) — swing PmClient methods off generic runAction dispatch onto the primitives; each result must match the equivalent runAction shape (semantics oracle, pm-usfg 07-06 note). Order: S1 first (widest coverage per line moved), then S3 (integrity leverage), S2, S4 last."
   "2026-07-12T08:44:00.803Z",codex-root,"Execution rule from user escalation (23rd recurrence): this active delivery lane must not stop at partial implementation, local verification, commit, PR creation, pending checks, or pending bot review. Continue through the requested green reviewed PR, merge, merged-head/release/Sentry/telemetry proof, tracker closure, claim release, and return to main; only a genuine exhausted blocker permits stopping."
-files[7]{path,scope,note}:
+files[9]{path,scope,note}:
   src/cli/commands/comments.ts,project,comments presentation consumes SDK kernel
   src/cli/commands/learnings.ts,project,learnings presentation consumes SDK kernel
   src/cli/commands/notes.ts,project,notes presentation consumes SDK kernel
+  src/core/shared/numeric-parsers.ts,project,dependency-neutral numeric parser shared by SDK and CLI
   src/sdk/annotations.ts,project,public annotation domain kernel
+  src/sdk/cli-contracts/tool-schema.ts,project,tool-action security boundary excludes arbitrary host file reads
   src/sdk/index.ts,project,SDK barrel exports annotation/link primitives
   src/sdk/runtime.ts,project,SDK runtime exposes annotation/link primitives
   tests/unit/sdk/sdk-context-primitives.spec.ts,project,SDK annotation/link primitive coverage
-tests[2]:
+tests[3]:
   - command: node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts
+    scope: project
+    timeout_seconds: 180
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/notes-learnings-command.spec.ts
     scope: project
     timeout_seconds: 180
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts tests/unit/commands/close-command.spec.ts

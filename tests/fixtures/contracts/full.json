@@ -21771,21 +21771,14 @@
             "type": "string"
           },
           "delete": {
-            "description": "For comments action, delete the comment at this 1-based index.",
+            "description": "For comments, notes, and learnings actions, delete the annotation at this 1-based index.",
             "minimum": 1,
             "type": "integer"
           },
           "edit": {
-            "description": "For comments action, replace the comment at this 1-based index with the supplied replacement text (add/stdin/file).",
+            "description": "For comments, notes, and learnings actions, replace the annotation at this 1-based index with supplied replacement text.",
             "minimum": 1,
             "type": "integer"
-          },
-          "file": {
-            "description": "Path to input file for actions that read payload text, such as comments --file.",
-            "examples": [
-              "notes/comment.md"
-            ],
-            "type": "string"
           },
           "force": {
             "description": "Force.",
@@ -21846,7 +21839,7 @@
             "type": "boolean"
           },
           "stdin": {
-            "description": "When true for comments action, read comment text from piped stdin (supports multiline markdown).",
+            "description": "For comments, notes, and learnings actions, read annotation text from piped stdin (supports multiline markdown).",
             "type": "boolean"
           },
           "text": {
@@ -21989,23 +21982,6 @@
               "id,title,priority,deadline"
             ],
             "type": "string"
-          },
-          "file": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              }
-            ],
-            "description": "File link to attach while creating or materializing a Plan.",
-            "examples": [
-              "path=src/cli.ts,note=implementation surface"
-            ]
           },
           "force": {
             "description": "Force.",
@@ -22368,21 +22344,14 @@
             "type": "string"
           },
           "delete": {
-            "description": "For comments action, delete the comment at this 1-based index.",
+            "description": "For comments, notes, and learnings actions, delete the annotation at this 1-based index.",
             "minimum": 1,
             "type": "integer"
           },
           "edit": {
-            "description": "For comments action, replace the comment at this 1-based index with the supplied replacement text (add/stdin/file).",
+            "description": "For comments, notes, and learnings actions, replace the annotation at this 1-based index with supplied replacement text.",
             "minimum": 1,
             "type": "integer"
-          },
-          "file": {
-            "description": "Path to input file for actions that read payload text, such as comments --file.",
-            "examples": [
-              "notes/comment.md"
-            ],
-            "type": "string"
           },
           "force": {
             "description": "Force.",
@@ -22443,7 +22412,7 @@
             "type": "boolean"
           },
           "stdin": {
-            "description": "When true for comments action, read comment text from piped stdin (supports multiline markdown).",
+            "description": "For comments, notes, and learnings actions, read annotation text from piped stdin (supports multiline markdown).",
             "type": "boolean"
           },
           "text": {
@@ -22495,17 +22464,17 @@
             "type": "string"
           },
           "delete": {
-            "description": "For comments action, delete the comment at this 1-based index.",
+            "description": "For comments, notes, and learnings actions, delete the annotation at this 1-based index.",
             "minimum": 1,
             "type": "integer"
           },
           "edit": {
-            "description": "For comments action, replace the comment at this 1-based index with the supplied replacement text (add/stdin/file).",
+            "description": "For comments, notes, and learnings actions, replace the annotation at this 1-based index with supplied replacement text.",
             "minimum": 1,
             "type": "integer"
           },
           "file": {
-            "description": "Path to input file for actions that read payload text, such as comments --file.",
+            "description": "CLI-only path to an input file for commands that read payload text; tool actions exclude host file access.",
             "examples": [
               "notes/comment.md"
             ],
@@ -22570,7 +22539,7 @@
             "type": "boolean"
           },
           "stdin": {
-            "description": "When true for comments action, read comment text from piped stdin (supports multiline markdown).",
+            "description": "For comments, notes, and learnings actions, read annotation text from piped stdin (supports multiline markdown).",
             "type": "boolean"
           },
           "text": {

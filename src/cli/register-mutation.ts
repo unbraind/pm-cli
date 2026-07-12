@@ -1675,7 +1675,13 @@ async function runNotesAction(
     },
     globalOptions,
   );
-  if (typeof add === "string" || options.stdin === true || typeof options.file === "string" || options.edit !== undefined || options.delete !== undefined) {
+  if (
+    typeof add === "string" ||
+    options.stdin === true ||
+    typeof options.file === "string" ||
+    typeof options.edit === "number" ||
+    typeof options.delete === "number"
+  ) {
     await invalidateSearchCachesForMutation(globalOptions, result);
   }
   printResult(result, globalOptions);
@@ -1712,7 +1718,13 @@ async function runLearningsAction(
     },
     globalOptions,
   );
-  if (typeof add === "string" || options.stdin === true || typeof options.file === "string" || options.edit !== undefined || options.delete !== undefined) {
+  if (
+    typeof add === "string" ||
+    options.stdin === true ||
+    typeof options.file === "string" ||
+    typeof options.edit === "number" ||
+    typeof options.delete === "number"
+  ) {
     await invalidateSearchCachesForMutation(globalOptions, result);
   }
   printResult(result, globalOptions);
@@ -3025,14 +3037,24 @@ export function registerMutationCommands(program: Command): void {
       "--add <text>",
       "Add one note entry (plain text fallback, text=<value>, markdown pairs, or - for stdin; CSV-like key fragments are preserved as plain text unless text is explicit)",
     )
-    .option("--stdin", "Read note text from stdin (supports multiline markdown)")
-    .option("--file <path>", "Read note text from file (supports multiline markdown)")
+    .option(
+      "--stdin",
+      "Read note text from stdin (supports multiline markdown)",
+    )
+    .option(
+      "--file <path>",
+      "Read note text from file (supports multiline markdown)",
+    )
     .option(
       "--edit <index>",
       "Replace the note at 1-based <index> (replacement text from positional [text], --add, --stdin, or --file)",
       parsePositiveIntOption("--edit"),
     )
-    .option("--delete <index>", "Delete the note at 1-based <index>", parsePositiveIntOption("--delete"))
+    .option(
+      "--delete <index>",
+      "Delete the note at 1-based <index>",
+      parsePositiveIntOption("--delete"),
+    )
     .option("--limit <n>", "Return only latest n notes")
     .option(
       "--author [value]",
@@ -3062,14 +3084,24 @@ export function registerMutationCommands(program: Command): void {
       "--add <text>",
       "Add one learning entry (plain text fallback, text=<value>, markdown pairs, or - for stdin; CSV-like key fragments are preserved as plain text unless text is explicit)",
     )
-    .option("--stdin", "Read learning text from stdin (supports multiline markdown)")
-    .option("--file <path>", "Read learning text from file (supports multiline markdown)")
+    .option(
+      "--stdin",
+      "Read learning text from stdin (supports multiline markdown)",
+    )
+    .option(
+      "--file <path>",
+      "Read learning text from file (supports multiline markdown)",
+    )
     .option(
       "--edit <index>",
       "Replace the learning at 1-based <index> (replacement text from positional [text], --add, --stdin, or --file)",
       parsePositiveIntOption("--edit"),
     )
-    .option("--delete <index>", "Delete the learning at 1-based <index>", parsePositiveIntOption("--delete"))
+    .option(
+      "--delete <index>",
+      "Delete the learning at 1-based <index>",
+      parsePositiveIntOption("--delete"),
+    )
     .option("--limit <n>", "Return only latest n learnings")
     .option(
       "--author [value]",

@@ -7,6 +7,10 @@ import { runLearnings } from "../../../src/cli/commands/learnings.js";
 import { runNotes } from "../../../src/cli/commands/notes.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import {
+  isErrnoError,
+  resolveAnnotationInput,
+} from "../../../src/sdk/annotations.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
@@ -29,6 +33,37 @@ const TARGETS: LogCommandTarget[] = [
     run: runLearnings,
   },
 ];
+
+describe("annotation source resolution", () => {
+  it("validates edit and delete indices before reading replacement sources", async () => {
+    for (const index of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      await expect(resolveAnnotationInput({ edit: index, add: "replacement" }, "note")).rejects.toThrow(
+        "--edit must be a positive integer",
+      );
+      await expect(resolveAnnotationInput({ delete: index }, "note")).rejects.toThrow(
+        "--delete must be a positive integer",
+      );
+    }
+  });
+
+  it("rejects mutually exclusive operations and text sources without consuming stdin", async () => {
+    await expect(resolveAnnotationInput({ edit: 1, delete: 1 }, "note")).rejects.toThrow(
+      "Specify only one of --edit or --delete",
+    );
+    await expect(resolveAnnotationInput({ delete: 1, stdin: true }, "note")).rejects.toThrow(
+      "--delete cannot be combined with replacement text",
+    );
+    await expect(resolveAnnotationInput({ add: "inline", file: "entry.md" }, "note")).rejects.toThrow(
+      "using only one input source",
+    );
+  });
+
+  it("classifies errno-shaped failures without assuming every object is an errno", () => {
+    expect(isErrnoError({ code: "ENOENT" })).toBe(true);
+    expect(isErrnoError(new Error("plain failure"))).toBe(false);
+    expect(isErrnoError(null)).toBe(false);
+  });
+});
 
 function createTask(context: TempPmContext, title: string): string {
   return createTestItemId(context, {

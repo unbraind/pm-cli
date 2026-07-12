@@ -10,6 +10,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { createStdinTokenResolver } from "../../core/item/parse.js";
 import type { Comment } from "../../types/index.js";
 import {
+  isErrnoError,
   parseAnnotationTextInput,
   runAnnotationCommand,
 } from "../../sdk/annotations.js";
@@ -63,10 +64,6 @@ interface ResolvedCommentInput {
   value?: string;
   emptyFlag?: string;
   index?: number;
-}
-
-function isErrnoError(error: unknown): error is NodeJS.ErrnoException {
-  return typeof error === "object" && error !== null && "code" in error;
 }
 
 async function resolveCommentTextSource(

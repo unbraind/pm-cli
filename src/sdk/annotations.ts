@@ -11,6 +11,7 @@ import { createStdinTokenResolver, parseCsvKv } from "../core/item/parse.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { parseLimit } from "../core/shared/numeric-parsers.js";
 import { nowIso } from "../core/shared/time.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import {
@@ -138,15 +139,6 @@ export function readAnnotationEntries<TEntry>(
   return Array.isArray(value) ? (value as TEntry[]) : [];
 }
 
-function parseAnnotationLimit(raw: string | undefined): number | undefined {
-  if (raw === undefined) return undefined;
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new PmCliError("--limit must be a non-negative number", EXIT_CODE.USAGE);
-  }
-  return Math.floor(parsed);
-}
-
 /** Implements parse annotation text input for the public runtime surface of this module. */
 export function parseAnnotationTextInput(
   raw: string,
@@ -183,14 +175,17 @@ export function parseAnnotationTextInput(
   }
 }
 
-function isErrnoError(error: unknown): error is NodeJS.ErrnoException {
+/** Returns whether an unknown file-system failure exposes a Node errno code. */
+export function isErrnoError(error: unknown): error is NodeJS.ErrnoException {
   return typeof error === "object" && error !== null && "code" in error;
 }
 
 async function resolveAnnotationTextSource(
   options: AnnotationSourceOptions,
   noun: string,
-): Promise<{ value: string; rawValue?: string; emptyFlag: string } | undefined> {
+): Promise<
+  { value: string; rawValue?: string; emptyFlag: string } | undefined
+> {
   const sourceCount =
     Number(options.add !== undefined) +
     Number(options.stdin === true) +
@@ -224,10 +219,16 @@ async function resolveAnnotationTextSource(
     return { value: await readFile(filePath, "utf8"), emptyFlag: "--file" };
   } catch (error: unknown) {
     if (isErrnoError(error) && error.code === "ENOENT") {
-      throw new PmCliError(`--file path not found: ${filePath}`, EXIT_CODE.USAGE);
+      throw new PmCliError(
+        `--file path not found: ${filePath}`,
+        EXIT_CODE.USAGE,
+      );
     }
     const detail = error instanceof Error ? error.message : String(error);
-    throw new PmCliError(`Failed to read --file path "${filePath}": ${detail}`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Failed to read --file path "${filePath}": ${detail}`,
+      EXIT_CODE.USAGE,
+    );
   }
 }
 
@@ -237,15 +238,37 @@ export async function resolveAnnotationInput(
   noun: string,
 ): Promise<AnnotationInput> {
   if (options.edit !== undefined && options.delete !== undefined) {
-    throw new PmCliError("Specify only one of --edit or --delete", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Specify only one of --edit or --delete",
+      EXIT_CODE.USAGE,
+    );
   }
-  const resolved = await resolveAnnotationTextSource(options, noun);
   if (options.delete !== undefined) {
-    if (resolved) {
-      throw new PmCliError("--delete cannot be combined with replacement text", EXIT_CODE.USAGE);
+    if (
+      options.add !== undefined ||
+      options.stdin === true ||
+      typeof options.file === "string"
+    ) {
+      throw new PmCliError(
+        "--delete cannot be combined with replacement text",
+        EXIT_CODE.USAGE,
+      );
+    }
+    if (!Number.isInteger(options.delete) || options.delete < 1) {
+      throw new PmCliError(
+        "--delete must be a positive integer",
+        EXIT_CODE.USAGE,
+      );
     }
     return { mode: "delete", index: options.delete };
   }
+  if (
+    options.edit !== undefined &&
+    (!Number.isInteger(options.edit) || options.edit < 1)
+  ) {
+    throw new PmCliError("--edit must be a positive integer", EXIT_CODE.USAGE);
+  }
+  const resolved = await resolveAnnotationTextSource(options, noun);
   if (options.edit !== undefined) {
     if (!resolved) {
       throw new PmCliError(
@@ -336,7 +359,7 @@ export async function runAnnotationCommand<
     settings,
     getActiveExtensionRegistrations(),
   );
-  const limit = parseAnnotationLimit(options.limit);
+  const limit = parseLimit(options.limit);
 
   if (config.input.mode === "list") {
     const located = await locateItem(
