@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   _testOnlyItemFormat,
   canonicalDocument,
-  normalizeFrontMatter,
+  normalizeItemMetadata,
   serializeItemDocument,
 } from "../../../../src/core/item/item-format.js";
 
@@ -42,11 +42,11 @@ describe("item-format internal normalization helpers", () => {
   });
 
   it("normalizes type options and body edge cases", () => {
-    const knownFrontMatterKeys = _testOnlyItemFormat.buildKnownFrontMatterKeys({
+    const knownItemMetadataKeys = _testOnlyItemFormat.buildKnownItemMetadataKeys({
       unknownFieldPolicy: "allow",
       extensionFieldNames: new Set(["custom_flag"]),
     } as never);
-    expect(knownFrontMatterKeys.has("custom_flag")).toBe(true);
+    expect(knownItemMetadataKeys.has("custom_flag")).toBe(true);
     expect(_testOnlyItemFormat.normalizeTypeOptions(undefined)).toBeUndefined();
     expect(_testOnlyItemFormat.normalizeTypeOptions({ " b ": " two ", a: " one " } as never)).toEqual({
       a: "one",
@@ -343,7 +343,7 @@ describe("item-format internal normalization helpers", () => {
       unknown_runtime_field: "kept",
     };
     expect(
-      normalizeFrontMatter(metadata as never, {
+      normalizeItemMetadata(metadata as never, {
         schema: { unknown_field_policy: "warn" } as never,
         onWarning: (warning) => warnings.push(warning),
       }),
@@ -375,7 +375,7 @@ describe("item-format internal normalization helpers", () => {
     expect(warnings).toEqual(["item_unknown_schema_fields:unknown_runtime_field"]);
   });
 
-  it("skips unsafe and malformed front matter extension fields", () => {
+  it("skips unsafe and malformed item metadata extension fields", () => {
     const metadata = {
       id: "pm-1",
       title: "Title",
@@ -395,7 +395,7 @@ describe("item-format internal normalization helpers", () => {
       value: "blocked",
     });
 
-    const normalized = normalizeFrontMatter(metadata as never, {
+    const normalized = normalizeItemMetadata(metadata as never, {
       schema: { unknown_field_policy: "allow" } as never,
     });
 

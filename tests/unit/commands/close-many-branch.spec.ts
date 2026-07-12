@@ -39,7 +39,7 @@ describe("close-many branch coverage", () => {
       resolveItemTypeRegistry: vi.fn(() => ({ type_to_folder: new Map<string, string>() })),
     }));
     vi.doMock("../../../src/core/store/item-store.js", () => ({
-      listAllFrontMatterLight: vi.fn(async () => []),
+      listAllItemMetadataLight: vi.fn(async () => []),
     }));
     vi.doMock("../../../src/core/item/status.js", () => ({
       isTerminalStatus: vi.fn((status: string, registry: { terminal_statuses: Set<string> }) => registry.terminal_statuses.has(status)),

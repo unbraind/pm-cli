@@ -22,7 +22,7 @@ import type {
   ContextDepth,
   ContextSectionName,
   ContextSettings,
-  ItemFrontMatter,
+  ItemMetadata,
   ItemStatus,
   PmSettings,
 } from "../../types/index.js";
@@ -701,7 +701,7 @@ function isBlockedStatus(
 }
 
 // Projection flags belong to list/calendar/activity output shaping and must not
-// leak into runContext's downstream calls, which need full ItemFrontMatter rows.
+// leak into runContext's downstream calls, which need full ItemMetadata rows.
 // --parent is a context-level subtree scope computed here transitively, so it
 // must not reach runList (whose --parent matches direct children only).
 const LIST_PROJECTION_FLAGS = [
@@ -735,7 +735,7 @@ function stripListProjectionFlags(
  * sibling read commands (e.g. `pm next`) can apply the same subtree scoping.
  */
 export function collectSubtreeIds(
-  corpus: ItemFrontMatter[],
+  corpus: ItemMetadata[],
   parentId: string,
 ): { ids: Set<string>; found: boolean } {
   const target = parentId.trim().toLowerCase();
@@ -874,8 +874,8 @@ function normalizedParentId(value: unknown): string | null {
  * `pm next`) recommend work in the exact same sequence as `pm context`.
  */
 export function compareCriticalItems(
-  left: ItemFrontMatter,
-  right: ItemFrontMatter,
+  left: ItemMetadata,
+  right: ItemMetadata,
   statusRegistry: RuntimeStatusRegistry,
 ): number {
   const byStatus =
@@ -921,7 +921,7 @@ function resolveDeadlinePressure(deadline: unknown, nowMs: number): number {
   return deadlineDays <= 0 ? 1 : 1 / (1 + deadlineDays / 30);
 }
 
-function resolveRiskPressure(risk: ItemFrontMatter["risk"]): number {
+function resolveRiskPressure(risk: ItemMetadata["risk"]): number {
   const normalized =
     typeof risk === "string" ? risk.trim().toLowerCase() : undefined;
   if (normalized === "critical" || normalized === "high") return 1;
@@ -930,7 +930,7 @@ function resolveRiskPressure(risk: ItemFrontMatter["risk"]): number {
 }
 
 function buildItemContextRelevanceCandidate(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
   params: {
     statusRegistry: RuntimeStatusRegistry;
     nowMs: number;
@@ -939,7 +939,7 @@ function buildItemContextRelevanceCandidate(
     recencyDenominator: number;
     itemCount: number;
   },
-): ContextRelevanceCandidate<ItemFrontMatter> {
+): ContextRelevanceCandidate<ItemMetadata> {
   const assignedToAuthor =
     params.normalizedAuthor !== undefined &&
     typeof item.assignee === "string" &&
@@ -977,11 +977,11 @@ function buildItemContextRelevanceCandidate(
 
 /** Derives the metadata signals currently available on compact item rows. More expensive history/index/semantic signals can be added by an extension scorer without changing the public candidate contract. */
 export function buildItemContextRelevanceCandidates(
-  items: readonly ItemFrontMatter[],
+  items: readonly ItemMetadata[],
   statusRegistry: RuntimeStatusRegistry,
   now: string,
   author: string | undefined,
-): ContextRelevanceCandidate<ItemFrontMatter>[] {
+): ContextRelevanceCandidate<ItemMetadata>[] {
   const recencyOrder = [...items].sort(
     (left, right) =>
       compareTimestampStrings(
@@ -1030,9 +1030,9 @@ function completionPct(closed: number, total: number): number {
 
 /** Indexes items by their parent id, yielding a parent→direct-children map used by the hierarchy/progress rollups and by focus-row child completion. Items without a parent are skipped. Exported so sibling read commands reuse the same index. */
 export function buildChildrenByParent(
-  allItems: ItemFrontMatter[],
-): Map<string, ItemFrontMatter[]> {
-  const childrenByParent = new Map<string, ItemFrontMatter[]>();
+  allItems: ItemMetadata[],
+): Map<string, ItemMetadata[]> {
+  const childrenByParent = new Map<string, ItemMetadata[]>();
   for (const item of allItems) {
     const parent = normalizedParentId(item.parent);
     if (!parent) continue;
@@ -1050,9 +1050,9 @@ export function buildChildrenByParent(
  * so sibling read commands (e.g. `pm next`) emit identically-shaped focus rows.
  */
 export function toContextFocusItem(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
   statusRegistry?: RuntimeStatusRegistry,
-  childrenByParent?: Map<string, ItemFrontMatter[]>,
+  childrenByParent?: Map<string, ItemMetadata[]>,
 ): ContextFocusItem {
   const focus: ContextFocusItem = {
     id: item.id,
@@ -1133,12 +1133,12 @@ function filterTerminalCalendarEvents(
 // ---------------------------------------------------------------------------
 
 function buildHierarchy(
-  allItems: ItemFrontMatter[],
-  activeItems: ItemFrontMatter[],
+  allItems: ItemMetadata[],
+  activeItems: ItemMetadata[],
   statusRegistry: RuntimeStatusRegistry,
   limit: number,
 ): HierarchyNode[] {
-  const itemMap = new Map<string, ItemFrontMatter>();
+  const itemMap = new Map<string, ItemMetadata>();
   for (const item of allItems) {
     itemMap.set(item.id, item);
   }
@@ -1215,9 +1215,9 @@ function buildHierarchy(
 
 function collectDescendants(
   parentId: string,
-  childrenByParent: Map<string, ItemFrontMatter[]>,
-): ItemFrontMatter[] {
-  const result: ItemFrontMatter[] = [];
+  childrenByParent: Map<string, ItemMetadata[]>,
+): ItemMetadata[] {
+  const result: ItemMetadata[] = [];
   const stack = [parentId];
   const visited = new Set<string>();
   while (stack.length > 0) {
@@ -1285,12 +1285,12 @@ async function buildActivity(
 }
 
 function buildProgress(
-  allItems: ItemFrontMatter[],
-  activeItems: ItemFrontMatter[],
+  allItems: ItemMetadata[],
+  activeItems: ItemMetadata[],
   statusRegistry: RuntimeStatusRegistry,
   limit: number,
 ): ProgressEntry[] {
-  const childrenByParent = new Map<string, ItemFrontMatter[]>();
+  const childrenByParent = new Map<string, ItemMetadata[]>();
   for (const item of allItems) {
     if (!item.parent) continue;
     const children = childrenByParent.get(item.parent) ?? [];
@@ -1339,8 +1339,8 @@ function buildProgress(
 }
 
 function buildBlockers(
-  blockedItems: ItemFrontMatter[],
-  itemMap: Map<string, ItemFrontMatter>,
+  blockedItems: ItemMetadata[],
+  itemMap: Map<string, ItemMetadata>,
   limit: number,
 ): BlockerEntry[] {
   return blockedItems.slice(0, limit).map((item) => {
@@ -1360,7 +1360,7 @@ function buildBlockers(
 }
 
 function buildHotFiles(
-  activeItems: ItemFrontMatter[],
+  activeItems: ItemMetadata[],
   limit: number,
 ): HotFile[] {
   const fileMap = new Map<string, Set<string>>();
@@ -1383,11 +1383,11 @@ function buildHotFiles(
 }
 
 function buildWorkload(
-  activeItems: ItemFrontMatter[],
+  activeItems: ItemMetadata[],
   statusRegistry: RuntimeStatusRegistry,
   limit: number,
 ): WorkloadEntry[] {
-  const groups = new Map<string | null, ItemFrontMatter[]>();
+  const groups = new Map<string | null, ItemMetadata[]>();
   for (const item of activeItems) {
     const key = item.assignee ?? null;
     const existing = groups.get(key) ?? [];
@@ -1409,7 +1409,7 @@ function buildWorkload(
 }
 
 function buildStaleness(
-  allNonTerminal: ItemFrontMatter[],
+  allNonTerminal: ItemMetadata[],
   staleThresholdDays: number,
   now: string,
   limit: number,
@@ -1434,9 +1434,9 @@ function buildStaleness(
 }
 
 function buildRecentlyCreated(
-  allNonTerminal: ItemFrontMatter[],
+  allNonTerminal: ItemMetadata[],
   statusRegistry: RuntimeStatusRegistry,
-  childrenByParent: Map<string, ItemFrontMatter[]>,
+  childrenByParent: Map<string, ItemMetadata[]>,
   limit: number,
 ): RecentContextItem[] {
   return allNonTerminal
@@ -1455,9 +1455,9 @@ function buildRecentlyCreated(
 }
 
 function buildUnparented(
-  allNonTerminal: ItemFrontMatter[],
+  allNonTerminal: ItemMetadata[],
   statusRegistry: RuntimeStatusRegistry,
-  childrenByParent: Map<string, ItemFrontMatter[]>,
+  childrenByParent: Map<string, ItemMetadata[]>,
   limit: number,
 ): ContextFocusItem[] {
   return allNonTerminal
@@ -1470,7 +1470,7 @@ function buildUnparented(
     .map((item) => toContextFocusItem(item, statusRegistry, childrenByParent));
 }
 
-function buildTestHealth(activeItems: ItemFrontMatter[]): TestHealthSummary {
+function buildTestHealth(activeItems: ItemMetadata[]): TestHealthSummary {
   let itemsWithTests = 0;
   let itemsWithRecentRuns = 0;
   let passed = 0;
@@ -1878,20 +1878,20 @@ interface ContextRuntime {
 
 interface ContextCorpus {
   listed: Awaited<ReturnType<typeof runList>>;
-  listedFrontMatter: ItemFrontMatter[];
-  allItems: ItemFrontMatter[];
-  fullCorpus: ItemFrontMatter[];
+  listedItemMetadata: ItemMetadata[];
+  allItems: ItemMetadata[];
+  fullCorpus: ItemMetadata[];
   subtreeIds: Set<string> | undefined;
 }
 
 interface ContextFocusGroups {
-  activeItems: ItemFrontMatter[];
-  blockedItems: ItemFrontMatter[];
+  activeItems: ItemMetadata[];
+  blockedItems: ItemMetadata[];
   highLevel: ContextFocusItem[];
   lowLevel: ContextFocusItem[];
   blockedFallback: ContextFocusItem[];
   blockedFallbackUsed: boolean;
-  ranking: ContextRelevanceReport<ItemFrontMatter>;
+  ranking: ContextRelevanceReport<ItemMetadata>;
   pageExtras: {
     has_more?: boolean;
     next_cursor?: string;
@@ -1984,8 +1984,8 @@ async function loadContextCorpus(
     { excludeTerminal: true },
   );
   const listed = await runList(undefined, listOptions, global);
-  let listedFrontMatter = listed.items as ItemFrontMatter[];
-  let allItems: ItemFrontMatter[] = listedFrontMatter;
+  let listedItemMetadata = listed.items as ItemMetadata[];
+  let allItems: ItemMetadata[] = listedItemMetadata;
   if (needsAllItems || runtime.parentScope !== undefined) {
     const allListed = await runList(
       undefined,
@@ -1994,24 +1994,24 @@ async function loadContextCorpus(
       }),
       global,
     );
-    allItems = allListed.items as ItemFrontMatter[];
+    allItems = allListed.items as ItemMetadata[];
   }
   const fullCorpus = allItems;
   const subtreeIds = resolveContextSubtreeIds(runtime.parentScope, fullCorpus);
   if (subtreeIds) {
-    listedFrontMatter = listedFrontMatter.filter((item) =>
+    listedItemMetadata = listedItemMetadata.filter((item) =>
       subtreeIds.has(item.id.trim().toLowerCase()),
     );
     allItems = allItems.filter((item) =>
       subtreeIds.has(item.id.trim().toLowerCase()),
     );
   }
-  return { listed, listedFrontMatter, allItems, fullCorpus, subtreeIds };
+  return { listed, listedItemMetadata, allItems, fullCorpus, subtreeIds };
 }
 
 function resolveContextSubtreeIds(
   parentScope: string | undefined,
-  fullCorpus: ItemFrontMatter[],
+  fullCorpus: ItemMetadata[],
 ): Set<string> | undefined {
   if (parentScope === undefined) {
     return undefined;
@@ -2027,8 +2027,8 @@ function resolveContextSubtreeIds(
 }
 
 async function resolveContextFocusGroups(
-  listedFrontMatter: ItemFrontMatter[],
-  allItems: ItemFrontMatter[],
+  listedItemMetadata: ItemMetadata[],
+  allItems: ItemMetadata[],
   statusRegistry: RuntimeStatusRegistry,
   sectionsIncluded: ContextSectionName[],
   limit: number,
@@ -2038,7 +2038,7 @@ async function resolveContextFocusGroups(
   cursorFingerprint: string,
   useBoundedPage: boolean,
 ): Promise<ContextFocusGroups> {
-  const structural = [...listedFrontMatter].sort((left, right) =>
+  const structural = [...listedItemMetadata].sort((left, right) =>
     compareCriticalItems(left, right, statusRegistry),
   );
   const ranking = await scoreContextCandidatesWithActiveExtensions(
@@ -2180,7 +2180,7 @@ async function buildContextAgenda(
 }
 
 function countContextStatus(
-  items: ItemFrontMatter[],
+  items: ItemMetadata[],
   status: string | undefined,
   statusRegistry: RuntimeStatusRegistry,
 ): number {
@@ -2193,8 +2193,8 @@ function countContextStatus(
 
 async function buildOptionalContextSections(params: {
   runtime: ContextRuntime;
-  allItems: ItemFrontMatter[];
-  fullCorpus: ItemFrontMatter[];
+  allItems: ItemMetadata[];
+  fullCorpus: ItemMetadata[];
   focusGroups: ContextFocusGroups;
   now: string;
   global: GlobalOptions;
@@ -2270,7 +2270,7 @@ async function buildOptionalContextSections(params: {
 
 function buildContextSummaryExtras(
   needsAllItems: boolean,
-  allItems: ItemFrontMatter[],
+  allItems: ItemMetadata[],
   statusRegistry: RuntimeStatusRegistry,
 ): Pick<ContextSummary, "total_items" | "closed" | "canceled"> {
   if (!needsAllItems) {
@@ -2334,8 +2334,8 @@ function applyContextFocusProjection(
 
 function maybeAttachEmptyContextSuggestions(
   result: ContextResult,
-  activeItems: ItemFrontMatter[],
-  blockedItems: ItemFrontMatter[],
+  activeItems: ItemMetadata[],
+  blockedItems: ItemMetadata[],
 ): void {
   if (
     activeItems.length > 0 ||
@@ -2367,7 +2367,7 @@ export async function runContext(
     ),
   };
   const focusGroups = await resolveContextFocusGroups(
-    corpus.listedFrontMatter,
+    corpus.listedItemMetadata,
     corpus.allItems,
     runtime.statusRegistry,
     runtime.sectionsIncluded,

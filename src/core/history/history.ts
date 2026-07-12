@@ -4,7 +4,7 @@
  * Implements append-only history and replay behavior for History.
  */
 import jsonPatch from "fast-json-patch";
-import { FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
+import { ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { runActiveServiceOverride } from "../extensions/index.js";
 import { appendLineAtomic } from "../fs/fs-utils.js";
 import { canonicalDocument } from "../item/item-format.js";
@@ -112,12 +112,12 @@ function canonicalHashDocument(document: ItemDocument): {
     };
   }
   const canonical = canonicalDocument(document);
-  const orderedFrontMatter = orderObject(
+  const orderedMetadata = orderObject(
     toItemRecord(canonical.metadata),
-    FRONT_MATTER_KEY_ORDER,
+    ITEM_METADATA_KEY_ORDER,
   );
   return {
-    front_matter: orderedFrontMatter,
+    front_matter: orderedMetadata,
     body: canonical.body,
   };
 }
@@ -137,7 +137,7 @@ function canonicalPatchDocument(document: ItemDocument): {
   const canonical = canonicalDocument(document);
   const orderedMetadata = orderObject(
     toItemRecord(canonical.metadata),
-    FRONT_MATTER_KEY_ORDER,
+    ITEM_METADATA_KEY_ORDER,
   );
   return {
     metadata: orderedMetadata,

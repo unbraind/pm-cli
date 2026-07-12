@@ -3,7 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { scanHistoryDrift } from "../../../../src/core/history/drift-scan.js";
 import { getHistoryPath } from "../../../../src/core/store/paths.js";
-import { listAllFrontMatterWithBody } from "../../../../src/core/store/item-store.js";
+import { listAllItemMetadataWithBody } from "../../../../src/core/store/item-store.js";
 import { withTempPmPath, type TempPmContext } from "../../../helpers/withTempPmPath.js";
 import { createTestItem } from "../../../helpers/itemFactory.js";
 
@@ -35,9 +35,9 @@ async function seedStaleMetadataMatchedCache(
   context: TempPmContext,
   title: string,
   mutateStream: (historyPath: string) => Promise<void>,
-): Promise<{ createdId: string; items: Awaited<ReturnType<typeof listAllFrontMatterWithBody>> }> {
+): Promise<{ createdId: string; items: Awaited<ReturnType<typeof listAllItemMetadataWithBody>> }> {
   const created = createTestItem(context, { title });
-  const items = await listAllFrontMatterWithBody(context.pmPath);
+  const items = await listAllItemMetadataWithBody(context.pmPath);
   await scanHistoryDrift(context.pmPath, items);
   const cachePath = path.join(context.pmPath, DRIFT_CACHE_RELATIVE);
   const cache = await readDriftCache(context.pmPath);
@@ -79,7 +79,7 @@ describe("core/history/drift-scan", () => {
     await withTempPmPath(async (context) => {
       createTestItem(context, { title: "Alpha" });
       createTestItem(context, { title: "Beta" });
-      const items = await listAllFrontMatterWithBody(context.pmPath);
+      const items = await listAllItemMetadataWithBody(context.pmPath);
 
       const first = await scanHistoryDrift(context.pmPath, items);
       expect(first.driftedItems).toEqual([]);
@@ -100,7 +100,7 @@ describe("core/history/drift-scan", () => {
   it("detects a hash mismatch when the item content diverges from its history", async () => {
     await withTempPmPath(async (context) => {
       const created = createTestItem(context, { title: "Gamma" });
-      const items = await listAllFrontMatterWithBody(context.pmPath);
+      const items = await listAllItemMetadataWithBody(context.pmPath);
       const tampered = items.map((item) =>
         item.id === created.id ? { ...item, body: `${item.body} tampered` } : item,
       );
@@ -116,7 +116,7 @@ describe("core/history/drift-scan", () => {
       const broken = createTestItem(context, { title: "Broken" });
       const unreadable = createTestItem(context, { title: "Unreadable" });
       const empty = createTestItem(context, { title: "Empty" });
-      const items = await listAllFrontMatterWithBody(context.pmPath);
+      const items = await listAllItemMetadataWithBody(context.pmPath);
 
       // Chain that does not replay from the empty document.
       await fs.writeFile(
@@ -153,7 +153,7 @@ describe("core/history/drift-scan", () => {
   it("invalidates a cached stream when ctime changes even if mtime and size do not", async () => {
     await withTempPmPath(async (context) => {
       const created = createTestItem(context, { title: "Ctime" });
-      const items = await listAllFrontMatterWithBody(context.pmPath);
+      const items = await listAllItemMetadataWithBody(context.pmPath);
       await scanHistoryDrift(context.pmPath, items); // populate cache (records ctime)
 
       // chmod updates the inode ctime without touching mtime or size, the exact
@@ -170,7 +170,7 @@ describe("core/history/drift-scan", () => {
   it("ignores corrupt or version-mismatched cache files and rescans from scratch", async () => {
     await withTempPmPath(async (context) => {
       createTestItem(context, { title: "Delta" });
-      const items = await listAllFrontMatterWithBody(context.pmPath);
+      const items = await listAllItemMetadataWithBody(context.pmPath);
       const cachePath = path.join(context.pmPath, DRIFT_CACHE_RELATIVE);
       await fs.mkdir(path.dirname(cachePath), { recursive: true });
 
@@ -191,7 +191,7 @@ describe("core/history/drift-scan", () => {
     await withTempPmPath(async (context) => {
       createTestItem(context, { title: "One" });
       createTestItem(context, { title: "Two" });
-      const items = await listAllFrontMatterWithBody(context.pmPath);
+      const items = await listAllItemMetadataWithBody(context.pmPath);
 
       await scanHistoryDrift(context.pmPath, items);
       expect(Object.keys((await readDriftCache(context.pmPath)).entries)).toHaveLength(2);

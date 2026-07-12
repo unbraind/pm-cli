@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../../../src/core/item/item-format.js";
+import { canonicalDocument, normalizeItemMetadata, serializeItemDocument } from "../../../../src/core/item/item-format.js";
 import { _testOnly as lockInternals, acquireLock } from "../../../../src/core/lock/lock.js";
 import {
   clearActiveExtensionHooks,
@@ -11,7 +11,7 @@ import {
 } from "../../../../src/core/extensions/index.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { getLockPath } from "../../../../src/core/store/paths.js";
-import type { ItemFrontMatter } from "../../../../src/types/index.js";
+import type { ItemMetadata } from "../../../../src/types/index.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 const FIXED_TS = "2026-02-21T00:00:00.000Z";
@@ -21,7 +21,7 @@ afterEach(() => {
   clearActiveExtensionHooks();
 });
 
-function baseFrontMatter(overrides: Partial<ItemFrontMatter> = {}): ItemFrontMatter {
+function baseItemMetadata(overrides: Partial<ItemMetadata> = {}): ItemMetadata {
   return {
     id: "pm-coverage",
     title: "Coverage",
@@ -38,8 +38,8 @@ function baseFrontMatter(overrides: Partial<ItemFrontMatter> = {}): ItemFrontMat
 
 describe("core/item/item-format additional branch coverage", () => {
   it("sorts dependency, log, test, and doc ties deterministically", () => {
-    const normalized = normalizeFrontMatter(
-      baseFrontMatter({
+    const normalized = normalizeItemMetadata(
+      baseItemMetadata({
         dependencies: [
           { id: "PM-DEP", kind: "related", created_at: FIXED_TS, author: "  zed " },
           { id: "pm-dep", kind: "blocks", created_at: FIXED_TS, author: " " },
@@ -79,8 +79,8 @@ describe("core/item/item-format additional branch coverage", () => {
   });
 
   it("uses note tie-break ordering for tests and docs with identical primary sort keys", () => {
-    const normalized = normalizeFrontMatter(
-      baseFrontMatter({
+    const normalized = normalizeItemMetadata(
+      baseItemMetadata({
         tests: [
           { scope: "project", path: "tests/unit/same.spec.ts", command: "pnpm test", timeout_seconds: 42, note: "z" },
           { scope: "project", path: "tests/unit/same.spec.ts", command: "pnpm test", timeout_seconds: 42, note: "a" },
@@ -97,8 +97,8 @@ describe("core/item/item-format additional branch coverage", () => {
   });
 
   it("covers dependency and linked-test comparator branch paths", () => {
-    const dependencySorted = normalizeFrontMatter(
-      baseFrontMatter({
+    const dependencySorted = normalizeItemMetadata(
+      baseItemMetadata({
         dependencies: [
           { id: "pm-newer", kind: "related", created_at: "2026-02-21T00:00:02.000Z", author: "steve" },
           { id: "pm-older", kind: "related", created_at: "2026-02-21T00:00:01.000Z", author: "steve" },
@@ -107,8 +107,8 @@ describe("core/item/item-format additional branch coverage", () => {
     );
     expect(dependencySorted.dependencies?.map((value) => value.id)).toEqual(["pm-older", "pm-newer"]);
 
-    const scopeSorted = normalizeFrontMatter(
-      baseFrontMatter({
+    const scopeSorted = normalizeItemMetadata(
+      baseItemMetadata({
         tests: [
           { scope: "project", path: "tests/unit/a.spec.ts", command: "pnpm test", timeout_seconds: 5, note: "a" },
           { scope: "global", path: "tests/unit/a.spec.ts", command: "pnpm test", timeout_seconds: 5, note: "a" },
@@ -117,8 +117,8 @@ describe("core/item/item-format additional branch coverage", () => {
     );
     expect(scopeSorted.tests?.map((value) => value.scope)).toEqual(["global", "project"]);
 
-    const pathSorted = normalizeFrontMatter(
-      baseFrontMatter({
+    const pathSorted = normalizeItemMetadata(
+      baseItemMetadata({
         tests: [
           { scope: "project", path: "tests/unit/b.spec.ts", command: "pnpm test", timeout_seconds: 5, note: "a" },
           { scope: "project", path: "tests/unit/a.spec.ts", command: "pnpm test", timeout_seconds: 5, note: "a" },
@@ -127,8 +127,8 @@ describe("core/item/item-format additional branch coverage", () => {
     );
     expect(pathSorted.tests?.map((value) => value.path)).toEqual(["tests/unit/a.spec.ts", "tests/unit/b.spec.ts"]);
 
-    const commandSorted = normalizeFrontMatter(
-      baseFrontMatter({
+    const commandSorted = normalizeItemMetadata(
+      baseItemMetadata({
         tests: [
           { scope: "project", path: "tests/unit/a.spec.ts", command: "z-run", timeout_seconds: 5, note: "a" },
           { scope: "project", path: "tests/unit/a.spec.ts", command: "a-run", timeout_seconds: 5, note: "a" },
@@ -137,8 +137,8 @@ describe("core/item/item-format additional branch coverage", () => {
     );
     expect(commandSorted.tests?.map((value) => value.command)).toEqual(["a-run", "z-run"]);
 
-    const timeoutSorted = normalizeFrontMatter(
-      baseFrontMatter({
+    const timeoutSorted = normalizeItemMetadata(
+      baseItemMetadata({
         tests: [
           { scope: "project", path: "tests/unit/a.spec.ts", command: "pnpm test", timeout_seconds: 20, note: "a" },
           { scope: "project", path: "tests/unit/a.spec.ts", command: "pnpm test", timeout_seconds: 10, note: "a" },
@@ -149,8 +149,8 @@ describe("core/item/item-format additional branch coverage", () => {
   });
 
   it("covers nullish fallback branches for optional test/doc sort keys", () => {
-    const normalized = normalizeFrontMatter(
-      baseFrontMatter({
+    const normalized = normalizeItemMetadata(
+      baseItemMetadata({
         tests: [
           { scope: "project", path: "tests/unit/fallback.spec.ts" },
           { scope: "project", path: "tests/unit/fallback.spec.ts", command: " ", timeout_seconds: undefined, note: " " },
@@ -173,7 +173,7 @@ describe("core/item/item-format additional branch coverage", () => {
   });
 
   it("covers optional-list empty paths and undefined body normalization", () => {
-    const normalized = normalizeFrontMatter(baseFrontMatter());
+    const normalized = normalizeItemMetadata(baseItemMetadata());
     expect(normalized.dependencies).toBeUndefined();
     expect(normalized.comments).toBeUndefined();
     expect(normalized.notes).toBeUndefined();
@@ -183,12 +183,12 @@ describe("core/item/item-format additional branch coverage", () => {
     expect(normalized.docs).toBeUndefined();
 
     const serialized = serializeItemDocument({
-      metadata: baseFrontMatter(),
+      metadata: baseItemMetadata(),
       body: undefined as unknown as string,
     });
     expect(serialized.endsWith("\n")).toBe(true);
     const canonical = canonicalDocument({
-      metadata: baseFrontMatter(),
+      metadata: baseItemMetadata(),
       body: undefined as unknown as string,
     });
     expect(canonical.body).toBe("");

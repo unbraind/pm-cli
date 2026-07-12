@@ -27,7 +27,7 @@ import {
 } from "../../core/item/status.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { ItemFrontMatter, ItemStatus } from "../../types/index.js";
+import type { ItemMetadata, ItemStatus } from "../../types/index.js";
 import { parseIntegerLimit } from "../shared-parsers.js";
 import {
   buildChildrenByParent,
@@ -223,7 +223,7 @@ function parseNextLimit(
 function toNextActionableItem(
   entry: ActionableEntry,
   statusRegistry: RuntimeStatusRegistry,
-  childrenByParent: Map<string, ItemFrontMatter[]>,
+  childrenByParent: Map<string, ItemMetadata[]>,
   rank: number,
 ): NextActionableItem {
   return {
@@ -363,8 +363,8 @@ function inProgressReadyCount(
 // rows are useful governance closeout context, but concrete leaf work should rank
 // ahead of them in the default agent loop.
 function hasCompletedDescendants(
-  item: ItemFrontMatter,
-  childrenByParent: Map<string, ItemFrontMatter[]>,
+  item: ItemMetadata,
+  childrenByParent: Map<string, ItemMetadata[]>,
 ): boolean {
   return (childrenByParent.get(item.id.trim().toLowerCase()) ?? []).length > 0;
 }
@@ -393,7 +393,7 @@ function nextListOptions(
 
 function rankNextReadyEntries(
   ready: ActionableEntry[],
-  childrenByParent: Map<string, ItemFrontMatter[]>,
+  childrenByParent: Map<string, ItemMetadata[]>,
   statusRegistry: RuntimeStatusRegistry,
 ): ActionableEntry[] {
   return [...ready].sort((left, right) => {
@@ -475,10 +475,10 @@ function buildNextTruncation(
 }
 
 function filterCandidatesByParentScope(
-  candidates: ItemFrontMatter[],
-  corpus: ItemFrontMatter[],
+  candidates: ItemMetadata[],
+  corpus: ItemMetadata[],
   parentScope: string,
-): ItemFrontMatter[] {
+): ItemMetadata[] {
   if (!parentScope) {
     return candidates;
   }
@@ -496,7 +496,7 @@ function filterCandidatesByParentScope(
 
 async function rankReadyEntriesWithRelevance(
   rankedReady: ActionableEntry[],
-  childrenByParent: Map<string, ItemFrontMatter[]>,
+  childrenByParent: Map<string, ItemMetadata[]>,
   statusRegistry: RuntimeStatusRegistry,
   now: string,
   callerAuthor: string | undefined,
@@ -504,7 +504,7 @@ async function rankReadyEntriesWithRelevance(
   projectedReady: ActionableEntry[];
   ranking: Awaited<
     ReturnType<
-      typeof scoreContextCandidatesWithActiveExtensions<ItemFrontMatter>
+      typeof scoreContextCandidatesWithActiveExtensions<ItemMetadata>
     >
   >;
   completedContainer: boolean;
@@ -571,11 +571,11 @@ export async function runNext(
     global,
   );
   const candidates = filterCandidatesByParentScope(
-    candidatesList.items as ItemFrontMatter[],
-    corpusList.items as ItemFrontMatter[],
+    candidatesList.items as ItemMetadata[],
+    corpusList.items as ItemMetadata[],
     parentScope,
   );
-  const corpus = corpusList.items as ItemFrontMatter[];
+  const corpus = corpusList.items as ItemMetadata[];
 
   const report = computeActionabilityReport(candidates, corpus, statusRegistry);
   const childrenByParent = buildChildrenByParent(corpus);

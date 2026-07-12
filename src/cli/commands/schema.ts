@@ -66,7 +66,7 @@ import {
   toDefaultFolder,
   type ResolvedItemTypeDefinition,
 } from "../../core/item/type-registry.js";
-import { listAllFrontMatterLight } from "../../core/store/item-store.js";
+import { listAllItemMetadataLight } from "../../core/store/item-store.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import type { PmSettings } from "../../types/index.js";
@@ -716,7 +716,7 @@ async function ensureInitialized(pmRoot: string): Promise<void> {
   }
 }
 
-/** Counts items whose resolved type matches `typeName` (case-insensitive). Uses the lightest existing read path (listAllFrontMatterLight skips the heavy collections cache). All items are counted — not just open ones — so the advisory warning surfaces every item the removed definition would orphan; the count is non-blocking. The caller passes its already-loaded `settings` so we never re-read settings.json from disk here. */
+/** Counts items whose resolved type matches `typeName` (case-insensitive). Uses the lightest existing read path (listAllItemMetadataLight skips the heavy collections cache). All items are counted — not just open ones — so the advisory warning surfaces every item the removed definition would orphan; the count is non-blocking. The caller passes its already-loaded `settings` so we never re-read settings.json from disk here. */
 async function countItemsUsingType(
   pmRoot: string,
   settings: PmSettings,
@@ -728,7 +728,7 @@ async function countItemsUsingType(
     getActiveExtensionRegistrations(),
   );
   const lowerName = typeName.trim().toLowerCase();
-  const items = await listAllFrontMatterLight(
+  const items = await listAllItemMetadataLight(
     pmRoot,
     settings.item_format,
     registry.type_to_folder,
@@ -741,7 +741,7 @@ async function countItemsUsingType(
   ).length;
 }
 
-/** Counts items currently set to the status whose id/aliases resolve to `statusId`. Uses listAllFrontMatterLight (the lightest read path). All items are counted regardless of lifecycle phase; the count is advisory only. The caller passes its already-loaded `settings` so we never re-read from disk. */
+/** Counts items currently set to the status whose id/aliases resolve to `statusId`. Uses listAllItemMetadataLight (the lightest read path). All items are counted regardless of lifecycle phase; the count is advisory only. The caller passes its already-loaded `settings` so we never re-read from disk. */
 async function countItemsUsingStatus(
   pmRoot: string,
   settings: PmSettings,
@@ -754,7 +754,7 @@ async function countItemsUsingStatus(
   );
   const statusRegistry = resolveRuntimeStatusRegistry(schema);
   const normalizedId = normalizeStatusToken(statusId);
-  const items = await listAllFrontMatterLight(
+  const items = await listAllItemMetadataLight(
     pmRoot,
     settings.item_format,
     registry.type_to_folder,
@@ -1630,7 +1630,7 @@ async function countItemsUsingField(
     settings,
     getActiveExtensionRegistrations(),
   );
-  const items = await listAllFrontMatterLight(
+  const items = await listAllItemMetadataLight(
     pmRoot,
     settings.item_format,
     registry.type_to_folder,
@@ -1920,7 +1920,7 @@ export async function runSchemaInferTypes(
     settings,
     getActiveExtensionRegistrations(),
   );
-  const items = await listAllFrontMatterLight(
+  const items = await listAllItemMetadataLight(
     pmRoot,
     settings.item_format,
     registry.type_to_folder,

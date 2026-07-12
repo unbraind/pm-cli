@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import path from "node:path";
-import type { ItemFrontMatter } from "../../../src/types.js";
+import type { ItemMetadata } from "../../../src/types.js";
 import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import { serializeItemDocument } from "../../../src/core/item/item-format.js";
 import { runSearch } from "../../../src/cli/commands/search.js";
@@ -9,7 +9,7 @@ import { readJsonFixture } from "../../helpers/fixtures.js";
 const {
   pathExistsMock,
   readSettingsMock,
-  listAllFrontMatterMock,
+  listAllItemMetadataMock,
   readFileMock,
   realpathMock,
   runActiveOnReadHooksMock,
@@ -17,7 +17,7 @@ const {
 } = vi.hoisted(() => ({
   pathExistsMock: vi.fn<() => Promise<boolean>>(),
   readSettingsMock: vi.fn<() => Promise<{ id_prefix: string }>>(),
-  listAllFrontMatterMock: vi.fn<() => Promise<ItemFrontMatter[]>>(),
+  listAllItemMetadataMock: vi.fn<() => Promise<ItemMetadata[]>>(),
   readFileMock: vi.fn<(targetPath: string, encoding: string) => Promise<string>>(),
   realpathMock: vi.fn<(targetPath: string) => Promise<string>>(),
   runActiveOnReadHooksMock: vi.fn<() => Promise<string[]>>(),
@@ -48,7 +48,7 @@ vi.mock("../../../src/core/store/settings.js", () => ({
 }));
 
 vi.mock("../../../src/core/store/item-store.js", () => ({
-  listAllFrontMatter: listAllFrontMatterMock,
+  listAllItemMetadata: listAllItemMetadataMock,
 }));
 
 vi.mock("../../../src/core/extensions/index.js", () => ({
@@ -71,14 +71,14 @@ vi.mock("node:child_process", () => ({
 interface KeywordCorpusFixture {
   match_scenario: {
     query: string;
-    matching_overrides: Partial<ItemFrontMatter> & Pick<ItemFrontMatter, "id">;
-    non_matching_overrides: Partial<ItemFrontMatter> & Pick<ItemFrontMatter, "id">;
+    matching_overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">;
+    non_matching_overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">;
   };
 }
 
 const keywordCorpusFixture = readJsonFixture<KeywordCorpusFixture>("search", "keyword-corpus.json");
 
-function makeFrontMatter(overrides: Partial<ItemFrontMatter> & Pick<ItemFrontMatter, "id">): ItemFrontMatter {
+function makeItemMetadata(overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">): ItemMetadata {
   return {
     id: overrides.id,
     title: overrides.title ?? overrides.id,
@@ -110,8 +110,8 @@ function makeFrontMatter(overrides: Partial<ItemFrontMatter> & Pick<ItemFrontMat
   };
 }
 
-function serializeDocument(frontMatter: ItemFrontMatter, body: string): string {
-  return `${JSON.stringify(frontMatter, null, 2)}\n\n${body}`;
+function serializeDocument(itemMetadata: ItemMetadata, body: string): string {
+  return `${JSON.stringify(itemMetadata, null, 2)}\n\n${body}`;
 }
 
 function makeDefaultSettings() {
@@ -211,9 +211,9 @@ function mockOllamaAutoDetectAvailable(): void {
   });
 }
 
-function seedSingleTokenItem(overrides: Partial<ItemFrontMatter> & Pick<ItemFrontMatter, "id">): void {
-  const item = makeFrontMatter(overrides);
-  listAllFrontMatterMock.mockResolvedValue([item]);
+function seedSingleTokenItem(overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">): void {
+  const item = makeItemMetadata(overrides);
+  listAllItemMetadataMock.mockResolvedValue([item]);
   readFileMock.mockResolvedValue(serializeDocument(item, "token body"));
 }
 
@@ -223,8 +223,8 @@ function setupExtensionVectorAdapterScenario(options: {
   vectorStore?: Record<string, unknown>;
   query: () => unknown;
 }): void {
-  const item = makeFrontMatter({ id: options.id, title: options.title });
-  listAllFrontMatterMock.mockResolvedValue([item]);
+  const item = makeItemMetadata({ id: options.id, title: options.title });
+  listAllItemMetadataMock.mockResolvedValue([item]);
   readFileMock.mockResolvedValue(serializeDocument(item, "semantic body"));
   readSettingsMock.mockResolvedValue(
     makeSemanticSearchSettings({ vector_store: options.vectorStore ?? { adapter: "ext-vector" } }),
@@ -252,7 +252,7 @@ describe("runSearch", () => {
   beforeEach(() => {
     pathExistsMock.mockReset();
     readSettingsMock.mockReset();
-    listAllFrontMatterMock.mockReset();
+    listAllItemMetadataMock.mockReset();
     readFileMock.mockReset();
     realpathMock.mockReset();
     runActiveOnReadHooksMock.mockReset();
@@ -261,7 +261,7 @@ describe("runSearch", () => {
 
     pathExistsMock.mockResolvedValue(true);
     readSettingsMock.mockResolvedValue({ id_prefix: "pm-" });
-    listAllFrontMatterMock.mockResolvedValue([]);
+    listAllItemMetadataMock.mockResolvedValue([]);
     realpathMock.mockImplementation(async (targetPath) => targetPath);
     runActiveOnReadHooksMock.mockResolvedValue([]);
     spawnSyncMock.mockReturnValue({
@@ -282,25 +282,25 @@ describe("runSearch", () => {
   it("applies active content and governance-missing filters in the search predicate (kept vs excluded)", async () => {
     // Two items both match the keyword query so both reach the filter predicate.
     // One carries notes + reviewer (governance-present), the other carries neither.
-    const withNotes: ItemFrontMatter = {
-      ...makeFrontMatter({
+    const withNotes: ItemMetadata = {
+      ...makeItemMetadata({
         id: "pm-search-filter-rich",
         title: "token rich",
         description: "token rich description",
         tags: ["token"],
         notes: [{ author: "a", created_at: "2026-02-18T00:00:00.000Z", text: "a note" }],
       }),
-      // makeFrontMatter does not copy reviewer; attach it explicitly so the
+      // makeItemMetadata does not copy reviewer; attach it explicitly so the
       // serialized document carries governance-present metadata.
       reviewer: "rev",
     };
-    const bare = makeFrontMatter({
+    const bare = makeItemMetadata({
       id: "pm-search-filter-bare",
       title: "token bare",
       description: "token bare description",
       tags: ["token"],
     });
-    listAllFrontMatterMock.mockResolvedValue([withNotes, bare]);
+    listAllItemMetadataMock.mockResolvedValue([withNotes, bare]);
     readFileMock.mockImplementation(async (targetPath: string) => {
       if (targetPath.includes("pm-search-filter-rich")) {
         return serializeDocument(withNotes, "token body");
@@ -325,17 +325,17 @@ describe("runSearch", () => {
   });
 
   it("matches exact and short item IDs as first-class search hits", async () => {
-    const target = makeFrontMatter({
+    const target = makeItemMetadata({
       id: "pm-fk49",
       title: "Game Engine & Core Architecture",
       description: "No literal id token in content",
     });
-    const other = makeFrontMatter({
+    const other = makeItemMetadata({
       id: "pm-other",
       title: "fk49 mentioned elsewhere",
       description: "This item should rank below the exact id match",
     });
-    listAllFrontMatterMock.mockResolvedValue([other, target]);
+    listAllItemMetadataMock.mockResolvedValue([other, target]);
     readFileMock.mockImplementation(async (targetPath: string) => {
       if (targetPath.includes("pm-fk49")) {
         return serializeDocument(target, "body without lookup token");
@@ -353,13 +353,13 @@ describe("runSearch", () => {
     expect(short.items[0]?.item.id).toBe("pm-fk49");
     expect(short.items[0]?.matched_fields).toEqual(["id"]);
 
-    const customIdTarget = makeFrontMatter({
+    const customIdTarget = makeItemMetadata({
       id: "custom-fk49",
       title: "Custom prefix item",
       description: "No literal id token in content",
     });
     readSettingsMock.mockResolvedValue({ ...makeDefaultSettings(), id_prefix: "custom-" } as never);
-    listAllFrontMatterMock.mockResolvedValue([customIdTarget]);
+    listAllItemMetadataMock.mockResolvedValue([customIdTarget]);
     readFileMock.mockResolvedValue(serializeDocument(customIdTarget, "body without lookup token"));
     const custom = await runSearch("fk49", {}, { path: "/tmp/pm-search" });
     expect(custom.items[0]?.item.id).toBe("custom-fk49");
@@ -367,23 +367,23 @@ describe("runSearch", () => {
   });
 
   it("ranks exact dashed ID matches above items that only mention the ID (GH-295)", async () => {
-    const target = makeFrontMatter({
+    const target = makeItemMetadata({
       id: "pm-jxyj",
       title: "Target item",
       description: "No exact id mention in description",
       comments: [{ author: "a", created_at: "2026-02-18T00:00:00.000Z", text: "pm-jxyj self reference" }],
     });
-    const descriptionMention = makeFrontMatter({
+    const descriptionMention = makeItemMetadata({
       id: "pm-mention-description",
       title: "Mention elsewhere",
       description: "pm-jxyj pm-jxyj pm-jxyj",
     });
-    const commentMention = makeFrontMatter({
+    const commentMention = makeItemMetadata({
       id: "pm-mention-comment",
       title: "Comment mention",
       comments: [{ author: "a", created_at: "2026-02-18T00:00:00.000Z", text: "pm-jxyj pm-jxyj" }],
     });
-    listAllFrontMatterMock.mockResolvedValue([descriptionMention, commentMention, target]);
+    listAllItemMetadataMock.mockResolvedValue([descriptionMention, commentMention, target]);
     readFileMock.mockImplementation(async (targetPath: string) => {
       if (targetPath.includes("pm-jxyj")) return serializeDocument(target, "body without lookup token");
       if (targetPath.includes("pm-mention-description")) return serializeDocument(descriptionMention, "body");
@@ -399,10 +399,10 @@ describe("runSearch", () => {
   });
 
   it("ranks semantic/hybrid search with the offline BM25 provider and warns on auto-fallback (pm-75k9)", async () => {
-    const dbDoc = makeFrontMatter({ id: "pm-db", title: "database connection pool leak under load" });
-    const retryDoc = makeFrontMatter({ id: "pm-retry", title: "exponential backoff retry http client" });
-    const migrationDoc = makeFrontMatter({ id: "pm-mig", title: "database migration plan" });
-    listAllFrontMatterMock.mockResolvedValue([dbDoc, retryDoc, migrationDoc]);
+    const dbDoc = makeItemMetadata({ id: "pm-db", title: "database connection pool leak under load" });
+    const retryDoc = makeItemMetadata({ id: "pm-retry", title: "exponential backoff retry http client" });
+    const migrationDoc = makeItemMetadata({ id: "pm-mig", title: "database migration plan" });
+    listAllItemMetadataMock.mockResolvedValue([dbDoc, retryDoc, migrationDoc]);
     readFileMock.mockImplementation(async (targetPath: string) => {
       if (targetPath.includes("pm-db")) return serializeDocument(dbDoc, "");
       if (targetPath.includes("pm-retry")) return serializeDocument(retryDoc, "");
@@ -706,7 +706,7 @@ describe("runSearch", () => {
 
   it("returns deterministic empty semantic and hybrid results for limit=0 without embedding/vector requests", async () => {
     const semanticSettings = makeSemanticSearchSettings();
-    const indexedItem = makeFrontMatter({
+    const indexedItem = makeItemMetadata({
       id: "pm-limit-zero",
       title: "token title",
       description: "token description",
@@ -714,7 +714,7 @@ describe("runSearch", () => {
     });
 
     readSettingsMock.mockResolvedValue(semanticSettings);
-    listAllFrontMatterMock.mockResolvedValue([indexedItem]);
+    listAllItemMetadataMock.mockResolvedValue([indexedItem]);
     readFileMock.mockImplementation(async (targetPath) => {
       if (targetPath.endsWith("pm-limit-zero.md")) {
         return serializeDocument(indexedItem, "token body");
@@ -748,11 +748,11 @@ describe("runSearch", () => {
   });
 
   it("executes a configured extension search provider for semantic mode", async () => {
-    const extensionItem = makeFrontMatter({
+    const extensionItem = makeItemMetadata({
       id: "pm-ext-provider",
       title: "extension provider item",
     });
-    listAllFrontMatterMock.mockResolvedValue([extensionItem]);
+    listAllItemMetadataMock.mockResolvedValue([extensionItem]);
     readFileMock.mockResolvedValue(serializeDocument(extensionItem, "extension body"));
     readSettingsMock.mockResolvedValue({
       search: {
@@ -793,11 +793,11 @@ describe("runSearch", () => {
   });
 
   it("degrades to keyword when an extension provider throws and built-in fallback is unavailable", async () => {
-    const extensionItem = makeFrontMatter({
+    const extensionItem = makeItemMetadata({
       id: "pm-ext-provider-error",
       title: "extension provider item",
     });
-    listAllFrontMatterMock.mockResolvedValue([extensionItem]);
+    listAllItemMetadataMock.mockResolvedValue([extensionItem]);
     readFileMock.mockResolvedValue(serializeDocument(extensionItem, "extension body"));
     readSettingsMock.mockResolvedValue({
       search: {
@@ -986,11 +986,11 @@ describe("runSearch", () => {
   });
 
   it("matches every keyword corpus field and applies metadata filters", async () => {
-    const matching = makeFrontMatter(keywordCorpusFixture.match_scenario.matching_overrides);
-    const nonMatch = makeFrontMatter(keywordCorpusFixture.match_scenario.non_matching_overrides);
+    const matching = makeItemMetadata(keywordCorpusFixture.match_scenario.matching_overrides);
+    const nonMatch = makeItemMetadata(keywordCorpusFixture.match_scenario.non_matching_overrides);
     const query = keywordCorpusFixture.match_scenario.query;
 
-    listAllFrontMatterMock.mockResolvedValueOnce([nonMatch, matching]);
+    listAllItemMetadataMock.mockResolvedValueOnce([nonMatch, matching]);
     readFileMock.mockImplementation(async (targetPath) => {
       if (targetPath.endsWith("pm-match.md")) {
         return serializeDocument(matching, "bodytoken");
@@ -1041,7 +1041,7 @@ describe("runSearch", () => {
       limit: "1.9",
     });
 
-    const calendarHeavy = makeFrontMatter({
+    const calendarHeavy = makeItemMetadata({
       id: "pm-calendar",
       title: "calendar workflow",
       reminders: [{ at: "2026-02-18T09:00:00.000Z", text: "agent reminder token" }],
@@ -1061,7 +1061,7 @@ describe("runSearch", () => {
         },
       ],
     });
-    listAllFrontMatterMock.mockResolvedValueOnce([calendarHeavy]);
+    listAllItemMetadataMock.mockResolvedValueOnce([calendarHeavy]);
     readFileMock.mockResolvedValueOnce(serializeDocument(calendarHeavy, ""));
     readFileMock.mockResolvedValueOnce(serializeDocument(calendarHeavy, ""));
     const calendarSearch = await runSearch("roadmap reminder room-token all day", { mode: "keyword" }, { path: "/tmp/pm-search" });
@@ -1069,7 +1069,7 @@ describe("runSearch", () => {
     expect(calendarSearch.items[0].item.id).toBe("pm-calendar");
     expect(calendarSearch.items[0].matched_fields).toEqual(["events", "reminders"]);
 
-    listAllFrontMatterMock.mockResolvedValue([matching]);
+    listAllItemMetadataMock.mockResolvedValue([matching]);
     readFileMock.mockResolvedValue(serializeDocument(matching, "bodytoken"));
 
     const wrongType = await runSearch("titletoken", { type: "Issue" }, { path: "/tmp/pm-search" });
@@ -1100,7 +1100,7 @@ describe("runSearch", () => {
 
   it("keeps keyword search readable for malformed legacy array fields", async () => {
     const malformed = {
-      ...makeFrontMatter({
+      ...makeItemMetadata({
         id: "pm-legacy-malformed",
         title: "legacy malformed item",
         description: "contains stabletoken",
@@ -1111,9 +1111,9 @@ describe("runSearch", () => {
       notes: undefined,
       learnings: undefined,
       dependencies: undefined,
-    } as unknown as ItemFrontMatter;
+    } as unknown as ItemMetadata;
 
-    listAllFrontMatterMock.mockResolvedValueOnce([malformed]);
+    listAllItemMetadataMock.mockResolvedValueOnce([malformed]);
     readFileMock.mockResolvedValueOnce(serializeDocument(malformed, ""));
 
     const { runSearch } = await import("../../../src/cli/commands/search.js");
@@ -1125,32 +1125,32 @@ describe("runSearch", () => {
   });
 
   it("executes semantic and hybrid search modes with deterministic ranking", async () => {
-    const semanticTop = makeFrontMatter({
+    const semanticTop = makeItemMetadata({
       id: "pm-sem-top",
       title: "tok alpha",
       updated_at: "2026-02-18T00:02:00.000Z",
       priority: 1,
     });
-    const semanticAndLexical = makeFrontMatter({
+    const semanticAndLexical = makeItemMetadata({
       id: "pm-sem-lex",
       title: "tok tok beta",
       updated_at: "2026-02-18T00:01:00.000Z",
       priority: 1,
     });
-    const lexicalOnly = makeFrontMatter({
+    const lexicalOnly = makeItemMetadata({
       id: "pm-lex-only",
       title: "tok tok tok gamma",
       updated_at: "2026-02-18T00:03:00.000Z",
       priority: 0,
     });
-    const semanticDropped = makeFrontMatter({
+    const semanticDropped = makeItemMetadata({
       id: "pm-sem-drop",
       title: "no lexical hit",
       updated_at: "2026-02-18T00:04:00.000Z",
       priority: 2,
     });
     const docs = [semanticTop, semanticAndLexical, lexicalOnly, semanticDropped];
-    listAllFrontMatterMock.mockResolvedValue(docs);
+    listAllItemMetadataMock.mockResolvedValue(docs);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
       if (!match) {
@@ -1247,18 +1247,18 @@ describe("runSearch", () => {
   });
 
   it("expands semantic queries when search.query_expansion is enabled", async () => {
-    const docA = makeFrontMatter({
+    const docA = makeItemMetadata({
       id: "pm-qe-a",
       title: "project alpha",
       updated_at: "2026-02-18T00:01:00.000Z",
     });
-    const docB = makeFrontMatter({
+    const docB = makeItemMetadata({
       id: "pm-qe-b",
       title: "project beta",
       updated_at: "2026-02-18T00:02:00.000Z",
     });
     const docs = [docA, docB];
-    listAllFrontMatterMock.mockResolvedValue(docs);
+    listAllItemMetadataMock.mockResolvedValue(docs);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
       if (!match) {
@@ -1342,12 +1342,12 @@ describe("runSearch", () => {
   });
 
   it("warns when configured query-expansion provider is unavailable", async () => {
-    const doc = makeFrontMatter({
+    const doc = makeItemMetadata({
       id: "pm-qe-fallback",
       title: "release notes",
       updated_at: "2026-02-18T00:01:00.000Z",
     });
-    listAllFrontMatterMock.mockResolvedValue([doc]);
+    listAllItemMetadataMock.mockResolvedValue([doc]);
     readFileMock.mockResolvedValue(serializeDocument(doc, "fallback body"));
     readSettingsMock.mockResolvedValue({
       search: {
@@ -1410,18 +1410,18 @@ describe("runSearch", () => {
   });
 
   it("reranks hybrid candidates when search.rerank is enabled", async () => {
-    const docA = makeFrontMatter({
+    const docA = makeItemMetadata({
       id: "pm-rerank-a",
       title: "tok alpha",
       updated_at: "2026-02-18T00:01:00.000Z",
     });
-    const docB = makeFrontMatter({
+    const docB = makeItemMetadata({
       id: "pm-rerank-b",
       title: "tok beta",
       updated_at: "2026-02-18T00:02:00.000Z",
     });
     const docs = [docA, docB];
-    listAllFrontMatterMock.mockResolvedValue(docs);
+    listAllItemMetadataMock.mockResolvedValue(docs);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
       if (!match) {
@@ -1491,18 +1491,18 @@ describe("runSearch", () => {
   });
 
   it("keeps reranked candidates ahead of non-reranked candidates", async () => {
-    const docA = makeFrontMatter({
+    const docA = makeItemMetadata({
       id: "pm-rerank-priority-a",
       title: "tok alpha",
       updated_at: "2026-02-18T00:01:00.000Z",
     });
-    const docB = makeFrontMatter({
+    const docB = makeItemMetadata({
       id: "pm-rerank-priority-b",
       title: "tok beta",
       updated_at: "2026-02-18T00:02:00.000Z",
     });
     const docs = [docA, docB];
-    listAllFrontMatterMock.mockResolvedValue(docs);
+    listAllItemMetadataMock.mockResolvedValue(docs);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
       if (!match) {
@@ -1568,18 +1568,18 @@ describe("runSearch", () => {
   });
 
   it("falls back to hybrid scores when rerank embeddings fail", async () => {
-    const docA = makeFrontMatter({
+    const docA = makeItemMetadata({
       id: "pm-rerank-fail-a",
       title: "tok alpha",
       updated_at: "2026-02-18T00:01:00.000Z",
     });
-    const docB = makeFrontMatter({
+    const docB = makeItemMetadata({
       id: "pm-rerank-fail-b",
       title: "tok beta",
       updated_at: "2026-02-18T00:02:00.000Z",
     });
     const docs = [docA, docB];
-    listAllFrontMatterMock.mockResolvedValue(docs);
+    listAllItemMetadataMock.mockResolvedValue(docs);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
       if (!match) {
@@ -1632,17 +1632,17 @@ describe("runSearch", () => {
   });
 
   it("handles hybrid normalization when score maps are empty or uniform", async () => {
-    const itemA = makeFrontMatter({
+    const itemA = makeItemMetadata({
       id: "pm-hybrid-a",
       title: "same",
       updated_at: "2026-02-18T00:01:00.000Z",
     });
-    const itemB = makeFrontMatter({
+    const itemB = makeItemMetadata({
       id: "pm-hybrid-b",
       title: "same",
       updated_at: "2026-02-18T00:00:00.000Z",
     });
-    listAllFrontMatterMock.mockResolvedValue([itemA, itemB]);
+    listAllItemMetadataMock.mockResolvedValue([itemA, itemB]);
     readFileMock.mockImplementation(async (targetPath) => {
       if (targetPath.endsWith("pm-hybrid-a.md")) {
         return serializeDocument(itemA, "body");
@@ -1717,23 +1717,23 @@ describe("runSearch", () => {
   });
 
   it("applies hybrid --limit after fusion without shrinking the vector candidate window", async () => {
-    const semanticOnlyTop = makeFrontMatter({
+    const semanticOnlyTop = makeItemMetadata({
       id: "pm-semantic-top",
       title: "tok",
       updated_at: "2026-02-18T00:01:00.000Z",
     });
-    const fusedTop = makeFrontMatter({
+    const fusedTop = makeItemMetadata({
       id: "pm-fused-top",
       title: "tok tok tok tok",
       updated_at: "2026-02-18T00:02:00.000Z",
     });
-    const tail = makeFrontMatter({
+    const tail = makeItemMetadata({
       id: "pm-tail",
       title: "tok tail",
       updated_at: "2026-02-18T00:00:00.000Z",
     });
     const docs = [semanticOnlyTop, fusedTop, tail];
-    listAllFrontMatterMock.mockResolvedValue(docs);
+    listAllItemMetadataMock.mockResolvedValue(docs);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
       if (!match) {
@@ -1797,20 +1797,20 @@ describe("runSearch", () => {
   });
 
   it("applies score_threshold as a mode-aware minimum score filter", async () => {
-    const thresholdStrong = makeFrontMatter({
+    const thresholdStrong = makeItemMetadata({
       id: "pm-threshold-strong",
       title: "tok tok tok",
       updated_at: "2026-02-18T00:02:00.000Z",
       priority: 1,
     });
-    const thresholdWeak = makeFrontMatter({
+    const thresholdWeak = makeItemMetadata({
       id: "pm-threshold-weak",
       title: "tok",
       updated_at: "2026-02-18T00:01:00.000Z",
       priority: 1,
     });
     const docs = [thresholdStrong, thresholdWeak];
-    listAllFrontMatterMock.mockResolvedValue(docs);
+    listAllItemMetadataMock.mockResolvedValue(docs);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
       if (!match) {
@@ -1912,7 +1912,7 @@ describe("runSearch", () => {
     const globalRoot = "/tmp/pm-search-global";
     process.env.PM_GLOBAL_PATH = globalRoot;
     try {
-      const linkedOnlyMatch = makeFrontMatter({
+      const linkedOnlyMatch = makeItemMetadata({
         id: "pm-linked-only",
         title: "No keyword in core fields",
         description: "No linked token here",
@@ -1930,7 +1930,7 @@ describe("runSearch", () => {
         ],
       });
 
-      listAllFrontMatterMock.mockResolvedValue([linkedOnlyMatch]);
+      listAllItemMetadataMock.mockResolvedValue([linkedOnlyMatch]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-linked-only.md")) {
           return serializeDocument(linkedOnlyMatch, "body without keyword");
@@ -1959,11 +1959,11 @@ describe("runSearch", () => {
       expect(withLinked.items[0].matched_fields).toEqual(["linked_content"]);
       expect(withLinked.filters).toMatchObject({ include_linked: true });
 
-      const noLinkedEntries = makeFrontMatter({
+      const noLinkedEntries = makeItemMetadata({
         id: "pm-no-linked-entries",
         title: "still no keyword",
       });
-      listAllFrontMatterMock.mockResolvedValue([noLinkedEntries]);
+      listAllItemMetadataMock.mockResolvedValue([noLinkedEntries]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-no-linked-entries.md")) {
           return serializeDocument(noLinkedEntries, "body without keyword");
@@ -1988,7 +1988,7 @@ describe("runSearch", () => {
     const globalRoot = "/tmp/pm-search-containment-global";
     process.env.PM_GLOBAL_PATH = globalRoot;
     try {
-      const containedItem = makeFrontMatter({
+      const containedItem = makeItemMetadata({
         id: "pm-linked-contained",
         title: "No keyword in core fields",
         files: [{ path: "../escape-project.md", scope: "project" }],
@@ -1997,7 +1997,7 @@ describe("runSearch", () => {
       const escapedProjectPath = path.resolve(process.cwd(), "../escape-project.md");
       const escapedGlobalPath = path.resolve(globalRoot, "../escape-global.md");
 
-      listAllFrontMatterMock.mockResolvedValue([containedItem]);
+      listAllItemMetadataMock.mockResolvedValue([containedItem]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-linked-contained.md")) {
           return serializeDocument(containedItem, "body without token");
@@ -2035,7 +2035,7 @@ describe("runSearch", () => {
     const globalRoot = "/tmp/pm-search-symlink-global";
     process.env.PM_GLOBAL_PATH = globalRoot;
     try {
-      const symlinkItem = makeFrontMatter({
+      const symlinkItem = makeItemMetadata({
         id: "pm-linked-symlink-escape",
         title: "No keyword in core fields",
         files: [{ path: "docs/project-link.md", scope: "project" }],
@@ -2046,7 +2046,7 @@ describe("runSearch", () => {
       const escapedProjectRealpath = path.resolve(process.cwd(), "../project-realpath-escape.md");
       const escapedGlobalRealpath = path.resolve(globalRoot, "../global-realpath-escape.md");
 
-      listAllFrontMatterMock.mockResolvedValue([symlinkItem]);
+      listAllItemMetadataMock.mockResolvedValue([symlinkItem]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-linked-symlink-escape.md")) {
           return serializeDocument(symlinkItem, "body without token");
@@ -2093,7 +2093,7 @@ describe("runSearch", () => {
     const globalRoot = "/tmp/pm-search-realpath-fail-global";
     process.env.PM_GLOBAL_PATH = globalRoot;
     try {
-      const realpathFailureItem = makeFrontMatter({
+      const realpathFailureItem = makeItemMetadata({
         id: "pm-linked-realpath-fail",
         title: "No keyword in core fields",
         files: [{ path: "docs/project-link.md", scope: "project" }],
@@ -2102,7 +2102,7 @@ describe("runSearch", () => {
       const projectLinkedPath = path.resolve(process.cwd(), "docs/project-link.md");
       const globalLinkedPath = path.resolve(globalRoot, "docs/global-link.md");
 
-      listAllFrontMatterMock.mockResolvedValue([realpathFailureItem]);
+      listAllItemMetadataMock.mockResolvedValue([realpathFailureItem]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-linked-realpath-fail.md")) {
           return serializeDocument(realpathFailureItem, "body without token");
@@ -2149,14 +2149,14 @@ describe("runSearch", () => {
     const globalRoot = "/tmp/pm-search-hooks-global";
     process.env.PM_GLOBAL_PATH = globalRoot;
     try {
-      const hookedItem = makeFrontMatter({
+      const hookedItem = makeItemMetadata({
         id: "pm-hooked",
         title: "Hooked item",
         files: [{ path: "docs/hook-project.md", scope: "project" }],
         docs: [{ path: "hook-global.md", scope: "global" }],
       });
 
-      listAllFrontMatterMock.mockResolvedValue([hookedItem]);
+      listAllItemMetadataMock.mockResolvedValue([hookedItem]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-hooked.md")) {
           return serializeDocument(hookedItem, "body without hooktoken");
@@ -2196,50 +2196,50 @@ describe("runSearch", () => {
   });
 
   it("sorts by score, terminal state, priority, updated_at, then id", async () => {
-    const scoreTop = makeFrontMatter({
+    const scoreTop = makeItemMetadata({
       id: "pm-score-top",
       title: "hittok hittok",
       priority: 4,
       updated_at: "2026-02-18T00:01:00.000Z",
     });
-    const priorityFirst = makeFrontMatter({
+    const priorityFirst = makeItemMetadata({
       id: "pm-priority",
       title: "hittok",
       priority: 0,
       updated_at: "2026-02-18T00:01:00.000Z",
     });
-    const updatedNew = makeFrontMatter({
+    const updatedNew = makeItemMetadata({
       id: "pm-updated-new",
       title: "hittok",
       priority: 1,
       updated_at: "2026-02-18T00:06:00.000Z",
     });
-    const updatedOld = makeFrontMatter({
+    const updatedOld = makeItemMetadata({
       id: "pm-updated-old",
       title: "hittok",
       priority: 1,
       updated_at: "2026-02-18T00:05:00.000Z",
     });
-    const idA = makeFrontMatter({
+    const idA = makeItemMetadata({
       id: "pm-id-a",
       title: "hittok",
       priority: 1,
       updated_at: "2026-02-18T00:00:00.000Z",
     });
-    const idB = makeFrontMatter({
+    const idB = makeItemMetadata({
       id: "pm-id-b",
       title: "hittok",
       priority: 1,
       updated_at: "2026-02-18T00:00:00.000Z",
     });
-    const terminal = makeFrontMatter({
+    const terminal = makeItemMetadata({
       id: "pm-terminal",
       title: "hittok",
       status: "closed",
       priority: 0,
       updated_at: "2026-02-18T00:10:00.000Z",
     });
-    const noHit = makeFrontMatter({
+    const noHit = makeItemMetadata({
       id: "pm-no-hit",
       title: "different",
       priority: 1,
@@ -2247,7 +2247,7 @@ describe("runSearch", () => {
     });
 
     const allItems = [idB, terminal, priorityFirst, noHit, updatedOld, updatedNew, scoreTop, idA];
-    listAllFrontMatterMock.mockResolvedValueOnce(allItems);
+    listAllItemMetadataMock.mockResolvedValueOnce(allItems);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
       if (!match) {
@@ -2272,19 +2272,19 @@ describe("runSearch", () => {
   });
 
   it("applies deterministic exact-title token boost in keyword ranking", async () => {
-    const exactTokenTitle = makeFrontMatter({
+    const exactTokenTitle = makeItemMetadata({
       id: "pm-exact-token",
       title: "token",
       updated_at: "2026-02-18T00:00:00.000Z",
     });
-    const substringTitle = makeFrontMatter({
+    const substringTitle = makeItemMetadata({
       id: "pm-substring-token",
       title: "tokenized",
       updated_at: "2026-02-18T00:00:00.000Z",
     });
 
     const allItems = [substringTitle, exactTokenTitle];
-    listAllFrontMatterMock.mockResolvedValueOnce(allItems);
+    listAllItemMetadataMock.mockResolvedValueOnce(allItems);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
       if (!match) {
@@ -2301,19 +2301,19 @@ describe("runSearch", () => {
   });
 
   it("supports --title-exact filtering for query/title parity", async () => {
-    const exactTitle = makeFrontMatter({
+    const exactTitle = makeItemMetadata({
       id: "pm-title-exact",
       title: "Cross-Epic Realism Dependency Council",
       updated_at: "2026-02-18T00:00:00.000Z",
     });
-    const nearMatch = makeFrontMatter({
+    const nearMatch = makeItemMetadata({
       id: "pm-title-near",
       title: "Cross-Epic Realism Governance Council",
       updated_at: "2026-02-18T00:00:00.000Z",
     });
 
     const allItems = [nearMatch, exactTitle];
-    listAllFrontMatterMock.mockResolvedValueOnce(allItems);
+    listAllItemMetadataMock.mockResolvedValueOnce(allItems);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
       if (!match) {
@@ -2334,19 +2334,19 @@ describe("runSearch", () => {
   });
 
   it("supports --phrase-exact filtering for normalized phrase matches", async () => {
-    const phraseInBody = makeFrontMatter({
+    const phraseInBody = makeItemMetadata({
       id: "pm-phrase-body",
       title: "Scheduling note",
       description: "Contains full phrase in body only",
     });
-    const tokenOnly = makeFrontMatter({
+    const tokenOnly = makeItemMetadata({
       id: "pm-token-only",
       title: "Cross-Epic Council",
       description: "Contains related tokens but no exact phrase",
     });
 
     const allItems = [tokenOnly, phraseInBody];
-    listAllFrontMatterMock.mockResolvedValueOnce(allItems);
+    listAllItemMetadataMock.mockResolvedValueOnce(allItems);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
       if (!match) {
@@ -2373,12 +2373,12 @@ describe("runSearch", () => {
   });
 
   it("boosts exact long-phrase title matches above partial lexical overlap noise", async () => {
-    const exactTitle = makeFrontMatter({
+    const exactTitle = makeItemMetadata({
       id: "pm-long-phrase-exact-title",
       title: "Cross-Epic Realism Dependency Council",
       updated_at: "2026-02-18T00:00:00.000Z",
     });
-    const noisyPartial = makeFrontMatter({
+    const noisyPartial = makeItemMetadata({
       id: "pm-long-phrase-noise",
       title: "Operational cadence sync",
       description: [
@@ -2391,7 +2391,7 @@ describe("runSearch", () => {
     });
 
     const allItems = [noisyPartial, exactTitle];
-    listAllFrontMatterMock.mockResolvedValueOnce(allItems);
+    listAllItemMetadataMock.mockResolvedValueOnce(allItems);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
       if (!match) {
@@ -2431,19 +2431,19 @@ describe("runSearch", () => {
   });
 
   it("applies multi-factor tuning weights to influence ranking", async () => {
-    const titleHit = makeFrontMatter({
+    const titleHit = makeItemMetadata({
       id: "pm-tuning-title",
       title: "tunetoken",
       updated_at: "2026-02-18T00:00:00.000Z",
     });
-    const bodyHit = makeFrontMatter({
+    const bodyHit = makeItemMetadata({
       id: "pm-tuning-body",
       title: "different",
       updated_at: "2026-02-18T00:00:00.000Z",
     });
 
     const allItems = [titleHit, bodyHit];
-    listAllFrontMatterMock.mockResolvedValue(allItems);
+    listAllItemMetadataMock.mockResolvedValue(allItems);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
       if (!match) {
@@ -2473,12 +2473,12 @@ describe("runSearch", () => {
   });
 
   it("falls back to alternate item format path when preferred file is missing", async () => {
-    const fallbackItem = makeFrontMatter({
+    const fallbackItem = makeItemMetadata({
       id: "pm-fallback-format",
       title: "Fallback format title",
       description: "Preferred TOON file missing",
     });
-    listAllFrontMatterMock.mockResolvedValue([fallbackItem]);
+    listAllItemMetadataMock.mockResolvedValue([fallbackItem]);
     readSettingsMock.mockResolvedValue({
       id_prefix: "pm-",
       item_format: "toon",
@@ -2504,12 +2504,12 @@ describe("runSearch", () => {
   });
 
   it("falls back from json_markdown preference to TOON item file when markdown path is missing", async () => {
-    const fallbackItem = makeFrontMatter({
+    const fallbackItem = makeItemMetadata({
       id: "pm-fallback-toon",
       title: "Fallback toon title",
       description: "Preferred markdown file missing",
     });
-    listAllFrontMatterMock.mockResolvedValue([fallbackItem]);
+    listAllItemMetadataMock.mockResolvedValue([fallbackItem]);
     readSettingsMock.mockResolvedValue({
       id_prefix: "pm-",
       item_format: "json_markdown",
@@ -2541,7 +2541,7 @@ describe("runSearch", () => {
   });
 
   it("supports compact/full/fields projections and validates projection flags", async () => {
-    const projectedItem = makeFrontMatter({
+    const projectedItem = makeItemMetadata({
       id: "pm-projection",
       title: "Projection title token",
       status: "in_progress",
@@ -2549,7 +2549,7 @@ describe("runSearch", () => {
       type: "Task",
       updated_at: "2026-02-18T00:03:00.000Z",
     });
-    listAllFrontMatterMock.mockResolvedValue([projectedItem]);
+    listAllItemMetadataMock.mockResolvedValue([projectedItem]);
     readFileMock.mockResolvedValue(serializeDocument(projectedItem, "projection token body"));
 
     const { runSearch } = await import("../../../src/cli/commands/search.js");
@@ -2611,20 +2611,20 @@ describe("runSearch", () => {
   });
 
   it("filters the keyword corpus by --status before the query and echoes the raw value", async () => {
-    const openHit = makeFrontMatter({
+    const openHit = makeItemMetadata({
       id: "pm-status-open",
       title: "statustoken open work",
       description: "statustoken open description",
       status: "open",
     });
-    const closedHit = makeFrontMatter({
+    const closedHit = makeItemMetadata({
       id: "pm-status-closed",
       title: "statustoken closed work",
       description: "statustoken closed description",
       status: "closed",
     });
     const docs = [openHit, closedHit];
-    listAllFrontMatterMock.mockResolvedValue(docs);
+    listAllItemMetadataMock.mockResolvedValue(docs);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
       if (!match) {
@@ -2689,7 +2689,7 @@ describe("runSearch", () => {
   // mention used to out-rank the exact-ID target because the keyword
   // contribution is capped by hybrid_semantic_weight.
   it("forces an exact full-ID match to rank #1 in hybrid mode over a higher-semantic competitor", async () => {
-    const target = makeFrontMatter({
+    const target = makeItemMetadata({
       id: "pm-fk49",
       title: "Game Engine Core Architecture",
       description: "No literal id token in content",
@@ -2698,14 +2698,14 @@ describe("runSearch", () => {
     // Competitor carries a far stronger semantic score AND a literal body
     // mention of the target id, so under the default 0.7 semantic weight it
     // would out-rank the exact-id target without the GH-281 guarantee.
-    const rival = makeFrontMatter({
+    const rival = makeItemMetadata({
       id: "pm-rival",
       title: "pm-fk49 mentioned in the title and body",
       description: "pm-fk49 appears here too",
       updated_at: "2026-02-18T00:02:00.000Z",
     });
     const docs = [rival, target];
-    listAllFrontMatterMock.mockResolvedValue(docs);
+    listAllItemMetadataMock.mockResolvedValue(docs);
     readFileMock.mockImplementation(async (targetPath: string) => {
       const match = docs.find((item) => targetPath.includes(item.id));
       if (!match) {
@@ -2749,26 +2749,26 @@ describe("runSearch", () => {
     // (score 1000) and item "pm-fk49" matches as a SHORT id (prefix "pm-"
     // stripped → "fk49", score 900). The full-ID band slot must rank above the
     // short-ID band slot, and both must out-rank the higher-semantic rival.
-    const fullIdMatch = makeFrontMatter({
+    const fullIdMatch = makeItemMetadata({
       id: "fk49",
       title: "full id exact target",
       description: "no id token here",
       updated_at: "2026-02-18T00:01:00.000Z",
     });
-    const shortIdMatch = makeFrontMatter({
+    const shortIdMatch = makeItemMetadata({
       id: "pm-fk49",
       title: "short id exact target",
       description: "no id token here",
       updated_at: "2026-02-18T00:01:30.000Z",
     });
-    const rival = makeFrontMatter({
+    const rival = makeItemMetadata({
       id: "pm-rival",
       title: "fk49 fk49 fk49 in title",
       description: "fk49 body mention",
       updated_at: "2026-02-18T00:02:00.000Z",
     });
     const docs = [rival, fullIdMatch, shortIdMatch];
-    listAllFrontMatterMock.mockResolvedValue(docs);
+    listAllItemMetadataMock.mockResolvedValue(docs);
     readFileMock.mockImplementation(async (targetPath: string) => {
       const match = docs.find((item) => targetPath.includes(item.id));
       if (!match) {
@@ -2808,20 +2808,20 @@ describe("runSearch", () => {
   });
 
   it("forces an exact full-ID match to rank #1 in semantic mode even with no vector hit and a raised --min-score", async () => {
-    const target = makeFrontMatter({
+    const target = makeItemMetadata({
       id: "pm-fk49",
       title: "semantic exact target",
       description: "no id token here",
       updated_at: "2026-02-18T00:01:00.000Z",
     });
-    const rival = makeFrontMatter({
+    const rival = makeItemMetadata({
       id: "pm-rival",
       title: "unrelated heading",
       description: "unrelated",
       updated_at: "2026-02-18T00:02:00.000Z",
     });
     const docs = [rival, target];
-    listAllFrontMatterMock.mockResolvedValue(docs);
+    listAllItemMetadataMock.mockResolvedValue(docs);
     readFileMock.mockImplementation(async (targetPath: string) => {
       const match = docs.find((item) => targetPath.includes(item.id));
       if (!match) {
@@ -2893,14 +2893,14 @@ describe("classifyImplicitSemanticFallbackReason", () => {
   // GH-181 / pm-cstl / pm-13nx: match-mode, all-terms coverage ranking, default
   // keyword limit + total, --count, --min-score override, and list filter parity.
   describe("keyword relevance control and filter parity", () => {
-    function makeBody(frontMatter: ItemFrontMatter, body: string): string {
-      return serializeDocument(frontMatter, body);
+    function makeBody(itemMetadata: ItemMetadata, body: string): string {
+      return serializeDocument(itemMetadata, body);
     }
 
     it("ranks all-terms coverage above partial matches in default (or) mode and surfaces matched_all_terms only internally", async () => {
-      const allTerms = makeFrontMatter({ id: "pm-all", title: "alpha beta gamma" });
-      const partial = makeFrontMatter({ id: "pm-partial", title: "alpha only" });
-      listAllFrontMatterMock.mockResolvedValueOnce([partial, allTerms]);
+      const allTerms = makeItemMetadata({ id: "pm-all", title: "alpha beta gamma" });
+      const partial = makeItemMetadata({ id: "pm-partial", title: "alpha only" });
+      listAllItemMetadataMock.mockResolvedValueOnce([partial, allTerms]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-all.md")) return makeBody(allTerms, "body");
         if (targetPath.endsWith("pm-partial.md")) return makeBody(partial, "body");
@@ -2917,9 +2917,9 @@ describe("classifyImplicitSemanticFallbackReason", () => {
     });
 
     it("hard-filters with --match-mode and (every distinct token must match)", async () => {
-      const allTerms = makeFrontMatter({ id: "pm-all", title: "alpha beta gamma" });
-      const partial = makeFrontMatter({ id: "pm-partial", title: "alpha only" });
-      listAllFrontMatterMock.mockResolvedValue([partial, allTerms]);
+      const allTerms = makeItemMetadata({ id: "pm-all", title: "alpha beta gamma" });
+      const partial = makeItemMetadata({ id: "pm-partial", title: "alpha only" });
+      listAllItemMetadataMock.mockResolvedValue([partial, allTerms]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-all.md")) return makeBody(allTerms, "body");
         if (targetPath.endsWith("pm-partial.md")) return makeBody(partial, "body");
@@ -2933,9 +2933,9 @@ describe("classifyImplicitSemanticFallbackReason", () => {
     });
 
     it("requires a contiguous phrase with --match-mode exact", async () => {
-      const phrase = makeFrontMatter({ id: "pm-phrase", title: "alpha beta gamma" });
-      const scattered = makeFrontMatter({ id: "pm-scattered", title: "alpha gamma beta" });
-      listAllFrontMatterMock.mockResolvedValue([phrase, scattered]);
+      const phrase = makeItemMetadata({ id: "pm-phrase", title: "alpha beta gamma" });
+      const scattered = makeItemMetadata({ id: "pm-scattered", title: "alpha gamma beta" });
+      listAllItemMetadataMock.mockResolvedValue([phrase, scattered]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-phrase.md")) return makeBody(phrase, "body");
         if (targetPath.endsWith("pm-scattered.md")) return makeBody(scattered, "body");
@@ -2956,9 +2956,9 @@ describe("classifyImplicitSemanticFallbackReason", () => {
 
     it("applies the default keyword limit (max_results) and reports total when truncating", async () => {
       const items = Array.from({ length: 5 }, (_, index) =>
-        makeFrontMatter({ id: `pm-k${index}`, title: "alpha" }),
+        makeItemMetadata({ id: `pm-k${index}`, title: "alpha" }),
       );
-      listAllFrontMatterMock.mockResolvedValue(items);
+      listAllItemMetadataMock.mockResolvedValue(items);
       readFileMock.mockImplementation(async (targetPath) => {
         const match = items.find((item) => targetPath.endsWith(`${item.id}.md`));
         if (match) return makeBody(match, "body");
@@ -2976,9 +2976,9 @@ describe("classifyImplicitSemanticFallbackReason", () => {
 
     it("returns only the count with --count and omits hit rows", async () => {
       const items = Array.from({ length: 3 }, (_, index) =>
-        makeFrontMatter({ id: `pm-c${index}`, title: "alpha" }),
+        makeItemMetadata({ id: `pm-c${index}`, title: "alpha" }),
       );
-      listAllFrontMatterMock.mockResolvedValue(items);
+      listAllItemMetadataMock.mockResolvedValue(items);
       readFileMock.mockImplementation(async (targetPath) => {
         const match = items.find((item) => targetPath.endsWith(`${item.id}.md`));
         if (match) return makeBody(match, "body");
@@ -3009,9 +3009,9 @@ describe("classifyImplicitSemanticFallbackReason", () => {
     });
 
     it("keeps the count-only shape when --count matches nothing (empty-result path)", async () => {
-      listAllFrontMatterMock.mockResolvedValue([makeFrontMatter({ id: "pm-none", title: "alpha" })]);
+      listAllItemMetadataMock.mockResolvedValue([makeItemMetadata({ id: "pm-none", title: "alpha" })]);
       readFileMock.mockImplementation(async (targetPath) => {
-        if (targetPath.endsWith("pm-none.md")) return makeBody(makeFrontMatter({ id: "pm-none", title: "alpha" }), "body");
+        if (targetPath.endsWith("pm-none.md")) return makeBody(makeItemMetadata({ id: "pm-none", title: "alpha" }), "body");
         throw new Error(`Unexpected path: ${targetPath}`);
       });
       const { runSearch } = await import("../../../src/cli/commands/search.js");
@@ -3032,8 +3032,8 @@ describe("classifyImplicitSemanticFallbackReason", () => {
     });
 
     it("applies --min-score as a per-query override of the persistent threshold", async () => {
-      const item = makeFrontMatter({ id: "pm-min", title: "alpha" });
-      listAllFrontMatterMock.mockResolvedValue([item]);
+      const item = makeItemMetadata({ id: "pm-min", title: "alpha" });
+      listAllItemMetadataMock.mockResolvedValue([item]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-min.md")) return makeBody(item, "body");
         throw new Error(`Unexpected path: ${targetPath}`);
@@ -3058,7 +3058,7 @@ describe("classifyImplicitSemanticFallbackReason", () => {
     });
 
     it("applies pm list filter parity (updated/created windows, assignee, sprint, release, parent)", async () => {
-      const target = makeFrontMatter({
+      const target = makeItemMetadata({
         id: "pm-target",
         title: "alpha",
         assignee: "alice",
@@ -3068,7 +3068,7 @@ describe("classifyImplicitSemanticFallbackReason", () => {
         created_at: "2026-03-01T00:00:00.000Z",
         updated_at: "2026-03-10T00:00:00.000Z",
       });
-      const other = makeFrontMatter({
+      const other = makeItemMetadata({
         id: "pm-other",
         title: "alpha",
         assignee: "bob",
@@ -3078,7 +3078,7 @@ describe("classifyImplicitSemanticFallbackReason", () => {
         created_at: "2026-01-01T00:00:00.000Z",
         updated_at: "2026-01-02T00:00:00.000Z",
       });
-      listAllFrontMatterMock.mockResolvedValue([target, other]);
+      listAllItemMetadataMock.mockResolvedValue([target, other]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-target.md")) return makeBody(target, "body");
         if (targetPath.endsWith("pm-other.md")) return makeBody(other, "body");
@@ -3123,8 +3123,8 @@ describe("classifyImplicitSemanticFallbackReason", () => {
     });
 
     it("echoes new filters and match_mode in the compact filter summary", async () => {
-      const item = makeFrontMatter({ id: "pm-cf", title: "alpha", assignee: "alice", sprint: "S1" });
-      listAllFrontMatterMock.mockResolvedValue([item]);
+      const item = makeItemMetadata({ id: "pm-cf", title: "alpha", assignee: "alice", sprint: "S1" });
+      listAllItemMetadataMock.mockResolvedValue([item]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-cf.md")) return makeBody(item, "body");
         throw new Error(`Unexpected path: ${targetPath}`);
@@ -3156,10 +3156,10 @@ describe("classifyImplicitSemanticFallbackReason", () => {
 
 describe("inline query syntax and highlighting (GH-157)", () => {
   function makeDoc(
-    overrides: Partial<ItemFrontMatter> & Pick<ItemFrontMatter, "id">,
+    overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">,
     body = "",
-  ): { metadata: ItemFrontMatter; body: string } {
-    return { metadata: makeFrontMatter(overrides), body };
+  ): { metadata: ItemMetadata; body: string } {
+    return { metadata: makeItemMetadata(overrides), body };
   }
 
   describe("parseInlineQueryFilters", () => {
@@ -3283,7 +3283,7 @@ describe("inline query syntax and highlighting (GH-157)", () => {
     beforeEach(() => {
       pathExistsMock.mockReset();
       readSettingsMock.mockReset();
-      listAllFrontMatterMock.mockReset();
+      listAllItemMetadataMock.mockReset();
       readFileMock.mockReset();
       realpathMock.mockReset();
       runActiveOnReadHooksMock.mockReset();
@@ -3297,19 +3297,19 @@ describe("inline query syntax and highlighting (GH-157)", () => {
     });
 
     function seedAuthCorpus(): void {
-      const authItem = makeFrontMatter({
+      const authItem = makeItemMetadata({
         id: "pm-lgn1",
         title: "Fix auth login bug",
         description: "auth handling",
         tags: ["area:auth"],
       });
-      const searchItem = makeFrontMatter({
+      const searchItem = makeItemMetadata({
         id: "pm-rnk2",
         title: "Improve auth in search",
         description: "auth ranking",
         tags: ["area:search"],
       });
-      listAllFrontMatterMock.mockResolvedValue([authItem, searchItem]);
+      listAllItemMetadataMock.mockResolvedValue([authItem, searchItem]);
       readFileMock.mockImplementation(async (targetPath: string) =>
         targetPath.includes("pm-lgn1") ? serializeDocument(authItem, "auth body") : serializeDocument(searchItem, "auth body"),
       );
@@ -3321,7 +3321,7 @@ describe("inline query syntax and highlighting (GH-157)", () => {
       const result = await runSearch("auth tag:area:auth", {}, { path: "/tmp/pm-search" });
       expect(result.query).toBe("auth");
       expect(result.filters).toMatchObject({ tag: "area:auth" });
-      expect(result.items.map((hit) => (hit as { item: ItemFrontMatter }).item.id)).toEqual(["pm-lgn1"]);
+      expect(result.items.map((hit) => (hit as { item: ItemMetadata }).item.id)).toEqual(["pm-lgn1"]);
     });
 
     it("lets an explicit flag win over a conflicting inline token and warns", async () => {

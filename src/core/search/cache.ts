@@ -46,7 +46,7 @@ import type {
   VectorizationEmbeddingMetadata,
 } from "./vectorization-metadata.js";
 import { nowIso } from "../shared/time.js";
-import type { ItemDocument, ItemFrontMatter } from "../../types/index.js";
+import type { ItemDocument, ItemMetadata } from "../../types/index.js";
 
 /** Public contract for search cache artifact paths, shared by SDK and presentation-layer consumers. */
 export const SEARCH_CACHE_ARTIFACT_PATHS = [
@@ -263,7 +263,7 @@ export async function writeVectorizationStatusLedger(
   await writeFileAtomic(ledgerPath, serialized);
 }
 
-function buildVectorPayload(item: ItemFrontMatter): Record<string, unknown> {
+function buildVectorPayload(item: ItemMetadata): Record<string, unknown> {
   return {
     id: item.id,
     type: item.type,

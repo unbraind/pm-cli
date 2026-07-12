@@ -14,7 +14,7 @@ coverage/
 !.agents/pm/search/eval-queries.json
 .agents/pm/index/manifest.json
 .agents/pm/checkpoints/
-.agents/pm/runtime/front-matter-cache.json
+.agents/pm/runtime/item-metadata-cache.json
 .agents/pm/runtime/metadata-cache.json
 .agents/pm/runtime/metadata-cache-bodies.json
 .agents/pm/runtime/metadata-cache-collections.json

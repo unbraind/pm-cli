@@ -3213,15 +3213,15 @@ describe("create command helper coverage", () => {
     expect(_testOnlyCreateCommand.resolveRuntimeCreateUnsetDefinition("malformed", registry)).toBeUndefined();
     expect(_testOnlyCreateCommand.resolveRuntimeCreateUnsetDefinition("gh_url", registry)).toEqual({
       optionKey: "githubUrl",
-      frontMatterKey: "github_url",
+      metadataKey: "github_url",
     });
     expect(_testOnlyCreateCommand.resolveRuntimeCreateUnsetDefinition("githuburl", registry)).toEqual({
       optionKey: "githubUrl",
-      frontMatterKey: "github_url",
+      metadataKey: "github_url",
     });
     expect(_testOnlyCreateCommand.resolveRuntimeCreateUnsetDefinition("hidden", registry)).toBeUndefined();
     const parsed = _testOnlyCreateCommand.parseCreateUnsetTargets(["deadline", "gh-url"], registry);
-    expect([...parsed.frontMatterKeys].sort()).toEqual(["deadline", "github_url"]);
+    expect([...parsed.metadataKeys].sort()).toEqual(["deadline", "github_url"]);
     expect([...parsed.optionKeys].sort()).toEqual(["deadline", "githubUrl"]);
     expect(() => _testOnlyCreateCommand.parseCreateUnsetTargets(["   "], registry)).toThrow(
       expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),

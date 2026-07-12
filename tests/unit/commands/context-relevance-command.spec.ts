@@ -3,13 +3,13 @@ import { buildItemContextRelevanceCandidates, runContext } from "../../../src/cl
 import { runNext } from "../../../src/cli/commands/next.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
-import type { ItemFrontMatter } from "../../../src/types/index.js";
+import type { ItemMetadata } from "../../../src/types/index.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 function relevanceItem(
   id: string,
-  overrides: Partial<ItemFrontMatter> = {},
-): ItemFrontMatter {
+  overrides: Partial<ItemMetadata> = {},
+): ItemMetadata {
   return {
     id,
     title: id,
@@ -20,7 +20,7 @@ function relevanceItem(
     created_at: "2026-07-01T00:00:00.000Z",
     updated_at: "2026-07-01T00:00:00.000Z",
     ...overrides,
-  } as ItemFrontMatter;
+  } as ItemMetadata;
 }
 
 describe("context relevance command integration", () => {
@@ -65,7 +65,7 @@ describe("context relevance command integration", () => {
     expect(candidates[1]?.signals?.deadline_pressure).toBeCloseTo(0.5);
     expect(candidates[2]?.signals?.risk_pressure).toBe(0.1);
     expect(candidates[3]?.signals).toMatchObject({ claim_focus: 0, risk_pressure: 0, deadline_pressure: 0 });
-    expect(buildItemContextRelevanceCandidates([items[0] as ItemFrontMatter], registry, now, undefined)[0]?.signals?.recency).toBe(1);
+    expect(buildItemContextRelevanceCandidates([items[0] as ItemMetadata], registry, now, undefined)[0]?.signals?.recency).toBe(1);
     expect(buildItemContextRelevanceCandidates([
       relevanceItem("pm-invalid-runtime", { priority: undefined as never, deadline: "2026-08-09" }),
     ], registry, "invalid-now", undefined)[0]?.signals).toMatchObject({ priority_pressure: 0, deadline_pressure: 0 });

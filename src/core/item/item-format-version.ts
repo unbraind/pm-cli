@@ -1,11 +1,11 @@
 /**
  * @module core/item/item-format-version
  *
- * Tracks the on-disk item front-matter format version so a future breaking
+ * Tracks the on-disk item-metadata format version so a future breaking
  * storage change can tell already-current items apart from items that a staged
  * migration must rewrite, without re-parsing and structurally guessing every
  * file. The version is an explicit, monotonically increasing integer stamped in
- * front-matter as `pm_format_version`.
+ * item-metadata as `pm_format_version`.
  *
  * Token economy is a first-class constraint here: the baseline version (1) is
  * the implicit default and is never serialized, so today's corpus gains zero
@@ -17,12 +17,12 @@
  */
 import type { ItemMetadata } from "../../types/index.js";
 
-/** The original (and implicit) item front-matter format version. Items missing a `pm_format_version` field are always treated as this version, so the baseline is never written to disk and adds no per-item token cost. */
+/** The original (and implicit) item-metadata format version. Items missing a `pm_format_version` field are always treated as this version, so the baseline is never written to disk and adds no per-item token cost. */
 export const BASELINE_ITEM_FORMAT_VERSION = 1;
 
 /**
  * The format version this runtime writes and considers current. When a breaking
- * front-matter change ships, bump this constant and add a migration that
+ * item-metadata change ships, bump this constant and add a migration that
  * rewrites items whose {@link effectiveItemFormatVersion} is lower; items at or
  * above it need no migration. It stays equal to
  * {@link BASELINE_ITEM_FORMAT_VERSION} until the first such change.

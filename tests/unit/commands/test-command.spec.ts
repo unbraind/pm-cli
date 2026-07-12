@@ -22,7 +22,7 @@ import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { readSettings } from "../../../src/core/store/settings.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
 import {
-  loadTaskFrontMatter,
+  loadTaskMetadata,
   overwriteTaskTestRuns,
   overwriteTaskTests,
   setGovernancePreset,
@@ -2494,8 +2494,8 @@ describe("runTest", () => {
           { path: context.pmPath },
         );
         expect(result.warnings).toBeUndefined();
-        const frontMatter = await loadTaskFrontMatter(context, id);
-        const testRuns = (frontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+        const itemMetadata = await loadTaskMetadata(context, id);
+        const testRuns = (itemMetadata.test_runs ?? []) as Array<Record<string, unknown>>;
         expect(testRuns).toHaveLength(1);
         expect(testRuns[0]).toMatchObject({
           run_id: "tr-unit-success",
@@ -2546,8 +2546,8 @@ describe("runTest", () => {
       );
 
       expect(result.run_results[0]?.status).toBe("passed");
-      const frontMatter = await loadTaskFrontMatter(context, id);
-      expect(frontMatter.test_runs).toBeUndefined();
+      const itemMetadata = await loadTaskMetadata(context, id);
+      expect(itemMetadata.test_runs).toBeUndefined();
     });
   });
 
@@ -2579,8 +2579,8 @@ describe("runTest", () => {
           { path: context.pmPath },
         );
         expect(result.warnings).toBeUndefined();
-        const frontMatter = await loadTaskFrontMatter(context, id);
-        const testRuns = (frontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+        const itemMetadata = await loadTaskMetadata(context, id);
+        const testRuns = (itemMetadata.test_runs ?? []) as Array<Record<string, unknown>>;
         expect(testRuns).toHaveLength(1);
         expect(testRuns[0]?.run_id).toMatch(/^test-local-/);
         expect(testRuns[0]).toMatchObject({
@@ -2677,8 +2677,8 @@ describe("runTest", () => {
         }
       }
 
-      const frontMatter = await loadTaskFrontMatter(context, id);
-      const testRuns = (frontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+      const itemMetadata = await loadTaskMetadata(context, id);
+      const testRuns = (itemMetadata.test_runs ?? []) as Array<Record<string, unknown>>;
       expect(testRuns.map((entry) => `${entry.run_id}:${entry.kind}`)).toEqual(["tr-same:test-all", "tr-newer:test"]);
 
       process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT = "invalid";
@@ -2708,7 +2708,7 @@ describe("runTest", () => {
         }
       }
 
-      const afterInvalidLimit = await loadTaskFrontMatter(context, id);
+      const afterInvalidLimit = await loadTaskMetadata(context, id);
       const afterRuns = (afterInvalidLimit.test_runs ?? []) as Array<Record<string, unknown>>;
       expect(afterRuns.map((entry) => entry.run_id)).toContain("tr-after-invalid-limit");
 
@@ -2743,8 +2743,8 @@ describe("runTest", () => {
           skipped: 0,
         },
       });
-      const sortedFrontMatter = await loadTaskFrontMatter(context, sortId);
-      const sortedRuns = (sortedFrontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+      const sortedItemMetadata = await loadTaskMetadata(context, sortId);
+      const sortedRuns = (sortedItemMetadata.test_runs ?? []) as Array<Record<string, unknown>>;
       expect(sortedRuns.map((entry) => entry.run_id)).toEqual(["tr-a", "tr-b"]);
     });
   });

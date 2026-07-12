@@ -3,7 +3,7 @@ import {
   DEFAULT_STATUS_DEFINITIONS,
   EMPTY_CANONICAL_DOCUMENT,
   EXIT_CODE,
-  FRONT_MATTER_KEY_ORDER,
+  ITEM_METADATA_KEY_ORDER,
   PM_DIRNAME,
   PM_REQUIRED_SUBDIRS,
   resolveTelemetryErrorCategory,
@@ -58,7 +58,7 @@ describe("shared constants and errors contracts", () => {
       "comments", "notes", "learnings", "files", "tests", "docs",
       "close_reason", "plan_steps",
     ];
-    const indices = sentinelOrder.map((k) => FRONT_MATTER_KEY_ORDER.indexOf(k));
+    const indices = sentinelOrder.map((k) => ITEM_METADATA_KEY_ORDER.indexOf(k));
     // all sentinel keys are present
     expect(indices.every((i) => i !== -1)).toBe(true);
     // sentinel keys appear in the declared relative order
@@ -66,7 +66,7 @@ describe("shared constants and errors contracts", () => {
       expect(indices[i]).toBeLessThan(indices[i + 1]);
     }
     // no duplicate keys in the full array
-    expect(new Set(FRONT_MATTER_KEY_ORDER).size).toBe(FRONT_MATTER_KEY_ORDER.length);
+    expect(new Set(ITEM_METADATA_KEY_ORDER).size).toBe(ITEM_METADATA_KEY_ORDER.length);
     expect(EMPTY_CANONICAL_DOCUMENT).toEqual({
       metadata: {},
       body: "",

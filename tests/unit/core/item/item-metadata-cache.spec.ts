@@ -4,11 +4,11 @@ import os from "node:os";
 import path from "node:path";
 import { serializeItemDocument } from "../../../../src/core/item/item-format.js";
 import {
-  clearFrontMatterEnvelopeMemo,
+  clearItemMetadataEnvelopeMemo,
   listAllDocumentCandidatesCached,
   shouldRecordCachedDocumentCandidate,
   shouldReplaceCachedDocumentCandidate,
-} from "../../../../src/core/store/front-matter-cache.js";
+} from "../../../../src/core/store/item-metadata-cache.js";
 import {
   clearActiveExtensionHooks,
   setActiveExtensionHooks,
@@ -20,7 +20,7 @@ import type { ItemMetadata } from "../../../../src/types.js";
 const tempRoots: string[] = [];
 
 async function withTempPmRoot(run: (pmRoot: string) => Promise<void>): Promise<void> {
-  const pmRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-front-matter-cache-"));
+  const pmRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-item-cache-"));
   tempRoots.push(pmRoot);
   await run(pmRoot);
 }
@@ -43,11 +43,11 @@ afterEach(async () => {
   vi.restoreAllMocks();
   clearActiveExtensionHooks();
   setActiveExtensionRegistrations(null);
-  clearFrontMatterEnvelopeMemo();
+  clearItemMetadataEnvelopeMemo();
   await Promise.all(tempRoots.splice(0).map((tempRoot) => fs.rm(tempRoot, { recursive: true, force: true })));
 });
 
-describe("front matter cache", () => {
+describe("item metadata cache", () => {
   it("serves cached item bodies for unchanged files and refreshes them after mutation", async () => {
     await withTempPmRoot(async (pmRoot) => {
       const tasksDir = path.join(pmRoot, "tasks");
@@ -451,7 +451,7 @@ describe("front matter cache", () => {
       envelope.entries["tasks/not-an-item.txt"] =
         envelope.entries["tasks/pm-index-first.toon"];
       await fs.writeFile(cachePath, JSON.stringify(envelope), "utf8");
-      clearFrontMatterEnvelopeMemo();
+      clearItemMetadataEnvelopeMemo();
 
       const indexedAndSorted = await listAllDocumentCandidatesCached(
         pmRoot,

@@ -535,7 +535,7 @@ describe("static-quality-gate", () => {
         "Multi line detail here",
       );
       expect(mod.extractDocstringProse("/** See {@link Foo} now. */")).toBe("See Foo now.");
-      expect(mod.identifierWords("itemFrontMatter")).toEqual(["item", "front", "matter"]);
+      expect(mod.identifierWords("itemMetadata")).toEqual(["item", "metadata"]);
       expect(mod.identifierWords("Owner.snake_case")).toEqual(["owner", "snake", "case"]);
       expect(mod.identifierWords("")).toEqual([]);
       expect(mod.identifierWords(undefined as unknown as string)).toEqual([]);

@@ -718,7 +718,7 @@
         "src/core/shared/constants.ts",
         "src/core/shared/errors.ts",
         "src/core/shared/time.ts",
-        "src/core/store/front-matter-cache.ts",
+        "src/core/store/item-metadata-cache.ts",
         "src/core/store/item-store.ts",
         "src/core/store/paths.ts",
         "src/core/store/settings.ts"
@@ -840,7 +840,7 @@
         "src/core/shared/errors.ts",
         "src/core/shared/primitives.ts",
         "src/core/shared/time.ts",
-        "src/core/store/front-matter-cache.ts",
+        "src/core/store/item-metadata-cache.ts",
         "src/core/store/paths.ts",
         "src/core/store/settings.ts"
       ]
@@ -935,7 +935,7 @@
         "src/core/shared/primitives.ts",
         "src/core/shared/text-normalization.ts",
         "src/core/shared/time.ts",
-        "src/core/store/front-matter-cache.ts",
+        "src/core/store/item-metadata-cache.ts",
         "src/core/store/item-store.ts",
         "src/core/store/paths.ts",
         "src/core/store/settings.ts"

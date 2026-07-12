@@ -9,12 +9,12 @@ import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { listAllFrontMatterLight } from "../../core/store/item-store.js";
+import { listAllItemMetadataLight } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type {
   Dependency,
-  ItemFrontMatter,
+  ItemMetadata,
   ItemStatus,
   ItemType,
 } from "../../types/index.js";
@@ -185,7 +185,7 @@ function normalizeDependencies(
   return [...deduped.values()];
 }
 
-function toIndexedItem(item: ItemFrontMatter): IndexedItem {
+function toIndexedItem(item: ItemMetadata): IndexedItem {
   return {
     id: item.id,
     title: item.title,
@@ -355,7 +355,7 @@ export async function runDeps(
     settings,
     getActiveExtensionRegistrations(),
   );
-  const items = await listAllFrontMatterLight(
+  const items = await listAllItemMetadataLight(
     pmRoot,
     settings.item_format,
     typeRegistry.type_to_folder,

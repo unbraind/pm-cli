@@ -7,7 +7,7 @@ import type {
   ExtensionPolicyOverrideSettings,
   ExtensionPolicySettings,
   ItemDocument,
-  ItemFrontMatter,
+  ItemMetadata,
   ItemStatus,
   PmSettings,
 } from "../../types/index.js";
@@ -392,9 +392,9 @@ export interface AfterCommandAffectedItem {
   /** Lifecycle state reported for status. */
   status?: ItemStatus;
   /** Value that configures or reports previous for this contract. */
-  previous?: Partial<ItemFrontMatter>;
+  previous?: Partial<ItemMetadata>;
   /** Value that configures or reports current for this contract. */
-  current?: Partial<ItemFrontMatter>;
+  current?: Partial<ItemMetadata>;
   /** Value that configures or reports changed fields for this contract. */
   changed_fields?: string[];
 }

@@ -909,7 +909,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   unset: {
     description:
-      "Repeatable list of front-matter fields to clear explicitly during create/update mutations.",
+      "Repeatable list of item-metadata fields to clear explicitly during create/update mutations.",
     examples: [["deadline", "assignee"], ["close-reason"]],
   },
   clearDeps: {

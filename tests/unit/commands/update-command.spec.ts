@@ -157,7 +157,7 @@ describe("update command helper coverage", () => {
 
     expect(_testOnlyUpdateCommand.resolveRuntimeUnsetDefinition("github_url", registry)).toEqual({
       optionKey: "githubUrl",
-      frontMatterKey: "github_url",
+      metadataKey: "github_url",
     });
     expect(_testOnlyUpdateCommand.resolveRuntimeUnsetDefinition("hidden", registry)).toBeUndefined();
 
@@ -166,7 +166,7 @@ describe("update command helper coverage", () => {
       registry,
       ["external_field"],
     );
-    expect([...parsed.frontMatterKeys].sort()).toEqual(["deadline", "external_field", "github_url"]);
+    expect([...parsed.metadataKeys].sort()).toEqual(["deadline", "external_field", "github_url"]);
     expect([...parsed.optionKeys].sort()).toEqual(["deadline", "field", "githubUrl"]);
 
     expect(() => _testOnlyUpdateCommand.parseUpdateUnsetTargets([""], registry)).toThrow(
@@ -695,7 +695,7 @@ describe("runUpdate", () => {
         {
           options: { status: "closed", closeReason: "direct mutation path" },
           statusRegistry,
-          clearFrontMatterKeys: new Set(),
+          clearItemMetadataKeys: new Set(),
           nowIso: "2026-01-02T00:00:00.000Z",
         },
         "open",
@@ -724,7 +724,7 @@ describe("runUpdate", () => {
         {
           options: { status: "closed", closeReason: "direct mutation path" },
           statusRegistry,
-          clearFrontMatterKeys: new Set(),
+          clearItemMetadataKeys: new Set(),
           nowIso: "2026-01-02T00:00:00.000Z",
         },
         "open",
@@ -755,7 +755,7 @@ describe("runUpdate", () => {
         {
           options: { status: "open" },
           statusRegistry,
-          clearFrontMatterKeys: new Set(),
+          clearItemMetadataKeys: new Set(),
           nowIso: "2026-01-02T00:00:00.000Z",
         },
         "closed",

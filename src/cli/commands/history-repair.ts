@@ -28,7 +28,7 @@ import {
   runActiveOnWriteHooks,
 } from "../../core/extensions/index.js";
 import {
-  listAllFrontMatterWithBody,
+  listAllItemMetadataWithBody,
   readLocatedItem,
 } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
@@ -453,7 +453,7 @@ export async function runHistoryRepairAll(
     getActiveExtensionRegistrations(),
   );
   const itemReadWarnings: string[] = [];
-  const items = await listAllFrontMatterWithBody(
+  const items = await listAllItemMetadataWithBody(
     pmRoot,
     settings.item_format,
     typeRegistry.type_to_folder,

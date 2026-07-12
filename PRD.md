@@ -575,7 +575,7 @@ If `metadata_profile=custom` and `metadata_required_fields` is empty, runtime fa
 
 ### 9.7 Test-result tracking policy
 
-`settings.testing.record_results_to_items` controls whether linked-test executions append bounded `test_runs` summaries to item front matter:
+`settings.testing.record_results_to_items` controls whether linked-test executions append bounded `test_runs` summaries to item metadata:
 
 - `false` (default): command output only; no item mutation for run summaries.
 - `true`: `pm test --run` and `pm test-all` append deterministic summary entries (`run_id`, `kind`, `status`, counts, timestamps) with bounded retention.
@@ -915,7 +915,7 @@ List/search filters:
 - `--assignee-filter assigned|unassigned` (assignee presence filter)
 - `--sprint` (exact match on `sprint` field)
 - `--release` (exact match on `release` field)
-- `--include-body` (list* only; when enabled, each returned item includes `body`; default list rows remain front-matter-only)
+- `--include-body` (list* only; when enabled, each returned item includes `body`; default list rows remain item-metadata-only)
 - `--compact` / `--fields <csv>` (`list*` projection controls; mutually exclusive)
 - `--sort <priority|deadline|updated_at|created_at|title|parent>` + `--order <asc|desc>` (`list*` deterministic sort controls; `--order` requires `--sort`)
 - `--compact` / `--full` / `--fields <csv>` (`search` only; mutually exclusive projection controls, default compact)
@@ -1345,7 +1345,7 @@ export interface ExtensionApi {
 
 ### 14.6 Schema extension migrations
 
-- Extensions adding front-matter fields must provide forward migrations.
+- Extensions adding item metadata fields must provide forward migrations.
 - Migration definitions are versioned and idempotent.
 - `pm health` reports deterministic migration status summaries:
   - `applied`: registered migrations whose definition status is `"applied"` (case-insensitive).

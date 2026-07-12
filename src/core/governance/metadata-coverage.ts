@@ -15,7 +15,7 @@
 
 import { toNonEmptyStringOrUndefined } from "../shared/primitives.js";
 
-/** Minimal structural shape this module needs from an item's front matter. */
+/** Minimal structural shape this module needs from an item's item metadata. */
 export interface CoverageItem {
   /** Schema type that determines the shape and validation rules for this value. */
   type: string;

@@ -20,7 +20,7 @@ import {
   nowIso,
   resolveIsoOrRelative,
 } from "../../core/shared/time.js";
-import { listAllFrontMatterLight } from "../../core/store/item-store.js";
+import { listAllItemMetadataLight } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { readHistoryEntries } from "./history.js";
@@ -232,7 +232,7 @@ async function prepareActivityHistoryRead(
     context.settings,
     getActiveExtensionRegistrations(),
   );
-  const items = await listAllFrontMatterLight(
+  const items = await listAllItemMetadataLight(
     context.pmRoot,
     context.settings.item_format,
     typeRegistry.type_to_folder,

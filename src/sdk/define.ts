@@ -129,7 +129,7 @@ export function defineItemType<TType extends SchemaItemTypeDefinition>(
 }
 
 /**
- * Type a custom front-matter field definition for `api.registerItemFields([...])`.
+ * Type a custom item-metadata field definition for `api.registerItemFields([...])`.
  *
  * Checks `name`/`type`/`optional` against {@link SchemaFieldDefinition} while
  * keeping the field's extra metadata (the contract carries an index signature)

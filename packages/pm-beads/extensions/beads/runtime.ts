@@ -148,7 +148,7 @@ interface BeadsSdkModule {
     itemFormat: PmSettings["item_format"],
     typeToFolder: Record<string, string>,
   ) => Promise<unknown>;
-  normalizeFrontMatter: (frontMatter: Partial<ItemMetadata>) => ItemMetadata;
+  normalizeItemMetadata: (itemMetadata: Partial<ItemMetadata>) => ItemMetadata;
   normalizeItemId: (id: string, prefix: string) => string;
   normalizeRawItemId: (id: string) => string;
   nowIso: () => string;
@@ -204,7 +204,7 @@ const BEADS_SDK_FUNCTION_EXPORTS = [
   "getItemPath",
   "isTimestampLiteral",
   "locateItem",
-  "normalizeFrontMatter",
+  "normalizeItemMetadata",
   "normalizeItemId",
   "normalizeRawItemId",
   "nowIso",
@@ -670,7 +670,7 @@ async function importBeadsRecord(
   const closedAt = toIsoString(record.closed_at);
   const assignee =
     toNonEmptyString(record.assignee) ?? toNonEmptyString(record.owner);
-  const frontMatter = runtime.sdk.normalizeFrontMatter({
+  const itemMetadata = runtime.sdk.normalizeItemMetadata({
     id,
     title,
     description: toNonEmptyString(record.description) ?? "",
@@ -720,7 +720,7 @@ async function importBeadsRecord(
     docs: toImportLinkedDocs(record.docs, BEADS_DOC_OPTIONS),
   });
   const afterDocument = runtime.sdk.canonicalDocument({
-    metadata: frontMatter,
+    metadata: itemMetadata,
     body: buildBeadsImportedBody(record),
   });
   const existing = await runtime.sdk.locateItem(

@@ -108,8 +108,8 @@ import {
   nowIso,
   resolveIsoOrRelative,
 } from "../../core/shared/time.js";
-import { listAllDocumentCandidatesCached } from "../../core/store/front-matter-cache.js";
-import { listAllFrontMatter } from "../../core/store/item-store.js";
+import { listAllDocumentCandidatesCached } from "../../core/store/item-metadata-cache.js";
+import { listAllItemMetadata } from "../../core/store/item-store.js";
 import {
   getItemPath,
   getSettingsPath,
@@ -120,7 +120,7 @@ import { readSettings } from "../../core/store/settings.js";
 import type {
   ItemDocument,
   ItemFormat,
-  ItemFrontMatter,
+  ItemMetadata,
   ItemStatus,
   ItemType,
   PmSettings,
@@ -281,7 +281,7 @@ type InlineQueryFilterField = (typeof INLINE_QUERY_FILTER_FIELDS)[number];
 /** Documents the search hit payload exchanged by command, SDK, and package integrations. */
 export interface SearchHit {
   /** Value that configures or reports item for this contract. */
-  item: ItemFrontMatter;
+  item: ItemMetadata;
   /** Value that configures or reports score for this contract. */
   score: number;
   /** Value that configures or reports matched fields for this contract. */
@@ -1059,7 +1059,7 @@ function resolveSearchMetadataFilterSet(
 }
 
 function matchesScalarSearchFilters(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
   filters: SearchMetadataFilterSet,
 ): boolean {
   return (
@@ -1070,7 +1070,7 @@ function matchesScalarSearchFilters(
 }
 
 function matchesIdentitySearchFilters(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
   filters: SearchMetadataFilterSet,
 ): boolean {
   if (filters.statusSet && !filters.statusSet.has(item.status)) return false;
@@ -1086,14 +1086,14 @@ function matchesIdentitySearchFilters(
 }
 
 function matchesTimestampSearchFilters(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
   filters: SearchMetadataFilterSet,
 ): boolean {
   return matchesTimestampFilters(item, filters);
 }
 
 function matchesOwnerSearchFilters(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
   filters: SearchMetadataFilterSet,
 ): boolean {
   if (
@@ -1196,7 +1196,7 @@ function tokenizeForExactTokenMatch(value: string): string[] {
 }
 
 function collectLinkedPaths(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
 ): Array<{ scope: "project" | "global"; path: string }> {
   const fromFiles = (item.files ?? []).map((entry) => ({
     scope: entry.scope,
@@ -1557,7 +1557,7 @@ function buildSearchableScoringFields(
 }
 
 function buildExactIdSearchHit(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
   normalizedQuery: string,
   idPrefix: string,
 ): SearchHit | null {
@@ -1614,7 +1614,7 @@ function scoreTokenMatches(
 }
 
 function scorePhraseMatches(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
   normalizedQuery: string,
   searchableFields: SearchableScoringField[],
   state: SearchScoreState,
@@ -2765,7 +2765,7 @@ async function loadDocuments(
     getActiveExtensionRegistrations(),
   );
   const readDocumentBody = async (
-    metadata: ItemFrontMatter,
+    metadata: ItemMetadata,
     preferredPath: string,
     preferredFormat: ItemFormat,
   ): Promise<string> => {
@@ -2817,14 +2817,14 @@ async function loadDocuments(
   );
   const documents: ItemDocument[] = [];
   if (cachedDocuments.length === 0) {
-    const frontMatterDocuments = await listAllFrontMatter(
+    const itemMetadataDocuments = await listAllItemMetadata(
       pmRoot,
       itemFormat,
       typeToFolder,
       listWarnings,
       schema,
     );
-    for (const metadata of frontMatterDocuments) {
+    for (const metadata of itemMetadataDocuments) {
       const preferredPath = getItemPath(
         pmRoot,
         metadata.type as ItemType,

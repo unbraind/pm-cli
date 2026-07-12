@@ -21,7 +21,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { splitCommaList } from "../../core/shared/split-comma-list.js";
 import {
-  listAllFrontMatter,
+  listAllItemMetadata,
   locateItem,
   mutateItem,
   readLocatedItem,
@@ -635,7 +635,7 @@ export async function runLinkedArtifacts(
     Array<{ id: string; artifacts?: LinkedArtifact[] }>
   > =>
     (
-      await listAllFrontMatter(
+      await listAllItemMetadata(
         pmRoot,
         settings.item_format,
         typeRegistry.type_to_folder,

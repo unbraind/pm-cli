@@ -62,7 +62,7 @@ export const KANBAN_ITEM_TYPE: SchemaItemTypeDefinition = {
   required_create_fields: [],
 };
 
-/** Flow-control front-matter fields for a Kanban board. None shadow a built-in field key, so they register cleanly alongside core metadata. */
+/** Flow-control item-metadata fields for a Kanban board. None shadow a built-in field key, so they register cleanly alongside core metadata. */
 export const KANBAN_ITEM_FIELDS: SchemaFieldDefinition[] = [
   { name: "wip_limit", type: "number", optional: true },
   { name: "class_of_service", type: "string", optional: true },

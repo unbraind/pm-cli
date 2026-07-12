@@ -28,7 +28,7 @@ import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fiel
 import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import {
   EXIT_CODE,
-  FRONT_MATTER_KEY_ORDER,
+  ITEM_METADATA_KEY_ORDER,
 } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { nowIso } from "../../core/shared/time.js";
@@ -79,12 +79,12 @@ function selectAuthor(
   return trimmed.length > 0 ? trimmed : "unknown";
 }
 
-function buildChangedFields(frontMatter: ItemMetadata, body: string): string[] {
+function buildChangedFields(itemMetadata: ItemMetadata, body: string): string[] {
   const changed = [
     ...new Set([
-      ...FRONT_MATTER_KEY_ORDER.filter((key) => frontMatter[key] !== undefined),
-      ...Object.keys(frontMatter).filter(
-        (key) => frontMatter[key] !== undefined,
+      ...ITEM_METADATA_KEY_ORDER.filter((key) => itemMetadata[key] !== undefined),
+      ...Object.keys(itemMetadata).filter(
+        (key) => itemMetadata[key] !== undefined,
       ),
       ...(body.length > 0 ? ["body"] : []),
     ]),

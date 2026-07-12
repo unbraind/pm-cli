@@ -38,7 +38,7 @@ import {
   type RendererOverrideResult,
   type ServiceOverrideResult,
 } from "./loader.js";
-import type { ItemFrontMatter } from "../../types/index.js";
+import type { ItemMetadata } from "../../types/index.js";
 
 let activeExtensionHooks: ExtensionHookRegistry | null = null;
 let activeExtensionCommands: ExtensionCommandRegistry | null = null;
@@ -168,9 +168,9 @@ export function recordAfterCommandAffectedItem(
 
 /** Implements project after command item snapshot for the public runtime surface of this module. */
 export function projectAfterCommandItemSnapshot(
-  metadata: ItemFrontMatter,
+  metadata: ItemMetadata,
   changedFields: readonly string[],
-): Partial<ItemFrontMatter> {
+): Partial<ItemMetadata> {
   if (!metadata || !metadata.id) {
     return {};
   }
@@ -180,7 +180,7 @@ export function projectAfterCommandItemSnapshot(
     status: metadata.status,
   };
   if (!Array.isArray(changedFields)) {
-    return snapshot as Partial<ItemFrontMatter>;
+    return snapshot as Partial<ItemMetadata>;
   }
   const source = metadata as unknown as Record<string, unknown>;
   for (const field of changedFields) {
@@ -205,7 +205,7 @@ export function projectAfterCommandItemSnapshot(
       snapshot[actualField] = source[actualField];
     }
   }
-  return snapshot as Partial<ItemFrontMatter>;
+  return snapshot as Partial<ItemMetadata>;
 }
 
 /** Implements consume after command affected items for the public runtime surface of this module. */

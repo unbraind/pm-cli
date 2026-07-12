@@ -92,7 +92,7 @@ describe("runClose", () => {
     ).toEqual(["pm-a", "pm-b"]);
   });
 
-  it("builds active child indexes from tracker front matter", async () => {
+  it("builds active child indexes from tracker item metadata", async () => {
     await withTempPmPath(async (context) => {
       const parentId = createTask(context, "close-many-index-parent");
       const childB = createTask(context, "close-many-index-child-b", { parent: parentId });

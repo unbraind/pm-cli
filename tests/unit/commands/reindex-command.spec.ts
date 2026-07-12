@@ -13,7 +13,7 @@ import {
   setActiveExtensionRegistrations,
 } from "../../../src/core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../../../src/core/item/type-registry.js";
-import { listAllDocumentCandidatesCached } from "../../../src/core/store/front-matter-cache.js";
+import { listAllDocumentCandidatesCached } from "../../../src/core/store/item-metadata-cache.js";
 import { createEmptyExtensionRegistrationRegistry } from "../../../src/core/extensions/loader.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
@@ -1764,7 +1764,7 @@ describe("runReindex", () => {
         }
       }
 
-      const frontMatterCacheModule = await import("../../../src/core/store/front-matter-cache.js");
+      const itemMetadataCacheModule = await import("../../../src/core/store/item-metadata-cache.js");
       const metadataOnlyCandidate = {
         metadata: {
           id: "pm-metadata-only",
@@ -1780,7 +1780,7 @@ describe("runReindex", () => {
         item_format: "toon",
       };
       const listAllCandidatesSpy = vi
-        .spyOn(frontMatterCacheModule, "listAllDocumentCandidatesCached")
+        .spyOn(itemMetadataCacheModule, "listAllDocumentCandidatesCached")
         .mockResolvedValueOnce([metadataOnlyCandidate] as never);
       try {
         const keywordMetadataFallback = await runReindex({ mode: "keyword" }, { path: context.pmPath });

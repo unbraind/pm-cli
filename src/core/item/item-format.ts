@@ -50,7 +50,7 @@ import {
 } from "./item-format-version.js";
 import { normalizeStatusInput } from "./status.js";
 import { decodeToonItemContent } from "./toon-decode.js";
-import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
+import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { findFirstMergeConflictMarker } from "../shared/conflict-markers.js";
 import { PmCliError } from "../shared/errors.js";
 import { orderObject } from "../shared/serialization.js";
@@ -99,7 +99,7 @@ const REQUIRED_STRING_FIELDS = [
   "updated_at",
 ] as const;
 
-const STATIC_FRONT_MATTER_FIELD_SET = new Set(FRONT_MATTER_KEY_ORDER);
+const STATIC_ITEM_METADATA_FIELD_SET = new Set(ITEM_METADATA_KEY_ORDER);
 
 interface RuntimeSchemaValidationContext {
   statusRegistry?: RuntimeStatusRegistry;
@@ -153,15 +153,15 @@ function runtimeFieldRequiredForType(
 
 function validationError(message: string): never {
   throw new PmCliError(
-    `Invalid item front matter: ${message}`,
+    `Invalid item metadata: ${message}`,
     EXIT_CODE.GENERIC_FAILURE,
   );
 }
 
-function buildKnownFrontMatterKeys(
+function buildKnownItemMetadataKeys(
   runtimeContext: RuntimeSchemaValidationContext,
 ): Set<string> {
-  const knownKeys = new Set(STATIC_FRONT_MATTER_FIELD_SET);
+  const knownKeys = new Set(STATIC_ITEM_METADATA_FIELD_SET);
   for (const definition of runtimeContext.fieldRegistry?.definitions ?? []) {
     knownKeys.add(definition.metadata_key);
   }
@@ -171,7 +171,7 @@ function buildKnownFrontMatterKeys(
   return knownKeys;
 }
 
-function assertFrontMatterCondition(condition: boolean, message: string): void {
+function assertItemMetadataCondition(condition: boolean, message: string): void {
   if (!condition) {
     validationError(message);
   }
@@ -182,12 +182,12 @@ function assertTimestampField(
   fieldName: "created_at" | "updated_at" | "deadline",
 ): void {
   const rawValue = record[fieldName];
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     typeof rawValue === "string",
     `${fieldName} must be a string`,
   );
   const timestamp = rawValue as string;
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     isTimestampLiteral(timestamp),
     `${fieldName} must be a valid ISO timestamp`,
   );
@@ -202,7 +202,7 @@ function assertPositiveIntegerField(
   if (value === undefined) {
     return;
   }
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     typeof value === "number" && Number.isInteger(value) && value >= 1,
     `${messagePrefix} must be an integer >= 1`,
   );
@@ -217,11 +217,11 @@ function assertOptionalTimestampString(
   if (value === undefined) {
     return;
   }
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     typeof value === "string",
     `${messagePrefix} must be a string`,
   );
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     isTimestampLiteral(value as string),
     `${messagePrefix} must be a valid ISO timestamp`,
   );
@@ -231,17 +231,17 @@ function assertRecurrenceWeekdays(value: unknown): void {
   if (value === undefined) {
     return;
   }
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     Array.isArray(value),
     "event.recurrence.by_weekday must be an array",
   );
   for (const weekday of value as unknown[]) {
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       typeof weekday === "string",
       "event.recurrence.by_weekday entries must be strings",
     );
     const normalizedWeekday = (weekday as string).trim().toLowerCase();
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       RECURRENCE_WEEKDAY_VALUES.includes(
         normalizedWeekday as (typeof RECURRENCE_WEEKDAY_VALUES)[number],
       ),
@@ -254,12 +254,12 @@ function assertRecurrenceMonthDays(value: unknown): void {
   if (value === undefined) {
     return;
   }
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     Array.isArray(value),
     "event.recurrence.by_month_day must be an array",
   );
   for (const day of value as unknown[]) {
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       typeof day === "number" && Number.isInteger(day) && day >= 1 && day <= 31,
       "event.recurrence.by_month_day entries must be integers 1..31",
     );
@@ -270,16 +270,16 @@ function assertRecurrenceExdates(value: unknown): void {
   if (value === undefined) {
     return;
   }
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     Array.isArray(value),
     "event.recurrence.exdates must be an array",
   );
   for (const exdate of value as unknown[]) {
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       typeof exdate === "string",
       "event.recurrence.exdates entries must be strings",
     );
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       isTimestampLiteral(exdate as string),
       "event.recurrence.exdates entries must be valid ISO timestamps",
     );
@@ -287,19 +287,19 @@ function assertRecurrenceExdates(value: unknown): void {
 }
 
 function assertValidRecurrenceRule(recurrence: unknown): void {
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     typeof recurrence === "object" &&
       recurrence !== null &&
       !Array.isArray(recurrence),
     "event.recurrence must be an object",
   );
   const recurrenceRecord = recurrence as Record<string, unknown>;
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     typeof recurrenceRecord.freq === "string",
     "event.recurrence.freq must be a string",
   );
   const frequency = (recurrenceRecord.freq as string).trim().toLowerCase();
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     RECURRENCE_FREQUENCY_VALUES.includes(
       frequency as (typeof RECURRENCE_FREQUENCY_VALUES)[number],
     ),
@@ -326,25 +326,25 @@ function assertValidRecurrenceRule(recurrence: unknown): void {
   assertRecurrenceExdates(recurrenceRecord.exdates);
 }
 
-function assertRequiredFrontMatterFields(
+function assertRequiredItemMetadataFields(
   record: Record<string, unknown>,
 ): string {
   for (const fieldName of REQUIRED_STRING_FIELDS) {
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       typeof record[fieldName] === "string",
       `${fieldName} is required and must be a string`,
     );
   }
 
   const itemType = record.type;
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     typeof itemType === "string" && itemType.trim().length > 0,
     "type must be a non-empty string",
   );
 
   const formatVersion = record.pm_format_version;
   if (formatVersion !== undefined) {
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       typeof formatVersion === "number" &&
         Number.isInteger(formatVersion) &&
         formatVersion >= BASELINE_ITEM_FORMAT_VERSION,
@@ -354,12 +354,12 @@ function assertRequiredFrontMatterFields(
   return itemType as string;
 }
 
-function assertStatusFrontMatterField(
+function assertStatusItemMetadataField(
   record: Record<string, unknown>,
   runtimeContext?: RuntimeSchemaValidationContext,
 ): void {
   const status = record.status;
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     typeof status === "string" && status.trim().length > 0,
     "status must be a non-empty string",
   );
@@ -371,7 +371,7 @@ function assertStatusFrontMatterField(
   const statusDomain = statusRegistry
     ? statusRegistry.definitions.map((definition) => definition.id)
     : [...STATUS_VALUES];
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     normalizedStatus !== undefined,
     `status must be one of: ${statusDomain.join(", ")}`,
   );
@@ -379,7 +379,7 @@ function assertStatusFrontMatterField(
 
 function assertPriorityAndTags(record: Record<string, unknown>): void {
   const priority = record.priority;
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     typeof priority === "number" &&
       Number.isInteger(priority) &&
       [0, 1, 2, 3, 4].includes(priority),
@@ -387,16 +387,16 @@ function assertPriorityAndTags(record: Record<string, unknown>): void {
   );
 
   const tags = record.tags;
-  assertFrontMatterCondition(Array.isArray(tags), "tags must be an array");
+  assertItemMetadataCondition(Array.isArray(tags), "tags must be an array");
   for (const tag of tags as unknown[]) {
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       typeof tag === "string",
       "tags entries must be strings",
     );
   }
 }
 
-function assertConfidenceFrontMatterField(
+function assertConfidenceItemMetadataField(
   record: Record<string, unknown>,
 ): void {
   const confidence = record.confidence;
@@ -404,7 +404,7 @@ function assertConfidenceFrontMatterField(
     return;
   }
   if (typeof confidence === "number") {
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       Number.isInteger(confidence) && confidence >= 0 && confidence <= 100,
       "confidence number value must be an integer 0..100",
     );
@@ -417,16 +417,16 @@ function assertConfidenceFrontMatterField(
       CONFIDENCE_TEXT_VALUES.includes(
         normalizedConfidence as (typeof CONFIDENCE_TEXT_VALUES)[number],
       );
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       isKnownTextConfidence,
       `confidence string value must be one of: ${[...CONFIDENCE_TEXT_VALUES, "med"].join(", ")}`,
     );
     return;
   }
-  assertFrontMatterCondition(false, "confidence must be a number or string");
+  assertItemMetadataCondition(false, "confidence must be a number or string");
 }
 
-function assertSeverityFrontMatterField(record: Record<string, unknown>): void {
+function assertSeverityItemMetadataField(record: Record<string, unknown>): void {
   const severity = record.severity;
   if (severity === undefined) {
     return;
@@ -440,13 +440,13 @@ function assertSeverityFrontMatterField(record: Record<string, unknown>): void {
     ISSUE_SEVERITY_VALUES.includes(
       normalizedSeverity as (typeof ISSUE_SEVERITY_VALUES)[number],
     );
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     isKnownSeverity,
     `severity value must be one of: ${[...ISSUE_SEVERITY_VALUES, "med"].join(", ")}`,
   );
 }
 
-function assertRegressionFrontMatterField(
+function assertRegressionItemMetadataField(
   record: Record<string, unknown>,
 ): void {
   if (
@@ -462,31 +462,31 @@ function assertReminderEntries(record: Record<string, unknown>): void {
   if (reminders === undefined) {
     return;
   }
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     Array.isArray(reminders),
     "reminders must be an array",
   );
   for (const reminder of reminders as unknown[]) {
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       typeof reminder === "object" &&
         reminder !== null &&
         !Array.isArray(reminder),
       "reminders entries must be objects",
     );
     const reminderRecord = reminder as Record<string, unknown>;
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       typeof reminderRecord.at === "string",
       "reminder.at must be a string",
     );
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       isTimestampLiteral(reminderRecord.at as string),
       "reminder.at must be a valid ISO timestamp",
     );
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       typeof reminderRecord.text === "string",
       "reminder.text must be a string",
     );
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       (reminderRecord.text as string).trim().length > 0,
       "reminder.text must not be empty",
     );
@@ -501,11 +501,11 @@ function assertEventStringFields(eventRecord: Record<string, unknown>): void {
     "timezone",
   ] as const) {
     if (eventRecord[stringField] !== undefined) {
-      assertFrontMatterCondition(
+      assertItemMetadataCondition(
         typeof eventRecord[stringField] === "string",
         `event.${stringField} must be a string`,
       );
-      assertFrontMatterCondition(
+      assertItemMetadataCondition(
         (eventRecord[stringField] as string).trim().length > 0,
         `event.${stringField} must not be empty`,
       );
@@ -519,7 +519,7 @@ function assertEventRecurrence(eventRecord: Record<string, unknown>): void {
   }
   assertValidRecurrenceRule(eventRecord.recurrence);
   if ((eventRecord.recurrence as Record<string, unknown>).until !== undefined) {
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       compareTimestampStrings(
         (eventRecord.recurrence as Record<string, unknown>).until as string,
         eventRecord.start_at as string,
@@ -530,30 +530,30 @@ function assertEventRecurrence(eventRecord: Record<string, unknown>): void {
 }
 
 function assertCalendarEventEntry(event: unknown): void {
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     typeof event === "object" && event !== null && !Array.isArray(event),
     "events entries must be objects",
   );
   const eventRecord = event as Record<string, unknown>;
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     typeof eventRecord.start_at === "string",
     "event.start_at must be a string",
   );
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     isTimestampLiteral(eventRecord.start_at as string),
     "event.start_at must be a valid ISO timestamp",
   );
 
   if (eventRecord.end_at !== undefined) {
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       typeof eventRecord.end_at === "string",
       "event.end_at must be a string",
     );
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       isTimestampLiteral(eventRecord.end_at as string),
       "event.end_at must be a valid ISO timestamp",
     );
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       compareTimestampStrings(
         eventRecord.end_at as string,
         eventRecord.start_at as string,
@@ -564,7 +564,7 @@ function assertCalendarEventEntry(event: unknown): void {
 
   assertEventStringFields(eventRecord);
   if (eventRecord.all_day !== undefined) {
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       typeof eventRecord.all_day === "boolean",
       "event.all_day must be a boolean",
     );
@@ -577,7 +577,7 @@ function assertCalendarEvents(record: Record<string, unknown>): void {
   if (events === undefined) {
     return;
   }
-  assertFrontMatterCondition(Array.isArray(events), "events must be an array");
+  assertItemMetadataCondition(Array.isArray(events), "events must be an array");
   for (const event of events as unknown[]) {
     assertCalendarEventEntry(event);
   }
@@ -592,7 +592,7 @@ function assertOptionalStringFields(record: Record<string, unknown>): void {
   ] as const) {
     const value = record[fieldName];
     if (value !== undefined) {
-      assertFrontMatterCondition(
+      assertItemMetadataCondition(
         typeof value === "string",
         `${fieldName} must be a string`,
       );
@@ -605,7 +605,7 @@ function assertTypeOptionsField(record: Record<string, unknown>): void {
   if (typeOptions === undefined) {
     return;
   }
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     typeof typeOptions === "object" &&
       typeOptions !== null &&
       !Array.isArray(typeOptions),
@@ -614,23 +614,23 @@ function assertTypeOptionsField(record: Record<string, unknown>): void {
   for (const [optionKey, optionValue] of Object.entries(
     typeOptions as Record<string, unknown>,
   )) {
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       optionKey.trim().length > 0,
       "type_options keys must be non-empty",
     );
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       typeof optionValue === "string",
       "type_options values must be strings",
     );
     const optionText = optionValue as string;
-    assertFrontMatterCondition(
+    assertItemMetadataCondition(
       optionText.trim().length > 0,
       "type_options values must be non-empty strings",
     );
   }
 }
 
-function coerceRuntimeFrontMatterFields(
+function coerceRuntimeItemMetadataFields(
   record: Record<string, unknown>,
   itemType: string,
   runtimeContext?: RuntimeSchemaValidationContext,
@@ -665,14 +665,14 @@ function coerceRuntimeFrontMatterFields(
   }
 }
 
-function assertRuntimeUnknownFrontMatterFields(
+function assertRuntimeUnknownItemMetadataFields(
   record: Record<string, unknown>,
   runtimeContext?: RuntimeSchemaValidationContext,
 ): void {
   if (!runtimeContext || runtimeContext.unknownFieldPolicy === "allow") {
     return;
   }
-  const knownKeys = buildKnownFrontMatterKeys(runtimeContext);
+  const knownKeys = buildKnownItemMetadataKeys(runtimeContext);
   const unknownKeys = Object.keys(record)
     .filter((key) => !knownKeys.has(key))
     .sort((left, right) => left.localeCompare(right));
@@ -690,24 +690,24 @@ function assertRuntimeUnknownFrontMatterFields(
   }
 }
 
-function assertValidFrontMatter(
-  frontMatter: unknown,
+function assertValidItemMetadata(
+  itemMetadata: unknown,
   runtimeContext?: RuntimeSchemaValidationContext,
-): asserts frontMatter is ItemMetadata {
-  assertFrontMatterCondition(
-    typeof frontMatter === "object" &&
-      frontMatter !== null &&
-      !Array.isArray(frontMatter),
-    "front matter must be an object",
+): asserts itemMetadata is ItemMetadata {
+  assertItemMetadataCondition(
+    typeof itemMetadata === "object" &&
+      itemMetadata !== null &&
+      !Array.isArray(itemMetadata),
+    "item metadata must be an object",
   );
 
-  const record = frontMatter as Record<string, unknown>;
-  const itemType = assertRequiredFrontMatterFields(record);
-  assertStatusFrontMatterField(record, runtimeContext);
+  const record = itemMetadata as Record<string, unknown>;
+  const itemType = assertRequiredItemMetadataFields(record);
+  assertStatusItemMetadataField(record, runtimeContext);
   assertPriorityAndTags(record);
-  assertConfidenceFrontMatterField(record);
-  assertSeverityFrontMatterField(record);
-  assertRegressionFrontMatterField(record);
+  assertConfidenceItemMetadataField(record);
+  assertSeverityItemMetadataField(record);
+  assertRegressionItemMetadataField(record);
   assertTimestampField(record, "created_at");
   assertTimestampField(record, "updated_at");
   if (record.deadline !== undefined) {
@@ -718,8 +718,8 @@ function assertValidFrontMatter(
   assertOptionalTimestampString(record, "closed_at", "closed_at");
   assertOptionalStringFields(record);
   assertTypeOptionsField(record);
-  coerceRuntimeFrontMatterFields(record, itemType, runtimeContext);
-  assertRuntimeUnknownFrontMatterFields(record, runtimeContext);
+  coerceRuntimeItemMetadataFields(record, itemType, runtimeContext);
+  assertRuntimeUnknownItemMetadataFields(record, runtimeContext);
 }
 
 function sortDependencies(
@@ -1448,7 +1448,7 @@ function emptyStringToUndefined(value: string | undefined): string | undefined {
   return value || undefined;
 }
 
-function copyExtensionFrontMatterFields(
+function copyExtensionItemMetadataFields(
   normalized: ItemMetadata,
   source: ItemMetadata,
 ): void {
@@ -1494,7 +1494,7 @@ function assertNormalizedUnknownFields(
   if (!runtimeContext || runtimeContext.unknownFieldPolicy === "allow") {
     return;
   }
-  const knownKeys = buildKnownFrontMatterKeys(runtimeContext);
+  const knownKeys = buildKnownItemMetadataKeys(runtimeContext);
   const record = normalized as unknown as Record<string, unknown>;
   const unknownKeys = Object.keys(record)
     .filter((key) => !knownKeys.has(key))
@@ -1514,9 +1514,9 @@ function assertNormalizedUnknownFields(
   }
 }
 
-/** Implements normalize front matter for the public runtime surface of this module. */
-export function normalizeFrontMatter(
-  frontMatter: ItemMetadata,
+/** Implements normalize item metadata for the public runtime surface of this module. */
+export function normalizeItemMetadata(
+  itemMetadata: ItemMetadata,
   options: Pick<
     ItemDocumentFormatOptions,
     "schema" | "extensionFieldNames" | "onWarning"
@@ -1524,101 +1524,101 @@ export function normalizeFrontMatter(
 ): ItemMetadata {
   const runtimeContext = resolveRuntimeSchemaValidationContext(options);
   const normalizedStatus =
-    normalizeStatusInput(frontMatter.status, runtimeContext?.statusRegistry) ??
-    frontMatter.status;
+    normalizeStatusInput(itemMetadata.status, runtimeContext?.statusRegistry) ??
+    itemMetadata.status;
   const tags = Array.from(
     new Set(
-      frontMatter.tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean),
+      itemMetadata.tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean),
     ),
   ).sort((a, b) => a.localeCompare(b));
   const normalized: ItemMetadata = {
-    id: frontMatter.id,
-    title: frontMatter.title,
-    description: frontMatter.description,
-    type: frontMatter.type,
+    id: itemMetadata.id,
+    title: itemMetadata.title,
+    description: itemMetadata.description,
+    type: itemMetadata.type,
     pm_format_version: normalizeItemFormatVersion(
-      frontMatter.pm_format_version,
+      itemMetadata.pm_format_version,
     ),
-    source_type: trimStringOrUndefined(frontMatter.source_type),
-    type_options: normalizeTypeOptions(frontMatter.type_options),
+    source_type: trimStringOrUndefined(itemMetadata.source_type),
+    type_options: normalizeTypeOptions(itemMetadata.type_options),
     status: normalizedStatus,
-    priority: frontMatter.priority,
+    priority: itemMetadata.priority,
     tags,
-    created_at: frontMatter.created_at,
-    updated_at: frontMatter.updated_at,
-    dependencies: sortDependencies(frontMatter.dependencies),
-    comments: sortLogValues(frontMatter.comments),
-    notes: sortLogValues(frontMatter.notes),
-    learnings: sortLogValues(frontMatter.learnings),
-    files: normalizeFiles(frontMatter.files),
-    tests: sortTests(frontMatter.tests),
-    test_runs: normalizeTestRunSummaries(frontMatter.test_runs),
-    docs: sortDocs(frontMatter.docs),
-    deadline: emptyStringToUndefined(frontMatter.deadline),
-    reminders: sortReminders(frontMatter.reminders),
-    events: sortEvents(frontMatter.events),
-    closed_at: emptyStringToUndefined(frontMatter.closed_at),
-    assignee: trimStringOrUndefined(frontMatter.assignee),
-    source_owner: trimStringOrUndefined(frontMatter.source_owner),
-    author: emptyStringToUndefined(frontMatter.author),
-    estimated_minutes: frontMatter.estimated_minutes,
-    acceptance_criteria: frontMatter.acceptance_criteria ?? undefined,
-    design: frontMatter.design ?? undefined,
-    external_ref: frontMatter.external_ref ?? undefined,
-    definition_of_ready: trimStringOrUndefined(frontMatter.definition_of_ready),
-    order: frontMatter.order,
-    goal: trimStringOrUndefined(frontMatter.goal),
-    objective: trimStringOrUndefined(frontMatter.objective),
-    value: trimStringOrUndefined(frontMatter.value),
-    impact: trimStringOrUndefined(frontMatter.impact),
-    outcome: trimStringOrUndefined(frontMatter.outcome),
-    why_now: trimStringOrUndefined(frontMatter.why_now),
-    parent: trimStringOrUndefined(frontMatter.parent),
-    reviewer: trimStringOrUndefined(frontMatter.reviewer),
-    risk: frontMatter.risk ?? undefined,
-    confidence: normalizeConfidenceValue(frontMatter.confidence),
-    sprint: trimStringOrUndefined(frontMatter.sprint),
-    release: trimStringOrUndefined(frontMatter.release),
-    blocked_by: trimStringOrUndefined(frontMatter.blocked_by),
-    blocked_reason: trimStringOrUndefined(frontMatter.blocked_reason),
-    unblock_note: trimStringOrUndefined(frontMatter.unblock_note),
-    reporter: trimStringOrUndefined(frontMatter.reporter),
-    severity: normalizeSeverityValue(frontMatter.severity),
-    environment: trimStringOrUndefined(frontMatter.environment),
-    repro_steps: trimStringOrUndefined(frontMatter.repro_steps),
-    resolution: trimStringOrUndefined(frontMatter.resolution),
-    expected_result: trimStringOrUndefined(frontMatter.expected_result),
-    actual_result: trimStringOrUndefined(frontMatter.actual_result),
-    affected_version: trimStringOrUndefined(frontMatter.affected_version),
-    fixed_version: trimStringOrUndefined(frontMatter.fixed_version),
-    component: trimStringOrUndefined(frontMatter.component),
-    regression: frontMatter.regression,
-    customer_impact: trimStringOrUndefined(frontMatter.customer_impact),
-    close_reason: emptyStringToUndefined(frontMatter.close_reason),
+    created_at: itemMetadata.created_at,
+    updated_at: itemMetadata.updated_at,
+    dependencies: sortDependencies(itemMetadata.dependencies),
+    comments: sortLogValues(itemMetadata.comments),
+    notes: sortLogValues(itemMetadata.notes),
+    learnings: sortLogValues(itemMetadata.learnings),
+    files: normalizeFiles(itemMetadata.files),
+    tests: sortTests(itemMetadata.tests),
+    test_runs: normalizeTestRunSummaries(itemMetadata.test_runs),
+    docs: sortDocs(itemMetadata.docs),
+    deadline: emptyStringToUndefined(itemMetadata.deadline),
+    reminders: sortReminders(itemMetadata.reminders),
+    events: sortEvents(itemMetadata.events),
+    closed_at: emptyStringToUndefined(itemMetadata.closed_at),
+    assignee: trimStringOrUndefined(itemMetadata.assignee),
+    source_owner: trimStringOrUndefined(itemMetadata.source_owner),
+    author: emptyStringToUndefined(itemMetadata.author),
+    estimated_minutes: itemMetadata.estimated_minutes,
+    acceptance_criteria: itemMetadata.acceptance_criteria ?? undefined,
+    design: itemMetadata.design ?? undefined,
+    external_ref: itemMetadata.external_ref ?? undefined,
+    definition_of_ready: trimStringOrUndefined(itemMetadata.definition_of_ready),
+    order: itemMetadata.order,
+    goal: trimStringOrUndefined(itemMetadata.goal),
+    objective: trimStringOrUndefined(itemMetadata.objective),
+    value: trimStringOrUndefined(itemMetadata.value),
+    impact: trimStringOrUndefined(itemMetadata.impact),
+    outcome: trimStringOrUndefined(itemMetadata.outcome),
+    why_now: trimStringOrUndefined(itemMetadata.why_now),
+    parent: trimStringOrUndefined(itemMetadata.parent),
+    reviewer: trimStringOrUndefined(itemMetadata.reviewer),
+    risk: itemMetadata.risk ?? undefined,
+    confidence: normalizeConfidenceValue(itemMetadata.confidence),
+    sprint: trimStringOrUndefined(itemMetadata.sprint),
+    release: trimStringOrUndefined(itemMetadata.release),
+    blocked_by: trimStringOrUndefined(itemMetadata.blocked_by),
+    blocked_reason: trimStringOrUndefined(itemMetadata.blocked_reason),
+    unblock_note: trimStringOrUndefined(itemMetadata.unblock_note),
+    reporter: trimStringOrUndefined(itemMetadata.reporter),
+    severity: normalizeSeverityValue(itemMetadata.severity),
+    environment: trimStringOrUndefined(itemMetadata.environment),
+    repro_steps: trimStringOrUndefined(itemMetadata.repro_steps),
+    resolution: trimStringOrUndefined(itemMetadata.resolution),
+    expected_result: trimStringOrUndefined(itemMetadata.expected_result),
+    actual_result: trimStringOrUndefined(itemMetadata.actual_result),
+    affected_version: trimStringOrUndefined(itemMetadata.affected_version),
+    fixed_version: trimStringOrUndefined(itemMetadata.fixed_version),
+    component: trimStringOrUndefined(itemMetadata.component),
+    regression: itemMetadata.regression,
+    customer_impact: trimStringOrUndefined(itemMetadata.customer_impact),
+    close_reason: emptyStringToUndefined(itemMetadata.close_reason),
     plan_mode: trimStringOrUndefined(
-      frontMatter.plan_mode,
+      itemMetadata.plan_mode,
     ) as ItemMetadata["plan_mode"],
-    plan_scope: trimStringOrUndefined(frontMatter.plan_scope),
+    plan_scope: trimStringOrUndefined(itemMetadata.plan_scope),
     plan_harness: trimStringOrUndefined(
-      frontMatter.plan_harness,
+      itemMetadata.plan_harness,
     ) as ItemMetadata["plan_harness"],
-    plan_resume_context: trimStringOrUndefined(frontMatter.plan_resume_context),
-    plan_steps: normalizePlanSteps(frontMatter.plan_steps),
-    plan_decisions: normalizePlanDecisions(frontMatter.plan_decisions),
-    plan_discoveries: normalizePlanDiscoveries(frontMatter.plan_discoveries),
-    plan_validation: normalizePlanValidation(frontMatter.plan_validation),
+    plan_resume_context: trimStringOrUndefined(itemMetadata.plan_resume_context),
+    plan_steps: normalizePlanSteps(itemMetadata.plan_steps),
+    plan_decisions: normalizePlanDecisions(itemMetadata.plan_decisions),
+    plan_discoveries: normalizePlanDiscoveries(itemMetadata.plan_discoveries),
+    plan_validation: normalizePlanValidation(itemMetadata.plan_validation),
   };
-  copyExtensionFrontMatterFields(normalized, frontMatter);
+  copyExtensionItemMetadataFields(normalized, itemMetadata);
   coerceNormalizedRuntimeFields(normalized, runtimeContext);
   assertNormalizedUnknownFields(normalized, runtimeContext);
   deleteUndefinedFields(normalized as unknown as Record<string, unknown>);
   return normalized;
 }
 
-function orderFrontMatter(frontMatter: ItemMetadata): Record<string, unknown> {
+function orderItemMetadata(itemMetadata: ItemMetadata): Record<string, unknown> {
   return orderObject(
-    frontMatter as unknown as Record<string, unknown>,
-    FRONT_MATTER_KEY_ORDER,
+    itemMetadata as unknown as Record<string, unknown>,
+    ITEM_METADATA_KEY_ORDER,
   );
 }
 
@@ -1708,14 +1708,14 @@ function stripLeadingYamlDocument(content: string): {
   return { content: normalizedContent, stripped: false };
 }
 
-function normalizeParsedFrontMatter(
-  frontMatter: ItemMetadata,
+function normalizeParsedItemMetadata(
+  itemMetadata: ItemMetadata,
   options: Pick<
     ItemDocumentFormatOptions,
     "schema" | "extensionFieldNames" | "onWarning"
   >,
 ): ItemMetadata {
-  return normalizeFrontMatter(frontMatter, {
+  return normalizeItemMetadata(itemMetadata, {
     ...options,
     onWarning: undefined,
   });
@@ -1748,10 +1748,10 @@ function parseJsonMarkdownItemDocument(
   } catch {
     validationError("JSON front matter is not valid JSON");
   }
-  assertValidFrontMatter(parsed, runtimeContext);
+  assertValidItemMetadata(parsed, runtimeContext);
 
   return {
-    metadata: normalizeParsedFrontMatter(parsed, options),
+    metadata: normalizeParsedItemMetadata(parsed, options),
     body: normalizeBody(body),
   };
 }
@@ -1775,32 +1775,32 @@ function parseToonItemDocument(
   } catch {
     validationError("TOON item document is not valid TOON");
   }
-  assertFrontMatterCondition(
+  assertItemMetadataCondition(
     typeof parsed === "object" && parsed !== null && !Array.isArray(parsed),
     "TOON item document must be an object",
   );
   const record = parsed as Record<string, unknown>;
 
   if (Object.prototype.hasOwnProperty.call(record, "front_matter")) {
-    assertValidFrontMatter(record.front_matter, runtimeContext);
-    assertFrontMatterCondition(
+    assertValidItemMetadata(record.front_matter, runtimeContext);
+    assertItemMetadataCondition(
       record.body === undefined || typeof record.body === "string",
       "TOON item document body must be a string",
     );
     return {
-      metadata: normalizeParsedFrontMatter(record.front_matter, options),
+      metadata: normalizeParsedItemMetadata(record.front_matter, options),
       body: normalizeBody(typeof record.body === "string" ? record.body : ""),
     };
   }
 
-  const { body, ...frontMatterRecord } = record;
-  assertFrontMatterCondition(
+  const { body, ...itemMetadataRecord } = record;
+  assertItemMetadataCondition(
     body === undefined || typeof body === "string",
     "TOON item document body must be a string",
   );
-  assertValidFrontMatter(frontMatterRecord, runtimeContext);
+  assertValidItemMetadata(itemMetadataRecord, runtimeContext);
   return {
-    metadata: normalizeParsedFrontMatter(frontMatterRecord, options),
+    metadata: normalizeParsedItemMetadata(itemMetadataRecord, options),
     body: normalizeBody(typeof body === "string" ? body : ""),
   };
 }
@@ -1812,17 +1812,17 @@ function serializeJsonMarkdownItemDocument(
     "schema" | "extensionFieldNames" | "onWarning"
   > = {},
 ): string {
-  const normalizedFrontMatter = normalizeFrontMatter(
+  const normalizedMetadata = normalizeItemMetadata(
     document.metadata,
     options,
   );
-  const orderedFrontMatter = orderFrontMatter(normalizedFrontMatter);
-  const serializedFrontMatter = JSON.stringify(orderedFrontMatter, null, 2);
+  const orderedMetadata = orderItemMetadata(normalizedMetadata);
+  const serializedMetadata = JSON.stringify(orderedMetadata, null, 2);
   const normalizedBody = normalizeBody(document.body ?? "");
   if (!normalizedBody) {
-    return `${serializedFrontMatter}\n`;
+    return `${serializedMetadata}\n`;
   }
-  return `${serializedFrontMatter}\n\n${normalizedBody}\n`;
+  return `${serializedMetadata}\n\n${normalizedBody}\n`;
 }
 
 function serializeToonItemDocument(
@@ -1832,13 +1832,13 @@ function serializeToonItemDocument(
     "schema" | "extensionFieldNames" | "onWarning"
   > = {},
 ): string {
-  const normalizedFrontMatter = normalizeFrontMatter(
+  const normalizedMetadata = normalizeItemMetadata(
     document.metadata,
     options,
   );
-  const orderedFrontMatter = orderFrontMatter(normalizedFrontMatter);
+  const orderedMetadata = orderItemMetadata(normalizedMetadata);
   const normalizedBody = normalizeBody(document.body ?? "");
-  return `${encodeToon({ ...orderedFrontMatter, body: normalizedBody })}\n`;
+  return `${encodeToon({ ...orderedMetadata, body: normalizedBody })}\n`;
 }
 
 /** Implements parse item document for the public runtime surface of this module. */
@@ -1890,14 +1890,14 @@ export function canonicalDocument(
   > = {},
 ): ItemDocument {
   return {
-    metadata: normalizeFrontMatter(document.metadata, options),
+    metadata: normalizeItemMetadata(document.metadata, options),
     body: normalizeBody(document.body ?? ""),
   };
 }
 
 /** Public contract for test only item format, shared by SDK and presentation-layer consumers. */
 export const _testOnlyItemFormat = {
-  buildKnownFrontMatterKeys,
+  buildKnownItemMetadataKeys,
   firstNonZeroComparison,
   normalizeBody,
   normalizePlanDecisions,

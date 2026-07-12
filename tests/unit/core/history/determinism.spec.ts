@@ -201,7 +201,7 @@ describe("deterministic primitives", () => {
   });
 
   it("normalizes replace ops to add when a patch path is absent", () => {
-    const baseFrontMatter = {
+    const baseItemMetadata = {
       id: "pm-a1",
       title: "Patch mode",
       description: "Patch mode",
@@ -214,7 +214,7 @@ describe("deterministic primitives", () => {
     };
     const before = canonicalDocument({
       metadata: {
-        ...baseFrontMatter,
+        ...baseItemMetadata,
         tests: [
           {
             command: "node scripts/run-tests.mjs test",
@@ -227,7 +227,7 @@ describe("deterministic primitives", () => {
     });
     const after = canonicalDocument({
       metadata: {
-        ...baseFrontMatter,
+        ...baseItemMetadata,
         updated_at: "2026-02-18T00:06:00.000Z",
         tests: [
           {

@@ -52,8 +52,8 @@ import {
   scanItemFormatVersions,
 } from "../../core/item/item-format-version.js";
 import {
-  listAllFrontMatter,
-  listAllFrontMatterWithBody,
+  listAllItemMetadata,
+  listAllItemMetadataWithBody,
 } from "../../core/store/item-store.js";
 import {
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
@@ -207,7 +207,7 @@ interface ExtensionHealthTriageSummary {
 }
 
 type ItemWithBody = Awaited<
-  ReturnType<typeof listAllFrontMatterWithBody>
+  ReturnType<typeof listAllItemMetadataWithBody>
 >[number];
 const STALE_VECTORIZATION_SUMMARY_LIMIT = 25;
 const BRIEF_HEALTH_DETAIL_LIMIT = 8;
@@ -2257,7 +2257,7 @@ async function readHealthItems(params: {
   itemReadWarnings: string[];
 }): Promise<Array<ItemMetadata | ItemWithBody>> {
   if (params.skipPolicy.skipDrift && params.skipPolicy.skipVectors) {
-    return listAllFrontMatter(
+    return listAllItemMetadata(
       params.pmRoot,
       params.settings.item_format,
       params.typeRegistry.type_to_folder,
@@ -2265,7 +2265,7 @@ async function readHealthItems(params: {
       params.settings.schema,
     );
   }
-  return listAllFrontMatterWithBody(
+  return listAllItemMetadataWithBody(
     params.pmRoot,
     params.settings.item_format,
     params.typeRegistry.type_to_folder,

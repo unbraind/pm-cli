@@ -60,7 +60,7 @@ describe("todos runtime export/import error branches", () => {
         type_to_folder: { Task: "tasks" },
       }),
       getActiveExtensionRegistrations: () => undefined,
-      listAllFrontMatter: async () => listed,
+      listAllItemMetadata: async () => listed,
       locateItem: async (_root: string, id: string) => {
         if (id === "pm-missing") {
           return null;

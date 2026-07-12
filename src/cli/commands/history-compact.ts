@@ -29,7 +29,7 @@ import {
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { lifecycleClassifierFromStatusRegistry } from "../../core/governance/metadata-coverage.js";
 import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
-import { listAllFrontMatterLight } from "../../core/store/item-store.js";
+import { listAllItemMetadataLight } from "../../core/store/item-store.js";
 import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -674,7 +674,7 @@ async function collectHistoryCompactBulkCandidates(params: {
 }> {
   const statusRegistry = resolveRuntimeStatusRegistry(params.settings.schema);
   const classifier = lifecycleClassifierFromStatusRegistry(statusRegistry);
-  const items = await listAllFrontMatterLight(
+  const items = await listAllItemMetadataLight(
     params.pmRoot,
     params.settings.item_format,
     params.typeToFolder,

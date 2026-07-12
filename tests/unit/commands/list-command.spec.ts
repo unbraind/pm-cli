@@ -453,7 +453,7 @@ describe("runList", () => {
 
       const tasksDir = path.join(context.pmPath, "tasks");
       await writeFile(path.join(tasksDir, "invalid-a.toon"), "id: invalid-a\nstatus: open\n", "utf8");
-      await writeFile(path.join(tasksDir, "invalid-b.toon"), "this is not toon front matter\n", "utf8");
+      await writeFile(path.join(tasksDir, "invalid-b.toon"), "this is not TOON item metadata\n", "utf8");
 
       const fullResult = await runList(
         undefined,

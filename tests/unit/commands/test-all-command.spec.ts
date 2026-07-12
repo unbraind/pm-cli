@@ -7,7 +7,7 @@ import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import * as itemTestRunTracking from "../../../src/core/test/item-test-run-tracking.js";
 import {
-  loadTaskFrontMatter,
+  loadTaskMetadata,
   overwriteTaskTests,
   setGovernancePreset,
   setTestResultTracking,
@@ -914,8 +914,8 @@ describe("runTestAll", () => {
         const result = await runTestAll({ status: "open", timeout: "20" }, { path: context.pmPath });
         expect(result.failed).toBe(0);
         expect(result.warnings).toBeUndefined();
-        const frontMatter = await loadTaskFrontMatter(context, id);
-        const testRuns = (frontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+        const itemMetadata = await loadTaskMetadata(context, id);
+        const testRuns = (itemMetadata.test_runs ?? []) as Array<Record<string, unknown>>;
         expect(testRuns).toHaveLength(1);
         expect(testRuns[0]).toMatchObject({
           run_id: "tr-test-all-success",
@@ -997,8 +997,8 @@ describe("runTestAll", () => {
         const result = await runTestAll({ status: "open", failOnSkipped: true }, { path: context.pmPath });
         expect(result.fail_on_skipped_triggered).toBe(true);
         expect(result.skipped).toBeGreaterThanOrEqual(1);
-        const frontMatter = await loadTaskFrontMatter(context, id);
-        const testRuns = (frontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+        const itemMetadata = await loadTaskMetadata(context, id);
+        const testRuns = (itemMetadata.test_runs ?? []) as Array<Record<string, unknown>>;
         expect(testRuns).toHaveLength(1);
         expect(testRuns[0]).toMatchObject({
           kind: "test-all",
@@ -1029,8 +1029,8 @@ describe("runTestAll", () => {
       try {
         const result = await runTestAll({ status: "open", timeout: "20" }, { path: context.pmPath });
         expect(result.failed).toBe(0);
-        const frontMatter = await loadTaskFrontMatter(context, id);
-        const testRuns = (frontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+        const itemMetadata = await loadTaskMetadata(context, id);
+        const testRuns = (itemMetadata.test_runs ?? []) as Array<Record<string, unknown>>;
         expect(testRuns).toHaveLength(1);
         expect(testRuns[0]).toMatchObject({ kind: "test-all", status: "passed" });
       } finally {

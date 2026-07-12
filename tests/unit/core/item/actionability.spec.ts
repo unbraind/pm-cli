@@ -5,7 +5,7 @@ import {
   resolveItemBlockers,
 } from "../../../../src/core/item/actionability.js";
 import { resolveRuntimeStatusRegistry } from "../../../../src/core/schema/runtime-schema.js";
-import type { Dependency, ItemFrontMatter, ItemType } from "../../../../src/types/index.js";
+import type { Dependency, ItemMetadata, ItemType } from "../../../../src/types/index.js";
 
 const registry = resolveRuntimeStatusRegistry(undefined);
 
@@ -19,7 +19,7 @@ interface ItemOverrides {
   dependencies?: Dependency[];
 }
 
-function item(overrides: ItemOverrides): ItemFrontMatter {
+function item(overrides: ItemOverrides): ItemMetadata {
   return {
     id: overrides.id,
     title: `Item ${overrides.id}`,
@@ -33,7 +33,7 @@ function item(overrides: ItemOverrides): ItemFrontMatter {
     ...(overrides.parent !== undefined ? { parent: overrides.parent } : {}),
     ...(overrides.blocked_by !== undefined ? { blocked_by: overrides.blocked_by as string } : {}),
     ...(overrides.dependencies !== undefined ? { dependencies: overrides.dependencies } : {}),
-  } as ItemFrontMatter;
+  } as ItemMetadata;
 }
 
 function blockedByDep(id: string): Dependency {

@@ -17,24 +17,24 @@ function withFields(fields: Array<Record<string, unknown>>): ExtensionRegistrati
 
 describe("extensions item field runtime wiring", () => {
   it("applies defaults and validates values when registrations are present", () => {
-    const frontMatter: Record<string, unknown> = {};
+    const itemMetadata: Record<string, unknown> = {};
     applyRegisteredItemFieldDefaultsAndValidation(
-      frontMatter,
+      itemMetadata,
       withFields([
         { name: "team", type: "string", default: "platform" },
         { name: "size", type: "number", default: 3 },
       ]),
     );
-    expect(frontMatter).toEqual({
+    expect(itemMetadata).toEqual({
       team: "platform",
       size: 3,
     });
   });
 
   it("does nothing when registrations are absent", () => {
-    const frontMatter: Record<string, unknown> = {};
-    applyRegisteredItemFieldDefaultsAndValidation(frontMatter, null);
-    expect(frontMatter).toEqual({});
+    const itemMetadata: Record<string, unknown> = {};
+    applyRegisteredItemFieldDefaultsAndValidation(itemMetadata, null);
+    expect(itemMetadata).toEqual({});
   });
 
   it("parses declared extension field assignments with typed values", () => {
@@ -109,7 +109,7 @@ describe("extensions item field runtime wiring", () => {
   });
 
   it("accepts supported field types", () => {
-    const frontMatter: Record<string, unknown> = {
+    const itemMetadata: Record<string, unknown> = {
       text_value: "ok",
       number_value: 1,
       boolean_value: true,
@@ -117,7 +117,7 @@ describe("extensions item field runtime wiring", () => {
       object_value: { key: "value" },
     };
     applyRegisteredItemFieldDefaultsAndValidation(
-      frontMatter,
+      itemMetadata,
       withFields([
         { name: "text_value", type: "string" },
         { name: "number_value", type: "number" },
@@ -126,7 +126,7 @@ describe("extensions item field runtime wiring", () => {
         { name: "object_value", type: "object" },
       ]),
     );
-    expect(frontMatter.object_value).toEqual({ key: "value" });
+    expect(itemMetadata.object_value).toEqual({ key: "value" });
   });
 
   it("throws for type mismatch and allowed value mismatch", () => {
@@ -159,31 +159,31 @@ describe("extensions item field runtime wiring", () => {
   });
 
   it("skips invalid field names and unknown field types", () => {
-    const frontMatter: Record<string, unknown> = { tracked: 42 };
+    const itemMetadata: Record<string, unknown> = { tracked: 42 };
     applyRegisteredItemFieldDefaultsAndValidation(
-      frontMatter,
+      itemMetadata,
       withFields([
         { name: "   ", default: "ignored" },
         { name: "tracked", type: "nonsense-type" },
       ]),
     );
-    expect(frontMatter).toEqual({ tracked: 42 });
+    expect(itemMetadata).toEqual({ tracked: 42 });
   });
 
   it("clones cloneable defaults and preserves non-cloneable defaults", () => {
     const objectDefault = { nested: { value: 1 } };
     const functionDefault = () => "fallback";
-    const frontMatter: Record<string, unknown> = {};
+    const itemMetadata: Record<string, unknown> = {};
     applyRegisteredItemFieldDefaultsAndValidation(
-      frontMatter,
+      itemMetadata,
       withFields([
         { name: "object_default", default: objectDefault },
         { name: "function_default", default: functionDefault },
       ]),
     );
 
-    expect(frontMatter.object_default).toEqual({ nested: { value: 1 } });
-    expect(frontMatter.object_default).not.toBe(objectDefault);
-    expect(frontMatter.function_default).toBe(functionDefault);
+    expect(itemMetadata.object_default).toEqual({ nested: { value: 1 } });
+    expect(itemMetadata.object_default).not.toBe(objectDefault);
+    expect(itemMetadata.function_default).toBe(functionDefault);
   });
 });

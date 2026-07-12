@@ -11,7 +11,7 @@
  */
 import { isTerminalStatus, normalizeStatusForRegistry } from "./status.js";
 import type { RuntimeStatusRegistry } from "../schema/runtime-schema.js";
-import type { ItemFrontMatter, ItemStatus } from "../../types/index.js";
+import type { ItemMetadata, ItemStatus } from "../../types/index.js";
 
 /** Dependency kind that marks "this item is blocked by the referenced item". */
 const BLOCKED_BY_DEPENDENCY_KIND = "blocked_by";
@@ -28,7 +28,7 @@ function normalizeItemId(id: string): string {
 
 /** Collects the blocker item ids declared by an item: the legacy scalar `blocked_by` field plus every `blocked_by` dependency edge. Ids are trimmed, de-duplicated, and returned in stable lexicographic order. This is the single source of truth for "what must close before this item can proceed", shared by `pm next` readiness classification and the close-time auto-unblock sweep. */
 export function collectBlockedByIds(
-  item: Pick<ItemFrontMatter, "blocked_by" | "dependencies">,
+  item: Pick<ItemMetadata, "blocked_by" | "dependencies">,
 ): string[] {
   const ids = new Set<string>();
   const scalar =
@@ -62,8 +62,8 @@ export interface ResolvedBlocker {
 
 /** Resolves an item's declared blockers against a corpus index, annotating each with the blocker's title/status and whether it still gates work. Unknown ids remain unresolved: silently treating a typo as satisfied would dispatch work whose prerequisite was never completed. Terminal referenced items alone are resolved. */
 export function resolveItemBlockers(
-  item: Pick<ItemFrontMatter, "blocked_by" | "dependencies">,
-  itemsById: Map<string, ItemFrontMatter>,
+  item: Pick<ItemMetadata, "blocked_by" | "dependencies">,
+  itemsById: Map<string, ItemMetadata>,
   statusRegistry: RuntimeStatusRegistry,
 ): ResolvedBlocker[] {
   return collectBlockedByIds(item).map((id) => {
@@ -83,7 +83,7 @@ export function resolveItemBlockers(
 /** A classified actionable item plus the context an agent needs to act on it. */
 export interface ActionableEntry {
   /** Value that configures or reports item for this contract. */
-  item: ItemFrontMatter;
+  item: ItemMetadata;
   /** Blockers that still gate the item (resolved blockers are filtered out). */
   open_blockers: ResolvedBlocker[];
   /** Ids of non-terminal items whose `blocked_by` points at this item. */
@@ -116,7 +116,7 @@ function resolveActiveStatusSet(
 /** Returns whether an item has any non-terminal descendant by walking the parent→children index depth-first, short-circuiting on the first one found. Such an item is a container (its real work lives in its children), so `pm next` skips it and recommends a leaf instead. Cycle-safe via a visited set. */
 function hasOpenDescendant(
   rootId: string,
-  childrenByParent: Map<string, ItemFrontMatter[]>,
+  childrenByParent: Map<string, ItemMetadata[]>,
   statusRegistry: RuntimeStatusRegistry,
 ): boolean {
   const stack = [normalizeItemId(rootId)];
@@ -138,13 +138,13 @@ function hasOpenDescendant(
 }
 
 /** Indexes the corpus into a by-id map, a parent→children map, and a reverse blocker map (blocker id → ids of items it blocks). Built once per report so blocker resolution, descendant counting, and downstream "unblocks" lookups share the same passes over the corpus. */
-function indexCorpus(corpus: ItemFrontMatter[]): {
-  itemsById: Map<string, ItemFrontMatter>;
-  childrenByParent: Map<string, ItemFrontMatter[]>;
+function indexCorpus(corpus: ItemMetadata[]): {
+  itemsById: Map<string, ItemMetadata>;
+  childrenByParent: Map<string, ItemMetadata[]>;
   blockedByReverse: Map<string, string[]>;
 } {
-  const itemsById = new Map<string, ItemFrontMatter>();
-  const childrenByParent = new Map<string, ItemFrontMatter[]>();
+  const itemsById = new Map<string, ItemMetadata>();
+  const childrenByParent = new Map<string, ItemMetadata[]>();
   const blockedByReverse = new Map<string, string[]>();
   for (const item of corpus) {
     // Index keys are normalized (lowercased) for case-insensitive resolution;
@@ -179,8 +179,8 @@ function indexCorpus(corpus: ItemFrontMatter[]): {
  * the candidate order so the caller can apply its own ranking.
  */
 export function computeActionabilityReport(
-  candidates: ItemFrontMatter[],
-  corpus: ItemFrontMatter[],
+  candidates: ItemMetadata[],
+  corpus: ItemMetadata[],
   statusRegistry: RuntimeStatusRegistry,
 ): ActionabilityReport {
   const { itemsById, childrenByParent, blockedByReverse } = indexCorpus(corpus);

@@ -34,11 +34,11 @@ import {
   nowIso,
   resolveIsoOrRelative,
 } from "../../core/shared/time.js";
-import { listAllFrontMatterLight } from "../../core/store/item-store.js";
+import { listAllItemMetadataLight } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type {
-  ItemFrontMatter,
+  ItemMetadata,
   ItemStatus,
   ItemType,
   RecurrenceRule,
@@ -849,7 +849,7 @@ function sortEvents(values: CalendarRow[]): CalendarRow[] {
 }
 
 function buildItemCalendarRowBase(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
 ): Pick<
   CalendarRow,
   | "item_id"
@@ -873,7 +873,7 @@ function buildItemCalendarRowBase(
   };
 }
 
-function buildDeadlineRow(item: ItemFrontMatter): CalendarRow | null {
+function buildDeadlineRow(item: ItemMetadata): CalendarRow | null {
   if (!item.deadline) {
     return null;
   }
@@ -894,7 +894,7 @@ function buildDeadlineRow(item: ItemFrontMatter): CalendarRow | null {
   };
 }
 
-function buildReminderRows(item: ItemFrontMatter): CalendarRow[] {
+function buildReminderRows(item: ItemMetadata): CalendarRow[] {
   return (item.reminders ?? []).map((reminder) => ({
     at: reminder.at,
     date: toUtcDayKey(reminder.at),
@@ -924,7 +924,7 @@ function recurringDurationMs(
 
 function eventOccurrenceEnd(
   occurrenceAt: string,
-  event: NonNullable<ItemFrontMatter["events"]>[number],
+  event: NonNullable<ItemMetadata["events"]>[number],
   durationMs: number | null,
 ): string | null {
   return event.recurrence && durationMs !== null
@@ -933,8 +933,8 @@ function eventOccurrenceEnd(
 }
 
 function buildScheduledEventRows(
-  item: ItemFrontMatter,
-  event: NonNullable<ItemFrontMatter["events"]>[number],
+  item: ItemMetadata,
+  event: NonNullable<ItemMetadata["events"]>[number],
   recurringWindow: { start: string; end: string },
   occurrenceLimit: number | undefined,
 ): CalendarRow[] {
@@ -973,7 +973,7 @@ function buildScheduledEventRows(
 }
 
 function buildEventSeed(
-  items: ItemFrontMatter[],
+  items: ItemMetadata[],
   recurringWindow: { start: string; end: string },
   includeSources: Set<CalendarIncludeKind>,
   occurrenceLimit: number | undefined,
@@ -1006,12 +1006,12 @@ function buildEventSeed(
 }
 
 function filterItems(
-  items: ItemFrontMatter[],
+  items: ItemMetadata[],
   options: CalendarOptions,
   typeRegistry: ItemTypeRegistry,
   statusRegistry: RuntimeStatusRegistry,
   runtimeFieldFilters: Record<string, unknown>,
-): ItemFrontMatter[] {
+): ItemMetadata[] {
   const typeFilter = parseType(options.type, typeRegistry);
   const tagFilter = options.tag?.trim().toLowerCase();
   const priorityFilter = parsePriority(options.priority);
@@ -1054,7 +1054,7 @@ function filterItems(
 }
 
 function itemMatchesCalendarFilters(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
   filters: {
     typeFilter: ItemType | undefined;
     tagFilter: string | undefined;
@@ -1078,7 +1078,7 @@ function itemMatchesCalendarFilters(
 }
 
 function itemMatchesCalendarIdentityFilters(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
   filters: Parameters<typeof itemMatchesCalendarFilters>[1],
 ): boolean {
   if (filters.typeFilter && item.type !== filters.typeFilter) return false;
@@ -1098,7 +1098,7 @@ function itemMatchesCalendarIdentityFilters(
 }
 
 function itemMatchesCalendarOwnerFilters(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
   filters: Parameters<typeof itemMatchesCalendarFilters>[1],
 ): boolean {
   if (filters.assigneeModeFilter === "assigned" && !item.assignee) return false;
@@ -1640,7 +1640,7 @@ export async function runCalendar(
   );
   const listWarnings: string[] = [];
   appendCalendarCapWarning(listWarnings, inputs.eventsOnlyCapApplied);
-  const items = await listAllFrontMatterLight(
+  const items = await listAllItemMetadataLight(
     pmRoot,
     settings.item_format,
     typeRegistry.type_to_folder,

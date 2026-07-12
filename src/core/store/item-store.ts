@@ -36,7 +36,7 @@ import {
   listAllDocumentCandidatesCached,
   listAllDocumentsCached,
   listAllDocumentsCachedLight,
-} from "./front-matter-cache.js";
+} from "./item-metadata-cache.js";
 import {
   getHistoryPath,
   getItemFormatFromPath,
@@ -48,7 +48,7 @@ import { nowIso } from "../shared/time.js";
 import type {
   ItemDocument,
   ItemFormat,
-  ItemFrontMatter,
+  ItemMetadata,
   ItemType,
   PmSettings,
   RuntimeSchemaSettings,
@@ -179,14 +179,14 @@ export async function readLocatedItem(
   return { raw, document };
 }
 
-/** Implements list all front matter for the public runtime surface of this module. */
-export async function listAllFrontMatter(
+/** Implements list all item metadata for the public runtime surface of this module. */
+export async function listAllItemMetadata(
   pmRoot: string,
   preferredFormat?: ItemFormat,
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
   warnings?: string[],
   schema?: RuntimeSchemaSettings,
-): Promise<ItemFrontMatter[]> {
+): Promise<ItemMetadata[]> {
   const documents = await listAllDocumentsCached(
     pmRoot,
     preferredFormat,
@@ -198,18 +198,18 @@ export async function listAllFrontMatter(
 }
 
 /**
- * Light variant of {@link listAllFrontMatter}: returns front-matter WITHOUT the heavy
+ * Light variant of {@link listAllItemMetadata}: returns item-metadata WITHOUT the heavy
  * collection fields (comments/notes/learnings/files/tests/test_runs/docs). Skips the
  * large collections cache so the hot list path stays cheap. Only use for callers that
  * read just the light scalar/small fields — see {@link listAllDocumentsCachedLight}.
  */
-export async function listAllFrontMatterLight(
+export async function listAllItemMetadataLight(
   pmRoot: string,
   preferredFormat?: ItemFormat,
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
   warnings?: string[],
   schema?: RuntimeSchemaSettings,
-): Promise<ItemFrontMatter[]> {
+): Promise<ItemMetadata[]> {
   const documents = await listAllDocumentsCachedLight(
     pmRoot,
     preferredFormat,
@@ -220,14 +220,14 @@ export async function listAllFrontMatterLight(
   return documents.map((document) => document.metadata);
 }
 
-/** Implements list all front matter with body for the public runtime surface of this module. */
-export async function listAllFrontMatterWithBody(
+/** Implements list all item metadata with body for the public runtime surface of this module. */
+export async function listAllItemMetadataWithBody(
   pmRoot: string,
   preferredFormat?: ItemFormat,
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
   warnings?: string[],
   schema?: RuntimeSchemaSettings,
-): Promise<Array<ItemFrontMatter & { body: string }>> {
+): Promise<Array<ItemMetadata & { body: string }>> {
   const candidates = await listAllDocumentCandidatesCached(
     pmRoot,
     preferredFormat,
@@ -501,7 +501,7 @@ export async function mutateItem(params: {
     warnings?: string[];
   };
 }): Promise<{
-  item: ItemFrontMatter;
+  item: ItemMetadata;
   body: string;
   changedFields: string[];
   warnings: string[];
@@ -692,7 +692,7 @@ export async function deleteItem(params: {
   force?: boolean;
   dryRun?: boolean;
 }): Promise<{
-  item: ItemFrontMatter;
+  item: ItemMetadata;
   changedFields: string[];
   warnings: string[];
   targetPath?: string;

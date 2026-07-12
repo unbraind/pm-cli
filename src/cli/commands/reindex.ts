@@ -58,7 +58,7 @@ import { nowIso } from "../../core/shared/time.js";
 import {
   listAllDocumentCandidatesCached,
   type CachedDocumentCandidate,
-} from "../../core/store/front-matter-cache.js";
+} from "../../core/store/item-metadata-cache.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemDocument, PmSettings } from "../../types/index.js";
