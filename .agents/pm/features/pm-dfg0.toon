@@ -6,8 +6,8 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli","area:sdk",scale
 created_at: "2026-07-06T21:24:55.022Z"
-updated_at: "2026-07-12T17:02:18.614Z"
-closed_at: "2026-07-12T17:02:18.144Z"
+updated_at: "2026-07-12T18:08:58.970Z"
+closed_at: "2026-07-12T18:08:58.409Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: list/search/context accept a stable cursor (--after/--cursor per ADR contract) with deterministic ordering; at-scale default limits keep any single invocation under a documented token budget with an explicit truncation marker + next-cursor hint; small workspaces see no behavior change; contracts/MCP/completions/docs regenerated
@@ -19,13 +19,15 @@ expected_result: Stable query-bound cursors resume deterministic reads without d
 actual_result: "Cursor envelopes, --after flags, at-scale bounds, contracts, documentation, and 176 focused continuation/command tests passed locally."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-rjqr,related,"2026-07-10T21:42:08.450Z",null,null
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-12T14:11:32.109Z",maintainer-agent,"Start evidence: dependency pm-bl8x is now closed/accepted. Work targets stable versioned cursor primitives and bounded scale defaults without changing explicit full-output compatibility or small-workspace defaults."
   "2026-07-12T15:42:06.723Z",maintainer-agent,"Completion evidence: public SDK cursor primitives, query fingerprints, stable cursor validation, --after adoption for list/search/context, has_more/next_cursor/applied_limit/truncated envelopes, bounded at-scale defaults, next queues, contract types/snapshot, docs, and end-to-end no-duplicate continuation tests. PM-linked verification passed 176 focused tests and contracts:check. Small-workspace explicit/full compatibility remains covered."
   "2026-07-12T16:18:10.346Z",maintainer-agent,"Review findings accepted for implementation: presentation flags must not bind cursors; public decode must reject non-string input deterministically; deleted cursor rows should resume by ordered insertion point; semantic/hybrid paging must not page a retrieval window smaller than the requested page. Duplicate check reused this canonical cursor feature."
   "2026-07-12T16:34:11.204Z",maintainer-agent,"PR #525 review-fix evidence: cursors now reject non-string input deterministically, include a bounded positional fallback for deleted rows, and exclude presentation-only flags from list/search fingerprints. CLI continuation changes presentation modes without duplicates; packed external consumer and public SDK cursor imports passed. Semantic/hybrid continuation remains intentionally bounded to the stable pre-existing search.max_results candidate window because expanding the window changes hybrid normalization/order. Focused tests and full 5588-test 100% coverage passed."
   "2026-07-12T16:52:53.853Z",maintainer-agent,"Second-pass findings accepted: share the context scale threshold, derive context fingerprints by inclusion with explicit presentation exclusions, ensure limit=0 never advertises a dead-end continuation, expose context --after in tool contracts, and exclude search format from its fingerprint."
   "2026-07-12T17:02:15.939Z",maintainer-agent,"Second review-loop evidence: shared context scale threshold, inclusion-first future-safe context fingerprint, format-independent search fingerprint, consistent limit=0 envelopes across SDK/list/context, and context MCP --after contract are implemented. Contract snapshot/current check, focused tests, 10k scale gate, and full 5588-test 100% coverage pass locally."
+  "2026-07-12T17:21:40.150Z",maintainer-agent,"Third review-loop findings accepted: deleted cursor rows must resume at the shifted slot, and the max-items page-size alias must remain presentation-independent."
+  "2026-07-12T18:08:56.386Z",maintainer-agent,"Third review-loop completion: deleted-row fallback resumes at the shifted slot and context maxItems/limit aliases share a presentation-independent cursor fingerprint. Focused continuation regressions passed within the 51-test affected suite; full 5588-test 100% coverage and strict local scale gate passed."
 notes[1]{created_at,author,text}:
   "2026-07-10T21:40:37.369Z",maintainer-agent,"Wave-2 chain scoping 2026-07-10 (planning pass). This item is the sole blocker of pm-55ra (token-budget context packer) and thus gates the wave-2 tail; it is itself blocked by ADR pm-bl8x decision point 3 (cursor vs offset). Current surface (verified in code): pm list has --limit/--offset with NO default bound (list.ts:352-409, total emitted only when paginating); pm search has --limit only (search.ts:383/2608), no offset, no cursor; pm context defaults DEFAULT_CONTEXT_LIMIT=10 but --depth full lifts it to MAX_SAFE_INTEGER (context.ts:313/418) — the one truly unbounded default hole. No cursor token exists anywhere. Suggested slices: S1 cursor primitive in the SDK read/query layer shipped by pm-rjqr — opaque cursor encoding a stable sort tuple (sort key + id tiebreak), envelope gains next_cursor/has_more; this is ADR-input work and can start as a spike BEFORE pm-bl8x formally lands (recommend cursor-over-offset to the ADR, offset degrades at 100k+). S2 pm list adoption — threshold-gated default limit (small workspaces keep today's unbounded behavior per pm-z436 small-end concerns; large workspaces get a bounded default + next_cursor), --offset retained as compat alias. S3 pm search adoption — ranked-result cursors are rank-stability-sensitive (BM25/semantic scores shift between invocations); options: snapshot cursor (embed result-id window) vs re-rank-and-skip; decide in S3, not S1. S4 pm context/next bounded degradation — close the --depth full hole and hand off to pm-55ra, whose packer consumes S1 primitives for budget-aware truncation. Coordination: pm-9rxu (scale epic parent), pm-rjqr (S1 lands in its query facade), pm-3mna/pm-usfg promotion wave (S1 belongs in SDK not CLI per SDK-first), pm-z436 (threshold defaults), pm-gdi7/pm-nilh (envelope verbosity — next_cursor must not bloat lean output)."
 learnings[1]{created_at,author,text}:
@@ -57,5 +59,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-mrhyk97d-n16spa,test,passed,"2026-07-12T15:38:18.431Z","2026-07-12T15:38:30.169Z","2026-07-12T15:38:30.169Z",2,0,0
 docs[1]{path,scope,note}:
   docs/PERFORMANCE.md,project,cursor and at-scale bounded-output documentation
-close_reason: "Second PR #525 pagination review fixes complete: contracts, future-safe fingerprints, zero-limit envelopes, and all local quality/coverage gates pass."
+close_reason: "PR #525 third-loop cursor correctness fixes verified locally with focused, full coverage, contracts, and scale gates."
 body: ""

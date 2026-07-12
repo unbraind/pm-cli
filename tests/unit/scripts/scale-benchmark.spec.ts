@@ -111,6 +111,7 @@ describe("scale benchmark runner", () => {
 
   it("reports non-Linux RSS fallback and real failing CLI stderr", async () => {
     await expect(readLinuxRssBytes(process.pid, "win32")).resolves.toBeUndefined();
+    await expect(readLinuxRssBytes(undefined, "linux")).resolves.toBeUndefined();
     await expect(readLinuxRssBytes(Number.MAX_SAFE_INTEGER, "linux")).resolves.toBeUndefined();
     await expect(
       measureCliProcess(["definitely-not-a-command"], {

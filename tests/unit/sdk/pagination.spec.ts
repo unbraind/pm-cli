@@ -106,7 +106,21 @@ describe("SDK query pagination", () => {
         fingerprint,
         (row) => row.id,
       ),
-    ).toBe(2);
+    ).toBe(1);
+    expect(
+      paginateQueryRows(
+        [{ id: "pm-first" }, { id: "pm-third" }, { id: "pm-fourth" }],
+        {
+          cursor,
+          fingerprint,
+          limit: 2,
+          readId: (row) => row.id,
+        },
+      ),
+    ).toMatchObject({
+      rows: [{ id: "pm-third" }, { id: "pm-fourth" }],
+      has_more: false,
+    });
     expect(
       resolveQueryCursorStart(
         [{ id: "pm-first" }],

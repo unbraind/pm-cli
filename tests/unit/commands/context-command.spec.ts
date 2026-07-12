@@ -1448,7 +1448,7 @@ describe("context command module", () => {
       expect(tightlyLimited.filters.parent).toBe(epicId);
       expect(tightlyLimited.next_cursor).toBeTypeOf("string");
       const continued = await runContext(
-        { parent: epicId, limit: "1", after: tightlyLimited.next_cursor },
+        { parent: epicId, maxItems: "1", after: tightlyLimited.next_cursor },
         { path: context.pmPath },
       );
       expect(

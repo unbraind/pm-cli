@@ -2126,6 +2126,7 @@ function buildContextCursorFingerprint(options: ContextOptions): string {
   const normalizedOptions: Record<string, unknown> = { ...options };
   delete normalizedOptions.after;
   delete normalizedOptions.limit;
+  delete normalizedOptions.maxItems;
   delete normalizedOptions.format;
   delete normalizedOptions.fields;
   delete normalizedOptions.section;

@@ -67,7 +67,7 @@ export function summarizeSamples(samples, warmupSample) {
 
 /** Read one Linux process RSS sample, or return undefined on other hosts. */
 export async function readLinuxRssBytes(pid, platform = process.platform) {
-  if (platform !== "linux") return undefined;
+  if (platform !== "linux" || pid === undefined) return undefined;
   try {
     const raw = await readFile(`/proc/${pid}/status`, "utf8");
     const match = raw.match(/^VmRSS:\s+(\d+)\s+kB$/m);

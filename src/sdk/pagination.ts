@@ -154,7 +154,7 @@ export function resolveQueryCursorStart<T>(
   const index = rows.findIndex((row) => readId(row) === state.after_id);
   if (index < 0) {
     if (state.after_index !== undefined) {
-      return Math.min(state.after_index + 1, rows.length);
+      return Math.min(state.after_index, rows.length);
     }
     throw invalidCursor(`Query cursor item ${state.after_id} is no longer present in this result set.`);
   }
