@@ -283,11 +283,11 @@ export async function generateSyntheticWorkspace(options) {
   });
   await client.init(undefined, { defaults: true, force: true });
 
-  const itemDirectories = new Set();
-  for (let index = 0; index < itemCount; index += 1) {
-    const document = buildSyntheticItemDocument(index, seed);
-    itemDirectories.add(path.dirname(getItemPath(pmRoot, document.metadata.type, document.metadata.id, "toon")));
-  }
+  const itemDirectories = new Set(
+    ["Epic", ...WEIGHTED_TYPES].map((type) =>
+      path.dirname(getItemPath(pmRoot, type, scaleItemId(0), "toon")),
+    ),
+  );
   itemDirectories.add(path.join(pmRoot, "history"));
   await Promise.all([...itemDirectories].map((directory) => mkdir(directory, { recursive: true })));
 

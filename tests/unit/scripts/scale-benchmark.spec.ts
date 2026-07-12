@@ -118,6 +118,13 @@ describe("scale benchmark runner", () => {
         env: { ...process.env, PM_SENTRY_DISABLED: "1", PM_TELEMETRY_DISABLED: "1" },
       }),
     ).rejects.toThrow(/Benchmark command failed.*definitely-not-a-command/s);
+    await expect(
+      measureCliProcess([], {
+        workspaceRoot: process.cwd(),
+        env: process.env,
+        executablePath: "/definitely/missing/node",
+      }),
+    ).rejects.toThrow(/ENOENT/);
   });
 
   it("builds budgets and reports missing, latency, memory, and token violations", () => {

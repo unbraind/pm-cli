@@ -80,7 +80,7 @@ export async function readLinuxRssBytes(pid, platform = process.platform) {
 /** Measure one real built-CLI subprocess including output and sampled RSS. */
 export async function measureCliProcess(args, environment) {
   const startedAt = performance.now();
-  const child = spawn(process.execPath, [CLI_PATH, ...args], {
+  const child = spawn(environment.executablePath ?? process.execPath, [CLI_PATH, ...args], {
     cwd: environment.workspaceRoot,
     env: environment.env,
     stdio: ["ignore", "pipe", "pipe"],
@@ -104,22 +104,25 @@ export async function measureCliProcess(args, environment) {
       await delay(RSS_SAMPLE_INTERVAL_MS);
     }
   })();
-  const exitCode = await new Promise((resolve, reject) => {
-    child.once("error", reject);
-    child.once("close", (code) => resolve(code === 0 ? 0 : 1));
-  });
-  complete = true;
-  await resourceSampler;
-  if (exitCode !== 0) {
-    throw new Error(`Benchmark command failed (${exitCode}): pm ${args.join(" ")}\n${stderr.trim()}`);
+  try {
+    const exitCode = await new Promise((resolve, reject) => {
+      child.once("error", reject);
+      child.once("close", (code) => resolve(code === 0 ? 0 : 1));
+    });
+    if (exitCode !== 0) {
+      throw new Error(`Benchmark command failed (${exitCode}): pm ${args.join(" ")}\n${stderr.trim()}`);
+    }
+    const outputBytes = Buffer.byteLength(stdout);
+    return {
+      duration_ms: performance.now() - startedAt,
+      peak_rss_bytes: peakRssBytes,
+      output_bytes: outputBytes,
+      estimated_tokens: estimateTokens(outputBytes),
+    };
+  } finally {
+    complete = true;
+    await resourceSampler;
   }
-  const outputBytes = Buffer.byteLength(stdout);
-  return {
-    duration_ms: performance.now() - startedAt,
-    peak_rss_bytes: peakRssBytes,
-    output_bytes: outputBytes,
-    estimated_tokens: estimateTokens(outputBytes),
-  };
 }
 
 async function measureSdkOperation(operation) {

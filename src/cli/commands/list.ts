@@ -1557,6 +1557,7 @@ function pageAndProjectListItems(
       ? encodeQueryCursor(
           cursorFingerprint,
           limited[limited.length - 1]!.id,
+          offset + limited.length - 1,
         )
       : undefined;
   return {
@@ -1580,6 +1581,11 @@ function buildListCursorFingerprint(
   delete normalizedOptions.limit;
   delete normalizedOptions.offset;
   delete normalizedOptions.noTruncate;
+  delete normalizedOptions.includeBody;
+  delete normalizedOptions.compact;
+  delete normalizedOptions.brief;
+  delete normalizedOptions.full;
+  delete normalizedOptions.fields;
   return createQueryFingerprint("list", {
     status,
     options: normalizedOptions,

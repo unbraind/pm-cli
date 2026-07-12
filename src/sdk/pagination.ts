@@ -17,6 +17,15 @@ interface QueryCursorEnvelope {
   version: number;
   fingerprint: string;
   after_id: string;
+  after_index?: number;
+}
+
+/** Decoded cursor state for advanced package and retrieval-window integrations. */
+export interface QueryCursorState {
+  /** Stable id of the last row emitted by the previous page. */
+  after_id: string;
+  /** Zero-based position of that row when the producer supplied one. */
+  after_index?: number;
 }
 
 /** Describes one stable cursor page over an already ordered query result. */
@@ -46,12 +55,14 @@ export function createQueryFingerprint(
 export function encodeQueryCursor(
   fingerprint: string,
   afterId: string,
+  afterIndex?: number,
 ): string {
   return Buffer.from(
     JSON.stringify({
       version: QUERY_CURSOR_VERSION,
       fingerprint,
       after_id: afterId,
+      ...(afterIndex === undefined ? {} : { after_index: afterIndex }),
     } satisfies QueryCursorEnvelope),
   ).toString("base64url");
 }
@@ -65,11 +76,31 @@ function invalidCursor(message: string): PmCliError {
   });
 }
 
-/** Decode and validate a cursor against the normalized query fingerprint. */
-export function decodeQueryCursor(
-  cursor: string,
+/** Return whether an unknown payload is a supported cursor envelope. */
+function isQueryCursorEnvelope(value: unknown): value is QueryCursorEnvelope {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const envelope = value as Partial<QueryCursorEnvelope>;
+  return (
+    envelope.version === QUERY_CURSOR_VERSION &&
+    typeof envelope.fingerprint === "string" &&
+    typeof envelope.after_id === "string" &&
+    envelope.after_id.length > 0 &&
+    (envelope.after_index === undefined ||
+      (Number.isSafeInteger(envelope.after_index) &&
+        envelope.after_index >= 0))
+  );
+}
+
+/** Decode and validate complete cursor state against a query fingerprint. */
+export function decodeQueryCursorState(
+  cursor: unknown,
   expectedFingerprint: string,
-): string {
+): QueryCursorState {
+  if (typeof cursor !== "string") {
+    throw invalidCursor("Query cursor is malformed.");
+  }
   const normalized = cursor.trim();
   if (
     normalized.length === 0 ||
@@ -84,28 +115,29 @@ export function decodeQueryCursor(
   } catch {
     throw invalidCursor("Query cursor is malformed.");
   }
-  if (
-    typeof parsed !== "object" ||
-    parsed === null ||
-    Array.isArray(parsed)
-  ) {
-    throw invalidCursor("Query cursor payload is invalid.");
-  }
-  const envelope = parsed as Partial<QueryCursorEnvelope>;
-  if (
-    envelope.version !== QUERY_CURSOR_VERSION ||
-    typeof envelope.fingerprint !== "string" ||
-    typeof envelope.after_id !== "string" ||
-    envelope.after_id.length === 0
-  ) {
+  if (!isQueryCursorEnvelope(parsed)) {
     throw invalidCursor("Query cursor version or payload is unsupported.");
   }
+  const envelope = parsed;
   if (envelope.fingerprint !== expectedFingerprint) {
     throw invalidCursor(
       `Query cursor does not match the current filters, sort, or query (${envelope.fingerprint} != ${expectedFingerprint}).`,
     );
   }
-  return envelope.after_id;
+  return {
+    after_id: envelope.after_id,
+    ...(envelope.after_index === undefined
+      ? {}
+      : { after_index: envelope.after_index }),
+  };
+}
+
+/** Decode and validate a cursor against the normalized query fingerprint. */
+export function decodeQueryCursor(
+  cursor: unknown,
+  expectedFingerprint: string,
+): string {
+  return decodeQueryCursorState(cursor, expectedFingerprint).after_id;
 }
 
 /** Resolve the first row after a validated cursor's stable id tiebreaker. */
@@ -118,12 +150,13 @@ export function resolveQueryCursorStart<T>(
   if (cursor === undefined) {
     return 0;
   }
-  const afterId = decodeQueryCursor(cursor, fingerprint);
-  const index = rows.findIndex((row) => readId(row) === afterId);
+  const state = decodeQueryCursorState(cursor, fingerprint);
+  const index = rows.findIndex((row) => readId(row) === state.after_id);
   if (index < 0) {
-    throw invalidCursor(
-      `Query cursor item ${afterId} is no longer present in this result set.`,
-    );
+    if (state.after_index !== undefined) {
+      return Math.min(state.after_index + 1, rows.length);
+    }
+    throw invalidCursor(`Query cursor item ${state.after_id} is no longer present in this result set.`);
   }
   return index + 1;
 }
@@ -155,6 +188,7 @@ export function paginateQueryRows<T>(
           next_cursor: encodeQueryCursor(
             options.fingerprint,
             options.readId(lastRow),
+            pageStart + pageRows.length - 1,
           ),
         }
       : {}),

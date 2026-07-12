@@ -3,6 +3,7 @@ import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
   QUERY_CURSOR_CONTRACT,
   createQueryFingerprint,
+  decodeQueryCursorState,
   decodeQueryCursor,
   encodeQueryCursor,
   paginateQueryRows,
@@ -24,8 +25,12 @@ describe("SDK query pagination", () => {
       createQueryFingerprint("search", { status: "open" }),
     );
 
-    const cursor = encodeQueryCursor(first, "pm-second");
+    const cursor = encodeQueryCursor(first, "pm-second", 1);
     expect(decodeQueryCursor(cursor, first)).toBe("pm-second");
+    expect(decodeQueryCursorState(cursor, first)).toEqual({
+      after_id: "pm-second",
+      after_index: 1,
+    });
     expect(
       resolveQueryCursorStart(
         [{ id: "pm-first" }, { id: "pm-second" }, { id: "pm-third" }],
@@ -38,7 +43,7 @@ describe("SDK query pagination", () => {
     expect(QUERY_CURSOR_CONTRACT).toEqual({ version: 1, max_length: 4096 });
   });
 
-  it("rejects malformed, mismatched, unsupported, and stale cursors", () => {
+  it("rejects malformed, mismatched, and unsupported cursors", () => {
     const fingerprint = createQueryFingerprint("list", { status: "open" });
     const mismatched = encodeQueryCursor(
       createQueryFingerprint("list", { status: "closed" }),
@@ -66,6 +71,20 @@ describe("SDK query pagination", () => {
     ]) {
       expect(() => decodeQueryCursor(cursor, fingerprint)).toThrow(PmCliError);
     }
+    for (const cursor of [null, undefined, 42, {}]) {
+      expect(() => decodeQueryCursor(cursor, fingerprint)).toThrow(PmCliError);
+    }
+    const invalidIndex = Buffer.from(
+      JSON.stringify({
+        version: 1,
+        fingerprint,
+        after_id: "pm-first",
+        after_index: -1,
+      }),
+    ).toString("base64url");
+    expect(() => decodeQueryCursor(invalidIndex, fingerprint)).toThrow(
+      PmCliError,
+    );
     const stale = encodeQueryCursor(fingerprint, "pm-missing");
     expect(() =>
       resolveQueryCursorStart(
@@ -75,6 +94,27 @@ describe("SDK query pagination", () => {
         (row) => row.id,
       ),
     ).toThrow(/no longer present/);
+  });
+
+  it("resumes by the recorded position when concurrent mutation removes the cursor row", () => {
+    const fingerprint = createQueryFingerprint("list", { status: "open" });
+    const cursor = encodeQueryCursor(fingerprint, "pm-removed", 1);
+    expect(
+      resolveQueryCursorStart(
+        [{ id: "pm-first" }, { id: "pm-third" }, { id: "pm-fourth" }],
+        cursor,
+        fingerprint,
+        (row) => row.id,
+      ),
+    ).toBe(2);
+    expect(
+      resolveQueryCursorStart(
+        [{ id: "pm-first" }],
+        encodeQueryCursor(fingerprint, "pm-removed", 99),
+        fingerprint,
+        (row) => row.id,
+      ),
+    ).toBe(1);
   });
 
   it("returns bounded ordered pages with continuation metadata", () => {

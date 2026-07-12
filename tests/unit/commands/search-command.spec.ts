@@ -1751,6 +1751,7 @@ describe("runSearch", () => {
     );
 
     const originalFetch = globalThis.fetch;
+    const vectorLimits: number[] = [];
     globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
       const target = resolveFetchTarget(url);
       if (target.endsWith("/v1/embeddings")) {
@@ -1758,7 +1759,7 @@ describe("runSearch", () => {
       }
       if (target.endsWith("/collections/pm_items/points/search")) {
         const body = parseJsonBody<{ limit?: number }>(init?.body);
-        expect(body.limit).toBe(3);
+        vectorLimits.push(body.limit ?? 0);
         return makeJsonResponse({
           result: [
             { id: "pm-semantic-top", score: 0.99 },
@@ -1779,6 +1780,17 @@ describe("runSearch", () => {
       expect(result.total).toBe(2);
       expect(result.items.map((entry) => entry.item.id)).toEqual(["pm-fused-top"]);
       expect(result.filters.limit).toBe("1");
+      expect(result.next_cursor).toBeTypeOf("string");
+
+      const continued = await runSearch(
+        "tok",
+        { mode: "hybrid", limit: "1", after: result.next_cursor },
+        { path: "/tmp/pm-search" },
+      );
+      expect(continued.items.map((entry) => entry.item.id)).toEqual([
+        "pm-semantic-top",
+      ]);
+      expect(vectorLimits).toEqual([3, 3]);
     } finally {
       globalThis.fetch = originalFetch;
     }

@@ -10,6 +10,28 @@ import {
 import type { SearchHit, SearchOptions } from "./search.js";
 import type { SearchMode } from "./search-rendering.js";
 
+/** Build the query-only fingerprint shared by search retrieval and paging. */
+export function createSearchCursorFingerprint(options: {
+  query: string;
+  mode: SearchMode;
+  searchOptions: SearchOptions;
+}): string {
+  const normalizedOptions: Record<string, unknown> = {
+    ...options.searchOptions,
+  };
+  delete normalizedOptions.after;
+  delete normalizedOptions.limit;
+  delete normalizedOptions.compact;
+  delete normalizedOptions.full;
+  delete normalizedOptions.fields;
+  delete normalizedOptions.highlight;
+  return createQueryFingerprint("search", {
+    query: options.query.trim(),
+    mode: options.mode,
+    options: normalizedOptions,
+  });
+}
+
 /** Page ranked search hits without coupling cursor mechanics to search scoring. */
 export function resolveSearchPage(options: {
   sorted: SearchHit[];
@@ -26,18 +48,9 @@ export function resolveSearchPage(options: {
     truncated?: true;
   };
 } {
-  const normalizedOptions: Record<string, unknown> = {
-    ...options.searchOptions,
-  };
-  delete normalizedOptions.after;
-  delete normalizedOptions.limit;
   const page = paginateQueryRows(options.sorted, {
     cursor: options.searchOptions.after,
-    fingerprint: createQueryFingerprint("search", {
-      query: options.query.trim(),
-      mode: options.mode,
-      options: normalizedOptions,
-    }),
+    fingerprint: createSearchCursorFingerprint(options),
     limit: options.limit,
     readId: (hit) => hit.item.id,
   });

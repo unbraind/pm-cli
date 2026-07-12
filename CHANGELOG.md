@@ -14,8 +14,8 @@
 
 ### Other
 
-- Lazy-load @sentry/node off the command hot path (~850ms ESM load on every command, even when telemetry disabled) ([pm-1ybs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-1ybs.toon))
 - Scale benchmark harness: synthetic 10k/100k/1M-item workspace generator + latency/memory/token baseline for the read and claim hot paths ([pm-mi2x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mi2x.toon))
+- Lazy-load @sentry/node off the command hot path (~850ms ESM load on every command, even when telemetry disabled) ([pm-1ybs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-1ybs.toon))
 - ADR: workspace scale-out strategy — indexed reads, storage fan-out, and bounded-output contracts for 100k-1M-item workspaces (proposed) ([pm-bl8x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-bl8x.toon))
 - Local test/coverage dev loop 17+min: replace per-call spawnSync CLI runner with synchronous worker-thread bridge ([pm-kvd0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-kvd0.toon))
 

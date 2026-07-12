@@ -965,7 +965,7 @@ function canUseDerivedIndex(params: {
     params.existingCache?.context_fingerprint !== params.contextFingerprint ||
     params.entryKeys.length < params.minimumIndexedItems ||
     !directorySignaturesMatch(
-      params.existingCache.directory_signatures,
+      params.existingCache?.directory_signatures,
       params.directorySignatures,
     )
   ) {

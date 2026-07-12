@@ -2071,6 +2071,7 @@ async function resolveContextFocusGroups(
       ? encodeQueryCursor(
           cursorFingerprint,
           focusPage[focusPage.length - 1]!.id,
+          pageStart + focusPage.length - 1,
         )
       : undefined;
   const blockedItems = ranked.filter((item) =>
