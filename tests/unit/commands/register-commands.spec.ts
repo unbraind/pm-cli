@@ -1576,10 +1576,14 @@ describe("mutation command actions", () => {
     const learningsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runLearnings) as never, 1);
     expect(learningsOptions.add).toBe("lesson");
     expect(learningsOptions.allowAuditComment).toBe(true);
+    await runCli("learnings", "pm-1", "--edit", "2", "revised lesson");
+    const learningEditOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runLearnings) as never, 1);
+    expect(learningEditOptions.edit).toBe(2);
+    expect(learningEditOptions.add).toBe("revised lesson");
     await runCli("learnings", "pm-1", "--delete", "3");
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runLearnings) as never, 1).delete).toBe(3);
     await expect(runCli("learnings", "pm-1", "a", "--add", "b")).rejects.toThrow("not both");
-    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(7);
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(8);
   });
 
   it("maps files/docs link management and discover routing", async () => {
