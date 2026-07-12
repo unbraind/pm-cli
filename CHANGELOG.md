@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-518: reduce Complex Method in src/cli/commands/next.ts (CodeFactor, PR\#517 rank rendering) ([pm-2gvp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2gvp.toon))
+
 ## 2026.7.12 - 2026-07-12
 
 ### Added
