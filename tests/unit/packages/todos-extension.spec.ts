@@ -1379,7 +1379,7 @@ describe("built-in todos extension import/export", () => {
         return {
           ...actualModule,
           splitFrontMatter: () => ({
-            itemMetadata: "[]",
+            frontMatter: "[]",
             body: "mocked body",
           }),
         };
