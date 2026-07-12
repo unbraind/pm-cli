@@ -667,6 +667,8 @@ export function renderNextMarkdown(result: NextResult): string {
   lines.push(
     ...renderNextSection(
       "Decision needed",
+      // `?? []` tolerates JSON payloads from pre-decision-queue builds (the
+      // field is newer than the rest of the shape); pinned by a dedicated spec.
       (result.decision_needed ?? []).map((item) => `- ${formatNextLine(item)}`),
       "No human-gated decisions.",
     ),
