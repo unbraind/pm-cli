@@ -3,6 +3,7 @@
 import { execFileSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
+/* v8 ignore start -- exercised end-to-end through the authenticated gh CLI */
 function runGh(args, input) {
   return execFileSync("gh", args, {
     encoding: "utf8",
@@ -20,6 +21,7 @@ function usage(message) {
   node scripts/reviews/pr-review-loop.mjs reply-top --body <text> [--pr <number>] [--repo <owner/name>]`);
   process.exit(2);
 }
+/* v8 ignore stop */
 
 export function parseArgs(argv) {
   const [command = "inventory", ...rest] = argv;
@@ -33,9 +35,9 @@ export function parseArgs(argv) {
   return { command, options };
 }
 
-function resolveTarget(options) {
-  const repo = options.repo ?? JSON.parse(runGh(["repo", "view", "--json", "nameWithOwner"])).nameWithOwner;
-  const pr = Number(options.pr ?? JSON.parse(runGh(["pr", "view", "--json", "number"])).number);
+export function resolveTarget(options, executeGh = runGh) {
+  const repo = options.repo ?? JSON.parse(executeGh(["repo", "view", "--json", "nameWithOwner"])).nameWithOwner;
+  const pr = Number(options.pr ?? JSON.parse(executeGh(["pr", "view", "--json", "number"])).number);
   if (!repo.includes("/") || !Number.isInteger(pr) || pr <= 0) usage("A valid repository and PR are required.");
   const [owner, name] = repo.split("/");
   return { repo, owner, name, pr };
@@ -148,38 +150,42 @@ export function inlineReplyPath(repo, pr, commentId) {
   return `repos/${repo}/pulls/${pr}/comments/${commentId}/replies`;
 }
 
-export function main(argv = process.argv.slice(2)) {
+export function main(argv = process.argv.slice(2), dependencies = {}) {
   const { command, options } = parseArgs(argv);
+  const executeGh = dependencies.runGh ?? runGh;
+  const write = dependencies.log ?? console.log;
 
   if (command === "inventory") {
-    const target = resolveTarget(options);
-    const pullRequest = fetchReviewInventory(target);
-    console.log(JSON.stringify({ repository: target.repo, pullRequest }, null, 2));
+    const target = resolveTarget(options, executeGh);
+    const pullRequest = fetchReviewInventory(target, executeGh);
+    write(JSON.stringify({ repository: target.repo, pullRequest }, null, 2));
   } else if (command === "react") {
     if (!options["node-id"] || !options.reaction) usage("react requires --node-id and --reaction.");
     const mutation = `mutation($subjectId: ID!, $content: ReactionContent!) {
     addReaction(input: { subjectId: $subjectId, content: $content }) { reaction { content } }
   }`;
-    console.log(runGh([
+    write(executeGh([
       "api", "graphql", "-f", `query=${mutation}`,
       "-F", `subjectId=${options["node-id"]}`, "-F", `content=${options.reaction}`,
     ]));
   } else if (command === "reply-inline") {
-    const target = resolveTarget(options);
+    const target = resolveTarget(options, executeGh);
     if (!options["comment-id"] || !options.body) usage("reply-inline requires --comment-id and --body.");
-    console.log(runGh([
+    write(executeGh([
       "api", inlineReplyPath(target.repo, target.pr, options["comment-id"]),
       "-f", `body=${options.body}`,
     ]));
   } else if (command === "reply-top") {
-    const target = resolveTarget(options);
+    const target = resolveTarget(options, executeGh);
     if (!options.body) usage("reply-top requires --body.");
-    console.log(runGh(["pr", "comment", String(target.pr), "--repo", target.repo, "--body", options.body]));
+    write(executeGh(["pr", "comment", String(target.pr), "--repo", target.repo, "--body", options.body]));
   } else {
     usage(`Unknown command: ${command}`);
   }
 }
 
+/* v8 ignore start -- direct CLI entrypoint */
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }
+/* v8 ignore stop */
