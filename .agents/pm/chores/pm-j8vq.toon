@@ -1,0 +1,16 @@
+id: pm-j8vq
+title: Burn down the 76 grandfathered complexity-baseline suppressions (cognitive >16 + cyclomatic 17)
+description: ""
+type: Chore
+status: open
+priority: 3
+tags[2]: code-quality,codefactor
+created_at: "2026-07-12T07:36:30.261Z"
+updated_at: "2026-07-12T07:36:30.261Z"
+author: maintainer-agent
+estimated_minutes: 600
+acceptance_criteria: "eslint-suppressions.json total reduced from 180 back toward 104 as functions are decomposed; MAX_ESLINT_SUPPRESSIONS lowered in lockstep (never raised); worst offenders first (extension-command-options.ts cog 34, lock-gc.ts 29, checkpoint-gc.ts 28, lock.ts 27, fs-utils.ts 27); each refactor keeps the 100% coverage gate green"
+parent: pm-92if
+risk: low
+confidence: high
+body: "The GH-518/pm-2gvp gate fix added sonarjs/cognitive-complexity <=16 and lowered the cyclomatic ceiling 17->16 (policy: no function over 16 on either metric). 76 pre-existing violations were grandfathered into eslint-suppressions.json (104 -> 180): 62 functions with cognitive complexity >16 and 14 at cyclomatic exactly 17. The ratchet already prevents ANY new violation and any worsening of a suppressed file; this chore owns shrinking the baseline itself.\n\nMethod per slice: pick a file from eslint-suppressions.json, decompose the offending function(s) below both ceilings, run pnpm lint (stale suppressions fail the run) + pnpm lint:eslint:prune, commit the smaller baseline. Never edit suppression counts by hand; never raise MAX_ESLINT_SUPPRESSIONS.\n\nTop offenders by cognitive score (2026-07-12 scan): src/cli/extension-command-options.ts:371 (34) + :206 (23), src/core/lock/lock-gc.ts:246 (29), src/core/checkpoint/checkpoint-gc.ts:135 (28), src/core/lock/lock.ts:520 (27), src/core/fs/fs-utils.ts:42 (27), src/core/store/item-format-migration.ts:60 (26), src/core/extensions/item-fields.ts:289 (24), src/cli/commands/shared-unset-fields.ts:311 (24), src/cli/commands/health.ts:388 (24)."
