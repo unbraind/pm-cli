@@ -1269,7 +1269,8 @@
       "imports": [
         "src/core/item/type-registry.ts",
         "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts"
+        "src/core/shared/errors.ts",
+        "src/core/shared/numeric-parsers.ts"
       ]
     },
     {
