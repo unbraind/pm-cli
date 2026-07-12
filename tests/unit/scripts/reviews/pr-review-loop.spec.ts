@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { pathToFileURL } from "node:url";
 
 import {
   fetchReviewInventory,
@@ -177,10 +178,10 @@ describe("PR review loop helper", () => {
 
   it("runs the CLI entrypoint only for direct execution", () => {
     const executeMain = vi.fn();
-    const scriptPath = "/tmp/review-loop.mjs";
-    runCliIfDirect(["node", scriptPath], "file:///tmp/review-loop.mjs", executeMain);
-    runCliIfDirect(["node", scriptPath], "file:///tmp/importer.mjs", executeMain);
-    runCliIfDirect(["node"], "file:///tmp/review-loop.mjs", executeMain);
+    const scriptPath = process.platform === "win32" ? "C:\\tmp\\review-loop.mjs" : "/tmp/review-loop.mjs";
+    runCliIfDirect(["node", scriptPath], pathToFileURL(scriptPath).href, executeMain);
+    runCliIfDirect(["node", scriptPath], pathToFileURL(`${scriptPath}.importer`).href, executeMain);
+    runCliIfDirect(["node"], pathToFileURL(scriptPath).href, executeMain);
     expect(executeMain).toHaveBeenCalledTimes(1);
   });
 });
