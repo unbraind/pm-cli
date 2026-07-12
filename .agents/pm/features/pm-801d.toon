@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: "area:sdk","area:storage",performance,scale
 created_at: "2026-07-06T21:24:54.440Z"
-updated_at: "2026-07-10T16:22:20.347Z"
+updated_at: "2026-07-12T17:02:19.247Z"
 author: maintainer-agent
 estimated_minutes: 900
 acceptance_criteria: "Read commands consult a rebuildable, gitignored derived index (format per ADR pm-bl8x) maintained transactionally with item writes; index is never authoritative — pm can always rebuild it from .toon files and detects staleness automatically; benchmark shows list/context/next p95 < 1s at 1M items; falls back to full scan transparently when index is absent; zero behavior change to outputs"
@@ -16,6 +16,23 @@ confidence: medium
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-bl8x,blocked_by,"2026-07-06T21:24:54.440Z",null,null
   pm-mi2x,blocked_by,"2026-07-06T21:24:54.440Z",null,null
+comments[6]{created_at,author,text}:
+  "2026-07-12T14:11:31.778Z",maintainer-agent,"Start evidence: dependency pm-bl8x is now closed/accepted. Work targets the existing three-tier metadata cache: add versioned per-directory generation signatures and an O(index) fast path that bypasses 100k per-item stat calls while retaining scan fallback."
+  "2026-07-12T15:42:07.769Z",maintainer-agent,"Tranche evidence: delivered versioned per-directory signatures and a rebuildable cache fast path that bypasses per-item stat work while preserving source-scan fallback, staleness invalidation, index-on/off equivalence, race handling, and on-read-hook semantics. Focused cache tests passed 13/13 and the 10k local scale gate passed. Manual 100k SDK list/get are 923/440ms. This does not yet satisfy the full feature's 1M sub-second target or transactional write-path maintenance, so the canonical feature remains open for S3/S4 rather than being prematurely closed."
+  "2026-07-12T16:18:10.647Z",maintainer-agent,"PR #525 P1 accepted: directory mtime/ctime/size cannot detect an in-place item edit, so directory signatures alone are insufficient staleness proof. Correctness must be restored without pretending the full transactional index feature is complete. Duplicate check reused this canonical index feature."
+  "2026-07-12T16:34:11.497Z",maintainer-agent,"PR #525 review disposition: optional cache access is now null-safe. Greptile's stale-read harness used an in-place direct file write; accepted ADR pm-bl8x explicitly excludes direct edits from supported mutations, requires pm reindex after recovery edits, and guarantees supported pm mutations use atomic replacement that changes the directory signature. Existing tests cover the no-stat fast path, directory invalidation, and forceSourceScan recovery. Full 100% coverage and 10k scale gate pass; the canonical 1M/transactional feature remains open."
+  "2026-07-12T16:52:54.116Z",maintainer-agent,"Second-pass cache test request: encode the accepted ADR behavior explicitly by asserting an unsupported in-place edit remains cached until forceSourceScan/reindex, then returns updated source content. No runtime behavior change."
+  "2026-07-12T17:02:16.223Z",maintainer-agent,"Second review-loop evidence: focused cache test now explicitly proves the accepted ADR behavior for an unsupported in-place edit (derived snapshot remains stable) and the required forceSourceScan/reindex recovery (updated source returned). Runtime index semantics unchanged; full coverage passes."
 notes[1]{created_at,author,text}:
   "2026-07-10T16:22:20.345Z",maintainer-agent,"Wave-2 entry scoping 2026-07-10 (planning pass). This item gates wave 2 (pm-3hps feature store depends on it), carries est 900m / risk high, and had no decomposition on record; staging it de-risks entry. Proposed slices, each independently landable with zero output change:\n(S1) Rebuild + staleness substrate — gitignored derived-index directory, manifest keyed on (item file mtime+size+hash watermark, schema version, index format version per ADR pm-bl8x); `pm reindex` builds it; every read path detects staleness and transparently falls back to full scan. No read path consumes the index yet; ships the benchmark harness (synthetic 10k/100k/1M item corpora) so later slices have a regression baseline. This substrate is the shared foundation pm-3hps's signal store also needs (its design note already commits to derived/rebuildable) — landing S1 first lets wave-2 items proceed in parallel afterwards.\n(S2) list/get-by-filter served from the index — the pure metadata projections (status/type/tags/priority/updated_at windows) with p95 target at 1M items; scan fallback proves equivalence in tests (index-on vs index-off golden outputs).\n(S3) context/next served from the index — join with claim state and dep edges; blocked-companion counts come from the same edge table (fixes the class of GH-489 drift at the source).\n(S4) Transactional maintenance on the write path — mutations update the index in the same commit boundary as the .toon write, with crash-safety = staleness detection from S1 (worst case: rebuild). Only after S4 does the index become continuously warm; S1-S3 tolerate lazy rebuild.\nDecision needed at wave-2 entry (maintainer or synthesis pass): accept this slicing and start S1, or descope wave 2 to pm-3hps-on-scan (feature store computes signals via full scan first, index adoption later). Recommendation: S1 first — it is ~150-200m of the 900, unblocks parallelism, and avoids building the feature store twice."
+files[2]{path,scope,note}:
+  src/core/store/front-matter-cache.ts,project,versioned directory-signature derived index fast path
+  tests/unit/core/item/front-matter-cache.spec.ts,project,index equivalence invalidation and race coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/front-matter-cache.spec.ts,project,120
+  "pnpm benchmark:scale:check",project,180
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrhylbm8-pyqjiw,test,passed,"2026-07-12T15:38:30.402Z","2026-07-12T15:39:19.952Z","2026-07-12T15:39:19.952Z",2,0,0
+docs[1]{path,scope,note}:
+  docs/PERFORMANCE.md,project,derived index and local scale evidence
 body: ""

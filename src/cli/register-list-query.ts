@@ -324,6 +324,10 @@ function registerListCommand(
       "Skip the first n matching rows before limit is applied",
     )
     .option(
+      "--after <cursor>",
+      "Continue after an opaque next_cursor from a previous list response",
+    )
+    .option(
       "--no-truncate",
       "Return every matched row, overriding any --limit (alias: --all)",
     )
@@ -761,6 +765,10 @@ export function registerListQueryCommands(
       )
       .option("--limit <n>", "Limit focus and agenda rows per section")
       .option(
+        "--after <cursor>",
+        "Continue ranked focus after a next_cursor from a previous context response",
+      )
+      .option(
         "--format <value>",
         "Context output format override: markdown|toon|json",
       )
@@ -957,7 +965,11 @@ export function registerListQueryCommands(
         "Render custom comma-separated search hit fields (mutually exclusive with --compact/--full; valid: --fields id,title,score; invalid: --full --fields id,title)",
       )
       .option("--format <value>", "Search output format override: json|toon")
-      .option("--limit <n>", "Limit returned item count");
+      .option("--limit <n>", "Limit returned item count")
+      .option(
+        "--after <cursor>",
+        "Continue after an opaque next_cursor from a previous search response",
+      );
     registerContentAndGovernanceFilters(searchCommand);
     searchCommand.action(runSearchAction);
     addHiddenOption(searchCommand, "--tags <value>", "Alias for --tag");

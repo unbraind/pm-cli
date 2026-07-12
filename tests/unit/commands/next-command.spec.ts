@@ -202,6 +202,38 @@ describe("runNext", () => {
     });
   });
 
+  it("reports complete counts when decision and foreign-held queues are bounded", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, { title: "Decision one", type: "Decision" });
+      createItem(context, { title: "Decision two", type: "Decision" });
+      const foreignOne = createItem(context, { title: "Foreign one" });
+      const foreignTwo = createItem(context, { title: "Foreign two" });
+      context.runCli(
+        ["update", foreignOne, "--assignee", "other-agent", "--json"],
+        { expectJson: true },
+      );
+      context.runCli(
+        ["update", foreignTwo, "--assignee", "other-agent", "--json"],
+        { expectJson: true },
+      );
+
+      const result = await runNext(
+        { limit: "1" },
+        { path: context.pmPath },
+      );
+      expect(result.decision_needed).toHaveLength(1);
+      expect(result.held_by_others).toHaveLength(1);
+      expect(result.truncation).toEqual({
+        decision_needed_total: 2,
+        held_by_others_total: 2,
+      });
+      expect(result.summary).toMatchObject({
+        decision_needed: 2,
+        held_by_others: 2,
+      });
+    });
+  });
+
   it("keeps completed containers behind concrete leaf work and marks container closeout rationale", async () => {
     await withTempPmPath(async (context) => {
       const completedEpic = createItem(context, { title: "Completed platform epic", type: "Epic", priority: "0" });

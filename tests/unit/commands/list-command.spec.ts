@@ -106,6 +106,9 @@ describe("runList", () => {
     expect(() => listInternals.parseIdsFilter(" , ")).toThrow(PmCliError);
     expect(listInternals.parseOffset("2")).toBe(2);
     expect(() => listInternals.parseOffset("-1")).toThrow(PmCliError);
+    expect(listInternals.resolveListPageLimit({}, 9_999)).toBeUndefined();
+    expect(listInternals.resolveListPageLimit({}, 10_000)).toBe(20);
+    expect(listInternals.resolveListPageLimit({ limit: "7" }, 10_000)).toBe(7);
     expect(listInternals.parseFieldSelectors("id,item.title,id")).toEqual(["id", "item.title"]);
     expect(() => listInternals.parseFieldSelectors(" , ")).toThrow(PmCliError);
     expect(listInternals.runtimeMetadataKeysForProjection([{ metadata_key: "severity" }, { metadata_key: "owner" }])).toEqual([
@@ -1393,6 +1396,26 @@ describe("runList", () => {
       const limited = await runList(undefined, { limit: "1" }, { path: context.pmPath });
       expect(limited.count).toBe(1);
       expect(limited.total).toBe(4);
+      expect(limited.next_cursor).toBeTypeOf("string");
+
+      const zero = await runList(undefined, { limit: "0" }, { path: context.pmPath });
+      expect(zero.count).toBe(0);
+      expect(zero.has_more).toBeUndefined();
+      expect(zero.next_cursor).toBeUndefined();
+
+      const continued = await runList(
+        undefined,
+        { limit: "1", after: limited.next_cursor },
+        { path: context.pmPath },
+      );
+      expect(continued.items[0]?.id).not.toBe(limited.items[0]?.id);
+      await expect(
+        runList(
+          undefined,
+          { after: limited.next_cursor, offset: "1" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
 
       // --no-truncate returns everything and omits total (nothing was dropped).
       const full = await runList(undefined, { noTruncate: true }, { path: context.pmPath });

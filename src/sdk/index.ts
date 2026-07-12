@@ -190,6 +190,7 @@ export type {
 } from "./cli-contracts.js";
 export * from "./compose.js";
 export * from "./context-relevance.js";
+export * from "./pagination.js";
 export type {
   PlanCommandOptions,
   PlanCommandResult,

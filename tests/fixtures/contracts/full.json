@@ -1480,6 +1480,9 @@
           "flag": "--limit"
         },
         {
+          "flag": "--after"
+        },
+        {
           "flag": "--format"
         },
         {
@@ -1886,6 +1889,9 @@
             "--max-items"
           ],
           "flag": "--limit"
+        },
+        {
+          "flag": "--after"
         },
         {
           "flag": "--format"
@@ -2884,6 +2890,9 @@
           "flag": "--offset"
         },
         {
+          "flag": "--after"
+        },
+        {
           "aliases": [
             "--all"
           ],
@@ -3089,6 +3098,9 @@
         },
         {
           "flag": "--offset"
+        },
+        {
+          "flag": "--after"
         },
         {
           "aliases": [
@@ -3298,6 +3310,9 @@
           "flag": "--offset"
         },
         {
+          "flag": "--after"
+        },
+        {
           "aliases": [
             "--all"
           ],
@@ -3503,6 +3518,9 @@
         },
         {
           "flag": "--offset"
+        },
+        {
+          "flag": "--after"
         },
         {
           "aliases": [
@@ -3712,6 +3730,9 @@
           "flag": "--offset"
         },
         {
+          "flag": "--after"
+        },
+        {
           "aliases": [
             "--all"
           ],
@@ -3917,6 +3938,9 @@
         },
         {
           "flag": "--offset"
+        },
+        {
+          "flag": "--after"
         },
         {
           "aliases": [
@@ -4126,6 +4150,9 @@
           "flag": "--offset"
         },
         {
+          "flag": "--after"
+        },
+        {
           "aliases": [
             "--all"
           ],
@@ -4331,6 +4358,9 @@
         },
         {
           "flag": "--offset"
+        },
+        {
+          "flag": "--after"
         },
         {
           "aliases": [
@@ -5631,6 +5661,9 @@
         },
         {
           "flag": "--limit"
+        },
+        {
+          "flag": "--after"
         },
         {
           "flag": "--status",
@@ -7017,6 +7050,12 @@
       },
       {
         "keys": [
+          "after"
+        ],
+        "target": "after"
+      },
+      {
+        "keys": [
           "format"
         ],
         "target": "format"
@@ -7553,6 +7592,12 @@
       },
       {
         "keys": [
+          "after"
+        ],
+        "target": "after"
+      },
+      {
+        "keys": [
           "fields"
         ],
         "target": "fields"
@@ -7701,6 +7746,12 @@
           "limit"
         ],
         "target": "limit"
+      },
+      {
+        "keys": [
+          "after"
+        ],
+        "target": "after"
       }
     ],
     "update_repeatable_options": [

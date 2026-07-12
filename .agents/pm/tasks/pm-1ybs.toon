@@ -1,0 +1,35 @@
+id: pm-1ybs
+title: "Lazy-load @sentry/node off the command hot path (~850ms ESM load on every command, even when telemetry disabled)"
+description: ""
+type: Task
+status: closed
+priority: 1
+tags[2]: performance,telemetry
+created_at: "2026-07-12T13:20:06.786Z"
+updated_at: "2026-07-12T15:42:31.235Z"
+closed_at: "2026-07-12T15:42:10.861Z"
+author: maintainer-agent
+acceptance_criteria: "Static import of @sentry/node in src/core/sentry/instrument.ts replaced by a dynamic import that runs only after the isSentryDisabled() gate; PM_SENTRY_DISABLED=1 / PM_TELEMETRY_DISABLED=1 / vitest runs never load the Sentry module graph; Telemetry-enabled runs preserve current behavior: init fires at command start (non-blocking), error-capture and flush paths await the same init promise, spans/breadcrumbs still emitted; pm list wall time at the current workspace drops from ~1.4s to <=0.85s (stub-experiment ceiling 562-801ms); measured before/after recorded on pm-mi2x; Full test suite + contract tests green; zero flag/output changes"
+risk: medium
+confidence: high
+resolution: Deferred the Sentry runtime module graph until after telemetry opt-out guards while preserving enabled capture and flush semantics.
+expected_result: "Disabled commands avoid loading @sentry/node; enabled telemetry initializes, captures, spans, breadcrumbs, and flushes as before with lower command startup latency."
+actual_result: "48 focused tests passed, the live Sentry/telemetry gate passed, and scale dogfood demonstrated the reduced read-path cost with zero flag/output contract change."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-9rxu,related,"2026-07-12T13:20:06.786Z",null,null
+  pm-mi2x,related,"2026-07-12T13:35:08.059Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-12T13:35:11.977Z",maintainer-agent,"External sweep before implementation: no open PRs; zero open Dependabot, code-scanning, or secret-scanning alerts; pnpm audit reports no known vulnerabilities. @sentry/node 10.65.0 is available vs current 10.63.0, but dependency upgrades remain outside this measured hot-path change unless required by package API compatibility. Sentry still returns unresolved PM-CLI issues, so enabled capture/flush behavior must be preserved and reverified after the lazy-load change."
+  "2026-07-12T15:42:07.246Z",maintainer-agent,"Completion evidence: @sentry/node is now loaded lazily through top-level createRequire only after telemetry disable guards; enabled init/capture/flush semantics remain covered. PM-linked Sentry tests passed 48/48. Live Sentry CLI access succeeded after the change; the local combined gate passed with critical=0 high=0, telemetry finish_error_rate_pct=0.25, and zero missing error-code rows. The observed workspace command baseline fell from roughly 1.2-2.0s reads before this tranche to 100k SDK list/get at 923/440ms and CLI operations 0.7-3.5s depending on query."
+learnings[1]{created_at,author,text}:
+  "2026-07-12T15:42:07.478Z",maintainer-agent,A static observability import can dominate every short-lived CLI command even when telemetry is disabled. Keeping external packaging unchanged while deferring the single module graph behind the existing opt-out gate preserves enabled telemetry without imposing its module-load cost on disabled runs.
+files[3]{path,scope,note}:
+  src/core/sentry/instrument.ts,project,lazy Sentry loader and behavior coverage
+  tests/unit/core/sentry/instrument.spec.ts,project,lazy Sentry loader and behavior coverage
+  tests/unit/core/sentry/sentry-helpers.spec.ts,project,lazy Sentry loader and behavior coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/sentry/instrument.spec.ts tests/unit/core/sentry/sentry-helpers.spec.ts,project,120
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrhyjzxx-06forq,test,passed,"2026-07-12T15:38:11.805Z","2026-07-12T15:38:18.165Z","2026-07-12T15:38:18.165Z",1,0,0
+close_reason: Removed the static Sentry module graph from disabled command startup while preserving enabled init/capture/flush behavior; focused tests and live local Sentry/telemetry gate passed.
+body: "## Problem\ncpu-prof attribution (2026-07-12, evidence on pm-mi2x notes) shows ~60% of every pm command's wall time at 1.7k items is Node ESM resolve+compile of the @sentry/node -> OpenTelemetry -> undici dependency forest, triggered by the static `import * as SentryModule from \"@sentry/node\"` at the top of src/core/sentry/instrument.ts. Isolated: `await import(\"@sentry/node\")` = 847ms while `commander` = 10ms. The cost is paid even when PM_SENTRY_DISABLED=1 because the opt-out check executes only after module load.\n\n## Fix shape\ninstrument.ts is the SOLE importer and already funnels all access through async ensureSentryInit() / sync getSentry() (undefined until init). Replace the static namespace import with `const SentryModule = (await import(\"@sentry/node\"))` inside ensureSentryInit AFTER the disabled gate; type positions move to `type SentryLike = typeof import(\"@sentry/node\")` (type-only, erased at runtime). Callers in src/cli/main.ts kick ensureSentryInit off non-blocking; sentryCaptureCliError/sentryFlush in src/core/sentry/helpers.ts must await the init promise instead of relying on getSentry() being populated synchronously.\n\n## Semantics preserved (zero feature loss)\n- Telemetry-enabled runs still init Sentry every command; capture/flush await init so no events are dropped at exit.\n- captureConsoleIntegration attaches marginally later; console output emitted before init completes is the only theoretical gap — for enabled runs init resolves in the first ~200ms while the command is still doing fs I/O.\n- Disabled runs (env opt-out, vitest) skip the module graph entirely — this is where the full ~850ms comes back.\n\n## Evidence ceiling\nProduction layout with @sentry/node aliased to an empty stub: pm list 562-801ms vs 1400ms baseline, output byte-identical (mi2x attribution note). Fits accepted ADR pm-irp1 (lazy per-command imports, external deps unchanged)."

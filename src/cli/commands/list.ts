@@ -69,6 +69,11 @@ import type {
   ItemType,
 } from "../../types/index.js";
 import type { SharedItemFilterOptions } from "./item-filter-options.js";
+import {
+  createQueryFingerprint,
+  encodeQueryCursor,
+  resolveQueryCursorStart,
+} from "../../sdk/pagination.js";
 
 /** Documents the list options payload exchanged by command, SDK, and package integrations. */
 export interface ListOptions extends SharedItemFilterOptions {
@@ -84,6 +89,8 @@ export interface ListOptions extends SharedItemFilterOptions {
   limit?: string;
   /** Value that configures or reports offset for this contract. */
   offset?: string;
+  /** Opaque cursor returned by a previous list page. */
+  after?: string;
   /** Value that configures or reports no truncate for this contract. */
   noTruncate?: boolean;
   /** Value that configures or reports include body for this contract. */
@@ -298,6 +305,14 @@ interface ListResultBase {
   // Total rows matched before pagination; only emitted when --limit/--offset
   // omitted rows, so agents know how many remain (GH-154).
   total?: number;
+  /** Whether additional rows remain after this page. */
+  has_more?: boolean;
+  /** Opaque continuation cursor when additional rows remain. */
+  next_cursor?: string;
+  /** Effective page size, including an automatic at-scale bound. */
+  applied_limit?: number;
+  /** Explicit marker that the response is a bounded page. */
+  truncated?: true;
   warnings?: string[];
 }
 
@@ -1335,6 +1350,52 @@ interface ListPageResult {
   projected: ListedItem[];
   totalMatched: number;
   truncationExtras: { total: number } | Record<string, never>;
+  pageExtras: {
+    has_more?: boolean;
+    next_cursor?: string;
+    applied_limit?: number;
+    truncated?: true;
+  };
+}
+
+function resolveListPageLimit(
+  options: ListOptions,
+  totalRows: number,
+): number | undefined {
+  if (options.noTruncate === true) {
+    return undefined;
+  }
+  return (
+    parseIntegerLimit(options.limit) ?? (totalRows >= 10_000 ? 20 : undefined)
+  );
+}
+
+function resolveListPageStart(
+  ordered: ListedItem[],
+  options: ListOptions,
+  cursorFingerprint: string,
+): number {
+  if (options.after === undefined) {
+    return parseOffset(options.offset) ?? 0;
+  }
+  return resolveQueryCursorStart(
+    ordered,
+    options.after,
+    cursorFingerprint,
+    (item) => item.id,
+  );
+}
+
+function buildListPageExtras(
+  limit: number | undefined,
+  hasMore: boolean,
+  nextCursor: string | undefined,
+): ListPageResult["pageExtras"] {
+  return {
+    ...(limit !== undefined ? { applied_limit: limit } : {}),
+    ...(hasMore ? { has_more: true, truncated: true } : {}),
+    ...(nextCursor ? { next_cursor: nextCursor } : {}),
+  };
 }
 
 async function resolveListRuntimeContext(
@@ -1474,22 +1535,65 @@ function pageAndProjectListItems(
   options: ListOptions,
   projection: ListProjectionConfig,
   treeEnabled: boolean,
+  cursorFingerprint: string,
 ): ListPageResult {
-  const noTruncate = options.noTruncate === true;
-  const limit = noTruncate ? undefined : parseIntegerLimit(options.limit);
-  const offset = parseOffset(options.offset) ?? 0;
+  if (options.after !== undefined && options.offset !== undefined) {
+    throw new PmCliError(
+      "List --after cannot be combined with --offset.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const limit = resolveListPageLimit(options, ordered.length);
+  const offset = resolveListPageStart(ordered, options, cursorFingerprint);
   const limited =
     limit === undefined
       ? ordered.slice(offset)
       : ordered.slice(offset, offset + limit);
   const projected = projectListItems(limited, projection, treeEnabled);
   const totalMatched = ordered.length;
+  const hasMore = limited.length > 0 && offset + limited.length < totalMatched;
+  const nextCursor =
+    hasMore && limited.length > 0
+      ? encodeQueryCursor(
+          cursorFingerprint,
+          limited[limited.length - 1]!.id,
+          offset + limited.length - 1,
+        )
+      : undefined;
   return {
     projected,
     totalMatched,
     truncationExtras:
-      projected.length < totalMatched ? { total: totalMatched } : {},
+      projected.length < totalMatched || offset > 0
+        ? { total: totalMatched }
+        : {},
+    pageExtras: buildListPageExtras(limit, hasMore, nextCursor),
   };
+}
+
+function buildListCursorFingerprint(
+  status: string | string[] | null,
+  options: ListOptions,
+  ordering: ListOrderingOptions,
+): string {
+  const normalizedOptions: Record<string, unknown> = { ...options };
+  delete normalizedOptions.after;
+  delete normalizedOptions.limit;
+  delete normalizedOptions.offset;
+  delete normalizedOptions.noTruncate;
+  delete normalizedOptions.includeBody;
+  delete normalizedOptions.compact;
+  delete normalizedOptions.brief;
+  delete normalizedOptions.full;
+  delete normalizedOptions.fields;
+  return createQueryFingerprint("list", {
+    status,
+    options: normalizedOptions,
+    sort: ordering.sortField ?? "default",
+    order: ordering.sortOrder,
+    tree: ordering.treeEnabled,
+    tree_depth: ordering.treeDepth ?? null,
+  });
 }
 
 function buildVerboseListFilters(params: {
@@ -1579,6 +1683,11 @@ export async function runList(
     options,
     runtime.projection,
     ordering.treeEnabled,
+    buildListCursorFingerprint(
+      statusSelection.filtersStatus,
+      options,
+      ordering,
+    ),
   );
   const now = nowIso();
   const warnings = [...new Set(listWarnings)].sort((left, right) =>
@@ -1602,6 +1711,7 @@ export async function runList(
       items: page.projected,
       count: page.projected.length,
       ...page.truncationExtras,
+      ...page.pageExtras,
       filters: compactFilters,
       ...(warnings.length > 0 ? { warnings } : {}),
     };
@@ -1610,6 +1720,7 @@ export async function runList(
     items: page.projected,
     count: page.projected.length,
     ...page.truncationExtras,
+    ...page.pageExtras,
     filters: buildVerboseListFilters({
       filtersStatus: statusSelection.filtersStatus,
       options,
@@ -1652,6 +1763,7 @@ export const _testOnly = {
   parseOffset,
   parseProjectionConfig,
   resolveListUpdatedAfter,
+  resolveListPageLimit,
   parseSortField,
   parseSortOrder,
   orderItemsAsTree,

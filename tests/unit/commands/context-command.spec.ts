@@ -1392,6 +1392,20 @@ describe("context command module", () => {
   });
 
   it("--depth full surfaces every section without the default per-section cap", async () => {
+    expect(
+      contextInternals.resolveContextLimitAtScale(
+        Number.MAX_SAFE_INTEGER,
+        9_999,
+      ),
+    ).toBe(Number.MAX_SAFE_INTEGER);
+    expect(
+      contextInternals.resolveContextLimitAtScale(
+        Number.MAX_SAFE_INTEGER,
+        10_000,
+      ),
+    ).toBe(10);
+    expect(contextInternals.resolveContextLimitAtScale(7, 10_000)).toBe(7);
+
     await withTempPmPath(async (context) => {
       for (let index = 0; index < 12; index += 1) {
         createContextItem(context, { title: `Full task ${index}`, type: "Task", status: "open" });
@@ -1418,6 +1432,13 @@ describe("context command module", () => {
       expect(scopedIds).toEqual([childId, epicId].sort());
       expect(scoped.summary.total_items).toBe(2);
 
+      const zero = await runContext(
+        { parent: epicId, limit: "0" },
+        { path: context.pmPath },
+      );
+      expect(zero.has_more).toBeUndefined();
+      expect(zero.next_cursor).toBeUndefined();
+
       const markdown = renderContextMarkdown(scoped);
       expect(markdown).toContain(`- scope: subtree of ${epicId}`);
 
@@ -1425,6 +1446,16 @@ describe("context command module", () => {
       // shrink the corpus used to resolve the anchor → no false NOT_FOUND.
       const tightlyLimited = await runContext({ parent: epicId, limit: "1" }, { path: context.pmPath });
       expect(tightlyLimited.filters.parent).toBe(epicId);
+      expect(tightlyLimited.next_cursor).toBeTypeOf("string");
+      const continued = await runContext(
+        { parent: epicId, maxItems: "1", after: tightlyLimited.next_cursor },
+        { path: context.pmPath },
+      );
+      expect(
+        [...continued.high_level, ...continued.low_level].map((item) => item.id),
+      ).not.toContain(
+        [...tightlyLimited.high_level, ...tightlyLimited.low_level][0]?.id,
+      );
 
       await expect(runContext({ parent: "pm-missing" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,

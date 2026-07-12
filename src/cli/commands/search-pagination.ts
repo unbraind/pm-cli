@@ -1,0 +1,66 @@
+/**
+ * @module cli/commands/search-pagination
+ *
+ * Applies the shared SDK cursor contract to ranked search results.
+ */
+import {
+  createQueryFingerprint,
+  paginateQueryRows,
+} from "../../sdk/pagination.js";
+import type { SearchHit, SearchOptions } from "./search.js";
+import type { SearchMode } from "./search-rendering.js";
+
+/** Build the query-only fingerprint shared by search retrieval and paging. */
+export function createSearchCursorFingerprint(options: {
+  query: string;
+  mode: SearchMode;
+  searchOptions: SearchOptions;
+}): string {
+  const normalizedOptions: Record<string, unknown> = {
+    ...options.searchOptions,
+  };
+  delete normalizedOptions.after;
+  delete normalizedOptions.limit;
+  delete normalizedOptions.compact;
+  delete normalizedOptions.full;
+  delete normalizedOptions.fields;
+  delete normalizedOptions.highlight;
+  delete normalizedOptions.format;
+  return createQueryFingerprint("search", {
+    query: options.query.trim(),
+    mode: options.mode,
+    options: normalizedOptions,
+  });
+}
+
+/** Page ranked search hits without coupling cursor mechanics to search scoring. */
+export function resolveSearchPage(options: {
+  sorted: SearchHit[];
+  query: string;
+  mode: SearchMode;
+  searchOptions: SearchOptions;
+  limit: number;
+}): {
+  limited: SearchHit[];
+  pageExtras: {
+    has_more?: boolean;
+    next_cursor?: string;
+    applied_limit: number;
+    truncated?: true;
+  };
+} {
+  const page = paginateQueryRows(options.sorted, {
+    cursor: options.searchOptions.after,
+    fingerprint: createSearchCursorFingerprint(options),
+    limit: options.limit,
+    readId: (hit) => hit.item.id,
+  });
+  return {
+    limited: page.rows,
+    pageExtras: {
+      applied_limit: options.limit,
+      ...(page.has_more ? { has_more: true, truncated: true } : {}),
+      ...(page.next_cursor ? { next_cursor: page.next_cursor } : {}),
+    },
+  };
+}

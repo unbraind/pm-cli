@@ -45,6 +45,11 @@ import {
   type ContextRelevanceReport,
   type ContextRelevanceSignalName,
 } from "../../sdk/context-relevance.js";
+import {
+  createQueryFingerprint,
+  encodeQueryCursor,
+  resolveQueryCursorStart,
+} from "../../sdk/pagination.js";
 
 // ---------------------------------------------------------------------------
 // Output format
@@ -87,6 +92,8 @@ export interface ContextOptions {
   limit?: string;
   /** Value that configures or reports max items for this contract. */
   maxItems?: string;
+  /** Opaque cursor returned by a previous context focus page. */
+  after?: string;
   /** Value that configures or reports format for this contract. */
   format?: string;
   /** Value that configures or reports depth for this contract. */
@@ -387,6 +394,14 @@ export interface ContextResult {
   warnings?: string[];
   /** Value that configures or reports ranking for this contract. */
   ranking?: ContextRankingSummary;
+  /** Whether additional ranked focus rows remain after this page. */
+  has_more?: boolean;
+  /** Opaque continuation cursor for the next ranked focus page. */
+  next_cursor?: string;
+  /** Effective ranked-focus page size. */
+  applied_limit?: number;
+  /** Explicit marker that focus rows were bounded. */
+  truncated?: true;
 }
 
 /** Compact explainability envelope shared by context and next JSON results. */
@@ -411,6 +426,7 @@ export interface ContextRankingSummary {
 
 const HIGH_LEVEL_TYPES = new Set<string>(["Epic", "Feature"]);
 const DEFAULT_CONTEXT_LIMIT = 10;
+const CONTEXT_SCALE_THRESHOLD = 10_000;
 
 const STANDARD_SECTIONS: ContextSectionName[] = [
   "hierarchy",
@@ -541,6 +557,12 @@ function parseContextLimit(
     parseIntegerLimit(raw, "--limit") ??
     (depth === "full" ? Number.MAX_SAFE_INTEGER : DEFAULT_CONTEXT_LIMIT)
   );
+}
+
+function resolveContextLimitAtScale(limit: number, itemCount: number): number {
+  return itemCount >= CONTEXT_SCALE_THRESHOLD && limit === Number.MAX_SAFE_INTEGER
+    ? DEFAULT_CONTEXT_LIMIT
+    : limit;
 }
 
 /** Implements parse context depth for the public runtime surface of this module. */
@@ -1240,6 +1262,7 @@ export const _testOnly = {
   normalizedParentId,
   parseActivityLimit,
   parseContextLimit,
+  resolveContextLimitAtScale,
   parseContextParent,
   parseContextTimestampMs,
   parseStaleThresholdDays,
@@ -1869,6 +1892,12 @@ interface ContextFocusGroups {
   blockedFallback: ContextFocusItem[];
   blockedFallbackUsed: boolean;
   ranking: ContextRelevanceReport<ItemFrontMatter>;
+  pageExtras: {
+    has_more?: boolean;
+    next_cursor?: string;
+    applied_limit?: number;
+    truncated?: true;
+  };
 }
 
 interface ContextOptionalSections {
@@ -1940,6 +1969,7 @@ function buildUnpaginatedContextListOptions(
     noTruncate: true,
     limit: undefined,
     offset: undefined,
+    after: undefined,
   };
 }
 
@@ -1949,12 +1979,10 @@ async function loadContextCorpus(
   runtime: ContextRuntime,
 ): Promise<ContextCorpus> {
   const needsAllItems = contextNeedsAllItems(runtime.sectionsIncluded);
-  const listOptions: ListOptions =
-    runtime.parentScope === undefined
-      ? { ...runtime.baseListOptions, excludeTerminal: true }
-      : buildUnpaginatedContextListOptions(runtime.baseListOptions, {
-          excludeTerminal: true,
-        });
+  const listOptions = buildUnpaginatedContextListOptions(
+    runtime.baseListOptions,
+    { excludeTerminal: true },
+  );
   const listed = await runList(undefined, listOptions, global);
   let listedFrontMatter = listed.items as ItemFrontMatter[];
   let allItems: ItemFrontMatter[] = listedFrontMatter;
@@ -2006,6 +2034,9 @@ async function resolveContextFocusGroups(
   limit: number,
   now: string,
   author: string | undefined,
+  cursor: string | undefined,
+  cursorFingerprint: string,
+  useBoundedPage: boolean,
 ): Promise<ContextFocusGroups> {
   const structural = [...listedFrontMatter].sort((left, right) =>
     compareCriticalItems(left, right, statusRegistry),
@@ -2024,6 +2055,29 @@ async function resolveContextFocusGroups(
   const activeItems = ranked.filter((item) =>
     activeStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
   );
+  const pageStart = useBoundedPage
+    ? resolveQueryCursorStart(
+        activeItems,
+        cursor,
+        cursorFingerprint,
+        (item) => item.id,
+      )
+    : 0;
+  const focusPage = useBoundedPage
+    ? activeItems.slice(pageStart, pageStart + limit)
+    : activeItems;
+  const hasMore =
+    useBoundedPage &&
+    focusPage.length > 0 &&
+    pageStart + focusPage.length < activeItems.length;
+  const nextCursor =
+    hasMore && focusPage.length > 0
+      ? encodeQueryCursor(
+          cursorFingerprint,
+          focusPage[focusPage.length - 1]!.id,
+          pageStart + focusPage.length - 1,
+        )
+      : undefined;
   const blockedItems = ranked.filter((item) =>
     statusRegistry.blocked_statuses.has(
       normalizeStatusForRegistry(item.status, statusRegistry),
@@ -2033,15 +2087,15 @@ async function resolveContextFocusGroups(
   const focusChildrenByParent = contextNeedsAllItems(sectionsIncluded)
     ? childrenByParent
     : undefined;
-  const highLevel = activeItems
+  const highLevel = focusPage
     .filter((item) => HIGH_LEVEL_TYPES.has(item.type))
-    .slice(0, limit)
+    .slice(0, useBoundedPage ? focusPage.length : limit)
     .map((item) =>
       toContextFocusItem(item, statusRegistry, focusChildrenByParent),
     );
-  const lowLevel = activeItems
+  const lowLevel = focusPage
     .filter((item) => !HIGH_LEVEL_TYPES.has(item.type))
-    .slice(0, limit)
+    .slice(0, useBoundedPage ? focusPage.length : limit)
     .map((item) =>
       toContextFocusItem(item, statusRegistry, focusChildrenByParent),
     );
@@ -2060,7 +2114,38 @@ async function resolveContextFocusGroups(
       : [],
     blockedFallbackUsed,
     ranking,
+    pageExtras: {
+      ...(useBoundedPage ? { applied_limit: limit } : {}),
+      ...(hasMore ? { has_more: true, truncated: true } : {}),
+      ...(nextCursor ? { next_cursor: nextCursor } : {}),
+    },
   };
+}
+
+function buildContextCursorFingerprint(options: ContextOptions): string {
+  const normalizedOptions: Record<string, unknown> = { ...options };
+  delete normalizedOptions.after;
+  delete normalizedOptions.limit;
+  delete normalizedOptions.maxItems;
+  delete normalizedOptions.format;
+  delete normalizedOptions.fields;
+  delete normalizedOptions.section;
+  delete normalizedOptions.activityLimit;
+  delete normalizedOptions.staleThreshold;
+  delete normalizedOptions.explainRanking;
+  return createQueryFingerprint("context", normalizedOptions);
+}
+
+function shouldPageContextFocus(
+  options: ContextOptions,
+  corpusItemCount: number,
+): boolean {
+  return (
+    options.limit !== undefined ||
+    options.maxItems !== undefined ||
+    options.after !== undefined ||
+    corpusItemCount >= CONTEXT_SCALE_THRESHOLD
+  );
 }
 
 async function buildContextAgenda(
@@ -2272,8 +2357,15 @@ export async function runContext(
   options: ContextOptions,
   global: GlobalOptions,
 ): Promise<ContextResult> {
-  const runtime = await resolveContextRuntime(options, global);
-  const corpus = await loadContextCorpus(options, global, runtime);
+  const resolvedRuntime = await resolveContextRuntime(options, global);
+  const corpus = await loadContextCorpus(options, global, resolvedRuntime);
+  const runtime = {
+    ...resolvedRuntime,
+    limit: resolveContextLimitAtScale(
+      resolvedRuntime.limit,
+      corpus.fullCorpus.length,
+    ),
+  };
   const focusGroups = await resolveContextFocusGroups(
     corpus.listedFrontMatter,
     corpus.allItems,
@@ -2282,6 +2374,9 @@ export async function runContext(
     runtime.limit,
     nowIso(),
     process.env.PM_AUTHOR,
+    options.after,
+    buildContextCursorFingerprint(options),
+    shouldPageContextFocus(options, corpus.fullCorpus.length),
   );
   const agendaContext = await buildContextAgenda(
     options,
@@ -2364,6 +2459,7 @@ export async function runContext(
       summary: agendaContext.agendaSummary,
       events: agendaContext.agendaEvents,
     },
+    ...focusGroups.pageExtras,
   };
 
   attachOptionalContextSections(result, sections);
