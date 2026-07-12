@@ -129,7 +129,7 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     code: "integrity_item_parse_failed",
     command: "pm validate --check-files --verbose-diagnostics",
     summary:
-      "An item file failed to parse; fix the malformed front matter at the reported path.",
+      "An item file failed to parse; fix the malformed item metadata at the reported path.",
   },
   {
     code: "integrity_item_conflict_marker",
@@ -244,7 +244,7 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   // --- pm validate: metadata ---
   // Note: validate_metadata_missing_author has no entry on purpose. `pm update
   // --author` sets the mutation/audit author (history), not the item's
-  // `metadata.author` front-matter field, and there is no CLI flag that writes
+  // `metadata.author` item-metadata field, and there is no CLI flag that writes
   // that field — so emitting a command here would record an audit entry without
   // clearing the finding. A missing item author must be restored at the source.
   {

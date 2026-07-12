@@ -50,7 +50,7 @@ src/
     schema/
     search/
     store/
-      front-matter-cache.ts
+      item-metadata-cache.ts
     test/
     validate/
     shared/
@@ -143,7 +143,7 @@ body: |
 
 Legacy JSON-front-matter markdown files are read only for one-way migration into TOON. Runtime internals use `metadata` as the item metadata model key.
 
-Front-matter carries an explicit, monotonically increasing storage format version (`pm_format_version`). The baseline version (`1`) is the implicit default and is **never** serialized, so the field stays absent for the entire current corpus and adds no per-item token cost; it only materializes once an item advances past the baseline via a future breaking migration. Absence therefore always means the baseline. `core/item/item-format-version.ts` owns the constant and the classification helpers (`effectiveItemFormatVersion`, `classifyItemFormatVersion`, `scanItemFormatVersions`) that `pm health` (the `integrity` check) and `pm validate` (the `format_version` check) use to flag items that are outdated (a future migration would rewrite them) or ahead of the runtime (written by a newer pm). When a breaking front-matter change ships, bump `CURRENT_ITEM_FORMAT_VERSION` and add a migration that rewrites items below it — the version gate makes that a per-item decision instead of a full-corpus structural re-parse.
+Item metadata carries an explicit, monotonically increasing storage format version (`pm_format_version`). The baseline version (`1`) is the implicit default and is **never** serialized, so the field stays absent for the entire current corpus and adds no per-item token cost; it only materializes once an item advances past the baseline via a future breaking migration. Absence therefore always means the baseline. `core/item/item-format-version.ts` owns the constant and the classification helpers (`effectiveItemFormatVersion`, `classifyItemFormatVersion`, `scanItemFormatVersions`) that `pm health` (the `integrity` check) and `pm validate` (the `format_version` check) use to flag items that are outdated (a future migration would rewrite them) or ahead of the runtime (written by a newer pm). When a breaking item metadata change ships, bump `CURRENT_ITEM_FORMAT_VERSION` and add a migration that rewrites items below it — the version gate makes that a per-item decision instead of a full-corpus structural re-parse.
 
 Built-in item types (11; confirm at runtime with `pm schema list`):
 
@@ -347,7 +347,7 @@ behavior, not the exact milliseconds, as the durable contract):
   read command does not pay for mutation/search modules. On a clean project the
   dominant remaining cost is Node ESM module resolution (~90ms); this is the last
   structural startup lever and is tracked under the observability epic.
-- **Reads.** The front-matter cache splits item metadata from body text and skips
+- **Reads.** The item metadata cache splits item metadata from body text and skips
   re-reads of unchanged files, and on-read hooks are skipped when no extension
   registers one. `pm health` uses a drift-scan verification cache so repeated
   health checks do not re-hash every history stream.

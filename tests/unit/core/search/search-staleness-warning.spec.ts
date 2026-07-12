@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { collectStaleVectorizationIds } from "../../../../src/core/search/staleness.js";
 
 // pm-7ilo — `pm search ... --mode semantic|hybrid` emits a one-line stderr
-// warning when the vectorization ledger lags behind item front-matter. The
+// warning when the vectorization ledger lags behind item metadata. The
 // staleness helper drives both the existing health gate and the new
 // query-time warning; this spec locks its contract.
 describe("collectStaleVectorizationIds", () => {
@@ -18,7 +18,7 @@ describe("collectStaleVectorizationIds", () => {
     expect(collectStaleVectorizationIds(items, ledger)).toEqual([]);
   });
 
-  it("flags items whose front-matter updated_at no longer matches the ledger", () => {
+  it("flags items whose item metadata updated_at no longer matches the ledger", () => {
     const items = [
       { id: "pm-a", updated_at: "2026-05-28T00:00:02Z" }, // changed
       { id: "pm-b", updated_at: "2026-05-28T00:00:01Z" }, // matches

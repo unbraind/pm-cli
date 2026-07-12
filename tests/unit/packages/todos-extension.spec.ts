@@ -13,11 +13,11 @@ import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 async function writeTodoMarkdown(
   folder: string,
   filename: string,
-  frontMatter: Record<string, unknown> | string,
+  itemMetadata: Record<string, unknown> | string,
   body = "",
 ): Promise<void> {
-  const frontMatterText = typeof frontMatter === "string" ? frontMatter : JSON.stringify(frontMatter, null, 2);
-  const content = body.length > 0 ? `${frontMatterText}\n\n${body}\n` : `${frontMatterText}\n`;
+  const itemMetadataText = typeof itemMetadata === "string" ? itemMetadata : JSON.stringify(itemMetadata, null, 2);
+  const content = body.length > 0 ? `${itemMetadataText}\n\n${body}\n` : `${itemMetadataText}\n`;
   await writeFile(path.join(folder, filename), content, "utf8");
 }
 
@@ -1034,15 +1034,15 @@ describe("built-in todos extension import/export", () => {
 
       const exportedRaw = await readFile(path.join(destinationFolder, `${id}.md`), "utf8");
       const split = splitFrontMatter(exportedRaw);
-      const frontMatter = JSON.parse(split.frontMatter) as Record<string, unknown>;
-      expect(frontMatter).toMatchObject({
+      const itemMetadata = JSON.parse(split.frontMatter) as Record<string, unknown>;
+      expect(itemMetadata).toMatchObject({
         id,
         title: "Todos Export Fixture",
         status: "open",
         assignee: "todos-export-author",
       });
-      expect(frontMatter.tags).toEqual(["export", "todos"]);
-      expect(typeof frontMatter.created_at).toBe("string");
+      expect(itemMetadata.tags).toEqual(["export", "todos"]);
+      expect(typeof itemMetadata.created_at).toBe("string");
       expect(split.body.trim()).toBe("Todos export body");
     });
   });
@@ -1340,7 +1340,7 @@ describe("built-in todos extension import/export", () => {
         const actualModule = (await vi.importActual(itemStoreModulePath)) as typeof import("../../../src/core/store/item-store.js");
         return {
           ...actualModule,
-          listAllFrontMatter: async () => [{ id: "raw-id" }, { id: "pm-read-failed" }],
+          listAllItemMetadata: async () => [{ id: "raw-id" }, { id: "pm-read-failed" }],
           locateItem: async (_pmRoot: string, rawId: string) => {
             if (rawId === "raw-id") {
               return null;
@@ -1379,7 +1379,7 @@ describe("built-in todos extension import/export", () => {
         return {
           ...actualModule,
           splitFrontMatter: () => ({
-            frontMatter: "[]",
+            itemMetadata: "[]",
             body: "mocked body",
           }),
         };

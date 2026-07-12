@@ -16,7 +16,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { listAllFrontMatterLight } from "../../core/store/item-store.js";
+import { listAllItemMetadataLight } from "../../core/store/item-store.js";
 import {
   getSettingsPath,
   resolveGlobalPmRoot,
@@ -123,7 +123,7 @@ export interface TestAllResult {
 }
 
 type TestAllSelectedItem = Awaited<
-  ReturnType<typeof listAllFrontMatterLight>
+  ReturnType<typeof listAllItemMetadataLight>
 >[number];
 
 interface TestAllItemTests {
@@ -402,7 +402,7 @@ async function selectTestAllItems(params: {
   const limitFilter = parseNonNegativeInteger(params.options.limit, "--limit");
   const offsetFilter =
     parseNonNegativeInteger(params.options.offset, "--offset") ?? 0;
-  const allItems = await listAllFrontMatterLight(
+  const allItems = await listAllItemMetadataLight(
     params.pmRoot,
     params.settings.item_format,
     typeRegistry.type_to_folder,

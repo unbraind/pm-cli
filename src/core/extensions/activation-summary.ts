@@ -84,7 +84,7 @@ export interface ExtensionActivationSummary {
   flag_commands: string[];
   /** Custom item-type names registered via `registerItemTypes`. */
   item_types: string[];
-  /** Custom front-matter field names registered via `registerItemFields`. */
+  /** Custom item-metadata field names registered via `registerItemFields`. */
   item_fields: string[];
   /** Schema migration ids registered via `registerMigration` (id-less migrations are omitted — they carry no identifier). */
   migrations: string[];

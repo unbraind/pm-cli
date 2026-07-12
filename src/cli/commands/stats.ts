@@ -33,8 +33,8 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import {
-  listAllFrontMatterLight,
-  listAllFrontMatterWithBody,
+  listAllItemMetadataLight,
+  listAllItemMetadataWithBody,
 } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -191,14 +191,14 @@ export async function runStats(
   // tests/comments/deps) AND the body, which the light reader drops — so when it
   // is requested we read the WithBody rows and use them for every section.
   const items = options.fieldUtilization
-    ? await listAllFrontMatterWithBody(
+    ? await listAllItemMetadataWithBody(
         pmRoot,
         settings.item_format,
         typeRegistry.type_to_folder,
         undefined,
         settings.schema,
       )
-    : await listAllFrontMatterLight(
+    : await listAllItemMetadataLight(
         pmRoot,
         settings.item_format,
         typeRegistry.type_to_folder,
@@ -217,7 +217,7 @@ export async function runStats(
     statusRegistry.definitions.map((definition) => definition.id),
   );
   // zeroByType/zeroByStatus pre-seed a bucket for every registry type/status, and
-  // the light front-matter reader drops any item whose type/status falls outside
+  // the light item-metadata reader drops any item whose type/status falls outside
   // the active registry (parse rejects them) — so every item's bucket is already
   // present here and no on-the-fly initialization is reachable.
   for (const item of items) {

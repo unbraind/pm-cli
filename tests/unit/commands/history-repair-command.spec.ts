@@ -626,7 +626,7 @@ describe("history-repair --all (bulk drift repair)", () => {
 
   it("sorts and deduplicates item read warnings in bulk summary", async () => {
     await withTempPmPath(async (context) => {
-      const listSpy = vi.spyOn(itemStoreModule, "listAllFrontMatterWithBody").mockImplementation(async (...args) => {
+      const listSpy = vi.spyOn(itemStoreModule, "listAllItemMetadataWithBody").mockImplementation(async (...args) => {
         const warnings = args[3];
         warnings.push("z-warning", "a-warning", "a-warning");
         return [];

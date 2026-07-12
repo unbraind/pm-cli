@@ -340,7 +340,7 @@ describe("runNext", () => {
     await withTempPmPath(async (context) => {
       const tasksDir = path.join(context.pmPath, "tasks");
       await writeFile(path.join(tasksDir, "invalid-a.toon"), "id: invalid-a\nstatus: open\n", "utf8");
-      await writeFile(path.join(tasksDir, "invalid-b.toon"), "this is not toon front matter\n", "utf8");
+      await writeFile(path.join(tasksDir, "invalid-b.toon"), "this is not TOON item metadata\n", "utf8");
       const result = await runNext({}, { path: context.pmPath });
       expect(result.warnings?.length ?? 0).toBeGreaterThanOrEqual(2);
       expect(result.warnings).toEqual([...(result.warnings ?? [])].sort((left, right) => left.localeCompare(right)));

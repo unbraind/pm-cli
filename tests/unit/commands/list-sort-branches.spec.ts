@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ItemFrontMatter } from "../../../src/types.js";
+import type { ItemMetadata } from "../../../src/types.js";
 
 const pathExistsMock = vi.fn<() => Promise<boolean>>();
 const readFileIfExistsMock = vi.fn<() => Promise<string | null>>();
 const writeFileAtomicMock = vi.fn<() => Promise<void>>();
 const readSettingsMock = vi.fn<() => Promise<unknown>>();
-const listAllFrontMatterMock = vi.fn<() => Promise<ItemFrontMatter[]>>();
-const listAllFrontMatterWithBodyMock = vi.fn<() => Promise<Array<ItemFrontMatter & { body: string }>>>();
+const listAllItemMetadataMock = vi.fn<() => Promise<ItemMetadata[]>>();
+const listAllItemMetadataWithBodyMock = vi.fn<() => Promise<Array<ItemMetadata & { body: string }>>>();
 
 vi.mock("../../../src/core/fs/fs-utils.js", () => ({
   pathExists: pathExistsMock,
@@ -19,8 +19,8 @@ vi.mock("../../../src/core/store/settings.js", () => ({
 }));
 
 vi.mock("../../../src/core/store/item-store.js", () => ({
-  listAllFrontMatter: listAllFrontMatterMock,
-  listAllFrontMatterWithBody: listAllFrontMatterWithBodyMock,
+  listAllItemMetadata: listAllItemMetadataMock,
+  listAllItemMetadataWithBody: listAllItemMetadataWithBodyMock,
 }));
 
 describe("runList sorting branches", () => {
@@ -29,7 +29,7 @@ describe("runList sorting branches", () => {
     readFileIfExistsMock.mockResolvedValue("{}");
     writeFileAtomicMock.mockResolvedValue(undefined);
     readSettingsMock.mockResolvedValue({});
-    const baseItems: ItemFrontMatter[] = [
+    const baseItems: ItemMetadata[] = [
       {
         id: "pm-bbb",
         title: "same-time-id-b",
@@ -97,8 +97,8 @@ describe("runList sorting branches", () => {
         updated_at: "2026-02-18T00:06:00.000Z",
       },
     ];
-    listAllFrontMatterMock.mockResolvedValue(baseItems);
-    listAllFrontMatterWithBodyMock.mockResolvedValue(baseItems.map((item) => ({ ...item, body: "" })));
+    listAllItemMetadataMock.mockResolvedValue(baseItems);
+    listAllItemMetadataWithBodyMock.mockResolvedValue(baseItems.map((item) => ({ ...item, body: "" })));
   });
 
   it("orders open items before terminal then applies priority/updated/id tie-breakers", async () => {
@@ -115,7 +115,7 @@ describe("runList sorting branches", () => {
   });
 
   it("covers terminal-first comparator branch", async () => {
-    listAllFrontMatterMock.mockResolvedValueOnce([
+    listAllItemMetadataMock.mockResolvedValueOnce([
       {
         id: "pm-terminal-first",
         title: "terminal-first",
@@ -162,7 +162,7 @@ describe("runList sorting branches", () => {
   });
 
   it("covers nullable deadline and parent sort branches", async () => {
-    listAllFrontMatterMock.mockResolvedValueOnce([
+    listAllItemMetadataMock.mockResolvedValueOnce([
       {
         id: "pm-parent-a",
         title: "parent-a",
@@ -207,7 +207,7 @@ describe("runList sorting branches", () => {
     const byDeadlineAsc = await runList(undefined, { sort: "deadline", order: "asc" }, { path: "/tmp/pm-list-sort" });
     expect(byDeadlineAsc.items.map((item) => item.id)).toEqual(["pm-parent-a", "pm-parent-b", "pm-parent-null"]);
 
-    listAllFrontMatterMock.mockResolvedValueOnce([
+    listAllItemMetadataMock.mockResolvedValueOnce([
       {
         id: "pm-parent-a",
         title: "parent-a",

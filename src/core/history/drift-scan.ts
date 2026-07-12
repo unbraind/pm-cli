@@ -307,9 +307,9 @@ export async function scanHistoryDrift(
       chain_ok: resolved.verification.chainOk,
     };
 
-    const { body, ...frontMatter } = item;
+    const { body, ...itemMetadata } = item;
     const currentHash = hashDocument({
-      metadata: frontMatter as ItemMetadata,
+      metadata: itemMetadata as ItemMetadata,
       body,
     });
     if (currentHash !== resolved.verification.latestAfterHash) {

@@ -9,7 +9,7 @@ authors can copy this shape when they need low-risk observation hooks.
 
 Transition-aware packages can inspect `afterCommand`'s optional `affected`
 entries for item mutations. Each entry includes the item id, operation,
-previous/current status, changed fields, and compact front matter snapshots.
+previous/current status, changed fields, and compact item metadata snapshots.
 
 Copy this pattern when a package needs command-level notifications without
 parsing command results or reading item files:

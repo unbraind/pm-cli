@@ -262,15 +262,15 @@ describe("extensions runtime registration resolution", () => {
       },
     );
 
-    const frontMatter: Record<string, unknown> = { x_impact: 2 };
-    applyRegisteredItemFieldDefaultsAndValidation(frontMatter, registrations, { skipDefaultFields: new Set(["x_flagged"]) });
-    expect(frontMatter).toEqual({
+    const itemMetadata: Record<string, unknown> = { x_impact: 2 };
+    applyRegisteredItemFieldDefaultsAndValidation(itemMetadata, registrations, { skipDefaultFields: new Set(["x_flagged"]) });
+    expect(itemMetadata).toEqual({
       x_severity: "medium",
       x_impact: 2,
       x_labels: ["coverage"],
       x_meta: { nested: true },
     });
-    expect(frontMatter.x_meta).not.toBe(defaultObject);
+    expect(itemMetadata.x_meta).not.toBe(defaultObject);
 
     expect(() => applyRegisteredItemFieldDefaultsAndValidation({ x_severity: "urgent" }, registrations)).toThrow(
       /configured allowed values/,

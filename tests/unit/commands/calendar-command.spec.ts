@@ -1698,7 +1698,7 @@ describe("calendar command module", () => {
   it("covers invalid recurrence exdate and duration defensive branches via mocked item records", async () => {
     await withTempPmPath(async (context) => {
       vi.resetModules();
-      const listAllFrontMatterLightMock = vi.fn(
+      const listAllItemMetadataLightMock = vi.fn(
         async (
           _pmRoot: string,
           _itemFormat: string,
@@ -1772,7 +1772,7 @@ describe("calendar command module", () => {
         },
       );
       vi.doMock("../../../src/core/store/item-store.js", () => ({
-        listAllFrontMatterLight: listAllFrontMatterLightMock,
+        listAllItemMetadataLight: listAllItemMetadataLightMock,
       }));
 
       try {
@@ -1787,7 +1787,7 @@ describe("calendar command module", () => {
           { path: context.pmPath },
         );
 
-        expect(listAllFrontMatterLightMock).toHaveBeenCalledTimes(1);
+        expect(listAllItemMetadataLightMock).toHaveBeenCalledTimes(1);
         expect(mockedResult.warnings).toEqual([
           "warning-alpha",
           "warning-zeta",

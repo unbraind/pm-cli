@@ -7,7 +7,7 @@ import type {
   BuiltinItemType,
   GovernancePreset,
   GovernanceSettings,
-  ItemFrontMatter,
+  ItemMetadata,
   PmSettings,
   RuntimeStatusDefinition,
   RuntimeWorkflowDefinition,
@@ -117,8 +117,8 @@ export const TYPE_TO_FOLDER: Record<BuiltinItemType, string> = {
   Plan: "plans",
 };
 
-/** Public contract for front matter key order, shared by SDK and presentation-layer consumers. */
-export const FRONT_MATTER_KEY_ORDER: ReadonlyArray<string> = [
+/** Public contract for item metadata key order, shared by SDK and presentation-layer consumers. */
+export const ITEM_METADATA_KEY_ORDER: ReadonlyArray<string> = [
   "id",
   "title",
   "description",

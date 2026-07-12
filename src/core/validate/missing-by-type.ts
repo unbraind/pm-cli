@@ -10,7 +10,7 @@
 
 /** One missing required metadata field observed on an item of a specific type. */
 export interface MissingFieldOccurrence {
-  /** Item type name as stored in front matter (e.g. "Task"). */
+  /** Item type name as stored in item metadata (e.g. "Task"). */
   item_type: string;
   /** Required metadata field that is missing on the item. */
   field: string;

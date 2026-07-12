@@ -180,7 +180,7 @@ describe("item document format edge cases", () => {
 
     expect(parsed.metadata.id).toBe("pm-wrapper");
     expect(parsed.body).toBe("wrapped body");
-    expect(() => parseItemDocument("front_matter: [", { format: "toon" })).toThrow("front matter must be an object");
+    expect(() => parseItemDocument("front_matter: [", { format: "toon" })).toThrow("item metadata must be an object");
     expect(() => parseItemDocument("<<<<<<< HEAD\nid: pm-conflict\n", { format: "toon" })).toThrow(
       "Merge conflict markers detected",
     );
@@ -318,6 +318,6 @@ describe("item document format edge cases", () => {
         schema: rejectSchema,
       }),
     ).toThrow("unknown schema fields are not allowed: a_unknown, z_unknown");
-    expect(() => parseItemDocument("front_matter: [", { format: "toon" })).toThrow("front matter must be an object");
+    expect(() => parseItemDocument("front_matter: [", { format: "toon" })).toThrow("item metadata must be an object");
   });
 });

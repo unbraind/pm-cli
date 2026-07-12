@@ -163,7 +163,7 @@ export function filterByContentFields<T extends ContentFieldItem>(
   return items.filter((item) => itemMatchesContentFilters(item, filters));
 }
 
-/** Whether a content-field filter set requires the heavy collections to be loaded. True when any non-body field is requested (collections + tests' linked command all live in the heavy front-matter arrays). */
+/** Whether a content-field filter set requires the heavy collections to be loaded. True when any non-body field is requested (collections + tests' linked command all live in the heavy item-metadata arrays). */
 export function contentFiltersNeedCollections(
   filters: ContentFieldFilters,
 ): boolean {

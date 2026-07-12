@@ -1814,7 +1814,7 @@ packages that need file-level context without storing item bodies by default.
 `afterCommand` receives the command outcome plus an optional `affected` array for
 item mutations. Each affected entry is a compact command context:
 `id`, `op`, `item_type`, `previous_status`, `status`, `changed_fields`, and
-partial `previous`/`current` front matter snapshots. Use this for
+partial `previous`/`current` item metadata snapshots. Use this for
 transition-aware packages such as notifications; do not parse the untyped
 `result` payload when the transition fields are available.
 

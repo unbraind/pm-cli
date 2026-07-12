@@ -739,7 +739,7 @@ export interface ItemMetadata {
   description: string;
   /** Schema type that determines the shape and validation rules for this value. */
   type: ItemType;
-  /** On-disk front-matter format version. Absent means the implicit baseline (version 1) and is never serialized; populated only once an item advances past the baseline via a future storage migration. See core/item/item-format-version. */
+  /** On-disk item-metadata format version. Absent means the implicit baseline (version 1) and is never serialized; populated only once an item advances past the baseline via a future storage migration. See core/item/item-format-version. */
   pm_format_version?: number;
   /** Schema type that determines the shape and validation rules for this value. */
   source_type?: string;
@@ -873,11 +873,6 @@ export interface ItemMetadata {
   plan_resume_context?: string;
   [key: string]: unknown;
 }
-
-/**
- * @deprecated Use ItemMetadata.
- */
-export type ItemFrontMatter = ItemMetadata;
 
 /** Documents the item document payload exchanged by command, SDK, and package integrations. */
 export interface ItemDocument {

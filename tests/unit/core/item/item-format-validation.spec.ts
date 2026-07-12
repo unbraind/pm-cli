@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { encode as encodeToon } from "@toon-format/toon";
 import {
   _testOnlyItemFormat,
-  normalizeFrontMatter,
+  normalizeItemMetadata,
   parseItemDocument as parseRawItemDocument,
   serializeItemDocument,
   type ItemDocumentFormatOptions,
@@ -12,9 +12,9 @@ import { SETTINGS_DEFAULTS } from "../../../../src/core/shared/constants.js";
 const FIXED_TS = "2026-02-22T00:00:00.000Z";
 
 function buildSource(overrides: Record<string, unknown> = {}, body = "Body"): string {
-  const frontMatter: Record<string, unknown> = {
+  const itemMetadata: Record<string, unknown> = {
     id: "pm-validate",
-    title: "Validate front matter",
+    title: "Validate item metadata",
     description: "Validation contract",
     type: "Task",
     status: "open",
@@ -24,7 +24,7 @@ function buildSource(overrides: Record<string, unknown> = {}, body = "Body"): st
     updated_at: FIXED_TS,
     ...overrides,
   };
-  return `${JSON.stringify(frontMatter, null, 2)}\n\n${body}\n`;
+  return `${JSON.stringify(itemMetadata, null, 2)}\n\n${body}\n`;
 }
 
 function runtimeSchemaOverrides(overrides: Record<string, unknown> = {}) {
@@ -38,8 +38,8 @@ function parseItemDocument(content: string, options: ItemDocumentFormatOptions =
   return parseRawItemDocument(content, { format: "json_markdown", ...options });
 }
 
-describe("item-format front-matter validation", () => {
-  it("parses and normalizes valid front matter", () => {
+describe("item-format metadata validation", () => {
+  it("parses and normalizes valid item metadata", () => {
     const parsed = parseItemDocument(buildSource());
     expect(parsed.metadata.id).toBe("pm-validate");
     expect(parsed.metadata.tags).toEqual(["alpha", "beta"]);
@@ -224,7 +224,7 @@ describe("item-format front-matter validation", () => {
   });
 
   it("drops reminders that normalize to empty text in direct normalize fallback", () => {
-    const normalized = normalizeFrontMatter({
+    const normalized = normalizeItemMetadata({
       id: "pm-reminder-empty-normalize",
       title: "Reminder normalize fallback",
       description: "normalize fallback",
@@ -235,7 +235,7 @@ describe("item-format front-matter validation", () => {
       created_at: FIXED_TS,
       updated_at: FIXED_TS,
       reminders: [{ at: FIXED_TS, text: "   " }],
-    } as unknown as Parameters<typeof normalizeFrontMatter>[0]);
+    } as unknown as Parameters<typeof normalizeItemMetadata>[0]);
 
     expect(normalized.reminders).toBeUndefined();
   });
@@ -306,7 +306,7 @@ describe("item-format front-matter validation", () => {
   });
 
   it("sorts event ties by timezone, location, description, and recurrence", () => {
-    const baseFrontMatter = {
+    const baseItemMetadata = {
       id: "pm-event-sort-ties",
       title: "Event tie sort",
       description: "Event tie sort description",
@@ -318,8 +318,8 @@ describe("item-format front-matter validation", () => {
       updated_at: FIXED_TS,
     };
 
-    const timezoneSorted = normalizeFrontMatter({
-      ...baseFrontMatter,
+    const timezoneSorted = normalizeItemMetadata({
+      ...baseItemMetadata,
       events: [
         {
           start_at: "2026-02-24T09:00:00.000Z",
@@ -345,8 +345,8 @@ describe("item-format front-matter validation", () => {
     });
     expect(timezoneSorted.events?.map((event) => event.timezone)).toEqual(["UTC", "Zulu"]);
 
-    const locationSorted = normalizeFrontMatter({
-      ...baseFrontMatter,
+    const locationSorted = normalizeItemMetadata({
+      ...baseItemMetadata,
       events: [
         {
           start_at: "2026-02-24T09:00:00.000Z",
@@ -372,8 +372,8 @@ describe("item-format front-matter validation", () => {
     });
     expect(locationSorted.events?.map((event) => event.location)).toEqual(["alpha room", "zeta room"]);
 
-    const descriptionSorted = normalizeFrontMatter({
-      ...baseFrontMatter,
+    const descriptionSorted = normalizeItemMetadata({
+      ...baseItemMetadata,
       events: [
         {
           start_at: "2026-02-24T09:00:00.000Z",
@@ -399,8 +399,8 @@ describe("item-format front-matter validation", () => {
     });
     expect(descriptionSorted.events?.map((event) => event.description)).toEqual(["alpha desc", "zeta desc"]);
 
-    const recurrenceSorted = normalizeFrontMatter({
-      ...baseFrontMatter,
+    const recurrenceSorted = normalizeItemMetadata({
+      ...baseItemMetadata,
       events: [
         {
           start_at: "2026-02-24T09:00:00.000Z",
@@ -428,7 +428,7 @@ describe("item-format front-matter validation", () => {
   });
 
   it("covers event comparator optional-field branches and interval retention", () => {
-    const baseFrontMatter = {
+    const baseItemMetadata = {
       id: "pm-event-comparator-branches",
       title: "Event comparator branches",
       description: "Event comparator branch coverage",
@@ -440,8 +440,8 @@ describe("item-format front-matter validation", () => {
       updated_at: FIXED_TS,
     };
 
-    const intervalRetained = normalizeFrontMatter({
-      ...baseFrontMatter,
+    const intervalRetained = normalizeItemMetadata({
+      ...baseItemMetadata,
       events: [
         {
           start_at: "2026-02-24T09:00:00.000Z",
@@ -451,8 +451,8 @@ describe("item-format front-matter validation", () => {
     });
     expect(intervalRetained.events?.[0]?.recurrence?.interval).toBe(2);
 
-    const endSorted = normalizeFrontMatter({
-      ...baseFrontMatter,
+    const endSorted = normalizeItemMetadata({
+      ...baseItemMetadata,
       events: [
         {
           start_at: "2026-02-24T09:00:00.000Z",
@@ -469,8 +469,8 @@ describe("item-format front-matter validation", () => {
     });
     expect(endSorted.events?.map((event) => event.end_at)).toEqual([undefined, "2026-02-24T10:00:00.000Z"]);
 
-    const titleSorted = normalizeFrontMatter({
-      ...baseFrontMatter,
+    const titleSorted = normalizeItemMetadata({
+      ...baseItemMetadata,
       events: [
         {
           start_at: "2026-02-24T09:00:00.000Z",
@@ -487,8 +487,8 @@ describe("item-format front-matter validation", () => {
     });
     expect(titleSorted.events?.map((event) => event.title)).toEqual([undefined, "Tie event"]);
 
-    const allDaySorted = normalizeFrontMatter({
-      ...baseFrontMatter,
+    const allDaySorted = normalizeItemMetadata({
+      ...baseItemMetadata,
       events: [
         {
           start_at: "2026-02-24T09:00:00.000Z",
@@ -506,8 +506,8 @@ describe("item-format front-matter validation", () => {
     });
     expect(allDaySorted.events?.map((event) => event.all_day)).toEqual([false, true]);
 
-    const timezoneSorted = normalizeFrontMatter({
-      ...baseFrontMatter,
+    const timezoneSorted = normalizeItemMetadata({
+      ...baseItemMetadata,
       events: [
         {
           start_at: "2026-02-24T09:00:00.000Z",
@@ -526,8 +526,8 @@ describe("item-format front-matter validation", () => {
     });
     expect(timezoneSorted.events?.map((event) => event.timezone)).toEqual([undefined, "UTC"]);
 
-    const locationSorted = normalizeFrontMatter({
-      ...baseFrontMatter,
+    const locationSorted = normalizeItemMetadata({
+      ...baseItemMetadata,
       events: [
         {
           start_at: "2026-02-24T09:00:00.000Z",
@@ -548,8 +548,8 @@ describe("item-format front-matter validation", () => {
     });
     expect(locationSorted.events?.map((event) => event.location)).toEqual([undefined, "Room 1"]);
 
-    const descriptionSorted = normalizeFrontMatter({
-      ...baseFrontMatter,
+    const descriptionSorted = normalizeItemMetadata({
+      ...baseItemMetadata,
       events: [
         {
           start_at: "2026-02-24T09:00:00.000Z",
@@ -572,8 +572,8 @@ describe("item-format front-matter validation", () => {
     });
     expect(descriptionSorted.events?.map((event) => event.description)).toEqual([undefined, "Description"]);
 
-    const recurrenceSorted = normalizeFrontMatter({
-      ...baseFrontMatter,
+    const recurrenceSorted = normalizeItemMetadata({
+      ...baseItemMetadata,
       events: [
         {
           start_at: "2026-02-24T09:00:00.000Z",
@@ -598,8 +598,8 @@ describe("item-format front-matter validation", () => {
     });
     expect(recurrenceSorted.events?.map((event) => event.recurrence?.freq)).toEqual(["weekly", undefined]);
 
-    const bothUndefinedFallback = normalizeFrontMatter({
-      ...baseFrontMatter,
+    const bothUndefinedFallback = normalizeItemMetadata({
+      ...baseItemMetadata,
       events: [
         {
           start_at: "2026-02-24T09:00:00.000Z",
@@ -705,7 +705,7 @@ describe("item-format front-matter validation", () => {
   });
 
   it("parses Beads compatibility fields and sorts dependency source_kind ties deterministically", () => {
-    const normalizedDirect = normalizeFrontMatter({
+    const normalizedDirect = normalizeItemMetadata({
       id: "pm-sort-source-kind",
       title: "Sort source kind",
       description: "sort test",
@@ -722,7 +722,7 @@ describe("item-format front-matter validation", () => {
     });
     expect(normalizedDirect.dependencies?.map((entry) => entry.source_kind)).toEqual(["a-rel", "z-rel"]);
 
-    const normalizedWithUndefinedSourceKind = normalizeFrontMatter({
+    const normalizedWithUndefinedSourceKind = normalizeItemMetadata({
       id: "pm-sort-source-kind-undefined",
       title: "Sort source kind undefined",
       description: "sort test",
@@ -739,7 +739,7 @@ describe("item-format front-matter validation", () => {
     });
     expect(normalizedWithUndefinedSourceKind.dependencies?.map((entry) => entry.source_kind)).toEqual([undefined, "b-rel"]);
 
-    const normalizedWithLeadingUndefinedSourceKind = normalizeFrontMatter({
+    const normalizedWithLeadingUndefinedSourceKind = normalizeItemMetadata({
       id: "pm-sort-source-kind-leading-undefined",
       title: "Sort source kind leading undefined",
       description: "sort test",
@@ -836,24 +836,24 @@ describe("item-format front-matter validation", () => {
 
   it("drops invalid confidence text during direct normalize fallback", () => {
     const parsed = parseItemDocument(buildSource({ confidence: "low" }));
-    const normalized = normalizeFrontMatter({
+    const normalized = normalizeItemMetadata({
       ...(parsed.metadata as Record<string, unknown>),
       confidence: "unknown",
-    } as unknown as Parameters<typeof normalizeFrontMatter>[0]);
+    } as unknown as Parameters<typeof normalizeItemMetadata>[0]);
     expect(normalized.confidence).toBeUndefined();
   });
 
   it("drops invalid severity text during direct normalize fallback", () => {
     const parsed = parseItemDocument(buildSource({ severity: "low" }));
-    const normalized = normalizeFrontMatter({
+    const normalized = normalizeItemMetadata({
       ...(parsed.metadata as Record<string, unknown>),
       severity: "urgent",
-    } as unknown as Parameters<typeof normalizeFrontMatter>[0]);
+    } as unknown as Parameters<typeof normalizeItemMetadata>[0]);
     expect(normalized.severity).toBeUndefined();
   });
 
   it("drops invalid recurrence frequency during direct normalize fallback", () => {
-    const normalized = normalizeFrontMatter({
+    const normalized = normalizeItemMetadata({
       id: "pm-invalid-recurrence-fallback",
       title: "Invalid recurrence fallback",
       description: "invalid recurrence fallback description",
@@ -871,7 +871,7 @@ describe("item-format front-matter validation", () => {
           },
         },
       ],
-    } as unknown as Parameters<typeof normalizeFrontMatter>[0]);
+    } as unknown as Parameters<typeof normalizeItemMetadata>[0]);
 
     expect(normalized.events).toEqual([
       {
@@ -959,7 +959,7 @@ describe("item-format front-matter validation", () => {
   });
 
   it("throws when TOON item document is malformed", () => {
-    expect(() => parseItemDocument("front_matter: [", { format: "toon" })).toThrow("front matter must be an object");
+    expect(() => parseItemDocument("front_matter: [", { format: "toon" })).toThrow("item metadata must be an object");
   });
 
   it("throws when TOON decoding returns a non-object value", () => {
@@ -996,7 +996,7 @@ describe("item-format front-matter validation", () => {
   });
 
   it("normalizes linked test/test-run comparators and nested plan structures", () => {
-    const normalized = normalizeFrontMatter({
+    const normalized = normalizeItemMetadata({
       id: "pm-plan-coverage",
       title: "Plan coverage",
       description: "Coverage payload",
@@ -1157,7 +1157,7 @@ describe("item-format front-matter validation", () => {
     });
 
     expect(() =>
-      normalizeFrontMatter({
+      normalizeItemMetadata({
         id: "pm-unknown-field",
         title: "Unknown field",
         description: "unknown",
@@ -1176,7 +1176,7 @@ describe("item-format front-matter validation", () => {
       "missing required schema field: release_train",
     );
     expect(() =>
-      normalizeFrontMatter({
+      normalizeItemMetadata({
         id: "pm-type-options-empty",
         title: "Type options empty",
         description: "empty options",
@@ -1195,7 +1195,7 @@ describe("item-format front-matter validation", () => {
 
   it("covers unknown-field sorting and plan-step non-object normalization branches", () => {
     expect(() =>
-      normalizeFrontMatter({
+      normalizeItemMetadata({
         id: "pm-unknown-sort",
         title: "Unknown sort",
         description: "Unknown sort coverage",
@@ -1277,7 +1277,7 @@ describe("item-format front-matter validation", () => {
       { text: "run" },
     ]);
 
-    const normalizedStatusFallback = normalizeFrontMatter({
+    const normalizedStatusFallback = normalizeItemMetadata({
       id: "pm-status-fallback",
       title: "Status fallback",
       description: "Status fallback",

@@ -30,16 +30,16 @@ async function readTaskDocument(context: TempPmContext, id: string): Promise<Tas
 }
 
 /**
- * Reads the persisted front matter of a task item in a temp workspace,
+ * Reads the persisted item metadata of a task item in a temp workspace,
  * resolving the on-disk document format (TOON or JSON-markdown) automatically.
  */
-export async function loadTaskFrontMatter(context: TempPmContext, id: string): Promise<Record<string, unknown>> {
+export async function loadTaskMetadata(context: TempPmContext, id: string): Promise<Record<string, unknown>> {
   const { format, source } = await readTaskDocument(context, id);
   return parseItemDocument(source, { format }).metadata as unknown as Record<string, unknown>;
 }
 
 /**
- * Replaces the `tests` front-matter array of a task item on disk, bypassing
+ * Replaces the `tests` item metadata array of a task item on disk, bypassing
  * CLI validation so specs can seed arbitrary linked-test metadata.
  */
 export async function overwriteTaskTests(
@@ -54,7 +54,7 @@ export async function overwriteTaskTests(
 }
 
 /**
- * Replaces the `test_runs` front-matter array of a task item on disk,
+ * Replaces the `test_runs` item metadata array of a task item on disk,
  * bypassing CLI validation so specs can seed arbitrary tracked run history.
  */
 export async function overwriteTaskTestRuns(

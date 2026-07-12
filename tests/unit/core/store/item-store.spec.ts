@@ -10,14 +10,14 @@ import {
   itemStoreTestOnly,
   buildItemNotFoundError,
   deleteItem,
-  listAllFrontMatter,
-  listAllFrontMatterLight,
-  listAllFrontMatterWithBody,
+  listAllItemMetadata,
+  listAllItemMetadataLight,
+  listAllItemMetadataWithBody,
   locateItem,
   mutateItem,
   readLocatedItem,
 } from "../../../../src/core/store/item-store.js";
-import { listAllDocumentsCached } from "../../../../src/core/store/front-matter-cache.js";
+import { listAllDocumentsCached } from "../../../../src/core/store/item-metadata-cache.js";
 import { getItemPath } from "../../../../src/core/store/paths.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
@@ -68,7 +68,7 @@ describe("core/store/item-store", () => {
       await writeTaskItem(pmPath, id);
       await fs.rm(path.join(pmPath, "issues"), { recursive: true, force: true });
 
-      const items = await listAllFrontMatter(pmPath);
+      const items = await listAllItemMetadata(pmPath);
       expect(items.some((entry) => entry.id === id)).toBe(true);
     });
   });
@@ -185,37 +185,37 @@ describe("core/store/item-store", () => {
     });
   });
 
-  it("deduplicates listAllFrontMatter results by preferred item format", async () => {
+  it("deduplicates listAllItemMetadata results by preferred item format", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-list-format-preference";
       await writeTaskItem(pmPath, id, { description: "markdown-only" }, "json_markdown");
       await writeTaskItem(pmPath, id, { description: "toon-only" }, "toon");
 
-      const defaultPreferred = await listAllFrontMatter(pmPath);
+      const defaultPreferred = await listAllItemMetadata(pmPath);
       expect(defaultPreferred.filter((entry) => entry.id === id)).toHaveLength(1);
       expect(defaultPreferred.find((entry) => entry.id === id)?.description).toBe("toon-only");
 
-      const preferredToon = await listAllFrontMatter(pmPath, "toon");
+      const preferredToon = await listAllItemMetadata(pmPath, "toon");
       expect(preferredToon.filter((entry) => entry.id === id)).toHaveLength(1);
       expect(preferredToon.find((entry) => entry.id === id)?.description).toBe("toon-only");
 
-      const preferredMarkdown = await listAllFrontMatter(pmPath, "json_markdown");
+      const preferredMarkdown = await listAllItemMetadata(pmPath, "json_markdown");
       expect(preferredMarkdown.filter((entry) => entry.id === id)).toHaveLength(1);
       expect(preferredMarkdown.find((entry) => entry.id === id)?.description).toBe("markdown-only");
     });
   });
 
-  it("lists light front matter and body-bearing front matter variants", async () => {
+  it("lists light item metadata and body-bearing item metadata variants", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-list-variants";
       await writeTaskItem(pmPath, id, { description: "variant target" }, "toon");
 
-      const light = await listAllFrontMatterLight(pmPath, "toon");
+      const light = await listAllItemMetadataLight(pmPath, "toon");
       const lightEntry = light.find((entry) => entry.id === id);
       expect(lightEntry).toMatchObject({ id, description: "variant target" });
       expect(lightEntry).not.toHaveProperty("comments");
 
-      const withBody = await listAllFrontMatterWithBody(pmPath, "toon");
+      const withBody = await listAllItemMetadataWithBody(pmPath, "toon");
       expect(withBody.find((entry) => entry.id === id)).toMatchObject({
         id,
         description: "variant target",
@@ -249,7 +249,7 @@ describe("core/store/item-store", () => {
       await fs.writeFile(unreadablePath, "{ invalid-toon", "utf8");
 
       const warnings: string[] = [];
-      const items = await listAllFrontMatter(pmPath, "toon", undefined, warnings);
+      const items = await listAllItemMetadata(pmPath, "toon", undefined, warnings);
       expect(items.some((entry) => entry.id === validId)).toBe(true);
       expect(warnings).toContain("item_list_item_read_failed:tasks/pm-list-warning-bad.toon");
     });
@@ -455,7 +455,7 @@ describe("core/store/item-store", () => {
     });
   });
 
-  it("populates front-matter cache on first run and reuses it on second run", async () => {
+  it("populates item metadata cache on first run and reuses it on second run", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-cache-test-item";
       await writeTaskItem(pmPath, id, { description: "cache-target" }, "toon");
@@ -463,7 +463,7 @@ describe("core/store/item-store", () => {
       const cachePath = path.join(pmPath, "runtime", "metadata-cache.json");
       expect(await fs.access(cachePath).then(() => true, () => false)).toBe(false);
 
-      const firstRun = await listAllFrontMatter(pmPath, "toon");
+      const firstRun = await listAllItemMetadata(pmPath, "toon");
       expect(firstRun.some((entry) => entry.id === id)).toBe(true);
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -472,7 +472,7 @@ describe("core/store/item-store", () => {
       const cached = JSON.parse(await fs.readFile(cachePath, "utf8")) as { entries: Record<string, unknown> };
       expect(Object.keys(cached.entries).length).toBeGreaterThan(0);
 
-      const secondRun = await listAllFrontMatter(pmPath, "toon");
+      const secondRun = await listAllItemMetadata(pmPath, "toon");
       expect(secondRun.some((entry) => entry.id === id)).toBe(true);
       expect(secondRun.find((entry) => entry.id === id)?.description).toBe("cache-target");
     });
@@ -483,14 +483,14 @@ describe("core/store/item-store", () => {
       const id = "pm-cache-invalidation";
       await writeTaskItem(pmPath, id, { description: "before-change" }, "toon");
 
-      const firstRun = await listAllFrontMatter(pmPath, "toon");
+      const firstRun = await listAllItemMetadata(pmPath, "toon");
       expect(firstRun.find((entry) => entry.id === id)?.description).toBe("before-change");
 
       await new Promise((resolve) => setTimeout(resolve, 50));
 
       await writeTaskItem(pmPath, id, { description: "after-change" }, "toon");
 
-      const secondRun = await listAllFrontMatter(pmPath, "toon");
+      const secondRun = await listAllItemMetadata(pmPath, "toon");
       expect(secondRun.find((entry) => entry.id === id)?.description).toBe("after-change");
     });
   });
@@ -516,20 +516,20 @@ describe("core/store/item-store", () => {
       await writeTaskItem(pmPath, keepId, {}, "toon");
       await writeTaskItem(pmPath, removeId, {}, "toon");
 
-      const firstRun = await listAllFrontMatter(pmPath, "toon");
+      const firstRun = await listAllItemMetadata(pmPath, "toon");
       expect(firstRun.some((entry) => entry.id === keepId)).toBe(true);
       expect(firstRun.some((entry) => entry.id === removeId)).toBe(true);
 
       const removePath = getItemPath(pmPath, "Task", removeId, "toon");
       await fs.rm(removePath);
 
-      const secondRun = await listAllFrontMatter(pmPath, "toon");
+      const secondRun = await listAllItemMetadata(pmPath, "toon");
       expect(secondRun.some((entry) => entry.id === keepId)).toBe(true);
       expect(secondRun.some((entry) => entry.id === removeId)).toBe(false);
     });
   });
 
-  it("dispatches onRead hooks on cached front-matter reads", async () => {
+  it("dispatches onRead hooks on cached item metadata reads", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-cache-read-hook";
       await writeTaskItem(pmPath, id, {}, "toon");
@@ -552,11 +552,11 @@ describe("core/store/item-store", () => {
       });
 
       try {
-        await listAllFrontMatter(pmPath, "toon");
+        await listAllItemMetadata(pmPath, "toon");
         const firstRunReadCount = seenReads.filter((entry) => entry === basename).length;
         expect(firstRunReadCount).toBeGreaterThan(0);
 
-        await listAllFrontMatter(pmPath, "toon");
+        await listAllItemMetadata(pmPath, "toon");
         const secondRunReadCount = seenReads.filter((entry) => entry === basename).length;
         expect(secondRunReadCount).toBeGreaterThan(firstRunReadCount);
       } finally {

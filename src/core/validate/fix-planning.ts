@@ -64,7 +64,7 @@ export interface ValidateFixRecord {
   item_id: string;
   /** Validate check the finding came from. */
   check: ValidateFixCheck;
-  /** Front-matter field (or link list) the fix changes. */
+  /** Item-metadata field (or link list) the fix changes. */
   field: string;
   /** Declarative fix kind the applier dispatches on. */
   kind: ValidateFixKind;

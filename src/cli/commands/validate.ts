@@ -34,7 +34,7 @@ import {
   effectiveItemFormatVersion,
   scanItemFormatVersions,
 } from "../../core/item/item-format-version.js";
-import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
+import { listAllItemMetadataWithBody } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import {
@@ -91,7 +91,7 @@ type ValidateStatus = "ok" | "warn" | "error";
 type ValidateDependencyCycleSeverity = "off" | "warn" | "error";
 type ValidateFileScanMode = "default" | "tracked-all" | "tracked-all-strict";
 type ItemWithBody = Awaited<
-  ReturnType<typeof listAllFrontMatterWithBody>
+  ReturnType<typeof listAllItemMetadataWithBody>
 >[number];
 type FileCandidateSource =
   | "default-curated"
@@ -3312,7 +3312,7 @@ export async function runValidate(
     getActiveExtensionRegistrations(),
   );
   const itemReadWarnings: string[] = [];
-  const items = await listAllFrontMatterWithBody(
+  const items = await listAllItemMetadataWithBody(
     pmRoot,
     settings.item_format,
     typeRegistry.type_to_folder,

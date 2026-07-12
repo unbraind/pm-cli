@@ -1,7 +1,7 @@
 /**
- * @module core/store/front-matter-cache
+ * @module core/store/item-metadata-cache
  *
- * Reads and writes tracker storage with format-aware helpers for Front Matter Cache.
+ * Reads and writes tracker storage with format-aware helpers for the item metadata cache.
  */
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -29,7 +29,7 @@ const CACHE_FILENAME = "metadata-cache.json";
 const BODY_CACHE_FILENAME = "metadata-cache-bodies.json";
 const COLLECTIONS_CACHE_FILENAME = "metadata-cache-collections.json";
 
-/** Heavy "collection" front-matter fields. These arrays dominate the on-disk cache (e.g. a single item's comment thread can be hundreds of KB) yet the hot list path (`pm list`, stats, deps, activity, calendar, close) never reads them. They are stored in a separate collections cache that is parsed only when a caller opts in (`includeCollections`), keeping the always-loaded light cache an order of magnitude smaller and its JSON.parse correspondingly cheaper. */
+/** Heavy "collection" item-metadata fields. These arrays dominate the on-disk cache (e.g. a single item's comment thread can be hundreds of KB) yet the hot list path (`pm list`, stats, deps, activity, calendar, close) never reads them. They are stored in a separate collections cache that is parsed only when a caller opts in (`includeCollections`), keeping the always-loaded light cache an order of magnitude smaller and its JSON.parse correspondingly cheaper. */
 export const HEAVY_METADATA_KEYS = [
   "comments",
   "notes",
@@ -88,7 +88,7 @@ interface CollectionsCacheEnvelope {
   collections: Record<string, CachedCollections>;
 }
 
-/** Split parsed front-matter into the light scalar/small fields (everything except the heavy collection arrays) and the heavy collection fields. Only keys that are actually present are moved, so an item without comments stays without comments in both tiers. */
+/** Split parsed item-metadata into the light scalar/small fields (everything except the heavy collection arrays) and the heavy collection fields. Only keys that are actually present are moved, so an item without comments stays without comments in both tiers. */
 function splitHeavyMetadata(metadata: ItemMetadata): {
   light: ItemMetadata;
   heavy: Record<string, unknown>;
@@ -234,7 +234,7 @@ async function loadEnvelopeMemoized<T extends MemoizedEnvelope["envelope"]>(
  * Drop memoized envelopes. Exposed for tests; production invalidation is stat-driven
  * plus the explicit delete in {@link persistCache} after a rewrite.
  */
-export function clearFrontMatterEnvelopeMemo(): void {
+export function clearItemMetadataEnvelopeMemo(): void {
   envelopeMemo.clear();
 }
 

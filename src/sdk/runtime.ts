@@ -301,7 +301,7 @@ export {
 } from "./package-import-adapters.js";
 export {
   canonicalDocument,
-  normalizeFrontMatter,
+  normalizeItemMetadata,
   serializeItemDocument,
   splitFrontMatter,
 } from "../core/item/item-format.js";
@@ -328,7 +328,7 @@ export { EXIT_CODE } from "../core/shared/constants.js";
 export { PmCliError } from "../core/shared/errors.js";
 export { isTimestampLiteral, nowIso } from "../core/shared/time.js";
 export {
-  listAllFrontMatter,
+  listAllItemMetadata,
   locateItem,
   readLocatedItem,
 } from "../core/store/item-store.js";

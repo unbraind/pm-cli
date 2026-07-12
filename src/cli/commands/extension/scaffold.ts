@@ -679,7 +679,7 @@ function buildProfileArchetypeFieldLines(extensionName: string): string[] {
     '      description: "Work is implementation-complete and awaiting review.",',
     "    },",
     "  ],",
-    "  // Custom front-matter fields the archetype tracks.",
+    "  // Custom item-metadata fields the archetype tracks.",
     "  fields: [",
     "    {",
     `      key: ${JSON.stringify(fieldKey)},`,

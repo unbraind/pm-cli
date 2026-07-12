@@ -21,7 +21,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { toErrorMessage } from "../../core/shared/primitives.js";
 import { resolveAuthor } from "../../core/shared/author.js";
 import { nowIso } from "../../core/shared/time.js";
-import { listAllFrontMatterLight } from "../../core/store/item-store.js";
+import { listAllItemMetadataLight } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { runClose, type CloseCommandOptions } from "./close.js";
@@ -238,7 +238,7 @@ async function buildActiveChildrenByParent(
     settings,
     getActiveExtensionRegistrations(),
   );
-  const items = await listAllFrontMatterLight(
+  const items = await listAllItemMetadataLight(
     pmRoot,
     settings.item_format,
     typeRegistry.type_to_folder,

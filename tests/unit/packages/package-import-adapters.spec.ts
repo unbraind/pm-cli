@@ -8,7 +8,7 @@ import {
   getHistoryPath,
   getItemPath,
   locateItem,
-  normalizeFrontMatter,
+  normalizeItemMetadata,
   pathExists,
   readSettings,
   resolveItemTypeRegistry,
@@ -185,7 +185,7 @@ describe("package import adapter primitives", () => {
         const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
         const id = await generateItemId(pmRoot, settings.id_prefix);
         const document = canonicalDocument({
-          metadata: normalizeFrontMatter({
+          metadata: normalizeItemMetadata({
             id,
             title: "Imported item",
             description: "",
@@ -230,7 +230,7 @@ describe("package import adapter primitives", () => {
         const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
         const id = await generateItemId(pmRoot, settings.id_prefix);
         const document = canonicalDocument({
-          metadata: normalizeFrontMatter({
+          metadata: normalizeItemMetadata({
             id,
             title: "Locked item",
             description: "",
@@ -272,7 +272,7 @@ describe("package import adapter primitives", () => {
         const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
         const id = await generateItemId(pmRoot, settings.id_prefix);
         const document = canonicalDocument({
-          metadata: normalizeFrontMatter({
+          metadata: normalizeItemMetadata({
             id,
             title: "History failure item",
             description: "",

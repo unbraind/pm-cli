@@ -80,7 +80,7 @@ type ConfidenceTextValue = Extract<
 
 interface ParsedTodoCandidate {
   entryName: string;
-  frontMatter: Record<string, unknown>;
+  itemMetadata: Record<string, unknown>;
   body: string;
   readWarnings: string[];
 }
@@ -131,7 +131,7 @@ interface TodosSdkModule {
     itemFormat: "toon",
     typeToFolder: Record<string, string>,
   ) => string;
-  listAllFrontMatter: (
+  listAllItemMetadata: (
     pmRoot: string,
     itemFormat: PmSettings["item_format"],
     typeToFolder: Record<string, string>,
@@ -143,7 +143,7 @@ interface TodosSdkModule {
     itemFormat: PmSettings["item_format"],
     typeToFolder: Record<string, string>,
   ) => Promise<unknown>;
-  normalizeFrontMatter: (frontMatter: Partial<ItemMetadata>) => ItemMetadata;
+  normalizeItemMetadata: (itemMetadata: Partial<ItemMetadata>) => ItemMetadata;
   normalizeItemId: (id: string, prefix: string) => string;
   nowIso: () => string;
   readLocatedItem: (located: unknown) => Promise<{ document: ItemDocument }>;
@@ -216,9 +216,9 @@ const TODOS_SDK_FUNCTION_EXPORTS = [
   "generateItemId",
   "getActiveExtensionRegistrations",
   "getItemPath",
-  "listAllFrontMatter",
+  "listAllItemMetadata",
   "locateItem",
-  "normalizeFrontMatter",
+  "normalizeItemMetadata",
   "normalizeItemId",
   "nowIso",
   "readLocatedItem",
@@ -318,9 +318,9 @@ const {
   generateItemId,
   getActiveExtensionRegistrations,
   getItemPath,
-  listAllFrontMatter,
+  listAllItemMetadata,
   locateItem,
-  normalizeFrontMatter,
+  normalizeItemMetadata,
   normalizeItemId,
   nowIso,
   readLocatedItem,
@@ -454,7 +454,7 @@ function resolveFolderPath(rawPath: string): string {
 }
 
 function parseTodoMarkdown(content: string): {
-  frontMatter: Record<string, unknown>;
+  itemMetadata: Record<string, unknown>;
   body: string;
 } {
   const split = splitFrontMatter(content);
@@ -471,7 +471,7 @@ function parseTodoMarkdown(content: string): {
   }
   /* v8 ignore stop */
   return {
-    frontMatter: parsed,
+    itemMetadata: parsed,
     body: normalizeBody(split.body),
   };
 }
@@ -492,7 +492,7 @@ async function readTodoCandidate(
     scope: "project",
   });
 
-  let parsed: { frontMatter: Record<string, unknown>; body: string };
+  let parsed: { itemMetadata: Record<string, unknown>; body: string };
   try {
     parsed = parseTodoMarkdown(raw);
   } catch {
@@ -501,7 +501,7 @@ async function readTodoCandidate(
 
   return {
     entryName: entry.name,
-    frontMatter: parsed.frontMatter,
+    itemMetadata: parsed.itemMetadata,
     body: parsed.body,
     readWarnings,
   };
@@ -511,12 +511,12 @@ async function importTodoCandidate(
   candidate: ParsedTodoCandidate,
   runtime: TodosImportRuntime,
 ): Promise<ImportCandidateResult> {
-  const title = toNonEmptyString(candidate.frontMatter.title);
+  const title = toNonEmptyString(candidate.itemMetadata.title);
   if (!title) {
     return { warning: `todos_import_missing_title:${candidate.entryName}` };
   }
 
-  const explicitId = toNonEmptyString(candidate.frontMatter.id);
+  const explicitId = toNonEmptyString(candidate.itemMetadata.id);
   const derivedId = path.basename(
     candidate.entryName,
     path.extname(candidate.entryName),
@@ -527,9 +527,9 @@ async function importTodoCandidate(
   const id = idSource
     ? normalizeItemId(idSource, runtime.settings.id_prefix)
     : await generateItemId(runtime.pmRoot, runtime.settings.id_prefix);
-  const createdAt = toIsoString(candidate.frontMatter.created_at) ?? nowIso();
-  const updatedAt = toIsoString(candidate.frontMatter.updated_at) ?? createdAt;
-  const type = toItemType(candidate.frontMatter.type, runtime.typeNames);
+  const createdAt = toIsoString(candidate.itemMetadata.created_at) ?? nowIso();
+  const updatedAt = toIsoString(candidate.itemMetadata.updated_at) ?? createdAt;
+  const type = toItemType(candidate.itemMetadata.type, runtime.typeNames);
   const located = await locateItem(
     runtime.pmRoot,
     id,
@@ -549,88 +549,88 @@ async function importTodoCandidate(
   );
 
   const afterDocument = canonicalDocument({
-    metadata: normalizeFrontMatter({
+    metadata: normalizeItemMetadata({
       id,
       title,
-      description: toNonEmptyString(candidate.frontMatter.description) ?? "",
+      description: toNonEmptyString(candidate.itemMetadata.description) ?? "",
       type,
-      status: toStatus(candidate.frontMatter.status),
-      priority: toPriority(candidate.frontMatter.priority),
+      status: toStatus(candidate.itemMetadata.status),
+      priority: toPriority(candidate.itemMetadata.priority),
       confidence: toImportConfidence(
-        candidate.frontMatter.confidence,
+        candidate.itemMetadata.confidence,
         CONFIDENCE_TEXT_VALUES,
       ),
-      tags: toTags(candidate.frontMatter.tags),
+      tags: toTags(candidate.itemMetadata.tags),
       created_at: createdAt,
       updated_at: updatedAt,
-      deadline: toIsoString(candidate.frontMatter.deadline),
-      assignee: toNonEmptyString(candidate.frontMatter.assignee),
-      author: toNonEmptyString(candidate.frontMatter.author) ?? runtime.author,
+      deadline: toIsoString(candidate.itemMetadata.deadline),
+      assignee: toNonEmptyString(candidate.itemMetadata.assignee),
+      author: toNonEmptyString(candidate.itemMetadata.author) ?? runtime.author,
       estimated_minutes: toEstimatedMinutes(
-        candidate.frontMatter.estimated_minutes,
+        candidate.itemMetadata.estimated_minutes,
       ),
       acceptance_criteria: toNonEmptyString(
-        candidate.frontMatter.acceptance_criteria,
+        candidate.itemMetadata.acceptance_criteria,
       ),
       definition_of_ready: toNonEmptyString(
-        candidate.frontMatter.definition_of_ready,
+        candidate.itemMetadata.definition_of_ready,
       ),
-      order: toInteger(candidate.frontMatter.order),
-      goal: toNonEmptyString(candidate.frontMatter.goal),
-      objective: toNonEmptyString(candidate.frontMatter.objective),
-      value: toNonEmptyString(candidate.frontMatter.value),
-      impact: toNonEmptyString(candidate.frontMatter.impact),
-      outcome: toNonEmptyString(candidate.frontMatter.outcome),
-      why_now: toNonEmptyString(candidate.frontMatter.why_now),
-      parent: toNonEmptyString(candidate.frontMatter.parent),
-      reviewer: toNonEmptyString(candidate.frontMatter.reviewer),
-      risk: toImportNormalizedEnum(candidate.frontMatter.risk, RISK_VALUES),
-      sprint: toNonEmptyString(candidate.frontMatter.sprint),
-      release: toNonEmptyString(candidate.frontMatter.release),
-      blocked_by: toNonEmptyString(candidate.frontMatter.blocked_by),
-      blocked_reason: toNonEmptyString(candidate.frontMatter.blocked_reason),
-      unblock_note: toNonEmptyString(candidate.frontMatter.unblock_note),
-      reporter: toNonEmptyString(candidate.frontMatter.reporter),
+      order: toInteger(candidate.itemMetadata.order),
+      goal: toNonEmptyString(candidate.itemMetadata.goal),
+      objective: toNonEmptyString(candidate.itemMetadata.objective),
+      value: toNonEmptyString(candidate.itemMetadata.value),
+      impact: toNonEmptyString(candidate.itemMetadata.impact),
+      outcome: toNonEmptyString(candidate.itemMetadata.outcome),
+      why_now: toNonEmptyString(candidate.itemMetadata.why_now),
+      parent: toNonEmptyString(candidate.itemMetadata.parent),
+      reviewer: toNonEmptyString(candidate.itemMetadata.reviewer),
+      risk: toImportNormalizedEnum(candidate.itemMetadata.risk, RISK_VALUES),
+      sprint: toNonEmptyString(candidate.itemMetadata.sprint),
+      release: toNonEmptyString(candidate.itemMetadata.release),
+      blocked_by: toNonEmptyString(candidate.itemMetadata.blocked_by),
+      blocked_reason: toNonEmptyString(candidate.itemMetadata.blocked_reason),
+      unblock_note: toNonEmptyString(candidate.itemMetadata.unblock_note),
+      reporter: toNonEmptyString(candidate.itemMetadata.reporter),
       severity: toImportNormalizedEnum(
-        candidate.frontMatter.severity,
+        candidate.itemMetadata.severity,
         ISSUE_SEVERITY_VALUES,
       ),
-      environment: toNonEmptyString(candidate.frontMatter.environment),
-      repro_steps: toNonEmptyString(candidate.frontMatter.repro_steps),
-      resolution: toNonEmptyString(candidate.frontMatter.resolution),
-      expected_result: toNonEmptyString(candidate.frontMatter.expected_result),
-      actual_result: toNonEmptyString(candidate.frontMatter.actual_result),
+      environment: toNonEmptyString(candidate.itemMetadata.environment),
+      repro_steps: toNonEmptyString(candidate.itemMetadata.repro_steps),
+      resolution: toNonEmptyString(candidate.itemMetadata.resolution),
+      expected_result: toNonEmptyString(candidate.itemMetadata.expected_result),
+      actual_result: toNonEmptyString(candidate.itemMetadata.actual_result),
       affected_version: toNonEmptyString(
-        candidate.frontMatter.affected_version,
+        candidate.itemMetadata.affected_version,
       ),
-      fixed_version: toNonEmptyString(candidate.frontMatter.fixed_version),
-      component: toNonEmptyString(candidate.frontMatter.component),
-      regression: toImportBoolean(candidate.frontMatter.regression),
-      customer_impact: toNonEmptyString(candidate.frontMatter.customer_impact),
-      close_reason: toNonEmptyString(candidate.frontMatter.close_reason),
+      fixed_version: toNonEmptyString(candidate.itemMetadata.fixed_version),
+      component: toNonEmptyString(candidate.itemMetadata.component),
+      regression: toImportBoolean(candidate.itemMetadata.regression),
+      customer_impact: toNonEmptyString(candidate.itemMetadata.customer_impact),
+      close_reason: toNonEmptyString(candidate.itemMetadata.close_reason),
       dependencies: toDependencyEntries(
-        candidate.frontMatter.dependencies,
+        candidate.itemMetadata.dependencies,
         createdAt,
       ),
-      comments: toImportLogEntries(candidate.frontMatter.comments, {
+      comments: toImportLogEntries(candidate.itemMetadata.comments, {
         ...TODOS_LOG_ENTRY_OPTIONS,
         fallbackCreatedAt: createdAt,
         fallbackAuthor: runtime.author,
       }),
-      notes: toImportLogEntries(candidate.frontMatter.notes, {
+      notes: toImportLogEntries(candidate.itemMetadata.notes, {
         ...TODOS_LOG_ENTRY_OPTIONS,
         fallbackCreatedAt: createdAt,
         fallbackAuthor: runtime.author,
       }),
-      learnings: toImportLogEntries(candidate.frontMatter.learnings, {
+      learnings: toImportLogEntries(candidate.itemMetadata.learnings, {
         ...TODOS_LOG_ENTRY_OPTIONS,
         fallbackCreatedAt: createdAt,
         fallbackAuthor: runtime.author,
       }),
-      files: toImportLinkedFiles(candidate.frontMatter.files),
-      docs: toImportLinkedDocs(candidate.frontMatter.docs),
+      files: toImportLinkedFiles(candidate.itemMetadata.files),
+      docs: toImportLinkedDocs(candidate.itemMetadata.docs),
       tests: toImportLinkedTests(
-        candidate.frontMatter.tests,
+        candidate.itemMetadata.tests,
         TODOS_TEST_OPTIONS,
       ),
     } as ItemMetadata),
@@ -763,7 +763,7 @@ export async function runTodosExport(
   const warnings: string[] = [];
   const ids: string[] = [];
   let exported = 0;
-  const items = await listAllFrontMatter(
+  const items = await listAllItemMetadata(
     pmRoot,
     settings.item_format,
     typeRegistry.type_to_folder,
@@ -788,10 +788,10 @@ export async function runTodosExport(
     try {
       const { document } = await readLocatedItem(located);
       const todoFrontMatter: Record<string, unknown> = { ...document.metadata };
-      const frontMatter = JSON.stringify(todoFrontMatter, null, 2);
+      const itemMetadata = JSON.stringify(todoFrontMatter, null, 2);
       const body = normalizeBody(document.body);
       const serialized =
-        body.length > 0 ? `${frontMatter}\n\n${body}\n` : `${frontMatter}\n`;
+        body.length > 0 ? `${itemMetadata}\n\n${body}\n` : `${itemMetadata}\n`;
       const exportPath = path.join(
         destinationFolder,
         `${document.metadata.id}.md`,

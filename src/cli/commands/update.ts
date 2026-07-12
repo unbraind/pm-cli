@@ -95,7 +95,7 @@ import type {
   GovernanceWorkflowEnforcement,
   ItemFormat,
   ItemDocument,
-  ItemFrontMatter,
+  ItemMetadata,
   ItemStatus,
   LinkedDoc,
   LinkedFile,
@@ -179,7 +179,7 @@ export interface UpdateResult {
 
 interface UpdateUnsetFieldDefinition {
   optionKey: string;
-  frontMatterKey: string;
+  metadataKey: string;
 }
 
 const UPDATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
@@ -188,7 +188,7 @@ const UPDATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
     canonical: "close-reason",
     aliases: ["close_reason", "close-reason"],
     optionKey: "closeReason",
-    frontMatterKey: "close_reason",
+    metadataKey: "close_reason",
   },
   ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
   ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
@@ -200,7 +200,7 @@ const UPDATE_UNSET_ALIAS_MAP: Map<string, UpdateUnsetFieldDefinition> = (() => {
     for (const alias of definition.aliases) {
       map.set(alias, {
         optionKey: definition.optionKey,
-        frontMatterKey: definition.frontMatterKey,
+        metadataKey: definition.metadataKey,
       });
     }
   }
@@ -219,7 +219,7 @@ const UPDATE_UNSET_SUPPORTED_CANONICAL_FIELDS =
     .sort((left, right) => left.localeCompare(right))
     .join(", ");
 
-const AUDIT_UPDATE_DISALLOWED_UNSET_FRONT_MATTER_KEYS = new Set<string>([
+const AUDIT_UPDATE_DISALLOWED_UNSET_ITEM_METADATA_KEYS = new Set<string>([
   "close_reason",
   "assignee",
   "parent",
@@ -298,7 +298,7 @@ function parseUpdateUnsetTargets(
   raw: string[] | undefined,
   runtimeFieldRegistry?: RuntimeFieldRegistry,
   extensionFieldNames: readonly string[] = [],
-): { frontMatterKeys: Set<string>; optionKeys: Set<string> } {
+): { metadataKeys: Set<string>; optionKeys: Set<string> } {
   return parseCommandUnsetTargets({
     raw,
     supportedFields: UPDATE_UNSET_SUPPORTED_CANONICAL_FIELDS,
@@ -319,7 +319,7 @@ function parseUpdateUnsetTargets(
           runtimeFieldRegistry,
         ) ??
         (extensionFieldName
-          ? { optionKey: "field", frontMatterKey: extensionFieldName }
+          ? { optionKey: "field", metadataKey: extensionFieldName }
           : undefined);
       return definition;
     },
@@ -388,7 +388,7 @@ function buildAuditScopeRestrictedOptionsError(params: {
 function enforceAllowAuditUpdateScope(
   id: string,
   options: UpdateCommandOptions,
-  clearFrontMatterKeys: Set<string>,
+  clearItemMetadataKeys: Set<string>,
 ): void {
   const allowAuditUpdate = options.allowAuditUpdate === true;
   const allowAuditDepUpdate = options.allowAuditDepUpdate === true;
@@ -542,7 +542,7 @@ function enforceAllowAuditUpdateScope(
       disallowedFlags,
     );
     pushIf(options.force === true, "--force", disallowedFlags);
-    pushIf(clearFrontMatterKeys.size > 0, "--unset", disallowedFlags);
+    pushIf(clearItemMetadataKeys.size > 0, "--unset", disallowedFlags);
     if (options.dep === undefined || options.dep.length === 0) {
       throw new PmCliError(
         "--allow-audit-dep-update requires at least one --dep value",
@@ -595,9 +595,9 @@ function enforceAllowAuditUpdateScope(
   pushIf(options.clearEvents === true, "--clear-events", disallowedFlags);
 
   /* c8 ignore start -- audit unset ordering fallback is validated by audit-governance integration coverage. */
-  const disallowedUnset = [...clearFrontMatterKeys]
+  const disallowedUnset = [...clearItemMetadataKeys]
     .filter((field) =>
-      AUDIT_UPDATE_DISALLOWED_UNSET_FRONT_MATTER_KEYS.has(field),
+      AUDIT_UPDATE_DISALLOWED_UNSET_ITEM_METADATA_KEYS.has(field),
     )
     .sort((left, right) => left.localeCompare(right))
     .map((field) => `--unset ${field.replaceAll("_", "-")}`);
@@ -952,7 +952,7 @@ async function resolveBlockedByDependencyTarget(
 // and record the `dependencies` change. Kept out of the mutate callback so the
 // large runUpdate function stays under the static-quality complexity budget.
 function applyBlockedByDependencyEdge(
-  metadata: ItemFrontMatter,
+  metadata: ItemMetadata,
   resolvedBlockedById: string | undefined,
   nowIsoValue: string,
   author: string,
@@ -1171,7 +1171,7 @@ function enforceUpdateOptionsByType(
 
 interface UpdateScalarMutationContext {
   metadataRecord: Record<string, unknown>;
-  clearFrontMatterKeys: ReadonlySet<string>;
+  clearItemMetadataKeys: ReadonlySet<string>;
   changedFields: string[];
   nowValue: Date;
 }
@@ -1188,7 +1188,7 @@ interface UpdateClearCollectionDefinition {
   clearFlag: string;
   valueFlag: string;
   values: string[] | undefined;
-  frontMatterKey: string;
+  metadataKey: string;
 }
 
 interface UpdateMutationContext {
@@ -1199,7 +1199,7 @@ interface UpdateMutationContext {
   runtimeFieldRegistry: RuntimeFieldRegistry;
   extensionRegistrations: ReturnType<typeof getActiveExtensionRegistrations>;
   extensionFieldNames: readonly string[];
-  clearFrontMatterKeys: ReadonlySet<string>;
+  clearItemMetadataKeys: ReadonlySet<string>;
   dependencyUpdates: ParsedDependencyUpdates;
   dependencyRemovals: DependencyRemovalSelector[];
   commentUpdates: ReturnType<typeof parseLogSeed>;
@@ -1344,7 +1344,7 @@ function applyUpdateScalarMutations(
 ): void {
   for (const definition of definitions) {
     const optionValue = options[definition.optionKey];
-    const shouldClear = context.clearFrontMatterKeys.has(
+    const shouldClear = context.clearItemMetadataKeys.has(
       definition.metadataKey,
     );
     if (optionValue === undefined && !shouldClear) {
@@ -1406,7 +1406,7 @@ function buildClearCollectionDefinitions(
       clearFlag: "--clear-deps",
       valueFlag: "--dep",
       values: options.dep,
-      frontMatterKey: "dependencies",
+      metadataKey: "dependencies",
     },
     {
       enabled: options.clearComments,
@@ -1414,7 +1414,7 @@ function buildClearCollectionDefinitions(
       clearFlag: "--clear-comments",
       valueFlag: "--comment",
       values: options.comment,
-      frontMatterKey: "comments",
+      metadataKey: "comments",
     },
     {
       enabled: options.clearNotes,
@@ -1422,7 +1422,7 @@ function buildClearCollectionDefinitions(
       clearFlag: "--clear-notes",
       valueFlag: "--note",
       values: options.note,
-      frontMatterKey: "notes",
+      metadataKey: "notes",
     },
     {
       enabled: options.clearLearnings,
@@ -1430,7 +1430,7 @@ function buildClearCollectionDefinitions(
       clearFlag: "--clear-learnings",
       valueFlag: "--learning",
       values: options.learning,
-      frontMatterKey: "learnings",
+      metadataKey: "learnings",
     },
     {
       enabled: options.clearFiles,
@@ -1438,7 +1438,7 @@ function buildClearCollectionDefinitions(
       clearFlag: "--clear-files",
       valueFlag: "--file",
       values: options.file,
-      frontMatterKey: "files",
+      metadataKey: "files",
     },
     {
       enabled: options.clearTests || options.replaceTests,
@@ -1446,7 +1446,7 @@ function buildClearCollectionDefinitions(
       clearFlag: "--clear-tests",
       valueFlag: "--test",
       values: options.test,
-      frontMatterKey: "tests",
+      metadataKey: "tests",
     },
     {
       enabled: options.clearDocs,
@@ -1454,7 +1454,7 @@ function buildClearCollectionDefinitions(
       clearFlag: "--clear-docs",
       valueFlag: "--doc",
       values: options.doc,
-      frontMatterKey: "docs",
+      metadataKey: "docs",
     },
     {
       enabled: options.clearReminders,
@@ -1462,7 +1462,7 @@ function buildClearCollectionDefinitions(
       clearFlag: "--clear-reminders",
       valueFlag: "--reminder",
       values: options.reminder,
-      frontMatterKey: "reminders",
+      metadataKey: "reminders",
     },
     {
       enabled: options.clearEvents,
@@ -1470,7 +1470,7 @@ function buildClearCollectionDefinitions(
       clearFlag: "--clear-events",
       valueFlag: "--event",
       values: options.event,
-      frontMatterKey: "events",
+      metadataKey: "events",
     },
     {
       enabled: options.clearTypeOptions,
@@ -1478,7 +1478,7 @@ function buildClearCollectionDefinitions(
       clearFlag: "--clear-type-options",
       valueFlag: "--type-option",
       values: options.typeOption,
-      frontMatterKey: "type_options",
+      metadataKey: "type_options",
     },
   ];
 }
@@ -1524,7 +1524,7 @@ function applyClearCollectionDefinitions(params: {
   definitions: readonly UpdateClearCollectionDefinition[];
   options: UpdateCommandOptions;
   clearOptionKeys: Set<string>;
-  clearFrontMatterKeys: Set<string>;
+  clearItemMetadataKeys: Set<string>;
 }): void {
   for (const definition of params.definitions) {
     if (!definition.enabled) {
@@ -1540,7 +1540,7 @@ function applyClearCollectionDefinitions(params: {
       );
     }
     params.clearOptionKeys.add(definition.optionKey);
-    params.clearFrontMatterKeys.add(definition.frontMatterKey);
+    params.clearItemMetadataKeys.add(definition.metadataKey);
   }
 }
 
@@ -1557,7 +1557,7 @@ function buildScalarOptionPresence(
 
 function rejectUnsetScalarConflicts(
   options: UpdateCommandOptions,
-  unsetTargets: { optionKeys: Set<string>; frontMatterKeys: Set<string> },
+  unsetTargets: { optionKeys: Set<string>; metadataKeys: Set<string> },
 ): void {
   const scalarOptionPresence = buildScalarOptionPresence(options);
   for (const [optionKey, hasValue] of Object.entries(scalarOptionPresence)) {
@@ -1571,7 +1571,7 @@ function rejectUnsetScalarConflicts(
       EXIT_CODE.USAGE,
     );
   }
-  if (!unsetTargets.frontMatterKeys.has("tags")) {
+  if (!unsetTargets.metadataKeys.has("tags")) {
     return;
   }
   if (Array.isArray(options.addTags) && options.addTags.length > 0) {
@@ -1706,7 +1706,7 @@ function assertMatchingOrderRank(options: UpdateCommandOptions): void {
 async function resolveParentReferenceForUpdate(params: {
   id: string;
   options: UpdateCommandOptions;
-  unsetTargets: { frontMatterKeys: Set<string> };
+  unsetTargets: { metadataKeys: Set<string> };
   pmRoot: string;
   settings: Awaited<ReturnType<typeof readSettings>>;
   typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
@@ -1716,7 +1716,7 @@ async function resolveParentReferenceForUpdate(params: {
 }): Promise<{ resolvedParentValue: string | undefined; warnings: string[] }> {
   if (
     params.options.parent === undefined ||
-    params.unsetTargets.frontMatterKeys.has("parent")
+    params.unsetTargets.metadataKeys.has("parent")
   ) {
     return { resolvedParentValue: undefined, warnings: [] };
   }
@@ -1921,7 +1921,7 @@ function applyStatusAndCloseReasonMutations(
   document: ItemDocument,
   context: Pick<
     UpdateMutationContext,
-    "options" | "statusRegistry" | "clearFrontMatterKeys" | "nowIso"
+    "options" | "statusRegistry" | "clearItemMetadataKeys" | "nowIso"
   >,
   previousStatusNormalized: string,
   changedFields: string[],
@@ -1947,9 +1947,9 @@ function applyStatusAndCloseReasonMutations(
   }
   if (
     context.options.closeReason !== undefined ||
-    context.clearFrontMatterKeys.has("close_reason")
+    context.clearItemMetadataKeys.has("close_reason")
   ) {
-    if (context.clearFrontMatterKeys.has("close_reason")) {
+    if (context.clearItemMetadataKeys.has("close_reason")) {
       delete document.metadata.close_reason;
     } else {
       const closeReason = context.options.closeReason?.trim() ?? "";
@@ -2025,9 +2025,9 @@ function applyTypeOptionMutation(
 ): void {
   if (
     context.options.typeOption !== undefined ||
-    context.clearFrontMatterKeys.has("type_options")
+    context.clearItemMetadataKeys.has("type_options")
   ) {
-    if (context.clearFrontMatterKeys.has("type_options")) {
+    if (context.clearItemMetadataKeys.has("type_options")) {
       delete document.metadata.type_options;
     } else {
       const parsedTypeOptions = parseTypeOptionEntries(
@@ -2074,11 +2074,11 @@ function applyDependencyMutations(
   if (
     context.options.dep === undefined &&
     context.options.depRemove === undefined &&
-    !context.clearFrontMatterKeys.has("dependencies")
+    !context.clearItemMetadataKeys.has("dependencies")
   ) {
     return;
   }
-  let nextDependencies = context.clearFrontMatterKeys.has("dependencies")
+  let nextDependencies = context.clearItemMetadataKeys.has("dependencies")
     ? []
     : [...(document.metadata.dependencies ?? [])];
   if (context.dependencyUpdates.additions.length > 0) {
@@ -2117,7 +2117,7 @@ function applyLogCollectionMutations(
     "comments",
     context.options.comment,
     context.commentUpdates.values as Comment[] | undefined,
-    context.clearFrontMatterKeys,
+    context.clearItemMetadataKeys,
     changedFields,
   );
   applyLogCollectionMutation(
@@ -2125,7 +2125,7 @@ function applyLogCollectionMutations(
     "notes",
     context.options.note,
     context.noteUpdates.values as LogNote[] | undefined,
-    context.clearFrontMatterKeys,
+    context.clearItemMetadataKeys,
     changedFields,
   );
   applyLogCollectionMutation(
@@ -2133,7 +2133,7 @@ function applyLogCollectionMutations(
     "learnings",
     context.options.learning,
     context.learningUpdates.values as LogNote[] | undefined,
-    context.clearFrontMatterKeys,
+    context.clearItemMetadataKeys,
     changedFields,
   );
 }
@@ -2143,13 +2143,13 @@ function applyLogCollectionMutation(
   key: "comments" | "notes" | "learnings",
   optionValue: string[] | undefined,
   values: Comment[] | LogNote[] | undefined,
-  clearFrontMatterKeys: ReadonlySet<string>,
+  clearItemMetadataKeys: ReadonlySet<string>,
   changedFields: string[],
 ): void {
-  if (optionValue === undefined && !clearFrontMatterKeys.has(key)) {
+  if (optionValue === undefined && !clearItemMetadataKeys.has(key)) {
     return;
   }
-  if (clearFrontMatterKeys.has(key) || !values || values.length === 0) {
+  if (clearItemMetadataKeys.has(key) || !values || values.length === 0) {
     delete document.metadata[key];
   } else {
     document.metadata[key] = [
@@ -2171,7 +2171,7 @@ function applyEvidenceCollectionMutations(
     context.options.file,
     context.fileUpdates.values,
     fileKey,
-    context.clearFrontMatterKeys,
+    context.clearItemMetadataKeys,
     changedFields,
   );
   applyTestCollectionMutation(document, context, changedFields);
@@ -2181,7 +2181,7 @@ function applyEvidenceCollectionMutations(
     context.options.doc,
     context.docUpdates.values,
     docKey,
-    context.clearFrontMatterKeys,
+    context.clearItemMetadataKeys,
     changedFields,
   );
 }
@@ -2192,13 +2192,13 @@ function applyUniqueLinkedCollectionMutation<T extends LinkedFile | LinkedDoc>(
   optionValue: string[] | undefined,
   values: T[] | undefined,
   keyOf: (value: T) => string,
-  clearFrontMatterKeys: ReadonlySet<string>,
+  clearItemMetadataKeys: ReadonlySet<string>,
   changedFields: string[],
 ): void {
-  if (optionValue === undefined && !clearFrontMatterKeys.has(key)) {
+  if (optionValue === undefined && !clearItemMetadataKeys.has(key)) {
     return;
   }
-  if (clearFrontMatterKeys.has(key) || !values || values.length === 0) {
+  if (clearItemMetadataKeys.has(key) || !values || values.length === 0) {
     delete document.metadata[key];
   } else {
     const next = [...((document.metadata[key] as T[] | undefined) ?? [])];
@@ -2222,18 +2222,18 @@ function applyTestCollectionMutation(
 ): void {
   if (
     context.options.test === undefined &&
-    !context.clearFrontMatterKeys.has("tests")
+    !context.clearItemMetadataKeys.has("tests")
   ) {
     return;
   }
   if (
-    context.clearFrontMatterKeys.has("tests") &&
+    context.clearItemMetadataKeys.has("tests") &&
     context.options.replaceTests === true
   ) {
     document.metadata.tests =
       dedupeLinkedTests(context.testUpdates.values) ?? [];
   } else if (
-    context.clearFrontMatterKeys.has("tests") ||
+    context.clearItemMetadataKeys.has("tests") ||
     !context.testUpdates.values ||
     context.testUpdates.values.length === 0
   ) {
@@ -2283,10 +2283,10 @@ function applyTagsAndPlanningMutations(
     (Array.isArray(removeTagsValues) && removeTagsValues.length > 0);
   if (
     context.options.tags !== undefined ||
-    context.clearFrontMatterKeys.has("tags") ||
+    context.clearItemMetadataKeys.has("tags") ||
     hasAdditiveTagMutation
   ) {
-    const baseTags = context.clearFrontMatterKeys.has("tags")
+    const baseTags = context.clearItemMetadataKeys.has("tags")
       ? []
       : context.options.tags !== undefined
         ? parseTags(context.options.tags)
@@ -2313,10 +2313,10 @@ function applyOrderMutation(
   changedFields: string[],
 ): void {
   const orderRaw = context.options.order ?? context.options.rank;
-  if (orderRaw === undefined && !context.clearFrontMatterKeys.has("order")) {
+  if (orderRaw === undefined && !context.clearItemMetadataKeys.has("order")) {
     return;
   }
-  if (context.clearFrontMatterKeys.has("order")) {
+  if (context.clearItemMetadataKeys.has("order")) {
     delete document.metadata.order;
   } else {
     const parsedOrder = parseOptionalNumber(orderRaw ?? "", "order");
@@ -2374,11 +2374,11 @@ function applyAssigneeMutation(
 ): void {
   if (
     context.options.assignee === undefined &&
-    !context.clearFrontMatterKeys.has("assignee")
+    !context.clearItemMetadataKeys.has("assignee")
   ) {
     return;
   }
-  if (context.clearFrontMatterKeys.has("assignee")) {
+  if (context.clearItemMetadataKeys.has("assignee")) {
     delete document.metadata.assignee;
   } else {
     const assignee = context.options.assignee?.trim() ?? "";
@@ -2400,11 +2400,11 @@ function applyParentMutation(
 ): void {
   if (
     context.options.parent === undefined &&
-    !context.clearFrontMatterKeys.has("parent")
+    !context.clearItemMetadataKeys.has("parent")
   ) {
     return;
   }
-  if (context.clearFrontMatterKeys.has("parent")) {
+  if (context.clearItemMetadataKeys.has("parent")) {
     delete document.metadata.parent;
   } else {
     document.metadata.parent = context.resolvedParentValue ?? "";
@@ -2421,11 +2421,11 @@ function applySprintReleaseMutation(
 ): void {
   if (
     context.options[key] === undefined &&
-    !context.clearFrontMatterKeys.has(key)
+    !context.clearItemMetadataKeys.has(key)
   ) {
     return;
   }
-  if (context.clearFrontMatterKeys.has(key)) {
+  if (context.clearItemMetadataKeys.has(key)) {
     delete document.metadata[key];
   } else {
     const validation = validateSprintOrReleaseValue(
@@ -2446,18 +2446,18 @@ function applyBlockedByMutation(
 ): void {
   if (
     context.options.blockedBy === undefined &&
-    !context.clearFrontMatterKeys.has("blocked_by")
+    !context.clearItemMetadataKeys.has("blocked_by")
   ) {
     return;
   }
-  if (context.clearFrontMatterKeys.has("blocked_by")) {
+  if (context.clearItemMetadataKeys.has("blocked_by")) {
     delete document.metadata.blocked_by;
   } else {
     document.metadata.blocked_by = context.options.blockedBy?.trim() ?? "";
   }
   changedFields.push("blocked_by");
   if (
-    context.clearFrontMatterKeys.has("blocked_by") ||
+    context.clearItemMetadataKeys.has("blocked_by") ||
     context.resolvedBlockedByDependencyId !== undefined
   ) {
     applyBlockedByDependencyEdge(
@@ -2477,9 +2477,9 @@ function applyScheduleMutations(
 ): void {
   if (
     context.options.reminder !== undefined ||
-    context.clearFrontMatterKeys.has("reminders")
+    context.clearItemMetadataKeys.has("reminders")
   ) {
-    if (context.clearFrontMatterKeys.has("reminders")) {
+    if (context.clearItemMetadataKeys.has("reminders")) {
       delete document.metadata.reminders;
     } else {
       document.metadata.reminders = parseReminderEntries(
@@ -2492,9 +2492,9 @@ function applyScheduleMutations(
   }
   if (
     context.options.event !== undefined ||
-    context.clearFrontMatterKeys.has("events")
+    context.clearItemMetadataKeys.has("events")
   ) {
-    if (context.clearFrontMatterKeys.has("events")) {
+    if (context.clearItemMetadataKeys.has("events")) {
       delete document.metadata.events;
     } else {
       document.metadata.events = parseEventEntries(
@@ -2520,19 +2520,19 @@ function applyRuntimeAndRegisteredFieldMutations(
     context.runtimeFieldRegistry.definitions.map(
       (definition) => definition.metadata_key,
     ),
-    context.clearFrontMatterKeys,
+    context.clearItemMetadataKeys,
     changedFields,
   );
   clearDynamicFields(
     metadataRecord,
     context.extensionFieldNames,
-    context.clearFrontMatterKeys,
+    context.clearItemMetadataKeys,
     changedFields,
   );
   for (const [fieldKey, fieldValue] of Object.entries(
     context.runtimeFieldUpdates,
   )) {
-    if (context.clearFrontMatterKeys.has(fieldKey)) {
+    if (context.clearItemMetadataKeys.has(fieldKey)) {
       const fieldFlag = fieldKey.replaceAll("_", "-");
       const definition = context.runtimeFieldRegistry.definitions.find(
         (candidate) => candidate.metadata_key === fieldKey,
@@ -2555,7 +2555,7 @@ function applyRuntimeAndRegisteredFieldMutations(
     context.extensionRegistrations,
   );
   for (const fieldKey of Object.keys(registeredItemFieldUpdates)) {
-    if (context.clearFrontMatterKeys.has(fieldKey)) {
+    if (context.clearItemMetadataKeys.has(fieldKey)) {
       throw new PmCliError(
         `Cannot combine --unset ${fieldKey.replaceAll("_", "-")} with --field ${fieldKey}=...`,
         EXIT_CODE.USAGE,
@@ -2575,12 +2575,12 @@ function applyRuntimeAndRegisteredFieldMutations(
 function clearDynamicFields(
   metadataRecord: Record<string, unknown>,
   fieldKeys: readonly string[],
-  clearFrontMatterKeys: ReadonlySet<string>,
+  clearItemMetadataKeys: ReadonlySet<string>,
   changedFields: string[],
 ): void {
   for (const fieldKey of fieldKeys) {
     if (
-      !clearFrontMatterKeys.has(fieldKey) ||
+      !clearItemMetadataKeys.has(fieldKey) ||
       metadataRecord[fieldKey] === undefined
     ) {
       continue;
@@ -2605,7 +2605,7 @@ function mutateUpdateDocument(
   const metadataRecord = toItemRecord(document.metadata);
   const scalarMutationContext: UpdateScalarMutationContext = {
     metadataRecord,
-    clearFrontMatterKeys: context.clearFrontMatterKeys,
+    clearItemMetadataKeys: context.clearItemMetadataKeys,
     changedFields,
     nowValue: context.nowValue,
   };
@@ -2647,7 +2647,7 @@ function mutateUpdateDocument(
     applyRegisteredItemFieldDefaultsAndValidation(
       metadataRecord,
       context.extensionRegistrations,
-      { skipDefaultFields: context.clearFrontMatterKeys },
+      { skipDefaultFields: context.clearItemMetadataKeys },
     );
   } catch (error: unknown) {
     throw new PmCliError(
@@ -2693,16 +2693,16 @@ export async function runUpdate(
     extensionFieldNames,
   );
   const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);
-  const clearFrontMatterKeys = new Set<string>(unsetTargets.frontMatterKeys);
+  const clearItemMetadataKeys = new Set<string>(unsetTargets.metadataKeys);
 
   validateReplaceOptions(options);
   applyClearCollectionDefinitions({
     definitions: buildClearCollectionDefinitions(options),
     options,
     clearOptionKeys,
-    clearFrontMatterKeys,
+    clearItemMetadataKeys,
   });
-  enforceAllowAuditUpdateScope(id, options, clearFrontMatterKeys);
+  enforceAllowAuditUpdateScope(id, options, clearItemMetadataKeys);
 
   rejectUnsetScalarConflicts(options, unsetTargets);
   rejectLegacyScalarTokens(options);
@@ -2760,7 +2760,7 @@ export async function runUpdate(
   // mutate callback can mirror create.ts and add a `blocked_by` dependency edge.
   const blockedByResolution = await resolveBlockedByDependencyTarget(
     options.blockedBy,
-    clearFrontMatterKeys.has("blocked_by"),
+    clearItemMetadataKeys.has("blocked_by"),
     pmRoot,
     settings.id_prefix,
     settings.item_format,
@@ -2834,7 +2834,7 @@ export async function runUpdate(
         runtimeFieldRegistry,
         extensionRegistrations,
         extensionFieldNames,
-        clearFrontMatterKeys,
+        clearItemMetadataKeys,
         dependencyUpdates,
         dependencyRemovals,
         commentUpdates,

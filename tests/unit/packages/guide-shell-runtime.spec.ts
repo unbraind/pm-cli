@@ -124,7 +124,7 @@ export function resolveRuntimeFieldRegistry() {
   command_to_fields.set("create", [{ cli_flag: "item_type" }]);
   return { command_to_fields };
 }
-export async function listAllFrontMatter() {
+export async function listAllItemMetadata() {
   return [
     { metadata: { tags: ["alpha", "beta", "alpha"] } },
     { metadata: { tags: ["gamma", "beta"] } },
@@ -336,7 +336,7 @@ export function resolveRuntimeFieldRegistry() {
   // undefined for each, exercising the ?? [] fallback and empty flags branch.
   return { command_to_fields };
 }
-export async function listAllFrontMatter() {
+export async function listAllItemMetadata() {
   return [{ metadata: { tags: "not-an-array" } }, { metadata: {} }];
 }
 export function getActiveExtensionRegistrations() { return {}; }
@@ -487,7 +487,7 @@ export async function readSettings() { return { schema: {} }; }
 export function resolveItemTypeRegistry() { return {}; }
 export function resolveRuntimeStatusRegistry() { return { definitions: [] }; }
 export function resolveRuntimeFieldRegistry() { return { command_to_fields: new Map() }; }
-export async function listAllFrontMatter() { return []; }
+export async function listAllItemMetadata() { return []; }
 export function getActiveExtensionRegistrations() { return {}; }
 export function readStringOption() { return undefined; }
 export function readBooleanOption() { return undefined; }
@@ -526,7 +526,7 @@ export async function readSettings() { return { schema: {} }; }
 export function resolveItemTypeRegistry() { return {}; }
 export function resolveRuntimeStatusRegistry() { return { definitions: [] }; }
 export function resolveRuntimeFieldRegistry() { return { command_to_fields: new Map() }; }
-export async function listAllFrontMatter() { return []; }
+export async function listAllItemMetadata() { return []; }
 export function getActiveExtensionRegistrations() { return {}; }
 export function readStringOption(options, key) { return typeof options?.[key] === "string" ? options[key] : undefined; }
 export function readBooleanOption() { return undefined; }

@@ -184,7 +184,7 @@ export interface ExtensionBlueprint {
   preflights?: PreflightOverride[];
   /** Custom item types registered in a single `api.registerItemTypes(types)` call. */
   itemTypes?: SchemaItemTypeDefinition[];
-  /** Custom front-matter fields registered in a single `api.registerItemFields(fields)` call. */
+  /** Custom item-metadata fields registered in a single `api.registerItemFields(fields)` call. */
   itemFields?: SchemaFieldDefinition[];
   /** Schema migrations registered one at a time via `api.registerMigration(definition)`. */
   migrations?: SchemaMigrationDefinition[];

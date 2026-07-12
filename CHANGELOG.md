@@ -106,7 +106,7 @@
 - GH-488: path-target pm init emits executable tracker-scoped follow-up commands ([pm-x26a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x26a.toon))
 - Declarative extension install: activation failure is misreported and scaffold next_steps break when @unbrained/pm-cli is unresolvable ([pm-3wsi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3wsi.toon))
 - Project package install with --pm-path can write extensions into the caller workspace ([pm-qt5d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qt5d.toon))
-- GH-482: Node 24 nightly coverage gate flake — readdir-order-dependent branch at front-matter-cache.ts:505 ([pm-gume](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gume.toon))
+- GH-482: Node 24 nightly coverage gate flake — readdir-order-dependent branch at item-metadata-cache.ts:505 ([pm-gume](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gume.toon))
 - Context evaluation runner and CI gate: rank-aware quality metrics plus token-budget regression checks ([pm-xmp5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xmp5.toon))
 - Token-cost regression gate: CI budget check over a representative command-output corpus ([pm-cu1i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cu1i.toon))
 - GH-484: pm update --blocked-by silently overwrites prior blockers instead of appending ([pm-q6gx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q6gx.toon))
@@ -1543,9 +1543,9 @@
 
 ### Added
 
-- SDK: Export ItemFrontMatter and ItemDocument types ([pm-slul](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-slul.toon))
+- SDK: Export ItemMetadata and ItemDocument types ([pm-slul](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-slul.toon))
 - Add vector dimension mismatch warning counter to LanceDB queries ([pm-k213](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k213.toon))
-- Performance: Parallelize listAllFrontMatter I/O ([pm-hiji](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hiji.toon))
+- Performance: Parallelize listAllItemMetadata I/O ([pm-hiji](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hiji.toon))
 - Architecture: Decompose extension loader types ([pm-f9s0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-f9s0.toon))
 - Performance: list/filter operations scan all 625+ item files on each invocation ([pm-cd2f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cd2f.toon))
 - Docs: Add practical SDK extension examples ([pm-7k9o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7k9o.toon))

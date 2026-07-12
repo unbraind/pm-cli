@@ -45,7 +45,7 @@ import {
 } from "../../core/schema/runtime-schema.js";
 import {
   EXIT_CODE,
-  FRONT_MATTER_KEY_ORDER,
+  ITEM_METADATA_KEY_ORDER,
 } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -56,15 +56,15 @@ import {
   resolveIsoOrRelative,
 } from "../../core/shared/time.js";
 import {
-  listAllFrontMatter,
-  listAllFrontMatterLight,
-  listAllFrontMatterWithBody,
+  listAllItemMetadata,
+  listAllItemMetadataLight,
+  listAllItemMetadataWithBody,
 } from "../../core/store/item-store.js";
-import { HEAVY_METADATA_KEYS } from "../../core/store/front-matter-cache.js";
+import { HEAVY_METADATA_KEYS } from "../../core/store/item-metadata-cache.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type {
-  ItemFrontMatter,
+  ItemMetadata,
   ItemStatus,
   ItemType,
 } from "../../types/index.js";
@@ -248,7 +248,7 @@ export function resolveContentFieldFilters(
 }
 
 /** Restricts listed item values accepted by command, SDK, and storage contracts. */
-export type ListedItem = ItemFrontMatter | (ItemFrontMatter & { body: string });
+export type ListedItem = ItemMetadata | (ItemMetadata & { body: string });
 
 type ListProjectionMode = "full" | "compact" | "fields";
 
@@ -793,7 +793,7 @@ function validateListProjectionFields(
     return;
   }
   const allowed = new Set([
-    ...FRONT_MATTER_KEY_ORDER,
+    ...ITEM_METADATA_KEY_ORDER,
     "body",
     ...TREE_METADATA_FIELDS,
     ...runtimeMetadataKeys,
@@ -1454,7 +1454,7 @@ async function loadListItems(
     contentFiltersNeedCollections(contentFieldFilters);
   const contentNeedsBody = contentFiltersNeedBody(contentFieldFilters);
   if (options.includeBody || projectionNeedsBody || contentNeedsBody) {
-    return await listAllFrontMatterWithBody(
+    return await listAllItemMetadataWithBody(
       runtime.pmRoot,
       runtime.settings.item_format,
       runtime.typeRegistry.type_to_folder,
@@ -1463,7 +1463,7 @@ async function loadListItems(
     );
   }
   if (projectionNeedsCollections || contentNeedsCollections) {
-    return await listAllFrontMatter(
+    return await listAllItemMetadata(
       runtime.pmRoot,
       runtime.settings.item_format,
       runtime.typeRegistry.type_to_folder,
@@ -1471,7 +1471,7 @@ async function loadListItems(
       runtime.settings.schema,
     );
   }
-  return await listAllFrontMatterLight(
+  return await listAllItemMetadataLight(
     runtime.pmRoot,
     runtime.settings.item_format,
     runtime.typeRegistry.type_to_folder,

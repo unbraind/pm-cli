@@ -17,14 +17,14 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import {
   buildItemNotFoundError,
-  listAllFrontMatterLight,
+  listAllItemMetadataLight,
   locateItem,
   mutateItem,
   readLocatedItem,
 } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { ItemFrontMatter } from "../../types/index.js";
+import type { ItemMetadata } from "../../types/index.js";
 
 /** Documents the close command options payload exchanged by command, SDK, and package integrations. */
 export interface CloseCommandOptions {
@@ -39,7 +39,7 @@ export interface CloseCommandOptions {
   // pm-fl0c #11 (2026-05-28): allow setting the three closure validation
   // fields inline on `pm close` so agents do not have to issue a prior
   // `pm update` just to satisfy --validate-close warn|strict. These map 1:1
-  // to ItemFrontMatter.{resolution,expected_result,actual_result}.
+  // to ItemMetadata.{resolution,expected_result,actual_result}.
   /** Value that configures or reports resolution for this contract. */
   resolution?: string;
   /** Structured result returned by the expected operation. */
@@ -155,7 +155,7 @@ function resolveEffectiveCloseReasonText(
 
 const CLOSE_VALIDATION_FIELDS: Array<{
   key: keyof Pick<
-    ItemFrontMatter,
+    ItemMetadata,
     "resolution" | "expected_result" | "actual_result"
   >;
   label: string;
@@ -192,11 +192,11 @@ function parseValidateCloseMode(
 }
 
 function findMissingCloseValidationFields(
-  frontMatter: ItemFrontMatter,
+  itemMetadata: ItemMetadata,
 ): string[] {
   const missing: string[] = [];
   for (const field of CLOSE_VALIDATION_FIELDS) {
-    const rawValue = frontMatter[field.key];
+    const rawValue = itemMetadata[field.key];
     if (typeof rawValue !== "string" || rawValue.trim().length === 0) {
       missing.push(field.label);
     }
@@ -205,7 +205,7 @@ function findMissingCloseValidationFields(
 }
 
 async function duplicateChainReferencesClosingItem(
-  loadItemById: (id: string) => Promise<ItemFrontMatter | null>,
+  loadItemById: (id: string) => Promise<ItemMetadata | null>,
   initialDuplicateOf: unknown,
   closingId: string,
 ): Promise<boolean> {
@@ -250,8 +250,8 @@ async function assertDuplicateTargetExists(
     );
   }
   const typeRegistry = resolveItemTypeRegistry(settings);
-  const itemCache = new Map<string, ItemFrontMatter | null>();
-  const loadItemById = async (id: string): Promise<ItemFrontMatter | null> => {
+  const itemCache = new Map<string, ItemMetadata | null>();
+  const loadItemById = async (id: string): Promise<ItemMetadata | null> => {
     if (itemCache.has(id)) {
       return itemCache.get(id) ?? null;
     }
@@ -337,7 +337,7 @@ async function findActiveChildIds(
   statusRegistry: RuntimeStatusRegistry,
 ): Promise<string[]> {
   const typeRegistry = resolveItemTypeRegistry(settings);
-  const items = await listAllFrontMatterLight(
+  const items = await listAllItemMetadataLight(
     pmRoot,
     settings.item_format,
     typeRegistry.type_to_folder,
@@ -361,7 +361,7 @@ async function findAutoUnblockCandidates(
   statusRegistry: RuntimeStatusRegistry,
 ): Promise<AutoUnblockCandidate[]> {
   const typeRegistry = resolveItemTypeRegistry(settings);
-  const items = await listAllFrontMatterLight(
+  const items = await listAllItemMetadataLight(
     pmRoot,
     settings.item_format,
     typeRegistry.type_to_folder,
@@ -461,7 +461,7 @@ async function autoUnblockResolvedDependents(
 }
 
 function applyInlineCloseFields(
-  metadata: ItemFrontMatter,
+  metadata: ItemMetadata,
   options: CloseCommandOptions,
 ): CloseInlineFieldKey[] {
   const changedFields: CloseInlineFieldKey[] = [];
@@ -488,7 +488,7 @@ function applyInlineCloseFields(
 }
 
 function applyDuplicateCloseMetadata(
-  metadata: ItemFrontMatter,
+  metadata: ItemMetadata,
   duplicateOf: string | undefined,
 ): CloseInlineFieldKey[] {
   if (duplicateOf === undefined) {
@@ -514,7 +514,7 @@ function applyDuplicateCloseMetadata(
 }
 
 function collectCloseValidationWarnings(
-  metadata: ItemFrontMatter,
+  metadata: ItemMetadata,
   validateCloseMode: ValidateCloseMode,
   activeChildIds: string[],
 ): string[] {
@@ -554,7 +554,7 @@ function collectCloseValidationWarnings(
 }
 
 function applyCloseReason(
-  metadata: ItemFrontMatter,
+  metadata: ItemMetadata,
   closeReason: string | undefined,
 ): string[] {
   if (closeReason !== undefined) {
@@ -568,7 +568,7 @@ function applyCloseReason(
   return [];
 }
 
-function clearCloseAssignee(metadata: ItemFrontMatter): string[] {
+function clearCloseAssignee(metadata: ItemMetadata): string[] {
   if (metadata.assignee === undefined) {
     return [];
   }
@@ -576,7 +576,7 @@ function clearCloseAssignee(metadata: ItemFrontMatter): string[] {
   return ["assignee"];
 }
 
-function clearClosedBlockerSignals(metadata: ItemFrontMatter): {
+function clearClosedBlockerSignals(metadata: ItemMetadata): {
   changedFields: string[];
   warnings: string[];
 } {
@@ -623,7 +623,7 @@ function clearClosedBlockerSignals(metadata: ItemFrontMatter): {
 }
 
 function mutateCloseMetadata(
-  metadata: ItemFrontMatter,
+  metadata: ItemMetadata,
   context: CloseMutationContext,
 ): { changedFields: string[]; warnings?: string[] } {
   if (

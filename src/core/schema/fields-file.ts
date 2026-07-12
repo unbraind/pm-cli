@@ -12,7 +12,7 @@ import type {
   RuntimeFieldDefinition,
   RuntimeFieldType,
 } from "../../types/index.js";
-import { FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
+import { ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 
 export type {
   RuntimeFieldCommand,
@@ -36,9 +36,9 @@ export type {
 const RUNTIME_FIELD_TYPE_SET = new Set<string>(RUNTIME_FIELD_TYPE_VALUES);
 const RUNTIME_FIELD_COMMAND_SET = new Set<string>(RUNTIME_FIELD_COMMAND_VALUES);
 
-/** Built-in front-matter field names a custom field key must never shadow. A custom key that collides with one of these would let `pm create --<key>` write over reserved metadata, so add-field rejects them up front (symmetric with the built-in-type guard in item-types-file.ts). */
+/** Built-in item-metadata field names a custom field key must never shadow. A custom key that collides with one of these would let `pm create --<key>` write over reserved metadata, so add-field rejects them up front (symmetric with the built-in-type guard in item-types-file.ts). */
 export const BUILTIN_FIELD_KEYS: ReadonlySet<string> = new Set([
-  ...FRONT_MATTER_KEY_ORDER.filter((key) => key !== "severity"),
+  ...ITEM_METADATA_KEY_ORDER.filter((key) => key !== "severity"),
   "id",
   "title",
   "type",
@@ -324,7 +324,7 @@ export function serializeFieldsFile(file: FieldsFile): string {
   return `${JSON.stringify({ fields: file.fields }, null, 2)}\n`;
 }
 
-/** Idempotent UPSERT of a custom field into the parsed file. Matching is by normalized key. When a definition already exists, the supplied input fully replaces its add-field-managed attributes (type/commands/description/flags/ required flags) while preserving any unrelated keys the file may carry; any `metadata_key` already stored is preserved so existing item data keeps mapping to the same front-matter column. */
+/** Idempotent UPSERT of a custom field into the parsed file. Matching is by normalized key. When a definition already exists, the supplied input fully replaces its add-field-managed attributes (type/commands/description/flags/ required flags) while preserving any unrelated keys the file may carry; any `metadata_key` already stored is preserved so existing item data keeps mapping to the same item-metadata column. */
 export function upsertField(
   file: FieldsFile,
   input: NormalizedAddFieldInput,

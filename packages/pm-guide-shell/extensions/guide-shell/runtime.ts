@@ -66,7 +66,7 @@ interface RuntimeSdkModule {
   resolveRuntimeFieldRegistry: (schema: unknown) => {
     command_to_fields: Map<string, Array<{ cli_flag: string }>>;
   };
-  listAllFrontMatter: (
+  listAllItemMetadata: (
     pmRoot: string,
     itemFormat: "toon" | "json_markdown",
     typeToFolder: Record<string, string>,
@@ -109,7 +109,7 @@ const REQUIRED_RUNTIME_SDK_EXPORTS = [
   "resolveItemTypeRegistry",
   "resolveRuntimeStatusRegistry",
   "resolveRuntimeFieldRegistry",
-  "listAllFrontMatter",
+  "listAllItemMetadata",
   "getActiveExtensionRegistrations",
   "readStringOption",
   "readBooleanOption",
@@ -461,7 +461,7 @@ export async function runCompletionTagsPackage(
       ? "json_markdown"
       : "toon"
   ) as "toon" | "json_markdown";
-  const items = await bundle.sdk.listAllFrontMatter(
+  const items = await bundle.sdk.listAllItemMetadata(
     pmRoot,
     itemFormat,
     typeToFolder,

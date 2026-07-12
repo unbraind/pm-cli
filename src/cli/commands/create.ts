@@ -15,7 +15,7 @@ import {
 import { generateItemId, normalizeItemId } from "../../core/item/id.js";
 import {
   canonicalDocument,
-  normalizeFrontMatter,
+  normalizeItemMetadata,
   serializeItemDocument,
 } from "../../core/item/item-format.js";
 import {
@@ -63,7 +63,7 @@ import {
 } from "../../core/schema/runtime-schema.js";
 import {
   EXIT_CODE,
-  FRONT_MATTER_KEY_ORDER,
+  ITEM_METADATA_KEY_ORDER,
 } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -220,7 +220,7 @@ const LOG_SEED_ALLOWED_KEYS = new Set(["author", "created_at", "text"]);
 
 interface CreateUnsetFieldDefinition {
   optionKey: string;
-  frontMatterKey: string;
+  metadataKey: string;
 }
 
 const CREATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
@@ -229,7 +229,7 @@ const CREATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
     canonical: "author",
     aliases: ["author"],
     optionKey: "author",
-    frontMatterKey: "author",
+    metadataKey: "author",
   },
   ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
 ];
@@ -240,7 +240,7 @@ const CREATE_UNSET_ALIAS_MAP: Map<string, CreateUnsetFieldDefinition> = (() => {
     for (const alias of definition.aliases) {
       map.set(alias, {
         optionKey: definition.optionKey,
-        frontMatterKey: definition.frontMatterKey,
+        metadataKey: definition.metadataKey,
       });
     }
   }
@@ -379,7 +379,7 @@ function parseOptionalString(value: string | undefined): string | undefined {
 function parseCreateUnsetTargets(
   raw: string[] | undefined,
   runtimeFieldRegistry?: RuntimeFieldRegistry,
-): { frontMatterKeys: Set<string>; optionKeys: Set<string> } {
+): { metadataKeys: Set<string>; optionKeys: Set<string> } {
   return parseCommandUnsetTargets({
     raw,
     supportedFields: CREATE_UNSET_SUPPORTED_CANONICAL_FIELDS,
@@ -760,16 +760,16 @@ function parseEvents(
 }
 
 function buildChangedFields(
-  frontMatter: ItemMetadata,
+  itemMetadata: ItemMetadata,
   body: string,
   explicitUnsets: string[],
-  additionalFrontMatterKeys: readonly string[] = [],
+  additionalItemMetadataKeys: readonly string[] = [],
 ): string[] {
   const changed = [
-    ...FRONT_MATTER_KEY_ORDER.filter((key) => frontMatter[key] !== undefined),
-    ...additionalFrontMatterKeys.filter(
+    ...ITEM_METADATA_KEY_ORDER.filter((key) => itemMetadata[key] !== undefined),
+    ...additionalItemMetadataKeys.filter(
       (key) =>
-        (frontMatter as unknown as Record<string, unknown>)[key] !== undefined,
+        (itemMetadata as unknown as Record<string, unknown>)[key] !== undefined,
     ),
     ...(body.length > 0 ? ["body"] : []),
     ...explicitUnsets.map((key) => `unset:${key}`),
@@ -1470,7 +1470,7 @@ function ensureInitHasRun(pmRoot: string): Promise<void> {
 }
 
 /**
- * Resolve an optional string front-matter field for {@link runCreate}: yields
+ * Resolve an optional string item-metadata field for {@link runCreate}: yields
  * `undefined` when the field is being cleared via `--unset <key>` or was never
  * supplied, otherwise the (identity-parsed) raw value. Collapses the pervasive
  * `unset ? undefined : raw === undefined ? undefined : parseOptionalString(raw)`
@@ -1479,10 +1479,10 @@ function ensureInitHasRun(pmRoot: string): Promise<void> {
  */
 function resolveUnsettableOptionalString(
   unsetKeys: ReadonlySet<string>,
-  frontMatterKey: string,
+  metadataKey: string,
   raw: string | undefined,
 ): string | undefined {
-  return unsetKeys.has(frontMatterKey) || raw === undefined
+  return unsetKeys.has(metadataKey) || raw === undefined
     ? undefined
     : parseOptionalString(raw);
 }
@@ -1490,11 +1490,11 @@ function resolveUnsettableOptionalString(
 /** Resolve an optional field that maps its raw string through `transform` once present: yields `undefined` when the field is being cleared via `--unset` or was never supplied, otherwise `transform(raw)`. The non-string return type is inferred from `transform`, so this serves numeric, ISO-date, and enum fields alike while keeping the unset/absent guard in one place. */
 function resolveUnsettableTransformed<Value>(
   unsetKeys: ReadonlySet<string>,
-  frontMatterKey: string,
+  metadataKey: string,
   raw: string | undefined,
   transform: (value: string) => Value,
 ): Value | undefined {
-  return unsetKeys.has(frontMatterKey) || raw === undefined
+  return unsetKeys.has(metadataKey) || raw === undefined
     ? undefined
     : transform(raw);
 }
@@ -1651,14 +1651,14 @@ async function resolveCreateItemId(params: {
 /** Resolve a sprint or release field: `undefined` when cleared/absent, otherwise the format-validated value plus any never-blocking format warnings from the configured `sprint_release_format` policy. */
 function resolveCreateSprintOrRelease(
   unsetKeys: ReadonlySet<string>,
-  frontMatterKey: string,
+  metadataKey: string,
   raw: string | undefined,
   field: Parameters<typeof validateSprintOrReleaseValue>[0],
   policy: Parameters<typeof validateSprintOrReleaseValue>[2],
 ): { value: string | undefined; warnings: string[] } {
   const resolved = resolveUnsettableOptionalString(
     unsetKeys,
-    frontMatterKey,
+    metadataKey,
     raw,
   );
   if (resolved === undefined) {
@@ -1911,12 +1911,12 @@ async function resolveCreateTypeSelection(
   return { resolvedOptions, typeDefinition, type, schedulePreset, createMode };
 }
 
-/** Seed the explicit-unset and clear-option key sets from the parsed `--unset` targets, then fold in each enabled `--clear-<collection>` flag: it marks the collection's front-matter key as explicitly unset and its option key as cleared, and rejects combining a clear flag with its own value flag. Returns the augmented sets used downstream for required-flag relaxation and history messaging. */
+/** Seed the explicit-unset and clear-option key sets from the parsed `--unset` targets, then fold in each enabled `--clear-<collection>` flag: it marks the collection's item-metadata key as explicitly unset and its option key as cleared, and rejects combining a clear flag with its own value flag. Returns the augmented sets used downstream for required-flag relaxation and history messaging. */
 function collectCreateClearTargets(
   resolvedOptions: CreateCommandOptions,
-  unsetTargets: { frontMatterKeys: Set<string>; optionKeys: Set<string> },
+  unsetTargets: { metadataKeys: Set<string>; optionKeys: Set<string> },
 ): { explicitUnsets: Set<string>; clearOptionKeys: Set<string> } {
-  const explicitUnsets = new Set<string>(unsetTargets.frontMatterKeys);
+  const explicitUnsets = new Set<string>(unsetTargets.metadataKeys);
   const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);
   const clearCollectionDefinitions: ReadonlyArray<{
     enabled: boolean | undefined;
@@ -1924,7 +1924,7 @@ function collectCreateClearTargets(
     clearFlag: string;
     valueFlag: string;
     values: string[] | undefined;
-    frontMatterKey: string;
+    metadataKey: string;
   }> = [
     {
       enabled: resolvedOptions.clearDeps,
@@ -1932,7 +1932,7 @@ function collectCreateClearTargets(
       clearFlag: "--clear-deps",
       valueFlag: "--dep",
       values: resolvedOptions.dep,
-      frontMatterKey: "dependencies",
+      metadataKey: "dependencies",
     },
     {
       enabled: resolvedOptions.clearComments,
@@ -1940,7 +1940,7 @@ function collectCreateClearTargets(
       clearFlag: "--clear-comments",
       valueFlag: "--comment",
       values: resolvedOptions.comment,
-      frontMatterKey: "comments",
+      metadataKey: "comments",
     },
     {
       enabled: resolvedOptions.clearNotes,
@@ -1948,7 +1948,7 @@ function collectCreateClearTargets(
       clearFlag: "--clear-notes",
       valueFlag: "--note",
       values: resolvedOptions.note,
-      frontMatterKey: "notes",
+      metadataKey: "notes",
     },
     {
       enabled: resolvedOptions.clearLearnings,
@@ -1956,7 +1956,7 @@ function collectCreateClearTargets(
       clearFlag: "--clear-learnings",
       valueFlag: "--learning",
       values: resolvedOptions.learning,
-      frontMatterKey: "learnings",
+      metadataKey: "learnings",
     },
     {
       enabled: resolvedOptions.clearFiles,
@@ -1964,7 +1964,7 @@ function collectCreateClearTargets(
       clearFlag: "--clear-files",
       valueFlag: "--file",
       values: resolvedOptions.file,
-      frontMatterKey: "files",
+      metadataKey: "files",
     },
     {
       enabled: resolvedOptions.clearTests,
@@ -1972,7 +1972,7 @@ function collectCreateClearTargets(
       clearFlag: "--clear-tests",
       valueFlag: "--test",
       values: resolvedOptions.test,
-      frontMatterKey: "tests",
+      metadataKey: "tests",
     },
     {
       enabled: resolvedOptions.clearDocs,
@@ -1980,7 +1980,7 @@ function collectCreateClearTargets(
       clearFlag: "--clear-docs",
       valueFlag: "--doc",
       values: resolvedOptions.doc,
-      frontMatterKey: "docs",
+      metadataKey: "docs",
     },
     {
       enabled: resolvedOptions.clearReminders,
@@ -1988,7 +1988,7 @@ function collectCreateClearTargets(
       clearFlag: "--clear-reminders",
       valueFlag: "--reminder",
       values: resolvedOptions.reminder,
-      frontMatterKey: "reminders",
+      metadataKey: "reminders",
     },
     {
       enabled: resolvedOptions.clearEvents,
@@ -1996,7 +1996,7 @@ function collectCreateClearTargets(
       clearFlag: "--clear-events",
       valueFlag: "--event",
       values: resolvedOptions.event,
-      frontMatterKey: "events",
+      metadataKey: "events",
     },
     {
       enabled: resolvedOptions.clearTypeOptions,
@@ -2004,7 +2004,7 @@ function collectCreateClearTargets(
       clearFlag: "--clear-type-options",
       valueFlag: "--type-option",
       values: resolvedOptions.typeOption,
-      frontMatterKey: "type_options",
+      metadataKey: "type_options",
     },
   ];
   for (const definition of clearCollectionDefinitions) {
@@ -2018,7 +2018,7 @@ function collectCreateClearTargets(
         EXIT_CODE.USAGE,
       );
     }
-    explicitUnsets.add(definition.frontMatterKey);
+    explicitUnsets.add(definition.metadataKey);
     clearOptionKeys.add(definition.optionKey);
   }
   return { explicitUnsets, clearOptionKeys };
@@ -2160,10 +2160,10 @@ function assertNoLegacyCreateScalarTokens(
 function assertNoCreateFieldUnsetConflicts(
   registeredItemFieldValues: Record<string, unknown>,
   runtimeCreateFieldValues: { values?: Record<string, unknown> },
-  unsetTargets: { frontMatterKeys: Set<string> },
+  unsetTargets: { metadataKeys: Set<string> },
 ): void {
   for (const fieldKey of Object.keys(registeredItemFieldValues)) {
-    if (!unsetTargets.frontMatterKeys.has(fieldKey)) {
+    if (!unsetTargets.metadataKeys.has(fieldKey)) {
       continue;
     }
     throw new PmCliError(
@@ -2174,7 +2174,7 @@ function assertNoCreateFieldUnsetConflicts(
   /* c8 ignore start -- collectRuntimeCreateFieldValues always returns a `values` object, so the `?? {}` fallback is unreachable. */
   for (const fieldKey of Object.keys(runtimeCreateFieldValues.values ?? {})) {
     /* c8 ignore stop */
-    if (!unsetTargets.frontMatterKeys.has(fieldKey)) {
+    if (!unsetTargets.metadataKeys.has(fieldKey)) {
       continue;
     }
     throw new PmCliError(
@@ -2592,7 +2592,7 @@ export async function runCreate(
     resolvedOptions.priority !== undefined
       ? ensurePriority(resolvedOptions.priority)
       : 2;
-  const unsetKeys = unsetTargets.frontMatterKeys;
+  const unsetKeys = unsetTargets.metadataKeys;
   const tags = resolveCreateTags(unsetKeys, resolvedOptions);
   const deadline = resolveUnsettableTransformed(
     unsetKeys,
@@ -2845,7 +2845,7 @@ export async function runCreate(
     status === statusRegistry.close_status ? nowValue : undefined;
   validationWarnings.push(...closeReasonResolution.warnings);
 
-  const frontMatter: ItemMetadata = normalizeFrontMatter({
+  const itemMetadata: ItemMetadata = normalizeItemMetadata({
     id,
     title,
     description,
@@ -2906,7 +2906,7 @@ export async function runCreate(
   });
   try {
     applyRegisteredItemFieldDefaultsAndValidation(
-      frontMatter as unknown as Record<string, unknown>,
+      itemMetadata as unknown as Record<string, unknown>,
       extensionRegistrations,
     );
   } catch (error: unknown) {
@@ -2922,7 +2922,7 @@ export async function runCreate(
 
   const afterDocument: ItemDocument = canonicalDocument(
     {
-      metadata: frontMatter,
+      metadata: itemMetadata,
       body,
     },
     { schema: settings.schema, extensionFieldNames },
@@ -2940,7 +2940,7 @@ export async function runCreate(
     explicitUnsetKeys,
   );
   const changedFields = buildChangedFields(
-    frontMatter,
+    itemMetadata,
     body,
     explicitUnsetKeys,
     [
@@ -2965,7 +2965,7 @@ export async function runCreate(
     nowValue,
   });
 
-  const outputItem = structuredClone(frontMatter);
+  const outputItem = structuredClone(itemMetadata);
 
   // GH-216: nudge agents toward the underutilized in_progress state instead of
   // jumping open -> closed. Only surfaces for workable types created in the open

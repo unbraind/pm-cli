@@ -7,7 +7,7 @@ import { runCopy } from "../../src/cli/commands/copy.js";
 import { runCreate } from "../../src/cli/commands/create.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
-import { listAllFrontMatter } from "../../src/core/store/item-store.js";
+import { listAllItemMetadata } from "../../src/core/store/item-store.js";
 import { readSettings } from "../../src/core/store/settings.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
@@ -157,13 +157,13 @@ describe("runCopy", () => {
   it("removes the partially written item file when history append fails", async () => {
     await withTempPmPath(async (context) => {
       const source = await seedClosedSource(context);
-      const before = await listAllFrontMatter(context.pmPath);
+      const before = await listAllItemMetadata(context.pmPath);
       const historyModule = await import("../../src/core/history/history.js");
       vi.spyOn(historyModule, "appendHistoryEntry").mockRejectedValueOnce(new Error("history-write-failed"));
 
       await expect(runCopy(source.id, {}, { path: context.pmPath })).rejects.toThrow("history-write-failed");
 
-      const after = await listAllFrontMatter(context.pmPath);
+      const after = await listAllItemMetadata(context.pmPath);
       expect(after).toHaveLength(before.length);
       expect(after.map((item) => item.id).sort((left, right) => left.localeCompare(right))).toEqual(
         before.map((item) => item.id).sort((left, right) => left.localeCompare(right)),

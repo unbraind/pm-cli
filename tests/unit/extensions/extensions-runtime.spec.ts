@@ -77,7 +77,7 @@ describe("core/extensions runtime wrappers", () => {
     expect(consumeAfterCommandAffectedItems()).toBeUndefined();
   });
 
-  it("projects compact afterCommand item snapshots from changed front matter", () => {
+  it("projects compact afterCommand item snapshots from changed item metadata", () => {
     const snapshot = projectAfterCommandItemSnapshot(
       {
         id: "pm-one",

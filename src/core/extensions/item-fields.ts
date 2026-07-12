@@ -8,10 +8,10 @@ import {
   normalizeItemFieldType,
   type KnownItemFieldType,
 } from "./item-field-types.js";
-import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
+import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 
-const reservedItemFieldNames = new Set(FRONT_MATTER_KEY_ORDER);
+const reservedItemFieldNames = new Set(ITEM_METADATA_KEY_ORDER);
 
 /** Item metadata keys extension-provided fields may never shadow, exposed without mutation methods. */
 export const RESERVED_ITEM_FIELD_NAMES: ReadonlySet<string> = Object.freeze({
@@ -287,7 +287,7 @@ function isAllowedFieldValue(
 
 /** Implements apply registered item field defaults and validation for the public runtime surface of this module. */
 export function applyRegisteredItemFieldDefaultsAndValidation(
-  frontMatter: Record<string, unknown>,
+  itemMetadata: Record<string, unknown>,
   registrations: ExtensionRegistrationRegistry | null,
   options: { skipDefaultFields?: ReadonlySet<string> } = {},
 ): void {
@@ -303,14 +303,14 @@ export function applyRegisteredItemFieldDefaultsAndValidation(
       }
       assertNotReservedItemFieldName(fieldName);
       if (
-        !(fieldName in frontMatter) &&
+        !(fieldName in itemMetadata) &&
         !options.skipDefaultFields?.has(fieldName) &&
         Object.prototype.hasOwnProperty.call(definition, "default")
       ) {
-        frontMatter[fieldName] = cloneFieldValue(definition.default);
+        itemMetadata[fieldName] = cloneFieldValue(definition.default);
       }
 
-      const currentValue = frontMatter[fieldName];
+      const currentValue = itemMetadata[fieldName];
       if (currentValue === undefined) {
         continue;
       }

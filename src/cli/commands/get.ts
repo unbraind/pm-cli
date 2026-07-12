@@ -14,13 +14,13 @@ import {
 import { isTerminalStatus } from "../../core/item/status.js";
 import {
   EXIT_CODE,
-  FRONT_MATTER_KEY_ORDER,
+  ITEM_METADATA_KEY_ORDER,
 } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import {
   buildItemNotFoundError,
-  listAllFrontMatterLight,
+  listAllItemMetadataLight,
   locateItem,
   readLocatedItem,
 } from "../../core/store/item-store.js";
@@ -32,7 +32,7 @@ import {
 import { readSettings } from "../../core/store/settings.js";
 import { parseIntegerLimit } from "../shared-parsers.js";
 import type {
-  ItemFrontMatter,
+  ItemMetadata,
   LinkedDoc,
   LinkedFile,
   LinkedTest,
@@ -76,7 +76,7 @@ export interface GetResult {
   // for parity with `pm list --include-body`, so agents reliably find it at
   // `.item.body` in JSON output instead of a top-level sibling.
   /** Value that configures or reports item for this contract. */
-  item: Partial<ItemFrontMatter> & { body?: string };
+  item: Partial<ItemMetadata> & { body?: string };
   /** Value that configures or reports linked for this contract. */
   linked?: {
     files: LinkedFile[];
@@ -161,9 +161,9 @@ function parseGetDepth(raw: string | undefined): GetDepth {
 }
 
 function projectItemForDepth(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
   depth: GetDepth,
-): Partial<ItemFrontMatter> {
+): Partial<ItemMetadata> {
   if (depth === "deep") {
     return item;
   }
@@ -210,7 +210,7 @@ function validateGetFields(
     return;
   }
   const itemFields = new Set([
-    ...FRONT_MATTER_KEY_ORDER,
+    ...ITEM_METADATA_KEY_ORDER,
     ...runtimeMetadataKeys,
   ]);
   const allowedRootFields = new Set([
@@ -256,9 +256,9 @@ function validateGetFields(
 }
 
 function projectItemForFields(
-  item: ItemFrontMatter,
+  item: ItemMetadata,
   fields: string[],
-): Partial<ItemFrontMatter> {
+): Partial<ItemMetadata> {
   const source = toItemRecord(item);
   const projected: Record<string, unknown> = {};
   for (const field of fields) {
@@ -274,7 +274,7 @@ function projectItemForFields(
     }
     projected[normalized] = source[normalized];
   }
-  return projected as Partial<ItemFrontMatter>;
+  return projected as Partial<ItemMetadata>;
 }
 
 function fieldsInclude(fields: string[] | null, name: string): boolean {
@@ -299,7 +299,7 @@ interface GetItemContext {
   settings: Awaited<ReturnType<typeof readSettings>>;
   typeToFolder: Record<string, string>;
   locatedId: string;
-  metadata: ItemFrontMatter;
+  metadata: ItemMetadata;
   body: string;
 }
 
@@ -446,7 +446,7 @@ async function buildGetChildrenRollup(
     return undefined;
   }
   const statusRegistry = resolveRuntimeStatusRegistry(context.settings.schema);
-  const corpus = await listAllFrontMatterLight(
+  const corpus = await listAllItemMetadataLight(
     context.pmRoot,
     context.settings.item_format,
     context.typeToFolder,

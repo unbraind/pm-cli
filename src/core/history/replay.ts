@@ -4,7 +4,7 @@
  * Implements append-only history and replay behavior for Replay.
  */
 import jsonPatch from "fast-json-patch";
-import { FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
+import { ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { canonicalDocument } from "../item/item-format.js";
 import { toItemRecord } from "../item/item-record.js";
 import {
@@ -76,7 +76,7 @@ export function replayToItemDocument(document: ReplayDocument): ItemDocument {
   };
 }
 
-/** Converts a materialized replay document into a canonical item document. Use this when callers have already rejected the empty/deleted replay state and need restored metadata validated through the normal front-matter rules. */
+/** Converts a materialized replay document into a canonical item document. Use this when callers have already rejected the empty/deleted replay state and need restored metadata validated through the normal item-metadata rules. */
 export function replayToCanonicalItemDocument(
   document: ReplayDocument,
   options: Parameters<typeof canonicalDocument>[1] = {},
@@ -96,7 +96,7 @@ export function toReplayDocument(document: ItemDocument): ReplayDocument {
   return {
     metadata: orderObject(
       toItemRecord(canonical.metadata),
-      FRONT_MATTER_KEY_ORDER,
+      ITEM_METADATA_KEY_ORDER,
     ),
     body: canonical.body,
   };

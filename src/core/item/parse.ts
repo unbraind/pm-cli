@@ -64,9 +64,9 @@ export function collectTagFlagValues(
   return Array.from(new Set(collected)).sort((a, b) => a.localeCompare(b));
 }
 
-/** Normalize a base tag list to the canonical form pm stores: trimmed, lowercased, non-empty. Existing front-matter tags are almost always already canonical (parseTags lowercases on write), but legacy or hand-edited `.toon` files can carry mixed-case entries — normalizing here keeps additive and subtractive mutations case-insensitive (so `--add-tags beta` dedupes against an existing `Beta`, and `--remove-tags alpha` removes an existing `Alpha`). */
+/** Normalize a base tag list to the canonical form pm stores: trimmed, lowercased, non-empty. Existing item-metadata tags are almost always already canonical (parseTags lowercases on write), but legacy or hand-edited `.toon` files can carry mixed-case entries — normalizing here keeps additive and subtractive mutations case-insensitive (so `--add-tags beta` dedupes against an existing `Beta`, and `--remove-tags alpha` removes an existing `Alpha`). */
 function normalizeBaseTags(baseTags: readonly string[]): string[] {
-  // Defensive: front-matter parsed from corrupted/hand-edited `.toon` (or an
+  // Defensive: item-metadata parsed from corrupted/hand-edited `.toon` (or an
   // external SDK caller) could pass a non-array or non-string entries despite
   // the `string[]` type — guard the array and skip non-strings rather than
   // throwing on `.filter`/`.trim()`.
@@ -117,7 +117,7 @@ export function applyTagRemovals(
 
 // Agents and MCP callers frequently pass --tags as a JSON array (e.g.
 // `--tags '["a","b"]'`). The MCP server normalizes that upstream, but direct
-// CLI invocations used to write the raw bracket string into front matter,
+// CLI invocations used to write the raw bracket string into item metadata,
 // silently corrupting tags. Accept JSON arrays of primitives transparently.
 function coerceJsonTagArray(trimmed: string): string | null {
   if (!trimmed.startsWith("[")) {
