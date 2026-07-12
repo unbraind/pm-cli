@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: bug,data-loss,gh-issue,schema
 created_at: "2026-07-06T08:03:08.451Z"
-updated_at: "2026-07-11T23:06:28.012Z"
+updated_at: "2026-07-12T06:11:21.405Z"
 closed_at: "2026-07-11T23:06:27.189Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,6 +14,9 @@ acceptance_criteria: Boolean custom fields persist via auto-derived flags on cre
 parent: pm-8jdc
 risk: medium
 confidence: high
+resolution: "Not reproducible on current main (PR#520 verification): four-type isolated regression proof passed; the reported failing key was a reserved-field collision, tracked and fixed by pm-b9ov."
+expected_result: Boolean custom fields persist via auto-derived flags on create and update.
+actual_result: "GH-448 report reproduced only via a reserved-field name collision (pm-b9ov class), not a boolean-persistence defect; typed boolean persistence proven in packed-tarball sandbox."
 comments[2]{created_at,author,text}:
   "2026-07-11T23:05:05.200Z",codex-root,"Implementation start: selected after live all-status duplicate checks, full metadata/comments/notes/learnings review, GitHub issue/PR/security/dependency inspection, and SDK-first frontier reconciliation. This item is actively edited in the broad schema/config/profile/init SDK promotion bundle; unrelated open items remain unclaimed."
   "2026-07-11T23:06:26.400Z",codex-root,"Live verification correction: current main already persists all four runtime custom-field types. Isolated PM_PATH/PM_GLOBAL_PATH proof created custom_bool:boolean=true, custom_number:number=42, custom_string:string=hello, and custom_array:string_array=[a,b]; pm get returned each typed value. GH-448's customer_impact repro instead collides with a built-in create/update field and belongs to pm-b9ov; no boolean coercion code change is warranted."

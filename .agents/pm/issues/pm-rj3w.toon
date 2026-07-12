@@ -6,15 +6,16 @@ status: open
 priority: 2
 tags[3]: "area:telemetry",infra,reliability
 created_at: "2026-06-10T20:00:10.707Z"
-updated_at: "2026-07-04T19:18:11.320Z"
+updated_at: "2026-07-12T06:14:58.725Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: Telemetry worker reconnects to Postgres with backoff after a restart; queued RabbitMQ events drain automatically; runbook documents the recovery path.
 parent: pm-5oj5
 risk: medium
 confidence: high
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-06-25T17:37:16.724Z",codex-gpt5,"Implementation start: duplicate-safe all-status search found pm-rj3w as the only active telemetry worker reconnect item; related historical telemetry and Windows teardown items are closed or verification-gated. Scope is production worker reconnect/health hardening plus operator validation, not a new tracker item."
   "2026-06-25T17:41:04.644Z",codex-gpt5,"Investigation note: the concrete worker reconnect/healthcheck fix surface is scripts/prod/telemetry, which is intentionally git-ignored as private production operations material. I validated the needed local shape (Postgres reconnect after insert connection errors plus worker health state and stall warning), but will not force-add private ops files to a public PR. Releasing this item for a private deployment-path change."
   "2026-06-28T06:26:52.503Z",codex-gpt5,"Investigation note 2026-06-28: revisited during SDK/CLI continuation. Duplicate-safe all-status search still points to pm-rj3w as the canonical telemetry worker reconnect item. The concrete worker material remains under scripts/prod/telemetry as ignored/private production operations files, so it is intentionally not force-added to the public product PR; live telemetry/Sentry gates will still be verified as closeout evidence."
+  "2026-07-12T06:14:58.724Z",maintainer-agent,"Second live occurrence 2026-07-12: pm-telemetry-postgres restarted ~04:00 (host maintenance window; container Up 8h vs worker Up 8d), worker logged continuous worker_insert_failed:the connection is closed, pm.telemetry.events backlogged to 111,382 messages / 1 consumer while Postgres kept serving reads. Remediation applied: docker compose restart telemetry-worker → consumer reattached, queue draining. This defect now has a repeatable operational cost on every Postgres restart — reconnect-with-backoff in the worker insert path remains the fix; consider raising priority."
 body: "## Context\nIncident 2026-06-09/10 on the remote telemetry stack: pm-telemetry-postgres restarted; pm-telemetry-worker kept the dead connection and failed every insert ('worker_insert_failed: the connection is closed') for ~24h. RabbitMQ retained all 15,778 backed-up events (no data loss); manual `docker restart pm-telemetry-worker` drained the backlog in ~2 min.\n\n## Fix (remote stack, scripts/prod/telemetry on the host — NOT in this repo's tracked files)\n1. Worker reconnect/retry with backoff on closed Postgres connection instead of failing forever.\n2. Container healthcheck failing on repeated insert errors so docker auto-restarts.\n3. Optional alert when queue depth grows abnormally (Grafana panel already exists).\nStanding rule: never write host IPs/tokens into tracked files; verify via scripts/prod/telemetry/check-stack-health.sh.\n\n## Definition of done\nKill-postgres drill: worker reconnects unaided and drains the queue; healthcheck restarts a wedged worker; drill evidence recorded here (counts before/after)."

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: bug,gh-issue,schema
 created_at: "2026-07-06T08:03:11.164Z"
-updated_at: "2026-07-11T23:15:26.887Z"
+updated_at: "2026-07-12T06:11:17.910Z"
 closed_at: "2026-07-11T23:15:24.613Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,6 +14,9 @@ acceptance_criteria: add-field fails fast on reserved/built-in names with the re
 parent: pm-8jdc
 risk: medium
 confidence: high
+resolution: "Fixed in PR#520: reserved-field list derived from canonical front-matter metadata; add-field and runtime collisions fail fast naming both claimants with rename hint."
+expected_result: "Reserved/built-in schema field names rejected at registration and use, with the full reserved list and both claimants named."
+actual_result: Collisions failed silently or named no partner; ops-profile keys like customer_impact/expected_result were missing from the denylist.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-ghf1,related,"2026-07-06T08:03:11.164Z",null,null
 comments[2]{created_at,author,text}:
