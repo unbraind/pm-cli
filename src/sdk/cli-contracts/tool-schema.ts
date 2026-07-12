@@ -643,6 +643,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       optional: [
         "text",
         "add",
+        "stdin",
+        "file",
+        "edit",
+        "delete",
         "limit",
         "allowAuditNote",
         "allowAuditComment",
@@ -654,6 +658,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       optional: [
         "text",
         "add",
+        "stdin",
+        "file",
+        "edit",
+        "delete",
         "limit",
         "allowAuditLearning",
         "allowAuditComment",

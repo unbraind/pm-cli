@@ -16,7 +16,7 @@ import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { resolveAuthor } from "../../core/shared/author.js";
-import { wrapOwnershipConflict } from "./annotation-command.js";
+import { wrapOwnershipConflict } from "../../sdk/annotations.js";
 import { runNext, type NextRecommendation, type NextOptions } from "./next.js";
 
 /** Stable warning/error code for an exhausted atomic next-work walk. */

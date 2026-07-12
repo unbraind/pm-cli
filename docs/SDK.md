@@ -33,6 +33,7 @@ Source of truth:
 
 - [`src/sdk/index.ts`](../src/sdk/index.ts)
 - [`src/sdk/runtime.ts`](../src/sdk/runtime.ts)
+- [`src/sdk/annotations.ts`](../src/sdk/annotations.ts)
 - [`src/sdk/cli-contracts.ts`](../src/sdk/cli-contracts.ts)
 - [`src/sdk/cli-contracts/commander-types.ts`](../src/sdk/cli-contracts/commander-types.ts)
 - [`src/sdk/cli-contracts/commander-mutation-options.ts`](../src/sdk/cli-contracts/commander-mutation-options.ts)
@@ -111,6 +112,7 @@ Command/action contract exports:
 - Context relevance contracts: `ContextRelevanceCandidate`, `ContextRelevanceSignals`, `ContextRelevanceScorer`, `ContextRelevanceReport`, `ContextEvaluationReader`, `ContextEvaluationScenario`, `ContextEvaluationScenarioReport`, `ContextEvaluationThresholds`, and `ContextEvaluationCorpusReport`
 - Typed annotation and relationship primitives on `PmClient`: `comments`, `notes`, `learnings`, `files`, `filesDiscover`, `docs`, `deps`, and `append`
 - Annotation and relationship option/result contracts: `CommentsCommandOptions` / `CommentsResult`, `NotesCommandOptions` / `NotesResult`, `LearningsCommandOptions` / `LearningsResult`, `FilesCommandOptions` / `FilesResult`, `FilesDiscoverOptions` / `FilesDiscoverResult`, `DocsCommandOptions` / `DocsResult`, `DepsCommandOptions` / `DepsResult`, `AppendCommandOptions` / `AppendResult`
+- Annotation kernel primitives: `resolveAnnotationInput`, `runAnnotationCommand`, `resolveAnnotationIndex`, `parseAnnotationTextInput`, and their typed input/config/result contracts
 - Typed customization primitives on `PmClient`: `init`, `config`, `schema`, `schemaList`, `schemaShow`, `schemaAddType`, `schemaRemoveType`, `schemaAddStatus`, `schemaRemoveStatus`, `schemaAddField`, `schemaRemoveField`, `schemaListFields`, `schemaShowField`, `schemaApplyPreset`, `schemaInferTypes`, `schemaShowStatus`, `profile`, `profileList`, `profileShow`, `profileApply`, and `profileLint`
 - Workspace-scaffold primitives: `ensurePmGitignore` and `getPmGitignoreBlock` let custom tools apply the same idempotent runtime/search cache policy as `pm init` without importing CLI internals.
 - Customization primitive option/result contracts: `InitCommandOptions` / `InitResult`, `ConfigCommandOptions` / `ConfigResult`, `SchemaSubcommand` / `SchemaResult` / `SchemaInspectResult`, `SchemaListResult`, `SchemaShowResult`, `SchemaAddTypeResult`, `SchemaRemoveTypeResult`, `SchemaAddStatusResult`, `SchemaRemoveStatusResult`, `SchemaAddFieldResult`, `SchemaRemoveFieldResult`, `SchemaListFieldsResult`, `SchemaShowFieldResult`, `SchemaApplyPresetResult`, `SchemaAddTypeInferResult`, `SchemaShowStatusResult`, `ProfileSubcommand` / `ProfileResult`, `ProfileListResult`, `ProfileShowResult`, `ProfileApplyResult`, `ProfileLintResult`
@@ -579,6 +581,10 @@ embedded agent, package, or custom UI needs to add durable rationale, link
 changed files/docs/tests, or inspect the item graph. `pm.filesDiscover` exposes
 the same file-candidate discovery used by the CLI, so a custom tool can present
 reviewable link suggestions instead of scraping git output itself.
+Comments, notes, and learnings share the exported annotation kernel, including
+plain/stdin/file input resolution, one-based edit/delete semantics, ownership
+guidance, history mutation metadata, and stable list pagination. Package authors
+can build custom annotation presentation layers without importing CLI modules.
 
 Customization convenience methods are the SDK baseline for project-specific pm
 tools. `pm.init` stages a tracker, `pm.config` reads/writes settings,

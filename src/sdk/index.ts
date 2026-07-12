@@ -3,6 +3,22 @@
  *
  * Defines public SDK APIs and package-author helpers for Index.
  */
+export {
+  limitAnnotationEntries,
+  parseAnnotationTextInput,
+  readAnnotationEntries,
+  resolveAnnotationInput,
+  resolveAnnotationIndex,
+  runAnnotationCommand,
+  wrapOwnershipConflict,
+  type AnnotationCommandConfig,
+  type AnnotationCommandOptions,
+  type AnnotationCommandResult,
+  type AnnotationEntry,
+  type AnnotationInput,
+  type AnnotationSourceOptions,
+  type OwnershipConflictGuidance,
+} from "./annotations.js";
 import {
   EXTENSION_CAPABILITY_CONTRACT,
   EXTENSION_CAPABILITY_CONTRACT_VERSION,

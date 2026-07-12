@@ -22367,6 +22367,23 @@
             ],
             "type": "string"
           },
+          "delete": {
+            "description": "For comments action, delete the comment at this 1-based index.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "edit": {
+            "description": "For comments action, replace the comment at this 1-based index with the supplied replacement text (add/stdin/file).",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "file": {
+            "description": "Path to input file for actions that read payload text, such as comments --file.",
+            "examples": [
+              "notes/comment.md"
+            ],
+            "type": "string"
+          },
           "force": {
             "description": "Force.",
             "type": "boolean"
@@ -22423,6 +22440,10 @@
           },
           "quiet": {
             "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "stdin": {
+            "description": "When true for comments action, read comment text from piped stdin (supports multiline markdown).",
             "type": "boolean"
           },
           "text": {
@@ -22473,6 +22494,23 @@
             ],
             "type": "string"
           },
+          "delete": {
+            "description": "For comments action, delete the comment at this 1-based index.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "edit": {
+            "description": "For comments action, replace the comment at this 1-based index with the supplied replacement text (add/stdin/file).",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "file": {
+            "description": "Path to input file for actions that read payload text, such as comments --file.",
+            "examples": [
+              "notes/comment.md"
+            ],
+            "type": "string"
+          },
           "force": {
             "description": "Force.",
             "type": "boolean"
@@ -22529,6 +22567,10 @@
           },
           "quiet": {
             "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "stdin": {
+            "description": "When true for comments action, read comment text from piped stdin (supports multiline markdown).",
             "type": "boolean"
           },
           "text": {

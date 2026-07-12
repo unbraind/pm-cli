@@ -4,17 +4,25 @@
  * Implements the pm learnings command surface and its agent-facing runtime behavior.
  */
 import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { createStdinTokenResolver } from "../../core/item/parse.js";
 import type { LogNote } from "../../types/index.js";
 import {
   parseAnnotationTextInput,
+  resolveAnnotationInput,
   runAnnotationCommand,
-} from "./annotation-command.js";
+} from "../../sdk/annotations.js";
 
 /** Documents the learnings command options payload exchanged by command, SDK, and package integrations. */
 export interface LearningsCommandOptions {
   /** Value that configures or reports add for this contract. */
   add?: string;
+  /** Read learning text from stdin. */
+  stdin?: boolean;
+  /** Read learning text from a UTF-8 file. */
+  file?: string;
+  /** Replace the learning at this one-based index. */
+  edit?: number;
+  /** Delete the learning at this one-based index. */
+  delete?: number;
   /** Value that configures or reports limit for this contract. */
   limit?: string;
   /** Value that configures or reports author for this contract. */
@@ -45,25 +53,12 @@ export async function runLearnings(
   options: LearningsCommandOptions,
   global: GlobalOptions,
 ): Promise<LearningsResult> {
-  const stdinResolver = createStdinTokenResolver();
-  const addInput =
-    options.add === undefined
-      ? undefined
-      : await stdinResolver.resolveValue(options.add, "--add");
-
   return runAnnotationCommand<"learnings", LogNote>(id, options, global, {
-    // addInput is defined whenever options.add is defined (see resolveValue), so the cast is safe.
-    input:
-      options.add === undefined
-        ? { mode: "list" }
-        : {
-            mode: "add",
-            value: addInput as string,
-            rawValue: options.add,
-            emptyFlag: "--add",
-          },
+    input: await resolveAnnotationInput(options, "learning"),
     collectionKey: "learnings",
     op: "learning_add",
+    editOp: "learning_edit",
+    deleteOp: "learning_delete",
     parseText: (raw) => parseAnnotationTextInput(raw),
     allowAuditBypass: Boolean(
       options.allowAuditLearning || options.allowAuditComment,

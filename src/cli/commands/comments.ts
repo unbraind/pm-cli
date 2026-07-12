@@ -12,7 +12,7 @@ import type { Comment } from "../../types/index.js";
 import {
   parseAnnotationTextInput,
   runAnnotationCommand,
-} from "./annotation-command.js";
+} from "../../sdk/annotations.js";
 
 /** Documents the comments command options payload exchanged by command, SDK, and package integrations. */
 export interface CommentsCommandOptions {

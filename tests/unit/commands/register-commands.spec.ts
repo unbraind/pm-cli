@@ -2248,17 +2248,18 @@ describe("mutation command actions", () => {
     await runCli("comments", "pm-1", "--file", "/tmp/comment.md");
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runComments) as never, 1).file).toBe("/tmp/comment.md");
 
-    await runCli("notes", "pm-1", "--add", "noted", "--limit", "3", "--author", "agent", "--message", "m");
+    await runCli("notes", "pm-1", "--edit", "2", "--file", "/tmp/note.md", "--limit", "3", "--author", "agent", "--message", "m");
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1)).toMatchObject({
-      add: "noted",
+      edit: 2,
+      file: "/tmp/note.md",
       limit: "3",
       author: "agent",
       message: "m",
     });
 
-    await runCli("learnings", "pm-1", "--add", "learned", "--limit", "2", "--author", "agent", "--message", "m");
+    await runCli("learnings", "pm-1", "--delete", "1", "--limit", "2", "--author", "agent", "--message", "m");
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runLearnings) as never, 1)).toMatchObject({
-      add: "learned",
+      delete: 1,
       limit: "2",
       author: "agent",
       message: "m",

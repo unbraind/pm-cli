@@ -4,17 +4,25 @@
  * Implements the pm notes command surface and its agent-facing runtime behavior.
  */
 import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { createStdinTokenResolver } from "../../core/item/parse.js";
 import type { LogNote } from "../../types/index.js";
 import {
   parseAnnotationTextInput,
+  resolveAnnotationInput,
   runAnnotationCommand,
-} from "./annotation-command.js";
+} from "../../sdk/annotations.js";
 
 /** Documents the notes command options payload exchanged by command, SDK, and package integrations. */
 export interface NotesCommandOptions {
   /** Value that configures or reports add for this contract. */
   add?: string;
+  /** Read note text from stdin. */
+  stdin?: boolean;
+  /** Read note text from a UTF-8 file. */
+  file?: string;
+  /** Replace the note at this one-based index. */
+  edit?: number;
+  /** Delete the note at this one-based index. */
+  delete?: number;
   /** Value that configures or reports limit for this contract. */
   limit?: string;
   /** Value that configures or reports author for this contract. */
@@ -45,25 +53,12 @@ export async function runNotes(
   options: NotesCommandOptions,
   global: GlobalOptions,
 ): Promise<NotesResult> {
-  const stdinResolver = createStdinTokenResolver();
-  const addInput =
-    options.add === undefined
-      ? undefined
-      : await stdinResolver.resolveValue(options.add, "--add");
-
   return runAnnotationCommand<"notes", LogNote>(id, options, global, {
-    // addInput is defined whenever options.add is defined (see resolveValue), so the cast is safe.
-    input:
-      options.add === undefined
-        ? { mode: "list" }
-        : {
-            mode: "add",
-            value: addInput as string,
-            rawValue: options.add,
-            emptyFlag: "--add",
-          },
+    input: await resolveAnnotationInput(options, "note"),
     collectionKey: "notes",
     op: "note_add",
+    editOp: "note_edit",
+    deleteOp: "note_delete",
     parseText: (raw) => parseAnnotationTextInput(raw),
     allowAuditBypass: Boolean(
       options.allowAuditNote || options.allowAuditComment,

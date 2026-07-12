@@ -243,6 +243,40 @@ describe.each(TARGETS)("run%s", (target) => {
     });
   });
 
+  it("adds from explicit stdin and files, then edits and deletes with history-safe indices", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, `${target.name}-repair-parity`);
+      const stdin = new PassThrough();
+      stdin.end("entry from explicit stdin\n");
+      Object.defineProperty(stdin, "isTTY", { value: false, configurable: true });
+      vi.spyOn(process, "stdin", "get").mockReturnValue(stdin as unknown as NodeJS.ReadStream);
+      await target.run(id, { stdin: true }, { path: context.pmPath });
+
+      const filePath = path.join(context.pmPath, `${target.name}.md`);
+      await writeFile(filePath, "entry from file\n", "utf8");
+      await target.run(id, { file: filePath }, { path: context.pmPath });
+      const edited = await target.run(
+        id,
+        { edit: 1, add: "corrected entry", message: "repair annotation" },
+        { path: context.pmPath },
+      );
+      expect(extractEntries(target, edited)[0]).toMatchObject({ text: "corrected entry" });
+      expect(extractEntries(target, edited)[0]).toHaveProperty("edited_at");
+
+      const deleted = await target.run(id, { delete: 2 }, { path: context.pmPath });
+      expect(extractEntries(target, deleted).map((entry) => entry.text)).toEqual(["corrected entry"]);
+
+      await expect(target.run(id, { edit: 1 }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--edit requires replacement text"),
+      });
+      await expect(target.run(id, { delete: 1, add: "invalid" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--delete cannot be combined"),
+      });
+    });
+  });
+
   it("rejects flag-like --add values before they become stored annotation text", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, `${target.name}-flag-like-add`);
