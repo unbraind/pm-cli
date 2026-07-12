@@ -3,7 +3,6 @@
 import { execFileSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
-/* v8 ignore start -- exercised end-to-end through the authenticated gh CLI */
 function runGh(args, input) {
   return execFileSync("gh", args, {
     encoding: "utf8",
@@ -21,7 +20,6 @@ function usage(message) {
   node scripts/reviews/pr-review-loop.mjs reply-top --body <text> [--pr <number>] [--repo <owner/name>]`);
   process.exit(2);
 }
-/* v8 ignore stop */
 
 export function parseArgs(argv) {
   const [command = "inventory", ...rest] = argv;
@@ -184,8 +182,6 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
   }
 }
 
-/* v8 ignore start -- direct CLI entrypoint */
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }
-/* v8 ignore stop */

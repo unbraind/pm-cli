@@ -12822,7 +12822,7 @@
             "type": "string"
           },
           "unset": {
-            "description": "Repeatable list of front-matter fields to clear explicitly during create/update mutations.",
+            "description": "Repeatable list of item-metadata fields to clear explicitly during create/update mutations.",
             "examples": [
               [
                 "deadline",
@@ -20445,7 +20445,7 @@
             "type": "string"
           },
           "unset": {
-            "description": "Repeatable list of front-matter fields to clear explicitly during create/update mutations.",
+            "description": "Repeatable list of item-metadata fields to clear explicitly during create/update mutations.",
             "examples": [
               [
                 "deadline",
@@ -21167,7 +21167,7 @@
             "type": "string"
           },
           "unset": {
-            "description": "Repeatable list of front-matter fields to clear explicitly during create/update mutations.",
+            "description": "Repeatable list of item-metadata fields to clear explicitly during create/update mutations.",
             "examples": [
               [
                 "deadline",
