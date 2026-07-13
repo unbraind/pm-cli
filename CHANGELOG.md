@@ -4,6 +4,7 @@
 
 ### Added
 
+- Bare-core audit extraction phase 2: move audit command implementations and audit flags out of default CLI/SDK into pm-governance-audit ([pm-vjk3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-vjk3.toon))
 - Cursor pagination and bounded-output defaults for list/search/context at scale ([pm-dfg0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-dfg0.toon))
 - Notes/learnings repair parity: add --edit/--delete (and a real --stdin/--file input source) matching comments, so bad annotation entries are fixable via the CLI ([pm-a2h3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-a2h3.toon))
 
@@ -20,6 +21,8 @@
 
 ### Other
 
+- Extract governance audit runtime from the default CLI and SDK ([pm-w1c0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-w1c0.toon))
+- S5: coverage migration + bare-core vs installed-plugin e2e verification for the audit extraction ([pm-rxp1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-rxp1.toon))
 - S4: purge audit surface from default SDK contracts, MCP tool definitions, completion, help, and docs; package declares its own contracts; re-measure token surface ([pm-kg18](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kg18.toon))
 - Promote terminal-status and mutation runner primitives required by package-owned governance workflows ([pm-yu6d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yu6d.toon))
 - Decision: extension-point mechanism and bare-core fallback semantics for extracted audit flags (D1+D2 of pm-vjk3) ([pm-fg0b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-fg0b.toon))

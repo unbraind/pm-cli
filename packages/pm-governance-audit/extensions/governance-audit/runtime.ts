@@ -9,14 +9,17 @@ import {
   readStringOption,
   type GlobalOptions,
 } from "./sdk.ts";
-import { runCommentsAudit } from "./comments-audit.ts";
-import { runDedupeAudit } from "./dedupe-audit.ts";
-import { runDedupeMerge } from "./dedupe-merge.ts";
+import {
+  runCommentsAudit,
+  type CommentsAuditOptions,
+} from "./comments-audit.ts";
+import { runDedupeAudit, type DedupeAuditOptions } from "./dedupe-audit.ts";
+import { runDedupeMerge, type DedupeMergeOptions } from "./dedupe-merge.ts";
 import { runNormalize, type NormalizeCommandOptions } from "./normalize.ts";
 
 function normalizeDedupeAuditOptions(
   raw: Record<string, unknown>,
-): Record<string, unknown> {
+): DedupeAuditOptions {
   return {
     mode: readStringOption(raw, "mode"),
     status: readStringOption(raw, "status"),
@@ -41,7 +44,7 @@ function normalizeDedupeAuditOptions(
 
 function normalizeDedupeMergeOptions(
   raw: Record<string, unknown>,
-): Record<string, unknown> {
+): DedupeMergeOptions {
   return {
     keep: readStringOption(raw, "keep"),
     close: readCsvListOption(raw, "close"),
@@ -60,7 +63,7 @@ function normalizeDedupeMergeOptions(
 
 function normalizeCommentsAuditOptions(
   raw: Record<string, unknown>,
-): Record<string, unknown> {
+): CommentsAuditOptions {
   return {
     status: readStringOption(raw, "status"),
     type: readStringOption(raw, "type"),
@@ -133,12 +136,7 @@ export async function runDedupeAuditPackage(
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<unknown> {
-  return runDedupeAudit(
-    normalizeDedupeAuditOptions(options) as Parameters<
-      typeof runDedupeAudit
-    >[0],
-    global,
-  );
+  return runDedupeAudit(normalizeDedupeAuditOptions(options), global);
 }
 
 /** Executes the dedupe merge package operation through the package runtime. */
@@ -146,12 +144,7 @@ export async function runDedupeMergePackage(
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<unknown> {
-  return runDedupeMerge(
-    normalizeDedupeMergeOptions(options) as Parameters<
-      typeof runDedupeMerge
-    >[0],
-    global,
-  );
+  return runDedupeMerge(normalizeDedupeMergeOptions(options), global);
 }
 
 /** Executes the comments audit package operation through the package runtime. */
@@ -159,12 +152,7 @@ export async function runCommentsAuditPackage(
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<unknown> {
-  return runCommentsAudit(
-    normalizeCommentsAuditOptions(options) as Parameters<
-      typeof runCommentsAudit
-    >[0],
-    global,
-  );
+  return runCommentsAudit(normalizeCommentsAuditOptions(options), global);
 }
 
 /** Executes the normalize package operation through the package runtime. */
