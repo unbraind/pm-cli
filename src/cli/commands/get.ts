@@ -30,6 +30,7 @@ import {
   resolvePmRoot,
 } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { recordContextUsageTouches } from "../../sdk/context-usage.js";
 import { parseIntegerLimit } from "../shared-parsers.js";
 import type {
   ItemMetadata,
@@ -545,5 +546,17 @@ export async function runGet(
     projection.treeDepth,
     global,
   );
+  try {
+    await recordContextUsageTouches({
+      pmRoot: context.pmRoot,
+      author:
+        (process.env.PM_AUTHOR ?? context.settings.author_default).trim() ||
+        "unknown",
+      itemIds: [context.locatedId],
+      intent: "get",
+    });
+  } catch {
+    // Derived usage feedback must never make the source-of-truth read fail.
+  }
   return result;
 }

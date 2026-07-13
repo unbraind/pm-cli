@@ -80,6 +80,29 @@
       "required_keys": ["returning-anchor"],
       "continuity_keys": ["returning-anchor", "support"],
       "token_budget": 2000
+    },
+    {
+      "id": "served-then-used-feedback",
+      "surface": "context",
+      "rationale": "An item acted on after serving should outrank an otherwise equivalent served-and-ignored item without excluding exploration candidates.",
+      "workspace": {
+        "items": [
+          { "key": "used", "title": "Used context candidate", "description": "Agent acted on this candidate", "type": "Task", "status": "open", "priority": "2" },
+          { "key": "ignored", "title": "Ignored context candidate", "description": "Agent did not act on this candidate", "type": "Task", "status": "open", "priority": "2" },
+          { "key": "explore-a", "title": "Exploration candidate A", "description": "Unseen low-priority candidate", "type": "Task", "status": "open", "priority": "4" },
+          { "key": "explore-b", "title": "Exploration candidate B", "description": "Unseen low-priority candidate", "type": "Task", "status": "open", "priority": "4" },
+          { "key": "explore-c", "title": "Exploration candidate C", "description": "Unseen low-priority candidate", "type": "Task", "status": "open", "priority": "4" }
+        ]
+      },
+      "usage_feedback": {
+        "served_keys": ["used", "ignored"],
+        "touched_keys": ["used"]
+      },
+      "options": { "limit": "5" },
+      "judgments": { "used": 3, "ignored": 0, "explore-a": 0, "explore-b": 0, "explore-c": 0 },
+      "required_keys": ["used"],
+      "continuity_keys": [],
+      "token_budget": 1200
     }
   ]
 }

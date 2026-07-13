@@ -37,9 +37,11 @@ describe("core/extensions runtime wrappers", () => {
     clearActiveExtensionHooks();
   });
 
-  it("records afterCommand affected items only when afterCommand hooks are active", () => {
+  it("records affected items for usage feedback even when extension hooks are inactive", () => {
     recordAfterCommandAffectedItem({ id: "pm-skip", op: "update", status: "open" });
-    expect(consumeAfterCommandAffectedItems()).toBeUndefined();
+    expect(consumeAfterCommandAffectedItems()).toEqual([
+      { id: "pm-skip", op: "update", status: "open" },
+    ]);
 
     setActiveExtensionHooks({
       beforeCommand: [],

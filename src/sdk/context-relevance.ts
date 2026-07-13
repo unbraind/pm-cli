@@ -19,6 +19,7 @@ export const CONTEXT_RELEVANCE_SIGNAL_NAMES = [
   "deadline_pressure",
   "knowledge_density",
   "author_affinity",
+  "usage_affinity",
   "semantic_similarity",
 ] as const;
 
@@ -121,6 +122,7 @@ const DEFAULT_CONTEXT_RELEVANCE_WEIGHTS: Record<
   deadline_pressure: 0.45,
   knowledge_density: 0.25,
   author_affinity: 0.2,
+  usage_affinity: 0.3,
   semantic_similarity: 0.5,
 };
 const JSON_TOKEN_ENCODER = new TextEncoder();

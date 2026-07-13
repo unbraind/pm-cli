@@ -4,6 +4,7 @@
 
 ### Added
 
+- Context usage feedback signal: served-then-acted-on outcomes strengthen relevance scoring (retrieval-practice effect) ([pm-uwfs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-uwfs.toon))
 - GH-544: linked-file path anchoring — files/docs add/glob/discover/validate-paths resolve at process.cwd() while validate --check-files anchors at the workspace root ([pm-chyh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-chyh.toon))
 
 ### Changed
@@ -23,6 +24,7 @@
 
 ### Other
 
+- Token-budget context packer: diversity-aware selection, projection degradation, and bounded output for pm context/next ([pm-55ra](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-55ra.toon))
 - Complete public linked-resource SDK primitives and actionable dependency governance ([pm-jcvg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jcvg.toon))
 
 ## 2026.7.13 - 2026-07-13

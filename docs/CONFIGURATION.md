@@ -99,6 +99,7 @@ pm config project set schema_unknown_field_policy reject   # (schema.unknown_fie
 | `PM_LOCK_WAIT_MS` | per-process override for `locks.wait_ms`; non-negative integer milliseconds, with `0` restoring fail-fast lock conflicts |
 | `PM_OLLAMA_MODEL` | choose default Ollama embedding model |
 | `PM_DISABLE_OLLAMA_AUTO_DEFAULTS` | disable implicit Ollama search defaults |
+| `PM_CONTEXT_USAGE_DISABLED` | set to `1` to disable the derived context/next usage-feedback ledger with zero filesystem reads or writes |
 
 For command-level tracker targeting, prefer `--pm-path <tracker-root>`. The old
 `--path` flag is still accepted, but it means the pm tracker storage directory

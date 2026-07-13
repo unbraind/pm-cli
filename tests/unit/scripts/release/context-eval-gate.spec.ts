@@ -223,7 +223,7 @@ describe("context evaluation gate", () => {
     const gate = await loadGate();
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     delete process.env.PM_AUTHOR;
-    await expect(gate.main()).resolves.toMatchObject({ scenario_count: 4, passed: true });
+    await expect(gate.main()).resolves.toMatchObject({ scenario_count: 5, passed: true });
     expect(process.env.PM_AUTHOR).toBeUndefined();
   });
 
@@ -310,5 +310,22 @@ describe("context evaluation gate", () => {
       }],
     }));
     await expect(gate.main(["--corpus", corpusPath, "--baseline", baselinePath])).rejects.toThrow("EXIT:1");
+
+    for (const usage_feedback of [
+      { served_keys: ["missing"], touched_keys: [] },
+      { served_keys: ["known"], touched_keys: ["missing"] },
+    ]) {
+      await writeFile(corpusPath, JSON.stringify({
+        ...corpus,
+        scenarios: [{
+          ...corpus.scenarios[0],
+          workspace: {
+            items: [{ key: "known", title: "Known", description: "Known", type: "Task", status: "open", priority: 1 }],
+          },
+          usage_feedback,
+        }],
+      }));
+      await expect(gate.main(["--corpus", corpusPath, "--baseline", baselinePath])).rejects.toThrow("EXIT:1");
+    }
   });
 });

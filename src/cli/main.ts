@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 /**
  * @module cli/main
- *
- * Provides CLI runtime support for Main.
  */
 import { Command } from "commander";
 import {
   activateExtensions,
   clearActiveExtensionHooks,
+  createCoreCommandHookContext,
   resetActiveExtensionRuntimeState,
   createEmptyExtensionRegistrationRegistry,
   discoverExtensions,
@@ -32,6 +31,7 @@ import {
   type ExtensionCommandRegistry,
   type ExtensionDiscoveryResult,
   type ExtensionHookRegistry,
+  type ActiveExtensionHookContext,
   type ExtensionParserRegistry,
   type ExtensionPreflightRegistry,
   type ExtensionServiceRegistry,
@@ -94,6 +94,7 @@ import {
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { PmSettings } from "../types/index.js";
 import { resolveSubcommandFlagContractsForCommand } from "../sdk/cli-contracts.js";
+import { recordContextUsageTouches } from "../sdk/context-usage.js";
 import {
   coerceLooseCommandOptionsWithFlagDefinitions,
   collectLooseCommandOptionKeysForDefinitions,
@@ -186,22 +187,11 @@ if (
   process.env[PM_PACKAGE_ROOT_ENV] = resolvePmPackageRoot();
 }
 
-interface ActiveExtensionHookContext {
-  hooks: ExtensionHookRegistry;
-  commandName: string;
-  commandArgs: string[];
-  commandOptions: Record<string, unknown>;
-  globalOptions: GlobalOptions;
-  pmRoot: string;
-  profileEnabled: boolean;
-  migrationBlockers: MandatoryMigrationBlocker[];
-}
-
-let activeExtensionHookContext: ActiveExtensionHookContext | null = null;
+let activeExtensionHookContext: ActiveExtensionHookContext<MandatoryMigrationBlocker> | null = null;
 let activeTelemetryCommandContext: ActiveTelemetryCommand | null = null;
 
 function setActiveExtensionHookContextForTest(
-  context: ActiveExtensionHookContext | null,
+  context: ActiveExtensionHookContext<MandatoryMigrationBlocker> | null,
 ): void {
   activeExtensionHookContext = context;
 }
@@ -785,18 +775,31 @@ async function runAndClearAfterCommandHooks(
   }
 
   let hookWarnings: string[] = [];
+  const affected = consumeAfterCommandAffectedItems();
   try {
-    hookWarnings = await runAfterCommandHooks(runtime.hooks, {
-      command: runtime.commandName,
-      args: runtime.commandArgs,
-      options: { ...runtime.commandOptions },
-      global: { ...runtime.globalOptions },
-      pm_root: runtime.pmRoot,
-      ok: outcome.ok,
-      error: outcome.error,
-      result: getActiveCommandResult(),
-      affected: consumeAfterCommandAffectedItems(),
+    await recordContextUsageTouches({
+      pmRoot: runtime.pmRoot,
+      author: process.env.PM_AUTHOR ?? "unknown",
+      itemIds: outcome.ok ? (affected?.map((item) => item.id) ?? []) : [],
+      intent: runtime.commandName,
     });
+  } catch {
+    hookWarnings.push("context_usage_feedback_write_failed");
+  }
+  try {
+    hookWarnings.push(
+      ...(await runAfterCommandHooks(runtime.hooks, {
+        command: runtime.commandName,
+        args: runtime.commandArgs,
+        options: { ...runtime.commandOptions },
+        global: { ...runtime.globalOptions },
+        pm_root: runtime.pmRoot,
+        ok: outcome.ok,
+        error: outcome.error,
+        result: getActiveCommandResult(),
+        affected,
+      })),
+    );
   } catch (error) {
     /* c8 ignore next */
     const message = error instanceof Error ? error.message : String(error);
@@ -2557,6 +2560,13 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   );
   const runtimeExtensions = await maybeLoadRuntimeExtensions(actionCommand);
   if (!runtimeExtensions) {
+    activeExtensionHookContext = createCoreCommandHookContext({
+      commandName: commandPath,
+      commandArgs,
+      commandOptions,
+      globalOptions,
+      pmRoot: fallbackPmRoot,
+    });
     activeTelemetryCommandContext = await startTelemetryCommand({
       command: commandPath,
       pm_version: CLI_VERSION,
