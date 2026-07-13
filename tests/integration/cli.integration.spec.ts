@@ -5945,6 +5945,36 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(createResult.code).toBe(0);
       const id = (createResult.json as { item: { id: string } }).item.id;
 
+      const updateConflict = context.runCli([
+        "update",
+        id,
+        "--priority",
+        "2",
+        "--author",
+        "owner-b",
+      ]);
+      expect(updateConflict.code).toBe(4);
+      expect(updateConflict.stderr).toContain("assigned to");
+
+      const auditedUpdate = context.runCli(
+        [
+          "update",
+          id,
+          "--priority",
+          "2",
+          "--author",
+          "owner-b",
+          "--allow-audit-update",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(auditedUpdate.code).toBe(0);
+      expect(auditedUpdate.json).toMatchObject({
+        item: { priority: 2, assignee: "owner-a" },
+        audit_update: true,
+      });
+
       const releaseConflict = context.runCli(["release", id, "--author", "owner-b"]);
       expect(releaseConflict.code).toBe(4);
       expect(releaseConflict.stderr).toContain("assigned to");

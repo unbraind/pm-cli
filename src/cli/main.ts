@@ -125,6 +125,7 @@ import {
   getGlobalOptions,
   invalidateSearchCachesForMutation,
   setResolvedGlobalOptions,
+  syncCommanderActionOptions,
 } from "./registration-helpers.js";
 import type { registerSetupCommands as RegisterSetupCommandsFn } from "./register-setup.js";
 import type { registerListQueryCommands as RegisterListQueryCommandsFn } from "./register-list-query.js";
@@ -2235,9 +2236,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         globalOptions = await applyDefaultOutputFormat(globalOptions);
         setResolvedGlobalOptions(actionCommand, globalOptions);
         syncCommanderActionArgs(actionCommand, actionArgs, commandArgs);
-        for (const [key, value] of Object.entries(commandOptions)) {
-          actionCommand.setOptionValueWithSource(key, value, "cli");
-        }
+        syncCommanderActionOptions(actionCommand, commandOptions);
         setActiveCommandResult(undefined);
         setActiveCommandContext({
           command: commandPath,
@@ -2615,6 +2614,7 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   commandArgs = parserOverride.context.args;
   commandOptions = parserOverride.context.options;
   globalOptions = parserOverride.context.global;
+  syncCommanderActionOptions(actionCommand, commandOptions);
 
   const preflightOverride = await runActivePreflightOverride({
     command: commandPath,
@@ -2633,6 +2633,7 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   commandArgs = preflightOverride.context.args;
   commandOptions = preflightOverride.context.options;
   globalOptions = preflightOverride.context.global;
+  syncCommanderActionOptions(actionCommand, commandOptions);
   const preflightDecision = preflightOverride.decision;
 
   await enforceItemFormatWriteGateAndPreflightMigration(

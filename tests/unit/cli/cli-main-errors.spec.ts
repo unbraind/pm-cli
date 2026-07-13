@@ -3057,6 +3057,50 @@ export default {
     });
   });
 
+  it("passes parser-derived options into wrapped core action handlers", async () => {
+    await withTempPmPath(async (context) => {
+      const root = new Command().name("pm").exitOverride();
+      root.option("--pm-path <dir>", "PM path");
+      let observedOptions: Record<string, unknown> = {};
+      root.command("mutate").option("--original").action((options) => {
+        observedOptions = options;
+      });
+
+      setActiveExtensionRegistrations(createEmptyExtensionRegistrationRegistry());
+      setActiveExtensionParsers({
+        overrides: [
+          {
+            layer: "project",
+            name: "mutate-parser",
+            command: "mutate",
+            run: (runtimeContext) => ({
+              options: {
+                ...runtimeContext.options,
+                ownershipMetadataBypass: true,
+              },
+            }),
+          },
+        ],
+      });
+      setActiveExtensionCommands({ overrides: [], handlers: [] });
+
+      _testOnly.wrapProgramActionsForExtensionHandlers(root);
+      await root.parseAsync([
+        "node",
+        "pm",
+        "--pm-path",
+        context.pmPath,
+        "mutate",
+        "--original",
+      ]);
+
+      expect(observedOptions).toMatchObject({
+        original: true,
+        ownershipMetadataBypass: true,
+      });
+    });
+  });
+
   it("infers post-action telemetry outcomes from command results and process exit codes", () => {
     const previousExitCode = process.exitCode;
     try {

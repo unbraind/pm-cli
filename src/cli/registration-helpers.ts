@@ -65,6 +65,16 @@ export async function applyActiveCommandResultService(
   return override.handled ? override.result : result;
 }
 
+/** Synchronize parser-derived options with Commander and its action arguments. */
+export function syncCommanderActionOptions(
+  actionCommand: Command,
+  commandOptions: Record<string, unknown>,
+): void {
+  for (const [key, value] of Object.entries(commandOptions)) {
+    actionCommand.setOptionValueWithSource(key, value, "cli");
+  }
+}
+
 function readJoinedRepeatedOption(
   options: Record<string, unknown>,
   contract: CommanderOptionAliasContract,
