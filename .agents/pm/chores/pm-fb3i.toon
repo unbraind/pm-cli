@@ -1,0 +1,20 @@
+id: pm-fb3i
+title: "Docstring coverage regressed below achieved-100% by PR#536 extraction files; quality:static floors never ratcheted and mask drift; drop dead closure-pattern export"
+description: ""
+type: Chore
+status: open
+priority: 2
+tags[3]: docstrings,pm-governance-audit,quality-gate
+created_at: "2026-07-13T09:49:05.235Z"
+updated_at: "2026-07-13T09:49:40.939Z"
+author: maintainer-agent
+estimated_minutes: 40
+acceptance_criteria: "runtime-utils.ts and sdk.ts in packages/pm-governance-audit/extensions/governance-audit carry module + exported + member docstrings and static-quality-gate reports 100/100/100 with default thresholds; DEFAULT_CLOSURE_LIKE_METADATA_FIELD_PATTERNS is removed from runtime-utils.ts (zero call sites) or wired to a real consumer with a covering spec; the quality:static script floors in package.json are ratcheted to the newly achieved coverage so future sub-100% files fail CI"
+parent: pm-u9d0
+risk: low
+confidence: high
+files[3]{path,scope,note}:
+  package.json,project,"quality:static floors 92.93/84.41/13.655 need ratchet to achieved coverage"
+  packages/pm-governance-audit/extensions/governance-audit/runtime-utils.ts,project,missing docstrings + dead DEFAULT_CLOSURE_LIKE_METADATA_FIELD_PATTERNS export
+  packages/pm-governance-audit/extensions/governance-audit/sdk.ts,project,missing module + exported docstrings
+body: "## Evidence (review pass 2026-07-13, gate-verified)\n\nRunning `node scripts/release/static-quality-gate.mjs` with DEFAULT thresholds (100%) fails on exactly two files, both introduced by PR#536 (governance-audit extraction phase 2):\n\n- `packages/pm-governance-audit/extensions/governance-audit/runtime-utils.ts` — missing module docstring, 13 exported docstrings, 5 member docstrings (LinkedArtifactAuditPayload/LinkedArtifactAuditEntry fields).\n- `packages/pm-governance-audit/extensions/governance-audit/sdk.ts` — missing module docstring + 2 exported docstrings (line 26 exported value, RuntimeStatusRegistry line 50).\n\nAchieved coverage today: source 99.29%, exported 99.41%, member 99.89%. The repo previously reached literal 100% via the closed docstring waves (pm-4ak1 repo-wide, pm-qely packages/*). CI stays green because `quality:static` in package.json passes floors `--min-docstring-coverage 92.93 --min-exported-docstring-coverage 84.41 --min-member-docstring-coverage 13.655` — set before the waves completed and never ratcheted, so ~6-15 points of headroom silently absorb regressions. Ratcheting the floors is the control that makes the next extraction-style PR fail instead of drift.\n\n## Dead export (same files, same fix window)\n\n`DEFAULT_CLOSURE_LIKE_METADATA_FIELD_PATTERNS` (runtime-utils.ts:3) has ZERO call sites across src/, tests/, packages/, scripts/ — including inside runtime-utils.ts itself. normalize.ts derives its closure-like patterns from `settings.validation.lifecycle_closure_like_*_patterns` (normalize.ts:202-208), so the constant is an extraction leftover default table nobody reads. Contrast: `buildLinkedArtifactAudit` LOOKS test-only from an external grep but is called internally at runtime-utils.ts:166 and powers the shipped `pm files/docs --audit` flag (verified live) — do NOT remove it.\n\nNot covered by: pm-u5zr (windows spec exemption), pm-rxp1 CLOSED (boundary spec), pm-j8z6 (file links), pm-92if (CodeFactor-scoped)."
