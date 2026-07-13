@@ -1,0 +1,18 @@
+id: pm-xwah
+title: Derive ALL MCP tool inputSchemas from *_FLAG_CONTRACTS — eliminate hand-declared parallel schema tables (extend the pm_copy pattern)
+description: "Class fix behind pm-zx13 (schema/flag drift, closed) and pm-hno5 (pm_copy nested-options drift, closed via PR#545). Today only pm_copy imports COPY_FLAG_CONTRACTS; the other ~27 tools hand-declare schemas that the pm-4os2 golden file can only catch AFTER drift ships. Generating schemas from the single flag-contract source makes CLI/MCP input parity structural. Duplicate check: pm-srns owns OUTPUT envelope grammar; pm-0z7n owns CLI alias sweep; pm-9k90 owns tool TIERING; none owns input-schema derivation. Sequence freely; no blockers."
+type: Chore
+status: open
+priority: 3
+tags[4]: "area:contracts","area:mcp",dx,simplification
+created_at: "2026-07-13T17:29:48.188Z"
+updated_at: "2026-07-13T17:29:48.188Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "Every mutation/query MCP tool in src/mcp/tool-definitions.ts derives its flat camelCase inputSchema keys from the corresponding *_FLAG_CONTRACTS table (as pm_copy does from COPY_FLAG_CONTRACTS since PR#545) instead of a hand-declared parallel table; contracts:check snapshot regenerated once and stays byte-stable across a no-op rebuild; a unit spec asserts no tool schema key exists without a backing flag-contract entry (drift becomes structurally impossible, not just snapshot-caught); MCP integration suites stay warning-clean"
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-srns,related,"2026-07-13T17:29:48.188Z",null,null
+body: ""
