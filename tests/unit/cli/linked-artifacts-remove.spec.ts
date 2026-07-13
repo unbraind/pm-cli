@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseRemoveEntries } from "../../../src/cli/commands/linked-artifacts.js";
+import { parseRemoveEntries } from "../../../src/sdk/linked-artifacts.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 

@@ -4,8 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { runClose } from "../../../src/cli/commands/close.js";
-import * as docsCommand from "../../../src/cli/commands/docs.js";
-import * as filesCommand from "../../../src/cli/commands/files.js";
+import * as docsCommand from "../../../src/sdk/docs.js";
+import * as filesCommand from "../../../src/sdk/files.js";
 import * as updateCommand from "../../../src/cli/commands/update.js";
 import { runHistoryRedact } from "../../../src/cli/commands/history-redact.js";
 import { runInit } from "../../../src/cli/commands/init.js";
@@ -285,6 +285,18 @@ describe("runValidate", () => {
       expect(check.status).toBe("warn");
       expect(check.details).toMatchObject({ dangling_reference_count: 2 });
       expect((check.details.remediation_hints as string[])[0]).toContain("--replace-deps");
+      const sourceAwareCheck = validateInternals.buildDependencyReferencesCheck([
+        {
+          id: "pm-source-aware",
+          status: "open",
+          blocked_by: "pm-scalar-missing",
+          dependencies: [{ id: "pm-edge-missing", kind: "blocked_by" }],
+        },
+      ] as never, true).check;
+      expect(sourceAwareCheck.details.remediation_hints).toEqual([
+        "pm update pm-source-aware --replace-deps '<correct dependency edges>'",
+        "pm update pm-source-aware --unset blocked_by",
+      ]);
       const multiRowCheck = validateInternals.buildDependencyReferencesCheck([
         { id: "pm-b", parent: "pm-missing-b", dependencies: [] },
         { id: "pm-a", parent: "pm-missing-a", dependencies: [] },
@@ -297,6 +309,68 @@ describe("runValidate", () => {
         "pm update pm-a --unset parent",
         "pm update pm-b --unset parent",
       ]);
+      const partitionedCheck = validateInternals.buildDependencyReferencesCheck([
+        { id: "pm-active", status: "open", parent: "pm-active-missing", dependencies: [] },
+        {
+          id: "pm-closed",
+          status: "closed",
+          blocked_by: "no-active-blocker",
+          dependencies: [{ id: "pm-legacy-missing", kind: "related" }],
+        },
+      ] as never, true).check;
+      expect(partitionedCheck.status).toBe("warn");
+      expect(partitionedCheck.details).toMatchObject({
+        dangling_reference_count: 3,
+        active_dangling_reference_count: 1,
+        legacy_terminal_dangling_reference_count: 2,
+        legacy_closed_dangling_reference_count: 2,
+        no_active_blocker_sentinel_count: 1,
+      });
+      expect(partitionedCheck.details.remediation_hints).toEqual([
+        "pm update pm-active --unset parent",
+      ]);
+
+      const historicalOnlyCheck = validateInternals.buildDependencyReferencesCheck([
+        {
+          id: "pm-closed",
+          status: "closed",
+          blocked_by: "no-active-blocker",
+          dependencies: [],
+        },
+      ] as never, true).check;
+      expect(historicalOnlyCheck.status).toBe("ok");
+      expect(historicalOnlyCheck.details).toMatchObject({
+        dangling_reference_count: 1,
+        active_dangling_reference_count: 0,
+        legacy_terminal_dangling_reference_count: 1,
+      });
+      expect(historicalOnlyCheck.details.remediation_hints).toEqual([]);
+
+      const activeSentinelCheck = validateInternals.buildDependencyReferencesCheck([
+        {
+          id: "pm-active-sentinel",
+          status: "open",
+          blocked_by: "no-active-blocker",
+          dependencies: [],
+        },
+      ] as never, true).check;
+      expect(activeSentinelCheck.details).toMatchObject({
+        active_dangling_reference_count: 1,
+        no_active_blocker_sentinel_count: 1,
+      });
+
+      const canceledOnlyCheck = validateInternals.buildDependencyReferencesCheck([
+        {
+          id: "pm-canceled",
+          status: "canceled",
+          parent: "pm-historical-missing",
+          dependencies: [],
+        },
+      ] as never, true).check;
+      expect(canceledOnlyCheck.details).toMatchObject({
+        legacy_terminal_dangling_reference_count: 1,
+        legacy_closed_dangling_reference_count: 0,
+      });
     });
   });
 

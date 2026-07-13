@@ -1,0 +1,58 @@
+id: pm-jcvg
+title: Complete public linked-resource SDK primitives and actionable dependency governance
+description: "Finish the remaining pm-zwpp S2/S3/S4 slices as one broad implementation: promote files/docs link orchestration and dependency mutation/inspection behind typed public SDK primitives, repoint CLI presentation handlers away from command-owned domain logic, preserve all discovery and referential-integrity behavior, and make pm-2ler active-versus-legacy dangling dependency reporting consume the same dependency semantics."
+type: Task
+status: closed
+priority: 1
+tags[4]: architecture,"area:governance","area:links","area:sdk"
+created_at: "2026-07-13T09:59:04.847Z"
+updated_at: "2026-07-13T12:49:19.157Z"
+closed_at: "2026-07-13T10:35:51.337Z"
+author: codex-sdk-wide-20260713
+estimated_minutes: 420
+acceptance_criteria: "Public typed SDK primitives own files/docs/deps orchestration and are exported through the package; CLI files/docs/deps handlers are thin presentation layers over those primitives; active and legacy dangling dependency references are separately reported with no remediation that mutates terminal items; CLI JSON/TOON behavior remains compatible; docstrings and SDK docs are complete; focused tests, full 100/100/100/100 coverage, strict quality/security gates, installed-package temp-project proof, changelog generation, and review/merge validation pass."
+parent: pm-zwpp
+risk: medium
+confidence: high
+resolution: "Promoted linked-artifact, files, docs, and dependency orchestration into typed public SDK modules; routed runtime consumers through SDK primitives; removed 34 private CLI-to-core imports; documented and verified packed consumption."
+expected_result: "Public SDK owns linked-resource and dependency primitives while CLI behavior, strict quality, exact coverage, and installed-package behavior remain compatible."
+actual_result: "CLI files/docs/deps are thin SDK re-exports; direct SDK and PmClient consumers pass; 5,604 tests pass at 100/100/100/100; static/docs/contracts/security/package/Sentry gates pass."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2ler,related,"2026-07-13T09:59:04.847Z",null,null
+comments[10]{created_at,author,text}:
+  "2026-07-13T09:59:04.847Z",codex-sdk-wide-20260713,"author=codex-sdk-wide-20260713,text=Duplicate check evidence: searched all tracker statuses for file/doc link management, dependency edge management, facet SDK files/docs/deps, and the full pm-usfg child lineage. pm-zwpp is the canonical parent; pm-a2h3 and earlier annotation work are closed, while no existing child owns the remaining S2 files/docs, S3 deps, and S4 direct-facade completion bundle. External baseline: open Dependabot PRs #537-#541; GitHub Dependabot, code-scanning, and secret-scanning alerts are empty; pnpm audit reports 0 vulnerabilities; Windows nightly failure is already tracked separately by pm-u5zr/pm-b24b; latest pm-changelog is 2026.7.12-2."
+  "2026-07-13T09:59:20.214Z",codex-sdk-wide-20260713,"Implementation start: active bundle is pm-jcvg + pm-2ler only. Scope combines public files/docs/deps domain kernels, CLI-on-SDK presentation layering, dependency validation actionability, SDK docs/docstrings, exact coverage, packed temp-project proof, and full PR review/merge closeout. Parent pm-zwpp remains open as the canonical feature container rather than being marked in progress."
+  "2026-07-13T10:11:41.839Z",codex-sdk-wide-20260713,"Implementation evidence: extracted linked-artifact, files, docs, and dependency command implementations into public SDK modules; kept CLI compatibility re-exports; routed PmClient/runtime directly through SDK primitives; added direct public exports, SDK documentation, and focused tests. Focused affected suite: 128/128 passed."
+  "2026-07-13T10:35:48.048Z",codex-sdk-wide-20260713,"Final local evidence: release gates passed build, typecheck, docs/skills, strict static quality, package boundary, token budgets, exact coverage (279 files, 5,604 tests, 100% statements/branches/functions/lines), version sync, secrets, packed npx smoke (12 packages), and 88-command package-first dogfood. Manual packed temp consumer /tmp/pm-sdk-manual-ujCqZK verified direct runFiles/runDocs/runDeps, PmClient readback, and active/historical/sentinel classification. Sentry/telemetry gate: critical=0, high=0 over 14 days; health warnings=0; history drift=0. Pre-commit release:gates stopped only at the Greptile review gate because review requires committed changes; it will be rerun on the PR head."
+  "2026-07-13T10:45:29.820Z",codex-sdk-wide-20260713,"Greptile preflight review 79d26578-e567-4bfb-9aa6-9837c2c8eb3f: accepted both P2 findings. Preserved backward-compatible dangling_reference_count as active+terminal total while active_dangling_reference_count remains the warning/gating signal; documented the contract and updated assertions. Changed the collector test to import the public SDK module directly. Verification: focused deps+validate 97/97, strict static quality, package boundary, token budget, and docs/skills gates pass."
+  "2026-07-13T11:13:04.126Z",codex-sdk-wide-20260713,"Hosted review round 1 implementation evidence: fixed files-discover apply race reporting so only newly committed links count as added/changed; bounded relative-path scanning to 32 KiB while retaining full absolute-path discovery; parallelized file probes; replaced resource-result double casts with a typed mapped result; and hardened dependency governance against malformed non-string runtime targets. Focused files/docs/deps suite passes 40/40 with typecheck."
+  "2026-07-13T11:44:09.625Z",codex-sdk-wide-20260713,"Hosted review round 2 evidence: accepted Gemini cleanup by removing a redundant runtime string type guard and the artificial malformed-match test; also removed the now-exposed impossible regex match fallback. Greptile's P1 export claim was disproven against the built package declaration: dist/sdk/index.d.ts already re-exports FilesCommandOptions, FilesResult, DocsCommandOptions, DocsResult, DepsCommandOptions, and DepsResult through runtime.js. Verification: 159 focused tests, typecheck, strict quality, and full 5,604/5,604 coverage at exact 100/100/100/100."
+  "2026-07-13T12:00:06.827Z",codex-sdk-wide-20260713,"Hosted review round 3 evidence: accepted two late Gemini findings. Dependency governance now ignores null/non-object legacy dependency entries and defaults missing kinds to related without any, while files discovery tracks applied candidate indices to avoid redundant path-key resolution for skipped results. Verification: focused 40/40, typecheck, strict static/package-boundary/token gates, and full 5,604/5,604 at exact 100/100/100/100."
+  "2026-07-13T12:31:20.390Z",codex-sdk-wide-20260713,"Hosted review round 4 evidence: accepted CodeRabbit's self-contained SDK example, source-aware blocker remediation, and strict closed-versus-terminal compatibility count findings. Dependency summary mode now counts unique nodes, edges, and missing targets with a cycle-safe traversal without constructing exponential tree/graph payloads; explicit max-depth remains available while the default preserves complete graph semantics. Verification: focused deps+validate 98/98, typecheck, strict static/package-boundary/token/docs-link gates, and full 5,605/5,605 coverage at exact 100/100/100/100 (35,469 statements; 25,429 branches; 7,166 functions; 34,690 lines)."
+  "2026-07-13T12:49:19.156Z",codex-sdk-wide-20260713,"Hosted review round 5 evidence: accepted Greptile's active-sentinel diagnostic finding and both Gemini performance/canonicalization findings. Sentinel accounting now covers active and terminal holders; files discovery resolves each unique raw path once before mapping results to source references; dependency tree and summary traversal resolve tracker ids case-insensitively and use a BFS-expanded set. Verification: focused files/docs/deps/validate 129/129, typecheck, strict static/package-boundary/token gates, and full 5,605/5,605 at exact 100/100/100/100 (35,474 statements; 25,429 branches; 7,168 functions; 34,695 lines)."
+learnings[1]{created_at,author,text}:
+  "2026-07-13T10:35:50.352Z",codex-sdk-wide-20260713,"Architecture learning: command-owned linked-resource kernels can move intact behind SDK modules while retaining thin CLI compatibility exports; the import-boundary ratchet then proves the migration by removing private CLI-to-core edges instead of adding exemptions."
+files[16]{path,scope,note}:
+  scripts/release/sdk-import-boundary-baseline.json,project,Ratchet records removal of 34 private CLI-to-core imports
+  src/cli/commands/deps.ts,project,Wide SDK primitive extraction and dependency governance implementation
+  src/cli/commands/docs.ts,project,Wide SDK primitive extraction and dependency governance implementation
+  src/cli/commands/files.ts,project,Wide SDK primitive extraction and dependency governance implementation
+  src/cli/commands/validate.ts,project,Wide SDK primitive extraction and dependency governance implementation
+  src/sdk/dependencies.ts,project,Wide SDK primitive extraction and dependency governance implementation
+  src/sdk/docs.ts,project,Wide SDK primitive extraction and dependency governance implementation
+  src/sdk/files.ts,project,Wide SDK primitive extraction and dependency governance implementation
+  src/sdk/index.ts,project,Wide SDK primitive extraction and dependency governance implementation
+  src/sdk/linked-artifacts.ts,project,Wide SDK primitive extraction and dependency governance implementation
+  src/sdk/runtime.ts,project,Wide SDK primitive extraction and dependency governance implementation
+  tests/unit/cli/linked-artifacts-remove.spec.ts,project,Linked-artifact parser coverage imports the public SDK primitive
+  tests/unit/commands/deps-command.spec.ts,project,Focused SDK primitive and validator coverage
+  tests/unit/commands/files-docs-command.spec.ts,project,Focused SDK primitive and validator coverage
+  tests/unit/commands/validate-command.spec.ts,project,Focused SDK primitive and validator coverage
+  tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,MCP runtime test boundary follows SDK-native files docs and dependency imports
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,1200
+  node scripts/run-tests.mjs test -- tests/unit/commands/deps-command.spec.ts tests/unit/commands/files-docs-command.spec.ts tests/unit/commands/validate-command.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Public linked-resource and dependency governance SDK guide
+close_reason: "Delivered the public linked-resource/dependency SDK bundle with exact coverage, strict quality, packed acceptance, and live telemetry evidence."
+body: ""

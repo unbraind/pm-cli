@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runDeps } from "../../../src/cli/commands/deps.js";
+import { collectDanglingDependencyReferences } from "../../../src/sdk/dependencies.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
@@ -56,6 +57,103 @@ function createTask(context: TempPmContext, title: string, deps: string[] = ["no
 }
 
 describe("runDeps", () => {
+  it("partitions active, terminal, custom-terminal, and sentinel references", () => {
+    const items = [
+      { id: "pm-active", status: "open", parent: "pm-missing-active" },
+      {
+        id: "pm-closed",
+        status: "closed",
+        blocked_by: "no-active-blocker",
+        dependencies: [{ id: "pm-missing-legacy", kind: "related" }],
+      },
+      { id: "pm-blocked", status: "blocked", parent: "pm-custom-terminal" },
+    ] as const;
+
+    const defaultSummary = collectDanglingDependencyReferences(items);
+    expect(defaultSummary.active.map((row) => row.target_id)).toEqual([
+      "pm-missing-active",
+      "pm-custom-terminal",
+    ]);
+    expect(defaultSummary.legacy_terminal.map((row) => row.target_id)).toEqual([
+      "no-active-blocker",
+      "pm-missing-legacy",
+    ]);
+    expect(defaultSummary.no_active_blocker_sentinels).toHaveLength(1);
+
+    const activeSentinelSummary = collectDanglingDependencyReferences([
+      {
+        id: "pm-active-sentinel",
+        status: "open",
+        blocked_by: "no-active-blocker",
+      },
+    ]);
+    expect(activeSentinelSummary.active).toHaveLength(1);
+    expect(activeSentinelSummary.no_active_blocker_sentinels).toHaveLength(1);
+
+    const customSummary = collectDanglingDependencyReferences(
+      items,
+      (status) => status === "closed" || status === "blocked",
+    );
+    expect(customSummary.active.map((row) => row.target_id)).toEqual([
+      "pm-missing-active",
+    ]);
+    expect(customSummary.legacy_terminal.map((row) => row.target_id)).toContain(
+      "pm-custom-terminal",
+    );
+
+    const sameHolderAndTarget = collectDanglingDependencyReferences([
+      {
+        id: "pm-tie-breaker",
+        status: "open",
+        parent: "pm-shared-target",
+        dependencies: [{ id: "pm-shared-target", kind: "related" }],
+      },
+    ]);
+    expect(sameHolderAndTarget.active.map((row) => row.kind)).toEqual([
+      "parent",
+      "related",
+    ]);
+    expect(sameHolderAndTarget.active.map((row) => row.source)).toEqual([
+      "parent",
+      "dependency",
+    ]);
+
+    const distinctBlockedBySources = collectDanglingDependencyReferences([
+      {
+        id: "pm-blocked-sources",
+        status: "open",
+        blocked_by: "pm-shared-blocker",
+        dependencies: [{ id: "pm-shared-blocker", kind: "blocked_by" }],
+      },
+    ]);
+    expect(distinctBlockedBySources.active.map((row) => row.source)).toEqual([
+      "blocked_by",
+      "dependency",
+    ]);
+
+    const malformedRuntimeTargets = collectDanglingDependencyReferences([
+      {
+        id: "pm-malformed-runtime",
+        status: "open",
+        parent: 42,
+        blocked_by: false,
+        dependencies: [
+          null,
+          true,
+          { id: true, kind: "related" },
+          { id: "pm-missing-default-kind" },
+        ],
+      } as unknown as Parameters<typeof collectDanglingDependencyReferences>[0][number],
+    ]);
+    expect(malformedRuntimeTargets.active).toEqual([
+      expect.objectContaining({
+        target_id: "pm-missing-default-kind",
+        kind: "related",
+        source: "dependency",
+      }),
+    ]);
+  });
+
   it("fails when tracker is not initialized", async () => {
     await expect(runDeps("pm-missing", {}, { path: "/tmp/pm-deps-missing-root" })).rejects.toMatchObject<PmCliError>({
       exitCode: EXIT_CODE.NOT_FOUND,
@@ -107,6 +205,10 @@ describe("runDeps", () => {
       expect(middleNode?.dependencies.map((entry) => `${entry.via}:${entry.id}`)).toEqual([`blocks:${leafId}`]);
       const missingNode = result.tree?.dependencies[1];
       expect(missingNode?.missing).toBe(true);
+
+      const caseInsensitiveResult = await runDeps(rootId.toUpperCase(), { format: "tree" }, { path: context.pmPath });
+      expect(caseInsensitiveResult.tree?.id).toBe(rootId);
+      expect(caseInsensitiveResult.node_count).toBe(4);
     });
   });
 
@@ -170,6 +272,32 @@ describe("runDeps", () => {
       expect(result.missing_count).toBe(0);
       expect(result.tree).toBeUndefined();
       expect(result.graph).toBeUndefined();
+    });
+  });
+
+  it("counts shared summary graphs without materializing result payloads", async () => {
+    await withTempPmPath(async (context) => {
+      const sharedId = createTask(context, "deps-summary-shared", [
+        "id=pm-summary-missing,kind=related,author=test-author,created_at=now",
+      ]);
+      const leftId = createTask(context, "deps-summary-left", [
+        `id=${sharedId},kind=related,author=test-author,created_at=now`,
+      ]);
+      const rightId = createTask(context, "deps-summary-right", [
+        `id=${sharedId},kind=related,author=test-author,created_at=now`,
+      ]);
+      const rootId = createTask(context, "deps-summary-dag", [
+        `id=${leftId},kind=blocks,author=test-author,created_at=now`,
+        `id=${rightId},kind=blocks,author=test-author,created_at=now`,
+      ]);
+
+      const full = await runDeps(rootId, { format: "graph", summary: true }, { path: context.pmPath });
+      expect(full).toMatchObject({ node_count: 5, edge_count: 5, missing_count: 1 });
+      expect(full.tree).toBeUndefined();
+      expect(full.graph).toBeUndefined();
+
+      const bounded = await runDeps(rootId, { summary: true, maxDepth: 1 }, { path: context.pmPath });
+      expect(bounded).toMatchObject({ node_count: 3, edge_count: 2, missing_count: 0 });
     });
   });
 

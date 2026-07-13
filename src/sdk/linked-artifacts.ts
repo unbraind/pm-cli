@@ -1,35 +1,35 @@
 /**
- * @module cli/commands/linked-artifacts
+ * @module sdk/linked-artifacts
  *
  * Implements the pm linked artifacts command surface and its agent-facing runtime behavior.
  */
 import fs from "node:fs/promises";
 import path from "node:path";
 import fg from "fast-glob";
-import { pathExists } from "../../core/fs/fs-utils.js";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { pathExists } from "../core/fs/fs-utils.js";
+import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
 import {
   assertNoUnknownCsvKeys,
   createStdinTokenResolver,
   looksLikeGenericKeyValueEntry,
   parseCsvKv,
-} from "../../core/item/parse.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { isRemoteLinkedArtifactReference } from "../../core/validate/linked-artifact-reference.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { splitCommaList } from "../../core/shared/split-comma-list.js";
+} from "../core/item/parse.js";
+import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
+import { isRemoteLinkedArtifactReference } from "../core/validate/linked-artifact-reference.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
+import type { GlobalOptions } from "../core/shared/command-types.js";
+import { PmCliError } from "../core/shared/errors.js";
+import { splitCommaList } from "../core/shared/split-comma-list.js";
 import {
   locateItem,
   mutateItem,
   readLocatedItem,
-} from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
-import { SCOPE_VALUES } from "../../types/index.js";
-import { resolveAuthor } from "../../core/shared/author.js";
-import type { LinkScope } from "../../types/index.js";
+} from "../core/store/item-store.js";
+import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import { readSettings } from "../core/store/settings.js";
+import { SCOPE_VALUES } from "../types/index.js";
+import { resolveAuthor } from "../core/shared/author.js";
+import type { LinkScope } from "../types/index.js";
 
 /** Restricts linked artifact values accepted by command, SDK, and storage contracts. */
 export type LinkedArtifact = {
@@ -134,6 +134,12 @@ export interface LinkedArtifactResult {
   /** Value that configures or reports artifacts for this contract. */
   artifacts: LinkedArtifact[];
 }
+
+/** Replaces the generic artifacts field with a resource-specific result key while retaining the remaining result contract. */
+export type RenamedLinkedArtifactResult<
+  Result extends LinkedArtifactResult,
+  Key extends "files" | "docs",
+> = Omit<Result, "artifacts"> & { [Field in Key]: Result["artifacts"] };
 
 /** Configuration that adapts the shared linked-artifact command core to a specific resource kind (files or docs) while preserving every behavioral detail of the original twin implementations. */
 export interface LinkedArtifactKindConfig {
@@ -502,7 +508,11 @@ function mergeLinkedArtifactChanges(
   appendStable: boolean,
 ): LinkedArtifact[] {
   for (const add of adds) {
-    if (!current.some((entry) => entry.path === add.path && entry.scope === add.scope)) {
+    if (
+      !current.some(
+        (entry) => entry.path === add.path && entry.scope === add.scope,
+      )
+    ) {
       current.push(add);
     }
   }
@@ -670,13 +680,13 @@ export async function runLinkedArtifacts(
 }
 
 /** Re-key the generic `artifacts` field to the resource-specific name (files/docs) while preserving the original key order and presence so kind-specific result shapes (and their deterministic JSON key ordering) stay byte-identical. */
-export function renameArtifactsResultKey(
-  result: LinkedArtifactResult,
-  key: "files" | "docs",
-): Record<string, unknown> {
+export function renameArtifactsResultKey<
+  Result extends LinkedArtifactResult,
+  const Key extends "files" | "docs",
+>(result: Result, key: Key): RenamedLinkedArtifactResult<Result, Key> {
   const out: Record<string, unknown> = {};
   for (const [field, value] of Object.entries(result)) {
     out[field === "artifacts" ? key : field] = value;
   }
-  return out;
+  return out as RenamedLinkedArtifactResult<Result, Key>;
 }

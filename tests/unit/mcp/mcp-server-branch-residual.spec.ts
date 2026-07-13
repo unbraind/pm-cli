@@ -15,6 +15,9 @@ import { createDefaultExtensionGovernancePolicy } from "../../../src/core/extens
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 const COMMANDS_MODULE = "../../../src/cli/commands/index.js";
+const DEPENDENCIES_SDK_MODULE = "../../../src/sdk/dependencies.js";
+const DOCS_SDK_MODULE = "../../../src/sdk/docs.js";
+const FILES_SDK_MODULE = "../../../src/sdk/files.js";
 const PACKAGE_ROOT_MODULE = "../../../src/core/packages/root.js";
 const EXTENSIONS_MODULE = "../../../src/core/extensions/index.js";
 const TOOLS_MODULE = "../../../src/mcp/tool-definitions.js";
@@ -97,6 +100,12 @@ async function importServerWithCommandMocks(commandMocks: Record<string, unknown
       ...commandMocks,
     };
   });
+  vi.doMock(DEPENDENCIES_SDK_MODULE, () => ({ runDeps: commandMocks.runDeps }));
+  vi.doMock(DOCS_SDK_MODULE, () => ({ runDocs: commandMocks.runDocs }));
+  vi.doMock(FILES_SDK_MODULE, () => ({
+    runFiles: commandMocks.runFiles,
+    runFilesDiscover: commandMocks.runFilesDiscover,
+  }));
   return import("../../../src/mcp/server.js");
 }
 
@@ -104,6 +113,9 @@ describe("mcp server branch residual coverage", () => {
   afterEach(async () => {
     vi.restoreAllMocks();
     vi.doUnmock(COMMANDS_MODULE);
+    vi.doUnmock(DEPENDENCIES_SDK_MODULE);
+    vi.doUnmock(DOCS_SDK_MODULE);
+    vi.doUnmock(FILES_SDK_MODULE);
     vi.doUnmock(PACKAGE_ROOT_MODULE);
     vi.doUnmock(EXTENSIONS_MODULE);
     vi.doUnmock(TOOLS_MODULE);

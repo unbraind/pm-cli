@@ -5,8 +5,8 @@ import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runDocs } from "../../../src/cli/commands/docs.js";
 import { _testOnly as filesInternals, runFiles, runFilesDiscover } from "../../../src/cli/commands/files.js";
-import { parseAddGlobEntries, validateLinkedPaths } from "../../../src/cli/commands/linked-artifacts.js";
-import * as linkedArtifactsModule from "../../../src/cli/commands/linked-artifacts.js";
+import { parseAddGlobEntries, validateLinkedPaths } from "../../../src/sdk/linked-artifacts.js";
+import * as linkedArtifactsModule from "../../../src/sdk/linked-artifacts.js";
 import * as itemStoreModule from "../../../src/core/store/item-store.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
@@ -14,7 +14,6 @@ import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath
 afterEach(() => {
   vi.restoreAllMocks();
 });
-
 interface LinkOptions {
   add?: string[];
   remove?: string[];
@@ -189,6 +188,14 @@ describe("runFiles", () => {
     );
     const duplicatedTokens = filesInternals.extractRawPathReferences([{ field: "metadata.note", value: "./README.md ./README.md" }]);
     expect(duplicatedTokens.filter((entry) => entry.value === "./README.md")).toHaveLength(1);
+    const boundedReferences = filesInternals.extractRawPathReferences([
+      {
+        field: "metadata.large",
+        value: `${"x".repeat(filesInternals.relativeReferenceScanMaxChars)} docs/beyond-limit.md /tmp/absolute-beyond-limit.md`,
+      },
+    ]);
+    expect(boundedReferences.map((entry) => entry.value)).toContain("/tmp/absolute-beyond-limit.md");
+    expect(boundedReferences.map((entry) => entry.value)).not.toContain("docs/beyond-limit.md");
 
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-files-helper-"));
     try {
@@ -243,16 +250,6 @@ describe("runFiles", () => {
         const tiedScopes = tiedEntries.map((entry) => entry.scope);
         expect(tiedScopes).toContain("global");
         expect(tiedScopes.every((scope) => scope === "global" || scope === "project")).toBe(true);
-
-        const weirdMatchReferences = filesInternals.extractRawPathReferences([
-          {
-            field: "metadata.synthetic",
-            value: {
-              matchAll: () => [[undefined]],
-            } as unknown as string,
-          },
-        ]);
-        expect(weirdMatchReferences).toEqual([]);
 
         const localeCompare = String.prototype.localeCompare;
         const localeSpy = vi.spyOn(String.prototype, "localeCompare").mockImplementation(function (
@@ -928,7 +925,10 @@ describe("runFiles", () => {
         const applied = await runFilesDiscover(id, { apply: true }, { path: context.pmPath });
         expect(applied.apply).toBe(true);
         expect(applied.addable_count).toBeGreaterThanOrEqual(1);
-        expect(applied.added_count).toBeLessThanOrEqual(1);
+        expect(applied.changed).toBe(false);
+        expect(applied.added_count).toBe(0);
+        expect(applied.added).toEqual([]);
+        expect(applied.skipped_existing_count).toBe(1);
       } finally {
         cwdSpy.mockRestore();
         mutateSpy.mockRestore();
