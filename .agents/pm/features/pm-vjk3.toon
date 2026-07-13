@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: bare-core,cli,governance,packages,refactor,sdk
 created_at: "2026-07-12T19:53:05.226Z"
-updated_at: "2026-07-13T04:48:57.964Z"
+updated_at: "2026-07-13T08:56:02.030Z"
 closed_at: "2026-07-13T04:48:57.343Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -14,6 +14,9 @@ acceptance_criteria: "src/cli/commands/{dedupe-audit,dedupe-merge,comments-audit
 parent: pm-ugqx
 risk: medium
 confidence: high
+resolution: completed
+expected_result: Bare-core pm ships with no audit commands/flags/contracts/MCP tools; pm install audit restores the full audit surface via pm-governance-audit
+actual_result: "PR#536 relocated dedupe-audit/dedupe-merge/comments-audit/normalize + all --audit/--allow-audit-* flags into pm-governance-audit; bare-vs-installed e2e proof green, 100% coverage retained"
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-ixt3,related,"2026-07-12T19:55:39.572Z",null,null
 comments[2]{created_at,author,text}:

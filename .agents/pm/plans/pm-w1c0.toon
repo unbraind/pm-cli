@@ -6,10 +6,13 @@ status: closed
 priority: 1
 tags[5]: bare-core,cli,governance,packages,sdk
 created_at: "2026-07-12T23:09:24.310Z"
-updated_at: "2026-07-13T04:49:26.105Z"
+updated_at: "2026-07-13T08:56:03.496Z"
 closed_at: "2026-07-13T04:48:55.410Z"
 author: codex-pm-audit-extraction
 parent: pm-vjk3
+resolution: completed
+expected_result: "Execution plan for the audit-extraction program is materialized, followed, and closed with the program"
+actual_result: Plan executed across slices 79fr/27mv/7dcf/kg18/rxp1 and closed by PR#536 with the program umbrella pm-vjk3
 dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-27mv,related,"2026-07-12T23:09:24.310Z",null,null
   pm-79fr,related,"2026-07-12T23:09:24.310Z",null,null

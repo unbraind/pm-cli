@@ -1,0 +1,16 @@
+id: pm-7je0
+title: "GH-533: create/update accept empty --title — required-title contract inconsistent between omitted and empty string"
+description: "pm create --type Task --title \"\" succeeds and persists an empty title, and pm update <id> --title \"\" clears an existing title, while omitting --title on create correctly errors 'Missing required option --title'. Title-less items render meaninglessly in lists and break title-keyed tooling (dedupe is title-prefix based). Fix: treat empty/whitespace-only --title as invalid on both create and update with the same required-option error shape; note extension.name already has a load-bearing .trim() precedent (PR#339–#351 era) — apply the same trim-then-require rule."
+type: Issue
+status: open
+priority: 2
+tags[4]: cli,data-integrity,gh-issue,validation
+created_at: "2026-07-13T08:57:49.715Z"
+updated_at: "2026-07-13T08:57:49.715Z"
+author: maintainer-agent
+estimated_minutes: 45
+acceptance_criteria: Empty or whitespace-only --title rejected on create and update; error shape matches the missing-required-option error; regression tests; GH-533 closed
+parent: pm-mpbb
+risk: low
+confidence: high
+body: ""

@@ -1,0 +1,18 @@
+id: pm-jh9t
+title: "GH-532: --estimated-minutes accepts negative numbers and floats — missing non-negative-integer range validation"
+description: "pm update --estimated-minutes -5 and 1.5 both succeed (exit 0) and persist, while non-numeric input is correctly rejected — the coercion validates type but not range/integrality. Negative effort corrupts aggregate sums and flow metrics. Fix: reject negatives (and either reject or round-document fractionals) with the same 'Invalid argument value' error shape used for non-numeric input, at the shared numeric-coercion site so create/update/update-many all inherit it. Same silent-wrong-data family as pm-96vo/pm-kj4k."
+type: Issue
+status: open
+priority: 3
+tags[3]: cli,gh-issue,validation
+created_at: "2026-07-13T08:57:37.424Z"
+updated_at: "2026-07-13T08:57:37.424Z"
+author: maintainer-agent
+estimated_minutes: 45
+acceptance_criteria: Negative and non-integer --estimated-minutes rejected on create/update/update-many with domain-stating error; existing stored invalid values unaffected; regression tests; GH-532 closed
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-96vo,related,"2026-07-13T08:57:37.424Z",null,null
+body: ""

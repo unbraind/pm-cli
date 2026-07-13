@@ -1,0 +1,18 @@
+id: pm-45mb
+title: "GH-534: no-op update reports phantom changed_fields in --json while TOON reports empty, and changed_field_count is always null in JSON"
+description: "A no-op pm update (field set to its current value) emits changed_fields:['title'] in --json but an empty changed_fields in TOON — the two formats disagree about whether anything changed; agents keying off JSON see phantom mutations. Additionally changed_field_count is computed for TOON but left null in the JSON envelope. Fix: compute changed_fields once from the actual before/after diff and share it across both renderers (uniform output contract — pm-srns territory), and populate changed_field_count as a number (0 for no-op). Check update-many/close envelopes for the same divergence at fix time."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,cli,gh-issue,json-output
+created_at: "2026-07-13T08:58:01.446Z"
+updated_at: "2026-07-13T08:58:01.446Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: "No-op update reports empty changed_fields in BOTH json and toon; changed_field_count numeric in JSON (0 no-op, N real); update-many/close checked for the same divergence; regression tests; GH-534 closed"
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-srns,related,"2026-07-13T08:58:01.446Z",null,null
+body: ""

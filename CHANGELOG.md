@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Replace obsolete front-matter vocabulary with item metadata terminology ([pm-hq28](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hq28.toon))
+
 ## 2026.7.13 - 2026-07-13
 
 ### Added

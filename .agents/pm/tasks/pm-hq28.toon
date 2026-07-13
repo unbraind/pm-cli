@@ -2,13 +2,21 @@ id: pm-hq28
 title: Replace obsolete front-matter vocabulary with item metadata terminology
 description: "Rename live code, APIs, identifiers, files, tests, diagnostics, documentation, generated compatibility fixtures, and review automation references away from frontmatter/front-matter/front_matter now that TOON is canonical. Preserve .agents/pm item files and history unchanged as historical evidence, retain legacy JSON-markdown compatibility behavior under accurate metadata-block terminology, and prove the repository has no tracked non-history occurrences."
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[5]: developer-experience,metadata,refactor,toon,vocabulary
 created_at: "2026-07-12T20:24:28.207Z"
-updated_at: "2026-07-12T22:35:32.161Z"
-assignee: codex-frontmatter-vocabulary
+updated_at: "2026-07-13T08:56:21.190Z"
+closed_at: "2026-07-13T08:56:20.378Z"
 author: codex-frontmatter-vocabulary
+estimated_minutes: 240
+acceptance_criteria: "ItemMetadata is the single canonical item record type across CLI, SDK, packages, and tests; TOON metadata readers/normalizers/cache modules/fixtures/prose renamed; genuine YAML skill and legacy JSON-markdown front-matter terminology preserved"
+parent: pm-n7rr
+risk: low
+confidence: high
+resolution: completed
+expected_result: No obsolete front-matter vocabulary remains for item records; ItemMetadata is the canonical term everywhere except genuine YAML/legacy front-matter compatibility surfaces
+actual_result: "PR#531 renamed readers, normalizers, cache modules, helpers, fixtures, and prose; 74-test focused suite + full coverage green"
 comments[10]{created_at,author,text}:
   "2026-07-12T20:42:43.447Z",codex-frontmatter-vocabulary,"Implementation evidence before external review: renamed the canonical item type and APIs to ItemMetadata/listAllItemMetadata/normalizeItemMetadata; renamed the cache module and test file to item-metadata-cache; updated CLI, SDK, package runtimes, tests, fixtures, import-boundary baseline, diagnostics, and TOON-specific prose; removed the obsolete ItemFrontMatter compatibility alias; retained splitFrontMatter plus YAML/JSON front-matter wording only where the files genuinely contain front matter; added scripts/reviews/pr-review-loop.mjs and docs/PR_REVIEW_LOOP.md for complete thread/reaction inventory and acknowledgements. Verification passed: pnpm build; focused 74-test item format/cache/record suite; full node scripts/run-tests.mjs test; full coverage; pnpm quality:static; pnpm quality:docs-skills; git diff --check; node --check review helper."
   "2026-07-12T20:50:50.050Z",codex-frontmatter-vocabulary,"Pre-push Greptile attempt evidence: review 84e236fa-46b4-4529-95fb-b0c3b21573cd was dispatched against main and allowed three uninterrupted five-minute windows, then failed unexpectedly without returning findings. This is an external reviewer failure, not a clean review; retrying the same committed diff before push."
@@ -691,4 +699,5 @@ docs[26]{path,scope,note}:
   docs/TESTING.md,project,Developer terminology and PR review-loop documentation
   PRD.md,project,TOON item metadata terminology
   README.md,project,Canonical storage format wording
+close_reason: "Shipped via PR#531 (merged 2026-07-12T23:06Z): item-metadata vocabulary unified across CLI/SDK/packages/tests"
 body: ""

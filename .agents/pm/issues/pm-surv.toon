@@ -1,0 +1,18 @@
+id: pm-surv
+title: "GH-529: init --agent-guidance emits run-tests.mjs linked-test example that may not exist in the target repo"
+description: "pm init --agent-guidance add writes an auto-managed AGENTS.md quickstart block whose linked-test example is 'pm test <id> --add command=\"node scripts/run-tests.mjs test -- ...\"'. That script is pm-cli-repo-specific; in arbitrary host repos the trusted onboarding guidance points at a non-existent command, causing confusion and linked-test-evidence drift. Fix direction: render a repo-agnostic placeholder template ('<your project test command>') or detect an existing test entry point (package.json scripts.test) before rendering a concrete command. Class: environment/capability-aware hint rendering — same family as pm-qljv (package-only reindex hint) and the pm-mpbb 'derive hints from actual capability' ledger; audit other init-guidance hints for repo-specific assumptions at fix time."
+type: Issue
+status: open
+priority: 3
+tags[3]: agent-ux,gh-issue,init
+created_at: "2026-07-13T08:57:09.402Z"
+updated_at: "2026-07-13T08:57:09.402Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: Generated guidance never names a command absent from the target repo (placeholder template or detected test entry); init-guidance hints audited for repo-specific assumptions; GH-529 closed
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-qljv,related,"2026-07-13T08:57:09.402Z",null,null
+body: ""

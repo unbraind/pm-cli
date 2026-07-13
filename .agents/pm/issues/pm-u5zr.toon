@@ -1,0 +1,18 @@
+id: pm-u5zr
+title: "Nightly windows/Node24: package-manifest SDK-surface exemption uses POSIX endsWith — governance-audit runtime.ts check fails on backslash paths"
+description: "New nightly red introduced by PR#536 (distinct from pm-b24b init-suite failures on the same leg). tests/unit/packages/package-manifest.spec.ts 'keeps shipped package sources on the public SDK surface' exempts the governance-audit runtime via sourceFile.endsWith(\"governance-audit/runtime.ts\") (spec ~line 862), but sourceFile is built with path.join → on Windows it ends 'governance-audit\\runtime.ts', the exemption never matches, and the file falls into the generic public-SDK-import assertion (expects from \"@unbrained/pm-cli/sdk\", file legitimately imports local ./sdk.ts shim per its resilient-loader design). Spec-side POSIX path assumption class (precedent pm-gf6f); fix = separator-agnostic suffix comparison (compare against path.join(...) or normalize to posix before endsWith). Restoring the windows/Node24 leg to green requires BOTH this and pm-b24b. Consider pinning package-manifest.spec.ts into the windows-regression PR job so spec-side POSIX assumptions are caught pre-merge."
+type: Issue
+status: open
+priority: 1
+tags[3]: ci,tests,windows
+created_at: "2026-07-13T08:56:54.128Z"
+updated_at: "2026-07-13T08:56:54.128Z"
+author: maintainer-agent
+estimated_minutes: 45
+acceptance_criteria: "Exemption branch matches on both / and \\ separators; nightly windows/Node24 package-manifest test passes; evaluate windows-regression pinning for package-manifest.spec.ts"
+parent: pm-92if
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-b24b,related,"2026-07-13T08:56:54.128Z",null,null
+body: ""

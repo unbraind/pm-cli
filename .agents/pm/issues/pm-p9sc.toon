@@ -1,0 +1,18 @@
+id: pm-p9sc
+title: "GH-535: pm deps omits dangling parent references (missing_count:0, missing:false) contradicting validate's dangling_reference_count"
+description: "When an item's parent points at a deleted/missing id, pm deps <child> reports node_count:1, missing_count:0, missing:false — a false clean view — while pm validate correctly reports dangling_reference_count:1. deps builds its tree only from resolvable nodes and drops unresolvable parent edges silently. Fix: include unresolvable parent/blocked_by/dep targets as missing nodes (missing:true, missing_count>=1) so deps and validate agree; the check-side classification from pm-ol5v (dependency_references) is the shared source of truth — reuse it rather than a second detector. Secondary observation from the issue: pm delete permits deleting a still-referenced parent without warning/reparenting — evaluate a referenced-parent guard or advisory at fix time (keep in this item unless it grows). Active/legacy split for validate noise stays owned by pm-2ler."
+type: Issue
+status: open
+priority: 2
+tags[4]: cli,deps,gh-issue,governance
+created_at: "2026-07-13T08:58:16.372Z"
+updated_at: "2026-07-13T08:58:16.372Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: deps reports missing nodes for dangling parent/dep references consistent with validate; delete-referenced-parent advisory evaluated; regression tests incl. deleted-parent repro; GH-535 closed
+parent: pm-33cw
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2ler,related,"2026-07-13T08:58:16.372Z",null,null
+body: ""
