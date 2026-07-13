@@ -103,6 +103,17 @@ describe("runDeps", () => {
       "parent",
       "related",
     ]);
+
+    const malformedRuntimeTargets = collectDanglingDependencyReferences([
+      {
+        id: "pm-malformed-runtime",
+        status: "open",
+        parent: 42,
+        blocked_by: false,
+        dependencies: [{ id: true, kind: "related" }],
+      } as unknown as Parameters<typeof collectDanglingDependencyReferences>[0][number],
+    ]);
+    expect(malformedRuntimeTargets.active).toEqual([]);
   });
 
   it("fails when tracker is not initialized", async () => {

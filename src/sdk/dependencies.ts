@@ -104,10 +104,10 @@ export function collectDanglingDependencyReferences(
   const rows = new Map<string, DanglingDependencyReference>();
   const addReference = (
     item: DependencyReferenceHolder,
-    target: string | undefined,
+    target: unknown,
     kind: string,
   ): void => {
-    const normalized = target?.trim();
+    const normalized = typeof target === "string" ? target.trim() : "";
     if (
       !normalized ||
       ["none", "null", "n/a", "na"].includes(normalized.toLowerCase()) ||

@@ -143,6 +143,9 @@ interface RawPathReference {
   value: string;
 }
 
+/** Bounds fuzzy relative-path scanning while preserving full absolute-path discovery. */
+const RELATIVE_REFERENCE_SCAN_MAX_CHARS = 32_768;
+
 function normalizeCandidatePathForOutput(value: string): string {
   return normalizeLinkedPath(path.normalize(value));
 }
@@ -221,9 +224,17 @@ function extractRawPathReferences(
     /(?:\.{1,2}[\\/])?(?:(?:[A-Za-z0-9_.@-]+[\\/])+[A-Za-z0-9_.@-]+|[A-Za-z0-9_.@-]+\.[A-Za-z0-9][A-Za-z0-9._-]*)/gu;
   for (const reference of references) {
     const seenInField = new Set<string>();
-    for (const pattern of [absolutePattern, relativePattern]) {
+    const runtimeValue: unknown = reference.value;
+    const boundedRelativeValue =
+      typeof runtimeValue === "string"
+        ? runtimeValue.slice(0, RELATIVE_REFERENCE_SCAN_MAX_CHARS)
+        : reference.value;
+    for (const [pattern, input] of [
+      [absolutePattern, reference.value],
+      [relativePattern, boundedRelativeValue],
+    ] as const) {
       pattern.lastIndex = 0;
-      for (const match of reference.value.matchAll(pattern)) {
+      for (const match of input.matchAll(pattern)) {
         /* c8 ignore next -- RegExp match arrays always expose capture [0]. */
         const token = cleanupPathToken(match[0] ?? "");
         if (!token || seenInField.has(token)) {
@@ -302,8 +313,13 @@ async function discoverReferencedFiles(
   const rawReferences = extractRawPathReferences(
     collectItemTextReferences(document),
   );
-  for (const reference of rawReferences) {
-    const resolved = await resolveDiscoveredFile(reference.value, projectRoot);
+  const resolvedReferences = await Promise.all(
+    rawReferences.map(async (reference) => ({
+      reference,
+      resolved: await resolveDiscoveredFile(reference.value, projectRoot),
+    })),
+  );
+  for (const { reference, resolved } of resolvedReferences) {
     if (!resolved) {
       continue;
     }
@@ -347,6 +363,7 @@ async function discoverReferencedFiles(
 
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
+  relativeReferenceScanMaxChars: RELATIVE_REFERENCE_SCAN_MAX_CHARS,
   normalizeCandidatePathForOutput,
   realpathForContainment,
   linkedFileResolvedKey,
@@ -375,7 +392,7 @@ export async function runFiles(
       supportsAppendStable: true,
     },
   );
-  return renameArtifactsResultKey(result, "files") as unknown as FilesResult;
+  return renameArtifactsResultKey(result, "files");
 }
 
 /** Implements run files discover for the public runtime surface of this module. */
@@ -445,6 +462,7 @@ export async function runFilesDiscover(
     scope: candidate.scope,
     note,
   }));
+  let appliedAdds: LinkedFile[] = [];
   const result = await mutateItem({
     pmRoot,
     settings,
@@ -458,7 +476,7 @@ export async function runFilesDiscover(
       const existingResolvedKeys = new Set(
         next.map((entry) => linkedFileResolvedKey(entry, process.cwd())),
       );
-      const appliedAdds: LinkedFile[] = [];
+      appliedAdds = [];
       for (const add of discoveredAdds) {
         const resolvedKey = linkedFileResolvedKey(add, process.cwd());
         /* c8 ignore next -- duplicate-key race paths are exercised in broader CLI race tests. */
@@ -495,11 +513,23 @@ export async function runFilesDiscover(
 
   const files = result.item.files ?? [];
   const addedResolvedKeys = new Set(
-    discoveredAdds.map((entry) => linkedFileResolvedKey(entry, process.cwd())),
+    appliedAdds.map((entry) => linkedFileResolvedKey(entry, process.cwd())),
   );
   const added = files.filter((entry) =>
     addedResolvedKeys.has(linkedFileResolvedKey(entry, process.cwd())),
   );
+  const skippedDuringApplyKeys = new Set(
+    discoveredAdds
+      .filter(
+        (entry) =>
+          !addedResolvedKeys.has(linkedFileResolvedKey(entry, process.cwd())),
+      )
+      .map((entry) => linkedFileResolvedKey(entry, process.cwd())),
+  );
+  const skippedDuringApply = addableCandidates.filter((candidate) =>
+    skippedDuringApplyKeys.has(linkedFileResolvedKey(candidate, process.cwd())),
+  );
+  const allSkippedExisting = [...skippedExisting, ...skippedDuringApply];
   return {
     id: result.item.id,
     files,
@@ -509,9 +539,9 @@ export async function runFilesDiscover(
     candidate_count: candidates.length,
     addable_count: addableCandidates.length,
     added_count: added.length,
-    skipped_existing_count: skippedExisting.length,
+    skipped_existing_count: allSkippedExisting.length,
     candidates,
     added,
-    skipped_existing: skippedExisting,
+    skipped_existing: allSkippedExisting,
   };
 }

@@ -14,7 +14,6 @@ import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath
 afterEach(() => {
   vi.restoreAllMocks();
 });
-
 interface LinkOptions {
   add?: string[];
   remove?: string[];
@@ -189,6 +188,14 @@ describe("runFiles", () => {
     );
     const duplicatedTokens = filesInternals.extractRawPathReferences([{ field: "metadata.note", value: "./README.md ./README.md" }]);
     expect(duplicatedTokens.filter((entry) => entry.value === "./README.md")).toHaveLength(1);
+    const boundedReferences = filesInternals.extractRawPathReferences([
+      {
+        field: "metadata.large",
+        value: `${"x".repeat(filesInternals.relativeReferenceScanMaxChars)} docs/beyond-limit.md /tmp/absolute-beyond-limit.md`,
+      },
+    ]);
+    expect(boundedReferences.map((entry) => entry.value)).toContain("/tmp/absolute-beyond-limit.md");
+    expect(boundedReferences.map((entry) => entry.value)).not.toContain("docs/beyond-limit.md");
 
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-files-helper-"));
     try {
@@ -928,7 +935,10 @@ describe("runFiles", () => {
         const applied = await runFilesDiscover(id, { apply: true }, { path: context.pmPath });
         expect(applied.apply).toBe(true);
         expect(applied.addable_count).toBeGreaterThanOrEqual(1);
-        expect(applied.added_count).toBeLessThanOrEqual(1);
+        expect(applied.changed).toBe(false);
+        expect(applied.added_count).toBe(0);
+        expect(applied.added).toEqual([]);
+        expect(applied.skipped_existing_count).toBe(1);
       } finally {
         cwdSpy.mockRestore();
         mutateSpy.mockRestore();

@@ -1,12 +1,12 @@
 id: pm-2ler
-title: validate dependency_references warns on 101 legacy refs held only by closed/canceled items (98x no-active-blocker sentinel) — split active vs legacy counts
+title: Separate active dangling dependency warnings from terminal historical reference diagnostics
 description: ""
 type: Issue
 status: closed
 priority: 2
 tags[3]: agent-ux,legacy-data,validate
 created_at: "2026-07-10T21:27:32.454Z"
-updated_at: "2026-07-13T10:45:30.303Z"
+updated_at: "2026-07-13T11:13:05.191Z"
 closed_at: "2026-07-13T10:35:53.595Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -21,11 +21,12 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-ol5v,related,"2026-07-10T21:27:32.454Z",null,null
   pm-wrbe,related,"2026-07-10T21:27:32.454Z",null,null
   pm-jcvg,related,"2026-07-13T09:59:19.597Z",null,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-13T09:59:20.749Z",codex-sdk-wide-20260713,"Implementation start: bundled with pm-jcvg because dangling-reference classification must consume the same dependency semantics being promoted into the public SDK; this avoids parallel CLI-only and SDK-only logic."
   "2026-07-13T10:11:42.502Z",codex-sdk-wide-20260713,"Implementation evidence: validator now reports actionable active dangling references separately from terminal historical debt, preserves historical counts, identifies no-active-blocker sentinels, and emits remediation only for active holders. Live repository result: active=0, legacy_terminal=101, sentinel=98, status=ok."
   "2026-07-13T10:35:49.161Z",codex-sdk-wide-20260713,"Final acceptance evidence: full suite 5,604/5,604 at exact 100/100/100/100; focused dependency/validate coverage passes; live dependency_references status is ok with active=0, legacy_terminal=101, sentinel=98, and empty remediation. No historical item mutation was performed."
   "2026-07-13T10:45:30.302Z",codex-sdk-wide-20260713,"Review hardening: dangling_reference_count remains the backward-compatible total (101 live), while active_dangling_reference_count=0 alone controls status/warnings and legacy_terminal_dangling_reference_count=101 remains informational. This avoids silent undercounting for existing consumers without reintroducing historical-noise warnings."
+  "2026-07-13T11:13:05.190Z",codex-sdk-wide-20260713,"Hosted review round 1 evidence: dependency target normalization now accepts unknown runtime input and safely ignores malformed non-string parent, blocked_by, or dependency ids. Renamed the item from problem wording to the delivered active-versus-historical diagnostic outcome for generated changelog clarity."
 files[4]{path,scope,note}:
   src/cli/commands/validate.ts,project,Actionable versus historical dangling dependency validation
   src/sdk/dependencies.ts,project,Actionable versus historical dangling dependency validation

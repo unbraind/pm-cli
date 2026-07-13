@@ -135,6 +135,12 @@ export interface LinkedArtifactResult {
   artifacts: LinkedArtifact[];
 }
 
+/** Replaces the generic artifacts field with a resource-specific result key while retaining the remaining result contract. */
+export type RenamedLinkedArtifactResult<
+  Result extends LinkedArtifactResult,
+  Key extends "files" | "docs",
+> = Omit<Result, "artifacts"> & { [Field in Key]: Result["artifacts"] };
+
 /** Configuration that adapts the shared linked-artifact command core to a specific resource kind (files or docs) while preserving every behavioral detail of the original twin implementations. */
 export interface LinkedArtifactKindConfig {
   /** Metadata key under which the artifacts are stored (e.g. "files" | "docs"). */
@@ -674,13 +680,13 @@ export async function runLinkedArtifacts(
 }
 
 /** Re-key the generic `artifacts` field to the resource-specific name (files/docs) while preserving the original key order and presence so kind-specific result shapes (and their deterministic JSON key ordering) stay byte-identical. */
-export function renameArtifactsResultKey(
-  result: LinkedArtifactResult,
-  key: "files" | "docs",
-): Record<string, unknown> {
+export function renameArtifactsResultKey<
+  Result extends LinkedArtifactResult,
+  const Key extends "files" | "docs",
+>(result: Result, key: Key): RenamedLinkedArtifactResult<Result, Key> {
   const out: Record<string, unknown> = {};
   for (const [field, value] of Object.entries(result)) {
     out[field === "artifacts" ? key : field] = value;
   }
-  return out;
+  return out as RenamedLinkedArtifactResult<Result, Key>;
 }

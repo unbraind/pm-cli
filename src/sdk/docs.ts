@@ -69,5 +69,5 @@ export async function runDocs(
       supportsAppendStable: false,
     },
   );
-  return renameArtifactsResultKey(result, "docs") as unknown as DocsResult;
+  return renameArtifactsResultKey(result, "docs");
 }

@@ -8,7 +8,7 @@
 
 ### Fixed
 
-- validate dependency_references warns on 101 legacy refs held only by closed/canceled items (98x no-active-blocker sentinel) — split active vs legacy counts ([pm-2ler](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2ler.toon))
+- Separate active dangling dependency warnings from terminal historical reference diagnostics ([pm-2ler](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2ler.toon))
 
 ### Other
 
