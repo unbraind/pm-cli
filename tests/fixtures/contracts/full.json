@@ -18345,15 +18345,11 @@
             "enum": [
               "keyword",
               "semantic",
-              "hybrid",
-              "title_exact",
-              "title_fuzzy",
-              "parent_scope"
+              "hybrid"
             ],
             "examples": [
               "keyword",
-              "hybrid",
-              "title_exact"
+              "hybrid"
             ],
             "type": "string"
           },

@@ -134,6 +134,7 @@ const UPDATE_COMMAND_OPTION_KEYS = [
   "typeOption",
   "field",
   "ownershipMetadataBypass",
+  "ownershipDependencyBypass",
   "force",
 ] as const;
 

@@ -12,7 +12,7 @@ import {
 import { runCommentsAudit } from "./comments-audit.ts";
 import { runDedupeAudit } from "./dedupe-audit.ts";
 import { runDedupeMerge } from "./dedupe-merge.ts";
-import { runNormalize } from "./normalize.ts";
+import { runNormalize, type NormalizeCommandOptions } from "./normalize.ts";
 
 function normalizeDedupeAuditOptions(
   raw: Record<string, unknown>,
@@ -85,7 +85,7 @@ function normalizeCommentsAuditOptions(
 
 function normalizeNormalizeOptions(
   raw: Record<string, unknown>,
-): Record<string, unknown> {
+): NormalizeCommandOptions {
   return {
     status: readStringOption(raw, "filterStatus", ["filter_status", "status"]),
     list: {
@@ -173,9 +173,7 @@ export async function runNormalizePackage(
   global: GlobalOptions,
 ): Promise<unknown> {
   return runNormalize(
-    normalizeNormalizeOptions(options) as unknown as Parameters<
-      typeof runNormalize
-    >[0],
+    normalizeNormalizeOptions(options),
     global,
   );
 }

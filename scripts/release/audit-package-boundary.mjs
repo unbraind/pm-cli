@@ -22,6 +22,7 @@ export const FORBIDDEN_CORE_AUDIT_PATTERNS = [
   /\baudit_release\b/gu,
   /\baudit_smoke\b/gu,
   /\blinked_artifact_audit\b/gu,
+  /\b(?:title_fuzzy|parent_scope)\b/gu,
   /\brun(?:DedupeAudit|DedupeMerge|CommentsAudit|Normalize)\b/gu,
 ];
 

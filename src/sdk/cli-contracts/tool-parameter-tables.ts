@@ -136,14 +136,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   whyNow: { type: "string" },
   mode: {
     type: "string",
-    enum: [
-      "keyword",
-      "semantic",
-      "hybrid",
-      "title_exact",
-      "title_fuzzy",
-      "parent_scope",
-    ],
+    enum: ["keyword", "semantic", "hybrid"],
   },
   semanticWeight: { anyOf: [{ type: "string" }, { type: "number" }] },
   op: { type: "string" },
@@ -946,7 +939,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   mode: {
     description:
       "Mode selector for search and reindex (keyword|semantic|hybrid).",
-    examples: ["keyword", "hybrid", "title_exact"],
+    examples: ["keyword", "hybrid"],
   },
   semanticWeight: {
     description:

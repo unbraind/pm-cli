@@ -53,10 +53,13 @@ describe("registration helpers", () => {
         },
       ],
     });
-    await expect(
-      applyActiveCommandResultService("update", [], {}, {}, { original: true }),
-    ).resolves.toEqual({ decorated: true });
-    setActiveExtensionServices(null);
+    try {
+      await expect(
+        applyActiveCommandResultService("update", [], {}, {}, { original: true }),
+      ).resolves.toEqual({ decorated: true });
+    } finally {
+      setActiveExtensionServices(null);
+    }
   });
 
   it("falls back to opts() for command-like objects without optsWithGlobals", () => {
