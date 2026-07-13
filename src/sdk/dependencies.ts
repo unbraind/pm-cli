@@ -548,15 +548,16 @@ export async function runDeps(
   );
   for (const reference of [...dangling.active, ...dangling.legacy_terminal]) {
     const holder = index.get(reference.holder_id.trim().toLowerCase());
+    const referenceKind = reference.kind.trim().toLowerCase();
     if (
       holder &&
       !holder.dependencies.some(
         (dependency) =>
           dependency.id.trim().toLowerCase() === reference.target_id.trim().toLowerCase() &&
-          dependency.kind === reference.kind,
+          dependency.kind === referenceKind,
       )
     ) {
-      holder.dependencies.push({ id: reference.target_id, kind: reference.kind });
+      holder.dependencies.push({ id: reference.target_id, kind: referenceKind });
     }
   }
   if (!index.has(id.trim().toLowerCase())) {

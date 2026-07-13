@@ -1350,6 +1350,8 @@ describe("MCP dynamic package actions", () => {
       const copyResult = (copy?.structuredContent as { result?: { id?: string; item?: unknown } } | undefined)?.result;
       expect(copyResult?.id).toMatch(/^pm-/);
       expect(copyResult?.item).toBeUndefined();
+      const copyHistory = context.runCli(["history", copyResult?.id ?? "", "--full", "--json"], { expectJson: true });
+      expect((copyHistory.json as { history: Array<{ author: string }> }).history.at(-1)?.author).toBe("mcp-agent");
 
       const claim = await handleRequest({
         jsonrpc: "2.0",

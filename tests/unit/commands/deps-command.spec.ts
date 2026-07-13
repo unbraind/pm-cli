@@ -191,6 +191,15 @@ describe("runDeps", () => {
         `id=${middleId},kind=blocks,author=test-author,created_at=now`,
         "id=pm-missing-dependency,kind=related,author=test-author,created_at=now",
       ]);
+      const located = await locateItem(context.pmPath, rootId);
+      expect(located).not.toBeNull();
+      if (!located) return;
+      const { raw } = await readLocatedItem(located);
+      await writeFile(
+        located.itemPath,
+        raw.replace("pm-missing-dependency,related", "pm-missing-dependency,RELATED"),
+        "utf8",
+      );
 
       const result = await runDeps(rootId, { format: "tree" }, { path: context.pmPath });
       expect(result.format).toBe("tree");
