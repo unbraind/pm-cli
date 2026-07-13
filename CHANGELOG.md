@@ -12,13 +12,13 @@
 
 ### Fixed
 
+- GH-533: create/update accept empty --title — required-title contract inconsistent between omitted and empty string ([pm-7je0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7je0.toon))
 - GH-535: pm deps omits dangling parent references (missing_count:0, missing:false) contradicting validate's dangling_reference_count ([pm-p9sc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p9sc.toon))
 - GH-542: MCP pm_copy nests title/message under options while sibling tools declare flat camelCase params — own suite triggers unexpected-arg warnings ([pm-hno5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hno5.toon))
 - GH-532: --estimated-minutes accepts negative numbers and floats — missing non-negative-integer range validation ([pm-jh9t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jh9t.toon))
 - GH-534: no-op update reports phantom changed_fields in --json while TOON reports empty, and changed_field_count is always null in JSON ([pm-45mb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-45mb.toon))
 - GH-526: aggregate --sum/--avg accept unknown field names and silently report 0 ([pm-96vo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-96vo.toon))
 - GH-530: list --status <invalid\> silently returns count 0 — validate against the status domain like --type and search status: ([pm-kj4k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kj4k.toon))
-- GH-533: create/update accept empty --title — required-title contract inconsistent between omitted and empty string ([pm-7je0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7je0.toon))
 - Separate active dangling dependency warnings from terminal historical reference diagnostics ([pm-2ler](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2ler.toon))
 
 ### Other

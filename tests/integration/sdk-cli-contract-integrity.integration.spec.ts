@@ -134,9 +134,15 @@ describe("SDK and CLI contract integrity", () => {
       );
       expect(noOp.json).toMatchObject({ changed_field_count: 0 });
 
+      const blankUpdate = context.runCli(["update", id, "--title", "   ", "--json"]);
+      expect(blankUpdate.code).toBe(2);
+      expect((JSON.parse(blankUpdate.stderr) as JsonErrorEnvelope).detail).toContain(
+        "pass a non-empty title with --title",
+      );
+      expect(blankUpdate.stderr).not.toContain("pm create");
+
       for (const args of [
         ["create", "--title", "   ", "--type", "Task", "--json"],
-        ["update", id, "--title", "   ", "--json"],
         ["create", "Estimate", "--type", "Task", "--estimated-minutes", "-1", "--json"],
         ["update", id, "--estimated-minutes", "1.5", "--json"],
         ["update-many", "--ids", id, "--estimated-minutes", "nope", "--dry-run", "--json"],

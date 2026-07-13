@@ -6,8 +6,8 @@ status: closed
 priority: 2
 tags[4]: cli,data-integrity,gh-issue,validation
 created_at: "2026-07-13T08:57:49.715Z"
-updated_at: "2026-07-13T15:33:38.690Z"
-closed_at: "2026-07-13T15:32:44.579Z"
+updated_at: "2026-07-13T16:59:55.390Z"
+closed_at: "2026-07-13T16:59:54.555Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: Empty or whitespace-only --title rejected on create and update; error shape matches the missing-required-option error; regression tests; GH-533 closed
@@ -19,9 +19,13 @@ expected_result: Empty and whitespace-only titles fail before persistence with t
 actual_result: Create and update reject blank titles with exit 2 while legacy malformed fixture reads remain covered.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jh9t,related,"2026-07-13T15:28:04.596Z",null,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-13T14:32:12.252Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
   "2026-07-13T15:32:36.175Z",codex-sdk-contracts-20260713,"Evidence: create and update now share trim-then-require title validation. Empty and whitespace-only titles fail with usage exit 2 before persistence; legacy malformed fixtures remain readable through explicit fixture rewriting. Focused and full coverage gates passed."
+  "2026-07-13T16:50:36.635Z",codex-sdk-contracts-20260713,"Review follow-up: Gemini inline 3572496492 correctly identified that shared blank-title validation emits create-specific retry syntax on pm update. Reopening only pm-7je0 to make the shared error command-neutral and add public CLI regression proof."
+  "2026-07-13T16:59:52.808Z",codex-sdk-contracts-20260713,"Review evidence: blank title values now produce command-neutral invalid-value guidance while omitted create titles retain the richer missing-required-option recovery. The public CLI regression, direct helper unit, linked acceptance suite, manual isolated temp-project proof, and full 5,614-test exact coverage gate all pass (35,518/35,518 statements; 25,466/25,466 branches; 7,181/7,181 functions; 34,738/34,738 lines)."
+learnings[1]{created_at,author,text}:
+  "2026-07-13T16:59:53.577Z",codex-sdk-contracts-20260713,"Distinguish omitted required input from present-but-blank input: the former benefits from command-specific missing-option recovery, while the latter needs reusable invalid-value guidance across create and update."
 files[3]{path,scope,note}:
   src/cli/commands/create.ts,project,shared nonblank title validation
   src/cli/commands/update.ts,project,update title validation
@@ -29,7 +33,8 @@ files[3]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/commands/focus-command.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
   test-all-local-mrjdn0i2-0w3w16,test-all,passed,"2026-07-13T15:28:19.236Z","2026-07-13T15:28:57.654Z","2026-07-13T15:28:57.654Z",2,0,0,1,2
-close_reason: Implemented shared nonblank title validation for create/update with regression coverage; GH-533 will close on PR merge.
+  test-all-local-mrjgvws3-9qmdsa,test-all,passed,"2026-07-13T16:59:13.188Z","2026-07-13T16:59:33.541Z","2026-07-13T16:59:33.541Z",2,0,0,1,2
+close_reason: "Current-head review complete: blank-title errors are command-neutral, persistence remains unchanged, and exact full coverage plus isolated CLI proof pass."
 body: ""

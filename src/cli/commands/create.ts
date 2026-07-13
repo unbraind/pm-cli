@@ -1312,6 +1312,12 @@ export function requireStringOption(value: string | undefined, flag: string): st
   const normalized = value?.trim();
   if (!normalized) {
     if (flag === "--title") {
+      if (value !== undefined) {
+        throw new PmCliError(
+          "Title cannot be empty or whitespace-only. Retry: pass a non-empty title with --title.",
+          EXIT_CODE.USAGE,
+        );
+      }
       throw new PmCliError(
         'Missing required option --title. Why required: every item needs a human-readable title for lookup, search, and reporting. Retry: pass the title as the first positional argument (example: pm create "Fix login bug" --type Issue) or with --title.',
         EXIT_CODE.USAGE,
