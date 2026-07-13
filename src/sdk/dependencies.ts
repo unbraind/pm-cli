@@ -130,7 +130,19 @@ export function collectDanglingDependencyReferences(
     addReference(item, item.parent, "parent");
     addReference(item, item.blocked_by, "blocked_by");
     for (const dependency of item.dependencies ?? []) {
-      addReference(item, dependency.id, dependency.kind);
+      // Public SDK callers may supply legacy or JSON-decoded payloads that do
+      // not yet satisfy the current structured dependency contract.
+      if (typeof dependency !== "object" || dependency === null) {
+        continue;
+      }
+      const legacyDependency = dependency as Partial<Dependency>;
+      addReference(
+        item,
+        legacyDependency.id,
+        typeof legacyDependency.kind === "string"
+          ? legacyDependency.kind
+          : "related",
+      );
     }
   }
   const sorted = [...rows.values()].sort(

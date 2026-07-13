@@ -110,10 +110,20 @@ describe("runDeps", () => {
         status: "open",
         parent: 42,
         blocked_by: false,
-        dependencies: [{ id: true, kind: "related" }],
+        dependencies: [
+          null,
+          true,
+          { id: true, kind: "related" },
+          { id: "pm-missing-default-kind" },
+        ],
       } as unknown as Parameters<typeof collectDanglingDependencyReferences>[0][number],
     ]);
-    expect(malformedRuntimeTargets.active).toEqual([]);
+    expect(malformedRuntimeTargets.active).toEqual([
+      expect.objectContaining({
+        target_id: "pm-missing-default-kind",
+        kind: "related",
+      }),
+    ]);
   });
 
   it("fails when tracker is not initialized", async () => {

@@ -461,6 +461,7 @@ export async function runFilesDiscover(
     note,
   }));
   let appliedAdds: LinkedFile[] = [];
+  const appliedCandidateIndices = new Set<number>();
   const result = await mutateItem({
     pmRoot,
     settings,
@@ -475,7 +476,8 @@ export async function runFilesDiscover(
         next.map((entry) => linkedFileResolvedKey(entry, process.cwd())),
       );
       appliedAdds = [];
-      for (const add of discoveredAdds) {
+      appliedCandidateIndices.clear();
+      for (const [index, add] of discoveredAdds.entries()) {
         const resolvedKey = linkedFileResolvedKey(add, process.cwd());
         /* c8 ignore next -- duplicate-key race paths are exercised in broader CLI race tests. */
         if (existingResolvedKeys.has(resolvedKey)) {
@@ -484,6 +486,7 @@ export async function runFilesDiscover(
         next.push(add);
         existingResolvedKeys.add(resolvedKey);
         appliedAdds.push(add);
+        appliedCandidateIndices.add(index);
       }
       const deduped = dedupeLinkedArtifacts(next);
       /* c8 ignore next -- appendStable branch is covered through runFiles command contract tests. */
@@ -516,16 +519,8 @@ export async function runFilesDiscover(
   const added = files.filter((entry) =>
     addedResolvedKeys.has(linkedFileResolvedKey(entry, process.cwd())),
   );
-  const skippedDuringApplyKeys = new Set(
-    discoveredAdds
-      .filter(
-        (entry) =>
-          !addedResolvedKeys.has(linkedFileResolvedKey(entry, process.cwd())),
-      )
-      .map((entry) => linkedFileResolvedKey(entry, process.cwd())),
-  );
-  const skippedDuringApply = addableCandidates.filter((candidate) =>
-    skippedDuringApplyKeys.has(linkedFileResolvedKey(candidate, process.cwd())),
+  const skippedDuringApply = addableCandidates.filter(
+    (_candidate, index) => !appliedCandidateIndices.has(index),
   );
   const allSkippedExisting = [...skippedExisting, ...skippedDuringApply];
   return {
