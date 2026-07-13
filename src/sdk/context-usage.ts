@@ -5,6 +5,7 @@
  * contains only item ids, timestamps, authors, ranks, profiles, and command
  * intents; it never enters item history and is safe to delete or rebuild.
  */
+import { randomUUID } from "node:crypto";
 import {
   appendFile,
   mkdir,
@@ -114,9 +115,9 @@ async function readEvents(
   }
 }
 
-async function appendEvent(
+async function appendEvents(
   options: ContextUsageLedgerOptions,
-  event: ContextUsageEvent,
+  events: readonly ContextUsageEvent[],
 ): Promise<void> {
   const maxEvents = options.maxEvents ?? DEFAULT_MAX_EVENTS;
   const retentionDays = options.retentionDays ?? DEFAULT_RETENTION_DAYS;
@@ -133,19 +134,26 @@ async function appendEvent(
   const target = ledgerPath(options.pmRoot);
   const runtimeDirectory = path.dirname(target);
   await mkdir(runtimeDirectory, { recursive: true });
-  await appendFile(target, `${JSON.stringify(event)}\n`, "utf8");
+  await appendFile(target, events.map((event) => `${JSON.stringify(event)}\n`).join(""), "utf8");
   const customBounds =
     options.maxEvents !== undefined || options.retentionDays !== undefined;
   if (!customBounds && (await stat(target)).size <= DEFAULT_COMPACTION_BYTES)
     return;
   const retained = await readEvents(options);
-  const temporary = `${target}.${process.pid}.tmp`;
+  const temporary = `${target}.${process.pid}.${randomUUID()}.tmp`;
   await writeFile(
     temporary,
     `${retained.map((entry) => JSON.stringify(entry)).join("\n")}\n`,
     "utf8",
   );
   await rename(temporary, target);
+}
+
+async function appendEvent(
+  options: ContextUsageLedgerOptions,
+  event: ContextUsageEvent,
+): Promise<void> {
+  await appendEvents(options, [event]);
 }
 
 /** Records a propensity-complete context/next serving event. */
@@ -206,8 +214,7 @@ export async function recordContextUsageTouch(
 }
 
 /**
- * Records mutation outcomes in sequence so multi-item commands cannot race the
- * bounded ledger's compaction rename.
+ * Records mutation outcomes as one append and one optional compaction pass.
  */
 export async function recordContextUsageTouches(
   options: ContextUsageLedgerOptions & {
@@ -219,19 +226,19 @@ export async function recordContextUsageTouches(
     intent: string;
   },
 ): Promise<void> {
-  if (process.env.PM_CONTEXT_USAGE_DISABLED === "1") return;
-  for (const itemId of options.itemIds) {
-    await recordContextUsageTouch({
-      pmRoot: options.pmRoot,
-      author: options.author,
-      itemId,
-      intent: options.intent,
-      enabled: options.enabled,
-      maxEvents: options.maxEvents,
-      retentionDays: options.retentionDays,
-      now: options.now,
-    });
+  if (process.env.PM_CONTEXT_USAGE_DISABLED === "1" || options.enabled === false || options.itemIds.length === 0) return;
+  const author = options.author.trim();
+  const intent = options.intent.trim();
+  if (!author || !intent) {
+    throw new TypeError("Context usage touch requires author and intent");
   }
+  const at = resolveNow(options).iso;
+  const events = options.itemIds.map((itemId): ContextUsageEvent => {
+    const trimmedId = itemId.trim();
+    if (!trimmedId) throw new TypeError("Context usage touch requires non-empty itemId");
+    return { kind: "touch", at, author, item_id: trimmedId, intent };
+  });
+  await appendEvents(options, events);
 }
 
 /**
@@ -283,7 +290,7 @@ export async function readContextUsageAffinity(
   const affinity = Object.fromEntries(
     [...scores.entries()].map(([id, score]) => [
       id,
-      0.05 + 0.95 * (score / maximum),
+      0.05 + 0.95 * (maximum > 0 ? score / maximum : 0),
     ]),
   );
   return {

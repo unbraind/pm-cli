@@ -779,7 +779,7 @@ async function runAndClearAfterCommandHooks(
   try {
     await recordContextUsageTouches({
       pmRoot: runtime.pmRoot,
-      author: process.env.PM_AUTHOR ?? "unknown",
+      author: process.env.PM_AUTHOR ?? (await readSettings(runtime.pmRoot)).author_default,
       itemIds: outcome.ok ? (affected?.map((item) => item.id) ?? []) : [],
       intent: runtime.commandName,
     });

@@ -1029,10 +1029,12 @@ export function buildItemContextRelevanceCandidates(
   );
 }
 
+const tokenEncoder = new TextEncoder();
+
 function estimateJsonTokens(value: unknown): number {
   return Math.max(
     1,
-    Math.ceil(new TextEncoder().encode(JSON.stringify(value)).length / 4),
+    Math.ceil(tokenEncoder.encode(JSON.stringify(value)).length / 4),
   );
 }
 

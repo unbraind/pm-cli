@@ -25,6 +25,7 @@ import { _testOnly } from "../../../src/cli/main.js";
 import {
   clearActiveExtensionHooks,
   getActiveCommandResult,
+  recordAfterCommandAffectedItem,
   setActiveCommandResult,
   setActiveExtensionCommands,
   setActiveExtensionParsers,
@@ -33,6 +34,7 @@ import {
   setActiveExtensionServices,
 } from "../../../src/core/extensions/index.js";
 import { createEmptyExtensionRegistrationRegistry } from "../../../src/core/extensions/loader.js";
+import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
 import { _testOnly as helpJsonTestOnly, maybeRenderBootstrapJsonHelp } from "../../../src/cli/help-json-payload.js";
 import {
   applyBootstrapPagerPolicy,
@@ -3209,6 +3211,43 @@ export default {
     expect(stderr).toContain("[pm] warning: afterCommand hook_warnings=");
     expect(stderr).toContain("extension_hook_failed:project:after-warn:afterCommand");
     expect(stderr).toContain("profile:extensions hook_warnings=");
+  });
+
+  it("attributes mutation feedback to the configured default author", async () => {
+    const pmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-default-author-"));
+    const previousAuthor = process.env.PM_AUTHOR;
+    delete process.env.PM_AUTHOR;
+    try {
+      await writeSettings(pmRoot, { ...(await readSettings(pmRoot)), author_default: "configured-agent" });
+      recordAfterCommandAffectedItem({
+        id: "pm-default-author",
+        type: "Task",
+        status: "open",
+        changed_fields: ["status"],
+        snapshot: { id: "pm-default-author", type: "Task", status: "open" },
+      });
+      _testOnly.setActiveExtensionHookContextForTest({
+        hooks: { beforeCommand: [], afterCommand: [], onWrite: [], onRead: [], onIndex: [] },
+        commandName: "update",
+        commandArgs: ["pm-default-author"],
+        commandOptions: {},
+        globalOptions: {} as never,
+        pmRoot,
+        profileEnabled: false,
+        migrationBlockers: [],
+      });
+      await _testOnly.runAndClearAfterCommandHooks({
+        ok: true,
+        exit_code: EXIT_CODE.SUCCESS,
+        command_resolution: "success",
+        resolution_stage: "execute",
+      });
+      expect(await readFile(path.join(pmRoot, "runtime", "context-usage.jsonl"), "utf8")).toContain('"author":"configured-agent"');
+    } finally {
+      if (previousAuthor === undefined) delete process.env.PM_AUTHOR;
+      else process.env.PM_AUTHOR = previousAuthor;
+      await rm(pmRoot, { recursive: true, force: true });
+    }
   });
 
   it("falls back to raw after-command exception messages", async () => {

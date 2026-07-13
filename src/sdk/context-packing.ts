@@ -211,7 +211,7 @@ function findBestAffordableCandidate<TItem>(
   let bestIndex = -1;
   let evaluated = 0;
   for (let index = 0; index < candidates.length; index += 1) {
-    if (readClock() >= deadline) {
+    if (index % 128 === 0 && readClock() >= deadline) {
       return { index: bestIndex, evaluated, timedOut: true };
     }
     const candidate = candidates[index]!;
@@ -317,7 +317,7 @@ function upgradeSelectedProjections<TItem>(
       const rightCost = right.token_costs[target] - right.token_costs[previous];
       return (
         right.marginal_value / Math.max(rightCost, 1) -
-          left.marginal_value / Math.max(leftCost, 1) || left.rank - right.rank
+          left.marginal_value / Math.max(leftCost, 1) || left.rank - right.rank || left.id.localeCompare(right.id)
       );
     });
     for (const entry of upgrades) {

@@ -124,6 +124,14 @@ describe("context packing", () => {
       { tokenBudget: 80 },
     );
     expect(tied.included.map((entry) => entry.id)).toEqual(["a", "b"]);
+    const oneUpgrade = packContextCandidates(
+      [candidate("b", 1, 1), candidate("a", 1, 1)],
+      { tokenBudget: 30 },
+    );
+    expect(oneUpgrade.included.map(({ id, projection }) => [id, projection])).toEqual([
+      ["a", "summary"],
+      ["b", "identity"],
+    ]);
 
     const omitted = packContextCandidates(
       [candidate("required", 1, 1, { required: true })],
@@ -246,6 +254,46 @@ describe("context usage feedback", () => {
       .trim()
       .split("\n");
     expect(lines).toHaveLength(2);
+    await recordContextUsageTouches({
+      pmRoot,
+      author: "agent",
+      itemIds: ["pm-4", "pm-5"],
+      intent: "batch-update",
+      now: "2026-07-04T00:00:00.000Z",
+      maxEvents: 3,
+      retentionDays: 10,
+    });
+    const batchedLines = (await readFile(path.join(pmRoot, "runtime", "context-usage.jsonl"), "utf8")).trim().split("\n");
+    expect(batchedLines).toHaveLength(3);
+    expect(batchedLines.map((line) => JSON.parse(line).item_id)).toEqual(["pm-3", "pm-4", "pm-5"]);
+  });
+
+  it("keeps the exploration floor when decay underflows to zero", async () => {
+    const pmRoot = await tempPmRoot();
+    await recordContextUsageServing({
+      pmRoot,
+      author: "agent",
+      surface: "context",
+      profile: "context",
+      rows: [{ id: "pm-ancient", rank: 1, included: true }],
+      now: "2000-01-01T00:00:00.000Z",
+      retentionDays: 3_000_000,
+    });
+    await recordContextUsageTouch({
+      pmRoot,
+      author: "agent",
+      itemId: "pm-ancient",
+      intent: "get",
+      now: "2000-01-01T00:01:00.000Z",
+      retentionDays: 3_000_000,
+    });
+    await expect(readContextUsageAffinity({
+      pmRoot,
+      author: "agent",
+      now: "9999-01-01T00:00:00.000Z",
+      retentionDays: 3_000_000,
+      horizonHours: 1,
+    })).resolves.toMatchObject({ affinity: { "pm-ancient": 0.05 } });
   });
 
   it("supports a zero-cost disabled mode and rejects malformed inputs", async () => {
@@ -258,6 +306,13 @@ describe("context usage feedback", () => {
       intent: "update",
     });
     delete process.env.PM_CONTEXT_USAGE_DISABLED;
+    await recordContextUsageTouches({
+      pmRoot,
+      author: "",
+      itemIds: ["pm-a"],
+      intent: "",
+      enabled: false,
+    });
     await recordContextUsageServing({
       pmRoot,
       author: "",
@@ -280,6 +335,22 @@ describe("context usage feedback", () => {
       positive_judgments: 0,
       serving_events: 0,
     });
+    await expect(
+      recordContextUsageTouches({
+        pmRoot,
+        author: "",
+        itemIds: ["pm-a"],
+        intent: "update",
+      }),
+    ).rejects.toThrow("author and intent");
+    await expect(
+      recordContextUsageTouches({
+        pmRoot,
+        author: "agent",
+        itemIds: [""],
+        intent: "update",
+      }),
+    ).rejects.toThrow("non-empty itemId");
     await expect(
       recordContextUsageServing({
         pmRoot,
