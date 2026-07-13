@@ -620,7 +620,7 @@ async function rankReadyEntriesWithRelevance(
   const readyById = new Map(
     structuralReady.map((entry) => [entry.item.id, entry]),
   );
-  const projectedReady = packing.included
+  const projectedReady = ranking.ranked
     .map((entry) => readyById.get(entry.id))
     .filter((entry): entry is ActionableEntry => entry !== undefined);
   return {
