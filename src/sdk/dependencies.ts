@@ -89,7 +89,7 @@ export interface DanglingDependencyReferenceSummary {
   active: DanglingDependencyReference[];
   /** Missing references held only by terminal items; retained as informational history debt. */
   legacy_terminal: DanglingDependencyReference[];
-  /** Historical sentinel rows called out separately from typo-like missing ids. */
+  /** Legacy sentinel rows across active and terminal holders, called out separately from typo-like ids. */
   no_active_blocker_sentinels: DanglingDependencyReference[];
 }
 
@@ -167,7 +167,7 @@ export function collectDanglingDependencyReferences(
   return {
     active: sorted.filter((row) => !row.legacy_terminal),
     legacy_terminal: legacyTerminal,
-    no_active_blocker_sentinels: legacyTerminal.filter(
+    no_active_blocker_sentinels: sorted.filter(
       (row) => row.no_active_blocker_sentinel,
     ),
   };
@@ -330,15 +330,16 @@ function toTreeNode(
   depth = 0,
   via?: string,
 ): DepsTreeNode {
-  const item = index.get(id);
+  const lookupId = id.trim().toLowerCase();
+  const item = index.get(lookupId);
   const baseNode: DepsTreeNode = {
-    id,
+    id: item?.id ?? id,
     title: item?.title,
     type: item?.type,
     status: item?.status,
     via,
     missing: !item,
-    cycle: lineage.has(id),
+    cycle: lineage.has(lookupId),
     dependencies: [],
   };
   if (!item || baseNode.cycle) {
@@ -350,15 +351,15 @@ function toTreeNode(
     }
     return baseNode;
   }
-  if (collapse === "repeated" && expanded.has(id)) {
+  if (collapse === "repeated" && expanded.has(lookupId)) {
     baseNode.collapsed = true;
     return baseNode;
   }
   if (collapse === "repeated") {
-    expanded.add(id);
+    expanded.add(lookupId);
   }
   const nextLineage = new Set(lineage);
-  nextLineage.add(id);
+  nextLineage.add(lookupId);
   baseNode.dependencies = item.dependencies.map((dependency) =>
     toTreeNode(
       dependency.id,
@@ -467,27 +468,29 @@ function countDependencyGraph(
   const nodeIds = new Set<string>();
   const edgeKeys = new Set<string>();
   const missingIds = new Set<string>();
-  const shallowestExpandedDepth = new Map<string, number>();
+  const expanded = new Set<string>();
   const pending = [{ id: rootId, depth: 0 }];
   let pendingIndex = 0;
   while (pendingIndex < pending.length) {
     const current = pending[pendingIndex++]!;
-    nodeIds.add(current.id);
-    const item = index.get(current.id);
+    const lookupId = current.id.trim().toLowerCase();
+    nodeIds.add(lookupId);
+    const item = index.get(lookupId);
     if (!item) {
-      missingIds.add(current.id);
+      missingIds.add(lookupId);
       continue;
     }
     if (maxDepth !== undefined && current.depth >= maxDepth) {
       continue;
     }
-    const priorDepth = shallowestExpandedDepth.get(current.id);
-    if (priorDepth !== undefined && priorDepth <= current.depth) {
+    if (expanded.has(lookupId)) {
       continue;
     }
-    shallowestExpandedDepth.set(current.id, current.depth);
+    expanded.add(lookupId);
     for (const dependency of item.dependencies) {
-      edgeKeys.add(`${current.id}::${dependency.id}::${dependency.kind}`);
+      edgeKeys.add(
+        `${lookupId}::${dependency.id.trim().toLowerCase()}::${dependency.kind}`,
+      );
       pending.push({ id: dependency.id, depth: current.depth + 1 });
     }
   }
@@ -527,8 +530,10 @@ export async function runDeps(
     undefined,
     settings.schema,
   );
-  const index = new Map(items.map((item) => [item.id, toIndexedItem(item)]));
-  if (!index.has(id)) {
+  const index = new Map(
+    items.map((item) => [item.id.trim().toLowerCase(), toIndexedItem(item)]),
+  );
+  if (!index.has(id.trim().toLowerCase())) {
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
   }
 

@@ -311,12 +311,24 @@ async function discoverReferencedFiles(
   const rawReferences = extractRawPathReferences(
     collectItemTextReferences(document),
   );
-  const resolvedReferences = await Promise.all(
-    rawReferences.map(async (reference) => ({
-      reference,
-      resolved: await resolveDiscoveredFile(reference.value, projectRoot),
-    })),
+  const resolvedByValue = new Map<
+    string,
+    Pick<LinkedFile, "path" | "scope"> | undefined
+  >();
+  await Promise.all(
+    [...new Set(rawReferences.map((reference) => reference.value))].map(
+      async (value) => {
+        resolvedByValue.set(
+          value,
+          await resolveDiscoveredFile(value, projectRoot),
+        );
+      },
+    ),
   );
+  const resolvedReferences = rawReferences.map((reference) => ({
+    reference,
+    resolved: resolvedByValue.get(reference.value),
+  }));
   for (const { reference, resolved } of resolvedReferences) {
     if (!resolved) {
       continue;

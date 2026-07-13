@@ -80,6 +80,16 @@ describe("runDeps", () => {
     ]);
     expect(defaultSummary.no_active_blocker_sentinels).toHaveLength(1);
 
+    const activeSentinelSummary = collectDanglingDependencyReferences([
+      {
+        id: "pm-active-sentinel",
+        status: "open",
+        blocked_by: "no-active-blocker",
+      },
+    ]);
+    expect(activeSentinelSummary.active).toHaveLength(1);
+    expect(activeSentinelSummary.no_active_blocker_sentinels).toHaveLength(1);
+
     const customSummary = collectDanglingDependencyReferences(
       items,
       (status) => status === "closed" || status === "blocked",
@@ -195,6 +205,10 @@ describe("runDeps", () => {
       expect(middleNode?.dependencies.map((entry) => `${entry.via}:${entry.id}`)).toEqual([`blocks:${leafId}`]);
       const missingNode = result.tree?.dependencies[1];
       expect(missingNode?.missing).toBe(true);
+
+      const caseInsensitiveResult = await runDeps(rootId.toUpperCase(), { format: "tree" }, { path: context.pmPath });
+      expect(caseInsensitiveResult.tree?.id).toBe(rootId);
+      expect(caseInsensitiveResult.node_count).toBe(4);
     });
   });
 

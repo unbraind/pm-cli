@@ -346,6 +346,19 @@ describe("runValidate", () => {
       });
       expect(historicalOnlyCheck.details.remediation_hints).toEqual([]);
 
+      const activeSentinelCheck = validateInternals.buildDependencyReferencesCheck([
+        {
+          id: "pm-active-sentinel",
+          status: "open",
+          blocked_by: "no-active-blocker",
+          dependencies: [],
+        },
+      ] as never, true).check;
+      expect(activeSentinelCheck.details).toMatchObject({
+        active_dangling_reference_count: 1,
+        no_active_blocker_sentinel_count: 1,
+      });
+
       const canceledOnlyCheck = validateInternals.buildDependencyReferencesCheck([
         {
           id: "pm-canceled",
