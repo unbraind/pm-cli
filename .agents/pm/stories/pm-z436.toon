@@ -1,12 +1,12 @@
 id: pm-z436
 title: "As an agent on a minutes-old scratch project, pm init, quick-capture create, and next are near-zero ceremony and token-cheap at three-item scale"
-description: ""
+description: "Define and verify a near-zero-ceremony scratch-project profile whose init, create, next, and close loop stays fast and token-cheap at single-digit item scale."
 type: Story
 status: open
 priority: 2
 tags[4]: agent-ux,onboarding,small-scale,token-efficiency
 created_at: "2026-07-06T23:36:18.776Z"
-updated_at: "2026-07-06T23:36:18.776Z"
+updated_at: "2026-07-13T21:37:54.111Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "A documented scratch/minimal metadata profile lets pm create <type> <title> succeed with no further flags and zero validate warnings; the full init -> create x3 -> next -> close round trip is covered by an e2e test asserting a bounded total token footprint (measured via the pm-a22j corpus method) and bounded wall-clock latency; pm context/next on a sub-10-item workspace produce output whose token cost is proportional to the workspace, with no fixed large envelope; the quickstart doc shows the scratch flow in under ten lines; governance defaults never require ceremony the scratch profile has not opted into"

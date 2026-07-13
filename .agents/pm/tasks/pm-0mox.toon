@@ -1,12 +1,12 @@
 id: pm-0mox
 title: "Alias-usage counters: measure deprecated-spelling hits so grammar-freeze removals are evidence-based"
-description: ""
+description: Record privacy-safe deprecated-alias usage counters so removal decisions after the grammar freeze are evidence-based rather than time-based.
 type: Task
 status: open
 priority: 3
 tags[3]: agent-ux,cli-simplification,telemetry
 created_at: "2026-07-07T07:01:56.726Z"
-updated_at: "2026-07-07T07:01:56.726Z"
+updated_at: "2026-07-13T21:38:13.684Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Alias shim records per-alias hit counters (alias, canonical, count, last_seen) in the local telemetry store honoring existing telemetry disable env-vars; canonical spellings incur zero overhead; a diagnostics surface lists alias usage and zero-use aliases; the deprecation ADR documents the zero-use-for-N-releases removal criterion; unit test proves counter increment on alias resolution and absence on canonical invocation"

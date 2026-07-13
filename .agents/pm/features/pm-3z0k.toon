@@ -1,12 +1,12 @@
 id: pm-3z0k
 title: "Portable integrity attestation: export a detached hash-chain proof bundle and verify it standalone, so third parties can confirm the recorded history was never altered"
-description: ""
+description: Export and independently verify detached hash-chain proof bundles so third parties can attest tracker history integrity without the original workspace.
 type: Feature
 status: open
 priority: 3
 tags[3]: governance,history,immutable-record
 created_at: "2026-07-06T23:19:12.124Z"
-updated_at: "2026-07-06T23:19:12.124Z"
+updated_at: "2026-07-13T21:38:16.195Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "attest export produces a documented, versioned bundle covering all item and workspace history streams with a workspace rollup digest; verify against a bundle detects any post-export stream rewrite and names the diverged streams; verify runs read-only with no locks and works on a bare clone; compact/redact/repair produce lineage-visible digest transitions (tested); SDK exposes export/verify primitives with reference docs; bundle stays small (KBs, independent of workspace size beyond stream count)"

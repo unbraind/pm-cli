@@ -1,12 +1,12 @@
 id: pm-a9mc
 title: pm validate needs a counts-only projection so agents can read drift numbers without row-array payloads
-description: ""
+description: "Add a counts-only validate projection that preserves diagnostic totals while omitting large per-item row arrays across CLI, MCP, contracts, and docs."
 type: Feature
 status: open
 priority: 2
 tags[3]: agent-ux,"area:cli",token-efficiency
 created_at: "2026-07-07T15:13:53.449Z"
-updated_at: "2026-07-07T15:15:27.581Z"
+updated_at: "2026-07-13T21:37:47.471Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "pm validate --json supports a counts-only mode (flag or details=summary) keeping every *_count/*_total field and dropping per-item row arrays (missing_resolution_rows, missing_linked_path_rows, orphaned_path_rows, duplicate lists); human-readable output gains the same projection; default behavior unchanged (full row worklists remain default); contracts, MCP pm_validate params, completions, and docs updated per the new-flag wiring checklist"

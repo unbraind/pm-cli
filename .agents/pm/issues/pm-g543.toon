@@ -1,12 +1,12 @@
 id: pm-g543
 title: "GH-490: unknown-command suggester ranks substring hits over synonyms/edit distance — pm log suggests 'extension catalog'"
-description: ""
+description: Improve unknown-command ranking so edit distance and semantic synonyms beat misleading substring matches and recovery hints point to the intended command.
 type: Issue
 status: open
 priority: 3
 tags[4]: agent-ux,cli,errors,gh-issue
 created_at: "2026-07-10T10:32:36.607Z"
-updated_at: "2026-07-12T19:39:36.654Z"
+updated_at: "2026-07-13T21:38:05.277Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: pm log suggests history/comments/notes ahead of catalog commands; suggester ranks synonym table then edit distance then substring; unit tests cover top-10 verb synonyms; unknown-command JSON contract shape unchanged

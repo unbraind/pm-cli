@@ -1,12 +1,12 @@
 id: pm-srns
 title: "Uniform output contract: one format-flag grammar + one envelope spec across every command (JSON/TOON), old spellings alias-preserved"
-description: ""
+description: "Define and enforce one alias-preserving output-format, envelope, and exit-code contract across all CLI commands and machine-readable surfaces."
 type: Issue
 status: open
 priority: 2
-tags: []
+tags[5]: agent-ux,"area:cli","area:contracts",simplification,token-efficiency
 created_at: "2026-07-11T10:47:29.123Z"
-updated_at: "2026-07-13T17:28:00.719Z"
+updated_at: "2026-07-13T21:37:30.523Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "Every command accepts one identical output-format flag contract; a single written envelope spec covers all read/mutation/diagnostic shapes; the per-command trap class is gone (search --format-only vs notes/validate --json-only vs activity .activity decoy); zero feature loss: all current spellings kept as deprecation-tracked aliases; contract tests assert flag+envelope parity across the full surface"

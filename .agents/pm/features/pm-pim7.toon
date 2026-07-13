@@ -1,12 +1,12 @@
 id: pm-pim7
 title: "Write-time secret detection advisory: mutation paths flag credential-shaped content before it enters the immutable history stream"
-description: ""
+description: "Add an SDK-first configurable pre-write secret scanner across text-bearing CLI and MCP mutations, with advisory, blocking, and disabled modes plus safe failure semantics."
 type: Feature
 status: open
 priority: 2
 tags[3]: agent-ux,sdk,security
 created_at: "2026-07-07T07:01:25.465Z"
-updated_at: "2026-07-07T07:01:25.465Z"
+updated_at: "2026-07-13T21:37:49.780Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "SDK exports a documented secret-scan primitive with deterministic default rules and unit-tested detection for GitHub token prefixes, private keys, AWS keys, and high-entropy assignments; all text-bearing CLI+MCP mutation paths consult it honoring secret_guard advise/block/off config; advise emits a single stderr line and never alters exit code or output shape; block returns a structured error with an explicit override flag; scanner failure never blocks a mutation; docs cover configuration and the remediation path for already-recorded content"

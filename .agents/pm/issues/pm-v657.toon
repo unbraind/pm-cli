@@ -1,0 +1,29 @@
+id: pm-v657
+title: pm-governance-audit comments-audit limit contract contradicts runtime alias semantics
+description: "Reconcile comments-audit pagination controls so agents can independently bound scanned items and emitted full-history rows, while preserving old spellings through an explicit compatibility policy."
+type: Issue
+status: open
+priority: 3
+tags[5]: agent-ux,"area:contracts","area:extensions",governance-audit,token-efficiency
+created_at: "2026-07-13T21:36:43.602Z"
+updated_at: "2026-07-13T21:36:43.602Z"
+author: codex-root
+estimated_minutes: 90
+acceptance_criteria: "Runtime, help, package contracts, completions, and docs define one truthful pagination grammar; --limit-items remains the scanned-item cap; a canonical row-output cap bounds full-history rows without lowering scan coverage; legacy --limit behavior remains available as a documented hidden/deprecated alias or a migration hint; conflicting legacy/canonical values return a targeted structured recovery; focused tests cover independent caps and compatibility"
+parent: pm-ugqx
+risk: low
+confidence: high
+severity: low
+environment: Installed pm-governance-audit with pm 2026.7.13
+repro_steps: Run pm comments-audit --limit-items 10000 --full-history --limit 100000 --json.
+expected_result: "The documented scanned-item and output-row limits apply independently, allowing complete item coverage with a bounded row payload."
+actual_result: "The command exits because --limit and --limit-items must match, revealing that runtime treats them as aliases despite help describing different scopes."
+component: pm-governance-audit/comments-audit
+customer_impact: "Large-workspace audits cannot independently control scan completeness and token/output size, and agents waste a retry discovering the hidden alias rule."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-srns,related,"2026-07-13T21:36:43.602Z",codex-root,null
+  pm-vjk3,related,"2026-07-13T21:36:43.602Z",codex-root,null
+  pm-w1j3,related,"2026-07-13T21:36:43.602Z",codex-root,null
+comments[1]{created_at,author,text}:
+  "2026-07-13T21:36:43.602Z",codex-root,"Duplicate check evidence: all-status searches for comments-audit limit semantics found closed implementation item pm-w1j3 and broad output-contract item pm-srns,but no active issue for the live package help/runtime contradiction. Reproduced during the full 6,546-comment-row audit."
+body: ""

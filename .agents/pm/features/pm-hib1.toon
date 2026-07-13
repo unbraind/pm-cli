@@ -1,12 +1,12 @@
 id: pm-hib1
 title: "Point-in-time read projection: pm get --at <version|timestamp> renders reconstructed historical item state without mutating"
-description: ""
+description: Expose SDK and CLI point-in-time item reads that reconstruct verified historical state by version or timestamp without mutating or locking the tracker.
 type: Feature
 status: open
 priority: 2
 tags[3]: agent-ux,history,immutable-record
 created_at: "2026-07-06T23:18:28.374Z"
-updated_at: "2026-07-06T23:36:46.759Z"
+updated_at: "2026-07-13T21:37:51.800Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "pm get <id> --at <version> and --at <timestamp> return the reconstructed state with reconstructed:true and as_of_* fields in both json and toon; reconstruction reuses the restore replay helper (single implementation, verified by test); invalid/future targets fail with a structured error listing the valid version range; SDK exposes the same primitive with reference docs; works after history-compact (checkpoint-aware replay); no mutation, no lock, no history entry is written by the read"

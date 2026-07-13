@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: "area:history",contracts,pm-cli,quality-gate
 created_at: "2026-07-06T23:08:54.068Z"
-updated_at: "2026-07-06T23:10:05.021Z"
+updated_at: "2026-07-13T21:41:33.254Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "A test enumerates every mutating action from the contracts/register-mutation tables (single source of truth, no hand-maintained list), executes each against a sandbox workspace, and asserts a history entry is appended with correct op and author; item-scope mutations gate immediately; workspace-scope mutations gate once pm-klo8 lands (until then the test asserts the known-unaudited list explicitly so any new unaudited mutation still fails); adding a mutating command without history coverage fails CI; the invariant is documented in the history docs."
@@ -15,4 +15,6 @@ risk: low
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-klo8,related,"2026-07-06T23:10:05.000Z",maintainer-agent,null
+comments[1]{created_at,author,text}:
+  "2026-07-13T21:41:33.254Z",codex-root,"History-completeness audit 2026-07-13: before this audit mutated the tracker, all 1,792 discovered history streams and all 28,195 events were read; integrity checks found zero missing streams, unreadable logs, hash mismatches, chain mismatches, or history drift. Item mutation integrity is therefore currently healthy. Keep this item open because workspace-scoped configuration, schema, profile, initialization, and other non-item mutation paths still need explicit immutable audit coverage and restoration semantics, coordinated with pm-klo8."
 body: "## Rationale\n25k+ history entries exist because item mutation paths call the history writer — but nothing proves coverage is complete. A new mutating command (or SDK primitive) that forgets to record history would silently break the full-proof guarantee that any item can be restored to any version. The contracts table already classifies mutating actions (register-mutation.ts wiring), so the enumeration is free and the gate cannot drift from the surface.\n\n## Phasing\n1. Item-scope mutations now: create/update/close/delete/append/claim/release/copy/restore/comments/notes/learnings/files/docs/deps/test-link/plan mutations/update-many/close-many/history-redact/repair/compact (audited rewrites must leave their audit marker).\n2. Workspace-scope after pm-klo8: config/schema/profile/init/extension-state.\n\n## Notes\n- Assert via the SDK read path (history list) not raw file reads where possible, to double as an SDK-first exercise (pm-usfg).\n- Explicit known-unaudited allowlist mirrors the eslint-suppressions ratchet pattern: shrinking-only."

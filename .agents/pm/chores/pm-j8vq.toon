@@ -1,12 +1,12 @@
 id: pm-j8vq
 title: Burn down the 76 grandfathered complexity-baseline suppressions (cognitive >16 + cyclomatic 17)
-description: ""
+description: "Eliminate grandfathered complexity suppressions through behavior-preserving decomposition while keeping quality, duplication, and coverage gates green."
 type: Chore
 status: open
 priority: 3
 tags[2]: code-quality,codefactor
 created_at: "2026-07-12T07:36:30.261Z"
-updated_at: "2026-07-12T07:36:30.261Z"
+updated_at: "2026-07-13T21:38:09.439Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "eslint-suppressions.json total reduced from 180 back toward 104 as functions are decomposed; MAX_ESLINT_SUPPRESSIONS lowered in lockstep (never raised); worst offenders first (extension-command-options.ts cog 34, lock-gc.ts 29, checkpoint-gc.ts 28, lock.ts 27, fs-utils.ts 27); each refactor keeps the 100% coverage gate green"

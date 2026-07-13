@@ -1,12 +1,12 @@
 id: pm-5qmm
 title: "Workspace memory tiers: derived rollup summaries of closed-item epochs keep decades-old work queryable in bounded tokens"
-description: ""
+description: Maintain rebuildable epoch and epic rollups so decades of closed work remain queryable and useful to context assembly within fixed token budgets.
 type: Feature
 status: open
 priority: 2
 tags[3]: context,long-horizon,scale
 created_at: "2026-07-06T23:26:29.415Z"
-updated_at: "2026-07-06T23:26:29.415Z"
+updated_at: "2026-07-13T21:37:58.882Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "Design note settles derived-artifact placement, regeneration triggers, and invalidation (aligned with the semantic-ledger precedent); prototype generates epoch/epic rollup summaries on a pm-mi2x synthetic workspace; pm context and pm search can surface rollup records as compact stand-ins under a token budget with drill-down IDs to full items; source items and their history streams remain byte-untouched (derived-only guarantee proven by test); regeneration is deterministic for a fixed workspace state; small workspaces skip the tier entirely with zero configuration"

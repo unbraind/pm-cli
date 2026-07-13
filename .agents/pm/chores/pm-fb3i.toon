@@ -1,12 +1,12 @@
 id: pm-fb3i
 title: "Docstring coverage regressed below achieved-100% by PR#536 extraction files; quality:static floors never ratcheted and mask drift; drop dead closure-pattern export"
-description: ""
+description: Restore 100% docstring coverage and ratchet the static gate after governance-audit extraction while removing or using the dead closure-pattern export.
 type: Chore
 status: open
 priority: 2
 tags[3]: docstrings,pm-governance-audit,quality-gate
 created_at: "2026-07-13T09:49:05.235Z"
-updated_at: "2026-07-13T09:49:40.939Z"
+updated_at: "2026-07-13T21:37:32.649Z"
 author: maintainer-agent
 estimated_minutes: 40
 acceptance_criteria: "runtime-utils.ts and sdk.ts in packages/pm-governance-audit/extensions/governance-audit carry module + exported + member docstrings and static-quality-gate reports 100/100/100 with default thresholds; DEFAULT_CLOSURE_LIKE_METADATA_FIELD_PATTERNS is removed from runtime-utils.ts (zero call sites) or wired to a real consumer with a covering spec; the quality:static script floors in package.json are ratcheted to the newly achieved coverage so future sub-100% files fail CI"

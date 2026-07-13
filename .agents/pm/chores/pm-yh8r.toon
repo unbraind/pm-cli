@@ -1,12 +1,12 @@
 id: pm-yh8r
 title: "LOC-cap headroom: decompose near-cap infrastructure files outside the SDK-promotion partition (main.ts at 99% of the 3400 gate)"
-description: ""
+description: Decompose near-limit infrastructure modules into behavior-preserving units to restore LOC headroom without crossing SDK-promotion ownership boundaries.
 type: Chore
 status: open
 priority: 1
 tags[2]: "area:quality",refactor
 created_at: "2026-07-11T10:47:52.058Z"
-updated_at: "2026-07-13T14:24:31.364Z"
+updated_at: "2026-07-13T21:37:21.835Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "main.ts, extensions/loader.ts, sdk/runtime.ts, register-mutation.ts, completion.ts each at or under 80% of the 3400 effective-line gate; splits are behavior-preserving (byte-identical outputs on goldens, contract tests green); vitest.config mirrored test paths updated; jscpd clean; coverage gate holds 100%; no decomposition of files fenced to other owners"

@@ -1,12 +1,12 @@
 id: pm-ka6d
 title: Document the two-call agent cold-start (contracts --summary + next) as the canonical orientation in docs and plugin templates
-description: ""
+description: Standardize the two-call contracts-summary plus next cold start across agent docs and plugin templates with measured token evidence.
 type: Chore
 status: open
 priority: 2
 tags[3]: agent-ux,"area:docs",simplification
 created_at: "2026-07-11T16:23:07.560Z"
-updated_at: "2026-07-11T16:23:07.560Z"
+updated_at: "2026-07-13T21:37:41.346Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Agent-facing docs describe the two-call cold-start as the canonical orientation path; plugin instruction templates teach the same sequence; no new top-level commands introduced; before/after token numbers cited from the a22j baseline script

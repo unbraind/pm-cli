@@ -1,12 +1,12 @@
 id: pm-u14c
 title: "As an organization running thousands of agents, I can verify which principal recorded each history entry: per-entry author signatures complementing hash-chain tamper-evidence"
-description: ""
+description: Explore per-entry cryptographic author signatures and key-management models that add verifiable authorship to existing hash-chain tamper evidence at fleet scale.
 type: Story
 status: open
 priority: 4
 tags[5]: exploration,history,identity,integrity,long-horizon
 created_at: "2026-07-06T23:35:58.629Z"
-updated_at: "2026-07-06T23:35:58.629Z"
+updated_at: "2026-07-13T21:38:19.688Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "Spike + ADR only at this stage: a written exploration evaluates per-entry signature schemes (author keypairs, git-commit-signing reuse, workspace trust store), key distribution/rotation for thousands of agent principals, verify integration into the existing history --verify path, storage/token overhead per entry, and opt-in configuration; the ADR states an accept/defer decision with scale measurements from the pm-mi2x workspaces; no implementation lands before the ADR is accepted"

@@ -1,12 +1,12 @@
 id: pm-dijg
 title: "Schema evolution migrations: lossless, history-recorded bulk migration of existing items when custom types, fields, or statuses are renamed or retired"
-description: ""
+description: "Provide SDK-first, dry-run-first, resumable schema evolution migrations that losslessly rename or retire types, fields, and statuses with immutable audit proof."
 type: Feature
 status: open
 priority: 2
 tags[5]: customization,durability,long-horizon,schema,sdk
 created_at: "2026-07-06T23:35:40.341Z"
-updated_at: "2026-07-06T23:35:40.341Z"
+updated_at: "2026-07-13T21:37:56.466Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "pm schema gains migration verbs (SDK-first): rename-type, rename-field, remap-status/retire-status with an explicit value mapping; a --dry-run plan enumerates affected items and per-field changes before any write; execution rewrites affected items losslessly (unknown/unmapped values are never silently dropped) and appends a migration history entry to every touched item plus the workspace stream, preserving immutable proof; migration is O(affected) via the derived read index at 100k+ scale (benchmark on pm-mi2x workspaces); interrupted migrations are resumable or atomic per item with a verifiable completion check; docs cover the schema-evolution workflow end to end"

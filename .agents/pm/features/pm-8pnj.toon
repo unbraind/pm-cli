@@ -1,12 +1,12 @@
 id: pm-8pnj
 title: "Golden agent-transcript replay: measure tokens-per-completed-task as a CI-visible DX regression gate"
-description: ""
+description: "Replay versioned golden agent task transcripts in CI to measure and gate total tokens per completed task, complementing context-quality evaluation."
 type: Feature
 status: open
 priority: 2
 tags[4]: agent-ux,"area:ci",measurement,simplification
 created_at: "2026-07-11T16:22:48.239Z"
-updated_at: "2026-07-11T16:22:48.239Z"
+updated_at: "2026-07-13T21:37:44.054Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: Golden transcript corpus (canonical agent task sequences) versioned in-repo; replay runner reports bytes+approx-tokens per completed task against the current build; wired into the existing token-cost CI gate lineage with a documented regression threshold; boundary with pm-atfm quality harness documented; workflow for adding transcripts documented

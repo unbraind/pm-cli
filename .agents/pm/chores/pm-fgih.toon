@@ -1,12 +1,12 @@
 id: pm-fgih
 title: "Cursor fingerprints: replace per-command presentation-flag deny-lists with contract-declared semantic classification in sdk/pagination"
-description: ""
+description: Declare query-semantic versus presentation-only flags in contracts so SDK cursor fingerprints stay stable without per-command deny-list maintenance.
 type: Chore
 status: open
 priority: 3
 tags[3]: agent-ux,perf,sdk
 created_at: "2026-07-12T19:24:49.130Z"
-updated_at: "2026-07-12T19:25:23.329Z"
+updated_at: "2026-07-13T21:38:07.380Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "Single shared helper (or flag-contract metadata) classifies each query flag as cursor-semantic vs presentation; list/context/search fingerprints are built from that declaration instead of local delete-lists; Adding a new presentation-only flag to list/search/context cannot invalidate an in-flight cursor without a test failing (contract test covers the classification); The three existing deny-list sites (buildListCursorFingerprint, buildContextCursorFingerprint area, createSearchCursorFingerprint) are converged with zero behavior change for currently-valid cursors"

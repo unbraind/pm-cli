@@ -1,12 +1,12 @@
 id: pm-ksv2
 title: "Sentry captures deliberate Ctrl+C interrupts as error-level events (AbortError, PM-CLI-27)"
-description: ""
+description: Classify deliberate SIGINT and readline cancellations as handled control flow so user aborts do not create error-level Sentry issues or block release telemetry gates.
 type: Issue
 status: open
 priority: 2
 tags[3]: agent-ux,sentry,telemetry
 created_at: "2026-07-12T08:08:23.019Z"
-updated_at: "2026-07-13T19:42:45.176Z"
+updated_at: "2026-07-13T21:37:28.208Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "user-initiated SIGINT/Ctrl+C aborts are classified as handled non-error telemetry (breadcrumb or info event, or not captured at all); AbortError from readline/prompt cancellation no longer creates unresolved error-level Sentry issues; sentry-telemetry-gate cannot be blocked by a user pressing Ctrl+C; regression spec covers the abort path"

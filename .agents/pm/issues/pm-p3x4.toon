@@ -1,12 +1,12 @@
 id: pm-p3x4
 title: "pm activity --compact --json emits an empty activity:[] decoy key alongside compact_activity"
-description: ""
+description: Remove the empty activity decoy from compact JSON and establish one unambiguous activity payload key without breaking alias compatibility.
 type: Issue
 status: open
 priority: 3
 tags[3]: agent-ux,cli,token-efficiency
 created_at: "2026-07-10T10:48:01.400Z"
-updated_at: "2026-07-10T10:48:01.400Z"
+updated_at: "2026-07-13T21:38:11.478Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: compact --json emits exactly one activity key (no empty decoy array); MCP activity envelope matches; contracts/docs state the compact JSON shape; regression test asserts the empty key is absent
