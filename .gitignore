@@ -41,4 +41,5 @@ scripts/prod/telemetry/**
 # pm-cli:runtime-cache:start
 .agents/pm/runtime/
 .agents/pm/search/
+.agents/pm/locks/
 # pm-cli:runtime-cache:end

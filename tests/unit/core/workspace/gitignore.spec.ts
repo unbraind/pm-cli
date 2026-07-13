@@ -14,6 +14,7 @@ describe("ensurePmGitignore", () => {
       const first = await ensurePmGitignore(root);
       expect(first.changed).toBe(true);
       expect(await readFile(first.path, "utf8")).toBe(`${getPmGitignoreBlock()}\n`);
+      expect(getPmGitignoreBlock()).toContain(".agents/pm/locks/");
 
       await writeFile(
         first.path,

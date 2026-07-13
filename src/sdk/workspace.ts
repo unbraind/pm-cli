@@ -15,6 +15,7 @@ const PM_GITIGNORE_BLOCK = [
   PM_GITIGNORE_START,
   ".agents/pm/runtime/",
   ".agents/pm/search/",
+  ".agents/pm/locks/",
   PM_GITIGNORE_END,
 ].join("\n");
 
