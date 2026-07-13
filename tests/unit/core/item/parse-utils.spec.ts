@@ -25,6 +25,8 @@ describe("core/item/parse", () => {
   it("parses non-negative integer options without accepting fractional or negative values", () => {
     expect(parseOptionalNonNegativeInteger("0", "--estimate")).toBe(0);
     expect(parseOptionalNonNegativeInteger("42", "--estimate")).toBe(42);
+    expect(parseOptionalNonNegativeInteger(" 42 ", "--estimate")).toBe(42);
+    expect(() => parseOptionalNonNegativeInteger("   ", "--estimate")).toThrow(PmCliError);
     expect(() => parseOptionalNonNegativeInteger("1.5", "--estimate")).toThrow(PmCliError);
     expect(() => parseOptionalNonNegativeInteger("-1", "--estimate")).toThrow(PmCliError);
   });

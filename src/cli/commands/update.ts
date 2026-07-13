@@ -2597,7 +2597,7 @@ function mutateUpdateDocument(
   document: ItemDocument,
   context: UpdateMutationContext,
 ): { changedFields: string[]; warnings: string[] } {
-  const beforeMetadata = structuredClone(document.metadata) as Record<string, unknown>;
+  const beforeMetadata = structuredClone(toItemRecord(document.metadata));
   const beforeBody = document.body;
   const changedFields: string[] = [];
   const warnings: string[] = [];

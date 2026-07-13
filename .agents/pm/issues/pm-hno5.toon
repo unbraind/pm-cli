@@ -6,8 +6,8 @@ status: closed
 priority: 2
 tags[4]: agent-ux,contracts,gh-issue,mcp
 created_at: "2026-07-13T09:17:31.743Z"
-updated_at: "2026-07-13T15:33:40.581Z"
-closed_at: "2026-07-13T15:32:49.841Z"
+updated_at: "2026-07-13T16:17:55.261Z"
+closed_at: "2026-07-13T16:17:54.437Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "pm_copy inputSchema declares title/message (and idOnly if supported) as flat top-level params derived from COPY_FLAG_CONTRACTS; options stays accepted for back-compat; Contract test asserts every narrow tool's declared top-level keys cover its action's flag contract (options-vs-flat drift fails fast); MCP integration suites run warning-clean: pm_close 'text' arg fixed and zero unexpected-top-level-argument warnings asserted"
@@ -19,9 +19,11 @@ expected_result: Supported flat copy arguments are declared and warning-free whi
 actual_result: "title, message, and idOnly are declared; bridge behavior and nested precedence passed; pm_close uses declared reason with no unexpected-argument warning."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-srns,related,"2026-07-13T15:28:05.446Z",null,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-13T14:32:19.802Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
   "2026-07-13T15:32:38.010Z",codex-sdk-contracts-20260713,"Evidence: pm_copy top-level title/message schema is derived from COPY_FLAG_CONTRACTS, idOnly is declared, nested options stay compatible, and the native bridge forwards flat overrides. The MCP lifecycle suite now uses declared pm_close reason, asserts no unexpected-top-level warnings, and verifies the stored close_reason. Contract snapshot, MCP suites, and package dogfood passed warning-clean for this path."
+  "2026-07-13T16:06:22.319Z",codex-sdk-contracts-20260713,"Review follow-up: actively addressing current-head Gemini findings for this item's implementation surface in PR #545. The item is reopened only for the duration of the review fix and will be reverified, closed, and released after evidence is recorded."
+  "2026-07-13T16:15:51.108Z",codex-sdk-contracts-20260713,"Review disposition: COPY_FLAG_CONTRACTS currently contains only single-word title/author/message flags, while fullChangedFields and idOnly are explicitly declared camelCase MCP controls outside that CLI contract. The proposed speculative kebab conversion has no reachable current input and would reduce exact coverage; no code change was warranted."
 learnings[1]{created_at,author,text}:
   "2026-07-13T15:28:10.238Z",codex-sdk-contracts-20260713,"Narrow MCP schemas should derive flat action parameters from canonical flag contracts, and integration tests should assert declared arguments produce no unexpected-top-level warnings."
 files[4]{path,scope,note}:
@@ -33,7 +35,8 @@ tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/mcp tests/integration/copy-command.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
   test-all-local-mrjdn0i2-0w3w16,test-all,passed,"2026-07-13T15:28:19.236Z","2026-07-13T15:31:01.377Z","2026-07-13T15:31:01.377Z",3,0,0,1,3
-close_reason: Implemented contract-derived pm_copy schema and warning-clean MCP lifecycle coverage; GH-542 will close on PR merge.
+  test-all-local-mrjfc5pj-px5stt,test-all,passed,"2026-07-13T16:15:52.023Z","2026-07-13T16:16:52.730Z","2026-07-13T16:16:52.730Z",3,0,0,1,3
+close_reason: "Review disposition complete: current copy contract remains camelCase and warning-clean; speculative unreachable conversion declined with evidence."
 body: "The MCP boundary's declared-keys warning (shipped by pm-qxwu via pm-at83) is only trustworthy if each tool's declared surface matches what the runtime actually accepts. pm_copy under-declares: runtime handler spreads args into runAction so flat title/message work, but the schema routes them through nested options — the ONLY narrow mutation tool shaped this way. Evidence in-repo: tests/integration/mcp-dynamic-package-actions.spec.ts ~:1340 passes flat title/message/idOnly and every CI run emits 3 warnings; same suite passes 'text' to pm_close (not a real param, silently ignored — assertion value untested). Class framing: this is the INPUT-side sibling of pm-srns (uniform output contract) and belongs to the mpbb declared-contract-rendering ledger family (6y58/9qcr/ulqu render FROM contract domain; this one DECLARES from contract). Fix in tool-definitions.ts by deriving from COPY_FLAG_CONTRACTS, not by hand-adding keys."

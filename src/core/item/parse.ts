@@ -532,8 +532,9 @@ export function parseOptionalNonNegativeInteger(
   raw: string,
   optionName: string,
 ): number {
-  const value = Number(raw);
-  if (!Number.isInteger(value) || value < 0) {
+  const trimmed = raw.trim();
+  const value = Number(trimmed);
+  if (trimmed === "" || !Number.isInteger(value) || value < 0) {
     throw new PmCliError(
       `Invalid ${optionName} value "${raw}". Expected a non-negative integer.`,
       EXIT_CODE.USAGE,

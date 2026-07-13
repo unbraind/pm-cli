@@ -6,8 +6,8 @@ status: closed
 priority: 3
 tags[3]: cli,gh-issue,validation
 created_at: "2026-07-13T08:57:37.424Z"
-updated_at: "2026-07-13T15:33:39.409Z"
-closed_at: "2026-07-13T15:32:46.314Z"
+updated_at: "2026-07-13T16:17:51.947Z"
+closed_at: "2026-07-13T16:17:51.137Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: Negative and non-integer --estimated-minutes rejected on create/update/update-many with domain-stating error; existing stored invalid values unaffected; regression tests; GH-532 closed
@@ -19,9 +19,11 @@ expected_result: "Negative, fractional, and nonnumeric estimates fail before wri
 actual_result: All invalid estimate forms return usage errors; zero and positive integers remain valid; focused and full tests passed.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-96vo,related,"2026-07-13T08:57:37.424Z",null,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-13T14:32:14.393Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
   "2026-07-13T15:32:36.668Z",codex-sdk-contracts-20260713,"Evidence: the shared non-negative integer parser is applied to create, update, and update-many planning, rejecting negative, fractional, and nonnumeric estimates before writes. Direct parser, command, bulk, and acceptance coverage passed."
+  "2026-07-13T16:06:24.496Z",codex-sdk-contracts-20260713,"Review follow-up: actively addressing current-head Gemini findings for this item's implementation surface in PR #545. The item is reopened only for the duration of the review fix and will be reverified, closed, and released after evidence is recorded."
+  "2026-07-13T16:15:48.182Z",codex-sdk-contracts-20260713,"Review evidence: the shared estimate parser now trims once and explicitly rejects empty or whitespace-only input instead of accepting JavaScript Number coercion as zero. Focused parser/command tests and full exact coverage passed."
 files[5]{path,scope,note}:
   src/cli/commands/create.ts,project,create estimate validation
   src/cli/commands/update-many.ts,project,bulk dry-run estimate validation
@@ -31,7 +33,8 @@ files[5]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/update-many-command.spec.ts tests/unit/commands/update-command.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/core/item/parse-utils.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
   test-all-local-mrjdn0i2-0w3w16,test-all,passed,"2026-07-13T15:28:19.236Z","2026-07-13T15:31:22.325Z","2026-07-13T15:31:22.325Z",2,0,0,1,2
-close_reason: Implemented shared non-negative integer estimate validation across create/update/update-many; GH-532 will close on PR merge.
+  test-all-local-mrjfc5pj-px5stt,test-all,passed,"2026-07-13T16:15:52.023Z","2026-07-13T16:17:18.645Z","2026-07-13T16:17:18.645Z",2,0,0,1,2
+close_reason: "Review hardening complete: whitespace-only estimates fail before coercion and exact full coverage passed."
 body: ""

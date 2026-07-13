@@ -300,14 +300,17 @@ function normalizeDependencies(
   if (!dependencies || dependencies.length === 0) {
     return [];
   }
-  const sorted = [...dependencies].sort((left, right) => {
+  const sorted = dependencies.map(({ id, kind }) => ({
+    id: id.trim(),
+    kind: kind.trim().toLowerCase(),
+  })).sort((left, right) => {
     const byKind = left.kind.localeCompare(right.kind);
     if (byKind !== 0) return byKind;
     return left.id.localeCompare(right.id);
   });
   const deduped = new Map<string, IndexedDependency>();
   for (const dependency of sorted) {
-    const key = `${dependency.kind}::${dependency.id}`;
+    const key = `${dependency.kind.toLowerCase()}::${dependency.id.toLowerCase()}`;
     if (!deduped.has(key)) {
       deduped.set(key, { id: dependency.id, kind: dependency.kind });
     }
