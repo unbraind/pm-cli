@@ -212,6 +212,28 @@ describe("runDeps", () => {
     });
   });
 
+  it("projects a dangling parent reference as a typed missing edge", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = createTask(context, "deps-parent-to-delete");
+      const child = context.runCli(
+        ["create", "deps-child", "--type", "Task", "--parent", parentId, "--json"],
+        { expectJson: true },
+      );
+      const childId = (child.json as { item: { id: string } }).item.id;
+      expect(
+        context.runCli(["delete", parentId, "--force", "--json"], {
+          expectJson: true,
+        }).code,
+      ).toBe(0);
+
+      const result = await runDeps(childId, { format: "tree" }, { path: context.pmPath });
+      expect(result).toMatchObject({ missing_count: 1 });
+      expect(result.tree?.dependencies).toEqual([
+        expect.objectContaining({ id: parentId, via: "parent", missing: true }),
+      ]);
+    });
+  });
+
   it("supports max-depth truncation for dense trees", async () => {
     await withTempPmPath(async (context) => {
       const leafId = createTask(context, "deps-depth-leaf");

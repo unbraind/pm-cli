@@ -2,15 +2,34 @@ id: pm-7je0
 title: "GH-533: create/update accept empty --title — required-title contract inconsistent between omitted and empty string"
 description: "pm create --type Task --title \"\" succeeds and persists an empty title, and pm update <id> --title \"\" clears an existing title, while omitting --title on create correctly errors 'Missing required option --title'. Title-less items render meaninglessly in lists and break title-keyed tooling (dedupe is title-prefix based). Fix: treat empty/whitespace-only --title as invalid on both create and update with the same required-option error shape; note extension.name already has a load-bearing .trim() precedent (PR#339–#351 era) — apply the same trim-then-require rule."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: cli,data-integrity,gh-issue,validation
 created_at: "2026-07-13T08:57:49.715Z"
-updated_at: "2026-07-13T08:57:49.715Z"
+updated_at: "2026-07-13T15:33:38.690Z"
+closed_at: "2026-07-13T15:32:44.579Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: Empty or whitespace-only --title rejected on create and update; error shape matches the missing-required-option error; regression tests; GH-533 closed
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: Resolved with shared trim-then-require title validation used by create and update.
+expected_result: Empty and whitespace-only titles fail before persistence with the required-title usage error.
+actual_result: Create and update reject blank titles with exit 2 while legacy malformed fixture reads remain covered.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-jh9t,related,"2026-07-13T15:28:04.596Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-13T14:32:12.252Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
+  "2026-07-13T15:32:36.175Z",codex-sdk-contracts-20260713,"Evidence: create and update now share trim-then-require title validation. Empty and whitespace-only titles fail with usage exit 2 before persistence; legacy malformed fixtures remain readable through explicit fixture rewriting. Focused and full coverage gates passed."
+files[3]{path,scope,note}:
+  src/cli/commands/create.ts,project,shared nonblank title validation
+  src/cli/commands/update.ts,project,update title validation
+  tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,create and update rejection coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/commands/focus-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mrjdn0i2-0w3w16,test-all,passed,"2026-07-13T15:28:19.236Z","2026-07-13T15:28:57.654Z","2026-07-13T15:28:57.654Z",2,0,0,1,2
+close_reason: Implemented shared nonblank title validation for create/update with regression coverage; GH-533 will close on PR merge.
 body: ""

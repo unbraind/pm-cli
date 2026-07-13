@@ -31,6 +31,7 @@ import {
   looksLikeGenericKeyValueEntry,
   mergeAdditiveTags,
   parseCsvKv,
+  parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
 } from "../../core/item/parse.js";
@@ -1307,8 +1308,9 @@ function buildTypeSpecificCreateExample(
   return tokens.join(" ");
 }
 
-function requireStringOption(value: string | undefined, flag: string): string {
-  if (value === undefined) {
+export function requireStringOption(value: string | undefined, flag: string): string {
+  const normalized = value?.trim();
+  if (!normalized) {
     if (flag === "--title") {
       throw new PmCliError(
         'Missing required option --title. Why required: every item needs a human-readable title for lookup, search, and reporting. Retry: pass the title as the first positional argument (example: pm create "Fix login bug" --type Issue) or with --title.',
@@ -1317,7 +1319,7 @@ function requireStringOption(value: string | undefined, flag: string): string {
     }
     throw new PmCliError(`Missing required option ${flag}`, EXIT_CODE.USAGE);
   }
-  return value;
+  return normalized;
 }
 
 function selectAuthor(
@@ -2604,7 +2606,7 @@ export async function runCreate(
     unsetKeys,
     "estimated_minutes",
     resolvedOptions.estimatedMinutes,
-    (raw) => parseOptionalNumber(raw, "estimated-minutes"),
+    (raw) => parseOptionalNonNegativeInteger(raw, "estimated-minutes"),
   );
   const acceptanceCriteria = resolveUnsettableOptionalString(
     unsetKeys,

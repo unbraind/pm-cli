@@ -2,17 +2,32 @@ id: pm-kj4k
 title: "GH-530: list --status <invalid> silently returns count 0 — validate against the status domain like --type and search status:"
 description: "pm list --status bogusstatus returns count:0 exit 0 while pm list --type BogusType and pm search 'x' status:notarealstatus both fail fast with the valid domain. An agent reading the empty result concludes 'no matching items' — silent-wrong-data class, sibling of pm-96vo (GH-526 aggregate --sum/--avg silent 0 on unknown fields). Fix: validate --status against open|closed|canceled + configured status ids (same validator search uses) and error with the domain list; sweep other list filters (--assignee? --tag?) for the same fail-fast gap at fix time so the filter surface is uniformly validated."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,cli,gh-issue
 created_at: "2026-07-13T08:57:24.341Z"
-updated_at: "2026-07-13T08:57:24.341Z"
+updated_at: "2026-07-13T15:33:40.001Z"
+closed_at: "2026-07-13T15:32:48.021Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Unknown --status on list errors with the valid domain (including configured statuses); behavior consistent with search status: validator; regression tests for list/list-* variants; GH-530 closed"
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: Resolved by enabling strict runtime status-registry parsing for list filters.
+expected_result: Unknown statuses fail with the configured status domain instead of returning a false empty result.
+actual_result: "Unknown list status returns usage exit 2 while built-in, workflow, and custom aliases remain supported."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-96vo,related,"2026-07-13T08:57:24.341Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-13T14:32:17.252Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
+  "2026-07-13T15:32:37.393Z",codex-sdk-contracts-20260713,"Evidence: list status parsing now uses the runtime status registry in strict mode, preserving built-in/custom/workflow aliases while rejecting unknown tokens with usage exit 2 instead of a false empty result. Unit and acceptance coverage passed."
+files[2]{path,scope,note}:
+  src/cli/commands/list.ts,project,strict runtime status resolution
+  tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,invalid status acceptance coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/list-command.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mrjdn0i2-0w3w16,test-all,passed,"2026-07-13T15:28:19.236Z","2026-07-13T15:31:34.498Z","2026-07-13T15:31:34.498Z",1,0,0,1,1
+close_reason: Implemented strict runtime-registry status validation for list filters; GH-530 will close on PR merge.
 body: ""

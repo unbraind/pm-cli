@@ -3483,7 +3483,6 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const appFile = path.join(projectRoot, "src", "app.ts");
       const planFile = path.join(projectRoot, "docs", "plan.md");
       const globalFile = path.join(outsideRoot, "global.txt");
-      const normalizedGlobalFile = globalFile.split(path.sep).join("/");
       await writeFile(appFile, "export const app = true;\n", "utf8");
       await writeFile(planFile, "# plan\n", "utf8");
       await writeFile(globalFile, "global reference\n", "utf8");
@@ -3567,9 +3566,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(dryRunJson.skipped_existing_count).toBe(1);
       expect(dryRunJson.candidates).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ path: "src/app.ts", scope: "project", status: "addable" }),
-          expect.objectContaining({ path: "docs/plan.md", scope: "project", status: "already_linked" }),
-          expect.objectContaining({ path: normalizedGlobalFile, scope: "global", status: "addable" }),
+          expect.objectContaining({ path: "discovery-project/src/app.ts", scope: "project", status: "addable" }),
+          expect.objectContaining({ path: "discovery-project/docs/plan.md", scope: "project", status: "already_linked" }),
+          expect.objectContaining({ path: "outside/global.txt", scope: "project", status: "addable" }),
         ]),
       );
 
@@ -3599,9 +3598,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(appliedJson.added_count).toBe(2);
       expect(appliedJson.files).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ path: "src/app.ts", scope: "project", note: "context discovery" }),
-          expect.objectContaining({ path: normalizedGlobalFile, scope: "global", note: "context discovery" }),
-          expect.objectContaining({ path: "docs/plan.md", scope: "project" }),
+          expect.objectContaining({ path: "discovery-project/src/app.ts", scope: "project", note: "context discovery" }),
+          expect.objectContaining({ path: "outside/global.txt", scope: "project", note: "context discovery" }),
+          expect.objectContaining({ path: "discovery-project/docs/plan.md", scope: "project" }),
         ]),
       );
 
@@ -3616,7 +3615,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(listFiles.code).toBe(0);
       const listFilesJson = listFiles.json as { files: Array<{ path: string }> };
       expect(listFilesJson.files.map((entry) => entry.path).sort()).toEqual(
-        [normalizedGlobalFile, "docs/plan.md", "src/app.ts"].sort(),
+        ["outside/global.txt", "discovery-project/docs/plan.md", "discovery-project/src/app.ts"].sort(),
       );
 
       const history = context.runCli(["history", id, "--json", "--full", "--limit", "1"], { expectJson: true, cwd: projectRoot });
@@ -6788,7 +6787,10 @@ it("supports files/docs add-glob mutations through CLI", async () => {
     expect(filesResult.code).toBe(0);
     const filesJson = filesResult.json as { files: Array<{ path: string; scope: string }>; count: number };
     expect(filesJson.count).toBe(2);
-    expect(filesJson.files.map((entry) => entry.path)).toEqual(["src/routes/alpha.ts", "src/routes/beta.ts"]);
+    expect(filesJson.files.map((entry) => entry.path)).toEqual([
+      "glob-workspace/src/routes/alpha.ts",
+      "glob-workspace/src/routes/beta.ts",
+    ]);
     expect(filesJson.files.every((entry) => entry.scope === "project")).toBe(true);
 
     const docsResult = context.runCli(
@@ -6798,7 +6800,10 @@ it("supports files/docs add-glob mutations through CLI", async () => {
     expect(docsResult.code).toBe(0);
     const docsJson = docsResult.json as { docs: Array<{ path: string; scope: string; note?: string }>; count: number };
     expect(docsJson.count).toBe(2);
-    expect(docsJson.docs.map((entry) => entry.path)).toEqual(["docs/guides/alpha.md", "docs/guides/beta.md"]);
+    expect(docsJson.docs.map((entry) => entry.path)).toEqual([
+      "glob-workspace/docs/guides/alpha.md",
+      "glob-workspace/docs/guides/beta.md",
+    ]);
     expect(docsJson.docs.every((entry) => entry.scope === "global")).toBe(true);
     expect(docsJson.docs.every((entry) => entry.note === "from glob")).toBe(true);
   });

@@ -16,7 +16,11 @@ import {
   mutateItem,
   readLocatedItem,
 } from "../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import {
+  getSettingsPath,
+  resolvePmRoot,
+  resolveWorkspaceRoot,
+} from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import { isPathWithinDirectory } from "../core/fs/path-utils.js";
@@ -248,11 +252,12 @@ function extractRawPathReferences(
 
 async function resolveDiscoveredFile(
   rawPath: string,
-  projectRoot: string,
+  workspaceRoot: string,
+  invocationRoot: string = workspaceRoot,
 ): Promise<Pick<LinkedFile, "path" | "scope"> | undefined> {
   const absolutePath = path.isAbsolute(rawPath)
     ? path.resolve(rawPath)
-    : path.resolve(projectRoot, rawPath);
+    : path.resolve(invocationRoot, rawPath);
   let stats;
   try {
     stats = await fs.stat(absolutePath);
@@ -263,7 +268,7 @@ async function resolveDiscoveredFile(
     return undefined;
   }
   const [canonicalProjectRoot, canonicalAbsolutePath] = await Promise.all([
-    realpathForContainment(projectRoot),
+    realpathForContainment(workspaceRoot),
     realpathForContainment(absolutePath),
   ]);
   if (isPathWithinDirectory(canonicalProjectRoot, canonicalAbsolutePath)) {
@@ -291,11 +296,12 @@ async function resolveDiscoveredFile(
 
 async function discoverReferencedFiles(
   document: ItemDocument,
-  projectRoot: string,
+  workspaceRoot: string,
+  invocationRoot: string = workspaceRoot,
 ): Promise<FilesDiscoveryCandidate[]> {
   const existingResolvedKeys = new Set(
     (document.metadata.files ?? []).map((entry) =>
-      linkedFileResolvedKey(entry, projectRoot),
+      linkedFileResolvedKey(entry, workspaceRoot),
     ),
   );
   const grouped = new Map<
@@ -320,7 +326,7 @@ async function discoverReferencedFiles(
       async (value) => {
         resolvedByValue.set(
           value,
-          await resolveDiscoveredFile(value, projectRoot),
+          await resolveDiscoveredFile(value, workspaceRoot, invocationRoot),
         );
       },
     ),
@@ -333,7 +339,7 @@ async function discoverReferencedFiles(
     if (!resolved) {
       continue;
     }
-    const key = linkedFileResolvedKey(resolved, projectRoot);
+    const key = linkedFileResolvedKey(resolved, workspaceRoot);
     const existing = grouped.get(key) ?? {
       path: resolved.path,
       scope: resolved.scope,
@@ -412,6 +418,7 @@ export async function runFilesDiscover(
   global: GlobalOptions,
 ): Promise<FilesDiscoverResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const workspaceRoot = resolveWorkspaceRoot(pmRoot);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(
       `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
@@ -437,6 +444,7 @@ export async function runFilesDiscover(
   const loaded = await readLocatedItem(located, { schema: settings.schema });
   const candidates = await discoverReferencedFiles(
     loaded.document,
+    workspaceRoot,
     process.cwd(),
   );
   const addableCandidates = candidates.filter(
@@ -485,12 +493,12 @@ export async function runFilesDiscover(
     mutate(document) {
       const next = [...(document.metadata.files ?? [])];
       const existingResolvedKeys = new Set(
-        next.map((entry) => linkedFileResolvedKey(entry, process.cwd())),
+        next.map((entry) => linkedFileResolvedKey(entry, workspaceRoot)),
       );
       appliedAdds = [];
       appliedCandidateIndices.clear();
       for (const [index, add] of discoveredAdds.entries()) {
-        const resolvedKey = linkedFileResolvedKey(add, process.cwd());
+        const resolvedKey = linkedFileResolvedKey(add, workspaceRoot);
         /* c8 ignore next -- duplicate-key race paths are exercised in broader CLI race tests. */
         if (existingResolvedKeys.has(resolvedKey)) {
           continue;
@@ -526,10 +534,10 @@ export async function runFilesDiscover(
 
   const files = result.item.files ?? [];
   const addedResolvedKeys = new Set(
-    appliedAdds.map((entry) => linkedFileResolvedKey(entry, process.cwd())),
+    appliedAdds.map((entry) => linkedFileResolvedKey(entry, workspaceRoot)),
   );
   const added = files.filter((entry) =>
-    addedResolvedKeys.has(linkedFileResolvedKey(entry, process.cwd())),
+    addedResolvedKeys.has(linkedFileResolvedKey(entry, workspaceRoot)),
   );
   const skippedDuringApply = addableCandidates.filter(
     (_candidate, index) => !appliedCandidateIndices.has(index),

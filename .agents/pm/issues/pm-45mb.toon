@@ -2,17 +2,37 @@ id: pm-45mb
 title: "GH-534: no-op update reports phantom changed_fields in --json while TOON reports empty, and changed_field_count is always null in JSON"
 description: "A no-op pm update (field set to its current value) emits changed_fields:['title'] in --json but an empty changed_fields in TOON — the two formats disagree about whether anything changed; agents keying off JSON see phantom mutations. Additionally changed_field_count is computed for TOON but left null in the JSON envelope. Fix: compute changed_fields once from the actual before/after diff and share it across both renderers (uniform output contract — pm-srns territory), and populate changed_field_count as a number (0 for no-op). Check update-many/close envelopes for the same divergence at fix time."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,cli,gh-issue,json-output
 created_at: "2026-07-13T08:58:01.446Z"
-updated_at: "2026-07-13T08:58:01.446Z"
+updated_at: "2026-07-13T15:33:38.099Z"
+closed_at: "2026-07-13T15:32:42.756Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "No-op update reports empty changed_fields in BOTH json and toon; changed_field_count numeric in JSON (0 no-op, N real); update-many/close checked for the same divergence; regression tests; GH-534 closed"
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: Resolved by filtering attempted mutations through the persisted before/after document and suppressing no-op writes.
+expected_result: No-op updates report no changed fields or history mutation in every output projection.
+actual_result: Same-value title updates report changed_field_count=0; real mutations retain precise changed fields and full tests passed.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-srns,related,"2026-07-13T08:58:01.446Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-13T14:32:09.854Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
+  "2026-07-13T15:32:35.414Z",codex-sdk-contracts-20260713,"Evidence: update changed_fields is filtered against the persisted before/after metadata and body, and skipNoop prevents phantom history/write timestamps. JSON reports changed_field_count=0 for a same-title update. update-many and close envelope ownership were evaluated and documented. Focused and full coverage gates passed."
+notes[1]{created_at,author,text}:
+  "2026-07-13T15:28:07.544Z",codex-sdk-contracts-20260713,"update-many already computes row status from actual per-item mutation results, and close is a lifecycle transition rather than a same-value scalar update. The phantom field defect was isolated to update's pre-diff changed_fields accumulation."
+learnings[1]{created_at,author,text}:
+  "2026-07-13T15:28:09.546Z",codex-sdk-contracts-20260713,"Mutation output should derive changed_fields from the persisted before/after document, not from attempted assignments, so JSON, TOON, history, and no-op write suppression share one truth."
+files[3]{path,scope,note}:
+  src/cli/commands/update.ts,project,persisted-delta mutation filtering
+  tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,no-op JSON acceptance coverage
+  tests/unit/commands/update-command.spec.ts,project,truthful changed_fields coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mrjdn0i2-0w3w16,test-all,passed,"2026-07-13T15:28:19.236Z","2026-07-13T15:28:35.584Z","2026-07-13T15:28:35.584Z",1,0,0,1,1
+close_reason: Implemented persisted-delta changed_fields and no-op write suppression with consistent mutation projection proof; GH-534 will close on PR merge.
 body: ""

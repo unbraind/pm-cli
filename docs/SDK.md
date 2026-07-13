@@ -165,8 +165,10 @@ const result = await pm.planMaterialize(created.plan.id, {
 
 ### Linked resources and dependency governance
 
-Tracked: [pm-jcvg](../.agents/pm/tasks/pm-jcvg.toon) and
-[pm-2ler](../.agents/pm/issues/pm-2ler.toon).
+Tracked: [pm-jcvg](../.agents/pm/tasks/pm-jcvg.toon),
+[pm-2ler](../.agents/pm/issues/pm-2ler.toon),
+[pm-chyh](../.agents/pm/issues/pm-chyh.toon), and
+[pm-p9sc](../.agents/pm/issues/pm-p9sc.toon).
 
 Custom tools can use the same domain primitives as the CLI without dispatching a
 command action. The direct functions accept the typed command options plus a
@@ -201,6 +203,18 @@ const references = collectDanglingDependencyReferences(items, (status) =>
 );
 // references.active gates work; references.legacy_terminal is historical debt.
 ```
+
+Local file and documentation paths have one storage contract: relative inputs
+are resolved from the invocation directory and stored relative to the workspace
+that owns `.agents/pm`. Absolute paths and remote references stay absolute.
+Globs, discovery, removal, and `validatePaths` use the same anchoring rule, so a
+tool invoked from a nested package never records a path that changes meaning
+when another agent runs from the repository root. Root-layout trackers use the
+tracker directory itself as their workspace.
+
+`runDeps` also projects missing `parent` and legacy `blocked_by` references as
+typed missing edges, alongside structured dependencies. Tree, graph, and
+summary output therefore share the same relationship-integrity view.
 
 `pm validate --check-lifecycle` uses the same classification. Its
 `dependency_references` check warns only when

@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -14,7 +14,7 @@ import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 async function seedItem(context: TempPmContext, title = "focus-parent"): Promise<string> {
   const created = await runCreate(
     {
-      title,
+      title: title || "legacy blank title fixture",
       description: `${title} description`,
       type: "Epic",
       status: "open",
@@ -23,6 +23,11 @@ async function seedItem(context: TempPmContext, title = "focus-parent"): Promise
     },
     { path: context.pmPath },
   );
+  if (title === "") {
+    const itemPath = path.join(context.pmPath, "epics", `${created.item.id}.toon`);
+    const raw = await readFile(itemPath, "utf8");
+    await writeFile(itemPath, raw.replace(/^title:.*$/m, 'title: ""'), "utf8");
+  }
   return created.item.id;
 }
 
@@ -60,7 +65,7 @@ describe("runFocus", () => {
       const id = await seedItem(context, "");
       const result = await runFocus(id, {}, { path: context.pmPath });
       expect(result.action).toBe("set");
-      // An item created with an empty title yields a null title hint.
+      // A legacy item persisted before title validation yields a null title hint.
       expect(result.title).toBeNull();
       // No title, so the "Focused on <id> (title)" suffix is omitted.
       expect(result.message).toContain(`Focused on ${id}. New items`);

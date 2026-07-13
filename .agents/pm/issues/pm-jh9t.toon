@@ -2,17 +2,36 @@ id: pm-jh9t
 title: "GH-532: --estimated-minutes accepts negative numbers and floats — missing non-negative-integer range validation"
 description: "pm update --estimated-minutes -5 and 1.5 both succeed (exit 0) and persist, while non-numeric input is correctly rejected — the coercion validates type but not range/integrality. Negative effort corrupts aggregate sums and flow metrics. Fix: reject negatives (and either reject or round-document fractionals) with the same 'Invalid argument value' error shape used for non-numeric input, at the shared numeric-coercion site so create/update/update-many all inherit it. Same silent-wrong-data family as pm-96vo/pm-kj4k."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: cli,gh-issue,validation
 created_at: "2026-07-13T08:57:37.424Z"
-updated_at: "2026-07-13T08:57:37.424Z"
+updated_at: "2026-07-13T15:33:39.409Z"
+closed_at: "2026-07-13T15:32:46.314Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: Negative and non-integer --estimated-minutes rejected on create/update/update-many with domain-stating error; existing stored invalid values unaffected; regression tests; GH-532 closed
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: "Resolved with a shared non-negative integer parser wired into create, update, and update-many planning."
+expected_result: "Negative, fractional, and nonnumeric estimates fail before writes across all mutation paths."
+actual_result: All invalid estimate forms return usage errors; zero and positive integers remain valid; focused and full tests passed.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-96vo,related,"2026-07-13T08:57:37.424Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-13T14:32:14.393Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
+  "2026-07-13T15:32:36.668Z",codex-sdk-contracts-20260713,"Evidence: the shared non-negative integer parser is applied to create, update, and update-many planning, rejecting negative, fractional, and nonnumeric estimates before writes. Direct parser, command, bulk, and acceptance coverage passed."
+files[5]{path,scope,note}:
+  src/cli/commands/create.ts,project,create estimate validation
+  src/cli/commands/update-many.ts,project,bulk dry-run estimate validation
+  src/cli/commands/update.ts,project,update estimate validation
+  src/core/item/parse.ts,project,non-negative integer parser
+  tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,cross-command estimate rejection coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/update-many-command.spec.ts tests/unit/commands/update-command.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/core/item/parse-utils.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mrjdn0i2-0w3w16,test-all,passed,"2026-07-13T15:28:19.236Z","2026-07-13T15:31:22.325Z","2026-07-13T15:31:22.325Z",2,0,0,1,2
+close_reason: Implemented shared non-negative integer estimate validation across create/update/update-many; GH-532 will close on PR merge.
 body: ""

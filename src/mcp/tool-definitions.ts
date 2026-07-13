@@ -4,6 +4,7 @@
  * Defines the Tool Definitions module for pm CLI source.
  */
 import { PM_TOOL_ACTIONS } from "../sdk/cli-contracts/enum-contracts.js";
+import { COPY_FLAG_CONTRACTS } from "../sdk/cli-contracts/flag-contracts.js";
 import { RUNTIME_STATUS_ROLE_VALUES } from "../types.js";
 
 /**
@@ -83,6 +84,13 @@ const SEARCH_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> = {
     description: "Alias for options.limit.",
   },
 };
+
+const COPY_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> = Object.fromEntries(
+  COPY_FLAG_CONTRACTS.filter(({ flag }) => flag !== "--author").map(({ flag }) => [
+    flag.slice(2),
+    { type: "string", description: `Alias for options.${flag.slice(2).replaceAll("-", "_")}.` },
+  ]),
+);
 
 function objectSchema(
   properties: Record<string, unknown>,
@@ -253,10 +261,15 @@ export const TOOLS: ToolDefinition[] = [
     inputSchema: objectSchema(
       {
         id: idSchema,
+        ...COPY_TOP_LEVEL_OPTION_PROPERTIES,
         fullChangedFields: {
           type: "boolean",
           description:
             "Return full changed_fields instead of changed_field_count.",
+        },
+        idOnly: {
+          type: "boolean",
+          description: "Return only id and status.",
         },
         options: {
           type: "object",

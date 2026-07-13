@@ -11,6 +11,7 @@ import { nowIso } from "../../core/shared/time.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { parseStatusFilterCsv } from "../../core/item/status-filter.js";
 import {
+  resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
   type RuntimeStatusRegistry,
 } from "../../core/schema/runtime-schema.js";
@@ -186,6 +187,7 @@ interface NumericAggregation {
 
 function parseNumericAggregation(
   options: AggregateOptions,
+  allowedFields: readonly string[] = ["estimate", "estimated_minutes", "priority"],
 ): NumericAggregation | null {
   const sumField = options.sum?.trim();
   const avgField = options.avg?.trim();
@@ -200,8 +202,15 @@ function parseNumericAggregation(
       EXIT_CODE.USAGE,
     );
   }
+  const field = normalizedSum ?? normalizedAvg!;
+  if (!allowedFields.includes(field)) {
+    throw new PmCliError(
+      `Aggregate numeric field "${field}" is not registered. Allowed: ${allowedFields.join(", ")}`,
+      EXIT_CODE.USAGE,
+    );
+  }
   return {
-    field: normalizedSum ?? normalizedAvg!,
+    field,
     sum: normalizedSum !== undefined,
     avg: normalizedAvg !== undefined,
   };
@@ -570,9 +579,20 @@ export async function runAggregate(
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const numericFields = [
+    "estimate",
+    "estimated_minutes",
+    "priority",
+    ...resolveRuntimeFieldRegistry(settings.schema).definitions
+      .filter((definition) => definition.type === "number")
+      .map((definition) => definition.metadata_key),
+  ];
   const groupBy = parseGroupBy(options.groupBy);
   const status = parseStatus(options.status, statusRegistry);
-  const numericAggregation = parseNumericAggregation(options);
+  const numericAggregation = parseNumericAggregation(
+    options,
+    [...new Set(numericFields)].sort((left, right) => left.localeCompare(right)),
+  );
   const includeCompletion = options.completion === true;
   const includeUnparented = options.includeUnparented === true;
 

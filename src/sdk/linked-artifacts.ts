@@ -25,7 +25,11 @@ import {
   mutateItem,
   readLocatedItem,
 } from "../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import {
+  getSettingsPath,
+  resolvePmRoot,
+  resolveWorkspaceRoot,
+} from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { SCOPE_VALUES } from "../types/index.js";
 import { resolveAuthor } from "../core/shared/author.js";
@@ -339,15 +343,46 @@ export function normalizeLinkedPath(value: string): string {
   return value.split(path.sep).join("/");
 }
 
+/** Anchor a local linked path to the project workspace while preserving remote references and absolute paths. */
+export function anchorLinkedPath(
+  value: string,
+  workspaceRoot: string,
+  invocationRoot: string = process.cwd(),
+): string {
+  const trimmed = value.trim();
+  if (isRemoteLinkedArtifactReference(trimmed)) {
+    return trimmed;
+  }
+  if (path.isAbsolute(trimmed) || /^[A-Za-z]:[\\/]/.test(trimmed)) {
+    return normalizeLinkedPath(trimmed.replaceAll("\\", path.sep));
+  }
+  const invocationRelativeToWorkspace = path.relative(
+    workspaceRoot,
+    invocationRoot,
+  );
+  if (
+    invocationRelativeToWorkspace.startsWith(`..${path.sep}`) ||
+    invocationRelativeToWorkspace === ".." ||
+    path.isAbsolute(invocationRelativeToWorkspace)
+  ) {
+    return normalizeLinkedPath(path.normalize(trimmed));
+  }
+  return normalizeLinkedPath(
+    path.relative(workspaceRoot, path.resolve(invocationRoot, trimmed)),
+  );
+}
+
 /** Implements expand add glob entries for the public runtime surface of this module. */
 export async function expandAddGlobEntries(
   entries: AddGlobEntry[],
+  workspaceRoot: string = process.cwd(),
+  invocationRoot: string = process.cwd(),
 ): Promise<LinkedArtifact[]> {
   const expanded: LinkedArtifact[] = [];
   for (const entry of entries) {
     const absolutePattern = path.isAbsolute(entry.pattern);
     const matches = await fg(entry.pattern, {
-      cwd: process.cwd(),
+      cwd: invocationRoot,
       absolute: absolutePattern,
       onlyFiles: true,
       dot: true,
@@ -356,7 +391,9 @@ export async function expandAddGlobEntries(
     });
     const sortedMatches = [
       ...new Set(
-        matches.map((match) => normalizeLinkedPath(path.normalize(match))),
+        matches.map((match) =>
+          anchorLinkedPath(match, workspaceRoot, invocationRoot),
+        ),
       ),
     ].sort((left, right) => left.localeCompare(right));
     for (const matchedPath of sortedMatches) {
@@ -427,6 +464,7 @@ export function dedupeLinkedArtifacts(
 /** Implements validate linked paths for the public runtime surface of this module. */
 export async function validateLinkedPaths(
   paths: string[],
+  workspaceRoot: string = process.cwd(),
 ): Promise<LinkedPathValidation> {
   const uniquePaths = [...new Set(paths)].sort((left, right) =>
     left.localeCompare(right),
@@ -445,7 +483,7 @@ export async function validateLinkedPaths(
     }
     const resolvedPath = path.isAbsolute(relativePath)
       ? relativePath
-      : path.resolve(process.cwd(), relativePath);
+      : path.resolve(workspaceRoot, relativePath);
     try {
       const stats = await fs.stat(resolvedPath);
       if (stats.isFile()) {
@@ -531,6 +569,7 @@ async function buildLinkedArtifactResult(params: {
   changed: boolean;
   migrationsApplied?: number;
   options: LinkedArtifactCommandOptions;
+  workspaceRoot: string;
 }): Promise<LinkedArtifactResult> {
   const paths = params.artifacts.map((entry) => entry.path);
   return {
@@ -543,7 +582,7 @@ async function buildLinkedArtifactResult(params: {
         ? params.migrationsApplied
         : undefined,
     validation: params.options.validatePaths
-      ? await validateLinkedPaths(paths)
+      ? await validateLinkedPaths(paths, params.workspaceRoot)
       : undefined,
   };
 }
@@ -558,6 +597,8 @@ export async function runLinkedArtifacts(
   const { metadataKey } = config;
   const stdinResolver = createStdinTokenResolver();
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const workspaceRoot = resolveWorkspaceRoot(pmRoot);
+  const invocationRoot = process.cwd();
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(
       `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
@@ -582,15 +623,26 @@ export async function runLinkedArtifacts(
     options.migrate,
     "--migrate",
   );
-  const parsedAdds = parseAddEntries(resolvedAdds, config.bareNoun);
+  const parsedAdds = parseAddEntries(resolvedAdds, config.bareNoun).map(
+    (entry) => ({
+      ...entry,
+      path: anchorLinkedPath(entry.path, workspaceRoot, invocationRoot),
+    }),
+  );
   const addGlobs = parseAddGlobEntries(resolvedAddGlobs);
-  const expandedGlobAdds = await expandAddGlobEntries(addGlobs);
+  const expandedGlobAdds = await expandAddGlobEntries(
+    addGlobs,
+    workspaceRoot,
+    invocationRoot,
+  );
   const adds = applyStandaloneNote(
     [...parsedAdds, ...expandedGlobAdds],
     options.note,
     parsedAdds.length > 0 || addGlobs.length > 0,
   );
-  const removes = parseRemoveEntries(resolvedRemoves);
+  const removes = parseRemoveEntries(resolvedRemoves).map((entry) =>
+    anchorLinkedPath(entry, workspaceRoot, invocationRoot),
+  );
   const migrations = parseMigrateEntries(resolvedMigrations);
   const shouldMutate =
     adds.length > 0 || removes.length > 0 || migrations.length > 0;
@@ -616,6 +668,7 @@ export async function runLinkedArtifacts(
       artifacts,
       changed: false,
       options,
+      workspaceRoot,
     });
   }
 
@@ -676,6 +729,7 @@ export async function runLinkedArtifacts(
     changed: true,
     migrationsApplied: migrationCount,
     options,
+    workspaceRoot,
   });
 }
 

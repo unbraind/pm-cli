@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { _testOnlyAggregateCommand, runAggregate } from "../../../src/cli/commands/aggregate.js";
+import { runSchemaAddField } from "../../../src/cli/commands/schema.js";
 import { runNormalize } from "../../../packages/pm-governance-audit/extensions/governance-audit/normalize.ts";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
@@ -145,6 +146,12 @@ describe("aggregate command helper coverage", () => {
     expect(() => _testOnlyAggregateCommand.parseNumericAggregation({ sum: "estimate", avg: "priority" })).toThrow(
       PmCliError,
     );
+    expect(
+      _testOnlyAggregateCommand.parseNumericAggregation(
+        { sum: "custom_score" },
+        ["estimate", "custom_score"],
+      ),
+    ).toEqual({ field: "custom_score", sum: true, avg: false });
 
     expect(_testOnlyAggregateCommand.normalizeTagGroupValue([" Beta ", "", "alpha", "beta"])).toBe("alpha,beta");
     expect(_testOnlyAggregateCommand.normalizeTagGroupValue([" ", ""])).toBeNull();
@@ -746,7 +753,7 @@ describe("runAggregate", () => {
     });
   });
 
-  it("reports null numeric aggregates for fields not present on listed items", async () => {
+  it("rejects unregistered numeric fields instead of silently returning zero-like aggregates", async () => {
     await withTempPmPath(async (context) => {
       createItem(context, {
         title: "Missing Numeric Task",
@@ -754,59 +761,18 @@ describe("runAggregate", () => {
         status: "open",
       });
 
-      const result = await runAggregate(
-        {
-          groupBy: "type",
-          avg: "missing_numeric_field",
-        },
-        { path: context.pmPath },
-      );
-
-      expect(result.groups.map(stripGroupLabel)).toEqual([
-        {
-          group: {
-            type: "Task",
+      await expect(
+        runAggregate(
+          {
+            groupBy: "type",
+            avg: "missing_numeric_field",
           },
-          count: 1,
-          null_count: 1,
-          avg: null,
-        },
-      ]);
-    });
-  });
-
-  it("increments null_count when repeated groups have null numeric values", async () => {
-    await withTempPmPath(async (context) => {
-      createItem(context, {
-        title: "Missing Numeric Task A",
-        type: "Task",
-        status: "open",
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining('numeric field "missing_numeric_field" is not registered'),
       });
-      createItem(context, {
-        title: "Missing Numeric Task B",
-        type: "Task",
-        status: "open",
-      });
-
-      const result = await runAggregate(
-        {
-          groupBy: "status",
-          avg: "missing_numeric_field",
-          type: "Task",
-        },
-        { path: context.pmPath },
-      );
-
-      expect(result.groups.map(stripGroupLabel)).toEqual([
-        {
-          group: {
-            status: "open",
-          },
-          count: 2,
-          null_count: 2,
-          avg: null,
-        },
-      ]);
     });
   });
 
@@ -824,7 +790,14 @@ describe("runAggregate", () => {
         status: "open",
         tags: "numeric-existing",
       });
+      const thirdId = createItem(context, {
+        title: "Numeric Existing Group C",
+        type: "Task",
+        status: "open",
+        tags: "numeric-existing",
+      });
       context.runCli(["update", secondId, "--estimate", "none", "--message", "clear estimate", "--json"], { expectJson: true });
+      context.runCli(["update", thirdId, "--estimate", "none", "--message", "clear estimate", "--json"], { expectJson: true });
 
       const result = await runAggregate(
         {
@@ -841,10 +814,80 @@ describe("runAggregate", () => {
           group: {
             status: "open",
           },
-          count: 2,
-          null_count: 1,
+          count: 3,
+          null_count: 2,
           sum: 15,
           avg: 15,
+        },
+      ]);
+    });
+  });
+
+  it("aggregates runtime-registered numeric metadata fields", async () => {
+    await withTempPmPath(async (context) => {
+      await runSchemaAddField(
+        "custom_score",
+        { type: "number", commands: ["create", "update", "list"] },
+        { path: context.pmPath },
+      );
+      const id = createItem(context, {
+        title: "Custom Numeric Task",
+        type: "Task",
+        status: "open",
+        tags: "custom-numeric",
+      });
+      expect(
+        context.runCli(["update", id, "--custom-score", "7", "--json"], {
+          expectJson: true,
+        }).code,
+      ).toBe(0);
+
+      const result = await runAggregate(
+        { groupBy: "type", sum: "custom_score", tag: "custom-numeric" },
+        { path: context.pmPath },
+      );
+      expect(result.groups.map(stripGroupLabel)).toEqual([
+        {
+          group: { type: "Task" },
+          count: 1,
+          null_count: 0,
+          sum: 7,
+        },
+      ]);
+    });
+  });
+
+  it("returns a null average when an aggregate group has no numeric values", async () => {
+    await withTempPmPath(async (context) => {
+      for (const title of ["Null Average A", "Null Average B"]) {
+        const id = createItem(context, {
+          title,
+          type: "Task",
+          status: "open",
+          tags: "null-average",
+        });
+        expect(
+          context.runCli(["update", id, "--estimate", "none", "--json"], {
+            expectJson: true,
+          }).code,
+        ).toBe(0);
+      }
+
+      const result = await runAggregate(
+        { groupBy: "type", avg: "estimated_minutes", tag: "null-average" },
+        { path: context.pmPath },
+      );
+      expect(result.filters).toMatchObject({
+        sum: null,
+        avg: "estimated_minutes",
+        numeric_field: "estimated_minutes",
+      });
+      expect(result.groups.map(stripGroupLabel)).toEqual([
+        {
+          group: { type: "Task" },
+          count: 2,
+          null_count: 2,
+          avg: null,
         },
       ]);
     });
