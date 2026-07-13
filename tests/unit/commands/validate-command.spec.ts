@@ -308,7 +308,7 @@ describe("runValidate", () => {
       ] as never, true).check;
       expect(partitionedCheck.status).toBe("warn");
       expect(partitionedCheck.details).toMatchObject({
-        dangling_reference_count: 1,
+        dangling_reference_count: 3,
         active_dangling_reference_count: 1,
         legacy_terminal_dangling_reference_count: 2,
         no_active_blocker_sentinel_count: 1,
@@ -327,7 +327,7 @@ describe("runValidate", () => {
       ] as never, true).check;
       expect(historicalOnlyCheck.status).toBe("ok");
       expect(historicalOnlyCheck.details).toMatchObject({
-        dangling_reference_count: 0,
+        dangling_reference_count: 1,
         active_dangling_reference_count: 0,
         legacy_terminal_dangling_reference_count: 1,
       });

@@ -1552,7 +1552,7 @@ function buildDependencyReferencesCheck(
       status: activeRows.length === 0 ? "ok" : "warn",
       details: {
         checked_items: items.length,
-        dangling_reference_count: activeRows.length,
+        dangling_reference_count: activeRows.length + legacyRows.length,
         active_dangling_reference_count: activeRows.length,
         dangling_reference_rows: summarizedRows.values,
         dangling_reference_rows_truncated: summarizedRows.truncated,

@@ -204,6 +204,8 @@ const references = collectDanglingDependencyReferences(items, (status) =>
 `active_dangling_reference_count` is non-zero. Terminal-holder debt is reported
 under `legacy_terminal_dangling_reference_count` and receives no mutation hint,
 so an agent is never told to rewrite a closed item merely to silence validation.
+The backward-compatible `dangling_reference_count` remains the total of active
+and terminal-holder rows; use the explicit active field for gating.
 `no_active_blocker_sentinel_count` separately identifies the legacy scalar
 sentinel rather than presenting it as a mistyped pm id.
 

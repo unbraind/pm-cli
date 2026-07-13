@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  collectDanglingDependencyReferences,
-  runDeps,
-} from "../../../src/cli/commands/deps.js";
+import { runDeps } from "../../../src/cli/commands/deps.js";
+import { collectDanglingDependencyReferences } from "../../../src/sdk/dependencies.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
