@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[5]: branding,docs,growth,marketing,positioning
 created_at: "2026-07-13T09:28:19.572Z"
-updated_at: "2026-07-13T09:33:29.814Z"
+updated_at: "2026-07-13T17:38:41.679Z"
 author: maintainer-agent
 estimated_minutes: 2400
 acceptance_criteria: Category statement + brand architecture ratified via ADR before any public copy changes; all child workstreams either shipped or explicitly dispositioned; no public surface still leads with command counts or 'Git-native project management CLI' as the primary descriptor
 value: "Product maturity (1300+ commits, dozens of releases) far exceeds awareness (single-digit stars); positioning/distribution/proof gap, not a feature gap"
 outcome: "Every public surface leads with one consistent category, doctrine, and installation path; agents and humans understand what pm is within one screen"
 why_now: External strategy review 2026-07-13 identified category compression as the top growth blocker; further promotion before fixing positioning wastes attention
+parent: pm-doxj
 risk: medium
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
