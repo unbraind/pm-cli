@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { handleRequest } from "../../src/mcp/server.js";
 import { writeTestExtension } from "../helpers/extensions.js";
 import { assertPmContextDepthProjection } from "../helpers/mcp-context-depth.js";
@@ -1350,6 +1350,8 @@ describe("MCP dynamic package actions", () => {
       const copyResult = (copy?.structuredContent as { result?: { id?: string; item?: unknown } } | undefined)?.result;
       expect(copyResult?.id).toMatch(/^pm-/);
       expect(copyResult?.item).toBeUndefined();
+      const copyHistory = context.runCli(["history", copyResult?.id ?? "", "--full", "--json"], { expectJson: true });
+      expect((copyHistory.json as { history: Array<{ author: string }> }).history.at(-1)?.author).toBe("mcp-agent");
 
       const claim = await handleRequest({
         jsonrpc: "2.0",
@@ -1445,16 +1447,34 @@ describe("MCP dynamic package actions", () => {
       });
       expect(test?.isError).not.toBe(true);
 
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
       const close = await handleRequest({
         jsonrpc: "2.0",
         id: 128,
         method: "tools/call",
         params: {
           name: "pm_close",
-          arguments: { path: context.pmPath, id, text: "MCP close reason", author: "mcp-agent", options: { validateClose: "warn" } },
+          arguments: {
+            path: context.pmPath,
+            id,
+            reason: "MCP close reason",
+            author: "mcp-agent",
+            options: { validateClose: "warn" },
+          },
         },
       });
       expect(close?.isError).not.toBe(true);
+      expect(
+        errorSpy.mock.calls.some(([message]) =>
+          String(message).includes("Unexpected top-level argument"),
+        ),
+      ).toBe(false);
+      errorSpy.mockRestore();
+      expect(
+        (context.runCli(["get", id, "--json"], { expectJson: true }).json as {
+          item: { close_reason?: string };
+        }).item.close_reason,
+      ).toBe("MCP close reason");
     });
   });
 

@@ -6,6 +6,8 @@
 import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
 import { pathExists } from "../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
+import { isTerminalStatus } from "../core/item/status.js";
+import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -45,7 +47,12 @@ interface IndexedItem {
   title: string;
   type: ItemType;
   status: ItemStatus;
-  dependencies: Dependency[];
+  dependencies: IndexedDependency[];
+}
+
+interface IndexedDependency {
+  id: string;
+  kind: string;
 }
 
 /** Minimal item shape inspected by dependency-reference governance. */
@@ -289,22 +296,23 @@ function parseCollapse(raw: string | undefined): DepsCollapseMode {
 
 function normalizeDependencies(
   dependencies: Dependency[] | undefined,
-): Dependency[] {
+): IndexedDependency[] {
   if (!dependencies || dependencies.length === 0) {
     return [];
   }
-  const sorted = [...dependencies].sort((left, right) => {
+  const sorted = dependencies.map(({ id, kind }) => ({
+    id: id.trim(),
+    kind: kind.trim().toLowerCase(),
+  })).sort((left, right) => {
     const byKind = left.kind.localeCompare(right.kind);
     if (byKind !== 0) return byKind;
-    const byId = left.id.localeCompare(right.id);
-    if (byId !== 0) return byId;
-    return left.created_at.localeCompare(right.created_at);
+    return left.id.localeCompare(right.id);
   });
-  const deduped = new Map<string, Dependency>();
+  const deduped = new Map<string, IndexedDependency>();
   for (const dependency of sorted) {
-    const key = `${dependency.kind}::${dependency.id}`;
+    const key = `${dependency.kind.toLowerCase()}::${dependency.id.toLowerCase()}`;
     if (!deduped.has(key)) {
-      deduped.set(key, dependency);
+      deduped.set(key, { id: dependency.id, kind: dependency.kind });
     }
   }
   return [...deduped.values()];
@@ -530,9 +538,28 @@ export async function runDeps(
     undefined,
     settings.schema,
   );
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const index = new Map(
     items.map((item) => [item.id.trim().toLowerCase(), toIndexedItem(item)]),
   );
+  const dangling = collectDanglingDependencyReferences(
+    items,
+    (status) => isTerminalStatus(status, statusRegistry),
+  );
+  for (const reference of [...dangling.active, ...dangling.legacy_terminal]) {
+    const holder = index.get(reference.holder_id.trim().toLowerCase());
+    const referenceKind = reference.kind.trim().toLowerCase();
+    if (
+      holder &&
+      !holder.dependencies.some(
+        (dependency) =>
+          dependency.id.trim().toLowerCase() === reference.target_id.trim().toLowerCase() &&
+          dependency.kind === referenceKind,
+      )
+    ) {
+      holder.dependencies.push({ id: reference.target_id, kind: referenceKind });
+    }
+  }
   if (!index.has(id.trim().toLowerCase())) {
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
   }

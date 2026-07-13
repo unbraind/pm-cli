@@ -551,7 +551,7 @@ describe("MCP protocol handshake", () => {
         expect(result.structuredContent?.result?.added_count).toBe(1);
         expect(result.structuredContent?.result?.files).toContainEqual(
           expect.objectContaining({
-            path: "src/mcp-discovered.ts",
+            path: "workspace/src/mcp-discovered.ts",
             scope: "project",
             note: "linked through MCP discovery",
           }),

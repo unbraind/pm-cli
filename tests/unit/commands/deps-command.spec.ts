@@ -1,8 +1,10 @@
+import { writeFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { runDeps } from "../../../src/cli/commands/deps.js";
 import { collectDanglingDependencyReferences } from "../../../src/sdk/dependencies.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { locateItem, readLocatedItem } from "../../../src/core/store/item-store.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
 function createTask(context: TempPmContext, title: string, deps: string[] = ["none"]): string {
@@ -189,6 +191,15 @@ describe("runDeps", () => {
         `id=${middleId},kind=blocks,author=test-author,created_at=now`,
         "id=pm-missing-dependency,kind=related,author=test-author,created_at=now",
       ]);
+      const located = await locateItem(context.pmPath, rootId);
+      expect(located).not.toBeNull();
+      if (!located) return;
+      const { raw } = await readLocatedItem(located);
+      await writeFile(
+        located.itemPath,
+        raw.replace("pm-missing-dependency,related", "pm-missing-dependency,RELATED"),
+        "utf8",
+      );
 
       const result = await runDeps(rootId, { format: "tree" }, { path: context.pmPath });
       expect(result.format).toBe("tree");
@@ -209,6 +220,28 @@ describe("runDeps", () => {
       const caseInsensitiveResult = await runDeps(rootId.toUpperCase(), { format: "tree" }, { path: context.pmPath });
       expect(caseInsensitiveResult.tree?.id).toBe(rootId);
       expect(caseInsensitiveResult.node_count).toBe(4);
+    });
+  });
+
+  it("projects a dangling parent reference as a typed missing edge", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = createTask(context, "deps-parent-to-delete");
+      const child = context.runCli(
+        ["create", "deps-child", "--type", "Task", "--parent", parentId, "--json"],
+        { expectJson: true },
+      );
+      const childId = (child.json as { item: { id: string } }).item.id;
+      expect(
+        context.runCli(["delete", parentId, "--force", "--json"], {
+          expectJson: true,
+        }).code,
+      ).toBe(0);
+
+      const result = await runDeps(childId, { format: "tree" }, { path: context.pmPath });
+      expect(result).toMatchObject({ missing_count: 1 });
+      expect(result.tree?.dependencies).toEqual([
+        expect.objectContaining({ id: parentId, via: "parent", missing: true }),
+      ]);
     });
   });
 
@@ -351,6 +384,11 @@ describe("runDeps", () => {
         `id=${targetId},kind=related,author=test-author,created_at=2026-01-01T00:00:00.000Z`,
         `id=${targetId},kind=blocks,author=test-author,created_at=2026-01-03T00:00:00.000Z`,
       ]);
+      const located = await locateItem(context.pmPath, rootId);
+      expect(located).not.toBeNull();
+      if (!located) return;
+      const { raw } = await readLocatedItem(located);
+      await writeFile(located.itemPath, raw.replace(targetId, targetId.toUpperCase()), "utf8");
 
       const tree = await runDeps(rootId, { format: "tree", maxDepth: 1 as unknown as string }, { path: context.pmPath });
       expect(tree.tree?.dependencies.map((entry) => entry.via)).toEqual(["blocks", "related"]);

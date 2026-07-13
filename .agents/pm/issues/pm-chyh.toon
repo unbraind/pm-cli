@@ -2,17 +2,41 @@ id: pm-chyh
 title: "GH-544: linked-file path anchoring — files/docs add/glob/discover/validate-paths resolve at process.cwd() while validate --check-files anchors at the workspace root"
 description: "From a monorepo subdirectory, pm files/docs --add, --add-glob, --discover, and --validate-paths anchor relative paths at process.cwd() (src/sdk/files.ts runFilesDiscover; src/sdk/linked-artifacts.ts:350 expandAddGlobEntries cwd, :448 validateLinkedPaths), while pm validate --check-files classifies against resolveWorkspaceRoot(pmRoot) (src/cli/commands/validate.ts:725, :3356). resolvePmRoot walks up ancestors, so subdirectory invocations succeed but store paths that validate later reports as missing — silent files_missing drift, invisible at write time because --validate-paths shares the cwd anchor. Promoted to public SDK surface by PR#543, so external consumers now inherit the cwd dependence. Fix direction: single workspace-root anchoring contract across write and check sides; re-anchor cwd-relative input at store time. Class precedent pm-og1v (closed, lancedb store path). See GH-544."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: cli,data-integrity,files,sdk
 created_at: "2026-07-13T14:23:57.531Z"
-updated_at: "2026-07-13T14:24:09.429Z"
+updated_at: "2026-07-13T15:33:36.770Z"
+closed_at: "2026-07-13T15:32:39.525Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "All linked-path resolution surfaces (files/docs --add, --add-glob expansion, --discover containment, --validate-paths probing) anchor stored paths at resolveWorkspaceRoot(pmRoot), not process.cwd(); relative CLI input is interpreted against cwd then re-anchored to the workspace root before storage; a subdirectory-cwd regression test proves pm files --add + pm validate --check-files agree; SDK docs for runFiles/runFilesDiscover/validateLinkedPaths state the workspace-root anchoring contract"
 parent: pm-33cw
 risk: medium
 confidence: high
+resolution: Resolved by separating invocation-root interpretation from workspace-root persistence and validation for linked resources.
+expected_result: Nested files/docs operations store stable workspace-relative paths and agree with validate --check-files.
+actual_result: "Nested add/discover/glob/remove and both validation surfaces use one workspace anchor; focused, full-coverage, package dogfood, and installed-tarball proof passed."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-j8z6,related,"2026-07-13T14:24:09.412Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-13T14:32:03.797Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
+  "2026-07-13T15:32:33.818Z",codex-sdk-contracts-20260713,"Evidence: relative linked inputs now resolve at invocation cwd, persist workspace-relative, and validate from the workspace across add, remove, glob, discovery, write-time validation, and independent validate --check-files. Nested-package acceptance passed. Repository proof: 5614 tests at 100/100/100/100 coverage; release build/typecheck/docs/static-quality/package-boundary/token/security/packed-smoke gates passed; 88-command package-first dogfood passed; fresh installed tarball stored packages/app/src/entry.ts and SDK get passed."
+learnings[1]{created_at,author,text}:
+  "2026-07-13T15:28:08.195Z",codex-sdk-contracts-20260713,"A tracker path and an invocation path are separate context primitives: interpret user-relative input at invocation cwd, persist it relative to the owning workspace, and validate persisted paths only from that workspace."
+files[6]{path,scope,note}:
+  CHANGELOG.md,project,package-owned generated closeout record
+  src/core/store/paths.ts,project,workspace-root primitive
+  src/sdk/files.ts,project,workspace-aware discovery
+  src/sdk/linked-artifacts.ts,project,shared path anchoring and validation
+  tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,nested-directory acceptance coverage
+  tests/unit/commands/files-docs-command.spec.ts,project,discovery anchoring coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/mcp-handshake.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/commands/files-docs-command.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mrjdn0i2-0w3w16,test-all,passed,"2026-07-13T15:28:19.236Z","2026-07-13T15:30:20.942Z","2026-07-13T15:30:20.942Z",2,0,0,1,2
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,linked-resource anchoring contract
+close_reason: Implemented workspace-root linked-resource anchoring across SDK/CLI surfaces with nested invocation and independent validation proof; GH-544 will close on PR merge.
 body: ""

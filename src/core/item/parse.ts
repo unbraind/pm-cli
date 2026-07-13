@@ -527,6 +527,22 @@ export function parseOptionalNumber(raw: string, optionName: string): number {
   return value;
 }
 
+/** Parse a non-negative integer option such as an item duration estimate. */
+export function parseOptionalNonNegativeInteger(
+  raw: string,
+  optionName: string,
+): number {
+  const trimmed = raw.trim();
+  const value = Number(trimmed);
+  if (trimmed === "" || !Number.isInteger(value) || value < 0) {
+    throw new PmCliError(
+      `Invalid ${optionName} value "${raw}". Expected a non-negative integer.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return value;
+}
+
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   coerceJsonTagArray,

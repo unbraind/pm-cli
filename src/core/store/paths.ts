@@ -119,6 +119,15 @@ export function resolvePmRoot(cwd: string, cliPath?: string): string {
   return path.resolve(cwd, selected);
 }
 
+/** Resolve the project workspace that owns a tracker root. */
+export function resolveWorkspaceRoot(pmRoot: string): string {
+  const normalizedRoot = path.resolve(pmRoot);
+  const parent = path.dirname(normalizedRoot);
+  return path.basename(normalizedRoot) === "pm" && path.basename(parent) === ".agents"
+    ? path.dirname(parent)
+    : normalizedRoot;
+}
+
 /** Implements resolve global pm root for the public runtime surface of this module. */
 export function resolveGlobalPmRoot(cwd: string): string {
   const envPath = process.env.PM_GLOBAL_PATH?.trim();

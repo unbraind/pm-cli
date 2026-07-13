@@ -814,15 +814,15 @@ describe("runFiles", () => {
           .map((entry) => entry.path)
           .sort((left, right) => left.localeCompare(right));
         expect(dryRun.changed).toBe(false);
-        expect(addablePaths).toEqual(["src/discovered.ts", normalizeLinkedPath(globalFile)].sort());
-        expect(dryRun.skipped_existing.map((entry) => entry.path)).toContain("README.md");
-        const discoveredCandidate = dryRun.candidates.find((entry) => entry.path === "src/discovered.ts");
+        expect(addablePaths).toEqual(["shared/global-notes.md", "workspace/src/discovered.ts"].sort());
+        expect(dryRun.skipped_existing.map((entry) => entry.path)).toContain("workspace/README.md");
+        const discoveredCandidate = dryRun.candidates.find((entry) => entry.path === "workspace/src/discovered.ts");
         expect(discoveredCandidate?.source_fields).toContain("body");
         expect(discoveredCandidate?.source_count).toBeGreaterThanOrEqual(2);
         const discoveredOriginalPaths = (discoveredCandidate?.original_paths ?? []).map(normalizeAnyPath);
         expect(discoveredOriginalPaths).toContain("src/discovered.ts");
         expect(discoveredOriginalPaths.some((entry) => entry.endsWith("/src/discovered.ts"))).toBe(true);
-        expect(dryRun.candidates.find((entry) => entry.path === normalizeLinkedPath(globalFile))?.scope).toBe("global");
+        expect(dryRun.candidates.find((entry) => entry.path === "shared/global-notes.md")?.scope).toBe("project");
 
         const applied = await runFilesDiscover(
           id,
@@ -835,9 +835,17 @@ describe("runFiles", () => {
         );
         expect(applied.changed).toBe(true);
         expect(applied.added_count).toBe(2);
-        expect(applied.files.filter((entry) => entry.path === "src/discovered.ts" && entry.scope === "project")).toHaveLength(1);
-        expect(applied.files.filter((entry) => entry.path === normalizeLinkedPath(globalFile) && entry.scope === "global")).toHaveLength(1);
-        expect(applied.files.find((entry) => entry.path === "src/discovered.ts")?.note).toBe("auto-discovered");
+        expect(
+          applied.files.filter(
+            (entry) => entry.path === "workspace/src/discovered.ts" && entry.scope === "project",
+          ),
+        ).toHaveLength(1);
+        expect(
+          applied.files.filter(
+            (entry) => entry.path === "shared/global-notes.md" && entry.scope === "project",
+          ),
+        ).toHaveLength(1);
+        expect(applied.files.find((entry) => entry.path === "workspace/src/discovered.ts")?.note).toBe("auto-discovered");
 
         const rerun = await runFilesDiscover(id, { apply: true }, { path: context.pmPath });
         expect(rerun.changed).toBe(false);
@@ -912,7 +920,7 @@ describe("runFiles", () => {
             message: "seed discover race",
             force: input.force,
             mutate(document) {
-              document.metadata.files = [{ path: "src/discover-me.ts", scope: "project" }];
+              document.metadata.files = [{ path: "workspace-race/src/discover-me.ts", scope: "project" }];
               return { changedFields: ["files"] };
             },
           });

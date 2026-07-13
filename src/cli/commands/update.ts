@@ -30,6 +30,7 @@ import {
   looksLikeGenericKeyValueEntry,
   mergeAdditiveTags,
   parseCsvKv,
+  parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
 } from "../../core/item/parse.js";
@@ -107,7 +108,13 @@ import {
   ISSUE_SEVERITY_VALUES,
   RISK_VALUES,
 } from "../../types/index.js";
-import { parseDocs, parseFiles, parseLogSeed, parseTests } from "./create.js";
+import {
+  parseDocs,
+  parseFiles,
+  parseLogSeed,
+  parseTests,
+  requireStringOption,
+} from "./create.js";
 import {
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
@@ -1269,7 +1276,8 @@ const UPDATE_POST_TAG_SCALAR_MUTATIONS: ReadonlyArray<UpdateScalarMutationDefini
     {
       optionKey: "estimatedMinutes",
       metadataKey: "estimated_minutes",
-      transform: (value) => parseOptionalNumber(value, "estimated-minutes"),
+      transform: (value) =>
+        parseOptionalNonNegativeInteger(value, "estimated-minutes"),
     },
     {
       optionKey: "acceptanceCriteria",
@@ -1887,7 +1895,7 @@ function applySimpleItemMutations(
   changedFields: string[],
 ): string {
   if (options.title !== undefined) {
-    document.metadata.title = options.title;
+    document.metadata.title = requireStringOption(options.title, "--title");
     changedFields.push("title");
   }
   if (options.description !== undefined) {
@@ -2589,6 +2597,8 @@ function mutateUpdateDocument(
   document: ItemDocument,
   context: UpdateMutationContext,
 ): { changedFields: string[]; warnings: string[] } {
+  const beforeMetadata = structuredClone(toItemRecord(document.metadata));
+  const beforeBody = document.body;
   const changedFields: string[] = [];
   const warnings: string[] = [];
   const previousStatusNormalized = applySimpleItemMutations(
@@ -2652,7 +2662,13 @@ function mutateUpdateDocument(
       EXIT_CODE.USAGE,
     );
   }
-  return { changedFields, warnings };
+  const afterMetadata = toItemRecord(document.metadata);
+  const actualChangedFields = [...new Set(changedFields)].filter((field) =>
+    field === "body"
+      ? document.body !== beforeBody
+      : !stableValueEquals(beforeMetadata[field], afterMetadata[field]),
+  );
+  return { changedFields: actualChangedFields, warnings };
 }
 
 /** Implements run update for the public runtime surface of this module. */
@@ -2820,6 +2836,7 @@ export async function runUpdate(
     bypassAssigneeConflict:
       options.ownershipMetadataBypass === true || options.ownershipDependencyBypass === true,
     extensionFieldNames,
+    skipNoop: true,
     mutate(document) {
       return mutateUpdateDocument(document, {
         options,

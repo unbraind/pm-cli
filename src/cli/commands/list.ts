@@ -889,14 +889,13 @@ function parseAssigneeFilter(
   return normalized;
 }
 
-// `pm list` keeps lenient status parsing (an unknown token is passed through
-// verbatim and simply matches nothing) so custom/unknown statuses never error;
-// the shared CSV parser resolves the open/closed/canceled workflow-group aliases.
+// Resolve built-in, runtime, and workflow-group aliases through the shared
+// registry, rejecting typos instead of returning a misleading empty result.
 function resolveStatusFilter(
   status: ItemStatus | undefined,
   statusRegistry: RuntimeStatusRegistry,
 ): ItemStatus[] | undefined {
-  return parseStatusFilterCsv(status, statusRegistry, { strict: false });
+  return parseStatusFilterCsv(status, statusRegistry, { strict: true });
 }
 
 interface ListFilterSet {

@@ -8567,12 +8567,24 @@
             "description": "pm item id, for example pm-abc1.",
             "type": "string"
           },
+          "idOnly": {
+            "description": "Return only id and status.",
+            "type": "boolean"
+          },
+          "message": {
+            "description": "Alias for options.message.",
+            "type": "string"
+          },
           "options": {
             "description": "Copy options such as title override, author, and message.",
             "type": "object"
           },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Alias for options.title.",
             "type": "string"
           }
         },

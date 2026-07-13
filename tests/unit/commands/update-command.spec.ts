@@ -1086,9 +1086,14 @@ describe("runUpdate", () => {
         { path: context.pmPath },
       );
 
-      expect(result.changed_fields).toEqual(
-        expect.arrayContaining(["description", "status", ...OPTIONAL_UPDATE_CHANGED_FIELDS]),
-      );
+      expect(result.changed_fields).toEqual([
+        "description",
+        "status",
+        "deadline",
+        "estimated_minutes",
+        "acceptance_criteria",
+        "assignee",
+      ]);
 
       const item = result.item as Record<string, unknown>;
       expect(item.status).toBe("canceled");

@@ -3401,6 +3401,12 @@ describe("create command helper coverage", () => {
         message: expect.stringContaining("human-readable title"),
       }),
     );
+    expect(() => _testOnlyCreateCommand.requireStringOption("   ", "--title")).toThrow(
+      expect.objectContaining({
+        exitCode: EXIT_CODE.USAGE,
+        message: "Title cannot be empty or whitespace-only. Retry: pass a non-empty title with --title.",
+      }),
+    );
     expect(() => _testOnlyCreateCommand.requireStringOption(undefined, "--description")).toThrow(
       expect.objectContaining({ exitCode: EXIT_CODE.USAGE, message: "Missing required option --description" }),
     );

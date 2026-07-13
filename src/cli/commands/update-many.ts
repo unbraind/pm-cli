@@ -15,6 +15,7 @@ import { toItemRecord } from "../../core/item/item-record.js";
 import {
   applyTagRemovals,
   mergeAdditiveTags,
+  parseOptionalNonNegativeInteger,
   parseTags,
 } from "../../core/item/parse.js";
 import { resolvePriority } from "../../core/item/priority.js";
@@ -661,6 +662,12 @@ function assertPlannedUpdateValuesValid(
   }
   if (update.deadline !== undefined) {
     resolveIsoOrRelative(update.deadline, new Date(), "deadline");
+  }
+  if (update.estimatedMinutes !== undefined) {
+    parseOptionalNonNegativeInteger(
+      update.estimatedMinutes,
+      "estimated-minutes",
+    );
   }
 }
 

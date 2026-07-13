@@ -2,17 +2,46 @@ id: pm-p9sc
 title: "GH-535: pm deps omits dangling parent references (missing_count:0, missing:false) contradicting validate's dangling_reference_count"
 description: "When an item's parent points at a deleted/missing id, pm deps <child> reports node_count:1, missing_count:0, missing:false — a false clean view — while pm validate correctly reports dangling_reference_count:1. deps builds its tree only from resolvable nodes and drops unresolvable parent edges silently. Fix: include unresolvable parent/blocked_by/dep targets as missing nodes (missing:true, missing_count>=1) so deps and validate agree; the check-side classification from pm-ol5v (dependency_references) is the shared source of truth — reuse it rather than a second detector. Secondary observation from the issue: pm delete permits deleting a still-referenced parent without warning/reparenting — evaluate a referenced-parent guard or advisory at fix time (keep in this item unless it grows). Active/legacy split for validate noise stays owned by pm-2ler."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: cli,deps,gh-issue,governance
 created_at: "2026-07-13T08:58:16.372Z"
-updated_at: "2026-07-13T08:58:16.372Z"
+updated_at: "2026-07-13T16:42:51.501Z"
+closed_at: "2026-07-13T16:42:50.649Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: deps reports missing nodes for dangling parent/dep references consistent with validate; delete-referenced-parent advisory evaluated; regression tests incl. deleted-parent repro; GH-535 closed
 parent: pm-33cw
 risk: low
 confidence: high
+resolution: Resolved by reusing the SDK dangling-reference classifier when constructing dependency projections.
+expected_result: "Dangling hierarchy and structured references appear as typed missing nodes in deps tree, graph, and summary."
+actual_result: Deleted-parent cases report missing_count=1 consistently; permissive delete compatibility decision is documented and tests passed.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-2ler,related,"2026-07-13T08:58:16.372Z",null,null
+comments[6]{created_at,author,text}:
+  "2026-07-13T14:32:06.962Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
+  "2026-07-13T15:32:34.614Z",codex-sdk-contracts-20260713,"Evidence: runDeps now reuses collectDanglingDependencyReferences with the runtime terminal registry and projects parent/blocked_by misses as typed edges in tree, graph, and summary. Unit and deleted-parent acceptance tests passed; installed tarball reported missing_count=1. Delete remains permissive by documented compatibility decision."
+  "2026-07-13T16:06:26.450Z",codex-sdk-contracts-20260713,"Review follow-up: actively addressing current-head Gemini findings for this item's implementation surface in PR #545. The item is reopened only for the duration of the review fix and will be reverified, closed, and released after evidence is recorded."
+  "2026-07-13T16:15:48.810Z",codex-sdk-contracts-20260713,"Review evidence: dependency projection now trims identifiers, canonicalizes relationship kind casing, and deduplicates kind/id pairs case-insensitively. A legacy mixed-case stored-id regression passes through the public runDeps surface; malformed non-string rows are excluded upstream by item loading, so no unreachable second validator was added."
+  "2026-07-13T16:29:24.724Z",codex-sdk-contracts-20260713,"Current-head review follow-up: actively fixing Gemini 3572340992 so dangling-reference merge comparisons and inserted kinds use the same normalized identity."
+  "2026-07-13T16:41:21.707Z",codex-sdk-contracts-20260713,"Review evidence: dangling-reference merge now trims and lowercases reference.kind for both duplicate comparison and inserted edge identity. A stored uppercase RELATED dangling edge remains one canonical related edge. Focused tests and exact full coverage pass."
+notes[1]{created_at,author,text}:
+  "2026-07-13T15:28:06.747Z",codex-sdk-contracts-20260713,"Delete-parent behavior was evaluated. This PR keeps delete permissive for history and migration compatibility, while making every deps projection surface the resulting typed missing edge; a future delete guard should be separately governed if policy changes."
+learnings[2]{created_at,author,text}:
+  "2026-07-13T15:28:08.908Z",codex-sdk-contracts-20260713,Dependency projections must consume the same dangling-reference classifier as governance validation; rebuilding only from resolvable structured edges silently erases missing hierarchy context.
+  "2026-07-13T16:15:50.427Z",codex-sdk-contracts-20260713,Normalize case at dependency graph identity boundaries while preserving canonical item ids in output; malformed persisted records remain the item parser/store boundary's responsibility.
+files[2]{path,scope,note}:
+  src/sdk/dependencies.ts,project,dangling hierarchy projection
+  tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,tree graph summary acceptance coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/deps-command.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/commands/deps-command.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,240
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mrjdn0i2-0w3w16,test-all,passed,"2026-07-13T15:28:19.236Z","2026-07-13T15:31:52.892Z","2026-07-13T15:31:52.892Z",2,0,0,1,2
+  test-all-local-mrjfc5pj-px5stt,test-all,passed,"2026-07-13T16:15:52.023Z","2026-07-13T16:17:40.771Z","2026-07-13T16:17:40.771Z",2,0,0,1,2
+  test-all-local-mrjg8zor-wpurht,test-all,passed,"2026-07-13T16:41:23.843Z","2026-07-13T16:42:31.813Z","2026-07-13T16:42:31.813Z",2,0,0,1,2
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,dependency projection contract
+close_reason: "Current-head review complete: dangling dependency reference kinds share canonical lowercase graph identity with exact coverage."
 body: ""
