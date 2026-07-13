@@ -24,6 +24,7 @@
 
 ### Other
 
+- PR review helper: watch GitHub checks and enforce thread-scoped replies ([pm-0fxa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0fxa.toon))
 - Token-budget context packer: diversity-aware selection, projection degradation, and bounded output for pm context/next ([pm-55ra](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-55ra.toon))
 - Complete public linked-resource SDK primitives and actionable dependency governance ([pm-jcvg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jcvg.toon))
 

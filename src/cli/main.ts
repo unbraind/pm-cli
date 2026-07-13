@@ -777,12 +777,12 @@ async function runAndClearAfterCommandHooks(
   let hookWarnings: string[] = [];
   const affected = consumeAfterCommandAffectedItems();
   try {
-    await recordContextUsageTouches({
-      pmRoot: runtime.pmRoot,
-      author: process.env.PM_AUTHOR ?? (await readSettings(runtime.pmRoot)).author_default,
-      itemIds: outcome.ok ? (affected?.map((item) => item.id) ?? []) : [],
-      intent: runtime.commandName,
-    });
+    if (process.env.PM_CONTEXT_USAGE_DISABLED !== "1") await recordContextUsageTouches({
+        pmRoot: runtime.pmRoot,
+        author: process.env.PM_AUTHOR ?? (await readSettings(runtime.pmRoot)).author_default,
+        itemIds: outcome.ok ? (affected?.map((item) => item.id) ?? []) : [],
+        intent: runtime.commandName,
+      });
   } catch {
     hookWarnings.push("context_usage_feedback_write_failed");
   }

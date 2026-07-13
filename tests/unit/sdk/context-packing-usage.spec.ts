@@ -296,6 +296,30 @@ describe("context usage feedback", () => {
     })).resolves.toMatchObject({ affinity: { "pm-ancient": 0.05 } });
   });
 
+  it("serializes concurrent append and compaction writers without losing events", async () => {
+    const pmRoot = await tempPmRoot();
+    await Promise.all(
+      Array.from({ length: 8 }, (_, index) =>
+        recordContextUsageTouch({
+          pmRoot,
+          author: "agent",
+          itemId: `pm-concurrent-${index}`,
+          intent: "update",
+          now: "2026-07-04T00:00:00.000Z",
+          maxEvents: 20,
+          retentionDays: 10,
+        }),
+      ),
+    );
+    const events = (await readFile(path.join(pmRoot, "runtime", "context-usage.jsonl"), "utf8"))
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    expect(events.map((event) => event.item_id).sort()).toEqual(
+      Array.from({ length: 8 }, (_, index) => `pm-concurrent-${index}`).sort(),
+    );
+  });
+
   it("supports a zero-cost disabled mode and rejects malformed inputs", async () => {
     const pmRoot = await tempPmRoot();
     process.env.PM_CONTEXT_USAGE_DISABLED = "1";
@@ -305,6 +329,21 @@ describe("context usage feedback", () => {
       itemIds: ["pm-a"],
       intent: "update",
     });
+    await recordContextUsageServing({
+      pmRoot,
+      author: "",
+      surface: "context",
+      profile: "",
+      rows: [],
+    });
+    await recordContextUsageTouch({ pmRoot, author: "", itemId: "", intent: "" });
+    await expect(readContextUsageAffinity({ pmRoot, author: "agent" })).resolves.toEqual({
+      affinity: {},
+      positive_judgments: 0,
+      serving_events: 0,
+    });
+    await expect(readFile(path.join(pmRoot, "runtime", "context-usage.jsonl"), "utf8"))
+      .rejects.toMatchObject({ code: "ENOENT" });
     delete process.env.PM_CONTEXT_USAGE_DISABLED;
     await recordContextUsageTouches({
       pmRoot,

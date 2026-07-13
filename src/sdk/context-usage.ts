@@ -15,6 +15,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import path from "node:path";
+import { acquireLock } from "../core/lock/lock.js";
 import type { ContextRelevanceSurface } from "./context-relevance.js";
 
 /** One propensity row disclosed when context or next serves a candidate. */
@@ -73,6 +74,7 @@ const DEFAULT_MAX_EVENTS = 2_048;
 const DEFAULT_RETENTION_DAYS = 30;
 const DAY_MS = 86_400_000;
 const DEFAULT_COMPACTION_BYTES = 262_144;
+const CONTEXT_USAGE_LOCK_ID = "context-usage-ledger";
 
 function ledgerPath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", "context-usage.jsonl");
@@ -133,20 +135,33 @@ async function appendEvents(
   }
   const target = ledgerPath(options.pmRoot);
   const runtimeDirectory = path.dirname(target);
-  await mkdir(runtimeDirectory, { recursive: true });
-  await appendFile(target, events.map((event) => `${JSON.stringify(event)}\n`).join(""), "utf8");
-  const customBounds =
-    options.maxEvents !== undefined || options.retentionDays !== undefined;
-  if (!customBounds && (await stat(target)).size <= DEFAULT_COMPACTION_BYTES)
-    return;
-  const retained = await readEvents(options);
-  const temporary = `${target}.${process.pid}.${randomUUID()}.tmp`;
-  await writeFile(
-    temporary,
-    `${retained.map((entry) => JSON.stringify(entry)).join("\n")}\n`,
-    "utf8",
+  const releaseLock = await acquireLock(
+    options.pmRoot,
+    CONTEXT_USAGE_LOCK_ID,
+    30,
+    `context-usage:${process.pid}`,
+    false,
+    false,
+    3_000,
   );
-  await rename(temporary, target);
+  try {
+    await mkdir(runtimeDirectory, { recursive: true });
+    await appendFile(target, events.map((event) => `${JSON.stringify(event)}\n`).join(""), "utf8");
+    const customBounds =
+      options.maxEvents !== undefined || options.retentionDays !== undefined;
+    if (!customBounds && (await stat(target)).size <= DEFAULT_COMPACTION_BYTES)
+      return;
+    const retained = await readEvents(options);
+    const temporary = `${target}.${process.pid}.${randomUUID()}.tmp`;
+    await writeFile(
+      temporary,
+      `${retained.map((entry) => JSON.stringify(entry)).join("\n")}\n`,
+      "utf8",
+    );
+    await rename(temporary, target);
+  } finally {
+    await releaseLock();
+  }
 }
 
 async function appendEvent(
@@ -165,7 +180,7 @@ export async function recordContextUsageServing(
     rows: ContextUsageServingRow[];
   },
 ): Promise<void> {
-  if (options.enabled === false) return;
+  if (process.env.PM_CONTEXT_USAGE_DISABLED === "1" || options.enabled === false) return;
   if (
     !options.author.trim() ||
     options.rows.some(
@@ -194,7 +209,7 @@ export async function recordContextUsageTouch(
     intent: string;
   },
 ): Promise<void> {
-  if (options.enabled === false) return;
+  if (process.env.PM_CONTEXT_USAGE_DISABLED === "1" || options.enabled === false) return;
   if (
     !options.author.trim() ||
     !options.itemId.trim() ||
@@ -241,6 +256,17 @@ export async function recordContextUsageTouches(
   await appendEvents(options, events);
 }
 
+function findTouchTimeInHorizon(
+  touches: readonly { entry: Extract<ContextUsageEvent, { kind: "touch" }>; time: number }[],
+  itemId: string,
+  servedAt: number,
+  horizonMs: number,
+): number | undefined {
+  return touches.find(({ entry, time }) =>
+    entry.item_id === itemId && time >= servedAt && time - servedAt <= horizonMs
+  )?.time;
+}
+
 /**
  * Derives decayed served-then-touched affinity. A small exploration floor keeps
  * ignored and unseen items eligible, preventing a popularity feedback lock-in.
@@ -251,7 +277,7 @@ export async function readContextUsageAffinity(
     horizonHours?: number;
   },
 ): Promise<ContextUsageAffinity> {
-  if (options.enabled === false)
+  if (process.env.PM_CONTEXT_USAGE_DISABLED === "1" || options.enabled === false)
     return { affinity: {}, positive_judgments: 0, serving_events: 0 };
   const events = await readEvents(options);
   const now = resolveNow(options).ms;
@@ -259,10 +285,12 @@ export async function readContextUsageAffinity(
   if (!Number.isFinite(horizonMs) || horizonMs <= 0)
     throw new TypeError("Context usage horizonHours must be positive");
   const author = options.author.trim();
-  const touches = events.filter(
-    (event): event is Extract<ContextUsageEvent, { kind: "touch" }> =>
-      event.kind === "touch" && event.author === author,
-  );
+  const touches = events
+    .filter(
+      (event): event is Extract<ContextUsageEvent, { kind: "touch" }> =>
+        event.kind === "touch" && event.author === author,
+    )
+    .map((entry) => ({ entry, time: Date.parse(entry.at) }));
   const scores = new Map<string, number>();
   let servingEvents = 0;
   let positiveJudgments = 0;
@@ -272,17 +300,10 @@ export async function readContextUsageAffinity(
     const servedAt = Date.parse(event.at);
     for (const row of event.rows) {
       if (!row.included) continue;
-      const touch = touches.find((entry) => {
-        const touchAt = Date.parse(entry.at);
-        return (
-          entry.item_id === row.id &&
-          touchAt >= servedAt &&
-          touchAt - servedAt <= horizonMs
-        );
-      });
-      if (!touch) continue;
+      const touchTime = findTouchTimeInHorizon(touches, row.id, servedAt, horizonMs);
+      if (touchTime === undefined) continue;
       positiveJudgments += 1;
-      const ageDays = Math.max(0, (now - Date.parse(touch.at)) / DAY_MS);
+      const ageDays = Math.max(0, (now - touchTime) / DAY_MS);
       scores.set(row.id, (scores.get(row.id) ?? 0) + Math.exp(-ageDays / 14));
     }
   }
