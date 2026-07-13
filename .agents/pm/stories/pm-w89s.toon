@@ -6,18 +6,19 @@ status: open
 priority: 1
 tags[3]: agent-story,"area:sdk",changelog-exclude
 created_at: "2026-07-05T04:52:38.434Z"
-updated_at: "2026-07-10T05:12:46.141Z"
+updated_at: "2026-07-13T22:02:34.217Z"
 author: maintainer-agent
 estimated_minutes: 30
 acceptance_criteria: "Exemplar package builds a minimal custom PM CLI importing only @unbrained/pm-cli/sdk; it exercises create/update/close/claim, list/search/context, comments/notes/files/deps, validate/health, and a schema customization end-to-end in its linked tests; no src/core deep imports anywhere in the exemplar"
 parent: pm-usfg
 risk: low
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-6abs,related,"2026-07-07T08:57:50.864Z",null,null
   pm-3mna,blocked_by,"2026-07-07T21:11:34.344Z",null,null
   pm-oxrw,blocked_by,"2026-07-07T21:11:34.344Z",null,null
   pm-zwpp,blocked_by,"2026-07-07T21:11:34.344Z",null,null
+  pm-cbwg,blocked_by,"2026-07-13T22:02:34.197Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-07T09:44:04.849Z",codex-agent,"Integrator story update: pm-6abs adds hermetic package smoke-test diagnostics. A package author can run pm package doctor --project --isolated --detail deep --trace or isolate PM_GLOBAL_PATH for a whole test process; temp-dir dogfood proved a fresh package loaded only project:pm-temp-smoke."
   "2026-07-08T06:06:35.422Z",codex,"Evidence: package-consumer SDK proof now exercises the installed @unbrained/pm-cli SDK from a packed tarball in /tmp, covering init/create/update/claim/release/comments/notes/learnings/files/docs/deps/schema/profile/context/next/health/validate and returning ok with created item pm-yp8p and child pm-gps8."

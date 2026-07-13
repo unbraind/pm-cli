@@ -1,0 +1,30 @@
+id: pm-6x7o
+title: "Relationship governance and completeness audit: semantic edge validation, graph coverage profiles, isolates, stale links, and remediation plans"
+description: "Add policy-aware graph quality checks and machine-executable remediation planning without assuming that every root, isolate, or sparse item is defective."
+type: Feature
+status: open
+priority: 1
+tags[6]: "area:governance","area:graph",audit,data-quality,relationships,validation
+created_at: "2026-07-13T21:59:02.798Z"
+updated_at: "2026-07-13T21:59:02.798Z"
+author: codex-root
+estimated_minutes: 480
+acceptance_criteria: "Audits validate registered kinds, endpoints, direction and inverse rules, payload schema, cardinality, canonical aliases, duplicate identity, provenance, and snapshot consistency; Cycle checks operate only over declared order-bearing kinds and remain separate from associative strongly connected component analysis; Coverage profiles vary by item type, lifecycle state, project profile, age, and role; roots, archives, decisions, reminders, and scratch work can be explicitly valid isolates; Reports include counts, rates, severity, deterministic bounded samples, cursors, change since baseline, and machine-readable issue and remediation codes; Dry-run plans propose exact add, remove, retype, supersede, waive, or investigate operations with confidence and source evidence; no auto-fix invents an edge; Active and terminal remediation are separated; closed-item changes require dedicated changelog-safe batches and immutable audit history; Health, validate, stats, aggregate, and package audit surfaces reuse one SDK policy and finding contract with token-efficient default output"
+goal: project management = context management
+objective: "Make relationship quality observable, enforceable, explainable, and safely remediable across active and terminal history"
+value: Maintainers can distinguish genuine graph debt from intentional sparsity and repair the former without fabricating context
+impact: "Prevents dangling, contradictory, cyclic, stale, or meaningless relationship graphs from misleading agents and algorithms"
+outcome: "Counts-first audits, bounded samples, profile-aware policies, waivers, dry-run plans, and resumable remediation workflows"
+why_now: "Current validation covers basic dependency integrity but the all-status audit exposed isolates, edge-kind drift, shallow ordering chains, and body-to-edge mismatches"
+parent: pm-96h7
+risk: medium
+confidence: high
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-33cw,related,"2026-07-13T21:59:02.798Z",null,null
+  pm-4jqm,blocked_by,"2026-07-13T21:59:02.798Z",null,null
+  pm-6irg,related,"2026-07-13T21:59:02.798Z",null,null
+  pm-e9zh,related,"2026-07-13T21:59:02.798Z",null,null
+  pm-ju83,blocked_by,"2026-07-13T21:59:02.798Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-13T21:59:02.798Z",codex-root,"Duplicate check 2026-07-13: existing validate,deps visualization,and one-time living-map audits do not provide schema-aware graph coverage profiles and remediation plans; this extends canonical governance rather than replacing those items."
+body: "## Finding families\n\n- Integrity: missing endpoints, unregistered kinds, invalid payloads, duplicate canonical identity, self-links, inverse mismatch.\n- Ordering: genuine cycles, stale blockers, contradictory blocks pairs, unreachable prerequisites, redundant transitive edges.\n- Coverage: unexplained roots or isolates, stories without delivery links, bodies naming absent prerequisites, milestones without outcomes, work without evidence lineage.\n- Temporal: stale inferred relationships, superseded endpoints, snapshot drift, history and materialized-view disagreement.\n- Quality: generic related overuse, alias drift, dense cliques, hub inflation, low-confidence edges without evidence.\n\n## Policy stance\n\nSparse is not automatically bad and dense is not automatically good. Every finding must state the violated policy, evidence, confidence, consequences, and safe next action. Waivers are explicit, attributable, scoped, reviewable, and time-aware."

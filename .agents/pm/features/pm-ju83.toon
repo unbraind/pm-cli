@@ -1,0 +1,30 @@
+id: pm-ju83
+title: "SDK relationship registry and graph-query primitives: custom typed edges, adjacency, paths, closures, impact, and bounded subgraphs"
+description: "Promote relationship definition, mutation, indexing, and bounded traversal into stable public SDK APIs so every adapter and domain model shares one implementation."
+type: Feature
+status: open
+priority: 1
+tags[6]: api,"area:graph","area:sdk",performance,relationships,sdk-first
+created_at: "2026-07-13T21:58:11.171Z"
+updated_at: "2026-07-13T21:58:11.171Z"
+author: codex-root
+estimated_minutes: 720
+acceptance_criteria: "The registry defines built-in and extension-provided kinds with direction, inverse, order-bearing and hierarchy flags, cardinality, payload schema, lifecycle, aliases, and compatibility version; Mutation APIs validate endpoints and invariants then append attributable immutable events without direct state rewrites; Read APIs cover adjacency, predecessors, successors, ancestors, descendants, shortest and constrained paths, transitive closure, reverse impact, and induced bounded subgraphs; Every query supports deterministic ordering, typed filters, field projection, cursor or streaming continuation, cancellation, snapshot selection, and explicit cost or truncation metadata; Indexes are rebuildable from history, incrementally maintained, crash safe, observable, and optional for small projects; Thin CLI and MCP adapters call public SDK APIs without hidden core imports; shell-safe JSON, JSONL, TOON, and counts-first outputs preserve pipeline composability; Contract, property, replay, concurrency, migration, and scale tests cover legacy kinds, custom kinds, cycles, snapshots, and one million items"
+goal: project management = context management
+objective: Make the public SDK the complete source of truth for relationship schemas and graph operations
+value: "CLI, MCP, extensions, scripts, and non-PM applications can build on one deterministic and extensible graph contract"
+impact: "Removes adapter-local graph logic and unlocks typed domain relationships, scalable context assembly, and future graph algorithms"
+outcome: "Versioned SDK APIs for kind registries, immutable mutations, adjacency and path queries, closures, impact traversal, and bounded subgraphs"
+why_now: "The CLI has dependency operations and visualization, but custom semantic kinds and complete public graph primitives lack a canonical SDK contract"
+parent: pm-96h7
+risk: high
+confidence: medium
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-4jqm,blocked_by,"2026-07-13T21:58:11.171Z",null,null
+  pm-801d,related,"2026-07-13T21:58:11.171Z",null,null
+  pm-8xr8,related,"2026-07-13T21:58:11.171Z",null,null
+  pm-usfg,related,"2026-07-13T21:58:11.171Z",null,null
+  pm-zwpp,blocked_by,"2026-07-13T21:58:11.171Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-13T21:58:11.171Z",codex-root,"Duplicate check 2026-07-13: SDK-first inventory contains generic query and lifecycle promotion slices but no stable typed relationship registry plus bounded graph algorithm API; this is a new promotion slice under pm-96h7 and relates to pm-usfg."
+body: "## Public surface\n\n- RelationshipKindRegistry and schema validation.\n- Append, remove or supersede, and inspect relationship events.\n- Snapshot-aware graph reader and index interfaces.\n- Bounded adjacency, path, closure, impact, and subgraph queries.\n- Explain and cost metadata suitable for token-aware context selection.\n- Import, export, merge, and extension hooks built from the same contract.\n\n## Non-goals\n\nThis item does not choose product-specific relevance weights, silently invent relationships, or force large indexes on scratch projects. Those belong to context-engine policy, audits, and adaptive storage layers."

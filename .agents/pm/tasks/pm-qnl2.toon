@@ -1,0 +1,31 @@
+id: pm-qnl2
+title: "Wave 1 active graph enrichment: connect strategic stories, decisions, delivery slices, evidence, and execution order from reviewed findings"
+description: "Apply only high-confidence, evidence-backed relationship changes to active items and verify each bounded batch before continuing."
+type: Task
+status: open
+priority: 2
+tags[6]: active-items,backfill,graph,relationships,task,"wave:1"
+created_at: "2026-07-13T22:00:05.456Z"
+updated_at: "2026-07-13T22:00:05.456Z"
+author: codex-root
+estimated_minutes: 720
+acceptance_criteria: "Consume only reviewed Wave 0 findings and accepted edge semantics; every operation includes source evidence, confidence, author, and rationale; Prioritize story-to-delivery, decision-to-implementation, prerequisite ordering, discovered-from, evidence, release, incident, and SDK-to-adapter relationships; Partition work by canonical lineage and bounded item count so agents can claim non-overlapping batches and resume from durable cursors; Each batch runs duplicate, semantic graph, lifecycle, history-drift, and health validation and records graph-quality and token-context deltas; Low-confidence and conflicting cases remain investigations or waivers; no generic related edge is added solely for connectivity; Finish when every active item has a reviewed classification and either valid relationships, an intentional-isolate waiver, or an explicit remediation owner"
+goal: project management = context management
+objective: Make active execution and strategy lineages richly traversable without adding arbitrary density
+value: "Agents gain reliable prerequisite, delivery, decision, evidence, and impact paths for current work first"
+impact: "Improves claim-next, planning, context assembly, duplicate prevention, handoffs, and blast-radius reasoning"
+outcome: "Reviewed active-item relationship batches with before and after metrics, immutable evidence, and no unexplained policy violations"
+why_now: "Active work has the highest context value and lowest changelog risk, while several bodies already provide direct evidence for missing prerequisites"
+parent: pm-a8zm
+risk: medium
+confidence: medium
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-1kxs,related,"2026-07-13T22:00:05.456Z",null,null
+  pm-4jqm,blocked_by,"2026-07-13T22:00:05.456Z",null,null
+  pm-4k6b,related,"2026-07-13T22:00:05.456Z",null,null
+  pm-6x7o,blocked_by,"2026-07-13T22:00:05.456Z",null,null
+  pm-p9a4,blocked_by,"2026-07-13T22:00:05.456Z",null,null
+  pm-usfg,related,"2026-07-13T22:00:05.456Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-13T22:00:05.456Z",codex-root,"Duplicate check 2026-07-13: no existing open item owns systematic evidence-backed active-item relationship enrichment across capability lineages; existing epics own their features while this task owns only cross-lineage graph remediation batches."
+body: "## Priority order\n\n1. Priority-zero and priority-one stories and decisions.\n2. SDK-first and CLI simplification delivery chains.\n3. Context engine, scale, history integrity, releases, packages, and governance.\n4. Remaining active features, tasks, chores, plans, issues, and reminders.\n\n## Batch contract\n\nSnapshot; claim; bounded finding set; exact operations; dry-run validation; mutation; post-checks; evidence comment; metric delta; cursor checkpoint; release."

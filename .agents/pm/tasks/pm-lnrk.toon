@@ -1,0 +1,30 @@
+id: pm-lnrk
+title: "Wave 2 terminal-history graph backfill: reconstruct closed and canceled lineage in changelog-safe, epoch-ordered batches"
+description: "Enrich terminal item relationships only after active graph policy is proven, preserving historical meaning and coordinating every mutation with changelog and resolution-evidence governance."
+type: Task
+status: open
+priority: 3
+tags[8]: backfill,changelog-safe,graph,history,relationships,task,terminal-items,"wave:2"
+created_at: "2026-07-13T22:00:29.132Z"
+updated_at: "2026-07-13T22:00:29.132Z"
+author: codex-root
+estimated_minutes: 1800
+acceptance_criteria: "Start only after Wave 1 policy and tooling are accepted and pm-e9zh terminal evidence workflow is unblocked or explicitly coordinated; Partition terminal work by historical epoch, canonical parent lineage, release or incident boundary, and bounded batch size with non-overlapping claims; Infer candidate edges only from durable evidence such as original descriptions, comments, history events, linked commits or PRs, files, docs, tests, releases, and explicit identifiers; Human review is required for ambiguous retyping, inferred prerequisites, conflicting evidence, and high-impact graph hubs; unresolved cases retain uncertainty rather than fabricated links; Corrections append superseding events and preserve prior versions; each item remains restorable and explainable at every snapshot; Every batch includes package-owned changelog generation and review after the final tracker mutation plus duplicate, lifecycle, graph, health, history-chain, and release-boundary validation; Completion classifies every terminal item and demonstrates bounded resumability, stable indexes, and compact audit summaries at million-item scale"
+goal: project management = context management
+objective: "Recover decades-scale historical lineage and evidence without rewriting proof, dragging unrelated changelog buckets, or inventing retrospective certainty"
+value: "Agents and graph algorithms can learn from completed, canceled, superseded, and failed work as first-class institutional context"
+impact: "Enables point-in-time restoration, analogical retrieval, outcome learning, provenance, release archaeology, and trustworthy long-horizon planning"
+outcome: "Epoch-ordered terminal graph batches with immutable supersession events, changelog review, uncertainty labels, and complete validation evidence"
+why_now: "Terminal items are most of the tracker and carry rich history, but they also present the highest semantic, audit, and changelog risk"
+parent: pm-a8zm
+risk: high
+confidence: low
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-e9zh,blocked_by,"2026-07-13T22:00:29.132Z",null,null
+  pm-hib1,related,"2026-07-13T22:00:29.132Z",null,null
+  pm-klo8,related,"2026-07-13T22:00:29.132Z",null,null
+  pm-o2kc,related,"2026-07-13T22:00:29.132Z",null,null
+  pm-qnl2,blocked_by,"2026-07-13T22:00:29.132Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-13T22:00:29.132Z",codex-root,"Duplicate check 2026-07-13: pm-e9zh owns terminal resolution evidence and completed audits inspected history,but no open task owns typed terminal relationship reconstruction in changelog-safe epoch batches; this task is downstream and coordinated,not duplicate."
+body: "## Epoch ordering\n\nWork newest-to-oldest within stable lineages so current conventions inform, but do not overwrite, historical semantics. Suggested epochs: current release train; post-package architecture; SDK and extension expansion; early CLI and storage foundation; imported or legacy archives.\n\n## Evidence hierarchy\n\nExplicit item IDs and immutable mutation events outrank inferred title similarity. Linked commits, PRs, releases, tests, files, and docs provide provenance. Textual resemblance is only a candidate signal. Canceled experiments and superseded decisions remain visible and are not treated as outstanding work.\n\n## Changelog boundary\n\nTerminal metadata updates can move items into current generated changelog sections. Each bounded batch owns its final tracker mutation, package-owned changelog regeneration and check, diff review, and evidence comment as one atomic handoff."

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: agent-story,changelog-exclude,context-management
 created_at: "2026-07-06T23:46:30.772Z"
-updated_at: "2026-07-06T23:46:41.695Z"
+updated_at: "2026-07-13T22:05:17.456Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Continuity scenarios (short/medium/long gap incl. consolidated epochs) are expressible and pass as pm-atfm judgment classes; a returning agent needs exactly one documented context call; token cost is bounded by actionable-now content, not elapsed time; delta-since-cursor is derivable from history/event primitives without manual diffing"

@@ -1,0 +1,28 @@
+id: pm-p9a4
+title: "Wave 0 graph baseline and waiver ledger: classify roots, active dependency isolates, legacy aliases, and body-to-edge drift"
+description: Publish a reproducible all-status graph baseline and classify every currently suspicious sparse or semantically ambiguous case before changing relationships.
+type: Task
+status: open
+priority: 1
+tags[5]: baseline,graph,relationships,task,"wave:0"
+created_at: "2026-07-13T21:59:48.347Z"
+updated_at: "2026-07-13T21:59:48.347Z"
+author: codex-root
+estimated_minutes: 300
+acceptance_criteria: "Record snapshot identity, commands, schema and package versions, counts by status and type, parent-depth distribution, edge kinds, components, isolates, ordering depth, dangling endpoints, and history integrity; Classify all roots and active dependency isolates as intentional, governed sparse, incomplete, ambiguous, archived, or remediation debt with reason and reviewer state; Detect item bodies and comments that name explicit prerequisites or delivery links missing from dependency metadata and record source excerpts or event pointers without auto-mutating; Map related_to and other legacy aliases plus parent or child duplication into candidate canonical kinds while preserving uncertainty; Produce cursorable machine-readable findings and a compact summary whose limits, omissions, and snapshot are explicit; Run exact, fuzzy, and parent-scope duplicate scans plus validate, health, and history-drift checks; baseline creation makes no terminal-item mutations"
+goal: project management = context management
+objective: Turn audit counts into a deterministic evidence and waiver ledger that later waves can safely execute
+value: Every proposed graph change starts from a reviewed finding rather than a density target or intuition
+impact: "Prevents synthetic links and makes reconstruction resumable, measurable, and multi-agent safe"
+outcome: "Versioned baseline metrics, exact item classifications, waiver reasons, body-to-edge findings, and proposed remediation records"
+why_now: "The current baseline has 185 hierarchy roots overall, 100 active dependency isolates, alias drift, and documented prerequisites absent from metadata"
+parent: pm-a8zm
+risk: low
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-6x7o,blocked_by,"2026-07-13T21:59:48.347Z",null,null
+  pm-mp49,related,"2026-07-13T21:59:48.347Z",null,null
+  pm-v657,related,"2026-07-13T21:59:48.347Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-13T21:59:48.347Z",codex-root,"Duplicate check 2026-07-13: prior audits captured point-in-time state but no open execution task owns the typed graph baseline,isolate classification,waiver ledger,and body-to-edge drift required by pm-a8zm."
+body: "## Current reproducible anchors\n\nAt audit time: 1,786 total items; 200 active; 1,601 parent edges; 1,137 dependency entries; 665 items with dependencies; 109 active dependency components; 100 active dependency isolates; longest active order-bearing path two edges; parent depth max four; no active normalized-title duplicate cluster; no active lifecycle cycle or dangling dependency endpoint.\n\nThese are baselines, not target quotas. The task must rerun and timestamp every measure when claimed.\n\n## Deliverables\n\nA counts-first report, machine-readable finding stream, waiver registry, explicit uncertainty queue, and exact proposed relationship operations for Wave 1."

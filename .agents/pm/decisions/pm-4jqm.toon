@@ -1,0 +1,30 @@
+id: pm-4jqm
+title: "ADR: relationship graph semantics — typed directional, ordering, provenance, evidence, and associative edges with schema-extensible invariants"
+description: "Decide the durable relationship model that distinguishes execution ordering from hierarchy, provenance, evidence, and relevance while permitting domain-specific edge kinds."
+type: Decision
+status: open
+priority: 1
+tags[6]: adr,"area:graph","area:sdk",decision-needed,relationships,schema
+created_at: "2026-07-13T21:57:26.030Z"
+updated_at: "2026-07-13T21:57:26.030Z"
+author: codex-root
+estimated_minutes: 180
+acceptance_criteria: "Context and drivers inventory current parent, child, blocks, blocked_by, discovered_from, incident_from, related, and related_to behavior; Alternatives compare fixed enums, extension registries, generic labeled property graphs, event-derived edges, and a hybrid registry; The decision specifies direction, inverse materialization, order-bearing and associative classification, cardinality, payload schema, authorship, timestamps, confidence, and source evidence; Compatibility rules cover legacy aliases, unknown custom kinds, import and export, merge and federation, schema versioning, and rollback; Validation rules define dangling endpoints, self-edges, duplicate canonical edges, order-only cycles, inverse consistency, stale evidence, and safe remediation; Human review records the chosen alternative, consequences, migration path, and explicit non-goals before implementation starts"
+goal: project management = context management
+objective: "Choose one compatible edge model before graph APIs, audits, analytics, and backfill are implemented"
+value: Algorithms and agents can interpret every edge consistently instead of inferring semantics from labels or adjacency
+impact: "Prevents false cycle reports, meaningless graph enrichment, irreversible schema drift, and CLI-only relationship behavior"
+outcome: An accepted ADR with migration rules and executable invariants for built-in and custom relationship kinds
+why_now: "The tracker already contains related and related_to drift, parent and child entries, ordering edges, and a live false-positive cycle issue"
+parent: pm-96h7
+risk: medium
+confidence: medium
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-6irg,related,"2026-07-13T21:57:26.030Z",null,null
+  pm-96h7,related,"2026-07-13T21:57:26.030Z",null,null
+  pm-9x6k,related,"2026-07-13T21:57:26.030Z",null,null
+  pm-a859,related,"2026-07-13T21:57:26.030Z",null,null
+  pm-zwpp,related,"2026-07-13T21:57:26.030Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-13T21:57:26.030Z",codex-root,"Duplicate check 2026-07-13: all-status searches found dependency validation and visualization decisions but no ADR that classifies relationship kinds by graph semantics and defines a schema-extensible registry; this is the decision gate for pm-96h7."
+body: "## Decision question\n\nWhat relationship contract lets pm represent project execution, knowledge provenance, evidence, organizational structure, domain models, and future non-PM graphs without confusing an associative connection with a prerequisite?\n\n## Drivers\n\nCorrect graph algorithms; immutable and attributable mutations; SDK-first extensibility; backward compatibility; shell-friendly interchange; bounded context assembly; federation; point-in-time replay; and small-project simplicity.\n\n## Alternatives to evaluate\n\n1. Closed built-in enum only.\n2. Extension-registered kinds with a stable built-in core.\n3. Generic property-graph labels with runtime validation.\n4. Relationships derived only from immutable events.\n5. Hybrid registry plus immutable relationship events and materialized indexes.\n\n## Proposed vocabulary dimensions\n\nEach kind declares direction, optional inverse, whether it participates in ordering or hierarchy, allowed endpoint types or statuses, cardinality, payload schema, dedupe identity, lifecycle policy, visibility, confidence and evidence requirements, and compatibility aliases.\n\nThis item intentionally remains open until a maintainer accepts or rejects the decision."

@@ -1,0 +1,35 @@
+id: pm-96h7
+title: "Project relationship graph maturity: typed edge ontology, graph governance, scalable analytics, and all-status knowledge-map backfill"
+description: "Make item relationships first-class, semantically typed, queryable, explainable, and useful from tiny projects to million-item multi-agent ecosystems without manufacturing meaningless edges."
+type: Epic
+status: open
+priority: 1
+tags[7]: "area:graph","area:sdk",context-management,governance,initiative,relationships,scale
+created_at: "2026-07-13T21:57:05.806Z"
+updated_at: "2026-07-13T22:09:16.493Z"
+author: codex-root
+estimated_minutes: 1800
+acceptance_criteria: "A reviewed ADR defines canonical and custom edge semantics, direction, ordering, inverse, provenance, and compatibility; The public SDK exposes bounded graph mutation and query primitives before thin CLI, MCP, and package adapters; Graph governance reports semantic errors, isolates, stale or redundant edges, cycles only over order-bearing kinds, and profile-aware coverage; Analytics provide explainable critical paths, blast radius, bottlenecks, communities, redundancy, and relevance signals with deterministic evidence; A resumable all-status backfill classifies every item as connected, intentional root or archive, waived, or remediation debt without synthetic related filler; Benchmarks demonstrate bounded memory, latency, and token output at one million items while preserving small-project ergonomics"
+goal: project management = context management
+objective: Turn the complete tracker into a trustworthy typed knowledge graph that agents and algorithms can traverse under bounded time and token budgets
+value: "Every agent can recover why work exists, what it affects, what orders it, and which evidence supports it without dumping the tracker"
+impact: "Enables graph algorithms, context optimization, critical-path planning, dependency integrity, and durable ecosystem understanding at every scale"
+outcome: "A schema-extensible relationship model, SDK graph primitives, scalable analytics, governance audits, and evidence-backed all-status enrichment"
+why_now: The live hierarchy is connected but the active dependency graph has 100 isolates and only a two-edge prerequisite depth; some documented prerequisites are not encoded
+parent: pm-33cw
+risk: high
+confidence: high
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-4k6b,related,"2026-07-13T21:57:05.806Z",null,null
+  pm-6irg,related,"2026-07-13T21:57:05.806Z",null,null
+  pm-801d,related,"2026-07-13T21:57:05.806Z",null,null
+  pm-doxj,related,"2026-07-13T21:57:05.806Z",null,null
+  pm-zwpp,related,"2026-07-13T21:57:05.806Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-13T21:57:05.806Z",codex-root,"Duplicate check 2026-07-13: exhaustive all-status keyword and normalized-title review found adjacent visualization,linked-resource,context-engine,and one-time audit work but no active or terminal initiative owning typed relationship semantics plus scalable graph governance and all-status reconstruction; canonical parent is pm-33cw."
+  "2026-07-13T22:09:16.493Z",codex-root,"Post-organization evidence 2026-07-13: tracker now has 1,799 items, 1,614 parent edges, 1,224 dependency entries, and 682 items with dependencies. Compared with the pre-pass baseline, active dependency components improved 109 to 96, active dependency isolates 100 to 89, largest active component 79 to 110, active blocked_by edges 30 to 71, hierarchy depth 4 to 5, and longest active prerequisite path 2 to 5: pm-lnrk -> pm-qnl2 -> pm-p9a4 -> pm-6x7o -> pm-ju83 -> pm-4jqm. Validation reports zero active dangling references, zero lifecycle or parent cycles, zero stale blockers, and zero history hash or chain drift. Health has zero warnings. Exact and 0.92 fuzzy dedupe found only the known three canceled accidental-probe items; parent-scope found no cluster. No terminal items were mutated."
+notes[1]{created_at,author,text}:
+  "2026-07-13T22:08:13.695Z",codex-root,"Audit baseline 2026-07-13: before this initiative the live tracker had 1,786 items, 1,601 parent edges, 1,137 dependency entries, 665 items with dependencies, 109 active dependency components, 100 active dependency isolates, 30 active blocked_by edges, parent depth max 4, and a longest active prerequisite path of 2 edges. The exhaustive history aggregation covered 28,283 immutable events across 1,794 streams."
+learnings[1]{created_at,author,text}:
+  "2026-07-13T22:08:14.219Z",codex-root,"Graph richness must optimize semantic information, not raw edge count. Hierarchy, order-bearing prerequisites, provenance, evidence, and associative relevance need separate registered kinds. Until pm-6irg is fixed, adding valid blocked_by edges into an associative related network can produce false lifecycle cycles, so every enrichment batch must validate and back out ambiguous order edges rather than accepting warnings."
+body: "## Baseline and problem\n\nThe 2026-07-13 exhaustive live audit found 1,786 items, 1,601 parent edges, and 1,137 dependency entries. Parent plus dependency connectivity is complete through the roadmap root, but the active dependency-only graph has 109 weak components, 100 isolated items, and a longest prerequisite chain of only two edges. This means hierarchy is doing nearly all structural work while execution, provenance, and impact semantics remain under-modeled.\n\n## Principles\n\n- Model meaning, not density: no link exists merely to improve a graph metric.\n- Separate hierarchy, order-bearing prerequisites, provenance, evidence, and associative relevance.\n- Make edge kind, direction, inverse behavior, payload, authorship, time, source, and confidence explicit.\n- Treat graph reads as bounded, cursorable, streamable SDK primitives; render token-efficient summaries by default.\n- Evaluate cycles only on declared order-bearing edge kinds.\n- Preserve immutable mutation history and permit point-in-time reconstruction.\n- Scale from a seconds-long scratch project to million-item, multi-decade, thousand-agent ecosystems.\n- Keep the CLI and MCP thin over the same public SDK capabilities.\n- Backfill closed history only in deliberate changelog-safe batches; never fabricate metadata or dependencies.\n\n## Delivery horizons\n\nH1 establishes semantics, SDK registry and bounded traversal. H2 adds governance and active-lineage enrichment. H3 adds incremental analytics and context-engine signals. H4 reconstructs terminal history in resumable waves. H5 proves federated and million-item behavior and supports non-PM domains."

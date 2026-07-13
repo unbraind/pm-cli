@@ -1,0 +1,31 @@
+id: pm-kr3t
+title: "Beyond-PM SDK exemplar phase 2: temporal digital-twin graph with entity relationships, event replay, point-in-time state, and invariants"
+description: "Prove the public pm SDK can model a non-PM digital twin whose entities, relationships, immutable events, snapshots, invariants, and queries are implemented without CLI-internal imports."
+type: Feature
+status: open
+priority: 4
+tags[7]: "area:sdk",digital-twin,exemplar,graph,history,long-term,non-pm
+created_at: "2026-07-13T22:00:59.149Z"
+updated_at: "2026-07-13T22:00:59.149Z"
+author: codex-root
+estimated_minutes: 900
+acceptance_criteria: "Choose and document one bounded domain such as a facility, production cell, fleet, supply network, or service topology with entities, typed relationships, states, commands, events, and invariants; Implement the exemplar entirely through published SDK exports and extension or package contracts; no CLI internal, core internal, or tracker-file access is allowed; Every mutation appends attributable immutable events; rebuilding from genesis and from verified checkpoints yields identical state and relationship indexes; Queries support current and point-in-time entity state, topology and impact traversal, event history, provenance, invariant violations, and bounded shell-friendly export; Model concurrent observations, conflicting updates, corrections by superseding events, schema evolution, offline or federated replicas, and deterministic merge or explicit conflict surfaces; Property and scenario tests cover replay, temporal relationships, invariant enforcement, partial failure, restore, import and export, and tamper evidence; Publish a structured gap report that links every missing capability to the existing SDK promotion lineage or a duplicate-checked new item"
+goal: Universal project and context primitives through the public pm SDK
+objective: "Validate that SDK item, field, relationship, event, query, history, and replay primitives can represent a realistic evolving physical or business system"
+value: Provides concrete proof that pm SDK abstractions generalize to digital twins and exposes missing primitives before they ossify
+impact: "Broadens the SDK from project tracking to event-sourced domain engines, simulations, asset networks, organizations, and business logic"
+outcome: "An installable exemplar package, realistic fixture, point-in-time queries, invariant evaluation, replay proof, and SDK gap report"
+why_now: "The roadmap explicitly targets VCS and company-scale logic, but digital-twin capability has no canonical tracked exemplar"
+parent: pm-8ngt
+risk: high
+confidence: low
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-e200,related,"2026-07-13T22:00:59.149Z",null,null
+  pm-hib1,related,"2026-07-13T22:00:59.149Z",null,null
+  pm-is1a,related,"2026-07-13T22:00:59.149Z",null,null
+  pm-ju83,blocked_by,"2026-07-13T22:00:59.149Z",null,null
+  pm-klo8,related,"2026-07-13T22:00:59.149Z",null,null
+  pm-xtrd,blocked_by,"2026-07-13T22:00:59.149Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-13T22:00:59.149Z",codex-root,"Duplicate check 2026-07-13: exhaustive all-status search found the broad beyond-PM story pm-8ngt and VCS exemplar pm-xtrd but no digital-twin exemplar; this is phase 2 beneath that canonical lineage and depends on public graph primitives."
+body: "## Suggested domain\n\nA small production facility is a useful stress test: sites contain lines; lines contain machines and sensors; assets depend on utilities and upstream processes; observations and maintenance commands change state; work orders and incidents connect operational context; safety and capacity rules are temporal invariants.\n\n## Capabilities exercised\n\nCustom item and event types; custom relationship registry; immutable command and observation history; derived snapshots and indexes; point-in-time reconstruction; topology and blast-radius graph queries; constraints and invariants; identity and authorship; schema migrations; import, export, merge, and federation; compact terminal output.\n\n## Boundary\n\nThis is an exemplar and conformance test, not a production industrial-control system. It must reveal SDK gaps without moving domain-specific policy into core."

@@ -6,11 +6,27 @@ status: open
 priority: 1
 tags[4]: agent-story,agent-ux,"area:cli",changelog-exclude
 created_at: "2026-07-05T04:52:38.075Z"
-updated_at: "2026-07-05T04:52:38.075Z"
+updated_at: "2026-07-13T22:02:12.794Z"
 author: maintainer-agent
 estimated_minutes: 30
 acceptance_criteria: pm --help lists ~15 nouns on one screen; each noun help page enumerates all verbs/flags; an agent transcript can complete a create->annotate->close workflow using only tiered help for discovery; old spellings still work
 parent: pm-n7rr
 risk: low
 confidence: high
+dependencies[15]{id,kind,created_at,author,source_kind}:
+  pm-0z7n,blocked_by,"2026-07-13T22:02:12.776Z",null,null
+  pm-6apl,blocked_by,"2026-07-13T22:02:12.776Z",null,null
+  pm-e2bq,blocked_by,"2026-07-13T22:02:12.776Z",null,null
+  pm-eq4x,blocked_by,"2026-07-13T22:02:12.776Z",null,null
+  pm-ik19,blocked_by,"2026-07-13T22:02:12.776Z",null,null
+  pm-kcs4,blocked_by,"2026-07-13T22:02:12.776Z",null,null
+  pm-lp4j,blocked_by,"2026-07-13T22:02:12.776Z",null,null
+  pm-mu8m,blocked_by,"2026-07-13T22:02:12.776Z",null,null
+  pm-npr3,blocked_by,"2026-07-13T22:02:12.776Z",null,null
+  pm-o3fh,blocked_by,"2026-07-13T22:02:12.776Z",null,null
+  pm-pfqi,blocked_by,"2026-07-13T22:02:12.776Z",null,null
+  pm-tnud,blocked_by,"2026-07-13T22:02:12.776Z",null,null
+  pm-tqel,blocked_by,"2026-07-13T22:02:12.776Z",null,null
+  pm-xkgq,blocked_by,"2026-07-13T22:02:12.776Z",null,null
+  pm-yql1,blocked_by,"2026-07-13T22:02:12.776Z",null,null
 body: ""

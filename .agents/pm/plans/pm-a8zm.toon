@@ -1,0 +1,29 @@
+id: pm-a8zm
+title: "All-status relationship graph reconstruction: evidence-backed canonicalization and enrichment across every pm item"
+description: "Reconstruct and enrich the complete historical and active tracker graph in resumable, reviewable waves after semantics and governance are available."
+type: Plan
+status: open
+priority: 2
+tags[7]: all-status,audit,backfill,graph,plan,relationships,resumable
+created_at: "2026-07-13T21:59:23.505Z"
+updated_at: "2026-07-13T21:59:23.505Z"
+author: codex-root
+estimated_minutes: 1800
+acceptance_criteria: "Every item is classified as correctly connected, intentional root, intentional archive or isolate, waived with rationale, or remediation debt with an exact next action; All legacy edge kinds and aliases are mapped to canonical semantics with source evidence; ambiguous relationships remain investigations rather than guessed rewrites; Execution is partitioned into bounded cursor-based waves with snapshots, checkpoints, deterministic ordering, idempotency, resume, rollback-by-new-event, and multi-agent claim boundaries; Active strategic lineages are enriched before terminal history; closed or canceled items change only in dedicated changelog-safe batches coordinated with pm-e9zh; Every mutation records author, timestamp, rationale, source evidence, confidence, previous meaning, and resulting validation evidence in immutable history; Post-wave audits show no new duplicates, dangling endpoints, false order cycles, history drift, or unexplained policy violations and publish graph-quality deltas; The process is benchmarked and token-bounded for one million items and safe under concurrent agents without full-memory or full-output requirements"
+goal: project management = context management
+objective: Classify and correctly connect every item across all lifecycle states while preserving historical truth and avoiding synthetic relationships
+value: The full ecosystem becomes understandable and analyzable as a durable knowledge map rather than only as a hierarchy and archive
+impact: "Improves context retrieval, lineage, critical paths, impact analysis, duplicate prevention, handoffs, and long-term institutional memory"
+outcome: "A checkpointed wave plan, waiver ledger, exact remediation operations, verified graph metrics, and immutable evidence for every change"
+why_now: "The baseline identifies meaningful graph debt, but direct bulk mutation before an accepted ontology and policy would create ambiguity and changelog risk"
+parent: pm-6x7o
+risk: high
+confidence: medium
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-6x7o,blocked_by,"2026-07-13T21:59:23.505Z",null,null
+  pm-doxj,related,"2026-07-13T21:59:23.505Z",null,null
+  pm-e9zh,related,"2026-07-13T21:59:23.505Z",null,null
+  pm-uid0,related,"2026-07-13T21:59:23.505Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-13T21:59:23.505Z",codex-root,"Duplicate check 2026-07-13: prior all-status audits are completed point-in-time reviews and pm-e9zh owns terminal resolution evidence; none owns a future resumable typed-relationship reconstruction program. This plan starts only after pm-6x7o."
+body: "## Wave strategy\n\n0. Freeze and publish a reproducible baseline; classify current roots, active dependency isolates, aliases, and body-to-edge mismatches.\n1. Enrich active strategic stories, features, decisions, and delivery chains with high-confidence explicit evidence.\n2. Normalize legacy edge aliases and repair semantic integrity after ADR acceptance.\n3. Backfill recent terminal lineages in changelog-safe batches, then move backward by history epoch.\n4. Reconstruct evidence, incident, release, package, and domain relationships from immutable events and linked resources.\n5. Verify million-item and federated behavior, sample quality manually, and retain a waiver and uncertainty ledger.\n\n## Safety\n\nNo generic-density target. No all-items full dump. No terminal touch outside a dedicated batch. No automatic edge whose source and confidence cannot be explained. A correction appends a superseding event rather than erasing proof."

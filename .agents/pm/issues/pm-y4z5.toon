@@ -1,0 +1,32 @@
+id: pm-y4z5
+title: pm get --full omits children for Plan parents while pm list --parent returns them
+description: The full get projection does not expose child summary or rows for a Plan item even when live parent relationships exist and the list parent filter finds them.
+type: Issue
+status: open
+priority: 2
+tags[7]: "area:graph","area:query",bug,children,plan,projection,sdk-parity
+created_at: "2026-07-13T22:07:55.014Z"
+updated_at: "2026-07-13T22:07:55.014Z"
+author: codex-root
+estimated_minutes: 180
+acceptance_criteria: "A focused sandbox test reproduces Plan parent children and fails before the fix; Public SDK get/read primitives compute children consistently for Plan, Epic, Milestone, Feature, and custom parent-capable types rather than hard-coding container types; CLI human, JSON, TOON, MCP, and SDK projections report the same total and active child counts with deterministic bounded samples and explicit truncation metadata; pm list --parent and pm get --full parity is covered for open, closed, canceled, custom-type, missing-parent, and large child sets; The fix does not require a full tracker scan when the derived parent index is available and remains bounded at one million items"
+parent: pm-6x7o
+risk: medium
+confidence: high
+reporter: codex-root
+severity: medium
+environment: pm-cli 2026.7.13 on main 5194806d; Node v26.4.0; Linux; real repository tracker
+repro_steps: "1. Create or select a Plan with items whose parent field is the Plan ID. 2. Run pm get <plan-id> --full --json and inspect .children. 3. Run pm list --status all --parent <plan-id> --no-truncate --json. Reproduced with pm-a8zm: get returned children:null while list returned pm-p9a4, pm-qnl2, and pm-lnrk."
+expected_result: "Full get and its public SDK contract expose a deterministic bounded child summary for every valid parent item type, including Plan, with total and active counts plus truncation or continuation metadata; CLI human and JSON projections agree with list --parent."
+actual_result: "pm get pm-a8zm --full --json returns children:null; pm list --status all --parent pm-a8zm --no-truncate --json returns count:3 with all three live children."
+component: get query projection and SDK read primitives
+regression: false
+customer_impact: Agents using get as the canonical context call cannot discover executable tasks nested below a Plan and may incorrectly infer the plan has no children.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-a8zm,discovered_from,"2026-07-13T22:07:55.014Z",null,null
+  pm-je50,related,"2026-07-13T22:07:55.014Z",null,null
+  pm-ju83,related,"2026-07-13T22:07:55.014Z",null,null
+  pm-rjqr,related,"2026-07-13T22:07:55.014Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-13T22:07:55.014Z",codex-root,"Duplicate check 2026-07-13: exhaustive all-status searches for get full Plan children,list parent mismatch,and child count found historical Plan and parent-filter work but no issue tracking this projection inconsistency; live reproduction is attached."
+body: "## Live reproduction\n\npm get pm-a8zm --full --json | jq '{children}'\n=> {children: null}\n\npm list --status all --parent pm-a8zm --no-truncate --json | jq '{count,items:[.items[].id]}'\n=> count 3; pm-p9a4, pm-qnl2, pm-lnrk.\n\nThe three task records each persist parent: pm-a8zm and validation reports no dangling or parent-cycle issue.\n\n## Design expectation\n\nChild discovery is a graph-read primitive, not an Epic-only presentation convenience. The SDK should expose a bounded total, active count, status breakdown, deterministic sample, and continuation link or cursor for any parent-capable item. CLI, MCP, and packages should adapt that same result.\n\n## Safety\n\nTests must use sandboxed PM_PATH and PM_GLOBAL_PATH and cover both indexed and indexless fallback behavior."

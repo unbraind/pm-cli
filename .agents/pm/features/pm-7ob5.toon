@@ -1,0 +1,31 @@
+id: pm-7ob5
+title: "Graph analytics for planning and context: critical paths, blast radius, bottlenecks, communities, redundancy, and explainable relevance signals"
+description: "Implement deterministic, incremental, and explainable algorithms that turn typed relationship data into planning decisions and token-efficient context signals."
+type: Feature
+status: open
+priority: 2
+tags[7]: algorithms,"area:context","area:graph",context-management,performance,planning,scale
+created_at: "2026-07-13T21:58:35.029Z"
+updated_at: "2026-07-13T21:58:35.029Z"
+author: codex-root
+estimated_minutes: 900
+acceptance_criteria: "Order-bearing DAG analysis provides topological order, critical path, slack, prerequisite depth, frontier, dominators, and transitive reduction while reporting genuine cycles separately; Impact analysis provides reverse reachability, bounded blast radius, articulation points or bridges, dependency fan-in and fan-out, bottlenecks, and change-risk propagation; Knowledge-graph analysis provides connected components, strongly connected components by edge family, community detection, centrality, redundancy, structural holes, and orphan classification; Algorithms are exact where bounded and expose deterministic approximation method, seed, error or confidence bounds, freshness, and omitted counts otherwise; Incremental and temporal variants consume immutable history and support snapshot comparison, trend, change-point, and counterfactual what-if analysis; Each signal includes provenance and a concise explanation suitable for context packing; no opaque score is authoritative by itself; Evaluation compares quality, latency, memory, update cost, and token savings on scratch, medium, adversarial, multi-decade, and one-million-item fixtures"
+goal: project management = context management
+objective: Derive actionable project and context intelligence from typed graphs without conflating associative and order-bearing relationships
+value: "Agents and maintainers can find critical work, impact, bottlenecks, communities, missing links, and the best bounded context automatically"
+impact: "Improves prioritization, change safety, duplicate avoidance, context relevance, and portfolio understanding from tiny to million-item trackers"
+outcome: "A library of snapshot-aware graph analytics with explanations, incremental updates, approximation bounds, and evaluation evidence"
+why_now: The context engine already plans multi-signal scoring but needs trustworthy graph semantics and scalable derived features
+parent: pm-96h7
+risk: high
+confidence: medium
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-3hps,related,"2026-07-13T21:58:35.029Z",null,null
+  pm-4k6b,related,"2026-07-13T21:58:35.029Z",null,null
+  pm-801d,blocked_by,"2026-07-13T21:58:35.029Z",null,null
+  pm-atfm,related,"2026-07-13T21:58:35.029Z",null,null
+  pm-g2zz,related,"2026-07-13T21:58:35.029Z",null,null
+  pm-ju83,blocked_by,"2026-07-13T21:58:35.029Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-13T21:58:35.029Z",codex-root,"Duplicate check 2026-07-13: context-engine items define relevance assembly and evaluation but no dedicated typed-graph analytics portfolio covering project planning,impact,community,and incremental temporal algorithms; this item supplies those graph primitives without duplicating ranking policy."
+body: "## Algorithm portfolio\n\n### Execution graph\nTopological layering; longest weighted path and slack; dominators; prerequisite frontier; transitive reduction; minimum cut candidates; resource-constrained scheduling inputs.\n\n### Impact graph\nReverse reachability; bounded personalized PageRank or diffusion; articulation and bridge analysis; fan-in or fan-out; dependency cones; affected evidence and ownership.\n\n### Knowledge graph\nWeak and strong components by kind family; Leiden or Louvain-style communities with deterministic seeds; degree, eigenvector, betweenness approximations; structural similarity; redundant and contradictory paths.\n\n### Temporal and multi-agent graph\nIncremental maintenance; snapshot deltas; edge survival and decay; change-point detection; event-time windows; merge or federation boundaries; contention hot spots.\n\n### Context selection\nGraph-distance features; spreading activation; prerequisite and evidence boosts; diversity-aware MMR or DPP-style packing; novelty and redundancy penalties; bounded anytime assembly.\n\nAll outputs must identify edge families, snapshot, exact or approximate status, limits, freshness, and why each result matters."
