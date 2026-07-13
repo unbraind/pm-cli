@@ -1,0 +1,18 @@
+id: pm-chyh
+title: "GH-544: linked-file path anchoring — files/docs add/glob/discover/validate-paths resolve at process.cwd() while validate --check-files anchors at the workspace root"
+description: "From a monorepo subdirectory, pm files/docs --add, --add-glob, --discover, and --validate-paths anchor relative paths at process.cwd() (src/sdk/files.ts runFilesDiscover; src/sdk/linked-artifacts.ts:350 expandAddGlobEntries cwd, :448 validateLinkedPaths), while pm validate --check-files classifies against resolveWorkspaceRoot(pmRoot) (src/cli/commands/validate.ts:725, :3356). resolvePmRoot walks up ancestors, so subdirectory invocations succeed but store paths that validate later reports as missing — silent files_missing drift, invisible at write time because --validate-paths shares the cwd anchor. Promoted to public SDK surface by PR#543, so external consumers now inherit the cwd dependence. Fix direction: single workspace-root anchoring contract across write and check sides; re-anchor cwd-relative input at store time. Class precedent pm-og1v (closed, lancedb store path). See GH-544."
+type: Issue
+status: open
+priority: 2
+tags[4]: cli,data-integrity,files,sdk
+created_at: "2026-07-13T14:23:57.531Z"
+updated_at: "2026-07-13T14:24:09.429Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: "All linked-path resolution surfaces (files/docs --add, --add-glob expansion, --discover containment, --validate-paths probing) anchor stored paths at resolveWorkspaceRoot(pmRoot), not process.cwd(); relative CLI input is interpreted against cwd then re-anchored to the workspace root before storage; a subdirectory-cwd regression test proves pm files --add + pm validate --check-files agree; SDK docs for runFiles/runFilesDiscover/validateLinkedPaths state the workspace-root anchoring contract"
+parent: pm-33cw
+risk: medium
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-j8z6,related,"2026-07-13T14:24:09.412Z",null,null
+body: ""
