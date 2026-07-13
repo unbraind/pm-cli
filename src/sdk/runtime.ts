@@ -317,7 +317,7 @@ export {
   type ItemFormatVersionStatus,
 } from "../core/item/item-format-version.js";
 export { parseTags } from "../core/item/parse.js";
-export { normalizeStatusInput } from "../core/item/status.js";
+export { isTerminalStatus, normalizeStatusInput } from "../core/item/status.js";
 export { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 export { acquireLock } from "../core/lock/lock.js";
 export {
@@ -378,6 +378,14 @@ export {
   type ListVerboseResult,
 } from "../cli/commands/list.js";
 export {
+  runClose,
+  type CloseCommandOptions,
+} from "../cli/commands/close.js";
+export {
+  runUpdate,
+  type UpdateCommandOptions,
+} from "../cli/commands/update.js";
+export {
   NEXT_OUTPUT_VALUES,
   runNext,
   type NextActionableItem,
@@ -425,35 +433,6 @@ export {
   type CompletionResult,
   type CompletionShell,
 } from "../cli/commands/completion.js";
-export {
-  runCommentsAudit,
-  type CommentsAuditEntry,
-  type CommentsAuditHistoryRow,
-  type CommentsAuditOptions,
-  type CommentsAuditResult,
-  type CommentsAuditSummary,
-  type CommentsAuditTypeSummary,
-} from "../cli/commands/comments-audit.js";
-export {
-  runDedupeAudit,
-  type DedupeAuditCandidate,
-  type DedupeAuditCluster,
-  type DedupeAuditOptions,
-  type DedupeAuditResult,
-} from "../cli/commands/dedupe-audit.js";
-export {
-  runDedupeMerge,
-  type DedupeMergeChildReparent,
-  type DedupeMergeCloseAction,
-  type DedupeMergeDuplicateOutcome,
-  type DedupeMergeOptions,
-  type DedupeMergeResult,
-} from "../cli/commands/dedupe-merge.js";
-export {
-  runNormalize,
-  type NormalizeCommandOptions,
-  type NormalizeResult,
-} from "../cli/commands/normalize.js";
 export {
   runReindex,
   type ReindexOptions,

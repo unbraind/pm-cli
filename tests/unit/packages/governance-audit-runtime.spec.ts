@@ -1,251 +1,287 @@
 import { describe, expect, it } from "vitest";
-import type { GlobalOptions } from "../../../src/core/shared/command-types.js";
+import type { CommandDefinition, ExtensionApi, ServiceOverride } from "@unbrained/pm-cli/sdk";
+import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 import {
-  PM_PACKAGE_ROOT_ENV,
-  importRepoModule,
-  readGlobalCallLog,
-  resetGlobalCallLog,
-  setupPackageRuntimeSpec,
-  writeSdkRuntimeModule,
-} from "../../helpers/packageRuntime.js";
-
-const JSON_GLOBAL: GlobalOptions = { json: true };
-const EMPTY_GLOBAL: GlobalOptions = {};
-
-const { createTempRoot } = setupPackageRuntimeSpec();
+  runCommentsAuditPackage,
+  runDedupeAuditPackage,
+  runDedupeMergePackage,
+  runNormalizePackage,
+} from "../../../packages/pm-governance-audit/extensions/governance-audit/runtime.ts";
+import {
+  activate,
+  withOwnershipBypassOptions,
+} from "../../../packages/pm-governance-audit/extensions/governance-audit/index.ts";
+import {
+  buildLinkedArtifactAudit,
+  decorateGovernanceCommandResult,
+  jaccardSimilarity,
+  normalizeLowercaseWhitespace,
+  parseIntegerLimit,
+  splitCommaList,
+  tokenizeAlphaNumeric,
+  toErrorMessage,
+  toNonEmptyStringOrUndefined,
+} from "../../../packages/pm-governance-audit/extensions/governance-audit/runtime-utils.ts";
 
 describe("packages/pm-governance-audit runtime", () => {
-  it("covers governance-audit runtime normalization and loading failures", async () => {
-    delete process.env[PM_PACKAGE_ROOT_ENV];
-    const missingEnvRuntime = await importRepoModule<
-      typeof import("../../../packages/pm-governance-audit/extensions/governance-audit/runtime.ts")
-    >("packages/pm-governance-audit/extensions/governance-audit/runtime.ts", "governanceMissingEnv");
-    await expect(missingEnvRuntime.runDedupeAuditPackage({}, {})).rejects.toThrow("requires PM_CLI_PACKAGE_ROOT");
+  it("owns and executes all four audit workflows without core audit runners", async () => {
+    await withTempPmPath(async (sandbox) => {
+    const global = { path: sandbox.pmPath, json: true };
 
-    const invalidRoot = await createTempRoot("pm-governance-runtime-invalid-");
-    process.env[PM_PACKAGE_ROOT_ENV] = invalidRoot;
-    await writeSdkRuntimeModule(
-      invalidRoot,
-      `export async function runDedupeAudit() { return null; }
-export async function runCommentsAudit() { return null; }
-`,
-    );
-    const invalidRuntime = await importRepoModule<
-      typeof import("../../../packages/pm-governance-audit/extensions/governance-audit/runtime.ts")
-    >("packages/pm-governance-audit/extensions/governance-audit/runtime.ts", "governanceInvalidSdk");
-    await expect(invalidRuntime.runDedupeAuditPackage({}, EMPTY_GLOBAL)).rejects.toThrow(
-      "failed to load governance SDK runtime exports",
-    );
+    const dedupe = await runDedupeAuditPackage({ mode: "title_exact" }, global);
+    expect(dedupe).toMatchObject({ mode: "title_exact" });
 
-    const root = await createTempRoot("pm-governance-runtime-success-");
-    process.env[PM_PACKAGE_ROOT_ENV] = root;
-    await writeSdkRuntimeModule(
-      root,
-      `const key = "__PM_GOVERNANCE_CALLS";
-const calls = Array.isArray(globalThis[key]) ? globalThis[key] : [];
-globalThis[key] = calls;
-export function readStringOption(options, key, aliases = []) {
-  const candidates = [key, ...aliases];
-  for (const candidate of candidates) {
-    const value = options?.[candidate];
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value.trim();
-    }
-  }
-  return undefined;
-}
-export function readBooleanOption(options, key, aliases = []) {
-  const candidates = [key, ...aliases];
-  for (const candidate of candidates) {
-    const value = options?.[candidate];
-    if (value === true || value === false) return value;
-    if (typeof value === "string") {
-      const normalized = value.trim().toLowerCase();
-      if (["1", "true", "yes", "on"].includes(normalized)) return true;
-      if (["0", "false", "no", "off"].includes(normalized)) return false;
-    }
-  }
-  return undefined;
-}
-export function readCsvListOption(options, key, aliases = []) {
-  const value = readStringOption(options, key, aliases);
-  if (!value) return [];
-  return value.split(",").map((entry) => entry.trim()).filter((entry) => entry.length > 0);
-}
-export async function runDedupeAudit(options, global) {
-  calls.push({ kind: "dedupe", options, global });
-  return { kind: "dedupe", options, global };
-}
-export async function runDedupeMerge(options, global) {
-  calls.push({ kind: "dedupe-merge", options, global });
-  return { kind: "dedupe-merge", options, global };
-}
-export async function runCommentsAudit(options, global) {
-  calls.push({ kind: "comments", options, global });
-  return { kind: "comments", options, global };
-}
-export async function runNormalize(options, global) {
-  calls.push({ kind: "normalize", options, global });
-  return { kind: "normalize", options, global };
-}
-`,
-    );
-    resetGlobalCallLog("__PM_GOVERNANCE_CALLS");
-    const runtime = await importRepoModule<typeof import("../../../packages/pm-governance-audit/extensions/governance-audit/runtime.ts")>(
-      "packages/pm-governance-audit/extensions/governance-audit/runtime.ts",
-      "governanceRuntime",
-    );
+    const comments = await runCommentsAuditPackage({ latest: "0" }, global);
+    expect(comments).toHaveProperty("items");
 
-    const dedupe = (await runtime.runDedupeAuditPackage(
-      {
-        mode: "strict",
-        deadline_before: "2026-01-01",
-        deadlineAfter: "2026-02-01",
-        assignee_filter: "mine",
-        threshold: "3",
-      },
-      JSON_GLOBAL,
-    )) as Record<string, unknown>;
-    expect((dedupe.options as Record<string, unknown>).mode).toBe("strict");
-    expect((dedupe.options as Record<string, unknown>).deadlineBefore).toBe("2026-01-01");
-    expect((dedupe.options as Record<string, unknown>).deadlineAfter).toBe("2026-02-01");
-    expect((dedupe.options as Record<string, unknown>).assigneeFilter).toBe("mine");
+    const normalize = await runNormalizePackage({ dry_run: true }, global);
+    expect(normalize).toHaveProperty("dry_run", true);
 
-    const dedupeMerge = (await runtime.runDedupeMergePackage(
-      {
-        keep: "pm-canonical",
-        close: "pm-dup1, pm-dup2",
-        apply: true,
-        dry_run: true,
-        skip_children: true,
-        author: "merge-author",
-        message: "merge message",
-      },
-      JSON_GLOBAL,
-    )) as Record<string, unknown>;
-    const dedupeMergeOptions = dedupeMerge.options as Record<string, unknown>;
-    expect(dedupeMergeOptions.keep).toBe("pm-canonical");
-    expect(dedupeMergeOptions.close).toEqual(["pm-dup1", "pm-dup2"]);
-    expect(dedupeMergeOptions.apply).toBe(true);
-    expect(dedupeMergeOptions.dryRun).toBe(true);
-    expect(dedupeMergeOptions.reparentChildren).toBe(false);
-    expect(dedupeMergeOptions.author).toBe("merge-author");
-    expect(dedupeMergeOptions.message).toBe("merge message");
+    await expect(
+      runDedupeMergePackage({ keep: "pm-missing", close: "pm-other" }, global),
+    ).rejects.toThrow();
+    });
+  });
 
-    const comments = (await runtime.runCommentsAuditPackage(
-      {
-        full_history: "yes",
-        assignee_filter: "owner-a",
-        limit_items: "7",
-      },
-      JSON_GLOBAL,
-    )) as Record<string, unknown>;
-    expect((comments.options as Record<string, unknown>).fullHistory).toBe(true);
-    expect((comments.options as Record<string, unknown>).assigneeFilter).toBe("owner-a");
-    expect((comments.options as Record<string, unknown>).limitItems).toBe("7");
-
-    const normalize = (await runtime.runNormalizePackage(
+  it("normalizes package flag aliases before executing", async () => {
+    await withTempPmPath(async (sandbox) => {
+    const global = { path: sandbox.pmPath, json: true };
+    const result = await runNormalizePackage(
       {
         filter_status: "open",
         include_body: true,
         compact: true,
-        dry_run: true,
-        apply: false,
-        allow_audit_update: true,
+        apply: true,
         force: true,
+        allow_audit_update: true,
       },
-      JSON_GLOBAL,
-    )) as Record<string, unknown>;
-    const normalizeOptions = normalize.options as Record<string, unknown>;
-    expect(normalizeOptions.status).toBe("open");
-    expect((normalizeOptions.list as Record<string, unknown>).includeBody).toBe(true);
-    expect((normalizeOptions.list as Record<string, unknown>).compact).toBe(true);
-    expect(normalizeOptions.dryRun).toBe(true);
-    expect(normalizeOptions.apply).toBeUndefined();
-    expect(normalizeOptions.allowAuditUpdate).toBe(true);
-    expect(normalizeOptions.force).toBe(true);
-
-    // Bare options exercise every readStringOption-undefined and
-    // `readBooleanOption(...) === true ? true : undefined` false arm across the
-    // three normalizers.
-    const bareDedupe = (await runtime.runDedupeAuditPackage({}, EMPTY_GLOBAL)) as Record<string, unknown>;
-    const bareDedupeOptions = bareDedupe.options as Record<string, unknown>;
-    expect(bareDedupeOptions.mode).toBeUndefined();
-    expect(bareDedupeOptions.deadlineBefore).toBeUndefined();
-    expect(bareDedupeOptions.threshold).toBeUndefined();
-
-    const bareDedupeMerge = (await runtime.runDedupeMergePackage({}, EMPTY_GLOBAL)) as Record<string, unknown>;
-    const bareDedupeMergeOptions = bareDedupeMerge.options as Record<string, unknown>;
-    expect(bareDedupeMergeOptions.keep).toBeUndefined();
-    expect(bareDedupeMergeOptions.close).toEqual([]);
-    expect(bareDedupeMergeOptions.apply).toBeUndefined();
-    expect(bareDedupeMergeOptions.dryRun).toBeUndefined();
-    expect(bareDedupeMergeOptions.reparentChildren).toBeUndefined();
-
-    const bareComments = (await runtime.runCommentsAuditPackage({}, EMPTY_GLOBAL)) as Record<string, unknown>;
-    const bareCommentsOptions = bareComments.options as Record<string, unknown>;
-    expect(bareCommentsOptions.fullHistory).toBeUndefined();
-    expect(bareCommentsOptions.limitItems).toBeUndefined();
-
-    // apply:true exercises the `=== true ? true : undefined` TRUE arm for apply.
-    const applyNormalize = (await runtime.runNormalizePackage({ apply: true }, EMPTY_GLOBAL)) as Record<string, unknown>;
-    expect((applyNormalize.options as Record<string, unknown>).apply).toBe(true);
-
-    const bareNormalize = (await runtime.runNormalizePackage({}, EMPTY_GLOBAL)) as Record<string, unknown>;
-    const bareNormalizeOptions = bareNormalize.options as Record<string, unknown>;
-    expect(bareNormalizeOptions.dryRun).toBeUndefined();
-    expect(bareNormalizeOptions.apply).toBeUndefined();
-    expect(bareNormalizeOptions.force).toBeUndefined();
-    expect(bareNormalizeOptions.allowAuditUpdate).toBeUndefined();
-    expect((bareNormalizeOptions.list as Record<string, unknown>).includeBody).toBeUndefined();
-    expect((bareNormalizeOptions.list as Record<string, unknown>).compact).toBeUndefined();
-
-    const calls = readGlobalCallLog<{ kind: string }>("__PM_GOVERNANCE_CALLS");
-    expect(calls.map((entry) => entry.kind)).toEqual([
-      "dedupe",
-      "dedupe-merge",
-      "comments",
-      "normalize",
-      "dedupe",
-      "dedupe-merge",
-      "comments",
-      "normalize",
-      "normalize",
+      global,
+    );
+    expect(result).toMatchObject({ dry_run: false });
+    const comments = await runCommentsAuditPackage({ full_history: true }, global);
+    expect(comments).toHaveProperty("items");
+    await expect(
+      runDedupeMergePackage(
+        { keep: "pm-missing", close: "pm-other", apply: true, dry_run: true, skip_children: true },
+        global,
+      ),
+    ).rejects.toThrow();
+    expect(toErrorMessage("package failure")).toBe("package failure");
+    expect(toErrorMessage(new Error("runtime failure"))).toBe("runtime failure");
+    expect(toErrorMessage(new Error())).toBe("Error");
+    expect(jaccardSimilarity([], [])).toBe(1);
+    expect(jaccardSimilarity([], ["audit"])).toBe(0);
+    expect(splitCommaList(null)).toEqual([]);
+    expect(splitCommaList(" audit, ,governance ")).toEqual(["audit", "governance"]);
+    expect(toNonEmptyStringOrUndefined(1)).toBeUndefined();
+    expect(toNonEmptyStringOrUndefined("  ")).toBeUndefined();
+    expect(toNonEmptyStringOrUndefined(" audit ")).toBe("audit");
+    expect(normalizeLowercaseWhitespace("  Mixed   CASE ")).toBe("mixed case");
+    expect(tokenizeAlphaNumeric("Audit-ready: Item 42")).toEqual([
+      "audit",
+      "ready",
+      "item",
+      "42",
     ]);
+    expect(parseIntegerLimit(undefined)).toBeUndefined();
+    expect(parseIntegerLimit("2")).toBe(2);
+    expect(() => parseIntegerLimit("-1", "--latest")).toThrow(
+      "--latest must be a non-negative integer",
+    );
+    expect(buildLinkedArtifactAudit({})).toEqual([]);
+    });
   });
 
-  it("shares a single in-flight governance runtime load across concurrent callers", async () => {
-    const root = await createTempRoot("pm-governance-runtime-concurrent-");
-    process.env[PM_PACKAGE_ROOT_ENV] = root;
-    await writeSdkRuntimeModule(
-      root,
-      `export function readStringOption(options, key, aliases = []) {
-  const candidates = [key, ...aliases];
-  for (const candidate of candidates) {
-    const value = options?.[candidate];
-    if (typeof value === "string" && value.trim().length > 0) return value.trim();
-  }
-  return undefined;
-}
-export function readBooleanOption() { return undefined; }
-export function readCsvListOption() { return []; }
-export async function runDedupeAudit(options, global) { return { kind: "dedupe", options, global }; }
-export async function runDedupeMerge(options, global) { return { kind: "dedupe-merge", options, global }; }
-export async function runCommentsAudit(options, global) { return { kind: "comments", options, global }; }
-export async function runNormalize(options, global) { return { kind: "normalize", options, global }; }
-`,
-    );
-    const runtime = await importRepoModule<typeof import("../../../packages/pm-governance-audit/extensions/governance-audit/runtime.ts")>(
-      "packages/pm-governance-audit/extensions/governance-audit/runtime.ts",
-      "governanceConcurrent",
-    );
-    // Two un-awaited calls race through ensureGovernanceModule before the first
-    // load settles, so the second observes the in-flight promise branch.
-    const [first, second] = await Promise.all([
-      runtime.runDedupeAuditPackage({ mode: "strict" }, EMPTY_GLOBAL),
-      runtime.runCommentsAuditPackage({ status: "open" }, EMPTY_GLOBAL),
-    ]);
-    expect((first as Record<string, unknown>).kind).toBe("dedupe");
-    expect((second as Record<string, unknown>).kind).toBe("comments");
+  it("maps every package bypass flag without exposing it in core contracts", () => {
+    expect(
+      withOwnershipBypassOptions("update", {
+        allowAuditUpdate: true,
+        allowAuditDepUpdate: false,
+      }),
+    ).toMatchObject({
+      ownershipMetadataBypass: true,
+      ownershipDependencyBypass: false,
+    });
+    expect(
+      withOwnershipBypassOptions("update-many", {
+        allow_audit_update: true,
+        allow_audit_dep_update: true,
+      }),
+    ).toMatchObject({
+      ownershipMetadataBypass: true,
+      ownershipDependencyBypass: true,
+    });
+    expect(
+      withOwnershipBypassOptions("comments", { allowAuditComment: true }),
+    ).toMatchObject({ ownershipAppendBypass: true });
+    expect(
+      withOwnershipBypassOptions("notes", { allowAuditNote: true }),
+    ).toMatchObject({ ownershipAppendBypass: true });
+    expect(
+      withOwnershipBypassOptions("notes", { allowAuditComment: true }),
+    ).toMatchObject({ ownershipAppendBypass: true });
+    expect(
+      withOwnershipBypassOptions("learnings", { allowAuditLearning: true }),
+    ).toMatchObject({ ownershipAppendBypass: true });
+    expect(
+      withOwnershipBypassOptions("learnings", { allowAuditComment: true }),
+    ).toMatchObject({ ownershipAppendBypass: true });
+    expect(
+      withOwnershipBypassOptions("release", { allowAuditRelease: true }),
+    ).toMatchObject({ ownershipReleaseBypass: true });
+    expect(withOwnershipBypassOptions("files", { audit: true })).toEqual({
+      audit: true,
+    });
+  });
+
+  it("decorates package results across aliases and fallback branches", async () => {
+    expect(await decorateGovernanceCommandResult(null)).toBeUndefined();
+    expect(
+      await decorateGovernanceCommandResult({ result: "not-an-object" }),
+    ).toBe("not-an-object");
+    for (const options of [
+      { allowAuditUpdate: true },
+      { allow_audit_update: true },
+      { allowAuditDepUpdate: true },
+      { allow_audit_dep_update: true },
+    ]) {
+      await expect(
+        decorateGovernanceCommandResult({
+          command: "update",
+          options,
+          result: { ok: true },
+        }),
+      ).resolves.toEqual({ ok: true, audit_update: true });
+    }
+    await expect(
+      decorateGovernanceCommandResult({
+        command: "update-many",
+        options: { allowAuditUpdate: true },
+        result: { ok: true },
+      }),
+    ).resolves.toEqual({ ok: true, audit_update: true });
+    await expect(
+      decorateGovernanceCommandResult({
+        command: "release",
+        options: { allowAuditRelease: true },
+        result: { ok: true },
+      }),
+    ).resolves.toEqual({ ok: true, audit_release: true });
+    await expect(
+      decorateGovernanceCommandResult({
+        command: "files",
+        options: {},
+        result: { files: [] },
+      }),
+    ).resolves.toEqual({ files: [] });
+  });
+
+  it("decorates linked artifacts through the package SDK reader", async () => {
+    await withTempPmPath(async (sandbox) => {
+      const created = sandbox.runCli(
+        [
+          "create",
+          "--create-mode",
+          "progressive",
+          "--title",
+          "Linked audit fixture",
+          "--type",
+          "Task",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      const id = (created.json as { item: { id: string } }).item.id;
+      expect(
+        sandbox.runCli([
+          "files",
+          id,
+          "--add",
+          "path=shared.ts,scope=project",
+          "--json",
+        ]).code,
+      ).toBe(0);
+      await expect(
+        decorateGovernanceCommandResult({
+          command: "files",
+          options: { audit: true },
+          pm_root: sandbox.pmPath,
+          result: { files: [{ path: "shared.ts" }, { path: 1 }] },
+        }),
+      ).resolves.toEqual({
+        files: [{ path: "shared.ts" }, { path: 1 }],
+        audit: [
+          { path: "shared.ts", linked_by_count: 1, linked_item_ids: [id] },
+        ],
+      });
+      await expect(
+        decorateGovernanceCommandResult({
+          command: "files",
+          options: { audit: true },
+          result: { files: [] },
+        }),
+      ).resolves.toEqual({ files: [] });
+      await expect(
+        decorateGovernanceCommandResult({
+          command: "docs",
+          options: { audit: true },
+          pm_root: sandbox.pmPath,
+          result: { docs: "not-an-array" },
+        }),
+      ).resolves.toEqual({ docs: "not-an-array", audit: [] });
+    });
+  });
+
+  it("dispatches every package-owned command definition", async () => {
+    await withTempPmPath(async (sandbox) => {
+      const commands: CommandDefinition[] = [];
+      const parsers: Array<(context: { options: Record<string, unknown> }) => unknown> = [];
+      let auditService: ServiceOverride | undefined;
+      activate({
+        registerCommand(definition) {
+          commands.push(definition);
+        },
+        registerFlags() {},
+        registerParser(_command, parser) {
+          parsers.push(parser as (context: { options: Record<string, unknown> }) => unknown);
+        },
+        registerService(_service, override) {
+          auditService = override;
+        },
+        hooks: { onRead() {}, onWrite() {} },
+      } as unknown as ExtensionApi);
+      const global = { path: sandbox.pmPath, json: true };
+      const byName = new Map(commands.map((command) => [command.name, command]));
+      await expect(auditService?.({
+        payload: {
+          command: "update",
+          options: { allowAuditUpdate: true },
+          result: { ok: true },
+        },
+      } as never)).resolves.toEqual({ ok: true, audit_update: true });
+      expect(parsers[0]?.({ options: { allowAuditUpdate: true } })).toEqual({
+        options: {
+          allowAuditUpdate: true,
+          ownershipMetadataBypass: true,
+          ownershipDependencyBypass: false,
+        },
+      });
+      expect(buildLinkedArtifactAudit({
+        paths: ["docs/z.md", "docs/a.md"],
+        items: [
+          { id: "pm-one", artifacts: [{ path: "docs/a.md" }] },
+          { id: "pm-two", artifacts: [{ path: "docs/a.md" }] },
+        ],
+      })).toEqual([
+        { path: "docs/a.md", linked_by_count: 2, linked_item_ids: ["pm-one", "pm-two"] },
+        { path: "docs/z.md", linked_by_count: 0, linked_item_ids: [] },
+      ]);
+      await expect(byName.get("dedupe-audit")?.run?.({ options: {}, global } as never)).resolves.toHaveProperty("clusters");
+      await expect(byName.get("comments-audit")?.run?.({ options: {}, global } as never)).resolves.toHaveProperty("items");
+      await expect(byName.get("normalize")?.run?.({ options: { dryRun: true }, global } as never)).resolves.toHaveProperty("dry_run");
+      await expect(
+        byName.get("dedupe-merge")?.run?.({ options: { keep: "pm-missing", close: "pm-other" }, global } as never),
+      ).rejects.toThrow();
+    });
   });
 });

@@ -33,6 +33,7 @@ import { runUpdate } from "./commands/update.js";
 import { runValidate } from "./commands/validate.js";
 import {
   buildBackgroundTestAllCommandArgs,
+  applyActiveCommandResultService,
   buildBackgroundTestCommandArgs,
   addHiddenOption,
   collect,
@@ -570,10 +571,19 @@ async function runReleaseAction(
   const startedAt = Date.now();
   const result = await runRelease(id, Boolean(options.force), globalOptions, {
     ...buildLifecycleMutationOptions(options),
-    allowAuditRelease: options.allowAuditRelease === true,
-  });
+    ownershipReleaseBypass: options.ownershipReleaseBypass === true,
+  } as Parameters<typeof runRelease>[3]);
   await invalidateSearchCachesForMutation(globalOptions, result);
-  printResult(result, globalOptions);
+  printResult(
+    await applyActiveCommandResultService(
+      "release",
+      [id],
+      options,
+      globalOptions,
+      result,
+    ),
+    globalOptions,
+  );
   if (globalOptions.profile) {
     printError(`profile:command=release took_ms=${Date.now() - startedAt}`);
   }
@@ -838,7 +848,7 @@ export function registerOperationCommands(program: Command): void {
     )
     .option(
       "--field-utilization",
-      "Report content-field utilization rates (notes/learnings/files/docs/tests/comments/deps/body) for governance audits",
+      "Report content-field utilization rates (notes/learnings/files/docs/tests/comments/deps/body) for governance analysis",
     )
     .action(runStatsAction);
 
@@ -1064,10 +1074,6 @@ export function registerOperationCommands(program: Command): void {
     .argument("<id>", "Item id")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
-    .option(
-      "--allow-audit-release",
-      "Allow non-owner release handoffs without requiring --force",
-    )
     .option("--force", "Force release override")
     .description("Release an item's active claim.")
     .action(runReleaseAction);

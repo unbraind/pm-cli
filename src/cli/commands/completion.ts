@@ -29,7 +29,6 @@ import {
   INIT_FLAG_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
   NEXT_FLAG_CONTRACTS,
-  NORMALIZE_FLAG_CONTRACTS,
   PACKAGE_FLAG_CONTRACTS,
   PLAN_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
@@ -90,7 +89,6 @@ const GET_FLAGS = toCompletionFlagString(GET_FLAG_CONTRACTS);
 const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
 const UPDATE_MANY_FLAGS = toCompletionFlagString(UPDATE_MANY_FLAG_CONTRACTS);
 const CLOSE_MANY_FLAGS = toCompletionFlagString(CLOSE_MANY_FLAG_CONTRACTS);
-const NORMALIZE_FLAGS = toCompletionFlagString(NORMALIZE_FLAG_CONTRACTS);
 const ACTIVITY_FLAGS = toCompletionFlagString(ACTIVITY_FLAG_CONTRACTS);
 const CALENDAR_FLAGS = toCompletionFlagString(CALENDAR_FLAG_CONTRACTS);
 const CONTEXT_FLAGS = toCompletionFlagString(CONTEXT_FLAG_CONTRACTS);
@@ -121,7 +119,7 @@ const DELETE_MUTATION_FLAGS =
 const CLOSE_MUTATION_FLAGS =
   "--author --message --validate-close --duplicate-of --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
 const RELEASE_MUTATION_FLAGS =
-  "--allow-audit-release --author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
+  "--author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
 
 const COMMAND_COMPLETION_DESCRIPTIONS = [
   ["init", "Initialize pm storage for the current workspace"],
@@ -143,10 +141,6 @@ const COMMAND_COMPLETION_DESCRIPTIONS = [
   [
     "aggregate",
     "Aggregate grouped item counts and numeric stats for governance queries",
-  ],
-  [
-    "dedupe-audit",
-    "Audit potential duplicate items and emit merge suggestions",
   ],
   ["guide", "Browse local progressive-disclosure guides"],
   ["calendar", "Show calendar views for deadlines and reminders"],
@@ -189,10 +183,6 @@ const COMMAND_COMPLETION_DESCRIPTIONS = [
     "update-many",
     "Bulk-update matched items with dry-run and rollback checkpoints",
   ],
-  [
-    "normalize",
-    "Normalize lifecycle metadata with dry-run planning or apply mode",
-  ],
   ["close", "Close an item (reason requirement follows governance settings)"],
   [
     "close-many",
@@ -201,10 +191,6 @@ const COMMAND_COMPLETION_DESCRIPTIONS = [
   ["delete", "Delete an item and record the change"],
   ["append", "Append text to an item body"],
   ["comments", "List or add comments for an item"],
-  [
-    "comments-audit",
-    "Audit latest comments or full history across filtered items",
-  ],
   ["notes", "List or add notes for an item"],
   ["learnings", "List or add learnings for an item"],
   ["files", "Manage linked files"],
@@ -651,7 +637,6 @@ export function generateBashScript(
     UPDATE_MANY_FLAGS,
     runtime.command_flags?.["update-many"],
   );
-  const normalizeFlags = NORMALIZE_FLAGS;
   const searchFlags = mergeFlagStrings(
     SEARCH_FLAGS,
     runtime.command_flags?.search,
@@ -747,9 +732,6 @@ export function generateBashScript(
     "    aggregate)",
     `      COMPREPLY=(${compgen(AGGREGATE_FLAGS)})`,
     "      ;;",
-    "    dedupe-audit)",
-    `      COMPREPLY=(${compgen("--mode --limit --threshold --status --type --tag --priority --deadline-before --deadline-after --assignee --assignee-filter --parent --sprint --release --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
-    "      ;;",
     "    create)",
     `      COMPREPLY=(${compgen(createFlags)})`,
     "      ;;",
@@ -764,9 +746,6 @@ export function generateBashScript(
     "      ;;",
     "    update-many)",
     `      COMPREPLY=(${compgen(updateManyFlags)})`,
-    "      ;;",
-    "    normalize)",
-    `      COMPREPLY=(${compgen(normalizeFlags)})`,
     "      ;;",
     "    calendar|cal)",
     `      COMPREPLY=(${compgen(calendarFlags)})`,
@@ -799,22 +778,19 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(`${LIFECYCLE_ACTIONS} ${PACKAGE_LIFECYCLE_FLAGS}`)})`,
     "      ;;",
     "    comments)",
-    `      COMPREPLY=(${compgen("--add --body --stdin --file --edit --delete --limit --author --message --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
-    "      ;;",
-    "    comments-audit)",
-    `      COMPREPLY=(${compgen("--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --limit --full-history --latest --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --body --stdin --file --edit --delete --limit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    notes)",
-    `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --author --message --allow-audit-note --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    learnings)",
-    `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --author --message --allow-audit-learning --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    files)",
-    `      COMPREPLY=(${compgen("discover --add --add-glob --remove --migrate --list --apply --note --append-stable --validate-paths --audit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("discover --add --add-glob --remove --migrate --list --apply --note --append-stable --validate-paths --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    docs)",
-    `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --note --validate-paths --audit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --note --validate-paths --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    append)",
     `      COMPREPLY=(${compgen(APPEND_FLAGS)})`,
@@ -918,7 +894,6 @@ export function generateZshScript(
   eagerTagExpansion = false,
   runtime: CompletionRuntimeConfig = {},
 ): string {
-  const cmds = ALL_COMMANDS.map((c) => `'${c}'`).join(" ");
   const useDynamicTypeExpansion = itemTypes.length === 0;
   const typeFallbackChoices = completionTypeValues(itemTypes, runtime);
   const statusFallbackChoices = completionStatusValues(runtime);
@@ -937,12 +912,6 @@ export function generateZshScript(
   );
   const zshCreateRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(
     runtime.command_flags?.create,
-  );
-  const zshUpdateRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(
-    runtime.command_flags?.update,
-  );
-  const zshUpdateManyRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(
-    runtime.command_flags?.["update-many"],
   );
   const zshSearchRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(
     runtime.command_flags?.search,
@@ -1074,25 +1043,6 @@ ${zshListRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
-        dedupe-audit)
-          _arguments \\
-            '--mode[Dedupe mode]:(title_exact title_fuzzy parent_scope)' \\
-            '--limit[Limit returned duplicate clusters]:number' \\
-            '--threshold[Fuzzy mode token similarity threshold between 0 and 1]:number' \\
-            '--status[Filter by status]:(${statusChoices})' \\
-            '--type[Filter by item type]:(${typeChoices})' \\
-            '--tag[Filter by tag]:(${zshTagChoices})' \\
-            '--priority[Filter by priority]:(0 1 2 3 4)' \\
-            '--deadline-before[Filter by deadline upper bound (ISO/date string or relative)]:date' \\
-            '--deadline-after[Filter by deadline lower bound (ISO/date string or relative)]:date' \\
-            '--assignee[Filter by assignee]:assignee' \\
-            '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
-            '--parent[Filter by parent item ID]:parent_id' \\
-            '--sprint[Filter by sprint]:sprint' \\
-            '--release[Filter by release]:release' \\
-            '--json[Output JSON]' \\
-            '--quiet[Suppress stdout]'
-          ;;
         create)
           _arguments \\
             '(-t --title)'{-t,--title}'[Item title]:title' \\
@@ -1170,7 +1120,6 @@ ${renderZshScheduleItemSpecs("reminder")}
             '--expected[Short alias for --expected-result]:expected_result' \\
             '--actual[Short alias for --actual-result]:actual_result' \\
 ${zshMutationCollectionFlags}
-${zshUpdateRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -1234,7 +1183,6 @@ ${zshBulkPresenceFilterFlags}
             '--replace-deps[Atomically replace dependencies with provided --dep values]' \\
             '--replace-tests[Atomically replace linked tests with provided --test values]' \\
 ${zshMutationCollectionFlags}
-${zshUpdateManyRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -1261,30 +1209,6 @@ ${zshBulkPresenceFilterFlags}
             '--dry-run[Preview matched items without mutating]' \\
             '--rollback[Rollback checkpoint ID]:checkpoint_id' \\
             '--no-checkpoint[Disable checkpoint creation during apply mode]' \\
-            '--json[Output JSON]' \\
-            '--quiet[Suppress stdout]'
-          ;;
-        normalize)
-          _arguments \\
-            '--filter-status[Filter by status before planning or apply]:(${statusChoices})' \\
-            '--filter-type[Filter by type before planning or apply]:(${typeChoices})' \\
-            '--filter-tag[Filter by tag before planning or apply]:(${zshTagChoices})' \\
-            '--filter-priority[Filter by priority before planning or apply]:(0 1 2 3 4)' \\
-            '--filter-deadline-before[Filter by deadline upper bound]:deadline' \\
-            '--filter-deadline-after[Filter by deadline lower bound]:deadline' \\
-            '--filter-assignee[Filter by assignee before planning or apply]:assignee' \\
-            '--filter-assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
-            '--filter-parent[Filter by parent item ID]:parent' \\
-            '--filter-sprint[Filter by sprint]:sprint' \\
-            '--filter-release[Filter by release]:release' \\
-            '--limit[Limit matched item count]:number' \\
-            '--offset[Skip first n matched rows]:number' \\
-            '--dry-run[Preview normalize findings without mutating]' \\
-            '--apply[Apply normalize changes]' \\
-            '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
-            '--author[Mutation author]:author' \\
-            '--message[History message]:message' \\
-            '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1566,7 +1490,6 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--limit[Return only latest n entries]:number' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
-            '--allow-audit-comment[Allow non-owner append-only comment audits without requiring --force]' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1581,8 +1504,6 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--limit[Return only latest n entries]:number' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
-            '--allow-audit-note[Allow non-owner append-only note audits without requiring --force]' \\
-            '--allow-audit-comment[Backward-compatible alias for --allow-audit-note]' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1597,8 +1518,6 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--limit[Return only latest n entries]:number' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
-            '--allow-audit-learning[Allow non-owner append-only learning audits without requiring --force]' \\
-            '--allow-audit-comment[Backward-compatible alias for --allow-audit-learning]' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1738,7 +1657,6 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           _arguments \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
-            '--allow-audit-release[Allow non-owner release handoffs without requiring --force]' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1807,24 +1725,6 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--summary[Emit one-line-style health status with check names and warning count]' \\
             '--strict-exit[Return non-zero exit when health warnings are present]' \\
             '--fail-on-warn[Alias for --strict-exit]' \\
-            '--json[Output JSON]' \\
-            '--quiet[Suppress stdout]'
-          ;;
-        comments-audit)
-          _arguments \\
-            '--status[Filter by item status]:status:(${statusChoices})' \\
-            '--type[Filter by item type]:(${typeChoices})' \\
-            '--tag[Filter by tag]:(${zshTagChoices})' \\
-            '--priority[Filter by priority]:(0 1 2 3 4)' \\
-            '--parent[Filter by parent item ID]:parent_id' \\
-            '--sprint[Filter by sprint]:sprint' \\
-            '--release[Filter by release]:release' \\
-            '--assignee[Filter by assignee]:assignee' \\
-            '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
-            '--limit-items[Limit returned item count]:number' \\
-            '--limit[Alias for --limit-items]:number' \\
-            '--full-history[Export full comment history rows (cannot be combined with --latest)]' \\
-            '--latest[Return latest n comments per item (0 for summary-only rows)]:number' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -2110,21 +2010,6 @@ complete -c pm -n '__fish_seen_subcommand_from aggregate' -l parent -d 'Filter b
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l sprint -d 'Filter by sprint' -r
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l release -d 'Filter by release' -r
 
-# dedupe-audit flags
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l mode -d 'Dedupe mode' -r -a 'title_exact title_fuzzy parent_scope'
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l limit -d 'Limit returned duplicate clusters' -r
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l threshold -d 'Fuzzy mode token similarity threshold between 0 and 1' -r
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l status -d 'Filter by status' -r -a '${statusChoices}'
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l type -d 'Filter by item type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l tag -d 'Filter by tag' -r -a ${fishTagChoices}
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l deadline-before -d 'Filter by deadline upper bound (ISO/date string or relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l deadline-after -d 'Filter by deadline lower bound (ISO/date string or relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l assignee -d 'Filter by assignee' -r
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l parent -d 'Filter by parent item ID' -r
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l sprint -d 'Filter by sprint' -r
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l release -d 'Filter by release' -r
 
 # create flags
 complete -c pm -n '__fish_seen_subcommand_from create' -s t -l title              -d 'Item title' -r
@@ -2204,7 +2089,6 @@ complete -c pm -n '__fish_seen_subcommand_from update' -l clear-docs            
 complete -c pm -n '__fish_seen_subcommand_from update' -l clear-reminders         -d 'Clear reminders'
 complete -c pm -n '__fish_seen_subcommand_from update' -l clear-events            -d 'Clear events'
 complete -c pm -n '__fish_seen_subcommand_from update' -l clear-type-options      -d 'Clear type options'
-complete -c pm -n '__fish_seen_subcommand_from update' -l allow-audit-update      -d 'Allow non-owner metadata-only audit updates without requiring --force'
 complete -c pm -n '__fish_seen_subcommand_from update' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l force                   -d 'Force override'
@@ -2321,32 +2205,11 @@ complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-docs       
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-reminders         -d 'Clear reminders'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-events            -d 'Clear events'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-type-options      -d 'Clear type options'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l allow-audit-update      -d 'Allow non-owner metadata-only audit updates without requiring --force'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l force                   -d 'Force override'
 ${fishUpdateManyRuntimeFieldFlags}
 
-# normalize flags
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-status           -d 'Filter by status before planning or apply' -r -a '${statusChoices}'
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-type             -d 'Filter by type before planning or apply' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-tag              -d 'Filter by tag before planning or apply' -r -a ${fishTagChoices}
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-priority         -d 'Filter by priority before planning or apply' -r -a '0 1 2 3 4'
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-deadline-before  -d 'Filter by deadline upper bound' -r
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-deadline-after   -d 'Filter by deadline lower bound' -r
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-assignee         -d 'Filter by assignee before planning or apply' -r
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-assignee-filter  -d 'Filter assignee presence' -r -a 'assigned unassigned'
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-parent           -d 'Filter by parent item ID' -r
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-sprint           -d 'Filter by sprint before planning or apply' -r
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-release          -d 'Filter by release before planning or apply' -r
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l limit                   -d 'Limit matched item count' -r
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l offset                  -d 'Skip first n matched rows' -r
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l dry-run                 -d 'Preview normalize findings without mutating'
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l apply                   -d 'Apply normalize changes'
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l allow-audit-update      -d 'Allow non-owner metadata-only audit updates without requiring --force'
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l author                  -d 'Mutation author' -r
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l message                 -d 'History message' -r
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l force                   -d 'Force override'
 
 # search flags
 complete -c pm -n '__fish_seen_subcommand_from search' -l mode          -d 'Search mode' -r -a 'keyword semantic hybrid'
@@ -2573,9 +2436,6 @@ complete -c pm -n '__fish_seen_subcommand_from comments' -l delete -d 'Delete th
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l limit -d 'Return only latest n entries' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l author -d 'Entry author' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l message -d 'History message' -r
-complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l allow-audit-comment -d 'Allow non-owner append-only comment audits (legacy alias for notes/learnings)'
-complete -c pm -n '__fish_seen_subcommand_from notes' -l allow-audit-note -d 'Allow non-owner append-only note audits without requiring --force'
-complete -c pm -n '__fish_seen_subcommand_from learnings' -l allow-audit-learning -d 'Allow non-owner append-only learning audits without requiring --force'
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l force -d 'Force override'
 
 # test flags
@@ -2666,7 +2526,6 @@ complete -c pm -n '__fish_seen_subcommand_from close' -l expected-result -d 'Exp
 complete -c pm -n '__fish_seen_subcommand_from close' -l actual-result -d 'Observed behavior note' -r
 complete -c pm -n '__fish_seen_subcommand_from close' -l expected -d 'Short alias for --expected-result' -r
 complete -c pm -n '__fish_seen_subcommand_from close' -l actual -d 'Short alias for --actual-result' -r
-complete -c pm -n '__fish_seen_subcommand_from release' -l allow-audit-release -d 'Allow non-owner release handoffs without requiring --force'
 complete -c pm -n '__fish_seen_subcommand_from delete' -l dry-run -d 'Preview the item file that would be deleted without mutating'
 
 # scheduling shortcut flags (meet/event/remind)
@@ -2787,19 +2646,6 @@ complete -c pm -n '__fish_seen_subcommand_from health' -l brief -d 'Emit compact
 complete -c pm -n '__fish_seen_subcommand_from health' -l summary -d 'Emit one-line-style health status with check names and warning count'
 complete -c pm -n '__fish_seen_subcommand_from health' -l strict-exit -d 'Return non-zero exit when health warnings are present'
 complete -c pm -n '__fish_seen_subcommand_from health' -l fail-on-warn -d 'Alias for --strict-exit'
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l status -d 'Filter by item status' -r -a '${statusChoices}'
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l type -d 'Filter by item type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l tag -d 'Filter by tag' -r -a ${fishTagChoices}
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l parent -d 'Filter by parent item ID' -r
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l sprint -d 'Filter by sprint' -r
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l release -d 'Filter by release' -r
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l assignee -d 'Filter by assignee' -r
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l limit-items -d 'Limit returned item count' -r
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l limit -d 'Alias for --limit-items' -r
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l full-history -d 'Export full comment history rows (cannot be combined with --latest)'
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l latest -d 'Return latest n comments per item (0 for summary-only rows)' -r
 
 # completion shell argument
 complete -c pm -n '__fish_seen_subcommand_from completion' -l eager-tags -d 'Embed current tracker tags directly in script output'

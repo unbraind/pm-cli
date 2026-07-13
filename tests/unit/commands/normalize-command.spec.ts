@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { runNormalize } from "../../../src/cli/commands/normalize.js";
+import { runNormalize } from "../../../packages/pm-governance-audit/extensions/governance-audit/normalize.ts";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
@@ -383,7 +383,7 @@ describe("runNormalize", () => {
         }),
       }));
 
-      const { runNormalize: mockedRunNormalize } = await import("../../../src/cli/commands/normalize.js");
+      const { runNormalize: mockedRunNormalize } = await import("../../../packages/pm-governance-audit/extensions/governance-audit/normalize.ts");
       try {
         const result = await mockedRunNormalize(
           {
@@ -413,7 +413,7 @@ describe("runNormalize", () => {
         }),
       }));
 
-      const { runNormalize: mockedRunNormalize } = await import("../../../src/cli/commands/normalize.js");
+      const { runNormalize: mockedRunNormalize } = await import("../../../packages/pm-governance-audit/extensions/governance-audit/normalize.ts");
       try {
         const result = await mockedRunNormalize({ list: {}, dryRun: true }, { path: context.pmPath });
         expect(result.generated_at).toMatch(/[0-9]{4}-[0-9]{2}-[0-9]{2}T/);

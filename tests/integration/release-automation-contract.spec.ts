@@ -25,7 +25,7 @@ describe("release automation contract", () => {
       "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/bundle-cli.mjs && node scripts/finalize-build.mjs",
     );
     expect(packageJson.scripts?.["quality:static"]).toBe(
-      "pnpm build && node scripts/release/static-quality-gate.mjs --min-docstring-coverage 92.93 --min-exported-docstring-coverage 84.41 --min-member-docstring-coverage 13.655 && node scripts/release/token-budget-gate.mjs",
+      "pnpm build && node scripts/release/static-quality-gate.mjs --min-docstring-coverage 92.93 --min-exported-docstring-coverage 84.41 --min-member-docstring-coverage 13.655 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs",
     );
     expect(packageJson.scripts?.["quality:token-budget"]).toBe("node scripts/release/token-budget-gate.mjs");
     expect(packageJson.scripts?.lint).toBe("pnpm lint:eslint && pnpm lint:duplicates && pnpm lint:codefactor");

@@ -164,7 +164,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         action: "install",
         details: {
           installed_all: true,
-          installed_count: 11,
+          installed_count: 12,
         },
       });
 
@@ -216,7 +216,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           action: "install",
           details: {
             installed_all: true,
-            installed_count: 11,
+            installed_count: 12,
           },
         });
       }
@@ -5888,6 +5888,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
   it("supports audited non-owner release handoffs without force", async () => {
     await withTempPmPath(async (context) => {
+      expect(context.runCli(["install", "audit"]).code).toBe(0);
       const strictPreset = context.runCli(
         ["config", "project", "set", "governance-preset", "--policy", "strict", "--json"],
         { expectJson: true },
@@ -5944,6 +5945,36 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(createResult.code).toBe(0);
       const id = (createResult.json as { item: { id: string } }).item.id;
 
+      const updateConflict = context.runCli([
+        "update",
+        id,
+        "--priority",
+        "2",
+        "--author",
+        "owner-b",
+      ]);
+      expect(updateConflict.code).toBe(4);
+      expect(updateConflict.stderr).toContain("assigned to");
+
+      const auditedUpdate = context.runCli(
+        [
+          "update",
+          id,
+          "--priority",
+          "2",
+          "--author",
+          "owner-b",
+          "--allow-audit-update",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(auditedUpdate.code).toBe(0);
+      expect(auditedUpdate.json).toMatchObject({
+        item: { priority: 2, assignee: "owner-a" },
+        audit_update: true,
+      });
+
       const releaseConflict = context.runCli(["release", id, "--author", "owner-b"]);
       expect(releaseConflict.code).toBe(4);
       expect(releaseConflict.stderr).toContain("assigned to");
@@ -5965,6 +5996,71 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(auditedReleaseJson.audit_release).toBe(true);
       expect(auditedReleaseJson.forced).toBe(false);
       expect(auditedReleaseJson.item.assignee).toBeUndefined();
+    });
+  });
+
+  it("computes linked-file and linked-doc audits only through the installed audit package", async () => {
+    await withTempPmPath(async (context) => {
+      expect(context.runCli(["install", "audit"]).code).toBe(0);
+      const first = createItemFormatFixtureItem(context, {
+        title: "Audit links first",
+        description: "First linked-artifact audit fixture",
+        tags: "integration,audit,links",
+        acceptanceCriteria: "Package reports shared links",
+        message: "Create first audit link fixture",
+      }).createdId;
+      const second = createItemFormatFixtureItem(context, {
+        title: "Audit links second",
+        description: "Second linked-artifact audit fixture",
+        tags: "integration,audit,links",
+        acceptanceCriteria: "Package reports shared links",
+        message: "Create second audit link fixture",
+      }).createdId;
+
+      for (const id of [first, second]) {
+        expect(
+          context.runCli([
+            "files",
+            id,
+            "--add",
+            "path=src/shared.ts,scope=project",
+            "--json",
+          ]).code,
+        ).toBe(0);
+        expect(
+          context.runCli([
+            "docs",
+            id,
+            "--add",
+            "path=docs/shared.md,scope=project",
+            "--json",
+          ]).code,
+        ).toBe(0);
+      }
+
+      const fileAudit = context.runCli(["files", first, "--audit", "--json"], {
+        expectJson: true,
+      });
+      expect(fileAudit.code).toBe(0);
+      expect(
+        (fileAudit.json as { audit: Array<Record<string, unknown>> }).audit,
+      ).toContainEqual({
+        path: "src/shared.ts",
+        linked_by_count: 2,
+        linked_item_ids: [first, second].sort(),
+      });
+
+      const docAudit = context.runCli(["docs", first, "--audit", "--json"], {
+        expectJson: true,
+      });
+      expect(docAudit.code).toBe(0);
+      expect(
+        (docAudit.json as { audit: Array<Record<string, unknown>> }).audit,
+      ).toContainEqual({
+        path: "docs/shared.md",
+        linked_by_count: 2,
+        linked_item_ids: [first, second].sort(),
+      });
     });
   });
 

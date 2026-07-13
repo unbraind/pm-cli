@@ -214,7 +214,6 @@ const REQUIRED_UPDATE_MANY_FLAGS = [
   "--clear-reminders",
   "--clear-events",
   "--clear-type-options",
-  "--allow-audit-update",
   "--force",
 ];
 
@@ -271,7 +270,7 @@ const REQUIRED_TEST_FLAGS = [
   "--message",
   "--force",
 ];
-const REQUIRED_COMMENTS_FLAGS = ["--add", "--stdin", "--file", "--limit", "--author", "--message", "--allow-audit-comment", "--force"];
+const REQUIRED_COMMENTS_FLAGS = ["--add", "--stdin", "--file", "--limit", "--author", "--message", "--force"];
 const REQUIRED_COMMENTS_AUDIT_FLAGS = [
   "--status",
   "--type",
@@ -281,18 +280,16 @@ const REQUIRED_COMMENTS_AUDIT_FLAGS = [
   "--full-history",
   "--latest",
 ];
-const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-note", "--allow-audit-comment", "--force"];
+const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 const REQUIRED_LEARNINGS_FLAGS = [
   "--add",
   "--limit",
   "--author",
   "--message",
-  "--allow-audit-learning",
-  "--allow-audit-comment",
   "--force",
 ];
 const REQUIRED_CLAIM_FLAGS = ["--author", "--message", "--force"];
-const REQUIRED_RELEASE_FLAGS = ["--author", "--message", "--allow-audit-release", "--force"];
+const REQUIRED_RELEASE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_HISTORY_COMPACT_FLAGS = [
   "--before",
@@ -774,7 +771,7 @@ describe("release readiness runtime coverage", () => {
       }
       expect(help.stdout).not.toContain("--dep_remove");
       expect(help.stdout).not.toContain("--type_option");
-      expect(help.stdout).not.toContain("--allow_audit_update");
+      expect(help.stdout).not.toContain("--allow_ownership_bypass");
       expect(help.stdout).toContain("--confidence");
       for (const flag of ISSUE_METADATA_UPDATE_FLAG_TOKENS) {
         expect(help.stdout).toContain(flag);
@@ -1271,7 +1268,7 @@ describe("release readiness runtime coverage", () => {
         { expectJson: true },
       );
       expect(releaseResult.code).toBe(0);
-      expectTopLevelKeyOrder(releaseResult.json, ["item", "released_by", "previous_assignee", "audit_release", "forced"]);
+      expectTopLevelKeyOrder(releaseResult.json, ["item", "released_by", "previous_assignee", "forced"]);
 
       const appendResult = context.runCli(
         ["append", createdId, "--body", "runtime payload", "--author", "test-author", "--message", "append", "--json"],
@@ -1826,7 +1823,7 @@ describe("release readiness runtime coverage", () => {
     );
     expect(packageJson.scripts?.["version:next"]).toBe("node scripts/release-version.mjs next");
     expect(packageJson.scripts?.["quality:static"]).toBe(
-      "pnpm build && node scripts/release/static-quality-gate.mjs --min-docstring-coverage 92.93 --min-exported-docstring-coverage 84.41 --min-member-docstring-coverage 13.655 && node scripts/release/token-budget-gate.mjs",
+      "pnpm build && node scripts/release/static-quality-gate.mjs --min-docstring-coverage 92.93 --min-exported-docstring-coverage 84.41 --min-member-docstring-coverage 13.655 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs",
     );
     expect(packageJson.scripts?.["quality:token-budget"]).toBe("node scripts/release/token-budget-gate.mjs");
     expect(packageJson.scripts?.lint).toBe("pnpm lint:eslint && pnpm lint:duplicates && pnpm lint:codefactor");

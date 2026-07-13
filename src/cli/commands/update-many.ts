@@ -52,12 +52,12 @@ import { runUpdate, type UpdateCommandOptions } from "./update.js";
 const UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION = 1;
 const UPDATE_MANY_CHECKPOINT_SUBDIR = "update-many";
 
-const NON_MUTATION_UPDATE_OPTION_KEYS = new Set<keyof UpdateCommandOptions>([
+const NON_MUTATION_UPDATE_OPTION_KEYS = new Set<PropertyKey>([
   "author",
   "message",
   "force",
-  "allowAuditUpdate",
-  "allowAuditDepUpdate",
+  "ownershipMetadataBypass",
+  "ownershipDependencyBypass",
 ]);
 
 const UPDATE_MANY_MUTATION_FLAG_GUIDANCE = [

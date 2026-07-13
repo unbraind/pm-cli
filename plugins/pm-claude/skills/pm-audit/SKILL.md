@@ -15,7 +15,6 @@ Use for comprehensive repository audits, consistency reviews, and health diagnos
 4. **Health check** — `pm_health` for tracker diagnostics.
 5. **Validation suite** — `pm_validate` with all checks enabled.
 6. **Aggregate** — `pm_run` with `action: "aggregate"` for governance view.
-7. **Dedupe review** — `pm_run` with `action: "dedupe-audit"`.
 8. **Calendar** — `pm_run` with `action: "calendar"` for deadline view.
 9. **Convert findings** — create pm items for each actionable finding.
 10. **Evidence** — `pm_comments` with verification summaries.
@@ -43,7 +42,6 @@ For each **finding item** created during the audit, also create a matching `Task
 { "tool": "pm_health", "args": {} }
 { "tool": "pm_validate", "args": { "options": { "checkResolution": true, "checkHistoryDrift": true, "checkFiles": true, "scanMode": "tracked-all" } } }
 { "tool": "pm_run", "args": { "action": "aggregate", "options": { "groupBy": "status,type" } } }
-{ "tool": "pm_run", "args": { "action": "dedupe-audit", "options": { "mode": "parent_scope", "limit": "20" } } }
 { "tool": "pm_run", "args": { "action": "calendar", "options": { "view": "week", "format": "markdown", "include": "deadlines,reminders" } } }
 { "tool": "pm_run", "args": { "action": "stats" } }
 ```
@@ -51,7 +49,6 @@ For each **finding item** created during the audit, also create a matching `Task
 ### Activity Review
 ```json
 { "tool": "pm_run", "args": { "action": "activity", "options": { "limit": "50" } } }
-{ "tool": "pm_run", "args": { "action": "comments-audit", "options": { "limit": "20" } } }
 ```
 
 ### Contracts and Schema Check

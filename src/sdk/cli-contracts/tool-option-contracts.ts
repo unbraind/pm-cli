@@ -125,13 +125,6 @@ export const TOOL_AGGREGATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   ...cloneOptionContracts(TOOL_BASIC_ITEM_FILTER_OPTION_CONTRACTS),
 ];
 
-/** Public contract for tool dedupe audit option contracts, shared by SDK and presentation-layer consumers. */
-export const TOOL_DEDUPE_AUDIT_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
-  { param: "mode", flag: "--mode" },
-  { param: "limit", flag: "--limit" },
-  { param: "threshold", flag: "--threshold" },
-  ...cloneOptionContracts(TOOL_BASIC_ITEM_FILTER_OPTION_CONTRACTS),
-];
 
 /** Public contract for tool search filter option contracts, shared by SDK and presentation-layer consumers. */
 export const TOOL_SEARCH_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
@@ -282,8 +275,6 @@ export const TOOL_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "clearReminders", flag: "--clear-reminders" },
   { param: "clearEvents", flag: "--clear-events" },
   { param: "clearTypeOptions", flag: "--clear-type-options" },
-  { param: "allowAuditUpdate", flag: "--allow-audit-update" },
-  { param: "allowAuditDepUpdate", flag: "--allow-audit-dep-update" },
 ];
 
 const TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] =
@@ -335,26 +326,6 @@ const TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagC
 export const TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] =
   [...cloneOptionContracts(TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS)];
 
-// normalize keeps the original filter family (no --ids / date-window filters):
-// it audits/repairs metadata in place and its filter contract is intentionally
-// narrower than update-many's bulk-mutation surface.
-/** Public contract for tool normalize filter option contracts, shared by SDK and presentation-layer consumers. */
-export const TOOL_NORMALIZE_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] =
-  [
-    { param: "filterStatus", flag: "--filter-status" },
-    { param: "filterType", flag: "--filter-type" },
-    { param: "filterTag", flag: "--filter-tag" },
-    { param: "filterPriority", flag: "--filter-priority" },
-    { param: "filterDeadlineBefore", flag: "--filter-deadline-before" },
-    { param: "filterDeadlineAfter", flag: "--filter-deadline-after" },
-    { param: "filterAssignee", flag: "--filter-assignee" },
-    { param: "filterAssigneeFilter", flag: "--filter-assignee-filter" },
-    { param: "filterParent", flag: "--filter-parent" },
-    { param: "filterSprint", flag: "--filter-sprint" },
-    { param: "filterRelease", flag: "--filter-release" },
-    { param: "limit", flag: "--limit" },
-    { param: "offset", flag: "--offset" },
-  ];
 
 /** Public contract for tool close many filter option contracts, shared by SDK and presentation-layer consumers. */
 export const TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] =

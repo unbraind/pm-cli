@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { _testOnly as dedupeInternals, runDedupeAudit } from "../../../src/cli/commands/dedupe-audit.js";
+import { _testOnly as dedupeInternals, runDedupeAudit } from "../../../packages/pm-governance-audit/extensions/governance-audit/dedupe-audit.ts";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
@@ -394,7 +394,7 @@ describe("runDedupeAudit", () => {
           }),
       }));
 
-      const { runDedupeAudit: mockedRunDedupeAudit } = await import("../../../src/cli/commands/dedupe-audit.js");
+      const { runDedupeAudit: mockedRunDedupeAudit } = await import("../../../packages/pm-governance-audit/extensions/governance-audit/dedupe-audit.ts");
       try {
         const withoutWarnings = await mockedRunDedupeAudit({ mode: "title_exact" }, { path: context.pmPath });
         expect(withoutWarnings.warnings).toBeUndefined();

@@ -485,7 +485,7 @@ describe("runGet and runAppend", () => {
       expect(afterClaim.claim_state.last_release).toBeNull();
 
       const release = context.runCli(
-        ["release", id, "--json", "--author", "audit-reviewer", "--allow-audit-release", "--message", "release metadata context"],
+        ["release", id, "--json", "--author", "audit-reviewer", "--force", "--message", "release metadata context"],
         { expectJson: true },
       );
       expect(release.code).toBe(0);

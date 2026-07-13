@@ -1021,7 +1021,7 @@ describe("CLI bootstrap entrypoints", () => {
     });
   });
 
-  it("renders unknown help requests through runPmCli in-process bootstrap handling", async () => {
+  it("renders unknown help requests through runPmCli in-process bootstrap handling", { timeout: 60_000 }, async () => {
     await withTempPmPath(async (context) => {
       const result = await context.runCliInProcess(["--json", "definitely-missing", "--help"]);
       expect(result.code).toBe(EXIT_CODE.USAGE);
@@ -3054,6 +3054,50 @@ export default {
       await root.parseAsync(["node", "pm", "--pm-path", context.pmPath, "collect", "original"]);
 
       expect(observedValues).toEqual(["rewritten", "original"]);
+    });
+  });
+
+  it("passes parser-derived options into wrapped core action handlers", async () => {
+    await withTempPmPath(async (context) => {
+      const root = new Command().name("pm").exitOverride();
+      root.option("--pm-path <dir>", "PM path");
+      let observedOptions: Record<string, unknown> = {};
+      root.command("mutate").option("--original").action((options) => {
+        observedOptions = options;
+      });
+
+      setActiveExtensionRegistrations(createEmptyExtensionRegistrationRegistry());
+      setActiveExtensionParsers({
+        overrides: [
+          {
+            layer: "project",
+            name: "mutate-parser",
+            command: "mutate",
+            run: (runtimeContext) => ({
+              options: {
+                ...runtimeContext.options,
+                ownershipMetadataBypass: true,
+              },
+            }),
+          },
+        ],
+      });
+      setActiveExtensionCommands({ overrides: [], handlers: [] });
+
+      _testOnly.wrapProgramActionsForExtensionHandlers(root);
+      await root.parseAsync([
+        "node",
+        "pm",
+        "--pm-path",
+        context.pmPath,
+        "mutate",
+        "--original",
+      ]);
+
+      expect(observedOptions).toMatchObject({
+        original: true,
+        ownershipMetadataBypass: true,
+      });
     });
   });
 

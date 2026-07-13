@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { _testOnly as mergeInternals, runDedupeMerge } from "../../../src/cli/commands/dedupe-merge.js";
+import { _testOnly as mergeInternals, runDedupeMerge } from "../../../packages/pm-governance-audit/extensions/governance-audit/dedupe-merge.ts";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
@@ -169,7 +169,7 @@ describe("runDedupeMerge", () => {
           }),
         };
       });
-      const mockedMerge = await import("../../../src/cli/commands/dedupe-merge.js");
+      const mockedMerge = await import("../../../packages/pm-governance-audit/extensions/governance-audit/dedupe-merge.ts");
 
       const result = await mockedMerge.runDedupeMerge(
         { keep, close: `${duplicate},${duplicateTwo}`, apply: true, author: "merge-bot" },

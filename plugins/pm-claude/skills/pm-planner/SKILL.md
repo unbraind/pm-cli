@@ -76,7 +76,6 @@ Then for each child feature/task, set `parent: "pm-xxxx"` via `pm_update`.
 
 ### Run Dedupe Audit After Batch Work
 ```json
-{ "tool": "pm_run", "args": { "action": "dedupe-audit", "options": { "mode": "parent_scope", "limit": "20" } } }
 ```
 
 ### Validate After Batch Creates

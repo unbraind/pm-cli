@@ -3,101 +3,23 @@
  *
  * @module packages/pm-governance-audit/extensions/governance-audit/runtime
  */
-import path from "node:path";
-import { pathToFileURL } from "node:url";
-import type { GlobalOptions } from "@unbrained/pm-cli/sdk/runtime";
-
-const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
-
-interface GovernanceRuntimeSdkModule {
-  runDedupeAudit: (
-    options: Record<string, unknown>,
-    global: GlobalOptions,
-  ) => Promise<unknown>;
-  runDedupeMerge: (
-    options: Record<string, unknown>,
-    global: GlobalOptions,
-  ) => Promise<unknown>;
-  runCommentsAudit: (
-    options: Record<string, unknown>,
-    global: GlobalOptions,
-  ) => Promise<unknown>;
-  runNormalize: (
-    options: Record<string, unknown>,
-    global: GlobalOptions,
-  ) => Promise<unknown>;
-  readStringOption: (
-    options: Record<string, unknown>,
-    key: string,
-    aliases?: string[],
-  ) => string | undefined;
-  readBooleanOption: (
-    options: Record<string, unknown>,
-    key: string,
-    aliases?: string[],
-  ) => boolean | undefined;
-  readCsvListOption: (
-    options: Record<string, unknown>,
-    key: string,
-    aliases?: string[],
-  ) => string[] | undefined;
-}
-
-let governanceModule: GovernanceRuntimeSdkModule | null = null;
-let governanceModulePromise: Promise<GovernanceRuntimeSdkModule> | null = null;
-
-async function ensureGovernanceModule(): Promise<GovernanceRuntimeSdkModule> {
-  if (governanceModule) {
-    return governanceModule;
-  }
-  if (!governanceModulePromise) {
-    governanceModulePromise = loadGovernanceModule();
-  }
-  governanceModule = await governanceModulePromise;
-  return governanceModule;
-}
-
-async function loadGovernanceModule(): Promise<GovernanceRuntimeSdkModule> {
-  const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
-  if (typeof envRoot !== "string" || envRoot.trim().length === 0) {
-    throw new Error(
-      `builtin-governance-audit requires ${PM_PACKAGE_ROOT_ENV} to locate core SDK runtime exports.`,
-    );
-  }
-  const modulePath = path.join(
-    path.resolve(envRoot.trim()),
-    "dist",
-    "sdk",
-    "runtime.js",
-  );
-  try {
-    const loaded = (await import(
-      pathToFileURL(modulePath).href
-    )) as Partial<GovernanceRuntimeSdkModule>;
-    if (
-      typeof loaded.runDedupeAudit === "function" &&
-      typeof loaded.runDedupeMerge === "function" &&
-      typeof loaded.runCommentsAudit === "function" &&
-      typeof loaded.runNormalize === "function" &&
-      typeof loaded.readStringOption === "function" &&
-      typeof loaded.readBooleanOption === "function" &&
-      typeof loaded.readCsvListOption === "function"
-    ) {
-      return loaded as GovernanceRuntimeSdkModule;
-    }
-  } catch {
-    // Fall through to deterministic failure message below.
-  }
-  throw new Error(
-    `builtin-governance-audit failed to load governance SDK runtime exports from ${modulePath}.`,
-  );
-}
+import {
+  readBooleanOption,
+  readCsvListOption,
+  readStringOption,
+  type GlobalOptions,
+} from "./sdk.ts";
+import {
+  runCommentsAudit,
+  type CommentsAuditOptions,
+} from "./comments-audit.ts";
+import { runDedupeAudit, type DedupeAuditOptions } from "./dedupe-audit.ts";
+import { runDedupeMerge, type DedupeMergeOptions } from "./dedupe-merge.ts";
+import { runNormalize, type NormalizeCommandOptions } from "./normalize.ts";
 
 function normalizeDedupeAuditOptions(
-  sdk: GovernanceRuntimeSdkModule,
   raw: Record<string, unknown>,
-): Record<string, unknown> {
-  const readStringOption = sdk.readStringOption;
+): DedupeAuditOptions {
   return {
     mode: readStringOption(raw, "mode"),
     status: readStringOption(raw, "status"),
@@ -121,14 +43,11 @@ function normalizeDedupeAuditOptions(
 }
 
 function normalizeDedupeMergeOptions(
-  sdk: GovernanceRuntimeSdkModule,
   raw: Record<string, unknown>,
-): Record<string, unknown> {
-  const readStringOption = sdk.readStringOption;
-  const readBooleanOption = sdk.readBooleanOption;
+): DedupeMergeOptions {
   return {
     keep: readStringOption(raw, "keep"),
-    close: sdk.readCsvListOption(raw, "close"),
+    close: readCsvListOption(raw, "close"),
     apply: readBooleanOption(raw, "apply") === true ? true : undefined,
     dryRun:
       readBooleanOption(raw, "dryRun", ["dry_run"]) === true ? true : undefined,
@@ -143,11 +62,8 @@ function normalizeDedupeMergeOptions(
 }
 
 function normalizeCommentsAuditOptions(
-  sdk: GovernanceRuntimeSdkModule,
   raw: Record<string, unknown>,
-): Record<string, unknown> {
-  const readStringOption = sdk.readStringOption;
-  const readBooleanOption = sdk.readBooleanOption;
+): CommentsAuditOptions {
   return {
     status: readStringOption(raw, "status"),
     type: readStringOption(raw, "type"),
@@ -171,11 +87,8 @@ function normalizeCommentsAuditOptions(
 }
 
 function normalizeNormalizeOptions(
-  sdk: GovernanceRuntimeSdkModule,
   raw: Record<string, unknown>,
-): Record<string, unknown> {
-  const readStringOption = sdk.readStringOption;
-  const readBooleanOption = sdk.readBooleanOption;
+): NormalizeCommandOptions {
   return {
     status: readStringOption(raw, "filterStatus", ["filter_status", "status"]),
     list: {
@@ -223,11 +136,7 @@ export async function runDedupeAuditPackage(
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<unknown> {
-  const module = await ensureGovernanceModule();
-  return module.runDedupeAudit(
-    normalizeDedupeAuditOptions(module, options),
-    global,
-  );
+  return runDedupeAudit(normalizeDedupeAuditOptions(options), global);
 }
 
 /** Executes the dedupe merge package operation through the package runtime. */
@@ -235,11 +144,7 @@ export async function runDedupeMergePackage(
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<unknown> {
-  const module = await ensureGovernanceModule();
-  return module.runDedupeMerge(
-    normalizeDedupeMergeOptions(module, options),
-    global,
-  );
+  return runDedupeMerge(normalizeDedupeMergeOptions(options), global);
 }
 
 /** Executes the comments audit package operation through the package runtime. */
@@ -247,11 +152,7 @@ export async function runCommentsAuditPackage(
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<unknown> {
-  const module = await ensureGovernanceModule();
-  return module.runCommentsAudit(
-    normalizeCommentsAuditOptions(module, options),
-    global,
-  );
+  return runCommentsAudit(normalizeCommentsAuditOptions(options), global);
 }
 
 /** Executes the normalize package operation through the package runtime. */
@@ -259,9 +160,8 @@ export async function runNormalizePackage(
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<unknown> {
-  const module = await ensureGovernanceModule();
-  return module.runNormalize(
-    normalizeNormalizeOptions(module, options),
+  return runNormalize(
+    normalizeNormalizeOptions(options),
     global,
   );
 }

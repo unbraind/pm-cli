@@ -90,7 +90,6 @@ export const PM_TELEMETRY_SOURCE_CONTEXT_VALUES = [
   "automation",
   "test",
   "dogfood",
-  "audit_smoke",
 ] as const;
 
 let _lastFlushPromise: Promise<void> = Promise.resolve();

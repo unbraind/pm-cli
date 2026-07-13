@@ -23,7 +23,8 @@
   ],
   "pm": {
     "aliases": [
-      "governance-audit"
+      "governance-audit",
+      "audit"
     ],
     "extensions": [
       "extensions/governance-audit"

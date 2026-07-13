@@ -684,7 +684,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       const normalizeHelp = context.runCli(["normalize", "--help"]);
       expect(normalizeHelp.code).toBe(2);
       expect(normalizeHelp.stderr).toContain("Unknown command normalize");
-      expect(normalizeHelp.stderr).toContain("pm install governance-audit");
+      expect(normalizeHelp.stderr).toContain("pm install audit");
     });
   });
 
@@ -964,9 +964,10 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
-  it("supports --allow-audit-comment for non-owner append-only comment audits", async () => {
+  it("supports package-provided --allow-audit-comment for non-owner append-only comment audits", async () => {
     await withTempPmPath(async (context) => {
       setGovernancePreset(context, "strict");
+      expect(context.runCli(["install", "audit"]).code).toBe(0);
       const created = context.runCli(
         [
           "create",
@@ -991,9 +992,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
       const blocked = context.runCli(["comments", id, "--add", "audit note", "--author", "owner-b", "--json"]);
       expect(blocked.code).toBe(4);
-      const blockedEnvelope = expectJsonErrorEnvelope(blocked.stderr, { code: "ownership_conflict" });
-      expect(blockedEnvelope.required).toContain("--allow-audit-comment");
-      expect(blockedEnvelope.next_steps?.some((step) => step.includes("--allow-audit-comment"))).toBe(true);
+      expectJsonErrorEnvelope(blocked.stderr, { code: "ownership_conflict" });
 
       const allowed = context.runCli(
         ["comments", id, "--add", "audit note", "--author", "owner-b", "--allow-audit-comment", "--json"],
@@ -1008,6 +1007,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
   it("supports command-specific audit aliases for notes/learnings with legacy compatibility", async () => {
     await withTempPmPath(async (context) => {
       setGovernancePreset(context, "strict");
+      expect(context.runCli(["install", "audit"]).code).toBe(0);
       const created = context.runCli(
         [
           "create",
@@ -1030,18 +1030,11 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(created.code).toBe(0);
       const id = (created.json as { item: { id: string } }).item.id;
 
-      const blockedNote = context.runCli(["notes", id, "--add", "audit note", "--author", "owner-b", "--json"]);
-      expect(blockedNote.code).toBe(4);
-      const blockedNoteEnvelope = expectJsonErrorEnvelope(blockedNote.stderr, { code: "ownership_conflict" });
-      expect(blockedNoteEnvelope.required).toContain("--allow-audit-note");
-      expect(blockedNoteEnvelope.required).toContain("--allow-audit-comment");
-      expect(blockedNoteEnvelope.next_steps?.some((step) => step.includes("--allow-audit-note"))).toBe(true);
-
       const allowedNote = context.runCli(
         ["notes", id, "--add", "audit note", "--author", "owner-b", "--allow-audit-note", "--json"],
         { expectJson: true },
       );
-      expect(allowedNote.code).toBe(0);
+      expect(allowedNote.code, allowedNote.stderr).toBe(0);
       const allowedNotePayload = allowedNote.json as { notes: Array<{ text: string; author: string }> };
       expect(allowedNotePayload.notes.at(-1)).toMatchObject({ text: "audit note", author: "owner-b" });
 
@@ -1052,13 +1045,6 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(allowedNoteLegacy.code).toBe(0);
       const allowedNoteLegacyPayload = allowedNoteLegacy.json as { notes: Array<{ text: string; author: string }> };
       expect(allowedNoteLegacyPayload.notes.at(-1)).toMatchObject({ text: "legacy alias note", author: "owner-b" });
-
-      const blockedLearning = context.runCli(["learnings", id, "--add", "audit learning", "--author", "owner-b", "--json"]);
-      expect(blockedLearning.code).toBe(4);
-      const blockedLearningEnvelope = expectJsonErrorEnvelope(blockedLearning.stderr, { code: "ownership_conflict" });
-      expect(blockedLearningEnvelope.required).toContain("--allow-audit-learning");
-      expect(blockedLearningEnvelope.required).toContain("--allow-audit-comment");
-      expect(blockedLearningEnvelope.next_steps?.some((step) => step.includes("--allow-audit-learning"))).toBe(true);
 
       const allowedLearning = context.runCli(
         ["learnings", id, "--add", "audit learning", "--author", "owner-b", "--allow-audit-learning", "--json"],
@@ -1078,48 +1064,6 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         text: "legacy alias learning",
         author: "owner-b",
       });
-    });
-  });
-
-  it("supports --allow-audit-release for non-owner release handoffs", async () => {
-    await withTempPmPath(async (context) => {
-      setGovernancePreset(context, "strict");
-      const created = context.runCli(
-        [
-          "create",
-          "--title",
-          "Audit release seed",
-          "--description",
-          "Seed item for audit release policy checks",
-          "--type",
-          "Task",
-          "--create-mode",
-          "progressive",
-          "--assignee",
-          "owner-a",
-          "--author",
-          "owner-a",
-          "--json",
-        ],
-        { expectJson: true },
-      );
-      expect(created.code).toBe(0);
-      const id = (created.json as { item: { id: string } }).item.id;
-
-      const blocked = context.runCli(["release", id, "--author", "owner-b", "--json"]);
-      expect(blocked.code).toBe(4);
-      const blockedEnvelope = expectJsonErrorEnvelope(blocked.stderr, { code: "ownership_conflict" });
-      expect(blockedEnvelope.required).toContain("--allow-audit-release");
-      expect(blockedEnvelope.next_steps?.some((step) => step.includes("--allow-audit-release"))).toBe(true);
-
-      const allowed = context.runCli(["release", id, "--author", "owner-b", "--allow-audit-release", "--json"], {
-        expectJson: true,
-      });
-      expect(allowed.code).toBe(0);
-      const payload = allowed.json as { item: { assignee?: string }; released_by: string; audit_release: boolean };
-      expect(payload.released_by).toBe("owner-b");
-      expect(payload.audit_release).toBe(true);
-      expect(payload.item.assignee).toBeUndefined();
     });
   });
 
@@ -1185,14 +1129,18 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         exit_code: 4,
       });
       expect(envelope.required).toContain("--force");
-      expect(envelope.next_steps?.some((step) => step.includes("PM audits"))).toBe(true);
+      expect(
+        envelope.next_steps?.some((step) =>
+          step.includes("approved systematic metadata updates"),
+        ),
+      ).toBe(true);
       expect(envelope.next_steps?.some((step) => step.includes("stale metadata"))).toBe(true);
       expect(envelope.next_steps?.some((step) => step.includes("pm claim <ID>"))).toBe(true);
 
       const textConflict = context.runCli(["update", id, "--status", "in_progress", "--author", "owner-b"]);
       expect(textConflict.code).toBe(4);
       expect(textConflict.stderr).toContain("Next steps:");
-      expect(textConflict.stderr).toContain("PM audits");
+      expect(textConflict.stderr).toContain("approved systematic metadata updates");
     });
   });
 

@@ -26,12 +26,10 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | Family | Commands | Purpose |
 |--------|----------|---------|
 | Bootstrap | `init`, `config`, `health`, `telemetry` | create and inspect tracker setup |
-| Triage | `context`, `search`, `eval`, `get`, `list*`, `aggregate`, `dedupe-audit`*, `dedupe-merge`* | find work, read a single item, measure search relevance, and audit decomposition |
 | Lifecycle | `create`, `copy`, `focus`, `claim`, `update`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state |
 | Bulk | `update-many`, `close-many` | apply one change across a matched, dry-run-previewed set with a rollback checkpoint |
 | Scheduling | `meet`, `event`, `remind` | low-friction Meeting/Event/Reminder creation |
 | Planning | `plan create`, `plan add-step`, `plan update-step`, `plan complete-step`, `plan link`, `plan approve`, `plan materialize` | agent-optimized living plans with ordered steps, evidence, decisions, validation, and materialization |
-| Logs | `comments`, `notes`, `learnings`, `comments-audit`* | record progress and durable context |
 | Links | `files`, `docs`, `test`, `deps` | connect items to artifacts, tests, and relationships |
 | Verification | `test`, `test-all`, `test-runs`†, `validate`, `gc` | run linked tests and repository checks |
 | History | `history`, `history-compact`, `history-redact`, `history-repair`, `activity`, `restore`, `stats` | inspect, compact, redact, re-anchor, and recover item state |
@@ -41,7 +39,6 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | Packages | `install`, `upgrade`, `package`, `packages`, `extension`, package/extension command groups | install, upgrade, manage, and run package-backed extension commands |
 | Machines | `contracts`, `help`, optional `guide`/`completion` | command contracts plus optional guide-shell docs routing and shell helpers |
 
-`*` `dedupe-audit`, `dedupe-merge`, `comments-audit`, and `normalize` are provided by the optional `governance-audit` package (`pm install governance-audit --project`).
 
 `†` `test-runs` subcommands are provided by the optional `linked-test-adapters` package (`pm install linked-test-adapters --project`).
 
@@ -96,9 +93,6 @@ pm list-open --type Task --priority 1 --limit 20
 pm list-in-progress --limit 20
 pm aggregate --group-by parent,type --status open
 pm aggregate --group-by parent,type --completion --include-unparented
-pm install governance-audit --project   # if dedupe-audit / dedupe-merge are not available
-pm dedupe-audit --mode parent_scope --limit 20
-pm dedupe-merge --keep pm-canonical --close pm-duplicate --dry-run
 ```
 
 Use `pm next` when the only question is "what should I work on now?" It computes dependency-aware readiness, keeps dangling dependency ids blocked until repaired, and combines lifecycle-blocked plus graph-blocked work in the companion queue. The `recommended` projection is excluded from the `ready` tail; every actionable row carries its one-based `rank`, and the tail preserves the exact recommendation order. Foreign-owned in-progress work is summarized under `held_by_others`. Human-gated `Decision` records remain visible under `decision_needed` but are excluded from agent recommendations by default.
@@ -392,7 +386,6 @@ pm update <id> --parent <parent-id>
 pm append <id> --body "Detailed implementation notes."
 ```
 
-For audit evidence on an item owned by another agent, `pm update --allow-audit-update`
 can make non-lifecycle metadata updates and append comments, linked files, and linked
 docs in one audited history entry. It is intentionally append-only for evidence:
 lifecycle/ownership fields, dependencies, tests, notes, learnings, reminders, events,
@@ -400,7 +393,6 @@ and all clear/replace operations stay restricted or use their dedicated commands
 
 ```bash
 pm update <id> \
-  --allow-audit-update \
   --comment "Audit evidence: reproduced in staging" \
   --file "path=src/cli/commands/update.ts,scope=project,note=audit evidence" \
   --doc "path=docs/COMMANDS.md,scope=project,note=user-facing behavior" \
@@ -515,7 +507,6 @@ pm remind "Review PR" --at +2d                               # Reminder (--at de
 pm claim <id>
 pm claim --next
 pm release <id>
-pm release <id> --allow-audit-release --author <you>
 ```
 
 `claim` is the normal start signal. `--assignee` is an ownership alias for

@@ -13,7 +13,10 @@ import { PmCliError } from "../core/shared/errors.js";
 import { printError, printResult, writeStdout } from "../core/output/output.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
-import { setActiveCommandResult } from "../core/extensions/index.js";
+import {
+  runActiveServiceOverride,
+  setActiveCommandResult,
+} from "../core/extensions/index.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { ItemStatus } from "../types/index.js";
 import {
@@ -41,6 +44,36 @@ import type {
 import type { runList, runActivity } from "./commands/index.js";
 
 export { printError, printResult, writeStdout };
+
+/** Let an active package asynchronously augment a completed command result. */
+export async function applyActiveCommandResultService(
+  command: string,
+  args: string[],
+  options: Record<string, unknown>,
+  global: GlobalOptions,
+  result: unknown,
+): Promise<unknown> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const override = await runActiveServiceOverride("command_result", {
+    command,
+    args,
+    options,
+    global,
+    pm_root: pmRoot,
+    result,
+  });
+  return override.handled ? override.result : result;
+}
+
+/** Synchronize parser-derived options with Commander and its action arguments. */
+export function syncCommanderActionOptions(
+  actionCommand: Command,
+  commandOptions: Record<string, unknown>,
+): void {
+  for (const [key, value] of Object.entries(commandOptions)) {
+    actionCommand.setOptionValueWithSource(key, value, "cli");
+  }
+}
 
 function readJoinedRepeatedOption(
   options: Record<string, unknown>,
@@ -524,14 +557,10 @@ export function normalizeUpdateOptions(
     author: readUpdateString("author"),
     message: readUpdateString("message"),
     force: Boolean(commandOptions.force),
-    allowAuditUpdate: anyOptionTrue(commandOptions, [
-      "allowAuditUpdate",
-      "allow_audit_update",
-    ]),
-    allowAuditDepUpdate: anyOptionTrue(commandOptions, [
-      "allowAuditDepUpdate",
-      "allow_audit_dep_update",
-    ]),
+    ownershipMetadataBypass:
+      commandOptions.ownershipMetadataBypass === true ? true : undefined,
+    ownershipDependencyBypass:
+      commandOptions.ownershipDependencyBypass === true ? true : undefined,
     assignee: readUpdateString("assignee"),
     parent: readUpdateString("parent"),
     reviewer: readUpdateString("reviewer"),

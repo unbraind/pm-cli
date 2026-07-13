@@ -50,7 +50,6 @@ describe("generateBashScript", () => {
       "activity",
       "restore",
       "update-many",
-      "normalize",
       "close",
       "delete",
       "append",
@@ -192,22 +191,6 @@ describe("generateBashScript", () => {
     expect(fishScript).toContain("-l reminder");
   });
 
-  it("includes normalize command flags across completion scripts", () => {
-    const bashScript = generateBashScript();
-    expect(bashScript).toContain("normalize)");
-    expect(bashScript).toContain("--apply");
-    expect(bashScript).toContain("--filter-status");
-
-    const zshScript = generateZshScript();
-    expect(zshScript).toContain("normalize)");
-    expect(zshScript).toContain("--apply[Apply normalize changes]");
-    expect(zshScript).toContain("--filter-status[Filter by status before planning or apply]");
-
-    const fishScript = generateFishScript();
-    expect(fishScript).toContain("__fish_seen_subcommand_from normalize");
-    expect(fishScript).toContain("-l apply");
-    expect(fishScript).toContain("-l filter-status");
-  });
 
   it("includes append required --body flag from command contracts", () => {
     const bashScript = generateBashScript();
@@ -219,10 +202,6 @@ describe("generateBashScript", () => {
     expect(fishScript).toContain("-l body");
   });
 
-  it("includes release audit handoff flag", () => {
-    const script = generateBashScript();
-    expect(script).toContain("--allow-audit-release");
-  });
 
   it("includes deps ergonomics flags", () => {
     const script = generateBashScript();
@@ -234,17 +213,10 @@ describe("generateBashScript", () => {
 
   it("includes comments mutation metadata flags in bash completion", () => {
     const script = generateBashScript();
-    expect(script).toContain("--add --body --stdin --file --edit --delete --limit --author --message --allow-audit-comment --force");
     expect(script).toContain("--stdin");
     expect(script).toContain("--file");
     expect(script).toContain("--edit");
     expect(script).toContain("--delete");
-    expect(script).toContain("--allow-audit-comment");
-    expect(script).toContain("--allow-audit-note");
-    expect(script).toContain("--allow-audit-learning");
-    expect(script).toContain(
-      "--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --limit --full-history --latest",
-    );
 
     const zshScript = generateZshScript();
     expect(zshScript).toContain("--stdin[Read comment text from stdin (supports multiline markdown)]");
@@ -260,27 +232,7 @@ describe("generateBashScript", () => {
     expect(fishScript).toContain("-l delete -d 'Delete the comment at 1-based index'");
   });
 
-  it("includes notes/learnings audit alias flags in zsh and fish completion", () => {
-    const zshScript = generateZshScript();
-    expect(zshScript).toContain("--allow-audit-note");
-    expect(zshScript).toContain("--allow-audit-learning");
-    expect(zshScript).toContain("Backward-compatible alias for --allow-audit-note");
-    expect(zshScript).toContain("Backward-compatible alias for --allow-audit-learning");
 
-    const fishScript = generateFishScript();
-    expect(fishScript).toContain("-l allow-audit-note");
-    expect(fishScript).toContain("-l allow-audit-learning");
-    expect(fishScript).toContain("-l allow-audit-comment");
-  });
-
-  it("includes comments-audit --limit alias in zsh and fish completion", () => {
-    const zshScript = generateZshScript();
-    expect(zshScript).toContain("--limit[Alias for --limit-items]:number");
-
-    const fishScript = generateFishScript();
-    expect(fishScript).toContain("__fish_seen_subcommand_from comments-audit");
-    expect(fishScript).toContain("-l limit -d 'Alias for --limit-items'");
-  });
 
   it("includes files/docs add-glob flag in bash completion", () => {
     const script = generateBashScript();
@@ -290,7 +242,7 @@ describe("generateBashScript", () => {
     expect(script).toContain("--migrate");
     expect(script).toContain("--list");
     expect(script).toContain("--validate-paths");
-    expect(script).toContain("--audit");
+    expect(script).not.toContain("--audit");
   });
 
   it("includes files append-stable flag in bash completion", () => {
@@ -594,7 +546,6 @@ describe("generateZshScript", () => {
     expect(script).toContain("create:Create a new project management item");
     expect(script).toContain("completion:Generate shell completion");
     expect(script).toContain("guide:Browse local progressive-disclosure guides");
-    expect(script).toContain("normalize:Normalize lifecycle metadata with dry-run planning or apply mode");
     expect(script).toContain("contracts:Show machine-readable command and schema contracts");
     expect(script).toContain("start-task:Lifecycle alias to claim and set in_progress");
     expect(script).toContain("pause-task:Lifecycle alias to reopen and release claim");
@@ -800,7 +751,6 @@ describe("generateFishScript", () => {
       ["search", "Search items"],
       ["completion", "Generate shell completion"],
       ["guide", "progressive-disclosure guides"],
-      ["normalize", "Normalize lifecycle metadata"],
       ["contracts", "machine-readable command and schema contracts"],
       ["health", "project tracker health"],
       ["stats", "project tracker statistics"],

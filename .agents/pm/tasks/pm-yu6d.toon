@@ -1,0 +1,28 @@
+id: pm-yu6d
+title: Promote terminal-status and mutation runner primitives required by package-owned governance workflows
+description: "The pm-vjk3 audit runtime extraction proved packages cannot preserve dedupe-merge and normalize behavior using the public SDK because isTerminalStatus, runUpdate, and runClose are imported internally by sdk/runtime but not exported. Promote exactly these existing primitives; do not add audit-specific APIs."
+type: Task
+status: closed
+priority: 1
+tags[3]: packages,runtime,sdk
+created_at: "2026-07-12T23:24:58.894Z"
+updated_at: "2026-07-13T00:40:13.361Z"
+closed_at: "2026-07-13T00:37:25.809Z"
+author: codex-pm-audit-extraction
+estimated_minutes: 45
+acceptance_criteria: "@unbrained/pm-cli/sdk/runtime exports isTerminalStatus, runUpdate, and runClose with existing types; package-owned governance runtimes compile and behavior tests pass; no audit-specific SDK export is introduced"
+parent: pm-usfg
+resolution: completed
+expected_result: Generic SDK runtime primitives are public without audit-specific APIs.
+actual_result: "isTerminalStatus, runUpdate, and runClose are exported; package typecheck and release gates pass."
+comments[2]{created_at,author,text}:
+  "2026-07-12T23:24:58.894Z",codex-pm-audit-extraction,"Duplicate check: pm-vjk3/pm-79fr explicitly require filing any SDK primitive gap under pm-usfg before widening; no separate existing item covers these three missing exports. Discovered while moving the four audit runtimes."
+  "2026-07-13T00:37:00.535Z",codex-pm-audit-extraction,"Evidence: promoted only generic isTerminalStatus, runUpdate, and runClose runtime primitives; pnpm typecheck and all package/runtime SDK suites pass without any audit-specific SDK API."
+files[3]{path,scope,note}:
+  src/sdk/index.ts,project,public generic SDK exports
+  src/sdk/runtime.ts,project,public generic runtime primitive exports
+  tests/unit/sdk/sdk-index.spec.ts,project,SDK export regression coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  pnpm typecheck,project,300,package and SDK type contract proof
+close_reason: "Promoted only isTerminalStatus, runUpdate, and runClose as generic SDK runtime primitives; package typecheck and full release gates pass."
+body: ""

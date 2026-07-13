@@ -13,6 +13,7 @@ import {
 } from "../../../src/cli/migration-gates.js";
 import {
   _testOnly,
+  applyActiveCommandResultService,
   applyDefaultOutputFormat,
   buildBackgroundTestAllCommandArgs,
   buildBackgroundTestCommandArgs,
@@ -35,11 +36,32 @@ import {
   clearResolvedGlobalOptions,
   setResolvedGlobalOptions,
 } from "../../../src/cli/registration-helpers.js";
+import { setActiveExtensionServices } from "../../../src/core/extensions/index.js";
 import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 
 describe("registration helpers", () => {
+  it("uses an active package command-result override when handled", async () => {
+    setActiveExtensionServices({
+      overrides: [
+        {
+          layer: "project",
+          name: "result-decorator",
+          service: "command_result",
+          run: () => ({ decorated: true }),
+        },
+      ],
+    });
+    try {
+      await expect(
+        applyActiveCommandResultService("update", [], {}, {}, { original: true }),
+      ).resolves.toEqual({ decorated: true });
+    } finally {
+      setActiveExtensionServices(null);
+    }
+  });
+
   it("falls back to opts() for command-like objects without optsWithGlobals", () => {
     const command = { opts: () => ({ json: true, quiet: true, path: ".pm" }) } as unknown as Command;
 
@@ -286,8 +308,8 @@ describe("registration helpers", () => {
       ac: ["second"],
       addTags: ["tests"],
       depRemove: ["pm-old"],
-      allow_audit_update: true,
-      allow_audit_dep_update: true,
+      ownershipMetadataBypass: true,
+      ownershipDependencyBypass: true,
       replaceTests: true,
       clearEvents: true,
       extra: "kept",
@@ -296,8 +318,8 @@ describe("registration helpers", () => {
       addTags: ["tests"],
       acceptanceCriteria: "first; second",
       depRemove: ["pm-old"],
-      allowAuditUpdate: true,
-      allowAuditDepUpdate: true,
+      ownershipMetadataBypass: true,
+      ownershipDependencyBypass: true,
       replaceTests: true,
       clearEvents: true,
       extra: "kept",
@@ -373,8 +395,8 @@ describe("registration helpers", () => {
     const update = normalizeUpdateOptions({});
     expect(update).toMatchObject({
       force: false,
-      allowAuditUpdate: undefined,
-      allowAuditDepUpdate: undefined,
+      ownershipMetadataBypass: undefined,
+      ownershipDependencyBypass: undefined,
       replaceDeps: undefined,
       replaceTests: undefined,
       clearDeps: undefined,
@@ -441,8 +463,8 @@ describe("registration helpers", () => {
 
     const update = normalizeUpdateOptions({
       force: true,
-      allowAuditUpdate: true,
-      allowAuditDepUpdate: true,
+      ownershipMetadataBypass: true,
+      ownershipDependencyBypass: true,
       replaceDeps: true,
       replaceTests: true,
       clearDeps: true,
@@ -458,8 +480,8 @@ describe("registration helpers", () => {
     });
     expect(update).toMatchObject({
       force: true,
-      allowAuditUpdate: true,
-      allowAuditDepUpdate: true,
+      ownershipMetadataBypass: true,
+      ownershipDependencyBypass: true,
       replaceDeps: true,
       clearDeps: true,
       clearTypeOptions: true,

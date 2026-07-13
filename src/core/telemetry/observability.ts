@@ -87,7 +87,6 @@ const QUERY_ROOT_COMMANDS = new Set([
   "deps",
   "contracts",
   "stats",
-  "dedupe-audit",
 ]);
 const MUTATION_ROOT_COMMANDS = new Set([
   "create",

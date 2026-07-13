@@ -2,23 +2,38 @@ id: pm-79fr
 title: "S1: relocate dedupe-audit/dedupe-merge/comments-audit/normalize implementations into pm-governance-audit and delete their public SDK exports"
 description: "Move the four implementation files (src/cli/commands/dedupe-audit.ts 639 LOC, dedupe-merge.ts 486, comments-audit.ts 460, normalize.ts 561) into packages/pm-governance-audit/extensions/governance-audit/ (TypeScript-only, pm-2p7a loader). Invert the current dependency: the package today dynamic-imports runDedupeAudit/runCommentsAudit/runDedupeMerge/runNormalize from core SDK via loadGovernanceModule/PM_CLI_PACKAGE_ROOT — after S1 the package OWNS the logic, rebuilt on public SDK primitives (read/query pm-rjqr, lifecycle pm-98cz, runtime pm-xzhz; helpers readStringOption/readBooleanOption/readCsvListOption already SDK). Delete the four exports from src/sdk/index.ts:276-281 and src/sdk/runtime.ts:429-453. Spike first: list every core-internal import of the four files (status.js, runtime-schema.js, list-filter-shared.js, buildListQueryFilters, runList, resolvePmRoot, readSettings, text-normalization, shared-parsers) and map each to an existing public SDK primitive; any gap becomes a scoped SDK-promotion follow-up under pm-usfg BEFORE the move — do not widen the SDK ad hoc. normalize's allowAuditUpdate passthrough stays functional via generic option reads (S3 owns the flag itself). Bump package pm_min_version in the same cut (lockstep, sync-versions). No decision dependency — actionable immediately."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[4]: bare-core,packages,refactor,sdk
 created_at: "2026-07-12T19:54:18.150Z"
-updated_at: "2026-07-12T19:56:00.404Z"
+updated_at: "2026-07-13T00:40:13.842Z"
+closed_at: "2026-07-13T00:37:27.603Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: Four implementation files deleted from src/cli/commands and live in the package; runDedupeAudit/runCommentsAudit/runDedupeMerge/runNormalize absent from sdk/index.ts and sdk/runtime.ts exports; loadGovernanceModule dynamic core-SDK import path removed from package runtime; SDK-primitive gap list produced; gaps filed under pm-usfg before widening SDK; all four commands behave identically with the package installed (existing e2e verify commands in package README pass)
 parent: pm-vjk3
 risk: high
 confidence: medium
-files[7]{path,scope,note}:
+resolution: completed
+expected_result: Four audit implementations live in pm-governance-audit and disappear from public core SDK exports.
+actual_result: "All four runtimes moved, audit SDK exports removed, and installed-package parity passes."
+comments[1]{created_at,author,text}:
+  "2026-07-12T23:37:42.648Z",codex-pm-audit-extraction,"Implementation evidence: four audit command implementations moved from src/cli/commands into pm-governance-audit; public SDK audit runners/types removed; package uses an install-safe generic SDK adapter. SDK gap pm-yu6d filed before promoting three existing primitives."
+files[15]{path,scope,note}:
+  packages/pm-governance-audit/extensions/governance-audit/comments-audit.ts,project,package-owned audit runtime extraction
+  packages/pm-governance-audit/extensions/governance-audit/dedupe-audit.ts,project,package-owned audit runtime extraction
+  packages/pm-governance-audit/extensions/governance-audit/dedupe-merge.ts,project,package-owned audit runtime extraction
+  packages/pm-governance-audit/extensions/governance-audit/index.ts,project,package-owned audit runtime extraction
+  packages/pm-governance-audit/extensions/governance-audit/normalize.ts,project,package-owned audit runtime extraction
+  packages/pm-governance-audit/extensions/governance-audit/runtime-utils.ts,project,package-owned audit runtime extraction
   packages/pm-governance-audit/extensions/governance-audit/runtime.ts,project,invert dynamic core-SDK import; package owns logic
+  packages/pm-governance-audit/extensions/governance-audit/sdk.ts,project,package-owned audit runtime extraction
+  packages/pm-governance-audit/package.json,project,package-owned audit runtime extraction
   src/cli/commands/comments-audit.ts,project,460 LOC to relocate
   src/cli/commands/dedupe-audit.ts,project,639 LOC to relocate
   src/cli/commands/dedupe-merge.ts,project,486 LOC to relocate
   src/cli/commands/normalize.ts,project,561 LOC to relocate
   src/sdk/index.ts,project,"delete audit runner exports :276-281"
   src/sdk/runtime.ts,project,"delete audit runner exports :429-453"
+close_reason: Moved all four audit command implementations out of core CLI/SDK into pm-governance-audit with generic SDK-only dependencies and full behavior coverage.
 body: ""

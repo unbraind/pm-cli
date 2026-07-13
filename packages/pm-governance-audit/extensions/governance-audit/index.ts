@@ -17,6 +17,9 @@ import {
   runDedupeMergePackage,
   runNormalizePackage,
 } from "./runtime.ts";
+import {
+  decorateGovernanceCommandResult,
+} from "./runtime-utils.ts";
 
 /** Declarative package manifest consumed by the extension loader. */
 export const manifest = {
@@ -24,7 +27,7 @@ export const manifest = {
   version: "0.1.0",
   entry: "./index.js",
   priority: 0,
-  capabilities: ["commands", "schema", "hooks"],
+  capabilities: ["commands", "schema", "hooks", "parser", "services"],
 };
 
 const HOOK_LOG_ENV = "PM_GOVERNANCE_AUDIT_HOOK_LOG";
@@ -296,6 +299,35 @@ const normalizeFlags = [
   },
 ] as const;
 
+const linkedArtifactAuditFlags = [
+  {
+    long: "--audit",
+    value_type: "boolean" as const,
+    description: "Report cross-item usage for the linked paths on this item.",
+  },
+];
+
+const allowAuditUpdateFlags = [
+  {
+    long: "--allow-audit-update",
+    value_type: "boolean" as const,
+    description: "Allow append-only audit updates across owners.",
+  },
+  {
+    long: "--allow-audit-dep-update",
+    value_type: "boolean" as const,
+    description: "Allow dependency-only audit updates across owners.",
+  },
+];
+
+const allowAuditCommentFlags = [
+  {
+    long: "--allow-audit-comment",
+    value_type: "boolean" as const,
+    description: "Allow append-only audit comments across owners.",
+  },
+];
+
 function dedupeAuditCommand(): CommandDefinition {
   return {
     name: "dedupe-audit",
@@ -377,12 +409,81 @@ function appendHookAuditRecord(
   }
 }
 
+/** Map package-owned flag names onto core-internal ownership controls. */
+export function withOwnershipBypassOptions(
+  command: string,
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  const mapped = { ...options };
+  if (command === "update" || command === "update-many") {
+    mapped.ownershipMetadataBypass =
+      options.allowAuditUpdate === true || options.allow_audit_update === true;
+    mapped.ownershipDependencyBypass =
+      options.allowAuditDepUpdate === true ||
+      options.allow_audit_dep_update === true;
+  } else if (command === "comments") {
+    mapped.ownershipAppendBypass = options.allowAuditComment === true;
+  } else if (command === "notes") {
+    mapped.ownershipAppendBypass =
+      options.allowAuditNote === true || options.allowAuditComment === true;
+  } else if (command === "learnings") {
+    mapped.ownershipAppendBypass =
+      options.allowAuditLearning === true || options.allowAuditComment === true;
+  } else if (command === "release") {
+    mapped.ownershipReleaseBypass = options.allowAuditRelease === true;
+  }
+  return mapped;
+}
+
 /** Registers this package's commands, actions, and runtime hooks with the host. */
 export function activate(api: ExtensionApi): void {
   api.registerCommand(dedupeAuditCommand());
   api.registerCommand(dedupeMergeCommand());
   api.registerCommand(commentsAuditCommand());
   api.registerCommand(normalizeCommand());
+  api.registerFlags("files", linkedArtifactAuditFlags);
+  api.registerFlags("docs", linkedArtifactAuditFlags);
+  api.registerFlags("update", allowAuditUpdateFlags);
+  api.registerFlags("update-many", allowAuditUpdateFlags);
+  api.registerFlags("comments", allowAuditCommentFlags);
+  api.registerFlags("notes", [
+    ...allowAuditCommentFlags,
+    {
+      long: "--allow-audit-note",
+      value_type: "boolean",
+      description: "Allow append-only audit notes across owners.",
+    },
+  ]);
+  api.registerFlags("learnings", [
+    ...allowAuditCommentFlags,
+    {
+      long: "--allow-audit-learning",
+      value_type: "boolean",
+      description: "Allow append-only audit learnings across owners.",
+    },
+  ]);
+  api.registerFlags("release", [
+    {
+      long: "--allow-audit-release",
+      value_type: "boolean",
+      description: "Allow releasing an audit claim owned by another agent.",
+    },
+  ]);
+  for (const command of [
+    "update",
+    "update-many",
+    "comments",
+    "notes",
+    "learnings",
+    "release",
+  ]) {
+    api.registerParser(command, (context) => ({
+      options: withOwnershipBypassOptions(command, context.options),
+    }));
+  }
+  api.registerService("command_result", (context) =>
+    decorateGovernanceCommandResult(context.payload),
+  );
   api.hooks.onRead((context) => appendHookAuditRecord("on_read", context));
   api.hooks.onWrite((context) => appendHookAuditRecord("on_write", context));
 }

@@ -173,7 +173,6 @@ Spawn pm-triage-agent to set up the pm item for: add OAuth2 login support
 |------|---------|
 | `pm_run` | Any pm action not covered above — pass `action` field |
 
-**`pm_run` actions:** `init`, `calendar`, `activity`, `aggregate`, `dedupe-audit`, `normalize`, `reindex`, `extension`, `history`, `stats`, `append`, `test-all`, `comments-audit`, `gc`, `templates-list`, `templates-save`, `templates-show`, `test-runs-list`, `test-runs-status`, `test-runs-logs`, `test-runs-stop`, `test-runs-resume`, `config`, `completion`
 
 ## Hybrid TUI Sync Pattern
 

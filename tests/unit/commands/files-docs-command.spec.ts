@@ -5,13 +5,12 @@ import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runDocs } from "../../../src/cli/commands/docs.js";
 import { _testOnly as filesInternals, runFiles, runFilesDiscover } from "../../../src/cli/commands/files.js";
-import { buildLinkedPathAudit, parseAddGlobEntries, validateLinkedPaths } from "../../../src/cli/commands/linked-artifacts.js";
+import { parseAddGlobEntries, validateLinkedPaths } from "../../../src/cli/commands/linked-artifacts.js";
 import * as linkedArtifactsModule from "../../../src/cli/commands/linked-artifacts.js";
 import * as itemStoreModule from "../../../src/core/store/item-store.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
-
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -573,7 +572,7 @@ describe("runFiles", () => {
     });
   });
 
-  it("supports linked-file path migration, validation, audit, and idempotent re-run", async () => {
+  it("supports linked-file path migration, validation, and idempotent re-run", async () => {
     await withTempPmPath(async (context) => {
       const sourceId = createTask(context, "files-hygiene-source");
       const peerId = createTask(context, "files-hygiene-peer");
@@ -600,8 +599,7 @@ describe("runFiles", () => {
         {
           migrate: ["from=docs/old/,to=docs/new/"],
           validatePaths: true,
-          audit: true,
-          message: "migrate and audit linked files",
+          message: "migrate and validate linked files",
         },
         { path: context.pmPath },
       );
@@ -609,30 +607,17 @@ describe("runFiles", () => {
       expect(migrated.files.some((entry) => entry.path === "docs/new/file-one.md")).toBe(true);
       expect(migrated.migrations_applied).toBeGreaterThan(0);
       expect(migrated.validation?.checked).toBeGreaterThan(0);
-      expect(migrated.audit?.find((entry) => entry.path === "docs/new/file-one.md")).toEqual(
-        expect.objectContaining({
-          linked_by_count: 2,
-          linked_item_ids: expect.arrayContaining([sourceId, peerId]),
-        }),
-      );
 
       const readOnlyInspection = await runFiles(
         sourceId,
         {
           list: true,
           validatePaths: true,
-          audit: true,
         },
         { path: context.pmPath },
       );
       expect(readOnlyInspection.changed).toBe(false);
       expect(readOnlyInspection.validation?.checked).toBeGreaterThan(0);
-      expect(readOnlyInspection.audit?.find((entry) => entry.path === "docs/new/file-one.md")).toEqual(
-        expect.objectContaining({
-          linked_by_count: 2,
-          linked_item_ids: expect.arrayContaining([sourceId, peerId]),
-        }),
-      );
 
       const rerun = await runFiles(
         sourceId,
@@ -687,19 +672,9 @@ describe("runFiles", () => {
     }
   });
 
-  it("covers linked-artifact parser and audit empty branches", () => {
+  it("covers linked-artifact parser empty branches", () => {
     expect(parseAddGlobEntries(["pattern=src/**/*.ts,scope=project,note=   "])).toEqual([
       { pattern: "src/**/*.ts", scope: "project", note: undefined },
-    ]);
-
-    const audit = buildLinkedPathAudit(
-      ["linked.md", "unlinked.md"],
-      [{ id: "pm-empty" }, { id: "pm-linked", artifacts: [{ path: "linked.md", scope: "project" }] }],
-    );
-
-    expect(audit).toEqual([
-      { path: "linked.md", linked_by_count: 1, linked_item_ids: ["pm-linked"] },
-      { path: "unlinked.md", linked_by_count: 0, linked_item_ids: [] },
     ]);
   });
 
@@ -1268,7 +1243,7 @@ describe("runDocs", () => {
     });
   });
 
-  it("supports linked-doc path migration, validation, audit, and idempotent re-run", async () => {
+  it("supports linked-doc path migration, validation, and idempotent re-run", async () => {
     await withTempPmPath(async (context) => {
       const sourceId = createTask(context, "docs-hygiene-source");
       const peerId = createTask(context, "docs-hygiene-peer");
@@ -1295,8 +1270,7 @@ describe("runDocs", () => {
         {
           migrate: ["from=docs/old/,to=docs/new/"],
           validatePaths: true,
-          audit: true,
-          message: "migrate and audit linked docs",
+          message: "migrate and validate linked docs",
         },
         { path: context.pmPath },
       );
@@ -1304,29 +1278,16 @@ describe("runDocs", () => {
       expect(migrated.docs.some((entry) => entry.path === "docs/new/doc-one.md")).toBe(true);
       expect(migrated.migrations_applied).toBeGreaterThan(0);
       expect(migrated.validation?.checked).toBeGreaterThan(0);
-      expect(migrated.audit?.find((entry) => entry.path === "docs/new/doc-one.md")).toEqual(
-        expect.objectContaining({
-          linked_by_count: 2,
-          linked_item_ids: expect.arrayContaining([sourceId, peerId]),
-        }),
-      );
 
       const readOnlyInspection = await runDocs(
         sourceId,
         {
           validatePaths: true,
-          audit: true,
         },
         { path: context.pmPath },
       );
       expect(readOnlyInspection.changed).toBe(false);
       expect(readOnlyInspection.validation?.checked).toBeGreaterThan(0);
-      expect(readOnlyInspection.audit?.find((entry) => entry.path === "docs/new/doc-one.md")).toEqual(
-        expect.objectContaining({
-          linked_by_count: 2,
-          linked_item_ids: expect.arrayContaining([sourceId, peerId]),
-        }),
-      );
 
       const rerun = await runDocs(
         sourceId,

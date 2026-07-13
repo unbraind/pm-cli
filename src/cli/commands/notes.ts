@@ -29,10 +29,6 @@ export interface NotesCommandOptions {
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
-  /** Value that configures or reports allow audit note for this contract. */
-  allowAuditNote?: boolean;
-  /** Value that configures or reports allow audit comment for this contract. */
-  allowAuditComment?: boolean;
   /** Value that configures or reports force for this contract. */
   force?: boolean;
 }
@@ -60,17 +56,18 @@ export async function runNotes(
     editOp: "note_edit",
     deleteOp: "note_delete",
     parseText: (raw) => parseAnnotationTextInput(raw),
-    allowAuditBypass: Boolean(
-      options.allowAuditNote || options.allowAuditComment,
+    bypassOwnershipConflict: Boolean(
+      options.edit === undefined && options.delete === undefined &&
+        (options as NotesCommandOptions & {
+          ownershipAppendBypass?: boolean;
+        }).ownershipAppendBypass,
     ),
     conflictGuidance: {
       required:
-        "For append-only note audits on another owner's item, prefer --allow-audit-note (legacy alias: --allow-audit-comment) before considering --force.",
-      examples: [
-        'pm notes pm-a1b2 --add "audit note" --author "reviewer" --allow-audit-note',
-      ],
+        "For an approved append-only handoff on another owner's item, use the package-provided ownership bypass before considering --force.",
+      examples: ['pm notes pm-a1b2 --add "review note" --author "reviewer" --force'],
       nextSteps: [
-        "Retry with --allow-audit-note (or legacy --allow-audit-comment) for append-only note audits that do not mutate item metadata beyond notes.",
+        "Use an installed package's narrow append-only ownership bypass when available.",
         "Use --force only when an ownership override is explicitly approved.",
       ],
     },

@@ -1,0 +1,37 @@
+id: pm-w1c0
+title: Extract governance audit runtime from the default CLI and SDK
+description: "Execute pm-vjk3 as a package-owned boundary migration with bare-core contract removal, installed-package parity, exhaustive verification, and hosted review convergence."
+type: Plan
+status: closed
+priority: 1
+tags[5]: bare-core,cli,governance,packages,sdk
+created_at: "2026-07-12T23:09:24.310Z"
+updated_at: "2026-07-13T04:49:26.105Z"
+closed_at: "2026-07-13T04:48:55.410Z"
+author: codex-pm-audit-extraction
+parent: pm-vjk3
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-27mv,related,"2026-07-12T23:09:24.310Z",null,null
+  pm-79fr,related,"2026-07-12T23:09:24.310Z",null,null
+  pm-7dcf,related,"2026-07-12T23:09:24.310Z",null,null
+  pm-fg0b,related,"2026-07-12T23:09:24.310Z",null,null
+  pm-kg18,related,"2026-07-12T23:09:24.310Z",null,null
+  pm-rxp1,related,"2026-07-12T23:09:24.310Z",null,null
+  pm-vjk3,parent,"2026-07-12T23:09:24.310Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-13T03:15:21.195Z",codex-pm-audit-extraction,"Step 7 pre-push evidence: the continuation boundary inventory found and removed remaining files/docs audit types/runtime, named bypass options/result markers, audit-smoke telemetry context, and PRD surface. Generic command_result extension plumbing now lets the package own result decoration. Full release:gates and exact 100% coverage pass; isolated bare-vs-installed proof passes. Next state is commit/push followed by current-head hosted review convergence."
+  "2026-07-13T04:48:54.664Z",codex-pm-audit-extraction,"Plan complete: all seven steps delivered. Exact-head evidence is recorded on pm-rxp1; PR #536 is clean and mergeable with all required checks green and every review disposition complete."
+close_reason: "All audit extraction plan steps completed with package-owned runtime/flags/results, audit-free bare contracts, installed parity, exact 100% coverage, and hosted review convergence."
+plan_mode: completed
+plan_scope: "Move every audit command, flag, handler, contract, SDK export, MCP parameter, completion entry, and audit-specific documentation surface from core into packages/pm-governance-audit."
+plan_harness: codex
+plan_resume_context: "Continue on agent/extract-governance-audit-from-core-runtime. Read pm-vjk3 and children live. Decision pm-fg0b chose hybrid registerFlags/package handlers, audit alias, --force fallback, and no public audit SDK surface."
+plan_steps[7]{id,order,title,status,created_at,updated_at,evidence,completed_at}:
+  plan-step-001,1,Inventory imports and public SDK gaps before moving implementations,completed,"2026-07-12T23:09:24.359Z","2026-07-12T23:37:23.268Z",Mapped every moved runtime import. Public SDK already covered most primitives; filed pm-yu6d for isTerminalStatus/runUpdate/runClose before promoting them.,"2026-07-12T23:37:23.268Z"
+  plan-step-002,2,Relocate four audit runtimes into pm-governance-audit and remove SDK exports,completed,"2026-07-12T23:09:24.359Z","2026-07-12T23:37:23.928Z",Four implementations moved to packages/pm-governance-audit; dynamic audit-runner imports and public SDK audit exports removed; install-safe SDK adapter added.,"2026-07-12T23:37:23.928Z"
+  plan-step-003,3,Move files/docs audit reporting and allow-audit flags behind package activation,completed,"2026-07-12T23:09:24.359Z","2026-07-12T23:37:24.719Z",Package registers files/docs --audit and all allow-audit flag families; core registrations removed; bare help omits them and installed package restores them.,"2026-07-12T23:37:24.719Z"
+  plan-step-004,4,Purge core contracts MCP completion help docs and SDK audit surface,completed,"2026-07-12T23:09:24.359Z","2026-07-12T23:37:25.188Z","Removed static audit contracts, MCP parameters, help, completion, SDK exports, and core/plugin docs references; package README owns the surface.","2026-07-12T23:37:25.188Z"
+  plan-step-005,5,Migrate coverage and prove bare-core versus installed-package parity,completed,"2026-07-12T23:09:24.359Z","2026-07-12T23:37:25.717Z",Real temp project proved bare-core absence and pm install audit restoration; package doctor and four command smokes passed.,"2026-07-12T23:37:25.717Z"
+  plan-step-006,6,Run release gates regenerate changelog and record tracker evidence,completed,"2026-07-12T23:09:24.359Z","2026-07-13T00:37:01.757Z","pnpm release:gates passed typecheck, docs/skills, static-quality, token-budget, and 278 files / 5592 tests at literal 100% coverage; tracker evidence linked and ready for final changelog generation.","2026-07-13T00:37:01.757Z"
+  plan-step-007,7,Publish PR converge all checks and AI review feedback then merge,completed,"2026-07-12T23:09:24.359Z","2026-07-13T04:48:53.742Z","PR #536 current head be232cb0 passed all required hosted checks; Greptile 5/5 no findings, CodeRabbit green, all bot records voted/replied, zero unresolved threads, and final typed-normalizer feedback implemented with passing lint/type/package tests.","2026-07-13T04:48:53.742Z"
+body: "## Continuation closeout plan (2026-07-13)\n\n1. Inventory the entire current diff and every PR review/thread/check, preserving inherited uncommitted bot fixes.\n2. Run a repo-wide semantic audit-boundary sweep across src, SDK exports/contracts, MCP schemas, completion/help/guidance, docs, tests, package manifests, and generated fixtures; classify legitimate generic governance/history uses versus audit functionality that must move.\n3. Implement every remaining boundary correction inside packages/pm-governance-audit, with bare-core negative assertions and installed-package parity assertions.\n4. Run focused tests, contracts/snapshots, lint/static/token gates, full coverage/release gates, and an isolated installed-package temp-project proof.\n5. Record files/docs/tests and evidence in pm-rxp1, regenerate the package-owned changelog only after the final tracker mutation, commit with detailed lineage, and push PR #536.\n6. Trigger all configured AI reviewers on the pushed head, wait once for the complete review/check window (no polling), inventory all top-level reviews and inline threads, react according to usefulness, reply inline with disposition/evidence, resolve addressed threads, and repeat after every pushed fix.\n7. Re-read all edited/new comments and reactions, confirm all required GitHub checks are green on the exact head, merge, return to main, and verify merged-head health.\n\nNo core audit-named command, flag, public SDK symbol/type, MCP parameter, completion/help contract, or audit execution path is acceptable. Generic ownership enforcement, validate/health governance, and history-integrity semantics remain core only where they are not audit package functionality."

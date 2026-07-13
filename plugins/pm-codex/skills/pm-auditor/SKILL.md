@@ -12,7 +12,6 @@ Use for broad repository audits, release readiness checks, privacy reviews, and 
 
 1. Use `pm_context` with standard or deep options.
 2. Use `pm_search` for likely existing audit or release items.
-3. Use `pm_run` actions `health`, `validate`, `contracts`, `dedupe-audit`, `aggregate`, and `calendar` as needed.
 4. Convert each actionable finding into a pm item or append evidence to an existing item.
 5. Keep sensitive operational data out of public docs and tracked comments.
 

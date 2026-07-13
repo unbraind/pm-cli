@@ -1,31 +1,31 @@
 /**
- * @module cli/commands/normalize
+ * @module packages/pm-governance-audit/normalize
  *
  * Implements the pm normalize command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
-import { toItemRecord } from "../../core/item/item-record.js";
-import { normalizeStatusInput } from "../../core/item/status.js";
 import {
-  resolveRuntimeStatusRegistry,
-  type RuntimeStatusRegistry,
-} from "../../core/schema/runtime-schema.js";
-import {
-  DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS,
   EXIT_CODE,
-} from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
+  PmCliError,
+  getSettingsPath,
+  normalizeStatusInput,
+  nowIso,
+  pathExists,
+  readSettings,
+  resolvePmRoot,
+  resolveRuntimeStatusRegistry,
+  runList,
+  runUpdate,
+  type GlobalOptions,
+  type ItemStatus,
+  type ListedItem,
+  type ListOptions,
+  type RuntimeStatusRegistry,
+  type UpdateCommandOptions,
+} from "./sdk.ts";
 import {
   toErrorMessage,
   toNonEmptyStringOrUndefined,
-} from "../../core/shared/primitives.js";
-import { nowIso } from "../../core/shared/time.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
-import type { ItemStatus } from "../../types/index.js";
-import { runList, type ListedItem, type ListOptions } from "./list.js";
-import { runUpdate, type UpdateCommandOptions } from "./update.js";
+} from "./runtime-utils.ts";
 
 interface LifecyclePatternSettingsSource {
   validation: {
@@ -287,6 +287,59 @@ function isTerminalDoneStatus(
   return terminalDoneStatuses.has(normalized);
 }
 
+function planActiveItemCleanup(
+  itemRecord: Record<string, unknown>,
+  lifecyclePatterns: LifecyclePatternPolicy,
+  changes: NormalizePlannedChange[],
+  unsetFields: Set<string>,
+): void {
+  for (const definition of ACTIVE_CLEAR_FIELD_RULES) {
+    const currentValue = toNonEmptyStringOrUndefined(itemRecord[definition.field]);
+    if (!currentValue) continue;
+    const normalized = normalizeComparableText(currentValue);
+    const hasClosurePattern = lifecyclePatterns.closure_like_metadata_field_patterns[
+      definition.field
+    ].some((pattern) => normalized.includes(pattern));
+    if (!hasClosurePattern && !isLowSignalText(currentValue)) continue;
+    unsetFields.add(definition.unsetField);
+    changes.push({
+      field: definition.field,
+      before: sanitizeBeforeValue(itemRecord[definition.field]),
+      after: null,
+      rule: RULE_ACTIVE_CLOSURE_LIKE_METADATA,
+    });
+  }
+  if (toNonEmptyStringOrUndefined(itemRecord.close_reason)) {
+    unsetFields.add("close-reason");
+    changes.push({
+      field: "close_reason",
+      before: sanitizeBeforeValue(itemRecord.close_reason),
+      after: null,
+      rule: RULE_ACTIVE_CLOSE_REASON,
+    });
+  }
+}
+
+function planTerminalItemBackfills(
+  itemRecord: Record<string, unknown>,
+  updates: UpdateCommandOptions,
+  changes: NormalizePlannedChange[],
+): void {
+  const closeReason = toMeaningfulCloseReason(itemRecord.close_reason);
+  for (const definition of CLOSED_BACKFILL_FIELD_RULES) {
+    const currentValue = toNonEmptyStringOrUndefined(itemRecord[definition.field]);
+    if (currentValue && !isLowSignalText(currentValue)) continue;
+    const replacement = buildClosedBackfillValue(definition.field, closeReason);
+    updates[definition.optionKey] = replacement;
+    changes.push({
+      field: definition.field,
+      before: sanitizeBeforeValue(itemRecord[definition.field]),
+      after: replacement,
+      rule: RULE_CLOSED_RESOLUTION_BACKFILL,
+    });
+  }
+}
+
 function buildNormalizePlan(
   item: ListedItem,
   statusRegistry: RuntimeStatusRegistry,
@@ -296,69 +349,14 @@ function buildNormalizePlan(
   const updates: UpdateCommandOptions = {};
   const changes: NormalizePlannedChange[] = [];
   const unsetFields = new Set<string>();
-  const itemRecord = toItemRecord(item);
+  const itemRecord = item as unknown as Record<string, unknown>;
 
   if (!isTerminalStatus(item, statusRegistry)) {
-    for (const definition of ACTIVE_CLEAR_FIELD_RULES) {
-      const currentValue = toNonEmptyStringOrUndefined(
-        itemRecord[definition.field],
-      );
-      if (!currentValue) {
-        continue;
-      }
-      const normalized = normalizeComparableText(currentValue);
-      const hasClosurePattern =
-        lifecyclePatterns.closure_like_metadata_field_patterns[
-          definition.field
-        ].some((pattern) => normalized.includes(pattern));
-      if (!hasClosurePattern && !isLowSignalText(currentValue)) {
-        continue;
-      }
-      /* c8 ignore start -- duplicate unset insertions are defensive against malformed duplicated rule definitions; ACTIVE_CLEAR_FIELD_RULES has distinct unsetField values. */
-      if (!unsetFields.has(definition.unsetField)) {
-        unsetFields.add(definition.unsetField);
-      }
-      /* c8 ignore stop */
-      changes.push({
-        field: definition.field,
-        before: sanitizeBeforeValue(itemRecord[definition.field]),
-        after: null,
-        rule: RULE_ACTIVE_CLOSURE_LIKE_METADATA,
-      });
-    }
-
-    if (toNonEmptyStringOrUndefined(itemRecord.close_reason)) {
-      unsetFields.add("close-reason");
-      changes.push({
-        field: "close_reason",
-        before: sanitizeBeforeValue(itemRecord.close_reason),
-        after: null,
-        rule: RULE_ACTIVE_CLOSE_REASON,
-      });
-    }
+    planActiveItemCleanup(itemRecord, lifecyclePatterns, changes, unsetFields);
   }
 
   if (isTerminalDoneStatus(item, terminalDoneStatuses, statusRegistry)) {
-    const closeReason = toMeaningfulCloseReason(itemRecord.close_reason);
-    for (const definition of CLOSED_BACKFILL_FIELD_RULES) {
-      const currentValue = toNonEmptyStringOrUndefined(
-        itemRecord[definition.field],
-      );
-      if (currentValue && !isLowSignalText(currentValue)) {
-        continue;
-      }
-      const replacement = buildClosedBackfillValue(
-        definition.field,
-        closeReason,
-      );
-      updates[definition.optionKey] = replacement;
-      changes.push({
-        field: definition.field,
-        before: sanitizeBeforeValue(itemRecord[definition.field]),
-        after: replacement,
-        rule: RULE_CLOSED_RESOLUTION_BACKFILL,
-      });
-    }
+    planTerminalItemBackfills(itemRecord, updates, changes);
   }
 
   if (unsetFields.size > 0) {
@@ -491,14 +489,13 @@ export async function runNormalize(
       : "normalize apply";
   const updateBaseOptions: Pick<
     UpdateCommandOptions,
-    "author" | "message" | "force" | "allowAuditUpdate"
-  > = {
+    "author" | "message" | "force"
+  > & { ownershipMetadataBypass?: boolean } = {
     author: options.author,
     message: applyMessage,
-    /* c8 ignore next -- false/undefined forms are normalized before reaching this assembly. */
     force: options.force === true ? true : undefined,
-    /* c8 ignore next -- false/undefined forms are normalized before reaching this assembly. */
-    allowAuditUpdate: options.allowAuditUpdate === true ? true : undefined,
+    ownershipMetadataBypass:
+      options.allowAuditUpdate === true ? true : undefined,
   };
 
   for (const plan of planned) {

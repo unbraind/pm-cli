@@ -97,8 +97,6 @@ export interface ReleaseResult {
   released_by: string;
   /** Value that configures or reports previous assignee for this contract. */
   previous_assignee: string | null;
-  /** Value that configures or reports audit release for this contract. */
-  audit_release: boolean;
   /** Value that configures or reports forced for this contract. */
   forced: boolean;
 }
@@ -116,10 +114,7 @@ export interface ClaimMutationOptions {
 }
 
 /** Documents the release mutation options payload exchanged by command, SDK, and package integrations. */
-export interface ReleaseMutationOptions extends ClaimMutationOptions {
-  /** Value that configures or reports allow audit release for this contract. */
-  allowAuditRelease?: boolean;
-}
+export type ReleaseMutationOptions = ClaimMutationOptions;
 
 /** Implements run claim for the public runtime surface of this module. */
 export async function runClaim(
@@ -328,6 +323,10 @@ export async function runRelease(
   }
   const settings = await readSettings(pmRoot);
   const author = resolveAuthor(options.author, settings.author_default);
+  const ownershipReleaseBypass =
+    (options as ReleaseMutationOptions & {
+      ownershipReleaseBypass?: boolean;
+    }).ownershipReleaseBypass === true;
   let previousAssignee: string | null = null;
 
   let result: Awaited<ReturnType<typeof mutateItem>>;
@@ -340,7 +339,7 @@ export async function runRelease(
       author,
       message: options.message,
       force,
-      bypassAssigneeConflict: Boolean(options.allowAuditRelease),
+      bypassAssigneeConflict: ownershipReleaseBypass,
       mutate(document) {
         previousAssignee = document.metadata.assignee ?? null;
         if (!previousAssignee) {
@@ -353,12 +352,10 @@ export async function runRelease(
   } catch (error: unknown) {
     wrapOwnershipConflict(error, {
       required:
-        "For audited non-owner handoffs, prefer --allow-audit-release before considering --force.",
-      examples: [
-        'pm release pm-a1b2 --author "reviewer" --allow-audit-release',
-      ],
+        "For approved non-owner handoffs, prefer the ownership-release bypass before considering --force.",
+      examples: ['pm release pm-a1b2 --author "reviewer" --force'],
       nextSteps: [
-        "Use --allow-audit-release for append-only release handoffs that only clear assignee metadata.",
+        "Use the package-provided ownership-release bypass for handoffs that only clear assignee metadata.",
         "Use --force only when an explicit override is approved for broader ownership conflicts.",
       ],
     });
@@ -368,7 +365,6 @@ export async function runRelease(
     item: toItemRecord(result.item),
     released_by: author,
     previous_assignee: previousAssignee,
-    audit_release: options.allowAuditRelease === true,
     forced: force,
   };
 }

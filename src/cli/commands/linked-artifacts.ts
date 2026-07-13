@@ -21,7 +21,6 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { splitCommaList } from "../../core/shared/split-comma-list.js";
 import {
-  listAllItemMetadata,
   locateItem,
   mutateItem,
   readLocatedItem,
@@ -80,8 +79,6 @@ export interface LinkedArtifactCommandOptions {
   appendStable?: boolean;
   /** Value that configures or reports validate paths for this contract. */
   validatePaths?: boolean;
-  /** Value that configures or reports audit for this contract. */
-  audit?: boolean;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
@@ -122,16 +119,6 @@ export interface LinkedPathValidation {
   remote_references: string[];
 }
 
-/** Documents the linked path audit entry payload exchanged by command, SDK, and package integrations. */
-export interface LinkedPathAuditEntry {
-  /** Filesystem path used for path resolution. */
-  path: string;
-  /** Number of linked by entries represented by this result. */
-  linked_by_count: number;
-  /** Value that configures or reports linked item ids for this contract. */
-  linked_item_ids: string[];
-}
-
 /** Documents the linked artifact result payload exchanged by command, SDK, and package integrations. */
 export interface LinkedArtifactResult {
   /** Stable identifier used to reference this record across commands and storage. */
@@ -144,8 +131,6 @@ export interface LinkedArtifactResult {
   migrations_applied?: number;
   /** Value that configures or reports validation for this contract. */
   validation?: LinkedPathValidation;
-  /** Value that configures or reports audit for this contract. */
-  audit?: LinkedPathAuditEntry[];
   /** Value that configures or reports artifacts for this contract. */
   artifacts: LinkedArtifact[];
 }
@@ -484,33 +469,6 @@ export async function validateLinkedPaths(
   };
 }
 
-/** Implements build linked path audit for the public runtime surface of this module. */
-export function buildLinkedPathAudit(
-  paths: string[],
-  allItems: Array<{ id: string; artifacts?: LinkedArtifact[] }>,
-): LinkedPathAuditEntry[] {
-  const index = new Map<string, Set<string>>();
-  for (const item of allItems) {
-    for (const linkedArtifact of item.artifacts ?? []) {
-      const seen = index.get(linkedArtifact.path) ?? new Set<string>();
-      seen.add(item.id);
-      index.set(linkedArtifact.path, seen);
-    }
-  }
-  return [...new Set(paths)]
-    .sort((left, right) => left.localeCompare(right))
-    .map((linkedPath) => {
-      const linkedIds = [...(index.get(linkedPath) ?? new Set<string>())].sort(
-        (left, right) => left.localeCompare(right),
-      );
-      return {
-        path: linkedPath,
-        linked_by_count: linkedIds.length,
-        linked_item_ids: linkedIds,
-      };
-    });
-}
-
 function applyLinkedArtifactMigrations(
   current: LinkedArtifact[],
   adds: LinkedArtifact[],
@@ -563,7 +521,6 @@ async function buildLinkedArtifactResult(params: {
   changed: boolean;
   migrationsApplied?: number;
   options: LinkedArtifactCommandOptions;
-  collectAuditItems: () => Promise<Array<{ id: string; artifacts?: LinkedArtifact[] }>>;
 }): Promise<LinkedArtifactResult> {
   const paths = params.artifacts.map((entry) => entry.path);
   return {
@@ -577,9 +534,6 @@ async function buildLinkedArtifactResult(params: {
         : undefined,
     validation: params.options.validatePaths
       ? await validateLinkedPaths(paths)
-      : undefined,
-    audit: params.options.audit
-      ? buildLinkedPathAudit(paths, await params.collectAuditItems())
       : undefined,
   };
 }
@@ -631,24 +585,6 @@ export async function runLinkedArtifacts(
   const shouldMutate =
     adds.length > 0 || removes.length > 0 || migrations.length > 0;
 
-  const collectAuditItems = async (): Promise<
-    Array<{ id: string; artifacts?: LinkedArtifact[] }>
-  > =>
-    (
-      await listAllItemMetadata(
-        pmRoot,
-        settings.item_format,
-        typeRegistry.type_to_folder,
-        undefined,
-        settings.schema,
-      )
-    ).map((entry) => ({
-      id: entry.id,
-      artifacts: (entry as Record<string, unknown>)[metadataKey] as
-        | LinkedArtifact[]
-        | undefined,
-    }));
-
   if (!shouldMutate) {
     const located = await locateItem(
       pmRoot,
@@ -670,7 +606,6 @@ export async function runLinkedArtifacts(
       artifacts,
       changed: false,
       options,
-      collectAuditItems,
     });
   }
 
@@ -731,7 +666,6 @@ export async function runLinkedArtifacts(
     changed: true,
     migrationsApplied: migrationCount,
     options,
-    collectAuditItems,
   });
 }
 

@@ -660,7 +660,7 @@ describe("extension policy runtime resolution", () => {
 describe("item type registry runtime resolution", () => {
   it("canonicalizes command options and derives fallback flag labels", () => {
     expect(canonicalizeCommandOptionKey("create", "--acceptance-criteria")).toBe("acceptanceCriteria");
-    expect(canonicalizeCommandOptionKey("update", "allow_audit_update")).toBe("allowAuditUpdate");
+    expect(canonicalizeCommandOptionKey("update", "allow_audit_update")).toBeUndefined();
     expect(canonicalizeCommandOptionKey("update", "  ")).toBeUndefined();
     expect(canonicalizeCommandOptionKey("create", "--type-option")).toBe("typeOption");
     expect(canonicalizeCommandOptionKey("update", "--add-type-option")).toBeUndefined();

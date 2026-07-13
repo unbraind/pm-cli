@@ -81,11 +81,8 @@
     }
   },
   "src/cli/commands/completion.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "complexity": {
-      "count": 2
+      "count": 1
     }
   },
   "src/cli/commands/config.ts": {
@@ -149,14 +146,6 @@
   },
   "src/cli/commands/history.ts": {
     "complexity": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "src/cli/commands/normalize.ts": {
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
     "sonarjs/cognitive-complexity": {

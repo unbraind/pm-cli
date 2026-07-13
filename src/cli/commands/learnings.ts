@@ -29,10 +29,6 @@ export interface LearningsCommandOptions {
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
-  /** Value that configures or reports allow audit learning for this contract. */
-  allowAuditLearning?: boolean;
-  /** Value that configures or reports allow audit comment for this contract. */
-  allowAuditComment?: boolean;
   /** Value that configures or reports force for this contract. */
   force?: boolean;
 }
@@ -60,17 +56,18 @@ export async function runLearnings(
     editOp: "learning_edit",
     deleteOp: "learning_delete",
     parseText: (raw) => parseAnnotationTextInput(raw),
-    allowAuditBypass: Boolean(
-      options.allowAuditLearning || options.allowAuditComment,
+    bypassOwnershipConflict: Boolean(
+      options.edit === undefined && options.delete === undefined &&
+        (options as LearningsCommandOptions & {
+          ownershipAppendBypass?: boolean;
+        }).ownershipAppendBypass,
     ),
     conflictGuidance: {
       required:
-        "For append-only learning audits on another owner's item, prefer --allow-audit-learning (legacy alias: --allow-audit-comment) before considering --force.",
-      examples: [
-        'pm learnings pm-a1b2 --add "audit learning" --author "reviewer" --allow-audit-learning',
-      ],
+        "For an approved append-only handoff on another owner's item, use the package-provided ownership bypass before considering --force.",
+      examples: ['pm learnings pm-a1b2 --add "review learning" --author "reviewer" --force'],
       nextSteps: [
-        "Retry with --allow-audit-learning (or legacy --allow-audit-comment) for append-only learning audits that do not mutate item metadata beyond learnings.",
+        "Use an installed package's narrow append-only ownership bypass when available.",
         "Use --force only when an ownership override is explicitly approved.",
       ],
     },

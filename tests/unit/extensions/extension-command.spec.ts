@@ -3335,11 +3335,21 @@ describe("extension command runtime", () => {
       const beforeInstall = await runExtension(undefined, { catalog: true, project: true, vocabulary: "package" }, { path: context.pmPath });
       expect(beforeInstall.action).toBe("catalog");
       expect(beforeInstall.details).toMatchObject({
-        total: 11,
+        total: 12,
         scope: "project",
         installable_resource_kinds: ["extensions"],
         metadata_only_resource_kinds: ["docs", "examples", "assets", "prompts"],
         packages: [
+          {
+            alias: "audit",
+            available: true,
+            installed: false,
+            package_name: "@unbrained/pm-governance-audit",
+            catalog: {
+              display_name: "Governance Audit",
+              category: "governance",
+            },
+          },
           {
             alias: "beads",
             available: true,
@@ -3470,10 +3480,10 @@ describe("extension command runtime", () => {
         { path: context.pmPath },
       );
       expect((compactCatalog.details as { packages?: Array<Record<string, unknown>> }).packages?.[0]).toEqual({
-        alias: "beads",
+        alias: "audit",
         installed: false,
-        install_command: "pm install beads --project",
-        category: "migration",
+        install_command: "pm install audit --project",
+        category: "governance",
       });
 
       await runExtension("todos", { install: true, project: true }, { path: context.pmPath });
@@ -3515,8 +3525,8 @@ describe("extension command runtime", () => {
         { path: context.pmPath },
       );
       expect((projected.details as { packages?: Array<Record<string, unknown>> }).packages?.[0]).toEqual({
-        alias: "beads",
-        display_name: "Beads Import",
+        alias: "audit",
+        display_name: "Governance Audit",
         package_version: expect.any(String),
       });
     });
@@ -3688,8 +3698,13 @@ describe("extension command runtime", () => {
       const wildcardInstall = await runExtension("*", { install: true, project: true }, { path: context.pmPath });
       expect(wildcardInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 11,
+        installed_count: 12,
         packages: [
+          {
+            alias: "audit",
+            extension: { name: "builtin-governance-audit" },
+            activated: true,
+          },
           {
             alias: "beads",
             extension: { name: "builtin-beads-import" },
@@ -3761,7 +3776,7 @@ describe("extension command runtime", () => {
       const allInstall = await runExtension("all", { install: true, project: true }, { path: context.pmPath });
       expect(allInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 11,
+        installed_count: 12,
       });
     });
   });
