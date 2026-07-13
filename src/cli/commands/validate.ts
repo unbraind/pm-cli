@@ -1540,8 +1540,11 @@ function buildDependencyReferencesCheck(
   const summarizedLegacyRows = summarizeList(legacyRows, diagnosticLimit);
   const hints = summarizeList(
     classified.active.map((row) => {
-      return row.kind === "parent"
-        ? `pm update ${row.holder_id} --unset parent`
+      if (row.source === "parent") {
+        return `pm update ${row.holder_id} --unset parent`;
+      }
+      return row.source === "blocked_by"
+        ? `pm update ${row.holder_id} --unset blocked_by`
         : `pm update ${row.holder_id} --replace-deps '<correct dependency edges>'`;
     }),
     diagnosticLimit,
@@ -1557,7 +1560,10 @@ function buildDependencyReferencesCheck(
         dangling_reference_rows: summarizedRows.values,
         dangling_reference_rows_truncated: summarizedRows.truncated,
         legacy_terminal_dangling_reference_count: legacyRows.length,
-        legacy_closed_dangling_reference_count: legacyRows.length,
+        legacy_closed_dangling_reference_count:
+          classified.legacy_terminal.filter(
+            (row) => row.holder_status === "closed",
+          ).length,
         legacy_terminal_dangling_reference_rows: summarizedLegacyRows.values,
         legacy_terminal_dangling_reference_rows_truncated:
           summarizedLegacyRows.truncated,

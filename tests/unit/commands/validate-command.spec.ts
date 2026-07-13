@@ -285,6 +285,18 @@ describe("runValidate", () => {
       expect(check.status).toBe("warn");
       expect(check.details).toMatchObject({ dangling_reference_count: 2 });
       expect((check.details.remediation_hints as string[])[0]).toContain("--replace-deps");
+      const sourceAwareCheck = validateInternals.buildDependencyReferencesCheck([
+        {
+          id: "pm-source-aware",
+          status: "open",
+          blocked_by: "pm-scalar-missing",
+          dependencies: [{ id: "pm-edge-missing", kind: "blocked_by" }],
+        },
+      ] as never, true).check;
+      expect(sourceAwareCheck.details.remediation_hints).toEqual([
+        "pm update pm-source-aware --replace-deps '<correct dependency edges>'",
+        "pm update pm-source-aware --unset blocked_by",
+      ]);
       const multiRowCheck = validateInternals.buildDependencyReferencesCheck([
         { id: "pm-b", parent: "pm-missing-b", dependencies: [] },
         { id: "pm-a", parent: "pm-missing-a", dependencies: [] },
@@ -311,6 +323,7 @@ describe("runValidate", () => {
         dangling_reference_count: 3,
         active_dangling_reference_count: 1,
         legacy_terminal_dangling_reference_count: 2,
+        legacy_closed_dangling_reference_count: 2,
         no_active_blocker_sentinel_count: 1,
       });
       expect(partitionedCheck.details.remediation_hints).toEqual([
@@ -332,6 +345,19 @@ describe("runValidate", () => {
         legacy_terminal_dangling_reference_count: 1,
       });
       expect(historicalOnlyCheck.details.remediation_hints).toEqual([]);
+
+      const canceledOnlyCheck = validateInternals.buildDependencyReferencesCheck([
+        {
+          id: "pm-canceled",
+          status: "canceled",
+          parent: "pm-historical-missing",
+          dependencies: [],
+        },
+      ] as never, true).check;
+      expect(canceledOnlyCheck.details).toMatchObject({
+        legacy_terminal_dangling_reference_count: 1,
+        legacy_closed_dangling_reference_count: 0,
+      });
     });
   });
 

@@ -62,6 +62,9 @@ export interface DependencyReferenceHolder {
   dependencies?: Dependency[];
 }
 
+/** Storage surface that contributed a normalized dependency reference. */
+export type DependencyReferenceSource = "parent" | "blocked_by" | "dependency";
+
 /** One normalized dependency reference whose target is absent from the tracker. */
 export interface DanglingDependencyReference {
   /** Item that owns the reference. */
@@ -70,6 +73,8 @@ export interface DanglingDependencyReference {
   target_id: string;
   /** Relationship field or dependency kind. */
   kind: string;
+  /** Storage surface that owns the reference and determines its remediation. */
+  source: DependencyReferenceSource;
   /** Current lifecycle status of the holder. */
   holder_status: ItemStatus;
   /** Whether the holder is terminal and therefore historical, non-actionable debt. */
@@ -106,6 +111,7 @@ export function collectDanglingDependencyReferences(
     item: DependencyReferenceHolder,
     target: unknown,
     kind: string,
+    source: DependencyReferenceSource,
   ): void => {
     const normalized = typeof target === "string" ? target.trim() : "";
     if (
@@ -119,16 +125,20 @@ export function collectDanglingDependencyReferences(
       holder_id: item.id,
       target_id: normalized,
       kind,
+      source,
       holder_status: item.status,
       legacy_terminal: isTerminal(item.status),
       no_active_blocker_sentinel:
         normalized.toLowerCase() === "no-active-blocker",
     };
-    rows.set(`${row.holder_id}::${row.target_id}::${row.kind}`, row);
+    rows.set(
+      `${row.holder_id}::${row.target_id}::${row.kind}::${row.source}`,
+      row,
+    );
   };
   for (const item of items) {
-    addReference(item, item.parent, "parent");
-    addReference(item, item.blocked_by, "blocked_by");
+    addReference(item, item.parent, "parent", "parent");
+    addReference(item, item.blocked_by, "blocked_by", "blocked_by");
     for (const dependency of item.dependencies ?? []) {
       // Public SDK callers may supply legacy or JSON-decoded payloads that do
       // not yet satisfy the current structured dependency contract.
@@ -142,6 +152,7 @@ export function collectDanglingDependencyReferences(
         typeof legacyDependency.kind === "string"
           ? legacyDependency.kind
           : "related",
+        "dependency",
       );
     }
   }
@@ -149,7 +160,8 @@ export function collectDanglingDependencyReferences(
     (left, right) =>
       left.holder_id.localeCompare(right.holder_id) ||
       left.target_id.localeCompare(right.target_id) ||
-      left.kind.localeCompare(right.kind),
+      left.kind.localeCompare(right.kind) ||
+      left.source.localeCompare(right.source),
   );
   const legacyTerminal = sorted.filter((row) => row.legacy_terminal);
   return {
@@ -446,6 +458,46 @@ function toGraph(root: DepsTreeNode): DepsGraphResult {
   };
 }
 
+/** Count a dependency result without allocating its potentially exponential tree payload. */
+function countDependencyGraph(
+  rootId: string,
+  index: Map<string, IndexedItem>,
+  maxDepth: number | undefined,
+): Pick<DepsResult, "node_count" | "edge_count" | "missing_count"> {
+  const nodeIds = new Set<string>();
+  const edgeKeys = new Set<string>();
+  const missingIds = new Set<string>();
+  const shallowestExpandedDepth = new Map<string, number>();
+  const pending = [{ id: rootId, depth: 0 }];
+  let pendingIndex = 0;
+  while (pendingIndex < pending.length) {
+    const current = pending[pendingIndex++]!;
+    nodeIds.add(current.id);
+    const item = index.get(current.id);
+    if (!item) {
+      missingIds.add(current.id);
+      continue;
+    }
+    if (maxDepth !== undefined && current.depth >= maxDepth) {
+      continue;
+    }
+    const priorDepth = shallowestExpandedDepth.get(current.id);
+    if (priorDepth !== undefined && priorDepth <= current.depth) {
+      continue;
+    }
+    shallowestExpandedDepth.set(current.id, current.depth);
+    for (const dependency of item.dependencies) {
+      edgeKeys.add(`${current.id}::${dependency.id}::${dependency.kind}`);
+      pending.push({ id: dependency.id, depth: current.depth + 1 });
+    }
+  }
+  return {
+    node_count: nodeIds.size,
+    edge_count: edgeKeys.size,
+    missing_count: missingIds.size,
+  };
+}
+
 /** Implements run deps for the public runtime surface of this module. */
 export async function runDeps(
   id: string,
@@ -480,6 +532,14 @@ export async function runDeps(
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
   }
 
+  if (summaryOnly) {
+    return {
+      id,
+      format,
+      ...countDependencyGraph(id, index, maxDepth),
+    };
+  }
+
   const tree = toTreeNode(
     id,
     index,
@@ -496,9 +556,6 @@ export async function runDeps(
     edge_count: graph.edges.length,
     missing_count: graph.missing_ids.length,
   };
-  if (summaryOnly) {
-    return baseResult;
-  }
   if (format === "tree") {
     return {
       ...baseResult,

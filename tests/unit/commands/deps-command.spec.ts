@@ -103,6 +103,23 @@ describe("runDeps", () => {
       "parent",
       "related",
     ]);
+    expect(sameHolderAndTarget.active.map((row) => row.source)).toEqual([
+      "parent",
+      "dependency",
+    ]);
+
+    const distinctBlockedBySources = collectDanglingDependencyReferences([
+      {
+        id: "pm-blocked-sources",
+        status: "open",
+        blocked_by: "pm-shared-blocker",
+        dependencies: [{ id: "pm-shared-blocker", kind: "blocked_by" }],
+      },
+    ]);
+    expect(distinctBlockedBySources.active.map((row) => row.source)).toEqual([
+      "blocked_by",
+      "dependency",
+    ]);
 
     const malformedRuntimeTargets = collectDanglingDependencyReferences([
       {
@@ -122,6 +139,7 @@ describe("runDeps", () => {
       expect.objectContaining({
         target_id: "pm-missing-default-kind",
         kind: "related",
+        source: "dependency",
       }),
     ]);
   });
@@ -240,6 +258,32 @@ describe("runDeps", () => {
       expect(result.missing_count).toBe(0);
       expect(result.tree).toBeUndefined();
       expect(result.graph).toBeUndefined();
+    });
+  });
+
+  it("counts shared summary graphs without materializing result payloads", async () => {
+    await withTempPmPath(async (context) => {
+      const sharedId = createTask(context, "deps-summary-shared", [
+        "id=pm-summary-missing,kind=related,author=test-author,created_at=now",
+      ]);
+      const leftId = createTask(context, "deps-summary-left", [
+        `id=${sharedId},kind=related,author=test-author,created_at=now`,
+      ]);
+      const rightId = createTask(context, "deps-summary-right", [
+        `id=${sharedId},kind=related,author=test-author,created_at=now`,
+      ]);
+      const rootId = createTask(context, "deps-summary-dag", [
+        `id=${leftId},kind=blocks,author=test-author,created_at=now`,
+        `id=${rightId},kind=blocks,author=test-author,created_at=now`,
+      ]);
+
+      const full = await runDeps(rootId, { format: "graph", summary: true }, { path: context.pmPath });
+      expect(full).toMatchObject({ node_count: 5, edge_count: 5, missing_count: 1 });
+      expect(full.tree).toBeUndefined();
+      expect(full.graph).toBeUndefined();
+
+      const bounded = await runDeps(rootId, { summary: true, maxDepth: 1 }, { path: context.pmPath });
+      expect(bounded).toMatchObject({ node_count: 3, edge_count: 2, missing_count: 0 });
     });
   });
 

@@ -173,6 +173,9 @@ command action. The direct functions accept the typed command options plus a
 `GlobalOptions` tracker path, while `PmClient` remains the ergonomic façade for
 applications that want shared workspace/author defaults:
 
+The example assumes the host application already provides `id`, `pmRoot`,
+`items`, and its schema-aware `terminalStatuses` set.
+
 ```ts
 import {
   PmClient,
