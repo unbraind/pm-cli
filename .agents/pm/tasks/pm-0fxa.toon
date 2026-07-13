@@ -1,0 +1,29 @@
+id: pm-0fxa
+title: "PR review helper: watch GitHub checks and enforce thread-scoped replies"
+description: "Make the review-loop script use GitHub check completion as the reviewer wait signal, take a complete exact-head inventory afterward, and prevent misleading generic PR comments where GitHub has no reply thread."
+type: Task
+status: closed
+priority: 1
+tags[3]: developer-experience,github,review-automation
+created_at: "2026-07-13T20:31:59.857Z"
+updated_at: "2026-07-13T20:47:06.339Z"
+closed_at: "2026-07-13T20:46:43.624Z"
+author: codex-review-loop-agent
+parent: pm-hq28
+resolution: Added check-watching exact-head inventory and real inline acknowledgement commands to the PR review helper.
+expected_result: One GitHub check watch replaces timed waits and all explanations land in actual inline threads without missing non-threadable bot surfaces.
+actual_result: "The helper watched PR #546 to completion in one call, returned all 18 comments, 17 reviews, and 13 threads on the exact head, and passed exact full coverage plus strict quality gates."
+comments[2]{created_at,author,text}:
+  "2026-07-13T20:31:59.857Z",codex-review-loop-agent,"Duplicate check: searched all statuses for review loop GitHub checks watch and threaded replies; pm-hq28 is the closed canonical origin, so this is a fresh child follow-up rather than reopening terminal work."
+  "2026-07-13T20:46:42.139Z",codex-review-loop-agent,"Implementation evidence: added a watch command that blocks on gh pr checks --watch, records failed reviewer checks as completed findings, takes the complete paginated inventory afterward, and retries up to three times if the PR head changes. Removed generic reply-top; added acknowledge-inline to apply the vote and direct pull-review-comment reply together. Top-level comments/review summaries remain inventoried and reactable but cannot produce fake default-comment replies. Manual PR #546 acceptance returned the exact watched head, failed Greptile completion, and all 18 comments/17 reviews/13 threads in one call. Focused 144 tests and full 5,628-test exact coverage pass; lint/static/context gates pass."
+learnings[1]{created_at,author,text}:
+  "2026-07-13T20:46:42.685Z",codex-review-loop-agent,"GitHub reviewer agents already expose completion through check runs. The token-efficient and race-safe loop is one gh pr checks --watch followed by one complete exact-head inventory; timed sleeps and repeated inventory polling are both weaker. Only pull-request review comments support actual threaded replies, so top-level comments and review summaries should be reacted to and inventoried, never answered with misleading generic PR comments."
+files[2]{path,scope,note}:
+  scripts/reviews/pr-review-loop.mjs,project,Check watcher and thread-only reply commands
+  tests/unit/scripts/reviews/pr-review-loop.spec.ts,project,Review helper regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/PR_REVIEW_LOOP.md,project,Document check-watching and GitHub reply-surface rules
+close_reason: "Implemented check-driven review waiting, exact-head post-check inventory, and real inline-thread acknowledgements with complete regression and manual PR proof."
+body: ""

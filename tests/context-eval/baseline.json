@@ -52,6 +52,17 @@
         "token_budget_adherence": 1,
         "within_token_budget": true
       }
+    },
+    {
+      "id": "served-then-used-feedback",
+      "metrics": {
+        "ndcg": 1,
+        "reciprocal_rank": 1,
+        "required_recall": 1,
+        "continuity_coverage": 1,
+        "token_budget_adherence": 1,
+        "within_token_budget": true
+      }
     }
   ]
 }

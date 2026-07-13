@@ -50,6 +50,14 @@ import {
   encodeQueryCursor,
   resolveQueryCursorStart,
 } from "../../sdk/pagination.js";
+import {
+  packContextCandidates,
+  type ContextPackingReport,
+} from "../../sdk/context-packing.js";
+import {
+  readContextUsageAffinity,
+  recordContextUsageServing,
+} from "../../sdk/context-usage.js";
 
 // ---------------------------------------------------------------------------
 // Output format
@@ -394,6 +402,8 @@ export interface ContextResult {
   warnings?: string[];
   /** Value that configures or reports ranking for this contract. */
   ranking?: ContextRankingSummary;
+  /** Token-budget selection and projection accounting for ranked focus rows. */
+  packing?: ContextPackingSummary;
   /** Whether additional ranked focus rows remain after this page. */
   has_more?: boolean;
   /** Opaque continuation cursor for the next ranked focus page. */
@@ -403,6 +413,14 @@ export interface ContextResult {
   /** Explicit marker that focus rows were bounded. */
   truncated?: true;
 }
+
+/** Compact token-budget accounting shared by context and next results. */
+export type ContextPackingSummary = Omit<
+  ContextPackingReport<unknown>,
+  "included"
+> & {
+  included: Array<{ id: string; projection: string; tokens: number }>;
+};
 
 /** Compact explainability envelope shared by context and next JSON results. */
 export interface ContextRankingSummary {
@@ -938,6 +956,7 @@ function buildItemContextRelevanceCandidate(
     recencyRank: ReadonlyMap<string, number>;
     recencyDenominator: number;
     itemCount: number;
+    usageAffinity?: Readonly<Record<string, number>>;
   },
 ): ContextRelevanceCandidate<ItemMetadata> {
   const assignedToAuthor =
@@ -971,6 +990,7 @@ function buildItemContextRelevanceCandidate(
       deadline_pressure: resolveDeadlinePressure(item.deadline, params.nowMs),
       knowledge_density: Math.min(knowledgeEntries / 5, 1),
       author_affinity: assignedToAuthor ? 1 : 0,
+      usage_affinity: params.usageAffinity?.[item.id],
     },
   };
 }
@@ -981,6 +1001,7 @@ export function buildItemContextRelevanceCandidates(
   statusRegistry: RuntimeStatusRegistry,
   now: string,
   author: string | undefined,
+  usageAffinity?: Readonly<Record<string, number>>,
 ): ContextRelevanceCandidate<ItemMetadata>[] {
   const recencyOrder = [...items].sort(
     (left, right) =>
@@ -1003,8 +1024,62 @@ export function buildItemContextRelevanceCandidates(
       recencyRank,
       recencyDenominator,
       itemCount: items.length,
+      usageAffinity,
     }),
   );
+}
+
+function estimateJsonTokens(value: unknown): number {
+  return Math.max(
+    1,
+    Math.ceil(Buffer.byteLength(JSON.stringify(value), "utf8") / 4),
+  );
+}
+
+/** Packs a relevance report with monotone identity, summary, and full item projections. */
+export function packRankedContextItems(
+  report: ContextRelevanceReport<ItemMetadata>,
+  tokenBudget: number,
+  requiredIds: ReadonlySet<string> = new Set(),
+  profile: "context" | "next" = "context",
+): ContextPackingReport<ItemMetadata> {
+  return packContextCandidates(
+    report.ranked.map((entry) => ({
+      id: entry.id,
+      item: entry.item,
+      rank: entry.rank,
+      score: entry.score,
+      required: requiredIds.has(entry.id),
+      cluster: entry.item.parent?.trim() || entry.item.type,
+      token_costs: {
+        identity: estimateJsonTokens({ id: entry.id, title: entry.item.title }),
+        summary: estimateJsonTokens({
+          id: entry.id,
+          title: entry.item.title,
+          type: entry.item.type,
+          status: entry.item.status,
+          priority: entry.item.priority,
+          parent: entry.item.parent,
+        }),
+        full: estimateJsonTokens(entry.item),
+      },
+    })),
+    { tokenBudget, profile, latencyBudgetMs: 25 },
+  );
+}
+
+/** Projects the SDK packer report onto the stable low-token command envelope. */
+export function toContextPackingSummary(
+  report: ContextPackingReport<ItemMetadata>,
+): ContextPackingSummary {
+  return {
+    ...report,
+    included: report.included.map((entry) => ({
+      id: entry.id,
+      projection: entry.projection,
+      tokens: entry.tokens,
+    })),
+  };
 }
 
 /** Project a full scorer report onto the low-token command explanation shape. */
@@ -1892,6 +1967,7 @@ interface ContextFocusGroups {
   blockedFallback: ContextFocusItem[];
   blockedFallbackUsed: boolean;
   ranking: ContextRelevanceReport<ItemMetadata>;
+  packing: ContextPackingReport<ItemMetadata>;
   pageExtras: {
     has_more?: boolean;
     next_cursor?: string;
@@ -2033,14 +2109,20 @@ async function resolveContextFocusGroups(
   sectionsIncluded: ContextSectionName[],
   limit: number,
   now: string,
-  author: string | undefined,
+  author: string,
   cursor: string | undefined,
   cursorFingerprint: string,
   useBoundedPage: boolean,
+  pmRoot: string,
 ): Promise<ContextFocusGroups> {
   const structural = [...listedItemMetadata].sort((left, right) =>
     compareCriticalItems(left, right, statusRegistry),
   );
+  const usage = await readContextUsageAffinity({
+    pmRoot,
+    author,
+    enabled: process.env.PM_CONTEXT_USAGE_DISABLED !== "1",
+  });
   const ranking = await scoreContextCandidatesWithActiveExtensions(
     "context",
     buildItemContextRelevanceCandidates(
@@ -2048,28 +2130,29 @@ async function resolveContextFocusGroups(
       statusRegistry,
       now,
       author,
+      usage.affinity,
     ),
   );
   const ranked = ranking.ranked.map((entry) => entry.item);
   const activeStatuses = statusRegistry.active_statuses;
-  const activeItems = ranked.filter((item) =>
+  const rankedActiveItems = ranked.filter((item) =>
     activeStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
   );
   const pageStart = useBoundedPage
     ? resolveQueryCursorStart(
-        activeItems,
+        rankedActiveItems,
         cursor,
         cursorFingerprint,
         (item) => item.id,
       )
     : 0;
   const focusPage = useBoundedPage
-    ? activeItems.slice(pageStart, pageStart + limit)
-    : activeItems;
+    ? rankedActiveItems.slice(pageStart, pageStart + limit)
+    : rankedActiveItems;
   const hasMore =
     useBoundedPage &&
     focusPage.length > 0 &&
-    pageStart + focusPage.length < activeItems.length;
+    pageStart + focusPage.length < rankedActiveItems.length;
   const nextCursor =
     hasMore && focusPage.length > 0
       ? encodeQueryCursor(
@@ -2078,7 +2161,24 @@ async function resolveContextFocusGroups(
           pageStart + focusPage.length - 1,
         )
       : undefined;
-  const blockedItems = ranked.filter((item) =>
+  const rankedBlockedItems = ranked.filter((item) =>
+    statusRegistry.blocked_statuses.has(
+      normalizeStatusForRegistry(item.status, statusRegistry),
+    ),
+  );
+  const packingIds = new Set([
+    ...focusPage.map((item) => item.id),
+    ...rankedBlockedItems.slice(0, limit).map((item) => item.id),
+  ]);
+  const packing = packRankedContextItems(
+    { ...ranking, ranked: ranking.ranked.filter((entry) => packingIds.has(entry.id)) },
+    Math.max(256, limit * 160),
+  );
+  const packedItems = packing.included.map((entry) => entry.item);
+  const activeItems = packedItems.filter((item) =>
+    activeStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
+  );
+  const blockedItems = packedItems.filter((item) =>
     statusRegistry.blocked_statuses.has(
       normalizeStatusForRegistry(item.status, statusRegistry),
     ),
@@ -2087,19 +2187,19 @@ async function resolveContextFocusGroups(
   const focusChildrenByParent = contextNeedsAllItems(sectionsIncluded)
     ? childrenByParent
     : undefined;
-  const highLevel = focusPage
+  const highLevel = activeItems
     .filter((item) => HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, useBoundedPage ? focusPage.length : limit)
     .map((item) =>
       toContextFocusItem(item, statusRegistry, focusChildrenByParent),
     );
-  const lowLevel = focusPage
+  const lowLevel = activeItems
     .filter((item) => !HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, useBoundedPage ? focusPage.length : limit)
     .map((item) =>
       toContextFocusItem(item, statusRegistry, focusChildrenByParent),
     );
-  const blockedFallbackUsed = activeItems.length === 0;
+  const blockedFallbackUsed = rankedActiveItems.length === 0;
   return {
     activeItems,
     blockedItems,
@@ -2114,6 +2214,7 @@ async function resolveContextFocusGroups(
       : [],
     blockedFallbackUsed,
     ranking,
+    packing,
     pageExtras: {
       ...(useBoundedPage ? { applied_limit: limit } : {}),
       ...(hasMore ? { has_more: true, truncated: true } : {}),
@@ -2352,11 +2453,41 @@ function maybeAttachEmptyContextSuggestions(
   ];
 }
 
+async function attachContextUsageFeedback(
+  result: ContextResult,
+  focusGroups: ContextFocusGroups,
+  pmRoot: string,
+  author: string,
+): Promise<void> {
+  try {
+    const included = new Set(
+      focusGroups.packing.included.map((entry) => entry.id),
+    );
+    await recordContextUsageServing({
+      pmRoot,
+      author,
+      surface: "context",
+      profile: focusGroups.packing.profile,
+      rows: focusGroups.ranking.ranked.map((entry) => ({
+        id: entry.id,
+        rank: entry.rank,
+        included: included.has(entry.id),
+      })),
+      enabled: process.env.PM_CONTEXT_USAGE_DISABLED !== "1",
+    });
+  } catch {
+    result.warnings = mergeSortedWarnings(result.warnings, [
+      "context_usage_feedback_write_failed",
+    ]);
+  }
+}
+
 /** Implements run context for the public runtime surface of this module. */
 export async function runContext(
   options: ContextOptions,
   global: GlobalOptions,
 ): Promise<ContextResult> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const resolvedRuntime = await resolveContextRuntime(options, global);
   const corpus = await loadContextCorpus(options, global, resolvedRuntime);
   const runtime = {
@@ -2366,6 +2497,7 @@ export async function runContext(
       corpus.fullCorpus.length,
     ),
   };
+  const author = process.env.PM_AUTHOR ?? runtime.settings.author_default;
   const focusGroups = await resolveContextFocusGroups(
     corpus.listedItemMetadata,
     corpus.allItems,
@@ -2373,10 +2505,11 @@ export async function runContext(
     runtime.sectionsIncluded,
     runtime.limit,
     nowIso(),
-    process.env.PM_AUTHOR,
+    author,
     options.after,
     buildContextCursorFingerprint(options),
     shouldPageContextFocus(options, corpus.fullCorpus.length),
+    pmRoot,
   );
   const agendaContext = await buildContextAgenda(
     options,
@@ -2463,8 +2596,10 @@ export async function runContext(
   };
 
   attachOptionalContextSections(result, sections);
-  if (options.explainRanking === true)
+  if (options.explainRanking === true) {
     result.ranking = toContextRankingSummary(focusGroups.ranking);
+    result.packing = toContextPackingSummary(focusGroups.packing);
+  }
   applyContextFocusProjection(result, runtime.focusFields);
   if (warnings.length > 0) result.warnings = warnings;
   maybeAttachEmptyContextSuggestions(
@@ -2472,6 +2607,7 @@ export async function runContext(
     focusGroups.activeItems,
     focusGroups.blockedItems,
   );
+  await attachContextUsageFeedback(result, focusGroups, pmRoot, author);
 
   return result;
 }

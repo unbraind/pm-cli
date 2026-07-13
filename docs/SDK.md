@@ -114,6 +114,7 @@ Command/action contract exports:
 - Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`
 - Context relevance primitives: `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
 - Context relevance contracts: `ContextRelevanceCandidate`, `ContextRelevanceSignals`, `ContextRelevanceScorer`, `ContextRelevanceReport`, `ContextEvaluationReader`, `ContextEvaluationScenario`, `ContextEvaluationScenarioReport`, `ContextEvaluationThresholds`, and `ContextEvaluationCorpusReport`
+- Context packing and feedback primitives: `packContextCandidates`, `recordContextUsageServing`, `recordContextUsageTouch`, `recordContextUsageTouches`, and `readContextUsageAffinity`
 - Typed annotation and relationship primitives on `PmClient`: `comments`, `notes`, `learnings`, `files`, `filesDiscover`, `docs`, `deps`, and `append`
 - Annotation and relationship option/result contracts: `CommentsCommandOptions` / `CommentsResult`, `NotesCommandOptions` / `NotesResult`, `LearningsCommandOptions` / `LearningsResult`, `FilesCommandOptions` / `FilesResult`, `FilesDiscoverOptions` / `FilesDiscoverResult`, `DocsCommandOptions` / `DocsResult`, `DepsCommandOptions` / `DepsResult`, `AppendCommandOptions` / `AppendResult`
 - Annotation kernel primitives: `resolveAnnotationInput`, `runAnnotationCommand`, `resolveAnnotationIndex`, `parseAnnotationTextInput`, `limitAnnotationEntries`, `readAnnotationEntries`, `wrapOwnershipConflict`, `isErrnoError`, and their typed input/config/result contracts
@@ -701,6 +702,30 @@ read path.
 Use `--explain-ranking --json` on `pm context` or `pm next` to include the model,
 available signals, baseline rank, final rank, score, and per-signal
 contributions. Explanation data is opt-in so default agent output stays bounded.
+
+The opt-in explanation also carries a compact `packing` envelope: the derived
+token budget, estimated usage, included projection depths, omitted ids, active
+task-set profile, and completeness. Packing still governs every default call;
+only its accounting envelope is omitted to preserve the token budget.
+`packContextCandidates` exposes the same
+deterministic optimizer to SDK consumers. It admits required anchors first,
+penalizes redundant clusters, applies uncertainty-aware value, and buys
+identity → summary → full upgrades so relevant rows lose detail before they are
+omitted. Built-in `context` and `next` profiles select intent-appropriate
+diversity and uncertainty policies while required safety anchors remain
+mask-immune. An optional `latencyBudgetMs` bounds candidate comparisons; the
+report discloses `selection_complete`, `termination_reason`, evaluated rows,
+the active profile, and the full projection-degradation ladder.
+
+The optional context-usage feedback loop is a derived runtime artifact under
+`.agents/pm/runtime/context-usage.jsonl`. Serving events retain only author,
+timestamp, surface, profile, item id, rank, and inclusion; subsequent reads and
+mutations record item id and command intent. The bounded ledger compacts by age and count,
+never enters item history, and feeds a decayed `usage_affinity` signal with an
+exploration floor. SDK hosts can use `recordContextUsageServing`,
+`recordContextUsageTouch`, `recordContextUsageTouches`, and
+`readContextUsageAffinity` directly. Set
+`PM_CONTEXT_USAGE_DISABLED=1` for a zero-read/zero-write opt-out.
 
 Custom tools can evaluate the same behavior without shelling out:
 

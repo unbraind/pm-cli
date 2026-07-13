@@ -1,3 +1,5 @@
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildItemContextRelevanceCandidates, runContext } from "../../../src/cli/commands/context.js";
 import { runNext } from "../../../src/cli/commands/next.js";
@@ -48,7 +50,7 @@ describe("context relevance command integration", () => {
       relevanceItem("pm-low", { risk: "low" }),
       relevanceItem("pm-none", { risk: undefined, deadline: "not-a-date" }),
     ];
-    const candidates = buildItemContextRelevanceCandidates(items, registry, now, "codex-root");
+    const candidates = buildItemContextRelevanceCandidates(items, registry, now, "codex-root", { "pm-critical": 0.8 });
 
     expect(candidates.map((entry) => entry.id)).toEqual(items.map((item) => item.id));
     expect(candidates[0]?.signals).toMatchObject({
@@ -60,6 +62,7 @@ describe("context relevance command integration", () => {
       knowledge_density: 1,
       author_affinity: 0,
       recency: 1,
+      usage_affinity: 0.8,
     });
     expect(candidates[1]?.signals).toMatchObject({ claim_focus: 0.75, risk_pressure: 0.5, author_affinity: 1 });
     expect(candidates[1]?.signals?.deadline_pressure).toBeCloseTo(0.5);
@@ -93,6 +96,7 @@ describe("context relevance command integration", () => {
 
   it("uses one scorer for context and next and emits explanations only on request", async () => {
     await withTempPmPath(async (context) => {
+      const createdIds: string[] = [];
       for (const [title, priority] of [["Baseline", "3"], ["Urgent", "0"]]) {
         const created = context.runCli(
           [
@@ -112,6 +116,7 @@ describe("context relevance command integration", () => {
           { expectJson: true },
         );
         expect(created.code).toBe(0);
+        createdIds.push((created.json as { item: { id: string } }).item.id);
       }
 
       const compact = await runContext({}, { path: context.pmPath });
@@ -121,16 +126,65 @@ describe("context relevance command integration", () => {
       const nextAlias = context.runCli(["next", "--json", "--explain_ranking"], { expectJson: true });
 
       expect(compact.ranking).toBeUndefined();
+      expect(compact.packing).toBeUndefined();
+      expect(explainedContext.packing).toMatchObject({ profile: "context", token_budget: 1600, selection_complete: true });
       expect(explainedContext.ranking?.model).toBe("default-weighted-v1");
       expect(explainedContext.ranking?.available_signals).toContain("priority_pressure");
       expect(explainedNext.ranking?.items.map((entry) => entry.id)).toEqual(
         [explainedNext.recommended?.id, ...explainedNext.ready.map((entry) => entry.id)].filter(Boolean),
       );
       expect(explainedNext.ranking?.items[0]?.contributions.priority_pressure).toBeGreaterThan(0);
+      expect(explainedNext.packing).toMatchObject({ profile: "next", token_budget: 640, selection_complete: true });
       expect(contextAlias.code).toBe(0);
       expect(contextAlias.json).toMatchObject({ ranking: { model: "default-weighted-v1" } });
       expect(nextAlias.code).toBe(0);
       expect(nextAlias.json).toMatchObject({ ranking: { model: "default-weighted-v1" } });
+
+      const read = context.runCli(["get", createdIds[1]!, "--json"], { expectJson: true });
+      expect(read.code).toBe(0);
+      const touched = context.runCli(["update", createdIds[0]!, "--priority", "2", "--json"], { expectJson: true });
+      expect(touched.code).toBe(0);
+      const feedbackNext = await runNext({ explainRanking: true }, { path: context.pmPath });
+      expect(feedbackNext.ranking?.available_signals).toContain("usage_affinity");
+      expect(feedbackNext.ranking?.items.find((entry) => entry.id === createdIds[0])?.contributions.usage_affinity).toBeGreaterThan(0);
+      expect(feedbackNext.ranking?.items.find((entry) => entry.id === createdIds[1])?.contributions.usage_affinity).toBeGreaterThan(0);
+
+      const previousAuthor = process.env.PM_AUTHOR;
+      delete process.env.PM_AUTHOR;
+      try {
+        await expect(runContext({}, { path: context.pmPath })).resolves.toBeDefined();
+        await expect(runNext({}, { path: context.pmPath })).resolves.toBeDefined();
+      } finally {
+        if (previousAuthor === undefined) delete process.env.PM_AUTHOR;
+        else process.env.PM_AUTHOR = previousAuthor;
+      }
+    });
+  });
+
+  it("contains derived usage-write failures without breaking context or next", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli([
+        "create", "--json", "--title", "Feedback resilience", "--description",
+        "Exercises derived usage failure containment", "--type", "Task", "--status", "open",
+      ], { expectJson: true });
+      expect(created.code).toBe(0);
+
+      const previousAuthor = process.env.PM_AUTHOR;
+      process.env.PM_AUTHOR = " ";
+      try {
+        const contextResult = await runContext({}, { path: context.pmPath });
+        const nextResult = await runNext({}, { path: context.pmPath });
+        expect(contextResult.warnings).toContain("context_usage_feedback_write_failed");
+        expect(nextResult.warnings).toContain("context_usage_feedback_write_failed");
+
+        await writeFile(path.join(context.pmPath, "tasks", "invalid-usage-warning.toon"), "not valid item metadata\n", "utf8");
+        const warnedNext = await runNext({}, { path: context.pmPath });
+        expect(warnedNext.warnings).toContain("context_usage_feedback_write_failed");
+        expect(warnedNext.warnings?.length).toBeGreaterThan(1);
+      } finally {
+        if (previousAuthor === undefined) delete process.env.PM_AUTHOR;
+        else process.env.PM_AUTHOR = previousAuthor;
+      }
     });
   });
 });

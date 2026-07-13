@@ -2,22 +2,70 @@ id: pm-uwfs
 title: "Context usage feedback signal: served-then-acted-on outcomes strengthen relevance scoring (retrieval-practice effect)"
 description: "Close the loop between context assembly and what agents actually did with it: derive a bounded usage signal (items served by context/next that the same author subsequently read, claimed, mutated, or closed) and feed it back into the pm-4k6b scorer as a strengthening/calibration input, mirroring how human recall strengthens memory traces."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[4]: cognitive-memory,context,relevance,sdk-first
 created_at: "2026-07-07T06:50:19.358Z"
-updated_at: "2026-07-13T17:50:53.992Z"
+updated_at: "2026-07-13T21:10:07.408Z"
+closed_at: "2026-07-13T19:56:02.425Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "A derived, append-only usage ledger records (serving, author, served ids, subsequent touch within a horizon) with bounded size and a documented retention/compaction policy; the ledger is derived data — never mutates tracked items and is excluded from item history-chain integrity; pm-4k6b scorer accepts a usage-affinity signal with a documented default weight and per-signal explanation in the score breakdown; signal is workspace-local, contains no content beyond item ids/timestamps/author, and can be disabled via config with zero residual cost; pm-atfm harness gains implicit-judgment scenarios (served-and-used vs served-and-ignored) to validate the signal improves ranking rather than entrenching it; popularity-bias guard: a documented exploration/decay term prevents self-reinforcing lock-in of already-surfaced items; no daemon (ADR pm-i7i4) — capture happens inline on the commands that already run"
 parent: pm-4k6b
 risk: medium
 confidence: low
-dependencies[3]{id,kind,created_at,author,source_kind}:
+resolution: Delivered privacy-minimal served-then-touched feedback primitives and usage-affinity ranking across SDK and CLI.
+expected_result: Useful served items strengthen future agent context while ignored and unseen work remains explorable without item-history mutation.
+actual_result: "Inline serving/read/mutation capture, bounded ledger, decay/exploration, opt-out, scorer attribution, five-scenario golden proof, temp acceptance, and exact 100% coverage pass."
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-3hps,related,"2026-07-07T06:50:19.358Z",null,null
   pm-atfm,related,"2026-07-07T06:50:19.358Z",null,null
   pm-vvib,related,"2026-07-07T06:50:19.358Z",null,null
+  pm-55ra,related,"2026-07-13T19:27:48.396Z",null,null
+comments[7]{created_at,author,text}:
+  "2026-07-13T18:17:05.362Z",codex-root,"Progress evidence: privacy-minimal derived usage ledger, propensity logging, central mutation-touch capture, decayed affinity scorer signal, retention/opt-out controls, and focused 79-test suite green."
+  "2026-07-13T19:55:49.495Z",codex-root,"Completion evidence: delivered a privacy-minimal workspace-local derived JSONL ledger with bounded retention/compaction, zero-I/O opt-out, propensity rows (profile/rank/inclusion), inline context/next serving, get/claim/mutation/close touches, per-author decay and exploration floor, usage_affinity scorer explanations, and core-only post-command capture. The committed pm-atfm corpus now includes served-then-used versus served-and-ignored and proves the used item ranks first while unseen exploration candidates remain; all five scenarios score 1.0 on NDCG, reciprocal rank, required recall, continuity, and token adherence. Focused 82-test linked suite passes; shared full suite passes 5,623 tests at exact 100/100/100/100; package-first dogfood passed 88 commands; fresh manual and packed-SDK temp acceptance passed. GitHub security/dependency and live Sentry/release findings were appended to canonical pm-qwoy, pm-7zs0, pm-wfvq, and pm-ksv2 without duplicate items or claims."
+  "2026-07-13T20:19:42.913Z",codex-root,"Review convergence evidence: multi-item touches now validate once, append once, and compact once instead of repeated append/read/rename cycles; compaction temp names use process id plus random UUID; affinity normalization guards complete decay underflow; central mutations use configured default author. Regression coverage proves batch retention, underflow exploration floor, and an actual configured-author central mutation ledger row. Exact 100/100/100/100 coverage and all quality/context/dogfood gates pass."
+  "2026-07-13T20:20:25.184Z",codex-root,"Post-review manual acceptance: fresh project /tmp/pm-review-acceptance-WllJCA initialized and configured entirely through the built CLI with author-default=configured-agent; context serving followed by update of pm-gq6a produced a mutation touch with author configured-agent and intent update in the derived ledger while PM_AUTHOR was unset."
+  "2026-07-13T20:46:41.645Z",codex-review-loop-agent,"Second review convergence evidence: accepted Gemini zero-I/O and timestamp hot-path findings plus Greptile concurrent-compaction finding. Disabled feedback now returns before settings reads and all public ledger entrypoints; touch timestamps are parsed once; every writer holds the shared context-usage ledger lock across append and optional compaction. An 8-writer compaction regression preserves all event ids. Full suite passes 281 files / 5,628 tests at exact 100% statements 35,814/35,814, branches 25,688/25,688, functions 7,244/7,244, lines 35,009/35,009; lint, zero-clone, static, package-boundary, token-budget, and five-scenario context quality gates pass."
+  "2026-07-13T21:02:18.482Z",codex-review-loop-agent,"Third review convergence evidence: accepted normalized touch-id deduplication and runtime validation, Node-native UTF-8 byte estimation, and pagination over the full ranked active set before token packing. Added regressions for duplicate/non-string touch ids and large multibyte identities across cursor pages. Declined the proposed unique lock-owner change because acquireLock uses exclusive O_EXCL lock-file creation and owner is diagnostic metadata only, so same-process callers cannot re-enter. Focused 52 tests, full 5,630-test exact 100% coverage (35,828 statements, 25,690 branches, 7,250 functions, 35,022 lines), ESLint, static quality, package boundary, token budget, and five-scenario context eval pass."
+  "2026-07-13T21:10:07.407Z",codex-review-loop-agent,"Final review convergence evidence: the complete thread-aware inventory surfaced Greptile's auto-resolved ready-queue P1, so it was handled despite not appearing in the unresolved subset. pm next now preserves the complete scorer-ranked ready queue for recommendation, ready count, and in-progress semantics while retaining token packing for bounded accounting and propensity disclosure. A large multibyte-identity regression proves three ready items remain semantically visible when the packer omits identities. Full suite passes 281 files / 5,631 tests at exact 100% statements 35,828/35,828, branches 25,690/25,690, functions 7,250/7,250, lines 35,022/35,022; focused 73 tests, ESLint, static quality, package boundary, token budget, and context eval pass."
 notes[2]{created_at,author,text}:
   "2026-07-12T19:07:34.334Z",maintainer-agent,"Scope addition 2026-07-12: pm-4k6b algorithm (19) task-set profiles graduate here (wave 4) — partition the \"agent used item next\" labels by triggering intent (verb of the following mutation in the episodic stream, pure derivation) and fit per-(workspace x intent) weight vectors; fallback hierarchy profile -> global weights -> RRF stays strict. Definition on the pm-4k6b ledger note (19), packer-side table on pm-55ra."
   "2026-07-13T17:50:53.992Z",maintainer-agent,"Scope note from pm-4k6b directed pass 2026-07-13: (a) this item additionally owns the per-workspace graduation of algorithm (21)'s shrinkage pseudo-counts k (same label machinery as the (3)/(19) weight graduation). (b) Hard prerequisite recorded here because it must ship WITH the feedback loop: context/next envelopes must LOG the disclosed profile, per-item rank, and inclusion decision (propensity logging) so any future online/off-policy weight learning stays possible — an online contextual-bandit learner was considered on pm-4k6b 2026-07-13 and REJECTED as a separate algorithm precisely because it is this item's graduation territory; without propensity logs that door closes silently."
+learnings[1]{created_at,author,text}:
+  "2026-07-13T19:55:47.865Z",codex-root,"Derived feedback must be attached at the core post-command boundary even when no extensions are installed, and read commands need their own inline touch. Propensity-complete serving rows plus a committed served-used golden scenario make the loop measurable without mutating item history."
+files[19]{path,scope,note}:
+  eslint-suppressions.json,project,Removed obsolete suppressions
+  scripts/release/context-eval-gate.mjs,project,Seeds implicit usage judgments in the mandatory quality harness
+  scripts/release/static-quality-gate.mjs,project,Strict suppression ratchet updated for cleaner implementation
+  src/cli/commands/context.ts,project,Context packing and propensity integration
+  src/cli/commands/get.ts,project,Inline served-then-read outcome capture
+  src/cli/commands/next.ts,project,Next packing and propensity integration
+  src/cli/main.ts,project,Central mutation outcome feedback capture
+  src/core/extensions/command-hook-context.ts,project,Core-only post-command context for outcome capture
+  src/core/extensions/index.ts,project,Affected-item capture independent of installed hooks
+  src/sdk/context-packing.ts,project,Public deterministic token-budget packer
+  src/sdk/context-relevance.ts,project,Usage-affinity scorer signal
+  src/sdk/context-usage.ts,project,Derived context usage feedback ledger
+  src/sdk/index.ts,project,Public SDK barrel exports
+  tests/context-eval/baseline.json,project,Five-scenario context quality baseline
+  tests/context-eval/golden-scenarios.json,project,Served-and-used versus served-and-ignored golden scenario
+  tests/unit/commands/context-relevance-command.spec.ts,project,Served-and-read plus served-and-mutated ranking scenarios
+  tests/unit/extensions/extensions-runtime.spec.ts,project,Core and extension hook outcome capture coverage
+  tests/unit/scripts/release/context-eval-gate.spec.ts,project,Usage-feedback corpus validation and error-path coverage
+  tests/unit/sdk/context-packing-usage.spec.ts,project,Packer and feedback regression coverage
+tests[5]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/commands/context-relevance-command.spec.ts tests/unit/commands/context-command.spec.ts tests/unit/commands/next-command.spec.ts,project,240
+  "pnpm benchmark:scale:check",project,180
+  "pnpm dogfood:package-first",project,360
+  "pnpm quality:context-eval",project,180
+  "pnpm test:coverage",project,360
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrjn1p94-p4ntxt,test,passed,"2026-07-13T19:51:28.755Z","2026-07-13T19:51:41.080Z","2026-07-13T19:51:41.080Z",1,0,0
+  test-local-mrjn1sw0-gsvxl6,test,passed,"2026-07-13T19:51:41.621Z","2026-07-13T19:51:45.792Z","2026-07-13T19:51:45.792Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/CONFIGURATION.md,project,Feedback opt-out configuration
+  docs/SDK.md,project,Public SDK packer and feedback guide
+close_reason: Derived context usage feedback is implemented and fully verified.
 body: "The pm-vvib cognitive ADR maps seven memory subsystems onto pm primitives, but omits the one mechanism that makes biological memory adaptive: retrieval strengthens the trace. Every signal in pm-4k6b's current design (recency, graph proximity, priority, semantics, knowledge density, author affinity) describes the workspace; none observes whether the context the engine served was actually useful. Without outcome feedback the scorer can be tuned once (pm-atfm golden judgments) but never learns from live use.\n\nProposal: when pm context/next serve a working set, record a minimal serving event; when the same author subsequently gets/claims/updates/closes a served item within a horizon, that pairing becomes an implicit positive judgment. Aggregated (and decayed) per item and per (author, item), it becomes: (1) a usage-affinity input to the pm-4k6b scorer — items this agent historically acted on after being shown rank higher for this agent; (2) free implicit-judgment data for the pm-atfm harness, complementing hand-graded goldens; (3) at pm-5qmm consolidation time, a salience hint for what an epoch rollup should keep verbatim vs summarize away.\n\nCognitive framing (extends pm-vvib, to be added to the ADR's subsystem map if accepted): retrieval-practice / Hebbian strengthening — recall is not read-only; it reshapes future recall. Graceful-forgetting decay already in the ADR is the complementary weakening term.\n\nSequencing: phase 2+ of the context engine — needs pm-3hps (feature store) and the pm-h3no scorer contract landed first; the ledger design should ride the same derived-store mechanics as pm-3hps. Priority 3 until pm-4k6b core ships a deterministic baseline (determinism note: usage signal is itself deterministic for a fixed ledger state, preserving pm-4k6b's reproducibility AC).\n\nDuplicate-check evidence: pm search 'context usage feedback signal reinforcement' -> only pm-4k6b (scorer, no outcome loop) and unrelated closed items; pm-vvib body confirms no strengthening-through-recall subsystem exists in the recorded architecture."

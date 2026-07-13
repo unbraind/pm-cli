@@ -17,9 +17,10 @@ export function usage(message, dependencies = {}) {
   if (message) writeError(message);
   writeError(`Usage:
   node scripts/reviews/pr-review-loop.mjs inventory [--pr <number>] [--repo <owner/name>]
+  node scripts/reviews/pr-review-loop.mjs watch [--pr <number>] [--repo <owner/name>] [--interval <seconds>]
   node scripts/reviews/pr-review-loop.mjs react --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...>
   node scripts/reviews/pr-review-loop.mjs reply-inline --comment-id <id> --body <text> [--pr <number>] [--repo <owner/name>]
-  node scripts/reviews/pr-review-loop.mjs reply-top --body <text> [--pr <number>] [--repo <owner/name>]`);
+  node scripts/reviews/pr-review-loop.mjs acknowledge-inline --comment-id <id> --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...> --body <text> [--pr <number>] [--repo <owner/name>]`);
   exit(2);
 }
 
@@ -160,6 +161,57 @@ export function inlineReplyPath(repo, pr, commentId) {
   return `repos/${repo}/pulls/${pr}/comments/${commentId}/replies`;
 }
 
+export function addReaction(nodeId, reaction, executeGh = runGh) {
+  if (!nodeId || !reaction) usage("A reaction requires --node-id and --reaction.");
+  if (!validReactions.has(reaction)) usage(`Invalid reaction: ${reaction}`);
+  const mutation = `mutation($subjectId: ID!, $content: ReactionContent!) {
+    addReaction(input: { subjectId: $subjectId, content: $content }) { reaction { content } }
+  }`;
+  return executeGh([
+    "api", "graphql", "-f", `query=${mutation}`,
+    "-F", `subjectId=${nodeId}`, "-F", `content=${reaction}`,
+  ]);
+}
+
+export function watchChecksAndInventory(target, interval, executeGh = runGh) {
+  if (!Number.isInteger(interval) || interval < 10) {
+    usage("watch requires --interval to be an integer of at least 10 seconds.");
+  }
+  const attempts = [];
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const watchedHeadRefOid = JSON.parse(executeGh([
+      "pr", "view", String(target.pr), "--repo", target.repo, "--json", "headRefOid",
+    ])).headRefOid;
+    let outcome = "passed";
+    let checkOutput;
+    try {
+      checkOutput = executeGh([
+        "pr", "checks", String(target.pr), "--repo", target.repo,
+        "--watch", "--interval", String(interval),
+      ]);
+    } catch (error) {
+      outcome = "failed";
+      checkOutput = String(error?.stdout ?? error).trim();
+    }
+    const pullRequest = fetchReviewInventory(target, executeGh);
+    const failedChecks = [...new Set(
+      checkOutput
+        .split("\n")
+        .map((line) => line.split("\t"))
+        .filter((fields) => fields[1] === "fail")
+        .map((fields) => fields.slice(0, 4).join("\t")),
+    )].map((line) => {
+      const [name, state, duration, url] = line.split("\t");
+      return { name, state, duration, url };
+    });
+    attempts.push({ attempt, watchedHeadRefOid, outcome, failedChecks });
+    if (pullRequest.headRefOid === watchedHeadRefOid) {
+      return { repository: target.repo, checkWatch: { attempts }, pullRequest };
+    }
+  }
+  throw new Error("PR head changed during three consecutive check-watch attempts.");
+}
+
 export function main(argv = process.argv.slice(2), dependencies = {}) {
   const { command, options } = parseArgs(argv);
   const executeGh = dependencies.runGh ?? runGh;
@@ -169,16 +221,12 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
     const target = resolveTarget(options, executeGh);
     const pullRequest = fetchReviewInventory(target, executeGh);
     write(JSON.stringify({ repository: target.repo, pullRequest }, null, 2));
+  } else if (command === "watch") {
+    const target = resolveTarget(options, executeGh);
+    const interval = Number(options.interval ?? 30);
+    write(JSON.stringify(watchChecksAndInventory(target, interval, executeGh), null, 2));
   } else if (command === "react") {
-    if (!options["node-id"] || !options.reaction) usage("react requires --node-id and --reaction.");
-    if (!validReactions.has(options.reaction)) usage(`Invalid reaction: ${options.reaction}`);
-    const mutation = `mutation($subjectId: ID!, $content: ReactionContent!) {
-    addReaction(input: { subjectId: $subjectId, content: $content }) { reaction { content } }
-  }`;
-    write(executeGh([
-      "api", "graphql", "-f", `query=${mutation}`,
-      "-F", `subjectId=${options["node-id"]}`, "-F", `content=${options.reaction}`,
-    ]));
+    write(addReaction(options["node-id"], options.reaction, executeGh));
   } else if (command === "reply-inline") {
     const target = resolveTarget(options, executeGh);
     if (!options["comment-id"] || !options.body) usage("reply-inline requires --comment-id and --body.");
@@ -186,10 +234,17 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       "api", inlineReplyPath(target.repo, target.pr, options["comment-id"]),
       "-f", `body=${options.body}`,
     ]));
-  } else if (command === "reply-top") {
+  } else if (command === "acknowledge-inline") {
     const target = resolveTarget(options, executeGh);
-    if (!options.body) usage("reply-top requires --body.");
-    write(executeGh(["pr", "comment", String(target.pr), "--repo", target.repo, "--body", options.body]));
+    if (!options["comment-id"] || !options.body) {
+      usage("acknowledge-inline requires --comment-id and --body.");
+    }
+    const reaction = addReaction(options["node-id"], options.reaction, executeGh);
+    const reply = executeGh([
+      "api", inlineReplyPath(target.repo, target.pr, options["comment-id"]),
+      "-f", `body=${options.body}`,
+    ]);
+    write(JSON.stringify({ reaction: JSON.parse(reaction), reply: JSON.parse(reply) }));
   } else {
     usage(`Unknown command: ${command}`);
   }

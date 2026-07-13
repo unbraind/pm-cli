@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[3]: agent-ux,sentry,telemetry
 created_at: "2026-07-12T08:08:23.019Z"
-updated_at: "2026-07-12T19:39:38.125Z"
+updated_at: "2026-07-13T19:42:45.176Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "user-initiated SIGINT/Ctrl+C aborts are classified as handled non-error telemetry (breadcrumb or info event, or not captured at all); AbortError from readline/prompt cancellation no longer creates unresolved error-level Sentry issues; sentry-telemetry-gate cannot be blocked by a user pressing Ctrl+C; regression spec covers the abort path"
 parent: pm-5oj5
 risk: low
 confidence: high
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-12T15:41:03.486Z",maintainer-agent,"Recurrence evidence 2026-07-12T15:36Z: this performance run interrupted an unintended interactive pm init prompt with Ctrl+C after pm test used schema context. Sentry correctly received PM-CLI-27 as handled=true but still reopened it at error/high; the linked runner was rerun successfully with --pm-context tracker. This is the same deliberate-abort class already owned here, not a new defect. Resolving the event group again pending the capture-time class fix."
+  "2026-07-13T19:42:45.175Z",codex-root,"Live recurrence evidence 2026-07-13: release gate reports PM-CLI-27 unresolved high with count=5 and last seen 2026-07-13T16:46Z. During this lane, two linked-test attempts with an unintended interactive TTY reached the pm init wizard and were deliberately cancelled with Ctrl+C, reproducing the already-owned handled AbortError class; the non-TTY tracker-context rerun completed. No duplicate item created or claimed."
 body: "Sentry PM-CLI-27 (first seen 2026-07-12T07:47Z): \"AbortError: Aborted with Ctrl+C\" captured at error level from a dogfood host. A deliberate user interrupt is expected control flow, not a defect — capturing it as an unresolved error-level event pollutes the feed AND can block the daily auto-release sentry-telemetry-gate (same blocking mechanic as the GH-521/pm-wfvq torn-install episode, but this one is guaranteed-benign and user-triggered).\n\nFix direction: classify user-initiated aborts (SIGINT, readline/prompt AbortError) as handled before the Sentry capture layer — either skip capture or downgrade to breadcrumb/info with a distinct handled tag. Do NOT add a generic message pattern to the release gate's environment patterns (pm-wfvq rule: real regressions can look identical); the classification must happen at capture time where intent is knowable.\n\nPM-CLI-27 itself resolved in Sentry as user-initiated after triage (this item owns the class fix)."

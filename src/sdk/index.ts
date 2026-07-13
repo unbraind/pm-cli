@@ -184,6 +184,8 @@ export type {
 } from "./cli-contracts.js";
 export * from "./compose.js";
 export * from "./context-relevance.js";
+export * from "./context-packing.js";
+export * from "./context-usage.js";
 export {
   collectDanglingDependencyReferences,
   runDeps,

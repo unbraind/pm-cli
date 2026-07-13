@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { pathToFileURL } from "node:url";
 
 import {
+  addReaction,
   fetchReviewInventory,
   inlineReplyPath,
   main,
@@ -10,6 +11,7 @@ import {
   runCliIfDirect,
   runGh,
   usage,
+  watchChecksAndInventory,
 } from "../../../../scripts/reviews/pr-review-loop.mjs";
 
 function connection(nodes: unknown[], hasNextPage = false, endCursor: string | null = null) {
@@ -98,7 +100,7 @@ describe("PR review loop helper", () => {
     expect(executeGh.mock.calls[3]?.[0]).toContain("threadId=thread-1");
   });
 
-  it("dispatches inventory, reactions, and both reply forms through injected gh", () => {
+  it("dispatches inventory, reactions, and thread-scoped replies through injected gh", () => {
     const inventoryGh = vi.fn().mockReturnValue(JSON.stringify({
       data: { repository: { pullRequest: {
         number: 531,
@@ -124,13 +126,95 @@ describe("PR review loop helper", () => {
     const log = vi.fn();
     main(["react", "--node-id", "node-1", "--reaction", "THUMBS_UP"], { runGh: executeGh, log });
     main(["reply-inline", "--repo", "unbraind/pm-cli", "--pr", "531", "--comment-id", "42", "--body", "done"], { runGh: executeGh, log });
-    main(["reply-top", "--repo", "unbraind/pm-cli", "--pr", "531", "--body", "done"], { runGh: executeGh, log });
+    main([
+      "acknowledge-inline", "--repo", "unbraind/pm-cli", "--pr", "531",
+      "--comment-id", "42", "--node-id", "node-2", "--reaction", "THUMBS_DOWN",
+      "--body", "not applicable",
+    ], { runGh: executeGh, log });
 
     expect(executeGh.mock.calls[0]?.[0]).toContain("subjectId=node-1");
     expect(executeGh.mock.calls[1]?.[0]).toContain("repos/unbraind/pm-cli/pulls/531/comments/42/replies");
-    expect(executeGh.mock.calls[2]?.[0]).toEqual([
-      "pr", "comment", "531", "--repo", "unbraind/pm-cli", "--body", "done",
+    expect(executeGh.mock.calls[2]?.[0]).toContain("subjectId=node-2");
+    expect(executeGh.mock.calls[3]?.[0]).toContain("repos/unbraind/pm-cli/pulls/531/comments/42/replies");
+    expect(JSON.parse(log.mock.calls[2]?.[0])).toEqual({
+      reaction: { ok: true }, reply: { ok: true },
+    });
+  });
+
+  it("watches GitHub checks once and inventories the exact watched head", () => {
+    const executeGh = vi.fn()
+      .mockReturnValueOnce('{"headRefOid":"abc123"}')
+      .mockReturnValueOnce("all checks complete")
+      .mockReturnValueOnce(JSON.stringify({
+        data: { repository: { pullRequest: {
+          number: 531,
+          url: "https://github.com/unbraind/pm-cli/pull/531",
+          headRefOid: "abc123",
+          updatedAt: "2026-07-13T00:00:00Z",
+          comments: connection([{ id: "top-comment" }]),
+          reviews: connection([{ id: "review" }]),
+          reviewThreads: connection([{ id: "thread", comments: connection([{ id: "inline" }]) }]),
+        } } },
+      }));
+    const log = vi.fn();
+    main(["watch", "--repo", "unbraind/pm-cli", "--pr", "531"], { runGh: executeGh, log });
+
+    const result = JSON.parse(log.mock.calls[0]?.[0]);
+    expect(result).toMatchObject({
+      repository: "unbraind/pm-cli",
+      checkWatch: { attempts: [{ watchedHeadRefOid: "abc123", outcome: "passed", failedChecks: [] }] },
+      pullRequest: { headRefOid: "abc123" },
+    });
+    expect(executeGh.mock.calls[1]?.[0]).toEqual([
+      "pr", "checks", "531", "--repo", "unbraind/pm-cli", "--watch", "--interval", "30",
     ]);
+  });
+
+  it("returns review findings after failed checks and retries changed heads", () => {
+    const failedCheck = Object.assign(new Error("checks failed"), {
+      stdout: "Greptile Review\tfail\t3m31s\thttps://greptile.com/\n",
+    });
+    const failedGh = vi.fn()
+      .mockReturnValueOnce('{"headRefOid":"abc123"}')
+      .mockImplementationOnce(() => { throw failedCheck; })
+      .mockReturnValueOnce(JSON.stringify({
+        data: { repository: { pullRequest: {
+          number: 531, url: "url", headRefOid: "abc123", updatedAt: "now",
+          comments: connection([]), reviews: connection([]), reviewThreads: connection([]),
+        } } },
+      }));
+    expect(watchChecksAndInventory(
+      { owner: "unbraind", name: "pm-cli", repo: "unbraind/pm-cli", pr: 531 },
+      10,
+      failedGh,
+    )).toMatchObject({
+      checkWatch: {
+        attempts: [{
+          outcome: "failed",
+          failedChecks: [{
+            name: "Greptile Review", state: "fail", duration: "3m31s", url: "https://greptile.com/",
+          }],
+        }],
+      },
+    });
+
+    let head = 0;
+    const changingGh = vi.fn((args: string[]) => {
+      if (args[0] === "pr" && args[1] === "view") return JSON.stringify({ headRefOid: `head-${++head}` });
+      if (args[0] === "pr" && args[1] === "checks") throw "review failed";
+      return JSON.stringify({
+        data: { repository: { pullRequest: {
+          number: 531, url: "url", headRefOid: `different-${head}`, updatedAt: "now",
+          comments: connection([]), reviews: connection([]), reviewThreads: connection([]),
+        } } },
+      });
+    });
+    expect(() => watchChecksAndInventory(
+      { owner: "unbraind", name: "pm-cli", repo: "unbraind/pm-cli", pr: 531 },
+      10,
+      changingGh,
+    )).toThrow("three consecutive");
+    expect(changingGh).toHaveBeenCalledTimes(9);
   });
 
   it("runs gh with the expected stdio modes and trims its output", () => {
@@ -168,8 +252,10 @@ describe("PR review loop helper", () => {
     expect(() => resolveTarget({ repo: "invalid", pr: "0" })).toThrow("exit");
     expect(() => main(["react"])).toThrow("exit");
     expect(() => main(["react", "--node-id", "node-1", "--reaction", "INVALID"])).toThrow("exit");
+    expect(() => addReaction("node-1", "INVALID")).toThrow("exit");
     expect(() => main(["reply-inline", "--repo", "unbraind/pm-cli", "--pr", "531"])).toThrow("exit");
-    expect(() => main(["reply-top", "--repo", "unbraind/pm-cli", "--pr", "531"])).toThrow("exit");
+    expect(() => main(["acknowledge-inline", "--repo", "unbraind/pm-cli", "--pr", "531"])).toThrow("exit");
+    expect(() => main(["watch", "--repo", "unbraind/pm-cli", "--pr", "531", "--interval", "9"])).toThrow("exit");
     expect(() => main(["unknown"])).toThrow("exit");
 
     expect(error).toHaveBeenCalled();

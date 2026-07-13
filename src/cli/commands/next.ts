@@ -34,13 +34,21 @@ import {
   buildItemContextRelevanceCandidates,
   collectSubtreeIds,
   compareCriticalItems,
+  packRankedContextItems,
+  toContextPackingSummary,
   toContextRankingSummary,
   toContextFocusItem,
   type ContextFocusItem,
   type ContextRankingSummary,
+  type ContextPackingSummary,
 } from "./context.js";
 import { runList, type ListOptions } from "./list.js";
 import { scoreContextCandidatesWithActiveExtensions } from "../../sdk/context-relevance.js";
+import {
+  readContextUsageAffinity,
+  recordContextUsageServing,
+} from "../../sdk/context-usage.js";
+import type { ContextPackingReport } from "../../sdk/context-packing.js";
 
 /** Supported values accepted by the next output contract. */
 export const NEXT_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;
@@ -167,6 +175,8 @@ export interface NextResult {
   warnings?: string[];
   /** Value that configures or reports ranking for this contract. */
   ranking?: ContextRankingSummary;
+  /** Token-budget selection and projection accounting for the ready queue. */
+  packing?: ContextPackingSummary;
   /** Explicit marker and complete counts for queues truncated by the shared section limit. */
   truncation?: {
     decision_needed_total?: number;
@@ -474,6 +484,80 @@ function buildNextTruncation(
   return Object.keys(truncation).length > 0 ? truncation : undefined;
 }
 
+async function attachNextUsageFeedback(params: {
+  result: NextResult;
+  pmRoot: string;
+  author: string;
+  packing: ContextPackingReport<ItemMetadata>;
+  ranking: Awaited<
+    ReturnType<typeof scoreContextCandidatesWithActiveExtensions<ItemMetadata>>
+  >;
+}): Promise<void> {
+  try {
+    const included = new Set(params.packing.included.map((entry) => entry.id));
+    await recordContextUsageServing({
+      pmRoot: params.pmRoot,
+      author: params.author,
+      surface: "next",
+      profile: params.packing.profile,
+      rows: params.ranking.ranked.map((entry) => ({
+        id: entry.id,
+        rank: entry.rank,
+        included: included.has(entry.id),
+      })),
+      enabled: process.env.PM_CONTEXT_USAGE_DISABLED !== "1",
+    });
+  } catch {
+    params.result.warnings = [
+      ...new Set([
+        ...(params.result.warnings ?? []),
+        "context_usage_feedback_write_failed",
+      ]),
+    ].sort((left, right) => left.localeCompare(right));
+  }
+}
+
+async function finalizeNextResult(params: {
+  result: NextResult;
+  recommended: NextRecommendation | null;
+  blockedRows: NextActionableItem[];
+  candidatesWarnings: string[] | undefined;
+  corpusWarnings: string[] | undefined;
+  readyRanking: Awaited<
+    ReturnType<typeof scoreContextCandidatesWithActiveExtensions<ItemMetadata>>
+  >;
+  explainRanking: boolean;
+  pmRoot: string;
+  author: string;
+  packing: ContextPackingReport<ItemMetadata>;
+}): Promise<NextResult> {
+  const warnings = [
+    ...new Set([
+      ...(params.candidatesWarnings ?? []),
+      ...(params.corpusWarnings ?? []),
+      ...(params.readyRanking.warnings ?? []),
+    ]),
+  ].sort((left, right) => left.localeCompare(right));
+  if (warnings.length > 0) params.result.warnings = warnings;
+  if (params.explainRanking) {
+    params.result.ranking = toContextRankingSummary(params.readyRanking);
+    params.result.packing = toContextPackingSummary(params.packing);
+  }
+
+  params.result.suggestions = buildNextSuggestions(
+    params.recommended,
+    params.blockedRows,
+  );
+  await attachNextUsageFeedback({
+    result: params.result,
+    pmRoot: params.pmRoot,
+    author: params.author,
+    packing: params.packing,
+    ranking: params.readyRanking,
+  });
+  return params.result;
+}
+
 function filterCandidatesByParentScope(
   candidates: ItemMetadata[],
   corpus: ItemMetadata[],
@@ -499,7 +583,9 @@ async function rankReadyEntriesWithRelevance(
   childrenByParent: Map<string, ItemMetadata[]>,
   statusRegistry: RuntimeStatusRegistry,
   now: string,
-  callerAuthor: string | undefined,
+  callerAuthor: string,
+  pmRoot: string,
+  tokenBudget: number,
 ): Promise<{
   projectedReady: ActionableEntry[];
   ranking: Awaited<
@@ -508,21 +594,29 @@ async function rankReadyEntriesWithRelevance(
     >
   >;
   completedContainer: boolean;
+  packing: ContextPackingReport<ItemMetadata>;
 }> {
   const concreteReady = rankedReady.filter(
     (entry) => !hasCompletedDescendants(entry.item, childrenByParent),
   );
   const structuralReady =
     concreteReady.length > 0 ? concreteReady : rankedReady;
+  const usage = await readContextUsageAffinity({
+    pmRoot,
+    author: callerAuthor,
+    enabled: process.env.PM_CONTEXT_USAGE_DISABLED !== "1",
+  });
   const ranking = await scoreContextCandidatesWithActiveExtensions(
     "next",
     buildItemContextRelevanceCandidates(
       structuralReady.map((entry) => entry.item),
       statusRegistry,
       now,
-      callerAuthor ?? process.env.PM_AUTHOR,
+      callerAuthor,
+      usage.affinity,
     ),
   );
+  const packing = packRankedContextItems(ranking, tokenBudget, new Set(), "next");
   const readyById = new Map(
     structuralReady.map((entry) => [entry.item.id, entry]),
   );
@@ -533,6 +627,7 @@ async function rankReadyEntriesWithRelevance(
     projectedReady,
     ranking,
     completedContainer: concreteReady.length === 0,
+    packing,
   };
 }
 
@@ -543,6 +638,8 @@ export async function runNext(
 ): Promise<NextResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
+  const callerAuthor =
+    options.callerAuthor ?? process.env.PM_AUTHOR ?? settings.author_default;
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const now = nowIso();
   const limit = parseNextLimit(options.limit, "--limit", DEFAULT_NEXT_LIMIT);
@@ -586,7 +683,7 @@ export async function runNext(
   const callerPartition = partitionCallerOwnedReady(
     partitionedByDecision.agent,
     settings.author_default,
-    options.callerAuthor,
+    callerAuthor,
   );
   const rankedReady = rankNextReadyEntries(
     callerPartition.available,
@@ -600,12 +697,15 @@ export async function runNext(
     projectedReady,
     ranking: readyRanking,
     completedContainer,
+    packing: readyPacking,
   } = await rankReadyEntriesWithRelevance(
     rankedReady,
     childrenByParent,
     statusRegistry,
     now,
-    options.callerAuthor,
+    callerAuthor,
+    pmRoot,
+    Math.max(192, limit * 128),
   );
 
   const readyRows = projectedReady.map((entry, index) =>
@@ -670,20 +770,18 @@ export async function runNext(
     truncation,
   };
 
-  const warnings = [
-    ...new Set([
-      ...(candidatesList.warnings ?? []),
-      ...(corpusList.warnings ?? []),
-      ...(readyRanking.warnings ?? []),
-    ]),
-  ].sort((a, b) => a.localeCompare(b));
-  if (warnings.length > 0) result.warnings = warnings;
-  if (options.explainRanking === true)
-    result.ranking = toContextRankingSummary(readyRanking);
-
-  result.suggestions = buildNextSuggestions(recommended, blockedRows);
-
-  return result;
+  return finalizeNextResult({
+    result,
+    recommended,
+    blockedRows,
+    candidatesWarnings: candidatesList.warnings,
+    corpusWarnings: corpusList.warnings,
+    readyRanking,
+    explainRanking: options.explainRanking === true,
+    pmRoot,
+    author: callerAuthor,
+    packing: readyPacking,
+  });
 }
 
 /**

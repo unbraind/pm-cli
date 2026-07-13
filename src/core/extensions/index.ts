@@ -160,7 +160,7 @@ export function getActiveCommandResult(): unknown {
 export function recordAfterCommandAffectedItem(
   item: AfterCommandAffectedItem,
 ): void {
-  if (!item || (activeExtensionHooks?.afterCommand?.length ?? 0) === 0) {
+  if (!item) {
     return;
   }
   activeAfterCommandAffectedItems.push(item);
@@ -429,6 +429,7 @@ export function runActiveServiceOverrideSync(
 }
 
 export * from "./loader.js";
+export * from "./command-hook-context.js";
 export { createSerialQueue } from "../shared/serial-queue.js";
 export {
   EXTENSION_CAPABILITY_REGISTRATION_SURFACES,

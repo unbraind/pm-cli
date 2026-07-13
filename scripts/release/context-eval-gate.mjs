@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 import {
   CONTEXT_EVALUATION_METRIC_NAMES,
   PmClient,
+  recordContextUsageServing,
+  recordContextUsageTouches,
   runContextEvaluationScenario,
   summarizeContextEvaluationReports,
 } from "../../dist/cli-bundle/sdk.js";
@@ -122,7 +124,39 @@ async function seedWorkspace(definition, workspaceRoot) {
       idByKey.set(key, created.item.id);
     }
   }
-  return { client, idByKey };
+  return { client, idByKey, pmRoot };
+}
+
+async function seedUsageFeedback(definition, idByKey, pmRoot) {
+  if (definition.usage_feedback === undefined) return;
+  const feedback = requiredObject(definition.usage_feedback, `scenario ${definition.id} usage_feedback`);
+  const servedKeys = optionalArray(feedback.served_keys, `scenario ${definition.id} usage_feedback.served_keys`);
+  const touchedKeys = optionalArray(feedback.touched_keys, `scenario ${definition.id} usage_feedback.touched_keys`);
+  const servedIds = servedKeys.map((key) => {
+    const id = idByKey.get(requiredKey(key, `scenario ${definition.id} served key`));
+    if (!id) fail(`Context evaluation usage_feedback references unknown item key: ${key}`);
+    return id;
+  });
+  const touchedIds = touchedKeys.map((key) => {
+    const id = idByKey.get(requiredKey(key, `scenario ${definition.id} touched key`));
+    if (!id) fail(`Context evaluation usage_feedback references unknown item key: ${key}`);
+    return id;
+  });
+  await recordContextUsageServing({
+    pmRoot,
+    author: "context-eval-agent",
+    surface: definition.surface,
+    profile: definition.surface,
+    rows: servedIds.map((id, index) => ({ id, rank: index + 1, included: true })),
+    now: "2026-07-01T00:00:00.000Z",
+  });
+  await recordContextUsageTouches({
+    pmRoot,
+    author: "context-eval-agent",
+    itemIds: touchedIds,
+    intent: "update",
+    now: "2026-07-01T00:01:00.000Z",
+  });
 }
 
 /** Build the committed comparison baseline from a current corpus report. */
@@ -196,7 +230,8 @@ async function measureCorpus(corpus) {
     for (const definition of corpus.scenarios) {
       const workspaceRoot = mkdtempSync(path.join(tmpdir(), `pm-context-eval-${definition.id}-`));
       try {
-        const { client, idByKey } = await seedWorkspace(definition, workspaceRoot);
+        const { client, idByKey, pmRoot } = await seedWorkspace(definition, workspaceRoot);
+        await seedUsageFeedback(definition, idByKey, pmRoot);
         reports.push(await runContextEvaluationScenario(mapScenarioDefinition(definition, idByKey), client));
       } finally {
         rmSync(workspaceRoot, { recursive: true, force: true });

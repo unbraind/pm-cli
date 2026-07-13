@@ -280,6 +280,22 @@ describe("runNext", () => {
     });
   });
 
+  it("keeps complete ready semantics when token packing omits large identities", async () => {
+    await withTempPmPath(async (context) => {
+      for (let index = 0; index < 3; index += 1) {
+        createItem(context, { title: `${"🧭".repeat(180)} ${index}` });
+      }
+      const result = await runNext(
+        { limit: "1", explainRanking: true },
+        { path: context.pmPath },
+      );
+      expect(result.summary.ready).toBe(3);
+      expect(result.recommended).not.toBeNull();
+      expect(result.ready).toHaveLength(1);
+      expect(result.packing?.omitted_ids.length).toBeGreaterThan(0);
+    });
+  });
+
   it("keeps lifecycle and dangling-dependency blockers visible and skips foreign work", async () => {
     await withTempPmPath(async (context) => {
       const mine = createItem(context, { title: "My work", priority: "1" });

@@ -2,25 +2,65 @@ id: pm-55ra
 title: "Token-budget context packer: diversity-aware selection, projection degradation, and bounded output for pm context/next"
 description: "Turn ranked candidates into the most useful bounded-token context packet, shrinking projections before dropping relevant work."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[4]: context,relevance,scale,token-efficiency
 created_at: "2026-07-06T23:50:39.960Z"
-updated_at: "2026-07-13T17:50:53.366Z"
+updated_at: "2026-07-13T20:19:42.180Z"
+closed_at: "2026-07-13T19:56:00.971Z"
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "pm context and pm next accept or derive an explicit token budget; packer preserves high-scoring required items, avoids near-duplicate context clusters, degrades projection depth before item omission, and reports budget accounting in json/debug output; behavior is measured by pm-cu1i token corpus and pm-atfm quality judgments; large-workspace output remains bounded by contract."
 parent: pm-4k6b
 risk: medium
 confidence: medium
-dependencies[4]{id,kind,created_at,author,source_kind}:
+resolution: Delivered reusable intent-profiled token and latency budget packing primitives shared by pm context and pm next.
+expected_result: "Relevant required and diverse items remain inside explicit bounded packets, degrading projection before omission with transparent accounting."
+actual_result: "Public SDK packer, CLI integration, latency certificate, five-scenario quality corpus, 10k scale proof, packed consumer, and exact 100% coverage all pass."
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-atfm,related,"2026-07-06T23:50:39.960Z",codex-agent,null
   pm-cu1i,related,"2026-07-06T23:50:39.960Z",codex-agent,null
-  pm-dfg0,blocked_by,"2026-07-06T23:50:39.960Z",codex-agent,null
-  pm-h3no,blocked_by,"2026-07-09T11:40:51.038Z",null,null
-comments[1]{created_at,author,text}:
+  pm-uwfs,related,"2026-07-13T19:27:47.877Z",null,null
+comments[4]{created_at,author,text}:
   "2026-07-06T23:50:39.960Z",codex-agent,"Duplicate check: searched all statuses for token budget packer/projection degradation/context ranking; existing items cover token measurement and pagination, but no packer implementation item existed."
+  "2026-07-13T18:17:04.538Z",codex-root,"Progress evidence: SDK-first packer, context/next integration, projection accounting, diversity and uncertainty handling, focused 79-test suite green."
+  "2026-07-13T19:55:48.657Z",codex-root,"Completion evidence: delivered public SDK packing profiles and deterministic token-budget selection with required-anchor immunity, cluster/lineage diversity, risk-adjusted uncertainty, identity-summary-full projection degradation, 25 ms bounded selection, and disclosed token/latency/completeness accounting shared by context and next. Exact full suite passes 281 files / 5,623 tests at 100% statements 35,768/35,768, branches 25,652/25,652, functions 7,233/7,233, lines 34,965/34,965. The 10,000-item scale gate passes its p95<1000 ms and <=5000 token product contract; five-scenario context quality is 1.0 on every aggregate metric; lint, zero-clone, static/docstring, package-boundary, token-budget, docs-links, contracts, security, and pnpm audit gates pass. Fresh manual CLI acceptance at /tmp/pm-context-acceptance-iIdToh observed serves=2, touches=3, disabled_lines=5; packed external SDK acceptance at /tmp/pm-sdk-pack-acceptance-rVOANR imported the tarball and exercised full projection plus batch feedback. Package-first dogfood passed 88 commands."
+  "2026-07-13T20:19:42.180Z",codex-root,"Review convergence evidence: Gemini optimization findings accepted: the 10k-scale selector now checks its monotonic clock once per 128 candidates, projection upgrades use an id tie-breaker, and token estimates reuse one module TextEncoder. Greptile default-author mismatch fixed by resolving settings.author_default at the central post-command boundary. Exact post-fix suite: 281 files, 5,625 tests, 35,780/35,780 statements, 25,666/25,666 branches, 7,236/7,236 functions, 34,975/34,975 lines. Lint, zero clones, static/docstring, package boundary, token budget, five-scenario context evaluation, and 88-command package-first dogfood all pass."
 notes[2]{created_at,author,text}:
   "2026-07-12T19:07:34.082Z",maintainer-agent,"Scope addition 2026-07-12 (pm-4k6b algorithms (18)+(19), definitions on that ledger): the packer surface owns (a) the explicit latency-budget parameter with threshold-algorithm early termination and a disclosed completeness certificate + degradation ladder in the envelope (algorithm 18), and (b) the task-set profile table keyed by triggering intent, with active-profile disclosure and safety-signal mask-immunity (algorithm 19). Learned-profile graduation is pm-uwfs (wave 4), not here."
   "2026-07-13T17:50:53.366Z",maintainer-agent,"Packer hooks from pm-4k6b directed pass 2026-07-13 (additions to this item's existing (18) deadline contract + (19) profile table ownership): (a) algorithm (21) risk-adjusted marginal value — packing consumes each estimate's credible width, value = mean - lambda*sigma with lambda selectable per (19) profile, so uncertain high-scorers can enter at reduced projection instead of full verbatim; --explain-ranking discloses the evidence basis (n, raw, shrunk, prior). (b) algorithm (22) lineage dedupe — lineage-mates count as near-duplicates in the (4) redundancy penalty; only the best chain representative spends budget, carrying a lineage breadcrumb for drill-down. Definitions in the pm-4k6b ledger, algorithms (21)-(22)."
+learnings[1]{created_at,author,text}:
+  "2026-07-13T19:55:47.329Z",codex-root,"A token-bounded selector needs two separate completeness concepts: projection completeness (everything fit at full detail) and search completeness (the latency budget allowed every candidate comparison). Disclosing both prevents a fast degraded packet from masquerading as an exact optimum."
+files[15]{path,scope,note}:
+  eslint-suppressions.json,project,Removed obsolete suppressions
+  scripts/release/static-quality-gate.mjs,project,Strict suppression ratchet updated for cleaner implementation
+  src/cli/commands/context.ts,project,Context packing and propensity integration
+  src/cli/commands/next.ts,project,Next packing and propensity integration
+  src/cli/main.ts,project,Central mutation outcome feedback capture
+  src/core/extensions/index.ts,project,Affected-item capture independent of installed hooks
+  src/sdk/context-packing.ts,project,Public deterministic token-budget packer
+  src/sdk/context-relevance.ts,project,Usage-affinity scorer signal
+  src/sdk/context-usage.ts,project,Derived context usage feedback ledger
+  src/sdk/index.ts,project,Public SDK barrel exports
+  tests/context-eval/baseline.json,project,Committed quality baseline
+  tests/context-eval/golden-scenarios.json,project,Token-budget and packing quality corpus
+  tests/unit/commands/context-relevance-command.spec.ts,project,CLI packing and feedback acceptance coverage
+  tests/unit/extensions/extensions-runtime.spec.ts,project,Core and extension hook outcome capture coverage
+  tests/unit/sdk/context-packing-usage.spec.ts,project,Packer and feedback regression coverage
+tests[5]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/commands/context-relevance-command.spec.ts tests/unit/commands/context-command.spec.ts tests/unit/commands/next-command.spec.ts,project,240
+  "pnpm benchmark:scale:check",project,180
+  "pnpm dogfood:package-first",project,360
+  "pnpm quality:context-eval",project,180
+  "pnpm test:coverage",project,360
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrjmii5g-oiffqh,test,failed,"2026-07-13T19:31:51.595Z","2026-07-13T19:36:45.412Z","2026-07-13T19:36:45.413Z",3,2,0
+  test-local-mrjmmizu-aigcxc,test,passed,"2026-07-13T19:37:02.158Z","2026-07-13T19:39:53.130Z","2026-07-13T19:39:53.130Z",1,0,0
+  test-local-mrjmorhc-9aowzz,test,passed,"2026-07-13T19:40:48.488Z","2026-07-13T19:41:37.440Z","2026-07-13T19:41:37.440Z",1,0,0
+  test-local-mrjmxzty-ngc1p9,test,passed,"2026-07-13T19:45:59.537Z","2026-07-13T19:48:48.167Z","2026-07-13T19:48:48.167Z",1,0,0
+  test-local-mrjn5sso-ht8gj1,test,passed,"2026-07-13T19:51:57.858Z","2026-07-13T19:54:52.296Z","2026-07-13T19:54:52.296Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/CONFIGURATION.md,project,Feedback opt-out configuration
+  docs/SDK.md,project,Public SDK packer and feedback guide
+close_reason: SDK-first bounded context packing is implemented and fully verified.
 body: ""
