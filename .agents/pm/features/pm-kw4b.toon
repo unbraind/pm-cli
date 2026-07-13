@@ -1,0 +1,21 @@
+id: pm-kw4b
+title: "ContextBench: public reproducible context-quality benchmark with published methodology, baselines, and results dashboard"
+description: Turn the existing context evaluation framework into pm's strongest public proof asset. The market is full of unverified 'agents get 10x faster' claims; pm instead measures whether the agent received the right project context within budget. Extends pm-atfm (evaluation harness) + pm-lixy (judgment corpus) — never a parallel framework.
+type: Feature
+status: open
+priority: 2
+tags[4]: benchmark,evaluation,marketing,proof
+created_at: "2026-07-13T09:32:20.341Z"
+updated_at: "2026-07-13T09:32:39.804Z"
+author: maintainer-agent
+estimated_minutes: 1800
+acceptance_criteria: "Six scenario families published: orientation after session reset, next-work selection, duplicate avoidance, budgeted handoff (1k/2k/4k tokens), evidence-backed closure, multi-worker concurrency; baselines include no-context-file, static AGENTS.md, raw task dump, pm list, pm context, pm next, pm brief, and a custom scorer (never only a strawman); deterministic metrics first (nDCG, reciprocal rank, required recall, continuity coverage, token-budget adherence, per-signal attribution — all already in the SDK); end-to-end metrics reported per model/version/client/pm-version/profile/budget/date and never collapsed into one vague claim; public /context-bench methodology + results pages and a repository; CI badge; launch claim limited to what the published corpus supports (e.g. required-context recall and budget thresholds met), no productivity percentages"
+parent: pm-wjfa
+risk: medium
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-atfm,blocked_by,"2026-07-13T09:32:20.341Z",null,null
+  pm-lixy,related,"2026-07-13T09:32:20.341Z",null,null
+notes[1]{created_at,author,text}:
+  "2026-07-13T09:32:39.803Z",maintainer-agent,"End-to-end (model-dependent) outcome metrics to add on top of the deterministic set: correct first action, blocked-work selection rate, duplicate creation rate, evidence-linked closure rate, successful handoff rate, tokens-to-orientation, time to first correct mutation, tool-call count, recovery from context reset, conflict rate under multiple agents. Suggested public surfaces: /context-bench, /context-bench/methodology, /context-bench/results, github.com/unbraind/pm-context-bench, plus a \"ContextBench: passing\" CI badge. Framing line for the site: \"Context should be ranked, explainable, budgeted, and tested.\" The existing token-budget, context-evaluation, scale, contract, external-package, and native-plugin quality scripts are marketing proof points — surface them in the same section."
+body: ""

@@ -1,0 +1,18 @@
+id: pm-lqu8
+title: "Launch content: flagship doctrine essay, 90-second demo video, technical articles, comparison/complement pages, single-message channel plan"
+description: "One central narrative everywhere: 'Project management is context management' (coding gets cheaper; project state, coordination, intent, and evidence stay scarce; a backlog is not automatically useful context; agents need context selected for the current decision that survives sessions/models/tools/people). Blocked on the Phase-1 rewrite — never send launch traffic to contradictory positioning."
+type: Task
+status: open
+priority: 2
+tags[4]: content,launch,marketing,seo
+created_at: "2026-07-13T09:32:54.788Z"
+updated_at: "2026-07-13T09:32:54.788Z"
+author: maintainer-agent
+estimated_minutes: 1400
+acceptance_criteria: "Flagship essay 'Project Management Is Context Management' written as an opinionated technical manifesto, not a disguised product announcement; demo video 'Your agent lost its context. Here is how it resumes in 60 seconds' (fresh session -> pm context -> pm next + reason -> claim -> linked evidence -> handoff); three technical articles (context tested like search infrastructure: signals/nDCG/recall/budgets/CI gates; a task list is not a coordination protocol: ownership/claim races/deps/atomic history; build a context-aware tool with the pm SDK: define -> preflight -> test); comparison pages (vs Beads, vs Backlog.md, vs Task Master) and complement pages (with OpenSpec, with Spec Kit, with GitHub Issues, with Jira/Linear) — complement pages prioritized as more credible and shareable; channel rollout ordered by immediate-install ability (GitHub/npm metadata, MCP Registry, skills catalogs, plugin marketplaces, MCP-client integration docs, Show HN with reproducible demo, developer communities, terminal-demo clips, context-engineering talks) with every surface leading the same category and doctrine"
+parent: pm-wjfa
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-69vv,blocked_by,"2026-07-13T09:32:54.788Z",null,null
+body: ""

@@ -1,0 +1,16 @@
+id: pm-o8um
+title: "Ecosystem trust ladder: community/verified/featured package tiers, generated verification badges, and first-ten external author seeding"
+description: "Shift the ecosystem goal from 'more official packages' to 'verified external authors'. The store shows dozens of official packages and zero community ones — engineering investment without ecosystem pull. The existing SDK already provides the hard infrastructure (package init, preflight, doctor, test harness, manifest synthesis, capability declarations); this adds the trust ladder, submission flow, and seeding program on top. Extends existing package infrastructure — no new internal packages."
+type: Feature
+status: open
+priority: 2
+tags[4]: community,ecosystem,packages,trust
+created_at: "2026-07-13T09:32:40.249Z"
+updated_at: "2026-07-13T09:32:40.249Z"
+author: maintainer-agent
+estimated_minutes: 1200
+acceptance_criteria: "Three trust tiers defined and enforced: Community (valid manifest, installable, license, basic docs), Verified (package doctor passes, compatible version range, capability preflight, automated smoke test), Featured (verified + maintained + documented use case + demonstrated adoption); verification badge block (pm package verified / compatibility range / capabilities / sandbox mode) generated from actual manifest + CI results, never hand-written; documented submission flow: package init -> capability starter -> develop against public SDK -> preflight + harness -> doctor -> publish -> catalog metadata PR -> automated verification -> store listing; at least ten concrete seeded contribution briefs published (e.g. OpenSpec execution-context bridge, Spec Kit task materializer, GitHub Projects sync, Conventional Commit evidence linker, Playwright test adapter, infra-operations profile, security-review profile, research workflow profile, release-train package, IDE status extension); success metric = external authors and community/verified package counts, not official package count"
+parent: pm-wjfa
+risk: medium
+confidence: medium
+body: ""
