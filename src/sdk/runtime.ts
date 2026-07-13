@@ -73,13 +73,9 @@ import {
   runCopy,
   runCreate,
   runDelete,
-  runDeps,
-  runDocs,
   runExtension,
   type ExtensionCommandOptions,
   type ExtensionCommandResult,
-  runFiles,
-  runFilesDiscover,
   runFocus,
   runGc,
   runGet,
@@ -126,6 +122,9 @@ import {
   type UpgradeResult,
   runValidate,
 } from "../cli/commands/index.js";
+import { runDeps } from "./dependencies.js";
+import { runDocs } from "./docs.js";
+import { runFiles, runFilesDiscover } from "./files.js";
 import type { ContextOptions, ContextResult } from "../cli/commands/context.js";
 import type { GetOptions, GetResult } from "../cli/commands/get.js";
 import type { CloseManyCommandOptions } from "../cli/commands/close-many.js";
@@ -133,7 +132,11 @@ import type {
   AppendCommandOptions,
   AppendResult,
 } from "../cli/commands/append.js";
-import type { ClaimNextResult, ClaimResult, ReleaseResult } from "../cli/commands/claim.js";
+import type {
+  ClaimNextResult,
+  ClaimResult,
+  ReleaseResult,
+} from "../cli/commands/claim.js";
 import type { CloseResult } from "../cli/commands/close.js";
 import {
   runContracts,
@@ -168,14 +171,14 @@ import type {
   ConfigCommandOptions,
   ConfigResult,
 } from "../cli/commands/config.js";
-import type { DepsCommandOptions, DepsResult } from "../cli/commands/deps.js";
-import type { DocsCommandOptions, DocsResult } from "../cli/commands/docs.js";
+import type { DepsCommandOptions, DepsResult } from "./dependencies.js";
+import type { DocsCommandOptions, DocsResult } from "./docs.js";
 import type {
   FilesCommandOptions,
   FilesDiscoverOptions,
   FilesDiscoverResult,
   FilesResult,
-} from "../cli/commands/files.js";
+} from "./files.js";
 import type { GcCommandOptions, GcResult } from "../cli/commands/gc.js";
 import type { HealthResult, RunHealthOptions } from "../cli/commands/health.js";
 import type { InitCommandOptions, InitResult } from "../cli/commands/init.js";
@@ -377,10 +380,7 @@ export {
   type ListSortOrder,
   type ListVerboseResult,
 } from "../cli/commands/list.js";
-export {
-  runClose,
-  type CloseCommandOptions,
-} from "../cli/commands/close.js";
+export { runClose, type CloseCommandOptions } from "../cli/commands/close.js";
 export {
   runUpdate,
   type UpdateCommandOptions,
@@ -1173,9 +1173,7 @@ export class PmClient {
   }
 
   /** Atomically claim the highest-ranked available item using the public next-work filters. */
-  claimNext(
-    options: ClaimNextOptions = {},
-  ): Promise<ClaimNextResult> {
+  claimNext(options: ClaimNextOptions = {}): Promise<ClaimNextResult> {
     return this.runTyped("claim", {
       next: true,
       ...splitFullClientMutationOptions(options),

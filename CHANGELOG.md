@@ -6,6 +6,14 @@
 
 - Replace obsolete front-matter vocabulary with item metadata terminology ([pm-hq28](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hq28.toon))
 
+### Fixed
+
+- validate dependency_references warns on 101 legacy refs held only by closed/canceled items (98x no-active-blocker sentinel) — split active vs legacy counts ([pm-2ler](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2ler.toon))
+
+### Other
+
+- Complete public linked-resource SDK primitives and actionable dependency governance ([pm-jcvg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jcvg.toon))
+
 ## 2026.7.13 - 2026-07-13
 
 ### Added

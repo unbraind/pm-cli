@@ -184,6 +184,49 @@ export type {
 } from "./cli-contracts.js";
 export * from "./compose.js";
 export * from "./context-relevance.js";
+export {
+  collectDanglingDependencyReferences,
+  runDeps,
+  type DanglingDependencyReference,
+  type DanglingDependencyReferenceSummary,
+  type DependencyReferenceHolder,
+  type DepsCollapseMode,
+  type DepsFormat,
+  type DepsGraphEdge,
+  type DepsGraphNode,
+  type DepsGraphResult,
+  type DepsTreeNode,
+} from "./dependencies.js";
+export { runDocs } from "./docs.js";
+export {
+  runFiles,
+  runFilesDiscover,
+  type FilesDiscoveryCandidate,
+} from "./files.js";
+export {
+  applyPathMigrations,
+  applyStandaloneNote,
+  artifactKey,
+  dedupeLinkedArtifacts,
+  ensureScope,
+  expandAddGlobEntries,
+  normalizeLinkedPath,
+  parseAddEntries,
+  parseAddGlobEntries,
+  parseMigrateEntries,
+  parseRemoveEntries,
+  renameArtifactsResultKey,
+  runLinkedArtifacts,
+  sortLinkedArtifacts,
+  validateLinkedPaths,
+  type AddGlobEntry,
+  type LinkedArtifact,
+  type LinkedArtifactCommandOptions,
+  type LinkedArtifactKindConfig,
+  type LinkedArtifactResult,
+  type LinkedPathValidation,
+  type PathMigration,
+} from "./linked-artifacts.js";
 export * from "./pagination.js";
 export type {
   PlanCommandOptions,

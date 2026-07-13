@@ -34,6 +34,10 @@ Source of truth:
 - [`src/sdk/index.ts`](../src/sdk/index.ts)
 - [`src/sdk/runtime.ts`](../src/sdk/runtime.ts)
 - [`src/sdk/annotations.ts`](../src/sdk/annotations.ts)
+- [`src/sdk/linked-artifacts.ts`](../src/sdk/linked-artifacts.ts)
+- [`src/sdk/files.ts`](../src/sdk/files.ts)
+- [`src/sdk/docs.ts`](../src/sdk/docs.ts)
+- [`src/sdk/dependencies.ts`](../src/sdk/dependencies.ts)
 - [`src/sdk/cli-contracts.ts`](../src/sdk/cli-contracts.ts)
 - [`src/sdk/cli-contracts/commander-types.ts`](../src/sdk/cli-contracts/commander-types.ts)
 - [`src/sdk/cli-contracts/commander-mutation-options.ts`](../src/sdk/cli-contracts/commander-mutation-options.ts)
@@ -113,6 +117,8 @@ Command/action contract exports:
 - Typed annotation and relationship primitives on `PmClient`: `comments`, `notes`, `learnings`, `files`, `filesDiscover`, `docs`, `deps`, and `append`
 - Annotation and relationship option/result contracts: `CommentsCommandOptions` / `CommentsResult`, `NotesCommandOptions` / `NotesResult`, `LearningsCommandOptions` / `LearningsResult`, `FilesCommandOptions` / `FilesResult`, `FilesDiscoverOptions` / `FilesDiscoverResult`, `DocsCommandOptions` / `DocsResult`, `DepsCommandOptions` / `DepsResult`, `AppendCommandOptions` / `AppendResult`
 - Annotation kernel primitives: `resolveAnnotationInput`, `runAnnotationCommand`, `resolveAnnotationIndex`, `parseAnnotationTextInput`, `limitAnnotationEntries`, `readAnnotationEntries`, `wrapOwnershipConflict`, `isErrnoError`, and their typed input/config/result contracts
+- Linked-resource kernel primitives: `runFiles`, `runFilesDiscover`, `runDocs`, `runDeps`, `runLinkedArtifacts`, parsing/normalization/path-validation helpers, and their typed contracts. The CLI files/docs/deps modules are presentation-only re-exports of these SDK implementations.
+- Dependency-governance primitive: `collectDanglingDependencyReferences` partitions missing targets into actionable active holders, informational terminal-history holders, and the legacy `no-active-blocker` sentinel without mutating stored history.
 - Typed customization primitives on `PmClient`: `init`, `config`, `schema`, `schemaList`, `schemaShow`, `schemaAddType`, `schemaRemoveType`, `schemaAddStatus`, `schemaRemoveStatus`, `schemaAddField`, `schemaRemoveField`, `schemaListFields`, `schemaShowField`, `schemaApplyPreset`, `schemaInferTypes`, `schemaShowStatus`, `profile`, `profileList`, `profileShow`, `profileApply`, and `profileLint`
 - Workspace-scaffold primitives: `ensurePmGitignore` and `getPmGitignoreBlock` let custom tools apply the same idempotent runtime/search cache policy as `pm init` without importing CLI internals.
 - Customization primitive option/result contracts: `InitCommandOptions` / `InitResult`, `ConfigCommandOptions` / `ConfigResult`, `SchemaSubcommand` / `SchemaResult` / `SchemaInspectResult`, `SchemaListResult`, `SchemaShowResult`, `SchemaAddTypeResult`, `SchemaRemoveTypeResult`, `SchemaAddStatusResult`, `SchemaRemoveStatusResult`, `SchemaAddFieldResult`, `SchemaRemoveFieldResult`, `SchemaListFieldsResult`, `SchemaShowFieldResult`, `SchemaApplyPresetResult`, `SchemaAddTypeInferResult`, `SchemaShowStatusResult`, `ProfileSubcommand` / `ProfileResult`, `ProfileListResult`, `ProfileShowResult`, `ProfileApplyResult`, `ProfileLintResult`
@@ -156,6 +162,50 @@ const result = await pm.planMaterialize(created.plan.id, {
 ```
 
 `field` is repeatable and forwards `name=value` pairs through normal schema-aware create validation for every materialized child. Required-on-create fields remain mandatory. Each `materialized` entry includes `id`, `title`, `type`, `parent`, `tags`, and `from_step`, so an agent can confirm the created work without extra `get` calls.
+
+### Linked resources and dependency governance
+
+Tracked: [pm-jcvg](../.agents/pm/tasks/pm-jcvg.toon) and
+[pm-2ler](../.agents/pm/issues/pm-2ler.toon).
+
+Custom tools can use the same domain primitives as the CLI without dispatching a
+command action. The direct functions accept the typed command options plus a
+`GlobalOptions` tracker path, while `PmClient` remains the ergonomic façade for
+applications that want shared workspace/author defaults:
+
+```ts
+import {
+  PmClient,
+  collectDanglingDependencyReferences,
+  runDeps,
+  runDocs,
+  runFiles,
+} from "@unbrained/pm-cli/sdk";
+
+await runFiles(
+  id,
+  { add: ["src/domain.ts"], note: "implementation" },
+  { path: pmRoot },
+);
+await runDocs(id, { add: ["docs/domain.md"] }, { path: pmRoot });
+const graph = await runDeps(id, { format: "graph" }, { path: pmRoot });
+
+const pm = new PmClient({ pmRoot, author: "integration-agent" });
+await pm.filesDiscover(id, { apply: true });
+
+const references = collectDanglingDependencyReferences(items, (status) =>
+  terminalStatuses.has(status),
+);
+// references.active gates work; references.legacy_terminal is historical debt.
+```
+
+`pm validate --check-lifecycle` uses the same classification. Its
+`dependency_references` check warns only when
+`active_dangling_reference_count` is non-zero. Terminal-holder debt is reported
+under `legacy_terminal_dangling_reference_count` and receives no mutation hint,
+so an agent is never told to rewrite a closed item merely to silence validation.
+`no_active_blocker_sentinel_count` separately identifies the legacy scalar
+sentinel rather than presenting it as a mistyped pm id.
 
 Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { runDeps } from "../../../src/cli/commands/deps.js";
+import {
+  collectDanglingDependencyReferences,
+  runDeps,
+} from "../../../src/cli/commands/deps.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
@@ -56,6 +59,54 @@ function createTask(context: TempPmContext, title: string, deps: string[] = ["no
 }
 
 describe("runDeps", () => {
+  it("partitions active, terminal, custom-terminal, and sentinel references", () => {
+    const items = [
+      { id: "pm-active", status: "open", parent: "pm-missing-active" },
+      {
+        id: "pm-closed",
+        status: "closed",
+        blocked_by: "no-active-blocker",
+        dependencies: [{ id: "pm-missing-legacy", kind: "related" }],
+      },
+      { id: "pm-blocked", status: "blocked", parent: "pm-custom-terminal" },
+    ] as const;
+
+    const defaultSummary = collectDanglingDependencyReferences(items);
+    expect(defaultSummary.active.map((row) => row.target_id)).toEqual([
+      "pm-missing-active",
+      "pm-custom-terminal",
+    ]);
+    expect(defaultSummary.legacy_terminal.map((row) => row.target_id)).toEqual([
+      "no-active-blocker",
+      "pm-missing-legacy",
+    ]);
+    expect(defaultSummary.no_active_blocker_sentinels).toHaveLength(1);
+
+    const customSummary = collectDanglingDependencyReferences(
+      items,
+      (status) => status === "closed" || status === "blocked",
+    );
+    expect(customSummary.active.map((row) => row.target_id)).toEqual([
+      "pm-missing-active",
+    ]);
+    expect(customSummary.legacy_terminal.map((row) => row.target_id)).toContain(
+      "pm-custom-terminal",
+    );
+
+    const sameHolderAndTarget = collectDanglingDependencyReferences([
+      {
+        id: "pm-tie-breaker",
+        status: "open",
+        parent: "pm-shared-target",
+        dependencies: [{ id: "pm-shared-target", kind: "related" }],
+      },
+    ]);
+    expect(sameHolderAndTarget.active.map((row) => row.kind)).toEqual([
+      "parent",
+      "related",
+    ]);
+  });
+
   it("fails when tracker is not initialized", async () => {
     await expect(runDeps("pm-missing", {}, { path: "/tmp/pm-deps-missing-root" })).rejects.toMatchObject<PmCliError>({
       exitCode: EXIT_CODE.NOT_FOUND,

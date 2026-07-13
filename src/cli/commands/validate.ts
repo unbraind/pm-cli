@@ -76,7 +76,11 @@ import type {
   ValidateMetadataProfile,
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
+import { collectDanglingDependencyReferences } from "../../sdk/dependencies.js";
+import { runDocs } from "../../sdk/docs.js";
+import { runFiles } from "../../sdk/files.js";
 import { extractReferencedPmItemIdsFromCommand } from "./test.js";
+import { runUpdate } from "./update.js";
 
 type ValidateCheckName =
   | "metadata"
@@ -1514,56 +1518,58 @@ function buildLifecycleDependencyGraph(
 function buildDependencyReferencesCheck(
   items: ItemWithBody[],
   verboseDiagnostics: boolean,
+  statusRegistry?: RuntimeStatusRegistry,
 ): { check: ValidateCheck; warnings: string[] } {
-  const knownIds = new Set(items.map((item) => item.id.trim().toLowerCase()));
-  const rows: string[] = [];
-  for (const item of items) {
-    const parent = toMeaningfulString(item.parent);
-    if (parent && !knownIds.has(parent.toLowerCase()))
-      rows.push(`${item.id}:${parent}:parent`);
-    const scalarBlocker = toMeaningfulString(item.blocked_by);
-    if (scalarBlocker && !knownIds.has(scalarBlocker.toLowerCase())) {
-      rows.push(`${item.id}:${scalarBlocker}:blocked_by`);
-    }
-    for (const dependency of item.dependencies ?? []) {
-      const dependencyId = toMeaningfulString(dependency.id);
-      if (dependencyId && !knownIds.has(dependencyId.toLowerCase())) {
-        rows.push(`${item.id}:${dependencyId}:${dependency.kind}`);
-      }
-    }
-  }
-  const uniqueRows = [...new Set(rows)].sort((left, right) =>
-    left.localeCompare(right),
+  const classified = collectDanglingDependencyReferences(
+    items,
+    statusRegistry
+      ? (status) => isTerminalStatus(status, statusRegistry)
+      : undefined,
+  );
+  const activeRows = classified.active.map(
+    (row) => `${row.holder_id}:${row.target_id}:${row.kind}`,
+  );
+  const legacyRows = classified.legacy_terminal.map(
+    (row) =>
+      `${row.holder_id}:${row.target_id}:${row.kind}:${row.holder_status}`,
   );
   const diagnosticLimit = verboseDiagnostics
     ? Number.POSITIVE_INFINITY
     : DIAGNOSTIC_LIST_SUMMARY_LIMIT;
-  const summarizedRows = summarizeList(uniqueRows, diagnosticLimit);
+  const summarizedRows = summarizeList(activeRows, diagnosticLimit);
+  const summarizedLegacyRows = summarizeList(legacyRows, diagnosticLimit);
   const hints = summarizeList(
-    uniqueRows.map((row) => {
-      const [itemId, , kind] = row.split(":");
-      return kind === "parent"
-        ? `pm update ${itemId} --unset parent`
-        : `pm update ${itemId} --replace-deps '<correct dependency edges>'`;
+    classified.active.map((row) => {
+      return row.kind === "parent"
+        ? `pm update ${row.holder_id} --unset parent`
+        : `pm update ${row.holder_id} --replace-deps '<correct dependency edges>'`;
     }),
     diagnosticLimit,
   );
   return {
     check: {
       name: "dependency_references",
-      status: uniqueRows.length === 0 ? "ok" : "warn",
+      status: activeRows.length === 0 ? "ok" : "warn",
       details: {
         checked_items: items.length,
-        dangling_reference_count: uniqueRows.length,
+        dangling_reference_count: activeRows.length,
+        active_dangling_reference_count: activeRows.length,
         dangling_reference_rows: summarizedRows.values,
         dangling_reference_rows_truncated: summarizedRows.truncated,
+        legacy_terminal_dangling_reference_count: legacyRows.length,
+        legacy_closed_dangling_reference_count: legacyRows.length,
+        legacy_terminal_dangling_reference_rows: summarizedLegacyRows.values,
+        legacy_terminal_dangling_reference_rows_truncated:
+          summarizedLegacyRows.truncated,
+        no_active_blocker_sentinel_count:
+          classified.no_active_blocker_sentinels.length,
         remediation_hints: hints.values,
         remediation_hints_truncated: hints.truncated,
       },
     },
     warnings:
-      uniqueRows.length > 0
-        ? [`validate_dangling_dependency_references:${uniqueRows.length}`]
+      activeRows.length > 0
+        ? [`validate_dangling_dependency_references:${activeRows.length}`]
         : [],
   };
 }
@@ -2917,7 +2923,6 @@ async function applyValidateFix(
     case "set_estimate":
     case "reparent":
     case "unset_parent": {
-      const { runUpdate } = await import("./update.js");
       const updateOptions: Record<string, unknown> = {
         message: VALIDATE_AUTO_FIX_MESSAGE,
       };
@@ -2997,14 +3002,12 @@ async function applyValidateFixes(
       );
     try {
       if (first.kind === "prune_file_link") {
-        const { runFiles } = await import("./files.js");
         await runFiles(
           first.item_id,
           { remove, message: VALIDATE_AUTO_FIX_MESSAGE },
           global,
         );
       } else {
-        const { runDocs } = await import("./docs.js");
         await runDocs(
           first.item_id,
           { remove, message: VALIDATE_AUTO_FIX_MESSAGE },
@@ -3150,7 +3153,11 @@ async function executeRequestedValidateChecks(params: {
     recordValidateCheck(state, built, fixHintsEnabled);
     recordValidateCheck(
       state,
-      buildDependencyReferencesCheck(params.items, fullDiagnostics),
+      buildDependencyReferencesCheck(
+        params.items,
+        fullDiagnostics,
+        params.statusRegistry,
+      ),
       fixHintsEnabled,
     );
   }
