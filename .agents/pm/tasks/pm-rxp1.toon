@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: bare-core,coverage,packages,tests
 created_at: "2026-07-12T19:55:15.063Z"
-updated_at: "2026-07-13T01:21:50.923Z"
+updated_at: "2026-07-13T03:15:20.726Z"
 assignee: codex-pm-audit-extraction
 author: maintainer-agent
 estimated_minutes: 90
@@ -16,24 +16,71 @@ risk: medium
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-kg18,blocked_by,"2026-07-12T19:55:39.214Z",null,null
-comments[3]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-12T23:37:43.406Z",codex-pm-audit-extraction,"E2E evidence: isolated temp project bare core rejected dedupe-audit and exposed no audit flags; pm install audit activated cleanly; package doctor OK; dedupe-audit, comments-audit, normalize, update help, and files help restored expected package surface."
   "2026-07-13T00:37:01.319Z",codex-pm-audit-extraction,"Verification evidence: pnpm release:gates reached 278 test files / 5592 tests with literal 100% statement, branch, function, and line coverage; typecheck, docs/skills, static quality, token budget, and isolated package installation all pass. Existing scripts/reviews/pr-review-loop.mjs and docs/PR_REVIEW_LOOP.md are linked for the hosted bot acknowledgement loop."
   "2026-07-13T01:21:50.923Z",codex-pm-audit-extraction,"Final local verification evidence: node scripts/run-tests.mjs coverage passed 278 test files and 5,593 tests with literal 100% statements (35,360/35,360), branches (25,334/25,334), functions (7,141/7,141), and lines (34,585/34,585). The package-owned linked_artifact_audit service now contains files/docs aggregation; bare core only dispatches the optional service."
-files[9]{path,scope,note}:
+  "2026-07-13T02:02:01.842Z",codex-pm-audit-extraction,"Hosted review loop 1: Greptile found a valid P1 normalize ownership-bypass mapping regression and stale completion/guidance artifacts; CodeRabbit supplied 14 inline findings plus outside-diff suggestions. Valid findings were implemented, including append-only bypass enforcement, generic release result naming, package service types, completion repair, parity assertions, and package docs. The package-only MCP-field suggestion was refused because adding those keys to the default schema would violate pm-vjk3's bare-core boundary. Gemini and CodeRabbit quota notices will be acknowledged individually. Local feedback verification: focused 159 tests passed, contracts snapshot current, lint/static/token gates passed; full release:gates reached 5,593 tests and 100% coverage, then correctly stopped only because its Greptile gate reviewed the still-uncommitted previous head."
+  "2026-07-13T02:09:11.325Z",codex-pm-audit-extraction,"Continuation started: preserving inherited review fixes, reopening the boundary inventory despite earlier green evidence, and treating PR #536 current-head bot/CI convergence plus merge as unfinished acceptance work."
+  "2026-07-13T03:15:20.726Z",codex-pm-audit-extraction,"Fresh local evidence on the expanded boundary pass: pnpm lint passed; audit package boundary and token/static gates passed; node scripts/run-tests.mjs coverage passed 279 files and 5,602 tests at exactly 100% statements (35,417/35,417), branches (25,409/25,409), functions (7,152/7,152), and lines (34,638/34,638); pnpm release:gates passed completely, including type/package/example checks, docs/skills, secrets, packed npx smoke, and the 88-command package-first dogfood run. A separate temp workspace proved bare core rejects dedupe-audit and exposes no --audit/--allow-audit flags, while installing packages/pm-governance-audit restores command/flag help and returns linked_by_count=2 for a shared file. The new scripts/release/audit-package-boundary.mjs ratchets exact audit execution/API tokens out of src and PRD."
+files[49]{path,scope,note}:
+  package.json,project,Audit extraction implementation contract or verification coverage
+  packages/pm-governance-audit/extensions/governance-audit/index.ts,project,Audit extraction implementation contract or verification coverage
+  packages/pm-governance-audit/extensions/governance-audit/manifest.json,project,Audit extraction implementation contract or verification coverage
+  packages/pm-governance-audit/extensions/governance-audit/normalize.ts,project,Greptile P1 normalize bypass boundary fix
+  packages/pm-governance-audit/extensions/governance-audit/runtime-utils.ts,project,CodeRabbit typed package service contract
+  packages/pm-governance-audit/extensions/governance-audit/runtime.ts,project,CodeRabbit runtime adapter simplification
+  packages/pm-governance-audit/extensions/governance-audit/sdk.ts,project,Audit extraction implementation contract or verification coverage
   scripts/reviews/pr-review-loop.mjs,project,reusable no-poll review inventory and acknowledgement workflow
+  src/cli/commands/claim.ts,project,bot-review generic release contract cleanup
+  src/cli/commands/comments.ts,project,bot-review append-only bypass enforcement
+  src/cli/commands/completion.ts,project,bot-review completion repair
+  src/cli/commands/docs.ts,project,Audit extraction implementation contract or verification coverage
+  src/cli/commands/files.ts,project,Audit extraction implementation contract or verification coverage
+  src/cli/commands/learnings.ts,project,Audit extraction implementation contract or verification coverage
+  src/cli/commands/linked-artifacts.ts,project,Audit extraction implementation contract or verification coverage
+  src/cli/commands/notes.ts,project,Audit extraction implementation contract or verification coverage
+  src/cli/commands/update-many.ts,project,Audit extraction implementation contract or verification coverage
+  src/cli/commands/update.ts,project,bot-review package bypass policy mapping
+  src/cli/error-guidance.ts,project,Audit extraction implementation contract or verification coverage
+  src/cli/register-mutation.ts,project,Audit extraction implementation contract or verification coverage
+  src/cli/register-operations.ts,project,Audit extraction implementation contract or verification coverage
+  src/cli/registration-helpers.ts,project,Audit extraction implementation contract or verification coverage
+  src/core/extensions/extension-types.ts,project,Audit extraction implementation contract or verification coverage
+  src/core/item/type-registry.ts,project,Audit extraction implementation contract or verification coverage
+  src/core/store/item-store.ts,project,Audit extraction implementation contract or verification coverage
+  src/core/telemetry/runtime.ts,project,Audit extraction implementation contract or verification coverage
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Audit extraction implementation contract or verification coverage
+  tests/fixtures/contracts/full.json,project,Audit extraction implementation contract or verification coverage
+  tests/integration/cli.integration.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/integration/help-runtime.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/integration/release-automation-contract.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/integration/release-readiness-runtime.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/unit/cli/registration-helpers.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/unit/commands/claim-command.spec.ts,project,Audit extraction implementation contract or verification coverage
   tests/unit/commands/comments-command.spec.ts,project,migrated package and bare-core coverage
   tests/unit/commands/completion-command.spec.ts,project,migrated package and bare-core coverage
   tests/unit/commands/contracts-command.spec.ts,project,migrated package and bare-core coverage
   tests/unit/commands/dedupe-audit-command.spec.ts,project,migrated package and bare-core coverage
   tests/unit/commands/dedupe-merge-command.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/commands/files-docs-command.spec.ts,project,Audit extraction implementation contract or verification coverage
   tests/unit/commands/normalize-command.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/commands/notes-learnings-command.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/unit/commands/register-commands.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/unit/commands/update-command.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/unit/commands/update-many-command.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/unit/core/telemetry/telemetry-runtime.spec.ts,project,Audit extraction implementation contract or verification coverage
   tests/unit/extensions/builtin-extension-entrypoints.spec.ts,project,migrated package and bare-core coverage
   tests/unit/packages/governance-audit-runtime.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/sdk/sdk-context-primitives.spec.ts,project,Audit extraction implementation contract or verification coverage
 tests[3]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,project,1200,100 percent literal all-src coverage gate
   node scripts/run-tests.mjs test,project,900,full sandboxed test suite
   "pnpm release:gates",project,1200,full release readiness gates
-docs[1]{path,scope,note}:
+docs[5]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,Audit extraction documentation and boundary ownership
+  docs/CONFIGURATION.md,project,Audit extraction documentation and boundary ownership
   docs/PR_REVIEW_LOOP.md,project,documented bot trigger wait inventory reaction reply and recheck workflow
+  packages/pm-governance-audit/README.md,project,package installation and tracker documentation
+  PRD.md,project,generic bare-core release contract documentation
 body: ""

@@ -261,7 +261,7 @@ describe("core/telemetry/runtime", () => {
       expect(queued.event.event_type).toBe("command_start");
       expect(queued.event.payload.capture_level).toBe("redacted");
       expect(queued.event.payload.pm_version).toBe("9.9.9-test");
-      expect(queued.event.payload.source_context).toMatch(/^(user|automation|test|dogfood|audit_smoke)$/);
+      expect(queued.event.payload.source_context).toMatch(/^(user|automation|test|dogfood)$/);
       expect(queued.event.payload.source_context_source).toMatch(/^(inferred|env_override)$/);
       expect(queued.event.payload.command_args).toEqual([
         "--api-key",
@@ -554,7 +554,7 @@ describe("core/telemetry/runtime", () => {
         pm_version: "9.9.9-test",
       });
       expect(startEvent?.event.payload.pm_version).toBe("9.9.9-test");
-      expect(startEvent?.event.payload.source_context).toMatch(/^(user|automation|test|dogfood|audit_smoke)$/);
+      expect(startEvent?.event.payload.source_context).toMatch(/^(user|automation|test|dogfood)$/);
       expect(startEvent?.event.payload.source_context_source).toMatch(/^(inferred|env_override)$/);
       expect(String(startEvent?.event.payload.command_args_digest ?? "")).toMatch(/^[a-f0-9]{64}$/);
       expect(String(startEvent?.event.payload.command_invocation_digest ?? "")).toMatch(/^[a-f0-9]{64}$/);
@@ -566,7 +566,7 @@ describe("core/telemetry/runtime", () => {
       const finishPayload = finishEvent?.event.payload ?? {};
       expect(finishPayload.capture_level).toBe("minimal");
       expect(finishPayload.pm_version).toBe("9.9.9-test");
-      expect(String(finishPayload.source_context ?? "")).toMatch(/^(user|automation|test|dogfood|audit_smoke)$/);
+      expect(String(finishPayload.source_context ?? "")).toMatch(/^(user|automation|test|dogfood)$/);
       expect(String(finishPayload.source_context_source ?? "")).toMatch(/^(inferred|env_override)$/);
       expect(finishPayload.ok).toBe(false);
       expect(finishPayload.exit_code).toBe(1);
@@ -649,7 +649,7 @@ describe("core/telemetry/runtime", () => {
       expect(finishEvent).toBeDefined();
       expect(startEvent?.event.payload.capture_level).toBe("max");
       expect(startEvent?.event.payload.pm_version).toBe("9.9.9-test");
-      expect(startEvent?.event.payload.source_context).toMatch(/^(user|automation|test|dogfood|audit_smoke)$/);
+      expect(startEvent?.event.payload.source_context).toMatch(/^(user|automation|test|dogfood)$/);
       expect(startEvent?.event.payload.source_context_source).toMatch(/^(inferred|env_override)$/);
       expect(startEvent?.event.payload.command_args).toEqual(
         expect.arrayContaining(["[redacted_email]", "[redacted_path]", "[redacted_ip]", "--token=[redacted]"]),

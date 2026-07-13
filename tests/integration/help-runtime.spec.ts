@@ -1129,14 +1129,18 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         exit_code: 4,
       });
       expect(envelope.required).toContain("--force");
-      expect(envelope.next_steps?.some((step) => step.includes("PM audits"))).toBe(true);
+      expect(
+        envelope.next_steps?.some((step) =>
+          step.includes("approved systematic metadata updates"),
+        ),
+      ).toBe(true);
       expect(envelope.next_steps?.some((step) => step.includes("stale metadata"))).toBe(true);
       expect(envelope.next_steps?.some((step) => step.includes("pm claim <ID>"))).toBe(true);
 
       const textConflict = context.runCli(["update", id, "--status", "in_progress", "--author", "owner-b"]);
       expect(textConflict.code).toBe(4);
       expect(textConflict.stderr).toContain("Next steps:");
-      expect(textConflict.stderr).toContain("PM audits");
+      expect(textConflict.stderr).toContain("approved systematic metadata updates");
     });
   });
 

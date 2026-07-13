@@ -14,47 +14,9 @@ import { runDedupeAudit } from "./dedupe-audit.ts";
 import { runDedupeMerge } from "./dedupe-merge.ts";
 import { runNormalize } from "./normalize.ts";
 
-interface GovernanceRuntimeSdkModule {
-  runDedupeAudit: typeof runDedupeAudit;
-  runDedupeMerge: typeof runDedupeMerge;
-  runCommentsAudit: typeof runCommentsAudit;
-  runNormalize: typeof runNormalize;
-  readStringOption: (
-    options: Record<string, unknown>,
-    key: string,
-    aliases?: string[],
-  ) => string | undefined;
-  readBooleanOption: (
-    options: Record<string, unknown>,
-    key: string,
-    aliases?: string[],
-  ) => boolean | undefined;
-  readCsvListOption: (
-    options: Record<string, unknown>,
-    key: string,
-    aliases?: string[],
-  ) => string[] | undefined;
-}
-
-const governanceModule: GovernanceRuntimeSdkModule = {
-  runDedupeAudit,
-  runDedupeMerge,
-  runCommentsAudit,
-  runNormalize,
-  readStringOption,
-  readBooleanOption,
-  readCsvListOption,
-};
-
-async function ensureGovernanceModule(): Promise<GovernanceRuntimeSdkModule> {
-  return governanceModule;
-}
-
 function normalizeDedupeAuditOptions(
-  sdk: GovernanceRuntimeSdkModule,
   raw: Record<string, unknown>,
 ): Record<string, unknown> {
-  const readStringOption = sdk.readStringOption;
   return {
     mode: readStringOption(raw, "mode"),
     status: readStringOption(raw, "status"),
@@ -78,14 +40,11 @@ function normalizeDedupeAuditOptions(
 }
 
 function normalizeDedupeMergeOptions(
-  sdk: GovernanceRuntimeSdkModule,
   raw: Record<string, unknown>,
 ): Record<string, unknown> {
-  const readStringOption = sdk.readStringOption;
-  const readBooleanOption = sdk.readBooleanOption;
   return {
     keep: readStringOption(raw, "keep"),
-    close: sdk.readCsvListOption(raw, "close"),
+    close: readCsvListOption(raw, "close"),
     apply: readBooleanOption(raw, "apply") === true ? true : undefined,
     dryRun:
       readBooleanOption(raw, "dryRun", ["dry_run"]) === true ? true : undefined,
@@ -100,11 +59,8 @@ function normalizeDedupeMergeOptions(
 }
 
 function normalizeCommentsAuditOptions(
-  sdk: GovernanceRuntimeSdkModule,
   raw: Record<string, unknown>,
 ): Record<string, unknown> {
-  const readStringOption = sdk.readStringOption;
-  const readBooleanOption = sdk.readBooleanOption;
   return {
     status: readStringOption(raw, "status"),
     type: readStringOption(raw, "type"),
@@ -128,11 +84,8 @@ function normalizeCommentsAuditOptions(
 }
 
 function normalizeNormalizeOptions(
-  sdk: GovernanceRuntimeSdkModule,
   raw: Record<string, unknown>,
 ): Record<string, unknown> {
-  const readStringOption = sdk.readStringOption;
-  const readBooleanOption = sdk.readBooleanOption;
   return {
     status: readStringOption(raw, "filterStatus", ["filter_status", "status"]),
     list: {
@@ -180,9 +133,8 @@ export async function runDedupeAuditPackage(
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<unknown> {
-  const module = await ensureGovernanceModule();
-  return module.runDedupeAudit(
-    normalizeDedupeAuditOptions(module, options) as Parameters<
+  return runDedupeAudit(
+    normalizeDedupeAuditOptions(options) as Parameters<
       typeof runDedupeAudit
     >[0],
     global,
@@ -194,9 +146,8 @@ export async function runDedupeMergePackage(
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<unknown> {
-  const module = await ensureGovernanceModule();
-  return module.runDedupeMerge(
-    normalizeDedupeMergeOptions(module, options) as Parameters<
+  return runDedupeMerge(
+    normalizeDedupeMergeOptions(options) as Parameters<
       typeof runDedupeMerge
     >[0],
     global,
@@ -208,9 +159,8 @@ export async function runCommentsAuditPackage(
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<unknown> {
-  const module = await ensureGovernanceModule();
-  return module.runCommentsAudit(
-    normalizeCommentsAuditOptions(module, options) as Parameters<
+  return runCommentsAudit(
+    normalizeCommentsAuditOptions(options) as Parameters<
       typeof runCommentsAudit
     >[0],
     global,
@@ -222,9 +172,8 @@ export async function runNormalizePackage(
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<unknown> {
-  const module = await ensureGovernanceModule();
-  return module.runNormalize(
-    normalizeNormalizeOptions(module, options) as unknown as Parameters<
+  return runNormalize(
+    normalizeNormalizeOptions(options) as unknown as Parameters<
       typeof runNormalize
     >[0],
     global,

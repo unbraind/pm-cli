@@ -8256,7 +8256,8 @@
       "history_append",
       "item_store_write",
       "item_store_delete",
-      "context_relevance"
+      "context_relevance",
+      "command_result"
     ],
     "trust_modes": [
       "off",
@@ -8696,7 +8697,7 @@
       ]
     },
     {
-      "description": "List, add, remove, audit, or validate linked files for a pm item.",
+      "description": "List, add, remove, or validate linked files for a pm item.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
@@ -19738,7 +19739,7 @@
               "create",
               "update",
               "close",
-              "update_audit"
+              "update_ownership_bypass"
             ],
             "type": "string"
           },

@@ -251,8 +251,8 @@ applies:
    boolean over overloading a shared enum.
 5. **Option policies** — if the flag participates in `command_option_policies`
    (provided-set governance), wire it into the command's policy declaration.
-6. **Dependency-audit scope** — field mutations that must be excluded from
-   audit-only update scopes belong in the update command's disallowed list.
+6. **Package policy scope** — optional packages validate their policy-specific
+   flags before mapping them onto the core's narrow internal ownership controls.
 7. **Docs and completions** — document the command in
    [Command Reference](COMMANDS.md); completion output is generated from the
    contracts, so confirm `pm completion` reflects the new surface.

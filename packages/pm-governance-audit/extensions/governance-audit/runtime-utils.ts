@@ -1,4 +1,4 @@
-import { EXIT_CODE, PmCliError, type ListOptions } from "./sdk.ts";
+import { EXIT_CODE, PmCliError, PmClient, type ListOptions } from "./sdk.ts";
 
 export const DEFAULT_CLOSURE_LIKE_METADATA_FIELD_PATTERNS = {
   blocked_reason: ["no active blocker because work is closed", "work is closed"],
@@ -73,11 +73,20 @@ export function toNonEmptyStringOrUndefined(value: unknown): string | undefined 
   return normalized.length > 0 ? normalized : undefined;
 }
 
-export function buildLinkedArtifactAudit(payload: unknown): unknown {
-  const input = payload as {
-    paths?: string[];
-    items?: Array<{ id: string; artifacts?: Array<{ path: string }> }>;
-  };
+export interface LinkedArtifactAuditPayload {
+  paths?: string[];
+  items?: Array<{ id: string; artifacts?: Array<{ path: string }> }>;
+}
+
+export interface LinkedArtifactAuditEntry {
+  path: string;
+  linked_by_count: number;
+  linked_item_ids: string[];
+}
+
+export function buildLinkedArtifactAudit(
+  input: LinkedArtifactAuditPayload,
+): LinkedArtifactAuditEntry[] {
   const index = new Map<string, Set<string>>();
   for (const item of input.items ?? []) {
     for (const artifact of item.artifacts ?? []) {
@@ -98,4 +107,87 @@ export function buildLinkedArtifactAudit(payload: unknown): unknown {
         linked_item_ids: linkedItemIds,
       };
     });
+}
+
+interface CommandResultPayload {
+  command?: string;
+  args?: string[];
+  options?: Record<string, unknown>;
+  pm_root?: string;
+  result?: unknown;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+function hasUpdateAuditBypass(options: Record<string, unknown>): boolean {
+  return (
+    options.allowAuditUpdate === true ||
+    options.allow_audit_update === true ||
+    options.allowAuditDepUpdate === true ||
+    options.allow_audit_dep_update === true
+  );
+}
+
+async function decorateLinkedArtifactResult(
+  payload: CommandResultPayload,
+  result: Record<string, unknown>,
+): Promise<Record<string, unknown> | undefined> {
+  if (
+    (payload.command !== "files" && payload.command !== "docs") ||
+    payload.options?.audit !== true ||
+    !payload.pm_root
+  ) {
+    return undefined;
+  }
+  const artifactKey = payload.command;
+  const artifacts = Array.isArray(result[artifactKey])
+    ? (result[artifactKey] as Array<{ path?: unknown }>)
+    : [];
+  const paths = artifacts.flatMap((entry) =>
+    typeof entry.path === "string" ? [entry.path] : [],
+  );
+  const listed = await new PmClient({ pmRoot: payload.pm_root }).list({
+    status: "all",
+    noTruncate: true,
+    fields: `id,${artifactKey}`,
+  });
+  const items = listed.items.map((item) => ({
+    id: item.id,
+    artifacts: Array.isArray(item[artifactKey])
+      ? (item[artifactKey] as Array<{ path: string }>)
+      : undefined,
+  }));
+  return {
+    ...result,
+    audit: buildLinkedArtifactAudit({ paths, items }),
+  };
+}
+
+/** Add package-owned fields to a completed core command result. */
+export async function decorateGovernanceCommandResult(
+  raw: unknown,
+): Promise<unknown> {
+  const payload = asRecord(raw) as CommandResultPayload | undefined;
+  const result = asRecord(payload?.result);
+  const options = payload?.options ?? {};
+  if (!payload || !result) return payload?.result;
+  const linkedArtifactResult = await decorateLinkedArtifactResult(payload, result);
+  if (linkedArtifactResult) return linkedArtifactResult;
+
+  if (
+    (payload.command === "update" || payload.command === "update-many") &&
+    hasUpdateAuditBypass(options)
+  ) {
+    return { ...result, audit_update: true };
+  }
+
+  if (payload.command === "release" && options.allowAuditRelease === true) {
+    return { ...result, audit_release: true };
+  }
+
+  return result;
 }

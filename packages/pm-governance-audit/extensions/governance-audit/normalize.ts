@@ -489,12 +489,13 @@ export async function runNormalize(
       : "normalize apply";
   const updateBaseOptions: Pick<
     UpdateCommandOptions,
-    "author" | "message" | "force" | "allowAuditUpdate"
-  > = {
+    "author" | "message" | "force"
+  > & { ownershipMetadataBypass?: boolean } = {
     author: options.author,
     message: applyMessage,
     force: options.force === true ? true : undefined,
-    allowAuditUpdate: options.allowAuditUpdate === true ? true : undefined,
+    ownershipMetadataBypass:
+      options.allowAuditUpdate === true ? true : undefined,
   };
 
   for (const plan of planned) {

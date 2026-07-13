@@ -707,7 +707,7 @@ function buildOwnershipConflictGuidance(
         "pm update pm-a1b2 --status in_progress --force",
       ],
       nextSteps: [
-        "Use --force for PM audits and systematic metadata updates performed by leads/maintainers.",
+        "Use --force for approved systematic metadata updates performed by leads or maintainers.",
         "Use --force when correcting known stale metadata after coordinating ownership changes.",
         'For non-terminal reassignment, prefer "pm claim <ID> --author <you>" before running other mutations.',
       ],

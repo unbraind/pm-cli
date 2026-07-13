@@ -343,6 +343,7 @@ function createCommandOnlyApi(): {
   commands: CommandDefinition[];
   flags: Array<{ command: string; flags: unknown[] }>;
   services: Array<{ service: ExtensionServiceName; override: ServiceOverride }>;
+  parsers: string[];
   importers: CapturedImporter[];
   exporters: CapturedExporter[];
   hooks: CapturedHooks;
@@ -350,6 +351,7 @@ function createCommandOnlyApi(): {
   const commands: CommandDefinition[] = [];
   const flags: Array<{ command: string; flags: unknown[] }> = [];
   const services: Array<{ service: ExtensionServiceName; override: ServiceOverride }> = [];
+  const parsers: string[] = [];
   const importers: CapturedImporter[] = [];
   const exporters: CapturedExporter[] = [];
   const hooks: CapturedHooks = { onRead: [], onWrite: [] };
@@ -367,8 +369,8 @@ function createCommandOnlyApi(): {
     registerService(service: ExtensionServiceName, override: ServiceOverride): void {
       services.push({ service, override });
     },
-    registerParser(): void {
-      throw new Error("Unexpected parser registration");
+    registerParser(command: string): void {
+      parsers.push(command);
     },
     registerPreflight(): void {
       throw new Error("Unexpected preflight registration");
@@ -409,7 +411,7 @@ function createCommandOnlyApi(): {
       onIndex: () => undefined,
     },
   };
-  return { api, commands, flags, services, importers, exporters, hooks };
+  return { api, commands, flags, services, parsers, importers, exporters, hooks };
 }
 
 describe("built-in extension entrypoints", () => {
@@ -459,7 +461,7 @@ describe("built-in extension entrypoints", () => {
       version: "0.1.0",
       entry: "./index.js",
       priority: 0,
-      capabilities: ["commands", "schema", "hooks", "services"],
+      capabilities: ["commands", "schema", "hooks", "parser", "services"],
     });
     expect(governanceBuiltin).toEqual({
       manifest: governanceManifest,
@@ -557,7 +559,7 @@ describe("built-in extension entrypoints", () => {
   });
 
   it("registers governance audit commands and opt-in read/write hook sidecar logging", async () => {
-    const { api, commands, flags, hooks } = createCommandOnlyApi();
+    const { api, commands, flags, parsers, hooks } = createCommandOnlyApi();
     const previousLogPath = process.env.PM_GOVERNANCE_AUDIT_HOOK_LOG;
     const hookLogPath = path.join(await mkdtemp(path.join(os.tmpdir(), "pm-governance-hook-log-")), "audit.jsonl");
 
@@ -572,6 +574,14 @@ describe("built-in extension entrypoints", () => {
       expect(flags.map((entry) => entry.command)).toEqual([
         "files",
         "docs",
+        "update",
+        "update-many",
+        "comments",
+        "notes",
+        "learnings",
+        "release",
+      ]);
+      expect(parsers).toEqual([
         "update",
         "update-many",
         "comments",

@@ -1,5 +1,7 @@
 # pm-governance-audit
 
+Tracker: [pm-vjk3](../../.agents/pm/features/pm-vjk3.toon)
+
 First-party package that restores optional governance audit surfaces in bare-core `pm`.
 
 ## Hooks
@@ -31,6 +33,16 @@ The package also augments existing commands with audit-only flags:
 - `pm notes`: `--allow-audit-note`, `--allow-audit-comment`
 - `pm learnings`: `--allow-audit-learning`, `--allow-audit-comment`
 - `pm release`: `--allow-audit-release`
+
+These flags are parsed and mapped by the package. The core command option types,
+SDK results, contracts, MCP schema, completion, and bare CLI do not declare them.
+`files/docs --audit` result aggregation also runs in the package through the
+generic asynchronous command-result extension service; core `runFiles` and
+`runDocs` return only their non-audit result contracts.
+
+Package-decorated CLI results retain the optional compatibility markers
+`audit_update: true` and `audit_release: true` when the corresponding package
+bypass is used. Those fields are not part of the default SDK result types.
 
 Without this package, those commands, flags, SDK runners, MCP parameters, and
 completion entries are absent from the default pm distribution. Core retains

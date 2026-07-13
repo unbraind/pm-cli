@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: bare-core,cli,governance,packages,sdk
 created_at: "2026-07-12T23:09:24.310Z"
-updated_at: "2026-07-13T00:37:01.761Z"
+updated_at: "2026-07-13T03:15:21.195Z"
 assignee: codex-pm-audit-extraction
 author: codex-pm-audit-extraction
 parent: pm-vjk3
@@ -18,6 +18,8 @@ dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-kg18,related,"2026-07-12T23:09:24.310Z",null,null
   pm-rxp1,related,"2026-07-12T23:09:24.310Z",null,null
   pm-vjk3,parent,"2026-07-12T23:09:24.310Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-13T03:15:21.195Z",codex-pm-audit-extraction,"Step 7 pre-push evidence: the continuation boundary inventory found and removed remaining files/docs audit types/runtime, named bypass options/result markers, audit-smoke telemetry context, and PRD surface. Generic command_result extension plumbing now lets the package own result decoration. Full release:gates and exact 100% coverage pass; isolated bare-vs-installed proof passes. Next state is commit/push followed by current-head hosted review convergence."
 plan_mode: executing
 plan_scope: "Move every audit command, flag, handler, contract, SDK export, MCP parameter, completion entry, and audit-specific documentation surface from core into packages/pm-governance-audit."
 plan_harness: codex
@@ -74,7 +76,8 @@ plan_steps[7]:
   - id: plan-step-007
     order: 7
     title: Publish PR converge all checks and AI review feedback then merge
-    status: pending
+    status: in_progress
     created_at: "2026-07-12T23:09:24.359Z"
-    updated_at: "2026-07-12T23:09:24.359Z"
-body: ""
+    updated_at: "2026-07-13T02:09:10.369Z"
+    evidence: "Continuation resumed on PR #536: first preserve and verify inherited bot fixes, run a fresh repo-wide audit-boundary inventory, close any remaining core CLI/SDK audit surfaces, run focused/full/package/temp-project gates, publish the new head, then complete thread-aware bot acknowledgement and current-head CI convergence before merge."
+body: "## Continuation closeout plan (2026-07-13)\n\n1. Inventory the entire current diff and every PR review/thread/check, preserving inherited uncommitted bot fixes.\n2. Run a repo-wide semantic audit-boundary sweep across src, SDK exports/contracts, MCP schemas, completion/help/guidance, docs, tests, package manifests, and generated fixtures; classify legitimate generic governance/history uses versus audit functionality that must move.\n3. Implement every remaining boundary correction inside packages/pm-governance-audit, with bare-core negative assertions and installed-package parity assertions.\n4. Run focused tests, contracts/snapshots, lint/static/token gates, full coverage/release gates, and an isolated installed-package temp-project proof.\n5. Record files/docs/tests and evidence in pm-rxp1, regenerate the package-owned changelog only after the final tracker mutation, commit with detailed lineage, and push PR #536.\n6. Trigger all configured AI reviewers on the pushed head, wait once for the complete review/check window (no polling), inventory all top-level reviews and inline threads, react according to usefulness, reply inline with disposition/evidence, resolve addressed threads, and repeat after every pushed fix.\n7. Re-read all edited/new comments and reactions, confirm all required GitHub checks are green on the exact head, merge, return to main, and verify merged-head health.\n\nNo core audit-named command, flag, public SDK symbol/type, MCP parameter, completion/help contract, or audit execution path is acceptable. Generic ownership enforcement, validate/health governance, and history-integrity semantics remain core only where they are not audit package functionality."

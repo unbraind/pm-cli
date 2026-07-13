@@ -117,7 +117,7 @@ Telemetry is opt-in via `pm config set telemetry-tracking on` (see [Common Setti
 | `PM_NO_TELEMETRY` | boolean | Alias for `PM_TELEMETRY_DISABLED` (honoured by the same checks). |
 | `PM_TELEMETRY_OTEL_DISABLED` | boolean | Disable only OTLP trace-span export; the event queue still flushes. |
 | `PM_TELEMETRY_INLINE_FLUSH` | boolean | Flush the queue and OTLP spans inline instead of dispatching the detached worker. Mainly for tests; normal use relies on the background worker. |
-| `PM_TELEMETRY_SOURCE_CONTEXT` | `user` \| `automation` \| `test` \| `dogfood` \| `audit_smoke` | Override the inferred source context recorded on each event. Any other value is ignored and the context is inferred. |
+| `PM_TELEMETRY_SOURCE_CONTEXT` | `user` \| `automation` \| `test` \| `dogfood` | Override the inferred source context recorded on each event. Any other value is ignored and the context is inferred. |
 | `PM_TELEMETRY_INGEST_KEY` | string | Sent as the `x-pm-telemetry-key` header on queue flushes; never logged. |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | URL | OTLP/HTTP traces endpoint for command spans. Takes precedence over the base endpoint. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | URL | Base OTLP endpoint; the traces endpoint is derived by appending `/v1/traces`. |

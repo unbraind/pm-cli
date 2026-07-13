@@ -17,7 +17,9 @@ import {
   runDedupeMergePackage,
   runNormalizePackage,
 } from "./runtime.ts";
-import { buildLinkedArtifactAudit } from "./runtime-utils.ts";
+import {
+  decorateGovernanceCommandResult,
+} from "./runtime-utils.ts";
 
 /** Declarative package manifest consumed by the extension loader. */
 export const manifest = {
@@ -25,7 +27,7 @@ export const manifest = {
   version: "0.1.0",
   entry: "./index.js",
   priority: 0,
-  capabilities: ["commands", "schema", "hooks", "services"],
+  capabilities: ["commands", "schema", "hooks", "parser", "services"],
 };
 
 const HOOK_LOG_ENV = "PM_GOVERNANCE_AUDIT_HOOK_LOG";
@@ -407,6 +409,32 @@ function appendHookAuditRecord(
   }
 }
 
+/** Map package-owned flag names onto core-internal ownership controls. */
+export function withOwnershipBypassOptions(
+  command: string,
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  const mapped = { ...options };
+  if (command === "update" || command === "update-many") {
+    mapped.ownershipMetadataBypass =
+      options.allowAuditUpdate === true || options.allow_audit_update === true;
+    mapped.ownershipDependencyBypass =
+      options.allowAuditDepUpdate === true ||
+      options.allow_audit_dep_update === true;
+  } else if (command === "comments") {
+    mapped.ownershipAppendBypass = options.allowAuditComment === true;
+  } else if (command === "notes") {
+    mapped.ownershipAppendBypass =
+      options.allowAuditNote === true || options.allowAuditComment === true;
+  } else if (command === "learnings") {
+    mapped.ownershipAppendBypass =
+      options.allowAuditLearning === true || options.allowAuditComment === true;
+  } else if (command === "release") {
+    mapped.ownershipReleaseBypass = options.allowAuditRelease === true;
+  }
+  return mapped;
+}
+
 /** Registers this package's commands, actions, and runtime hooks with the host. */
 export function activate(api: ExtensionApi): void {
   api.registerCommand(dedupeAuditCommand());
@@ -441,8 +469,20 @@ export function activate(api: ExtensionApi): void {
       description: "Allow releasing an audit claim owned by another agent.",
     },
   ]);
-  api.registerService("linked_artifact_audit", (context) =>
-    buildLinkedArtifactAudit(context.payload),
+  for (const command of [
+    "update",
+    "update-many",
+    "comments",
+    "notes",
+    "learnings",
+    "release",
+  ]) {
+    api.registerParser(command, (context) => ({
+      options: withOwnershipBypassOptions(command, context.options),
+    }));
+  }
+  api.registerService("command_result", (context) =>
+    decorateGovernanceCommandResult(context.payload),
   );
   api.hooks.onRead((context) => appendHookAuditRecord("on_read", context));
   api.hooks.onWrite((context) => appendHookAuditRecord("on_write", context));

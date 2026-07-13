@@ -288,7 +288,7 @@ describe("runComments", () => {
         {
           add: "allowed audit comment",
           author: "owner-b",
-          allowOwnershipAppendBypass: true,
+          ownershipAppendBypass: true,
         },
         { path: context.pmPath },
       );
@@ -1006,16 +1006,24 @@ describe("runComments edit/delete (GH-243)", () => {
         context: expect.objectContaining({ code: "ownership_conflict" }),
       });
 
+      await expect(
+        runComments(
+          id,
+          { edit: 1, add: "hijack", author: "owner-b", ownershipAppendBypass: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.CONFLICT });
+
       const edited = await runComments(
         id,
-        { edit: 1, add: "audited fix", author: "owner-b", allowOwnershipAppendBypass: true },
+        { edit: 1, add: "approved fix", author: "owner-b", force: true },
         { path: context.pmPath },
       );
-      expect(edited.comments[0].text).toBe("audited fix");
+      expect(edited.comments[0].text).toBe("approved fix");
 
       const deleted = await runComments(
         id,
-        { delete: 1, author: "owner-b", allowOwnershipAppendBypass: true },
+        { delete: 1, author: "owner-b", force: true },
         { path: context.pmPath },
       );
       expect(deleted.comments).toHaveLength(0);

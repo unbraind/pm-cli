@@ -955,7 +955,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   op: {
     description: "History operation filter for activity output.",
-    examples: ["create", "update", "close", "update_audit"],
+    examples: ["create", "update", "close", "update_ownership_bypass"],
   },
   fullPeriod: {
     description:

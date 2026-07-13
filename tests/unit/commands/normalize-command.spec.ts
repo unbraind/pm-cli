@@ -153,7 +153,7 @@ describe("runNormalize", () => {
         {
           list: { tag: "normalize-apply", includeBody: true },
           apply: true,
-          allowOwnershipMetadataBypass: true,
+          allowAuditUpdate: true,
           message: "normalize apply unit test",
         },
         { path: context.pmPath },

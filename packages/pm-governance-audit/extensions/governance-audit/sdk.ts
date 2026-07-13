@@ -18,6 +18,7 @@ const runtime = loadedRuntime;
 export const {
   EXIT_CODE,
   PmCliError,
+  PmClient,
   getActiveExtensionRegistrations,
   getSettingsPath,
   isTerminalStatus,

@@ -119,7 +119,7 @@ const DELETE_MUTATION_FLAGS =
 const CLOSE_MUTATION_FLAGS =
   "--author --message --validate-close --duplicate-of --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
 const RELEASE_MUTATION_FLAGS =
-  " --author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
+  "--author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
 
 const COMMAND_COMPLETION_DESCRIPTIONS = [
   ["init", "Initialize pm storage for the current workspace"],
@@ -1504,7 +1504,6 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--limit[Return only latest n entries]:number' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
-            '[Backward-compatible alias for]' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1519,7 +1518,6 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--limit[Return only latest n entries]:number' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
-            '[Backward-compatible alias for]' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1659,7 +1657,6 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           _arguments \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
-            '[Allow non-owner release handoffs without requiring --force]' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'

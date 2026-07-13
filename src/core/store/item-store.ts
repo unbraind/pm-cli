@@ -332,6 +332,9 @@ function bypassesAssigneeConflict(
         op === "learning_add" ||
         op === "release" ||
         op === "update" ||
+        op === "update_ownership_bypass" ||
+        // Historical compatibility for streams written before the optional
+        // governance package moved its ownership workflow out of core.
         op === "update_audit"))
   );
 }

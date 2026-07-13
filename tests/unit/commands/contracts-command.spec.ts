@@ -1286,7 +1286,7 @@ describe("contracts command runtime", () => {
         },
         {
           command: "comments",
-          flags: ["--add", "--stdin", "--file", "--edit", "--delete", "--limit"],
+          flags: ["--add", "--stdin", "--file", "--edit", "--delete", "--limit", "--author", "--message", "--force"],
         },
         {
           command: "notes",

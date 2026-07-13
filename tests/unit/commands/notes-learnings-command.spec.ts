@@ -308,7 +308,7 @@ describe.each(TARGETS)("run%s", (target) => {
         {
           add: "audit append",
           author: "owner-b",
-          allowOwnershipAppendBypass: true,
+          ownershipAppendBypass: true,
         },
         { path: context.pmPath },
       );
@@ -393,7 +393,7 @@ describe.each(TARGETS)("run%s", (target) => {
 });
 
 describe("command-specific audit aliases", () => {
-  it("allows note append audits with allowOwnershipNoteBypass", async () => {
+  it("allows note append audits with ownershipAppendBypass", async () => {
     await withTempPmPath(async (context) => {
       setGovernancePreset(context, "strict");
       const id = createTask(context, "notes-audit-alias");
@@ -411,7 +411,7 @@ describe("command-specific audit aliases", () => {
         {
           add: "allowed note",
           author: "owner-b",
-          allowOwnershipNoteBypass: true,
+          ownershipAppendBypass: true,
         },
         { path: context.pmPath },
       );
@@ -419,7 +419,7 @@ describe("command-specific audit aliases", () => {
     });
   });
 
-  it("allows learning append audits with allowOwnershipLearningBypass", async () => {
+  it("allows learning append audits with ownershipAppendBypass", async () => {
     await withTempPmPath(async (context) => {
       setGovernancePreset(context, "strict");
       const id = createTask(context, "learnings-audit-alias");
@@ -439,7 +439,7 @@ describe("command-specific audit aliases", () => {
         {
           add: "allowed learning",
           author: "owner-b",
-          allowOwnershipLearningBypass: true,
+          ownershipAppendBypass: true,
         },
         { path: context.pmPath },
       );

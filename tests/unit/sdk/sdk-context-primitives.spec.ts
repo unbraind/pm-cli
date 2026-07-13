@@ -576,7 +576,6 @@ describe("SDK context-management primitives", () => {
         item: {},
         released_by: "agent",
         previous_assignee: null,
-        audit_release: false,
         forced: false,
       },
     };
@@ -594,7 +593,6 @@ describe("SDK context-management primitives", () => {
         item: {},
         released_by: "agent",
         previous_assignee: null,
-        audit_release: false,
         forced: false,
       },
     };

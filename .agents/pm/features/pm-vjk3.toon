@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[6]: bare-core,cli,governance,packages,refactor,sdk
 created_at: "2026-07-12T19:53:05.226Z"
-updated_at: "2026-07-12T23:09:30.569Z"
+updated_at: "2026-07-13T02:09:08.750Z"
 assignee: codex-pm-audit-extraction
 author: maintainer-agent
 estimated_minutes: 60

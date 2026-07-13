@@ -26,6 +26,7 @@ const BUILTIN_TYPE_NAME_LOOKUP = new Set<string>(
 );
 import {
   collect,
+  applyActiveCommandResultService,
   extractUpdateManyMutationOptionSource,
   formatHookWarnings,
   getGlobalOptions,
@@ -902,7 +903,16 @@ async function runUpdateManyAction(
     globalOptions,
   );
   await invalidateSearchCachesForMutation(globalOptions, result);
-  printResult(result, globalOptions);
+  printResult(
+    await applyActiveCommandResultService(
+      "update-many",
+      [],
+      options,
+      globalOptions,
+      result,
+    ),
+    globalOptions,
+  );
   if (globalOptions.profile) {
     printError(`profile:command=update-many took_ms=${Date.now() - startedAt}`);
   }
@@ -1364,7 +1374,7 @@ async function runCommentsAction(
   const { runComments } = await import("./commands/comments.js");
   const result = await runComments(
     id,
-    {
+    ({
       add: sources.add,
       stdin: sources.readFromStdin,
       file: sources.readFromFile,
@@ -1373,9 +1383,9 @@ async function runCommentsAction(
       limit: readOptionString(options, "limit"),
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
-      allowOwnershipAppendBypass: Boolean(options.allowAuditComment),
+      ownershipAppendBypass: options.ownershipAppendBypass === true,
       force: Boolean(options.force),
-    },
+    } as Parameters<typeof runComments>[1]),
     globalOptions,
   );
   if (sources.isMutation) {
@@ -1453,7 +1463,16 @@ async function runUpdateAction(
     globalOptions,
   );
   await invalidateSearchCachesForMutation(globalOptions, result);
-  printResult(result, globalOptions);
+  printResult(
+    await applyActiveCommandResultService(
+      "update",
+      [id],
+      options,
+      globalOptions,
+      result,
+    ),
+    globalOptions,
+  );
   if (globalOptions.profile) {
     printError(`profile:command=update took_ms=${Date.now() - startedAt}`);
   }
@@ -1659,7 +1678,7 @@ async function runNotesAction(
   const { runNotes } = await import("./commands/notes.js");
   const result = await runNotes(
     id,
-    {
+    ({
       add,
       stdin: options.stdin === true,
       file: readOptionString(options, "file"),
@@ -1668,11 +1687,9 @@ async function runNotesAction(
       limit: readOptionString(options, "limit"),
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
-      allowOwnershipAppendBypass: Boolean(
-        options.allowAuditNote || options.allowAuditComment,
-      ),
+      ownershipAppendBypass: options.ownershipAppendBypass === true,
       force: Boolean(options.force),
-    },
+    } as Parameters<typeof runNotes>[1]),
     globalOptions,
   );
   if (
@@ -1702,7 +1719,7 @@ async function runLearningsAction(
   const { runLearnings } = await import("./commands/learnings.js");
   const result = await runLearnings(
     id,
-    {
+    ({
       add,
       stdin: options.stdin === true,
       file: readOptionString(options, "file"),
@@ -1711,11 +1728,9 @@ async function runLearningsAction(
       limit: readOptionString(options, "limit"),
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
-      allowOwnershipAppendBypass: Boolean(
-        options.allowAuditLearning || options.allowAuditComment,
-      ),
+      ownershipAppendBypass: options.ownershipAppendBypass === true,
       force: Boolean(options.force),
-    },
+    } as Parameters<typeof runLearnings>[1]),
     globalOptions,
   );
   if (
@@ -1763,7 +1778,6 @@ async function runFilesAction(
       list: Boolean(options.list),
       appendStable: Boolean(options.appendStable),
       validatePaths: Boolean(options.validatePaths),
-      audit: Boolean(options.audit),
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
       force: Boolean(options.force),
@@ -1778,7 +1792,16 @@ async function runFilesAction(
   ) {
     await invalidateSearchCachesForMutation(globalOptions, result);
   }
-  printResult(result, globalOptions);
+  printResult(
+    await applyActiveCommandResultService(
+      "files",
+      [id],
+      options,
+      globalOptions,
+      result,
+    ),
+    globalOptions,
+  );
   if (globalOptions.profile) {
     printError(`profile:command=files took_ms=${Date.now() - startedAt}`);
   }
@@ -1844,7 +1867,6 @@ async function runDocsAction(
       note: readOptionString(options, "note"),
       list: Boolean(options.list),
       validatePaths: Boolean(options.validatePaths),
-      audit: Boolean(options.audit),
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
       force: Boolean(options.force),
@@ -1859,7 +1881,16 @@ async function runDocsAction(
   ) {
     await invalidateSearchCachesForMutation(globalOptions, result);
   }
-  printResult(result, globalOptions);
+  printResult(
+    await applyActiveCommandResultService(
+      "docs",
+      [id],
+      options,
+      globalOptions,
+      result,
+    ),
+    globalOptions,
+  );
   if (globalOptions.profile) {
     printError(`profile:command=docs took_ms=${Date.now() - startedAt}`);
   }

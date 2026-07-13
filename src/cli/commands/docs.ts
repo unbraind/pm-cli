@@ -9,7 +9,6 @@ import {
   renameArtifactsResultKey,
   runLinkedArtifacts,
   type LinkedArtifactResult,
-  type LinkedPathAuditEntry,
   type LinkedPathValidation,
 } from "./linked-artifacts.js";
 
@@ -29,8 +28,6 @@ export interface DocsCommandOptions {
   list?: boolean;
   /** Value that configures or reports validate paths for this contract. */
   validatePaths?: boolean;
-  /** Value that configures or reports audit for this contract. */
-  audit?: boolean;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
@@ -53,8 +50,6 @@ export interface DocsResult {
   migrations_applied?: number;
   /** Value that configures or reports validation for this contract. */
   validation?: LinkedPathValidation;
-  /** Value that configures or reports audit for this contract. */
-  audit?: LinkedPathAuditEntry[];
 }
 
 /** Implements run docs for the public runtime surface of this module. */

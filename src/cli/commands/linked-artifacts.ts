@@ -7,10 +7,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import fg from "fast-glob";
 import { pathExists } from "../../core/fs/fs-utils.js";
-import {
-  getActiveExtensionRegistrations,
-  runActiveServiceOverride,
-} from "../../core/extensions/index.js";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import {
   assertNoUnknownCsvKeys,
   createStdinTokenResolver,
@@ -24,7 +21,6 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { splitCommaList } from "../../core/shared/split-comma-list.js";
 import {
-  listAllItemMetadata,
   locateItem,
   mutateItem,
   readLocatedItem,
@@ -83,8 +79,6 @@ export interface LinkedArtifactCommandOptions {
   appendStable?: boolean;
   /** Value that configures or reports validate paths for this contract. */
   validatePaths?: boolean;
-  /** Value that configures or reports audit for this contract. */
-  audit?: boolean;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
@@ -125,16 +119,6 @@ export interface LinkedPathValidation {
   remote_references: string[];
 }
 
-/** Documents the linked path audit entry payload exchanged by command, SDK, and package integrations. */
-export interface LinkedPathAuditEntry {
-  /** Filesystem path used for path resolution. */
-  path: string;
-  /** Number of linked by entries represented by this result. */
-  linked_by_count: number;
-  /** Value that configures or reports linked item ids for this contract. */
-  linked_item_ids: string[];
-}
-
 /** Documents the linked artifact result payload exchanged by command, SDK, and package integrations. */
 export interface LinkedArtifactResult {
   /** Stable identifier used to reference this record across commands and storage. */
@@ -147,8 +131,6 @@ export interface LinkedArtifactResult {
   migrations_applied?: number;
   /** Value that configures or reports validation for this contract. */
   validation?: LinkedPathValidation;
-  /** Value that configures or reports audit for this contract. */
-  audit?: LinkedPathAuditEntry[];
   /** Value that configures or reports artifacts for this contract. */
   artifacts: LinkedArtifact[];
 }
@@ -487,23 +469,6 @@ export async function validateLinkedPaths(
   };
 }
 
-async function runLinkedArtifactAuditService(
-  paths: string[],
-  allItems: Array<{ id: string; artifacts?: LinkedArtifact[] }>,
-): Promise<LinkedPathAuditEntry[]> {
-  const override = await runActiveServiceOverride("linked_artifact_audit", {
-    paths,
-    items: allItems,
-  });
-  if (!override.handled || !Array.isArray(override.result)) {
-    throw new PmCliError(
-      "The active package registered --audit without a linked-artifact audit service.",
-      EXIT_CODE.GENERIC_FAILURE,
-    );
-  }
-  return override.result as LinkedPathAuditEntry[];
-}
-
 function applyLinkedArtifactMigrations(
   current: LinkedArtifact[],
   adds: LinkedArtifact[],
@@ -556,7 +521,6 @@ async function buildLinkedArtifactResult(params: {
   changed: boolean;
   migrationsApplied?: number;
   options: LinkedArtifactCommandOptions;
-  collectAuditItems: () => Promise<Array<{ id: string; artifacts?: LinkedArtifact[] }>>;
 }): Promise<LinkedArtifactResult> {
   const paths = params.artifacts.map((entry) => entry.path);
   return {
@@ -570,12 +534,6 @@ async function buildLinkedArtifactResult(params: {
         : undefined,
     validation: params.options.validatePaths
       ? await validateLinkedPaths(paths)
-      : undefined,
-    audit: params.options.audit
-      ? await runLinkedArtifactAuditService(
-          paths,
-          await params.collectAuditItems(),
-        )
       : undefined,
   };
 }
@@ -627,24 +585,6 @@ export async function runLinkedArtifacts(
   const shouldMutate =
     adds.length > 0 || removes.length > 0 || migrations.length > 0;
 
-  const collectAuditItems = async (): Promise<
-    Array<{ id: string; artifacts?: LinkedArtifact[] }>
-  > =>
-    (
-      await listAllItemMetadata(
-        pmRoot,
-        settings.item_format,
-        typeRegistry.type_to_folder,
-        undefined,
-        settings.schema,
-      )
-    ).map((entry) => ({
-      id: entry.id,
-      artifacts: (entry as Record<string, unknown>)[metadataKey] as
-        | LinkedArtifact[]
-        | undefined,
-    }));
-
   if (!shouldMutate) {
     const located = await locateItem(
       pmRoot,
@@ -666,7 +606,6 @@ export async function runLinkedArtifacts(
       artifacts,
       changed: false,
       options,
-      collectAuditItems,
     });
   }
 
@@ -727,7 +666,6 @@ export async function runLinkedArtifacts(
     changed: true,
     migrationsApplied: migrationCount,
     options,
-    collectAuditItems,
   });
 }
 
