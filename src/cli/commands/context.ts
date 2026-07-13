@@ -1029,12 +1029,10 @@ export function buildItemContextRelevanceCandidates(
   );
 }
 
-const tokenEncoder = new TextEncoder();
-
 function estimateJsonTokens(value: unknown): number {
   return Math.max(
     1,
-    Math.ceil(tokenEncoder.encode(JSON.stringify(value)).length / 4),
+    Math.ceil(Buffer.byteLength(JSON.stringify(value), "utf8") / 4),
   );
 }
 
@@ -2135,27 +2133,26 @@ async function resolveContextFocusGroups(
       usage.affinity,
     ),
   );
-  const packing = packRankedContextItems(ranking, Math.max(256, limit * 160));
-  const ranked = packing.included.map((entry) => entry.item);
+  const ranked = ranking.ranked.map((entry) => entry.item);
   const activeStatuses = statusRegistry.active_statuses;
-  const activeItems = ranked.filter((item) =>
+  const rankedActiveItems = ranked.filter((item) =>
     activeStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
   );
   const pageStart = useBoundedPage
     ? resolveQueryCursorStart(
-        activeItems,
+        rankedActiveItems,
         cursor,
         cursorFingerprint,
         (item) => item.id,
       )
     : 0;
   const focusPage = useBoundedPage
-    ? activeItems.slice(pageStart, pageStart + limit)
-    : activeItems;
+    ? rankedActiveItems.slice(pageStart, pageStart + limit)
+    : rankedActiveItems;
   const hasMore =
     useBoundedPage &&
     focusPage.length > 0 &&
-    pageStart + focusPage.length < activeItems.length;
+    pageStart + focusPage.length < rankedActiveItems.length;
   const nextCursor =
     hasMore && focusPage.length > 0
       ? encodeQueryCursor(
@@ -2164,7 +2161,24 @@ async function resolveContextFocusGroups(
           pageStart + focusPage.length - 1,
         )
       : undefined;
-  const blockedItems = ranked.filter((item) =>
+  const rankedBlockedItems = ranked.filter((item) =>
+    statusRegistry.blocked_statuses.has(
+      normalizeStatusForRegistry(item.status, statusRegistry),
+    ),
+  );
+  const packingIds = new Set([
+    ...focusPage.map((item) => item.id),
+    ...rankedBlockedItems.slice(0, limit).map((item) => item.id),
+  ]);
+  const packing = packRankedContextItems(
+    { ...ranking, ranked: ranking.ranked.filter((entry) => packingIds.has(entry.id)) },
+    Math.max(256, limit * 160),
+  );
+  const packedItems = packing.included.map((entry) => entry.item);
+  const activeItems = packedItems.filter((item) =>
+    activeStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
+  );
+  const blockedItems = packedItems.filter((item) =>
     statusRegistry.blocked_statuses.has(
       normalizeStatusForRegistry(item.status, statusRegistry),
     ),
@@ -2173,19 +2187,19 @@ async function resolveContextFocusGroups(
   const focusChildrenByParent = contextNeedsAllItems(sectionsIncluded)
     ? childrenByParent
     : undefined;
-  const highLevel = focusPage
+  const highLevel = activeItems
     .filter((item) => HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, useBoundedPage ? focusPage.length : limit)
     .map((item) =>
       toContextFocusItem(item, statusRegistry, focusChildrenByParent),
     );
-  const lowLevel = focusPage
+  const lowLevel = activeItems
     .filter((item) => !HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, useBoundedPage ? focusPage.length : limit)
     .map((item) =>
       toContextFocusItem(item, statusRegistry, focusChildrenByParent),
     );
-  const blockedFallbackUsed = activeItems.length === 0;
+  const blockedFallbackUsed = rankedActiveItems.length === 0;
   return {
     activeItems,
     blockedItems,

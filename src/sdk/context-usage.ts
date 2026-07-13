@@ -247,12 +247,19 @@ export async function recordContextUsageTouches(
   if (!author || !intent) {
     throw new TypeError("Context usage touch requires author and intent");
   }
-  const at = resolveNow(options).iso;
-  const events = options.itemIds.map((itemId): ContextUsageEvent => {
+  const itemIds = new Set<string>();
+  for (const itemId of options.itemIds) {
+    if (typeof itemId !== "string") {
+      throw new TypeError("Context usage touch requires string itemIds");
+    }
     const trimmedId = itemId.trim();
     if (!trimmedId) throw new TypeError("Context usage touch requires non-empty itemId");
-    return { kind: "touch", at, author, item_id: trimmedId, intent };
-  });
+    itemIds.add(trimmedId);
+  }
+  const at = resolveNow(options).iso;
+  const events = [...itemIds].map(
+    (itemId): ContextUsageEvent => ({ kind: "touch", at, author, item_id: itemId, intent }),
+  );
   await appendEvents(options, events);
 }
 

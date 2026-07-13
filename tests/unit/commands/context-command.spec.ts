@@ -1463,6 +1463,29 @@ describe("context command module", () => {
     });
   });
 
+  it("pages over the complete ranked set when packing omits large identities", async () => {
+    await withTempPmPath(async (context) => {
+      for (let index = 0; index < 3; index += 1) {
+        createContextItem(context, {
+          title: `${"🧭".repeat(180)} ${index}`,
+          type: "Task",
+          status: "open",
+        });
+      }
+      const first = await runContext({ limit: "1" }, { path: context.pmPath });
+      expect(first.next_cursor).toBeTypeOf("string");
+      expect(first.has_more).toBe(true);
+      const second = await runContext(
+        { limit: "1", after: first.next_cursor },
+        { path: context.pmPath },
+      );
+      expect(second.next_cursor).toBeTypeOf("string");
+      expect([...second.high_level, ...second.low_level].map((item) => item.id)).not.toContain(
+        [...first.high_level, ...first.low_level][0]?.id,
+      );
+    });
+  });
+
   it("--parent resolves blocker metadata for references outside the subtree", async () => {
     await withTempPmPath(async (context) => {
       const epicId = createContextItem(context, { title: "Blocker epic", type: "Epic", status: "open" });

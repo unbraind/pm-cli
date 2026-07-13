@@ -226,6 +226,28 @@ describe("context usage feedback", () => {
     );
   });
 
+  it("deduplicates normalized touch ids and rejects non-string ids", async () => {
+    const pmRoot = await tempPmRoot();
+    await recordContextUsageTouches({
+      pmRoot,
+      author: "agent",
+      itemIds: ["pm-used", " pm-used ", "pm-other"],
+      intent: "update",
+      now: "2026-07-01T01:00:00.000Z",
+    });
+    const events = (await readFile(path.join(pmRoot, "runtime", "context-usage.jsonl"), "utf8"))
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line) as { item_id: string });
+    expect(events.map((event) => event.item_id)).toEqual(["pm-used", "pm-other"]);
+    await expect(recordContextUsageTouches({
+      pmRoot,
+      author: "agent",
+      itemIds: [42 as never],
+      intent: "update",
+    })).rejects.toThrow("string itemIds");
+  });
+
   it("compacts by retention and count while tolerating malformed derived rows", async () => {
     const pmRoot = await tempPmRoot();
     await mkdir(path.join(pmRoot, "runtime"), { recursive: true });
