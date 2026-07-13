@@ -7,6 +7,12 @@
 - Cursor pagination and bounded-output defaults for list/search/context at scale ([pm-dfg0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-dfg0.toon))
 - Notes/learnings repair parity: add --edit/--delete (and a real --stdin/--file input source) matching comments, so bad annotation entries are fixable via the CLI ([pm-a2h3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-a2h3.toon))
 
+### Changed
+
+- S3: move the --allow-audit-\* override flag family out of core command registrations into pm-governance-audit (enforcement stays core) ([pm-7dcf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7dcf.toon))
+- S2: move the --audit linked-usage report mode off pm files/pm docs into pm-governance-audit ([pm-27mv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-27mv.toon))
+- S1: relocate dedupe-audit/dedupe-merge/comments-audit/normalize implementations into pm-governance-audit and delete their public SDK exports ([pm-79fr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-79fr.toon))
+
 ### Fixed
 
 - Runtime-extension snapshot caches go stale in long-lived in-process embeddings (install invisible to next invocation) ([pm-8fxc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8fxc.toon))
@@ -14,6 +20,9 @@
 
 ### Other
 
+- S4: purge audit surface from default SDK contracts, MCP tool definitions, completion, help, and docs; package declares its own contracts; re-measure token surface ([pm-kg18](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kg18.toon))
+- Promote terminal-status and mutation runner primitives required by package-owned governance workflows ([pm-yu6d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yu6d.toon))
+- Decision: extension-point mechanism and bare-core fallback semantics for extracted audit flags (D1+D2 of pm-vjk3) ([pm-fg0b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-fg0b.toon))
 - Scale benchmark harness: synthetic 10k/100k/1M-item workspace generator + latency/memory/token baseline for the read and claim hot paths ([pm-mi2x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mi2x.toon))
 - Lazy-load @sentry/node off the command hot path (~850ms ESM load on every command, even when telemetry disabled) ([pm-1ybs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-1ybs.toon))
 - ADR: workspace scale-out strategy — indexed reads, storage fan-out, and bounded-output contracts for 100k-1M-item workspaces (proposed) ([pm-bl8x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-bl8x.toon))

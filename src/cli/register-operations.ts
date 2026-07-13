@@ -570,7 +570,7 @@ async function runReleaseAction(
   const startedAt = Date.now();
   const result = await runRelease(id, Boolean(options.force), globalOptions, {
     ...buildLifecycleMutationOptions(options),
-    allowAuditRelease: options.allowAuditRelease === true,
+    allowOwnershipReleaseBypass: options.allowAuditRelease === true,
   });
   await invalidateSearchCachesForMutation(globalOptions, result);
   printResult(result, globalOptions);
@@ -1064,10 +1064,6 @@ export function registerOperationCommands(program: Command): void {
     .argument("<id>", "Item id")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
-    .option(
-      "--allow-audit-release",
-      "Allow non-owner release handoffs without requiring --force",
-    )
     .option("--force", "Force release override")
     .description("Release an item's active claim.")
     .action(runReleaseAction);

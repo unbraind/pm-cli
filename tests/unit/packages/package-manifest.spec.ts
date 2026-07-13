@@ -452,7 +452,7 @@ describe("pm package manifest model", () => {
       source: "pm",
       package_name: "@unbrained/pm-governance-audit",
       package_version: rootPackage.version,
-      aliases: ["governance-audit"],
+      aliases: ["audit", "governance-audit"],
       catalog: {
         display_name: "Governance Audit",
         category: "governance",
@@ -858,6 +858,8 @@ describe("pm package manifest model", () => {
         // The generated loader stays import-light so copied installs load it without
         // resolving the SDK at module-evaluation time.
         expect(source, sourceFile).not.toContain("@unbrained/pm-cli");
+      } else if (sourceFile.endsWith("governance-audit/runtime.ts")) {
+        expect(source, sourceFile).toContain('from "./sdk.ts"');
       } else {
         // index.ts / runtime.ts author against the published SDK specifier (resolved
         // via the package's own exports map at load time).

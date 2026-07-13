@@ -2,19 +2,28 @@ id: pm-27mv
 title: "S2: move the --audit linked-usage report mode off pm files/pm docs into pm-governance-audit"
 description: "Remove the --audit option from the core pm files and pm docs registrations (src/cli/register-mutation.ts ~3163 and ~3221) and carve the cross-item linked-path usage-report branch out of runFilesAction/runDocsAction into the package, per the D1 mechanism chosen on pm-fg0b (registerFlags + registerCommand override vs package-owned report command). Also remove the two --audit entries from sdk/cli-contracts/flag-contracts.ts (~352/~368) and the audit wording from the pm_files MCP tool description (src/mcp/tool-definitions.ts:392) — coordinate with S4 which owns the systematic contract purge. --validate-paths and all other files/docs modes stay core. Blocked by the D1 decision."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[4]: bare-core,cli,packages,refactor
 created_at: "2026-07-12T19:54:30.538Z"
-updated_at: "2026-07-12T19:56:01.031Z"
+updated_at: "2026-07-13T00:56:38.637Z"
+closed_at: "2026-07-13T00:37:29.132Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "bare-core pm files --audit / pm docs --audit fail as unknown option with capability-aware hint (mind pm-qljv class: hint must not recommend a command the user cannot run); with package installed the audit report mode works identically to today; flag-contracts --audit entries and pm_files MCP description audit wording removed from core"
 parent: pm-vjk3
 risk: medium
 confidence: medium
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-fg0b,blocked_by,"2026-07-12T19:55:37.959Z",null,null
-files[1]{path,scope,note}:
+resolution: completed
+expected_result: Bare files/docs reject --audit while the installed package restores linked-usage reports.
+actual_result: Core contracts and registrations omit --audit; package registration and linked_artifact_audit service own and restore both report modes.
+comments[2]{created_at,author,text}:
+  "2026-07-13T00:37:24.371Z",codex-pm-audit-extraction,"Evidence: package activation now exclusively registers files/docs --audit and every allow-audit flag family; bare core help/contracts omit them, while pm install audit restores their behavior. Extension/core option validation was hardened to combine canonical core contracts with package flags."
+  "2026-07-13T00:56:38.012Z",codex-pm-audit-extraction,"Boundary correction evidence: removed buildLinkedPathAudit from core. pm-governance-audit now computes linked-path usage through linked_artifact_audit; core only dispatches the generic service and rejects an incomplete package registration. Focused files/docs, package manifest, and runtime suites pass."
+files[4]{path,scope,note}:
+  packages/pm-governance-audit/extensions/governance-audit/runtime-utils.ts,project,package-owned linked-artifact audit aggregation
+  src/cli/commands/linked-artifacts.ts,project,generic extension service dispatch only
   src/cli/register-mutation.ts,project,"--audit registrations on files (~3163) and docs (~3221)"
+  src/core/extensions/extension-types.ts,project,generic linked-artifact audit service contract
+close_reason: "Removed audit flags from bare core and restored them exclusively through package activation, including canonical flag-validation compatibility."
 body: ""

@@ -1,5 +1,5 @@
 /**
- * @module cli/commands/dedupe-merge
+ * @module packages/pm-governance-audit/dedupe-merge
  *
  * Implements the guided dedupe-merge consolidation workflow (GH-163). Where
  * `pm dedupe-audit` only *detects* likely-duplicate clusters and emits suggested
@@ -10,23 +10,27 @@
  * batch on a single per-item failure — failures are recorded as warnings so an
  * agent can act on a partial result.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { isTerminalStatus } from "../../core/item/status.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { splitCommaList } from "../../core/shared/split-comma-list.js";
-import { nowIso } from "../../core/shared/time.js";
-import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
-import type { ItemMetadata } from "../../types/index.js";
-import { runClose } from "./close.js";
-import { runList } from "./list.js";
-import { runUpdate } from "./update.js";
+import {
+  EXIT_CODE,
+  PmCliError,
+  getActiveExtensionRegistrations,
+  getSettingsPath,
+  isTerminalStatus,
+  locateItem,
+  nowIso,
+  pathExists,
+  readLocatedItem,
+  readSettings,
+  resolveItemTypeRegistry,
+  resolvePmRoot,
+  resolveRuntimeStatusRegistry,
+  runClose,
+  runList,
+  runUpdate,
+  type GlobalOptions,
+  type ItemMetadata,
+} from "./sdk.ts";
+import { splitCommaList } from "./runtime-utils.ts";
 
 /** Documents the dedupe-merge options payload exchanged by command, SDK, and package integrations. */
 export interface DedupeMergeOptions {
@@ -148,7 +152,7 @@ function parseDuplicateIds(
   const ids: string[] = [];
   const seen = new Set<string>();
   for (const entry of collected) {
-    for (const id of splitCommaList(entry, { unique: false })) {
+    for (const id of splitCommaList(entry)) {
       const trimmed = id.trim();
       if (trimmed.length === 0 || seen.has(trimmed)) {
         continue;

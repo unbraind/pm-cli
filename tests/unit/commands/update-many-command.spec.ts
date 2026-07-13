@@ -94,7 +94,7 @@ describe("update-many command helper coverage", () => {
       _testOnlyUpdateManyCommand.sanitizeUpdateOptionsForSummary({
         author: "agent",
         force: true,
-        allowAuditUpdate: true,
+        allowOwnershipMetadataBypass: true,
         message: "msg",
         priority: "2",
         title: "Title",
@@ -523,7 +523,7 @@ describe("runUpdateMany", () => {
           },
           update: {
             description: "bulk applied description",
-            allowAuditUpdate: true,
+            allowOwnershipMetadataBypass: true,
             message: "bulk apply command",
           },
         },

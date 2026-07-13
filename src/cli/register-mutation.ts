@@ -1373,7 +1373,7 @@ async function runCommentsAction(
       limit: readOptionString(options, "limit"),
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
-      allowAuditComment: Boolean(options.allowAuditComment),
+      allowOwnershipAppendBypass: Boolean(options.allowAuditComment),
       force: Boolean(options.force),
     },
     globalOptions,
@@ -1668,7 +1668,7 @@ async function runNotesAction(
       limit: readOptionString(options, "limit"),
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
-      allowAuditComment: Boolean(
+      allowOwnershipAppendBypass: Boolean(
         options.allowAuditNote || options.allowAuditComment,
       ),
       force: Boolean(options.force),
@@ -1711,7 +1711,7 @@ async function runLearningsAction(
       limit: readOptionString(options, "limit"),
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
-      allowAuditComment: Boolean(
+      allowOwnershipAppendBypass: Boolean(
         options.allowAuditLearning || options.allowAuditComment,
       ),
       force: Boolean(options.force),
@@ -1975,27 +1975,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--clear-reminders", "Clear reminders")
     .option("--clear-events", "Clear events")
     .option("--clear-type-options", "Clear type options")
-    .option(
-      "--allow-audit-update",
-      "Allow non-owner metadata-only audit updates without requiring --force",
-    )
-    .option(
-      "--allow-audit-dep-update",
-      "Allow non-owner append-only dependency updates without requiring --force",
-    )
     .option("--force", "Force ownership override");
-  addHiddenOption(
-    updateCommand,
-    "--allow_audit_update",
-    "Alias for --allow-audit-update",
-    false,
-  );
-  addHiddenOption(
-    updateCommand,
-    "--allow_audit_dep_update",
-    "Alias for --allow-audit-dep-update",
-    false,
-  );
   updateCommand.action(runUpdateAction);
 
   const updateManyCommand = program
@@ -2228,14 +2208,6 @@ export function registerMutationCommands(program: Command): void {
     .option("--clear-reminders", "Clear reminders")
     .option("--clear-events", "Clear events")
     .option("--clear-type-options", "Clear type options")
-    .option(
-      "--allow-audit-update",
-      "Allow non-owner metadata-only audit updates without requiring --force",
-    )
-    .option(
-      "--allow-audit-dep-update",
-      "Allow non-owner append-only dependency updates without requiring --force",
-    )
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "Mutation message")
     .option("--force", "Force ownership override");
@@ -2261,8 +2233,6 @@ export function registerMutationCommands(program: Command): void {
       ["--affected_version <value>", "Alias for --affected-version"],
       ["--fixed_version <value>", "Alias for --fixed-version"],
       ["--customer_impact <value>", "Alias for --customer-impact"],
-      ["--allow_audit_update", "Alias for --allow-audit-update"],
-      ["--allow_audit_dep_update", "Alias for --allow-audit-dep-update"],
       ["--filter-estimate-missing", "Alias for --filter-estimates-missing"],
     ],
     false,
@@ -3011,10 +2981,6 @@ export function registerMutationCommands(program: Command): void {
       "Comment author (optional; falls back to PM_AUTHOR/settings)",
     )
     .option("--message <value>", "History message")
-    .option(
-      "--allow-audit-comment",
-      "Allow non-owner append-only comment audits (add/edit/delete) without requiring --force",
-    )
     .option("--force", "Force ownership override")
     .description("List, add, edit, or delete comments for an item.")
     .action(runCommentsAction);
@@ -3061,14 +3027,6 @@ export function registerMutationCommands(program: Command): void {
       "Note author (optional; falls back to PM_AUTHOR/settings)",
     )
     .option("--message <value>", "History message")
-    .option(
-      "--allow-audit-note",
-      "Allow non-owner append-only note audits without requiring --force",
-    )
-    .option(
-      "--allow-audit-comment",
-      "Backward-compatible alias for --allow-audit-note",
-    )
     .option("--force", "Force ownership override")
     .description("List, add, edit, or delete notes for an item.")
     .action(runNotesAction);
@@ -3108,14 +3066,6 @@ export function registerMutationCommands(program: Command): void {
       "Learning author (optional; falls back to PM_AUTHOR/settings)",
     )
     .option("--message <value>", "History message")
-    .option(
-      "--allow-audit-learning",
-      "Allow non-owner append-only learning audits without requiring --force",
-    )
-    .option(
-      "--allow-audit-comment",
-      "Backward-compatible alias for --allow-audit-learning",
-    )
     .option("--force", "Force ownership override")
     .description("List, add, edit, or delete learnings for an item.")
     .action(runLearningsAction);
@@ -3158,10 +3108,6 @@ export function registerMutationCommands(program: Command): void {
     .option(
       "--validate-paths",
       "Validate linked file paths for existence and file shape",
-    )
-    .option(
-      "--audit",
-      "Audit linked file usage across all items for this item's linked paths",
     )
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
@@ -3216,10 +3162,6 @@ export function registerMutationCommands(program: Command): void {
     .option(
       "--validate-paths",
       "Validate linked doc paths for existence and file shape",
-    )
-    .option(
-      "--audit",
-      "Audit linked doc usage across all items for this item's linked paths",
     )
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")

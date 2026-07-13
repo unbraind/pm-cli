@@ -143,13 +143,13 @@ const CALENDAR_HINT: PackageCommandHint = {
   packageName: "@unbrained/pm-calendar",
   installCommand: "pm install calendar",
 };
-const GOVERNANCE_AUDIT_HINT: PackageCommandHint = {
-  packageName: "@unbrained/pm-governance-audit",
-  installCommand: "pm install governance-audit",
-};
 const SEARCH_ADVANCED_HINT: PackageCommandHint = {
   packageName: "@unbrained/pm-search-advanced",
   installCommand: "pm install search-advanced",
+};
+const GOVERNANCE_AUDIT_HINT: PackageCommandHint = {
+  packageName: "@unbrained/pm-governance-audit",
+  installCommand: "pm install audit",
 };
 
 const KNOWN_PACKAGE_COMMAND_HINTS: Readonly<
@@ -167,16 +167,16 @@ const KNOWN_PACKAGE_COMMAND_HINTS: Readonly<
   },
   calendar: CALENDAR_HINT,
   cal: CALENDAR_HINT,
-  "comments-audit": GOVERNANCE_AUDIT_HINT,
-  "dedupe-audit": GOVERNANCE_AUDIT_HINT,
-  "dedupe-merge": GOVERNANCE_AUDIT_HINT,
-  normalize: GOVERNANCE_AUDIT_HINT,
   reindex: SEARCH_ADVANCED_HINT,
   "search-advanced": SEARCH_ADVANCED_HINT,
   "test-runs": {
     packageName: "@unbrained/pm-linked-test-adapters",
     installCommand: "pm install linked-test-adapters",
   },
+  "comments-audit": GOVERNANCE_AUDIT_HINT,
+  "dedupe-audit": GOVERNANCE_AUDIT_HINT,
+  "dedupe-merge": GOVERNANCE_AUDIT_HINT,
+  normalize: GOVERNANCE_AUDIT_HINT,
 };
 
 function resolveKnownPackageCommandHint(
@@ -700,24 +700,16 @@ function buildOwnershipConflictGuidance(
       title: "Ownership conflict",
       happened: message,
       required:
-        "Run as assigned owner, use audit flags for safe non-owner updates, or use --force only for approved override scenarios.",
+        "Run as the assigned owner, claim the item when appropriate, or use --force only for an approved override.",
       why: "Ownership checks prevent accidental concurrent mutations on claimed items and protect against conflicting writes.",
       examples: [
-        'pm update pm-a1b2 --allow-audit-update --description "..." --author "audit-agent"',
-        'pm update pm-a1b2 --allow-audit-dep-update --dep "..." --author "audit-agent"',
-        'pm comments pm-a1b2 "..." --allow-audit-comment --author "audit-agent"',
         'pm claim pm-a1b2 --author "codex-agent"',
-        'pm release pm-a1b2 --allow-audit-release --author "reviewer"',
         "pm update pm-a1b2 --status in_progress --force",
       ],
       nextSteps: [
-        "Use --allow-audit-update for metadata-only non-owner updates (excludes lifecycle/ownership fields).",
-        "Use --allow-audit-dep-update for dependency-only non-owner additions.",
-        "Use --allow-audit-comment on comments/notes/learnings for append-only audit entries.",
         "Use --force for PM audits and systematic metadata updates performed by leads/maintainers.",
         "Use --force when correcting known stale metadata after coordinating ownership changes.",
         'For non-terminal reassignment, prefer "pm claim <ID> --author <you>" before running other mutations.',
-        'For assignee handoff release workflows, prefer "pm release <ID> --allow-audit-release --author <you>" before using --force.',
       ],
     }),
     rawMessage,

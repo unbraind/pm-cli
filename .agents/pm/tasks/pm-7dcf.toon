@@ -2,22 +2,28 @@ id: pm-7dcf
 title: "S3: move the --allow-audit-* override flag family out of core command registrations into pm-governance-audit (enforcement stays core)"
 description: "Remove core registration of the six override flags: --allow-audit-update + --allow-audit-dep-update (pm update / update-many; registration-helpers.ts:527-532, update-many.ts:59-60), --allow-audit-comment (comments.ts:41), --allow-audit-note, --allow-audit-learning (learnings.ts:33-35), --allow-audit-release (register-operations.ts:573). The package re-registers them via registerFlags(targetCommand) per D1 on pm-fg0b; core keeps the ENFORCEMENT (audit-protection guard) and keeps reading the option VALUES generically (anyOptionTrue alias lists + allowAuditBypass merge in register-mutation.ts:1376/1671/1714) so plugin-supplied flags pass through unchanged. Bare-core fallback behavior (D2): non-owner audit-gated mutations without the plugin per the decision (--force only vs hard block). Update error-guidance.ts:703 ownership-conflict guidance to be capability-aware (only mention audit flags when the plugin is installed — pm-qljv/pm-ulqu class, render from declared contract domain per the pm-mpbb ledger). Test risk: pm-qfdd commander-singleton leak affects in-process dynamic-flag tests — use worker-bridge suites (pm-kvd0 pattern). Blocked by the D1/D2 decision."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[5]: bare-core,cli,governance,packages,refactor
 created_at: "2026-07-12T19:54:46.588Z"
-updated_at: "2026-07-12T19:56:03.408Z"
+updated_at: "2026-07-13T00:40:15.322Z"
+closed_at: "2026-07-13T00:37:30.102Z"
 author: maintainer-agent
 estimated_minutes: 150
 acceptance_criteria: "no --allow-audit-* string registered by bare core (grep src/cli clean of flag registrations; option-value reads may remain); with package installed all six flags parse and gate exactly as today (covering specs); bare-core non-owner mutation error guidance no longer names uninstallable flags; MCP allowAudit* params follow the same ownership split (tool-option-contracts.ts:285-286)"
 parent: pm-vjk3
 risk: medium
 confidence: medium
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-fg0b,blocked_by,"2026-07-12T19:55:38.329Z",null,null
-files[4]{path,scope,note}:
+resolution: completed
+expected_result: All allow-audit flags are package-owned while enforcement remains generic in core.
+actual_result: Bare help omits every allow-audit flag; installed package parsing and ownership bypass tests pass.
+comments[1]{created_at,author,text}:
+  "2026-07-13T00:37:24.709Z",codex-pm-audit-extraction,"Evidence: @unbrained/pm-governance-audit now owns four command handlers, the audit alias, package help/README, install-safe SDK adapter, and restored package-only flags. Isolated install plus package doctor and runtime tests pass."
+files[5]{path,scope,note}:
   src/cli/commands/update-many.ts,project,"allow-audit option keys :59-60"
   src/cli/error-guidance.ts,project,"ownership-conflict guidance names audit flags :703"
+  src/cli/register-mutation.ts,project,remove core audit flag registration and retain generic enforcement bridge
   src/cli/register-operations.ts,project,"allowAuditRelease :573"
   src/cli/registration-helpers.ts,project,"allowAuditUpdate/DepUpdate anyOptionTrue :527-532"
+close_reason: Moved the full --allow-audit-* flag family out of core registrations into pm-governance-audit while retaining generic core enforcement.
 body: ""

@@ -13,7 +13,7 @@
     "env_write": false,
     "process_spawn": false
   },
-  "capabilities": ["commands", "schema", "hooks"],
+  "capabilities": ["commands", "schema", "hooks", "services"],
   "manifest_version": 1,
   "pm_min_version": "2026.6.24",
   "activation": {

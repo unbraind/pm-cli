@@ -39,7 +39,6 @@ Use [`scripts/release/sdk-import-boundary-baseline.json`](../scripts/release/sdk
 | `list`, `get`, `search`, `context`, `next`, `aggregate`, `stats` | [pm-rjqr](../.agents/pm/features/pm-rjqr.toon) | Read models should be reusable by CLI, MCP, and custom agents without shelling out. |
 | `comments`, `notes`, `learnings`, `files`, `docs`, `deps`, `append` | [pm-zwpp](../.agents/pm/features/pm-zwpp.toon) | Annotation/link mutation semantics must be stable SDK primitives. |
 | `schema`, `config`, `profile`, `init`, `init-agent-guidance` | [pm-3mna](../.agents/pm/features/pm-3mna.toon) | Universal customization requires programmatic schema, profile, and config APIs. |
-| `validate`, `health`, `gc`, `normalize`, `dedupe-audit`, `comments-audit` | [pm-oxrw](../.agents/pm/features/pm-oxrw.toon) | Governance should expose structured findings, remediation hints, and dry-run plans. |
 | `history`, `activity`, `history-redact`, `history-repair`, `history-compact` | [pm-4a7m](../.agents/pm/features/pm-4a7m.toon) | Audited history read, activity, rewrite, and checkpoint operations need explicit public contracts. |
 | `plan` | [pm-je50](../.agents/pm/features/pm-je50.toon) | Plan harness operations should be usable by external orchestrators through SDK calls. |
 | `test`, `test-all`, `test-runs`, `eval`, `telemetry`, `reindex` | [pm-oslr](../.agents/pm/features/pm-oslr.toon) | Execution helpers should return typed run state and diagnostics instead of CLI-only text. |

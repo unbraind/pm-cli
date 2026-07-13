@@ -140,19 +140,6 @@
       ]
     },
     {
-      "source": "src/cli/commands/comments-audit.ts",
-      "imports": [
-        "src/core/item/status.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
       "source": "src/cli/commands/comments.ts",
       "imports": [
         "src/core/item/parse.ts",
@@ -261,38 +248,6 @@
         "src/core/shared/command-types.ts",
         "src/core/shared/constants.ts",
         "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/dedupe-audit.ts",
-      "imports": [
-        "src/core/item/status.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/text-normalization.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/dedupe-merge.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/item/status.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/split-comma-list.ts",
         "src/core/shared/time.ts",
         "src/core/store/item-store.ts",
         "src/core/store/paths.ts",
@@ -741,22 +696,6 @@
         "src/core/shared/command-types.ts",
         "src/core/shared/constants.ts",
         "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/normalize.ts",
-      "imports": [
-        "src/core/fs/fs-utils.ts",
-        "src/core/item/item-record.ts",
-        "src/core/item/status.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/primitives.ts",
         "src/core/shared/time.ts",
         "src/core/store/paths.ts",
         "src/core/store/settings.ts"

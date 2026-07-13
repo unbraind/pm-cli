@@ -12,7 +12,7 @@ import {
   wrapOwnershipConflict,
 } from "../../../src/sdk/annotations.js";
 import { runComments } from "../../../src/cli/commands/comments.js";
-import { runCommentsAudit } from "../../../src/cli/commands/comments-audit.js";
+import { runCommentsAudit } from "../../../packages/pm-governance-audit/extensions/governance-audit/comments-audit.ts";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
@@ -79,7 +79,7 @@ describe("runComments", () => {
             collectionKey: "comments",
             op: "comment_add",
             parseText: (raw) => raw,
-            allowAuditBypass: false,
+            bypassOwnershipConflict: false,
             conflictGuidance: {
               required: "required",
               examples: [],
@@ -278,8 +278,8 @@ describe("runComments", () => {
         exitCode: EXIT_CODE.CONFLICT,
         context: expect.objectContaining({
           code: "ownership_conflict",
-          required: expect.stringContaining("--allow-audit-comment"),
-          nextSteps: expect.arrayContaining([expect.stringContaining("--allow-audit-comment")]),
+          required: expect.stringContaining("--force"),
+          nextSteps: expect.arrayContaining([expect.stringContaining("--force")]),
         }),
       });
 
@@ -288,7 +288,7 @@ describe("runComments", () => {
         {
           add: "allowed audit comment",
           author: "owner-b",
-          allowAuditComment: true,
+          allowOwnershipAppendBypass: true,
         },
         { path: context.pmPath },
       );
@@ -523,7 +523,8 @@ describe("runComments", () => {
     vi.doMock("../../../src/core/store/settings.js", () => ({
       readSettings: vi.fn(async () => ({ schema: {} })),
     }));
-    vi.doMock("../../../src/core/schema/runtime-schema.js", () => ({
+    vi.doMock("../../../src/core/schema/runtime-schema.js", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("../../../src/core/schema/runtime-schema.js")>()),
       resolveRuntimeStatusRegistry: vi.fn(() => ({
         definitions: [{ id: "open" }, { id: "closed" }],
       })),
@@ -546,7 +547,7 @@ describe("runComments", () => {
       })),
     }));
 
-    const { runCommentsAudit: mockedRunCommentsAudit } = await import("../../../src/cli/commands/comments-audit.js");
+    const { runCommentsAudit: mockedRunCommentsAudit } = await import("../../../packages/pm-governance-audit/extensions/governance-audit/comments-audit.ts");
     const result = await mockedRunCommentsAudit({ fullHistory: true }, { path: "/tmp/comments-audit-branch" });
     expect(result.items[0]?.comments).toEqual([]);
     expect(result.export.row_count).toBe(0);
@@ -987,7 +988,7 @@ describe("runComments edit/delete (GH-243)", () => {
     });
   });
 
-  it("honors ownership rules for edit/delete: blocked without bypass, allowed with --allow-audit-comment", async () => {
+  it("honors ownership rules for edit/delete: blocked without bypass, allowed with --force", async () => {
     await withTempPmPath(async (context) => {
       setGovernancePreset(context, "strict");
       const id = createTask(context, "comments-edit-ownership");
@@ -1007,14 +1008,14 @@ describe("runComments edit/delete (GH-243)", () => {
 
       const edited = await runComments(
         id,
-        { edit: 1, add: "audited fix", author: "owner-b", allowAuditComment: true },
+        { edit: 1, add: "audited fix", author: "owner-b", allowOwnershipAppendBypass: true },
         { path: context.pmPath },
       );
       expect(edited.comments[0].text).toBe("audited fix");
 
       const deleted = await runComments(
         id,
-        { delete: 1, author: "owner-b", allowAuditComment: true },
+        { delete: 1, author: "owner-b", allowOwnershipAppendBypass: true },
         { path: context.pmPath },
       );
       expect(deleted.comments).toHaveLength(0);
@@ -1031,7 +1032,7 @@ describe("runComments edit/delete (GH-243)", () => {
         collectionKey: "comments" as const,
         op: "comment_add" as const,
         parseText: (raw: string) => raw,
-        allowAuditBypass: false,
+        bypassOwnershipConflict: false,
         conflictGuidance: { required: "required", examples: [], nextSteps: [] },
       };
 

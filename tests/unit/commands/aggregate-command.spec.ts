@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { _testOnlyAggregateCommand, runAggregate } from "../../../src/cli/commands/aggregate.js";
-import { runNormalize } from "../../../src/cli/commands/normalize.js";
+import { runNormalize } from "../../../packages/pm-governance-audit/extensions/governance-audit/normalize.ts";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";

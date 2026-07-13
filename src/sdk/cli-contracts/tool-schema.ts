@@ -13,12 +13,10 @@ import {
   TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS,
   TOOL_UPDATE_OPTION_CONTRACTS,
   TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS,
-  TOOL_NORMALIZE_FILTER_OPTION_CONTRACTS,
   TOOL_CONTEXT_OPTION_CONTRACTS,
   TOOL_ACTIVITY_OPTION_CONTRACTS,
   TOOL_LIST_FILTER_OPTION_CONTRACTS,
   TOOL_AGGREGATE_OPTION_CONTRACTS,
-  TOOL_DEDUPE_AUDIT_OPTION_CONTRACTS,
   TOOL_SEARCH_FILTER_OPTION_CONTRACTS,
   TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS,
 } from "./tool-option-contracts.js";
@@ -114,15 +112,6 @@ const UPDATE_MANY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "noCheckpoint",
 ]);
 
-const NORMALIZE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
-  ...TOOL_NORMALIZE_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
-  "dryRun",
-  "apply",
-  "author",
-  "message",
-  "allowAuditUpdate",
-  "force",
-]);
 
 const CLOSE_MANY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
@@ -204,9 +193,6 @@ const AGGREGATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "completion",
   "includeUnparented",
 ]);
-const DEDUPE_AUDIT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList(
-  TOOL_DEDUPE_AUDIT_OPTION_CONTRACTS.map((entry) => entry.param),
-);
 const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "query",
   "keywords",
@@ -411,7 +397,6 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS,
     },
     aggregate: { optional: AGGREGATE_CONTRACT_PARAMETER_KEYS },
-    "dedupe-audit": { optional: DEDUPE_AUDIT_CONTRACT_PARAMETER_KEYS },
     guide: { optional: ["list", "format", "depth"] },
     context: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
     ctx: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
@@ -583,7 +568,6 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     },
     update: { required: ["id"], optional: UPDATE_CONTRACT_PARAMETER_KEYS },
     "update-many": { optional: UPDATE_MANY_CONTRACT_PARAMETER_KEYS },
-    normalize: { optional: NORMALIZE_CONTRACT_PARAMETER_KEYS },
     close: {
       required: ["id"],
       optional: [
@@ -616,25 +600,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "edit",
         "delete",
         "limit",
-        "allowAuditComment",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
-      ],
-    },
-    "comments-audit": {
-      optional: [
-        "status",
-        "type",
-        "assignee",
-        "assigneeFilter",
-        "parent",
-        "tag",
-        "sprint",
-        "release",
-        "priority",
-        "limitItems",
-        "limit",
-        "fullHistory",
-        "latest",
       ],
     },
     notes: {
@@ -646,8 +612,6 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "edit",
         "delete",
         "limit",
-        "allowAuditNote",
-        "allowAuditComment",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
     },
@@ -660,8 +624,6 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "edit",
         "delete",
         "limit",
-        "allowAuditLearning",
-        "allowAuditComment",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
     },
@@ -682,7 +644,6 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "discoveryNote",
         "appendStable",
         "validatePaths",
-        "audit",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
       dependentAnyOfRequired: [
@@ -699,7 +660,6 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "addNote",
         "list",
         "validatePaths",
-        "audit",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
       dependentAnyOfRequired: [
@@ -864,10 +824,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     },
     release: {
       required: ["id"],
-      optional: [
-        "allowAuditRelease",
-        ...LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
-      ],
+      optional: LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
     },
     "start-task": {
       required: ["id"],

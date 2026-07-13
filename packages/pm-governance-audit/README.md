@@ -23,10 +23,26 @@ bodies and full before/after snapshots.
 - `pm comments-audit`
 - `pm normalize`
 
+The package also augments existing commands with audit-only flags:
+
+- `pm files <id> --audit` and `pm docs <id> --audit`
+- `pm update` / `pm update-many`: `--allow-audit-update`, `--allow-audit-dep-update`
+- `pm comments`: `--allow-audit-comment`
+- `pm notes`: `--allow-audit-note`, `--allow-audit-comment`
+- `pm learnings`: `--allow-audit-learning`, `--allow-audit-comment`
+- `pm release`: `--allow-audit-release`
+
+Without this package, those commands, flags, SDK runners, MCP parameters, and
+completion entries are absent from the default pm distribution. Core retains
+only generic ownership enforcement; `--force` is the explicit bare-core
+override.
+
 ## Install
 
 ```bash
 pm install governance-audit --project
+# Short alias:
+pm install audit --project
 ```
 
 ## Verify

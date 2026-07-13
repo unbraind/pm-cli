@@ -1,21 +1,24 @@
 /**
- * @module cli/commands/comments-audit
+ * @module packages/pm-governance-audit/comments-audit
  *
  * Implements the pm comments audit command surface and its agent-facing runtime behavior.
  */
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { nowIso } from "../../core/shared/time.js";
-import { normalizeStatusInput } from "../../core/item/status.js";
 import {
+  EXIT_CODE,
+  PmCliError,
+  normalizeStatusInput,
+  nowIso,
+  readSettings,
+  resolvePmRoot,
   resolveRuntimeStatusRegistry,
+  runList,
+  type GlobalOptions,
+  type ItemMetadata,
+  type ItemStatus,
   type RuntimeStatusRegistry,
-} from "../../core/schema/runtime-schema.js";
-import { resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
-import { type Comment, type ItemStatus } from "../../types/index.js";
-import { runList } from "./list.js";
+} from "./sdk.ts";
+
+type Comment = NonNullable<ItemMetadata["comments"]>[number];
 
 /** Documents the comments audit options payload exchanged by command, SDK, and package integrations. */
 export interface CommentsAuditOptions {

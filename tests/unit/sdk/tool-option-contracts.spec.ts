@@ -3,7 +3,6 @@ import type { ToolOptionFlagContract } from "../../../src/sdk/cli-contracts.js";
 import {
   TOOL_AGGREGATE_OPTION_CONTRACTS,
   TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS,
-  TOOL_DEDUPE_AUDIT_OPTION_CONTRACTS,
   TOOL_LIST_FILTER_OPTION_CONTRACTS,
   TOOL_SEARCH_FILTER_OPTION_CONTRACTS,
   TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS,
@@ -28,13 +27,11 @@ describe("tool option contract composition", () => {
     const listStatus = requireOptionContract(TOOL_LIST_FILTER_OPTION_CONTRACTS, "status");
     const searchStatus = requireOptionContract(TOOL_SEARCH_FILTER_OPTION_CONTRACTS, "status");
     const aggregateStatus = requireOptionContract(TOOL_AGGREGATE_OPTION_CONTRACTS, "status");
-    const dedupeStatus = requireOptionContract(TOOL_DEDUPE_AUDIT_OPTION_CONTRACTS, "status");
     const updateManyStatus = requireOptionContract(TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS, "filterStatus");
     const closeManyStatus = requireOptionContract(TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS, "filterStatus");
 
     expect(listStatus).not.toBe(searchStatus);
     expect(listStatus).not.toBe(aggregateStatus);
-    expect(listStatus).not.toBe(dedupeStatus);
     expect(updateManyStatus).not.toBe(closeManyStatus);
   });
 });

@@ -22,7 +22,6 @@ Use native pm MCP tools to audit the repository's pm tracker state.
    - `pm_health` — tracker diagnostics
    - `pm_validate` with `checkResolution: true, checkHistoryDrift: true, checkFiles: true, scanMode: "tracked-all"`
    - `pm_run` with `action: "aggregate", options: { groupBy: "status,type" }` — count breakdown
-   - `pm_run` with `action: "dedupe-audit", options: { mode: "parent_scope", limit: "20" }` — duplicates
    - `pm_run` with `action: "stats"` — storage metrics
    - `pm_run` with `action: "calendar", options: { view: "week", include: "deadlines,reminders" }` — upcoming
 6. **Classify findings** — create child pm items for any blocker or warning findings.

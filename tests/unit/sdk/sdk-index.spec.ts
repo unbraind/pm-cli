@@ -647,9 +647,7 @@ describe("public sdk entrypoint", () => {
     expect(PM_TOOL_ACTIONS).not.toContain("templates-save");
     expect(PM_TOOL_ACTIONS).not.toEqual(
       expect.arrayContaining([
-        "comments-audit",
         "completion",
-        "dedupe-audit",
         "guide",
         "normalize",
         "reindex",
@@ -665,9 +663,7 @@ describe("public sdk entrypoint", () => {
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS).not.toHaveProperty("test-runs-list");
     expect(PM_CORE_COMMAND_NAMES).not.toEqual(
       expect.arrayContaining([
-        "comments-audit",
         "completion",
-        "dedupe-audit",
         "guide",
         "normalize",
         "reindex",
@@ -857,10 +853,7 @@ describe("public sdk entrypoint", () => {
     // their own contracts (not globals-only) for argv normalization + usage.
     expect(flagsFor("guide")).toEqual(expect.arrayContaining(["--list", "--depth"]));
     expect(flagsFor("completion")).toEqual(expect.arrayContaining(["--eager-tags"]));
-    expect(flagsFor("dedupe-audit")).toEqual(expect.arrayContaining(["--mode", "--threshold"]));
-    expect(flagsFor("dedupe-merge")).toEqual(expect.arrayContaining(["--keep", "--apply"]));
-    expect(flagsFor("normalize")).toEqual(expect.arrayContaining(["--filter-status", "--apply"]));
-    expect(flagsFor("comments-audit")).toEqual(expect.arrayContaining(["--limit-items", "--latest"]));
+    expect(flagsFor("normalize")).toEqual(expect.arrayContaining(["--json", "--pm-path"]));
     expect(flagsFor("cal")).toEqual(expect.arrayContaining(["--from", "--to"]));
     expect(flagsFor("ctx")).toEqual(expect.arrayContaining(["--depth"]));
     expect(flagsFor("test-runs-worker")).toEqual(expect.arrayContaining(["--status", "--tail"]));

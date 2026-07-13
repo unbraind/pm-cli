@@ -2,11 +2,12 @@ id: pm-rxp1
 title: "S5: coverage migration + bare-core vs installed-plugin e2e verification for the audit extraction"
 description: "Close the program with verification: (1) migrate/replace the unit+e2e specs that covered the four commands and six flags so the 100% literal all-src coverage gate stays green after ~2,146 LOC leave src/ (vitest.config.ts include/exclude reconciliation; package-side specs cover the moved logic — worker-bridge runCli pattern per pm-kvd0; watch pm-qfdd in-process flag leakage); (2) e2e matrix: bare core has NO audit commands/flags (help, completion, contracts, MCP tools/list, unknown-option guidance all clean) AND pm install governance-audit restores the full surface with identical output (README verify commands + golden JSON comparisons); (3) Windows + macOS legs: windows-regression job is the Windows oracle, nightly is the sole macOS oracle — enumerate every failed leg if red; (4) changelog: close items with accurate type/tags, regen LAST (pnpm changelog:pm), checkout .managed-extensions.json before commit. Blocked by S4."
 type: Task
-status: open
+status: in_progress
 priority: 1
 tags[4]: bare-core,coverage,packages,tests
 created_at: "2026-07-12T19:55:15.063Z"
-updated_at: "2026-07-12T19:55:39.242Z"
+updated_at: "2026-07-13T01:21:50.923Z"
+assignee: codex-pm-audit-extraction
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: coverage gate green with the four files relocated; package logic covered by specs; bare-vs-installed e2e matrix green on linux + windows-regression; nightly macOS watched post-merge; changelog regenerated as the last step of the closing PR
@@ -15,4 +16,24 @@ risk: medium
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-kg18,blocked_by,"2026-07-12T19:55:39.214Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-12T23:37:43.406Z",codex-pm-audit-extraction,"E2E evidence: isolated temp project bare core rejected dedupe-audit and exposed no audit flags; pm install audit activated cleanly; package doctor OK; dedupe-audit, comments-audit, normalize, update help, and files help restored expected package surface."
+  "2026-07-13T00:37:01.319Z",codex-pm-audit-extraction,"Verification evidence: pnpm release:gates reached 278 test files / 5592 tests with literal 100% statement, branch, function, and line coverage; typecheck, docs/skills, static quality, token budget, and isolated package installation all pass. Existing scripts/reviews/pr-review-loop.mjs and docs/PR_REVIEW_LOOP.md are linked for the hosted bot acknowledgement loop."
+  "2026-07-13T01:21:50.923Z",codex-pm-audit-extraction,"Final local verification evidence: node scripts/run-tests.mjs coverage passed 278 test files and 5,593 tests with literal 100% statements (35,360/35,360), branches (25,334/25,334), functions (7,141/7,141), and lines (34,585/34,585). The package-owned linked_artifact_audit service now contains files/docs aggregation; bare core only dispatches the optional service."
+files[9]{path,scope,note}:
+  scripts/reviews/pr-review-loop.mjs,project,reusable no-poll review inventory and acknowledgement workflow
+  tests/unit/commands/comments-command.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/commands/completion-command.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/commands/contracts-command.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/commands/dedupe-audit-command.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/commands/dedupe-merge-command.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/commands/normalize-command.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/extensions/builtin-extension-entrypoints.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/packages/governance-audit-runtime.spec.ts,project,migrated package and bare-core coverage
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1200,100 percent literal all-src coverage gate
+  node scripts/run-tests.mjs test,project,900,full sandboxed test suite
+  "pnpm release:gates",project,1200,full release readiness gates
+docs[1]{path,scope,note}:
+  docs/PR_REVIEW_LOOP.md,project,documented bot trigger wait inventory reaction reply and recheck workflow
 body: ""

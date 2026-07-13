@@ -253,53 +253,6 @@ export const AGGREGATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--release" },
 ];
 
-/** Public contract for dedupe audit flag contracts, shared by SDK and presentation-layer consumers. */
-export const DEDUPE_AUDIT_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--mode" },
-  { flag: "--limit" },
-  { flag: "--threshold" },
-  { flag: "--status" },
-  { flag: "--type" },
-  { flag: "--tag" },
-  { flag: "--priority" },
-  { flag: "--deadline-before" },
-  { flag: "--deadline-after" },
-  { flag: "--assignee" },
-  { flag: "--assignee-filter" },
-  { flag: "--assignee_filter" },
-  { flag: "--parent" },
-  { flag: "--sprint" },
-  { flag: "--release" },
-];
-
-/** Public contract for dedupe merge flag contracts, shared by SDK and presentation-layer consumers. */
-export const DEDUPE_MERGE_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--keep" },
-  { flag: "--close", list: true },
-  { flag: "--apply" },
-  { flag: "--dry-run" },
-  { flag: "--skip-children" },
-  { flag: "--author" },
-  { flag: "--message" },
-];
-
-/** Public contract for comments audit flag contracts, shared by SDK and presentation-layer consumers. */
-export const COMMENTS_AUDIT_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--status" },
-  { flag: "--type" },
-  { flag: "--assignee" },
-  { flag: "--assignee-filter" },
-  { flag: "--assignee_filter" },
-  { flag: "--parent" },
-  { flag: "--tag" },
-  { flag: "--sprint" },
-  { flag: "--release" },
-  { flag: "--priority" },
-  { flag: "--limit-items" },
-  { flag: "--limit" },
-  { flag: "--full-history" },
-  { flag: "--latest" },
-];
 
 /** Public contract for comments flag contracts, shared by SDK and presentation-layer consumers. */
 export const COMMENTS_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -311,7 +264,6 @@ export const COMMENTS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--limit" },
   { flag: "--author" },
   { flag: "--message" },
-  { flag: "--allow-audit-comment" },
   { flag: "--force" },
 ];
 
@@ -321,8 +273,6 @@ export const NOTES_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--limit" },
   { flag: "--author" },
   { flag: "--message" },
-  { flag: "--allow-audit-note" },
-  { flag: "--allow-audit-comment" },
   { flag: "--force" },
 ];
 
@@ -332,8 +282,6 @@ export const LEARNINGS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--limit" },
   { flag: "--author" },
   { flag: "--message" },
-  { flag: "--allow-audit-learning" },
-  { flag: "--allow-audit-comment" },
   { flag: "--force" },
 ];
 
@@ -349,7 +297,6 @@ export const FILES_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--list" },
   { flag: "--append-stable" },
   { flag: "--validate-paths" },
-  { flag: "--audit" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
@@ -365,7 +312,6 @@ export const DOCS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--note" },
   { flag: "--list" },
   { flag: "--validate-paths" },
-  { flag: "--audit" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
@@ -806,7 +752,6 @@ export const DELETE_FLAG_CONTRACTS: CliFlagContract[] = [
 export const RELEASE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
-  { flag: "--allow-audit-release" },
   { flag: "--force" },
 ];
 
@@ -1200,10 +1145,6 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--clear-reminders" },
   { flag: "--clear-events" },
   { flag: "--clear-type-options" },
-  { flag: "--allow-audit-update" },
-  { flag: "--allow_audit_update" },
-  { flag: "--allow-audit-dep-update" },
-  { flag: "--allow_audit_dep_update" },
   { flag: "--force" },
 ];
 
@@ -1316,39 +1257,11 @@ export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--clear-reminders" },
   { flag: "--clear-events" },
   { flag: "--clear-type-options" },
-  { flag: "--allow-audit-update" },
-  { flag: "--allow_audit_update" },
-  { flag: "--allow-audit-dep-update" },
-  { flag: "--allow_audit_dep_update" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
 ];
 
-/** Public contract for normalize flag contracts, shared by SDK and presentation-layer consumers. */
-export const NORMALIZE_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--filter-status" },
-  { flag: "--filter-type" },
-  { flag: "--filter-tag" },
-  { flag: "--filter-priority" },
-  { flag: "--filter-deadline-before" },
-  { flag: "--filter-deadline-after" },
-  { flag: "--filter-assignee" },
-  { flag: "--filter-assignee-filter" },
-  { flag: "--filter-assignee_filter" },
-  { flag: "--filter-parent" },
-  { flag: "--filter-sprint" },
-  { flag: "--filter-release" },
-  { flag: "--limit" },
-  { flag: "--offset" },
-  { flag: "--dry-run" },
-  { flag: "--apply" },
-  { flag: "--author" },
-  { flag: "--message" },
-  { flag: "--allow-audit-update" },
-  { flag: "--allow_audit_update" },
-  { flag: "--force" },
-];
 
 /** Public contract for calendar flag contracts, shared by SDK and presentation-layer consumers. */
 export const CALENDAR_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1591,9 +1504,6 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["copy", COPY_FLAG_CONTRACTS],
     ["focus", FOCUS_FLAG_CONTRACTS],
     ["aggregate", AGGREGATE_FLAG_CONTRACTS],
-    ["dedupe-audit", DEDUPE_AUDIT_FLAG_CONTRACTS],
-    ["dedupe-merge", DEDUPE_MERGE_FLAG_CONTRACTS],
-    ["normalize", NORMALIZE_FLAG_CONTRACTS],
     ["calendar", CALENDAR_FLAG_CONTRACTS],
     ["context", CONTEXT_FLAG_CONTRACTS],
     ["get", GET_FLAG_CONTRACTS],
@@ -1617,7 +1527,6 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["delete", DELETE_FLAG_CONTRACTS],
     ["append", APPEND_FLAG_CONTRACTS],
     ["comments", COMMENTS_FLAG_CONTRACTS],
-    ["comments-audit", COMMENTS_AUDIT_FLAG_CONTRACTS],
     ["notes", NOTES_FLAG_CONTRACTS],
     ["learnings", LEARNINGS_FLAG_CONTRACTS],
     ["files", FILES_FLAG_CONTRACTS],

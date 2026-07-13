@@ -120,6 +120,7 @@ export const KNOWN_EXTENSION_SERVICE_NAMES = [
   "item_store_write",
   "item_store_delete",
   "context_relevance",
+  "linked_artifact_audit",
 ] as const;
 /** Restricts extension service name values accepted by command, SDK, and storage contracts. */
 export type ExtensionServiceName =

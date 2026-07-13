@@ -100,8 +100,8 @@ export interface AnnotationCommandConfig<TKey extends string> {
   deleteOp?: Parameters<typeof mutateItem>[0]["op"];
   /** Domain parser that normalizes resolved text. */
   parseText: (raw: string) => string;
-  /** Whether this operation may bypass ownership for audit annotations. */
-  allowAuditBypass: boolean;
+  /** Whether this operation may bypass ownership for a caller-authorized annotation workflow. */
+  bypassOwnershipConflict: boolean;
   /** Recovery guidance for ownership conflicts. */
   conflictGuidance: OwnershipConflictGuidance;
 }
@@ -400,7 +400,7 @@ export async function runAnnotationCommand<
         author,
         message: options.message,
         force: options.force,
-        bypassAssigneeConflict: config.allowAuditBypass,
+        bypassAssigneeConflict: config.bypassOwnershipConflict,
         mutate(document) {
           const entries = readAnnotationEntries<TEntry>(
             document.metadata,
@@ -454,7 +454,7 @@ export async function runAnnotationCommand<
         author,
         message: options.message,
         force: options.force,
-        bypassAssigneeConflict: config.allowAuditBypass,
+        bypassAssigneeConflict: config.bypassOwnershipConflict,
         mutate(document) {
           const entries = readAnnotationEntries<TEntry>(
             document.metadata,
@@ -501,7 +501,7 @@ export async function runAnnotationCommand<
       author,
       message: options.message,
       force: options.force,
-      bypassAssigneeConflict: config.allowAuditBypass,
+      bypassAssigneeConflict: config.bypassOwnershipConflict,
       mutate(document) {
         const entries = readAnnotationEntries<TEntry>(
           document.metadata,

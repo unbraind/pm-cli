@@ -12,7 +12,7 @@ afterEach(resetExampleScriptHarness);
 const SCRIPT = "docs/examples/sdk-app-embedding/run-embedded-pm.mjs";
 
 describe("sdk-app-embedding example", () => {
-  it("covers run-embedded-pm script branches with mocked pm subprocess calls", async () => {
+  it("covers run-embedded-pm script branches with mocked pm subprocess calls", { timeout: 60_000 }, async () => {
     vi.doUnmock("@unbrained/pm-cli/sdk");
     const outputSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 

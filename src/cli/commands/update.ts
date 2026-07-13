@@ -151,9 +151,9 @@ export interface UpdateCommandOptions
   /** Value that configures or reports force for this contract. */
   force?: boolean;
   /** Value that configures or reports allow audit update for this contract. */
-  allowAuditUpdate?: boolean;
+  allowOwnershipMetadataBypass?: boolean;
   /** Value that configures or reports allow audit dep update for this contract. */
-  allowAuditDepUpdate?: boolean;
+  allowOwnershipDependencyBypass?: boolean;
   /** Value that configures or reports dep remove for this contract. */
   depRemove?: string[];
   /** Value that configures or reports replace deps for this contract. */
@@ -329,15 +329,15 @@ function parseUpdateUnsetTargets(
 // Restricted append-style flags have dedicated commands with their own
 // audit/override semantics; map each one to its exact replacement invocation so
 // audit-scope errors tell the agent how to retry instead of dead-ending. The
-// evidence append flags are allowed by --allow-audit-update, but still used by
-// narrower scopes such as --allow-audit-dep-update.
+// evidence append flags are allowed by the metadata ownership bypass, but still used by
+// narrower scopes such as the dependency ownership bypass.
 const AUDIT_RESTRICTED_FLAG_REPLACEMENTS: ReadonlyMap<
   string,
   (id: string) => string
 > = new Map([
   [
     "--comment",
-    (id: string) => `pm comments ${id} --add "<text>" --allow-audit-comment`,
+    (id: string) => `pm comments ${id} --add "<text>" the annotation ownership bypass`,
   ],
   [
     "--file",
@@ -390,14 +390,14 @@ function enforceAllowAuditUpdateScope(
   options: UpdateCommandOptions,
   clearItemMetadataKeys: Set<string>,
 ): void {
-  const allowAuditUpdate = options.allowAuditUpdate === true;
-  const allowAuditDepUpdate = options.allowAuditDepUpdate === true;
-  if (!allowAuditUpdate && !allowAuditDepUpdate) {
+  const allowOwnershipMetadataBypass = options.allowOwnershipMetadataBypass === true;
+  const allowOwnershipDependencyBypass = options.allowOwnershipDependencyBypass === true;
+  if (!allowOwnershipMetadataBypass && !allowOwnershipDependencyBypass) {
     return;
   }
-  if (allowAuditUpdate && allowAuditDepUpdate) {
+  if (allowOwnershipMetadataBypass && allowOwnershipDependencyBypass) {
     throw new PmCliError(
-      "Choose either --allow-audit-update or --allow-audit-dep-update; these override modes are mutually exclusive.",
+      "Choose either the metadata ownership bypass or the dependency ownership bypass; these override modes are mutually exclusive.",
       EXIT_CODE.USAGE,
     );
   }
@@ -406,7 +406,7 @@ function enforceAllowAuditUpdateScope(
       list.push(flag);
     }
   };
-  if (allowAuditDepUpdate) {
+  if (allowOwnershipDependencyBypass) {
     const disallowedFlags: string[] = [];
     pushIf(options.title !== undefined, "--title", disallowedFlags);
     pushIf(options.description !== undefined, "--description", disallowedFlags);
@@ -545,7 +545,7 @@ function enforceAllowAuditUpdateScope(
     pushIf(clearItemMetadataKeys.size > 0, "--unset", disallowedFlags);
     if (options.dep === undefined || options.dep.length === 0) {
       throw new PmCliError(
-        "--allow-audit-dep-update requires at least one --dep value",
+        "the dependency ownership bypass requires at least one --dep value",
         EXIT_CODE.USAGE,
       );
     }
@@ -553,10 +553,10 @@ function enforceAllowAuditUpdateScope(
       throw buildAuditScopeRestrictedOptionsError({
         id,
         code: "audit_dep_update_restricted_options",
-        message: `--allow-audit-dep-update supports append-only dependency additions via --dep. Remove restricted options: ${disallowedFlags.join(", ")}`,
+        message: `the dependency ownership bypass supports append-only dependency additions via --dep. Remove restricted options: ${disallowedFlags.join(", ")}`,
         required:
-          "Pass only --dep additions (plus --message/--author) when using --allow-audit-dep-update.",
-        why: "--allow-audit-dep-update is a narrow non-owner override scoped to append-only dependency additions; every other mutation keeps its normal ownership rules.",
+          "Pass only --dep additions (plus --message/--author) when using the dependency ownership bypass.",
+        why: "the dependency ownership bypass is a narrow non-owner override scoped to append-only dependency additions; every other mutation keeps its normal ownership rules.",
         disallowedFlags,
       });
     }
@@ -608,10 +608,10 @@ function enforceAllowAuditUpdateScope(
     throw buildAuditScopeRestrictedOptionsError({
       id,
       code: "audit_update_restricted_options",
-      message: `--allow-audit-update only supports non-lifecycle metadata fields and evidence appends. Remove restricted options: ${disallowedFlags.join(", ")}`,
+      message: `the metadata ownership bypass only supports non-lifecycle metadata fields and evidence appends. Remove restricted options: ${disallowedFlags.join(", ")}`,
       required:
-        "Limit --allow-audit-update to non-lifecycle metadata fields plus append-only --comment/--file/--doc evidence; route restricted appends and lifecycle changes through their dedicated commands.",
-      why: "--allow-audit-update is a non-owner override scoped to metadata audits and append-only evidence; lifecycle, ownership, dependency mutations, restricted append fields, and clear/replace operations keep their normal ownership rules.",
+        "Limit the metadata ownership bypass to non-lifecycle metadata fields plus append-only --comment/--file/--doc evidence; route restricted appends and lifecycle changes through their dedicated commands.",
+      why: "the metadata ownership bypass is a non-owner override scoped to metadata audits and append-only evidence; lifecycle, ownership, dependency mutations, restricted append fields, and clear/replace operations keep their normal ownership rules.",
       disallowedFlags,
     });
   }
@@ -1101,7 +1101,7 @@ function collectProvidedUpdatePolicyOptions(
   mark("typeOption", options.typeOption !== undefined);
   mark("field", options.field !== undefined);
   mark("force", options.force === true);
-  mark("allowAuditUpdate", options.allowAuditUpdate === true);
+  mark("allowOwnershipMetadataBypass", options.allowOwnershipMetadataBypass === true);
   mark("dep", options.clearDeps === true);
   mark("comment", options.clearComments === true);
   mark("note", options.clearNotes === true);
@@ -2726,7 +2726,7 @@ export async function runUpdate(
     author,
   );
   const commentUpdates =
-    options.allowAuditUpdate === true && parsedCommentUpdates.values
+    options.allowOwnershipMetadataBypass === true && parsedCommentUpdates.values
       ? {
           ...parsedCommentUpdates,
           values: parsedCommentUpdates.values.map((entry) => ({
@@ -2816,14 +2816,14 @@ export async function runUpdate(
     typeToFolder: typeRegistry.type_to_folder,
     id,
     op:
-      options.allowAuditUpdate === true || options.allowAuditDepUpdate === true
+      options.allowOwnershipMetadataBypass === true || options.allowOwnershipDependencyBypass === true
         ? "update_audit"
         : "update",
     author,
     message: options.message,
     force: options.force,
     bypassAssigneeConflict:
-      options.allowAuditUpdate === true || options.allowAuditDepUpdate === true,
+      options.allowOwnershipMetadataBypass === true || options.allowOwnershipDependencyBypass === true,
     extensionFieldNames,
     mutate(document) {
       return mutateUpdateDocument(document, {
@@ -2862,8 +2862,8 @@ export async function runUpdate(
       ...parentReferenceWarnings,
       ...result.warnings,
     ],
-    ...(options.allowAuditUpdate === true ||
-    options.allowAuditDepUpdate === true
+    ...(options.allowOwnershipMetadataBypass === true ||
+    options.allowOwnershipDependencyBypass === true
       ? { audit_update: true }
       : {}),
   };

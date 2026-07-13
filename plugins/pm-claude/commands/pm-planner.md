@@ -43,7 +43,6 @@ Run the pm planning loop using native MCP tools. Argument: `$ARGUMENTS` (optiona
 
 8. **Dedupe check**:
    ```json
-   { "tool": "pm_run", "args": { "action": "dedupe-audit", "options": { "mode": "parent_scope", "limit": "20" } } }
    ```
 
 9. If you claimed a planning item: `pm_close` it, `pm_release`, then `TaskUpdate(completed)`.

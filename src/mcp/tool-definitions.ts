@@ -55,7 +55,7 @@ const idSchema = {
 // MCP-facing description can never drift from the actual supported actions.
 const PM_RUN_ACTION_DESCRIPTION =
   `Operation name (one of): ${PM_TOOL_ACTIONS.join(", ")}. ` +
-  "Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.";
+  "Package-owned actions are available dynamically when their provider package is installed.";
 
 const LIST_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> = {
   status: { type: "string", description: "Alias for options.status." },
@@ -389,7 +389,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "pm_files",
     description:
-      "List, add, remove, audit, or validate linked files for a pm item.",
+      "List, add, remove, or validate linked files for a pm item.",
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
       "id",
     ]),

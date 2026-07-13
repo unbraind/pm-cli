@@ -399,7 +399,7 @@ describe("register modules command surface", () => {
     expect(hidden).toBeDefined();
     expect(hidden?.hidden).toBe(true);
     const update = program.commands.find((command) => command.name() === "update");
-    expect(update?.options.some((option) => option.long === "--allow_audit_update")).toBe(true);
+    expect(update?.options.some((option) => option.long === "--allow_audit_update")).toBe(false);
   });
 
   it("honors the list-query command filter including the ctx alias", () => {
@@ -730,14 +730,14 @@ describe("operation command actions", () => {
     expect(vi.mocked(runRelease)).toHaveBeenLastCalledWith("pm-1", false, expect.anything(), {
       author: "agent",
       message: "handoff",
-      allowAuditRelease: false,
+      allowOwnershipReleaseBypass: false,
     });
 
     await runCli("release", "pm-1", "--assignee", "release-alias");
     expect(vi.mocked(runRelease)).toHaveBeenLastCalledWith("pm-1", false, expect.anything(), {
       author: "release-alias",
       message: undefined,
-      allowAuditRelease: false,
+      allowOwnershipReleaseBypass: false,
     });
 
     await runCli("start-task", "pm-1", "--message", "begin");
@@ -1120,11 +1120,11 @@ describe("operation command actions", () => {
       message: undefined,
       ifAvailable: true,
     });
-    await runCli("release", "pm-1", "--allow-audit-release");
-    expect(vi.mocked(runRelease)).toHaveBeenCalledWith("pm-1", false, expect.anything(), {
+    await runCli("release", "pm-1", "--force");
+    expect(vi.mocked(runRelease)).toHaveBeenCalledWith("pm-1", true, expect.anything(), {
       author: undefined,
       message: undefined,
-      allowAuditRelease: true,
+      allowOwnershipReleaseBypass: false,
     });
     expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(2);
   });
@@ -1572,10 +1572,10 @@ describe("mutation command actions", () => {
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1).delete).toBe(2);
     await expect(runCli("notes", "pm-1", "a", "--add", "b")).rejects.toThrow("not both");
 
-    await runCli("learnings", "pm-1", "lesson", "--allow-audit-learning");
+    await runCli("learnings", "pm-1", "lesson", "--force");
     const learningsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runLearnings) as never, 1);
     expect(learningsOptions.add).toBe("lesson");
-    expect(learningsOptions.allowAuditComment).toBe(true);
+    expect(learningsOptions.allowOwnershipAppendBypass).toBe(false);
     await runCli("learnings", "pm-1", "--edit", "2", "revised lesson");
     const learningEditOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runLearnings) as never, 1);
     expect(learningEditOptions.edit).toBe(2);
@@ -2241,7 +2241,7 @@ describe("mutation command actions", () => {
       "--limit", "5",
       "--author", "agent",
       "--message", "review",
-      "--allow-audit-comment",
+      "--force",
       "--force",
     );
     const commentsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runComments) as never, 1);
@@ -2250,7 +2250,7 @@ describe("mutation command actions", () => {
       limit: "5",
       author: "agent",
       message: "review",
-      allowAuditComment: true,
+      allowOwnershipAppendBypass: false,
       force: true,
     });
 
@@ -2282,7 +2282,7 @@ describe("mutation command actions", () => {
       "--migrate", "from=src,to=lib",
       "--note", "linking",
       "--append-stable",
-      "--audit",
+
       "--author", "agent",
       "--message", "files",
       "--force",
@@ -2295,7 +2295,7 @@ describe("mutation command actions", () => {
       migrate: ["from=src,to=lib"],
       note: "linking",
       appendStable: true,
-      audit: true,
+      audit: false,
       author: "agent",
       message: "files",
       force: true,
@@ -2304,13 +2304,13 @@ describe("mutation command actions", () => {
     await runCli(
       "docs", "pm-1",
       "--note", "doc note",
-      "--audit",
+
       "--author", "agent",
       "--message", "docs",
       "--force",
     );
     const docsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runDocs) as never, 1);
-    expect(docsOptions).toMatchObject({ note: "doc note", audit: true, author: "agent", message: "docs", force: true });
+    expect(docsOptions).toMatchObject({ note: "doc note", audit: false, author: "agent", message: "docs", force: true });
 
     await runCli("deps", "pm-1", "--collapse", "repeated", "--max-depth", "3");
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runDeps) as never, 1)).toMatchObject({

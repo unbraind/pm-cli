@@ -296,8 +296,8 @@ describe("registration helpers", () => {
       addTags: ["tests"],
       acceptanceCriteria: "first; second",
       depRemove: ["pm-old"],
-      allowAuditUpdate: true,
-      allowAuditDepUpdate: true,
+      allowOwnershipMetadataBypass: true,
+      allowOwnershipDependencyBypass: true,
       replaceTests: true,
       clearEvents: true,
       extra: "kept",
@@ -373,8 +373,8 @@ describe("registration helpers", () => {
     const update = normalizeUpdateOptions({});
     expect(update).toMatchObject({
       force: false,
-      allowAuditUpdate: undefined,
-      allowAuditDepUpdate: undefined,
+      allowOwnershipMetadataBypass: undefined,
+      allowOwnershipDependencyBypass: undefined,
       replaceDeps: undefined,
       replaceTests: undefined,
       clearDeps: undefined,
@@ -441,8 +441,8 @@ describe("registration helpers", () => {
 
     const update = normalizeUpdateOptions({
       force: true,
-      allowAuditUpdate: true,
-      allowAuditDepUpdate: true,
+      allowOwnershipMetadataBypass: true,
+      allowOwnershipDependencyBypass: true,
       replaceDeps: true,
       replaceTests: true,
       clearDeps: true,
@@ -458,8 +458,8 @@ describe("registration helpers", () => {
     });
     expect(update).toMatchObject({
       force: true,
-      allowAuditUpdate: true,
-      allowAuditDepUpdate: true,
+      allowOwnershipMetadataBypass: true,
+      allowOwnershipDependencyBypass: true,
       replaceDeps: true,
       clearDeps: true,
       clearTypeOptions: true,

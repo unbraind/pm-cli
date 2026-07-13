@@ -412,18 +412,6 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "Checkpoints are enabled by default for apply mode; restore with --rollback <checkpoint-id>.",
     ],
   },
-  normalize: {
-    why: "Scans items for low-signal lifecycle metadata drift, emits deterministic per-item plans, and optionally applies normalized metadata updates with update-style safety checks.",
-    examples: [
-      "pm normalize --dry-run",
-      "pm normalize --filter-status in_progress --dry-run",
-      'pm normalize --filter-status closed --apply --author "codex-agent" --message "Normalize closure metadata"',
-    ],
-    tips: [
-      "Dry-run mode is the default; pass --apply only after reviewing planned changes.",
-      "Apply mode honors ownership/audit constraints and supports --allow-audit-update with optional --force override.",
-    ],
-  },
   templates: {
     why: "Saves, lists, and inspects reusable create option bundles for repeatable workflows.",
     examples: [
@@ -496,17 +484,6 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
     tips: [
       "Current aggregate mode is grouped counts only, so pass --count explicitly.",
-    ],
-  },
-  "dedupe-audit": {
-    why: "Audits potential duplicate items and emits deterministic merge suggestions before any mutation.",
-    examples: [
-      "pm dedupe-audit --mode title_exact",
-      "pm dedupe-audit --mode title_fuzzy --threshold 0.8 --limit 20",
-      "pm dedupe-audit --mode parent_scope --status open",
-    ],
-    tips: [
-      "Use title_exact for strict collisions, title_fuzzy for near-duplicates, and parent_scope for child-level collisions.",
     ],
   },
   guide: {
@@ -693,30 +670,16 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "When --add payload resembles CSV-like key fragments (for example text=hello,scope:project), plain-text fallback is intentional; use explicit text=..., markdown text: ..., or stdin token - for structured intent.",
     ],
   },
-  "comments-audit": {
-    why: "Audits latest comments or full history rows across filtered item sets.",
-    examples: [
-      "pm comments-audit --status open --latest 1",
-      "pm comments-audit --status open --latest 0",
-      "pm comments-audit --parent pm-feature01 --tag governance --sprint sprint-12 --release vnext --priority 0",
-      "pm comments-audit --full-history --limit 50",
-    ],
-    tips: [
-      "Use either --latest or --full-history (not both). --latest 0 returns item summaries without comment rows. --limit is an alias for --limit-items.",
-    ],
-  },
   notes: {
     why: "Adds or reviews durable implementation notes linked to an item.",
     examples: [
       'pm notes pm-a1b2 --add "Investigated parser edge case and documented fallback logic."',
       'pm notes pm-a1b2 --add "text: parser rationale with commas, colons, and key-like wording"',
-      'pm notes pm-a1b2 --add "Audit note" --author "reviewer" --allow-audit-note',
       'pm notes pm-a1b2 --edit 1 --add "Corrected durable note"',
       "pm notes pm-a1b2 --delete 2",
       "pm notes pm-a1b2 --limit 10",
     ],
     tips: [
-      "Use --allow-audit-note for non-owner annotation audits; --allow-audit-comment remains supported as a legacy alias.",
       "CSV-like add payloads with extra key fragments are treated as plain text by design; use explicit text keys (text= or text:) when structured parsing is required.",
     ],
   },
@@ -725,13 +688,11 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       'pm learnings pm-a1b2 --add "Avoid direct test-runner commands in linked tests; use sandbox runner."',
       'pm learnings pm-a1b2 --add "text: lesson with commas, key-like words, and punctuation-safe context"',
-      'pm learnings pm-a1b2 --add "Audit learning" --author "reviewer" --allow-audit-learning',
       'pm learnings pm-a1b2 --edit 1 --file docs/corrected-learning.md',
       "pm learnings pm-a1b2 --delete 2",
       "pm learnings pm-a1b2 --limit 10",
     ],
     tips: [
-      "Use --allow-audit-learning for non-owner annotation audits; --allow-audit-comment remains supported as a legacy alias.",
       "If you intended structured parsing for a key-like payload, prefer explicit text=..., markdown text: ..., or stdin token -; ambiguous CSV-like forms intentionally remain plain text.",
     ],
   },
@@ -839,10 +800,6 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Releases an active claim when paused, handed off, or completed.",
     examples: [
       'pm release pm-a1b2 --author "codex-agent" --message "Release after closure"',
-      'pm release pm-a1b2 --allow-audit-release --author "reviewer" --message "Audit handoff release"',
-    ],
-    tips: [
-      "Use --allow-audit-release for non-owner handoffs that only clear assignee metadata.",
     ],
   },
   "start-task": {

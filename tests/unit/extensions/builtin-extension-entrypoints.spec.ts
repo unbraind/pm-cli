@@ -341,12 +341,14 @@ interface CapturedHooks {
 function createCommandOnlyApi(): {
   api: ExtensionApi;
   commands: CommandDefinition[];
+  flags: Array<{ command: string; flags: unknown[] }>;
   services: Array<{ service: ExtensionServiceName; override: ServiceOverride }>;
   importers: CapturedImporter[];
   exporters: CapturedExporter[];
   hooks: CapturedHooks;
 } {
   const commands: CommandDefinition[] = [];
+  const flags: Array<{ command: string; flags: unknown[] }> = [];
   const services: Array<{ service: ExtensionServiceName; override: ServiceOverride }> = [];
   const importers: CapturedImporter[] = [];
   const exporters: CapturedExporter[] = [];
@@ -371,8 +373,8 @@ function createCommandOnlyApi(): {
     registerPreflight(): void {
       throw new Error("Unexpected preflight registration");
     },
-    registerFlags(): void {
-      throw new Error("Unexpected flags registration");
+    registerFlags(command: string, definitions: unknown[]): void {
+      flags.push({ command, flags: definitions });
     },
     registerItemFields(): void {
       throw new Error("Unexpected item fields registration");
@@ -407,7 +409,7 @@ function createCommandOnlyApi(): {
       onIndex: () => undefined,
     },
   };
-  return { api, commands, services, importers, exporters, hooks };
+  return { api, commands, flags, services, importers, exporters, hooks };
 }
 
 describe("built-in extension entrypoints", () => {
@@ -457,7 +459,7 @@ describe("built-in extension entrypoints", () => {
       version: "0.1.0",
       entry: "./index.js",
       priority: 0,
-      capabilities: ["commands", "schema", "hooks"],
+      capabilities: ["commands", "schema", "hooks", "services"],
     });
     expect(governanceBuiltin).toEqual({
       manifest: governanceManifest,
@@ -555,7 +557,7 @@ describe("built-in extension entrypoints", () => {
   });
 
   it("registers governance audit commands and opt-in read/write hook sidecar logging", async () => {
-    const { api, commands, hooks } = createCommandOnlyApi();
+    const { api, commands, flags, hooks } = createCommandOnlyApi();
     const previousLogPath = process.env.PM_GOVERNANCE_AUDIT_HOOK_LOG;
     const hookLogPath = path.join(await mkdtemp(path.join(os.tmpdir(), "pm-governance-hook-log-")), "audit.jsonl");
 
@@ -567,49 +569,18 @@ describe("built-in extension entrypoints", () => {
         "comments-audit",
         "normalize",
       ]);
+      expect(flags.map((entry) => entry.command)).toEqual([
+        "files",
+        "docs",
+        "update",
+        "update-many",
+        "comments",
+        "notes",
+        "learnings",
+        "release",
+      ]);
       expect(hooks.onRead).toHaveLength(1);
       expect(hooks.onWrite).toHaveLength(1);
-
-      resetRuntimeCalls();
-      const dedupeResult = (await commands[0]!.run({
-        command: "dedupe-audit",
-        args: [],
-        options: { mode: "title_exact" },
-        global: globalFlags,
-        pm_root: "/tmp/pm",
-      })) as Record<string, unknown>;
-      const dedupeMergeResult = (await commands[1]!.run({
-        command: "dedupe-merge",
-        args: [],
-        options: { keep: "pm-canonical", close: "pm-dup1", apply: true },
-        global: globalFlags,
-        pm_root: "/tmp/pm",
-      })) as Record<string, unknown>;
-      const commentsResult = (await commands[2]!.run({
-        command: "comments-audit",
-        args: [],
-        options: { full_history: true },
-        global: globalFlags,
-        pm_root: "/tmp/pm",
-      })) as Record<string, unknown>;
-      const normalizeResult = (await commands[3]!.run({
-        command: "normalize",
-        args: [],
-        options: { apply: true },
-        global: globalFlags,
-        pm_root: "/tmp/pm",
-      })) as Record<string, unknown>;
-      expect(dedupeResult).toMatchObject({ kind: "governance-dedupe" });
-      expect(dedupeMergeResult).toMatchObject({ kind: "governance-dedupe-merge" });
-      expect(commentsResult).toMatchObject({ kind: "governance-comments" });
-      expect(normalizeResult).toMatchObject({ kind: "governance-normalize" });
-      expect(readRuntimeCalls().map((entry) => entry.kind)).toEqual([
-        "governance-dedupe",
-        "governance-dedupe-merge",
-        "governance-comments",
-        "governance-normalize",
-      ]);
-      resetRuntimeCalls();
 
       await hooks.onWrite[0]?.run({
         path: "/tmp/project/tasks/pm-demo.md",

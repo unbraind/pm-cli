@@ -93,6 +93,7 @@ import {
 } from "../core/store/settings.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { PmSettings } from "../types/index.js";
+import { resolveSubcommandFlagContractsForCommand } from "../sdk/cli-contracts.js";
 import {
   coerceLooseCommandOptionsWithFlagDefinitions,
   collectLooseCommandOptionKeysForDefinitions,
@@ -972,6 +973,13 @@ function extractCommandScopedOptions(
     const extensionOptionKeys = collectLooseCommandOptionKeysForDefinitions(
       extensionFlagDefinitions,
     );
+    const coreFlagDefinitions = resolveSubcommandFlagContractsForCommand(
+      getCommandPath(command),
+    ).map((contract) => ({
+      long: contract.flag,
+      short: contract.short,
+      aliases: contract.aliases,
+    }));
     const optionsToValidate: Record<string, unknown> = { ...looseOptions };
     for (const key of extensionOptionKeys) {
       /* c8 ignore next */
@@ -981,7 +989,7 @@ function extractCommandScopedOptions(
     }
     validateLooseCommandOptionsWithFlagDefinitions(
       optionsToValidate,
-      extensionFlagDefinitions,
+      [...coreFlagDefinitions, ...extensionFlagDefinitions],
       getCommandPath(command),
     );
     return coerceLooseCommandOptionsWithFlagDefinitions(

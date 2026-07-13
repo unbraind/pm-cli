@@ -195,13 +195,13 @@ describe("update command helper coverage", () => {
       context: expect.objectContaining({
         code: "audit_update_restricted_options",
         examples: expect.arrayContaining([
-          'pm comments pm-1234 --add "<text>" --allow-audit-comment',
+          'pm comments pm-1234 --add "<text>" the annotation ownership bypass',
           'pm files pm-1234 --add "path=<path>,scope=<scope>,note=<note>" --force',
           'pm docs pm-1234 --add "path=<path>,scope=<scope>,note=<note>" --force',
         ]),
         nextSteps: expect.arrayContaining([
           "Re-run without: --comment, --file, --doc, --status, --unknown",
-          'Replace --comment with: pm comments pm-1234 --add "<text>" --allow-audit-comment',
+          'Replace --comment with: pm comments pm-1234 --add "<text>" the annotation ownership bypass',
           'Replace --file with: pm files pm-1234 --add "path=<path>,scope=<scope>,note=<note>" --force',
           'Replace --doc with: pm docs pm-1234 --add "path=<path>,scope=<scope>,note=<note>" --force',
         ]),
@@ -214,8 +214,8 @@ describe("update command helper coverage", () => {
       _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
         "pm-1234",
         {
-          allowAuditUpdate: true,
-          allowAuditDepUpdate: true,
+          allowOwnershipMetadataBypass: true,
+          allowOwnershipDependencyBypass: true,
         } as UpdateCommandOptions,
         new Set(),
       ),
@@ -225,17 +225,17 @@ describe("update command helper coverage", () => {
       _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
         "pm-1234",
         {
-          allowAuditDepUpdate: true,
+          allowOwnershipDependencyBypass: true,
         } as UpdateCommandOptions,
         new Set(),
       ),
-    ).toThrow("--allow-audit-dep-update requires at least one --dep value");
+    ).toThrow("the dependency ownership bypass requires at least one --dep value");
 
     expect(() =>
       _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
         "pm-1234",
         {
-          allowAuditDepUpdate: true,
+          allowOwnershipDependencyBypass: true,
           dep: ["id=pm-2,kind=related"],
           title: "Title",
           replaceTests: true,
@@ -259,7 +259,7 @@ describe("update command helper coverage", () => {
       _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
         "pm-1234",
         {
-          allowAuditUpdate: true,
+          allowOwnershipMetadataBypass: true,
           status: "closed",
           closeReason: "done",
           assignee: "agent",
@@ -299,7 +299,7 @@ describe("update command helper coverage", () => {
       _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
         "pm-1234",
         {
-          allowAuditDepUpdate: true,
+          allowOwnershipDependencyBypass: true,
           dep: ["id=pm-2,kind=related"],
         } as UpdateCommandOptions,
         new Set(),
@@ -309,7 +309,7 @@ describe("update command helper coverage", () => {
       _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
         "pm-1234",
         {
-          allowAuditUpdate: true,
+          allowOwnershipMetadataBypass: true,
           title: "Allowed metadata",
           comment: ["text=allowed audit evidence"],
           file: ["path=src/a.ts"],
@@ -324,7 +324,7 @@ describe("update command helper coverage", () => {
     expect(() =>
       _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
         "pm-1234",
-        { unset: ["close-reason"], allowAuditUpdate: true } as UpdateCommandOptions,
+        { unset: ["close-reason"], allowOwnershipMetadataBypass: true } as UpdateCommandOptions,
         new Set(["close_reason"]),
       ),
     ).toThrow(expect.objectContaining({ exitCode: EXIT_CODE.USAGE }));
@@ -340,7 +340,7 @@ describe("update command helper coverage", () => {
         addTags: ["alpha"],
         replaceDeps: true,
         replaceTests: true,
-        allowAuditUpdate: true,
+        allowOwnershipMetadataBypass: true,
         unset: ["external-field"],
       } as UpdateCommandOptions,
       {
@@ -351,7 +351,7 @@ describe("update command helper coverage", () => {
       },
       ["external_field"],
     );
-    expect([...provided].sort()).toEqual(expect.arrayContaining(["allowAuditUpdate", "dep", "field", "tags", "test"]));
+    expect([...provided].sort()).toEqual(expect.arrayContaining(["allowOwnershipMetadataBypass", "dep", "field", "tags", "test"]));
 
     const statusRegistry = {
       definitions: [
@@ -2419,14 +2419,14 @@ describe("runUpdate", () => {
     });
   });
 
-  it("allows non-owner metadata updates with --allow-audit-update", async () => {
+  it("allows non-owner metadata updates with the metadata ownership bypass", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-audit-override", { assignee: "foreign-assignee" });
       const result = await runUpdate(
         id,
         {
           description: "audited metadata update",
-          allowAuditUpdate: true,
+          allowOwnershipMetadataBypass: true,
           message: "audit override metadata sync",
         },
         { path: context.pmPath },
@@ -2437,14 +2437,14 @@ describe("runUpdate", () => {
     });
   });
 
-  it("rejects lifecycle and ownership fields when --allow-audit-update is used", async () => {
+  it("rejects lifecycle and ownership fields when the metadata ownership bypass is used", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-audit-scope-guard", { assignee: "foreign-assignee" });
       await expect(
         runUpdate(
           id,
           {
-            allowAuditUpdate: true,
+            allowOwnershipMetadataBypass: true,
             status: "blocked",
             message: "attempt lifecycle mutation via audit mode",
           },
@@ -2463,7 +2463,7 @@ describe("runUpdate", () => {
       const result = await runUpdate(
         id,
         {
-          allowAuditUpdate: true,
+          allowOwnershipMetadataBypass: true,
           comment: ["author=audit-bot,created_at=2026-03-01T00:00:00.000Z,text=audit note"],
           file: ["path=src/cli/commands/update.ts,scope=project,note=audit file"],
           doc: ["path=docs/COMMANDS.md,scope=project,note=audit doc"],
@@ -2501,7 +2501,7 @@ describe("runUpdate", () => {
       const error = await runUpdate(
         id,
         {
-          allowAuditUpdate: true,
+          allowOwnershipMetadataBypass: true,
           note: ["text=audit note"],
           test: ["command=node --version"],
           message: "attempt unsafe append mutation via audit mode",
@@ -2524,13 +2524,13 @@ describe("runUpdate", () => {
     });
   });
 
-  it("allows non-owner dependency additions with --allow-audit-dep-update", async () => {
+  it("allows non-owner dependency additions with the dependency ownership bypass", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-audit-dep-override", { assignee: "foreign-assignee" });
       const result = await runUpdate(
         id,
         {
-          allowAuditDepUpdate: true,
+          allowOwnershipDependencyBypass: true,
           dep: ["id=dep-audit,kind=related,author=audit-owner,created_at=2026-03-01T00:00:00.000Z"],
           message: "audit dependency add",
         },
@@ -2549,14 +2549,14 @@ describe("runUpdate", () => {
     });
   });
 
-  it("rejects non-dependency mutations when --allow-audit-dep-update is used", async () => {
+  it("rejects non-dependency mutations when the dependency ownership bypass is used", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-audit-dep-scope-guard", { assignee: "foreign-assignee" });
       await expect(
         runUpdate(
           id,
           {
-            allowAuditDepUpdate: true,
+            allowOwnershipDependencyBypass: true,
             status: "blocked",
             dep: ["id=dep-audit,kind=related"],
             message: "attempt lifecycle mutation in dep-audit mode",
@@ -2572,7 +2572,7 @@ describe("runUpdate", () => {
         runUpdate(
           id,
           {
-            allowAuditDepUpdate: true,
+            allowOwnershipDependencyBypass: true,
             message: "missing dependency payload",
           },
           { path: context.pmPath },
@@ -2585,7 +2585,7 @@ describe("runUpdate", () => {
       const docError = await runUpdate(
         id,
         {
-          allowAuditDepUpdate: true,
+          allowOwnershipDependencyBypass: true,
           dep: ["id=dep-audit,kind=related"],
           doc: ["path=docs/COMMANDS.md,scope=project,note=audit doc"],
           message: "attempt doc append in dep-audit mode",
@@ -2612,7 +2612,7 @@ describe("runUpdate", () => {
     });
   });
 
-  it("rejects additive tag mutations in --allow-audit-dep-update scope (pm-1lws)", async () => {
+  it("rejects additive tag mutations in the dependency ownership bypass scope (pm-1lws)", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "dep-audit-tag-guard", { assignee: "foreign-assignee" });
       for (const tagOption of [{ addTags: ["sneaky"] }, { removeTags: ["unit"] }]) {
@@ -2620,7 +2620,7 @@ describe("runUpdate", () => {
           runUpdate(
             id,
             {
-              allowAuditDepUpdate: true,
+              allowOwnershipDependencyBypass: true,
               dep: ["id=dep-audit,kind=related"],
               message: "attempt tag mutation in dep-audit mode",
               ...tagOption,

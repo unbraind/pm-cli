@@ -56,8 +56,8 @@ const NON_MUTATION_UPDATE_OPTION_KEYS = new Set<keyof UpdateCommandOptions>([
   "author",
   "message",
   "force",
-  "allowAuditUpdate",
-  "allowAuditDepUpdate",
+  "allowOwnershipMetadataBypass",
+  "allowOwnershipDependencyBypass",
 ]);
 
 const UPDATE_MANY_MUTATION_FLAG_GUIDANCE = [

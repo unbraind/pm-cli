@@ -1372,9 +1372,6 @@
           "flag": "--message"
         },
         {
-          "flag": "--allow-audit-comment"
-        },
-        {
           "flag": "--force"
         }
       ],
@@ -1982,9 +1979,6 @@
           "flag": "--validate-paths"
         },
         {
-          "flag": "--audit"
-        },
-        {
           "flag": "--author"
         },
         {
@@ -2411,9 +2405,6 @@
           "flag": "--validate-paths"
         },
         {
-          "flag": "--audit"
-        },
-        {
           "flag": "--author"
         },
         {
@@ -2715,12 +2706,6 @@
         },
         {
           "flag": "--message"
-        },
-        {
-          "flag": "--allow-audit-learning"
-        },
-        {
-          "flag": "--allow-audit-comment"
         },
         {
           "flag": "--force"
@@ -4489,12 +4474,6 @@
           "flag": "--message"
         },
         {
-          "flag": "--allow-audit-note"
-        },
-        {
-          "flag": "--allow-audit-comment"
-        },
-        {
           "flag": "--force"
         }
       ],
@@ -5519,9 +5498,6 @@
           "flag": "--message"
         },
         {
-          "flag": "--allow-audit-release"
-        },
-        {
           "flag": "--force"
         }
       ],
@@ -6273,18 +6249,6 @@
           "flag": "--clear-type-options"
         },
         {
-          "aliases": [
-            "--allow_audit_update"
-          ],
-          "flag": "--allow-audit-update"
-        },
-        {
-          "aliases": [
-            "--allow_audit_dep_update"
-          ],
-          "flag": "--allow-audit-dep-update"
-        },
-        {
           "flag": "--force"
         }
       ],
@@ -6688,18 +6652,6 @@
         },
         {
           "flag": "--clear-type-options"
-        },
-        {
-          "aliases": [
-            "--allow_audit_update"
-          ],
-          "flag": "--allow-audit-update"
-        },
-        {
-          "aliases": [
-            "--allow_audit_dep_update"
-          ],
-          "flag": "--allow-audit-dep-update"
         },
         {
           "flag": "--author"
@@ -9169,7 +9121,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, next, history, history-redact, history-repair, history-compact, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, next, history, history-redact, history-repair, history-compact, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions are available dynamically when their provider package is installed.",
             "type": "string"
           },
           "author": {
@@ -13810,7 +13762,7 @@
             "type": "string"
           },
           "assigneeFilter": {
-            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "description": "Assignee presence selector for list, calendar, and context filters.",
             "enum": [
               "assigned",
               "unassigned"
@@ -14281,7 +14233,7 @@
             "type": "string"
           },
           "assigneeFilter": {
-            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "description": "Assignee presence selector for list, calendar, and context filters.",
             "enum": [
               "assigned",
               "unassigned"
@@ -14752,7 +14704,7 @@
             "type": "string"
           },
           "assigneeFilter": {
-            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "description": "Assignee presence selector for list, calendar, and context filters.",
             "enum": [
               "assigned",
               "unassigned"
@@ -15223,7 +15175,7 @@
             "type": "string"
           },
           "assigneeFilter": {
-            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "description": "Assignee presence selector for list, calendar, and context filters.",
             "enum": [
               "assigned",
               "unassigned"
@@ -15694,7 +15646,7 @@
             "type": "string"
           },
           "assigneeFilter": {
-            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "description": "Assignee presence selector for list, calendar, and context filters.",
             "enum": [
               "assigned",
               "unassigned"
@@ -16165,7 +16117,7 @@
             "type": "string"
           },
           "assigneeFilter": {
-            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "description": "Assignee presence selector for list, calendar, and context filters.",
             "enum": [
               "assigned",
               "unassigned"
@@ -16636,7 +16588,7 @@
             "type": "string"
           },
           "assigneeFilter": {
-            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "description": "Assignee presence selector for list, calendar, and context filters.",
             "enum": [
               "assigned",
               "unassigned"
@@ -17107,7 +17059,7 @@
             "type": "string"
           },
           "assigneeFilter": {
-            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "description": "Assignee presence selector for list, calendar, and context filters.",
             "enum": [
               "assigned",
               "unassigned"
@@ -17496,7 +17448,7 @@
             "type": "string"
           },
           "assigneeFilter": {
-            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "description": "Assignee presence selector for list, calendar, and context filters.",
             "enum": [
               "assigned",
               "unassigned"
@@ -17687,7 +17639,7 @@
             "type": "string"
           },
           "assigneeFilter": {
-            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "description": "Assignee presence selector for list, calendar, and context filters.",
             "enum": [
               "assigned",
               "unassigned"
@@ -17916,7 +17868,7 @@
             "type": "string"
           },
           "assigneeFilter": {
-            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "description": "Assignee presence selector for list, calendar, and context filters.",
             "enum": [
               "assigned",
               "unassigned"
@@ -18388,7 +18340,7 @@
             "description": "Limit."
           },
           "mode": {
-            "description": "Mode selector for search/reindex (keyword|semantic|hybrid) and dedupe-audit (title_exact|title_fuzzy|parent_scope).",
+            "description": "Mode selector for search and reindex (keyword|semantic|hybrid).",
             "enum": [
               "keyword",
               "semantic",
@@ -18587,7 +18539,7 @@
             "type": "string"
           },
           "assigneeFilter": {
-            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "description": "Assignee presence selector for list, calendar, and context filters.",
             "enum": [
               "assigned",
               "unassigned"
@@ -19984,14 +19936,6 @@
             "description": "Affected Version.",
             "type": "string"
           },
-          "allowAuditDepUpdate": {
-            "description": "Allow non-owner append-only dependency update audits without requiring --force.",
-            "type": "boolean"
-          },
-          "allowAuditUpdate": {
-            "description": "Allow non-owner metadata-only update audits without requiring --force.",
-            "type": "boolean"
-          },
           "assignee": {
             "description": "Assignee identity.",
             "examples": [
@@ -20510,14 +20454,6 @@
           "affectedVersion": {
             "description": "Affected Version.",
             "type": "string"
-          },
-          "allowAuditDepUpdate": {
-            "description": "Allow non-owner append-only dependency update audits without requiring --force.",
-            "type": "boolean"
-          },
-          "allowAuditUpdate": {
-            "description": "Allow non-owner metadata-only update audits without requiring --force.",
-            "type": "boolean"
           },
           "assignee": {
             "description": "Assignee identity.",
@@ -21810,10 +21746,6 @@
             },
             "type": "array"
           },
-          "allowAuditComment": {
-            "description": "For comments action, allow non-owner append-only comment audits without requiring --force.",
-            "type": "boolean"
-          },
           "author": {
             "description": "Mutation author identity.",
             "examples": [
@@ -22396,14 +22328,6 @@
             },
             "type": "array"
           },
-          "allowAuditComment": {
-            "description": "For comments action, allow non-owner append-only comment audits without requiring --force.",
-            "type": "boolean"
-          },
-          "allowAuditNote": {
-            "description": "For notes action, allow non-owner append-only note audits without requiring --force.",
-            "type": "boolean"
-          },
           "author": {
             "description": "Mutation author identity.",
             "examples": [
@@ -22515,14 +22439,6 @@
               "type": "string"
             },
             "type": "array"
-          },
-          "allowAuditComment": {
-            "description": "For comments action, allow non-owner append-only comment audits without requiring --force.",
-            "type": "boolean"
-          },
-          "allowAuditLearning": {
-            "description": "For learnings action, allow non-owner append-only learning audits without requiring --force.",
-            "type": "boolean"
           },
           "author": {
             "description": "Mutation author identity.",
@@ -22681,10 +22597,6 @@
             "description": "Persist changes instead of returning a dry-run preview: for files discovery, add the missing discovered file links; for schema add-type --infer, register the inferred custom item types.",
             "type": "boolean"
           },
-          "audit": {
-            "description": "Audit.",
-            "type": "boolean"
-          },
           "author": {
             "description": "Mutation author identity.",
             "examples": [
@@ -22840,10 +22752,6 @@
               "command wiring"
             ],
             "type": "string"
-          },
-          "audit": {
-            "description": "Audit.",
-            "type": "boolean"
           },
           "author": {
             "description": "Mutation author identity.",
@@ -24291,7 +24199,7 @@
             "type": "string"
           },
           "assigneeFilter": {
-            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "description": "Assignee presence selector for list, calendar, and context filters.",
             "enum": [
               "assigned",
               "unassigned"
@@ -24483,10 +24391,6 @@
           "action": {
             "const": "release",
             "description": "Tool action to execute."
-          },
-          "allowAuditRelease": {
-            "description": "Allow non-owner release handoffs that clear assignee metadata without requiring --force.",
-            "type": "boolean"
           },
           "assignee": {
             "description": "Assignee identity.",

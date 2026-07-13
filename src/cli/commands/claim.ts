@@ -118,7 +118,7 @@ export interface ClaimMutationOptions {
 /** Documents the release mutation options payload exchanged by command, SDK, and package integrations. */
 export interface ReleaseMutationOptions extends ClaimMutationOptions {
   /** Value that configures or reports allow audit release for this contract. */
-  allowAuditRelease?: boolean;
+  allowOwnershipReleaseBypass?: boolean;
 }
 
 /** Implements run claim for the public runtime surface of this module. */
@@ -340,7 +340,7 @@ export async function runRelease(
       author,
       message: options.message,
       force,
-      bypassAssigneeConflict: Boolean(options.allowAuditRelease),
+      bypassAssigneeConflict: Boolean(options.allowOwnershipReleaseBypass),
       mutate(document) {
         previousAssignee = document.metadata.assignee ?? null;
         if (!previousAssignee) {
@@ -353,12 +353,12 @@ export async function runRelease(
   } catch (error: unknown) {
     wrapOwnershipConflict(error, {
       required:
-        "For audited non-owner handoffs, prefer --allow-audit-release before considering --force.",
+        "For audited non-owner handoffs, prefer the release ownership bypass before considering --force.",
       examples: [
-        'pm release pm-a1b2 --author "reviewer" --allow-audit-release',
+        'pm release pm-a1b2 --author "reviewer" the release ownership bypass',
       ],
       nextSteps: [
-        "Use --allow-audit-release for append-only release handoffs that only clear assignee metadata.",
+        "Use the release ownership bypass for append-only release handoffs that only clear assignee metadata.",
         "Use --force only when an explicit override is approved for broader ownership conflicts.",
       ],
     });
@@ -368,7 +368,7 @@ export async function runRelease(
     item: toItemRecord(result.item),
     released_by: author,
     previous_assignee: previousAssignee,
-    audit_release: options.allowAuditRelease === true,
+    audit_release: options.allowOwnershipReleaseBypass === true,
     forced: force,
   };
 }

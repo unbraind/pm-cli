@@ -855,7 +855,7 @@ describe("contracts command runtime", () => {
     expect(oneOf[0]?.properties).toHaveProperty("full");
   });
 
-  it("assigns allowAuditUpdate only to update-family action schemas", async () => {
+  it("omits package-owned audit bypass parameters from core action schemas", async () => {
     const createResult = await runContracts(
       {
         action: "create",
@@ -873,8 +873,8 @@ describe("contracts command runtime", () => {
     const createSchema = (createResult.schema?.oneOf ?? [])[0] as { properties?: Record<string, unknown> } | undefined;
     const updateSchema = (updateResult.schema?.oneOf ?? [])[0] as { properties?: Record<string, unknown> } | undefined;
 
-    expect(createSchema?.properties).not.toHaveProperty("allowAuditUpdate");
-    expect(updateSchema?.properties).toHaveProperty("allowAuditUpdate");
+    expect(createSchema?.properties).not.toHaveProperty("allowOwnershipMetadataBypass");
+    expect(updateSchema?.properties).not.toHaveProperty("allowOwnershipMetadataBypass");
   });
 
   it("accepts health and validate diagnostic flags in action schemas", async () => {
@@ -1286,7 +1286,7 @@ describe("contracts command runtime", () => {
         },
         {
           command: "comments",
-          flags: ["--add", "--stdin", "--file", "--allow-audit-comment"],
+          flags: ["--add", "--stdin", "--file", "--edit", "--delete", "--limit"],
         },
         {
           command: "notes",
@@ -1295,8 +1295,6 @@ describe("contracts command runtime", () => {
             "--limit",
             "--author",
             "--message",
-            "--allow-audit-note",
-            "--allow-audit-comment",
             "--force",
           ],
         },
@@ -1307,8 +1305,6 @@ describe("contracts command runtime", () => {
             "--limit",
             "--author",
             "--message",
-            "--allow-audit-learning",
-            "--allow-audit-comment",
             "--force",
           ],
         },
@@ -1321,12 +1317,11 @@ describe("contracts command runtime", () => {
             "--list",
             "--append-stable",
             "--validate-paths",
-            "--audit",
           ],
         },
         {
           command: "docs",
-          flags: ["--add", "--add-glob", "--note", "--list", "--validate-paths", "--audit"],
+          flags: ["--add", "--add-glob", "--note", "--list", "--validate-paths"],
         },
         { command: "history", flags: ["--limit", "--compact", "--full", "--diff", "--verify"] },
         {
@@ -1467,7 +1462,6 @@ describe("contracts command runtime", () => {
             "--replace-tests",
             "--clear-docs",
             "--clear-events",
-            "--allow-audit-update",
           ],
         },
         {
@@ -1577,7 +1571,6 @@ describe("contracts command runtime", () => {
       expect.arrayContaining([
         expect.objectContaining({ flag: "--stdin" }),
         expect.objectContaining({ flag: "--file" }),
-        expect.objectContaining({ flag: "--allow-audit-comment" }),
       ]),
     );
   });

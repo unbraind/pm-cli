@@ -53,7 +53,7 @@ describe("init tracker-path guardrails", () => {
       };
       expect(callerSettingsAfter).toBe(callerSettingsBefore);
       expect(callerExtensionsAfter).toEqual(callerExtensionsBefore);
-      expect(targetInit.json.installed_packages).toMatchObject({ installed_all: true, installed_count: 11 });
+      expect(targetInit.json.installed_packages).toMatchObject({ installed_all: true, installed_count: 12 });
       expect(targetSettings.id_prefix).toBe("pm-");
       expect(targetSettings.author_default).toBe("sandbox-agent");
     });

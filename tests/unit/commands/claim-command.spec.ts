@@ -381,7 +381,7 @@ describe("runClaim/runRelease", () => {
         {
           author: "audit-reviewer",
           message: "audit release handoff",
-          allowAuditRelease: true,
+          allowOwnershipReleaseBypass: true,
         },
       );
       expect(audited.previous_assignee).toBe("other-author");

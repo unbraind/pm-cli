@@ -214,7 +214,6 @@ const REQUIRED_UPDATE_MANY_FLAGS = [
   "--clear-reminders",
   "--clear-events",
   "--clear-type-options",
-  "--allow-audit-update",
   "--force",
 ];
 
@@ -271,7 +270,7 @@ const REQUIRED_TEST_FLAGS = [
   "--message",
   "--force",
 ];
-const REQUIRED_COMMENTS_FLAGS = ["--add", "--stdin", "--file", "--limit", "--author", "--message", "--allow-audit-comment", "--force"];
+const REQUIRED_COMMENTS_FLAGS = ["--add", "--stdin", "--file", "--limit", "--author", "--message", "--force"];
 const REQUIRED_COMMENTS_AUDIT_FLAGS = [
   "--status",
   "--type",
@@ -281,18 +280,16 @@ const REQUIRED_COMMENTS_AUDIT_FLAGS = [
   "--full-history",
   "--latest",
 ];
-const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-note", "--allow-audit-comment", "--force"];
+const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 const REQUIRED_LEARNINGS_FLAGS = [
   "--add",
   "--limit",
   "--author",
   "--message",
-  "--allow-audit-learning",
-  "--allow-audit-comment",
   "--force",
 ];
 const REQUIRED_CLAIM_FLAGS = ["--author", "--message", "--force"];
-const REQUIRED_RELEASE_FLAGS = ["--author", "--message", "--allow-audit-release", "--force"];
+const REQUIRED_RELEASE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_HISTORY_COMPACT_FLAGS = [
   "--before",

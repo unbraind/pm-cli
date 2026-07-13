@@ -1,0 +1,80 @@
+id: pm-w1c0
+title: Extract governance audit runtime from the default CLI and SDK
+description: "Execute pm-vjk3 as a package-owned boundary migration with bare-core contract removal, installed-package parity, exhaustive verification, and hosted review convergence."
+type: Plan
+status: open
+priority: 1
+tags[5]: bare-core,cli,governance,packages,sdk
+created_at: "2026-07-12T23:09:24.310Z"
+updated_at: "2026-07-13T00:37:01.761Z"
+assignee: codex-pm-audit-extraction
+author: codex-pm-audit-extraction
+parent: pm-vjk3
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-27mv,related,"2026-07-12T23:09:24.310Z",null,null
+  pm-79fr,related,"2026-07-12T23:09:24.310Z",null,null
+  pm-7dcf,related,"2026-07-12T23:09:24.310Z",null,null
+  pm-fg0b,related,"2026-07-12T23:09:24.310Z",null,null
+  pm-kg18,related,"2026-07-12T23:09:24.310Z",null,null
+  pm-rxp1,related,"2026-07-12T23:09:24.310Z",null,null
+  pm-vjk3,parent,"2026-07-12T23:09:24.310Z",null,null
+plan_mode: executing
+plan_scope: "Move every audit command, flag, handler, contract, SDK export, MCP parameter, completion entry, and audit-specific documentation surface from core into packages/pm-governance-audit."
+plan_harness: codex
+plan_resume_context: "Continue on agent/extract-governance-audit-from-core-runtime. Read pm-vjk3 and children live. Decision pm-fg0b chose hybrid registerFlags/package handlers, audit alias, --force fallback, and no public audit SDK surface."
+plan_steps[7]:
+  - id: plan-step-001
+    order: 1
+    title: Inventory imports and public SDK gaps before moving implementations
+    status: completed
+    created_at: "2026-07-12T23:09:24.359Z"
+    updated_at: "2026-07-12T23:37:23.268Z"
+    evidence: Mapped every moved runtime import. Public SDK already covered most primitives; filed pm-yu6d for isTerminalStatus/runUpdate/runClose before promoting them.
+    completed_at: "2026-07-12T23:37:23.268Z"
+  - id: plan-step-002
+    order: 2
+    title: Relocate four audit runtimes into pm-governance-audit and remove SDK exports
+    status: completed
+    created_at: "2026-07-12T23:09:24.359Z"
+    updated_at: "2026-07-12T23:37:23.928Z"
+    evidence: Four implementations moved to packages/pm-governance-audit; dynamic audit-runner imports and public SDK audit exports removed; install-safe SDK adapter added.
+    completed_at: "2026-07-12T23:37:23.928Z"
+  - id: plan-step-003
+    order: 3
+    title: Move files/docs audit reporting and allow-audit flags behind package activation
+    status: completed
+    created_at: "2026-07-12T23:09:24.359Z"
+    updated_at: "2026-07-12T23:37:24.719Z"
+    evidence: Package registers files/docs --audit and all allow-audit flag families; core registrations removed; bare help omits them and installed package restores them.
+    completed_at: "2026-07-12T23:37:24.719Z"
+  - id: plan-step-004
+    order: 4
+    title: Purge core contracts MCP completion help docs and SDK audit surface
+    status: completed
+    created_at: "2026-07-12T23:09:24.359Z"
+    updated_at: "2026-07-12T23:37:25.188Z"
+    evidence: "Removed static audit contracts, MCP parameters, help, completion, SDK exports, and core/plugin docs references; package README owns the surface."
+    completed_at: "2026-07-12T23:37:25.188Z"
+  - id: plan-step-005
+    order: 5
+    title: Migrate coverage and prove bare-core versus installed-package parity
+    status: completed
+    created_at: "2026-07-12T23:09:24.359Z"
+    updated_at: "2026-07-12T23:37:25.717Z"
+    evidence: Real temp project proved bare-core absence and pm install audit restoration; package doctor and four command smokes passed.
+    completed_at: "2026-07-12T23:37:25.717Z"
+  - id: plan-step-006
+    order: 6
+    title: Run release gates regenerate changelog and record tracker evidence
+    status: completed
+    created_at: "2026-07-12T23:09:24.359Z"
+    updated_at: "2026-07-13T00:37:01.757Z"
+    evidence: "pnpm release:gates passed typecheck, docs/skills, static-quality, token-budget, and 278 files / 5592 tests at literal 100% coverage; tracker evidence linked and ready for final changelog generation."
+    completed_at: "2026-07-13T00:37:01.757Z"
+  - id: plan-step-007
+    order: 7
+    title: Publish PR converge all checks and AI review feedback then merge
+    status: pending
+    created_at: "2026-07-12T23:09:24.359Z"
+    updated_at: "2026-07-12T23:09:24.359Z"
+body: ""

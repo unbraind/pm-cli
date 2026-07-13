@@ -2,17 +2,31 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runDocs } from "../../../src/cli/commands/docs.js";
 import { _testOnly as filesInternals, runFiles, runFilesDiscover } from "../../../src/cli/commands/files.js";
-import { buildLinkedPathAudit, parseAddGlobEntries, validateLinkedPaths } from "../../../src/cli/commands/linked-artifacts.js";
+import { parseAddGlobEntries, validateLinkedPaths } from "../../../src/cli/commands/linked-artifacts.js";
 import * as linkedArtifactsModule from "../../../src/cli/commands/linked-artifacts.js";
+import { setActiveExtensionServices } from "../../../src/core/extensions/index.js";
 import * as itemStoreModule from "../../../src/core/store/item-store.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
+import { buildLinkedArtifactAudit } from "../../../packages/pm-governance-audit/extensions/governance-audit/runtime-utils.ts";
+
+beforeEach(() => {
+  setActiveExtensionServices({
+    overrides: [{
+      layer: "project",
+      name: "governance-audit",
+      service: "linked_artifact_audit",
+      run: (context) => buildLinkedArtifactAudit(context.payload),
+    }],
+  });
+});
 
 afterEach(() => {
+  setActiveExtensionServices(null);
   vi.restoreAllMocks();
 });
 
@@ -692,15 +706,25 @@ describe("runFiles", () => {
       { pattern: "src/**/*.ts", scope: "project", note: undefined },
     ]);
 
-    const audit = buildLinkedPathAudit(
-      ["linked.md", "unlinked.md"],
-      [{ id: "pm-empty" }, { id: "pm-linked", artifacts: [{ path: "linked.md", scope: "project" }] }],
-    );
+    const audit = buildLinkedArtifactAudit({
+      paths: ["linked.md", "unlinked.md"],
+      items: [{ id: "pm-empty" }, { id: "pm-linked", artifacts: [{ path: "linked.md", scope: "project" }] }],
+    });
 
     expect(audit).toEqual([
       { path: "linked.md", linked_by_count: 1, linked_item_ids: ["pm-linked"] },
       { path: "unlinked.md", linked_by_count: 0, linked_item_ids: [] },
     ]);
+  });
+
+  it("fails clearly when an audit flag is registered without its package service", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "missing-linked-audit-service");
+      setActiveExtensionServices(null);
+      await expect(
+        runFiles(id, { audit: true }, { path: context.pmPath }),
+      ).rejects.toThrow("without a linked-artifact audit service");
+    });
   });
 
   it("supports append-stable mode to preserve order and append new entries", async () => {

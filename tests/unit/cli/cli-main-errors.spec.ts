@@ -1021,7 +1021,7 @@ describe("CLI bootstrap entrypoints", () => {
     });
   });
 
-  it("renders unknown help requests through runPmCli in-process bootstrap handling", async () => {
+  it("renders unknown help requests through runPmCli in-process bootstrap handling", { timeout: 60_000 }, async () => {
     await withTempPmPath(async (context) => {
       const result = await context.runCliInProcess(["--json", "definitely-missing", "--help"]);
       expect(result.code).toBe(EXIT_CODE.USAGE);

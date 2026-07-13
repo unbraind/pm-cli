@@ -1,31 +1,30 @@
 /**
- * @module cli/commands/dedupe-audit
+ * @module packages/pm-governance-audit/dedupe-audit
  *
  * Implements the pm dedupe audit command surface and its agent-facing runtime behavior.
  */
 import {
+  EXIT_CODE,
+  PmCliError,
   isTerminalStatus,
   normalizeStatusInput,
-} from "../../core/item/status.js";
-import {
+  nowIso,
+  readSettings,
+  resolvePmRoot,
   resolveRuntimeStatusRegistry,
+  runList,
+  type GlobalOptions,
+  type ItemStatus,
   type RuntimeStatusRegistry,
-} from "../../core/schema/runtime-schema.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { compareTimestampStrings, nowIso } from "../../core/shared/time.js";
+} from "./sdk.ts";
 import {
+  buildListQueryFilters,
+  compareTimestampStrings,
   jaccardSimilarity,
   normalizeLowercaseWhitespace,
+  parseIntegerLimit,
   tokenizeAlphaNumeric,
-} from "../../core/shared/text-normalization.js";
-import { resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
-import { type ItemStatus } from "../../types/index.js";
-import { parseIntegerLimit } from "../shared-parsers.js";
-import { buildListQueryFilters } from "./list-filter-shared.js";
-import { runList } from "./list.js";
+} from "./runtime-utils.ts";
 
 /** Public contract for dedupe audit modes, shared by SDK and presentation-layer consumers. */
 export const DEDUPE_AUDIT_MODES = [

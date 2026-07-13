@@ -7,7 +7,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import fg from "fast-glob";
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import {
+  getActiveExtensionRegistrations,
+  runActiveServiceOverride,
+} from "../../core/extensions/index.js";
 import {
   assertNoUnknownCsvKeys,
   createStdinTokenResolver,
@@ -484,31 +487,21 @@ export async function validateLinkedPaths(
   };
 }
 
-/** Implements build linked path audit for the public runtime surface of this module. */
-export function buildLinkedPathAudit(
+async function runLinkedArtifactAuditService(
   paths: string[],
   allItems: Array<{ id: string; artifacts?: LinkedArtifact[] }>,
-): LinkedPathAuditEntry[] {
-  const index = new Map<string, Set<string>>();
-  for (const item of allItems) {
-    for (const linkedArtifact of item.artifacts ?? []) {
-      const seen = index.get(linkedArtifact.path) ?? new Set<string>();
-      seen.add(item.id);
-      index.set(linkedArtifact.path, seen);
-    }
+): Promise<LinkedPathAuditEntry[]> {
+  const override = await runActiveServiceOverride("linked_artifact_audit", {
+    paths,
+    items: allItems,
+  });
+  if (!override.handled || !Array.isArray(override.result)) {
+    throw new PmCliError(
+      "The active package registered --audit without a linked-artifact audit service.",
+      EXIT_CODE.GENERIC_FAILURE,
+    );
   }
-  return [...new Set(paths)]
-    .sort((left, right) => left.localeCompare(right))
-    .map((linkedPath) => {
-      const linkedIds = [...(index.get(linkedPath) ?? new Set<string>())].sort(
-        (left, right) => left.localeCompare(right),
-      );
-      return {
-        path: linkedPath,
-        linked_by_count: linkedIds.length,
-        linked_item_ids: linkedIds,
-      };
-    });
+  return override.result as LinkedPathAuditEntry[];
 }
 
 function applyLinkedArtifactMigrations(
@@ -579,7 +572,10 @@ async function buildLinkedArtifactResult(params: {
       ? await validateLinkedPaths(paths)
       : undefined,
     audit: params.options.audit
-      ? buildLinkedPathAudit(paths, await params.collectAuditItems())
+      ? await runLinkedArtifactAuditService(
+          paths,
+          await params.collectAuditItems(),
+        )
       : undefined,
   };
 }

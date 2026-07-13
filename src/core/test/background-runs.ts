@@ -461,8 +461,9 @@ async function readLinuxCpuSeconds(
     const raw = await fs.readFile(`/proc/${pid}/stat`, "utf8");
     return parseLinuxCpuStat(raw);
   } catch {
-    /* c8 ignore next -- /proc entries can disappear between liveness and stat reads. */
+    /* c8 ignore start -- /proc entries can disappear between liveness and stat reads. */
     return {};
+    /* c8 ignore stop */
   }
 }
 

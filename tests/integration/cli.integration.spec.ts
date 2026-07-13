@@ -164,7 +164,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         action: "install",
         details: {
           installed_all: true,
-          installed_count: 11,
+          installed_count: 12,
         },
       });
 
@@ -216,7 +216,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           action: "install",
           details: {
             installed_all: true,
-            installed_count: 11,
+            installed_count: 12,
           },
         });
       }
@@ -5888,6 +5888,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
   it("supports audited non-owner release handoffs without force", async () => {
     await withTempPmPath(async (context) => {
+      expect(context.runCli(["install", "audit"]).code).toBe(0);
       const strictPreset = context.runCli(
         ["config", "project", "set", "governance-preset", "--policy", "strict", "--json"],
         { expectJson: true },

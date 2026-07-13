@@ -524,11 +524,13 @@ export function normalizeUpdateOptions(
     author: readUpdateString("author"),
     message: readUpdateString("message"),
     force: Boolean(commandOptions.force),
-    allowAuditUpdate: anyOptionTrue(commandOptions, [
+    allowOwnershipMetadataBypass: anyOptionTrue(commandOptions, [
+      "allowOwnershipMetadataBypass",
       "allowAuditUpdate",
       "allow_audit_update",
     ]),
-    allowAuditDepUpdate: anyOptionTrue(commandOptions, [
+    allowOwnershipDependencyBypass: anyOptionTrue(commandOptions, [
+      "allowOwnershipDependencyBypass",
       "allowAuditDepUpdate",
       "allow_audit_dep_update",
     ]),

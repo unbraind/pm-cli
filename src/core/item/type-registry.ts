@@ -133,7 +133,7 @@ const UPDATE_COMMAND_OPTION_KEYS = [
   "event",
   "typeOption",
   "field",
-  "allowAuditUpdate",
+  "allowOwnershipMetadataBypass",
   "force",
 ] as const;
 
@@ -180,8 +180,6 @@ const CREATE_COMMAND_OPTION_ALIASES: Record<string, string> = {
 
 const UPDATE_COMMAND_OPTION_ALIASES: Record<string, string> = {
   ...SHARED_COMMAND_OPTION_ALIASES,
-  "allow-audit-update": "allowAuditUpdate",
-  allow_audit_update: "allowAuditUpdate",
 };
 
 const COMMON_MUTATION_COMMAND_OPTION_FLAG_LABEL_ENTRIES = [
@@ -264,7 +262,6 @@ const UPDATE_COMMAND_OPTION_FLAG_LABELS = commandOptionLabelMap([
   ["tags", "--tags"],
   ...COMMON_MUTATION_COMMAND_OPTION_FLAG_LABEL_ENTRIES,
   ...LINKED_RESOURCE_COMMAND_OPTION_FLAG_LABEL_ENTRIES,
-  ["allowAuditUpdate", "--allow-audit-update"],
   ["author", "--author"],
   ["message", "--message"],
   ["force", "--force"],

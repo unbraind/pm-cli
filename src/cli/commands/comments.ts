@@ -38,7 +38,7 @@ export interface CommentsCommandOptions {
   /** Value that configures or reports force for this contract. */
   force?: boolean;
   /** Value that configures or reports allow audit comment for this contract. */
-  allowAuditComment?: boolean;
+  allowOwnershipAppendBypass?: boolean;
 }
 
 /** Documents the comments result payload exchanged by command, SDK, and package integrations. */
@@ -201,15 +201,15 @@ export async function runComments(
     editOp: "comment_edit",
     deleteOp: "comment_delete",
     parseText: (raw) => raw,
-    allowAuditBypass: Boolean(options.allowAuditComment),
+    bypassOwnershipConflict: Boolean(options.allowOwnershipAppendBypass),
     conflictGuidance: {
       required:
-        "For append-only comment audits on another owner's item, prefer --allow-audit-comment before considering --force.",
+        "For append-only comment audits on another owner's item, prefer the annotation ownership bypass before considering --force.",
       examples: [
-        'pm comments pm-a1b2 --add "audit note" --author "reviewer" --allow-audit-comment',
+        'pm comments pm-a1b2 --add "audit note" --author "reviewer" the annotation ownership bypass',
       ],
       nextSteps: [
-        "Retry with --allow-audit-comment for append-only audits that do not mutate item metadata beyond comments.",
+        "Retry with the annotation ownership bypass for append-only audits that do not mutate item metadata beyond comments.",
         "Use --force only when an ownership override is explicitly approved.",
       ],
     },

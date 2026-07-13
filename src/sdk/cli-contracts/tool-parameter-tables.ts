@@ -231,9 +231,6 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   limit: { anyOf: [{ type: "string" }, { type: "number" }] },
   blockedLimit: { anyOf: [{ type: "string" }, { type: "number" }] },
   readyOnly: { type: "boolean" },
-  limitItems: { anyOf: [{ type: "string" }, { type: "number" }] },
-  fullHistory: { type: "boolean" },
-  latest: { anyOf: [{ type: "string" }, { type: "number" }] },
   offset: { anyOf: [{ type: "string" }, { type: "number" }] },
   progress: { type: "boolean" },
   background: { type: "boolean" },
@@ -324,14 +321,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   pruneMissing: { type: "boolean" },
   checkHistoryDrift: { type: "boolean" },
   checkCommandReferences: { type: "boolean" },
-  allowAuditNote: { type: "boolean" },
-  allowAuditLearning: { type: "boolean" },
-  allowAuditComment: { type: "boolean" },
   edit: { type: "integer", minimum: 1 },
   delete: { type: "integer", minimum: 1 },
-  allowAuditUpdate: { type: "boolean" },
-  allowAuditDepUpdate: { type: "boolean" },
-  allowAuditRelease: { type: "boolean" },
   dryRun: { type: "boolean" },
   all: { type: "boolean" },
   clear: { type: "boolean" },
@@ -403,7 +394,6 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   list: { type: "boolean" },
   appendStable: { type: "boolean" },
   validatePaths: { type: "boolean" },
-  audit: { type: "boolean" },
   dep: { type: "array", items: { type: "string" } },
   depRemove: { type: "array", items: { type: "string" } },
   replaceDeps: { type: "boolean" },
@@ -433,7 +423,6 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   clearCriteria: { type: "boolean" },
   groupBy: { type: "string" },
   completion: { type: "boolean" },
-  threshold: { anyOf: [{ type: "string" }, { type: "number" }] },
   format: { type: "string" },
   depth: { type: "string", enum: ["brief", "standard", "deep", "full"] },
   section: {
@@ -892,7 +881,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   assigneeFilter: {
     description:
-      "Assignee presence selector for list/calendar/context/comments-audit filters.",
+      "Assignee presence selector for list, calendar, and context filters.",
     examples: ["assigned", "unassigned"],
   },
   parent: {
@@ -956,7 +945,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   mode: {
     description:
-      "Mode selector for search/reindex (keyword|semantic|hybrid) and dedupe-audit (title_exact|title_fuzzy|parent_scope).",
+      "Mode selector for search and reindex (keyword|semantic|hybrid).",
     examples: ["keyword", "hybrid", "title_exact"],
   },
   semanticWeight: {
@@ -1104,20 +1093,6 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "For history-compact bulk mode, compact every history stream regardless of lifecycle state.",
   },
-  limitItems: {
-    description:
-      "Maximum number of filtered items to include in comments-audit output (alias: --limit).",
-    examples: [10, "25"],
-  },
-  fullHistory: {
-    description:
-      "When true for comments-audit, export full per-item comment history rows; cannot be combined with latest.",
-  },
-  latest: {
-    description:
-      "Number of most recent comments to include per item in comments-audit output (use 0 for summary-only item rows).",
-    examples: [0, 1, "3"],
-  },
   literal: {
     description:
       "Repeatable literal matcher used by history-redact to scrub exact string values.",
@@ -1247,18 +1222,6 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   checkCommandReferences: {
     description: "Run linked-command PM-ID reference checks.",
   },
-  allowAuditNote: {
-    description:
-      "For notes action, allow non-owner append-only note audits without requiring --force.",
-  },
-  allowAuditLearning: {
-    description:
-      "For learnings action, allow non-owner append-only learning audits without requiring --force.",
-  },
-  allowAuditComment: {
-    description:
-      "For comments action, allow non-owner append-only comment audits without requiring --force.",
-  },
   edit: {
     description:
       "For comments, notes, and learnings actions, replace the annotation at this 1-based index with supplied replacement text.",
@@ -1275,18 +1238,6 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "CLI-only path to an input file for commands that read payload text; tool actions exclude host file access.",
     examples: ["notes/comment.md"],
-  },
-  allowAuditUpdate: {
-    description:
-      "Allow non-owner metadata-only update audits without requiring --force.",
-  },
-  allowAuditDepUpdate: {
-    description:
-      "Allow non-owner append-only dependency update audits without requiring --force.",
-  },
-  allowAuditRelease: {
-    description:
-      "Allow non-owner release handoffs that clear assignee metadata without requiring --force.",
   },
   preserveSourceIds: {
     description:
@@ -1434,11 +1385,6 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   summary: {
     description:
       "When true, return the command's compact summary projection (deps counts, health rollup, or contracts command intents).",
-  },
-  threshold: {
-    description:
-      "Dedupe-audit fuzzy title similarity threshold between 0 and 1.",
-    examples: [0.5, "0.75"],
   },
   shell: {
     description: "Shell target for completion generation.",

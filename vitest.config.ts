@@ -74,6 +74,10 @@ export default defineConfig({
         find: /^@unbrained\/pm-cli\/sdk$/,
         replacement: fileURLToPath(new URL("./src/sdk/index.ts", import.meta.url)),
       },
+      {
+        find: /^@unbrained\/pm-cli\/sdk\/runtime$/,
+        replacement: fileURLToPath(new URL("./src/sdk/runtime.ts", import.meta.url)),
+      },
     ],
   },
   test: {
