@@ -224,19 +224,17 @@ function extractRawPathReferences(
     /(?:\.{1,2}[\\/])?(?:(?:[A-Za-z0-9_.@-]+[\\/])+[A-Za-z0-9_.@-]+|[A-Za-z0-9_.@-]+\.[A-Za-z0-9][A-Za-z0-9._-]*)/gu;
   for (const reference of references) {
     const seenInField = new Set<string>();
-    const runtimeValue: unknown = reference.value;
-    const boundedRelativeValue =
-      typeof runtimeValue === "string"
-        ? runtimeValue.slice(0, RELATIVE_REFERENCE_SCAN_MAX_CHARS)
-        : reference.value;
+    const boundedRelativeValue = reference.value.slice(
+      0,
+      RELATIVE_REFERENCE_SCAN_MAX_CHARS,
+    );
     for (const [pattern, input] of [
       [absolutePattern, reference.value],
       [relativePattern, boundedRelativeValue],
     ] as const) {
       pattern.lastIndex = 0;
       for (const match of input.matchAll(pattern)) {
-        /* c8 ignore next -- RegExp match arrays always expose capture [0]. */
-        const token = cleanupPathToken(match[0] ?? "");
+        const token = cleanupPathToken(match[0]);
         if (!token || seenInField.has(token)) {
           continue;
         }

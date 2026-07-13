@@ -251,16 +251,6 @@ describe("runFiles", () => {
         expect(tiedScopes).toContain("global");
         expect(tiedScopes.every((scope) => scope === "global" || scope === "project")).toBe(true);
 
-        const weirdMatchReferences = filesInternals.extractRawPathReferences([
-          {
-            field: "metadata.synthetic",
-            value: {
-              matchAll: () => [[undefined]],
-            } as unknown as string,
-          },
-        ]);
-        expect(weirdMatchReferences).toEqual([]);
-
         const localeCompare = String.prototype.localeCompare;
         const localeSpy = vi.spyOn(String.prototype, "localeCompare").mockImplementation(function (
           this: string,
