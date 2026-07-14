@@ -10,6 +10,7 @@ import {
   setActiveCommandResult,
 } from "../extensions/index.js";
 import { EXIT_CODE } from "../shared/constants.js";
+import { isHostOutputSuppressed } from "./output-control.js";
 import { projectMutationResult } from "./mutation-projection.js";
 
 /** Documents the output options payload exchanged by command, SDK, and package integrations. */
@@ -261,12 +262,12 @@ function renderDefaultMarkdownResult(value: unknown): string | null {
   return `${lines.join("\n")}\n`;
 }
 
-/** Implements format output for the public runtime surface of this module. */
-export function formatOutput(result: unknown, options: OutputOptions): string {
-  const commandOverride = runActiveCommandOverride(result);
-  const nativeOutput = shouldUseNativeOutput(commandOverride.result);
-  const effectiveResult = stripNativeOutputMarker(commandOverride.result);
-  setActiveCommandResult(effectiveResult);
+/** Formats a command result after command-level output ownership is resolved. */
+function formatEffectiveOutput(
+  effectiveResult: unknown,
+  nativeOutput: boolean,
+  options: OutputOptions,
+): string {
   const format =
     options.json === true
       ? "json"
@@ -317,6 +318,22 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
     return "{}\n";
   }
   return `${renderToonValue(compactedToon, 0)}\n`;
+}
+
+/** Implements format output for the public runtime surface of this module. */
+export function formatOutput(result: unknown, options: OutputOptions): string {
+  const commandOverride = runActiveCommandOverride(result);
+  const suppressedOutput = isHostOutputSuppressed(commandOverride.result)
+    ? commandOverride.result
+    : null;
+  const nativeOutput = shouldUseNativeOutput(commandOverride.result);
+  const effectiveResult = suppressedOutput
+    ? suppressedOutput.result
+    : stripNativeOutputMarker(commandOverride.result);
+  setActiveCommandResult(effectiveResult);
+  return suppressedOutput
+    ? ""
+    : formatEffectiveOutput(effectiveResult, nativeOutput, options);
 }
 
 /** Implements print result for the public runtime surface of this module. */

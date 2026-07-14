@@ -2,11 +2,12 @@ id: pm-f38n
 title: "GH-547: SDK exporters and renderers cannot suppress host rendering of handled output"
 description: "Track the SDK contract gap where a package-owned exporter or renderer cannot explicitly mark a handled result as already emitted, causing host rendering to corrupt stdout or forcing stderr workarounds."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: "area:extensions","area:output","area:sdk",gh-issue,package-authoring
 created_at: "2026-07-13T22:19:34.239Z"
-updated_at: "2026-07-13T22:19:34.239Z"
+updated_at: "2026-07-14T18:22:15.910Z"
+closed_at: "2026-07-14T18:08:21.844Z"
 author: codex-root
 estimated_minutes: 180
 acceptance_criteria: "A typed, documented suppression contract is shared by exporter, renderer, service override, CLI, and MCP dispatch; default behavior remains backward compatible; runtime and package-harness tests cover handled output, suppressed output, JSON/TOON, errors, and telemetry; a packed temp package proves stdout remains uncorrupted"
@@ -16,14 +17,36 @@ confidence: high
 reporter: codex-root
 severity: medium
 repro_steps: "Implement a package exporter or renderer that streams or writes its own output, return a normal handled result, and observe the host render the result again because no public suppression sentinel exists."
-expected_result: "Public typed SDK contracts let handled exporter, renderer, and output-service paths explicitly suppress duplicate host rendering while preserving structured results, telemetry, and JSON/TOON contract clarity."
-actual_result: "Package authors must corrupt stdout with duplicate output, misuse stderr, or return shapes that the host still renders."
+resolution: Added a typed structural SDK output-suppression protocol and CLI presentation support with optional structured result preservation.
+expected_result: "Package commands that own streaming, binary, or pre-rendered stdout can prevent duplicate host rendering."
+actual_result: "Every normal handler result was rendered again by the host, corrupting package-owned stdout."
 component: "SDK exporter, renderer, and output service contracts"
 customer_impact: "Package authors cannot safely implement streaming, binary, or already-rendered export workflows through public SDK primitives."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-ixoa,related,"2026-07-13T22:19:34.239Z",null,null
   pm-srns,related,"2026-07-13T22:19:34.239Z",null,null
   pm-usfg,related,"2026-07-13T22:19:34.239Z",null,null
-comments[1]{created_at,author,text}:
+  pm-as4a,related,"2026-07-14T17:32:15.321Z",null,null
+  pm-evav,related,"2026-07-14T17:32:15.321Z",null,null
+comments[2]{created_at,author,text}:
   "2026-07-13T22:19:34.239Z",codex-root,"Duplicate check 2026-07-14: all-status searches for GH-547, suppress host rendering, exporter renderer suppression, and stdout corruption found no existing item. GitHub issue #547 is canonical external evidence; this item is deliberately left open and unclaimed."
+  "2026-07-14T18:08:04.049Z",codex-root,"Final evidence: public suppressHostOutput()/isHostOutputSuppressed contracts are exported from @unbrained/pm-cli/sdk; CLI output ownership unwraps the optional structured result for hooks/telemetry and emits no second payload. Linked pm tests pass; packed package imported the helper and direct stream output was exactly one line. Full coverage is 100/100/100/100."
+notes[1]{created_at,author,text}:
+  "2026-07-14T18:08:02.499Z",codex-root,"Design rationale: keep the protocol in core output-control, re-export it through sdk/output, and let the CLI presentation layer consume it. This preserves SDK-to-core dependency direction and lets embedded hosts use the same structural guard."
+files[6]{path,scope,note}:
+  src/core/output/output-control.ts,project,host output ownership protocol
+  src/core/output/output.ts,project,CLI suppression consumption and result preservation
+  src/sdk/index.ts,project,public SDK barrel
+  src/sdk/output.ts,project,stable SDK output-control export
+  tests/integration/extension-host-contracts.integration.spec.ts,project,real CLI no-double-render coverage
+  tests/unit/sdk/output.spec.ts,project,typed protocol and structural guard coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrkyra7o-xud4ch,test,passed,"2026-07-14T18:07:04.864Z","2026-07-14T18:07:16.596Z","2026-07-14T18:07:16.596Z",1,0,0
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,generated public fix record for SDK output ownership
+  docs/EXTENSIONS.md,project,extension host-output guidance
+  docs/SDK.md,project,output ownership SDK contract
+close_reason: "Published a typed SDK output-ownership protocol, integrated CLI suppression, and proved single-write stdout with a packed package."
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/547\n\nThis is backlog tracking only in the current immutable-history/read implementation lane. Reuse the public output contracts and avoid package-specific sentinels."

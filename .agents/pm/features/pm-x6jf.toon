@@ -2,24 +2,29 @@ id: pm-x6jf
 title: "Promote package & extension lifecycle primitives to the public SDK: install, upgrade, extension list/enable/disable, managed-package state"
 description: "Promote package and extension lifecycle operations into the public SDK so custom PM tools can install, upgrade, activate, deactivate, inspect, and manage packages without shelling out to CLI-only internals."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[3]: architecture,"area:extensions","area:sdk"
 created_at: "2026-07-06T21:58:30.613Z"
-updated_at: "2026-07-10T05:12:49.787Z"
+updated_at: "2026-07-14T18:22:33.141Z"
+closed_at: "2026-07-14T18:08:27.801Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "SDK exports typed primitives for package install/upgrade and extension lifecycle (list, enable/disable, managed-extensions state) returning the same structured results the CLI renders; pm install/upgrade/extension/package commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (install/extension specs green)"
 parent: pm-usfg
 risk: medium
 confidence: medium
-dependencies[5]{id,kind,created_at,author,source_kind}:
+resolution: "Completed the public package lifecycle family and its remaining dynamic host contracts across SDK, CLI, tests, and author documentation."
+expected_result: Custom PM tools and packages manage lifecycle and own dynamic command input/output through typed public SDK primitives.
+actual_result: "Lifecycle primitives were previously promoted incrementally while the remaining list parsing, output ownership, renderer parity, and passthrough contracts lacked a complete verified boundary."
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-tnud,related,"2026-07-06T21:58:39.001Z",null,null
   pm-6abs,related,"2026-07-07T08:57:29.205Z",null,null
   pm-cbwg,related,"2026-07-07T16:42:50.582Z",null,null
   pm-usfg,related,"2026-07-07T16:42:50.582Z",null,null
   pm-w89s,related,"2026-07-07T16:42:50.582Z",null,null
-comments[12]{created_at,author,text}:
+  pm-w13j,related,"2026-07-14T18:00:07.782Z",null,null
+comments[17]{created_at,author,text}:
   "2026-07-07T08:58:08.753Z",codex-agent,"Progress evidence: active PR bundle includes package/extension doctor isolation as a package-lifecycle primitive slice. Runtime loader options, CLI flags, SDK flag/tool contracts, shell completions, docs, and regression tests are being verified through pm-6abs; this item remains broader than the PR and should not be closed by the isolation slice alone."
   "2026-07-07T09:44:05.584Z",codex-agent,"Package lifecycle primitive update: pm-6abs promotes doctor isolation as a first-class lifecycle primitive across CLI flags, shell completion, help, SDK contract metadata, and action/tool schemas."
   "2026-07-07T16:42:43.496Z",codex-agent,"Implementation start: continuing SDK-first package/extension lifecycle promotion as one PR bundle linked to pm-usfg, pm-w89s, pm-cbwg, and pm-tnud. Live duplicate check used pm search --status all; closed read/lifecycle primitives pm-rjqr/pm-98cz/pm-395t are shipped and not reopened."
@@ -32,11 +37,27 @@ comments[12]{created_at,author,text}:
   "2026-07-07T19:24:18.498Z",codex-agent,"Installed-package proof after direct package guard fix: packed current checkout, installed it into a fresh /tmp project, initialized sandbox PM_PATH/PM_GLOBAL_PATH, imported @unbrained/pm-cli/sdk, and verified packageList, packageLifecycle list, packageCatalog, packageDoctor isolated, dry-run upgrade, and direct client.run(\"package\", { describe: true, vocabulary: \"extension\" }) still reports package vocabulary."
   "2026-07-07T19:43:55.235Z",codex-agent,"CodeRabbit follow-up: tightened the public lifecycle type-contract test to assert every picked field for ExtensionCommandResult, PackageCommandResult, and UpgradeResult instead of only action. Verification passed: focused SDK lifecycle test, pnpm typecheck, and pnpm lint."
   "2026-07-08T06:06:37.973Z",codex,"Evidence: GitHub hygiene was checked for this bundle: PR #481 is the active wide SDK/context primitives branch; Dependabot PRs #462/#465 remain separate; Dependabot and code-scanning alert APIs returned no open alerts."
-files[3]{path,scope,note}:
+  "2026-07-14T17:32:25.647Z",codex-root,"Bundle selection evidence 2026-07-14: all-status inventory (1811 items), full live metadata/history reads, and GitHub issue review identified the remaining package-lifecycle child pm-evav plus related host-contract issues pm-f38n, pm-albl, and pm-as4a. Only these five actively edited items are in_progress; broader SDK parents and unrelated open issues remain open/unclaimed."
+  "2026-07-14T17:50:30.885Z",codex-root,"Implementation checkpoint: the wide host-contract bundle now spans public SDK output ownership, real CLI renderer parity, ordered long/short list-flag accumulation, and documented variadic end-of-options behavior. Focused tests pass; pnpm typecheck and the full strict lint/static quality stack pass with 100% source/export/member docstrings, zero duplicates, package-boundary compliance, and token-budget compliance. Full coverage and packed temp-package acceptance remain before close."
+  "2026-07-14T17:59:38.916Z",codex-root,"Coverage gate finding: the first full run exposed the newly covered host-contract lines plus a pre-existing environment-sensitive claim-next author branch. The host lines received source-instrumented tests; claim-next now deterministically exercises explicit, environment, and unknown fallbacks in one isolated test. This is linked to closed coverage ADR pm-w13j rather than creating duplicate coverage work. Focused claim and ESLint checks pass; rerunning the mandatory literal 100% gate."
+  "2026-07-14T18:05:32.055Z",codex-root,"Observability evidence: packed-package execution produced healthy local telemetry configuration and pm health warning_count=0. Live Sentry query found zero criticals and two actionable highs, both pre-existing external-extension issues already tracked by open/unclaimed pm-d4ns (PM-CLI-2B, one handled event on 2026.7.11) and pm-7n5a (PM-CLI-29); 17 expected handled events were filtered. Trace/log lists had no 24h/1h rows, so real-time transaction/log ingestion is not claimed."
+  "2026-07-14T18:22:33.141Z",codex-root,"PR #561 review pass 1: Greptile correctly identified scalar Commander accumulator hardening and structural-marker collision risk; CodeRabbit correctly identified missing CHANGELOG.md pm docs links. The fix accepts scalar-or-array previous values, uses a collision-resistant versioned protocol value, adds regression assertions, and links CHANGELOG.md to all five represented items. Gemini, Sourcery, and CodeRabbit full-review capacity notices were external quota limits, not code findings."
+learnings[1]{created_at,author,text}:
+  "2026-07-14T18:08:01.631Z",codex-root,"Dynamic extension list flags cross two parsers: Commander consumes declared options before loose argv reconciliation, so an empty loose-occurrence ledger must preserve Commander values rather than replace them. Public output ownership should use a structural marker so independently installed packages do not depend on shared class identity."
+files[10]{path,scope,note}:
+  src/cli/extension-command-help.ts,project,package-owned dynamic option registration
+  src/cli/extension-command-options.ts,project,package-owned option coercion
+  src/core/output/output-control.ts,project,package host output primitive
   src/sdk/index.ts,project,public SDK barrel exports lifecycle helpers and contracts
   src/sdk/runtime.ts,project,typed package and extension lifecycle PmClient/top-level primitives
+  tests/integration/extension-host-contracts.integration.spec.ts,project,package host lifecycle real-boundary contracts
+  tests/unit/cli/extension-command-help.spec.ts,project,dynamic package option registration unit coverage
+  tests/unit/commands/claim-command.spec.ts,project,deterministic full-coverage proof for claim-next author fallback under the repository coverage ADR
+  tests/unit/sdk/output.spec.ts,project,public SDK output primitive coverage
   tests/unit/sdk/sdk-package-lifecycle.spec.ts,project,focused lifecycle primitive regression coverage
-tests[7]{command,scope,timeout_seconds}:
+tests[9]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/extension-command-help.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-package-lifecycle.spec.ts,project,240
   pnpm audit --audit-level high,project,120
   "pnpm changelog:pm:check",project,120
@@ -46,6 +67,9 @@ tests[7]{command,scope,timeout_seconds}:
   pnpm typecheck,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mravtqmq-rnxs0a,test,passed,"2026-07-07T16:47:12.203Z","2026-07-07T16:47:30.578Z","2026-07-07T16:47:30.578Z",2,0,0
-docs[1]{path,scope,note}:
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,generated public release record for package lifecycle and extension host contracts
+  docs/EXTENSIONS.md,project,package author host contracts
   docs/SDK.md,project,documents package/extension lifecycle SDK primitives
+close_reason: "Completed both lifecycle children and the broad extension host-contract bundle with linked tests, packed install proof, strict quality gates, and public SDK documentation."
 body: "Domain-by-domain SDK promotion under pm-usfg covers read (pm-rjqr), lifecycle (pm-98cz), schema/config/profile (pm-3mna), history maintenance (pm-4a7m), plan (pm-je50), governance/health/gc (pm-oxrw), annotations (pm-zwpp), and execution (pm-oslr) — but nobody owns the package/extension platform family. The universal-tool story (pm-w89s, exemplar pm-cbwg) requires an SDK-built PM tool to install and manage packages without shelling to the CLI. Promote the install/upgrade/extension lifecycle logic (multi-target install aggregation, managed-extensions.json state, activation) behind typed SDK primitives, and align with the CLI-side consolidation pm-tnud so the noun rename and the SDK promotion do not conflict."

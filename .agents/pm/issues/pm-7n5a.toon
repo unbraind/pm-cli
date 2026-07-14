@@ -6,14 +6,15 @@ status: open
 priority: 1
 tags[3]: "area:observability",external-integration,sentry
 created_at: "2026-07-14T07:55:43.315Z"
-updated_at: "2026-07-14T10:15:56.325Z"
+updated_at: "2026-07-14T18:05:31.354Z"
 author: codex-gpt5-root
 estimated_minutes: 120
 acceptance_criteria: Identify the emitting package and release; attribute the Sentry event to the owning project or classify the expected configuration error without hiding real pm-cli failures; sentry-telemetry-gate reports zero unrelated highs; document verification with current issue/event evidence.
 parent: pm-5oj5
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-ju83,related,"2026-07-14T07:55:43.315Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-14T07:55:43.315Z",codex-gpt5-root,"Duplicate check 2026-07-14: pm search 'Neo4j not configured NEO4J_URI PM-CLI-29' --status all and pm search neo4j --status all found no canonical Neo4j/Sentry item; gh issue search found no matching GitHub issue. Live release gate reports PM-CLI-29 high, while repository rg finds no Neo4j implementation, so this is filed as external-integration observability ownership under pm-5oj5."
   "2026-07-14T10:15:56.325Z",codex-gpt5,"Live verification 2026-07-14: pnpm release:gates passed build, typecheck, docs, static quality, 100/100/100/100 coverage (5,678 tests), version, secrets, packed npx smoke, and 88-command package-first dogfood, then failed only sentry-telemetry-gate because current PM-CLI-29 remains one high. Sentry event is handled=yes from pm-cli@2026.7.13 on an external Object.run command requiring Neo4j configuration; current SDK relationship changes contain no Neo4j surface. Telemetry was healthy: 0.29% finish error rate, zero failures missing error_code."
+  "2026-07-14T18:05:31.353Z",codex-root,"Live Sentry evidence 2026-07-14: pnpm sentry:telemetry:gate reports exactly two actionable highs in the 14-day window; PM-CLI-29 remains the separately tracked external Neo4j configuration error and PM-CLI-2B is pm-d4ns. Seventeen handled expected events are filtered, with zero criticals. This bundle does not claim or implement pm-7n5a."
 body: ""

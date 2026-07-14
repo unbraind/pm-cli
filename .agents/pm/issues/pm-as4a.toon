@@ -1,0 +1,38 @@
+id: pm-as4a
+title: "GH-560: extension renderer overrides diverge between SDK harness and real CLI output"
+description: Restore real CLI application of api.registerRenderer overrides so production command-result rendering matches the public SDK harness and typed extension contract.
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:extensions","area:output","area:sdk",gh-issue,regression
+created_at: "2026-07-14T17:31:50.115Z"
+updated_at: "2026-07-14T18:22:18.763Z"
+closed_at: "2026-07-14T18:08:25.497Z"
+author: codex-root
+estimated_minutes: 240
+acceptance_criteria: Real extension command results pass through registered JSON/TOON renderer overrides at the shipped CLI boundary; fallback rendering stays backward compatible; harness and CLI behavior match; real-boundary and packed-package tests cover raw artifact output; GH-560 is closed with evidence.
+parent: pm-ugqx
+resolution: Added real CLI and packed-package regression proof that registered renderer overrides own matching dynamic command output and fall back otherwise.
+expected_result: Renderer behavior matches the SDK harness at the shipped CLI boundary.
+actual_result: The released behavior was reported to bypass the renderer and diverge from harness expectations.
+regression: true
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-albl,related,"2026-07-14T17:32:14.606Z",null,null
+  pm-evav,related,"2026-07-14T17:32:14.606Z",null,null
+  pm-f38n,related,"2026-07-14T17:32:14.606Z",null,null
+  pm-x6jf,related,"2026-07-14T17:32:14.606Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-14T17:31:50.115Z",codex-root,"Duplicate check 2026-07-14: pm search exact issue title and GH-560 across status=all returned zero matches. GitHub issue #560 is canonical external evidence; related GH-547/pm-f38n covers suppression semantics but not this runtime regression."
+  "2026-07-14T18:08:05.516Z",codex-root,"Final evidence: current runtime already applies JSON renderer overrides to dynamic command results; the new real-boundary regression suite locks harness/CLI parity and fallback behavior. Packed installed package returned the raw artifact without JSON quoting. Linked pm test passes; full suite is 100/100/100/100."
+files[2]{path,scope,note}:
+  src/core/output/output.ts,project,shared runtime renderer and suppression pipeline
+  tests/integration/extension-host-contracts.integration.spec.ts,project,real CLI renderer override parity regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/extension-host-contracts.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrkyrr0a-1w5n67,test,passed,"2026-07-14T18:07:27.570Z","2026-07-14T18:07:38.362Z","2026-07-14T18:07:38.362Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,generated public fix record for real CLI renderer parity
+  docs/SDK.md,project,renderer fallback and output ownership contract
+close_reason: "Pinned renderer override parity across SDK expectations, real CLI execution, and packed-package raw output."
+body: ""

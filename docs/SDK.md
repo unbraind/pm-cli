@@ -68,6 +68,9 @@ Common authoring exports:
 - `PM_CLI_EXPECTED_ERROR_NAME`
 - `createPmCliExpectedError`
 - `isPmCliExpectedError`
+- `suppressHostOutput` / `isHostOutputSuppressed` / `SUPPRESS_HOST_OUTPUT_MARKER`
+  for extension commands that already wrote streaming, binary, or otherwise
+  pre-rendered output and must prevent a second host render
 
 Registration builders (`define*`, zero-cost identity — see [Authoring Builders](#authoring-builders)):
 
@@ -1177,7 +1180,9 @@ same list/default semantics as core flags:
   (`value_type ?? type`). An unrecognized value type is rejected at registration.
 - `list: true` makes a repeated, comma-joined flag accumulate into an array —
   parity with core list flags such as `--tags`. `--scope a,b --scope c` resolves
-  to `["a", "b", "c"]`, with each element coerced by `value_type`.
+  to `["a", "b", "c"]`, with each element coerced by `value_type`. Long and
+  short aliases share one accumulator, so `-s a --scope b,c --scope=d` preserves
+  command-line order as `["a", "b", "c", "d"]`.
 - `default` (a scalar, or an array of scalars for a `list` flag) is applied when
   the flag is omitted; for a `list` flag the default is flattened into the
   accumulated array exactly like a provided value — comma-joined strings (e.g.
@@ -1187,10 +1192,41 @@ same list/default semantics as core flags:
 
 ```ts
 api.registerFlags("report", [
-  { long: "--scope", value_type: "string", list: true, default: "all" },
+  { long: "--scope", short: "-s", value_type: "string", list: true, default: "all" },
   { long: "--limit", value_type: "number", default: 20 },
 ]);
 ```
+
+Dynamic extension commands follow the same end-of-options contract as core
+commands. Put `--` before variadic content that begins with a dash or resembles a
+pm flag: `pm query run -- RETURN -h --json`. Everything after the separator is
+delivered to the registered positional arguments unchanged.
+
+## Output Ownership
+
+Command handlers should normally return structured data and let the host select
+TOON, JSON, service, or registered renderer output. A renderer override returns a
+string when it owns the matching payload and `null` to fall back to native
+rendering. When a command must write directly — for example, a streaming export,
+binary response, or already-rendered protocol — return `suppressHostOutput()` so
+the CLI does not append a second payload:
+
+```ts
+import { suppressHostOutput } from "@unbrained/pm-cli/sdk";
+
+api.registerCommand({
+  name: "archive stream",
+  async run() {
+    await writeArchiveToStdout();
+    return suppressHostOutput({ records: 42 });
+  },
+});
+```
+
+The optional structured result remains available to command-result hooks,
+telemetry, and embedded hosts, while the CLI writes no host-rendered output. The
+marker is structural rather than identity-based, so separately installed
+packages and custom SDK-built hosts can exchange it safely.
 
 `registerItemFields` validates each declared field `type` against the canonical
 coercion kinds (`string`, `number`, `boolean`, `array`, `object`) at activation.
@@ -2196,6 +2232,9 @@ Treat `recovery.suggested_retry` as the first-choice deterministic replay comman
 
 - Keep handlers deterministic and JSON-like.
 - Return data, not pre-rendered terminal text, unless implementing a renderer or output service.
+- After directly writing streaming, binary, or pre-rendered output, return
+  `suppressHostOutput()` to make output ownership explicit and prevent duplicate
+  CLI rendering.
 - Keep service, renderer, and preflight overrides narrow. For `output_format`, return `context.payload`, `null`, or `undefined` for unrelated commands; for renderers, return `null` when the payload should fall back to native rendering.
 - Declare only capabilities in use.
 - Set `pm_min_version` when the package requires SDK or runtime behavior added after older pm releases.

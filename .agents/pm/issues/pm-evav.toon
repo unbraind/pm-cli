@@ -2,19 +2,42 @@ id: pm-evav
 title: "GH-550: extension list flags are erased at the real CLI boundary"
 description: "Fix list:true registerCommand flags so one, comma-separated, repeated, and interleaved alias values reach extension handlers through the built CLI without being replaced by an empty loose-occurrence array."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: agent-experience,extension-sdk,gh-550
 created_at: "2026-07-14T10:18:53.391Z"
-updated_at: "2026-07-14T16:46:37.149Z"
+updated_at: "2026-07-14T18:22:15.063Z"
+closed_at: "2026-07-14T18:08:20.229Z"
 author: codex-gpt5
 estimated_minutes: 180
 acceptance_criteria: Built CLI parser preserves one/comma/repeated/interleaved list values in occurrence order; omitted flags retain declared defaults; focused extension startup and CLI integration tests cover the real boundary.
 parent: pm-x6jf
 risk: medium
 confidence: 75
-dependencies[1]{id,kind,created_at,author,source_kind}:
+resolution: Registered list options accumulate through Commander and preserve values through loose-option reconciliation.
+expected_result: "One, comma-separated, repeated, and aliased list values reach extension handlers in occurrence order."
+actual_result: The loose parser replaced Commander-parsed list values with an empty array when no loose occurrences remained.
+regression: true
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-kfq5,related,"2026-07-14T10:18:53.391Z",codex-gpt5,null
-comments[1]{created_at,author,text}:
+  pm-albl,related,"2026-07-14T17:32:16.591Z",null,null
+  pm-as4a,related,"2026-07-14T17:32:16.591Z",null,null
+comments[2]{created_at,author,text}:
   "2026-07-14T10:18:53.391Z",codex-gpt5,"Duplicate check 2026-07-14: pm search GH-550 --status all returned no item. Related closed pm-kfq5 covered repeated occurrence accumulation but GitHub #550 reports a distinct real-CLI coercion regression in 2026.7.13. Source: https://github.com/unbraind/pm-cli/issues/550"
+  "2026-07-14T18:08:03.346Z",codex-root,"Final evidence: Commander now accumulates repeated long/short list occurrences before shared coercion; empty loose occurrence ledgers preserve those values. Linked pm tests pass. Full suite: 290 files / 5,699 tests / 100% statements, branches, functions, lines. Packed tarball proof produced [alpha,beta,gamma,delta] from -r alpha --repos beta,gamma --repos=delta."
+files[4]{path,scope,note}:
+  src/cli/extension-command-help.ts,project,Commander list-option accumulation at the real CLI boundary
+  src/cli/extension-command-options.ts,project,ordered loose-list reconciliation preserves declared option values
+  tests/integration/extension-host-contracts.integration.spec.ts,project,real CLI list flag coverage across aliases repeats and comma values
+  tests/unit/cli/extension-command-help.spec.ts,project,source-instrumented Commander list accumulator coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/extension-host-contracts.integration.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/cli/extension-command-help.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrkyr0qr-dns363,test,passed,"2026-07-14T18:06:48.183Z","2026-07-14T18:07:04.323Z","2026-07-14T18:07:04.323Z",2,0,0
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,generated public fix record for ordered extension list flags
+  docs/EXTENSIONS.md,project,package author runtime flag guidance
+  docs/SDK.md,project,list flag and end-of-options authoring contracts
+close_reason: Implemented ordered dynamic list-flag accumulation and verified real CLI plus packed-package behavior at 100/100/100/100 coverage.
 body: ""
