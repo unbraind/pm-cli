@@ -95,6 +95,7 @@ describe("runInit", () => {
     expect(initInternals.isPathLikeInitTarget("acme")).toBe(false);
     expect(initInternals.isPathLikeInitTarget("./sandbox")).toBe(true);
     expect(initInternals.isPathLikeInitTarget("/tmp/pm-test")).toBe(true);
+    expect(initInternals.isPathLikeInitTarget("C:tracker")).toBe(true);
     expect(
       initInternals.resolveInitInvocation("/repo", {}, "./sandbox"),
     ).toEqual({
@@ -146,6 +147,13 @@ describe("runInit", () => {
     );
     expect(() =>
       initInternals.resolveInitPrefixInput(undefined, "./tracker"),
+    ).toThrow(
+      expect.objectContaining({
+        context: expect.objectContaining({ code: "init_id_prefix_path_like" }),
+      }),
+    );
+    expect(() =>
+      initInternals.resolveInitPrefixInput(undefined, "C:tracker"),
     ).toThrow(
       expect.objectContaining({
         context: expect.objectContaining({ code: "init_id_prefix_path_like" }),

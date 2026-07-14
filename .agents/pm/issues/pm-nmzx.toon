@@ -6,8 +6,8 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,github-issue,init
 created_at: "2026-07-14T19:04:33.488Z"
-updated_at: "2026-07-14T20:44:55.773Z"
-closed_at: "2026-07-14T20:44:54.820Z"
+updated_at: "2026-07-14T21:03:32.870Z"
+closed_at: "2026-07-14T21:03:31.606Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "pm init accepts --id-prefix <value> as an alias for the positional prefix argument (positional form stays supported); conflicting positional + flag values fail fast with a clear message; help text, completion (bash+zsh+fish), contracts (cli-contracts.ts flag contracts + MCP schema), and docs updated per the new-flag wiring checklist; regression spec covers flag form, positional form, and the conflict case"
@@ -15,17 +15,18 @@ parent: pm-mpbb
 risk: low
 confidence: high
 resolution: completed
-expected_result: "pm init accepts a discoverable id-prefix flag without breaking positional compatibility, rejects ambiguous dual inputs, and never stores tracker paths as item prefixes."
-actual_result: "Both flag aliases persist normalized prefixes; equivalent dual inputs compose; conflicts, empty values, and path-like flagged values fail with structured code-2 guidance; all focused/full/package proofs pass."
+expected_result: Dependabot release PR is verified and init exposes a stable canonical project-id prefix contract that rejects path-shaped values across supported platforms.
+actual_result: "Verified the release dependency update and delivered canonical --id-prefix with --prefix compatibility, structured conflicts/errors, docs/contracts/completions, external packed proof, and cross-platform path rejection at exact 100/100/100/100 coverage."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-3mna,related,"2026-07-14T19:04:33.488Z",null,null
   pm-kl19,related,"2026-07-14T19:04:33.488Z",null,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-14T19:25:01.765Z",codex-gpt5,"Implementation start 2026-07-14: bundled with pm-3mna because init prefix input is part of the same public workspace-customization contract. Scope includes conflict validation, help/contracts/completions/docs, CLI regression tests, and installed temp-workspace proof."
   "2026-07-14T19:41:01.717Z",codex-gpt5,"Progress evidence: init now accepts --id-prefix with --prefix alias, preserves positional compatibility, accepts normalized equivalent dual inputs, and rejects empty/conflicting values deterministically. Help/contracts/completions/docs and focused regression coverage are green."
   "2026-07-14T20:17:42.518Z",codex-root,"Linked-test diagnostic: the first acceptance run passed 102 init/completion tests but the contract snapshot check failed only because pm test correctly sandboxed PM_PATH with zero tracker items/extensions, while contracts:check intentionally snapshots the real project package surface. Direct pnpm contracts:check on the real tracker is current. Re-running the linked set with explicit tracker context records the intended package-aware acceptance evidence."
   "2026-07-14T20:19:50.622Z",codex-root,"Final evidence: canonical --id-prefix and --prefix alias work with flag-only, positional-only, normalized equivalent dual input, empty-input refusal, and deterministic conflict guidance. Bash/zsh/fish completions, runtime contracts, docs, direct registration forwarding, integration coverage, and packed installed-CLI temp-workspace proof pass. Linked acceptance rerun is green (102 init/completion tests plus current project contract snapshot). Full repository verification is 5,701 tests at literal 100/100/100/100 coverage."
   "2026-07-14T20:44:53.144Z",codex-root,"PR #563 round-1 review: accepted Greptile's path-like flagged-prefix finding and added init_id_prefix_path_like refusal with actionable positional/global-path guidance plus unit/integration coverage. Rejected the separate alias-drop claim: Commander, repository integration tests, and Greptile T-Rex all prove --prefix ops persists ops-. All four inline bot comments were reacted to and answered in their real threads. Post-fix full suite remains 5,701 tests with 36,850/36,850 statements, 26,465/26,465 branches, 7,438/7,438 functions, and 35,965/35,965 lines."
+  "2026-07-14T21:03:30.601Z",codex-root,"PR #563 round-2 review evidence: accepted Greptile's Windows drive-relative path finding and hardened init prefix validation so targets such as C:tracker are rejected with structured init_id_prefix_path_like guidance. Added direct predicate, resolver, and built-CLI integration coverage. Verification passed: 290 test files, 5,701 tests, statements 36,850/36,850, branches 26,466/26,466, functions 7,438/7,438, lines 35,965/35,965 (exact 100/100/100/100); pnpm typecheck; pnpm quality:static. Reacted to and replied on the finding thread; final resolution follows after the pushed-head review loop."
 learnings[1]{created_at,author,text}:
   "2026-07-14T20:19:51.329Z",codex-root,"Commander stores the canonical property from the long flag declaration, so --prefix, --id-prefix <value> forwards through options.idPrefix; resolving positional and flag forms in one normalizer keeps compatibility and conflict behavior deterministic."
 files[7]{path,scope,note}:
@@ -45,5 +46,5 @@ test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,documents canonical flag alias compatibility and conflict behavior
   docs/SDK.md,project,documents shared customization primitive ownership
-close_reason: "Implemented and review-hardened GH-562 with canonical --id-prefix, working --prefix alias, path-like value refusal, conflict validation, completions, contracts, docs, and installed proof."
+close_reason: "Completed GH-562 follow-up plus both PR #563 review rounds: dependency release verification, canonical init prefix contract, path-like prefix rejection including Windows drive-relative targets, focused and full exact-coverage verification, and review evidence."
 body: ""

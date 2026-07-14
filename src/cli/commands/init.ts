@@ -345,6 +345,7 @@ function isPathLikeInitTarget(rawValue: string | undefined): boolean {
   }
   return (
     path.isAbsolute(trimmed) ||
+    /^[a-z]:/iu.test(trimmed) ||
     trimmed.startsWith(".") ||
     trimmed.includes("/") ||
     trimmed.includes("\\")
