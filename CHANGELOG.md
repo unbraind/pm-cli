@@ -4,8 +4,8 @@
 
 ### Added
 
-- Point-in-time read projection: pm get --at <version\|timestamp\> renders reconstructed historical item state without mutating ([pm-hib1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hib1.toon))
 - Promote history-stream maintenance primitives to the public SDK: history-redact, history-repair, history-compact (audited rewrite, re-anchor, checkpoint/prune) ([pm-4a7m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4a7m.toon))
+- Point-in-time read projection: pm get --at <version\|timestamp\> renders reconstructed historical item state without mutating ([pm-hib1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hib1.toon))
 - Context usage feedback signal: served-then-acted-on outcomes strengthen relevance scoring (retrieval-practice effect) ([pm-uwfs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-uwfs.toon))
 - GH-544: linked-file path anchoring — files/docs add/glob/discover/validate-paths resolve at process.cwd() while validate --check-files anchors at the workspace root ([pm-chyh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-chyh.toon))
 

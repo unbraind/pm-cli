@@ -4,6 +4,7 @@
  * Normalizes untyped action payload values at the SDK runtime boundary. These
  * primitives are shared by native action dispatchers and MCP-specific adapters.
  */
+import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 
 /** Read a non-empty string without altering its caller-provided whitespace. */
@@ -59,14 +60,20 @@ export function parseRuntimeInteger(
 ): number | undefined {
   if (typeof value === "number") {
     if (!Number.isInteger(value)) {
-      throw new PmCliError(`${label} must be a finite integer.`, 64);
+      throw new PmCliError(
+        `${label} must be a finite integer.`,
+        EXIT_CODE.USAGE,
+      );
     }
     return value;
   }
   if (typeof value === "string" && value.trim().length > 0) {
     const parsed = Number(value);
     if (!Number.isInteger(parsed)) {
-      throw new PmCliError(`${label} must be a finite integer.`, 64);
+      throw new PmCliError(
+        `${label} must be a finite integer.`,
+        EXIT_CODE.USAGE,
+      );
     }
     return parsed;
   }

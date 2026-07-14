@@ -20,8 +20,10 @@ import {
   resolveHistoryTarget,
 } from "../../../src/core/history/projection.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
+import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { readSettings } from "../../../src/core/store/settings.js";
+import { parseRuntimeInteger } from "../../../src/sdk/runtime-input.js";
 import type { ItemMetadata } from "../../../src/types/index.js";
 import {
   withTempPmPath,
@@ -88,6 +90,16 @@ function metadata(id: string, parent: string, status = "open"): ItemMetadata {
 }
 
 describe("public SDK history and rich-read primitives", () => {
+  it("uses the canonical usage exit code for invalid runtime integers", () => {
+    expect(parseRuntimeInteger("7", "limit")).toBe(7);
+
+    for (const value of [1.5, "1.5"]) {
+      expect(() => parseRuntimeInteger(value, "limit")).toThrow(
+        expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+      );
+    }
+  });
+
   it("exposes mutation-free time travel and typed maintenance methods", async () => {
     await withTempPmPath(async (context) => {
       const id = createSdkHistoryFixture(context);
