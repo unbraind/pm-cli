@@ -15,14 +15,18 @@ import {
   createHistoryEntry,
 } from "../../core/history/history.js";
 import {
-  EMPTY_REPLAY_DOCUMENT,
-  normalizeReplayPatchOps,
-  replayHash,
   replayToCanonicalItemDocument,
   replayToItemDocument,
   toReplayDocument,
-  type ReplayDocument as CanonicalReplayDocument,
 } from "../../core/history/replay.js";
+import {
+  applyHistoryPatch,
+  ensureMaterializedHistoryTarget as ensureMaterializedRestoreTarget,
+  extractPatchFailureContext,
+  readHistoryEntries,
+  replayHistoryToTarget as replayToTarget,
+  resolveHistoryTarget as ensureReplayTarget,
+} from "../../sdk/history-read.js";
 import { enforceHistoryStreamPolicyForItem } from "../../core/history/history-stream-policy.js";
 import { normalizeItemId, normalizeRawItemId } from "../../core/item/id.js";
 import {
@@ -56,13 +60,6 @@ import type {
   ItemDocument,
   ItemMetadata,
 } from "../../types/index.js";
-import { readHistoryEntries } from "./history.js";
-
-interface ResolvedRestoreTarget {
-  kind: "version" | "timestamp";
-  raw: string;
-  historyIndex: number;
-}
 
 interface ResolvedRestoreSubject {
   id: string;
@@ -74,14 +71,6 @@ interface ResolvedRestoreSubject {
 interface RestoreCurrentState {
   document: ItemDocument;
   originalRaw: string | null;
-}
-
-interface PatchFailureContext {
-  patchIndex?: number;
-  op?: string;
-  path?: string;
-  from?: string;
-  reason?: string;
 }
 
 /** Documents the restore command options payload exchanged by command, SDK, and package integrations. */
@@ -110,253 +99,6 @@ export interface RestoreResult {
   changed_fields: string[];
   /** Value that configures or reports warnings for this contract. */
   warnings: string[];
-}
-
-function ensureReplayTarget(
-  target: string,
-  history: HistoryEntry[],
-): ResolvedRestoreTarget {
-  const trimmed = target.trim();
-  if (!trimmed) {
-    throw new PmCliError(
-      "Missing restore target. Use a timestamp or version number.",
-      EXIT_CODE.USAGE,
-    );
-  }
-
-  if (/^\d+$/.test(trimmed)) {
-    const version = Number(trimmed);
-    if (
-      !Number.isSafeInteger(version) ||
-      version < 1 ||
-      version > history.length
-    ) {
-      throw new PmCliError(
-        `Restore version must be between 1 and ${history.length} for this item.`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    return {
-      kind: "version",
-      raw: trimmed,
-      historyIndex: version - 1,
-    };
-  }
-
-  const parsedTarget = Date.parse(trimmed);
-  if (!Number.isFinite(parsedTarget)) {
-    throw new PmCliError(
-      `Invalid restore target "${target}". Use a positive version number or ISO timestamp.`,
-      EXIT_CODE.USAGE,
-    );
-  }
-
-  let index = -1;
-  for (let i = 0; i < history.length; i += 1) {
-    const entryTimestamp = Date.parse(history[i].ts);
-    if (!Number.isFinite(entryTimestamp)) {
-      throw new PmCliError(
-        `History for this item contains invalid timestamp at entry ${i + 1}.`,
-        EXIT_CODE.GENERIC_FAILURE,
-      );
-    }
-    if (entryTimestamp <= parsedTarget) {
-      index = i;
-    }
-  }
-
-  if (index < 0) {
-    throw new PmCliError(
-      `No history entries exist at or before timestamp ${trimmed}.`,
-      EXIT_CODE.USAGE,
-    );
-  }
-
-  return {
-    kind: "timestamp",
-    raw: trimmed,
-    historyIndex: index,
-  };
-}
-
-function extractPatchFailureContext(
-  patch: HistoryPatchOp[],
-  error: unknown,
-): PatchFailureContext {
-  const context: PatchFailureContext = {};
-  if (error instanceof Error && error.message.trim().length > 0) {
-    context.reason = error.message.trim();
-  }
-  if (typeof error !== "object" || error === null) {
-    return context;
-  }
-  const candidate = error as {
-    index?: unknown;
-    operation?: unknown;
-  };
-  /* c8 ignore start -- parser-generated patch errors may omit index metadata in current fixtures. */
-  if (
-    typeof candidate.index === "number" &&
-    Number.isInteger(candidate.index) &&
-    candidate.index >= 0
-  ) {
-    context.patchIndex = candidate.index;
-  }
-  /* c8 ignore stop */
-  /* c8 ignore start -- operation payload metadata is optional in upstream json-patch failures. */
-  const operationRecord =
-    typeof candidate.operation === "object" && candidate.operation !== null
-      ? (candidate.operation as {
-          op?: unknown;
-          path?: unknown;
-          from?: unknown;
-        })
-      : null;
-  /* c8 ignore stop */
-  enrichPatchFailureContext(context, operationRecord, patch);
-  return context;
-}
-
-function enrichPatchFailureContext(
-  context: PatchFailureContext,
-  operationRecord: { op?: unknown; path?: unknown; from?: unknown } | null,
-  patch: HistoryPatchOp[],
-): void {
-  /* v8 ignore start -- operation replay records always carry a string op when present; this preserves context for malformed future rows */
-  if (operationRecord && typeof operationRecord.op === "string") {
-    context.op = operationRecord.op;
-  }
-  /* v8 ignore stop */
-  if (operationRecord && typeof operationRecord.path === "string") {
-    context.path = operationRecord.path;
-  }
-  if (operationRecord && typeof operationRecord.from === "string") {
-    context.from = operationRecord.from;
-  }
-  if (
-    (context.op === undefined || context.path === undefined) &&
-    context.patchIndex !== undefined
-  ) {
-    const fallback = patch[context.patchIndex];
-    /* c8 ignore start -- fallback enrichment paths are only exercised by malformed patch telemetry payloads. */
-    if (fallback) {
-      context.op = context.op ?? fallback.op;
-      context.path = context.path ?? fallback.path;
-      context.from = context.from ?? fallback.from;
-    }
-    /* c8 ignore stop */
-  }
-}
-
-function applyHistoryPatch(
-  current: CanonicalReplayDocument,
-  patch: HistoryPatchOp[],
-  entryNumber: number,
-  entryOp: string,
-): CanonicalReplayDocument {
-  try {
-    const normalizedPatch = normalizeReplayPatchOps(patch);
-    const applied = jsonPatch.applyPatch(
-      structuredClone(current),
-      normalizedPatch as jsonPatch.Operation[],
-      true,
-      false,
-    ).newDocument as unknown;
-    if (
-      typeof applied !== "object" ||
-      applied === null ||
-      !("metadata" in applied) ||
-      !("body" in applied) ||
-      typeof (applied as { body: unknown }).body !== "string" ||
-      typeof (applied as { metadata: unknown }).metadata !== "object" ||
-      (applied as { metadata: unknown }).metadata === null
-    ) {
-      throw new PmCliError(
-        `History replay produced an invalid document shape at entry ${entryNumber}.`,
-        EXIT_CODE.GENERIC_FAILURE,
-      );
-    }
-    const replay = applied as {
-      metadata: Record<string, unknown>;
-      body: string;
-    };
-    return {
-      metadata: replay.metadata,
-      body: replay.body,
-    };
-  } catch (error: unknown) {
-    if (error instanceof PmCliError) {
-      throw error;
-    }
-    const failureContext = extractPatchFailureContext(patch, error);
-    const contextTokens = [
-      `history_op=${entryOp}`,
-      /* c8 ignore next -- contextual fields are best-effort and may be absent depending on patch failure shape. */
-      failureContext.patchIndex !== undefined
-        ? `patch_index=${failureContext.patchIndex}`
-        : null,
-      /* c8 ignore next -- contextual fields are best-effort and may be absent depending on patch failure shape. */
-      failureContext.op ? `op=${failureContext.op}` : null,
-      /* c8 ignore next -- contextual fields are best-effort and may be absent depending on patch failure shape. */
-      failureContext.path ? `path=${failureContext.path}` : null,
-      /* c8 ignore next -- contextual fields are best-effort and may be absent depending on patch failure shape. */
-      failureContext.from ? `from=${failureContext.from}` : null,
-    ].filter((token): token is string => token !== null);
-    /* c8 ignore start -- jsonPatch/structuredClone/normalizeReplayPatchOps always throw Error instances with non-empty messages here, so extractPatchFailureContext always sets reason; the empty-suffix fallback is unreachable through applyHistoryPatch. */
-    const reasonSuffix = failureContext.reason
-      ? ` ${failureContext.reason}`
-      : "";
-    /* c8 ignore stop */
-    throw new PmCliError(
-      `Failed to apply history patch at entry ${entryNumber} (${contextTokens.join(", ")}).${reasonSuffix}`,
-      EXIT_CODE.GENERIC_FAILURE,
-    );
-  }
-}
-
-function replayToTarget(
-  history: HistoryEntry[],
-  targetIndex: number,
-): CanonicalReplayDocument {
-  let document: CanonicalReplayDocument = structuredClone(
-    EMPTY_REPLAY_DOCUMENT,
-  );
-
-  for (let i = 0; i <= targetIndex; i += 1) {
-    const entry = history[i];
-    const beforeHash = replayHash(document);
-    if (beforeHash !== entry.before_hash) {
-      throw new PmCliError(
-        `History hash mismatch before replay at entry ${i + 1}.`,
-        EXIT_CODE.GENERIC_FAILURE,
-      );
-    }
-
-    document = applyHistoryPatch(document, entry.patch, i + 1, entry.op);
-
-    const afterHash = replayHash(document);
-    if (afterHash !== entry.after_hash) {
-      throw new PmCliError(
-        `History hash mismatch after replay at entry ${i + 1}.`,
-        EXIT_CODE.GENERIC_FAILURE,
-      );
-    }
-  }
-
-  return document;
-}
-
-function ensureMaterializedRestoreTarget(
-  replayDocument: CanonicalReplayDocument,
-  target: ResolvedRestoreTarget,
-): CanonicalReplayDocument {
-  if (Object.keys(replayDocument.metadata).length > 0) {
-    return replayDocument;
-  }
-  throw new PmCliError(
-    `Restore target ${target.raw} resolves to a deleted state; choose a version or timestamp where the item exists.`,
-    EXIT_CODE.USAGE,
-  );
 }
 
 function replayCurrentDocument(history: HistoryEntry[]): ItemDocument {

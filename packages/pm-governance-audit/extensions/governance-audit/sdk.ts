@@ -1,3 +1,9 @@
+/**
+ * @module pm-governance-audit/sdk
+ *
+ * Resolves the host pm SDK runtime and exposes the typed subset consumed by
+ * the governance-audit package without copying core command implementations.
+ */
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type * as RuntimeSdk from "@unbrained/pm-cli/sdk/runtime";
@@ -23,6 +29,7 @@ try {
 /* c8 ignore stop */
 const runtime = loadedRuntime;
 
+/** Host SDK values used by package-owned audit commands and runtime decorators. */
 export const {
   EXIT_CODE,
   PmCliError,
@@ -47,6 +54,7 @@ export const {
   runUpdate,
 } = runtime;
 
+/** Runtime status registry inferred from the host SDK's schema resolver. */
 export type RuntimeStatusRegistry = ReturnType<
   typeof resolveRuntimeStatusRegistry
 >;

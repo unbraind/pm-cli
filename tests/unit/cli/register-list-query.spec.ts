@@ -173,10 +173,10 @@ describe("register-list-query list output formats", () => {
 });
 
 describe("register-list-query get options", () => {
-  it("passes string depth/fields and snake_case tree_depth through to runGet", async () => {
-    await runProfiled("get", "pm-1", "--depth", "deep", "--fields", "id,title", "--tree", "--tree_depth", "2");
+  it("passes depth, fields, historical target, and snake_case tree_depth through to runGet", async () => {
+    await runProfiled("get", "pm-1", "--depth", "deep", "--fields", "id,title", "--tree", "--tree_depth", "2", "--at", "7");
     const projection = lastCall<Record<string, unknown>>(vi.mocked(runGet) as never, 2);
-    expect(projection).toMatchObject({ depth: "deep", fields: "id,title", tree: true, treeDepth: "2" });
+    expect(projection).toMatchObject({ depth: "deep", fields: "id,title", tree: true, treeDepth: "2", at: "7" });
   });
 
   it("prefers the hyphenated --tree-depth value when provided", async () => {

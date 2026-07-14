@@ -147,6 +147,8 @@ pnpm sentry:telemetry:gate -- --telemetry-mode best-effort
 
 If private reliability checks identify repeated user friction, either confirm the current release already contains the remediation with regression coverage or fix it before continuing.
 
+The build writes `dist/cli-bundle/bundle-manifest.json` atomically with SHA-256 digests for every emitted bundle file. At startup, `pm` reports `bundle_integrity_torn_install` only when a module-loader failure is accompanied by manifest proof that an upgrade or rebuild changed, removed, or corrupted the active bundle. Reinstall `@unbrained/pm-cli` and retry after that diagnostic. Ordinary `ERR_MODULE_NOT_FOUND` and export failures with an intact manifest remain unexpected failures and must continue to block reliability gates.
+
 4. Run the same release pipeline locally.
 
 ```bash

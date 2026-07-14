@@ -1308,7 +1308,11 @@ function buildTypeSpecificCreateExample(
   return tokens.join(" ");
 }
 
-export function requireStringOption(value: string | undefined, flag: string): string {
+/** Require a trimmed option value while preserving title-specific recovery guidance. */
+export function requireStringOption(
+  value: string | undefined,
+  flag: string,
+): string {
   const normalized = value?.trim();
   if (!normalized) {
     if (flag === "--title") {
@@ -1664,11 +1668,7 @@ function resolveCreateSprintOrRelease(
   field: Parameters<typeof validateSprintOrReleaseValue>[0],
   policy: Parameters<typeof validateSprintOrReleaseValue>[2],
 ): { value: string | undefined; warnings: string[] } {
-  const resolved = resolveUnsettableOptionalString(
-    unsetKeys,
-    metadataKey,
-    raw,
-  );
+  const resolved = resolveUnsettableOptionalString(unsetKeys, metadataKey, raw);
   if (resolved === undefined) {
     return { value: undefined, warnings: [] };
   }

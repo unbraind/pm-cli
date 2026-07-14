@@ -6,9 +6,7 @@
   "allowed_private_core_imports": [
     {
       "source": "src/cli/bootstrap-args.ts",
-      "imports": [
-        "src/core/shared/levenshtein.ts"
-      ]
+      "imports": ["src/core/shared/levenshtein.ts"]
     },
     {
       "source": "src/cli/commander-usage.ts",
@@ -150,10 +148,7 @@
     },
     {
       "source": "src/cli/commands/completion.ts",
-      "imports": [
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts"
-      ]
+      "imports": ["src/core/shared/constants.ts", "src/core/shared/errors.ts"]
     },
     {
       "source": "src/cli/commands/config.ts",
@@ -410,7 +405,6 @@
         "src/core/extensions/index.ts",
         "src/core/fs/fs-utils.ts",
         "src/core/item/item-record.ts",
-        "src/core/item/status.ts",
         "src/core/item/type-registry.ts",
         "src/core/schema/runtime-schema.ts",
         "src/core/shared/command-types.ts",
@@ -463,67 +457,6 @@
       ]
     },
     {
-      "source": "src/cli/commands/history-compact.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/governance/metadata-coverage.ts",
-        "src/core/history/history-compact-bulk.ts",
-        "src/core/history/history-rewrite.ts",
-        "src/core/history/history.ts",
-        "src/core/history/replay.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/shared/author.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/history-redact.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/history/history-rewrite.ts",
-        "src/core/history/history.ts",
-        "src/core/history/replay.ts",
-        "src/core/item/id.ts",
-        "src/core/item/item-format.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/shared/author.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/history-repair.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/history/drift-scan.ts",
-        "src/core/history/history-rewrite.ts",
-        "src/core/history/replay.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
       "source": "src/cli/commands/history.ts",
       "imports": [
         "src/core/extensions/index.ts",
@@ -535,7 +468,6 @@
         "src/core/item/id.ts",
         "src/core/item/type-registry.ts",
         "src/core/shared/command-types.ts",
-        "src/core/shared/conflict-markers.ts",
         "src/core/shared/constants.ts",
         "src/core/shared/errors.ts",
         "src/core/store/item-store.ts",
@@ -545,10 +477,7 @@
     },
     {
       "source": "src/cli/commands/init-agent-guidance.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts"
-      ]
+      "imports": ["src/core/extensions/index.ts", "src/core/fs/fs-utils.ts"]
     },
     {
       "source": "src/cli/commands/init.ts",
@@ -569,29 +498,19 @@
     },
     {
       "source": "src/cli/commands/learnings.ts",
-      "imports": [
-        "src/core/shared/command-types.ts"
-      ]
+      "imports": ["src/core/shared/command-types.ts"]
     },
     {
       "source": "src/cli/commands/legacy-none-tokens.ts",
-      "imports": [
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts"
-      ]
+      "imports": ["src/core/shared/constants.ts", "src/core/shared/errors.ts"]
     },
     {
       "source": "src/cli/commands/lifecycle-transitions.ts",
-      "imports": [
-        "src/core/schema/runtime-schema.ts"
-      ]
+      "imports": ["src/core/schema/runtime-schema.ts"]
     },
     {
       "source": "src/cli/commands/linked-test-entry.ts",
-      "imports": [
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts"
-      ]
+      "imports": ["src/core/shared/constants.ts", "src/core/shared/errors.ts"]
     },
     {
       "source": "src/cli/commands/linked-test-parsers.ts",
@@ -649,9 +568,7 @@
     },
     {
       "source": "src/cli/commands/notes.ts",
-      "imports": [
-        "src/core/shared/command-types.ts"
-      ]
+      "imports": ["src/core/shared/command-types.ts"]
     },
     {
       "source": "src/cli/commands/plan.ts",
@@ -763,9 +680,7 @@
     },
     {
       "source": "src/cli/commands/scheduling-shortcuts.ts",
-      "imports": [
-        "src/core/shared/command-types.ts"
-      ]
+      "imports": ["src/core/shared/command-types.ts"]
     },
     {
       "source": "src/cli/commands/schema.ts",
@@ -1023,15 +938,11 @@
     },
     {
       "source": "src/cli/error-guidance.ts",
-      "imports": [
-        "src/core/shared/errors.ts"
-      ]
+      "imports": ["src/core/shared/errors.ts"]
     },
     {
       "source": "src/cli/extension-command-help.ts",
-      "imports": [
-        "src/core/extensions/index.ts"
-      ]
+      "imports": ["src/core/extensions/index.ts"]
     },
     {
       "source": "src/cli/extension-command-options.ts",
@@ -1160,9 +1071,7 @@
     },
     {
       "source": "src/cli/telemetry-flush.ts",
-      "imports": [
-        "src/core/telemetry/runtime.ts"
-      ]
+      "imports": ["src/core/telemetry/runtime.ts"]
     },
     {
       "source": "src/mcp/server.ts",

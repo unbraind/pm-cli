@@ -13,7 +13,7 @@ import * as historyRewriteModule from "../../../src/core/history/history-rewrite
 import * as replayModule from "../../../src/core/history/replay.js";
 import * as lockModule from "../../../src/core/lock/lock.js";
 import * as itemStoreModule from "../../../src/core/store/item-store.js";
-import * as historyCommandModule from "../../../src/cli/commands/history.js";
+import * as historyReadModule from "../../../src/core/history/read.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
@@ -652,8 +652,8 @@ describe("history-repair --all (bulk drift repair)", () => {
         chainMismatches: [],
         driftedItems: [skippedId, failedId],
       });
-      const originalReadHistoryEntries = historyCommandModule.readHistoryEntries;
-      const readSpy = vi.spyOn(historyCommandModule, "readHistoryEntries").mockImplementation(async (historyPath, itemId) => {
+      const originalReadHistoryEntries = historyReadModule.readHistoryEntries;
+      const readSpy = vi.spyOn(historyReadModule, "readHistoryEntries").mockImplementation(async (historyPath, itemId) => {
         if (itemId === failedId) {
           throw "synthetic_non_error_failure";
         }

@@ -2,19 +2,54 @@ id: pm-hib1
 title: "Point-in-time read projection: pm get --at <version|timestamp> renders reconstructed historical item state without mutating"
 description: Expose SDK and CLI point-in-time item reads that reconstruct verified historical state by version or timestamp without mutating or locking the tracker.
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,history,immutable-record
 created_at: "2026-07-06T23:18:28.374Z"
-updated_at: "2026-07-13T21:37:51.800Z"
+updated_at: "2026-07-14T00:29:16.837Z"
+closed_at: "2026-07-14T00:29:16.204Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "pm get <id> --at <version> and --at <timestamp> return the reconstructed state with reconstructed:true and as_of_* fields in both json and toon; reconstruction reuses the restore replay helper (single implementation, verified by test); invalid/future targets fail with a structured error listing the valid version range; SDK exposes the same primitive with reference docs; works after history-compact (checkpoint-aware replay); no mutation, no lock, no history entry is written by the read"
 parent: pm-o2kc
 risk: low
 confidence: high
+resolution: Added immutable getItemAt/readHistory SDK APIs and pm get --at version-or-timestamp projection on the restore-shared verified replay kernel.
+expected_result: "Historical item states are inspectable by version or timestamp without locks, writes, or history mutations, including after compaction."
+actual_result: "CLI and SDK return marked historical projections, structured ranges, and unchanged history hashes in focused and packed acceptance tests."
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-9yfo,related,"2026-07-06T23:18:28.374Z",null,null
   pm-hu11,related,"2026-07-06T23:18:28.374Z",null,null
   pm-tqel,related,"2026-07-06T23:18:28.374Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-13T22:45:35.485Z",codex-root,"Implementation evidence: added getItemAt plus pm get --at version/timestamp projections with reconstructed/as_of markers, structured valid_range errors, no lock/write path, historical claim cutoff, restore kernel reuse, future-target rejection, and checkpoint replay after history-compact."
+  "2026-07-14T00:09:46.145Z",codex-gpt5,"Implementation evidence: added mutation-free getItemAt/readHistory APIs and pm get --at version-or-timestamp projection with restore-shared verified replay, structured valid-range errors, flag conflict rules, and immutable-history proof. Exact-tree strict gates pass; full sandboxed coverage passes 5656 tests at 100/100/100/100."
+  "2026-07-14T00:29:10.047Z",codex-root,"Final verification: packed install reconstructs version 1 through CLI and SDK while the history hash remains unchanged; post-read SDK dry-run and real compaction verify; full coverage is 5656/5656 at 100/100/100/100 and package-first dogfood passes."
+files[11]{path,scope,note}:
+  src/cli/commands/get.ts,project,historical get projection
+  src/cli/commands/restore.ts,project,shared replay consumer
+  src/cli/register-list-query.ts,project,"--at CLI registration"
+  src/core/history/projection.ts,project,restore and read shared replay target kernel
+  src/core/shared/errors.ts,project,structured valid history range
+  src/mcp/tool-definitions.ts,project,MCP historical read guidance
+  src/sdk/cli-contracts/flag-contracts.ts,project,"--at runtime contract"
+  src/sdk/history-read.ts,project,public mutation-free getItemAt primitive
+  src/sdk/index.ts,project,PmClient and top-level point-in-time read exports
+  tests/fixtures/contracts/full.json,project,Runtime contract snapshot for --at
+  tests/unit/sdk/history-read-primitives.spec.ts,project,Historical projection and immutability coverage
+tests[3]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 900
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/get-append-command.spec.ts tests/unit/commands/history-activity-command.spec.ts tests/unit/sdk/history-read-primitives.spec.ts tests/unit/cli/register-list-query.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: "time-travel read,restore parity,post-compact,and registration coverage"
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/history-read-primitives.spec.ts tests/unit/commands/get-append-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,pm get --at usage and constraints
+  docs/SDK.md,project,getItemAt SDK contract and example
+close_reason: "Immutable CLI/SDK point-in-time reads pass mutation-hash, compaction, full coverage, packed acceptance, and documentation criteria."
 body: "pm restore <id> <target> can rewrite an item back to a prior version, but there is no READ-ONLY way to inspect what an item looked like at a given version or timestamp. Agents auditing provenance today must either run a mutating restore (then restore back) or manually fold JSON Patch entries from pm history --full — expensive, error-prone, and impossible to compose in pipelines.\n\nProposal: a non-mutating projection flag on the read path:\n- pm get <id> --at <version|ISO timestamp> reconstructs the item state by replaying the append-only history stream up to the target and renders it through the normal get projection (json/toon, --tree excluded).\n- Output marks the projection clearly (as_of_version, as_of_timestamp, reconstructed: true) so downstream tooling can never confuse a historical view with current state.\n- Reuses the same replay engine as pm restore (shared SDK primitive; no second replay implementation) so restore and read-projection can never diverge.\n- SDK: expose as a first-class read primitive (getItemAt) so custom tools built on the SDK get time-travel reads for free — a prerequisite for building VCS-like systems on pm primitives.\n\nThis closes the read half of the durability story: the append-only hash-chained history already guarantees every version is recorded; this makes every version cheaply inspectable.\n\n## Scope note 2026-07-07 — workspace-level projection (future phase)\nItem-scoped get --at is phase 1. A later phase can generalize the same reconstruction to workspace-level reads (list/context --at <timestamp>) for retrospectives and flow analysis over historical states; that phase must be index-backed (pm-801d) to avoid replaying every stream, and pairs naturally with the flow metrics in pm-pee5. Do not start it before item-scoped --at ships and the read index exists — filed as a scope note here (not a separate item) to keep one owner for time-travel reads."

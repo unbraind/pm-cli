@@ -9,6 +9,9 @@ import * as nodeModule from "node:module";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  runCliWithBundleIntegrity,
+} from "./cli/bundle-integrity.js";
 
 type NodeModuleWithCompileCache = typeof nodeModule & {
   enableCompileCache?: (cacheDir?: string) => {
@@ -99,6 +102,11 @@ export const _testOnly = {
 
 if (!printFastVersionIfRequested()) {
   enableNodeCompileCache();
-  const { runPmCli } = await import("./cli/main.js");
-  await runPmCli(process.argv.slice(2));
+  const cliEntrypointPath = fileURLToPath(import.meta.url);
+  await runCliWithBundleIntegrity(
+    process.argv.slice(2),
+    cliEntrypointPath,
+    () => import("./cli/main.js"),
+    process.stderr.write.bind(process.stderr),
+  );
 }

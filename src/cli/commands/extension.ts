@@ -663,13 +663,25 @@ async function copyExtensionDirectoryWithoutSelfNesting(
   sourceDirectory: string,
   destinationDirectory: string,
   copyDirectory: typeof fs.cp,
+  temporaryDirectory = os.tmpdir(),
 ): Promise<void> {
   const resolvedSource = path.resolve(sourceDirectory);
   const resolvedDestination = path.resolve(destinationDirectory);
-  if (resolvedSource === resolvedDestination) {
+  const canonicalSource = await fs
+    .realpath(resolvedSource)
+    .catch(() => resolvedSource);
+  const destinationParent = path.dirname(resolvedDestination);
+  const canonicalDestinationParent = await fs
+    .realpath(destinationParent)
+    .catch(() => destinationParent);
+  const canonicalDestination = path.join(
+    canonicalDestinationParent,
+    path.basename(resolvedDestination),
+  );
+  if (canonicalSource === canonicalDestination) {
     return;
   }
-  if (!isPathWithinDirectory(resolvedSource, resolvedDestination)) {
+  if (!isPathWithinDirectory(canonicalSource, canonicalDestination)) {
     await copyDirectory(sourceDirectory, destinationDirectory, {
       recursive: true,
       force: true,
@@ -677,8 +689,22 @@ async function copyExtensionDirectoryWithoutSelfNesting(
     return;
   }
 
+  const systemTempDirectory = path.resolve(temporaryDirectory);
+  const stagingBase = isPathWithinDirectory(
+    canonicalSource,
+    systemTempDirectory,
+  )
+    ? path.dirname(canonicalSource)
+    : systemTempDirectory;
+  if (isPathWithinDirectory(canonicalSource, stagingBase)) {
+    throw new PmCliError(
+      `Extension source "${sourceDirectory}" contains its install destination and no external staging directory is available. Install a narrower package directory instead.`,
+      EXIT_CODE.USAGE,
+      { code: "extension_install_source_contains_destination" },
+    );
+  }
   const stagingRoot = await fs.mkdtemp(
-    path.join(os.tmpdir(), "pm-extension-copy-"),
+    path.join(stagingBase, "pm-extension-copy-"),
   );
   const stagedDirectory = path.join(stagingRoot, "extension");
   try {

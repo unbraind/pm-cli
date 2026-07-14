@@ -89,6 +89,7 @@ pm context --limit 10
 pm search "calendar reminder validation" --limit 10
 pm get pm-a1b2                          # read one item; add --fields/--depth for lower-token projections
 pm get pm-a1b2 --tree --tree-depth 2    # item plus its descendant subtree
+pm get pm-a1b2 --at 7                   # verified, mutation-free historical version
 pm list-open --type Task --priority 1 --limit 20
 pm list-in-progress --limit 20
 pm aggregate --group-by parent,type --status open
@@ -106,7 +107,9 @@ pm next --ready-only --limit 3 --json   # tightest agent-loop projection
 ```
 
 Use `context` first for a compact active-work snapshot. Use `search` when the request names a concept, component, or prior issue.
-Use `pm get <id>` to read a single item by ID — the single-item read primitive used throughout the agent loop. It accepts `--fields <list>` and `--depth brief|standard|deep|full` for token-minimal projections, and `--tree`/`--tree-depth <n>` to include descendants. `pm get <id> --json` returns the `body` inside the `item` object (`.item.body`); see [Full results, totals, and bodies](#full-results-totals-and-bodies). To duplicate an existing item as a starting point, `pm copy <id> --title "New title"` clones it into a fresh id with lifecycle fields reset.
+Use `pm get <id>` to read a single item by ID — the single-item read primitive used throughout the agent loop. It accepts `--fields <list>` and `--depth brief|standard|deep|full` for token-minimal projections, and `--tree`/`--tree-depth <n>` to include descendants. Standard/deep reads expose a normalized `schedule` facet (`deadline`, `start_at`, `end_at`, `location`, reminders, and events) when scheduling metadata exists. Parent reads expose type-agnostic child counts plus a deterministic bounded sample and continuation metadata; this works for Plan, Feature, custom types, and every other item carrying direct children. `pm get <id> --json` returns the `body` inside the `item` object (`.item.body`); see [Full results, totals, and bodies](#full-results-totals-and-bodies). To duplicate an existing item as a starting point, `pm copy <id> --title "New title"` clones it into a fresh id with lifecycle fields reset.
+
+Add `--at <version|ISO-timestamp>` for a verified point-in-time read. It replays the same hash-checked history kernel used by restore but never acquires a lock, writes the item, or appends history. The result always includes `reconstructed: true`, `as_of_version`, and `as_of_timestamp`. Future/out-of-range targets fail with structured `valid_range` metadata. `--at` cannot be combined with `--tree`; workspace-wide historical graph projections require a future indexed primitive.
 `context` standard/deep views include high-level child completion counters plus `recently_created` and `unparented` sections, so agents can spot new orphan work before creating duplicates.
 Use `pm aggregate --completion` when you need per-group `open`, `in_progress`, `closed`, `other`, and `completion_pct` progress context.
 Each aggregate row carries an explicit `group_label`: a blank/null group value (e.g. unassigned items under `--group-by assignee`) renders as `(unassigned)`/`(untagged)`/`(unparented)` rather than an ambiguous empty key, while the structured `group` value keeps the raw `null` for machine consumers. Multi-field grouping joins each `field=value` pair into the label.
@@ -702,6 +705,8 @@ pm history <id> --limit 20
 pm history <id> --diff
 pm history <id> --diff --field status
 pm history <id> --full --diff --verify
+pm get <id> --at 12
+pm get <id> --at 2026-07-01T12:00:00.000Z --fields id,title,status,body
 pm history-compact <id> --dry-run
 pm history-compact <id> --before 25 --message "compact early entries"
 pm history-compact <id> --before 2026-06-01T00:00:00.000Z
@@ -720,6 +725,7 @@ pm restore <id> <timestamp-or-version>
 ```
 
 History is append-only. Restore appends a new restore event instead of rewriting old history.
+`pm get --at` is the read-only counterpart: it reconstructs a recorded version through the shared restore replay kernel and labels the result so consumers cannot confuse historical state with current state. Checkpoint baselines produced by `history-compact` remain valid reconstruction roots.
 
 `--diff` replays the history chain and emits, per entry, a `changes` array of `{ field, before, after }` field-level value transitions (alongside the `changed_fields` name list) — so you can see exactly what each field changed from and to without comparing snapshots. It is independent of the compact/full projection. `--field <name>` narrows the diff to a single field's transitions (implying `--diff`), answering "when did `<field>` change?" — e.g. `pm history <id> --diff --field status`.
 
@@ -739,6 +745,8 @@ For governance dashboards, `--metadata-coverage` adds a `metadata_coverage` bloc
 `history-compact` bulk mode (mutually exclusive with a positional `<id>`) compacts many streams in one audited pass. Select with `--ids <a,b,c>` (an explicit list — used on its own, not combined with the scan selectors below), or a scan: `--all-over <N>` (every stream with more than N entries) and/or a lifecycle filter `--closed` (terminal items only) or `--all-streams` (every stream). `--closed` and `--all-streams` are mutually exclusive. `--min-entries <N>` (default 3) skips already-compact streams; when `history.compact_policy` is enabled and `--all-over` is omitted, the policy's `max_entries` becomes the default threshold. `--before` is single-id only and is rejected in bulk mode. Each selected stream runs the same single-item compaction; one failing stream never aborts the rest — the result reports `totals` (`streams_considered`/`selected`/`items_compacted`/`items_skipped`/`items_errored`) plus one row per stream (`compacted`/`skipped` with a `skip_reason`/`errored`), and the command exits non-zero only if any stream errored.
 `history-repair` re-anchors a drifted history chain when `pm health`/`pm validate --check-history-drift` report stale hashes: it replays the stream, recomputes every before/after hash, repairs legacy patch ops that no longer strictly apply, reconciles the latest hash with the on-disk item, and appends an auditable `history_repair` marker. It never modifies item content and is a safe no-op on a clean stream.
 `history-repair --all` (mutually exclusive with `<id>`) runs the same drift scan `pm health` uses and applies the audited single-stream repair (ownership check, lock, post-repair no-drift verification, `--message` audit marker, per-stream `--force`) to every drifted stream in one pass. One failing stream never aborts the rest: the result lists one compact row per drifted stream (`repaired` / `skipped_clean` / `failed`) plus `totals`, and the command exits non-zero only if any stream failed.
+
+The maintenance engines are public SDK primitives rather than CLI-only implementations. `PmClient.historyRedact`, `historyRepair`, `historyRepairAll`, `historyCompact`, and `historyCompactBulk` return the same structured results shown here; the CLI commands are presentation shims over those SDK-owned engines.
 
 ## Custom Item Types
 

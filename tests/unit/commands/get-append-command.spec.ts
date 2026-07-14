@@ -5,6 +5,7 @@ import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runAppend } from "../../../src/cli/commands/append.js";
 import { runGet } from "../../../src/cli/commands/get.js";
+import { runHistoryCompact } from "../../../src/cli/commands/history-compact.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { locateItem } from "../../../src/core/store/item-store.js";
@@ -22,6 +23,9 @@ function createTask(
     body: string;
     includeLinks?: boolean;
     type?: string;
+    deadline?: string;
+    event?: string;
+    reminder?: string;
   },
 ): string {
   const linkArgs = params.includeLinks
@@ -53,7 +57,7 @@ function createTask(
     "--body",
     params.body,
     "--deadline",
-    "none",
+    params.deadline ?? "none",
     "--estimate",
     "10",
     "--acceptance-criteria",
@@ -73,6 +77,10 @@ function createTask(
     "--learning",
     "none",
     ...linkArgs,
+    ...(params.event === undefined ? [] : ["--event", params.event]),
+    ...(params.reminder === undefined
+      ? []
+      : ["--reminder", params.reminder]),
   ];
 
   const created = context.runCli(args, { expectJson: true });
@@ -242,7 +250,15 @@ describe("runGet and runAppend", () => {
 
       const withChildren = await runGet(id, { path: context.pmPath }, { fields: "id,children" });
       expect(withChildren.item).toEqual({ id });
-      expect(withChildren.children).toEqual({ count: 0, active: 0, by_status: {} });
+      expect(withChildren.children).toMatchObject({
+        count: 0,
+        active: 0,
+        by_status: {},
+        sample: [],
+        truncated: false,
+        next_offset: null,
+        continuation: null,
+      });
 
       await expect(runGet(id, { path: context.pmPath }, { fields: " , " })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
@@ -325,7 +341,7 @@ describe("runGet and runAppend", () => {
     });
   });
 
-  it("adds a child status rollup for container item reads", async () => {
+  it("adds a deterministic child status rollup for every parent-capable item type", async () => {
     await withTempPmPath(async (context) => {
       const epicId = createTask(context, {
         title: "get-children-rollup-epic",
@@ -368,15 +384,21 @@ describe("runGet and runAppend", () => {
       await writeFile(secondOpenChildPath, secondOpenChildSource.replace("status: open", 'status: ""'), "utf8");
 
       const standard = await runGet(epicId, { path: context.pmPath });
-      expect(standard.children).toEqual({
+      expect(standard.children).toMatchObject({
         count: 2,
         active: 1,
         by_status: {
           open: 1,
           closed: 1,
         },
+        truncated: false,
+        next_offset: null,
       });
-
+      expect(standard.children?.sample.map((child) => child.id)).toEqual(
+        [closedChildId, openChildId].sort((left, right) =>
+          left.localeCompare(right),
+        ),
+      );
 
       const brief = await runGet(epicId, { path: context.pmPath }, { depth: "brief" });
       expect(brief.children).toBeUndefined();
@@ -386,7 +408,118 @@ describe("runGet and runAppend", () => {
 
       const projectedLeaf = await runGet(openChildId, { path: context.pmPath }, { fields: "id,children" });
       expect(projectedLeaf.item).toEqual({ id: openChildId });
-      expect(projectedLeaf.children).toEqual({ count: 0, active: 0, by_status: {} });
+      expect(projectedLeaf.children).toMatchObject({
+        count: 0,
+        active: 0,
+        by_status: {},
+        sample: [],
+      });
+    });
+  });
+
+  it("projects schedule context at standard depth and through narrow fields", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "get-scheduled-meeting",
+        body: "meeting context",
+        type: "Meeting",
+        deadline: "2026-07-20T12:00:00.000Z",
+        event:
+          "start=2026-07-20T09:00:00.000Z,end=2026-07-20T10:00:00.000Z,title=SDK sync,location=Room 7",
+        reminder: "at=2026-07-20T08:45:00.000Z,text=Join SDK sync",
+      });
+
+      const standard = await runGet(id, { path: context.pmPath });
+      expect(standard.schedule).toMatchObject({
+        deadline: "2026-07-20T12:00:00.000Z",
+        start_at: "2026-07-20T09:00:00.000Z",
+        end_at: "2026-07-20T10:00:00.000Z",
+        location: "Room 7",
+      });
+      expect(standard.schedule?.events).toHaveLength(1);
+      expect(standard.schedule?.reminders).toHaveLength(1);
+
+      const projected = await runGet(
+        id,
+        { path: context.pmPath },
+        { fields: "id,schedule.start_at,schedule.location" },
+      );
+      expect(projected.item).toEqual({ id });
+      expect(projected.schedule).toEqual({
+        start_at: "2026-07-20T09:00:00.000Z",
+        location: "Room 7",
+      });
+      const brief = await runGet(id, { path: context.pmPath }, { depth: "brief" });
+      expect(brief.schedule).toBeUndefined();
+    });
+  });
+
+  it("reconstructs verified historical reads without mutating current state or history", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "get-time-travel-v1",
+        body: "historical body",
+      });
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const initialHistory = await readFile(historyPath, "utf8");
+      const update = context.runCli(
+        [
+          "update",
+          id,
+          "--title",
+          "get-time-travel-v2",
+          "--json",
+          "--author",
+          "test-author",
+          "--message",
+          "Advance historical fixture",
+        ],
+        { expectJson: true },
+      );
+      expect(update.code).toBe(0);
+      const beforeReadHistory = await readFile(historyPath, "utf8");
+      expect(beforeReadHistory.length).toBeGreaterThan(initialHistory.length);
+
+      const historical = await runGet(
+        id,
+        { path: context.pmPath },
+        { at: "1", fields: "id,title,body,claim_state" },
+      );
+      expect(historical).toMatchObject({
+        reconstructed: true,
+        as_of_version: 1,
+        item: { id, title: "get-time-travel-v1", body: "historical body" },
+      });
+      expect(historical.as_of_timestamp).toEqual(expect.any(String));
+      expect(historical.children).toBeUndefined();
+      expect(await readFile(historyPath, "utf8")).toBe(beforeReadHistory);
+      expect((await runGet(id, { path: context.pmPath })).item.title).toBe(
+        "get-time-travel-v2",
+      );
+
+      await expect(
+        runGet(id, { path: context.pmPath }, { at: "999" }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          code: "history_target_out_of_range",
+          valid_range: { first_version: 1, last_version: 2 },
+        },
+      });
+      await expect(
+        runGet(id, { path: context.pmPath }, { at: "2100-01-01T00:00:00.000Z" }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runGet(id, { path: context.pmPath }, { at: "1", tree: true }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await runHistoryCompact(id, { author: "test-author" }, { path: context.pmPath });
+      const checkpoint = await runGet(id, { path: context.pmPath }, { at: "1" });
+      expect(checkpoint).toMatchObject({
+        reconstructed: true,
+        as_of_version: 1,
+        item: { id, title: "get-time-travel-v2" },
+      });
     });
   });
 

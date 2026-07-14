@@ -1,0 +1,41 @@
+id: pm-7071
+title: Intentional package CommandError outcomes create high-severity Sentry issues (PM-CLI-16)
+description: "Typed package/extension CommandError values with an explicit numeric exitCode represent handled command outcomes, but sentryCaptureCliError currently records generic-failure exit code 1 as an exception. Preserve raw Error capture while treating explicit CommandError control flow like PmCliError so telemetry retains the failed command without creating unresolved error groups. Duplicate check: exact PM-CLI-16 and verify-release title searches across all statuses found only historical evidence comments, not a canonical active defect item."
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-07-13T23:36:29.498Z"
+updated_at: "2026-07-14T00:29:27.369Z"
+closed_at: "2026-07-14T00:29:26.592Z"
+author: codex-root
+acceptance_criteria: Sentry capture skips only Error values named CommandError with an explicit numeric exitCode; raw Error and untyped CommandError values remain captured; command-finish telemetry retains the nonzero outcome; focused regressions and the live Sentry gate pass.
+parent: pm-5oj5
+risk: low
+confidence: high
+reporter: codex-root
+severity: medium
+environment: pm-cli 2026.7.13; Node v26.4.0; Linux; live handled Sentry PM-CLI-16 exitCode=1
+repro_steps: "Run a package command that intentionally returns CommandError with numeric exitCode 1, such as a verify-release validation failure. Before the fix sentryCaptureCliError records it as an exception."
+resolution: Sentry capture now treats only typed CommandError values with numeric exitCode as handled package control flow while preserving capture for raw and untyped failures.
+expected_result: Typed handled CommandError outcomes remain in command telemetry without creating unresolved error-level Sentry groups.
+actual_result: The previous capture helper recognized PmCliError but captured extension/package CommandError outcomes as generic exceptions.
+component: Sentry CLI error classification and package runtime
+regression: false
+customer_impact: Expected package validation outcomes polluted Sentry and could block daily releases.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-ksv2,related,"2026-07-14T00:26:41.380Z",null,null
+  pm-wfvq,related,"2026-07-14T00:26:41.380Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-13T23:36:29.498Z",codex-root,"Duplicate-check evidence: pm search PM-CLI-16 --status all and exact verify-release title search found historical comments only. Live Sentry PM-CLI-16 is handled=yes, isUnhandled=false, CommandError exitCode=1, last seen 2026-07-13T21:38Z on release 2026.7.13; raw extension failures must remain captured."
+  "2026-07-14T00:09:50.089Z",codex-gpt5,"Implementation evidence: Sentry capture now suppresses only typed CommandError instances with numeric exit codes representing handled command outcomes; raw/untyped failures remain captured. Dedicated regressions and all exact-tree strict gates pass at 100/100/100/100 coverage."
+  "2026-07-14T00:29:13.849Z",codex-root,"Final verification: pm linked typed CommandError suite passes with sandbox parity; raw and untyped failure capture remains covered; live PM-CLI-16 is resolved and the reliability gate reports zero blocking highs."
+files[2]{path,scope,note}:
+  src/core/sentry/helpers.ts,project,Typed handled CommandError capture policy
+  tests/unit/core/sentry/sentry-control-flow.spec.ts,project,Handled command-error regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/sentry/sentry-control-flow.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrjwxzcs-lbevp2,test,passed,"2026-07-14T00:28:37.103Z","2026-07-14T00:28:43.708Z","2026-07-14T00:28:43.708Z",1,0,0
+close_reason: Typed handled package CommandError outcomes are excluded from exception capture while real failures remain observable; tests and live gate pass.
+body: ""

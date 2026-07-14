@@ -4,6 +4,8 @@
 
 ### Added
 
+- Point-in-time read projection: pm get --at <version\|timestamp\> renders reconstructed historical item state without mutating ([pm-hib1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hib1.toon))
+- Promote history-stream maintenance primitives to the public SDK: history-redact, history-repair, history-compact (audited rewrite, re-anchor, checkpoint/prune) ([pm-4a7m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4a7m.toon))
 - Context usage feedback signal: served-then-acted-on outcomes strengthen relevance scoring (retrieval-practice effect) ([pm-uwfs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-uwfs.toon))
 - GH-544: linked-file path anchoring — files/docs add/glob/discover/validate-paths resolve at process.cwd() while validate --check-files anchors at the workspace root ([pm-chyh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-chyh.toon))
 
@@ -13,6 +15,12 @@
 
 ### Fixed
 
+- Intentional package CommandError outcomes create high-severity Sentry issues (PM-CLI-16) ([pm-7071](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7071.toon))
+- Extension install self-copy guard: reject source-inside-destination layouts before fs.cp EINVAL (PM-CLI-28) ([pm-8myl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8myl.toon))
+- Sentry captures deliberate Ctrl+C interrupts as error-level events (AbortError, PM-CLI-27) ([pm-ksv2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ksv2.toon))
+- Torn-install bundle transients block scheduled releases: boot-time chunk-integrity self-check + distinct error code for gate classification ([pm-wfvq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wfvq.toon))
+- GH-446: pm get omits schedule facet (events/start_at/end_at/location) for Meeting/Event/Reminder ([pm-x1g5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x1g5.toon))
+- pm get --full omits children for Plan parents while pm list --parent returns them ([pm-y4z5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4z5.toon))
 - GH-533: create/update accept empty --title — required-title contract inconsistent between omitted and empty string ([pm-7je0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7je0.toon))
 - GH-535: pm deps omits dangling parent references (missing_count:0, missing:false) contradicting validate's dangling_reference_count ([pm-p9sc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p9sc.toon))
 - GH-542: MCP pm_copy nests title/message under options while sibling tools declare flat camelCase params — own suite triggers unexpected-arg warnings ([pm-hno5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hno5.toon))
@@ -24,6 +32,7 @@
 
 ### Other
 
+- Docstring coverage regressed below achieved-100% by PR\#536 extraction files; quality:static floors never ratcheted and mask drift; drop dead closure-pattern export ([pm-fb3i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fb3i.toon))
 - PR review helper: watch GitHub checks and enforce thread-scoped replies ([pm-0fxa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0fxa.toon))
 - Token-budget context packer: diversity-aware selection, projection degradation, and bounded output for pm context/next ([pm-55ra](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-55ra.toon))
 - Complete public linked-resource SDK primitives and actionable dependency governance ([pm-jcvg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jcvg.toon))

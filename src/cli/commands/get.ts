@@ -11,7 +11,6 @@ import {
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
 } from "../../core/schema/runtime-schema.js";
-import { isTerminalStatus } from "../../core/item/status.js";
 import {
   EXIT_CODE,
   ITEM_METADATA_KEY_ORDER,
@@ -29,8 +28,21 @@ import {
   getSettingsPath,
   resolvePmRoot,
 } from "../../core/store/paths.js";
+import { readHistoryEntries } from "../../sdk/history-read.js";
 import { readSettings } from "../../core/store/settings.js";
 import { recordContextUsageTouches } from "../../sdk/context-usage.js";
+import {
+  buildItemChildrenRollup,
+  type ChildRollupContext,
+} from "../../sdk/item-children.js";
+import {
+  buildItemSchedule,
+  type ItemScheduleContext,
+} from "../../sdk/item-schedule.js";
+import {
+  getItemAt,
+  type GetItemAtResult,
+} from "../../sdk/history-read.js";
 import { parseIntegerLimit } from "../shared-parsers.js";
 import type {
   ItemMetadata,
@@ -38,7 +50,6 @@ import type {
   LinkedFile,
   LinkedTest,
 } from "../../types/index.js";
-import { readHistoryEntries } from "./history.js";
 import { runList } from "./list.js";
 
 interface ClaimHistoryContext {
@@ -61,16 +72,6 @@ interface ClaimStateContext {
   last_release: ClaimHistoryContext | null;
 }
 
-interface ChildRollupContext {
-  count: number;
-  active: number;
-  by_status: Record<string, number>;
-}
-
-// GH-155 (pm-gcm3): only container types get the inline child rollup so leaf
-// item reads keep avoiding the corpus scan that the rollup requires.
-const CHILD_ROLLUP_TYPES = new Set(["milestone", "epic"]);
-
 /** Documents the get result payload exchanged by command, SDK, and package integrations. */
 export interface GetResult {
   // `body` lives inside `item` (alongside `description`/`acceptance_criteria`)
@@ -88,6 +89,14 @@ export interface GetResult {
   claim_state?: ClaimStateContext;
   /** Value that configures or reports children for this contract. */
   children?: ChildRollupContext;
+  /** Normalized scheduling data for scheduled item types and metadata. */
+  schedule?: Partial<ItemScheduleContext>;
+  /** True when the item was reconstructed from immutable history. */
+  reconstructed?: true;
+  /** One-based history version represented by a reconstructed read. */
+  as_of_version?: number;
+  /** Timestamp of the last history entry included in a reconstructed read. */
+  as_of_timestamp?: string;
   /** Value that configures or reports tree for this contract. */
   tree?: {
     root_id: string;
@@ -114,6 +123,8 @@ export interface GetOptions {
   tree?: boolean;
   /** Value that configures or reports tree depth for this contract. */
   treeDepth?: string;
+  /** One-based history version or ISO timestamp for a mutation-free read. */
+  at?: string;
 }
 
 function toClaimHistoryContext(entry: ClaimHistoryEntry): ClaimHistoryContext {
@@ -219,6 +230,7 @@ function validateGetFields(
     "linked",
     "claim_state",
     "children",
+    "schedule",
   ]);
   const allowedLinkedFields = new Set([
     "linked.files",
@@ -231,13 +243,22 @@ function validateGetFields(
     "claim_state.last_claim",
     "claim_state.last_release",
   ]);
+  const allowedScheduleFields = new Set([
+    "schedule.deadline",
+    "schedule.start_at",
+    "schedule.end_at",
+    "schedule.location",
+    "schedule.reminders",
+    "schedule.events",
+  ]);
   const unknown = fields.filter((field) => {
     const normalized = normalizeGetField(field);
     return (
       !itemFields.has(normalized) &&
       !allowedRootFields.has(normalized) &&
       !allowedLinkedFields.has(normalized) &&
-      !allowedClaimStateFields.has(normalized)
+      !allowedClaimStateFields.has(normalized) &&
+      !allowedScheduleFields.has(normalized)
     );
   });
   if (unknown.length > 0) {
@@ -269,7 +290,13 @@ function projectItemForFields(
     if (
       normalized === "body" ||
       normalized === "linked" ||
-      normalized.startsWith("linked.")
+      normalized.startsWith("linked.") ||
+      normalized === "claim_state" ||
+      normalized.startsWith("claim_state.") ||
+      normalized === "children" ||
+      normalized.startsWith("children.") ||
+      normalized === "schedule" ||
+      normalized.startsWith("schedule.")
     ) {
       continue;
     }
@@ -302,6 +329,7 @@ interface GetItemContext {
   locatedId: string;
   metadata: ItemMetadata;
   body: string;
+  historical?: GetItemAtResult;
 }
 
 function resolveGetProjection(options: GetOptions): ResolvedGetProjection {
@@ -317,6 +345,12 @@ function resolveGetProjection(options: GetOptions): ResolvedGetProjection {
   if (options.tree !== true && options.treeDepth !== undefined) {
     throw new PmCliError("Get --tree-depth requires --tree", EXIT_CODE.USAGE);
   }
+  if (options.at !== undefined && options.tree === true) {
+    throw new PmCliError(
+      "Get --at cannot be combined with --tree because workspace-level historical projections are not yet indexed.",
+      EXIT_CODE.USAGE,
+    );
+  }
   return {
     depth: options.full ? "deep" : parseGetDepth(options.depth),
     treeDepth:
@@ -331,6 +365,7 @@ function resolveGetProjection(options: GetOptions): ResolvedGetProjection {
 async function loadGetItemContext(
   id: string,
   global: GlobalOptions,
+  at?: string,
 ): Promise<GetItemContext> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
@@ -344,6 +379,18 @@ async function loadGetItemContext(
     settings,
     getActiveExtensionRegistrations(),
   );
+  if (at !== undefined) {
+    const historical = await getItemAt(id, at, { pmRoot: global.path });
+    return {
+      pmRoot,
+      settings,
+      typeToFolder: typeRegistry.type_to_folder,
+      locatedId: historical.document.metadata.id,
+      metadata: historical.document.metadata,
+      body: historical.document.body,
+      historical,
+    };
+  }
   const located = await locateItem(
     pmRoot,
     id,
@@ -385,17 +432,13 @@ function shouldIncludeGetField(params: {
   depth: GetDepth;
   fields: string[] | null;
   field: "body" | "linked" | "claim_state" | "children";
-  itemType?: string;
 }): boolean {
-  const { fieldProjection, depth, fields, field, itemType } = params;
+  const { fieldProjection, depth, fields, field } = params;
   if (fieldProjection) {
     if (field === "body" || field === "linked") {
       return fieldsInclude(fields, field);
     }
     return fieldsIncludeRoot(fields as string[], field);
-  }
-  if (field === "children") {
-    return depth !== "brief" && CHILD_ROLLUP_TYPES.has(itemType as string);
   }
   return depth !== "brief";
 }
@@ -409,7 +452,12 @@ async function resolveGetClaimState(
   }
   const historyPath = getHistoryPath(context.pmRoot, context.locatedId);
   const history = await readHistoryEntries(historyPath, context.locatedId);
-  return resolveClaimStateContext(context.metadata.assignee, history);
+  return resolveClaimStateContext(
+    context.metadata.assignee,
+    context.historical
+      ? history.slice(0, context.historical.as_of_version)
+      : history,
+  );
 }
 
 function attachGetLinked(
@@ -442,6 +490,7 @@ function attachGetLinked(
 async function buildGetChildrenRollup(
   context: GetItemContext,
   includeChildren: boolean,
+  includeEmpty: boolean,
 ): Promise<ChildRollupContext | undefined> {
   if (!includeChildren) {
     return undefined;
@@ -454,24 +503,36 @@ async function buildGetChildrenRollup(
     undefined,
     context.settings.schema,
   );
-  const byStatus: Record<string, number> = {};
-  let active = 0;
-  let count = 0;
-  const locatedId = context.locatedId.trim().toLowerCase();
-  for (const candidate of corpus) {
-    const parentId =
-      typeof candidate.parent === "string"
-        ? candidate.parent.trim().toLowerCase()
-        : "";
-    if (parentId !== locatedId) continue;
-    const candidateStatus = candidate.status.trim().toLowerCase();
-    count += 1;
-    byStatus[candidateStatus] = (byStatus[candidateStatus] ?? 0) + 1;
-    if (!isTerminalStatus(candidateStatus, statusRegistry)) {
-      active += 1;
-    }
+  const rollup = buildItemChildrenRollup(
+    context.locatedId,
+    corpus,
+    statusRegistry,
+  );
+  return rollup.count > 0 || includeEmpty ? rollup : undefined;
+}
+
+function attachGetSchedule(
+  result: GetResult,
+  context: GetItemContext,
+  fields: string[] | null,
+  includeSchedule: boolean,
+): void {
+  if (!includeSchedule) {
+    return;
   }
-  return { count, active, by_status: byStatus };
+  const schedule = buildItemSchedule(context.metadata);
+  if (!schedule) {
+    return;
+  }
+  if (fields === null || fieldsInclude(fields, "schedule")) {
+    result.schedule = schedule;
+    return;
+  }
+  result.schedule = Object.fromEntries(
+    Object.entries(schedule).filter(([key]) =>
+      fields.some((field) => field === `schedule.${key}`),
+    ),
+  ) as Partial<ItemScheduleContext>;
 }
 
 async function buildGetTree(
@@ -509,7 +570,7 @@ export async function runGet(
   options: GetOptions = {},
 ): Promise<GetResult> {
   const projection = resolveGetProjection(options);
-  const context = await loadGetItemContext(id, global);
+  const context = await loadGetItemContext(id, global, options.at);
   validateGetProjectionFields(projection.fields, context.settings);
   const includeBody = shouldIncludeGetField({ ...projection, field: "body" });
   const includeLinked = shouldIncludeGetField({
@@ -520,12 +581,15 @@ export async function runGet(
     ...projection,
     field: "claim_state",
   });
-  const itemType = context.metadata.type.trim().toLowerCase();
-  const includeChildren = shouldIncludeGetField({
+  const includeChildren =
+    context.historical === undefined &&
+    shouldIncludeGetField({
     ...projection,
     field: "children",
-    itemType,
   });
+  const includeSchedule = projection.fieldProjection
+    ? fieldsIncludeRoot(projection.fields as string[], "schedule")
+    : projection.depth !== "brief";
   const claimState = await resolveGetClaimState(context, includeClaimState);
   const result: GetResult = {
     item: projection.fieldProjection
@@ -539,13 +603,23 @@ export async function runGet(
   if (claimState) {
     result.claim_state = claimState;
   }
-  result.children = await buildGetChildrenRollup(context, includeChildren);
+  attachGetSchedule(result, context, projection.fields, includeSchedule);
+  result.children = await buildGetChildrenRollup(
+    context,
+    includeChildren,
+    projection.fieldProjection,
+  );
   result.tree = await buildGetTree(
     context,
     options,
     projection.treeDepth,
     global,
   );
+  if (context.historical) {
+    result.reconstructed = true;
+    result.as_of_version = context.historical.as_of_version;
+    result.as_of_timestamp = context.historical.as_of_timestamp;
+  }
   try {
     await recordContextUsageTouches({
       pmRoot: context.pmRoot,

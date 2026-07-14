@@ -2,15 +2,44 @@ id: pm-x1g5
 title: "GH-446: pm get omits schedule facet (events/start_at/end_at/location) for Meeting/Event/Reminder"
 description: "Dogfood GH-446: the single-item read primitive hides the defining fields of calendar types. Duplicate check: searched get schedule meeting event — pm-uzmf (closed calendar ergonomics) did not cover get projection; no open overlap."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "area:cli",bug,calendar,gh-issue
 created_at: "2026-07-06T08:03:07.959Z"
-updated_at: "2026-07-06T08:03:07.959Z"
+updated_at: "2026-07-14T00:29:19.895Z"
+closed_at: "2026-07-14T00:29:19.157Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: pm get renders the schedule facet for scheduled types in TOON and JSON at standard depth; --fields can project it; spec + COMMANDS.md updated
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: "Added a public normalized schedule facet and integrated it into rich get across CLI, SDK, MCP, selected fields, JSON, and TOON."
+expected_result: "Meeting, Event, Reminder, and other scheduled items expose their defining schedule fields through the canonical get projection."
+actual_result: "Standard/deep get emits normalized schedule data, brief remains token-efficient, and focused/full regression suites pass."
+comments[3]{created_at,author,text}:
+  "2026-07-13T22:45:36.579Z",codex-root,"Implementation evidence: standard/deep get now emits a normalized schedule facet for Meeting/Event/Reminder and any item carrying deadline/reminder/event data; narrow schedule.start_at/end_at/location/events/reminders fields and brief omission are covered. CLI, SDK, and MCP dispatch share the result."
+  "2026-07-14T00:09:47.240Z",codex-gpt5,"Implementation evidence: rich get now exposes a normalized public schedule facet for Meeting, Event, and Reminder data across standard, brief, JSON, TOON, and selected-field output. Focused regressions and exact-tree strict gates pass; full coverage is 100/100/100/100 across 5656 tests."
+  "2026-07-14T00:29:11.180Z",codex-root,"Final verification: pm linked tests pass both schedule/rich-get suites in sandboxed tracker contexts; full coverage 5656/5656 at 100/100/100/100, contract snapshot, packed smoke, and package-first dogfood pass."
+files[6]{path,scope,note}:
+  src/cli/commands/get.ts,project,standard and fields schedule projection
+  src/cli/help-content.ts,project,agent-facing schedule guidance
+  src/cli/register-list-query.ts,project,get read registration
+  src/mcp/tool-definitions.ts,project,MCP schedule projection guidance
+  src/sdk/item-schedule.ts,project,normalized schedule facet primitive
+  tests/unit/commands/get-append-command.spec.ts,project,meeting schedule TOON and JSON contract
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/get-append-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/get-append-command.spec.ts tests/unit/sdk/history-read-primitives.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: "schedule facet standard,brief,narrow fields,and SDK normalization"
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrjwxcco-wi21mc,test,passed,"2026-07-14T00:27:54.054Z","2026-07-14T00:28:13.896Z","2026-07-14T00:28:13.896Z",2,0,0
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,schedule facet command reference
+  docs/SDK.md,project,schedule primitive reference
+close_reason: "Normalized schedule facet passes CLI/SDK/MCP projection tests, contract snapshots, docs, and full coverage."
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/446\n\n## Problem\n`pm get` omits the schedule facet (events/start_at/end_at/location) for Meeting/Event/Reminder items — the single-item read primitive cannot show the defining fields of calendar types; agents must fall back to calendar/agenda commands.\n\n## Proposed fix\nInclude the schedule facet in pm get output (standard depth and above; respect --fields), matching where list/agenda expose it.\n\n## Definition of done\npm get shows events/start_at/end_at/location for scheduled types in TOON and JSON; spec added; docs COMMANDS.md get section updated."

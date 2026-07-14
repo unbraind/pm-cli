@@ -277,11 +277,21 @@ export function shouldCaptureCliError(error: unknown): boolean {
     return false;
   }
   if (
+    error instanceof Error &&
+    error.name === "AbortError" &&
+    /(?:ctrl\+c|sigint|user[- ]initiated)/i.test(error.message)
+  ) {
+    return false;
+  }
+  if (
     typeof error === "object" &&
     error !== null &&
     "exitCode" in error &&
     typeof (error as { exitCode?: unknown }).exitCode === "number"
   ) {
+    if (error instanceof Error && error.name === "CommandError") {
+      return false;
+    }
     const exitCode = Math.trunc((error as { exitCode: number }).exitCode);
     const expectedExitCodes: ReadonlySet<number> = new Set([
       EXIT_CODE.SUCCESS,
