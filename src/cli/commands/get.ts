@@ -638,17 +638,19 @@ export async function runGet(
     result.as_of_version = context.historical.as_of_version;
     result.as_of_timestamp = context.historical.as_of_timestamp;
   }
-  try {
-    await recordContextUsageTouches({
-      pmRoot: context.pmRoot,
-      author:
-        (process.env.PM_AUTHOR ?? context.settings.author_default).trim() ||
-        "unknown",
-      itemIds: [context.locatedId],
-      intent: "get",
-    });
-  } catch {
-    // Derived usage feedback must never make the source-of-truth read fail.
+  if (context.historical === undefined) {
+    try {
+      await recordContextUsageTouches({
+        pmRoot: context.pmRoot,
+        author:
+          (process.env.PM_AUTHOR ?? context.settings.author_default).trim() ||
+          "unknown",
+        itemIds: [context.locatedId],
+        intent: "get",
+      });
+    } catch {
+      // Derived usage feedback must never make the source-of-truth read fail.
+    }
   }
   return result;
 }

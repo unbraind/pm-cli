@@ -495,6 +495,8 @@ describe("runGet and runAppend", () => {
       expect(update.code).toBe(0);
       const beforeReadHistory = await readFile(historyPath, "utf8");
       expect(beforeReadHistory.length).toBeGreaterThan(initialHistory.length);
+      const usagePath = path.join(context.pmPath, "runtime", "context-usage.jsonl");
+      const beforeReadUsage = await readFile(usagePath, "utf8");
 
       const historical = await runGet(
         id,
@@ -509,8 +511,12 @@ describe("runGet and runAppend", () => {
       expect(historical.as_of_timestamp).toEqual(expect.any(String));
       expect(historical.children).toBeUndefined();
       expect(await readFile(historyPath, "utf8")).toBe(beforeReadHistory);
+      expect(await readFile(usagePath, "utf8")).toBe(beforeReadUsage);
       expect((await runGet(id, { path: context.pmPath })).item.title).toBe(
         "get-time-travel-v2",
+      );
+      expect((await readFile(usagePath, "utf8")).length).toBeGreaterThan(
+        beforeReadUsage.length,
       );
 
       await expect(
