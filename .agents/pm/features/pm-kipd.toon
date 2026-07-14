@@ -6,11 +6,14 @@ status: open
 priority: 2
 tags[3]: agent-ux,"area:cli",gh-issue
 created_at: "2026-07-06T08:03:04.192Z"
-updated_at: "2026-07-06T08:03:04.192Z"
+updated_at: "2026-07-14T17:05:05.785Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: create/update accept --stdin-json full-item documents incl. facets; get->modify->update round-trip spec green; unknown keys rejected with did-you-mean; docs+contracts updated
 parent: pm-mpbb
 risk: medium
 confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-srns,related,"2026-07-14T17:05:05.070Z",null,null
+  pm-xwah,related,"2026-07-14T17:05:05.766Z",null,null
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/438\n\n## Problem\nNo way to create/update an item from one JSON document: `pm create -` treats `-` as the title; `--stdin` is unknown. Structured agents must translate an item into 10-20 flags; strict-mode errors suggest a 19-flag retry.\n\n## Proposed fix\n`pm create --stdin-json` and `pm update <id> --stdin-json` accepting the same item shape `pm get --json` emits (round-trip: get | modify | update). Flags win over document keys when both given. Reject unknown keys with did-you-mean.\n\n## Definition of done\nCreate+update accept full item documents on stdin incl. deps/comments/files facets; round-trip spec (get -> update) green; SDK/MCP parity noted (MCP already takes structured params); docs + contracts updated."

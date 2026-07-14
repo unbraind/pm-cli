@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",refactor,simplification
 created_at: "2026-07-05T04:51:21.783Z"
-updated_at: "2026-07-13T22:09:18.183Z"
+updated_at: "2026-07-14T17:05:21.324Z"
 author: maintainer-agent
 estimated_minutes: 2400
 acceptance_criteria: Top-level command list fits one help screen (~15 nouns); every pre-existing command spelling still works (hidden alias shims + deprecation notice); contracts/MCP/completions/docs regenerated with zero feature regression; agent token cost of 'pm --help' + contracts measurably reduced; all existing tests pass unchanged (aliases keep old spellings valid)
@@ -17,6 +17,10 @@ why_now: "The command surface has grown command-by-command to ~60 top-level entr
 parent: pm-mpbb
 risk: medium
 confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-usfg,related,"2026-07-14T17:05:19.953Z",null,null
+  pm-pbyu,related,"2026-07-14T17:05:20.610Z",null,null
+  pm-mpbb,related,"2026-07-14T17:05:21.299Z",null,null
 comments[14]{created_at,author,text}:
   "2026-07-05T08:02:33.747Z",codex-sdk-agent,"Scope alignment evidence: PR #431 review caught that the target-surface body omitted append from item facets. Updated the live epic body through pm update so the consolidation grammar includes comments/notes/learnings/files/docs/deps/append/test."
   "2026-07-06T22:23:28.633Z",codex,"Audit evidence 2026-07-06/07 codex: live pm --help still exposes 64+ top-level/user-visible spellings plus extension commands and the internal test-runs-worker command. Existing child set covers list/history/package/lifecycle/calendar/facets/context/ops/aggregate/customization/help/contracts/alias-shim clusters. Duplicate-safe search found no focused item for the internal worker leakage, so pm-lp4j was created under this epic. This is a simplification gap only; no runtime feature is removed."

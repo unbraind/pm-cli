@@ -6,11 +6,13 @@ status: open
 priority: 2
 tags[4]: agent-ux,"area:cli",gh-issue,token-efficiency
 created_at: "2026-07-06T08:03:07.441Z"
-updated_at: "2026-07-08T17:09:41.052Z"
+updated_at: "2026-07-14T17:05:07.288Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: context supports --no-tags; inherited tag sets folded to parent row (or tags_inherited marker); ~40% brief-depth size cut measured here; MCP parity; spec pins folding semantics
 parent: pm-mpbb
 risk: low
 confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-gdi7,related,"2026-07-14T17:05:07.270Z",null,null
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/445\n\n## Problem\nIn a tag-heavy workspace ~43% of `pm context` brief output (1970 of 4582 B) is repeated `tags:` blocks — siblings inherit the parent tag set and repeat it verbatim per row. No --no-tags; brief depth cannot drop tags.\n\n## Proposed fix\n(1) `--no-tags` on context (and honor --fields projection, shipped via PR#297); (2) inherited-tag folding: when all low_level children share the parent tag set, emit tags once on the parent (or `tags_inherited: true`); (3) consider tag-less rows as the brief-depth default.\n\n## Definition of done\nContext size in this workspace cut ~40% at brief depth with no loss for the next-work decision; spec pins folding semantics; MCP pm_context parity; docs updated."

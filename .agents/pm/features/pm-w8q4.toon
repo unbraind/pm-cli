@@ -6,13 +6,15 @@ status: open
 priority: 2
 tags[4]: agent-ux,"area:validate",concurrency,governance
 created_at: "2026-07-06T21:40:40.251Z"
-updated_at: "2026-07-10T21:51:10.370Z"
+updated_at: "2026-07-14T17:05:16.084Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "pm validate (and/or pm health) gains a warn-only check flagging in_progress items that have no active claim AND no history activity within a configurable staleness window (default ~72h); output lists item IDs with last-activity timestamps and a remediation hint (claim, release back to open, or justify); pm update --status in_progress without an existing claim emits a one-line advisory suggesting pm claim; window configurable via settings; docs + tests; zero behavior change for existing green workflows (warn-only)"
 parent: pm-dj98
 risk: low
 confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-zwib,related,"2026-07-14T17:05:16.062Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-10T21:51:10.369Z",maintainer-agent,"Live evidence 2026-07-10 (first pass with PR#502 caller-aware pm next in place): 9 open items claimed 2026-07-04 by maintainer-agent (docstring umbrella pm-4ak1, gate pm-5566, + 7 module slices pm-m0uc/mswi/uxmf/uwu0/768v/2vb2/qely) sat dormant ~6 days with zero work. Effect measured: anonymous pm next callers saw 8 of them under held_by_others as apparent live lanes and they were excluded from the shared ready pool; with PM_AUTHOR=maintainer-agent the recommender steered the owner to resume pm-5566 instead of frontier work (pm-3mna). A claim-TTL/staleness signal would have surfaced these for release days earlier. Hygiene applied this pass: the 9 claims released (items stay open, statuses untouched). Foreign lanes pm-tnud (codex-agent, 07-07) and pm-92if (claude-code-agent) left alone; pm-92if release-then-reclaim sequence verified consistent, no state defect."
 body: "## Evidence (review #14, 2026-07-06)\nThe docstring initiative (epic pm-4ak1 + 8 child tasks) was bulk-set to in_progress on 2026-07-04/05 and then abandoned: no claim on any item, no branch, no PR, no commit touches docstrings (verified via git branch -a / gh pr list / git log --grep docstring). For 2 days pm next, pm context, and stats reported 9 phantom active work items.\n\n## Why this matters at scale\nThe scale story (pm-9rxu, pm-g2zz) assumes thousands of concurrent agents; with advisory-only claims and no staleness detection, every crashed or wandering agent permanently poisons the WIP signal. pm claim today has no TTL/expiry and validate has no WIP-accuracy check — status honesty is entirely manual.\n\n## Sketch\n- validate check id: validate_claims_stale_in_progress (warn): in_progress AND no active claim AND last history entry older than window (settings key, default 72h).\n- Advisory on 'pm update --status in_progress' when the item is unclaimed: 'hint: pm claim <id> --author <you> to signal ownership'.\n- Related-not-duplicate: pm-zwib (stale LOCK takeover race — file locks, not work claims), pm-8t5x closed (claim atomicity), pm-114v (claim --next distribution).\n\nDuplicate check: searched stale/abandoned/in_progress/claim/lease/heartbeat — no existing item covers WIP-staleness detection."

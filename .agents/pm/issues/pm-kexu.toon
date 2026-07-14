@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: agent-ux,"area:cli",bulk-ops,review
 created_at: "2026-07-06T22:29:52.125Z"
-updated_at: "2026-07-07T14:17:52.074Z"
+updated_at: "2026-07-14T17:05:06.440Z"
 author: codex-agent
 estimated_minutes: 90
 acceptance_criteria: "update-many --dry-run can return the matched item set/count when only filters are provided, without requiring a dummy mutation flag; output is bounded and scriptable in json/toon; existing mutation-required behavior remains for non-dry-run execution; tests cover no-mutation dry-run, no-mutation real run, and at least one metadata filter."
@@ -17,4 +17,6 @@ why_now: "Audits and bulk backfill planning need safe, exact previews before mut
 parent: pm-mpbb
 risk: low
 confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-plwm,related,"2026-07-14T17:05:06.423Z",null,null
 body: ""

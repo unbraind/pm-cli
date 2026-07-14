@@ -6,11 +6,13 @@ status: open
 priority: 2
 tags[4]: agent-story,changelog-exclude,code-scanning,security
 created_at: "2026-07-06T21:07:42.201Z"
-updated_at: "2026-07-07T14:10:52.323Z"
+updated_at: "2026-07-14T17:05:00.999Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Given a scanner export (Semgrep CSV, dependabot alert, CodeQL SARIF), when it is imported, then each finding exists as a pm Issue with scanner ID, rule, severity, file#line, platform link, and triage tags, parented under a batch task on pm-qwoy; and pm search by scanner ID or rule finds it without leaving pm."
 parent: pm-qwoy
 risk: medium
 confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-oz8u,related,"2026-07-14T17:05:00.979Z",null,null
 body: "# Agent story: security findings as pm context\n\n**As a** maintainer running security scanners over pm-cli,\n**I want** every finding preserved as an individually triageable pm issue (scanner ID as issue code, severity/rule/file tags, platform + code links),\n**so that** any agent can rebuild the full security posture from the pm tracker alone — project management = context management.\n\nExemplar batch: pm-oz8u (Semgrep 2026-07-06, 40 findings). Changelog-excluded per agent-story convention."

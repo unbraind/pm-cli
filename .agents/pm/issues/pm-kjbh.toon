@@ -6,11 +6,13 @@ status: open
 priority: 1
 tags[3]: "area:contracts",bug,gh-issue
 created_at: "2026-07-06T08:03:09.036Z"
-updated_at: "2026-07-06T08:03:09.036Z"
+updated_at: "2026-07-14T17:05:17.491Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Advertised policy/trust mode tokens are accepted verbatim by pm config set; drift spec walks every advertised enum through the real validator; contracts:update run"
 parent: pm-5k4v
 risk: low
 confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-xwah,related,"2026-07-14T17:05:17.472Z",null,null
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/449\n\n## Problem (contract drift)\n`pm contracts --json` advertises extension_contracts.policy_modes = [\"off\",\"warn\",\"enforce\"] (same for trust_modes), but governance config keys (e.g. governance-workflow-enforcement) accept `strict`, not `enforce`. Agents driving config from contracts construct invalid writes — exactly the drift class pm contracts exists to prevent.\n\n## Proposed fix\nSingle source of truth for mode tokens shared by contracts and config validation; either rename config token to `enforce` (with alias) or fix contracts to advertise `strict`; add a drift spec that walks advertised enum tokens through the real validators.\n\n## Definition of done\nAdvertised policy/trust mode tokens are accepted verbatim by config set; drift spec pins contracts<->validator parity; contracts:update run."

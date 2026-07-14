@@ -6,11 +6,13 @@ status: open
 priority: 3
 tags[2]: ci,docs
 created_at: "2026-07-04T08:32:11.333Z"
-updated_at: "2026-07-07T14:17:55.598Z"
+updated_at: "2026-07-14T17:05:12.726Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: docs-skills-gate fails on relative links whose anchor fragment does not exist in the target document; gate green on current docs.
 parent: pm-u9d0
 risk: low
 confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-wg07,related,"2026-07-14T17:05:12.707Z",null,null
 body: "## Context\n2026-07-04 docs review: scripts/release/docs-skills-gate.mjs splits link targets on [?#], so FILE.md#heading links only verify the file exists — dead anchors are ungated. All 12 current anchor links were verified by hand (none broken); this closes the gap for future ones.\n\n## Approach\nIn the gate, when a relative link carries a fragment: read the target file, slugify its headings (GitHub slugger rules — lowercase, strip punctuation, spaces→dashes, dedupe with -1 suffixes), and assert the fragment matches. While touching docs, break the wall-of-text paragraphs into bullets: EXTENSIONS.md line 89 (~4600 chars) and line 114; COMMANDS.md lines 612 and 627.\n\n## Definition of done\nGate fails on a seeded dead anchor and passes on the current tree; the four wall-of-text paragraphs are restructured; gate runtime stays negligible in CI static gates."

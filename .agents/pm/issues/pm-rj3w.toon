@@ -6,13 +6,15 @@ status: open
 priority: 2
 tags[3]: "area:telemetry",infra,reliability
 created_at: "2026-06-10T20:00:10.707Z"
-updated_at: "2026-07-12T06:14:58.725Z"
+updated_at: "2026-07-14T17:05:18.752Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: Telemetry worker reconnects to Postgres with backoff after a restart; queued RabbitMQ events drain automatically; runbook documents the recovery path.
 parent: pm-5oj5
 risk: medium
 confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-7n5a,related,"2026-07-14T17:05:18.719Z",null,null
 comments[4]{created_at,author,text}:
   "2026-06-25T17:37:16.724Z",codex-gpt5,"Implementation start: duplicate-safe all-status search found pm-rj3w as the only active telemetry worker reconnect item; related historical telemetry and Windows teardown items are closed or verification-gated. Scope is production worker reconnect/health hardening plus operator validation, not a new tracker item."
   "2026-06-25T17:41:04.644Z",codex-gpt5,"Investigation note: the concrete worker reconnect/healthcheck fix surface is scripts/prod/telemetry, which is intentionally git-ignored as private production operations material. I validated the needed local shape (Postgres reconnect after insert connection errors plus worker health state and stall warning), but will not force-add private ops files to a public PR. Releasing this item for a private deployment-path change."
