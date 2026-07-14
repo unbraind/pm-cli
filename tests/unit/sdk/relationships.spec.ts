@@ -86,6 +86,33 @@ describe("relationship kind registry", () => {
         aliases: ["not valid"],
       }),
     ).toThrow("Invalid relationship alias");
+    expect(
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "contains",
+        inverse: "Contained-By",
+        aliases: [],
+      }).require("contains").inverse,
+    ).toBe("contained_by");
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "contains",
+        inverse: "not valid",
+        aliases: [],
+      }),
+    ).toThrow("Invalid inverse relationship kind");
+    const cyclicSchema: { self?: unknown } = {};
+    cyclicSchema.self = cyclicSchema;
+    const cyclicRegistry = new RelationshipKindRegistry([]).register({
+      ...registry.require("owns"),
+      kind: "cycles",
+      aliases: [],
+      payloadSchema: cyclicSchema,
+    });
+    expect(
+      cyclicRegistry.require("cycles").payloadSchema?.self,
+    ).toBe(cyclicRegistry.require("cycles").payloadSchema);
   });
 });
 

@@ -205,16 +205,24 @@ function normalizeKind(kind: string): string {
   return kind.trim().toLowerCase().replaceAll("-", "_");
 }
 
-function freezeValue(value: unknown): unknown {
+function normalizeInverseKind(inverse: string | undefined): string | undefined {
+  if (inverse === undefined) return undefined;
+  const normalized = normalizeKind(inverse);
+  if (!/^[a-z][a-z0-9_]*$/.test(normalized))
+    throw new TypeError(`Invalid inverse relationship kind: ${inverse}`);
+  return normalized;
+}
+
+function freezeValue(value: unknown, visited = new Set<object>()): unknown {
+  if (value === null || typeof value !== "object") return value;
+  if (visited.has(value)) return value;
+  visited.add(value);
   if (Array.isArray(value)) {
-    for (const entry of value) freezeValue(entry);
+    for (const entry of value) freezeValue(entry, visited);
     return Object.freeze(value);
   }
-  if (value !== null && typeof value === "object") {
-    for (const entry of Object.values(value)) freezeValue(entry);
-    return Object.freeze(value);
-  }
-  return value;
+  for (const entry of Object.values(value)) freezeValue(entry, visited);
+  return Object.freeze(value);
 }
 
 /** Mutable registry with immutable snapshots and collision-safe extension registration. */
@@ -241,6 +249,7 @@ export class RelationshipKindRegistry {
       throw new TypeError(`Invalid compatibility version for ${kind}`);
     if (this.#definitions.has(kind) || this.#aliases.has(kind))
       throw new TypeError(`Relationship kind already registered: ${kind}`);
+    const inverse = normalizeInverseKind(definition.inverse);
     const aliases = [
       ...new Set((definition.aliases ?? []).map(normalizeKind)),
     ].sort();
@@ -257,6 +266,7 @@ export class RelationshipKindRegistry {
     const normalized = Object.freeze({
       ...definition,
       kind,
+      inverse,
       aliases: Object.freeze(aliases),
       payloadSchema: definition.payloadSchema
         ? (freezeValue(structuredClone(definition.payloadSchema)) as Readonly<
@@ -502,13 +512,14 @@ export class RelationshipGraph {
       : undefined;
     const rows = this.#neighbors(id, options.direction ?? "outgoing", kinds);
     const limit = options.limit ?? Number.POSITIVE_INFINITY;
-    const value = [...new Set(rows.map((row) => row.id))].slice(0, limit);
+    const uniqueNeighbors = [...new Set(rows.map((row) => row.id))];
+    const value = uniqueNeighbors.slice(0, limit);
     return {
       value,
       meta: {
         visitedNodes: 1,
         inspectedEdges: rows.length,
-        truncated: value.length < new Set(rows.map((row) => row.id)).size,
+        truncated: value.length < uniqueNeighbors.length,
         nextCursor: value.at(-1),
       },
     };
@@ -536,22 +547,20 @@ export class RelationshipGraph {
       options.signal?.throwIfAborted();
       const current = queue[index]!;
       visitedNodes += 1;
+      const neighbors = this.#neighbors(current.id, direction, kinds);
+      inspectedEdges += neighbors.length;
       if (current.depth >= maxDepth) {
-        const neighbors = this.#neighbors(current.id, direction, kinds);
-        inspectedEdges += neighbors.length;
         if (neighbors.some((neighbor) => !seen.has(neighbor.id)))
           truncated = true;
         continue;
       }
-      const neighbors = this.#neighbors(current.id, direction, kinds);
-      inspectedEdges += neighbors.length;
       for (const neighbor of neighbors) {
         if (seen.has(neighbor.id)) continue;
-        seen.add(neighbor.id);
         if (value.length >= limit) {
           truncated = true;
           break traversal;
         }
+        seen.add(neighbor.id);
         value.push(neighbor.id);
         queue.push({ id: neighbor.id, depth: current.depth + 1 });
       }
@@ -594,15 +603,13 @@ export class RelationshipGraph {
       options.signal?.throwIfAborted();
       const current = queue[index]!;
       visitedNodes += 1;
+      const neighbors = this.#neighbors(current.id, direction, kinds);
+      inspectedEdges += neighbors.length;
       if (current.path.length - 1 >= maxDepth) {
-        const neighbors = this.#neighbors(current.id, direction, kinds);
-        inspectedEdges += neighbors.length;
         if (neighbors.some((neighbor) => !seen.has(neighbor.id)))
           truncated = true;
         continue;
       }
-      const neighbors = this.#neighbors(current.id, direction, kinds);
-      inspectedEdges += neighbors.length;
       for (const neighbor of neighbors) {
         if (seen.has(neighbor.id)) continue;
         const path = [...current.path, neighbor.id];
