@@ -168,6 +168,11 @@ describe("relationship graph", () => {
   it("deduplicates undirected edges and provides directional adjacency", () => {
     expect(graph.edges()).toHaveLength(4);
     expect(graph.nodes()).toBe(graph.nodes());
+    expect(graph.incidentEdges("a")).toEqual([
+      { source: "a", target: "b", kind: "blocked_by" },
+      { source: "e", target: "a", kind: "related" },
+    ]);
+    expect(Object.isFrozen(graph.incidentEdges("a"))).toBe(true);
     expect(graph.adjacency("a", { kinds: ["related"] }).value).toEqual(["e"]);
     expect(
       graph.adjacency("b", {
@@ -181,6 +186,7 @@ describe("relationship graph", () => {
       nextCursor: "b",
     });
     expect(() => graph.adjacency("missing")).toThrow("node not found");
+    expect(() => graph.incidentEdges("missing")).toThrow("node not found");
     expect(() => graph.adjacency("a", { kinds: ["missing"] })).toThrow(
       "Unknown relationship kind",
     );

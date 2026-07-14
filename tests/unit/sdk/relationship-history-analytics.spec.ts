@@ -195,6 +195,18 @@ describe("relationship event history", () => {
     expect(() => log.append({ ...valid, edge: undefined })).toThrow(
       "requires an edge",
     );
+    expect(() =>
+      log.append({
+        ...valid,
+        edge: { source: 1 as never, target: "b", kind: "blocked_by" },
+      }),
+    ).toThrow("endpoint not found");
+    expect(() =>
+      log.append({
+        ...valid,
+        edge: { source: "a", target: false as never, kind: "blocked_by" },
+      }),
+    ).toThrow("endpoint not found");
     log.append(valid);
     expect(() => log.append({ ...valid, eventId: "event-2" })).toThrow(
       "already active",
@@ -375,7 +387,11 @@ describe("relationship graph analytics", () => {
               source: "a",
               target: "b",
               kind: "related",
-              payload: { z: [null, { beta: 2, alpha: 1 }], a: true },
+              payload: {
+                z: [null, { beta: 2, alpha: 1 }],
+                a: true,
+                when: new Date("2026-07-14T08:00:00.000Z"),
+              },
             },
           ],
         },
@@ -387,7 +403,11 @@ describe("relationship graph analytics", () => {
               kind: "related",
               target: "b",
               source: "a",
-              payload: { a: true, z: [null, { alpha: 1, beta: 2 }] },
+              payload: {
+                when: "2026-07-14T08:00:00.000Z",
+                a: true,
+                z: [null, { alpha: 1, beta: 2 }],
+              },
             },
           ],
         },
@@ -640,8 +660,16 @@ describe("bounded relationship context", () => {
       }).meta.truncated,
     ).toBe(true);
     expect(() =>
-      buildRelationshipContext(chain, "a", [], { tokenBudget: 1 }),
+      buildRelationshipContext(chain, "a", [], { tokenBudget: 10 }),
     ).toThrow("cannot fit one node");
+    expect(() =>
+      buildRelationshipContext(
+        chain,
+        "a",
+        [{ id: "a", evidence: ["x".repeat(100)] }],
+        { tokenBudget: 10 },
+      ),
+    ).toThrow("cannot fit root and evidence");
     expect(
       buildRelationshipContext(chain, "b", [], {
         edgeLimit: 1,
@@ -669,17 +697,27 @@ describe("bounded relationship context", () => {
         .meta.truncated,
     ).toBe(false);
     const evidenceRoot = { id: "solo", evidence: ["proof"] };
-    expect(
-      buildRelationshipContext(new RelationshipGraph(["solo"], []), "solo", [
-        evidenceRoot,
-      ]).meta.usedTokens,
-    ).toBe(
+    const evidenceResult = buildRelationshipContext(
+      new RelationshipGraph(["solo"], []),
+      "solo",
+      [evidenceRoot],
+    );
+    expect(evidenceResult.root).toEqual({ id: "solo" });
+    expect(evidenceResult.evidence).toEqual(["proof"]);
+    expect(evidenceResult.meta.usedTokens).toBe(
       Math.max(
         1,
         Math.ceil(
-          new TextEncoder().encode(JSON.stringify(evidenceRoot)).byteLength / 4,
+          new TextEncoder().encode(JSON.stringify({ id: "solo" })).byteLength /
+            4,
         ),
-      ),
+      ) +
+        Math.max(
+          1,
+          Math.ceil(
+            new TextEncoder().encode(JSON.stringify(["proof"])).byteLength / 4,
+          ),
+        ),
     );
   });
 });

@@ -122,6 +122,8 @@ function sortComponents(components: string[][]): string[][] {
 function stableJsonValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map((entry) => stableJsonValue(entry));
   if (value === null || typeof value !== "object") return value;
+  const toJSON = (value as { toJSON?: (this: object) => unknown }).toJSON;
+  if (typeof toJSON === "function") return stableJsonValue(toJSON.call(value));
   return Object.fromEntries(
     Object.entries(value)
       .sort(([left], [right]) => left.localeCompare(right))

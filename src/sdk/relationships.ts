@@ -528,6 +528,19 @@ export class RelationshipGraph {
     return this.#edges;
   }
 
+  /** Return the deterministic immutable edges incident to one node. */
+  public incidentEdges(id: string): readonly RelationshipEdge[] {
+    this.#assertNode(id);
+    return Object.freeze(
+      [
+        ...new Set([
+          ...(this.#outgoing.get(id) ?? []),
+          ...(this.#incoming.get(id) ?? []),
+        ]),
+      ].sort(compareEdges),
+    );
+  }
+
   /** Return the deterministic immutable node snapshot. */
   public nodes(): readonly string[] {
     return this.#nodeSnapshot;

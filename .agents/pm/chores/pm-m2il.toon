@@ -2,12 +2,11 @@ id: pm-m2il
 title: "Graph conformance and scale verification matrix: property, replay, migration, concurrency, token-budget, and million-item tests"
 description: "Build a reusable verification program for relationship schemas, immutable mutations, bounded queries, analytics, governance, adapters, and reconstruction waves."
 type: Chore
-status: in_progress
+status: open
 priority: 2
 tags[7]: "area:graph",benchmark,conformance,property-testing,scale,testing,token-efficiency
 created_at: "2026-07-13T22:03:31.210Z"
-updated_at: "2026-07-14T10:48:29.784Z"
-assignee: codex-gpt5
+updated_at: "2026-07-14T11:06:37.229Z"
 author: codex-root
 estimated_minutes: 600
 acceptance_criteria: "Fixtures cover empty and seconds-old scratch projects, representative medium histories, deep and cyclic typed graphs, multi-decade event streams, disconnected archives, and deterministic 10k, 100k, and one-million-item workspaces; Property tests cover registry invariants, inverse and alias rules, append-only mutation, replay equivalence, snapshot isolation, cursor stability, migration, merge or federation, and correction by superseding event; Algorithm tests verify exact results on bounded fixtures and deterministic seeds, error bounds, freshness, provenance, and monotonic resource limits for approximations; Concurrency tests exercise thousands-agent read and write contention, crashes, stale indexes, retries, idempotency, checkpoints, and non-overlapping reconstruction claims; CLI, MCP, SDK, extension, and shell pipeline parity share golden semantics while allowing intentionally different compact projections; Performance gates record p50, p95, and p99 latency, peak memory, incremental update cost, bytes and tokens, truncation quality, and index rebuild time with documented hardware and envelopes; Every test runs in sandboxed PM_PATH and PM_GLOBAL_PATH and never reads or writes the real repository tracker"
@@ -27,12 +26,13 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-g2zz,related,"2026-07-13T22:03:31.210Z",null,null
   pm-ju83,blocked_by,"2026-07-13T22:03:31.210Z",null,null
   pm-mi2x,related,"2026-07-13T22:03:31.210Z",null,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-13T22:03:31.210Z",codex-root,"Duplicate check 2026-07-13: pm-mi2x supplies generic scale fixtures and pm-atfm evaluates context quality,but no item owns typed-graph property,replay,migration,adapter-parity,and reconstruction conformance across those fixtures."
   "2026-07-14T09:43:38.102Z",codex-gpt5,"Implementation start 2026-07-14: add replay, snapshot, adversarial topology, deterministic analytics, and token-bound conformance coverage for the broad graph SDK bundle; all tests remain sandbox-safe."
   "2026-07-14T10:02:22.642Z",codex-gpt5,"TDD evidence: focused relationship suites pass 21 tests. New relationship history, analytics, and context modules plus the precedence additions report literal 100% statements/branches/functions/lines in focused V8 coverage; static quality, docstring, audit-boundary, and token-budget gates pass."
   "2026-07-14T10:19:34.994Z",codex-gpt5,"Verification evidence: focused relationship suite 21/21 passed; pnpm lint, typecheck, docs/skills, contracts, static quality, audit, and secrets gates passed; full all-source coverage is statements 36575/36575, branches 26252/26252, functions 7405/7405, lines 35721/35721 across 287 files / 5,678 tests. Packed npx smoke passed, package-first dogfood passed 88 real commands, and a fresh pnpm-installed tarball exercised custom ownership, relationship replay, critical-path analytics, and bounded context through @unbrained/pm-cli/sdk. Release gates fail only at live Sentry PM-CLI-29, owned by open pm-7n5a; telemetry is healthy at 0.29% error rate with zero missing error codes."
   "2026-07-14T10:48:29.783Z",codex-gpt5,"PR #556 review round 1 verification: every Gemini/Greptile inline finding was reacted to, answered, and resolved; CodeRabbit/Sourcery rate limits and Codecov success were acknowledged. Focused SDK suite passes 23/23; full suite passes 287 files / 5,680 tests with statements 36,592/36,592, branches 26,271/26,271, functions 7,411/7,411, lines 35,735/35,735. Lint, typecheck, static/docstring 100%, package boundary, token budget, and zero-clone gates pass."
+  "2026-07-14T11:06:16.983Z",codex-gpt5,"PR #556 review round 2 verification: six new Gemini/Greptile findings were up-voted, individually answered, tested, and resolved. Full repository gate passes 287 files / 5,680 tests with statements 36,607/36,607, branches 26,286/26,286, functions 7,412/7,412, lines 35,749/35,749; lint, zero-clone, typecheck, static/docstring, package boundary, and token gates pass."
 notes[1]{created_at,author,text}:
   "2026-07-14T10:19:37.624Z",codex-gpt5,"Remaining canonical scope after this PR: property generators, concurrent durable adapters, migration matrix, and million-item proof; keep chore open."
 files[2]{path,scope,note}:

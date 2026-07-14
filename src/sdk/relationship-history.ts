@@ -191,10 +191,18 @@ function resolveMutationEdge(
   if (input.action === "remove") return undefined;
   if (!input.edge)
     throw new TypeError(`Relationship ${input.action} event requires an edge`);
+  const source =
+    typeof input.edge.source === "string" ? input.edge.source.trim() : "";
+  const target =
+    typeof input.edge.target === "string" ? input.edge.target.trim() : "";
+  if (!nodes.has(source) || !nodes.has(target))
+    throw new TypeError(
+      `Relationship endpoint not found: ${source} -> ${target}`,
+    );
   const withoutCurrent = new Map(active);
   withoutCurrent.delete(relationshipId);
   const canonical = new RelationshipGraph(
-    nodes,
+    [source, target],
     [input.edge],
     registry,
   ).edges()[0]!;

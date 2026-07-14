@@ -90,6 +90,8 @@ interface DiscoveredNode {
   distance: number;
 }
 
+const tokenEncoder = new TextEncoder();
+
 function positiveInteger(
   value: number | undefined,
   fallback: number,
@@ -104,7 +106,7 @@ function positiveInteger(
 function estimateTokens(value: unknown): number {
   return Math.max(
     1,
-    Math.ceil(new TextEncoder().encode(JSON.stringify(value)).byteLength / 4),
+    Math.ceil(tokenEncoder.encode(JSON.stringify(value)).byteLength / 4),
   );
 }
 
@@ -134,13 +136,12 @@ function explainDirectEdge(
 }
 
 function directReasons(
-  graph: RelationshipGraph,
+  rootEdges: readonly RelationshipEdge[],
   root: string,
   node: string,
   registry: RelationshipKindRegistry,
 ): string[] {
-  const reasons = graph
-    .edges()
+  const reasons = rootEdges
     .filter(
       (edge) =>
         (edge.source === root && edge.target === node) ||
@@ -214,6 +215,7 @@ function selectContextNodes(params: {
 }): { nodes: RelationshipContextNode[]; usedTokens: number } {
   const nodes: RelationshipContextNode[] = [];
   let usedTokens = params.initialTokens;
+  const rootEdges = params.graph.incidentEdges(params.rootId);
   for (const candidate of params.candidates) {
     if (nodes.length >= params.nodeLimit) break;
     const node: RelationshipContextNode = {
@@ -222,7 +224,7 @@ function selectContextNodes(params: {
       reasons:
         candidate.distance === 1
           ? directReasons(
-              params.graph,
+              rootEdges,
               params.rootId,
               candidate.id,
               params.registry,
@@ -282,8 +284,11 @@ export function buildRelationshipContext(
   const tokenBudget = positiveInteger(options.tokenBudget, 1200, "tokenBudget");
   const registry = options.registry ?? createRelationshipKindRegistry();
   const byId = new Map(details.map((detail) => [detail.id, detail]));
-  const root = { ...(byId.get(rootId) ?? { id: rootId }) };
-  const evidence = [...(root.evidence ?? [])];
+  const rootDetails: RelationshipContextNodeDetails = byId.get(rootId) ?? {
+    id: rootId,
+  };
+  const { evidence: rootEvidence = [], ...root } = rootDetails;
+  const evidence = [...rootEvidence];
   const discovery = discoverNodes(graph, rootId, options);
   const fingerprint = createQueryFingerprint("relationship-context", {
     rootId,
@@ -298,6 +303,11 @@ export function buildRelationshipContext(
     ({ id }) => id,
   );
   const candidates = discovery.rows.slice(pageStart);
+  const initialTokens = estimateTokens(root) + estimateTokens(evidence);
+  if (initialTokens > tokenBudget)
+    throw new TypeError(
+      "Relationship context tokenBudget cannot fit root and evidence",
+    );
   const nodeSelection = selectContextNodes({
     candidates,
     details: byId,
@@ -306,7 +316,7 @@ export function buildRelationshipContext(
     registry,
     nodeLimit,
     tokenBudget,
-    initialTokens: estimateTokens(root),
+    initialTokens,
   });
   const { nodes } = nodeSelection;
 
