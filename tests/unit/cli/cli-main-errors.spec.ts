@@ -1232,6 +1232,16 @@ describe("CLI bootstrap entrypoints", () => {
     });
   });
 
+  it("renders empty invocation author overrides through the central usage handler", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runSourceCli(["--author=", "list"], context.env);
+
+      expect(result.code).toBe(EXIT_CODE.USAGE);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("--author requires a non-empty value");
+    });
+  });
+
   it("surfaces hook and flush reporting failures in generic error handling", async () => {
     const previousExitCode = process.exitCode;
     const sentryHelpers = await import("../../../src/core/sentry/helpers.js");

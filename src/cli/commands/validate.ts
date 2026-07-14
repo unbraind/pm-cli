@@ -77,6 +77,7 @@ import type {
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
 import { collectDanglingDependencyReferences } from "../../sdk/dependencies.js";
+import { scanHistoryAuthorAttribution } from "../../sdk/author-attribution.js";
 import {
   createRelationshipKindRegistry,
   type RelationshipKindRegistry,
@@ -1499,7 +1500,8 @@ function buildLifecycleDependencyGraph(
     for (const dependency of item.dependencies ?? []) {
       const dependencyKind = toMeaningfulString(dependency.kind);
       if (!dependencyKind) continue;
-      const relationshipDefinition = relationshipRegistry.resolve(dependencyKind);
+      const relationshipDefinition =
+        relationshipRegistry.resolve(dependencyKind);
       if (!relationshipDefinition?.ordering) continue;
       const dependencyId = toMeaningfulString(dependency.id);
       if (!dependencyId || !activeItemIds.has(dependencyId)) {
@@ -3341,6 +3343,12 @@ export async function runValidate(
     itemReadWarnings,
     settings.schema,
   );
+  const authorAttribution = await scanHistoryAuthorAttribution(pmRoot);
+  if (authorAttribution.unknown_event_count > 0) {
+    itemReadWarnings.push(
+      `validate_history_unknown_author_events:${authorAttribution.unknown_event_count}`,
+    );
+  }
   const requestedChecks = resolveRequestedChecks(options);
   const metadataProfileSource: "default" | "settings" | "option" =
     typeof options.metadataProfile === "string" ? "option" : "settings";

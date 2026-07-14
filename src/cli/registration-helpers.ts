@@ -181,6 +181,7 @@ export function getGlobalOptions(command: Command): GlobalOptions {
     noExtensions: opts.extensions === false,
     noPager: Boolean(opts.noPager),
     profile: Boolean(opts.profile),
+    author: typeof opts.author === "string" ? opts.author : undefined,
   };
 }
 

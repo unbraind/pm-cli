@@ -120,6 +120,14 @@ export {
   summarizeInitResult,
   type InitConciseResult,
 } from "./init.js";
+export {
+  INIT_AGENT_GUIDANCE_MODE_VALUES,
+  runInitAgentGuidance,
+  type InitAgentGuidanceMode,
+  type InitAgentGuidanceSummary,
+  type RunInitAgentGuidanceOptions,
+  type RunInitAgentGuidanceResult,
+} from "./init-agent-guidance.js";
 export { runLearnings } from "./learnings.js";
 export { runList, type ListOptions } from "./list.js";
 export { runNotes } from "./notes.js";

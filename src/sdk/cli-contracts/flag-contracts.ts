@@ -116,6 +116,7 @@ export const SUBCOMMAND_GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--no-pager" },
   { flag: "--profile" },
   { flag: "--help" },
+  { flag: "--author" },
 ];
 
 /** Public contract for global flag contracts, shared by SDK and presentation-layer consumers. */

@@ -151,26 +151,6 @@
       "imports": ["src/core/shared/constants.ts", "src/core/shared/errors.ts"]
     },
     {
-      "source": "src/cli/commands/config.ts",
-      "imports": [
-        "src/core/config/nested-settings.ts",
-        "src/core/config/positional-value.ts",
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/item/parent-reference-policy.ts",
-        "src/core/item/sprint-release-format.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/schema/item-types-file.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/store/item-format-migration.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
       "source": "src/cli/commands/context.ts",
       "imports": [
         "src/core/item/status.ts",
@@ -476,27 +456,6 @@
       ]
     },
     {
-      "source": "src/cli/commands/init-agent-guidance.ts",
-      "imports": ["src/core/extensions/index.ts", "src/core/fs/fs-utils.ts"]
-    },
-    {
-      "source": "src/cli/commands/init.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/item/id.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/schema/item-types-file.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/schema/type-presets.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
       "source": "src/cli/commands/learnings.ts",
       "imports": ["src/core/shared/command-types.ts"]
     },
@@ -582,30 +541,6 @@
         "src/core/shared/split-comma-list.ts",
         "src/core/shared/time.ts",
         "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/profile.ts",
-      "imports": [
-        "src/core/config/nested-settings.ts",
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/lock/lock.ts",
-        "src/core/profile/profile-describe.ts",
-        "src/core/profile/profile-lint.ts",
-        "src/core/profile/profile-plan.ts",
-        "src/core/profile/profile-presets.ts",
-        "src/core/schema/fields-file.ts",
-        "src/core/schema/item-types-file.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/schema/status-defs-file.ts",
-        "src/core/shared/author.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
         "src/core/store/paths.ts",
         "src/core/store/settings.ts"
       ]
@@ -758,17 +693,6 @@
         "src/core/store/paths.ts",
         "src/core/store/settings.ts",
         "src/core/telemetry/runtime.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/templates.ts",
-      "imports": [
-        "src/core/fs/fs-utils.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/paths.ts"
       ]
     },
     {

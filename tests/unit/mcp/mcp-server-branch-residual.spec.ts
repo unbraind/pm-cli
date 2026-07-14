@@ -16,6 +16,7 @@ import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 const COMMANDS_MODULE = "../../../src/cli/commands/index.js";
+const CONFIG_SDK_MODULE = "../../../src/sdk/config.js";
 const DEPENDENCIES_SDK_MODULE = "../../../src/sdk/dependencies.js";
 const DOCS_SDK_MODULE = "../../../src/sdk/docs.js";
 const FILES_SDK_MODULE = "../../../src/sdk/files.js";
@@ -116,6 +117,7 @@ async function importServerWithCommandMocks(
     };
   });
   vi.doMock(DEPENDENCIES_SDK_MODULE, () => ({ runDeps: commandMocks.runDeps }));
+  vi.doMock(CONFIG_SDK_MODULE, () => ({ runConfig: commandMocks.runConfig }));
   vi.doMock(DOCS_SDK_MODULE, () => ({ runDocs: commandMocks.runDocs }));
   vi.doMock(FILES_SDK_MODULE, () => ({
     runFiles: commandMocks.runFiles,
@@ -153,6 +155,7 @@ describe("mcp server branch residual coverage", () => {
   afterEach(async () => {
     vi.restoreAllMocks();
     vi.doUnmock(COMMANDS_MODULE);
+    vi.doUnmock(CONFIG_SDK_MODULE);
     vi.doUnmock(DEPENDENCIES_SDK_MODULE);
     vi.doUnmock(DOCS_SDK_MODULE);
     vi.doUnmock(FILES_SDK_MODULE);

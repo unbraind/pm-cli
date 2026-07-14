@@ -21,17 +21,17 @@
 
 ## Start Here
 
-| Need | Read |
-|------|------|
-| Install and create the first item | [Quickstart](docs/QUICKSTART.md) |
-| New maintainer onboarding | [Onboarding](docs/ONBOARDING.md) |
-| Agent workflow and token-minimal loops | [Agent Guide](docs/AGENT_GUIDE.md) |
-| Command families and examples | [Command Reference](docs/COMMANDS.md) |
-| Settings, storage, search, and output | [Configuration](docs/CONFIGURATION.md) |
-| Safe test execution and linked tests | [Testing](docs/TESTING.md) |
-| Package and extension authoring | [Packages and Extensions](docs/EXTENSIONS.md) and [SDK](docs/SDK.md) |
-| Maintainer release process (daily auto-release + local parity) | [Releasing](docs/RELEASING.md) |
-| Contributor internals | [Architecture](docs/ARCHITECTURE.md) |
+| Need                                                           | Read                                                                                                                                    |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Install and create the first item                              | [Quickstart](docs/QUICKSTART.md)                                                                                                        |
+| New maintainer onboarding                                      | [Onboarding](docs/ONBOARDING.md)                                                                                                        |
+| Agent workflow and token-minimal loops                         | [Agent Guide](docs/AGENT_GUIDE.md)                                                                                                      |
+| Command families and examples                                  | [Command Reference](docs/COMMANDS.md)                                                                                                   |
+| Settings, storage, search, and output                          | [Configuration](docs/CONFIGURATION.md)                                                                                                  |
+| Safe test execution and linked tests                           | [Testing](docs/TESTING.md)                                                                                                              |
+| Package and extension authoring                                | [Packages and Extensions](docs/EXTENSIONS.md), [SDK](docs/SDK.md), and [Customization Primitives](docs/SDK_CUSTOMIZATION_PRIMITIVES.md) |
+| Maintainer release process (daily auto-release + local parity) | [Releasing](docs/RELEASING.md)                                                                                                          |
+| Contributor internals                                          | [Architecture](docs/ARCHITECTURE.md)                                                                                                    |
 
 Full documentation starts at [docs/README.md](docs/README.md).
 

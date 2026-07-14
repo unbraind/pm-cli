@@ -37,15 +37,4 @@ export function extractProvidedOptionFlags(argv: string[]): string[] {
   return ordered;
 }
 
-/** Implements quote command arg for the public runtime surface of this module. */
-export function quoteCommandArg(arg: string): string {
-  if (/^[A-Za-z0-9._:/@=-]+$/.test(arg)) {
-    return arg;
-  }
-  return `"${arg.replace(/(["\\$`])/g, "\\$1")}"`;
-}
-
-/** Implements render pm command for the public runtime surface of this module. */
-export function renderPmCommand(argv: string[]): string {
-  return `pm ${argv.map((token) => quoteCommandArg(token)).join(" ")}`;
-}
+export { quoteCommandArg, renderPmCommand } from "../sdk/command-line.js";

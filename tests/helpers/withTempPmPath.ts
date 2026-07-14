@@ -3,8 +3,16 @@ import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { runInit } from "../../src/cli/commands/init.js";
-import { runDirectDistCli, runInProcessDistCli, type DirectCliRunResult } from "./cliRunner.js";
-import { disposeBridgeWorkerForTestContext, runWorkerCli } from "./cliWorkerBridge.js";
+import { readSettings, writeSettings } from "../../src/core/store/settings.js";
+import {
+  runDirectDistCli,
+  runInProcessDistCli,
+  type DirectCliRunResult,
+} from "./cliRunner.js";
+import {
+  disposeBridgeWorkerForTestContext,
+  runWorkerCli,
+} from "./cliWorkerBridge.js";
 
 export type CliRunResult = DirectCliRunResult;
 
@@ -12,13 +20,21 @@ export interface TempPmContext {
   tempRoot: string;
   pmPath: string;
   env: NodeJS.ProcessEnv;
-  runCli: (args: string[], options?: { expectJson?: boolean; cwd?: string; input?: string }) => CliRunResult;
-  runCliInProcess: (args: string[], options?: { expectJson?: boolean; cwd?: string }) => Promise<CliRunResult>;
+  runCli: (
+    args: string[],
+    options?: { expectJson?: boolean; cwd?: string; input?: string },
+  ) => CliRunResult;
+  runCliInProcess: (
+    args: string[],
+    options?: { expectJson?: boolean; cwd?: string },
+  ) => Promise<CliRunResult>;
 }
 
 const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
 
-const CREATE_VALUE_FLAG_TO_UNSET_FIELD: Readonly<Record<string, string | undefined>> = {
+const CREATE_VALUE_FLAG_TO_UNSET_FIELD: Readonly<
+  Record<string, string | undefined>
+> = {
   "--tags": "tags",
   "--deadline": "deadline",
   "--estimate": "estimate",
@@ -70,7 +86,9 @@ const CREATE_VALUE_FLAG_TO_UNSET_FIELD: Readonly<Record<string, string | undefin
   "--customer_impact": "customer-impact",
 };
 
-const CREATE_REPEATABLE_CLEAR_FLAG: Readonly<Record<string, string | undefined>> = {
+const CREATE_REPEATABLE_CLEAR_FLAG: Readonly<
+  Record<string, string | undefined>
+> = {
   "--dep": "--clear-deps",
   "--comment": "--clear-comments",
   "--note": "--clear-notes",
@@ -128,11 +146,21 @@ type TempPmEnvKey = (typeof TEMP_PM_ENV_KEYS)[number];
 type TempPmEnv = NodeJS.ProcessEnv & Record<TempPmEnvKey, string>;
 type TempPmEnvSnapshot = Record<TempPmEnvKey, string | undefined>;
 
-function shouldNormalizeLegacyCreateArgs(args: string[], createIndex: number): boolean {
-  return createIndex >= 0 && (createIndex === 0 || args.slice(0, createIndex).every((token) => token.startsWith("-")));
+function shouldNormalizeLegacyCreateArgs(
+  args: string[],
+  createIndex: number,
+): boolean {
+  return (
+    createIndex >= 0 &&
+    (createIndex === 0 ||
+      args.slice(0, createIndex).every((token) => token.startsWith("-")))
+  );
 }
 
-function createLegacyNormalizationState(args: string[], createIndex: number): LegacyCreateNormalizationState {
+function createLegacyNormalizationState(
+  args: string[],
+  createIndex: number,
+): LegacyCreateNormalizationState {
   return {
     normalized: args.slice(0, createIndex + 1),
     unsetCandidates: new Set<string>(),
@@ -144,7 +172,11 @@ function createLegacyNormalizationState(args: string[], createIndex: number): Le
   };
 }
 
-function recordConcreteCreateValue(state: LegacyCreateNormalizationState, unsetField: string | undefined, clearFlag: string | undefined): void {
+function recordConcreteCreateValue(
+  state: LegacyCreateNormalizationState,
+  unsetField: string | undefined,
+  clearFlag: string | undefined,
+): void {
   if (unsetField) {
     state.unsetWithConcreteValue.add(unsetField);
   }
@@ -153,7 +185,11 @@ function recordConcreteCreateValue(state: LegacyCreateNormalizationState, unsetF
   }
 }
 
-function recordLegacyNoneCreateValue(state: LegacyCreateNormalizationState, unsetField: string | undefined, clearFlag: string | undefined): void {
+function recordLegacyNoneCreateValue(
+  state: LegacyCreateNormalizationState,
+  unsetField: string | undefined,
+  clearFlag: string | undefined,
+): void {
   state.sawLegacyNone = true;
   if (unsetField) {
     state.unsetCandidates.add(unsetField);
@@ -163,7 +199,9 @@ function recordLegacyNoneCreateValue(state: LegacyCreateNormalizationState, unse
   }
 }
 
-function appendLegacyCreateClearArgs(state: LegacyCreateNormalizationState): void {
+function appendLegacyCreateClearArgs(
+  state: LegacyCreateNormalizationState,
+): void {
   if (!state.hasCreateMode) {
     state.normalized.push("--create-mode", "progressive");
   }
@@ -235,7 +273,9 @@ function runNodeCli(
   // custom cwd) and explicit opt-outs (PM_TEST_CLI_RUNNER=spawn) keep the
   // original spawn runner.
   const needsRealProcess =
-    options?.cwd !== undefined || options?.input !== undefined || process.env.PM_TEST_CLI_RUNNER === "spawn";
+    options?.cwd !== undefined ||
+    options?.input !== undefined ||
+    process.env.PM_TEST_CLI_RUNNER === "spawn";
   if (needsRealProcess) {
     return runDirectDistCli(normalizedArgs, {
       cwd: options?.cwd,
@@ -271,7 +311,10 @@ async function removeTempRoot(tempRoot: string): Promise<void> {
       return;
     } catch (error: unknown) {
       lastError = error;
-      const code = typeof error === "object" && error !== null && "code" in error ? String(error.code) : "";
+      const code =
+        typeof error === "object" && error !== null && "code" in error
+          ? String(error.code)
+          : "";
       if (!new Set(["ENOTEMPTY", "EBUSY", "EPERM"]).has(code)) {
         throw error;
       }
@@ -325,17 +368,23 @@ function restoreTempPmEnv(snapshot: TempPmEnvSnapshot): void {
   }
 }
 
-export async function withTempPmPath<T>(callback: (context: TempPmContext) => Promise<T>): Promise<T> {
+export async function withTempPmPath<T>(
+  callback: (context: TempPmContext) => Promise<T>,
+): Promise<T> {
   const tempRoot = await realpath(
     await mkdtemp(path.join(os.tmpdir(), "pm-cli-test-")),
   );
   const pmPath = path.join(tempRoot, ".agents", "pm");
   const env = buildTempPmEnv(tempRoot, pmPath);
 
-  const runCli = (args: string[], options?: { expectJson?: boolean; cwd?: string; input?: string }): CliRunResult =>
-    runNodeCli(env, args, options);
-  const runCliInProcess = (args: string[], options?: { expectJson?: boolean; cwd?: string }): Promise<CliRunResult> =>
-    runNodeCliInProcess(env, args, options);
+  const runCli = (
+    args: string[],
+    options?: { expectJson?: boolean; cwd?: string; input?: string },
+  ): CliRunResult => runNodeCli(env, args, options);
+  const runCliInProcess = (
+    args: string[],
+    options?: { expectJson?: boolean; cwd?: string },
+  ): Promise<CliRunResult> => runNodeCliInProcess(env, args, options);
 
   const previousEnv = snapshotTempPmEnv();
   applyTempPmEnv(env);
@@ -343,9 +392,18 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
   try {
     await runInit(
       undefined,
-      { path: pmPath, json: true, quiet: false, noExtensions: false, profile: false },
+      {
+        path: pmPath,
+        json: true,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
       { defaults: true },
     );
+    const legacyFixtureSettings = await readSettings(pmPath);
+    legacyFixtureSettings.author_default = "";
+    await writeSettings(pmPath, legacyFixtureSettings);
 
     return await callback({
       tempRoot,

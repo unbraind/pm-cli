@@ -82,7 +82,7 @@
       "count": 1
     }
   },
-  "src/cli/commands/config.ts": {
+  "src/sdk/config.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
@@ -154,7 +154,7 @@
       "count": 1
     }
   },
-  "src/cli/commands/profile.ts": {
+  "src/sdk/profile.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
@@ -175,7 +175,7 @@
       "count": 1
     }
   },
-  "src/cli/commands/templates.ts": {
+  "src/sdk/templates.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }

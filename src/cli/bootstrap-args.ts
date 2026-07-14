@@ -9,6 +9,24 @@ import {
 } from "../sdk/cli-contracts.js";
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 
+const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>([
+  "--pm-path",
+  "--path",
+  "--author",
+]);
+
+function isInlineGlobalValueToken(token: string): boolean {
+  const equalsIndex = token.indexOf("=");
+  return (
+    equalsIndex > 0 &&
+    GLOBAL_VALUE_CONSUMING_FLAGS.has(token.slice(0, equalsIndex))
+  );
+}
+
+function consumesBootstrapAuthorValue(next: string | undefined): boolean {
+  return typeof next === "string" && !next.startsWith("-");
+}
+
 function parseBootstrapPathToken(
   token: string,
   next: string | undefined,
@@ -50,6 +68,21 @@ function parseBootstrapPathToken(
   };
 }
 
+function parseBootstrapAuthorToken(
+  token: string,
+  next: string | undefined,
+): { consumed: number; author?: string } | null {
+  if (token === "--author") {
+    return consumesBootstrapAuthorValue(next)
+      ? { consumed: 2, author: next }
+      : { consumed: 1 };
+  }
+  if (!token.startsWith("--author=")) {
+    return null;
+  }
+  return { consumed: 1, author: token.slice("--author=".length) };
+}
+
 /** Documents the bootstrap global options payload exchanged by command, SDK, and package integrations. */
 export interface BootstrapGlobalOptions {
   /** Filesystem path used for path resolution. */
@@ -62,6 +95,8 @@ export interface BootstrapGlobalOptions {
   json: boolean;
   /** Value that configures or reports quiet for this contract. */
   quiet: boolean;
+  /** Invocation-wide mutation author override. */
+  author?: string;
 }
 
 /** Implements parse bootstrap global options for the public runtime surface of this module. */
@@ -74,6 +109,7 @@ export function parseBootstrapGlobalOptions(
   let noPager = false;
   let json = false;
   let quiet = false;
+  let author: string | undefined;
   let index = 0;
   while (index < argv.length) {
     const token = argv[index];
@@ -112,6 +148,12 @@ export function parseBootstrapGlobalOptions(
       index += parsedPath.consumed;
       continue;
     }
+    const parsedAuthor = parseBootstrapAuthorToken(token, argv[index + 1]);
+    if (parsedAuthor) {
+      author = parsedAuthor.author;
+      index += parsedAuthor.consumed;
+      continue;
+    }
     index += 1;
   }
   return {
@@ -120,6 +162,7 @@ export function parseBootstrapGlobalOptions(
     noPager,
     json,
     quiet,
+    ...(author !== undefined ? { author } : {}),
   };
 }
 
@@ -144,11 +187,15 @@ export function stripGlobalBootstrapTokens(argv: string[]): string[] {
       index += 1;
       continue;
     }
-    if (token === "--path" || token === "--pm-path") {
+    if (token === "--author") {
+      index += consumesBootstrapAuthorValue(argv[index + 1]) ? 2 : 1;
+      continue;
+    }
+    if (GLOBAL_VALUE_CONSUMING_FLAGS.has(token)) {
       index += 2;
       continue;
     }
-    if (token.startsWith("--path=") || token.startsWith("--pm-path=")) {
+    if (isInlineGlobalValueToken(token)) {
       index += 1;
       continue;
     }
@@ -223,13 +270,16 @@ function findCommandTokenIndex(argv: string[]): number | undefined {
     if (token === "--") {
       return undefined;
     }
-    if (token === "--path" || token === "--pm-path") {
+    if (token === "--author") {
+      index += consumesBootstrapAuthorValue(argv[index + 1]) ? 1 : 0;
+      continue;
+    }
+    if (GLOBAL_VALUE_CONSUMING_FLAGS.has(token)) {
       index += 1;
       continue;
     }
     if (
-      token.startsWith("--path=") ||
-      token.startsWith("--pm-path=") ||
+      isInlineGlobalValueToken(token) ||
       token === "--json" ||
       token === "--quiet" ||
       token === "--no-extensions" ||
@@ -643,8 +693,6 @@ function normalizeLongOptionToken(
 // flag during coalescing. `--pm-path <dir>` and its legacy `--path <dir>`
 // alias are the documented cases; other globals
 // (--json/--quiet/--no-extensions/--no-pager/--profile) are boolean.
-const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>(["--pm-path", "--path"]);
-
 function splitCanonicalListToken(
   token: string,
 ): { flag: string; inlineValue?: string } | null {
