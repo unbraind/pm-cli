@@ -193,6 +193,20 @@ export function collectDanglingDependencyReferences(
   };
 }
 
+/** Return unique real missing targets while excluding the legacy no-blocker sentinel. */
+function collectMissingDependencyTargetIds(
+  dangling: DanglingDependencyReferenceSummary,
+): string[] {
+  const targets = new Map<string, string>();
+  for (const reference of [...dangling.active, ...dangling.legacy_terminal]) {
+    if (reference.no_active_blocker_sentinel) continue;
+    const target = reference.target_id.trim();
+    const key = target.toLowerCase();
+    if (!targets.has(key)) targets.set(key, target);
+  }
+  return [...targets.values()].sort((left, right) => left.localeCompare(right));
+}
+
 /** Documents the deps tree node payload exchanged by command, SDK, and package integrations. */
 export interface DepsTreeNode {
   /** Stable identifier used to reference this record across commands and storage. */
@@ -544,17 +558,21 @@ export function buildDepsRelationshipContext(
   const tokenBudget = parsePositiveInteger(options.tokenBudget, "token-budget");
   const canonicalIds = new Map(items.map((item) => [item.id.trim().toLowerCase(), item.id.trim()]));
   const dangling = collectDanglingDependencyReferences(items);
-  const missingIds = [...new Set(
-    [...dangling.active, ...dangling.legacy_terminal].map(({ target_id }) => target_id.trim()),
-  )].sort((left, right) => left.localeCompare(right));
+  const missingIds = collectMissingDependencyTargetIds(dangling);
   const graphItems = items.map((item) => ({
     id: item.id,
-    ...(item.parent ? { parent: canonicalIds.get(item.parent.trim().toLowerCase()) ?? item.parent.trim() } : {}),
-    ...(item.blocked_by ? { blocked_by: canonicalIds.get(item.blocked_by.trim().toLowerCase()) ?? item.blocked_by.trim() } : {}),
-    dependencies: (item.dependencies ?? []).map((dependency) => ({
-      ...dependency,
-      id: canonicalIds.get(dependency.id.trim().toLowerCase()) ?? dependency.id.trim(),
-    })),
+    ...(item.parent && item.parent.trim().toLowerCase() !== "no-active-blocker"
+      ? { parent: canonicalIds.get(item.parent.trim().toLowerCase()) ?? item.parent.trim() }
+      : {}),
+    ...(item.blocked_by && item.blocked_by.trim().toLowerCase() !== "no-active-blocker"
+      ? { blocked_by: canonicalIds.get(item.blocked_by.trim().toLowerCase()) ?? item.blocked_by.trim() }
+      : {}),
+    dependencies: (item.dependencies ?? [])
+      .filter((dependency) => dependency.id.trim().toLowerCase() !== "no-active-blocker")
+      .map((dependency) => ({
+        ...dependency,
+        id: canonicalIds.get(dependency.id.trim().toLowerCase()) ?? dependency.id.trim(),
+      })),
   }));
   return buildRelationshipContext(
     RelationshipGraph.fromItems([...graphItems, ...missingIds.map((id) => ({ id }))]),
@@ -636,9 +654,7 @@ export async function runDeps(
       format,
       node_count: context.nodes.length + 1,
       edge_count: context.edges.length,
-      missing_count: new Set(
-        [...dangling.active, ...dangling.legacy_terminal].map(({ target_id }) => target_id.trim().toLowerCase()),
-      ).size,
+      missing_count: collectMissingDependencyTargetIds(dangling).length,
       ...(summaryOnly ? {} : { context }),
     };
   }

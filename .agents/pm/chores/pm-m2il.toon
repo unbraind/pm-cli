@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: "area:graph",benchmark,conformance,property-testing,scale,testing,token-efficiency
 created_at: "2026-07-13T22:03:31.210Z"
-updated_at: "2026-07-14T14:02:10.329Z"
+updated_at: "2026-07-14T14:37:47.498Z"
 author: codex-root
 estimated_minutes: 600
 acceptance_criteria: "Fixtures cover empty and seconds-old scratch projects, representative medium histories, deep and cyclic typed graphs, multi-decade event streams, disconnected archives, and deterministic 10k, 100k, and one-million-item workspaces; Property tests cover registry invariants, inverse and alias rules, append-only mutation, replay equivalence, snapshot isolation, cursor stability, migration, merge or federation, and correction by superseding event; Algorithm tests verify exact results on bounded fixtures and deterministic seeds, error bounds, freshness, provenance, and monotonic resource limits for approximations; Concurrency tests exercise thousands-agent read and write contention, crashes, stale indexes, retries, idempotency, checkpoints, and non-overlapping reconstruction claims; CLI, MCP, SDK, extension, and shell pipeline parity share golden semantics while allowing intentionally different compact projections; Performance gates record p50, p95, and p99 latency, peak memory, incremental update cost, bytes and tokens, truncation quality, and index rebuild time with documented hardware and envelopes; Every test runs in sandboxed PM_PATH and PM_GLOBAL_PATH and never reads or writes the real repository tracker"
@@ -26,7 +26,7 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-g2zz,related,"2026-07-13T22:03:31.210Z",null,null
   pm-ju83,blocked_by,"2026-07-13T22:03:31.210Z",null,null
   pm-mi2x,related,"2026-07-13T22:03:31.210Z",null,null
-comments[11]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-07-13T22:03:31.210Z",codex-root,"Duplicate check 2026-07-13: pm-mi2x supplies generic scale fixtures and pm-atfm evaluates context quality,but no item owns typed-graph property,replay,migration,adapter-parity,and reconstruction conformance across those fixtures."
   "2026-07-14T09:43:38.102Z",codex-gpt5,"Implementation start 2026-07-14: add replay, snapshot, adversarial topology, deterministic analytics, and token-bound conformance coverage for the broad graph SDK bundle; all tests remain sandbox-safe."
   "2026-07-14T10:02:22.642Z",codex-gpt5,"TDD evidence: focused relationship suites pass 21 tests. New relationship history, analytics, and context modules plus the precedence additions report literal 100% statements/branches/functions/lines in focused V8 coverage; static quality, docstring, audit-boundary, and token-budget gates pass."
@@ -38,6 +38,7 @@ comments[11]{created_at,author,text}:
   "2026-07-14T13:16:52.868Z",codex-root,"Final release-gate evidence: contracts, docs links, secrets, packed npx smoke, 88-command package-first dogfood, build/typecheck/static quality, exact 100/100/100/100 coverage, version sync, and npm packaging all passed. Live telemetry is healthy at 0.3% finish errors with zero missing error-code rows. The aggregate gate stops only on two unrelated handled Sentry highs: existing PM-CLI-29 tracked by pm-7n5a and new PM-CLI-2B tracked open as pm-d4ns after all-status duplicate checks."
   "2026-07-14T13:17:46.276Z",codex-root,"This implementation tranche adds real concurrent durable-store, replay-corruption, path-containment, cursor, bounds, summary, relevance-parity, CLI-contract, full coverage, package-first, and installed-artifact conformance. The canonical matrix remains open for property generators, thousands-agent/failure injection, migration/federation, golden shell projections, and 10k/100k/million performance envelopes."
   "2026-07-14T14:02:03.088Z",codex-gpt5,"PR #559 review verification: all five first-round inline findings are addressed with behavioral regressions. Focused SDK/CLI tests, typecheck, lint, duplication, docstring, package-boundary, and token gates pass; full repository suite passes 287 files/5689 tests at exact 100% statements, branches, functions, and lines; freshly packed npm consumer passes durable cross-instance refresh and npm audit reports zero vulnerabilities."
+  "2026-07-14T14:37:41.469Z",codex-gpt5,"PR #559 round 2 verification: 33 focused tests, typecheck, ESLint, zero clones, 100% docstrings/static quality, package boundary, token gate, and full 287-file/5689-test exact 100/100/100/100 coverage pass. Fresh packed SDK consumer and npm audit pass. Hosted Windows regression had one unrelated existing scale-workspace stdout timing failure while 834 tests passed; the review-fix push will rerun it before any unrelated code change."
 notes[1]{created_at,author,text}:
   "2026-07-14T10:19:37.624Z",codex-gpt5,"Remaining canonical scope after this PR: property generators, concurrent durable adapters, migration matrix, and million-item proof; keep chore open."
 files[6]{path,scope,note}:

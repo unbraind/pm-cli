@@ -29,10 +29,11 @@ describe("relationship event history", () => {
       ]);
 
       await second.append({ eventId: "evt-store-3", relationshipId: "rel-store-1", action: "remove", author: "agent-b", timestamp: "2026-07-14T08:02:00.000Z" });
+      expect(await first.currentVersion()).toBe(3);
       expect((await first.snapshot()).version).toBe(3);
       expect((await first.page({ limit: 1 })).version).toBe(3);
       const reopened = await RelationshipEventStore.open({ pmRoot, nodes });
-      expect(reopened.version).toBe(3);
+      expect(await reopened.currentVersion()).toBe(3);
       expect((await reopened.snapshot()).edges).toHaveLength(1);
       expect(await reopened.page({ limit: 1 })).toMatchObject({ version: 3, hasMore: true });
       const raw = await readFile(reopened.path, "utf8");

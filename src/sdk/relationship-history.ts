@@ -503,8 +503,9 @@ export class RelationshipEventStore {
     return this.#path;
   }
 
-  /** Current validated append sequence. */
-  public get version(): number {
+  /** Refresh from durable history and return the current validated append sequence. */
+  public async currentVersion(): Promise<number> {
+    this.#log = await loadRelationshipEventLog(this.#path, this.#nodes, this.#registry);
     return this.#log.version;
   }
 

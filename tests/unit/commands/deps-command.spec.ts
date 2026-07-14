@@ -76,6 +76,7 @@ describe("runDeps", () => {
           dependencies: [
             { id: "PM-PARENT", kind: "related" },
             { id: "pm-missing-related", kind: "related" },
+            { id: "pm-missing-related", kind: "blocks" },
           ],
         },
         { id: "pm-parent", title: "Parent", status: "open" },
@@ -93,6 +94,21 @@ describe("runDeps", () => {
       "pm-missing-blocker",
       "pm-missing-related",
     ]);
+
+    const sentinel = buildDepsRelationshipContext(
+      "pm-sentinel",
+      [{
+        id: "pm-sentinel",
+        title: "Sentinel",
+        status: "open",
+        parent: "no-active-blocker",
+        blocked_by: "no-active-blocker",
+        dependencies: [{ id: "no-active-blocker", kind: "related" }],
+      }] as ItemMetadata[],
+      {},
+    );
+    expect(sentinel.nodes).toEqual([]);
+    expect(sentinel.edges).toEqual([]);
   });
 
   it("partitions active, terminal, custom-terminal, and sentinel references", () => {
