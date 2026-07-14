@@ -21,6 +21,11 @@ describe("relationship kind registry", () => {
   });
 
   it("registers custom definitions and rejects invalid or colliding contracts", () => {
+    const payloadSchema = {
+      type: "object",
+      required: ["id"],
+      properties: { id: { type: "string" } },
+    };
     const registry = new RelationshipKindRegistry([]).register({
       kind: "owns",
       direction: "directed",
@@ -33,10 +38,23 @@ describe("relationship kind registry", () => {
       aliases: ["has_asset", "has_asset"],
       compatibilityVersion: 2,
       allowSelf: false,
-      payloadSchema: { type: "object" },
+      payloadSchema,
     });
+    payloadSchema.properties.id.type = "number";
     expect(registry.require("has-asset").kind).toBe("owns");
-    expect(registry.list()[0]?.payloadSchema).toEqual({ type: "object" });
+    expect(registry.list()[0]?.payloadSchema).toEqual({
+      type: "object",
+      required: ["id"],
+      properties: { id: { type: "string" } },
+    });
+    expect(Object.isFrozen(registry.list()[0]?.payloadSchema?.required)).toBe(
+      true,
+    );
+    expect(
+      Object.isFrozen(
+        (registry.list()[0]?.payloadSchema?.properties as { id: object }).id,
+      ),
+    ).toBe(true);
     expect(() => registry.require("missing")).toThrow(
       "Unknown relationship kind",
     );
@@ -128,8 +146,8 @@ describe("relationship graph", () => {
       graph.shortestPath("a", "d", {
         kinds: ["blocked_by"],
         maxDepth: 2,
-      }).value,
-    ).toEqual([]);
+      }),
+    ).toMatchObject({ value: [], meta: { truncated: true } });
     expect(
       graph.subgraph("a", { kinds: ["blocked_by"], limit: 2 }).value,
     ).toMatchObject({ nodes: ["a", "b", "c"] });
@@ -185,6 +203,12 @@ describe("relationship graph", () => {
       "y",
       "z",
     ]);
+    expect(
+      cyclic.shortestPath("x", "z", {
+        kinds: ["blocked_by"],
+        maxDepth: 1,
+      }).meta.truncated,
+    ).toBe(false);
     const oneWay = new RelationshipGraph(
       ["source", "target"],
       [{ source: "source", target: "target", kind: "blocked_by" }],
@@ -192,6 +216,10 @@ describe("relationship graph", () => {
     expect(oneWay.adjacency("source", { direction: "both" }).value).toEqual([
       "target",
     ]);
+    expect(
+      oneWay.adjacency("target", { direction: "both", kinds: ["blocks"] })
+        .value,
+    ).toEqual(["source"]);
     expect(oneWay.closure("target", { maxDepth: 0 }).meta.truncated).toBe(
       false,
     );
@@ -237,7 +265,7 @@ describe("relationship graph", () => {
     expect(
       dependencyToRelationship("a", {
         id: "b",
-        kind: "related",
+        kind: "related_to",
         created_at: "now",
         author: "me",
       }),

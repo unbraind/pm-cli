@@ -1,12 +1,12 @@
 id: pm-6irg
-title: validate lifecycle cycle detection treats non-directional related edges as ordering edges (reciprocal related links flag a false-positive dependency cycle)
+title: Validate lifecycle cycles using ordering relationship kinds only
 description: Restrict lifecycle cycle detection to directional ordering edges so reciprocal related links do not produce false-positive dependency cycles.
 type: Issue
 status: closed
 priority: 2
 tags[2]: governance,validate
 created_at: "2026-07-10T21:38:29.741Z"
-updated_at: "2026-07-14T07:46:49.890Z"
+updated_at: "2026-07-14T08:14:52.054Z"
 closed_at: "2026-07-14T07:46:33.846Z"
 author: maintainer-agent
 estimated_minutes: 90

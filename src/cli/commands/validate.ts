@@ -77,7 +77,7 @@ import type {
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
 import { collectDanglingDependencyReferences } from "../../sdk/dependencies.js";
-import { isOrderingRelationshipKind } from "../../sdk/relationships.js";
+import { createRelationshipKindRegistry } from "../../sdk/relationships.js";
 import { runDocs } from "../../sdk/docs.js";
 import { runFiles } from "../../sdk/files.js";
 import { extractReferencedPmItemIdsFromCommand } from "./test.js";
@@ -1482,6 +1482,7 @@ function buildLifecycleDependencyGraph(
   idPrefix = "pm",
 ): Map<string, string[]> {
   const activeItemIds = new Set(activeItems.map((item) => item.id));
+  const relationshipRegistry = createRelationshipKindRegistry();
   const graph = new Map<string, string[]>();
   const sortedItems = [...activeItems].sort((left, right) =>
     left.id.localeCompare(right.id),
@@ -1493,7 +1494,10 @@ function buildLifecycleDependencyGraph(
       edges.add(blockedBy);
     }
     for (const dependency of item.dependencies ?? []) {
-      if (!isOrderingRelationshipKind(dependency.kind)) continue;
+      const dependencyKind = toMeaningfulString(dependency.kind);
+      if (!dependencyKind) continue;
+      const relationshipDefinition = relationshipRegistry.resolve(dependencyKind);
+      if (relationshipDefinition && !relationshipDefinition.ordering) continue;
       const dependencyId = toMeaningfulString(dependency.id);
       if (!dependencyId || !activeItemIds.has(dependencyId)) {
         continue;

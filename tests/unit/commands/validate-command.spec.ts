@@ -441,11 +441,17 @@ describe("runValidate", () => {
         dependencies: [
           { id: "pm-a", kind: "related" },
           { id: "pm-c", kind: "related_to" },
+          { id: "pm-b", kind: null },
         ],
+      },
+      {
+        id: "pm-e",
+        dependencies: [{ id: "pm-a", kind: "custom_precedes" }],
       },
     ] as never);
     expect(graph.get("pm-a")).toEqual(["pm-b", "pm-c"]);
     expect(graph.get("pm-d")).toEqual([]);
+    expect(graph.get("pm-e")).toEqual(["pm-a"]);
     expect(validateInternals.extractItemIds("Ready after work-2 and pm-3.", "work")).toEqual(["work-2"]);
     expect(validateInternals.extractItemIds("Ready after x.pm-2", "x.pm")).toEqual(["x.pm-2"]);
     expect(validateInternals.extractItemIds("Ready after (x.pm-2), not ax.pm-3", "x.pm")).toEqual(["x.pm-2"]);

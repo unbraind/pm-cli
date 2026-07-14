@@ -20,7 +20,7 @@ SDK queries are deterministic, bounded, cancellation-aware, and return explicit 
 
 Aliases normalize at registry boundaries; stored values are not silently rewritten. Imports must carry or select a compatible registry version. Federation merges definitions before edges and rejects identifier or alias collisions. Rollback removes the custom definition and its derived index only after application-owned edges have been exported or superseded; immutable history is retained.
 
-Validation rejects missing endpoints, disallowed self-edges, duplicate canonical edges, cardinality violations at mutation boundaries, ordering-only cycles, and incompatible aliases or versions. Evidence freshness and application payload schemas are extension policy: the core preserves payloads but does not invent domain meaning.
+Validation rejects missing endpoints, disallowed self-edges, cardinality violations at mutation boundaries, ordering-only cycles, and incompatible aliases or versions. Immutable graph snapshots deduplicate canonical edges deterministically, retaining the last supplied edge; mutation boundaries may reject duplicates before snapshot construction. Evidence freshness and application payload schemas are extension policy: the core preserves payloads but does not invent domain meaning.
 
 ## Consequences and non-goals
 

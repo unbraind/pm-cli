@@ -205,6 +205,18 @@ function normalizeKind(kind: string): string {
   return kind.trim().toLowerCase().replaceAll("-", "_");
 }
 
+function freezeValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    for (const entry of value) freezeValue(entry);
+    return Object.freeze(value);
+  }
+  if (value !== null && typeof value === "object") {
+    for (const entry of Object.values(value)) freezeValue(entry);
+    return Object.freeze(value);
+  }
+  return value;
+}
+
 /** Mutable registry with immutable snapshots and collision-safe extension registration. */
 export class RelationshipKindRegistry {
   readonly #definitions = new Map<string, RelationshipKindDefinition>();
@@ -244,6 +256,11 @@ export class RelationshipKindRegistry {
       ...definition,
       kind,
       aliases: Object.freeze(aliases),
+      payloadSchema: definition.payloadSchema
+        ? (freezeValue(structuredClone(definition.payloadSchema)) as Readonly<
+            Record<string, unknown>
+          >)
+        : undefined,
     });
     this.#definitions.set(kind, normalized);
     for (const alias of aliases) this.#aliases.set(alias, kind);
@@ -296,6 +313,41 @@ function compareEdges(left: RelationshipEdge, right: RelationshipEdge): number {
   );
 }
 
+function normalizeRelationshipEdge(
+  candidate: RelationshipEdge,
+  nodes: ReadonlySet<string>,
+  registry: RelationshipKindRegistry,
+): { edge: RelationshipEdge; identity: string } {
+  const source = candidate.source.trim();
+  const target = candidate.target.trim();
+  const definition = registry.require(candidate.kind);
+  if (!nodes.has(source) || !nodes.has(target))
+    throw new TypeError(`Relationship endpoint not found: ${source} -> ${target}`);
+  if (source === target && !definition.allowSelf)
+    throw new TypeError(`Self relationship is not allowed for ${definition.kind}`);
+  const edge = Object.freeze({
+    ...candidate,
+    source,
+    target,
+    kind: definition.kind,
+  });
+  const endpoints =
+    definition.direction === "undirected"
+      ? [source, target].sort().join("\u0000")
+      : `${source}\u0000${target}`;
+  return { edge, identity: `${definition.kind}\u0000${endpoints}` };
+}
+
+function appendIndexedEdge(
+  index: Map<string, RelationshipEdge[]>,
+  node: string,
+  edge: RelationshipEdge,
+): void {
+  const indexed = index.get(node);
+  if (indexed) indexed.push(edge);
+  else index.set(node, [edge]);
+}
+
 /** Build an immutable, deterministic in-memory relationship index. */
 export class RelationshipGraph {
   readonly #registry: RelationshipKindRegistry;
@@ -314,48 +366,20 @@ export class RelationshipGraph {
     this.#nodes = new Set([...nodes].map((id) => id.trim()).filter(Boolean));
     const deduped = new Map<string, RelationshipEdge>();
     for (const candidate of edges) {
-      const source = candidate.source.trim();
-      const target = candidate.target.trim();
-      const definition = registry.require(candidate.kind);
-      if (!this.#nodes.has(source) || !this.#nodes.has(target))
-        throw new TypeError(
-          `Relationship endpoint not found: ${source} -> ${target}`,
-        );
-      if (source === target && !definition.allowSelf)
-        throw new TypeError(
-          `Self relationship is not allowed for ${definition.kind}`,
-        );
-      const edge = Object.freeze({
-        ...candidate,
-        source,
-        target,
-        kind: definition.kind,
-      });
-      const identity =
-        definition.direction === "undirected"
-          ? [source, target].sort().join("\u0000")
-          : `${source}\u0000${target}`;
-      deduped.set(`${definition.kind}\u0000${identity}`, edge);
+      const { edge, identity } = normalizeRelationshipEdge(
+        candidate,
+        this.#nodes,
+        registry,
+      );
+      deduped.set(identity, edge);
     }
     this.#edges = Object.freeze([...deduped.values()].sort(compareEdges));
     for (const edge of this.#edges) {
-      this.#outgoing.set(edge.source, [
-        ...(this.#outgoing.get(edge.source) ?? []),
-        edge,
-      ]);
-      this.#incoming.set(edge.target, [
-        ...(this.#incoming.get(edge.target) ?? []),
-        edge,
-      ]);
+      appendIndexedEdge(this.#outgoing, edge.source, edge);
+      appendIndexedEdge(this.#incoming, edge.target, edge);
       if (registry.require(edge.kind).direction === "undirected") {
-        this.#outgoing.set(edge.target, [
-          ...(this.#outgoing.get(edge.target) ?? []),
-          edge,
-        ]);
-        this.#incoming.set(edge.source, [
-          ...(this.#incoming.get(edge.source) ?? []),
-          edge,
-        ]);
+        appendIndexedEdge(this.#outgoing, edge.target, edge);
+        appendIndexedEdge(this.#incoming, edge.source, edge);
       }
     }
   }
@@ -413,7 +437,14 @@ export class RelationshipGraph {
       ...(direction === "outgoing" ? [] : (this.#incoming.get(id) ?? [])),
     ];
     return candidates
-      .filter((edge) => !kinds || kinds.has(edge.kind))
+      .filter((edge) => {
+        if (!kinds) return true;
+        const definition = this.#registry.require(edge.kind);
+        return (
+          kinds.has(edge.kind) ||
+          (definition.inverse !== undefined && kinds.has(definition.inverse))
+        );
+      })
       .map((edge) => ({
         id: edge.source === id ? edge.target : edge.source,
         edge,
@@ -466,7 +497,7 @@ export class RelationshipGraph {
     const queue = [{ id, depth: 0 }];
     let inspectedEdges = 0;
     let truncated = false;
-    for (let index = 0; index < queue.length; index += 1) {
+    traversal: for (let index = 0; index < queue.length; index += 1) {
       options.signal?.throwIfAborted();
       const current = queue[index]!;
       if (current.depth >= maxDepth) {
@@ -481,7 +512,7 @@ export class RelationshipGraph {
         seen.add(neighbor.id);
         if (value.length >= limit) {
           truncated = true;
-          continue;
+          break traversal;
         }
         value.push(neighbor.id);
         queue.push({ id: neighbor.id, depth: current.depth + 1 });
@@ -519,10 +550,17 @@ export class RelationshipGraph {
     const queue = [{ id: source, path: [source] }];
     const seen = new Set([source]);
     let inspectedEdges = 0;
+    let truncated = false;
     for (let index = 0; index < queue.length; index += 1) {
       options.signal?.throwIfAborted();
       const current = queue[index]!;
-      if (current.path.length - 1 >= maxDepth) continue;
+      if (current.path.length - 1 >= maxDepth) {
+        const neighbors = this.#neighbors(current.id, direction, kinds);
+        inspectedEdges += neighbors.length;
+        if (neighbors.some((neighbor) => !seen.has(neighbor.id)))
+          truncated = true;
+        continue;
+      }
       const neighbors = this.#neighbors(current.id, direction, kinds);
       inspectedEdges += neighbors.length;
       for (const neighbor of neighbors) {
@@ -543,7 +581,7 @@ export class RelationshipGraph {
     }
     return {
       value: [],
-      meta: { visitedNodes: queue.length, inspectedEdges, truncated: false },
+      meta: { visitedNodes: queue.length, inspectedEdges, truncated },
     };
   }
 
@@ -571,11 +609,12 @@ export class RelationshipGraph {
 export function dependencyToRelationship(
   source: string,
   dependency: Dependency,
+  registry: RelationshipKindRegistry = defaultRegistry,
 ): RelationshipEdge {
   return {
     source,
     target: dependency.id,
-    kind: dependency.kind,
+    kind: registry.require(dependency.kind).kind,
     createdAt: dependency.created_at,
     author: dependency.author,
   };

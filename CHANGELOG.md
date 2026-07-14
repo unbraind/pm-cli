@@ -9,7 +9,7 @@
 
 ### Fixed
 
-- validate lifecycle cycle detection treats non-directional related edges as ordering edges (reciprocal related links flag a false-positive dependency cycle) ([pm-6irg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6irg.toon))
+- Validate lifecycle cycles using ordering relationship kinds only ([pm-6irg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6irg.toon))
 
 ### Other
 
