@@ -27,6 +27,7 @@
 
 ### Other
 
+- Ship DeepSource, DeepScan, and Scrutinizer CI free-OSS analyzer configurations with documented activation ([pm-3a68](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3a68.toon))
 - ADR: relationship graph semantics — typed directional, ordering, provenance, evidence, and associative edges with schema-extensible invariants ([pm-4jqm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-4jqm.toon))
 
 ## 2026.7.14 - 2026-07-14
