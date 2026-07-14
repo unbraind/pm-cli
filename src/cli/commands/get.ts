@@ -302,9 +302,7 @@ function projectItemForFields(
   const source = toItemRecord(item);
   const projected: Record<string, unknown> = {};
   for (const field of fields) {
-    const normalized = field.startsWith("item.")
-      ? field.slice("item.".length)
-      : field;
+    const normalized = normalizeGetField(field);
     if (
       normalized === "body" ||
       normalized === "linked" ||
@@ -330,7 +328,10 @@ function fieldsInclude(fields: string[] | null, name: string): boolean {
 }
 
 function fieldsIncludeRoot(fields: string[], name: string): boolean {
-  return fields.some((field) => field === name || field.startsWith(`${name}.`));
+  return fields.some((field) => {
+    const normalized = normalizeGetField(field);
+    return normalized === name || normalized.startsWith(`${name}.`);
+  });
 }
 
 interface ResolvedGetProjection {
@@ -548,7 +549,9 @@ function attachGetSchedule(
   }
   result.schedule = Object.fromEntries(
     Object.entries(schedule).filter(([key]) =>
-      fields.some((field) => field === `schedule.${key}`),
+      fields.some(
+        (field) => normalizeGetField(field) === `schedule.${key}`,
+      ),
     ),
   ) as Partial<ItemScheduleContext>;
 }

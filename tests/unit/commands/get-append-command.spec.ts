@@ -261,6 +261,14 @@ describe("runGet and runAppend", () => {
         continuation: null,
       });
 
+      const withItemPrefixedClaimState = await runGet(
+        id,
+        { path: context.pmPath },
+        { fields: "item.id,item.claim_state.claimed" },
+      );
+      expect(withItemPrefixedClaimState.item).toEqual({ id });
+      expect(withItemPrefixedClaimState.claim_state?.claimed).toBe(false);
+
       await expect(runGet(id, { path: context.pmPath }, { fields: " , " })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -426,6 +434,17 @@ describe("runGet and runAppend", () => {
         sample: [],
       });
       expect(listAllSpy).toHaveBeenCalledOnce();
+
+      const itemPrefixedProjection = await runGet(
+        epicId,
+        { path: context.pmPath },
+        { fields: "item.id,item.children" },
+      );
+      expect(itemPrefixedProjection.item).toEqual({ id: epicId });
+      expect(itemPrefixedProjection.children).toMatchObject({
+        count: 2,
+        active: 1,
+      });
       expect(_testOnlyGetCommand.shouldAutoIncludeGetChildren("Plan")).toBe(true);
       expect(_testOnlyGetCommand.shouldAutoIncludeGetChildren("Task")).toBe(false);
       expect(_testOnlyGetCommand.shouldAutoIncludeGetChildren("CustomContainer")).toBe(true);
@@ -464,6 +483,15 @@ describe("runGet and runAppend", () => {
       expect(projected.schedule).toEqual({
         start_at: "2026-07-20T09:00:00.000Z",
         location: "Room 7",
+      });
+      const itemPrefixedProjection = await runGet(
+        id,
+        { path: context.pmPath },
+        { fields: "item.id,item.schedule.start_at" },
+      );
+      expect(itemPrefixedProjection.item).toEqual({ id });
+      expect(itemPrefixedProjection.schedule).toEqual({
+        start_at: "2026-07-20T09:00:00.000Z",
       });
       const brief = await runGet(id, { path: context.pmPath }, { depth: "brief" });
       expect(brief.schedule).toBeUndefined();
