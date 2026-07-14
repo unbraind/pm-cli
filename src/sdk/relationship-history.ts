@@ -4,7 +4,11 @@
  * Provides an append-only, storage-independent relationship event ledger with
  * optimistic concurrency, deterministic replay, snapshots, and cursor pages.
  */
-import { createQueryFingerprint, paginateQueryRows } from "./pagination.js";
+import {
+  createQueryFingerprint,
+  decodeQueryCursorState,
+  paginateQueryRows,
+} from "./pagination.js";
 import { appendFile, lstat, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { acquireLock } from "../core/lock/lock.js";
@@ -130,20 +134,14 @@ function assertCardinality(
   const outgoingOwner = indexes.outgoingOne.get(
     `${definition.kind}\u0000${candidate.source}`,
   );
-  if (
-    outgoingOwner !== undefined &&
-    outgoingOwner !== excludeRelationshipId
-  )
+  if (outgoingOwner !== undefined && outgoingOwner !== excludeRelationshipId)
     throw new TypeError(
       `Relationship outgoing cardinality exceeded for ${definition.kind}`,
     );
   const incomingOwner = indexes.incomingOne.get(
     `${definition.kind}\u0000${candidate.target}`,
   );
-  if (
-    incomingOwner !== undefined &&
-    incomingOwner !== excludeRelationshipId
-  )
+  if (incomingOwner !== undefined && incomingOwner !== excludeRelationshipId)
     throw new TypeError(
       `Relationship incoming cardinality exceeded for ${definition.kind}`,
     );
@@ -362,8 +360,7 @@ export class RelationshipEventLog {
         lastIndex = index;
         break;
       }
-      included =
-        lastIndex === -1 ? [] : this.#events.slice(0, lastIndex + 1);
+      included = lastIndex === -1 ? [] : this.#events.slice(0, lastIndex + 1);
     } else {
       const version = options.atVersion ?? this.version;
       if (!Number.isInteger(version) || version < 0 || version > this.version)
@@ -393,16 +390,30 @@ export class RelationshipEventLog {
   }): RelationshipEventPage {
     if (!Number.isInteger(options.limit) || options.limit < 1)
       throw new TypeError("Relationship event page limit must be positive");
-    const page = paginateQueryRows(this.#events, {
+    const fingerprint = createQueryFingerprint("relationship-events", {
+      order: "append-sequence",
+    });
+    const snapshot =
+      options.cursor === undefined
+        ? this.version
+        : Number(decodeQueryCursorState(options.cursor, fingerprint).snapshot);
+    if (
+      !Number.isSafeInteger(snapshot) ||
+      snapshot < 0 ||
+      snapshot > this.version
+    )
+      throw new TypeError(
+        "Relationship event cursor snapshot version is invalid",
+      );
+    const page = paginateQueryRows(this.#events.slice(0, snapshot), {
       cursor: options.cursor,
-      fingerprint: createQueryFingerprint("relationship-events", {
-        version: this.version,
-      }),
+      fingerprint,
       limit: options.limit,
       readId: (event) => event.eventId,
+      snapshot: String(snapshot),
     });
     return {
-      version: this.version,
+      version: snapshot,
       events: page.rows,
       hasMore: page.has_more,
       ...(page.next_cursor ? { nextCursor: page.next_cursor } : {}),
@@ -420,19 +431,31 @@ async function resolveRelationshipEventStorePath(
   const target = path.resolve(root, relativePath);
   const relative = path.relative(root, target);
   if (relative.length === 0)
-    throw new TypeError("Relationship event path must name a file within the tracker root");
-  if (relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative))
-    throw new TypeError("Relationship event path must stay within the tracker root");
+    throw new TypeError(
+      "Relationship event path must name a file within the tracker root",
+    );
+  if (
+    relative === ".." ||
+    relative.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relative)
+  )
+    throw new TypeError(
+      "Relationship event path must stay within the tracker root",
+    );
   await mkdir(root, { recursive: true });
   const rootStats = await lstat(root);
   if (rootStats.isSymbolicLink())
-    throw new TypeError("Relationship event tracker root must not be a symbolic link");
+    throw new TypeError(
+      "Relationship event tracker root must not be a symbolic link",
+    );
   let current = root;
   for (const segment of relative.split(path.sep)) {
     current = path.join(current, segment);
     try {
       if ((await lstat(current)).isSymbolicLink())
-        throw new TypeError("Relationship event path must not contain symbolic links");
+        throw new TypeError(
+          "Relationship event path must not contain symbolic links",
+        );
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") break;
       throw error;
@@ -462,10 +485,14 @@ async function loadRelationshipEventLog(
     try {
       stored = JSON.parse(line) as RelationshipEvent;
     } catch {
-      throw new TypeError(`Invalid relationship event JSONL at line ${index + 1}`);
+      throw new TypeError(
+        `Invalid relationship event JSONL at line ${index + 1}`,
+      );
     }
     if (stored.sequence !== log.version + 1)
-      throw new TypeError(`Invalid relationship event sequence at line ${index + 1}`);
+      throw new TypeError(
+        `Invalid relationship event sequence at line ${index + 1}`,
+      );
     log.append({
       eventId: stored.eventId,
       relationshipId: stored.relationshipId,
@@ -506,12 +533,29 @@ export class RelationshipEventStore {
   }
 
   /** Open and validate an existing stream or create an empty store view. */
-  public static async open(options: RelationshipEventStoreOptions): Promise<RelationshipEventStore> {
+  public static async open(
+    options: RelationshipEventStoreOptions,
+  ): Promise<RelationshipEventStore> {
     const nodes = Object.freeze([...options.nodes]);
-    const target = await resolveRelationshipEventStorePath(options.pmRoot, options.relativePath);
-    const release = await acquireLock(options.pmRoot, RELATIONSHIP_STORE_LOCK_ID, 30, `relationship-store:${process.pid}`, false, false, 3_000);
+    const target = await resolveRelationshipEventStorePath(
+      options.pmRoot,
+      options.relativePath,
+    );
+    const release = await acquireLock(
+      options.pmRoot,
+      RELATIONSHIP_STORE_LOCK_ID,
+      30,
+      `relationship-store:${process.pid}`,
+      false,
+      false,
+      3_000,
+    );
     try {
-      const log = await loadRelationshipEventLog(target, nodes, options.registry);
+      const log = await loadRelationshipEventLog(
+        target,
+        nodes,
+        options.registry,
+      );
       return new RelationshipEventStore(options, nodes, target, log);
     } finally {
       await release();
@@ -530,10 +574,24 @@ export class RelationshipEventStore {
   }
 
   /** Append one event after refreshing under the shared workspace lock. */
-  public async append(input: RelationshipEventInput): Promise<RelationshipEvent> {
-    const release = await acquireLock(this.#pmRoot, RELATIONSHIP_STORE_LOCK_ID, 30, `relationship-store:${process.pid}`, false, false, 3_000);
+  public async append(
+    input: RelationshipEventInput,
+  ): Promise<RelationshipEvent> {
+    const release = await acquireLock(
+      this.#pmRoot,
+      RELATIONSHIP_STORE_LOCK_ID,
+      30,
+      `relationship-store:${process.pid}`,
+      false,
+      false,
+      3_000,
+    );
     try {
-      const refreshed = await loadRelationshipEventLog(this.#path, this.#nodes, this.#registry);
+      const refreshed = await loadRelationshipEventLog(
+        this.#path,
+        this.#nodes,
+        this.#registry,
+      );
       const event = refreshed.append(input);
       await mkdir(path.dirname(this.#path), { recursive: true });
       await appendFile(this.#path, `${JSON.stringify(event)}\n`, "utf8");
@@ -545,22 +603,38 @@ export class RelationshipEventStore {
   }
 
   /** Refresh from durable history and materialize an exact validated snapshot. */
-  public async snapshot(options: Parameters<RelationshipEventLog["snapshot"]>[0] = {}): Promise<RelationshipSnapshot> {
+  public async snapshot(
+    options: Parameters<RelationshipEventLog["snapshot"]>[0] = {},
+  ): Promise<RelationshipSnapshot> {
     this.#log = await this.#refreshFromDurableHistory();
     return this.#log.snapshot(options);
   }
 
   /** Refresh from durable history and page immutable events. */
-  public async page(options: Parameters<RelationshipEventLog["page"]>[0]): Promise<RelationshipEventPage> {
+  public async page(
+    options: Parameters<RelationshipEventLog["page"]>[0],
+  ): Promise<RelationshipEventPage> {
     this.#log = await this.#refreshFromDurableHistory();
     return this.#log.page(options);
   }
 
   /** Serialize a durable refresh with writers so readers never observe a torn JSONL tail. */
   async #refreshFromDurableHistory(): Promise<RelationshipEventLog> {
-    const release = await acquireLock(this.#pmRoot, RELATIONSHIP_STORE_LOCK_ID, 30, `relationship-store:${process.pid}`, false, false, 3_000);
+    const release = await acquireLock(
+      this.#pmRoot,
+      RELATIONSHIP_STORE_LOCK_ID,
+      30,
+      `relationship-store:${process.pid}`,
+      false,
+      false,
+      3_000,
+    );
     try {
-      return await loadRelationshipEventLog(this.#path, this.#nodes, this.#registry);
+      return await loadRelationshipEventLog(
+        this.#path,
+        this.#nodes,
+        this.#registry,
+      );
     } finally {
       await release();
     }

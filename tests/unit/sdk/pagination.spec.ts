@@ -25,11 +25,12 @@ describe("SDK query pagination", () => {
       createQueryFingerprint("search", { status: "open" }),
     );
 
-    const cursor = encodeQueryCursor(first, "pm-second", 1);
+    const cursor = encodeQueryCursor(first, "pm-second", 1, "revision-7");
     expect(decodeQueryCursor(cursor, first)).toBe("pm-second");
     expect(decodeQueryCursorState(cursor, first)).toEqual({
       after_id: "pm-second",
       after_index: 1,
+      snapshot: "revision-7",
     });
     expect(
       resolveQueryCursorStart(
@@ -83,6 +84,17 @@ describe("SDK query pagination", () => {
       }),
     ).toString("base64url");
     expect(() => decodeQueryCursor(invalidIndex, fingerprint)).toThrow(
+      PmCliError,
+    );
+    const invalidSnapshot = Buffer.from(
+      JSON.stringify({
+        version: 1,
+        fingerprint,
+        after_id: "pm-first",
+        snapshot: "",
+      }),
+    ).toString("base64url");
+    expect(() => decodeQueryCursor(invalidSnapshot, fingerprint)).toThrow(
       PmCliError,
     );
     const stale = encodeQueryCursor(fingerprint, "pm-missing");
@@ -148,6 +160,15 @@ describe("SDK query pagination", () => {
         readId: (row) => row.id,
       }),
     ).toEqual({ rows: rows.slice(2), has_more: false });
+    expect(() =>
+      paginateQueryRows(rows, {
+        cursor: encodeQueryCursor(fingerprint, "pm-a", 0, "revision-1"),
+        fingerprint,
+        limit: 2,
+        readId: (row) => row.id,
+        snapshot: "revision-2",
+      }),
+    ).toThrow(/requested snapshot/);
     expect(
       paginateQueryRows(rows, {
         fingerprint,
