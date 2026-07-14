@@ -456,6 +456,18 @@ export class RelationshipGraph {
       throw new TypeError(`Relationship node not found: ${id}`);
   }
 
+  #matchesKinds(
+    edge: RelationshipEdge,
+    kinds: ReadonlySet<string> | undefined,
+  ): boolean {
+    if (!kinds) return true;
+    const definition = this.#registry.require(edge.kind);
+    return (
+      kinds.has(edge.kind) ||
+      (definition.inverse !== undefined && kinds.has(definition.inverse))
+    );
+  }
+
   #neighbors(
     id: string,
     direction: RelationshipTraversalDirection,
@@ -466,14 +478,7 @@ export class RelationshipGraph {
       ...(direction === "outgoing" ? [] : (this.#incoming.get(id) ?? [])),
     ];
     return [...new Set(candidates)]
-      .filter((edge) => {
-        if (!kinds) return true;
-        const definition = this.#registry.require(edge.kind);
-        return (
-          kinds.has(edge.kind) ||
-          (definition.inverse !== undefined && kinds.has(definition.inverse))
-        );
-      })
+      .filter((edge) => this.#matchesKinds(edge, kinds))
       .map((edge) => ({
         id: edge.source === id ? edge.target : edge.source,
         edge,
@@ -524,13 +529,17 @@ export class RelationshipGraph {
     const seen = new Set([id]);
     const value: string[] = [];
     const queue = [{ id, depth: 0 }];
+    let visitedNodes = 0;
     let inspectedEdges = 0;
     let truncated = false;
     traversal: for (let index = 0; index < queue.length; index += 1) {
       options.signal?.throwIfAborted();
       const current = queue[index]!;
+      visitedNodes += 1;
       if (current.depth >= maxDepth) {
-        if (this.#neighbors(current.id, direction, kinds).length > 0)
+        const neighbors = this.#neighbors(current.id, direction, kinds);
+        inspectedEdges += neighbors.length;
+        if (neighbors.some((neighbor) => !seen.has(neighbor.id)))
           truncated = true;
         continue;
       }
@@ -550,7 +559,7 @@ export class RelationshipGraph {
     return {
       value,
       meta: {
-        visitedNodes: queue.length,
+        visitedNodes,
         inspectedEdges,
         truncated,
         nextCursor: value.at(-1),
@@ -578,11 +587,13 @@ export class RelationshipGraph {
     const maxDepth = options.maxDepth ?? Number.POSITIVE_INFINITY;
     const queue = [{ id: source, path: [source] }];
     const seen = new Set([source]);
+    let visitedNodes = 0;
     let inspectedEdges = 0;
     let truncated = false;
     for (let index = 0; index < queue.length; index += 1) {
       options.signal?.throwIfAborted();
       const current = queue[index]!;
+      visitedNodes += 1;
       if (current.path.length - 1 >= maxDepth) {
         const neighbors = this.#neighbors(current.id, direction, kinds);
         inspectedEdges += neighbors.length;
@@ -599,7 +610,7 @@ export class RelationshipGraph {
           return {
             value: path,
             meta: {
-              visitedNodes: queue.length,
+              visitedNodes,
               inspectedEdges,
               truncated: false,
             },
@@ -610,7 +621,7 @@ export class RelationshipGraph {
     }
     return {
       value: [],
-      meta: { visitedNodes: queue.length, inspectedEdges, truncated },
+      meta: { visitedNodes, inspectedEdges, truncated },
     };
   }
 
@@ -622,10 +633,17 @@ export class RelationshipGraph {
     const closure = this.closure(id, options);
     const nodes = [id, ...closure.value].sort();
     const included = new Set(nodes);
+    const kinds = options.kinds
+      ? new Set(options.kinds.map((kind) => this.#registry.require(kind).kind))
+      : undefined;
     const edges = new Set<RelationshipEdge>();
     for (const node of nodes) {
       for (const edge of this.#outgoing.get(node) ?? []) {
-        if (included.has(edge.source) && included.has(edge.target))
+        if (
+          included.has(edge.source) &&
+          included.has(edge.target) &&
+          this.#matchesKinds(edge, kinds)
+        )
           edges.add(edge);
       }
     }

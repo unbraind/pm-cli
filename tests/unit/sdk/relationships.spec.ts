@@ -140,11 +140,13 @@ describe("relationship graph", () => {
       graph.closure("a", { kinds: ["blocked_by"], limit: 1 }),
     ).toMatchObject({
       value: ["b"],
-      meta: { truncated: true },
+      meta: { visitedNodes: 2, truncated: true },
     });
+    expect(graph.closure("a", { limit: 1 }).meta.visitedNodes).toBe(1);
     expect(
       graph.shortestPath("a", "d", { kinds: ["blocked_by"] }).value,
     ).toEqual(["a", "b", "c", "d"]);
+    expect(graph.shortestPath("a", "c").meta.visitedNodes).toBe(2);
     expect(graph.shortestPath("a", "a").value).toEqual(["a"]);
     expect(
       graph.shortestPath("d", "a", { kinds: ["blocked_by"] }).value,
@@ -157,7 +159,13 @@ describe("relationship graph", () => {
     ).toMatchObject({ value: [], meta: { truncated: true } });
     expect(
       graph.subgraph("a", { kinds: ["blocked_by"], limit: 2 }).value,
-    ).toMatchObject({ nodes: ["a", "b", "c"] });
+    ).toMatchObject({
+      nodes: ["a", "b", "c"],
+      edges: [
+        expect.objectContaining({ kind: "blocked_by" }),
+        expect.objectContaining({ kind: "blocked_by" }),
+      ],
+    });
     expect(graph.subgraph("d").value).toMatchObject({
       nodes: ["d"],
       edges: [],
@@ -227,6 +235,9 @@ describe("relationship graph", () => {
     ).toBe(1);
     expect(cyclic.adjacency("y", { kinds: ["related"] }).value).toEqual(["z"]);
     expect(cyclic.closure("x", { kinds: ["blocked_by"] }).value).toEqual(["y"]);
+    expect(
+      cyclic.closure("x", { kinds: ["blocked_by"], maxDepth: 1 }).meta,
+    ).toMatchObject({ inspectedEdges: 2, truncated: false });
     expect(cyclic.shortestPath("x", "z", { direction: "both" }).value).toEqual([
       "x",
       "y",
