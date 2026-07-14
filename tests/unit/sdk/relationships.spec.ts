@@ -173,6 +173,39 @@ describe("relationship graph", () => {
       { source: "e", target: "a", kind: "related" },
     ]);
     expect(Object.isFrozen(graph.incidentEdges("a"))).toBe(true);
+    const oneWay = new RelationshipGraph(
+      ["source", "target"],
+      [{ source: "source", target: "target", kind: "blocked_by" }],
+    );
+    expect(oneWay.incidentEdges("source")).toHaveLength(1);
+    expect(oneWay.incidentEdges("target")).toHaveLength(1);
+    expect(
+      new RelationshipGraph(
+        ["a", "center", "z"],
+        [
+          { source: "center", target: "a", kind: "blocked_by" },
+          { source: "z", target: "center", kind: "blocked_by" },
+        ],
+      ).incidentEdges("center"),
+    ).toHaveLength(2);
+    const selfRegistry = createRelationshipKindRegistry().register({
+      kind: "self_link",
+      direction: "undirected",
+      ordering: false,
+      hierarchy: false,
+      outgoing: "many",
+      incoming: "many",
+      lifecycle: "persistent",
+      compatibilityVersion: 1,
+      allowSelf: true,
+    });
+    expect(
+      new RelationshipGraph(
+        ["self"],
+        [{ source: "self", target: "self", kind: "self_link" }],
+        selfRegistry,
+      ).incidentEdges("self"),
+    ).toHaveLength(1);
     expect(graph.adjacency("a", { kinds: ["related"] }).value).toEqual(["e"]);
     expect(
       graph.adjacency("b", {

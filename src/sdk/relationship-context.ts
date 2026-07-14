@@ -175,6 +175,7 @@ function discoverNodes(
   for (let index = 0; index < queue.length; index += 1) {
     options.signal?.throwIfAborted();
     const current = queue[index]!;
+    if (current.distance >= maxDepth && depthTruncated) continue;
     const adjacent = graph.adjacency(current.id, {
       direction,
       kinds: options.kinds,

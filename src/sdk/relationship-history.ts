@@ -104,29 +104,28 @@ function freezeEdge(edge: RelationshipEdge): RelationshipEdge {
 function assertCardinality(
   candidate: RelationshipEdge,
   active: ReadonlyMap<string, RelationshipEdge>,
+  excludeRelationshipId: string,
   registry: RelationshipKindRegistry,
 ): void {
   const definition = registry.require(candidate.kind);
-  const comparable = [...active.values()].filter(
-    (edge) => registry.require(edge.kind).kind === definition.kind,
-  );
-  if (
-    definition.outgoing === "one" &&
-    comparable.some((edge) => edge.source === candidate.source)
-  )
-    throw new TypeError(
-      `Relationship outgoing cardinality exceeded for ${definition.kind}`,
-    );
-  if (
-    definition.incoming === "one" &&
-    comparable.some((edge) => edge.target === candidate.target)
-  )
-    throw new TypeError(
-      `Relationship incoming cardinality exceeded for ${definition.kind}`,
-    );
   const identity = edgeIdentity(candidate, registry);
-  if (comparable.some((edge) => edgeIdentity(edge, registry) === identity))
-    throw new TypeError(`Relationship edge already active: ${identity}`);
+  for (const [relationshipId, edge] of active) {
+    if (relationshipId === excludeRelationshipId) continue;
+    if (registry.require(edge.kind).kind !== definition.kind) continue;
+    if (
+      definition.outgoing === "one" &&
+      edge.source === candidate.source
+    )
+      throw new TypeError(
+        `Relationship outgoing cardinality exceeded for ${definition.kind}`,
+      );
+    if (definition.incoming === "one" && edge.target === candidate.target)
+      throw new TypeError(
+        `Relationship incoming cardinality exceeded for ${definition.kind}`,
+      );
+    if (edgeIdentity(edge, registry) === identity)
+      throw new TypeError(`Relationship edge already active: ${identity}`);
+  }
 }
 
 function replayEvents(
@@ -199,14 +198,12 @@ function resolveMutationEdge(
     throw new TypeError(
       `Relationship endpoint not found: ${source} -> ${target}`,
     );
-  const withoutCurrent = new Map(active);
-  withoutCurrent.delete(relationshipId);
   const canonical = new RelationshipGraph(
     [source, target],
     [input.edge],
     registry,
   ).edges()[0]!;
-  assertCardinality(canonical, withoutCurrent, registry);
+  assertCardinality(canonical, active, relationshipId, registry);
   return freezeEdge(canonical);
 }
 

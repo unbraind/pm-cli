@@ -285,6 +285,20 @@ function longestPath(
   return { depth: Object.fromEntries(depth), path };
 }
 
+function reconstructImpactPath(
+  root: string,
+  target: string,
+  parents: ReadonlyMap<string, string>,
+): string[] {
+  const path = [target];
+  let cursor = target;
+  while (cursor !== root) {
+    cursor = parents.get(cursor)!;
+    path.push(cursor);
+  }
+  return path.reverse();
+}
+
 /** Analyze registered order-bearing relationships without treating associative cycles as blockers. */
 export function analyzeRelationshipExecution(
   graph: RelationshipGraph,
@@ -324,19 +338,53 @@ export function analyzeGraphImpact(
   root: string,
   options: RelationshipQueryOptions = {},
 ): RelationshipImpactAnalysis {
-  const closure = graph.closure(root, options);
+  const direction = options.direction ?? "outgoing";
+  const maxDepth = options.maxDepth ?? Number.POSITIVE_INFINITY;
+  const limit = options.limit ?? Number.POSITIVE_INFINITY;
+  const queue = [{ id: root, depth: 0 }];
+  const seen = new Set([root]);
+  const parents = new Map<string, string>();
+  const affected: RelationshipImpactRow[] = [];
+  let visitedNodes = 0;
+  let inspectedEdges = 0;
+  let truncated = false;
+  traversal: for (let index = 0; index < queue.length; index += 1) {
+    options.signal?.throwIfAborted();
+    const current = queue[index]!;
+    visitedNodes += 1;
+    const adjacent = graph.adjacency(current.id, {
+      direction,
+      kinds: options.kinds,
+      signal: options.signal,
+    });
+    inspectedEdges += adjacent.meta.inspectedEdges;
+    if (current.depth >= maxDepth) {
+      if (adjacent.value.some((id) => !seen.has(id))) truncated = true;
+      continue;
+    }
+    for (const id of adjacent.value) {
+      if (seen.has(id)) continue;
+      if (affected.length >= limit) {
+        truncated = true;
+        break traversal;
+      }
+      seen.add(id);
+      parents.set(id, current.id);
+      const depth = current.depth + 1;
+      affected.push({
+        id,
+        distance: depth,
+        path: reconstructImpactPath(root, id, parents),
+      });
+      queue.push({ id, depth });
+    }
+  }
   return {
     root,
-    affected: closure.value.map((id) => {
-      const path = graph.shortestPath(root, id, options).value;
-      return { id, distance: path.length - 1, path };
-    }),
+    affected,
     exact: true,
-    truncated: closure.meta.truncated,
-    cost: {
-      visitedNodes: closure.meta.visitedNodes,
-      inspectedEdges: closure.meta.inspectedEdges,
-    },
+    truncated,
+    cost: { visitedNodes, inspectedEdges },
   };
 }
 

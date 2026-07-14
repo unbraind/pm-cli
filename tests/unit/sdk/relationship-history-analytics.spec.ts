@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   RelationshipEventLog,
   RelationshipGraph,
@@ -133,21 +133,41 @@ describe("relationship event history", () => {
   });
 
   it("enforces registered cardinality and custom payload semantics", () => {
-    const registry = new RelationshipKindRegistry([]).register({
-      kind: "owns",
-      inverse: "owned_by",
-      direction: "directed",
-      ordering: false,
-      hierarchy: true,
-      outgoing: "many",
-      incoming: "one",
-      lifecycle: "supersedable",
-      compatibilityVersion: 1,
-      allowSelf: false,
-      payloadSchema: { type: "object" },
-    });
+    const registry = new RelationshipKindRegistry([])
+      .register({
+        kind: "owns",
+        inverse: "owned_by",
+        direction: "directed",
+        ordering: false,
+        hierarchy: true,
+        outgoing: "many",
+        incoming: "one",
+        lifecycle: "supersedable",
+        compatibilityVersion: 1,
+        allowSelf: false,
+        payloadSchema: { type: "object" },
+      })
+      .register({
+        kind: "leases",
+        direction: "directed",
+        ordering: false,
+        hierarchy: false,
+        outgoing: "many",
+        incoming: "many",
+        lifecycle: "persistent",
+        compatibilityVersion: 1,
+        allowSelf: false,
+      });
     const log = new RelationshipEventLog(["company", "asset", "other"], {
       registry,
+    });
+    log.append({
+      eventId: "lease-1",
+      relationshipId: "lease-1",
+      action: "add",
+      edge: { source: "company", target: "other", kind: "leases" },
+      author: "legal",
+      timestamp: "2026-07-14T07:30:00.000Z",
     });
     log.append({
       eventId: "own-1",
@@ -162,6 +182,21 @@ describe("relationship event history", () => {
       author: "legal",
       timestamp: "2026-07-14T08:00:00.000Z",
     });
+    expect(
+      log.append({
+        eventId: "own-revise",
+        relationshipId: "ownership-1",
+        action: "supersede",
+        edge: {
+          source: "company",
+          target: "asset",
+          kind: "owns",
+          payload: { votingShare: 0.9 },
+        },
+        author: "legal",
+        timestamp: "2026-07-14T08:30:00.000Z",
+      }).edge?.payload,
+    ).toEqual({ votingShare: 0.9 });
     expect(() =>
       log.append({
         eventId: "own-2",
@@ -317,13 +352,13 @@ describe("relationship graph analytics", () => {
   });
 
   it("returns bounded impact with explainable paths", () => {
-    expect(
-      analyzeGraphImpact(graph, "design", {
-        direction: "incoming",
-        kinds: ["blocked_by"],
-        limit: 2,
-      }),
-    ).toMatchObject({
+    const shortestPath = vi.spyOn(graph, "shortestPath");
+    const impact = analyzeGraphImpact(graph, "design", {
+      direction: "incoming",
+      kinds: ["blocked_by"],
+      limit: 2,
+    });
+    expect(impact).toMatchObject({
       root: "design",
       affected: [
         { id: "build", distance: 1, path: ["design", "build"] },
@@ -331,6 +366,33 @@ describe("relationship graph analytics", () => {
       ],
       exact: true,
       truncated: true,
+    });
+    expect(shortestPath).not.toHaveBeenCalled();
+    shortestPath.mockRestore();
+    expect(
+      analyzeGraphImpact(graph, "design", {
+        direction: "incoming",
+        kinds: ["blocked_by"],
+        maxDepth: 1,
+      }),
+    ).toMatchObject({
+      affected: [{ id: "build", distance: 1 }],
+      truncated: true,
+    });
+    const cycle = new RelationshipGraph(
+      ["a", "b"],
+      [
+        { source: "a", target: "b", kind: "blocks" },
+        { source: "b", target: "a", kind: "blocks" },
+      ],
+    );
+    expect(analyzeGraphImpact(cycle, "a")).toMatchObject({
+      affected: [{ id: "b", distance: 1, path: ["a", "b"] }],
+      truncated: false,
+    });
+    expect(analyzeGraphImpact(cycle, "a", { maxDepth: 1 })).toMatchObject({
+      affected: [{ id: "b" }],
+      truncated: false,
     });
   });
 
@@ -518,6 +580,33 @@ describe("bounded relationship context", () => {
       tokenBudget: 220,
     });
     expect(result.meta.usedTokens).toBeLessThanOrEqual(220);
+  });
+
+  it("stops inspecting boundary nodes after depth truncation is established", () => {
+    const boundary = new RelationshipGraph(
+      ["root", "a", "b", "deep-a", "deep-b"],
+      [
+        { source: "root", target: "a", kind: "blocks" },
+        { source: "root", target: "b", kind: "blocks" },
+        { source: "a", target: "deep-a", kind: "blocks" },
+        { source: "b", target: "deep-b", kind: "blocks" },
+      ],
+    );
+    const adjacency = vi.spyOn(boundary, "adjacency");
+    const result = buildRelationshipContext(boundary, "root", [], {
+      direction: "outgoing",
+      maxDepth: 1,
+      nodeLimit: 10,
+      edgeLimit: 10,
+      tokenBudget: 1000,
+    });
+    expect(result.meta).toMatchObject({
+      truncated: true,
+      visitedNodes: 3,
+      inspectedEdges: 3,
+    });
+    expect(adjacency).toHaveBeenCalledTimes(2);
+    adjacency.mockRestore();
   });
 
   it("continues deterministically and rejects a cursor from another query", () => {

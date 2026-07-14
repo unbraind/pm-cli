@@ -531,14 +531,29 @@ export class RelationshipGraph {
   /** Return the deterministic immutable edges incident to one node. */
   public incidentEdges(id: string): readonly RelationshipEdge[] {
     this.#assertNode(id);
-    return Object.freeze(
-      [
-        ...new Set([
-          ...(this.#outgoing.get(id) ?? []),
-          ...(this.#incoming.get(id) ?? []),
-        ]),
-      ].sort(compareEdges),
-    );
+    // Preserve empty fallbacks for legacy indexes and JSON-derived graph state.
+    const outgoing = this.#outgoing.get(id) ?? [];
+    const incoming = this.#incoming.get(id) ?? [];
+    if (outgoing.length === 0) return Object.freeze([...incoming]);
+    if (incoming.length === 0) return Object.freeze([...outgoing]);
+    const edges: RelationshipEdge[] = [];
+    let outgoingIndex = 0;
+    let incomingIndex = 0;
+    while (outgoingIndex < outgoing.length || incomingIndex < incoming.length) {
+      const outgoingEdge = outgoing[outgoingIndex];
+      const incomingEdge = incoming[incomingIndex];
+      const edge =
+        outgoingEdge === undefined
+          ? incomingEdge!
+          : incomingEdge === undefined ||
+              compareEdges(outgoingEdge, incomingEdge) <= 0
+            ? outgoingEdge
+            : incomingEdge;
+      if (edges.at(-1) !== edge) edges.push(edge);
+      if (outgoingEdge === edge) outgoingIndex += 1;
+      if (incomingEdge === edge) incomingIndex += 1;
+    }
+    return Object.freeze(edges);
   }
 
   /** Return the deterministic immutable node snapshot. */
