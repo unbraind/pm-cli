@@ -12,6 +12,7 @@ import {
   createEmptyExtensionServiceRegistry,
 } from "../../../src/core/extensions/extension-registries.js";
 import { createDefaultExtensionGovernancePolicy } from "../../../src/core/extensions/extension-types.js";
+import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 const COMMANDS_MODULE = "../../../src/cli/commands/index.js";
@@ -336,7 +337,10 @@ describe("mcp server branch residual coverage", () => {
         action: "history-compact",
         options: { closed: true, allStreams: true },
       }),
-    ).rejects.toThrow(/mutually exclusive/);
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+      message: expect.stringMatching(/mutually exclusive/),
+    });
     await expect(
       runAction({
         action: "history-compact",

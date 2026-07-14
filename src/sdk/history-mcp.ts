@@ -6,6 +6,7 @@
  */
 import type { HistoryCompactScope } from "../core/history/history-compact-bulk.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import {
   assertHistoryCompactTarget,
@@ -82,7 +83,7 @@ export function runMcpHistoryCompactAction(
   if (distinctScopes.length > 1) {
     throw new PmCliError(
       "history-compact: closed and all-streams scopes are mutually exclusive.",
-      64,
+      EXIT_CODE.USAGE,
     );
   }
   const scope = distinctScopes[0];
