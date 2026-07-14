@@ -6,11 +6,13 @@ status: open
 priority: 1
 tags[3]: "area:observability",external-integration,sentry
 created_at: "2026-07-14T07:55:43.315Z"
-updated_at: "2026-07-14T18:05:31.354Z"
+updated_at: "2026-07-14T19:17:59.522Z"
 author: codex-gpt5-root
 estimated_minutes: 120
 acceptance_criteria: Identify the emitting package and release; attribute the Sentry event to the owning project or classify the expected configuration error without hiding real pm-cli failures; sentry-telemetry-gate reports zero unrelated highs; document verification with current issue/event evidence.
 parent: pm-5oj5
+risk: medium
+confidence: 70
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-ju83,related,"2026-07-14T07:55:43.315Z",null,null
 comments[3]{created_at,author,text}:
