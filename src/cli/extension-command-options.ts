@@ -358,7 +358,7 @@ function readOrderedLooseListValues(
   const occurrences = (occurrenceSource as LooseOptionsWithOccurrences)[
     LOOSE_OPTION_OCCURRENCES
   ];
-  if (!occurrences) {
+  if (!occurrences || occurrences.length === 0) {
     return fallback;
   }
   const acceptedKeys = new Set(optionKeys);

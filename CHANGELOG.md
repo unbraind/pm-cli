@@ -4,11 +4,16 @@
 
 ### Added
 
+- Promote package & extension lifecycle primitives to the public SDK: install, upgrade, extension list/enable/disable, managed-package state ([pm-x6jf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-x6jf.toon))
 - Promote annotation and link primitives to the public SDK: comments, notes, learnings, files, docs, deps, append metadata ([pm-zwpp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-zwpp.toon))
 - Point-in-time read projection: pm get --at <version\|timestamp\> renders reconstructed historical item state without mutating ([pm-hib1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hib1.toon))
 
 ### Fixed
 
+- GH-560: extension renderer overrides diverge between SDK harness and real CLI output ([pm-as4a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-as4a.toon))
+- GH-557: contract layer intercepts -h/--help before variadic-positional handlers, blocking legitimate positional content ([pm-albl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-albl.toon))
+- GH-547: SDK exporters and renderers cannot suppress host rendering of handled output ([pm-f38n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f38n.toon))
+- GH-550: extension list flags are erased at the real CLI boundary ([pm-evav](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-evav.toon))
 - GH-558: export canonical item-to-context-relevance candidate derivation from the public SDK ([pm-qyc6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qyc6.toon))
 - GH-555: remove unnecessary spread in relationship registry ordering assertion ([pm-ofgc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ofgc.toon))
 - Validate lifecycle cycles using ordering relationship kinds only ([pm-6irg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6irg.toon))

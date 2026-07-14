@@ -3,7 +3,7 @@
  *
  * Provides CLI runtime support for Extension Command Help.
  */
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import type {
   RegisteredExtensionCommandDefinition,
   RegisteredExtensionFlagDefinitions,
@@ -612,7 +612,16 @@ export function applyDynamicExtensionFlagOptions(
     if (!flags) {
       continue;
     }
-    command.option(flags, formatDynamicExtensionOptionDescription(definition));
+    const description = formatDynamicExtensionOptionDescription(definition);
+    if (definition.list !== true) {
+      command.option(flags, description);
+      continue;
+    }
+    command.addOption(
+      new Option(flags, description).argParser(
+        (value: string, previous: string[] = []) => [...previous, value],
+      ),
+    );
   }
 }
 

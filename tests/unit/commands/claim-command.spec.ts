@@ -121,19 +121,52 @@ describe("runClaim/runRelease", () => {
 
   it("returns a non-failing skip when every if-available candidate is held", async () => {
     const recommendation = { id: "pm-held", reasons: [] } as never;
-    const result = await claimNextFromRecommendations([recommendation], false, {}, { ifAvailable: true }, async () => ({
-      item: { id: "pm-held" },
-      claimed_by: "other",
-      previous_assignee: "other",
-      forced: false,
-      skipped: true,
-    }));
-    expect(result).toMatchObject({
-      available: false,
-      skipped: true,
-      attempts: 1,
-      recommendation: null,
-    });
+    const previousAuthor = process.env.PM_AUTHOR;
+    delete process.env.PM_AUTHOR;
+    try {
+      const claimRunner = async () => ({
+        item: { id: "pm-held" },
+        claimed_by: "other",
+        previous_assignee: "other",
+        forced: false,
+        skipped: true,
+      });
+      const unknown = await claimNextFromRecommendations(
+        [recommendation],
+        false,
+        {},
+        { ifAvailable: true },
+        claimRunner,
+      );
+      process.env.PM_AUTHOR = "environment-author";
+      const environment = await claimNextFromRecommendations(
+        [recommendation],
+        false,
+        {},
+        { ifAvailable: true },
+        claimRunner,
+      );
+      const explicit = await claimNextFromRecommendations(
+        [recommendation],
+        false,
+        {},
+        { ifAvailable: true, author: "explicit-author" },
+        claimRunner,
+      );
+
+      expect(unknown).toMatchObject({
+        available: false,
+        claimed_by: "unknown",
+        skipped: true,
+        attempts: 1,
+        recommendation: null,
+      });
+      expect(environment.claimed_by).toBe("environment-author");
+      expect(explicit.claimed_by).toBe("explicit-author");
+    } finally {
+      if (previousAuthor === undefined) delete process.env.PM_AUTHOR;
+      else process.env.PM_AUTHOR = previousAuthor;
+    }
   });
   it("reports conflict guidance when every attempted candidate loses its claim race", async () => {
     const recommendation = { id: "pm-raced", reasons: [] } as never;

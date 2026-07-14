@@ -1,6 +1,6 @@
 # Packages and Extensions
 
-Extension flags declared with `list: true` accumulate repeated long/short alias occurrences and comma-separated values into one array. Declarative blueprints are also checked for reserved item-field collisions during SDK lint/preflight and harness activation, so a package cannot pass author-time validation and then fail only when users create or update items.
+Extension flags declared with `list: true` accumulate repeated long/short alias occurrences and comma-separated values into one array. Dynamic commands preserve flag-like variadic content after `--`, and package handlers can use the public `suppressHostOutput()` protocol when they already emitted streaming, binary, or pre-rendered output. Declarative blueprints are also checked for reserved item-field collisions during SDK lint/preflight and harness activation, so a package cannot pass author-time validation and then fail only when users create or update items.
 
 Packages add optional `pm` workflows without changing the core CLI. A package can ship one or more runtime extensions plus metadata such as docs and examples. Prefer the package-first commands in new docs and automation:
 
@@ -300,6 +300,10 @@ Common APIs:
 - `api.registerProfile(profile)` contributes a project profile — a declarative archetype bundling item types, statuses, fields, per-type workflows, config, templates, and package recommendations. Once active it resolves by name through `pm profile list/show/apply` alongside the core `agile`/`ops`/`research` archetypes (built-in names are reserved; a colliding registration is ignored with a warning). Requires the `schema` capability.
 - `api.registerService("output_format", handler)` customizes output formatting through the service override API. Return `context.payload`, `null`, or `undefined` for commands the extension does not own.
 - `api.registerRenderer("toon" | "json", renderer)` adds format-specific renderers. Return `null` for unrelated payloads so pm falls back to native rendering.
+- `suppressHostOutput(result?)` from `@unbrained/pm-cli/sdk` returns a structural
+  result marker for commands that already wrote their output. The CLI emits no
+  second payload; the optional `result` remains available to hooks, telemetry,
+  and embedded hosts.
 - `api.hooks.beforeCommand(handler)`, `api.hooks.afterCommand(handler)`, `api.hooks.onWrite(handler)`, `api.hooks.onRead(handler)`, and `api.hooks.onIndex(handler)` add lifecycle hooks.
   `afterCommand` receives command outcome fields plus optional compact `affected` item entries for mutations, including `previous_status`, `status`, `changed_fields`, and partial `previous`/`current` item metadata snapshots.
   `onWrite` always includes `path`, `scope`, and `op`; item mutations also add optional `item_id`, `item_type`, `before`, `after`, and `changed_fields`.
@@ -322,6 +326,11 @@ pm schema show <Type>
 pm contracts --runtime-only --schema-only --json
 pm contracts --command <command> --flags-only --json
 ```
+
+List-valued inline flags and `registerFlags` entries share one ordered
+accumulator across their long and short aliases. For a variadic positional that
+must receive values such as `-h` or `--json`, put the end-of-options separator
+before the content: `pm <package-command> -- RETURN -h --json`.
 
 Detailed package-author runtime contracts live in
 [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md), including
