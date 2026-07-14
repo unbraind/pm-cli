@@ -5,6 +5,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/unbraind/pm-cli/badge)](https://www.codefactor.io/repository/github/unbraind/pm-cli)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/unbraind/pm-cli/badge)](https://scorecard.dev/viewer/?uri=github.com/unbraind/pm-cli)
 [![DeepScan grade](https://deepscan.io/api/teams/30234/projects/32092/branches/1043829/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=30234&pid=32092&bid=1043829)
+[![Scrutinizer quality](https://scrutinizer-ci.com/g/unbraind/pm-cli/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/unbraind/pm-cli/?branch=main)
 [![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/unbraind/pm-cli?utm_source=badge)
 [![npm version](https://img.shields.io/npm/v/%40unbrained%2Fpm-cli)](https://www.npmjs.com/package/%40unbrained%2Fpm-cli)
 [![Node >=22.18](https://img.shields.io/node/v/%40unbrained%2Fpm-cli)](https://nodejs.org)
