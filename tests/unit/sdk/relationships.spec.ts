@@ -12,9 +12,14 @@ describe("relationship kind registry", () => {
     const registry = createRelationshipKindRegistry();
     expect(registry.resolve("related-to")?.kind).toBe("related");
     expect(registry.resolve("depends_on")?.kind).toBe("blocked_by");
+    expect(registry.require("parent").hierarchyDirection).toBe("target_parent");
+    expect(registry.require("child").hierarchyDirection).toBe("source_parent");
     expect(registry.resolve(null)).toBeUndefined();
     expect(registry.list().map(({ kind }) => kind)).toEqual(
-      [...registry.list().map(({ kind }) => kind)].sort(),
+      registry
+        .list()
+        .map(({ kind }) => kind)
+        .sort(),
     );
     expect(isOrderingRelationshipKind("blocks", registry)).toBe(true);
     expect(isOrderingRelationshipKind("related", registry)).toBe(false);
@@ -87,12 +92,14 @@ describe("relationship kind registry", () => {
       }),
     ).toThrow("Invalid relationship alias");
     expect(
-      new RelationshipKindRegistry([]).register({
-        ...registry.require("owns"),
-        kind: "contains",
-        inverse: "Contained-By",
-        aliases: [],
-      }).require("contains").inverse,
+      new RelationshipKindRegistry([])
+        .register({
+          ...registry.require("owns"),
+          kind: "contains",
+          inverse: "Contained-By",
+          aliases: [],
+        })
+        .require("contains").inverse,
     ).toBe("contained_by");
     expect(() =>
       new RelationshipKindRegistry([]).register({
@@ -110,9 +117,39 @@ describe("relationship kind registry", () => {
       aliases: [],
       payloadSchema: cyclicSchema,
     });
-    expect(
-      cyclicRegistry.require("cycles").payloadSchema?.self,
-    ).toBe(cyclicRegistry.require("cycles").payloadSchema);
+    expect(cyclicRegistry.require("cycles").payloadSchema?.self).toBe(
+      cyclicRegistry.require("cycles").payloadSchema,
+    );
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "invalid_precedence",
+        ordering: true,
+        precedence: "sideways" as never,
+      }),
+    ).toThrow("Invalid relationship precedence");
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "associative_precedence",
+        precedence: "source_before_target",
+      }),
+    ).toThrow("Non-ordering relationship kind");
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "invalid_hierarchy_direction",
+        hierarchyDirection: "sideways" as never,
+      }),
+    ).toThrow("Invalid relationship hierarchy direction");
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "associative_hierarchy_direction",
+        hierarchy: false,
+        hierarchyDirection: "source_parent",
+      }),
+    ).toThrow("Non-hierarchy relationship kind");
   });
 });
 
@@ -130,6 +167,45 @@ describe("relationship graph", () => {
 
   it("deduplicates undirected edges and provides directional adjacency", () => {
     expect(graph.edges()).toHaveLength(4);
+    expect(graph.nodes()).toBe(graph.nodes());
+    expect(graph.incidentEdges("a")).toEqual([
+      { source: "a", target: "b", kind: "blocked_by" },
+      { source: "e", target: "a", kind: "related" },
+    ]);
+    expect(Object.isFrozen(graph.incidentEdges("a"))).toBe(true);
+    const oneWay = new RelationshipGraph(
+      ["source", "target"],
+      [{ source: "source", target: "target", kind: "blocked_by" }],
+    );
+    expect(oneWay.incidentEdges("source")).toHaveLength(1);
+    expect(oneWay.incidentEdges("target")).toHaveLength(1);
+    expect(
+      new RelationshipGraph(
+        ["a", "center", "z"],
+        [
+          { source: "center", target: "a", kind: "blocked_by" },
+          { source: "z", target: "center", kind: "blocked_by" },
+        ],
+      ).incidentEdges("center"),
+    ).toHaveLength(2);
+    const selfRegistry = createRelationshipKindRegistry().register({
+      kind: "self_link",
+      direction: "undirected",
+      ordering: false,
+      hierarchy: false,
+      outgoing: "many",
+      incoming: "many",
+      lifecycle: "persistent",
+      compatibilityVersion: 1,
+      allowSelf: true,
+    });
+    expect(
+      new RelationshipGraph(
+        ["self"],
+        [{ source: "self", target: "self", kind: "self_link" }],
+        selfRegistry,
+      ).incidentEdges("self"),
+    ).toHaveLength(1);
     expect(graph.adjacency("a", { kinds: ["related"] }).value).toEqual(["e"]);
     expect(
       graph.adjacency("b", {
@@ -143,6 +219,7 @@ describe("relationship graph", () => {
       nextCursor: "b",
     });
     expect(() => graph.adjacency("missing")).toThrow("node not found");
+    expect(() => graph.incidentEdges("missing")).toThrow("node not found");
     expect(() => graph.adjacency("a", { kinds: ["missing"] })).toThrow(
       "Unknown relationship kind",
     );
@@ -237,10 +314,9 @@ describe("relationship graph", () => {
     ).toThrow("endpoint not found");
     expect(
       () =>
-        new RelationshipGraph(
-          ["a"],
-          [{ source: "a", target: null, kind: "related" }] as never,
-        ),
+        new RelationshipGraph(["a"], [
+          { source: "a", target: null, kind: "related" },
+        ] as never),
     ).toThrow("endpoint not found");
   });
 

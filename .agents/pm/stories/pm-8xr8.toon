@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:graph",context-management,relationships,story,token-efficiency
 created_at: "2026-07-13T21:57:48.869Z"
-updated_at: "2026-07-13T22:05:14.210Z"
+updated_at: "2026-07-14T11:45:02.284Z"
 author: codex-root
 estimated_minutes: 90
 acceptance_criteria: "One request returns bounded ancestors, prerequisites, dependents, provenance, linked evidence, and the reason each node or edge was selected; Callers control direction, kind families, depth, node and edge limits, history window, token budget, fields, and cursor continuation; Default output is compact and counts-first; expanded and JSON or JSONL modes remain composable with grep, jq, and scripts; The response distinguishes complete, truncated, sampled, approximate, stale-index, and permission-redacted results; Public SDK, thin CLI, MCP action, and shell pipelines share one contract and deterministic ordering; Tests cover disconnected items, cycles in associative edges, missing endpoints, deep paths, concurrent mutations, and million-item bounded behavior"
@@ -24,6 +24,22 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-96h7,related,"2026-07-13T21:57:48.869Z",null,null
   pm-bwyw,related,"2026-07-13T21:57:48.869Z",null,null
   pm-4jqm,blocked_by,"2026-07-13T22:05:14.194Z",null,null
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-13T21:57:48.869Z",codex-root,"Duplicate check 2026-07-13: all-status review found context packing and deps visualization items but no single agent story joining bounded lineage,impact,blockers,and evidence traversal; it belongs under pm-96h7."
+  "2026-07-14T09:43:37.414Z",codex-gpt5,"Implementation start 2026-07-14: build one bounded graph-context SDK response joining lineage, prerequisites, dependents, impact, evidence reasons, cost/truncation metadata, and continuation on the shared graph kernel."
+  "2026-07-14T10:19:34.281Z",codex-gpt5,"Implementation evidence: added buildRelationshipContext for one-call bounded graph context with semantic reasons, root details/evidence, node/edge/depth/token budgets, exact inspected/omitted cost metadata, cancellation, and query-fingerprinted continuation cursors. Fresh installed-package proof returned design/release context around build through the public SDK. Remaining CLI/MCP adapters stay explicitly in this open story."
+  "2026-07-14T10:48:29.884Z",codex-gpt5,"PR #556 review round 1 evidence: bounded context now uses browser-safe TextEncoder byte sizing, charges root evidence exactly once, and explains custom hierarchy using registered endpoint orientation rather than labels. Direct ancestor/descendant and exact evidence token-cost regressions pass."
+  "2026-07-14T11:06:17.058Z",codex-gpt5,"PR #556 review round 2 evidence: direct semantic reasons consume one indexed root incident snapshot, TextEncoder is reused, promoted evidence is emitted once outside root and charged exactly once, and oversized root/evidence baselines fail closed before returning under-budget metadata."
+  "2026-07-14T11:19:55.052Z",codex-gpt5,"PR #556 review round 3 evidence: documented deliberate precedence and hierarchy-direction fallbacks at bounded-context call sites for compatibility with legacy and JSON-parsed definitions; focused SDK tests, lint, duplicate detection, CodeFactor rules, and typecheck pass."
+  "2026-07-14T11:44:57.939Z",codex-gpt5,"PR #556 review round 4 evidence: bounded context skips all remaining max-depth adjacency reads after truncation is established. Regression proof reduces the boundary fixture to two adjacency calls and three inspected edges while preserving exact truncation metadata; full coverage is 100/100/100/100."
+notes[1]{created_at,author,text}:
+  "2026-07-14T10:19:37.025Z",codex-gpt5,"Remaining canonical scope after this PR: thin CLI, shell, and MCP parity plus million-item latency acceptance; keep story open."
+learnings[1]{created_at,author,text}:
+  "2026-07-14T10:02:22.070Z",codex-gpt5,"A graph-context packet stays agent-efficient when semantic reasons, evidence pointers, exact cost, omitted counts, and continuation share one bounded envelope instead of requiring separate deps, get, history, and files calls."
+files[1]{path,scope,note}:
+  src/sdk/relationship-context.ts,project,bounded explainable graph-context packet with continuation
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/relationships.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/RELATIONSHIP_GRAPH.md,project,"public event,snapshot,analytics,and graph-context contracts"
 body: "## User story\n\nAs a coding or planning agent, I want one bounded and explainable relationship query for an item so that I can understand its purpose, execution order, downstream impact, and supporting evidence without guessing or loading unrelated history.\n\n## Token contract\n\nReturn the smallest useful summary first: item identity, state, immediate typed edges, critical path or blockers, evidence pointers, omitted counts, and a continuation token. Expand only on explicit demand or relevance thresholds.\n\n## Explainability contract\n\nEvery included node and edge carries a concise selection reason, source, age or freshness, and whether it is authoritative, inferred, approximate, or user-authored."

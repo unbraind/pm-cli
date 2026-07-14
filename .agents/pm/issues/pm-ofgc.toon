@@ -1,0 +1,28 @@
+id: pm-ofgc
+title: "GH-555: remove unnecessary spread in relationship registry ordering assertion"
+description: Resolve CodeFactor issue #555 in tests/unit/sdk/relationships.spec.ts by sorting the mapped fresh array directly while preserving the deterministic registry-order assertion.
+type: Issue
+status: closed
+priority: 3
+tags[2]: codefactor,gh-555
+created_at: "2026-07-14T10:14:47.488Z"
+updated_at: "2026-07-14T10:16:44.136Z"
+closed_at: "2026-07-14T10:15:54.957Z"
+author: codex-gpt5
+parent: pm-92if
+resolution: fixed
+expected_result: The deterministic relationship-kind ordering assertion should not allocate a redundant spread copy.
+actual_result: The mapped array is sorted directly; the focused 21-test suite and repo-wide ESLint pass.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-m2il,related,"2026-07-14T10:14:47.488Z",codex-gpt5,null
+comments[2]{created_at,author,text}:
+  "2026-07-14T10:14:47.488Z",codex-gpt5,"Duplicate check 2026-07-14: pm search 'GH-555 CodeFactor relationships.spec.ts spread' --status all and pm search 'issue 555 relationships.spec.ts' --status all found the existing CodeFactor epic pm-92if but no item for GitHub issue #555. Source: https://github.com/unbraind/pm-cli/issues/555"
+  "2026-07-14T10:15:54.155Z",codex-gpt5,"Evidence: removed the redundant array spread flagged by GitHub issue #555 while preserving the deterministic ordering assertion. The focused 21-test relationship SDK suite and repo-wide ESLint both pass."
+files[1]{path,scope,note}:
+  tests/unit/sdk/relationships.spec.ts,project,CodeFactor spread remediation and deterministic registry-order regression assertion
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/relationships.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/RELATIONSHIP_GRAPH.md,project,Relationship registry and analytics contract documented by the same PR
+close_reason: Resolved GH-555 with focused relationship tests and repo-wide ESLint passing; PR will close the linked GitHub issue.
+body: ""

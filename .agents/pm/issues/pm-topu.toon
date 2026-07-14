@@ -1,0 +1,17 @@
+id: pm-topu
+title: "GH-551: dependency seeds reject source_kind and rewrite cross-workspace IDs"
+description: Align the documented dependency seed contract with runtime behavior and make cross-workspace relationship IDs explicit and lossless instead of silently applying the local id_prefix.
+type: Issue
+status: open
+priority: 1
+tags[3]: data-integrity,gh-551,relationships
+created_at: "2026-07-14T10:18:53.997Z"
+updated_at: "2026-07-14T10:18:53.997Z"
+author: codex-gpt5
+acceptance_criteria: "The CLI either accepts and preserves documented source_kind for external dependencies or removes it with a safe replacement; external IDs are never silently rewritten; help, SDK contracts, validation, and integration tests agree."
+parent: pm-96h7
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ju83,related,"2026-07-14T10:18:53.997Z",codex-gpt5,null
+comments[1]{created_at,author,text}:
+  "2026-07-14T10:18:53.997Z",codex-gpt5,"Duplicate check 2026-07-14: pm search GH-551 --status all returned no item. This is related to the active relationship registry lineage pm-ju83 but is not implemented in the current in-memory graph primitive bundle. Source: https://github.com/unbraind/pm-cli/issues/551"
+body: ""
