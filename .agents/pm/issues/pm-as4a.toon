@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:output","area:sdk",gh-issue,regression
 created_at: "2026-07-14T17:31:50.115Z"
-updated_at: "2026-07-14T18:08:26.269Z"
+updated_at: "2026-07-14T18:22:18.763Z"
 closed_at: "2026-07-14T18:08:25.497Z"
 author: codex-root
 estimated_minutes: 240
@@ -31,7 +31,8 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/extension-host-contracts.integration.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrkyrr0a-1w5n67,test,passed,"2026-07-14T18:07:27.570Z","2026-07-14T18:07:38.362Z","2026-07-14T18:07:38.362Z",1,0,0
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,generated public fix record for real CLI renderer parity
   docs/SDK.md,project,renderer fallback and output ownership contract
 close_reason: "Pinned renderer override parity across SDK expectations, real CLI execution, and packed-package raw output."
 body: ""

@@ -16,6 +16,9 @@ describe("dynamic extension Commander options", () => {
         list: true,
       },
     ]);
+    const parseListValue = command.options[0]?.parseArg as
+      | ((value: string, previous: string | string[]) => string[])
+      | undefined;
     command.action((_, invoked: Command) => {
       options = invoked.opts<Record<string, unknown>>();
     });
@@ -31,6 +34,7 @@ describe("dynamic extension Commander options", () => {
       "--repos=delta",
     ]);
 
+    expect(parseListValue?.("alpha", "seed")).toEqual(["seed", "alpha"]);
     expect(options.repos).toEqual(["alpha", "beta,gamma", "delta"]);
   });
 });

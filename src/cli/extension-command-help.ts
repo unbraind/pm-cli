@@ -619,7 +619,10 @@ export function applyDynamicExtensionFlagOptions(
     }
     command.addOption(
       new Option(flags, description).argParser(
-        (value: string, previous: string[] = []) => [...previous, value],
+        (value: string, previous: string | string[] = []) => [
+          ...(Array.isArray(previous) ? previous : [previous]),
+          value,
+        ],
       ),
     );
   }

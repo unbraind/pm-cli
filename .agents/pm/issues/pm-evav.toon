@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-experience,extension-sdk,gh-550
 created_at: "2026-07-14T10:18:53.391Z"
-updated_at: "2026-07-14T18:08:20.992Z"
+updated_at: "2026-07-14T18:22:15.063Z"
 closed_at: "2026-07-14T18:08:20.229Z"
 author: codex-gpt5
 estimated_minutes: 180
@@ -35,7 +35,8 @@ tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/cli/extension-command-help.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrkyr0qr-dns363,test,passed,"2026-07-14T18:06:48.183Z","2026-07-14T18:07:04.323Z","2026-07-14T18:07:04.323Z",2,0,0
-docs[2]{path,scope,note}:
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,generated public fix record for ordered extension list flags
   docs/EXTENSIONS.md,project,package author runtime flag guidance
   docs/SDK.md,project,list flag and end-of-options authoring contracts
 close_reason: Implemented ordered dynamic list-flag accumulation and verified real CLI plus packed-package behavior at 100/100/100/100 coverage.

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-14T16:46:59.756Z"
-updated_at: "2026-07-14T18:08:24.490Z"
+updated_at: "2026-07-14T18:22:17.634Z"
 closed_at: "2026-07-14T18:08:23.561Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -30,7 +30,8 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/extension-host-contracts.integration.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrkyri8n-6v2tni,test,passed,"2026-07-14T18:07:17.263Z","2026-07-14T18:07:26.999Z","2026-07-14T18:07:26.999Z",1,0,0
-docs[2]{path,scope,note}:
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,generated public fix record for variadic end-of-options behavior
   docs/EXTENSIONS.md,project,package command passthrough guidance
   docs/SDK.md,project,dynamic command end-of-options contract
 close_reason: Documented and pinned real-boundary -- passthrough for variadic flag-like content with packed-package proof.

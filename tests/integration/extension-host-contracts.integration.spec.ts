@@ -132,7 +132,7 @@ describe("extension host contracts", () => {
         [
           "export default {",
           "  activate(api) {",
-          "    api.registerCommand({ name: 'host silent', run: () => ({ __pm_suppress_host_output: true }) });",
+          "    api.registerCommand({ name: 'host silent', run: () => ({ __pm_suppress_host_output: '@unbrained/pm-cli:suppress-host-output:v1' }) });",
           "  },",
           "};",
           "",
