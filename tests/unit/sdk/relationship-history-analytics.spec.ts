@@ -187,6 +187,53 @@ describe("relationship event history", () => {
       await rm(pmRoot, { recursive: true, force: true });
     }
   });
+  it("rejects a durable event path replaced by a symlink after open", async () => {
+    const pmRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-relationship-swap-"),
+    );
+    const outsideRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-relationship-outside-"),
+    );
+    try {
+      const store = await RelationshipEventStore.open({ pmRoot, nodes });
+      await store.append({
+        eventId: "evt-before-swap",
+        relationshipId: "rel-before-swap",
+        action: "add",
+        edge: { source: "build", target: "design", kind: "blocked_by" },
+        author: "agent-a",
+        timestamp: "2026-07-14T08:00:00.000Z",
+      });
+      const outsideFile = path.join(outsideRoot, "outside.jsonl");
+      await writeFile(outsideFile, "sentinel", "utf8");
+      await rm(store.path);
+      await symlink(outsideFile, store.path);
+
+      await expect(store.currentVersion()).rejects.toThrow(
+        "must not contain symbolic links",
+      );
+      await expect(store.snapshot()).rejects.toThrow(
+        "must not contain symbolic links",
+      );
+      await expect(store.page({ limit: 1 })).rejects.toThrow(
+        "must not contain symbolic links",
+      );
+      await expect(
+        store.append({
+          eventId: "evt-after-swap",
+          relationshipId: "rel-after-swap",
+          action: "add",
+          edge: { source: "test", target: "build", kind: "blocked_by" },
+          author: "agent-b",
+          timestamp: "2026-07-14T08:01:00.000Z",
+        }),
+      ).rejects.toThrow("must not contain symbolic links");
+      await expect(readFile(outsideFile, "utf8")).resolves.toBe("sentinel");
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+      await rm(outsideRoot, { recursive: true, force: true });
+    }
+  });
   it("appends attributable events and replays immutable snapshots", () => {
     const log = new RelationshipEventLog(nodes);
     const design = log.append({

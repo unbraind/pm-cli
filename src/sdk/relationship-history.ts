@@ -9,7 +9,8 @@ import {
   decodeQueryCursorState,
   paginateQueryRows,
 } from "./pagination.js";
-import { appendFile, lstat, mkdir, readFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import { lstat, mkdir, open, type FileHandle } from "node:fs/promises";
 import path from "node:path";
 import { acquireLock } from "../core/lock/lock.js";
 import {
@@ -422,6 +423,21 @@ export class RelationshipEventLog {
 }
 
 const RELATIONSHIP_STORE_LOCK_ID = "relationship-event-store";
+const RELATIONSHIP_NOFOLLOW_FLAG = constants.O_NOFOLLOW;
+
+function acquireRelationshipStoreLock(
+  pmRoot: string,
+): Promise<() => Promise<void>> {
+  return acquireLock(
+    pmRoot,
+    RELATIONSHIP_STORE_LOCK_ID,
+    30,
+    `relationship-store:${process.pid}`,
+    false,
+    false,
+    3_000,
+  );
+}
 
 async function resolveRelationshipEventStorePath(
   pmRoot: string,
@@ -471,11 +487,18 @@ async function loadRelationshipEventLog(
 ): Promise<RelationshipEventLog> {
   const log = new RelationshipEventLog(nodes, { registry });
   let raw: string;
+  let handle: FileHandle | undefined;
   try {
-    raw = await readFile(target, "utf8");
+    handle = await open(
+      target,
+      constants.O_RDONLY | RELATIONSHIP_NOFOLLOW_FLAG,
+    );
+    raw = await handle.readFile("utf8");
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return log;
     throw error;
+  } finally {
+    await handle?.close();
   }
   const lines = raw.split("\n");
   for (let index = 0; index < lines.length; index += 1) {
@@ -541,16 +564,9 @@ export class RelationshipEventStore {
       options.pmRoot,
       options.relativePath,
     );
-    const release = await acquireLock(
-      options.pmRoot,
-      RELATIONSHIP_STORE_LOCK_ID,
-      30,
-      `relationship-store:${process.pid}`,
-      false,
-      false,
-      3_000,
-    );
+    const release = await acquireRelationshipStoreLock(options.pmRoot);
     try {
+      await resolveRelationshipEventStorePath(options.pmRoot, target);
       const log = await loadRelationshipEventLog(
         target,
         nodes,
@@ -577,24 +593,32 @@ export class RelationshipEventStore {
   public async append(
     input: RelationshipEventInput,
   ): Promise<RelationshipEvent> {
-    const release = await acquireLock(
-      this.#pmRoot,
-      RELATIONSHIP_STORE_LOCK_ID,
-      30,
-      `relationship-store:${process.pid}`,
-      false,
-      false,
-      3_000,
-    );
+    const release = await acquireRelationshipStoreLock(this.#pmRoot);
     try {
-      const refreshed = await loadRelationshipEventLog(
+      const target = await resolveRelationshipEventStorePath(
+        this.#pmRoot,
         this.#path,
+      );
+      const refreshed = await loadRelationshipEventLog(
+        target,
         this.#nodes,
         this.#registry,
       );
       const event = refreshed.append(input);
-      await mkdir(path.dirname(this.#path), { recursive: true });
-      await appendFile(this.#path, `${JSON.stringify(event)}\n`, "utf8");
+      await mkdir(path.dirname(target), { recursive: true });
+      await resolveRelationshipEventStorePath(this.#pmRoot, target);
+      const handle = await open(
+        target,
+        constants.O_APPEND |
+          constants.O_CREAT |
+          constants.O_WRONLY |
+          RELATIONSHIP_NOFOLLOW_FLAG,
+      );
+      try {
+        await handle.appendFile(`${JSON.stringify(event)}\n`, "utf8");
+      } finally {
+        await handle.close();
+      }
       this.#log = refreshed;
       return event;
     } finally {
@@ -620,18 +644,14 @@ export class RelationshipEventStore {
 
   /** Serialize a durable refresh with writers so readers never observe a torn JSONL tail. */
   async #refreshFromDurableHistory(): Promise<RelationshipEventLog> {
-    const release = await acquireLock(
-      this.#pmRoot,
-      RELATIONSHIP_STORE_LOCK_ID,
-      30,
-      `relationship-store:${process.pid}`,
-      false,
-      false,
-      3_000,
-    );
+    const release = await acquireRelationshipStoreLock(this.#pmRoot);
     try {
-      return await loadRelationshipEventLog(
+      const target = await resolveRelationshipEventStorePath(
+        this.#pmRoot,
         this.#path,
+      );
+      return await loadRelationshipEventLog(
+        target,
         this.#nodes,
         this.#registry,
       );
