@@ -6,8 +6,8 @@ status: closed
 priority: 2
 tags[7]: "area:graph","area:query",bug,children,plan,projection,sdk-parity
 created_at: "2026-07-13T22:07:55.014Z"
-updated_at: "2026-07-14T00:29:18.364Z"
-closed_at: "2026-07-14T00:29:17.632Z"
+updated_at: "2026-07-14T01:01:53.432Z"
+closed_at: "2026-07-14T01:01:52.545Z"
 author: codex-root
 estimated_minutes: 180
 acceptance_criteria: "A focused sandbox test reproduces Plan parent children and fails before the fix; Public SDK get/read primitives compute children consistently for Plan, Epic, Milestone, Feature, and custom parent-capable types rather than hard-coding container types; CLI human, JSON, TOON, MCP, and SDK projections report the same total and active child counts with deterministic bounded samples and explicit truncation metadata; pm list --parent and pm get --full parity is covered for open, closed, canceled, custom-type, missing-parent, and large child sets; The fix does not require a full tracker scan when the derived parent index is available and remains bounded at one million items"
@@ -18,9 +18,9 @@ reporter: codex-root
 severity: medium
 environment: pm-cli 2026.7.13 on main 5194806d; Node v26.4.0; Linux; real repository tracker
 repro_steps: "1. Create or select a Plan with items whose parent field is the Plan ID. 2. Run pm get <plan-id> --full --json and inspect .children. 3. Run pm list --status all --parent <plan-id> --no-truncate --json. Reproduced with pm-a8zm: get returned children:null while list returned pm-p9a4, pm-qnl2, and pm-lnrk."
-resolution: "Replaced container-type special casing with a public bounded child projection for every parent-capable type, including deterministic samples and continuation metadata."
+resolution: Added a public bounded type-agnostic child projection; CLI auto-projects container-oriented built-ins and custom types while built-in leaf reads require explicit children projection and avoid corpus scans.
 expected_result: "Full get and its public SDK contract expose a deterministic bounded child summary for every valid parent item type, including Plan, with total and active counts plus truncation or continuation metadata; CLI human and JSON projections agree with list --parent."
-actual_result: "pm get pm-a8zm --full --json returns children:null; pm list --status all --parent pm-a8zm --no-truncate --json returns count:3 with all three live children."
+actual_result: "Plan, Epic, Milestone, Feature, and custom container reads expose deterministic bounded child summaries; a normal Task read does not invoke listAllItemMetadataLight, while --fields id,children remains available for any type."
 component: get query projection and SDK read primitives
 regression: false
 customer_impact: Agents using get as the canonical context call cannot discover executable tasks nested below a Plan and may incorrectly infer the plan has no children.
@@ -29,11 +29,13 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-je50,related,"2026-07-13T22:07:55.014Z",null,null
   pm-ju83,related,"2026-07-13T22:07:55.014Z",null,null
   pm-rjqr,related,"2026-07-13T22:07:55.014Z",null,null
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-13T22:07:55.014Z",codex-root,"Duplicate check 2026-07-13: exhaustive all-status searches for get full Plan children,list parent mismatch,and child count found historical Plan and parent-filter work but no issue tracking this projection inconsistency; live reproduction is attached."
   "2026-07-13T22:45:36.051Z",codex-root,"Implementation evidence: get children are now type-agnostic and derived from the light indexed metadata path, with status totals, active count, deterministic id-sorted sample, sample_limit, truncation, next_offset, continuation command, and explicit one-million-row safety bound. Empty leaf rollups stay omitted unless explicitly requested for token efficiency."
   "2026-07-14T00:09:46.665Z",codex-gpt5,"Implementation evidence: rich get now uses a public type-agnostic child projection with summaries, bounded samples, continuation metadata, custom-type support, and a one-million-row safety ceiling. Plan and custom-parent regressions pass; exact-tree strict gates and 5656-test 100/100/100/100 coverage pass."
   "2026-07-14T00:29:10.605Z",codex-root,"Final verification: pm linked tests pass 44 focused executions across the child/history matrix with sandbox context parity; packed PmClient get reports children.count=1; full coverage 5656/5656 at 100/100/100/100."
+  "2026-07-14T00:45:21.351Z",codex-root,Greptile review e72e80d9-93c1-4a1b-93cb-0f4799552240 found standard/deep get invokes the child corpus scan for leaf item types. Reopened to preserve type-agnostic parent support without adding O(n) work to ordinary leaf reads.
+  "2026-07-14T01:01:50.089Z",codex-root,"Review-fix evidence: normal built-in leaf reads now bypass the workspace corpus loader; an explicit children field still projects any item type, while Plan and other container-oriented built-ins plus custom types retain automatic summaries. Direct loader-spy regression, empty Plan, bounded SDK projection, and all linked tests pass; full coverage is 5656/5656 at 100/100/100/100."
 files[4]{path,scope,note}:
   src/cli/commands/get.ts,project,shared get child projection
   src/sdk/item-children.ts,project,type-agnostic bounded child graph primitive
@@ -47,10 +49,11 @@ tests[2]:
     scope: project
     timeout_seconds: 240
     note: "child summary,samples,continuation,custom type,and bound coverage"
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrjwwwh0-e2ixbu,test,passed,"2026-07-14T00:27:31.734Z","2026-07-14T00:27:53.316Z","2026-07-14T00:27:53.316Z",2,0,0
+  test-local-mrjy3wpm-fy5qu7,test,passed,"2026-07-14T01:00:58.974Z","2026-07-14T01:01:19.835Z","2026-07-14T01:01:19.835Z",2,0,0
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,type-agnostic get children contract
   docs/SDK.md,project,child graph primitive reference
-close_reason: "Type-agnostic bounded child projection passes Plan/custom/large-set linked tests, packed SDK acceptance, and full coverage."
+close_reason: "Completed rich bounded child projection with Plan/custom container support and constant-cost normal built-in leaf reads; focused, linked, full-coverage, static-quality, and packed acceptance evidence is recorded."
 body: "## Live reproduction\n\npm get pm-a8zm --full --json | jq '{children}'\n=> {children: null}\n\npm list --status all --parent pm-a8zm --no-truncate --json | jq '{count,items:[.items[].id]}'\n=> count 3; pm-p9a4, pm-qnl2, pm-lnrk.\n\nThe three task records each persist parent: pm-a8zm and validation reports no dangling or parent-cycle issue.\n\n## Design expectation\n\nChild discovery is a graph-read primitive, not an Epic-only presentation convenience. The SDK should expose a bounded total, active count, status breakdown, deterministic sample, and continuation link or cursor for any parent-capable item. CLI, MCP, and packages should adapt that same result.\n\n## Safety\n\nTests must use sandboxed PM_PATH and PM_GLOBAL_PATH and cover both indexed and indexless fallback behavior."

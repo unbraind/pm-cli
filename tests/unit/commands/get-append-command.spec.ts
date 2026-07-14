@@ -4,11 +4,12 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runAppend } from "../../../src/cli/commands/append.js";
-import { runGet } from "../../../src/cli/commands/get.js";
+import { _testOnlyGetCommand, runGet } from "../../../src/cli/commands/get.js";
 import { runHistoryCompact } from "../../../src/cli/commands/history-compact.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { locateItem } from "../../../src/core/store/item-store.js";
+import * as itemStoreModule from "../../../src/core/store/item-store.js";
 import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
@@ -403,8 +404,18 @@ describe("runGet and runAppend", () => {
       const brief = await runGet(epicId, { path: context.pmPath }, { depth: "brief" });
       expect(brief.children).toBeUndefined();
 
+      const emptyPlanId = createTask(context, {
+        title: "get-children-rollup-empty-plan",
+        body: "empty plan body",
+        type: "Plan",
+      });
+      const emptyPlan = await runGet(emptyPlanId, { path: context.pmPath });
+      expect(emptyPlan.children).toBeUndefined();
+
+      const listAllSpy = vi.spyOn(itemStoreModule, "listAllItemMetadataLight");
       const leaf = await runGet(openChildId, { path: context.pmPath });
       expect(leaf.children).toBeUndefined();
+      expect(listAllSpy).not.toHaveBeenCalled();
 
       const projectedLeaf = await runGet(openChildId, { path: context.pmPath }, { fields: "id,children" });
       expect(projectedLeaf.item).toEqual({ id: openChildId });
@@ -414,6 +425,11 @@ describe("runGet and runAppend", () => {
         by_status: {},
         sample: [],
       });
+      expect(listAllSpy).toHaveBeenCalledOnce();
+      expect(_testOnlyGetCommand.shouldAutoIncludeGetChildren("Plan")).toBe(true);
+      expect(_testOnlyGetCommand.shouldAutoIncludeGetChildren("Task")).toBe(false);
+      expect(_testOnlyGetCommand.shouldAutoIncludeGetChildren("CustomContainer")).toBe(true);
+      expect(_testOnlyGetCommand.shouldAutoIncludeGetChildren(" ")).toBe(false);
     });
   });
 

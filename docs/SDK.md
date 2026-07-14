@@ -186,7 +186,10 @@ import { PmClient, getItemAt } from "@unbrained/pm-cli/sdk";
 const pm = new PmClient({ pmRoot, author: "records-agent" });
 
 // Normal get projection, reconstructed at a one-based version.
-const historical = await pm.get(itemId, { at: "7", fields: "id,title,status,body" });
+const historical = await pm.get(itemId, {
+  at: "7",
+  fields: "id,title,status,body",
+});
 // historical.reconstructed === true
 // historical.as_of_version === 7
 
@@ -217,6 +220,11 @@ It returns the canonical `ItemDocument` plus `reconstructed`,
 stream length. Invalid and future targets throw `PmCliError` with a structured
 `context.valid_range`.
 
+The shared resolver accepts explicit caller policy: immutable reads reject
+timestamps after the final recorded entry, while restore preserves
+latest-entry-at-or-before semantics so a current wall-clock timestamp restores
+the latest available state. Restore also retains command-specific diagnostics.
+
 Generic reads also expose two composable SDK facets:
 
 - `buildItemSchedule` normalizes deadlines, reminders, and events into a stable
@@ -229,6 +237,10 @@ Generic reads also expose two composable SDK facets:
   truncation/continuation metadata. The primitive caps input at
   `MAX_CHILD_PROJECTION_ITEMS` (one million) and never guesses which schema
   types are containers.
+
+The CLI automatically computes that workspace projection for container-oriented
+built-ins and custom types. Built-in leaf reads stay constant-cost unless the
+caller explicitly projects `children`; SDK consumers remain fully type-agnostic.
 
 ### Linked resources and dependency governance
 

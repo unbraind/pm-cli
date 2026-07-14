@@ -15,12 +15,12 @@
 
 ### Fixed
 
+- pm get --full omits children for Plan parents while pm list --parent returns them ([pm-y4z5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4z5.toon))
 - Intentional package CommandError outcomes create high-severity Sentry issues (PM-CLI-16) ([pm-7071](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7071.toon))
 - Extension install self-copy guard: reject source-inside-destination layouts before fs.cp EINVAL (PM-CLI-28) ([pm-8myl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8myl.toon))
 - Sentry captures deliberate Ctrl+C interrupts as error-level events (AbortError, PM-CLI-27) ([pm-ksv2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ksv2.toon))
 - Torn-install bundle transients block scheduled releases: boot-time chunk-integrity self-check + distinct error code for gate classification ([pm-wfvq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wfvq.toon))
 - GH-446: pm get omits schedule facet (events/start_at/end_at/location) for Meeting/Event/Reminder ([pm-x1g5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x1g5.toon))
-- pm get --full omits children for Plan parents while pm list --parent returns them ([pm-y4z5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4z5.toon))
 - GH-533: create/update accept empty --title — required-title contract inconsistent between omitted and empty string ([pm-7je0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7je0.toon))
 - GH-535: pm deps omits dangling parent references (missing_count:0, missing:false) contradicting validate's dangling_reference_count ([pm-p9sc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p9sc.toon))
 - GH-542: MCP pm_copy nests title/message under options while sibling tools declare flat camelCase params — own suite triggers unexpected-arg warnings ([pm-hno5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hno5.toon))

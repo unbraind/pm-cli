@@ -25,7 +25,7 @@ import {
   extractPatchFailureContext,
   readHistoryEntries,
   replayHistoryToTarget as replayToTarget,
-  resolveHistoryTarget as ensureReplayTarget,
+  resolveHistoryTarget,
 } from "../../sdk/history-read.js";
 import { enforceHistoryStreamPolicyForItem } from "../../core/history/history-stream-policy.js";
 import { normalizeItemId, normalizeRawItemId } from "../../core/item/id.js";
@@ -99,6 +99,14 @@ export interface RestoreResult {
   changed_fields: string[];
   /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+}
+
+/** Resolve restore targets with the command's established wording and at-or-before timestamp semantics. */
+function ensureReplayTarget(target: string, history: readonly HistoryEntry[]) {
+  return resolveHistoryTarget(target, history, {
+    errorSubject: "restore",
+    allowFutureTimestamp: true,
+  });
 }
 
 function replayCurrentDocument(history: HistoryEntry[]): ItemDocument {

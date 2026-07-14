@@ -14,6 +14,7 @@ import {
 import {
   EXIT_CODE,
   ITEM_METADATA_KEY_ORDER,
+  TYPE_TO_FOLDER,
 } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -39,10 +40,7 @@ import {
   buildItemSchedule,
   type ItemScheduleContext,
 } from "../../sdk/item-schedule.js";
-import {
-  getItemAt,
-  type GetItemAtResult,
-} from "../../sdk/history-read.js";
+import { getItemAt, type GetItemAtResult } from "../../sdk/history-read.js";
 import { parseIntegerLimit } from "../shared-parsers.js";
 import type {
   ItemMetadata,
@@ -109,7 +107,27 @@ export interface GetResult {
 
 const GET_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
 
+const AUTOMATIC_CHILD_ROLLUP_TYPES = new Set([
+  "epic",
+  "feature",
+  "milestone",
+  "plan",
+]);
+const BUILTIN_ITEM_TYPES = new Set(
+  Object.keys(TYPE_TO_FOLDER).map((type) => type.toLowerCase()),
+);
+
 type GetDepth = (typeof GET_DEPTH_VALUES)[number];
+
+/** Decide whether a normal read should pay for a workspace-wide child projection. */
+function shouldAutoIncludeGetChildren(itemType: string): boolean {
+  const normalizedType = itemType.trim().toLowerCase();
+  return (
+    normalizedType.length > 0 &&
+    (AUTOMATIC_CHILD_ROLLUP_TYPES.has(normalizedType) ||
+      !BUILTIN_ITEM_TYPES.has(normalizedType))
+  );
+}
 
 /** Documents the get options payload exchanged by command, SDK, and package integrations. */
 export interface GetOptions {
@@ -431,7 +449,7 @@ function shouldIncludeGetField(params: {
   fieldProjection: boolean;
   depth: GetDepth;
   fields: string[] | null;
-  field: "body" | "linked" | "claim_state" | "children";
+  field: "body" | "linked" | "claim_state";
 }): boolean {
   const { fieldProjection, depth, fields, field } = params;
   if (fieldProjection) {
@@ -583,10 +601,10 @@ export async function runGet(
   });
   const includeChildren =
     context.historical === undefined &&
-    shouldIncludeGetField({
-    ...projection,
-    field: "children",
-  });
+    (projection.fieldProjection
+      ? fieldsIncludeRoot(projection.fields as string[], "children")
+      : projection.depth !== "brief" &&
+        shouldAutoIncludeGetChildren(context.metadata.type));
   const includeSchedule = projection.fieldProjection
     ? fieldsIncludeRoot(projection.fields as string[], "schedule")
     : projection.depth !== "brief";
@@ -634,3 +652,8 @@ export async function runGet(
   }
   return result;
 }
+
+/** Public contract for test-only get command policy helpers. */
+export const _testOnlyGetCommand = {
+  shouldAutoIncludeGetChildren,
+};

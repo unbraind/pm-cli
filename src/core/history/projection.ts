@@ -25,12 +25,68 @@ export interface ResolvedHistoryTarget {
   historyIndex: number;
 }
 
+/** Controls caller-specific target diagnostics and future timestamp policy. */
+export interface ResolveHistoryTargetOptions {
+  /** Command concept named in agent-facing validation errors. */
+  errorSubject?: "history" | "restore";
+  /** Allow a timestamp after the final entry to select that final entry. */
+  allowFutureTimestamp?: boolean;
+}
+
 interface PatchFailureContext {
   patchIndex?: number;
   op?: string;
   path?: string;
   from?: string;
   reason?: string;
+}
+
+/** Find the final history entry recorded at or before a parsed timestamp. */
+function findHistoryIndexAtTimestamp(
+  history: readonly HistoryEntry[],
+  parsedTarget: number,
+): number {
+  let historyIndex = -1;
+  history.forEach((entry, index) => {
+    const entryTimestamp = Date.parse(entry.ts);
+    if (!Number.isFinite(entryTimestamp)) {
+      throw new PmCliError(
+        `History for this item contains invalid timestamp at entry ${index + 1}.`,
+        EXIT_CODE.GENERIC_FAILURE,
+      );
+    }
+    if (entryTimestamp <= parsedTarget) {
+      historyIndex = index;
+    }
+  });
+  return historyIndex;
+}
+
+/** Build structured target-range guidance once for every resolver error path. */
+function buildHistoryTargetGuidance(history: readonly HistoryEntry[]) {
+  const firstTimestamp = history[0]?.ts ?? null;
+  const lastTimestamp = history.at(-1)?.ts ?? null;
+  const guidance = {
+    code: "history_target_out_of_range",
+    required: "Choose a target within the available item history.",
+    why: "Point-in-time reads and restores can only reconstruct recorded versions.",
+    examples: [] as string[],
+    nextSteps: [
+      "Run pm history <id> to inspect available versions and timestamps.",
+    ],
+    valid_range: {
+      first_version: null as number | null,
+      last_version: null as number | null,
+      first_timestamp: firstTimestamp,
+      last_timestamp: lastTimestamp,
+    },
+  };
+  if (lastTimestamp !== null) {
+    guidance.examples = ["1", String(history.length), lastTimestamp];
+    guidance.valid_range.first_version = 1;
+    guidance.valid_range.last_version = history.length;
+  }
+  return { guidance, lastTimestamp };
 }
 
 /** Extract best-effort JSON Patch position details for replay diagnostics. */
@@ -83,33 +139,15 @@ export function extractPatchFailureContext(
 export function resolveHistoryTarget(
   target: string,
   history: readonly HistoryEntry[],
+  options: ResolveHistoryTargetOptions = {},
 ): ResolvedHistoryTarget {
   const trimmed = target.trim();
-  const firstTimestamp = history[0]?.ts ?? null;
-  const lastTimestamp = history.at(-1)?.ts ?? null;
-  const guidance = {
-    code: "history_target_out_of_range",
-    required: "Choose a target within the available item history.",
-    why: "Point-in-time reads and restores can only reconstruct recorded versions.",
-    examples: [] as string[],
-    nextSteps: [
-      "Run pm history <id> to inspect available versions and timestamps.",
-    ],
-    valid_range: {
-      first_version: null as number | null,
-      last_version: null as number | null,
-      first_timestamp: firstTimestamp,
-      last_timestamp: lastTimestamp,
-    },
-  };
-  if (lastTimestamp !== null) {
-    guidance.examples = ["1", String(history.length), lastTimestamp];
-    guidance.valid_range.first_version = 1;
-    guidance.valid_range.last_version = history.length;
-  }
+  const errorSubject = options.errorSubject ?? "history";
+  const errorSubjectTitle = errorSubject === "restore" ? "Restore" : "History";
+  const { guidance, lastTimestamp } = buildHistoryTargetGuidance(history);
   if (!trimmed) {
     throw new PmCliError(
-      "Missing history target. Use a timestamp or version number.",
+      `Missing ${errorSubject} target. Use a timestamp or version number.`,
       EXIT_CODE.USAGE,
       guidance,
     );
@@ -122,7 +160,7 @@ export function resolveHistoryTarget(
       version > history.length
     ) {
       throw new PmCliError(
-        `History version must be between 1 and ${history.length} for this item.`,
+        `${errorSubjectTitle} version must be between 1 and ${history.length} for this item.`,
         EXIT_CODE.USAGE,
         guidance,
       );
@@ -132,29 +170,21 @@ export function resolveHistoryTarget(
   const parsedTarget = Date.parse(trimmed);
   if (!Number.isFinite(parsedTarget)) {
     throw new PmCliError(
-      `Invalid history target "${target}". Use a positive version number or ISO timestamp.`,
+      `Invalid ${errorSubject} target "${target}". Use a positive version number or ISO timestamp.`,
       EXIT_CODE.USAGE,
       guidance,
     );
   }
-  const timestamps = history.map((entry, index) => {
-    const entryTimestamp = Date.parse(entry.ts);
-    if (!Number.isFinite(entryTimestamp)) {
-      throw new PmCliError(
-        `History for this item contains invalid timestamp at entry ${index + 1}.`,
-        EXIT_CODE.GENERIC_FAILURE,
-      );
-    }
-    return entryTimestamp;
-  });
-  const historyIndex = timestamps.reduce(
-    (resolvedIndex, entryTimestamp, index) =>
-      entryTimestamp <= parsedTarget ? index : resolvedIndex,
-    -1,
-  );
-  if (historyIndex < 0 || parsedTarget > Date.parse(lastTimestamp as string)) {
+  const historyIndex = findHistoryIndexAtTimestamp(history, parsedTarget);
+  if (
+    historyIndex < 0 ||
+    (options.allowFutureTimestamp !== true &&
+      parsedTarget > Date.parse(lastTimestamp as string))
+  ) {
     throw new PmCliError(
-      `No history entry exists at timestamp ${trimmed}.`,
+      errorSubject === "restore"
+        ? `No history entries exist at or before timestamp ${trimmed}.`
+        : `No history entry exists at timestamp ${trimmed}.`,
       EXIT_CODE.USAGE,
       guidance,
     );
