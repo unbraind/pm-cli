@@ -562,6 +562,14 @@ describe("runGet and runAppend", () => {
       await expect(
         runGet(id, { path: context.pmPath }, { at: "1", tree: true }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runGet(id, { path: context.pmPath }, { at: "1", fields: "id,children" }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining(
+          "Get --at cannot project children",
+        ),
+      });
 
       await runHistoryCompact(id, { author: "test-author" }, { path: context.pmPath });
       const checkpoint = await runGet(id, { path: context.pmPath }, { at: "1" });

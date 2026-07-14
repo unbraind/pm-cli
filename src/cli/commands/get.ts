@@ -439,11 +439,18 @@ async function loadGetItemContext(
 function validateGetProjectionFields(
   fields: string[] | null,
   settings: Awaited<ReturnType<typeof readSettings>>,
+  historical: boolean,
 ): void {
   const runtimeMetadataKeys = resolveRuntimeFieldRegistry(
     settings.schema,
   ).definitions.map((field) => field.metadata_key);
   validateGetFields(fields, runtimeMetadataKeys);
+  if (historical && fieldsIncludeRoot(fields ?? [], "children")) {
+    throw new PmCliError(
+      "Get --at cannot project children because workspace-level historical relationships are not yet indexed.",
+      EXIT_CODE.USAGE,
+    );
+  }
 }
 
 function shouldIncludeGetField(params: {
@@ -592,7 +599,11 @@ export async function runGet(
 ): Promise<GetResult> {
   const projection = resolveGetProjection(options);
   const context = await loadGetItemContext(id, global, options.at);
-  validateGetProjectionFields(projection.fields, context.settings);
+  validateGetProjectionFields(
+    projection.fields,
+    context.settings,
+    context.historical !== undefined,
+  );
   const includeBody = shouldIncludeGetField({ ...projection, field: "body" });
   const includeLinked = shouldIncludeGetField({
     ...projection,
