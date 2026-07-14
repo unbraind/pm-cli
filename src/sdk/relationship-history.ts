@@ -421,7 +421,7 @@ function resolveRelationshipEventStorePath(
   const relative = path.relative(root, target);
   if (relative.length === 0)
     throw new TypeError("Relationship event path must name a file within the tracker root");
-  if (relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative))
+  if (relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative))
     throw new TypeError("Relationship event path must stay within the tracker root");
   return target;
 }
@@ -523,13 +523,15 @@ export class RelationshipEventStore {
     }
   }
 
-  /** Materialize an exact validated snapshot from the current local view. */
-  public snapshot(options: Parameters<RelationshipEventLog["snapshot"]>[0] = {}): RelationshipSnapshot {
+  /** Refresh from durable history and materialize an exact validated snapshot. */
+  public async snapshot(options: Parameters<RelationshipEventLog["snapshot"]>[0] = {}): Promise<RelationshipSnapshot> {
+    this.#log = await loadRelationshipEventLog(this.#path, this.#nodes, this.#registry);
     return this.#log.snapshot(options);
   }
 
-  /** Page immutable events from the current local view. */
-  public page(options: Parameters<RelationshipEventLog["page"]>[0]): RelationshipEventPage {
+  /** Refresh from durable history and page immutable events. */
+  public async page(options: Parameters<RelationshipEventLog["page"]>[0]): Promise<RelationshipEventPage> {
+    this.#log = await loadRelationshipEventLog(this.#path, this.#nodes, this.#registry);
     return this.#log.page(options);
   }
 }

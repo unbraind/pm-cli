@@ -29,10 +29,12 @@ describe("relationship event history", () => {
       ]);
 
       await second.append({ eventId: "evt-store-3", relationshipId: "rel-store-1", action: "remove", author: "agent-b", timestamp: "2026-07-14T08:02:00.000Z" });
+      expect((await first.snapshot()).version).toBe(3);
+      expect((await first.page({ limit: 1 })).version).toBe(3);
       const reopened = await RelationshipEventStore.open({ pmRoot, nodes });
       expect(reopened.version).toBe(3);
-      expect(reopened.snapshot().edges).toHaveLength(1);
-      expect(reopened.page({ limit: 1 })).toMatchObject({ version: 3, hasMore: true });
+      expect((await reopened.snapshot()).edges).toHaveLength(1);
+      expect(await reopened.page({ limit: 1 })).toMatchObject({ version: 3, hasMore: true });
       const raw = await readFile(reopened.path, "utf8");
       expect(raw.trim().split("\n")).toHaveLength(3);
 
@@ -43,6 +45,7 @@ describe("relationship event history", () => {
       await mkdir(path.join(pmRoot, "unreadable"));
       await expect(RelationshipEventStore.open({ pmRoot, nodes, relativePath: "unreadable" })).rejects.toThrow();
       await expect(RelationshipEventStore.open({ pmRoot, nodes, relativePath: "." })).rejects.toThrow("must name a file");
+      await expect(RelationshipEventStore.open({ pmRoot, nodes, relativePath: ".." })).rejects.toThrow("must stay within");
       await expect(RelationshipEventStore.open({ pmRoot, nodes, relativePath: "../escape.jsonl" })).rejects.toThrow("must stay within");
       await expect(RelationshipEventStore.open({ pmRoot, nodes, relativePath: path.resolve(pmRoot, "../absolute.jsonl") })).rejects.toThrow("must stay within");
     } finally {

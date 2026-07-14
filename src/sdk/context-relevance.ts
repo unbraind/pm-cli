@@ -11,7 +11,7 @@ import {
   normalizeStatusInput,
 } from "../core/item/status.js";
 import type { RuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
-import { compareTimestampStrings } from "../core/shared/time.js";
+import { compareTimestampStrings, resolveIsoOrRelative } from "../core/shared/time.js";
 import type { ItemMetadata } from "../types/index.js";
 
 /** Canonical signal keys understood by the built-in relevance model. */
@@ -91,9 +91,17 @@ export function buildItemContextRelevanceCandidates(
   items: readonly ItemMetadata[],
   options: BuildItemContextRelevanceCandidatesOptions,
 ): ContextRelevanceCandidate<ItemMetadata>[] {
+  const sortableTimestamp = (value: unknown): string => {
+    if (typeof value !== "string") return "";
+    try {
+      return resolveIsoOrRelative(value, new Date(Number.NaN), "updated_at");
+    } catch {
+      return "";
+    }
+  };
   const recencyOrder = [...items].sort((left, right) => {
-    const leftTime = Number.isFinite(Date.parse(left.updated_at)) ? new Date(left.updated_at).toISOString() : "";
-    const rightTime = Number.isFinite(Date.parse(right.updated_at)) ? new Date(right.updated_at).toISOString() : "";
+    const leftTime = sortableTimestamp(left.updated_at);
+    const rightTime = sortableTimestamp(right.updated_at);
     return compareTimestampStrings(rightTime, leftTime) || left.id.localeCompare(right.id);
   });
   const recencyRank = new Map(recencyOrder.map((item, index) => [item.id, index]));

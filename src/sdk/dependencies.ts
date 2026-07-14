@@ -542,10 +542,27 @@ export function buildDepsRelationshipContext(
   const nodeLimit = parsePositiveInteger(options.nodeLimit, "node-limit");
   const edgeLimit = parsePositiveInteger(options.edgeLimit, "edge-limit");
   const tokenBudget = parsePositiveInteger(options.tokenBudget, "token-budget");
+  const canonicalIds = new Map(items.map((item) => [item.id.trim().toLowerCase(), item.id.trim()]));
+  const dangling = collectDanglingDependencyReferences(items);
+  const missingIds = [...new Set(
+    [...dangling.active, ...dangling.legacy_terminal].map(({ target_id }) => target_id.trim()),
+  )].sort((left, right) => left.localeCompare(right));
+  const graphItems = items.map((item) => ({
+    id: item.id,
+    ...(item.parent ? { parent: canonicalIds.get(item.parent.trim().toLowerCase()) ?? item.parent.trim() } : {}),
+    ...(item.blocked_by ? { blocked_by: canonicalIds.get(item.blocked_by.trim().toLowerCase()) ?? item.blocked_by.trim() } : {}),
+    dependencies: (item.dependencies ?? []).map((dependency) => ({
+      ...dependency,
+      id: canonicalIds.get(dependency.id.trim().toLowerCase()) ?? dependency.id.trim(),
+    })),
+  }));
   return buildRelationshipContext(
-    RelationshipGraph.fromItems(items),
+    RelationshipGraph.fromItems([...graphItems, ...missingIds.map((id) => ({ id }))]),
     rootId,
-    items.map((item) => ({ id: item.id, title: item.title, status: item.status })),
+    [
+      ...items.map((item) => ({ id: item.id, title: item.title, status: item.status })),
+      ...missingIds.map((id) => ({ id, title: `[missing] ${id}`, status: "missing" })),
+    ],
     {
       ...(maxDepth === undefined ? {} : { maxDepth }),
       ...(nodeLimit === undefined ? {} : { nodeLimit }),
@@ -619,7 +636,9 @@ export async function runDeps(
       format,
       node_count: context.nodes.length + 1,
       edge_count: context.edges.length,
-      missing_count: 0,
+      missing_count: new Set(
+        [...dangling.active, ...dangling.legacy_terminal].map(({ target_id }) => target_id.trim().toLowerCase()),
+      ).size,
       ...(summaryOnly ? {} : { context }),
     };
   }

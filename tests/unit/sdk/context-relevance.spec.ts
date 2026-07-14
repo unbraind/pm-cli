@@ -73,6 +73,22 @@ describe("context relevance SDK primitives", () => {
     expect(candidates.find(({ id }) => id === "pm-a")?.signals?.recency).toBe(1);
   });
 
+  it("preserves compact timestamp recency and rejects non-string runtime values", () => {
+    const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const items = [
+      { id: "pm-new", title: "new", description: "new", type: "Task", status: "open", priority: 2, created_at: "20260714", updated_at: "20260714" },
+      { id: "pm-old", title: "old", description: "old", type: "Task", status: "open", priority: 2, created_at: "20260713", updated_at: "20260713" },
+      { id: "pm-invalid", title: "invalid", description: "invalid", type: "Task", status: "open", priority: 2, created_at: "invalid", updated_at: 1 },
+    ] as unknown as ItemMetadata[];
+    const candidates = buildItemContextRelevanceCandidates(items, {
+      statusRegistry: registry,
+      now: "2026-07-14T00:00:00.000Z",
+    });
+    expect(candidates.find(({ id }) => id === "pm-new")?.signals?.recency).toBe(1);
+    expect(candidates.find(({ id }) => id === "pm-old")?.signals?.recency).toBe(0.5);
+    expect(candidates.find(({ id }) => id === "pm-invalid")?.signals?.recency).toBe(0);
+  });
+
   it("preserves baseline ordering when advanced signals are absent", () => {
     const report = defaultScoreContextCandidates([
       { id: "pm-b", item: { title: "first" } },

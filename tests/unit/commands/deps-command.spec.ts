@@ -1,7 +1,11 @@
 import { writeFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { runDeps } from "../../../src/cli/commands/deps.js";
-import { collectDanglingDependencyReferences } from "../../../src/sdk/dependencies.js";
+import {
+  buildDepsRelationshipContext,
+  collectDanglingDependencyReferences,
+} from "../../../src/sdk/dependencies.js";
+import type { ItemMetadata } from "../../../src/types/index.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { locateItem, readLocatedItem } from "../../../src/core/store/item-store.js";
@@ -59,6 +63,38 @@ function createTask(context: TempPmContext, title: string, deps: string[] = ["no
 }
 
 describe("runDeps", () => {
+  it("normalizes canonical and missing parent, blocker, and dependency references for context", () => {
+    const context = buildDepsRelationshipContext(
+      "pm-root",
+      [
+        {
+          id: "pm-root",
+          title: "Root",
+          status: "open",
+          parent: "PM-PARENT",
+          blocked_by: "pm-missing-blocker",
+          dependencies: [
+            { id: "PM-PARENT", kind: "related" },
+            { id: "pm-missing-related", kind: "related" },
+          ],
+        },
+        { id: "pm-parent", title: "Parent", status: "open" },
+        { id: "pm-orphan", title: "Orphan", status: "open", parent: "pm-missing-parent" },
+      ] as unknown as ItemMetadata[],
+      {},
+    );
+
+    expect(context.nodes.map(({ id }) => id)).toEqual([
+      "pm-missing-blocker",
+      "pm-missing-related",
+      "pm-parent",
+    ]);
+    expect(context.nodes.filter(({ status }) => status === "missing").map(({ id }) => id)).toEqual([
+      "pm-missing-blocker",
+      "pm-missing-related",
+    ]);
+  });
+
   it("partitions active, terminal, custom-terminal, and sentinel references", () => {
     const items = [
       { id: "pm-active", status: "open", parent: "pm-missing-active" },
@@ -407,6 +443,15 @@ describe("runDeps", () => {
       const continued = await runDeps(rootId, { format: "context", nodeLimit: 1, maxDepth: 2, cursor: oneNode.context!.meta.nextCursor, summary: true }, { path: context.pmPath });
       expect(continued.context).toBeUndefined();
       await expect(runDeps(rootId, { format: "context", nodeLimit: 0 }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      const danglingId = createTask(context, "context-dangling", [
+        "id=pm-missing-prerequisite,kind=blocked_by,author=test-author,created_at=now",
+      ]);
+      const dangling = await runDeps(danglingId, { format: "context" }, { path: context.pmPath });
+      expect(dangling).toMatchObject({ missing_count: 1, node_count: 2, edge_count: 1 });
+      expect(dangling.context?.nodes).toEqual([
+        expect.objectContaining({ id: "pm-missing-prerequisite", status: "missing", reasons: ["prerequisite"] }),
+      ]);
     });
   });
 
