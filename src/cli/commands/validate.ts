@@ -77,6 +77,10 @@ import type {
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
 import { collectDanglingDependencyReferences } from "../../sdk/dependencies.js";
+import {
+  createRelationshipKindRegistry,
+  type RelationshipKindRegistry,
+} from "../../sdk/relationships.js";
 import { runDocs } from "../../sdk/docs.js";
 import { runFiles } from "../../sdk/files.js";
 import { extractReferencedPmItemIdsFromCommand } from "./test.js";
@@ -1479,6 +1483,7 @@ function escapeRegExp(value: string): string {
 function buildLifecycleDependencyGraph(
   activeItems: ItemWithBody[],
   idPrefix = "pm",
+  relationshipRegistry: RelationshipKindRegistry = createRelationshipKindRegistry(),
 ): Map<string, string[]> {
   const activeItemIds = new Set(activeItems.map((item) => item.id));
   const graph = new Map<string, string[]>();
@@ -1492,6 +1497,10 @@ function buildLifecycleDependencyGraph(
       edges.add(blockedBy);
     }
     for (const dependency of item.dependencies ?? []) {
+      const dependencyKind = toMeaningfulString(dependency.kind);
+      if (!dependencyKind) continue;
+      const relationshipDefinition = relationshipRegistry.resolve(dependencyKind);
+      if (!relationshipDefinition?.ordering) continue;
       const dependencyId = toMeaningfulString(dependency.id);
       if (!dependencyId || !activeItemIds.has(dependencyId)) {
         continue;

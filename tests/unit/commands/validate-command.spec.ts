@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { runClose } from "../../../src/cli/commands/close.js";
 import * as docsCommand from "../../../src/sdk/docs.js";
 import * as filesCommand from "../../../src/sdk/files.js";
+import { RelationshipKindRegistry } from "../../../src/sdk/relationships.js";
 import * as updateCommand from "../../../src/cli/commands/update.js";
 import { runHistoryRedact } from "../../../src/cli/commands/history-redact.js";
 import { runInit } from "../../../src/cli/commands/init.js";
@@ -438,10 +439,59 @@ describe("runValidate", () => {
       {
         id: "pm-d",
         definition_of_ready: "No pm item references here.",
-        dependencies: [],
+        dependencies: [
+          { id: "pm-a", kind: "related" },
+          { id: "pm-c", kind: "related_to" },
+          { id: "pm-b", kind: null },
+        ],
+      },
+      {
+        id: "pm-e",
+        dependencies: [{ id: "pm-a", kind: "custom_precedes" }],
       },
     ] as never);
     expect(graph.get("pm-a")).toEqual(["pm-b", "pm-c"]);
+    expect(graph.get("pm-d")).toEqual([]);
+    expect(graph.get("pm-e")).toEqual([]);
+    const customRegistry = new RelationshipKindRegistry([])
+      .register({
+        kind: "precedes",
+        direction: "directed",
+        ordering: true,
+        hierarchy: false,
+        outgoing: "many",
+        incoming: "many",
+        lifecycle: "persistent",
+        compatibilityVersion: 1,
+        allowSelf: false,
+      })
+      .register({
+        kind: "mentions",
+        direction: "directed",
+        ordering: false,
+        hierarchy: false,
+        outgoing: "many",
+        incoming: "many",
+        lifecycle: "persistent",
+        compatibilityVersion: 1,
+        allowSelf: false,
+      });
+    const customGraph = validateInternals.buildLifecycleDependencyGraph(
+      [
+        {
+          id: "pm-a",
+          dependencies: [
+            { id: "pm-b", kind: "precedes" },
+            { id: "pm-c", kind: "mentions" },
+          ],
+        },
+        { id: "pm-b" },
+        { id: "pm-c" },
+      ] as never,
+      "pm",
+      customRegistry,
+    );
+    expect(customGraph.get("pm-a")).toEqual(["pm-b"]);
     expect(validateInternals.extractItemIds("Ready after work-2 and pm-3.", "work")).toEqual(["work-2"]);
     expect(validateInternals.extractItemIds("Ready after x.pm-2", "x.pm")).toEqual(["x.pm-2"]);
     expect(validateInternals.extractItemIds("Ready after (x.pm-2), not ax.pm-3", "x.pm")).toEqual(["x.pm-2"]);
