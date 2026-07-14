@@ -66,10 +66,12 @@ jobs:
       # scan: TruffleHog re-checks candidate secrets against the issuing
       # provider and fails on live (verified) or unverifiable (unknown)
       # results. push/PR events scan the changed commit range; scheduled runs
-      # rescan everything. Known-benign test fixtures are excluded via
-      # .trufflehog-exclude-paths.txt (one path regex per line) — the only
-      # entry is a deliberate user:pass@example.test URI fixture; never add
-      # entries to silence a real finding.
+      # rescan everything. Known-benign paths are excluded via
+      # .trufflehog-exclude-paths.txt (one unanchored path regex per line):
+      # a deliberate basic-auth URI test fixture in the health-command spec,
+      # plus the two pm-4ris tracker files whose git history contains a
+      # since-redacted quote of that same fixture. Never add entries to
+      # silence a real finding.
       - name: TruffleHog scan
         uses: trufflesecurity/trufflehog@27b0417c16317ca9a472a9a8092acce143b49c55 # v3.95.9
         with:
