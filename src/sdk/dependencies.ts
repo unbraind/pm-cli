@@ -113,6 +113,20 @@ export interface DanglingDependencyReferenceSummary {
   no_active_blocker_sentinels: DanglingDependencyReference[];
 }
 
+/** Normalize a decoded reference target and reject empty legacy placeholders. */
+function normalizeDependencyReferenceTarget(target: unknown): string | undefined {
+  if (typeof target !== "string") return undefined;
+  const normalized = target.trim();
+  if (!normalized || ["none", "null", "n/a", "na"].includes(normalized.toLowerCase())) return undefined;
+  return normalized;
+}
+
+/** Normalize a graph target while removing the historical no-blocker marker. */
+function normalizeDependencyGraphTarget(target: unknown): string | undefined {
+  const normalized = normalizeDependencyReferenceTarget(target);
+  return normalized?.toLowerCase() === "no-active-blocker" ? undefined : normalized;
+}
+
 /**
  * Classify missing hierarchy and dependency targets without mutating their holders.
  *
@@ -133,12 +147,8 @@ export function collectDanglingDependencyReferences(
     kind: string,
     source: DependencyReferenceSource,
   ): void => {
-    const normalized = typeof target === "string" ? target.trim() : "";
-    if (
-      !normalized ||
-      ["none", "null", "n/a", "na"].includes(normalized.toLowerCase()) ||
-      knownIds.has(normalized.toLowerCase())
-    ) {
+    const normalized = normalizeDependencyReferenceTarget(target);
+    if (!normalized || knownIds.has(normalized.toLowerCase())) {
       return;
     }
     const row: DanglingDependencyReference = {
@@ -559,21 +569,26 @@ export function buildDepsRelationshipContext(
   const canonicalIds = new Map(items.map((item) => [item.id.trim().toLowerCase(), item.id.trim()]));
   const dangling = collectDanglingDependencyReferences(items);
   const missingIds = collectMissingDependencyTargetIds(dangling);
-  const graphItems = items.map((item) => ({
-    id: item.id,
-    ...(item.parent && item.parent.trim().toLowerCase() !== "no-active-blocker"
-      ? { parent: canonicalIds.get(item.parent.trim().toLowerCase()) ?? item.parent.trim() }
-      : {}),
-    ...(item.blocked_by && item.blocked_by.trim().toLowerCase() !== "no-active-blocker"
-      ? { blocked_by: canonicalIds.get(item.blocked_by.trim().toLowerCase()) ?? item.blocked_by.trim() }
-      : {}),
-    dependencies: (item.dependencies ?? [])
-      .filter((dependency) => dependency.id.trim().toLowerCase() !== "no-active-blocker")
-      .map((dependency) => ({
-        ...dependency,
-        id: canonicalIds.get(dependency.id.trim().toLowerCase()) ?? dependency.id.trim(),
-      })),
-  }));
+  const graphItems = items.map((item) => {
+    const parent = normalizeDependencyGraphTarget(item.parent);
+    const blocker = normalizeDependencyGraphTarget(item.blocked_by);
+    const dependencies = (item.dependencies ?? []).flatMap((rawDependency) => {
+      if (typeof rawDependency !== "object" || rawDependency === null) return [];
+      const dependency = rawDependency as Partial<Dependency>;
+      const target = normalizeDependencyGraphTarget(dependency.id);
+      if (!target) return [];
+      return [{
+        id: canonicalIds.get(target.toLowerCase()) ?? target,
+        kind: typeof dependency.kind === "string" ? dependency.kind : "related",
+      }];
+    });
+    return {
+      id: item.id,
+      ...(parent ? { parent: canonicalIds.get(parent.toLowerCase()) ?? parent } : {}),
+      ...(blocker ? { blocked_by: canonicalIds.get(blocker.toLowerCase()) ?? blocker } : {}),
+      dependencies,
+    };
+  });
   return buildRelationshipContext(
     RelationshipGraph.fromItems([...graphItems, ...missingIds.map((id) => ({ id }))]),
     rootId,

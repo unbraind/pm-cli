@@ -109,6 +109,22 @@ describe("runDeps", () => {
     );
     expect(sentinel.nodes).toEqual([]);
     expect(sentinel.edges).toEqual([]);
+
+    const malformed = buildDepsRelationshipContext(
+      "pm-malformed",
+      [{
+        id: "pm-malformed",
+        title: "Malformed",
+        status: "open",
+        parent: 42,
+        blocked_by: false,
+        dependencies: [null, true, { id: true }, { id: "none" }, { id: "pm-missing-default" }],
+      }] as unknown as ItemMetadata[],
+      {},
+    );
+    expect(malformed.nodes).toEqual([
+      expect.objectContaining({ id: "pm-missing-default", status: "missing" }),
+    ]);
   });
 
   it("partitions active, terminal, custom-terminal, and sentinel references", () => {

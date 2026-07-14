@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
@@ -23,6 +23,8 @@ describe("relationship event history", () => {
     try {
       const first = await RelationshipEventStore.open({ pmRoot, nodes });
       const second = await RelationshipEventStore.open({ pmRoot, nodes });
+      const freshRootStore = await RelationshipEventStore.open({ pmRoot: path.join(pmRoot, "fresh-root"), nodes });
+      expect(await freshRootStore.currentVersion()).toBe(0);
       await Promise.all([
         first.append({ eventId: "evt-store-1", relationshipId: "rel-store-1", action: "add", edge: { source: "build", target: "design", kind: "blocked_by" }, author: "agent-a", timestamp: "2026-07-14T08:00:00.000Z", reason: "durable prerequisite" }),
         second.append({ eventId: "evt-store-2", relationshipId: "rel-store-2", action: "add", edge: { source: "test", target: "build", kind: "blocked_by" }, author: "agent-b", timestamp: "2026-07-14T08:01:00.000Z" }),
@@ -49,6 +51,13 @@ describe("relationship event history", () => {
       await expect(RelationshipEventStore.open({ pmRoot, nodes, relativePath: ".." })).rejects.toThrow("must stay within");
       await expect(RelationshipEventStore.open({ pmRoot, nodes, relativePath: "../escape.jsonl" })).rejects.toThrow("must stay within");
       await expect(RelationshipEventStore.open({ pmRoot, nodes, relativePath: path.resolve(pmRoot, "../absolute.jsonl") })).rejects.toThrow("must stay within");
+      const symlinkTarget = path.join(pmRoot, "symlink-target.jsonl");
+      await writeFile(symlinkTarget, "");
+      await symlink(symlinkTarget, path.join(pmRoot, "symlink-events.jsonl"));
+      await expect(RelationshipEventStore.open({ pmRoot, nodes, relativePath: "symlink-events.jsonl" })).rejects.toThrow("must not contain symbolic links");
+      const rootLink = path.join(pmRoot, "root-link");
+      await symlink(pmRoot, rootLink, "dir");
+      await expect(RelationshipEventStore.open({ pmRoot: rootLink, nodes })).rejects.toThrow("tracker root must not be a symbolic link");
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
     }
