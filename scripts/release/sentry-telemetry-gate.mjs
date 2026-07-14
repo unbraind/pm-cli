@@ -155,6 +155,10 @@ const KNOWN_EXPECTED_HANDLED_ENVIRONMENT_ISSUE_PATTERNS = [
   // Node as Error/ENOSPC, not a pm-cli crash. It remains relevant in telemetry
   // but should not block releases when the CLI caught and reported it.
   "enospc: no space left on device",
+  // Emitted only after the launcher proves that its bundle manifest changed or
+  // an on-disk output is missing/hash-invalid. Generic module failures remain
+  // release-blocking and deliberately do not match this code.
+  "bundle_integrity_torn_install",
 ];
 
 function issueTextValue(issue) {

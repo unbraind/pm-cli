@@ -8,9 +8,11 @@ const SCRIPT = "scripts/bundle-cli.mjs";
 
 type BundleModule = {
   sleep: (ms: number) => Promise<void>;
+  hasErrorCode: (error: unknown, codes: string[]) => boolean;
   acquireBundleBuildLock: () => Promise<() => Promise<void>>;
   collectFiles: (directory: string) => Promise<string[]>;
   removeStaleBundleFiles: (outputs: Record<string, unknown>) => Promise<void>;
+  writeBundleManifest: (outputs: Record<string, unknown>) => Promise<void>;
   main: () => Promise<void>;
 };
 
@@ -124,7 +126,11 @@ describe("bundle-cli main()", () => {
       readFile: async () => '#!/usr/bin/env node\nawait import("./cli-bundle/main.js")\n',
     });
     expect(String(alreadyBundled.failure ?? "")).toContain("EXIT:0");
-    expect(alreadyBundled.writeFile).not.toHaveBeenCalled();
+    expect(
+      alreadyBundled.writeFile.mock.calls.some(
+        ([target]) => String(target).endsWith(path.join("dist", "cli.js")),
+      ),
+    ).toBe(false);
   });
 
   it("throws when the rewrite marker is missing from the cli source", async () => {
@@ -136,6 +142,52 @@ describe("bundle-cli main()", () => {
 });
 
 describe("bundle-cli helpers", () => {
+  it("matches structured error codes without accepting malformed values", async () => {
+    mockBundleFs({});
+    const mod = await harness.importModuleStable<BundleModule>(SCRIPT);
+    expect(mod.hasErrorCode({ code: "ENOENT" }, ["ENOENT"])).toBe(true);
+    expect(mod.hasErrorCode({ code: "EACCES" }, ["ENOENT"])).toBe(false);
+    expect(mod.hasErrorCode({}, ["ENOENT"])).toBe(false);
+    expect(mod.hasErrorCode("ENOENT", ["ENOENT"])).toBe(false);
+    expect(mod.hasErrorCode(null, ["ENOENT"])).toBe(false);
+  });
+
+  it("writes an atomic deterministic manifest for bundle outputs only", async () => {
+    const writes: Array<{ target: string; content: string }> = [];
+    const rename = vi.fn(async () => {});
+    mockBundleFs({
+      readFile: vi.fn(async (target: string) =>
+        String(target).endsWith("main.js") ? "main-output" : "chunk-output",
+      ),
+      writeFile: vi.fn(async (target: string, content: string) => {
+        writes.push({ target: String(target), content });
+      }),
+      rename,
+    });
+    const mod = await harness.importModuleStable<BundleModule>(SCRIPT);
+    await mod.writeBundleManifest({
+      "dist/cli-bundle/main.js": {},
+      "dist/cli-bundle/chunks/chunk-A.js": {},
+      "dist/not-bundled.js": {},
+    });
+    const manifest = JSON.parse(writes[0]?.content ?? "{}") as {
+      schema_version?: number;
+      generation?: string;
+      files?: Array<{ path: string; sha256: string }>;
+    };
+    expect(manifest.schema_version).toBe(1);
+    expect(manifest.generation).toMatch(/^[a-f0-9]{64}$/);
+    expect(manifest.files?.map((entry) => entry.path)).toEqual([
+      "chunks/chunk-A.js",
+      "main.js",
+    ]);
+    expect(manifest.files?.every((entry) => /^[a-f0-9]{64}$/.test(entry.sha256))).toBe(true);
+    expect(rename).toHaveBeenCalledWith(
+      expect.stringContaining("bundle-manifest.json.tmp-"),
+      expect.stringMatching(/bundle-manifest\.json$/),
+    );
+  });
+
   it("sleep resolves after the given delay (fake timers)", async () => {
     mockBundleFs({});
     const mod = await harness.importModuleStable<BundleModule>(SCRIPT);

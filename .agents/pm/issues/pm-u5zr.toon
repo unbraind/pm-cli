@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[3]: ci,tests,windows
 created_at: "2026-07-13T08:56:54.128Z"
-updated_at: "2026-07-13T08:56:54.128Z"
+updated_at: "2026-07-14T06:44:00.783Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: "Exemption branch matches on both / and \\ separators; nightly windows/Node24 package-manifest test passes; evaluate windows-regression pinning for package-manifest.spec.ts"
@@ -15,4 +15,6 @@ risk: low
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-b24b,related,"2026-07-13T08:56:54.128Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-14T06:44:00.782Z",codex-root,"Live GitHub evidence 2026-07-14: Nightly Validation run 29310713878 on main dcd58521 includes the expected package-manifest Windows failure alongside pm-b24b's five init/path failures. Other nightly legs passed. Existing canonical item reused; no duplicate and no claim because PR #549 is history/read scoped."
 body: ""

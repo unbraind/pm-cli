@@ -1,11 +1,12 @@
+/**
+ * @module pm-governance-audit/runtime-utils
+ *
+ * Shared parsing, comparison, linked-artifact, and result-decoration helpers
+ * for the governance-audit extension runtime.
+ */
 import { EXIT_CODE, PmCliError, PmClient, type ListOptions } from "./sdk.ts";
 
-export const DEFAULT_CLOSURE_LIKE_METADATA_FIELD_PATTERNS = {
-  blocked_reason: ["no active blocker because work is closed", "work is closed"],
-  resolution: ["closed with implementation evidence", "closed with verification evidence", "work completed and recorded", "work is closed"],
-  actual_result: ["closed and recorded", "work completed", "work completed and recorded"],
-} as const;
-
+/** Retain only list filters that the package-owned audit queries may forward. */
 export function buildListQueryFilters(
   filters: Pick<
     ListOptions,
@@ -21,18 +22,46 @@ export function buildListQueryFilters(
     | "release"
   >,
 ): ListOptions {
-  const { type, tag, priority, deadlineBefore, deadlineAfter, assignee, assigneeFilter, parent, sprint, release } = filters;
-  return { type, tag, priority, deadlineBefore, deadlineAfter, assignee, assigneeFilter, parent, sprint, release };
+  const {
+    type,
+    tag,
+    priority,
+    deadlineBefore,
+    deadlineAfter,
+    assignee,
+    assigneeFilter,
+    parent,
+    sprint,
+    release,
+  } = filters;
+  return {
+    type,
+    tag,
+    priority,
+    deadlineBefore,
+    deadlineAfter,
+    assignee,
+    assigneeFilter,
+    parent,
+    sprint,
+    release,
+  };
 }
 
+/** Order valid timestamps chronologically and malformed values lexicographically. */
 export function compareTimestampStrings(left: string, right: string): number {
   const leftMs = Date.parse(left);
   const rightMs = Date.parse(right);
-  if (Number.isFinite(leftMs) && Number.isFinite(rightMs) && leftMs !== rightMs) return leftMs - rightMs;
+  if (Number.isFinite(leftMs) && Number.isFinite(rightMs) && leftMs !== rightMs)
+    return leftMs - rightMs;
   return left.localeCompare(right);
 }
 
-export function jaccardSimilarity(leftTokens: string[], rightTokens: string[]): number {
+/** Measure set overlap between two token lists on the inclusive zero-to-one scale. */
+export function jaccardSimilarity(
+  leftTokens: string[],
+  rightTokens: string[],
+): number {
   if (leftTokens.length === 0 && rightTokens.length === 0) return 1;
   if (leftTokens.length === 0 || rightTokens.length === 0) return 0;
   const left = new Set(leftTokens);
@@ -42,48 +71,76 @@ export function jaccardSimilarity(leftTokens: string[], rightTokens: string[]): 
   return intersection / new Set([...left, ...right]).size;
 }
 
+/** Trim, lowercase, and collapse internal whitespace for stable audit comparisons. */
 export function normalizeLowercaseWhitespace(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+/** Split normalized text into non-empty lowercase ASCII alphanumeric tokens. */
 export function tokenizeAlphaNumeric(value: string): string[] {
-  return normalizeLowercaseWhitespace(value).split(/[^a-z0-9]+/).filter((token) => token.length > 0);
+  return normalizeLowercaseWhitespace(value)
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length > 0);
 }
 
-export function parseIntegerLimit(raw: string | undefined, label = "--limit"): number | undefined {
+/** Parse an optional non-negative integer limit with package-specific error context. */
+export function parseIntegerLimit(
+  raw: string | undefined,
+  label = "--limit",
+): number | undefined {
   if (raw === undefined) return undefined;
   const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 0) throw new PmCliError(`${label} must be a non-negative integer`, EXIT_CODE.USAGE);
+  if (!Number.isInteger(parsed) || parsed < 0)
+    throw new PmCliError(
+      `${label} must be a non-negative integer`,
+      EXIT_CODE.USAGE,
+    );
   return parsed;
 }
 
+/** Normalize an optional comma-separated value into trimmed non-empty entries. */
 export function splitCommaList(raw: string | undefined | null): string[] {
   if (raw == null) return [];
-  return raw.split(",").map((entry) => entry.trim()).filter(Boolean);
+  return raw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
 }
 
+/** Convert thrown values to a concise message suitable for audit result envelopes. */
 export function toErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message.trim() || error.name;
   return String(error);
 }
 
-export function toNonEmptyStringOrUndefined(value: unknown): string | undefined {
+/** Return trimmed non-empty text while rejecting non-string and blank values. */
+export function toNonEmptyStringOrUndefined(
+  value: unknown,
+): string | undefined {
   if (typeof value !== "string") return undefined;
   const normalized = value.trim();
   return normalized.length > 0 ? normalized : undefined;
 }
 
+/** Inputs used to attribute linked paths to every item that references them. */
 export interface LinkedArtifactAuditPayload {
+  /** Paths whose reverse-reference attribution should be reported. */
   paths?: string[];
+  /** Item identities and linked artifacts used to build the reverse index. */
   items?: Array<{ id: string; artifacts?: Array<{ path: string }> }>;
 }
 
+/** Deterministic reverse-reference summary for one linked artifact path. */
 export interface LinkedArtifactAuditEntry {
+  /** Linked artifact path described by this summary. */
   path: string;
+  /** Number of distinct items that reference the path. */
   linked_by_count: number;
+  /** Sorted distinct item ids that reference the path. */
   linked_item_ids: string[];
 }
 
+/** Build sorted, duplicate-free reverse attribution for requested artifact paths. */
 export function buildLinkedArtifactAudit(
   input: LinkedArtifactAuditPayload,
 ): LinkedArtifactAuditEntry[] {
@@ -175,7 +232,10 @@ export async function decorateGovernanceCommandResult(
   const result = asRecord(payload?.result);
   const options = payload?.options ?? {};
   if (!payload || !result) return payload?.result;
-  const linkedArtifactResult = await decorateLinkedArtifactResult(payload, result);
+  const linkedArtifactResult = await decorateLinkedArtifactResult(
+    payload,
+    result,
+  );
   if (linkedArtifactResult) return linkedArtifactResult;
 
   if (

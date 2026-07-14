@@ -47,6 +47,17 @@ export interface PmCliErrorContext {
   examples?: string[];
   /** Value that configures or reports next steps for this contract. */
   nextSteps?: string[];
+  /** Available history bounds for a failed point-in-time read or restore target. */
+  valid_range?: {
+    /** Earliest available one-based version, or null for an empty stream. */
+    first_version: number | null;
+    /** Latest available one-based version, or null for an empty stream. */
+    last_version: number | null;
+    /** Earliest available history timestamp, or null for an empty stream. */
+    first_timestamp: string | null;
+    /** Latest available history timestamp, or null for an empty stream. */
+    last_timestamp: string | null;
+  };
   /** Value that configures or reports recovery for this contract. */
   recovery?: PmCliErrorRecoveryPayload;
 }

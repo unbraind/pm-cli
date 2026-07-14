@@ -12,12 +12,16 @@ import {
   createEmptyExtensionServiceRegistry,
 } from "../../../src/core/extensions/extension-registries.js";
 import { createDefaultExtensionGovernancePolicy } from "../../../src/core/extensions/extension-types.js";
+import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 const COMMANDS_MODULE = "../../../src/cli/commands/index.js";
 const DEPENDENCIES_SDK_MODULE = "../../../src/sdk/dependencies.js";
 const DOCS_SDK_MODULE = "../../../src/sdk/docs.js";
 const FILES_SDK_MODULE = "../../../src/sdk/files.js";
+const HISTORY_COMPACT_SDK_MODULE = "../../../src/sdk/history-compact.js";
+const HISTORY_REDACT_SDK_MODULE = "../../../src/sdk/history-redact.js";
+const HISTORY_REPAIR_SDK_MODULE = "../../../src/sdk/history-repair.js";
 const PACKAGE_ROOT_MODULE = "../../../src/core/packages/root.js";
 const EXTENSIONS_MODULE = "../../../src/core/extensions/index.js";
 const TOOLS_MODULE = "../../../src/mcp/tool-definitions.js";
@@ -33,7 +37,10 @@ const INITIAL_PM_PACKAGE_ROOT = process.env.PM_CLI_PACKAGE_ROOT;
 // activating the repo's own extensions on every call.
 function mockEmptyExtensionWorkspace() {
   vi.doMock(EXTENSIONS_MODULE, async () => {
-    const actual = await vi.importActual<typeof import("../../../src/core/extensions/index.js")>(EXTENSIONS_MODULE);
+    const actual =
+      await vi.importActual<
+        typeof import("../../../src/core/extensions/index.js")
+      >(EXTENSIONS_MODULE);
     const emptyLoadResult = {
       disabled_by_flag: false,
       roots: { global: "", project: "" },
@@ -70,6 +77,10 @@ function buildCommandMocks() {
     runHistory: vi.fn(async () => ({ action: "history" })),
     runHistoryRedact: vi.fn(async () => ({ action: "history-redact" })),
     runHistoryCompact: vi.fn(async () => ({ action: "history-compact" })),
+    runHistoryCompactBulk: vi.fn(async () => ({
+      action: "history-compact-bulk",
+    })),
+    assertHistoryCompactTarget: vi.fn(),
     runTelemetry: vi.fn(async () => ({ action: "telemetry" })),
     runConfig: vi.fn(async () => ({ action: "config" })),
     runPlan: vi.fn(async () => ({ action: "plan" })),
@@ -90,7 +101,10 @@ function buildCommandMocks() {
   };
 }
 
-async function importServerWithCommandMocks(commandMocks: Record<string, unknown>, applyAdditionalMocks?: () => void) {
+async function importServerWithCommandMocks(
+  commandMocks: Record<string, unknown>,
+  applyAdditionalMocks?: () => void,
+) {
   await vi.resetModules();
   applyAdditionalMocks?.();
   vi.doMock(COMMANDS_MODULE, async () => {
@@ -106,6 +120,19 @@ async function importServerWithCommandMocks(commandMocks: Record<string, unknown
     runFiles: commandMocks.runFiles,
     runFilesDiscover: commandMocks.runFilesDiscover,
   }));
+  vi.doMock(HISTORY_COMPACT_SDK_MODULE, () => ({
+    assertHistoryCompactTarget: commandMocks.assertHistoryCompactTarget,
+    runHistoryCompact: commandMocks.runHistoryCompact,
+    runHistoryCompactBulk: commandMocks.runHistoryCompactBulk,
+  }));
+  vi.doMock(HISTORY_REDACT_SDK_MODULE, () => ({
+    runHistoryRedact: commandMocks.runHistoryRedact,
+  }));
+  vi.doMock(HISTORY_REPAIR_SDK_MODULE, () => ({
+    assertHistoryRepairTarget: commandMocks.assertHistoryRepairTarget,
+    runHistoryRepair: commandMocks.runHistoryRepair,
+    runHistoryRepairAll: commandMocks.runHistoryRepairAll,
+  }));
   return import("../../../src/mcp/server.js");
 }
 
@@ -116,6 +143,9 @@ describe("mcp server branch residual coverage", () => {
     vi.doUnmock(DEPENDENCIES_SDK_MODULE);
     vi.doUnmock(DOCS_SDK_MODULE);
     vi.doUnmock(FILES_SDK_MODULE);
+    vi.doUnmock(HISTORY_COMPACT_SDK_MODULE);
+    vi.doUnmock(HISTORY_REDACT_SDK_MODULE);
+    vi.doUnmock(HISTORY_REPAIR_SDK_MODULE);
     vi.doUnmock(PACKAGE_ROOT_MODULE);
     vi.doUnmock(EXTENSIONS_MODULE);
     vi.doUnmock(TOOLS_MODULE);
@@ -131,7 +161,10 @@ describe("mcp server branch residual coverage", () => {
     const previousRoot = process.env.PM_CLI_PACKAGE_ROOT;
     process.env.PM_CLI_PACKAGE_ROOT = "/tmp/preconfigured-pm-root";
     vi.doMock(PACKAGE_ROOT_MODULE, async () => {
-      const actual = await vi.importActual<typeof import("../../../src/core/packages/root.js")>(PACKAGE_ROOT_MODULE);
+      const actual =
+        await vi.importActual<
+          typeof import("../../../src/core/packages/root.js")
+        >(PACKAGE_ROOT_MODULE);
       return {
         ...actual,
         resolvePmCliVersion: vi.fn(() => undefined),
@@ -144,7 +177,10 @@ describe("mcp server branch residual coverage", () => {
       method: "initialize",
       params: {},
     });
-    expect((initializeResult as { serverInfo?: { version?: string } }).serverInfo?.version).toBe("0.0.0");
+    expect(
+      (initializeResult as { serverInfo?: { version?: string } }).serverInfo
+        ?.version,
+    ).toBe("0.0.0");
     expect(process.env.PM_CLI_PACKAGE_ROOT).toBe("/tmp/preconfigured-pm-root");
     if (previousRoot === undefined) {
       delete process.env.PM_CLI_PACKAGE_ROOT;
@@ -170,10 +206,15 @@ describe("mcp server branch residual coverage", () => {
 
   it("covers runAction option-fallback branches with mocked command handlers", async () => {
     const commandMocks = buildCommandMocks();
-    const server = await importServerWithCommandMocks(commandMocks, mockEmptyExtensionWorkspace);
+    const server = await importServerWithCommandMocks(
+      commandMocks,
+      mockEmptyExtensionWorkspace,
+    );
     const runAction = server._testOnly.runAction;
 
-    expect(server._testOnly.normalizeActionName("---Hello---World___42---")).toBe("hello-world-42");
+    expect(
+      server._testOnly.normalizeActionName("---Hello---World___42---"),
+    ).toBe("hello-world-42");
 
     await runAction({ action: "get", options: { id: "pm-1" } });
     await runAction({
@@ -196,41 +237,142 @@ describe("mcp server branch residual coverage", () => {
     await runAction({ action: "focus", id: "pm-2c" });
     await runAction({ action: "focus", options: { clear: true } });
     await runAction({ action: "focus", clear: true });
-    await runAction({ action: "update", options: { id: "pm-3", description: "updated" } });
+    await runAction({
+      action: "update",
+      options: { id: "pm-3", description: "updated" },
+    });
     await runAction({ action: "claim", options: { id: "pm-4" } });
     await runAction({ action: "claim", options: { id: "pm-4b", force: true } });
     await runAction({ action: "release", options: { id: "pm-5" } });
-    await runAction({ action: "close", options: { id: "pm-6", reason: "done" } });
+    await runAction({
+      action: "close",
+      options: { id: "pm-6", reason: "done" },
+    });
     await runAction({ action: "close", options: { id: "pm-6b" } });
 
-    await runAction({ action: "comments", options: { id: "pm-7", full: true } });
-    await runAction({ action: "comments", options: { id: "pm-7", add: "new comment" } });
-    await runAction({ action: "notes", options: { id: "pm-8", add: "new note" } });
-    await runAction({ action: "learnings", options: { id: "pm-9", add: "new learning" } });
-    await runAction({ action: "files", options: { id: "pm-10", add: "src/file.ts" } });
-    await runAction({ action: "files", options: { id: "pm-10", discover: true, discoveryNote: "auto" } });
-    await runAction({ action: "docs", options: { id: "pm-11", add: "docs/guide.md" } });
-    await runAction({ action: "test", options: { id: "pm-12", add: "node test.js" } });
+    await runAction({
+      action: "comments",
+      options: { id: "pm-7", full: true },
+    });
+    await runAction({
+      action: "comments",
+      options: { id: "pm-7", add: "new comment" },
+    });
+    await runAction({
+      action: "notes",
+      options: { id: "pm-8", add: "new note" },
+    });
+    await runAction({
+      action: "learnings",
+      options: { id: "pm-9", add: "new learning" },
+    });
+    await runAction({
+      action: "files",
+      options: { id: "pm-10", add: "src/file.ts" },
+    });
+    await runAction({
+      action: "files",
+      options: { id: "pm-10", discover: true, discoveryNote: "auto" },
+    });
+    await runAction({
+      action: "docs",
+      options: { id: "pm-11", add: "docs/guide.md" },
+    });
+    await runAction({
+      action: "test",
+      options: { id: "pm-12", add: "node test.js" },
+    });
     await runAction({ action: "deps", options: { id: "pm-13" } });
     await runAction({ action: "delete", options: { id: "pm-14" } });
 
     await runAction({ action: "telemetry", limit: 12, options: {} });
     await runAction({ action: "telemetry", options: { limit: 8 } });
     await runAction({ action: "telemetry", options: { limit: "9" } });
-    await runAction({ action: "telemetry", limit: "5", options: { limit: NaN } });
-    await runAction({ action: "config", options: { configAction: "get", key: "telemetry-tracking" } });
+    await runAction({
+      action: "telemetry",
+      limit: "5",
+      options: { limit: NaN },
+    });
+    await runAction({
+      action: "config",
+      options: { configAction: "get", key: "telemetry-tracking" },
+    });
 
     await runAction({ action: "files-discover", options: { id: "pm-15a" } });
     await runAction({ action: "history", options: { id: "pm-15b" } });
     await runAction({ action: "history-redact", options: { id: "pm-15c" } });
     await runAction({ action: "history-compact", options: { id: "pm-15d" } });
+    await runAction({
+      action: "history-compact",
+      options: { id: "pm-15d", dry_run: true },
+    });
+    await runAction({
+      action: "history-compact",
+      options: {
+        ids: "pm-15e, pm-15f",
+        scope: "closed",
+        all_over: "3",
+        min_entries: 4,
+        dry_run: true,
+      },
+    });
+    await runAction({
+      action: "history-compact",
+      options: { ids: ["pm-15g"], closed: true },
+    });
+    await runAction({
+      action: "history-compact",
+      options: { ids: ["pm-15h"], allStreams: true },
+    });
+    await runAction({
+      action: "history-compact",
+      options: { ids: ["pm-15i"], all_streams: true },
+    });
+    await runAction({
+      action: "history-compact",
+      options: { ids: ["pm-15j"], scope: "all-streams" },
+    });
+    await expect(
+      runAction({
+        action: "history-compact",
+        options: { closed: true, allStreams: true },
+      }),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+      message: expect.stringMatching(/mutually exclusive/),
+    });
+    await expect(
+      runAction({
+        action: "history-compact",
+        options: { closed: true, all_streams: true },
+      }),
+    ).rejects.toThrow(/mutually exclusive/);
+    await expect(
+      runAction({
+        action: "history-compact",
+        options: { closed: true, scope: "all-streams" },
+      }),
+    ).rejects.toThrow(/mutually exclusive/);
     await runAction({ action: "history-repair", options: { id: "pm-15" } });
     await runAction({ action: "history-repair", options: { all: true } });
 
-    await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16", reorderTo: "7th" } });
-    await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16a", reorderTo: 4 } });
-    await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16b", stepRef: "step-1" } });
-    await runAction({ action: "plan", subcommand: "show", options: { id: "pm-16h" } });
+    await runAction({
+      action: "plan",
+      options: { subcommand: "show", id: "pm-16", reorderTo: "7th" },
+    });
+    await runAction({
+      action: "plan",
+      options: { subcommand: "show", id: "pm-16a", reorderTo: 4 },
+    });
+    await runAction({
+      action: "plan",
+      options: { subcommand: "show", id: "pm-16b", stepRef: "step-1" },
+    });
+    await runAction({
+      action: "plan",
+      subcommand: "show",
+      options: { id: "pm-16h" },
+    });
     await runAction({
       action: "schema",
       subcommand: "add-status",
@@ -259,9 +401,23 @@ describe("mcp server branch residual coverage", () => {
     });
     await runAction({ action: "stats", options: { tagPrefix: "topic:" } });
     await runAction({ action: "stats", options: { tagPrefix: 42 } });
-    await runAction({ action: "append", options: { id: "pm-17", body: "body" } });
-    await runAction({ action: "update-many", options: { list: { status: "open" }, update: { priority: 2 }, checkpoint: true } });
-    await runAction({ action: "close-many", reason: "bulk-close", options: { list: { status: "open" } } });
+    await runAction({
+      action: "append",
+      options: { id: "pm-17", body: "body" },
+    });
+    await runAction({
+      action: "update-many",
+      options: {
+        list: { status: "open" },
+        update: { priority: 2 },
+        checkpoint: true,
+      },
+    });
+    await runAction({
+      action: "close-many",
+      reason: "bulk-close",
+      options: { list: { status: "open" } },
+    });
 
     await expect(
       runAction({
@@ -273,38 +429,72 @@ describe("mcp server branch residual coverage", () => {
       }),
     ).rejects.toThrow(/finite integer/);
 
-    await expect(runAction({ action: "plan", options: { subcommand: "show", id: "pm-16d", reorderTo: "abc" } })).rejects.toThrow(
-      /finite integer/,
-    );
-    await expect(runAction({ action: "plan", options: { subcommand: "show", id: "pm-16f", reorderTo: "1.5" } })).rejects.toThrow(
-      /finite integer/,
-    );
-    await expect(runAction({ action: "plan", options: { subcommand: "show", id: "pm-16c", reorderTo: 1.5 } })).rejects.toThrow(
-      /finite integer/,
-    );
     await expect(
-      runAction({ action: "plan", options: { subcommand: "show", id: "pm-16g", reorderTo: "9".repeat(400) } }),
+      runAction({
+        action: "plan",
+        options: { subcommand: "show", id: "pm-16d", reorderTo: "abc" },
+      }),
     ).rejects.toThrow(/finite integer/);
     await expect(
-      runAction({ action: "plan", options: { subcommand: "show", id: "pm-16e", reorderTo: Number.NaN } }),
+      runAction({
+        action: "plan",
+        options: { subcommand: "show", id: "pm-16f", reorderTo: "1.5" },
+      }),
+    ).rejects.toThrow(/finite integer/);
+    await expect(
+      runAction({
+        action: "plan",
+        options: { subcommand: "show", id: "pm-16c", reorderTo: 1.5 },
+      }),
+    ).rejects.toThrow(/finite integer/);
+    await expect(
+      runAction({
+        action: "plan",
+        options: {
+          subcommand: "show",
+          id: "pm-16g",
+          reorderTo: "9".repeat(400),
+        },
+      }),
+    ).rejects.toThrow(/finite integer/);
+    await expect(
+      runAction({
+        action: "plan",
+        options: { subcommand: "show", id: "pm-16e", reorderTo: Number.NaN },
+      }),
     ).rejects.toThrow(/finite integer/);
 
-    await expect(runAction({ action: "toString", options: {} })).rejects.toThrow(/Unsupported native pm action: tostring/);
-    await expect(runAction({ action: "schema", subcommand: "typo", infer: true, options: {} })).rejects.toThrow(
-      /Unknown pm schema subcommand "typo"/,
-    );
-    await expect(runAction({ action: "profile", options: { subcommand: "constructor" } })).rejects.toThrow(
-      /Unknown pm profile subcommand "constructor"/,
-    );
+    await expect(
+      runAction({ action: "toString", options: {} }),
+    ).rejects.toThrow(/Unsupported native pm action: tostring/);
+    await expect(
+      runAction({
+        action: "schema",
+        subcommand: "typo",
+        infer: true,
+        options: {},
+      }),
+    ).rejects.toThrow(/Unknown pm schema subcommand "typo"/);
+    await expect(
+      runAction({ action: "profile", options: { subcommand: "constructor" } }),
+    ).rejects.toThrow(/Unknown pm profile subcommand "constructor"/);
 
-    expect(server._testOnly.updateManyOptionsFromFlat({ update: { title: "bulk" } } as never)).toMatchObject({
+    expect(
+      server._testOnly.updateManyOptionsFromFlat({
+        update: { title: "bulk" },
+      } as never),
+    ).toMatchObject({
       list: expect.any(Object),
       update: expect.objectContaining({ title: "bulk" }),
     });
-    expect(server._testOnly.updateManyOptionsFromFlat({ checkpoint: true } as never)).toMatchObject({
+    expect(
+      server._testOnly.updateManyOptionsFromFlat({ checkpoint: true } as never),
+    ).toMatchObject({
       checkpoint: undefined,
     });
-    expect(server._testOnly.nearestDeclaredKey("abce", ["abcd", "abcf"])).toBe("abcd");
+    expect(server._testOnly.nearestDeclaredKey("abce", ["abcd", "abcf"])).toBe(
+      "abcd",
+    );
 
     await expect(
       server.handleRequest({
@@ -331,10 +521,16 @@ describe("mcp server branch residual coverage", () => {
       } as never),
     ).rejects.toThrow(/Unknown pm MCP tool: toString/);
 
-    expect(server._testOnly.errorContent(new Error("plain-error"))).toMatchObject({ isError: true });
-    expect(server._testOnly.errorContent("primitive-error")).toMatchObject({ isError: true });
+    expect(
+      server._testOnly.errorContent(new Error("plain-error")),
+    ).toMatchObject({ isError: true });
+    expect(server._testOnly.errorContent("primitive-error")).toMatchObject({
+      isError: true,
+    });
 
-    const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const writeSpy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
     server._testOnly.writeError(1, "primitive-write-error");
     expect(writeSpy).toHaveBeenCalled();
 
@@ -344,14 +540,21 @@ describe("mcp server branch residual coverage", () => {
     await server.processRpcLine("{ definitely not json");
     parseSpy.mockRestore();
 
-    expect(commandMocks.runClaim).toHaveBeenCalledWith("pm-4b", true, expect.any(Object), expect.objectContaining({ force: true }));
+    expect(commandMocks.runClaim).toHaveBeenCalledWith(
+      "pm-4b",
+      true,
+      expect.any(Object),
+      expect.objectContaining({ force: true }),
+    );
     expect(commandMocks.runCopy).toHaveBeenCalledTimes(2);
     expect(commandMocks.runComments).toHaveBeenCalledTimes(2);
     expect(commandMocks.runHistoryRepair).toHaveBeenCalledTimes(1);
     expect(commandMocks.runHistoryRepairAll).toHaveBeenCalledTimes(1);
     expect(commandMocks.assertHistoryRepairTarget).toHaveBeenCalledTimes(2);
     expect(commandMocks.runSchemaInferTypes).toHaveBeenCalledTimes(1);
-    expect(commandMocks.runPlan).toHaveBeenCalledWith(expect.objectContaining({ id: "pm-16a", reorderTo: 4 }));
+    expect(commandMocks.runPlan).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "pm-16a", reorderTo: 4 }),
+    );
   });
 
   it("covers extension-dispatch fallback branches", async () => {
@@ -363,7 +566,10 @@ describe("mcp server branch residual coverage", () => {
     }));
     const server = await importServerWithCommandMocks(commandMocks, () => {
       vi.doMock(EXTENSIONS_MODULE, async () => {
-        const actual = await vi.importActual<typeof import("../../../src/core/extensions/index.js")>(EXTENSIONS_MODULE);
+        const actual =
+          await vi.importActual<
+            typeof import("../../../src/core/extensions/index.js")
+          >(EXTENSIONS_MODULE);
         return {
           ...actual,
           loadExtensions: vi.fn(async () => ({ loaded: [] })),
@@ -374,7 +580,9 @@ describe("mcp server branch residual coverage", () => {
             preflight: { checks: [] },
             services: { records: new Map() },
             renderers: { itemSections: [] },
-            registrations: { commands: [{ action: "custom", command: "pm custom" }] },
+            registrations: {
+              commands: [{ action: "custom", command: "pm custom" }],
+            },
           })),
           runActiveCommandHandler,
           deactivateExtensions: vi.fn(async () => undefined),
@@ -390,9 +598,13 @@ describe("mcp server branch residual coverage", () => {
     });
 
     await withTempPmPath(async (context) => {
-      await expect(server._testOnly.runAction({ action: "custom", path: context.pmPath, options: {} })).rejects.toThrow(
-        /Unsupported native pm action: custom/,
-      );
+      await expect(
+        server._testOnly.runAction({
+          action: "custom",
+          path: context.pmPath,
+          options: {},
+        }),
+      ).rejects.toThrow(/Unsupported native pm action: custom/);
       expect(runActiveCommandHandler).toHaveBeenCalledTimes(1);
     });
   });
@@ -401,7 +613,10 @@ describe("mcp server branch residual coverage", () => {
     const commandMocks = buildCommandMocks();
     const server = await importServerWithCommandMocks(commandMocks, () => {
       vi.doMock(EXTENSIONS_MODULE, async () => {
-        const actual = await vi.importActual<typeof import("../../../src/core/extensions/index.js")>(EXTENSIONS_MODULE);
+        const actual =
+          await vi.importActual<
+            typeof import("../../../src/core/extensions/index.js")
+          >(EXTENSIONS_MODULE);
         return {
           ...actual,
           loadExtensions: vi.fn(async () => ({ loaded: [] })),
@@ -412,7 +627,10 @@ describe("mcp server branch residual coverage", () => {
         };
       });
       vi.doMock(TOOLS_MODULE, async () => {
-        const actual = await vi.importActual<typeof import("../../../src/mcp/tool-definitions.js")>(TOOLS_MODULE);
+        const actual =
+          await vi.importActual<
+            typeof import("../../../src/mcp/tool-definitions.js")
+          >(TOOLS_MODULE);
         return {
           ...actual,
           TOOLS: [
@@ -427,17 +645,27 @@ describe("mcp server branch residual coverage", () => {
       });
     });
 
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const errorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     try {
       await withTempPmPath(async (context) => {
         // CLI parity (pm-zumn): a load/activate failure must never break a built-in
         // action — it falls back to running with no active extensions.
-        const stats = await server._testOnly.runAction({ action: "stats", path: context.pmPath, options: {} });
+        const stats = await server._testOnly.runAction({
+          action: "stats",
+          path: context.pmPath,
+          options: {},
+        });
         expect(stats).toEqual({ action: "stats" });
         // A dynamic extension action, by contrast, cannot resolve once activation failed.
-        await expect(server._testOnly.runAction({ action: "custom", path: context.pmPath, options: {} })).rejects.toThrow(
-          /Unsupported native pm action: custom/,
-        );
+        await expect(
+          server._testOnly.runAction({
+            action: "custom",
+            path: context.pmPath,
+            options: {},
+          }),
+        ).rejects.toThrow(/Unsupported native pm action: custom/);
       });
       // The swallowed activation failure is surfaced on stderr for diagnosability.
       expect(errorSpy).toHaveBeenCalledWith(
@@ -447,7 +675,10 @@ describe("mcp server branch residual coverage", () => {
     } finally {
       errorSpy.mockRestore();
     }
-    const warnings = server._testOnly.detectUnexpectedTopLevelKeys("pm_test_no_properties", { typo: "value" });
+    const warnings = server._testOnly.detectUnexpectedTopLevelKeys(
+      "pm_test_no_properties",
+      { typo: "value" },
+    );
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toContain("declared arguments are:");
   });
@@ -470,19 +701,36 @@ describe("mcp server branch residual coverage", () => {
     const commandMocks = {
       ...buildCommandMocks(),
       runStats: vi.fn(async () => {
-        expect(setActiveExtensionHooks).toHaveBeenLastCalledWith(createEmptyExtensionHookRegistry());
-        expect(setActiveExtensionCommands).toHaveBeenLastCalledWith(createEmptyExtensionCommandRegistry());
-        expect(setActiveExtensionParsers).toHaveBeenLastCalledWith(createEmptyExtensionParserRegistry());
-        expect(setActiveExtensionPreflight).toHaveBeenLastCalledWith(createEmptyExtensionPreflightRegistry());
-        expect(setActiveExtensionServices).toHaveBeenLastCalledWith(createEmptyExtensionServiceRegistry());
-        expect(setActiveExtensionRenderers).toHaveBeenLastCalledWith(createEmptyExtensionRendererRegistry());
-        expect(setActiveExtensionRegistrations).toHaveBeenLastCalledWith(createEmptyExtensionRegistrationRegistry());
+        expect(setActiveExtensionHooks).toHaveBeenLastCalledWith(
+          createEmptyExtensionHookRegistry(),
+        );
+        expect(setActiveExtensionCommands).toHaveBeenLastCalledWith(
+          createEmptyExtensionCommandRegistry(),
+        );
+        expect(setActiveExtensionParsers).toHaveBeenLastCalledWith(
+          createEmptyExtensionParserRegistry(),
+        );
+        expect(setActiveExtensionPreflight).toHaveBeenLastCalledWith(
+          createEmptyExtensionPreflightRegistry(),
+        );
+        expect(setActiveExtensionServices).toHaveBeenLastCalledWith(
+          createEmptyExtensionServiceRegistry(),
+        );
+        expect(setActiveExtensionRenderers).toHaveBeenLastCalledWith(
+          createEmptyExtensionRendererRegistry(),
+        );
+        expect(setActiveExtensionRegistrations).toHaveBeenLastCalledWith(
+          createEmptyExtensionRegistrationRegistry(),
+        );
         return { action: "stats" };
       }),
     };
     const server = await importServerWithCommandMocks(commandMocks, () => {
       vi.doMock(EXTENSIONS_MODULE, async () => {
-        const actual = await vi.importActual<typeof import("../../../src/core/extensions/index.js")>(EXTENSIONS_MODULE);
+        const actual =
+          await vi.importActual<
+            typeof import("../../../src/core/extensions/index.js")
+          >(EXTENSIONS_MODULE);
         return {
           ...actual,
           loadExtensions: vi.fn(async () => ({ loaded: [] })),
@@ -507,10 +755,18 @@ describe("mcp server branch residual coverage", () => {
       });
     });
 
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const errorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     try {
       await withTempPmPath(async (context) => {
-        await expect(server._testOnly.runAction({ action: "stats", path: context.pmPath, options: {} })).resolves.toEqual({
+        await expect(
+          server._testOnly.runAction({
+            action: "stats",
+            path: context.pmPath,
+            options: {},
+          }),
+        ).resolves.toEqual({
           action: "stats",
         });
       });
@@ -529,19 +785,27 @@ describe("mcp server branch residual coverage", () => {
 
     // --no-extensions short-circuit: built-in actions still run; dynamic actions
     // cannot resolve because nothing was activated.
-    await runAction({ action: "get", noExtensions: true, options: { id: "pm-1" } });
-    await expect(runAction({ action: "custom", noExtensions: true, options: {} })).rejects.toThrow(
-      /Unsupported native pm action: custom/,
-    );
+    await runAction({
+      action: "get",
+      noExtensions: true,
+      options: { id: "pm-1" },
+    });
+    await expect(
+      runAction({ action: "custom", noExtensions: true, options: {} }),
+    ).rejects.toThrow(/Unsupported native pm action: custom/);
 
     // Missing-workspace path: with no settings file the activation cycle is skipped
     // entirely, so a built-in action runs and a dynamic action is unsupported.
     const emptyDir = await mkdtemp(path.join(tmpdir(), "pm-mcp-no-ws-"));
     try {
-      await runAction({ action: "get", path: emptyDir, options: { id: "pm-2" } });
-      await expect(runAction({ action: "custom", path: emptyDir, options: {} })).rejects.toThrow(
-        /Unsupported native pm action: custom/,
-      );
+      await runAction({
+        action: "get",
+        path: emptyDir,
+        options: { id: "pm-2" },
+      });
+      await expect(
+        runAction({ action: "custom", path: emptyDir, options: {} }),
+      ).rejects.toThrow(/Unsupported native pm action: custom/);
     } finally {
       await rm(emptyDir, { recursive: true, force: true });
     }

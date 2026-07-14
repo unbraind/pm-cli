@@ -590,11 +590,15 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm get pm-a1b2",
       "pm get pm-a1b2 --depth brief --json",
       "pm get pm-a1b2 --fields id,title,status,parent,type --json",
+      "pm get pm-a1b2 --at 7 --fields id,title,status,body --json",
     ],
     tips: [
       "Default depth is standard for body plus linked artifacts without append-only logs; use brief for metadata-only checks or --full for complete history-heavy metadata.",
       "Use --fields for the smallest deterministic item metadata payload when an agent only needs specific fields.",
-      "JSON output shape is { item, linked, claim_state, children }; body is nested at item.body (parity with list --include-body), and children appears for requested/container rollups.",
+      "Schedule metadata is normalized under schedule; request schedule.start_at or schedule.location for narrow calendar reads.",
+      "Children are type-agnostic and include bounded deterministic samples plus continuation metadata when a parent has direct children.",
+      "Use --at <version|timestamp> for a verified read-only historical projection; reconstructed/as_of fields distinguish it from current state.",
+      "JSON output shape is { item, linked, claim_state, schedule, children }; body is nested at item.body (parity with list --include-body).",
     ],
   },
   history: {

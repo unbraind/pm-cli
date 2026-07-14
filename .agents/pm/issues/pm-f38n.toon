@@ -1,0 +1,29 @@
+id: pm-f38n
+title: "GH-547: SDK exporters and renderers cannot suppress host rendering of handled output"
+description: "Track the SDK contract gap where a package-owned exporter or renderer cannot explicitly mark a handled result as already emitted, causing host rendering to corrupt stdout or forcing stderr workarounds."
+type: Issue
+status: open
+priority: 2
+tags[5]: "area:extensions","area:output","area:sdk",gh-issue,package-authoring
+created_at: "2026-07-13T22:19:34.239Z"
+updated_at: "2026-07-13T22:19:34.239Z"
+author: codex-root
+estimated_minutes: 180
+acceptance_criteria: "A typed, documented suppression contract is shared by exporter, renderer, service override, CLI, and MCP dispatch; default behavior remains backward compatible; runtime and package-harness tests cover handled output, suppressed output, JSON/TOON, errors, and telemetry; a packed temp package proves stdout remains uncorrupted"
+parent: pm-ugqx
+risk: medium
+confidence: high
+reporter: codex-root
+severity: medium
+repro_steps: "Implement a package exporter or renderer that streams or writes its own output, return a normal handled result, and observe the host render the result again because no public suppression sentinel exists."
+expected_result: "Public typed SDK contracts let handled exporter, renderer, and output-service paths explicitly suppress duplicate host rendering while preserving structured results, telemetry, and JSON/TOON contract clarity."
+actual_result: "Package authors must corrupt stdout with duplicate output, misuse stderr, or return shapes that the host still renders."
+component: "SDK exporter, renderer, and output service contracts"
+customer_impact: "Package authors cannot safely implement streaming, binary, or already-rendered export workflows through public SDK primitives."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-ixoa,related,"2026-07-13T22:19:34.239Z",null,null
+  pm-srns,related,"2026-07-13T22:19:34.239Z",null,null
+  pm-usfg,related,"2026-07-13T22:19:34.239Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-13T22:19:34.239Z",codex-root,"Duplicate check 2026-07-14: all-status searches for GH-547, suppress host rendering, exporter renderer suppression, and stdout corruption found no existing item. GitHub issue #547 is canonical external evidence; this item is deliberately left open and unclaimed."
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/547\n\nThis is backlog tracking only in the current immutable-history/read implementation lane. Reuse the public output contracts and avoid package-specific sentinels."

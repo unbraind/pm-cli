@@ -533,6 +533,7 @@ async function runGetAction(
         : typeof options.tree_depth === "string"
           ? options.tree_depth
           : undefined,
+    at: typeof options.at === "string" ? options.at : undefined,
   });
   printResult(
     result,
@@ -1019,6 +1020,10 @@ export function registerListQueryCommands(
       .option(
         "--tree-depth <n>",
         "Maximum subtree depth for --tree descendants",
+      )
+      .option(
+        "--at <version-or-timestamp>",
+        "Reconstruct a verified historical item state without mutating it",
       )
       .option("--format <value>", "Get output format override: json|toon")
       .description("Show item details by ID.")

@@ -110,7 +110,7 @@ Storage format-version exports (under `@unbrained/pm-cli/sdk/runtime`):
 Command/action contract exports:
 
 - `PmClient` / `runAction` (high-level in-process action execution for custom tools, bots, CI, and embedded runtimes)
-- Typed read primitives on `PmClient`: `get`, `list`, `search`, `context`, `next`, `aggregate`, and `stats`
+- Typed read primitives on `PmClient`: `get` (including `GetOptions.at` point-in-time reads), `list`, `search`, `context`, `next`, `aggregate`, and `stats`; direct `getItemAt` reconstructs a canonical historical document without mutation
 - Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`
 - Context relevance primitives: `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
 - Context relevance contracts: `ContextRelevanceCandidate`, `ContextRelevanceSignals`, `ContextRelevanceScorer`, `ContextRelevanceReport`, `ContextEvaluationReader`, `ContextEvaluationScenario`, `ContextEvaluationScenarioReport`, `ContextEvaluationThresholds`, and `ContextEvaluationCorpusReport`
@@ -123,8 +123,8 @@ Command/action contract exports:
 - Typed customization primitives on `PmClient`: `init`, `config`, `schema`, `schemaList`, `schemaShow`, `schemaAddType`, `schemaRemoveType`, `schemaAddStatus`, `schemaRemoveStatus`, `schemaAddField`, `schemaRemoveField`, `schemaListFields`, `schemaShowField`, `schemaApplyPreset`, `schemaInferTypes`, `schemaShowStatus`, `profile`, `profileList`, `profileShow`, `profileApply`, and `profileLint`
 - Workspace-scaffold primitives: `ensurePmGitignore` and `getPmGitignoreBlock` let custom tools apply the same idempotent runtime/search cache policy as `pm init` without importing CLI internals.
 - Customization primitive option/result contracts: `InitCommandOptions` / `InitResult`, `ConfigCommandOptions` / `ConfigResult`, `SchemaSubcommand` / `SchemaResult` / `SchemaInspectResult`, `SchemaListResult`, `SchemaShowResult`, `SchemaAddTypeResult`, `SchemaRemoveTypeResult`, `SchemaAddStatusResult`, `SchemaRemoveStatusResult`, `SchemaAddFieldResult`, `SchemaRemoveFieldResult`, `SchemaListFieldsResult`, `SchemaShowFieldResult`, `SchemaApplyPresetResult`, `SchemaAddTypeInferResult`, `SchemaShowStatusResult`, `ProfileSubcommand` / `ProfileResult`, `ProfileListResult`, `ProfileShowResult`, `ProfileApplyResult`, `ProfileLintResult`
-- Typed governance and maintenance primitives on `PmClient`: `validate`, `health`, and `gc`
-- Governance and maintenance option/result contracts: `ValidateCommandOptions` / `ValidateResult`, `RunHealthOptions` / `HealthResult`, `GcCommandOptions` / `GcResult`
+- Typed governance and maintenance primitives on `PmClient`: `validate`, `health`, `gc`, `historyRedact`, `historyRepair`, `historyRepairAll`, `historyCompact`, and `historyCompactBulk`
+- Governance and maintenance option/result contracts: `ValidateCommandOptions` / `ValidateResult`, `RunHealthOptions` / `HealthResult`, `GcCommandOptions` / `GcResult`, `HistoryRedactCommandOptions` / `HistoryRedactResult`, `HistoryRepairCommandOptions` / `HistoryRepairResult` / `HistoryRepairAllResult`, and `HistoryCompactCommandOptions` / `HistoryCompactResult` / `HistoryCompactBulkCommandOptions` / `HistoryCompactBulkResult`
 - Typed plan workflow primitives on `PmClient`: `plan`, `planCreate`, `planShow`, `planAddStep`, `planUpdateStep`, `planCompleteStep`, `planBlockStep`, `planReorderStep`, `planRemoveStep`, `planLink`, `planUnlink`, `planDecision`, `planDiscovery`, `planValidation`, `planResume`, `planApprove`, and `planMaterialize`
 - Plan contracts: `PlanSubcommand`, `PlanCommandOptions`, `PlanCommandResult`, `PlanResultPlan`, `PlanStepSummary`, `PlanShowDepth`, and `PlanTemplateName`
 - Typed package and extension lifecycle primitives on `PmClient`: `extension`, `extensionList`, `extensionActivate`, `extensionDeactivate`, `package`, `packageList`, `packageInstall`, `packageUninstall`, `packageDoctor`, `packageManage`, `packageDescribe`, `packageReload`, `packageCatalog`, `packageActivate`, `packageDeactivate`, and `upgrade`
@@ -163,6 +163,84 @@ const result = await pm.planMaterialize(created.plan.id, {
 ```
 
 `field` is repeatable and forwards `name=value` pairs through normal schema-aware create validation for every materialized child. Required-on-create fields remain mandatory. Each `materialized` entry includes `id`, `title`, `type`, `parent`, `tags`, and `from_step`, so an agent can confirm the created work without extra `get` calls.
+
+### Immutable history and rich item reads
+
+Tracked: [pm-4a7m](../.agents/pm/features/pm-4a7m.toon),
+[pm-hib1](../.agents/pm/features/pm-hib1.toon),
+[pm-y4z5](../.agents/pm/issues/pm-y4z5.toon), and
+[pm-x1g5](../.agents/pm/issues/pm-x1g5.toon).
+
+History rewrite ownership lives in the SDK. The CLI `history-redact`,
+`history-repair`, and `history-compact` modules are thin compatibility shims
+over `runHistoryRedact`, `runHistoryRepair` / `runHistoryRepairAll`, and
+`runHistoryCompact` / `runHistoryCompactBulk`. Applications normally use the
+typed `PmClient` methods (or matching top-level `historyRedact`,
+`historyRepair`, `historyRepairAll`, `historyCompact`, and
+`historyCompactBulk` helpers), while package authors can call the `run*`
+primitives when they already own `GlobalOptions`.
+
+```ts
+import { PmClient, getItemAt } from "@unbrained/pm-cli/sdk";
+
+const pm = new PmClient({ pmRoot, author: "records-agent" });
+
+// Normal get projection, reconstructed at a one-based version.
+const historical = await pm.get(itemId, {
+  at: "7",
+  fields: "id,title,status,body",
+});
+// historical.reconstructed === true
+// historical.as_of_version === 7
+
+// Direct canonical document primitive for a custom provenance/VCS interface.
+const snapshot = await getItemAt(itemId, "2026-07-01T12:00:00.000Z", {
+  pmRoot,
+});
+
+await pm.historyRedact(itemId, {
+  literal: ["private.example"],
+  replacement: "[redacted-host]",
+  dryRun: true,
+});
+await pm.historyRepairAll({ dryRun: true });
+await pm.historyCompactBulk({
+  scope: "closed",
+  allOver: 500,
+  dryRun: true,
+});
+```
+
+`getItemAt` and restore share `resolveHistoryTarget`, `applyHistoryPatch`, and
+`replayHistoryToTarget`: every patch is normalized, applied strictly, and
+checked against the recorded before/after hashes. The read primitive never
+acquires a lock, rewrites an item, appends history, or mutates a derived index.
+It returns the canonical `ItemDocument` plus `reconstructed`,
+`as_of_version`, `as_of_timestamp`, normalized target metadata, and the current
+stream length. Invalid and future targets throw `PmCliError` with a structured
+`context.valid_range`.
+
+The shared resolver accepts explicit caller policy: immutable reads reject
+timestamps after the final recorded entry, while restore preserves
+latest-entry-at-or-before semantics so a current wall-clock timestamp restores
+the latest available state. Restore also retains command-specific diagnostics.
+
+Generic reads also expose two composable SDK facets:
+
+- `buildItemSchedule` normalizes deadlines, reminders, and events into a stable
+  schedule projection with convenient earliest-event `start_at`, `end_at`, and
+  `location` aliases. `pm get` includes it at standard/deep depth and supports
+  narrow fields such as `schedule.start_at`.
+- `buildItemChildrenRollup` accepts metadata supplied by the persistent derived
+  index or a source scan and returns type-agnostic direct-child totals, active
+  counts, status groups, a deterministic id-sorted sample, and explicit
+  truncation/continuation metadata. The primitive caps input at
+  `MAX_CHILD_PROJECTION_ITEMS` (one million) and never guesses which schema
+  types are containers.
+
+The CLI automatically computes that workspace projection for container-oriented
+built-ins and custom types. Built-in leaf reads stay constant-cost unless the
+caller explicitly projects `children`; SDK consumers remain fully type-agnostic.
 
 ### Linked resources and dependency governance
 

@@ -138,10 +138,16 @@ describe("runHistory and runActivity", () => {
       kind: "timestamp",
       historyIndex: 0,
     });
-    expect(() => _testOnlyRestoreCommand.ensureReplayTarget(" ", history)).toThrow(PmCliError);
-    expect(() => _testOnlyRestoreCommand.ensureReplayTarget("3", history)).toThrow(PmCliError);
-    expect(() => _testOnlyRestoreCommand.ensureReplayTarget("not-a-date", history)).toThrow(PmCliError);
-    expect(() => _testOnlyRestoreCommand.ensureReplayTarget("2025-12-31T00:00:00.000Z", history)).toThrow(PmCliError);
+    expect(_testOnlyRestoreCommand.ensureReplayTarget("2026-01-03T00:00:00.000Z", history)).toMatchObject({
+      kind: "timestamp",
+      historyIndex: 1,
+    });
+    expect(() => _testOnlyRestoreCommand.ensureReplayTarget(" ", history)).toThrow("Missing restore target");
+    expect(() => _testOnlyRestoreCommand.ensureReplayTarget("3", history)).toThrow("Restore version must");
+    expect(() => _testOnlyRestoreCommand.ensureReplayTarget("not-a-date", history)).toThrow("Invalid restore target");
+    expect(() => _testOnlyRestoreCommand.ensureReplayTarget("2025-12-31T00:00:00.000Z", history)).toThrow(
+      "No history entries exist at or before",
+    );
 
     expect(_testOnlyRestoreCommand.replayToTarget(history, 1).metadata).toMatchObject({ title: "A2", priority: 2 });
     expect(_testOnlyRestoreCommand.replayCurrentDocument(history).metadata).toMatchObject({ title: "A2" });

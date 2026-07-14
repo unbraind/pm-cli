@@ -186,6 +186,12 @@ export * from "./compose.js";
 export * from "./context-relevance.js";
 export * from "./context-packing.js";
 export * from "./context-usage.js";
+export * from "./history-compact.js";
+export * from "./history-read.js";
+export * from "./history-redact.js";
+export * from "./history-repair.js";
+export * from "./item-children.js";
+export * from "./item-schedule.js";
 export {
   collectDanglingDependencyReferences,
   runDeps,
@@ -369,6 +375,11 @@ export {
   gc,
   get,
   health,
+  historyCompact,
+  historyCompactBulk,
+  historyRedact,
+  historyRepair,
+  historyRepairAll,
   init,
   learnings,
   list,

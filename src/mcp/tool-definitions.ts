@@ -215,14 +215,14 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "pm_get",
     description:
-      "Read one pm item. Pass options.depth='brief' or options.fields='id,title,status' for low-token inspection.",
+      "Read one pm item with shared SDK projections. Pass options.depth='brief' or options.fields='id,title,status' for low-token inspection, options.fields='id,schedule.start_at' for schedule context, or options.at='7' / an ISO timestamp for a verified mutation-free historical read. Parent results include bounded child counts, samples, and continuation metadata.",
     inputSchema: objectSchema(
       {
         id: idSchema,
         options: {
           type: "object",
           description:
-            "Get options such as depth=brief|standard|deep|full or fields=id,title,status.",
+            "Get options such as depth=brief|standard|deep|full, fields=id,title,status, or at=<version|ISO timestamp>.",
         },
       },
       ["id"],

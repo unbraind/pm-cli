@@ -1334,6 +1334,7 @@ export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--depth" },
   { flag: "--full" },
   { flag: "--fields", list: true },
+  { flag: "--at" },
   { flag: "--tree" },
   { flag: "--tree-depth" },
   { flag: "--tree_depth" },

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createHash } from "node:crypto";
 import { lstat, mkdir, readdir, readFile, rename, rm, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -24,9 +25,42 @@ const lockRetryMs = 250;
 const lockTimeoutMs = 120_000;
 const staleLockMs = 10 * 60_000;
 const bundleStaleRetentionMs = 10 * 60_000;
+const bundleManifestPath = path.join(outputDir, "bundle-manifest.json");
 
 export function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function hasErrorCode(error, codes) {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      "code" in error &&
+      codes.includes(String(error.code)),
+  );
+}
+
+async function readBundleBuildLockStats() {
+  try {
+    return await stat(lockDir);
+  } catch (error) {
+    if (hasErrorCode(error, ["ENOENT"])) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+async function reclaimStaleBundleBuildLock() {
+  const staleCandidateDir = `${lockDir}.stale.${Date.now()}.${Math.random().toString(36).slice(2)}`;
+  try {
+    await rename(lockDir, staleCandidateDir);
+    await rm(staleCandidateDir, { recursive: true, force: true });
+  } catch (error) {
+    if (!hasErrorCode(error, ["ENOENT", "EEXIST", "ENOTEMPTY"])) {
+      throw error;
+    }
+  }
 }
 
 export async function acquireBundleBuildLock() {
@@ -39,33 +73,15 @@ export async function acquireBundleBuildLock() {
         await rm(lockDir, { recursive: true, force: true });
       };
     } catch (error) {
-      if (!error || typeof error !== "object" || !("code" in error) || error.code !== "EEXIST") {
+      if (!hasErrorCode(error, ["EEXIST"])) {
         throw error;
       }
-      const lockStats = await stat(lockDir).catch((statError) => {
-        if (statError && typeof statError === "object" && "code" in statError && statError.code === "ENOENT") {
-          return null;
-        }
-        throw statError;
-      });
+      const lockStats = await readBundleBuildLockStats();
       if (!lockStats) {
         continue;
       }
       if (Date.now() - lockStats.mtimeMs > staleLockMs) {
-        const staleCandidateDir = `${lockDir}.stale.${Date.now()}.${Math.random().toString(36).slice(2)}`;
-        try {
-          await rename(lockDir, staleCandidateDir);
-          await rm(staleCandidateDir, { recursive: true, force: true });
-        } catch (staleError) {
-          if (
-            !staleError ||
-            typeof staleError !== "object" ||
-            !("code" in staleError) ||
-            !["ENOENT", "EEXIST", "ENOTEMPTY"].includes(String(staleError.code))
-          ) {
-            throw staleError;
-          }
-        }
+        await reclaimStaleBundleBuildLock();
         continue;
       }
       if (Date.now() - startedAt > lockTimeoutMs) {
@@ -116,6 +132,32 @@ export async function removeStaleBundleFiles(outputs) {
   );
 }
 
+export async function writeBundleManifest(outputs) {
+  const files = [];
+  for (const outputPath of Object.keys(outputs).sort((left, right) => left.localeCompare(right))) {
+    const absolutePath = path.resolve(repoRoot, outputPath);
+    if (!absolutePath.startsWith(`${outputDir}${path.sep}`)) {
+      continue;
+    }
+    const relativePath = path.relative(outputDir, absolutePath).split(path.sep).join("/");
+    const contents = await readFile(absolutePath);
+    files.push({
+      path: relativePath,
+      sha256: createHash("sha256").update(contents).digest("hex"),
+    });
+  }
+  const generation = createHash("sha256")
+    .update(files.map((entry) => `${entry.path}:${entry.sha256}`).join("\n"))
+    .digest("hex");
+  const temporaryPath = `${bundleManifestPath}.tmp-${process.pid}`;
+  await writeFile(
+    temporaryPath,
+    `${JSON.stringify({ schema_version: 1, generation, files }, null, 2)}\n`,
+    "utf8",
+  );
+  await rename(temporaryPath, bundleManifestPath);
+}
+
 export async function main() {
   // Do not delete the live bundle before rebuilding. Agents often run docs,
   // dogfood, and build gates concurrently in one checkout; removing this folder
@@ -138,13 +180,14 @@ export async function main() {
       logLevel: "warning",
     });
     await removeStaleBundleFiles(buildResult.metafile.outputs);
+    await writeBundleManifest(buildResult.metafile.outputs);
   } finally {
     await releaseBundleBuildLock();
   }
 
   const binSource = await readFile(binPath, "utf8");
-  const sourceImport = 'await import("./cli/main.js")';
-  const bundledImport = 'await import("./cli-bundle/main.js")';
+  const sourceImport = '"./cli/main.js"';
+  const bundledImport = '"./cli-bundle/main.js"';
   if (binSource.includes(bundledImport)) {
     process.exit(0);
   }

@@ -59,7 +59,6 @@ export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
 import {
   type AggregateOptions,
   type AggregateResult,
-  assertHistoryRepairTarget,
   runActivity,
   runAggregate,
   runAppend,
@@ -81,10 +80,6 @@ import {
   runGet,
   runHealth,
   runHistory,
-  runHistoryCompact,
-  runHistoryRedact,
-  runHistoryRepair,
-  runHistoryRepairAll,
   runInit,
   runLearnings,
   runList,
@@ -122,6 +117,33 @@ import {
   type UpgradeResult,
   runValidate,
 } from "../cli/commands/index.js";
+import {
+  type HistoryCompactBulkCommandOptions,
+  type HistoryCompactBulkResult,
+  type HistoryCompactCommandOptions,
+  type HistoryCompactResult,
+} from "./history-compact.js";
+import {
+  runHistoryRedact,
+  type HistoryRedactCommandOptions,
+  type HistoryRedactResult,
+} from "./history-redact.js";
+import {
+  type HistoryRepairAllResult,
+  type HistoryRepairCommandOptions,
+  type HistoryRepairResult,
+} from "./history-repair.js";
+import {
+  runMcpHistoryCompactAction,
+  runMcpHistoryRepairAction,
+} from "./history-mcp.js";
+import {
+  isRuntimeRecord as isRecord,
+  parseRuntimeInteger as parseMcpInteger,
+  readRuntimeScalarString as readScalarString,
+  readRuntimeScalarStringAllowBlank as readScalarStringAllowBlank,
+  readRuntimeString as readString,
+} from "./runtime-input.js";
 import { runDeps } from "./dependencies.js";
 import { runDocs } from "./docs.js";
 import { runFiles, runFilesDiscover } from "./files.js";
@@ -983,6 +1005,46 @@ export class PmClient {
     return this.runTyped("gc", { options });
   }
 
+  /** Redact sensitive values while preserving an audited, verified history chain. */
+  historyRedact(
+    id: string,
+    options: HistoryRedactCommandOptions,
+  ): Promise<HistoryRedactResult> {
+    return this.runTyped("history-redact", { id, options });
+  }
+
+  /** Repair and re-anchor one drifted history stream. */
+  historyRepair(
+    id: string,
+    options: HistoryRepairCommandOptions = {},
+  ): Promise<HistoryRepairResult> {
+    return this.runTyped("history-repair", { id, options });
+  }
+
+  /** Scan and repair every drifted history stream in one resilient pass. */
+  historyRepairAll(
+    options: HistoryRepairCommandOptions = {},
+  ): Promise<HistoryRepairAllResult> {
+    return this.runTyped("history-repair", {
+      options: { ...options, all: true },
+    });
+  }
+
+  /** Compact one history stream into a verified checkpoint and retained tail. */
+  historyCompact(
+    id: string,
+    options: HistoryCompactCommandOptions = {},
+  ): Promise<HistoryCompactResult> {
+    return this.runTyped("history-compact", { id, options });
+  }
+
+  /** Compact an explicit or policy-selected set of history streams. */
+  historyCompactBulk(
+    options: HistoryCompactBulkCommandOptions,
+  ): Promise<HistoryCompactBulkResult> {
+    return this.runTyped("history-compact", { options });
+  }
+
   /** Run any typed plan workflow primitive through the shared CLI/MCP engine. */
   plan(
     subcommand: PlanSubcommand,
@@ -1752,6 +1814,49 @@ export function gc(
   return new PmClient(clientOptions).gc(options);
 }
 
+/** Redact one history stream without constructing a reusable client. */
+export function historyRedact(
+  id: string,
+  options: HistoryRedactCommandOptions,
+  clientOptions: PmClientOptions = {},
+): Promise<HistoryRedactResult> {
+  return new PmClient(clientOptions).historyRedact(id, options);
+}
+
+/** Repair one history stream without constructing a reusable client. */
+export function historyRepair(
+  id: string,
+  options: HistoryRepairCommandOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<HistoryRepairResult> {
+  return new PmClient(clientOptions).historyRepair(id, options);
+}
+
+/** Repair all drifted history streams without constructing a reusable client. */
+export function historyRepairAll(
+  options: HistoryRepairCommandOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<HistoryRepairAllResult> {
+  return new PmClient(clientOptions).historyRepairAll(options);
+}
+
+/** Compact one history stream without constructing a reusable client. */
+export function historyCompact(
+  id: string,
+  options: HistoryCompactCommandOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<HistoryCompactResult> {
+  return new PmClient(clientOptions).historyCompact(id, options);
+}
+
+/** Compact selected history streams without constructing a reusable client. */
+export function historyCompactBulk(
+  options: HistoryCompactBulkCommandOptions,
+  clientOptions: PmClientOptions = {},
+): Promise<HistoryCompactBulkResult> {
+  return new PmClient(clientOptions).historyCompactBulk(options);
+}
+
 /** Create an item without constructing a reusable client. */
 export function create(
   options: PmClientFullMutationOptions = {},
@@ -2101,46 +2206,6 @@ export async function getContracts(
   };
 
   return runContracts(resolvedOptions, global);
-}
-
-function readString(
-  args: Record<string, unknown>,
-  key: string,
-): string | undefined {
-  const value = args[key];
-  return typeof value === "string" && value.trim().length > 0
-    ? value
-    : undefined;
-}
-
-function readScalarString(
-  args: Record<string, unknown>,
-  key: string,
-): string | undefined {
-  const value = args[key];
-  if (typeof value === "string") {
-    return value.trim().length > 0 ? value : undefined;
-  }
-  return typeof value === "number" && Number.isFinite(value)
-    ? String(value)
-    : undefined;
-}
-
-function readScalarStringAllowBlank(
-  args: Record<string, unknown>,
-  key: string,
-): string | undefined {
-  const value = args[key];
-  if (typeof value === "string") {
-    return value;
-  }
-  return typeof value === "number" && Number.isFinite(value)
-    ? String(value)
-    : undefined;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 /** Read a required non-empty string from an action argument bag. */
@@ -3276,34 +3341,6 @@ function runMcpActivityAction(ctx: McpActionDispatchContext): Promise<unknown> {
   return runActivity(activityOptions, ctx.global);
 }
 
-function runMcpHistoryRepairAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  const repairAll = ctx.options.all === true;
-  const repairId = ctx.id ?? readString(ctx.options, "id");
-  assertHistoryRepairTarget(repairId, repairAll);
-  return repairAll
-    ? runHistoryRepairAll(ctx.options, ctx.global)
-    : runHistoryRepair(repairId as string, ctx.options, ctx.global);
-}
-
-function parseMcpInteger(value: unknown, label: string): number | undefined {
-  if (typeof value === "number") {
-    if (!Number.isInteger(value)) {
-      throw new PmCliError(`${label} must be a finite integer.`, 64);
-    }
-    return value;
-  }
-  if (typeof value === "string" && value.trim().length > 0) {
-    const parsed = Number(value);
-    if (!Number.isInteger(parsed)) {
-      throw new PmCliError(`${label} must be a finite integer.`, 64);
-    }
-    return parsed;
-  }
-  return undefined;
-}
-
 function parseMcpIntegerPrefix(
   value: unknown,
   label: string,
@@ -3824,8 +3861,7 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   "history-redact": (ctx) =>
     runHistoryRedact(requireMcpItemId(ctx), ctx.options, ctx.global),
   "history-repair": runMcpHistoryRepairAction,
-  "history-compact": (ctx) =>
-    runHistoryCompact(requireMcpItemId(ctx), ctx.options, ctx.global),
+  "history-compact": runMcpHistoryCompactAction,
   plan: runMcpPlanAction,
   schema: runMcpSchemaAction,
   profile: runMcpProfileAction,

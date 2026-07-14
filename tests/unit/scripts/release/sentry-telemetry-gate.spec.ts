@@ -345,6 +345,50 @@ describe("scripts/release/sentry-telemetry-gate: telemetry modes", () => {
     expect(json.sentry.threshold_ok).toBe(true);
   });
 
+  it("ignores only the proven torn-bundle code while genuine module failures stay blocking", async () => {
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--max-high", "2"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: buildSentryFetch([
+        {
+          shortId: "PM-TORN-HANDLED",
+          level: "error",
+          logger: "node",
+          isUnhandled: false,
+          title: "Error: bundle_integrity_torn_install",
+          metadata: {
+            value: "bundle_integrity_torn_install: partial upgrade detected",
+            type: "Error",
+          },
+        },
+        {
+          shortId: "PM-MODULE-MISSING",
+          level: "error",
+          logger: "node",
+          isUnhandled: false,
+          title: "Error [ERR_MODULE_NOT_FOUND]: Cannot find module './chunk.js'",
+          metadata: { value: "Cannot find module './chunk.js'", type: "Error" },
+        },
+        {
+          shortId: "PM-TORN-UNHANDLED",
+          level: "error",
+          logger: "node",
+          isUnhandled: true,
+          title: "Error: bundle_integrity_torn_install",
+          metadata: { value: "bundle_integrity_torn_install", type: "Error" },
+        },
+      ]),
+    });
+    expect(json.sentry.ignored_expected_handled_short_ids).toEqual([
+      "PM-TORN-HANDLED",
+    ]);
+    expect(json.sentry.blocking_short_ids).toEqual([
+      "PM-MODULE-MISSING",
+      "PM-TORN-UNHANDLED",
+    ]);
+    expect(json.sentry.threshold_ok).toBe(true);
+  });
+
   it("ignores handled duplicate-import refusals without hiding unhandled failures", async () => {
     const duplicateImportMessage =
       'merge-strategy "fail": bead "bd-1" is already imported as pm-buex; aborting before any writes.';
