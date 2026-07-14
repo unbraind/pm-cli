@@ -14,7 +14,69 @@ Each relationship kind declares direction, inverse, ordering and hierarchy parti
 
 Ordering-cycle validation considers only kinds whose registry definition sets `ordering: true`. Associative and provenance edges never block execution. Hierarchy cycles remain a separate structural check. Canonical edge identity includes kind and ordered endpoints for directed edges, or sorted endpoints for undirected edges.
 
-SDK queries are deterministic, bounded, cancellation-aware, and return explicit visited-node, inspected-edge, truncation, and continuation metadata. The first implementation supplies adjacency, incoming and outgoing traversal, closure, shortest path, reverse impact through incoming traversal, and induced subgraphs. The in-memory index is rebuildable directly from item metadata; durable large-workspace indexes remain an interchangeable later storage implementation.
+SDK queries are deterministic, bounded, cancellation-aware, and return explicit visited-node, inspected-edge, truncation, and continuation metadata. The graph kernel supplies adjacency, incoming and outgoing traversal, closure, shortest path, reverse impact through incoming traversal, and induced subgraphs. The in-memory index is rebuildable directly from item metadata; durable large-workspace indexes remain an interchangeable storage implementation.
+
+Ordering kinds also declare precedence. `source_before_target` means the source must execute first; `target_before_source` models dependency-shaped edges such as `blocked_by`. Custom kinds default to source-first for compatibility, but domain packages should declare the direction explicitly. Analytics consume this field and never infer execution meaning from the label.
+
+## Immutable events and snapshots
+
+`RelationshipEventLog` is the storage-independent reference mutation boundary. An append carries a unique event id, stable logical relationship id, action, author, timestamp, and optional optimistic `expectedVersion`. Add and supersede events validate endpoints, registered kinds, self-edge policy, duplicate identity, and incoming/outgoing cardinality before they enter the stream. Remove and supersede require an active logical relationship. No event rewrites an earlier event.
+
+`snapshot({ atVersion })` and `snapshot({ atTimestamp })` replay the immutable stream into an exact `RelationshipGraph`. Event pages use the shared opaque query-cursor contract and bind continuation to the log version, so a caller cannot silently mix snapshots after concurrent writes. The in-memory ledger is a reference implementation: filesystem, database, replicated-log, and event-bus adapters persist the same public events and rebuild the same snapshots.
+
+```ts
+import { RelationshipEventLog } from "@unbrained/pm-cli/sdk";
+
+const history = new RelationshipEventLog(["design", "build", "ship"]);
+history.append({
+  eventId: "evt-001",
+  relationshipId: "build-needs-design",
+  action: "add",
+  edge: { source: "build", target: "design", kind: "blocked_by" },
+  author: "planning-agent",
+  timestamp: new Date().toISOString(),
+  expectedVersion: 0,
+});
+
+const current = history.snapshot();
+const historical = history.snapshot({ atVersion: 0 });
+```
+
+## Explainable analytics
+
+`analyzeRelationshipExecution` runs exact deterministic topological layering and longest-path analysis only over kinds registered with `ordering: true`. It reports the ready frontier, prerequisite depth, critical path, and genuine strongly connected ordering cycles separately from associative cycles. `analyzeGraphImpact` returns a bounded affected set with an exact shortest explanation path per returned node. `analyzeKnowledgeGraph` reports weak and strong components, intentional-or-unreviewed isolates, and unique-neighbor hubs without assigning an opaque authority score. `compareRelationshipSnapshots` exposes exact temporal edge additions and removals.
+
+Every analytics result identifies its algorithm and edge family. Exact algorithms stay exact when a result is bounded: `truncated` means additional rows exist, not that returned paths or distances are estimates. Future approximations must add their method, seed, freshness, and confidence or error bounds rather than reuse the exact envelope.
+
+## Bounded agent context
+
+`buildRelationshipContext` joins caller-owned compact node details with the graph kernel in one request. The packet includes the root, shortest-distance related nodes, semantic selection reasons (`prerequisite`, `dependent`, `ancestor`, `descendant`, `provenance`, or bounded reachability), root evidence pointers, included edges, explicit work counts, token accounting, omitted counts, and an opaque continuation cursor.
+
+Node, edge, depth, kind, direction, and token bounds are independent. The cursor fingerprint covers semantic filters and traversal shape, so it is rejected when reused for a different root or query. Output remains a plain object suitable for TOON, JSON, JSONL, MCP, or a custom UI; adapters own rendering and do not reimplement traversal.
+
+```ts
+import {
+  analyzeRelationshipExecution,
+  buildRelationshipContext,
+} from "@unbrained/pm-cli/sdk";
+
+const execution = analyzeRelationshipExecution(current.graph);
+const packet = buildRelationshipContext(
+  current.graph,
+  "build",
+  [
+    { id: "design", title: "Approve design", status: "closed" },
+    {
+      id: "build",
+      title: "Build release",
+      status: "open",
+      evidence: ["src/release.ts", "test:release"],
+    },
+    { id: "ship", title: "Ship release", status: "open" },
+  ],
+  { direction: "both", maxDepth: 3, nodeLimit: 20, tokenBudget: 800 },
+);
+```
 
 ## Compatibility and migration
 

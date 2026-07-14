@@ -14,7 +14,7 @@ describe("relationship kind registry", () => {
     expect(registry.resolve("depends_on")?.kind).toBe("blocked_by");
     expect(registry.resolve(null)).toBeUndefined();
     expect(registry.list().map(({ kind }) => kind)).toEqual(
-      [...registry.list().map(({ kind }) => kind)].sort(),
+      registry.list().map(({ kind }) => kind).sort(),
     );
     expect(isOrderingRelationshipKind("blocks", registry)).toBe(true);
     expect(isOrderingRelationshipKind("related", registry)).toBe(false);
@@ -87,12 +87,14 @@ describe("relationship kind registry", () => {
       }),
     ).toThrow("Invalid relationship alias");
     expect(
-      new RelationshipKindRegistry([]).register({
-        ...registry.require("owns"),
-        kind: "contains",
-        inverse: "Contained-By",
-        aliases: [],
-      }).require("contains").inverse,
+      new RelationshipKindRegistry([])
+        .register({
+          ...registry.require("owns"),
+          kind: "contains",
+          inverse: "Contained-By",
+          aliases: [],
+        })
+        .require("contains").inverse,
     ).toBe("contained_by");
     expect(() =>
       new RelationshipKindRegistry([]).register({
@@ -110,9 +112,24 @@ describe("relationship kind registry", () => {
       aliases: [],
       payloadSchema: cyclicSchema,
     });
-    expect(
-      cyclicRegistry.require("cycles").payloadSchema?.self,
-    ).toBe(cyclicRegistry.require("cycles").payloadSchema);
+    expect(cyclicRegistry.require("cycles").payloadSchema?.self).toBe(
+      cyclicRegistry.require("cycles").payloadSchema,
+    );
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "invalid_precedence",
+        ordering: true,
+        precedence: "sideways" as never,
+      }),
+    ).toThrow("Invalid relationship precedence");
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "associative_precedence",
+        precedence: "source_before_target",
+      }),
+    ).toThrow("Non-ordering relationship kind");
   });
 });
 
@@ -237,10 +254,9 @@ describe("relationship graph", () => {
     ).toThrow("endpoint not found");
     expect(
       () =>
-        new RelationshipGraph(
-          ["a"],
-          [{ source: "a", target: null, kind: "related" }] as never,
-        ),
+        new RelationshipGraph(["a"], [
+          { source: "a", target: null, kind: "related" },
+        ] as never),
     ).toThrow("endpoint not found");
   });
 

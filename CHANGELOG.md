@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- GH-555: remove unnecessary spread in relationship registry ordering assertion ([pm-ofgc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ofgc.toon))
 - Validate lifecycle cycles using ordering relationship kinds only ([pm-6irg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6irg.toon))
 
 ### Other

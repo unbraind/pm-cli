@@ -12,6 +12,10 @@ export type RelationshipDirection = "directed" | "undirected";
 export type RelationshipCardinality = "one" | "many";
 /** Lifecycle policy for a relationship kind. */
 export type RelationshipLifecycle = "persistent" | "supersedable" | "ephemeral";
+/** Direction in which an ordering edge contributes to execution precedence. */
+export type RelationshipPrecedence =
+  | "source_before_target"
+  | "target_before_source";
 
 /** Versioned semantic definition for a built-in or application-defined edge kind. */
 export interface RelationshipKindDefinition {
@@ -23,6 +27,8 @@ export interface RelationshipKindDefinition {
   inverse?: string;
   /** Whether the kind participates in execution-order cycle checks. */
   ordering: boolean;
+  /** Execution direction for ordering kinds; defaults to source before target. */
+  precedence?: RelationshipPrecedence;
   /** Whether the kind contributes to structural ancestry. */
   hierarchy: boolean;
   /** Maximum logical outgoing edges of this kind from one node. */
@@ -108,6 +114,7 @@ const BUILTIN_RELATIONSHIP_KINDS: readonly RelationshipKindDefinition[] = [
     direction: "directed",
     inverse: "blocks",
     ordering: true,
+    precedence: "target_before_source",
     hierarchy: false,
     outgoing: "many",
     incoming: "many",
@@ -121,6 +128,7 @@ const BUILTIN_RELATIONSHIP_KINDS: readonly RelationshipKindDefinition[] = [
     direction: "directed",
     inverse: "blocked_by",
     ordering: true,
+    precedence: "source_before_target",
     hierarchy: false,
     outgoing: "many",
     incoming: "many",
@@ -225,6 +233,22 @@ function freezeValue(value: unknown, visited = new Set<object>()): unknown {
   return Object.freeze(value);
 }
 
+function assertRelationshipPrecedence(
+  definition: RelationshipKindDefinition,
+  kind: string,
+): void {
+  if (
+    definition.precedence !== undefined &&
+    definition.precedence !== "source_before_target" &&
+    definition.precedence !== "target_before_source"
+  )
+    throw new TypeError(`Invalid relationship precedence for ${kind}`);
+  if (!definition.ordering && definition.precedence !== undefined)
+    throw new TypeError(
+      `Non-ordering relationship kind cannot declare precedence: ${kind}`,
+    );
+}
+
 /** Mutable registry with immutable snapshots and collision-safe extension registration. */
 export class RelationshipKindRegistry {
   readonly #definitions = new Map<string, RelationshipKindDefinition>();
@@ -247,6 +271,7 @@ export class RelationshipKindRegistry {
       definition.compatibilityVersion < 1
     )
       throw new TypeError(`Invalid compatibility version for ${kind}`);
+    assertRelationshipPrecedence(definition, kind);
     if (this.#definitions.has(kind) || this.#aliases.has(kind))
       throw new TypeError(`Relationship kind already registered: ${kind}`);
     const inverse = normalizeInverseKind(definition.inverse);
@@ -337,9 +362,13 @@ function normalizeRelationshipEdge(
     typeof candidate.target === "string" ? candidate.target.trim() : "";
   const definition = registry.require(candidate.kind);
   if (!nodes.has(source) || !nodes.has(target))
-    throw new TypeError(`Relationship endpoint not found: ${source} -> ${target}`);
+    throw new TypeError(
+      `Relationship endpoint not found: ${source} -> ${target}`,
+    );
   if (source === target && !definition.allowSelf)
-    throw new TypeError(`Self relationship is not allowed for ${definition.kind}`);
+    throw new TypeError(
+      `Self relationship is not allowed for ${definition.kind}`,
+    );
   const edge = Object.freeze({
     ...candidate,
     source,
@@ -446,8 +475,7 @@ export class RelationshipGraph {
       const source = normalizeNodeId(item.id);
       if (!source) continue;
       const parent = resolveExistingNodeId(item.parent, ids);
-      if (parent)
-        edges.push({ source, target: parent, kind: "parent" });
+      if (parent) edges.push({ source, target: parent, kind: "parent" });
       const blockedBy = resolveExistingNodeId(item.blocked_by, ids);
       if (blockedBy)
         edges.push({
@@ -473,6 +501,11 @@ export class RelationshipGraph {
   /** Return the deterministic immutable edge snapshot. */
   public edges(): readonly RelationshipEdge[] {
     return this.#edges;
+  }
+
+  /** Return the deterministic immutable node snapshot. */
+  public nodes(): readonly string[] {
+    return Object.freeze([...this.#nodes].sort());
   }
 
   #assertNode(id: string): void {

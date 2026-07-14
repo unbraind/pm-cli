@@ -1,0 +1,17 @@
+id: pm-evav
+title: "GH-550: extension list flags are erased at the real CLI boundary"
+description: "Fix list:true registerCommand flags so one, comma-separated, repeated, and interleaved alias values reach extension handlers through the built CLI without being replaced by an empty loose-occurrence array."
+type: Issue
+status: open
+priority: 1
+tags[3]: agent-experience,extension-sdk,gh-550
+created_at: "2026-07-14T10:18:53.391Z"
+updated_at: "2026-07-14T10:18:53.391Z"
+author: codex-gpt5
+acceptance_criteria: Built CLI parser preserves one/comma/repeated/interleaved list values in occurrence order; omitted flags retain declared defaults; focused extension startup and CLI integration tests cover the real boundary.
+parent: pm-x6jf
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-kfq5,related,"2026-07-14T10:18:53.391Z",codex-gpt5,null
+comments[1]{created_at,author,text}:
+  "2026-07-14T10:18:53.391Z",codex-gpt5,"Duplicate check 2026-07-14: pm search GH-550 --status all returned no item. Related closed pm-kfq5 covered repeated occurrence accumulation but GitHub #550 reports a distinct real-CLI coercion regression in 2026.7.13. Source: https://github.com/unbraind/pm-cli/issues/550"
+body: ""
