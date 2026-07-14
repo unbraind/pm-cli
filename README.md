@@ -3,6 +3,7 @@
 [![CI](https://github.com/unbraind/pm-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/unbraind/pm-cli/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/unbraind/pm-cli/branch/main/graph/badge.svg)](https://codecov.io/gh/unbraind/pm-cli)
 [![CodeFactor](https://www.codefactor.io/repository/github/unbraind/pm-cli/badge)](https://www.codefactor.io/repository/github/unbraind/pm-cli)
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/unbraind/pm-cli?utm_source=badge)
 [![npm version](https://img.shields.io/npm/v/%40unbrained%2Fpm-cli)](https://www.npmjs.com/package/%40unbrained%2Fpm-cli)
 [![Node >=22.18](https://img.shields.io/node/v/%40unbrained%2Fpm-cli)](https://nodejs.org)
 ![NPM Downloads](https://img.shields.io/npm/d18m/%40unbrained%2Fpm-cli)
