@@ -102,7 +102,10 @@ function positiveInteger(
 }
 
 function estimateTokens(value: unknown): number {
-  return Math.max(1, Math.ceil(Buffer.byteLength(JSON.stringify(value)) / 4));
+  return Math.max(
+    1,
+    Math.ceil(new TextEncoder().encode(JSON.stringify(value)).byteLength / 4),
+  );
 }
 
 function explainDirectEdge(
@@ -120,8 +123,10 @@ function explainDirectEdge(
     return node === before ? "prerequisite" : "dependent";
   }
   if (definition.hierarchy) {
-    if (edge.source === root && edge.target === node) return "ancestor";
-    return "descendant";
+    const sourceIsParent =
+      (definition.hierarchyDirection ?? "source_parent") === "source_parent";
+    const parent = sourceIsParent ? edge.source : edge.target;
+    return node === parent ? "ancestor" : "descendant";
   }
   if (edge.kind === "discovered_from" || edge.kind === "incident_from")
     return "provenance";
@@ -301,7 +306,7 @@ export function buildRelationshipContext(
     registry,
     nodeLimit,
     tokenBudget,
-    initialTokens: estimateTokens(root) + estimateTokens(evidence),
+    initialTokens: estimateTokens(root),
   });
   const { nodes } = nodeSelection;
 

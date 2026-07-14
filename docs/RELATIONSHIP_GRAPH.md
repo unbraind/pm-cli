@@ -18,6 +18,8 @@ SDK queries are deterministic, bounded, cancellation-aware, and return explicit 
 
 Ordering kinds also declare precedence. `source_before_target` means the source must execute first; `target_before_source` models dependency-shaped edges such as `blocked_by`. Custom kinds default to source-first for compatibility, but domain packages should declare the direction explicitly. Analytics consume this field and never infer execution meaning from the label.
 
+Hierarchy kinds likewise declare which endpoint is the structural parent. `source_parent` supports domain edges such as company `owns` asset, while `target_parent` preserves item-shaped child `parent` parent storage. Custom hierarchy kinds default to `source_parent`; packages should declare the orientation explicitly when their persisted edge shape differs. Context explanations use this contract instead of inferring ancestry from a kind name.
+
 ## Immutable events and snapshots
 
 `RelationshipEventLog` is the storage-independent reference mutation boundary. An append carries a unique event id, stable logical relationship id, action, author, timestamp, and optional optimistic `expectedVersion`. Add and supersede events validate endpoints, registered kinds, self-edge policy, duplicate identity, and incoming/outgoing cardinality before they enter the stream. Remove and supersede require an active logical relationship. No event rewrites an earlier event.

@@ -12,9 +12,14 @@ describe("relationship kind registry", () => {
     const registry = createRelationshipKindRegistry();
     expect(registry.resolve("related-to")?.kind).toBe("related");
     expect(registry.resolve("depends_on")?.kind).toBe("blocked_by");
+    expect(registry.require("parent").hierarchyDirection).toBe("target_parent");
+    expect(registry.require("child").hierarchyDirection).toBe("source_parent");
     expect(registry.resolve(null)).toBeUndefined();
     expect(registry.list().map(({ kind }) => kind)).toEqual(
-      registry.list().map(({ kind }) => kind).sort(),
+      registry
+        .list()
+        .map(({ kind }) => kind)
+        .sort(),
     );
     expect(isOrderingRelationshipKind("blocks", registry)).toBe(true);
     expect(isOrderingRelationshipKind("related", registry)).toBe(false);
@@ -130,6 +135,21 @@ describe("relationship kind registry", () => {
         precedence: "source_before_target",
       }),
     ).toThrow("Non-ordering relationship kind");
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "invalid_hierarchy_direction",
+        hierarchyDirection: "sideways" as never,
+      }),
+    ).toThrow("Invalid relationship hierarchy direction");
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "associative_hierarchy_direction",
+        hierarchy: false,
+        hierarchyDirection: "source_parent",
+      }),
+    ).toThrow("Non-hierarchy relationship kind");
   });
 });
 
@@ -147,6 +167,7 @@ describe("relationship graph", () => {
 
   it("deduplicates undirected edges and provides directional adjacency", () => {
     expect(graph.edges()).toHaveLength(4);
+    expect(graph.nodes()).toBe(graph.nodes());
     expect(graph.adjacency("a", { kinds: ["related"] }).value).toEqual(["e"]);
     expect(
       graph.adjacency("b", {

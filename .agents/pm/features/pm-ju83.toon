@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[6]: api,"area:graph","area:sdk",performance,relationships,sdk-first
 created_at: "2026-07-13T21:58:11.171Z"
-updated_at: "2026-07-14T10:19:35.649Z"
+updated_at: "2026-07-14T10:48:29.843Z"
 assignee: codex-gpt5
 author: codex-root
 estimated_minutes: 720
@@ -26,7 +26,7 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-8xr8,related,"2026-07-13T21:58:11.171Z",null,null
   pm-usfg,related,"2026-07-13T21:58:11.171Z",null,null
   pm-zwpp,blocked_by,"2026-07-13T21:58:11.171Z",null,null
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-07-13T21:58:11.171Z",codex-root,"Duplicate check 2026-07-13: SDK-first inventory contains generic query and lifecycle promotion slices but no stable typed relationship registry plus bounded graph algorithm API; this is a new promotion slice under pm-96h7 and relates to pm-usfg."
   "2026-07-14T07:46:26.495Z",codex-gpt5-root,"Evidence: delivered the first broad public graph foundation: versioned built-in/custom relationship registry, alias compatibility, immutable in-memory index construction from item metadata, deterministic adjacency/closure/reverse-impact/shortest-path/subgraph queries with cancellation and explicit cost/truncation metadata, SDK barrel/docs, and validate integration. Packed tarball consumer proved a custom company owns graph plus real CLI lifecycle. Full repository run passed 286 files/5664 tests; focused all-source coverage for relationships.ts is 100/100/100/100. Remaining event mutation, durable incremental index, snapshot/streaming, MCP projection, and million-item scale acceptance stay on this feature, so it will return to open rather than be falsely closed."
   "2026-07-14T08:15:26.847Z",codex-root,"PR #554 review evidence: addressed all ten first-round findings across construction complexity/performance, bounded closure/path truncation, malformed/custom lifecycle dependencies, immutable payload schemas, canonical dependency conversion, inverse-kind filters, generated changelog accuracy, and duplicate-edge documentation. Focused relationship coverage is exact 100/100/100/100; full repository run passed 286 files and 5664 tests before the final single branch regression was added. The broader durable event/index acceptance remains open."
@@ -37,6 +37,7 @@ comments[10]{created_at,author,text}:
   "2026-07-14T09:23:45.257Z",codex-root,"PR #554 final-round evidence: shortestPath now uses a parent map and reconstructs only the winning route, reducing traversal state to O(V) while preserving case-sensitive item identity; schema freeze assertions now fail on missing structure. Focused 95 tests pass, relationship coverage is exact 100/100/100/100, ESLint and build pass."
   "2026-07-14T09:43:36.284Z",codex-gpt5,"Implementation start 2026-07-14: continue the merged registry/query foundation with immutable attributable relationship events, replayable snapshots, continuation/index seams, and thin public-SDK consumption. All-status duplicate review reused the canonical graph lineage; no parallel item was created."
   "2026-07-14T10:19:33.062Z",codex-gpt5,"Implementation evidence: added explicit ordering precedence to the extensible relationship registry; immutable deterministic graph node enumeration; and an append-only attributable RelationshipEventLog with stable relationship identities, optimistic version checks, add/remove/supersede events, cardinality validation, immutable replay snapshots by version/time, and opaque cursor pagination. Public packed SDK consumer proof imported @unbrained/pm-cli/sdk in a fresh project and replayed a custom company owns relationship plus delivery dependencies successfully."
+  "2026-07-14T10:48:29.843Z",codex-gpt5,"PR #556 review round 1 evidence: accepted and resolved graph-kernel findings by caching the immutable sorted node snapshot, introducing explicit source_parent/target_parent hierarchy orientation, and documenting built-in versus custom semantics. Repeated nodes() identity and hierarchy validation regressions pass; full repository coverage is exact 100/100/100/100."
 notes[1]{created_at,author,text}:
   "2026-07-14T10:19:35.648Z",codex-gpt5,"Remaining canonical scope after this PR: durable storage adapters, native CLI/MCP graph query integration, migration/backfill, and million-item storage validation; keep feature open."
 learnings[2]{created_at,author,text}:

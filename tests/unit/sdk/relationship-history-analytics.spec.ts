@@ -286,6 +286,24 @@ describe("relationship graph analytics", () => {
     });
   });
 
+  it("keeps acyclic execution results valid when they lead into a cycle", () => {
+    const cyclic = new RelationshipGraph(
+      ["start", "a", "b"],
+      [
+        { source: "start", target: "a", kind: "blocks" },
+        { source: "a", target: "b", kind: "blocks" },
+        { source: "b", target: "a", kind: "blocks" },
+      ],
+    );
+    expect(analyzeRelationshipExecution(cyclic)).toMatchObject({
+      acyclic: false,
+      order: ["start"],
+      depth: { start: 0 },
+      criticalPath: ["start"],
+      cycles: [["a", "b"]],
+    });
+  });
+
   it("returns bounded impact with explainable paths", () => {
     expect(
       analyzeGraphImpact(graph, "design", {
@@ -346,6 +364,35 @@ describe("relationship graph analytics", () => {
     ).toMatchObject({
       removed: [expect.objectContaining({ source: "build" })],
     });
+    const payloadGraph = new RelationshipGraph(["a", "b"], []);
+    expect(
+      compareRelationshipSnapshots(
+        {
+          version: 1,
+          graph: payloadGraph,
+          edges: [
+            {
+              source: "a",
+              target: "b",
+              kind: "related",
+              payload: { z: [null, { beta: 2, alpha: 1 }], a: true },
+            },
+          ],
+        },
+        {
+          version: 2,
+          graph: payloadGraph,
+          edges: [
+            {
+              kind: "related",
+              target: "b",
+              source: "a",
+              payload: { a: true, z: [null, { alpha: 1, beta: 2 }] },
+            },
+          ],
+        },
+      ),
+    ).toMatchObject({ added: [], removed: [], unchangedCount: 1 });
   });
 
   it("covers empty graphs and deterministic equal-depth execution ties", () => {
@@ -507,6 +554,31 @@ describe("bounded relationship context", () => {
     ).toMatchObject({ id: "review", reasons: ["dependent"] });
   });
 
+  it("explains custom hierarchy direction independently from kind labels", () => {
+    const registry = createRelationshipKindRegistry().register({
+      kind: "owns",
+      direction: "directed",
+      ordering: false,
+      hierarchy: true,
+      outgoing: "many",
+      incoming: "one",
+      lifecycle: "persistent",
+      compatibilityVersion: 1,
+      allowSelf: false,
+    });
+    const ownership = new RelationshipGraph(
+      ["company", "asset"],
+      [{ source: "company", target: "asset", kind: "owns" }],
+      registry,
+    );
+    expect(
+      buildRelationshipContext(ownership, "company", [], { registry }).nodes[0],
+    ).toMatchObject({ id: "asset", reasons: ["descendant"] });
+    expect(
+      buildRelationshipContext(ownership, "asset", [], { registry }).nodes[0],
+    ).toMatchObject({ id: "company", reasons: ["ancestor"] });
+  });
+
   it("explains hierarchy, provenance, association, and deeper reachability", () => {
     const semantic = new RelationshipGraph(
       ["root", "parent", "child", "origin", "incident", "peer", "deep"],
@@ -596,5 +668,18 @@ describe("bounded relationship context", () => {
       buildRelationshipContext(new RelationshipGraph(["solo"], []), "solo", [])
         .meta.truncated,
     ).toBe(false);
+    const evidenceRoot = { id: "solo", evidence: ["proof"] };
+    expect(
+      buildRelationshipContext(new RelationshipGraph(["solo"], []), "solo", [
+        evidenceRoot,
+      ]).meta.usedTokens,
+    ).toBe(
+      Math.max(
+        1,
+        Math.ceil(
+          new TextEncoder().encode(JSON.stringify(evidenceRoot)).byteLength / 4,
+        ),
+      ),
+    );
   });
 });

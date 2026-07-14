@@ -119,6 +119,20 @@ function sortComponents(components: string[][]): string[][] {
   );
 }
 
+function stableJsonValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map((entry) => stableJsonValue(entry));
+  if (value === null || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, entry]) => [key, stableJsonValue(entry)]),
+  );
+}
+
+function relationshipEdgeKey(edge: RelationshipEdge): string {
+  return JSON.stringify(stableJsonValue(edge));
+}
+
 function appendFinishingOrder(
   start: string,
   adjacency: ReadonlyMap<string, ReadonlySet<string>>,
@@ -244,6 +258,7 @@ function longestPath(
   const parent = new Map<string, string>();
   for (const source of order) {
     for (const target of adjacency.get(source)!) {
+      if (!depth.has(target)) continue;
       const candidate = depth.get(source)! + 1;
       const currentParent = parent.get(target);
       if (
@@ -370,10 +385,10 @@ export function compareRelationshipSnapshots(
   after: RelationshipSnapshot,
 ): RelationshipSnapshotComparison {
   const earlier = new Map(
-    before.edges.map((edge) => [JSON.stringify(edge), edge]),
+    before.edges.map((edge) => [relationshipEdgeKey(edge), edge]),
   );
   const later = new Map(
-    after.edges.map((edge) => [JSON.stringify(edge), edge]),
+    after.edges.map((edge) => [relationshipEdgeKey(edge), edge]),
   );
   return {
     fromVersion: before.version,

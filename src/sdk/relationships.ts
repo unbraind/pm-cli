@@ -16,6 +16,8 @@ export type RelationshipLifecycle = "persistent" | "supersedable" | "ephemeral";
 export type RelationshipPrecedence =
   | "source_before_target"
   | "target_before_source";
+/** Endpoint that represents the structural parent for hierarchy kinds. */
+export type RelationshipHierarchyDirection = "source_parent" | "target_parent";
 
 /** Versioned semantic definition for a built-in or application-defined edge kind. */
 export interface RelationshipKindDefinition {
@@ -31,6 +33,8 @@ export interface RelationshipKindDefinition {
   precedence?: RelationshipPrecedence;
   /** Whether the kind contributes to structural ancestry. */
   hierarchy: boolean;
+  /** Endpoint that represents the parent; defaults to source for custom kinds. */
+  hierarchyDirection?: RelationshipHierarchyDirection;
   /** Maximum logical outgoing edges of this kind from one node. */
   outgoing: RelationshipCardinality;
   /** Maximum logical incoming edges of this kind to one node. */
@@ -142,6 +146,7 @@ const BUILTIN_RELATIONSHIP_KINDS: readonly RelationshipKindDefinition[] = [
     inverse: "child",
     ordering: false,
     hierarchy: true,
+    hierarchyDirection: "target_parent",
     outgoing: "one",
     incoming: "many",
     lifecycle: "supersedable",
@@ -155,6 +160,7 @@ const BUILTIN_RELATIONSHIP_KINDS: readonly RelationshipKindDefinition[] = [
     inverse: "parent",
     ordering: false,
     hierarchy: true,
+    hierarchyDirection: "source_parent",
     outgoing: "many",
     incoming: "one",
     lifecycle: "supersedable",
@@ -249,6 +255,22 @@ function assertRelationshipPrecedence(
     );
 }
 
+function assertRelationshipHierarchyDirection(
+  definition: RelationshipKindDefinition,
+  kind: string,
+): void {
+  if (
+    definition.hierarchyDirection !== undefined &&
+    definition.hierarchyDirection !== "source_parent" &&
+    definition.hierarchyDirection !== "target_parent"
+  )
+    throw new TypeError(`Invalid relationship hierarchy direction for ${kind}`);
+  if (!definition.hierarchy && definition.hierarchyDirection !== undefined)
+    throw new TypeError(
+      `Non-hierarchy relationship kind cannot declare hierarchy direction: ${kind}`,
+    );
+}
+
 /** Mutable registry with immutable snapshots and collision-safe extension registration. */
 export class RelationshipKindRegistry {
   readonly #definitions = new Map<string, RelationshipKindDefinition>();
@@ -272,6 +294,7 @@ export class RelationshipKindRegistry {
     )
       throw new TypeError(`Invalid compatibility version for ${kind}`);
     assertRelationshipPrecedence(definition, kind);
+    assertRelationshipHierarchyDirection(definition, kind);
     if (this.#definitions.has(kind) || this.#aliases.has(kind))
       throw new TypeError(`Relationship kind already registered: ${kind}`);
     const inverse = normalizeInverseKind(definition.inverse);
@@ -422,6 +445,7 @@ function reconstructPath(
 export class RelationshipGraph {
   readonly #registry: RelationshipKindRegistry;
   readonly #nodes: Set<string>;
+  readonly #nodeSnapshot: readonly string[];
   readonly #edges: readonly RelationshipEdge[];
   readonly #outgoing = new Map<string, RelationshipEdge[]>();
   readonly #incoming = new Map<string, RelationshipEdge[]>();
@@ -439,6 +463,7 @@ export class RelationshipGraph {
         .map((id) => id.trim())
         .filter(Boolean),
     );
+    this.#nodeSnapshot = Object.freeze([...this.#nodes].sort());
     const deduped = new Map<string, RelationshipEdge>();
     for (const candidate of edges) {
       const { edge, identity } = normalizeRelationshipEdge(
@@ -505,7 +530,7 @@ export class RelationshipGraph {
 
   /** Return the deterministic immutable node snapshot. */
   public nodes(): readonly string[] {
-    return Object.freeze([...this.#nodes].sort());
+    return this.#nodeSnapshot;
   }
 
   #assertNode(id: string): void {
