@@ -2,20 +2,24 @@ id: pm-k7dp
 title: Add OSSF Scorecard supply-chain security workflow with published results and SARIF code-scanning upload
 description: ""
 type: Task
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-07-14T21:47:30.312Z"
-updated_at: "2026-07-14T21:55:55.499Z"
-assignee: maintainer-agent
+updated_at: "2026-07-14T22:11:38.826Z"
+closed_at: "2026-07-14T22:11:38.825Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: "scorecard.yml runs green on main (push + weekly cron) with ossf/scorecard-action pinned by commit SHA per repo convention; publish_results:true so the OpenSSF badge/API is live; SARIF uploaded to GitHub code scanning; OSSF Scorecard badge added to README; only free-for-open-source features used"
 parent: pm-qwoy
 risk: low
 confidence: high
+resolution: completed
+expected_result: "scorecard.yml green on main with SHA-pinned action, published results powering the OpenSSF badge/API, SARIF in code scanning, README badge, free features only"
+actual_result: "Workflow green on both main pushes; results published (live API score 6.9, badge HTTP 302); Scorecard SARIF analyses present in code scanning (6); OpenSSF badge in README; weekly cron + branch_protection_rule + workflow_dispatch triggers; all free public-repo features"
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-3z0k,related,"2026-07-14T21:47:30.312Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-14T21:55:55.499Z",maintainer-agent,"Implementation: .github/workflows/scorecard.yml authored per repo conventions — ossf/scorecard-action@4eaacf05 (v2.4.3, annotated tag dereferenced to commit), checkout v7.0.0 with persist-credentials:false, upload-artifact v7, codeql upload-sarif v4.37.0; triggers = push(main) + weekly cron + branch_protection_rule + workflow_dispatch; top-level permissions read-all, job-scoped security-events:write + id-token:write; publish_results:true; OpenSSF badge added to README. actionlint + local trivy misconfig clean."
+close_reason: "OSSF Scorecard workflow shipped and verified: published results (score 6.9), SARIF code-scanning upload, README badge."
 body: ""

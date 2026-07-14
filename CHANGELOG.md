@@ -10,6 +10,7 @@
 
 ### Fixed
 
+- Adopt CodSpeed continuous CPU benchmarking in CI: review/land PR\#564 and establish the per-PR perf-regression signal ([pm-yh6t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yh6t.toon))
 - GH-562: pm init rejects --id-prefix/--prefix flag though id prefix is only positional ([pm-nmzx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nmzx.toon))
 - GH-560: extension renderer overrides diverge between SDK harness and real CLI output ([pm-as4a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-as4a.toon))
 - GH-557: contract layer intercepts -h/--help before variadic-positional handlers, blocking legitimate positional content ([pm-albl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-albl.toon))
@@ -18,6 +19,11 @@
 - GH-558: export canonical item-to-context-relevance candidate derivation from the public SDK ([pm-qyc6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qyc6.toon))
 - GH-555: remove unnecessary spread in relationship registry ordering assertion ([pm-ofgc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ofgc.toon))
 - Validate lifecycle cycles using ordering relationship kinds only ([pm-6irg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6irg.toon))
+
+### Security
+
+- Add TruffleHog OSS verified-secret scanning to the security workflow and complete free GitHub secret-scanning toggles ([pm-4ris](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-4ris.toon))
+- Add OSSF Scorecard supply-chain security workflow with published results and SARIF code-scanning upload ([pm-k7dp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k7dp.toon))
 
 ### Other
 

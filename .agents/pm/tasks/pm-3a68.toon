@@ -6,8 +6,7 @@ status: open
 priority: 3
 tags: []
 created_at: "2026-07-14T21:48:02.061Z"
-updated_at: "2026-07-14T21:55:57.905Z"
-assignee: maintainer-agent
+updated_at: "2026-07-14T22:11:57.393Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: ".deepsource.toml (javascript analyzer + secrets analyzer, exclude/test patterns) committed and valid; .deepscan.json exclusions committed for the ALREADY-ACTIVE DeepScan app (verified passing check on PR#564); .scrutinizer.yml committed; web-UI activation steps for DeepSource (app.deepsource.com) and Scrutinizer (scrutinizer-ci.com) documented on this item for the maintainer — both are free for open-source repos; once activated their checks report on PRs"
