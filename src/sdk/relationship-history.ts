@@ -5,6 +5,9 @@
  * optimistic concurrency, deterministic replay, snapshots, and cursor pages.
  */
 import { createQueryFingerprint, paginateQueryRows } from "./pagination.js";
+import { appendFile, mkdir, readFile } from "node:fs/promises";
+import path from "node:path";
+import { acquireLock } from "../core/lock/lock.js";
 import {
   RelationshipGraph,
   RelationshipKindRegistry,
@@ -72,6 +75,16 @@ export interface RelationshipEventPage {
 export interface RelationshipEventLogOptions {
   /** Registry defining edge semantics and cardinality. */
   registry?: RelationshipKindRegistry;
+}
+
+/** Filesystem controls for the durable relationship event store. */
+export interface RelationshipEventStoreOptions extends RelationshipEventLogOptions {
+  /** Tracker root that owns the relationship history directory. */
+  pmRoot: string;
+  /** Fixed node universe validated by every replay and append. */
+  nodes: Iterable<string>;
+  /** Optional JSONL path relative to the tracker root. */
+  relativePath?: string;
 }
 
 interface RelationshipCardinalityIndexes {
@@ -394,5 +407,129 @@ export class RelationshipEventLog {
       hasMore: page.has_more,
       ...(page.next_cursor ? { nextCursor: page.next_cursor } : {}),
     };
+  }
+}
+
+const RELATIONSHIP_STORE_LOCK_ID = "relationship-event-store";
+
+function resolveRelationshipEventStorePath(
+  pmRoot: string,
+  relativePath = "relationships/events.jsonl",
+): string {
+  const root = path.resolve(pmRoot);
+  const target = path.resolve(root, relativePath);
+  const relative = path.relative(root, target);
+  if (relative.length === 0)
+    throw new TypeError("Relationship event path must name a file within the tracker root");
+  if (relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative))
+    throw new TypeError("Relationship event path must stay within the tracker root");
+  return target;
+}
+
+async function loadRelationshipEventLog(
+  target: string,
+  nodes: readonly string[],
+  registry: RelationshipKindRegistry | undefined,
+): Promise<RelationshipEventLog> {
+  const log = new RelationshipEventLog(nodes, { registry });
+  let raw: string;
+  try {
+    raw = await readFile(target, "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return log;
+    throw error;
+  }
+  const lines = raw.split("\n");
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index]!.trim();
+    if (!line) continue;
+    let stored: RelationshipEvent;
+    try {
+      stored = JSON.parse(line) as RelationshipEvent;
+    } catch {
+      throw new TypeError(`Invalid relationship event JSONL at line ${index + 1}`);
+    }
+    if (stored.sequence !== log.version + 1)
+      throw new TypeError(`Invalid relationship event sequence at line ${index + 1}`);
+    log.append({
+      eventId: stored.eventId,
+      relationshipId: stored.relationshipId,
+      action: stored.action,
+      ...(stored.edge === undefined ? {} : { edge: stored.edge }),
+      author: stored.author,
+      timestamp: stored.timestamp,
+      ...(stored.reason === undefined ? {} : { reason: stored.reason }),
+      expectedVersion: log.version,
+    });
+  }
+  return log;
+}
+
+/**
+ * Lock-serialized durable JSONL adapter for {@link RelationshipEventLog}.
+ * Every append replays the current stream while holding the workspace lock, so
+ * independent processes share optimistic versions without lost updates.
+ */
+export class RelationshipEventStore {
+  readonly #pmRoot: string;
+  readonly #nodes: readonly string[];
+  readonly #registry: RelationshipKindRegistry | undefined;
+  readonly #path: string;
+  #log: RelationshipEventLog;
+
+  private constructor(
+    options: RelationshipEventStoreOptions,
+    nodes: readonly string[],
+    target: string,
+    log: RelationshipEventLog,
+  ) {
+    this.#pmRoot = options.pmRoot;
+    this.#nodes = nodes;
+    this.#registry = options.registry;
+    this.#path = target;
+    this.#log = log;
+  }
+
+  /** Open and validate an existing stream or create an empty store view. */
+  public static async open(options: RelationshipEventStoreOptions): Promise<RelationshipEventStore> {
+    const nodes = Object.freeze([...options.nodes]);
+    const target = resolveRelationshipEventStorePath(options.pmRoot, options.relativePath);
+    const log = await loadRelationshipEventLog(target, nodes, options.registry);
+    return new RelationshipEventStore(options, nodes, target, log);
+  }
+
+  /** Absolute JSONL path, exposed for diagnostics and backup tooling. */
+  public get path(): string {
+    return this.#path;
+  }
+
+  /** Current validated append sequence. */
+  public get version(): number {
+    return this.#log.version;
+  }
+
+  /** Append one event after refreshing under the shared workspace lock. */
+  public async append(input: RelationshipEventInput): Promise<RelationshipEvent> {
+    const release = await acquireLock(this.#pmRoot, RELATIONSHIP_STORE_LOCK_ID, 30, `relationship-store:${process.pid}`, false, false, 3_000);
+    try {
+      const refreshed = await loadRelationshipEventLog(this.#path, this.#nodes, this.#registry);
+      const event = refreshed.append(input);
+      await mkdir(path.dirname(this.#path), { recursive: true });
+      await appendFile(this.#path, `${JSON.stringify(event)}\n`, "utf8");
+      this.#log = refreshed;
+      return event;
+    } finally {
+      await release();
+    }
+  }
+
+  /** Materialize an exact validated snapshot from the current local view. */
+  public snapshot(options: Parameters<RelationshipEventLog["snapshot"]>[0] = {}): RelationshipSnapshot {
+    return this.#log.snapshot(options);
+  }
+
+  /** Page immutable events from the current local view. */
+  public page(options: Parameters<RelationshipEventLog["page"]>[0]): RelationshipEventPage {
+    return this.#log.page(options);
   }
 }

@@ -376,6 +376,40 @@ describe("runDeps", () => {
     });
   });
 
+  it("returns bounded explainable relationship context through deps", async () => {
+    await withTempPmPath(async (context) => {
+      const prerequisiteId = createTask(context, "context-prerequisite");
+      const rootId = createTask(context, "context-root", [
+        `id=${prerequisiteId},kind=blocked_by,author=test-author,created_at=now`,
+      ]);
+      const result = await runDeps(rootId, {
+        format: "context",
+        maxDepth: 2,
+        nodeLimit: "5",
+        edgeLimit: "5",
+        tokenBudget: "500",
+      }, { path: context.pmPath });
+
+      expect(result).toMatchObject({ id: rootId, format: "context", node_count: 2, edge_count: 1, missing_count: 0 });
+      expect(result.context).toMatchObject({
+        root: { id: rootId, title: "context-root", status: "open" },
+        nodes: [{ id: prerequisiteId, reasons: ["prerequisite"] }],
+        meta: { exact: true, truncated: false, nodeLimit: 5, edgeLimit: 5, tokenBudget: 500 },
+      });
+
+      const defaults = await runDeps(rootId, { format: "context" }, { path: context.pmPath });
+      expect(defaults.context?.meta).toMatchObject({ nodeLimit: 20, edgeLimit: 40, tokenBudget: 1200 });
+      createTask(context, "context-dependent", [
+        `id=${rootId},kind=blocked_by,author=test-author,created_at=now`,
+      ]);
+      const oneNode = await runDeps(rootId, { format: "context", nodeLimit: 1, maxDepth: 2 }, { path: context.pmPath });
+      expect(oneNode.context?.meta.nextCursor).toEqual(expect.any(String));
+      const continued = await runDeps(rootId, { format: "context", nodeLimit: 1, maxDepth: 2, cursor: oneNode.context!.meta.nextCursor, summary: true }, { path: context.pmPath });
+      expect(continued.context).toBeUndefined();
+      await expect(runDeps(rootId, { format: "context", nodeLimit: 0 }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
   it("accepts numeric max-depth values and keeps deterministic ordering for duplicate dependency edges", async () => {
     await withTempPmPath(async (context) => {
       const targetId = createTask(context, "deps-order-target");

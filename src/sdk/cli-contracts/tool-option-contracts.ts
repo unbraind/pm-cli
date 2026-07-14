@@ -395,4 +395,8 @@ export const TOOL_DEPS_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "maxDepth", flag: "--max-depth" },
   { param: "collapse", flag: "--collapse" },
   { param: "summary", flag: "--summary" },
+  { param: "nodeLimit", flag: "--node-limit" },
+  { param: "edgeLimit", flag: "--edge-limit" },
+  { param: "tokenBudget", flag: "--token-budget" },
+  { param: "cursor", flag: "--cursor" },
 ];

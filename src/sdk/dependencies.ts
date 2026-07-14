@@ -20,9 +20,14 @@ import type {
   ItemStatus,
   ItemType,
 } from "../types/index.js";
+import {
+  buildRelationshipContext,
+  type RelationshipContextResult,
+} from "./relationship-context.js";
+import { RelationshipGraph } from "./relationships.js";
 
 /** Supported values accepted by the deps format contract. */
-export const DEPS_FORMAT_VALUES = ["tree", "graph"] as const;
+export const DEPS_FORMAT_VALUES = ["tree", "graph", "context"] as const;
 /** Restricts deps format values accepted by command, SDK, and storage contracts. */
 export type DepsFormat = (typeof DEPS_FORMAT_VALUES)[number];
 /** Supported values accepted by the deps collapse contract. */
@@ -40,6 +45,14 @@ export interface DepsCommandOptions {
   collapse?: string;
   /** Value that configures or reports summary for this contract. */
   summary?: boolean;
+  /** Maximum graph-context nodes returned. */
+  nodeLimit?: string | number;
+  /** Maximum graph-context edges returned. */
+  edgeLimit?: string | number;
+  /** Maximum estimated graph-context output tokens. */
+  tokenBudget?: string | number;
+  /** Opaque continuation cursor for graph-context output. */
+  cursor?: string;
 }
 
 interface IndexedItem {
@@ -256,6 +269,8 @@ export interface DepsResult {
   tree?: DepsTreeNode;
   /** Value that configures or reports graph for this contract. */
   graph?: DepsGraphResult;
+  /** Explainable bounded graph-context projection. */
+  context?: RelationshipContextResult;
 }
 
 function parseFormat(raw: string | undefined): DepsFormat {
@@ -264,9 +279,17 @@ function parseFormat(raw: string | undefined): DepsFormat {
     return candidate as DepsFormat;
   }
   throw new PmCliError(
-    `Invalid --format value "${raw}". Use "tree" or "graph".`,
+    `Invalid --format value "${raw}". Use "tree", "graph", or "context".`,
     EXIT_CODE.USAGE,
   );
+}
+
+function parsePositiveInteger(raw: string | number | undefined, flag: string): number | undefined {
+  if (raw === undefined) return undefined;
+  const value = typeof raw === "number" ? raw : Number(raw.trim());
+  if (!Number.isInteger(value) || value < 1)
+    throw new PmCliError(`Invalid --${flag} value "${raw}". Use a positive integer.`, EXIT_CODE.USAGE);
+  return value;
 }
 
 function parseMaxDepth(raw: string | number | undefined): number | undefined {
@@ -509,6 +532,30 @@ function countDependencyGraph(
   };
 }
 
+/** Build the SDK-backed bounded relationship-context projection for deps. */
+export function buildDepsRelationshipContext(
+  rootId: string,
+  items: readonly ItemMetadata[],
+  options: Pick<DepsCommandOptions, "maxDepth" | "nodeLimit" | "edgeLimit" | "tokenBudget" | "cursor">,
+): RelationshipContextResult {
+  const maxDepth = parseMaxDepth(options.maxDepth);
+  const nodeLimit = parsePositiveInteger(options.nodeLimit, "node-limit");
+  const edgeLimit = parsePositiveInteger(options.edgeLimit, "edge-limit");
+  const tokenBudget = parsePositiveInteger(options.tokenBudget, "token-budget");
+  return buildRelationshipContext(
+    RelationshipGraph.fromItems(items),
+    rootId,
+    items.map((item) => ({ id: item.id, title: item.title, status: item.status })),
+    {
+      ...(maxDepth === undefined ? {} : { maxDepth }),
+      ...(nodeLimit === undefined ? {} : { nodeLimit }),
+      ...(edgeLimit === undefined ? {} : { edgeLimit }),
+      ...(tokenBudget === undefined ? {} : { tokenBudget }),
+      ...(options.cursor?.trim() ? { cursor: options.cursor.trim() } : {}),
+    },
+  );
+}
+
 /** Implements run deps for the public runtime surface of this module. */
 export async function runDeps(
   id: string,
@@ -562,6 +609,19 @@ export async function runDeps(
   }
   if (!index.has(id.trim().toLowerCase())) {
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
+  }
+
+  if (format === "context") {
+    const canonicalId = index.get(id.trim().toLowerCase())!.id;
+    const context = buildDepsRelationshipContext(canonicalId, items, options);
+    return {
+      id: canonicalId,
+      format,
+      node_count: context.nodes.length + 1,
+      edge_count: context.edges.length,
+      missing_count: 0,
+      ...(summaryOnly ? {} : { context }),
+    };
   }
 
   if (summaryOnly) {

@@ -39,6 +39,8 @@ Source of truth:
 - [`src/sdk/docs.ts`](../src/sdk/docs.ts)
 - [`src/sdk/dependencies.ts`](../src/sdk/dependencies.ts)
 - [`src/sdk/relationships.ts`](../src/sdk/relationships.ts)
+- [`src/sdk/relationship-history.ts`](../src/sdk/relationship-history.ts)
+- [`src/sdk/relationship-context.ts`](../src/sdk/relationship-context.ts)
 - [`src/sdk/cli-contracts.ts`](../src/sdk/cli-contracts.ts)
 - [`src/sdk/cli-contracts/commander-types.ts`](../src/sdk/cli-contracts/commander-types.ts)
 - [`src/sdk/cli-contracts/commander-mutation-options.ts`](../src/sdk/cli-contracts/commander-mutation-options.ts)
@@ -113,7 +115,7 @@ Command/action contract exports:
 - `PmClient` / `runAction` (high-level in-process action execution for custom tools, bots, CI, and embedded runtimes)
 - Typed read primitives on `PmClient`: `get` (including `GetOptions.at` point-in-time reads), `list`, `search`, `context`, `next`, `aggregate`, and `stats`; direct `getItemAt` reconstructs a canonical historical document without mutation
 - Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`
-- Context relevance primitives: `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
+- Context relevance primitives: `buildItemContextRelevanceCandidates`, `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
 - Context relevance contracts: `ContextRelevanceCandidate`, `ContextRelevanceSignals`, `ContextRelevanceScorer`, `ContextRelevanceReport`, `ContextEvaluationReader`, `ContextEvaluationScenario`, `ContextEvaluationScenarioReport`, `ContextEvaluationThresholds`, and `ContextEvaluationCorpusReport`
 - Context packing and feedback primitives: `packContextCandidates`, `recordContextUsageServing`, `recordContextUsageTouch`, `recordContextUsageTouches`, and `readContextUsageAffinity`
 - Typed annotation and relationship primitives on `PmClient`: `comments`, `notes`, `learnings`, `files`, `filesDiscover`, `docs`, `deps`, and `append`
@@ -121,7 +123,7 @@ Command/action contract exports:
 - Annotation kernel primitives: `resolveAnnotationInput`, `runAnnotationCommand`, `resolveAnnotationIndex`, `parseAnnotationTextInput`, `limitAnnotationEntries`, `readAnnotationEntries`, `wrapOwnershipConflict`, `isErrnoError`, and their typed input/config/result contracts
 - Linked-resource kernel primitives: `runFiles`, `runFilesDiscover`, `runDocs`, `runDeps`, `runLinkedArtifacts`, parsing/normalization/path-validation helpers, and their typed contracts. The CLI files/docs/deps modules are presentation-only re-exports of these SDK implementations.
 - Dependency-governance primitive: `collectDanglingDependencyReferences` partitions missing targets into actionable active holders, informational terminal-history holders, and the legacy `no-active-blocker` sentinel without mutating stored history.
-- Relationship graph primitives: `RelationshipKindRegistry`, `createRelationshipKindRegistry`, `RelationshipGraph`, `isOrderingRelationshipKind`, and `dependencyToRelationship` provide application-defined edge semantics plus bounded adjacency, closure, reverse-impact, shortest-path, and induced-subgraph queries. See [Relationship graph semantics](RELATIONSHIP_GRAPH.md).
+- Relationship graph primitives: `RelationshipKindRegistry`, `createRelationshipKindRegistry`, `RelationshipGraph`, `RelationshipEventLog`, `RelationshipEventStore`, `buildRelationshipContext`, `buildDepsRelationshipContext`, `isOrderingRelationshipKind`, and `dependencyToRelationship` provide application-defined edge semantics, durable replay, and bounded adjacency, closure, reverse-impact, shortest-path, induced-subgraph, and explainable context queries. See [Relationship graph semantics](RELATIONSHIP_GRAPH.md).
 - Typed customization primitives on `PmClient`: `init`, `config`, `schema`, `schemaList`, `schemaShow`, `schemaAddType`, `schemaRemoveType`, `schemaAddStatus`, `schemaRemoveStatus`, `schemaAddField`, `schemaRemoveField`, `schemaListFields`, `schemaShowField`, `schemaApplyPreset`, `schemaInferTypes`, `schemaShowStatus`, `profile`, `profileList`, `profileShow`, `profileApply`, and `profileLint`
 - Workspace-scaffold primitives: `ensurePmGitignore` and `getPmGitignoreBlock` let custom tools apply the same idempotent runtime/search cache policy as `pm init` without importing CLI internals.
 - Customization primitive option/result contracts: `InitCommandOptions` / `InitResult`, `ConfigCommandOptions` / `ConfigResult`, `SchemaSubcommand` / `SchemaResult` / `SchemaInspectResult`, `SchemaListResult`, `SchemaShowResult`, `SchemaAddTypeResult`, `SchemaRemoveTypeResult`, `SchemaAddStatusResult`, `SchemaRemoveStatusResult`, `SchemaAddFieldResult`, `SchemaRemoveFieldResult`, `SchemaListFieldsResult`, `SchemaShowFieldResult`, `SchemaApplyPresetResult`, `SchemaAddTypeInferResult`, `SchemaShowStatusResult`, `ProfileSubcommand` / `ProfileResult`, `ProfileListResult`, `ProfileShowResult`, `ProfileApplyResult`, `ProfileLintResult`
@@ -655,7 +657,13 @@ await pm.docs(created.item.id, {
   add: ["docs/SDK.md"],
   note: "authoring reference",
 });
-const graph = await pm.deps(created.item.id, { format: "graph" });
+const graph = await pm.deps(created.item.id, {
+  format: "context",
+  maxDepth: 3,
+  nodeLimit: 20,
+  edgeLimit: 40,
+  tokenBudget: 800,
+});
 const types = await pm.schemaList();
 const profiles = await pm.profileList();
 const validation = await pm.validate({ checkResolution: true });
@@ -767,12 +775,16 @@ runtimes.
 ### Context relevance and evaluation
 
 Tracked by [pm-4k6b](../.agents/pm/features/pm-4k6b.toon),
-[pm-h3no](../.agents/pm/tasks/pm-h3no.toon), and
-[pm-atfm](../.agents/pm/features/pm-atfm.toon).
+[pm-h3no](../.agents/pm/tasks/pm-h3no.toon),
+[pm-atfm](../.agents/pm/features/pm-atfm.toon), and
+[pm-qyc6](../.agents/pm/issues/pm-qyc6.toon).
 
 `pm context` and `pm next` share the public deterministic relevance model.
 Candidate order is the structural baseline; normalized metadata signals add
 explainable weighted contributions. Package authors can call
+`buildItemContextRelevanceCandidates(items, { statusRegistry, now, author,
+semanticSimilarity })`
+to derive the exact built-in metadata signals, then call
 `scoreContextCandidates` with a scorer callback, while installed extensions can
 register the governed `context_relevance` service override. A malformed or
 throwing override degrades to the deterministic default and emits an

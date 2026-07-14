@@ -1,0 +1,19 @@
+id: pm-d4ns
+title: "Sentry PM-CLI-2B: external extension subprocess cannot resolve pm executable"
+description: Investigate and correctly attribute the single handled spawnSync pm ENOENT event emitted by an external readPmItems extension command. Determine the owning package and replace PATH-dependent recursive CLI invocation with the public pm SDK or an explicit executable contract; prevent downstream extension failures from being attributed as high pm-cli core errors without hiding actionable failures.
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:observability",external-integration,sdk-adoption,sentry
+created_at: "2026-07-14T13:16:38.180Z"
+updated_at: "2026-07-14T13:16:52.339Z"
+author: codex-root
+acceptance_criteria: Identify the emitting extension/package and release; remove or harden the PATH-dependent spawnSync pm call in the owning repository; use the public SDK where appropriate; PM-CLI-2B no longer blocks the pm-cli Sentry gate; document fresh event and telemetry evidence.
+parent: pm-5oj5
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-59gj,related,"2026-07-14T13:16:38.180Z",null,null
+  pm-7n5a,related,"2026-07-14T13:16:38.180Z",null,null
+  pm-xzhz,related,"2026-07-14T13:16:38.180Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-14T13:16:52.339Z",codex-root,"Duplicate check 2026-07-14: all-status searches for PM-CLI-2B, spawnSync pm ENOENT, and readPmItems plus direct tracker scans found no canonical item. Live Sentry issue https://unbrained.sentry.io/issues/134232002/ is one handled high event from pm-cli@2026.7.11 at 2026-07-14T11:55:59Z on external host e2b.local; repository source and installed project extensions contain no readPmItems implementation, so ownership discovery remains required."
+body: ""

@@ -8642,7 +8642,7 @@
       ]
     },
     {
-      "description": "List, add, or remove dependencies for a pm item. Use options.add to declare a dependency and options.remove to drop one; omit both to list current dependencies.",
+      "description": "Read dependency trees/graphs or one bounded explainable relationship context packet. Use options.format=context with depth, node, edge, token, and cursor bounds.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
@@ -22878,6 +22878,26 @@
             ],
             "type": "string"
           },
+          "cursor": {
+            "description": "Opaque continuation cursor returned by deps --format context.",
+            "type": "string"
+          },
+          "edgeLimit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum related edges returned by deps --format context.",
+            "examples": [
+              20,
+              "40"
+            ]
+          },
           "format": {
             "description": "Format.",
             "type": "string"
@@ -22908,6 +22928,22 @@
               0,
               1,
               "2"
+            ]
+          },
+          "nodeLimit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum related nodes returned by deps --format context.",
+            "examples": [
+              10,
+              "20"
             ]
           },
           "noExtensions": {
@@ -22947,6 +22983,22 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
           }
         },
         "required": [

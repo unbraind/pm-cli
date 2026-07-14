@@ -1,0 +1,47 @@
+id: pm-qyc6
+title: "GH-558: export canonical item-to-context-relevance candidate derivation from the public SDK"
+description: "Promote the existing CLI-owned item signal derivation into a stable public SDK primitive so extensions reproduce pm next/context ranking without deep imports, subprocesses, or drift."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:sdk",context,extensions,gh-issue,relevance
+created_at: "2026-07-14T12:42:02.602Z"
+updated_at: "2026-07-14T13:24:30.603Z"
+closed_at: "2026-07-14T13:24:29.369Z"
+author: codex-root
+estimated_minutes: 120
+acceptance_criteria: "Public SDK derives ContextRelevanceCandidate values from item metadata with the same signals and ordering as pm next/context; CLI consumers use the SDK primitive rather than private logic; browser-safe stable types and deterministic now/author/semantic-score options are documented; focused SDK, CLI parity, barrel, packed-consumer, and exact coverage tests pass"
+goal: project management = context management
+objective: Give every extension the same canonical relevance inputs as pm next and pm context
+value: Eliminates contradictory rankings and subprocess workarounds across packages
+impact: "Makes context ranking extensible, deterministic, and SDK-first"
+outcome: "One exported derivation primitive shared by CLI, packages, and embedded hosts"
+why_now: GitHub #558 demonstrates published extensions cannot reproduce built-in ranking from public APIs
+parent: pm-3hps
+risk: low
+confidence: high
+resolution: Public buildItemContextRelevanceCandidates is exported and shared by pm context and pm next with documented deterministic metadata signals.
+expected_result: Extensions can reproduce built-in context candidate derivation from @unbrained/pm-cli/sdk without subprocesses or deep imports.
+actual_result: "SDK, CLI parity, exact coverage, linked-test, and packed-consumer proofs all pass."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-4k6b,related,"2026-07-14T12:42:02.602Z",null,null
+  pm-h3no,related,"2026-07-14T12:42:02.602Z",null,null
+comments[6]{created_at,author,text}:
+  "2026-07-14T12:42:02.602Z",codex-root,"Duplicate check 2026-07-14: all-status searches for ContextRelevanceCandidate, signal builder, and GH-558 found the broad pm-3hps feature store and shipped scorer pm-h3no, but no item owns promotion of the existing CLI builder; this child records GitHub #558 without duplicating the larger index-backed store."
+  "2026-07-14T12:42:11.944Z",codex-root,"GitHub provenance: https://github.com/unbraind/pm-cli/issues/558 documents the missing public signal builder and the pm-brief subprocess workaround. Canonical implementation lineage is pm-3hps -> pm-4k6b with shipped scorer contract pm-h3no."
+  "2026-07-14T12:58:57.826Z",codex-root,"TDD progress: public SDK now owns canonical item-to-relevance signal derivation; context and next are thin consumers. Focused SDK/CLI parity tests pass, including custom status, author affinity, deadline/risk/knowledge pressure, usage affinity, malformed timestamps, and deterministic ties."
+  "2026-07-14T13:07:51.733Z",codex-root,"Verification evidence: exact full coverage passed 287 files / 5,687 tests at 100% statements (36,748/36,748), branches (26,382/26,382), functions (7,421/7,421), and lines (35,873/35,873). Packed @unbrained/pm-cli@2026.7.14 into /tmp, installed it into a clean npm consumer, and exercised the public buildItemContextRelevanceCandidates export successfully; npm audit reported zero vulnerabilities."
+  "2026-07-14T13:19:04.684Z",codex-root,"Pre-commit acceptance review found the public options omitted caller-derived semantic_similarity despite the canonical signal and item acceptance requiring a semantic-score option. Reopened only this item to add the typed map, parity coverage, and documentation before publishing."
+  "2026-07-14T13:24:27.893Z",codex-root,"Acceptance correction evidence: options now accept caller-derived semanticSimilarity and emit canonical semantic_similarity values. Focused 16-test parity, typecheck, lint, zero clones, static/docstring, package boundary, token budget, full 287-file/5,687-test exact 100/100/100/100 coverage, and a freshly repacked installed consumer asserting semantic_similarity=0.95 all pass."
+files[3]{path,scope,note}:
+  src/cli/commands/context.ts,project,thin context consumer
+  src/cli/commands/next.ts,project,thin next consumer
+  src/sdk/context-relevance.ts,project,public canonical item signal derivation
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-relevance.spec.ts tests/unit/commands/context-relevance-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrkoet9q-mgdu7j,test,passed,"2026-07-14T13:17:27.074Z","2026-07-14T13:17:38.606Z","2026-07-14T13:17:38.606Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,public relevance derivation reference
+close_reason: "Completed GH-558 with a public deterministic item relevance builder shared by pm context and pm next, including clock, author, usage-affinity, and semantic-similarity inputs; documented and proven through CLI parity, linked tests, fresh packed-package consumption, and exact repo-wide 100/100/100/100 coverage."
+body: ""

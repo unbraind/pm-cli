@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import {
   RelationshipEventLog,
+  RelationshipEventStore,
   RelationshipGraph,
   RelationshipKindRegistry,
   analyzeGraphImpact,
@@ -14,6 +18,37 @@ import {
 const nodes = ["design", "build", "test", "ship", "note"];
 
 describe("relationship event history", () => {
+  it("persists, reopens, and serializes concurrent relationship appends", async () => {
+    const pmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-relationship-store-"));
+    try {
+      const first = await RelationshipEventStore.open({ pmRoot, nodes });
+      const second = await RelationshipEventStore.open({ pmRoot, nodes });
+      await Promise.all([
+        first.append({ eventId: "evt-store-1", relationshipId: "rel-store-1", action: "add", edge: { source: "build", target: "design", kind: "blocked_by" }, author: "agent-a", timestamp: "2026-07-14T08:00:00.000Z", reason: "durable prerequisite" }),
+        second.append({ eventId: "evt-store-2", relationshipId: "rel-store-2", action: "add", edge: { source: "test", target: "build", kind: "blocked_by" }, author: "agent-b", timestamp: "2026-07-14T08:01:00.000Z" }),
+      ]);
+
+      await second.append({ eventId: "evt-store-3", relationshipId: "rel-store-1", action: "remove", author: "agent-b", timestamp: "2026-07-14T08:02:00.000Z" });
+      const reopened = await RelationshipEventStore.open({ pmRoot, nodes });
+      expect(reopened.version).toBe(3);
+      expect(reopened.snapshot().edges).toHaveLength(1);
+      expect(reopened.page({ limit: 1 })).toMatchObject({ version: 3, hasMore: true });
+      const raw = await readFile(reopened.path, "utf8");
+      expect(raw.trim().split("\n")).toHaveLength(3);
+
+      await writeFile(reopened.path, `${raw}{bad-json}\n`, "utf8");
+      await expect(RelationshipEventStore.open({ pmRoot, nodes })).rejects.toThrow("relationship event JSONL");
+      await writeFile(reopened.path, `${raw.replace('"sequence":1', '"sequence":2')}`, "utf8");
+      await expect(RelationshipEventStore.open({ pmRoot, nodes })).rejects.toThrow("relationship event sequence");
+      await mkdir(path.join(pmRoot, "unreadable"));
+      await expect(RelationshipEventStore.open({ pmRoot, nodes, relativePath: "unreadable" })).rejects.toThrow();
+      await expect(RelationshipEventStore.open({ pmRoot, nodes, relativePath: "." })).rejects.toThrow("must name a file");
+      await expect(RelationshipEventStore.open({ pmRoot, nodes, relativePath: "../escape.jsonl" })).rejects.toThrow("must stay within");
+      await expect(RelationshipEventStore.open({ pmRoot, nodes, relativePath: path.resolve(pmRoot, "../absolute.jsonl") })).rejects.toThrow("must stay within");
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
   it("appends attributable events and replays immutable snapshots", () => {
     const log = new RelationshipEventLog(nodes);
     const design = log.append({

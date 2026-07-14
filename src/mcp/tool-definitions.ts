@@ -433,7 +433,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "pm_deps",
     description:
-      "List, add, or remove dependencies for a pm item. Use options.add to declare a dependency and options.remove to drop one; omit both to list current dependencies.",
+      "Read dependency trees/graphs or one bounded explainable relationship context packet. Use options.format=context with depth, node, edge, token, and cursor bounds.",
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
       "id",
     ]),

@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- GH-558: export canonical item-to-context-relevance candidate derivation from the public SDK ([pm-qyc6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qyc6.toon))
 - GH-555: remove unnecessary spread in relationship registry ordering assertion ([pm-ofgc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ofgc.toon))
 - Validate lifecycle cycles using ordering relationship kinds only ([pm-6irg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6irg.toon))
 

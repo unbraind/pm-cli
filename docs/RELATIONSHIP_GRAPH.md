@@ -1,6 +1,6 @@
 # Relationship graph semantics
 
-Tracked by [pm-4jqm](../.agents/pm/decisions/pm-4jqm.toon), [pm-ju83](../.agents/pm/features/pm-ju83.toon), and [pm-6irg](../.agents/pm/issues/pm-6irg.toon).
+Tracked by [pm-4jqm](../.agents/pm/decisions/pm-4jqm.toon), [pm-ju83](../.agents/pm/features/pm-ju83.toon), [pm-8xr8](../.agents/pm/stories/pm-8xr8.toon), and [pm-m2il](../.agents/pm/chores/pm-m2il.toon).
 
 ## Decision
 
@@ -24,10 +24,12 @@ Hierarchy kinds likewise declare which endpoint is the structural parent. `sourc
 
 `RelationshipEventLog` is the storage-independent reference mutation boundary. An append carries a unique event id, stable logical relationship id, action, author, timestamp, and optional optimistic `expectedVersion`. Add and supersede events validate endpoints, registered kinds, self-edge policy, duplicate identity, and incoming/outgoing cardinality before they enter the stream. Remove and supersede require an active logical relationship. No event rewrites an earlier event.
 
-`snapshot({ atVersion })` and `snapshot({ atTimestamp })` replay the immutable stream into an exact `RelationshipGraph`. Event pages use the shared opaque query-cursor contract and bind continuation to the log version, so a caller cannot silently mix snapshots after concurrent writes. The in-memory ledger is a reference implementation: filesystem, database, replicated-log, and event-bus adapters persist the same public events and rebuild the same snapshots.
+`snapshot({ atVersion })` and `snapshot({ atTimestamp })` replay the immutable stream into an exact `RelationshipGraph`. Event pages use the shared opaque query-cursor contract and bind continuation to the log version, so a caller cannot silently mix snapshots after concurrent writes.
+
+`RelationshipEventStore` is the built-in durable filesystem adapter. It stores validated JSONL at `.agents/pm/relationships/events.jsonl` by default, replays every row through the same registry and cardinality checks on open, and serializes cross-process appends with the tracker lock. Callers can select another relative path for domain-specific ledgers. Database, replicated-log, and event-bus adapters can persist the same public events and rebuild the same snapshots.
 
 ```ts
-import { RelationshipEventLog } from "@unbrained/pm-cli/sdk";
+import { RelationshipEventLog, RelationshipEventStore } from "@unbrained/pm-cli/sdk";
 
 const history = new RelationshipEventLog(["design", "build", "ship"]);
 history.append({
@@ -42,6 +44,19 @@ history.append({
 
 const current = history.snapshot();
 const historical = history.snapshot({ atVersion: 0 });
+
+const durable = await RelationshipEventStore.open({
+  pmRoot: ".agents/pm",
+  nodes: ["design", "build", "ship"],
+});
+await durable.append({
+  eventId: "evt-002",
+  relationshipId: "ship-needs-build",
+  action: "add",
+  edge: { source: "ship", target: "build", kind: "blocked_by" },
+  author: "release-agent",
+  timestamp: new Date().toISOString(),
+});
 ```
 
 ## Explainable analytics
@@ -55,6 +70,13 @@ Every analytics result identifies its algorithm and edge family. Exact algorithm
 `buildRelationshipContext` joins caller-owned compact node details with the graph kernel in one request. The packet includes the root, shortest-distance related nodes, semantic selection reasons (`prerequisite`, `dependent`, `ancestor`, `descendant`, `provenance`, or bounded reachability), root evidence pointers, included edges, explicit work counts, token accounting, omitted counts, and an opaque continuation cursor.
 
 Node, edge, depth, kind, direction, and token bounds are independent. The cursor fingerprint covers semantic filters and traversal shape, so it is rejected when reused for a different root or query. Output remains a plain object suitable for TOON, JSON, JSONL, MCP, or a custom UI; adapters own rendering and do not reimplement traversal.
+
+The native adapter is `pm deps <id> --format context`. It is also available through `PmClient.deps`, `runAction({ action: "deps" })`, and the MCP `pm_deps` tool. `--max-depth`, `--node-limit`, `--edge-limit`, `--token-budget`, and `--cursor` map directly to the public SDK context options; `--summary` keeps only counts. Tree and graph formats remain compatible.
+
+```bash
+pm deps pm-example --format context --max-depth 3 \
+  --node-limit 20 --edge-limit 40 --token-budget 800
+```
 
 ```ts
 import {
