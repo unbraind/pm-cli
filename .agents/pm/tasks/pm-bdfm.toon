@@ -1,0 +1,18 @@
+id: pm-bdfm
+title: "DeepSource Anti-pattern + Style categories to zero (baseline: ~7.2k + 16 issues)"
+description: ""
+type: Task
+status: open
+priority: 3
+tags: []
+created_at: "2026-07-14T22:42:25.464Z"
+updated_at: "2026-07-14T22:42:25.464Z"
+author: maintainer-agent
+estimated_minutes: 480
+acceptance_criteria: "Post-alignment residue triaged by rule: repo-idiom conflicts suppressed with rationale, legitimate modernizations fixed in batches that stay green through the full gate suite (coverage 100%, jscpd, complexity twin-16); both categories read 0"
+parent: pm-vlnc
+risk: medium
+confidence: low
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-87bu,blocked_by,"2026-07-14T22:42:25.464Z",null,null
+body: ""

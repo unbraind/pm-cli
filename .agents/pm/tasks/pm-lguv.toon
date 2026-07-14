@@ -1,0 +1,18 @@
+id: pm-lguv
+title: "DeepSource Bug Risk category to zero (baseline: ~1.2k issues)"
+description: ""
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-07-14T22:42:22.344Z"
+updated_at: "2026-07-14T22:42:22.344Z"
+author: maintainer-agent
+estimated_minutes: 480
+acceptance_criteria: "Post-alignment bug-risk findings triaged newest-first by rule: real defects fixed (with covering spec per repo policy) and cross-filed as pm defects when user-visible; false positives suppressed per-rule with rationale; category reads 0; count trajectory noted on pm-vlnc"
+parent: pm-vlnc
+risk: medium
+confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-87bu,blocked_by,"2026-07-14T22:42:22.344Z",null,null
+body: ""

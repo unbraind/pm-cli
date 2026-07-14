@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags: []
 created_at: "2026-07-14T21:48:02.061Z"
-updated_at: "2026-07-14T22:23:05.684Z"
+updated_at: "2026-07-14T22:42:45.281Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: ".deepsource.toml (javascript analyzer + secrets analyzer, exclude/test patterns) committed and valid; .deepscan.json exclusions committed for the ALREADY-ACTIVE DeepScan app (verified passing check on PR#564); .scrutinizer.yml committed; web-UI activation steps for DeepSource (app.deepsource.com) and Scrutinizer (scrutinizer-ci.com) documented on this item for the maintainer — both are free for open-source repos; once activated their checks report on PRs"
@@ -16,7 +16,8 @@ confidence: medium
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-4ris,related,"2026-07-14T21:48:02.061Z",null,null
   pm-yh6t,related,"2026-07-14T21:48:02.061Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-14T21:55:57.900Z",maintainer-agent,"Implementation: .deepsource.toml (javascript analyzer environment=nodejs + secrets analyzer; exclude dist/coverage/.agents/.tmp/docs-examples; test_patterns tests/benchmarks/spec/bench), .deepscan.json exclusions (DeepScan app already active — team 30234 / project 32092 / branch 1043829, badge added to README), .scrutinizer.yml (javascript checks, node v22, js-scrutinizer-run analysis node). ACTIVATION (maintainer, both free for OSS): DeepSource → app.deepsource.com, sign in with GitHub, activate unbraind/pm-cli (Starter plan, free for open source) — config auto-detected; Scrutinizer → scrutinizer-ci.com, add unbraind/pm-cli as Open Source (free) — .scrutinizer.yml auto-detected. Badges for these two can follow activation."
   "2026-07-14T22:23:05.683Z",maintainer-agent,"Activation reconcile: maintainer activated BOTH services 2026-07-14. DeepSource fully green on main d062b573 — three analyzers reporting commit statuses (JavaScript, Secrets, and auto-added Shell), 'Analysis passed: no blocking issues'. Scrutinizer connected but first inspection ERRORED (analysis + tests both): the effective config via the public API is the add-repo wizard preset, not the repo .scrutinizer.yml — it defines a bare 'tests: true' node and inferred npm dependency install, which cannot work on Scrutinizer's build image for a pnpm/Node>=22.18 repo. Fix pushed: repo config made self-sufficient — analysis node skips dependency install ('true' no-op override) and runs js-scrutinizer-run only; wizard's tests node stubbed to a green no-op (real tests live in GitHub Actions). Scrutinizer quality badge added to README. Maintainer follow-up (optional cleanup): clear the dashboard Settings→Configuration field so .scrutinizer.yml is the single source of truth, then the tests-node stub can be dropped. DeepSource badge needs the dashboard badge token (Settings→Badges) — grab it there if wanted in README."
+  "2026-07-14T22:42:45.280Z",maintainer-agent,"Scrutinizer root cause CONFIRMED from build log (maintainer-provided): environment setup fails before any command — Scrutinizer infers node 22.18.0 from package.json engines '>=22.18' and its nvm mirror ends at v22.14.0/v23.11.0, so BOTH nodes error on every inspection regardless of build config. Fix: explicit build.environment.node: v22.14.0 pin in .scrutinizer.yml (static analysis does not execute repo code, engine floor inapplicable). This also explains why the previous dependency-skip fix could not help."
 body: ""

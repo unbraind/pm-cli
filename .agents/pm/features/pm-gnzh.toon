@@ -1,0 +1,18 @@
+id: pm-gnzh
+title: "OSSF Scorecard 10/10 program: close every scoring gap from the 2026-07-14 baseline (6.9)"
+description: ""
+type: Feature
+status: open
+priority: 2
+tags: []
+created_at: "2026-07-14T22:39:59.630Z"
+updated_at: "2026-07-14T22:39:59.630Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: Every non-10 Scorecard check has a child item; agent-executable children shipped; human/community-gated children have their gate documented; aggregate score re-measured after each child closes (weekly cron or workflow_dispatch) and progress noted here; program closes when the score is 10.0 or every remaining gap is formally accepted with rationale on this item
+parent: pm-qwoy
+risk: medium
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-k7dp,related,"2026-07-14T22:39:59.630Z",null,null
+body: ""

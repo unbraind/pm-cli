@@ -1,0 +1,16 @@
+id: pm-87bu
+title: "DeepSource ruleset alignment: tune .deepsource.toml so reported issues reflect repo policy (lands before all category triage)"
+description: ""
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-07-14T22:41:44.652Z"
+updated_at: "2026-07-14T22:41:44.652Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: "Top rules by occurrence enumerated (authenticated dashboard/API) and dispositioned rule-by-rule: conflicts with repo idioms (TS-first patterns, docstring gate scope, intentional CLI process.exit etc.) get skipcq/toml suppressions WITH written rationale; genuinely useful rules stay enabled; post-alignment counts recorded on pm-vlnc; no blanket category disables without rationale"
+parent: pm-vlnc
+risk: medium
+confidence: high
+body: ""

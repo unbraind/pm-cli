@@ -15,6 +15,12 @@ filter:
     - "docs/examples/*"
 
 build:
+  # Scrutinizer infers the node version from package.json engines (>=22.18),
+  # but its nvm mirror tops out at v22.14.0 — pin the newest available 22.x
+  # explicitly. Static analysis does not execute repo code, so the engine
+  # floor does not apply here.
+  environment:
+    node: v22.14.0
   nodes:
     analysis:
       dependencies:

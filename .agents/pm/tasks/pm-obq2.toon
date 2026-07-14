@@ -1,0 +1,16 @@
+id: pm-obq2
+title: "Scorecard Code-Review (0→10): approved-review discipline for merged changesets"
+description: ""
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-07-14T22:40:59.570Z"
+updated_at: "2026-07-14T22:40:59.570Z"
+author: maintainer-agent
+estimated_minutes: 45
+acceptance_criteria: A workable review flow is decided and documented (maintainer approves agent-lane PRs via GitHub review before merge; bot reviews do not count); ruleset optionally enforces 1 approving review; Code-Review score trends toward 10 over the rolling 30-changeset window; decision recorded here
+parent: pm-gnzh
+risk: medium
+confidence: medium
+body: ""

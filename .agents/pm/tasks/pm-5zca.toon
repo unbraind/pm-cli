@@ -1,0 +1,16 @@
+id: pm-5zca
+title: "Scorecard Branch-Protection (-1→10): give the Scorecard workflow read access to protection rules"
+description: ""
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-07-14T22:40:58.632Z"
+updated_at: "2026-07-14T22:40:58.632Z"
+author: maintainer-agent
+estimated_minutes: 30
+acceptance_criteria: "Scorecard Branch-Protection returns a real score instead of -1: either main's protections are expressed as repository RULESETS (readable by the default token) or a fine-grained PAT with administration:read is stored as a repo secret and wired into scorecard.yml per the scorecard-action fine-grained-auth docs; chosen approach + rationale recorded here"
+parent: pm-gnzh
+risk: low
+confidence: high
+body: ""
