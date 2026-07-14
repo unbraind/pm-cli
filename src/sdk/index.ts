@@ -236,6 +236,7 @@ export {
   type PathMigration,
 } from "./linked-artifacts.js";
 export * from "./pagination.js";
+export * from "./relationships.js";
 export type {
   PlanCommandOptions,
   PlanCommandResult,

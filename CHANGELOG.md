@@ -4,7 +4,16 @@
 
 ### Added
 
+- Promote annotation and link primitives to the public SDK: comments, notes, learnings, files, docs, deps, append metadata ([pm-zwpp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-zwpp.toon))
 - Point-in-time read projection: pm get --at <version\|timestamp\> renders reconstructed historical item state without mutating ([pm-hib1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hib1.toon))
+
+### Fixed
+
+- validate lifecycle cycle detection treats non-directional related edges as ordering edges (reciprocal related links flag a false-positive dependency cycle) ([pm-6irg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6irg.toon))
+
+### Other
+
+- ADR: relationship graph semantics — typed directional, ordering, provenance, evidence, and associative edges with schema-extensible invariants ([pm-4jqm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-4jqm.toon))
 
 ## 2026.7.14 - 2026-07-14
 

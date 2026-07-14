@@ -77,6 +77,7 @@ import type {
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
 import { collectDanglingDependencyReferences } from "../../sdk/dependencies.js";
+import { isOrderingRelationshipKind } from "../../sdk/relationships.js";
 import { runDocs } from "../../sdk/docs.js";
 import { runFiles } from "../../sdk/files.js";
 import { extractReferencedPmItemIdsFromCommand } from "./test.js";
@@ -1492,6 +1493,7 @@ function buildLifecycleDependencyGraph(
       edges.add(blockedBy);
     }
     for (const dependency of item.dependencies ?? []) {
+      if (!isOrderingRelationshipKind(dependency.kind)) continue;
       const dependencyId = toMeaningfulString(dependency.id);
       if (!dependencyId || !activeItemIds.has(dependencyId)) {
         continue;

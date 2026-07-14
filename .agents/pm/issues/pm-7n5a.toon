@@ -1,0 +1,18 @@
+id: pm-7n5a
+title: "Sentry PM-CLI-29: external Neo4j command reports missing configuration as a high pm-cli error"
+description: "Investigate and correctly classify or re-home the live Sentry high CommandError emitted when an external Neo4j command runs without NEO4J_URI, NEO4J_USER, and NEO4J_PASSWORD. The pm-cli repository contains no Neo4j implementation or configuration references, so ownership likely belongs to an extension or downstream integration; prevent unrelated external expected-configuration errors from blocking pm-cli release gates while preserving actionable attribution."
+type: Issue
+status: open
+priority: 1
+tags[3]: "area:observability",external-integration,sentry
+created_at: "2026-07-14T07:55:43.315Z"
+updated_at: "2026-07-14T07:55:43.315Z"
+author: codex-gpt5-root
+estimated_minutes: 120
+acceptance_criteria: Identify the emitting package and release; attribute the Sentry event to the owning project or classify the expected configuration error without hiding real pm-cli failures; sentry-telemetry-gate reports zero unrelated highs; document verification with current issue/event evidence.
+parent: pm-5oj5
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ju83,related,"2026-07-14T07:55:43.315Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-14T07:55:43.315Z",codex-gpt5-root,"Duplicate check 2026-07-14: pm search 'Neo4j not configured NEO4J_URI PM-CLI-29' --status all and pm search neo4j --status all found no canonical Neo4j/Sentry item; gh issue search found no matching GitHub issue. Live release gate reports PM-CLI-29 high, while repository rg finds no Neo4j implementation, so this is filed as external-integration observability ownership under pm-5oj5."
+body: ""
