@@ -1915,6 +1915,10 @@ async function runDepsAction(
       maxDepth: readOptionString(options, "maxDepth"),
       collapse: options.collapse as string,
       summary: options.summary === true,
+      nodeLimit: readOptionString(options, "nodeLimit"),
+      edgeLimit: readOptionString(options, "edgeLimit"),
+      tokenBudget: readOptionString(options, "tokenBudget"),
+      cursor: readOptionString(options, "cursor"),
     },
     globalOptions,
   );
@@ -3203,13 +3207,17 @@ export function registerMutationCommands(program: Command): void {
   program
     .command("deps")
     .argument("<id>", "Item id")
-    .option("--format <value>", "Output format (tree or graph)", "tree")
+    .option("--format <value>", "Output format (tree, graph, or context)", "tree")
     .option(
       "--max-depth <value>",
       "Maximum dependency traversal depth (0 keeps only the root)",
     )
     .option("--collapse <value>", "Collapse mode (none or repeated)", "none")
     .option("--summary", "Return counts only without full tree/graph payload")
+    .option("--node-limit <value>", "Maximum nodes in context output")
+    .option("--edge-limit <value>", "Maximum edges in context output")
+    .option("--token-budget <value>", "Maximum estimated tokens in context output")
+    .option("--cursor <value>", "Continue an equivalent context query")
     .description("Show dependency relationships for an item.")
     .action(runDepsAction);
 }

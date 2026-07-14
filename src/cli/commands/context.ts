@@ -40,11 +40,12 @@ import { runList, type ListOptions } from "./list.js";
 import { runActivity, type CompactActivityEntry } from "./activity.js";
 import {
   scoreContextCandidatesWithActiveExtensions,
-  type ContextRelevanceCandidate,
+  buildItemContextRelevanceCandidates,
   type ContextRelevanceContributions,
   type ContextRelevanceReport,
   type ContextRelevanceSignalName,
 } from "../../sdk/context-relevance.js";
+export { buildItemContextRelevanceCandidates } from "../../sdk/context-relevance.js";
 import {
   createQueryFingerprint,
   encodeQueryCursor,
@@ -914,120 +915,6 @@ export function compareCriticalItems(
   return byUpdated !== 0 ? byUpdated : byId;
 }
 
-function normalizedPressure(value: unknown, maximum: number): number {
-  const parsed =
-    typeof value === "number"
-      ? value
-      : typeof value === "string"
-        ? Number.parseFloat(value)
-        : Number.NaN;
-  if (!Number.isFinite(parsed)) return 0;
-  return 1 - Math.min(Math.max(parsed, 0), maximum) / maximum;
-}
-
-function resolveDeadlinePressure(deadline: unknown, nowMs: number): number {
-  const deadlineMs =
-    typeof deadline === "string"
-      ? Date.parse(deadline)
-      : deadline instanceof Date
-        ? deadline.getTime()
-        : typeof deadline === "number"
-          ? deadline
-          : Number.NaN;
-  if (!Number.isFinite(deadlineMs) || !Number.isFinite(nowMs)) return 0;
-  const deadlineDays = (deadlineMs - nowMs) / (24 * 60 * 60 * 1000);
-  return deadlineDays <= 0 ? 1 : 1 / (1 + deadlineDays / 30);
-}
-
-function resolveRiskPressure(risk: ItemMetadata["risk"]): number {
-  const normalized =
-    typeof risk === "string" ? risk.trim().toLowerCase() : undefined;
-  if (normalized === "critical" || normalized === "high") return 1;
-  if (normalized === "medium") return 0.5;
-  return normalized === "low" ? 0.1 : 0;
-}
-
-function buildItemContextRelevanceCandidate(
-  item: ItemMetadata,
-  params: {
-    statusRegistry: RuntimeStatusRegistry;
-    nowMs: number;
-    normalizedAuthor: string | undefined;
-    recencyRank: ReadonlyMap<string, number>;
-    recencyDenominator: number;
-    itemCount: number;
-    usageAffinity?: Readonly<Record<string, number>>;
-  },
-): ContextRelevanceCandidate<ItemMetadata> {
-  const assignedToAuthor =
-    params.normalizedAuthor !== undefined &&
-    typeof item.assignee === "string" &&
-    item.assignee.trim().toLowerCase() === params.normalizedAuthor;
-  const claimFocus = isInProgressStatus(item.status, params.statusRegistry)
-    ? 1
-    : assignedToAuthor
-      ? 0.75
-      : 0;
-  const riskPressure = resolveRiskPressure(item.risk);
-  const knowledgeEntries =
-    (item.comments?.length ?? 0) +
-    (item.notes?.length ?? 0) +
-    (item.learnings?.length ?? 0);
-  return {
-    id: item.id,
-    item,
-    signals: {
-      recency:
-        params.itemCount === 1
-          ? 1
-          : 1 -
-            (params.recencyRank.get(item.id) as number) /
-              params.recencyDenominator,
-      graph_proximity: item.parent ? 0.3 : 0,
-      claim_focus: claimFocus,
-      priority_pressure: normalizedPressure(item.priority, 4),
-      risk_pressure: riskPressure,
-      deadline_pressure: resolveDeadlinePressure(item.deadline, params.nowMs),
-      knowledge_density: Math.min(knowledgeEntries / 5, 1),
-      author_affinity: assignedToAuthor ? 1 : 0,
-      usage_affinity: params.usageAffinity?.[item.id],
-    },
-  };
-}
-
-/** Derives the metadata signals currently available on compact item rows. More expensive history/index/semantic signals can be added by an extension scorer without changing the public candidate contract. */
-export function buildItemContextRelevanceCandidates(
-  items: readonly ItemMetadata[],
-  statusRegistry: RuntimeStatusRegistry,
-  now: string,
-  author: string | undefined,
-  usageAffinity?: Readonly<Record<string, number>>,
-): ContextRelevanceCandidate<ItemMetadata>[] {
-  const recencyOrder = [...items].sort(
-    (left, right) =>
-      compareTimestampStrings(
-        sortableTimestamp(right.updated_at),
-        sortableTimestamp(left.updated_at),
-      ) || left.id.localeCompare(right.id),
-  );
-  const recencyRank = new Map(
-    recencyOrder.map((item, index) => [item.id, index]),
-  );
-  const recencyDenominator = Math.max(items.length - 1, 1);
-  const normalizedAuthor = author?.trim().toLowerCase();
-  const nowMs = Date.parse(now);
-  return items.map((item) =>
-    buildItemContextRelevanceCandidate(item, {
-      statusRegistry,
-      nowMs,
-      normalizedAuthor,
-      recencyRank,
-      recencyDenominator,
-      itemCount: items.length,
-      usageAffinity,
-    }),
-  );
-}
 
 function estimateJsonTokens(value: unknown): number {
   return Math.max(
@@ -2125,13 +2012,12 @@ async function resolveContextFocusGroups(
   });
   const ranking = await scoreContextCandidatesWithActiveExtensions(
     "context",
-    buildItemContextRelevanceCandidates(
-      structural,
+    buildItemContextRelevanceCandidates(structural, {
       statusRegistry,
       now,
       author,
-      usage.affinity,
-    ),
+      usageAffinity: usage.affinity,
+    }),
   );
   const ranked = ranking.ranked.map((entry) => entry.item);
   const activeStatuses = statusRegistry.active_statuses;

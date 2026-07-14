@@ -18,6 +18,7 @@ interface QueryCursorEnvelope {
   fingerprint: string;
   after_id: string;
   after_index?: number;
+  snapshot?: string;
 }
 
 /** Decoded cursor state for advanced package and retrieval-window integrations. */
@@ -26,6 +27,8 @@ export interface QueryCursorState {
   after_id: string;
   /** Zero-based position of that row when the producer supplied one. */
   after_index?: number;
+  /** Opaque producer-defined snapshot token for stable continuation. */
+  snapshot?: string;
 }
 
 /** Describes one stable cursor page over an already ordered query result. */
@@ -56,6 +59,7 @@ export function encodeQueryCursor(
   fingerprint: string,
   afterId: string,
   afterIndex?: number,
+  snapshot?: string,
 ): string {
   return Buffer.from(
     JSON.stringify({
@@ -63,6 +67,7 @@ export function encodeQueryCursor(
       fingerprint,
       after_id: afterId,
       ...(afterIndex === undefined ? {} : { after_index: afterIndex }),
+      ...(snapshot === undefined ? {} : { snapshot }),
     } satisfies QueryCursorEnvelope),
   ).toString("base64url");
 }
@@ -89,7 +94,9 @@ function isQueryCursorEnvelope(value: unknown): value is QueryCursorEnvelope {
     envelope.after_id.length > 0 &&
     (envelope.after_index === undefined ||
       (Number.isSafeInteger(envelope.after_index) &&
-        envelope.after_index >= 0))
+        envelope.after_index >= 0)) &&
+    (envelope.snapshot === undefined ||
+      (typeof envelope.snapshot === "string" && envelope.snapshot.length > 0))
   );
 }
 
@@ -129,6 +136,7 @@ export function decodeQueryCursorState(
     ...(envelope.after_index === undefined
       ? {}
       : { after_index: envelope.after_index }),
+    ...(envelope.snapshot === undefined ? {} : { snapshot: envelope.snapshot }),
   };
 }
 
@@ -156,7 +164,9 @@ export function resolveQueryCursorStart<T>(
     if (state.after_index !== undefined) {
       return Math.min(state.after_index, rows.length);
     }
-    throw invalidCursor(`Query cursor item ${state.after_id} is no longer present in this result set.`);
+    throw invalidCursor(
+      `Query cursor item ${state.after_id} is no longer present in this result set.`,
+    );
   }
   return index + 1;
 }
@@ -169,8 +179,15 @@ export function paginateQueryRows<T>(
     fingerprint: string;
     limit: number;
     readId: (row: T) => string;
+    snapshot?: string;
   },
 ): QueryCursorPage<T> {
+  if (
+    options.cursor !== undefined &&
+    decodeQueryCursorState(options.cursor, options.fingerprint).snapshot !==
+      options.snapshot
+  )
+    throw invalidCursor("Query cursor does not match the requested snapshot.");
   const pageStart = resolveQueryCursorStart(
     rows,
     options.cursor,
@@ -190,6 +207,7 @@ export function paginateQueryRows<T>(
             options.fingerprint,
             options.readId(lastRow),
             pageStart + pageRows.length - 1,
+            options.snapshot,
           ),
         }
       : {}),

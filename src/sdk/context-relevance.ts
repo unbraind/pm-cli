@@ -6,6 +6,13 @@
  * with core, extension, or project-specific feature stores.
  */
 import { runActiveServiceOverride } from "../core/extensions/index.js";
+import {
+  normalizeStatusForRegistry,
+  normalizeStatusInput,
+} from "../core/item/status.js";
+import type { RuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
+import { compareTimestampStrings, resolveIsoOrRelative } from "../core/shared/time.js";
+import type { ItemMetadata } from "../types/index.js";
 
 /** Canonical signal keys understood by the built-in relevance model. */
 export const CONTEXT_RELEVANCE_SIGNAL_NAMES = [
@@ -40,6 +47,88 @@ export interface ContextRelevanceCandidate<TItem> {
   item: TItem;
   /** Value that configures or reports signals for this contract. */
   signals?: ContextRelevanceSignals;
+}
+
+/** Inputs that make item-signal derivation deterministic and host-configurable. */
+export interface BuildItemContextRelevanceCandidatesOptions {
+  /** Workspace lifecycle registry, including custom in-progress aliases. */
+  statusRegistry: RuntimeStatusRegistry;
+  /** Stable clock used for deadline pressure. */
+  now: string;
+  /** Optional caller identity used for assignment affinity. */
+  author?: string;
+  /** Optional derived served-then-used affinity by item id. */
+  usageAffinity?: Readonly<Record<string, number>>;
+  /** Optional caller-derived semantic similarity by item id. */
+  semanticSimilarity?: Readonly<Record<string, number>>;
+}
+
+function normalizedPressure(value: unknown, maximum: number): number {
+  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number.parseFloat(value) : Number.NaN;
+  return Number.isFinite(parsed) ? 1 - Math.min(Math.max(parsed, 0), maximum) / maximum : 0;
+}
+
+function deadlinePressure(deadline: unknown, nowMs: number): number {
+  const deadlineMs = typeof deadline === "string" ? Date.parse(deadline) : deadline instanceof Date ? deadline.getTime() : typeof deadline === "number" ? deadline : Number.NaN;
+  if (!Number.isFinite(deadlineMs) || !Number.isFinite(nowMs)) return 0;
+  const days = (deadlineMs - nowMs) / 86_400_000;
+  return days <= 0 ? 1 : 1 / (1 + days / 30);
+}
+
+function riskPressure(risk: ItemMetadata["risk"]): number {
+  const normalized = typeof risk === "string" ? risk.trim().toLowerCase() : undefined;
+  if (normalized === "critical" || normalized === "high") return 1;
+  if (normalized === "medium") return 0.5;
+  return normalized === "low" ? 0.1 : 0;
+}
+
+/**
+ * Derive the canonical metadata signals consumed by `pm context` and `pm next`.
+ * Extensions can pair this with {@link scoreContextCandidatesWithActiveExtensions}
+ * to reproduce built-in ranking without private imports or subprocesses.
+ */
+export function buildItemContextRelevanceCandidates(
+  items: readonly ItemMetadata[],
+  options: BuildItemContextRelevanceCandidatesOptions,
+): ContextRelevanceCandidate<ItemMetadata>[] {
+  const sortableTimestamp = (value: unknown): string => {
+    if (typeof value !== "string") return "";
+    try {
+      return resolveIsoOrRelative(value, new Date(Number.NaN), "updated_at");
+    } catch {
+      return "";
+    }
+  };
+  const recencyOrder = [...items].sort((left, right) => {
+    const leftTime = sortableTimestamp(left.updated_at);
+    const rightTime = sortableTimestamp(right.updated_at);
+    return compareTimestampStrings(rightTime, leftTime) || left.id.localeCompare(right.id);
+  });
+  const recencyRank = new Map(recencyOrder.map((item, index) => [item.id, index]));
+  const denominator = Math.max(items.length - 1, 1);
+  const normalizedAuthor = options.author?.trim().toLowerCase();
+  const inProgressStatus = normalizeStatusInput("in_progress", options.statusRegistry);
+  const nowMs = Date.parse(options.now);
+  return items.map((item) => {
+    const assigned = normalizedAuthor !== undefined && typeof item.assignee === "string" && item.assignee.trim().toLowerCase() === normalizedAuthor;
+    const knowledgeEntries = (item.comments?.length ?? 0) + (item.notes?.length ?? 0) + (item.learnings?.length ?? 0);
+    return {
+      id: item.id,
+      item,
+      signals: {
+        recency: items.length === 1 ? 1 : 1 - (recencyRank.get(item.id) as number) / denominator,
+        graph_proximity: item.parent ? 0.3 : 0,
+        claim_focus: normalizeStatusForRegistry(item.status, options.statusRegistry) === inProgressStatus ? 1 : assigned ? 0.75 : 0,
+        priority_pressure: normalizedPressure(item.priority, 4),
+        risk_pressure: riskPressure(item.risk),
+        deadline_pressure: deadlinePressure(item.deadline, nowMs),
+        knowledge_density: Math.min(knowledgeEntries / 5, 1),
+        author_affinity: assigned ? 1 : 0,
+        usage_affinity: options.usageAffinity?.[item.id],
+        semantic_similarity: options.semanticSimilarity?.[item.id],
+      },
+    };
+  });
 }
 
 /** Per-signal weighted contributions used to explain a ranked result. */

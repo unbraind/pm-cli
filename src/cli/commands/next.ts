@@ -610,10 +610,7 @@ async function rankReadyEntriesWithRelevance(
     "next",
     buildItemContextRelevanceCandidates(
       structuralReady.map((entry) => entry.item),
-      statusRegistry,
-      now,
-      callerAuthor,
-      usage.affinity,
+      { statusRegistry, now, author: callerAuthor, usageAffinity: usage.affinity },
     ),
   );
   const packing = packRankedContextItems(ranking, tokenBudget, new Set(), "next");

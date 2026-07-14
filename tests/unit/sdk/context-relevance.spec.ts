@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  buildItemContextRelevanceCandidates,
   CONTEXT_RELEVANCE_SIGNAL_NAMES,
   defaultScoreContextCandidates,
   evaluateContextRanking,
@@ -12,6 +13,9 @@ import {
   type ExtensionServiceRegistry,
 } from "../../../src/sdk/index.js";
 import { clearActiveExtensionHooks, setActiveExtensionServices } from "../../../src/core/extensions/index.js";
+import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
+import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
+import type { ItemMetadata } from "../../../src/types/index.js";
 
 type TestItem = { title: string };
 
@@ -26,6 +30,63 @@ function candidate(
 describe("context relevance SDK primitives", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
+  });
+
+  it("derives canonical item signals through the public SDK", () => {
+    const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const items = [
+      {
+        id: "pm-active", title: "Active", description: "Active work", type: "Task",
+        status: "in_progress", priority: 0, risk: "high", parent: "pm-parent",
+        deadline: "2026-07-13T00:00:00.000Z", created_at: "2026-07-01T00:00:00.000Z",
+        updated_at: "2026-07-14T00:00:00.000Z",
+      },
+      {
+        id: "pm-owned", title: "Owned", description: "Owned work", type: "Task",
+        status: "open", priority: 2, assignee: "Codex-Root",
+        created_at: "2026-07-01T00:00:00.000Z", updated_at: "2026-07-12T00:00:00.000Z",
+      },
+    ] as ItemMetadata[];
+
+    expect(buildItemContextRelevanceCandidates(items, {
+      statusRegistry: registry,
+      now: "2026-07-14T00:00:00.000Z",
+      author: "codex-root",
+      usageAffinity: { "pm-active": 0.8 },
+      semanticSimilarity: { "pm-active": 0.9 },
+    }).map(({ id, signals }) => ({ id, signals }))).toEqual([
+      { id: "pm-active", signals: expect.objectContaining({ recency: 1, graph_proximity: 0.3, claim_focus: 1, priority_pressure: 1, risk_pressure: 1, deadline_pressure: 1, usage_affinity: 0.8, semantic_similarity: 0.9 }) },
+      { id: "pm-owned", signals: expect.objectContaining({ recency: 0, claim_focus: 0.75, priority_pressure: 0.5, author_affinity: 1 }) },
+    ]);
+  });
+
+  it("orders malformed runtime timestamps deterministically", () => {
+    const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const malformed = ["pm-b", "pm-a"].map((id) => ({
+      id, title: id, description: id, type: "Task", status: "open", priority: 2,
+      created_at: "invalid", updated_at: "invalid",
+    })) as ItemMetadata[];
+    const candidates = buildItemContextRelevanceCandidates(malformed, {
+      statusRegistry: registry,
+      now: "invalid",
+    });
+    expect(candidates.find(({ id }) => id === "pm-a")?.signals?.recency).toBe(1);
+  });
+
+  it("preserves compact timestamp recency and rejects non-string runtime values", () => {
+    const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const items = [
+      { id: "pm-new", title: "new", description: "new", type: "Task", status: "open", priority: 2, created_at: "20260714", updated_at: "20260714" },
+      { id: "pm-old", title: "old", description: "old", type: "Task", status: "open", priority: 2, created_at: "20260713", updated_at: "20260713" },
+      { id: "pm-invalid", title: "invalid", description: "invalid", type: "Task", status: "open", priority: 2, created_at: "invalid", updated_at: 1 },
+    ] as unknown as ItemMetadata[];
+    const candidates = buildItemContextRelevanceCandidates(items, {
+      statusRegistry: registry,
+      now: "2026-07-14T00:00:00.000Z",
+    });
+    expect(candidates.find(({ id }) => id === "pm-new")?.signals?.recency).toBe(1);
+    expect(candidates.find(({ id }) => id === "pm-old")?.signals?.recency).toBe(0.5);
+    expect(candidates.find(({ id }) => id === "pm-invalid")?.signals?.recency).toBe(0);
   });
 
   it("preserves baseline ordering when advanced signals are absent", () => {

@@ -20,9 +20,14 @@ import type {
   ItemStatus,
   ItemType,
 } from "../types/index.js";
+import {
+  buildRelationshipContext,
+  type RelationshipContextResult,
+} from "./relationship-context.js";
+import { RelationshipGraph } from "./relationships.js";
 
 /** Supported values accepted by the deps format contract. */
-export const DEPS_FORMAT_VALUES = ["tree", "graph"] as const;
+export const DEPS_FORMAT_VALUES = ["tree", "graph", "context"] as const;
 /** Restricts deps format values accepted by command, SDK, and storage contracts. */
 export type DepsFormat = (typeof DEPS_FORMAT_VALUES)[number];
 /** Supported values accepted by the deps collapse contract. */
@@ -40,6 +45,14 @@ export interface DepsCommandOptions {
   collapse?: string;
   /** Value that configures or reports summary for this contract. */
   summary?: boolean;
+  /** Maximum graph-context nodes returned. */
+  nodeLimit?: string | number;
+  /** Maximum graph-context edges returned. */
+  edgeLimit?: string | number;
+  /** Maximum estimated graph-context output tokens. */
+  tokenBudget?: string | number;
+  /** Opaque continuation cursor for graph-context output. */
+  cursor?: string;
 }
 
 interface IndexedItem {
@@ -100,6 +113,20 @@ export interface DanglingDependencyReferenceSummary {
   no_active_blocker_sentinels: DanglingDependencyReference[];
 }
 
+/** Normalize a decoded reference target and reject empty legacy placeholders. */
+function normalizeDependencyReferenceTarget(target: unknown): string | undefined {
+  if (typeof target !== "string") return undefined;
+  const normalized = target.trim();
+  if (!normalized || ["none", "null", "n/a", "na"].includes(normalized.toLowerCase())) return undefined;
+  return normalized;
+}
+
+/** Normalize a graph target while removing the historical no-blocker marker. */
+function normalizeDependencyGraphTarget(target: unknown): string | undefined {
+  const normalized = normalizeDependencyReferenceTarget(target);
+  return normalized?.toLowerCase() === "no-active-blocker" ? undefined : normalized;
+}
+
 /**
  * Classify missing hierarchy and dependency targets without mutating their holders.
  *
@@ -120,12 +147,8 @@ export function collectDanglingDependencyReferences(
     kind: string,
     source: DependencyReferenceSource,
   ): void => {
-    const normalized = typeof target === "string" ? target.trim() : "";
-    if (
-      !normalized ||
-      ["none", "null", "n/a", "na"].includes(normalized.toLowerCase()) ||
-      knownIds.has(normalized.toLowerCase())
-    ) {
+    const normalized = normalizeDependencyReferenceTarget(target);
+    if (!normalized || knownIds.has(normalized.toLowerCase())) {
       return;
     }
     const row: DanglingDependencyReference = {
@@ -178,6 +201,20 @@ export function collectDanglingDependencyReferences(
       (row) => row.no_active_blocker_sentinel,
     ),
   };
+}
+
+/** Return unique real missing targets while excluding the legacy no-blocker sentinel. */
+function collectMissingDependencyTargetIds(
+  dangling: DanglingDependencyReferenceSummary,
+): string[] {
+  const targets = new Map<string, string>();
+  for (const reference of [...dangling.active, ...dangling.legacy_terminal]) {
+    if (reference.no_active_blocker_sentinel) continue;
+    const target = reference.target_id.trim();
+    const key = target.toLowerCase();
+    if (!targets.has(key)) targets.set(key, target);
+  }
+  return [...targets.values()].sort((left, right) => left.localeCompare(right));
 }
 
 /** Documents the deps tree node payload exchanged by command, SDK, and package integrations. */
@@ -256,6 +293,8 @@ export interface DepsResult {
   tree?: DepsTreeNode;
   /** Value that configures or reports graph for this contract. */
   graph?: DepsGraphResult;
+  /** Explainable bounded graph-context projection. */
+  context?: RelationshipContextResult;
 }
 
 function parseFormat(raw: string | undefined): DepsFormat {
@@ -264,9 +303,17 @@ function parseFormat(raw: string | undefined): DepsFormat {
     return candidate as DepsFormat;
   }
   throw new PmCliError(
-    `Invalid --format value "${raw}". Use "tree" or "graph".`,
+    `Invalid --format value "${raw}". Use "tree", "graph", or "context".`,
     EXIT_CODE.USAGE,
   );
+}
+
+function parsePositiveInteger(raw: string | number | undefined, flag: string): number | undefined {
+  if (raw === undefined) return undefined;
+  const value = typeof raw === "number" ? raw : Number(raw.trim());
+  if (!Number.isInteger(value) || value < 1)
+    throw new PmCliError(`Invalid --${flag} value "${raw}". Use a positive integer.`, EXIT_CODE.USAGE);
+  return value;
 }
 
 function parseMaxDepth(raw: string | number | undefined): number | undefined {
@@ -509,6 +556,56 @@ function countDependencyGraph(
   };
 }
 
+/** Build the SDK-backed bounded relationship-context projection for deps. */
+export function buildDepsRelationshipContext(
+  rootId: string,
+  items: readonly ItemMetadata[],
+  options: Pick<DepsCommandOptions, "maxDepth" | "nodeLimit" | "edgeLimit" | "tokenBudget" | "cursor">,
+): RelationshipContextResult {
+  const maxDepth = parseMaxDepth(options.maxDepth);
+  const nodeLimit = parsePositiveInteger(options.nodeLimit, "node-limit");
+  const edgeLimit = parsePositiveInteger(options.edgeLimit, "edge-limit");
+  const tokenBudget = parsePositiveInteger(options.tokenBudget, "token-budget");
+  const canonicalIds = new Map(items.map((item) => [item.id.trim().toLowerCase(), item.id.trim()]));
+  const dangling = collectDanglingDependencyReferences(items);
+  const missingIds = collectMissingDependencyTargetIds(dangling);
+  const graphItems = items.map((item) => {
+    const parent = normalizeDependencyGraphTarget(item.parent);
+    const blocker = normalizeDependencyGraphTarget(item.blocked_by);
+    const dependencies = (item.dependencies ?? []).flatMap((rawDependency) => {
+      if (typeof rawDependency !== "object" || rawDependency === null) return [];
+      const dependency = rawDependency as Partial<Dependency>;
+      const target = normalizeDependencyGraphTarget(dependency.id);
+      if (!target) return [];
+      return [{
+        id: canonicalIds.get(target.toLowerCase()) ?? target,
+        kind: typeof dependency.kind === "string" ? dependency.kind : "related",
+      }];
+    });
+    return {
+      id: item.id,
+      ...(parent ? { parent: canonicalIds.get(parent.toLowerCase()) ?? parent } : {}),
+      ...(blocker ? { blocked_by: canonicalIds.get(blocker.toLowerCase()) ?? blocker } : {}),
+      dependencies,
+    };
+  });
+  return buildRelationshipContext(
+    RelationshipGraph.fromItems([...graphItems, ...missingIds.map((id) => ({ id }))]),
+    rootId,
+    [
+      ...items.map((item) => ({ id: item.id, title: item.title, status: item.status })),
+      ...missingIds.map((id) => ({ id, title: `[missing] ${id}`, status: "missing" })),
+    ],
+    {
+      ...(maxDepth === undefined ? {} : { maxDepth }),
+      ...(nodeLimit === undefined ? {} : { nodeLimit }),
+      ...(edgeLimit === undefined ? {} : { edgeLimit }),
+      ...(tokenBudget === undefined ? {} : { tokenBudget }),
+      ...(options.cursor?.trim() ? { cursor: options.cursor.trim() } : {}),
+    },
+  );
+}
+
 /** Implements run deps for the public runtime surface of this module. */
 export async function runDeps(
   id: string,
@@ -562,6 +659,19 @@ export async function runDeps(
   }
   if (!index.has(id.trim().toLowerCase())) {
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
+  }
+
+  if (format === "context") {
+    const canonicalId = index.get(id.trim().toLowerCase())!.id;
+    const context = buildDepsRelationshipContext(canonicalId, items, options);
+    return {
+      id: canonicalId,
+      format,
+      node_count: context.nodes.length + 1,
+      edge_count: context.edges.length,
+      missing_count: collectMissingDependencyTargetIds(dangling).length,
+      ...(summaryOnly ? {} : { context }),
+    };
   }
 
   if (summaryOnly) {

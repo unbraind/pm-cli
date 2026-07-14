@@ -1272,11 +1272,12 @@ describe("mutation command actions", () => {
       { author: undefined, message: undefined, force: true },
       expect.anything(),
     );
-    await runCli("deps", "pm-1", "--format", "graph", "--summary", "--max-depth", "2");
+    await runCli("deps", "pm-1", "--format", "context", "--summary", "--max-depth", "2", "--node-limit", "5", "--edge-limit", "8", "--token-budget", "400", "--cursor", "next-page");
     const depsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runDeps) as never, 1);
-    expect(depsOptions.format).toBe("graph");
+    expect(depsOptions.format).toBe("context");
     expect(depsOptions.summary).toBe(true);
     expect(depsOptions.maxDepth).toBe("2");
+    expect(depsOptions).toMatchObject({ nodeLimit: "5", edgeLimit: "8", tokenBudget: "400", cursor: "next-page" });
   });
 
   it("routes plan subcommands, aliases, positional titles, and reorder validation", async () => {

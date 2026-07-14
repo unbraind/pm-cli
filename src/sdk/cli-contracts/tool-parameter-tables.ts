@@ -350,6 +350,10 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
     },
   },
   maxDepth: { anyOf: [{ type: "string" }, { type: "number" }] },
+  nodeLimit: { anyOf: [{ type: "string" }, { type: "integer", minimum: 1 }] },
+  edgeLimit: { anyOf: [{ type: "string" }, { type: "integer", minimum: 1 }] },
+  tokenBudget: { anyOf: [{ type: "string" }, { type: "integer", minimum: 1 }] },
+  cursor: { type: "string" },
   collapse: { type: "string", enum: ["none", "repeated"] },
   shell: { type: "string", enum: ["bash", "zsh", "fish"] },
   stdin: { type: "boolean" },
@@ -1369,6 +1373,21 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "Maximum dependency traversal depth for deps action (0 keeps only the root node).",
     examples: [0, 1, "2"],
+  },
+  nodeLimit: {
+    description: "Maximum related nodes returned by deps --format context.",
+    examples: [10, "20"],
+  },
+  edgeLimit: {
+    description: "Maximum related edges returned by deps --format context.",
+    examples: [20, "40"],
+  },
+  tokenBudget: {
+    description: "Maximum estimated output tokens for deps --format context.",
+    examples: [600, "1200"],
+  },
+  cursor: {
+    description: "Opaque continuation cursor returned by deps --format context.",
   },
   collapse: {
     description:

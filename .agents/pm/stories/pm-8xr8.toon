@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:graph",context-management,relationships,story,token-efficiency
 created_at: "2026-07-13T21:57:48.869Z"
-updated_at: "2026-07-14T11:45:02.284Z"
+updated_at: "2026-07-14T15:13:13.133Z"
 author: codex-root
 estimated_minutes: 90
 acceptance_criteria: "One request returns bounded ancestors, prerequisites, dependents, provenance, linked evidence, and the reason each node or edge was selected; Callers control direction, kind families, depth, node and edge limits, history window, token budget, fields, and cursor continuation; Default output is compact and counts-first; expanded and JSON or JSONL modes remain composable with grep, jq, and scripts; The response distinguishes complete, truncated, sampled, approximate, stale-index, and permission-redacted results; Public SDK, thin CLI, MCP action, and shell pipelines share one contract and deterministic ordering; Tests cover disconnected items, cycles in associative edges, missing endpoints, deep paths, concurrent mutations, and million-item bounded behavior"
@@ -24,7 +24,7 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-96h7,related,"2026-07-13T21:57:48.869Z",null,null
   pm-bwyw,related,"2026-07-13T21:57:48.869Z",null,null
   pm-4jqm,blocked_by,"2026-07-13T22:05:14.194Z",null,null
-comments[7]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-07-13T21:57:48.869Z",codex-root,"Duplicate check 2026-07-13: all-status review found context packing and deps visualization items but no single agent story joining bounded lineage,impact,blockers,and evidence traversal; it belongs under pm-96h7."
   "2026-07-14T09:43:37.414Z",codex-gpt5,"Implementation start 2026-07-14: build one bounded graph-context SDK response joining lineage, prerequisites, dependents, impact, evidence reasons, cost/truncation metadata, and continuation on the shared graph kernel."
   "2026-07-14T10:19:34.281Z",codex-gpt5,"Implementation evidence: added buildRelationshipContext for one-call bounded graph context with semantic reasons, root details/evidence, node/edge/depth/token budgets, exact inspected/omitted cost metadata, cancellation, and query-fingerprinted continuation cursors. Fresh installed-package proof returned design/release context around build through the public SDK. Remaining CLI/MCP adapters stay explicitly in this open story."
@@ -32,13 +32,23 @@ comments[7]{created_at,author,text}:
   "2026-07-14T11:06:17.058Z",codex-gpt5,"PR #556 review round 2 evidence: direct semantic reasons consume one indexed root incident snapshot, TextEncoder is reused, promoted evidence is emitted once outside root and charged exactly once, and oversized root/evidence baselines fail closed before returning under-budget metadata."
   "2026-07-14T11:19:55.052Z",codex-gpt5,"PR #556 review round 3 evidence: documented deliberate precedence and hierarchy-direction fallbacks at bounded-context call sites for compatibility with legacy and JSON-parsed definitions; focused SDK tests, lint, duplicate detection, CodeFactor rules, and typecheck pass."
   "2026-07-14T11:44:57.939Z",codex-gpt5,"PR #556 review round 4 evidence: bounded context skips all remaining max-depth adjacency reads after truncation is established. Regression proof reduces the boundary fixture to two adjacency calls and three inspected edges while preserving exact truncation metadata; full coverage is 100/100/100/100."
+  "2026-07-14T12:58:59.084Z",codex-root,"Implementation progress: pm deps <id> --format context now returns the public buildRelationshipContext envelope with depth/node/edge/token bounds and opaque cursor continuation; PmClient/runAction/MCP inherit the same action contract without adapter-local traversal."
+  "2026-07-14T13:07:52.933Z",codex-root,"Verification evidence: packed-package temp tracker created a prerequisite/dependent pair and installed pm deps pm-proof-build --format context --node-limit 2 --edge-limit 2 --token-budget 300 returned an exact 2-node/1-edge context packet with semantic prerequisite reason and explicit work/token counts. Full suite remains exact 100/100/100/100."
+  "2026-07-14T13:17:41.803Z",codex-root,"This implementation tranche completes the native public-SDK, CLI, PmClient/runAction, MCP-contract, cursor, bounds, semantic-reason, and packed-consumer adapter slice. The canonical story remains open for history-window/field/redaction state distinctions and million-item bounded acceptance."
+  "2026-07-14T14:02:00.872Z",codex-gpt5,"Review-round evidence for PR #559: fixed Greptile's dangling-context finding. pm deps --format context now materializes unresolved parent, blocked_by, and dependency targets as explicit status=missing nodes with typed edges and a unique missing_count, while canonicalizing case-insensitive live IDs. Tests cover every relationship form and canonical/missing branch; full coverage remains exact 100/100/100/100."
+  "2026-07-14T14:37:40.698Z",codex-gpt5,"PR #559 review round 2 evidence: legacy no-active-blocker references are now excluded from context graph construction and unique missing-target accounting, while real unresolved parent/blocker/dependency targets remain explicit missing nodes. Tests cover the sentinel plus duplicate target deduplication; exact full coverage remains 100/100/100/100."
+  "2026-07-14T15:13:07.998Z",codex-gpt5,"PR #559 review round 3 evidence: one shared decoded-reference normalizer now rejects non-string, empty, and legacy placeholder parent/blocker/dependency inputs before graph construction; valid malformed legacy dependencies receive the same default related kind as governance collection. Behavioral malformed/sentinel/canonical tests pass."
 notes[1]{created_at,author,text}:
   "2026-07-14T10:19:37.025Z",codex-gpt5,"Remaining canonical scope after this PR: thin CLI, shell, and MCP parity plus million-item latency acceptance; keep story open."
 learnings[1]{created_at,author,text}:
   "2026-07-14T10:02:22.070Z",codex-gpt5,"A graph-context packet stays agent-efficient when semantic reasons, evidence pointers, exact cost, omitted counts, and continuation share one bounded envelope instead of requiring separate deps, get, history, and files calls."
-files[1]{path,scope,note}:
+files[4]{path,scope,note}:
+  src/cli/register-mutation.ts,project,CLI depth/node/edge/token/cursor bounds
+  src/mcp/tool-definitions.ts,project,MCP parity
+  src/sdk/dependencies.ts,project,one bounded item relationship context
   src/sdk/relationship-context.ts,project,bounded explainable graph-context packet with continuation
-tests[1]{command,scope,timeout_seconds}:
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/deps-command.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/relationships.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,project,240
 docs[1]{path,scope,note}:
   docs/RELATIONSHIP_GRAPH.md,project,"public event,snapshot,analytics,and graph-context contracts"

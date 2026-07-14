@@ -50,7 +50,7 @@ describe("context relevance command integration", () => {
       relevanceItem("pm-low", { risk: "low" }),
       relevanceItem("pm-none", { risk: undefined, deadline: "not-a-date" }),
     ];
-    const candidates = buildItemContextRelevanceCandidates(items, registry, now, "codex-root", { "pm-critical": 0.8 });
+    const candidates = buildItemContextRelevanceCandidates(items, { statusRegistry: registry, now, author: "codex-root", usageAffinity: { "pm-critical": 0.8 } });
 
     expect(candidates.map((entry) => entry.id)).toEqual(items.map((item) => item.id));
     expect(candidates[0]?.signals).toMatchObject({
@@ -68,17 +68,17 @@ describe("context relevance command integration", () => {
     expect(candidates[1]?.signals?.deadline_pressure).toBeCloseTo(0.5);
     expect(candidates[2]?.signals?.risk_pressure).toBe(0.1);
     expect(candidates[3]?.signals).toMatchObject({ claim_focus: 0, risk_pressure: 0, deadline_pressure: 0 });
-    expect(buildItemContextRelevanceCandidates([items[0] as ItemMetadata], registry, now, undefined)[0]?.signals?.recency).toBe(1);
+    expect(buildItemContextRelevanceCandidates([items[0] as ItemMetadata], { statusRegistry: registry, now })[0]?.signals?.recency).toBe(1);
     expect(buildItemContextRelevanceCandidates([
       relevanceItem("pm-invalid-runtime", { priority: undefined as never, deadline: "2026-08-09" }),
-    ], registry, "invalid-now", undefined)[0]?.signals).toMatchObject({ priority_pressure: 0, deadline_pressure: 0 });
+    ], { statusRegistry: registry, now: "invalid-now" })[0]?.signals).toMatchObject({ priority_pressure: 0, deadline_pressure: 0 });
     expect(buildItemContextRelevanceCandidates([
       relevanceItem("pm-string-priority", { priority: "2" as never }),
-    ], registry, now, undefined)[0]?.signals?.priority_pressure).toBe(0.5);
+    ], { statusRegistry: registry, now })[0]?.signals?.priority_pressure).toBe(0.5);
     const tied = buildItemContextRelevanceCandidates([
       relevanceItem("pm-b"),
       relevanceItem("pm-a"),
-    ], registry, now, undefined);
+    ], { statusRegistry: registry, now });
     expect(tied.find((entry) => entry.id === "pm-a")?.signals?.recency).toBe(1);
   });
 
@@ -87,7 +87,7 @@ describe("context relevance command integration", () => {
     const runtimeShapes = buildItemContextRelevanceCandidates([
       relevanceItem("pm-date-deadline", { deadline: new Date("2026-07-09T00:00:00.000Z") as never, risk: " High " as never }),
       relevanceItem("pm-number-deadline", { deadline: Date.parse("2026-08-09T00:00:00.000Z") as never, assignee: 42 as never }),
-    ], registry, "2026-07-10T00:00:00.000Z", "codex-root");
+    ], { statusRegistry: registry, now: "2026-07-10T00:00:00.000Z", author: "codex-root" });
 
     expect(runtimeShapes[0]?.signals).toMatchObject({ deadline_pressure: 1, risk_pressure: 1 });
     expect(runtimeShapes[1]?.signals?.deadline_pressure).toBeCloseTo(0.5);
