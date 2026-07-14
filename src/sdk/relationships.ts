@@ -245,6 +245,8 @@ export class RelationshipKindRegistry {
       ...new Set((definition.aliases ?? []).map(normalizeKind)),
     ].sort();
     for (const alias of aliases) {
+      if (!/^[a-z][a-z0-9_]*$/.test(alias))
+        throw new TypeError(`Invalid relationship alias: ${alias}`);
       if (
         alias === kind ||
         this.#definitions.has(alias) ||
@@ -436,7 +438,7 @@ export class RelationshipGraph {
       ...(direction === "incoming" ? [] : (this.#outgoing.get(id) ?? [])),
       ...(direction === "outgoing" ? [] : (this.#incoming.get(id) ?? [])),
     ];
-    return candidates
+    return [...new Set(candidates)]
       .filter((edge) => {
         if (!kinds) return true;
         const definition = this.#registry.require(edge.kind);
@@ -593,12 +595,17 @@ export class RelationshipGraph {
     const closure = this.closure(id, options);
     const nodes = [id, ...closure.value].sort();
     const included = new Set(nodes);
+    const edges = new Set<RelationshipEdge>();
+    for (const node of nodes) {
+      for (const edge of this.#outgoing.get(node) ?? []) {
+        if (included.has(edge.source) && included.has(edge.target))
+          edges.add(edge);
+      }
+    }
     return {
       value: {
         nodes,
-        edges: this.#edges.filter(
-          (edge) => included.has(edge.source) && included.has(edge.target),
-        ),
+        edges: [...edges].sort(compareEdges),
       },
       meta: closure.meta,
     };

@@ -79,6 +79,12 @@ describe("relationship kind registry", () => {
         aliases: ["owns"],
       }),
     ).toThrow("alias already registered");
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        aliases: ["not valid"],
+      }),
+    ).toThrow("Invalid relationship alias");
   });
 });
 
@@ -151,6 +157,10 @@ describe("relationship graph", () => {
     expect(
       graph.subgraph("a", { kinds: ["blocked_by"], limit: 2 }).value,
     ).toMatchObject({ nodes: ["a", "b", "c"] });
+    expect(graph.subgraph("d").value).toMatchObject({
+      nodes: ["d"],
+      edges: [],
+    });
   });
 
   it("honors cancellation and validates graph construction", () => {
@@ -196,6 +206,10 @@ describe("relationship graph", () => {
     );
     expect(cyclic.edges()).toHaveLength(4);
     expect(cyclic.adjacency("x", { direction: "both" }).value).toEqual(["y"]);
+    expect(
+      cyclic.adjacency("y", { direction: "both", kinds: ["related"] }).meta
+        .inspectedEdges,
+    ).toBe(1);
     expect(cyclic.adjacency("y", { kinds: ["related"] }).value).toEqual(["z"]);
     expect(cyclic.closure("x", { kinds: ["blocked_by"] }).value).toEqual(["y"]);
     expect(cyclic.shortestPath("x", "z", { direction: "both" }).value).toEqual([

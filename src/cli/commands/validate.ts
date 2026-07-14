@@ -1497,7 +1497,7 @@ function buildLifecycleDependencyGraph(
       const dependencyKind = toMeaningfulString(dependency.kind);
       if (!dependencyKind) continue;
       const relationshipDefinition = relationshipRegistry.resolve(dependencyKind);
-      if (relationshipDefinition && !relationshipDefinition.ordering) continue;
+      if (!relationshipDefinition?.ordering) continue;
       const dependencyId = toMeaningfulString(dependency.id);
       if (!dependencyId || !activeItemIds.has(dependencyId)) {
         continue;
