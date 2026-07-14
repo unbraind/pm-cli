@@ -132,6 +132,64 @@ describe("relationship event history", () => {
     ).toThrow("not active");
   });
 
+  it("uses contiguous sequence prefixes for non-monotonic timestamp snapshots", () => {
+    const log = new RelationshipEventLog(["a", "b", "c"]);
+    log.append({
+      eventId: "late-add",
+      relationshipId: "relationship",
+      action: "add",
+      edge: { source: "a", target: "b", kind: "related" },
+      author: "agent",
+      timestamp: "2026-07-14T10:00:00.000Z",
+    });
+    log.append({
+      eventId: "early-supersede",
+      relationshipId: "relationship",
+      action: "supersede",
+      edge: { source: "a", target: "c", kind: "related" },
+      author: "agent",
+      timestamp: "2026-07-14T08:00:00.000Z",
+    });
+    expect(
+      log.snapshot({ atTimestamp: "2026-07-14T09:00:00.000Z" }),
+    ).toMatchObject({
+      version: 2,
+      edges: [{ source: "a", target: "c", kind: "related" }],
+    });
+    expect(
+      log.snapshot({ atTimestamp: "2026-07-14T07:00:00.000Z" }),
+    ).toMatchObject({ version: 0, edges: [] });
+  });
+
+  it("keeps append validation independent of active relationship count", () => {
+    const registry = createRelationshipKindRegistry();
+    const fanout = 100;
+    const log = new RelationshipEventLog(
+      ["root", ...Array.from({ length: fanout + 1 }, (_, index) => `n-${index}`)],
+      { registry },
+    );
+    for (let index = 0; index < fanout; index += 1)
+      log.append({
+        eventId: `event-${index}`,
+        relationshipId: `relationship-${index}`,
+        action: "add",
+        edge: { source: "root", target: `n-${index}`, kind: "related" },
+        author: "agent",
+        timestamp: "2026-07-14T08:00:00.000Z",
+      });
+    const requireKind = vi.spyOn(registry, "require");
+    log.append({
+      eventId: "event-final",
+      relationshipId: "relationship-final",
+      action: "add",
+      edge: { source: "root", target: `n-${fanout}`, kind: "related" },
+      author: "agent",
+      timestamp: "2026-07-14T08:00:00.000Z",
+    });
+    expect(requireKind.mock.calls.length).toBeLessThan(15);
+    requireKind.mockRestore();
+  });
+
   it("enforces registered cardinality and custom payload semantics", () => {
     const registry = new RelationshipKindRegistry([])
       .register({
@@ -274,6 +332,20 @@ describe("relationship event history", () => {
         edge: { source: "a", target: "c", kind: "parent" },
       }),
     ).toThrow("outgoing cardinality");
+    hierarchy.append({
+      ...valid,
+      eventId: "event-3",
+      action: "remove",
+      edge: undefined,
+    });
+    expect(
+      hierarchy.append({
+        ...valid,
+        eventId: "event-4",
+        relationshipId: "relationship-2",
+        edge: { source: "a", target: "c", kind: "parent" },
+      }).edge,
+    ).toMatchObject({ source: "a", target: "c", kind: "parent" });
 
     const undirected = new RelationshipEventLog(["a", "b"]);
     undirected.append({

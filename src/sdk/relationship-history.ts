@@ -74,6 +74,12 @@ export interface RelationshipEventLogOptions {
   registry?: RelationshipKindRegistry;
 }
 
+interface RelationshipCardinalityIndexes {
+  identities: Map<string, string>;
+  outgoingOne: Map<string, string>;
+  incomingOne: Map<string, string>;
+}
+
 function requiredText(value: unknown, field: string): string {
   if (typeof value !== "string" || value.trim().length === 0)
     throw new TypeError(`Relationship event ${field} must be non-empty`);
@@ -103,29 +109,35 @@ function freezeEdge(edge: RelationshipEdge): RelationshipEdge {
 
 function assertCardinality(
   candidate: RelationshipEdge,
-  active: ReadonlyMap<string, RelationshipEdge>,
   excludeRelationshipId: string,
   registry: RelationshipKindRegistry,
+  indexes: RelationshipCardinalityIndexes,
 ): void {
   const definition = registry.require(candidate.kind);
+  const outgoingOwner = indexes.outgoingOne.get(
+    `${definition.kind}\u0000${candidate.source}`,
+  );
+  if (
+    outgoingOwner !== undefined &&
+    outgoingOwner !== excludeRelationshipId
+  )
+    throw new TypeError(
+      `Relationship outgoing cardinality exceeded for ${definition.kind}`,
+    );
+  const incomingOwner = indexes.incomingOne.get(
+    `${definition.kind}\u0000${candidate.target}`,
+  );
+  if (
+    incomingOwner !== undefined &&
+    incomingOwner !== excludeRelationshipId
+  )
+    throw new TypeError(
+      `Relationship incoming cardinality exceeded for ${definition.kind}`,
+    );
   const identity = edgeIdentity(candidate, registry);
-  for (const [relationshipId, edge] of active) {
-    if (relationshipId === excludeRelationshipId) continue;
-    if (registry.require(edge.kind).kind !== definition.kind) continue;
-    if (
-      definition.outgoing === "one" &&
-      edge.source === candidate.source
-    )
-      throw new TypeError(
-        `Relationship outgoing cardinality exceeded for ${definition.kind}`,
-      );
-    if (definition.incoming === "one" && edge.target === candidate.target)
-      throw new TypeError(
-        `Relationship incoming cardinality exceeded for ${definition.kind}`,
-      );
-    if (edgeIdentity(edge, registry) === identity)
-      throw new TypeError(`Relationship edge already active: ${identity}`);
-  }
+  const identityOwner = indexes.identities.get(identity);
+  if (identityOwner !== undefined && identityOwner !== excludeRelationshipId)
+    throw new TypeError(`Relationship edge already active: ${identity}`);
 }
 
 function replayEvents(
@@ -181,6 +193,7 @@ function resolveMutationEdge(
   active: ReadonlyMap<string, RelationshipEdge>,
   nodes: ReadonlySet<string>,
   registry: RelationshipKindRegistry,
+  indexes: RelationshipCardinalityIndexes,
 ): RelationshipEdge | undefined {
   const isActive = active.has(relationshipId);
   if (input.action === "add" && isActive)
@@ -203,7 +216,7 @@ function resolveMutationEdge(
     [input.edge],
     registry,
   ).edges()[0]!;
-  assertCardinality(canonical, active, relationshipId, registry);
+  assertCardinality(canonical, relationshipId, registry, indexes);
   return freezeEdge(canonical);
 }
 
@@ -217,6 +230,11 @@ export class RelationshipEventLog {
   readonly #events: RelationshipEvent[] = [];
   readonly #eventIds = new Set<string>();
   readonly #active = new Map<string, RelationshipEdge>();
+  readonly #cardinalityIndexes: RelationshipCardinalityIndexes = {
+    identities: new Map(),
+    outgoingOne: new Map(),
+    incomingOne: new Map(),
+  };
 
   /** Create an empty relationship ledger for a fixed node universe. */
   public constructor(
@@ -242,15 +260,52 @@ export class RelationshipEventLog {
     return Object.freeze([...this.#events]);
   }
 
+  /** Add one active relationship to constant-time validation indexes. */
+  #indexActive(relationshipId: string, edge: RelationshipEdge): void {
+    const definition = this.#registry.require(edge.kind);
+    this.#cardinalityIndexes.identities.set(
+      edgeIdentity(edge, this.#registry),
+      relationshipId,
+    );
+    if (definition.outgoing === "one")
+      this.#cardinalityIndexes.outgoingOne.set(
+        `${definition.kind}\u0000${edge.source}`,
+        relationshipId,
+      );
+    if (definition.incoming === "one")
+      this.#cardinalityIndexes.incomingOne.set(
+        `${definition.kind}\u0000${edge.target}`,
+        relationshipId,
+      );
+  }
+
+  /** Remove one superseded or deleted relationship from validation indexes. */
+  #unindexActive(edge: RelationshipEdge): void {
+    const definition = this.#registry.require(edge.kind);
+    this.#cardinalityIndexes.identities.delete(
+      edgeIdentity(edge, this.#registry),
+    );
+    if (definition.outgoing === "one")
+      this.#cardinalityIndexes.outgoingOne.delete(
+        `${definition.kind}\u0000${edge.source}`,
+      );
+    if (definition.incoming === "one")
+      this.#cardinalityIndexes.incomingOne.delete(
+        `${definition.kind}\u0000${edge.target}`,
+      );
+  }
+
   /** Validate and append one attributable relationship mutation. */
   public append(input: RelationshipEventInput): RelationshipEvent {
     const header = normalizeEventHeader(input, this.version, this.#eventIds);
+    const previous = this.#active.get(header.relationshipId);
     const edge = resolveMutationEdge(
       input,
       header.relationshipId,
       this.#active,
       this.#nodes,
       this.#registry,
+      this.#cardinalityIndexes,
     );
 
     const event = Object.freeze({
@@ -265,8 +320,12 @@ export class RelationshipEventLog {
     }) satisfies RelationshipEvent;
     this.#events.push(event);
     this.#eventIds.add(header.eventId);
+    if (previous) this.#unindexActive(previous);
     if (input.action === "remove") this.#active.delete(header.relationshipId);
-    else this.#active.set(header.relationshipId, edge!);
+    else {
+      this.#active.set(header.relationshipId, edge!);
+      this.#indexActive(header.relationshipId, edge!);
+    }
     return event;
   }
 
@@ -284,9 +343,14 @@ export class RelationshipEventLog {
       const timestamp = Date.parse(options.atTimestamp);
       if (!Number.isFinite(timestamp))
         throw new TypeError("Relationship snapshot timestamp must be valid");
-      included = this.#events.filter(
-        (event) => Date.parse(event.timestamp) <= timestamp,
-      );
+      let lastIndex = -1;
+      for (let index = this.#events.length - 1; index >= 0; index -= 1) {
+        if (Date.parse(this.#events[index]!.timestamp) > timestamp) continue;
+        lastIndex = index;
+        break;
+      }
+      included =
+        lastIndex === -1 ? [] : this.#events.slice(0, lastIndex + 1);
     } else {
       const version = options.atVersion ?? this.version;
       if (!Number.isInteger(version) || version < 0 || version > this.version)
