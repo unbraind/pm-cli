@@ -43,17 +43,17 @@ describe("relationship kind registry", () => {
     });
     payloadSchema.properties.id.type = "number";
     expect(registry.require("has-asset").kind).toBe("owns");
-    expect(registry.list()[0]?.payloadSchema).toEqual({
+    expect(registry.list()[0]!.payloadSchema).toEqual({
       type: "object",
       required: ["id"],
       properties: { id: { type: "string" } },
     });
-    expect(Object.isFrozen(registry.list()[0]?.payloadSchema?.required)).toBe(
+    expect(Object.isFrozen(registry.list()[0]!.payloadSchema!.required)).toBe(
       true,
     );
     expect(
       Object.isFrozen(
-        (registry.list()[0]?.payloadSchema?.properties as { id: object }).id,
+        (registry.list()[0]!.payloadSchema!.properties as { id: object }).id,
       ),
     ).toBe(true);
     expect(() => registry.require("missing")).toThrow(

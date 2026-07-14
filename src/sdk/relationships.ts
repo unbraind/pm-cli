@@ -375,6 +375,20 @@ function resolveExistingNodeId(
   return id && ids.has(id) ? id : undefined;
 }
 
+function reconstructPath(
+  source: string,
+  target: string,
+  parents: ReadonlyMap<string, string>,
+): string[] {
+  const path = [target];
+  let cursor = target;
+  while (cursor !== source) {
+    cursor = parents.get(cursor)!;
+    path.push(cursor);
+  }
+  return path.reverse();
+}
+
 /** Build an immutable, deterministic in-memory relationship index. */
 export class RelationshipGraph {
   readonly #registry: RelationshipKindRegistry;
@@ -594,7 +608,8 @@ export class RelationshipGraph {
       : undefined;
     const direction = options.direction ?? "outgoing";
     const maxDepth = options.maxDepth ?? Number.POSITIVE_INFINITY;
-    const queue = [{ id: source, path: [source] }];
+    const queue = [{ id: source, depth: 0 }];
+    const parents = new Map<string, string>();
     const seen = new Set([source]);
     let visitedNodes = 0;
     let inspectedEdges = 0;
@@ -605,25 +620,21 @@ export class RelationshipGraph {
       visitedNodes += 1;
       const neighbors = this.#neighbors(current.id, direction, kinds);
       inspectedEdges += neighbors.length;
-      if (current.path.length - 1 >= maxDepth) {
+      if (current.depth >= maxDepth) {
         if (neighbors.some((neighbor) => !seen.has(neighbor.id)))
           truncated = true;
         continue;
       }
       for (const neighbor of neighbors) {
         if (seen.has(neighbor.id)) continue;
-        const path = [...current.path, neighbor.id];
+        parents.set(neighbor.id, current.id);
         if (neighbor.id === target)
           return {
-            value: path,
-            meta: {
-              visitedNodes,
-              inspectedEdges,
-              truncated: false,
-            },
+            value: reconstructPath(source, target, parents),
+            meta: { visitedNodes, inspectedEdges, truncated: false },
           };
         seen.add(neighbor.id);
-        queue.push({ id: neighbor.id, path });
+        queue.push({ id: neighbor.id, depth: current.depth + 1 });
       }
     }
     return {
