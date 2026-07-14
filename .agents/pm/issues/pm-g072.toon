@@ -1,0 +1,19 @@
+id: pm-g072
+title: "Extension install: untrusted manifest dependency specs reach npm install unvalidated (arg injection all-OS; shell command injection on Windows)"
+description: "installNpmPackageRuntimeDependencies() reads the package.json of a freshly npm-pack'd third-party extension (fully attacker-controlled) and builds install specs as `${name}@${version.trim()}` from arbitrary object keys/values in dependencies/optionalDependencies/peerDependencies (runtimeDependencyInstallSpecs, ~L767). These specs are passed to runNpmCommand -> execFile('npm', ['install','--ignore-scripts',...,...specs]). No validation exists: line 409's guard is only on the install-SOURCE spec, not on manifest dependency names/versions.\n\nTwo vectors, both requiring only that a user runs 'pm install <malicious-extension>':\n1. Argument injection (ALL platforms): a dependency KEY beginning with '-'/'--' (e.g. {\"--foo\":\"1\"} -> spec `--foo@1`) is appended after --ignore-scripts and parsed by npm's lenient nopt as an option, letting a manifest inject npm flags into a privileged install and probe for a way to re-enable lifecycle scripts / redirect --registry.\n2. Command injection (WINDOWS): shouldRunNpmCommandInShell() returns true on win32, so execFile runs with shell:true and concatenates argv into a shell command line. An unquoted version value such as '1.0.0 & <cmd>' yields shell command execution during pm install.\n\nThis defeats the deliberate --ignore-scripts hardening the authors added precisely because extension installs are untrusted. Fix = validate names/versions against npm grammar, reject leading-dash names and metachar versions, and insert a '--' end-of-options separator before the spec list (mirrors the passthrough contract pattern shipped in pm-albl). Class-relate to the spawn-shell-true Semgrep batch (pm-ngjd) but note this one is untrusted-INPUT-driven, not a static command string."
+type: Issue
+status: open
+priority: 1
+tags[5]: argument-injection,command-injection,extensions,security,windows
+created_at: "2026-07-14T19:07:23.786Z"
+updated_at: "2026-07-14T19:07:23.786Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: "runtimeDependencyInstallSpecs (src/cli/commands/extension/install-sources.ts) validates each dependency name against the npm package-name grammar and rejects/skips any name beginning with '-' so a manifest key cannot become an npm CLI flag; version values are validated against the npm version/range/dist-tag/url grammar and rejected if they contain shell metacharacters; a '--' end-of-options separator precedes the spec list passed to npm install so no spec can be parsed as a flag on any platform; regression specs cover a leading-dash dependency name, a version containing shell metacharacters, and confirm --ignore-scripts cannot be overridden by manifest input on both the win32 shell:true path and the POSIX execFile path"
+parent: pm-qwoy
+risk: high
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-6ixn,related,"2026-07-14T19:07:23.786Z",null,null
+  pm-ngjd,related,"2026-07-14T19:07:23.786Z",null,null
+body: ""
