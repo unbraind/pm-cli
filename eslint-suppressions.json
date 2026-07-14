@@ -167,17 +167,6 @@
       "count": 2
     }
   },
-  "src/cli/commands/schema.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "no-useless-assignment": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 2
-    }
-  },
   "src/cli/commands/shared-unset-fields.ts": {
     "complexity": {
       "count": 1

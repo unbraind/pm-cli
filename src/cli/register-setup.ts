@@ -892,6 +892,8 @@ async function runInitCommandAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const result = await runInit(prefix, globalOptions, {
+    idPrefix:
+      typeof options.idPrefix === "string" ? options.idPrefix : undefined,
     preset: typeof options.preset === "string" ? options.preset : undefined,
     defaults: options.defaults === true || options.yes === true,
     author: typeof options.author === "string" ? options.author : undefined,
@@ -1029,6 +1031,10 @@ export function registerSetupCommands(program: Command): void {
     .argument(
       "[prefix-or-path]",
       "Optional id prefix, or path-like tracker target such as ./pm-sandbox",
+    )
+    .option(
+      "--prefix, --id-prefix <value>",
+      "Set the item ID prefix (alias for the positional prefix)",
     )
     .option(
       "--preset <value>",

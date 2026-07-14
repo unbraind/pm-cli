@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: codeql,dependencies,github-actions,typescript
 created_at: "2026-07-10T09:40:10.713Z"
-updated_at: "2026-07-10T10:14:23.217Z"
+updated_at: "2026-07-14T20:01:09.326Z"
 closed_at: "2026-07-10T10:14:21.780Z"
 author: codex-root
 resolution: completed
@@ -14,10 +14,11 @@ expected_result: "Keep CodeQL init/analyze pinned in lockstep to official v4.37.
 actual_result: CodeQL v4.37.0 resolves to commit 99df26d4f13ea111d4ec1a7dddef6063f76b97e9; @types/node updates safely from 22.20.0 to 22.20.1 while the incompatible 26.x major is rejected. Typecheck and workflow contracts pass after the correction.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-2czc,related_to,"2026-07-10T09:40:20.682Z",codex-root,canonical_lineage
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-10T09:40:10.713Z",codex-root,"Duplicate check: pm search --status all for @types/node 26.1.0/26.1.1, CodeQL 4.37.0, Dependabot #462/#465 found canonical historical unblocking lineage pm-2czc but no item for the current version refresh. This concrete batch links to that closed precedent and supersedes the two stale bot branches."
   "2026-07-10T09:58:01.513Z",codex-root,"Evidence: npm registry latest @types/node is 26.1.1 and lockfile integrity matches the registry. Official github/codeql-action v4.37.0 annotated tag peels to immutable commit 99df26d4f13ea111d4ec1a7dddef6063f76b97e9. Frozen install, TypeScript 6 typecheck, CI workflow contract suite, production audit, contract snapshot, ESLint, jscpd 0 clones, static/docstring gate, token budget, docs/skills, secret scan, and 88-command package-first dogfood all pass. Full coverage: 270 files, 5,506 tests, statements 34380/34380, branches 24588/24588, functions 6882/6882, lines 33039/33039."
   "2026-07-10T10:07:14.948Z",codex-root,"Pre-push review correction: Greptile c3c227b6-2938-4f6a-b779-27fe90419cdc correctly identified that @types/node 26 would weaken the Node >=22.18.0 compile-time compatibility guard. Accepted: moved to current Node-22 patch 22.20.1 instead, retained engines.node, re-ran typecheck and workflow contracts, and removed the security tag so pm-changelog routes the maintenance entry accurately."
+  "2026-07-14T20:01:09.326Z",codex-root,"Live follow-up 2026-07-14: Dependabot reopened the rejected major as PR #540 (@types/node 26.1.1); build foundation and Docs fail while downstream CI is skipped. The closed decision remains current: preserve the Node 22 compile-time compatibility guard and do not merge the Node 26 declarations without an intentional runtime-floor migration. This SDK lane does not claim or modify that dependency branch."
 notes[1]{created_at,author,text}:
   "2026-07-10T09:58:02.248Z",codex-root,"GitHub consolidation: this batch supersedes stale Dependabot PR #462 (@types/node 26.1.0, while registry latest is 26.1.1) and behind-main PR #465 (CodeQL v4.37.0). Close both only after this combined current-version PR merges."
 learnings[1]{created_at,author,text}:

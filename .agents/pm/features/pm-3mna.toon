@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: architecture,"area:config","area:schema","area:sdk"
 created_at: "2026-07-05T04:54:11.971Z"
-updated_at: "2026-07-12T09:50:13.504Z"
+updated_at: "2026-07-14T20:19:54.802Z"
 author: maintainer-agent
 estimated_minutes: 360
 acceptance_criteria: SDK exports typed schema/config/profile/init primitives with the same validation + never-block errors as the CLI; corresponding commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change
@@ -17,7 +17,7 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-lodl,blocked_by,"2026-07-05T04:55:07.462Z",null,null
   pm-muhw,blocked_by,"2026-07-05T04:55:08.057Z",null,null
   pm-69nl,related,"2026-07-10T17:32:56.925Z",null,null
-comments[9]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-07-07T20:44:47.549Z",codex-agent,"Implementation start: bundled with pm-zwpp, pm-oxrw, pm-m4iu, pm-cbwg, pm-w89s, and pm-usfg. Live duplicate/context check found no closed schema/config/profile SDK primitive completion; prior read/lifecycle/package primitives remain separate shipped or in-progress domains."
   "2026-07-07T22:45:27.701Z",claude-code-agent,"Evidence: post-review docs/API cleanup keeps package authors on the correct context-management primitive shapes: linked file/doc adds use string arrays and top-level note, while SchemaResult documents the generic schema customization result union. Verified through docs gate, typecheck, focused SDK tests, and packed installed SDK proof."
   "2026-07-07T23:52:21.378Z",claude-code-agent,"Review follow-up evidence: the generic SDK schema() return type now explicitly includes all concrete inspect results as well as schema mutation results, preserving compile-time safety for customization primitive consumers. Focused SDK test and full coverage passed."
@@ -27,16 +27,26 @@ comments[9]{created_at,author,text}:
   "2026-07-11T23:15:37.998Z",codex-root,"Progress evidence: promoted workspace cache scaffolding into a typed public SDK primitive consumed by pm init, documented and packed-consumer tested. The broader schema/config/profile/init command-to-core extraction remains open; this PR does not claim full pm-3mna completion."
   "2026-07-12T08:31:32.782Z",codex-root,"Implementation start: active wide SDK bundle promotes schema mutation orchestration behind typed public primitives after the runtime dispatch decomposition; live blockers pm-lodl and pm-muhw are closed with shipped evidence."
   "2026-07-12T09:50:10.298Z",codex-root,"Scope reconciliation: no schema mutation primitive implementation landed in this branch; item returned to open so only actively delivered annotation work remains completed/in review."
+  "2026-07-14T19:24:55.099Z",codex-gpt5,"Implementation start 2026-07-14: live full-tracker/all-status and GitHub reconciliation selected the schema domain extraction as the broad SDK-first lane. This run will move schema primitive/types ownership out of src/cli, make CLI registration a presentation adapter, update public SDK docs/tests, and preserve behavior."
+  "2026-07-14T19:40:59.373Z",codex-gpt5,"Progress evidence: schema inspection/mutation ownership now lives in src/sdk/schema.ts; the CLI module is a compatibility re-export and SDK runtime imports schema primitives directly. Focused schema/SDK tests, 100% docstring static gate, package boundary, token budget, docs/skills, and governed contract checks pass."
+  "2026-07-14T20:19:47.964Z",codex-root,"Final branch evidence: schema inspection/mutation ownership moved from the CLI into src/sdk/schema.ts; the CLI is now a compatibility re-export and SDK runtime/MCP consume the SDK-owned engine. The import-boundary ratchet removed 17 schema edges, stale suppressions were deleted, and the hard suppression budget fell 174 -> 170. Exact verification on the final source: 290 files / 5,701 tests; 36,848/36,848 statements, 26,463/26,463 branches, 7,438/7,438 functions, 35,963/35,963 lines; typecheck, strict lint, zero-clone, 100% module/export/member docstrings, package boundary, token budget, docs, contracts, security, version, packed npm smoke, 88-command dogfood, and fresh external PmClient schema/custom-type lifecycle all pass. Broader config/profile/init implementation ownership remains for this feature, so it returns to open."
 notes[3]{created_at,author,text}:
   "2026-07-10T17:32:56.449Z",maintainer-agent,"Implementation slicing 2026-07-10 (grounded in current src state). Already public — do NOT redo: profile read-side (presets/plan/describe/lint exported via src/sdk/index.ts), schema runtime registries (resolveRuntimeFieldRegistry/resolveRuntimeStatusRegistry via src/sdk/runtime.ts), and generic PmClient.runTyped wrappers for the schema/config/profile/init actions. The actual gap: domain logic lives in CLI command modules — src/cli/commands/schema.ts (1973 lines), config.ts (1576), init.ts (955) + init-agent-guidance.ts (566), ~5.1k lines total — so SDK consumers reach these domains only through generic action dispatch, not typed primitives. Suggested slices: S1 schema mutation primitives (~150m) — extract add-type/add-field/status-def write paths into src/core/schema (fields-file/item-types-file/status-defs-file already own the file formats); command becomes parse+render. S2 config/settings primitives (~90m) — extract read/write/validate onto src/core/config/nested-settings; preserve the settings validator's unknown-key-stripping semantics (PR#314). S3 init + workspace-discovery primitive (~90m) — single source of truth for discovery; this is where the GH-501/pm-69nl class (init target invisible to discovery) gets fixed at the primitive level — coordinate with pm-69nl, do not duplicate its fix. S4 typed PmClient facades + SDK reference docs/tests (~60m) — replace generic payloads with typed inputs/outputs; each primitive must match the equivalent runAction result shape (semantics oracle, pm-usfg 07-06 note). Order: S1 first (schema gates the pm-w89s universality story); S2/S3 independent; S4 last."
   "2026-07-12T06:11:44.315Z",maintainer-agent,"Adjacent ship, scope intact: PR#520 (2026-07-12) promoted the FIRST workspace-customization primitive through the public SDK (ensurePmGitignore/getPmGitignoreBlock in src/sdk/workspace.ts) and made init consume it — proof the init-adjacent SDK boundary works end-to-end (packed-tarball external-consumer proof in PR verification). This does NOT deliver S1: schema/config/profile/init command families are still CLI-owned. Use src/sdk/workspace.ts as the pattern exemplar when starting S1."
   "2026-07-12T08:43:59.620Z",codex-root,"Execution rule from user escalation (23rd recurrence): this active delivery lane must not stop at partial implementation, local verification, commit, PR creation, pending checks, or pending bot review. Continue through the requested green reviewed PR, merge, merged-head/release/Sentry/telemetry proof, tracker closure, claim release, and return to main; only a genuine exhausted blocker permits stopping."
-files[4]{path,scope,note}:
+learnings[1]{created_at,author,text}:
+  "2026-07-14T20:19:48.566Z",codex-root,"Moving a CLI command engine into the SDK must also migrate its lint baseline, residual test mocks, and runtime imports; keeping a tiny CLI re-export preserves compatibility while the SDK becomes the single implementation owner."
+files[9]{path,scope,note}:
+  eslint-suppressions.json,project,Remove stale CLI schema suppressions after SDK extraction and lint cleanup
+  scripts/release/sdk-import-boundary-baseline.json,project,schema CLI private-core edges removed from ratchet baseline
+  scripts/release/static-quality-gate.mjs,project,Ratchet ESLint suppressions budget from 174 to 170 after schema CLI suppressions are eliminated
+  src/cli/commands/schema.ts,project,presentation compatibility re-export over SDK schema engine
   src/sdk/index.ts,project,SDK barrel exports customization primitive contracts
   src/sdk/runtime.ts,project,SDK runtime exposes init/config/schema/profile customization primitives
+  src/sdk/schema.ts,project,SDK-owned schema inspection and mutation engine
   src/sdk/workspace.ts,project,Public workspace customization primitive
   tests/unit/sdk/sdk-context-primitives.spec.ts,project,SDK customization primitive coverage
-tests[2]:
+tests[3]:
   - command: node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/unit/sdk/sdk-index.spec.ts
     scope: project
     timeout_seconds: 240
@@ -44,6 +54,11 @@ tests[2]:
     scope: project
     timeout_seconds: 120
     pm_context_mode: tracker
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts tests/unit/commands/schema-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrl3gn11-idibzy,test,passed,"2026-07-14T20:18:03.384Z","2026-07-14T20:18:58.069Z","2026-07-14T20:18:58.069Z",3,0,0
 docs[1]{path,scope,note}:
   docs/SDK.md,project,SDK customization primitive reference docs
 body: ""

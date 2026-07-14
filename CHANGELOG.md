@@ -10,6 +10,7 @@
 
 ### Fixed
 
+- GH-562: pm init rejects --id-prefix/--prefix flag though id prefix is only positional ([pm-nmzx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nmzx.toon))
 - GH-560: extension renderer overrides diverge between SDK harness and real CLI output ([pm-as4a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-as4a.toon))
 - GH-557: contract layer intercepts -h/--help before variadic-positional handlers, blocking legitimate positional content ([pm-albl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-albl.toon))
 - GH-547: SDK exporters and renderers cannot suppress host rendering of handled output ([pm-f38n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f38n.toon))

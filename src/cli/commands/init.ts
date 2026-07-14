@@ -129,6 +129,8 @@ export interface InitResult {
 
 /** Documents the init command options payload exchanged by command, SDK, and package integrations. */
 export interface InitCommandOptions {
+  /** Item-id prefix supplied through the flag-oriented SDK/CLI input surface. */
+  idPrefix?: string;
   /** Value that configures or reports preset for this contract. */
   preset?: string;
   /** Value that configures or reports defaults for this contract. */
@@ -223,6 +225,7 @@ export const _testOnly = {
   normalizeInitAgentGuidanceMode,
   isPathLikeInitTarget,
   resolveInitInvocation,
+  resolveInitPrefixInput,
   parseYesNoChoice,
   applyGovernancePreset,
   runInitWizard,
@@ -402,6 +405,38 @@ function resolveInitInvocation(
           }
         : { mode: "tracker-path", tracker_root: pmRoot },
   };
+}
+
+/** Resolves the optional positional and flag-oriented id-prefix inputs, accepting equivalent normalized spellings and rejecting ambiguous conflicts. */
+function resolveInitPrefixInput(
+  positionalPrefix: string | undefined,
+  flaggedPrefix: string | undefined,
+): string | undefined {
+  if (flaggedPrefix === undefined) {
+    return positionalPrefix;
+  }
+  if (flaggedPrefix.trim().length === 0) {
+    throw new PmCliError("--id-prefix must not be empty", EXIT_CODE.USAGE);
+  }
+  if (
+    positionalPrefix !== undefined &&
+    normalizePrefix(positionalPrefix) !== normalizePrefix(flaggedPrefix)
+  ) {
+    throw new PmCliError(
+      `Conflicting id prefixes: positional "${positionalPrefix}" and --id-prefix "${flaggedPrefix}".`,
+      EXIT_CODE.USAGE,
+      {
+        code: "init_id_prefix_conflict",
+        required:
+          "Use either the positional id prefix or --id-prefix with one value.",
+        examples: [
+          `pm init ${normalizePrefix(positionalPrefix)}`,
+          `pm init --id-prefix ${normalizePrefix(flaggedPrefix)}`,
+        ],
+      },
+    );
+  }
+  return flaggedPrefix;
 }
 
 function normalizeInitAgentGuidanceMode(
@@ -997,7 +1032,10 @@ function resolveInitWorkspaceRoot(
 ): string | undefined {
   const trackerRoot = path.resolve(target.tracker_root);
   const agentsRoot = path.dirname(trackerRoot);
-  if (path.basename(trackerRoot) === "pm" && path.basename(agentsRoot) === ".agents") {
+  if (
+    path.basename(trackerRoot) === "pm" &&
+    path.basename(agentsRoot) === ".agents"
+  ) {
     return path.dirname(agentsRoot);
   }
   return target.workspace_root;
@@ -1098,7 +1136,7 @@ export async function runInit(
     options.workspace,
   );
   const pmRoot = invocation.pmRoot;
-  prefixArg = invocation.prefixArg;
+  prefixArg = resolveInitPrefixInput(invocation.prefixArg, options.idPrefix);
   await assertExplicitTrackerPathIsNotWorkspaceRoot(
     pmRoot,
     invocation.target.mode === "tracker-path",
