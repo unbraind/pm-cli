@@ -22,6 +22,7 @@ const FILES_SDK_MODULE = "../../../src/sdk/files.js";
 const HISTORY_COMPACT_SDK_MODULE = "../../../src/sdk/history-compact.js";
 const HISTORY_REDACT_SDK_MODULE = "../../../src/sdk/history-redact.js";
 const HISTORY_REPAIR_SDK_MODULE = "../../../src/sdk/history-repair.js";
+const SCHEMA_SDK_MODULE = "../../../src/sdk/schema.js";
 const PACKAGE_ROOT_MODULE = "../../../src/core/packages/root.js";
 const EXTENSIONS_MODULE = "../../../src/core/extensions/index.js";
 const TOOLS_MODULE = "../../../src/mcp/tool-definitions.js";
@@ -133,6 +134,18 @@ async function importServerWithCommandMocks(
     runHistoryRepair: commandMocks.runHistoryRepair,
     runHistoryRepairAll: commandMocks.runHistoryRepairAll,
   }));
+  vi.doMock(SCHEMA_SDK_MODULE, async () => {
+    const actual =
+      await vi.importActual<typeof import("../../../src/sdk/schema.js")>(
+        SCHEMA_SDK_MODULE,
+      );
+    return {
+      ...actual,
+      runSchemaAddStatus: commandMocks.runSchemaAddStatus,
+      runSchemaAddType: commandMocks.runSchemaAddType,
+      runSchemaInferTypes: commandMocks.runSchemaInferTypes,
+    };
+  });
   return import("../../../src/mcp/server.js");
 }
 
@@ -146,6 +159,7 @@ describe("mcp server branch residual coverage", () => {
     vi.doUnmock(HISTORY_COMPACT_SDK_MODULE);
     vi.doUnmock(HISTORY_REDACT_SDK_MODULE);
     vi.doUnmock(HISTORY_REPAIR_SDK_MODULE);
+    vi.doUnmock(SCHEMA_SDK_MODULE);
     vi.doUnmock(PACKAGE_ROOT_MODULE);
     vi.doUnmock(EXTENSIONS_MODULE);
     vi.doUnmock(TOOLS_MODULE);

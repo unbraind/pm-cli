@@ -23,22 +23,21 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
 ## Command Families
 
-| Family | Commands | Purpose |
-|--------|----------|---------|
-| Bootstrap | `init`, `config`, `health`, `telemetry` | create and inspect tracker setup |
-| Lifecycle | `create`, `copy`, `focus`, `claim`, `update`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state |
-| Bulk | `update-many`, `close-many` | apply one change across a matched, dry-run-previewed set with a rollback checkpoint |
-| Scheduling | `meet`, `event`, `remind` | low-friction Meeting/Event/Reminder creation |
-| Planning | `plan create`, `plan add-step`, `plan update-step`, `plan complete-step`, `plan link`, `plan approve`, `plan materialize` | agent-optimized living plans with ordered steps, evidence, decisions, validation, and materialization |
-| Links | `files`, `docs`, `test`, `deps` | connect items to artifacts, tests, and relationships |
-| Verification | `test`, `test-all`, `test-runs`†, `validate`, `gc` | run linked tests and repository checks |
-| History | `history`, `history-compact`, `history-redact`, `history-repair`, `activity`, `restore`, `stats` | inspect, compact, redact, re-anchor, and recover item state |
-| Schema | `schema add-type` / `remove-type` / `add-status` / `remove-status` / `add-field` / `remove-field` / `apply-preset` | manage config-driven custom item types (`.agents/pm/schema/types.json`), statuses (`.agents/pm/schema/statuses.json`), and custom metadata fields (`.agents/pm/schema/fields.json`); `apply-preset` adopts a domain type preset; `add-type --infer` derives types from title-prefix conventions |
-| Profiles | `profile list` / `show` / `apply` / `lint` | compose item types, statuses, fields, workflows, config, templates, and recommended packages into archetype bundles (agile/ops/research); `apply` stages every dimension idempotently; `lint` reports author-time consistency findings without writing |
-| Calendar | `calendar`, `cal` | project deadlines, reminders, and events |
-| Packages | `install`, `upgrade`, `package`, `packages`, `extension`, package/extension command groups | install, upgrade, manage, and run package-backed extension commands |
-| Machines | `contracts`, `help`, optional `guide`/`completion` | command contracts plus optional guide-shell docs routing and shell helpers |
-
+| Family       | Commands                                                                                                                       | Purpose                                                                                                                                                                                                                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bootstrap    | `init`, `config`, `health`, `telemetry`                                                                                        | create and inspect tracker setup                                                                                                                                                                                                                                                                |
+| Lifecycle    | `create`, `copy`, `focus`, `claim`, `update`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state                                                                                                                                                                                                                                                                               |
+| Bulk         | `update-many`, `close-many`                                                                                                    | apply one change across a matched, dry-run-previewed set with a rollback checkpoint                                                                                                                                                                                                             |
+| Scheduling   | `meet`, `event`, `remind`                                                                                                      | low-friction Meeting/Event/Reminder creation                                                                                                                                                                                                                                                    |
+| Planning     | `plan create`, `plan add-step`, `plan update-step`, `plan complete-step`, `plan link`, `plan approve`, `plan materialize`      | agent-optimized living plans with ordered steps, evidence, decisions, validation, and materialization                                                                                                                                                                                           |
+| Links        | `files`, `docs`, `test`, `deps`                                                                                                | connect items to artifacts, tests, and relationships                                                                                                                                                                                                                                            |
+| Verification | `test`, `test-all`, `test-runs`†, `validate`, `gc`                                                                             | run linked tests and repository checks                                                                                                                                                                                                                                                          |
+| History      | `history`, `history-compact`, `history-redact`, `history-repair`, `activity`, `restore`, `stats`                               | inspect, compact, redact, re-anchor, and recover item state                                                                                                                                                                                                                                     |
+| Schema       | `schema add-type` / `remove-type` / `add-status` / `remove-status` / `add-field` / `remove-field` / `apply-preset`             | manage config-driven custom item types (`.agents/pm/schema/types.json`), statuses (`.agents/pm/schema/statuses.json`), and custom metadata fields (`.agents/pm/schema/fields.json`); `apply-preset` adopts a domain type preset; `add-type --infer` derives types from title-prefix conventions |
+| Profiles     | `profile list` / `show` / `apply` / `lint`                                                                                     | compose item types, statuses, fields, workflows, config, templates, and recommended packages into archetype bundles (agile/ops/research); `apply` stages every dimension idempotently; `lint` reports author-time consistency findings without writing                                          |
+| Calendar     | `calendar`, `cal`                                                                                                              | project deadlines, reminders, and events                                                                                                                                                                                                                                                        |
+| Packages     | `install`, `upgrade`, `package`, `packages`, `extension`, package/extension command groups                                     | install, upgrade, manage, and run package-backed extension commands                                                                                                                                                                                                                             |
+| Machines     | `contracts`, `help`, optional `guide`/`completion`                                                                             | command contracts plus optional guide-shell docs routing and shell helpers                                                                                                                                                                                                                      |
 
 `†` `test-runs` subcommands are provided by the optional `linked-test-adapters` package (`pm install linked-test-adapters --project`).
 
@@ -47,6 +46,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 ```bash
 pm init
 pm init --defaults --with-packages
+pm init --id-prefix ops --defaults
 pm init --workspace ./new-project --defaults
 pm init ./sandbox-tracker --defaults
 pm init --agent-guidance status
@@ -57,6 +57,11 @@ pm telemetry status
 ```
 
 `pm init` creates `.agents/pm`. `pm health --check-only --summary --json` gives the smallest machine-readable health gate without refreshing optional search artifacts.
+Use `--id-prefix <value>` (alias `--prefix`) when automation should set the item
+ID prefix without relying on the legacy positional form. `pm init ops` remains
+compatible, and supplying both forms is accepted only when they normalize to the
+same prefix; conflicting values fail with `init_id_prefix_conflict` instead of
+silently choosing one.
 Use `pm init --workspace <dir>` when `<dir>` is a project root; it creates `<dir>/.agents/pm`. A path-like positional remains the advanced tracker-root form and writes tracker files directly at that path. Both explicit target forms return `target.mode`, `target.tracker_root`, and tracker-scoped executable `next_steps` so agents can run the suggestions from any working directory.
 `pm init --agent-guidance ask` is the default behavior: prompt in TTY only when AGENTS/CLAUDE guidance is missing and no decline is recorded.
 Use `--agent-guidance add` to write guidance, `--agent-guidance skip` to persist a decline without writing, and `--agent-guidance status` to inspect guidance state.
@@ -215,7 +220,11 @@ Tune ranking via `search.bm25.k1` (term-frequency saturation, default `1.2`) and
 
 ```json
 [
-  { "query": "offline search ranking", "relevant_ids": ["pm-75k9"], "mode": "keyword" },
+  {
+    "query": "offline search ranking",
+    "relevant_ids": ["pm-75k9"],
+    "mode": "keyword"
+  },
   { "query": "relevance regression gate", "relevant_ids": ["pm-u8n5"] }
 ]
 ```
@@ -233,7 +242,7 @@ pm eval --fail-under 0.6 --json      # CI gate: exit non-zero when aggregate nDC
 
 ### Full results, totals, and bodies
 
-`pm list*` returns every matched row when neither `--limit` nor `--offset` is set. When a `--limit`/`--offset` *does* drop rows, the result adds a top-level `total` (the pre-pagination match count) so an agent knows how many remain. Pass `--no-truncate` (alias `--all`) to force the entire matched set and override any `--limit` in one call — the canonical "give me everything" flag for large-corpus audits:
+`pm list*` returns every matched row when neither `--limit` nor `--offset` is set. When a `--limit`/`--offset` _does_ drop rows, the result adds a top-level `total` (the pre-pagination match count) so an agent knows how many remain. Pass `--no-truncate` (alias `--all`) to force the entire matched set and override any `--limit` in one call — the canonical "give me everything" flag for large-corpus audits:
 
 ```bash
 pm list-all --no-truncate --brief          # every matched row, ignoring any --limit
@@ -262,7 +271,7 @@ CSV output is RFC 4180 compliant (values with commas, quotes, or newlines are qu
 
 ### Missing-metadata filters
 
-Every `list*` command also accepts metadata-presence filters for governance backfill: `--filter-ac-missing` (no `acceptance_criteria`), `--filter-estimates-missing` (no `estimated_minutes`; singular `--filter-estimate-missing` is an alias), `--filter-resolution-missing` (terminal items with no `resolution`), and `--filter-metadata-missing` (the union — missing *any* of those). Specific flags AND together; combine them with any other filter. They surface in the result's `filters` echo (`filter_ac_missing` etc.).
+Every `list*` command also accepts metadata-presence filters for governance backfill: `--filter-ac-missing` (no `acceptance_criteria`), `--filter-estimates-missing` (no `estimated_minutes`; singular `--filter-estimate-missing` is an alias), `--filter-resolution-missing` (terminal items with no `resolution`), and `--filter-metadata-missing` (the union — missing _any_ of those). Specific flags AND together; combine them with any other filter. They surface in the result's `filters` echo (`filter_ac_missing` etc.).
 
 The same `list*` commands and `pm search` extend this with governance-field presence selectors — `--filter-reviewer-missing`, `--filter-risk-missing`, `--filter-confidence-missing`, `--filter-sprint-missing`, and `--filter-release-missing` — each selecting items where that single field is unset.
 
@@ -279,7 +288,7 @@ pm list-open --filter-reviewer-missing --brief
 
 ### Content-field presence filters
 
-`list*` and `pm search` also accept paired presence/absence selectors for each content field, so you can scope to items that *have* a given field populated or that are *missing* it: `--has-notes`/`--no-notes`, `--has-learnings`/`--no-learnings`, `--has-files`/`--no-files`, `--has-docs`/`--no-docs`, `--has-tests`/`--no-tests`, `--has-comments`/`--no-comments`, `--has-deps`/`--no-deps`, `--has-body`/`--empty-body`, and `--has-linked-command`/`--no-linked-command`. Requesting both the present and absent variant for the same field is a usage error. Multiple content filters AND together and compose with any other filter.
+`list*` and `pm search` also accept paired presence/absence selectors for each content field, so you can scope to items that _have_ a given field populated or that are _missing_ it: `--has-notes`/`--no-notes`, `--has-learnings`/`--no-learnings`, `--has-files`/`--no-files`, `--has-docs`/`--no-docs`, `--has-tests`/`--no-tests`, `--has-comments`/`--no-comments`, `--has-deps`/`--no-deps`, `--has-body`/`--empty-body`, and `--has-linked-command`/`--no-linked-command`. Requesting both the present and absent variant for the same field is a usage error. Multiple content filters AND together and compose with any other filter.
 
 ```bash
 # Closed items that shipped no documented learnings
@@ -650,7 +659,7 @@ pm validate --check-metadata --all-affected-ids
 pm validate --check-metadata --json | jq -r '.checks[] | select(.name=="metadata") | .details.missing_acceptance_criteria_item_ids[]'
 ```
 
-`--auto-fix` applies the safe, deterministic subset of those remediations automatically and reports the result under a top-level `fixes` object (`planned_fixes[]`, `applied_fixes[]`, `gated_fixes[]`, `failed_fixes[]` — each row lists the item id, check, field, and the equivalent standalone `pm` command). Safe means derivable and non-destructive: a closed item missing `resolution` is backfilled from its own `close_reason` (or the `"completed"` default), and a closed item missing `close_reason` is backfilled from its existing `resolution`. Auto-fix NEVER closes, cancels, or deletes items, and every applied fix runs through the normal audited `pm update` path. Two scopes are opt-in. Structural lifecycle fixes — an active item whose parent is terminal gets reparented to its active grandparent or has its parent link cleared — are always *planned* but only *applied* under an explicit `--fix-scope lifecycle`. Estimate backfills — an item missing `estimated_minutes` gets a config-driven per-type default — are likewise *planned* but only *applied* under `--fix-scope estimates` (estimates are heuristic per-type guesses, not derived facts, so they are never auto-granted). The defaults are `Epic`/`Milestone` 2880, `Feature`/`Story` 480, `Task`/`Plan` 120, `Issue`/`Bug` 60, `Chore` 30, `Decision` 15, and a 120-minute fallback for any other type; override them per type with the `validation.estimate_defaults_by_type` setting (a `{ "<Type>": <minutes> }` map). `--fix-scope` is an exact allowlist of what `--auto-fix` may mutate (`metadata`, `resolution`, `estimates`, `lifecycle`; comma-separated or repeatable) — `--fix-scope estimates` alone applies *only* estimate fixes; omitting the flag grants the safe field-backfill scopes (`metadata`, `resolution`) and neither estimates nor lifecycle. `--dry-run` previews the full plan without mutating anything. With `--auto-fix` and no explicit `--check-*` flags, only the fix-capable checks (metadata, resolution, lifecycle) run. The `checks` in the output always describe the pre-fix state; re-run `pm validate` to confirm convergence.
+`--auto-fix` applies the safe, deterministic subset of those remediations automatically and reports the result under a top-level `fixes` object (`planned_fixes[]`, `applied_fixes[]`, `gated_fixes[]`, `failed_fixes[]` — each row lists the item id, check, field, and the equivalent standalone `pm` command). Safe means derivable and non-destructive: a closed item missing `resolution` is backfilled from its own `close_reason` (or the `"completed"` default), and a closed item missing `close_reason` is backfilled from its existing `resolution`. Auto-fix NEVER closes, cancels, or deletes items, and every applied fix runs through the normal audited `pm update` path. Two scopes are opt-in. Structural lifecycle fixes — an active item whose parent is terminal gets reparented to its active grandparent or has its parent link cleared — are always _planned_ but only _applied_ under an explicit `--fix-scope lifecycle`. Estimate backfills — an item missing `estimated_minutes` gets a config-driven per-type default — are likewise _planned_ but only _applied_ under `--fix-scope estimates` (estimates are heuristic per-type guesses, not derived facts, so they are never auto-granted). The defaults are `Epic`/`Milestone` 2880, `Feature`/`Story` 480, `Task`/`Plan` 120, `Issue`/`Bug` 60, `Chore` 30, `Decision` 15, and a 120-minute fallback for any other type; override them per type with the `validation.estimate_defaults_by_type` setting (a `{ "<Type>": <minutes> }` map). `--fix-scope` is an exact allowlist of what `--auto-fix` may mutate (`metadata`, `resolution`, `estimates`, `lifecycle`; comma-separated or repeatable) — `--fix-scope estimates` alone applies _only_ estimate fixes; omitting the flag grants the safe field-backfill scopes (`metadata`, `resolution`) and neither estimates nor lifecycle. `--dry-run` previews the full plan without mutating anything. With `--auto-fix` and no explicit `--check-*` flags, only the fix-capable checks (metadata, resolution, lifecycle) run. The `checks` in the output always describe the pre-fix state; re-run `pm validate` to confirm convergence.
 
 > Note: acceptance-criteria gaps are intentionally **not** auto-fixed. Unlike resolution/close_reason (derivable from the item's own fields) or estimates (a config-driven type default), acceptance criteria have no deterministic source — synthesizing them from the description would fabricate content rather than derive it, violating the auto-fix safety invariant. They remain `--fix-hints`-only.
 
@@ -658,7 +667,7 @@ pm validate --check-metadata --json | jq -r '.checks[] | select(.name=="metadata
 
 `pm validate --check-files` classifies every stale linked path in `details.missing_linked_path_classifications` as either `moved` (a file with the same basename still exists in the scan — the row carries the top relink candidate, e.g. `old/path.md:moved:new/path.md`) or `deleted` (no candidate anywhere, e.g. `old/path.md:deleted`). It also reports `details.missing_linked_path_rows` — owner attribution so cleanup is evidence-based without a reverse lookup. By default these are token-efficient one-liners (`<path>:<classification> owner=<id> status=<status> field=<files|docs> title="…"`); `--verbose-file-lists` expands them to the full structured shape (`{ path, classification, items: [{ id, type, title, status, field }] }`). Orphaned existing files get the same treatment through `details.orphaned_path_classifications` and `details.orphaned_path_rows`; classifications start with `docs_unowned`, `tests_unowned`, `source_unowned`, or `unlinked_existing`, and rows include a concrete `pm docs|files <id> --add ...` hint when a likely owner is found from nearby linked paths. `--prune-missing` bulk-removes the stale links classified `deleted` from their items (link removal only — real files are never touched; `moved` links are kept so their relink candidates are not lost) and reports each removal in `fixes.applied_fixes[]` as the equivalent `pm files <id> --remove <path>` / `pm docs <id> --remove <path>` command. It honors `--dry-run` and implies `--check-files`.
 
-The default `pm validate` run also includes a `format_version` check that compares every item's stored item metadata format version (`pm_format_version`, absent meaning the implicit baseline version `1`) against the version this pm runtime writes. `details.outdated_items` lists items that predate the current version (a future storage migration would rewrite them — advisory `warn`); `details.ahead_items` lists items written by a *newer* pm than the one running, which is an `error` because validation cannot vouch for fields it does not understand (upgrade pm to read them safely). At the current baseline version both lists are empty and the check is `ok`. The same `pm_format_version` integrity is surfaced by `pm health` under the `integrity` check (`details.counts.item_outdated_format_version` / `item_ahead_format_version`).
+The default `pm validate` run also includes a `format_version` check that compares every item's stored item metadata format version (`pm_format_version`, absent meaning the implicit baseline version `1`) against the version this pm runtime writes. `details.outdated_items` lists items that predate the current version (a future storage migration would rewrite them — advisory `warn`); `details.ahead_items` lists items written by a _newer_ pm than the one running, which is an `error` because validation cannot vouch for fields it does not understand (upgrade pm to read them safely). At the current baseline version both lists are empty and the check is `ok`. The same `pm_format_version` integrity is surfaced by `pm health` under the `integrity` check (`details.counts.item_outdated_format_version` / `item_ahead_format_version`).
 
 ### Telemetry Local Analytics
 
@@ -739,6 +748,7 @@ pm stats --field-utilization --json
 pm stats --by-assignee --by-priority
 pm stats --by-tag --tag-prefix domain: --json
 ```
+
 For governance dashboards, `--metadata-coverage` adds a `metadata_coverage` block reporting per-field `present`/`applicable`/`percent` for `acceptance_criteria`, `estimated_minutes`, `resolution`, `tags`, and `parent` — overall and `by_type` (resolution coverage is scoped to terminal items, its only applicable population). `--field-utilization` adds a `field_utilization` block reporting `present`/`total`/`percent` for each content field (`notes`, `learnings`, `files`, `docs`, `tests`, `comments`, `deps`, `body`, `linked_command`) across all items, so under-documented content dimensions are visible at a glance and pair naturally with the `--has-*`/`--no-*` list filters for drill-down. `--by-assignee`, `--by-tag`, and `--by-priority` add a `breakdowns` block with lifecycle-bucketed rows (`open`/`in_progress`/`blocked`/`draft`/`closed`/`canceled`/`other` + `total`) per group; blank keys render an explicit `(unassigned)`/`(untagged)` label. `--by-tag` accepts `--tag-prefix` to restrict counting to a tag namespace (for example `domain:`). All of these sections are gated behind their flags so the default `pm stats` stays token-light; the per-status/per-type distributions (already in `by_status`/`by_type`) zero-fill every configured state so underutilized lifecycle states and item types are visible at a glance.
 `history-redact` rewrites matching history payloads deterministically, recomputes hash chains, and appends an auditable `history_redact` marker entry when changes are applied.
 `history-compact` rewrites long streams into a synthetic checkpoint baseline plus a retained tail (`--before` accepts a 1-based version or ISO timestamp), re-anchors hashes, verifies integrity, and appends an auditable `history_compact` marker when applied.
@@ -849,23 +859,23 @@ pm plan show <plan-id> --fields id,title,steps_summary
 
 Subcommand cheatsheet:
 
-| Subcommand | Purpose |
-|------------|---------|
-| `create` | Create a Plan item with scope, harness, parent, related, blocked-by, and optional auto-claim |
-| `show` | Progressive-disclosure read (brief / standard / deep) with current step + next-action hints |
-| `add-step` | Append a step with title/body/owner/status/dependencies/files/tests/docs |
-| `update-step` | Patch one step (title, body, status, evidence, owner, blocked reason) |
-| `complete-step` | Shortcut for setting a step to `completed` with evidence |
-| `block-step` | Shortcut for setting a step to `blocked` with required `--step-blocked-reason` |
-| `reorder-step` | Move a step to a new 1-based order |
-| `remove-step` | Drop a step and renumber remaining steps |
-| `link` / `unlink` | Add or remove `linked_items` on a step (with optional `--promote-to-item-dep`) |
-| `decision` | Append a decision log entry (decision/rationale/evidence) |
-| `discovery` | Append a discovery log entry |
-| `validation` | Append a validation check (text/command/expected) |
-| `resume` | Replace the resume-context summary for stateless agents |
-| `approve` | Move `plan_mode` to `approved` (default) or any other mode via `--mode` |
-| `materialize` | Create real pm items (default `Task`) from selected steps with bidirectional links |
+| Subcommand        | Purpose                                                                                      |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| `create`          | Create a Plan item with scope, harness, parent, related, blocked-by, and optional auto-claim |
+| `show`            | Progressive-disclosure read (brief / standard / deep) with current step + next-action hints  |
+| `add-step`        | Append a step with title/body/owner/status/dependencies/files/tests/docs                     |
+| `update-step`     | Patch one step (title, body, status, evidence, owner, blocked reason)                        |
+| `complete-step`   | Shortcut for setting a step to `completed` with evidence                                     |
+| `block-step`      | Shortcut for setting a step to `blocked` with required `--step-blocked-reason`               |
+| `reorder-step`    | Move a step to a new 1-based order                                                           |
+| `remove-step`     | Drop a step and renumber remaining steps                                                     |
+| `link` / `unlink` | Add or remove `linked_items` on a step (with optional `--promote-to-item-dep`)               |
+| `decision`        | Append a decision log entry (decision/rationale/evidence)                                    |
+| `discovery`       | Append a discovery log entry                                                                 |
+| `validation`      | Append a validation check (text/command/expected)                                            |
+| `resume`          | Replace the resume-context summary for stateless agents                                      |
+| `approve`         | Move `plan_mode` to `approved` (default) or any other mode via `--mode`                      |
+| `materialize`     | Create real pm items (default `Task`) from selected steps with bidirectional links           |
 
 Invariants:
 

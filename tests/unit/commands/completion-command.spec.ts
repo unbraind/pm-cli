@@ -9,7 +9,11 @@ import {
 } from "../../../src/cli/commands/completion.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
+import {
+  readSettings,
+  writeSettings,
+} from "../../../src/core/store/settings.js";
+import { SCHEMA_SUBCOMMANDS } from "../../../src/sdk/schema.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("generateBashScript", () => {
@@ -142,16 +146,27 @@ describe("generateBashScript", () => {
     expect(bashScript).toContain("-y");
     expect(bashScript).toContain("--verbose");
     expect(bashScript).toContain("--type-preset");
+    expect(bashScript).toContain("--id-prefix");
+    expect(bashScript).toContain("--prefix");
 
     const zshScript = generateZshScript();
     const zshInitStart = zshScript.indexOf("        init)");
-    const zshInitBlock = zshScript.slice(zshInitStart, zshScript.indexOf("        config)", zshInitStart));
+    const zshInitBlock = zshScript.slice(
+      zshInitStart,
+      zshScript.indexOf("        config)", zshInitStart),
+    );
     expect(zshInitStart).toBeGreaterThan(-1);
     expect(zshInitBlock).toContain("_arguments");
-    expect(zshInitBlock).toContain("--preset[Governance preset for new setups]");
-    expect(zshInitBlock).toContain("--defaults[Use non-interactive setup defaults]");
+    expect(zshInitBlock).toContain(
+      "--preset[Governance preset for new setups]",
+    );
+    expect(zshInitBlock).toContain(
+      "--defaults[Use non-interactive setup defaults]",
+    );
     expect(zshScript).toContain("--agent-guidance[Agent guidance mode]");
     expect(zshScript).toContain("--type-preset[Register domain item types]");
+    expect(zshInitBlock).toContain("--id-prefix[Set the item ID prefix]");
+    expect(zshInitBlock).toContain("--prefix[Alias for --id-prefix]");
     expect(zshScript).toContain("Alias for --defaults");
     expect(zshScript).toContain("--verbose[");
 
@@ -159,6 +174,8 @@ describe("generateBashScript", () => {
     expect(fishScript).toContain("__fish_seen_subcommand_from init");
     expect(fishScript).toContain("-l agent-guidance");
     expect(fishScript).toContain("-l type-preset");
+    expect(fishScript).toContain("-l id-prefix");
+    expect(fishScript).toContain("-l prefix");
     expect(fishScript).toContain("-s y -l yes");
     expect(fishScript).toContain("-l verbose");
   });
@@ -180,9 +197,13 @@ describe("generateBashScript", () => {
 
     const zshScript = generateZshScript();
     expect(zshScript).toContain("update-many)");
-    expect(zshScript).toContain("--replace-tests[Atomically replace linked tests with provided --test values]");
+    expect(zshScript).toContain(
+      "--replace-tests[Atomically replace linked tests with provided --test values]",
+    );
     expect(zshScript).toContain("--clear-tests[Clear linked tests]");
-    expect(zshScript).toContain("--dep[Dependency seed id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>]");
+    expect(zshScript).toContain(
+      "--dep[Dependency seed id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>]",
+    );
 
     const fishScript = generateFishScript();
     expect(fishScript).toContain("__fish_seen_subcommand_from update-many");
@@ -190,7 +211,6 @@ describe("generateBashScript", () => {
     expect(fishScript).toContain("-l clear-docs");
     expect(fishScript).toContain("-l reminder");
   });
-
 
   it("includes append required --body flag from command contracts", () => {
     const bashScript = generateBashScript();
@@ -201,7 +221,6 @@ describe("generateBashScript", () => {
     expect(fishScript).toContain("__fish_seen_subcommand_from append");
     expect(fishScript).toContain("-l body");
   });
-
 
   it("includes deps ergonomics flags", () => {
     const script = generateBashScript();
@@ -219,20 +238,32 @@ describe("generateBashScript", () => {
     expect(script).toContain("--delete");
 
     const zshScript = generateZshScript();
-    expect(zshScript).toContain("--stdin[Read comment text from stdin (supports multiline markdown)]");
-    expect(zshScript).toContain("--file[Read comment text from file (supports multiline markdown)]:path");
+    expect(zshScript).toContain(
+      "--stdin[Read comment text from stdin (supports multiline markdown)]",
+    );
+    expect(zshScript).toContain(
+      "--file[Read comment text from file (supports multiline markdown)]:path",
+    );
     expect(zshScript).toContain("--edit[Replace the comment at 1-based index");
-    expect(zshScript).toContain("--delete[Delete the comment at 1-based index]:index");
+    expect(zshScript).toContain(
+      "--delete[Delete the comment at 1-based index]:index",
+    );
 
     const fishScript = generateFishScript();
     expect(fishScript).toContain("__fish_seen_subcommand_from comments");
-    expect(fishScript).toContain("-l stdin -d 'Read comment text from stdin (supports multiline markdown)'");
-    expect(fishScript).toContain("-l file -d 'Read comment text from file (supports multiline markdown)'");
-    expect(fishScript).toContain("-l edit -d 'Replace the comment at 1-based index");
-    expect(fishScript).toContain("-l delete -d 'Delete the comment at 1-based index'");
+    expect(fishScript).toContain(
+      "-l stdin -d 'Read comment text from stdin (supports multiline markdown)'",
+    );
+    expect(fishScript).toContain(
+      "-l file -d 'Read comment text from file (supports multiline markdown)'",
+    );
+    expect(fishScript).toContain(
+      "-l edit -d 'Replace the comment at 1-based index",
+    );
+    expect(fishScript).toContain(
+      "-l delete -d 'Delete the comment at 1-based index'",
+    );
   });
-
-
 
   it("includes files/docs add-glob flag in bash completion", () => {
     const script = generateBashScript();
@@ -304,7 +335,9 @@ describe("generateBashScript", () => {
   it("includes package lifecycle completions in bash with package-only declarative scaffolding", () => {
     const script = generateBashScript();
     expect(script).toContain("package|packages)");
-    expect(script).toContain("init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate");
+    expect(script).toContain(
+      "init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate",
+    );
     expect(script).toContain("--declarative");
     expect(script).toContain("--catalog");
   });
@@ -312,13 +345,17 @@ describe("generateBashScript", () => {
   it("includes fail-on-empty-test-run in bash test completions", () => {
     const script = generateBashScript();
     expect(script).toContain("--override-linked-pm-context");
-    expect(script).toContain("--fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm");
+    expect(script).toContain(
+      "--fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm",
+    );
     expect(script).toContain("--check-context --auto-pm-context");
   });
 
   it("includes test-all pagination flags in bash completion", () => {
     const script = generateBashScript();
-    expect(script).toContain("--status --limit --offset --background --timeout --progress");
+    expect(script).toContain(
+      "--status --limit --offset --background --timeout --progress",
+    );
   });
 
   it("includes gc dry-run and scope flags in bash completion", () => {
@@ -334,7 +371,9 @@ describe("generateBashScript", () => {
 
     const zshScript = generateZshScript();
     expect(zshScript).toContain("delete)");
-    expect(zshScript).toContain("--dry-run[Preview the item file that would be deleted without mutating]");
+    expect(zshScript).toContain(
+      "--dry-run[Preview the item file that would be deleted without mutating]",
+    );
 
     const fishScript = generateFishScript();
     expect(fishScript).toContain("__fish_seen_subcommand_from delete");
@@ -368,17 +407,27 @@ describe("generateBashScript", () => {
   it("includes history-compact flags across completion scripts", () => {
     const bashScript = generateBashScript();
     expect(bashScript).toContain("history-compact)");
-    expect(bashScript).toContain("--before --ids --all-over --closed --all-streams --min-entries --dry-run --author --message --force");
+    expect(bashScript).toContain(
+      "--before --ids --all-over --closed --all-streams --min-entries --dry-run --author --message --force",
+    );
 
     const zshScript = generateZshScript();
     expect(zshScript).toContain("history-compact)");
-    expect(zshScript).toContain("--before[Compact entries strictly before this version number or ISO timestamp]:before");
-    expect(zshScript).toContain("--all-over[Bulk: compact every stream with more than N entries]:all-over");
+    expect(zshScript).toContain(
+      "--before[Compact entries strictly before this version number or ISO timestamp]:before",
+    );
+    expect(zshScript).toContain(
+      "--all-over[Bulk: compact every stream with more than N entries]:all-over",
+    );
 
     const fishScript = generateFishScript();
     expect(fishScript).toContain("__fish_seen_subcommand_from history-compact");
-    expect(fishScript).toContain("-l before -d 'Compact entries strictly before this version number or ISO timestamp'");
-    expect(fishScript).toContain("-l all-streams -d 'Bulk: compact every history stream regardless of lifecycle state'");
+    expect(fishScript).toContain(
+      "-l before -d 'Compact entries strictly before this version number or ISO timestamp'",
+    );
+    expect(fishScript).toContain(
+      "-l all-streams -d 'Bulk: compact every history stream regardless of lifecycle state'",
+    );
   });
 
   it("includes get projection flags", () => {
@@ -388,12 +437,16 @@ describe("generateBashScript", () => {
 
     const zshScript = generateZshScript();
     expect(zshScript).toContain("get)");
-    expect(zshScript).toContain("--depth[Detail depth]:(brief standard deep full)");
+    expect(zshScript).toContain(
+      "--depth[Detail depth]:(brief standard deep full)",
+    );
     expect(zshScript).toContain("--full[Explicit full item read]");
 
     const fishScript = generateFishScript();
     expect(fishScript).toContain("__fish_seen_subcommand_from get");
-    expect(fishScript).toContain("-l depth -d 'Detail depth' -r -a 'brief standard deep full'");
+    expect(fishScript).toContain(
+      "-l depth -d 'Detail depth' -r -a 'brief standard deep full'",
+    );
     expect(fishScript).toContain("-l full -d 'Explicit full item read'");
   });
 
@@ -436,7 +489,10 @@ describe("generateBashScript", () => {
       expect(fish, `fish should contain -l ${flag}`).toContain(`-l ${flag}`);
     }
     const zshListBlockStart = zsh.indexOf("list|list-all|list-draft");
-    const zshListBlock = zsh.slice(zshListBlockStart, zsh.indexOf("aggregate)", zshListBlockStart));
+    const zshListBlock = zsh.slice(
+      zshListBlockStart,
+      zsh.indexOf("aggregate)", zshListBlockStart),
+    );
     expect(zshListBlock).toContain("--has-files[");
     expect(zshListBlock).toContain("--no-files[");
     expect(zshListBlock).toContain("--filter-files-missing[");
@@ -545,17 +601,35 @@ describe("generateZshScript", () => {
     expect(script).toContain("packages:Alias for package");
     expect(script).toContain("create:Create a new project management item");
     expect(script).toContain("completion:Generate shell completion");
-    expect(script).toContain("guide:Browse local progressive-disclosure guides");
-    expect(script).toContain("contracts:Show machine-readable command and schema contracts");
-    expect(script).toContain("start-task:Lifecycle alias to claim and set in_progress");
-    expect(script).toContain("pause-task:Lifecycle alias to reopen and release claim");
-    expect(script).toContain("close-task:Lifecycle alias to close and release claim");
-    expect(script).toContain("calendar:Show calendar views for deadlines and reminders");
+    expect(script).toContain(
+      "guide:Browse local progressive-disclosure guides",
+    );
+    expect(script).toContain(
+      "contracts:Show machine-readable command and schema contracts",
+    );
+    expect(script).toContain(
+      "start-task:Lifecycle alias to claim and set in_progress",
+    );
+    expect(script).toContain(
+      "pause-task:Lifecycle alias to reopen and release claim",
+    );
+    expect(script).toContain(
+      "close-task:Lifecycle alias to close and release claim",
+    );
+    expect(script).toContain(
+      "calendar:Show calendar views for deadlines and reminders",
+    );
     expect(script).toContain("cal:Alias for calendar");
-    expect(script).toContain("context:Show a token-efficient project context snapshot");
+    expect(script).toContain(
+      "context:Show a token-efficient project context snapshot",
+    );
     expect(script).toContain("ctx:Alias for context");
-    expect(script).toContain("history-compact:Compact history streams into a synthetic baseline + retained tail");
-    expect(script).toContain("history-redact:Redact sensitive literals/patterns and recompute history hashes");
+    expect(script).toContain(
+      "history-compact:Compact history streams into a synthetic baseline + retained tail",
+    );
+    expect(script).toContain(
+      "history-redact:Redact sensitive literals/patterns and recompute history hashes",
+    );
     expect(script).toContain("plan:Agent-optimized Plan item workflow");
     expect(script).toContain("notes:List or add notes for an item");
     expect(script).toContain("learnings:List or add learnings for an item");
@@ -565,7 +639,9 @@ describe("generateZshScript", () => {
 
   it("includes type completions for relevant flags", () => {
     const script = generateZshScript();
-    expect(script).toContain("Epic Feature Task Chore Issue Decision Event Reminder Milestone Meeting Plan");
+    expect(script).toContain(
+      "Epic Feature Task Chore Issue Decision Event Reminder Milestone Meeting Plan",
+    );
     expect(script).toContain("0 1 2 3 4");
     expect(script).toContain("keyword semantic hybrid");
     expect(script).toContain("bash zsh fish");
@@ -596,9 +672,15 @@ describe("generateZshScript", () => {
   it("places atomic claim flags only in the zsh claim block", () => {
     const script = generateZshScript();
     const updateStart = script.indexOf("        update)");
-    const updateBlock = script.slice(updateStart, script.indexOf("        update-many)", updateStart));
+    const updateBlock = script.slice(
+      updateStart,
+      script.indexOf("        update-many)", updateStart),
+    );
     const claimStart = script.indexOf("        claim)");
-    const claimBlock = script.slice(claimStart, script.indexOf("        release)", claimStart));
+    const claimBlock = script.slice(
+      claimStart,
+      script.indexOf("        release)", claimStart),
+    );
     expect(updateBlock).not.toContain("--if-available");
     expect(updateBlock).not.toContain("--next[");
     expect(claimBlock).toContain("--if-available");
@@ -646,24 +728,44 @@ describe("generateZshScript", () => {
 
   it("includes strict health flags in zsh completion", () => {
     const script = generateZshScript();
-    expect(script).toContain("--strict-directories[Treat optional item-type directories as required failures]");
-    expect(script).toContain("--verbose-stale-items[Include full stale vectorization ID lists in health output]");
-    expect(script).toContain("--brief[Emit compact health details for low-token agent checks]");
-    expect(script).toContain("--summary[Emit one-line-style health status with check names and warning count]");
-    expect(script).toContain("--strict-exit[Return non-zero exit when health warnings are present]");
+    expect(script).toContain(
+      "--strict-directories[Treat optional item-type directories as required failures]",
+    );
+    expect(script).toContain(
+      "--verbose-stale-items[Include full stale vectorization ID lists in health output]",
+    );
+    expect(script).toContain(
+      "--brief[Emit compact health details for low-token agent checks]",
+    );
+    expect(script).toContain(
+      "--summary[Emit one-line-style health status with check names and warning count]",
+    );
+    expect(script).toContain(
+      "--strict-exit[Return non-zero exit when health warnings are present]",
+    );
     expect(script).toContain("--fail-on-warn[Alias for --strict-exit]");
   });
 
   it("includes extension doctor strict flags in zsh completion", () => {
     const script = generateZshScript();
-    expect(script).toContain("--trace[Include registration traces in doctor deep diagnostics]");
+    expect(script).toContain(
+      "--trace[Include registration traces in doctor deep diagnostics]",
+    );
     expect(script).toContain(
       "--capability[Capability the init scaffold targets]:capability:(commands hooks search importers schema profile renderers parser preflight services)",
     );
-    expect(script).toContain("--runtime-probe[Opt-in runtime activation probe for manage output]");
-    expect(script).toContain("--fix-managed-state[Adopt unmanaged extensions before diagnostics/update checks]");
-    expect(script).toContain("--strict-exit[Return non-zero exit when doctor warnings are present]");
-    expect(script).toContain("--fail-on-warn[Alias for --strict-exit (doctor)]");
+    expect(script).toContain(
+      "--runtime-probe[Opt-in runtime activation probe for manage output]",
+    );
+    expect(script).toContain(
+      "--fix-managed-state[Adopt unmanaged extensions before diagnostics/update checks]",
+    );
+    expect(script).toContain(
+      "--strict-exit[Return non-zero exit when doctor warnings are present]",
+    );
+    expect(script).toContain(
+      "--fail-on-warn[Alias for --strict-exit (doctor)]",
+    );
   });
 
   it("includes zsh package lifecycle completions with package-only declarative scaffolding", () => {
@@ -672,20 +774,32 @@ describe("generateZshScript", () => {
     expect(script).toContain(
       "1:package_action:(init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate)",
     );
-    expect(script).toContain("--declarative[Generate a composeExtension blueprint starter]");
-    expect(script).toContain("--catalog[List bundled first-party package catalog entries]");
+    expect(script).toContain(
+      "--declarative[Generate a composeExtension blueprint starter]",
+    );
+    expect(script).toContain(
+      "--catalog[List bundled first-party package catalog entries]",
+    );
   });
 
   it("includes fail-on-empty-test-run in zsh test completions", () => {
     const script = generateZshScript();
-    expect(script).toContain("--override-linked-pm-context[Force run-level --pm-context over per-linked-test pm_context_mode metadata]");
-    expect(script).toContain("--fail-on-empty-test-run[Treat empty linked-test selections as failures]");
+    expect(script).toContain(
+      "--override-linked-pm-context[Force run-level --pm-context over per-linked-test pm_context_mode metadata]",
+    );
+    expect(script).toContain(
+      "--fail-on-empty-test-run[Treat empty linked-test selections as failures]",
+    );
   });
 
   it("includes test-all pagination flags in zsh completion", () => {
     const script = generateZshScript();
-    expect(script).toContain("--limit[Limit matching items before running linked tests]:number");
-    expect(script).toContain("--offset[Skip matching items before running linked tests]:number");
+    expect(script).toContain(
+      "--limit[Limit matching items before running linked tests]:number",
+    );
+    expect(script).toContain(
+      "--offset[Skip matching items before running linked tests]:number",
+    );
   });
 
   it("includes deterministic tag choices for zsh --tag flags", () => {
@@ -701,9 +815,17 @@ describe("generateZshScript", () => {
 
   it("does not split continued zsh _arguments blocks with blank lines", () => {
     const script = generateZshScript();
-    for (const command of ["search)", "update)", "update-many)", "context|ctx)"]) {
+    for (const command of [
+      "search)",
+      "update)",
+      "update-many)",
+      "context|ctx)",
+    ]) {
       const blockStart = script.indexOf(`        ${command}`);
-      const block = script.slice(blockStart, script.indexOf("          ;;", blockStart));
+      const block = script.slice(
+        blockStart,
+        script.indexOf("          ;;", blockStart),
+      );
       expect(blockStart).toBeGreaterThan(-1);
       expect(block).not.toMatch(/\\\n\s*\n/u);
     }
@@ -755,7 +877,10 @@ describe("generateFishScript", () => {
       ["health", "project tracker health"],
       ["stats", "project tracker statistics"],
       ["history-compact", "synthetic baseline + retained tail"],
-      ["history-redact", "Redact sensitive literals/patterns and recompute history hashes"],
+      [
+        "history-redact",
+        "Redact sensitive literals/patterns and recompute history hashes",
+      ],
       ["plan", "Agent-optimized Plan workflow"],
     ] as [string, string][]) {
       expect(script).toContain(`-a ${cmd}`);
@@ -778,7 +903,9 @@ describe("generateFishScript", () => {
 
   it("includes type and status value completions", () => {
     const script = generateFishScript();
-    expect(script).toContain("Epic Feature Task Chore Issue Decision Event Reminder Milestone Meeting Plan");
+    expect(script).toContain(
+      "Epic Feature Task Chore Issue Decision Event Reminder Milestone Meeting Plan",
+    );
     expect(script).toContain("0 1 2 3 4");
   });
 
@@ -836,10 +963,18 @@ describe("generateFishScript", () => {
     const script = generateFishScript();
     expect(script).toContain("__fish_seen_subcommand_from $package_cmd");
     expect(script).toContain("complete -c pm -n __pm_no_subcommand -a package");
-    expect(script).toContain("complete -c pm -n __pm_no_subcommand -a packages");
-    expect(script).toContain("-l declarative -d 'Generate a composeExtension blueprint starter'");
-    expect(script).toContain("-l catalog -d 'List bundled first-party package catalog entries'");
-    expect(script).toContain("-l fail-on-warn -d 'Alias for --strict-exit (doctor)'");
+    expect(script).toContain(
+      "complete -c pm -n __pm_no_subcommand -a packages",
+    );
+    expect(script).toContain(
+      "-l declarative -d 'Generate a composeExtension blueprint starter'",
+    );
+    expect(script).toContain(
+      "-l catalog -d 'List bundled first-party package catalog entries'",
+    );
+    expect(script).toContain(
+      "-l fail-on-warn -d 'Alias for --strict-exit (doctor)'",
+    );
   });
 
   it("includes strict health flags in fish completion", () => {
@@ -866,8 +1001,12 @@ describe("generateFishScript", () => {
   it("includes test-all pagination flags in fish completion", () => {
     const script = generateFishScript();
     expect(script).toContain("__fish_seen_subcommand_from test-all");
-    expect(script).toContain("-l limit -d 'Limit matching items before running linked tests'");
-    expect(script).toContain("-l offset -d 'Skip matching items before running linked tests'");
+    expect(script).toContain(
+      "-l limit -d 'Limit matching items before running linked tests'",
+    );
+    expect(script).toContain(
+      "-l offset -d 'Skip matching items before running linked tests'",
+    );
   });
 
   it("includes __pm_no_subcommand helper function", () => {
@@ -926,8 +1065,12 @@ describe("generateFishScript", () => {
 
   it("includes deterministic tag choices for fish --tag flags", () => {
     const script = generateFishScript(["Task"], ["beta", "alpha", "alpha"]);
-    expect(script).toContain("-l tag      -d 'Filter by tag' -r -a 'alpha beta'");
-    expect(script).toContain("-l tags           -d 'Alias for --tag' -r -a 'alpha beta'");
+    expect(script).toContain(
+      "-l tag      -d 'Filter by tag' -r -a 'alpha beta'",
+    );
+    expect(script).toContain(
+      "-l tags           -d 'Alias for --tag' -r -a 'alpha beta'",
+    );
   });
 });
 
@@ -1022,30 +1165,48 @@ describe("runCompletion", () => {
     expect(bashResult.script).toContain("pm completion-types");
     expect(bashResult.script).toContain('resolved="Bug Task"');
     expect(bashResult.script).toContain('resolved="draft qa_review"');
-    expect(bashResult.script).toContain('compgen -W "$(_pm_completion_status_choices)"');
-    expect(bashResult.script).toContain('compgen -W "$(_pm_completion_type_choices)"');
+    expect(bashResult.script).toContain(
+      'compgen -W "$(_pm_completion_status_choices)"',
+    );
+    expect(bashResult.script).toContain(
+      'compgen -W "$(_pm_completion_type_choices)"',
+    );
 
     const zshResult = runCompletion("zsh", ["Task"], [], false, runtime);
     expect(zshResult.script).toContain("_pm_status_choices()");
     expect(zshResult.script).toContain("pm completion-statuses");
     expect(zshResult.script).toContain('resolved="draft qa_review"');
-    expect(zshResult.script).toContain('--status[Filter by status]:(${(f)"$(_pm_status_choices)"})');
+    expect(zshResult.script).toContain(
+      '--status[Filter by status]:(${(f)"$(_pm_status_choices)"})',
+    );
     expect(zshResult.script).not.toContain("_pm_type_choices()");
-    const alphaFlagIndex = zshResult.script.indexOf("--alpha-segment[Runtime schema field flag]:value");
-    const customerFlagIndex = zshResult.script.indexOf("--customer-segment[Runtime schema field flag]:value");
+    const alphaFlagIndex = zshResult.script.indexOf(
+      "--alpha-segment[Runtime schema field flag]:value",
+    );
+    const customerFlagIndex = zshResult.script.indexOf(
+      "--customer-segment[Runtime schema field flag]:value",
+    );
     expect(alphaFlagIndex).toBeGreaterThan(-1);
     expect(customerFlagIndex).toBeGreaterThan(-1);
     expect(alphaFlagIndex).toBeLessThan(customerFlagIndex);
-    expect(zshResult.script).toContain("--customer-segment[Runtime schema field flag]:value");
+    expect(zshResult.script).toContain(
+      "--customer-segment[Runtime schema field flag]:value",
+    );
 
     const fishResult = runCompletion("fish", ["Task"], [], false, runtime);
     expect(fishResult.script).toContain("function __pm_status_choices");
     expect(fishResult.script).toContain("pm completion-statuses");
     expect(fishResult.script).toContain("set resolved 'draft qa_review'");
-    expect(fishResult.script).toContain("-l status -d 'Filter by status' -r -a '(__pm_status_choices)'");
+    expect(fishResult.script).toContain(
+      "-l status -d 'Filter by status' -r -a '(__pm_status_choices)'",
+    );
     expect(fishResult.script).not.toContain("function __pm_type_choices");
-    expect(fishResult.script).toContain("-l alpha-segment -d 'Runtime schema field flag' -r");
-    expect(fishResult.script).toContain("-l customer-segment -d 'Runtime schema field flag' -r");
+    expect(fishResult.script).toContain(
+      "-l alpha-segment -d 'Runtime schema field flag' -r",
+    );
+    expect(fishResult.script).toContain(
+      "-l customer-segment -d 'Runtime schema field flag' -r",
+    );
   });
 
   it("deduplicates runtime flags after underscore normalization", () => {
@@ -1056,23 +1217,39 @@ describe("runCompletion", () => {
     } satisfies CompletionRuntimeConfig;
 
     const zshResult = runCompletion("zsh", ["Task"], [], false, runtime);
-    expect((zshResult.script.match(/--customer-segment\[Runtime schema field flag\]:value/g) ?? []).length).toBe(1);
+    expect(
+      (
+        zshResult.script.match(
+          /--customer-segment\[Runtime schema field flag\]:value/g,
+        ) ?? []
+      ).length,
+    ).toBe(1);
     expect(zshResult.script).not.toContain("--[Runtime schema field flag]");
 
     const fishResult = runCompletion("fish", ["Task"], [], false, runtime);
-    expect((fishResult.script.match(/-l customer-segment -d 'Runtime schema field flag' -r/g) ?? []).length).toBe(1);
+    expect(
+      (
+        fishResult.script.match(
+          /-l customer-segment -d 'Runtime schema field flag' -r/g,
+        ) ?? []
+      ).length,
+    ).toBe(1);
   });
 });
 
 describe("pm completion CLI command", () => {
-  function installGuideShellPackage(
-    context: {
-      runCli: (args: string[], options?: { expectJson?: boolean; cwd?: string }) => {
-        code: number | null;
-      };
-    },
-  ): void {
-    const install = context.runCli(["install", "guide-shell", "--project", "--json"], { expectJson: true });
+  function installGuideShellPackage(context: {
+    runCli: (
+      args: string[],
+      options?: { expectJson?: boolean; cwd?: string },
+    ) => {
+      code: number | null;
+    };
+  }): void {
+    const install = context.runCli(
+      ["install", "guide-shell", "--project", "--json"],
+      { expectJson: true },
+    );
     expect(install.code).toBe(0);
   }
 
@@ -1091,7 +1268,9 @@ describe("pm completion CLI command", () => {
   it("outputs JSON object with --json", async () => {
     await withTempPmPath(async (context) => {
       installGuideShellPackage(context);
-      const result = context.runCli(["completion", "bash", "--json"], { expectJson: true });
+      const result = context.runCli(["completion", "bash", "--json"], {
+        expectJson: true,
+      });
       expect(result.code).toBe(0);
       const json = result.json as CompletionResult;
       expect(json.shell).toBe("bash");
@@ -1122,11 +1301,15 @@ describe("pm completion CLI command", () => {
 
       const zshResult = context.runCli(["completion", "zsh"]);
       expect(zshResult.code).toBe(0);
-      expect(zshResult.stdout).toContain("--customer-segment[Runtime schema field flag]:value");
+      expect(zshResult.stdout).toContain(
+        "--customer-segment[Runtime schema field flag]:value",
+      );
 
       const fishResult = context.runCli(["completion", "fish"]);
       expect(fishResult.code).toBe(0);
-      expect(fishResult.stdout).toContain("-l customer-segment -d 'Runtime schema field flag' -r");
+      expect(fishResult.stdout).toContain(
+        "-l customer-segment -d 'Runtime schema field flag' -r",
+      );
     });
   });
 
@@ -1169,13 +1352,21 @@ describe("pm completion CLI command", () => {
 
       const zshResult = context.runCli(["completion", "zsh"]);
       expect(zshResult.code).toBe(0);
-      expect(zshResult.stdout).toContain('--status[Filter by status]:(${(f)"$(_pm_status_choices)"})');
-      expect(zshResult.stdout).toContain('--type[Filter by item type]:(${(f)"$(_pm_type_choices)"})');
+      expect(zshResult.stdout).toContain(
+        '--status[Filter by status]:(${(f)"$(_pm_status_choices)"})',
+      );
+      expect(zshResult.stdout).toContain(
+        '--type[Filter by item type]:(${(f)"$(_pm_type_choices)"})',
+      );
 
       const fishResult = context.runCli(["completion", "fish"]);
       expect(fishResult.code).toBe(0);
-      expect(fishResult.stdout).toContain("-l status -d 'Filter by status' -r -a '(__pm_status_choices)'");
-      expect(fishResult.stdout).toContain("-l type     -d 'Filter by item type' -r -a '(__pm_type_choices)'");
+      expect(fishResult.stdout).toContain(
+        "-l status -d 'Filter by status' -r -a '(__pm_status_choices)'",
+      );
+      expect(fishResult.stdout).toContain(
+        "-l type     -d 'Filter by item type' -r -a '(__pm_type_choices)'",
+      );
     });
   }, 90_000);
 
@@ -1238,9 +1429,12 @@ describe("pm completion CLI command", () => {
 });
 
 describe("schema subcommand completion drift", () => {
-  it("lists every SCHEMA_SUBCOMMANDS entry in bash, zsh, and fish scripts", async () => {
-    const { SCHEMA_SUBCOMMANDS } = await import("../../../src/cli/commands/schema.js");
-    const scripts = [generateBashScript(), generateZshScript(), generateFishScript()];
+  it("lists every SCHEMA_SUBCOMMANDS entry in bash, zsh, and fish scripts", () => {
+    const scripts = [
+      generateBashScript(),
+      generateZshScript(),
+      generateFishScript(),
+    ];
     for (const script of scripts) {
       for (const subcommand of SCHEMA_SUBCOMMANDS) {
         expect(script).toContain(subcommand);

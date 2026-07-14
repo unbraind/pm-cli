@@ -1597,6 +1597,9 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         init)
           _arguments \\
+            '(1)--id-prefix[Set the item ID prefix]:prefix' \\
+            '(1)--prefix[Alias for --id-prefix]:prefix' \\
+            '1:optional id prefix or tracker path' \\
             '--preset[Governance preset for new setups]:preset:(minimal default strict)' \\
             '--defaults[Use non-interactive setup defaults]' \\
             '-y[Alias for --defaults]' \\
@@ -2626,6 +2629,8 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l prune-missing -d 'Re
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-command-references -d 'Run linked-command PM-ID reference checks'
 complete -c pm -n '__fish_seen_subcommand_from init' -l preset -d 'Governance preset for new setups' -r -a 'minimal default strict'
+complete -c pm -n '__fish_seen_subcommand_from init' -l id-prefix -d 'Set the item ID prefix' -r
+complete -c pm -n '__fish_seen_subcommand_from init' -l prefix -d 'Alias for --id-prefix' -r
 complete -c pm -n '__fish_seen_subcommand_from init' -l defaults -d 'Use non-interactive setup defaults'
 complete -c pm -n '__fish_seen_subcommand_from init' -s y -l yes -d 'Alias for --defaults'
 complete -c pm -n '__fish_seen_subcommand_from init' -l author -d 'Set the default mutation author for this project' -r

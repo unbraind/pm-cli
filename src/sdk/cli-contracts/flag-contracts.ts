@@ -253,7 +253,6 @@ export const AGGREGATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--release" },
 ];
 
-
 /** Public contract for comments flag contracts, shared by SDK and presentation-layer consumers. */
 export const COMMENTS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--add", aliases: ["--comment", "--body"] },
@@ -458,6 +457,7 @@ export const PLAN_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for init flag contracts, shared by SDK and presentation-layer consumers. */
 export const INIT_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id-prefix", aliases: ["--prefix"] },
   { flag: "--preset" },
   { flag: "--type-preset" },
   { flag: "--defaults", short: "-y", aliases: ["--yes"] },
@@ -1261,7 +1261,6 @@ export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--message" },
   { flag: "--force" },
 ];
-
 
 /** Public contract for calendar flag contracts, shared by SDK and presentation-layer consumers. */
 export const CALENDAR_FLAG_CONTRACTS: CliFlagContract[] = [

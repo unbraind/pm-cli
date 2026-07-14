@@ -38,6 +38,7 @@ Source of truth:
 - [`src/sdk/files.ts`](../src/sdk/files.ts)
 - [`src/sdk/docs.ts`](../src/sdk/docs.ts)
 - [`src/sdk/dependencies.ts`](../src/sdk/dependencies.ts)
+- [`src/sdk/schema.ts`](../src/sdk/schema.ts)
 - [`src/sdk/relationships.ts`](../src/sdk/relationships.ts)
 - [`src/sdk/relationship-history.ts`](../src/sdk/relationship-history.ts)
 - [`src/sdk/relationship-context.ts`](../src/sdk/relationship-context.ts)
@@ -755,6 +756,11 @@ tools. `pm.init` stages a tracker, `pm.config` reads/writes settings,
 methods list, inspect, apply, and lint project archetypes. These helpers let a
 package or app construct an opinionated project-management experience while
 staying on the same schema/profile primitives the CLI and MCP use.
+The schema mutation and inspection engine is owned by `src/sdk/schema.ts`; the
+CLI schema module is a presentation-compatible re-export. Embedded runtimes can
+therefore compose schema operations without importing CLI code, while CLI, MCP,
+and `PmClient` continue to share the same validation, locking, persistence, and
+result contracts.
 `pm.init` accepts `workspace` to initialize `<workspace>/.agents/pm`; path-target
 calls retain tracker-root semantics. `InitResult.target` exposes the resolved
 mode, tracker root, and optional workspace root, while every explicit-target
@@ -1192,7 +1198,13 @@ same list/default semantics as core flags:
 
 ```ts
 api.registerFlags("report", [
-  { long: "--scope", short: "-s", value_type: "string", list: true, default: "all" },
+  {
+    long: "--scope",
+    short: "-s",
+    value_type: "string",
+    list: true,
+    default: "all",
+  },
   { long: "--limit", value_type: "number", default: 20 },
 ]);
 ```

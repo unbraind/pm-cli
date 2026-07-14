@@ -683,28 +683,6 @@
       "imports": ["src/core/shared/command-types.ts"]
     },
     {
-      "source": "src/cli/commands/schema.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/lock/lock.ts",
-        "src/core/schema/fields-file.ts",
-        "src/core/schema/item-types-file.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/schema/status-defs-file.ts",
-        "src/core/schema/type-inference.ts",
-        "src/core/schema/type-presets.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
       "source": "src/cli/commands/search.ts",
       "imports": [
         "src/core/extensions/index.ts",

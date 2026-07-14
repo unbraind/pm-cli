@@ -2635,6 +2635,12 @@
       "command": "init",
       "flags": [
         {
+          "aliases": [
+            "--prefix"
+          ],
+          "flag": "--id-prefix"
+        },
+        {
           "flag": "--preset"
         },
         {
