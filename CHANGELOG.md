@@ -15,8 +15,8 @@
 
 ### Fixed
 
-- pm get --full omits children for Plan parents while pm list --parent returns them ([pm-y4z5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4z5.toon))
 - Intentional package CommandError outcomes create high-severity Sentry issues (PM-CLI-16) ([pm-7071](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7071.toon))
+- pm get --full omits children for Plan parents while pm list --parent returns them ([pm-y4z5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4z5.toon))
 - Extension install self-copy guard: reject source-inside-destination layouts before fs.cp EINVAL (PM-CLI-28) ([pm-8myl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8myl.toon))
 - Sentry captures deliberate Ctrl+C interrupts as error-level events (AbortError, PM-CLI-27) ([pm-ksv2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ksv2.toon))
 - Torn-install bundle transients block scheduled releases: boot-time chunk-integrity self-check + distinct error code for gate classification ([pm-wfvq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wfvq.toon))
