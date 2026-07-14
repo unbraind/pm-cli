@@ -1,0 +1,20 @@
+checks:
+  javascript: true
+
+filter:
+  excluded_paths:
+    - "dist/*"
+    - "coverage/*"
+    - "node_modules/*"
+    - ".agents/*"
+    - ".tmp/*"
+    - "docs/examples/*"
+
+build:
+  environment:
+    node: "v22"
+  nodes:
+    analysis:
+      tests:
+        override:
+          - js-scrutinizer-run

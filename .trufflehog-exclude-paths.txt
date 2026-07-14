@@ -1,0 +1,1 @@
+tests/unit/health-command\.spec\.ts

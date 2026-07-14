@@ -1,0 +1,25 @@
+version = 1
+
+exclude_patterns = [
+  "dist/**",
+  "coverage/**",
+  ".agents/**",
+  ".tmp/**",
+  "docs/examples/**"
+]
+
+test_patterns = [
+  "tests/**",
+  "benchmarks/**",
+  "**/*.spec.ts",
+  "**/*.bench.ts"
+]
+
+[[analyzers]]
+name = "javascript"
+
+  [analyzers.meta]
+  environment = ["nodejs"]
+
+[[analyzers]]
+name = "secrets"

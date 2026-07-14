@@ -6,7 +6,8 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-07-14T21:35:50.603Z"
-updated_at: "2026-07-14T21:35:50.603Z"
+updated_at: "2026-07-14T21:48:49.268Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "PR#564 is reviewed and either merged (CodSpeed workflow green on main, baseline established) or closed with the rejection rationale recorded on this item; if merged, a subsequent PR demonstrably receives a CodSpeed comparison report; a follow-up benchmark wishlist (item parsing, TOON decode, relationship analytics) is recorded as a note here"
@@ -16,4 +17,6 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-7rlp,related,"2026-07-14T21:35:50.603Z",null,null
   pm-mi2x,related,"2026-07-14T21:35:50.603Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-14T21:48:49.268Z",maintainer-agent,"PR#564 merged to main 2026-07-14 (merge commit) after review: all 25 checks green including the new 'Run benchmarks (Ubuntu, Node 24)' CodSpeed job (1m54s, 11 benchmarks uploaded in simulation mode). Workflow verified against repo conventions — SHA-pinned actions (CodSpeedHQ/action@f99becdc v4.18.5, checkout v7.0.0, pnpm/action-setup v6, setup-node v6), least-privilege permissions (contents:read + id-token:write for OIDC), timeout-minutes:20, concurrency cancel-in-progress. Bench config isolated from the 100%-coverage correctness suite (separate vitest.bench.config.ts; coverage shards passed on the PR). Awaiting: baseline run on main + a subsequent PR comparison report."
 body: ""

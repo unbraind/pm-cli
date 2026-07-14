@@ -1,0 +1,3 @@
+{
+  "exclude": ["dist", "coverage", "node_modules", ".agents", ".tmp", "docs/examples"]
+}

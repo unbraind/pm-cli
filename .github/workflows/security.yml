@@ -49,6 +49,32 @@ jobs:
           trivyignores: .trivyignore
           skip-dirs: node_modules,dist,coverage,.pnpm-store
 
+  trufflehog:
+    name: TruffleHog
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          # Full history so the action can resolve push/PR commit ranges and
+          # scheduled runs can rescan the entire history.
+          fetch-depth: 0
+
+      # Verified-credential detection on top of Trivy's pattern-based secret
+      # scan: TruffleHog re-checks candidate secrets against the issuing
+      # provider and fails on live (verified) or unverifiable (unknown)
+      # results. push/PR events scan the changed commit range; scheduled runs
+      # rescan everything. Known-benign test fixtures are excluded via
+      # .trufflehog-exclude-paths.txt (one path regex per line) — the only
+      # entry is a deliberate user:pass@example.test URI fixture; never add
+      # entries to silence a real finding.
+      - name: TruffleHog scan
+        uses: trufflesecurity/trufflehog@27b0417c16317ca9a472a9a8092acce143b49c55 # v3.95.9
+        with:
+          extra_args: --results=verified,unknown --exclude-paths=.trufflehog-exclude-paths.txt
+
   shellcheck:
     name: ShellCheck
     runs-on: ubuntu-latest
