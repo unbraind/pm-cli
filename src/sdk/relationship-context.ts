@@ -118,6 +118,7 @@ function explainDirectEdge(
 ): string {
   const definition = registry.require(edge.kind);
   if (definition.ordering) {
+    // Legacy and JSON-parsed definitions may predate explicit precedence.
     const sourceFirst =
       (definition.precedence ?? "source_before_target") ===
       "source_before_target";
@@ -125,6 +126,7 @@ function explainDirectEdge(
     return node === before ? "prerequisite" : "dependent";
   }
   if (definition.hierarchy) {
+    // Legacy and JSON-parsed definitions may predate explicit hierarchy direction.
     const sourceIsParent =
       (definition.hierarchyDirection ?? "source_parent") === "source_parent";
     const parent = sourceIsParent ? edge.source : edge.target;

@@ -215,6 +215,7 @@ function buildExecutionAdjacency(
   for (const edge of graph.edges()) {
     const definition = registry.require(edge.kind);
     if (!definition.ordering) continue;
+    // Legacy and JSON-parsed definitions may predate explicit precedence.
     const sourceFirst =
       (definition.precedence ?? "source_before_target") ===
       "source_before_target";
