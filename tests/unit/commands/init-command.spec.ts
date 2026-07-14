@@ -144,6 +144,13 @@ describe("runInit", () => {
     expect(() => initInternals.resolveInitPrefixInput(undefined, " ")).toThrow(
       "--id-prefix must not be empty",
     );
+    expect(() =>
+      initInternals.resolveInitPrefixInput(undefined, "./tracker"),
+    ).toThrow(
+      expect.objectContaining({
+        context: expect.objectContaining({ code: "init_id_prefix_path_like" }),
+      }),
+    );
     expect(() => initInternals.resolveInitPrefixInput("app", "ops")).toThrow(
       expect.objectContaining({
         context: expect.objectContaining({ code: "init_id_prefix_conflict" }),

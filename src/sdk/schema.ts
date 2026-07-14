@@ -573,12 +573,7 @@ export async function runSchemaAddType(
   global: GlobalOptions,
 ): Promise<SchemaAddTypeResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await ensureInitialized(pmRoot);
 
   let normalized;
   try {
@@ -699,9 +694,7 @@ export async function runSchemaAddType(
       path: typesPath,
       definitions: upsert.file.definitions.length,
     },
-    warnings: [...new Set(warnings)].sort((left, right) =>
-      left.localeCompare(right),
-    ),
+    warnings: finalizeWarnings(warnings),
     generated_at: nowIso(),
   };
 }
@@ -713,6 +706,13 @@ async function ensureInitialized(pmRoot: string): Promise<void> {
       EXIT_CODE.NOT_FOUND,
     );
   }
+}
+
+/** Deduplicates schema mutation warnings and returns their stable locale-aware order. */
+function finalizeWarnings(warnings: string[]): string[] {
+  return [...new Set(warnings)].sort((left, right) =>
+    left.localeCompare(right),
+  );
 }
 
 /** Counts items whose resolved type matches `typeName` (case-insensitive). Uses the lightest existing read path (listAllItemMetadataLight skips the heavy collections cache). All items are counted — not just open ones — so the advisory warning surfaces every item the removed definition would orphan; the count is non-blocking. The caller passes its already-loaded `settings` so we never re-read settings.json from disk here. */
@@ -915,9 +915,7 @@ export async function runSchemaRemoveType(
       path: typesPath,
       definitions: removal.file.definitions.length,
     },
-    warnings: [...new Set(warnings)].sort((left, right) =>
-      left.localeCompare(right),
-    ),
+    warnings: finalizeWarnings(warnings),
     generated_at: nowIso(),
   };
 }
@@ -1153,9 +1151,7 @@ export async function runSchemaAddStatus(
       path: statusesPath,
       statuses: upsert.file.statuses.length,
     },
-    warnings: [...new Set(warnings)].sort((left, right) =>
-      left.localeCompare(right),
-    ),
+    warnings: finalizeWarnings(warnings),
     generated_at: nowIso(),
   };
 }
@@ -1247,9 +1243,7 @@ export async function runSchemaRemoveStatus(
       path: statusesPath,
       statuses: removal.file.statuses.length,
     },
-    warnings: [...new Set(warnings)].sort((left, right) =>
-      left.localeCompare(right),
-    ),
+    warnings: finalizeWarnings(warnings),
     generated_at: nowIso(),
   };
 }
@@ -1374,12 +1368,7 @@ async function loadSchemaInspectionContext(global: GlobalOptions): Promise<{
   schema: ReturnType<typeof normalizeRuntimeSchemaSettings>;
 }> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
+  await ensureInitialized(pmRoot);
   const settings = await readSettings(pmRoot);
   const schema = normalizeRuntimeSchemaSettings(settings.schema);
   const typesPath = filePathForSchemaSection(
@@ -1626,9 +1615,7 @@ export async function runSchemaAddField(
       path: fieldsPath,
       fields: upsert.file.fields.length,
     },
-    warnings: [...new Set(warnings)].sort((left, right) =>
-      left.localeCompare(right),
-    ),
+    warnings: finalizeWarnings(warnings),
     generated_at: nowIso(),
   };
 }
@@ -1751,9 +1738,7 @@ export async function runSchemaRemoveField(
       path: fieldsPath,
       fields: removal.file.fields.length,
     },
-    warnings: [...new Set(warnings)].sort((left, right) =>
-      left.localeCompare(right),
-    ),
+    warnings: finalizeWarnings(warnings),
     generated_at: nowIso(),
   };
 }
@@ -1901,9 +1886,7 @@ export async function runSchemaApplyPreset(
       path: typesPath,
       definitions: definitionsCount,
     },
-    warnings: [...new Set(warnings)].sort((left, right) =>
-      left.localeCompare(right),
-    ),
+    warnings: finalizeWarnings(warnings),
     generated_at: nowIso(),
   };
 }
@@ -2062,9 +2045,7 @@ export async function runSchemaInferTypes(
       path: typesPath,
       definitions: definitionsCount,
     },
-    warnings: [...new Set(warnings)].sort((left, right) =>
-      left.localeCompare(right),
-    ),
+    warnings: finalizeWarnings(warnings),
     generated_at: nowIso(),
   };
 }

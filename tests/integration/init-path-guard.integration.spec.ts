@@ -85,6 +85,20 @@ describe("init tracker-path guardrails", () => {
       ]);
       expect(empty.code).toBe(2);
       expect(empty.stderr).toContain("--id-prefix must not be empty");
+
+      const pathLike = context.runCli([
+        "init",
+        "--id-prefix",
+        "./nested-tracker",
+        "--json",
+        "--yes",
+      ]);
+      expect(pathLike.code).toBe(2);
+      expectJsonErrorEnvelope(pathLike.stderr, {
+        code: "init_id_prefix_path_like",
+        exit_code: 2,
+      });
+      expect(pathLike.stderr).toContain("not a tracker path");
     });
   });
 

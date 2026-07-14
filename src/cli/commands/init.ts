@@ -418,6 +418,21 @@ function resolveInitPrefixInput(
   if (flaggedPrefix.trim().length === 0) {
     throw new PmCliError("--id-prefix must not be empty", EXIT_CODE.USAGE);
   }
+  if (isPathLikeInitTarget(flaggedPrefix)) {
+    throw new PmCliError(
+      `--id-prefix accepts an item ID prefix, not a tracker path: "${flaggedPrefix}".`,
+      EXIT_CODE.USAGE,
+      {
+        code: "init_id_prefix_path_like",
+        required:
+          "Pass the tracker path positionally or with the global --path option.",
+        examples: [
+          `pm init ${flaggedPrefix}`,
+          `pm --path ${flaggedPrefix} init`,
+        ],
+      },
+    );
+  }
   if (
     positionalPrefix !== undefined &&
     normalizePrefix(positionalPrefix) !== normalizePrefix(flaggedPrefix)
