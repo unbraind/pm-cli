@@ -270,7 +270,8 @@ export class RelationshipKindRegistry {
   }
 
   /** Resolve a canonical kind or compatibility alias. */
-  public resolve(kind: string): RelationshipKindDefinition | undefined {
+  public resolve(kind: unknown): RelationshipKindDefinition | undefined {
+    if (typeof kind !== "string") return undefined;
     const normalized = normalizeKind(kind);
     return this.#definitions.get(this.#aliases.get(normalized) ?? normalized);
   }
@@ -320,8 +321,10 @@ function normalizeRelationshipEdge(
   nodes: ReadonlySet<string>,
   registry: RelationshipKindRegistry,
 ): { edge: RelationshipEdge; identity: string } {
-  const source = candidate.source.trim();
-  const target = candidate.target.trim();
+  const source =
+    typeof candidate.source === "string" ? candidate.source.trim() : "";
+  const target =
+    typeof candidate.target === "string" ? candidate.target.trim() : "";
   const definition = registry.require(candidate.kind);
   if (!nodes.has(source) || !nodes.has(target))
     throw new TypeError(`Relationship endpoint not found: ${source} -> ${target}`);
@@ -350,6 +353,18 @@ function appendIndexedEdge(
   else index.set(node, [edge]);
 }
 
+function normalizeNodeId(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function resolveExistingNodeId(
+  value: unknown,
+  ids: ReadonlySet<string>,
+): string | undefined {
+  const id = normalizeNodeId(value);
+  return id && ids.has(id) ? id : undefined;
+}
+
 /** Build an immutable, deterministic in-memory relationship index. */
 export class RelationshipGraph {
   readonly #registry: RelationshipKindRegistry;
@@ -365,7 +380,12 @@ export class RelationshipGraph {
     registry: RelationshipKindRegistry = defaultRegistry,
   ) {
     this.#registry = registry;
-    this.#nodes = new Set([...nodes].map((id) => id.trim()).filter(Boolean));
+    this.#nodes = new Set(
+      [...nodes]
+        .filter((id): id is string => typeof id === "string")
+        .map((id) => id.trim())
+        .filter(Boolean),
+    );
     const deduped = new Map<string, RelationshipEdge>();
     for (const candidate of edges) {
       const { edge, identity } = normalizeRelationshipEdge(
@@ -394,22 +414,29 @@ export class RelationshipGraph {
     >[],
     registry: RelationshipKindRegistry = defaultRegistry,
   ): RelationshipGraph {
-    const ids = new Set(items.map((item) => item.id));
+    const ids = new Set(
+      items.map((item) => normalizeNodeId(item.id)).filter(Boolean),
+    );
     const edges: RelationshipEdge[] = [];
     for (const item of items) {
-      if (item.parent && ids.has(item.parent))
-        edges.push({ source: item.id, target: item.parent, kind: "parent" });
-      if (item.blocked_by && ids.has(item.blocked_by))
+      const source = normalizeNodeId(item.id);
+      if (!source) continue;
+      const parent = resolveExistingNodeId(item.parent, ids);
+      if (parent)
+        edges.push({ source, target: parent, kind: "parent" });
+      const blockedBy = resolveExistingNodeId(item.blocked_by, ids);
+      if (blockedBy)
         edges.push({
-          source: item.id,
-          target: item.blocked_by,
+          source,
+          target: blockedBy,
           kind: "blocked_by",
         });
       for (const dependency of item.dependencies ?? []) {
-        if (ids.has(dependency.id) && registry.resolve(dependency.kind))
+        const dependencyId = resolveExistingNodeId(dependency.id, ids);
+        if (dependencyId && registry.resolve(dependency.kind))
           edges.push({
-            source: item.id,
-            target: dependency.id,
+            source,
+            target: dependencyId,
             kind: dependency.kind,
             createdAt: dependency.created_at,
             author: dependency.author,

@@ -77,7 +77,10 @@ import type {
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
 import { collectDanglingDependencyReferences } from "../../sdk/dependencies.js";
-import { createRelationshipKindRegistry } from "../../sdk/relationships.js";
+import {
+  createRelationshipKindRegistry,
+  type RelationshipKindRegistry,
+} from "../../sdk/relationships.js";
 import { runDocs } from "../../sdk/docs.js";
 import { runFiles } from "../../sdk/files.js";
 import { extractReferencedPmItemIdsFromCommand } from "./test.js";
@@ -1480,9 +1483,9 @@ function escapeRegExp(value: string): string {
 function buildLifecycleDependencyGraph(
   activeItems: ItemWithBody[],
   idPrefix = "pm",
+  relationshipRegistry: RelationshipKindRegistry = createRelationshipKindRegistry(),
 ): Map<string, string[]> {
   const activeItemIds = new Set(activeItems.map((item) => item.id));
-  const relationshipRegistry = createRelationshipKindRegistry();
   const graph = new Map<string, string[]>();
   const sortedItems = [...activeItems].sort((left, right) =>
     left.id.localeCompare(right.id),

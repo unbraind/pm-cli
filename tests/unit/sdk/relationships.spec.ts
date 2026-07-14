@@ -12,6 +12,7 @@ describe("relationship kind registry", () => {
     const registry = createRelationshipKindRegistry();
     expect(registry.resolve("related-to")?.kind).toBe("related");
     expect(registry.resolve("depends_on")?.kind).toBe("blocked_by");
+    expect(registry.resolve(null)).toBeUndefined();
     expect(registry.list().map(({ kind }) => kind)).toEqual(
       [...registry.list().map(({ kind }) => kind)].sort(),
     );
@@ -192,6 +193,20 @@ describe("relationship graph", () => {
           [{ source: "a", target: "b", kind: "unknown" }],
         ),
     ).toThrow("Unknown relationship kind");
+    expect(
+      () =>
+        new RelationshipGraph(
+          ["a", null] as never,
+          [{ source: null, target: "a", kind: "related" }] as never,
+        ),
+    ).toThrow("endpoint not found");
+    expect(
+      () =>
+        new RelationshipGraph(
+          ["a"],
+          [{ source: "a", target: null, kind: "related" }] as never,
+        ),
+    ).toThrow("endpoint not found");
   });
 
   it("keeps cyclic and parallel-edge traversal deterministic", () => {
@@ -242,12 +257,12 @@ describe("relationship graph", () => {
   it("builds from item metadata and preserves dependency attribution", () => {
     const fromItems = RelationshipGraph.fromItems([
       {
-        id: "a",
-        parent: "b",
-        blocked_by: "c",
+        id: " a ",
+        parent: " b ",
+        blocked_by: " c ",
         dependencies: [
           {
-            id: "d",
+            id: " d ",
             kind: "discovered_from",
             created_at: "2026-01-01T00:00:00.000Z",
             author: "agent",
@@ -259,6 +274,7 @@ describe("relationship graph", () => {
       { id: "b" },
       { id: "c" },
       { id: "d" },
+      { id: null, parent: true },
     ] as never);
     expect(fromItems.edges()).toEqual(
       expect.arrayContaining([
