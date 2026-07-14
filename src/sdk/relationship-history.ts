@@ -509,8 +509,13 @@ export class RelationshipEventStore {
   public static async open(options: RelationshipEventStoreOptions): Promise<RelationshipEventStore> {
     const nodes = Object.freeze([...options.nodes]);
     const target = await resolveRelationshipEventStorePath(options.pmRoot, options.relativePath);
-    const log = await loadRelationshipEventLog(target, nodes, options.registry);
-    return new RelationshipEventStore(options, nodes, target, log);
+    const release = await acquireLock(options.pmRoot, RELATIONSHIP_STORE_LOCK_ID, 30, `relationship-store:${process.pid}`, false, false, 3_000);
+    try {
+      const log = await loadRelationshipEventLog(target, nodes, options.registry);
+      return new RelationshipEventStore(options, nodes, target, log);
+    } finally {
+      await release();
+    }
   }
 
   /** Absolute JSONL path, exposed for diagnostics and backup tooling. */
