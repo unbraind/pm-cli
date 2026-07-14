@@ -1,0 +1,19 @@
+id: pm-yh6t
+title: "Adopt CodSpeed continuous CPU benchmarking in CI: review/land PR#564 and establish the per-PR perf-regression signal"
+description: ""
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-07-14T21:35:50.603Z"
+updated_at: "2026-07-14T21:35:50.603Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "PR#564 is reviewed and either merged (CodSpeed workflow green on main, baseline established) or closed with the rejection rationale recorded on this item; if merged, a subsequent PR demonstrably receives a CodSpeed comparison report; a follow-up benchmark wishlist (item parsing, TOON decode, relationship analytics) is recorded as a note here"
+parent: pm-9rxu
+risk: medium
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-7rlp,related,"2026-07-14T21:35:50.603Z",null,null
+  pm-mi2x,related,"2026-07-14T21:35:50.603Z",null,null
+body: ""
