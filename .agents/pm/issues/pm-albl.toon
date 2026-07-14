@@ -1,0 +1,19 @@
+id: pm-albl
+title: "GH-557: contract layer intercepts -h/--help before variadic-positional handlers, blocking legitimate positional content"
+description: "Host contract/help layer treats a standalone -h/--help token as a global help request BEFORE the command handler runs, even for commands declaring a variadic positional whose content legitimately contains such tokens (Cypher, shell snippets, search expressions). Repro: an extension command 'pm pm-graph query <cypher-query...>' given 'pm pm-graph query WITH 1 AS h RETURN -h' prints contract-layer usage and never invokes the handler; extension-side help checks on context.args are dead code because the host short-circuits first. Quoted single-arg usage works. Impact: agents composing command lines programmatically get a help screen instead of execution, and extension authors have NO opt-out. Fix direction (from GH-557): respect and strip a '--' end-of-flags separator so everything after it reaches context.args verbatim, and/or a passthrough/raw attribute on variadic positional declarations in the command contract; expose raw argv as fallback. Class framing: this is contract-declared argument semantics (same family as pm-fgih convergence and pm-evav real-CLI-boundary flag erasure) — fix at the contract layer once, not per command. Found hardening unbraind/pm-graph query/neighbors."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-07-14T16:46:59.756Z"
+updated_at: "2026-07-14T16:46:59.756Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: A variadic positional can be declared passthrough (or '--' separator is respected and stripped) so -h/--help/--json tokens after it reach the handler verbatim at the real CLI boundary; global help still renders for the command when no passthrough content is present; behavior covered by real-boundary regression tests including an extension variadic command; contract docs + generated CLI contracts document the opt-out
+parent: pm-ugqx
+risk: medium
+confidence: 75
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-evav,related,"2026-07-14T16:46:59.756Z",null,null
+  pm-fgih,related,"2026-07-14T16:46:59.756Z",null,null
+body: ""

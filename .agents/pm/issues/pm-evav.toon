@@ -6,10 +6,13 @@ status: open
 priority: 1
 tags[3]: agent-experience,extension-sdk,gh-550
 created_at: "2026-07-14T10:18:53.391Z"
-updated_at: "2026-07-14T10:18:53.391Z"
+updated_at: "2026-07-14T16:46:37.149Z"
 author: codex-gpt5
+estimated_minutes: 180
 acceptance_criteria: Built CLI parser preserves one/comma/repeated/interleaved list values in occurrence order; omitted flags retain declared defaults; focused extension startup and CLI integration tests cover the real boundary.
 parent: pm-x6jf
+risk: medium
+confidence: 75
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-kfq5,related,"2026-07-14T10:18:53.391Z",codex-gpt5,null
 comments[1]{created_at,author,text}:
