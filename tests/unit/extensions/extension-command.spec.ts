@@ -4931,17 +4931,17 @@ describe("extension command runtime", () => {
           await ownerReleased;
           return "owner-finished";
         },
-        { stale_ms: 20, heartbeat_ms: 2 },
+        { stale_ms: 50, heartbeat_ms: 5 },
       );
       await ownerStarted;
-      await delay(35);
+      await delay(90);
 
       await expect(
         extensionCommandTestOnly.withExtensionInstallLock(
           tempRoot,
           "competing-ext",
           async () => "unreachable",
-          { attempts: 1, delay_ms: 0, stale_ms: 20, heartbeat_ms: 2 },
+          { attempts: 1, delay_ms: 0, stale_ms: 50, heartbeat_ms: 5 },
         ),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.CONFLICT });
       releaseOwner();
@@ -4961,10 +4961,10 @@ describe("extension command runtime", () => {
         tempRoot,
         "heartbeat-error-ext",
         async () => {
-          await delay(5);
+          await delay(30);
           return "install-finished";
         },
-        { heartbeat_ms: 1 },
+        { stale_ms: 50, heartbeat_ms: 5 },
       );
       expect(result).toBe("install-finished");
     } finally {
