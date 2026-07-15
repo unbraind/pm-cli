@@ -14,6 +14,12 @@ const HISTORY_AUTHOR_ATTRIBUTION_BASELINE_MS = Date.parse(
   HISTORY_AUTHOR_ATTRIBUTION_BASELINE,
 );
 
+/** Attribution policy indexed by unknown-author and post-baseline flags. */
+const HISTORY_AUTHOR_EVENT_CLASSIFICATIONS = [
+  ["attributed", "attributed"],
+  ["legacy_unknown", "actionable_unknown"],
+] as const;
+
 /** Return history string fields unchanged while normalizing other values to empty text. */
 const historyStringValue = (value: unknown): string =>
   typeof value === "string" ? value : "";
@@ -50,14 +56,12 @@ export const classifyHistoryAuthorEvent = (
 ): "attributed" | "legacy_unknown" | "actionable_unknown" => {
   const record = (parsed ?? {}) as { author?: unknown; ts?: unknown };
   const author = historyStringValue(record.author).trim().toLowerCase();
-  if (!["", "unknown"].includes(author)) {
-    return "attributed";
-  }
-  const timestamp = Date.parse(historyStringValue(record.ts));
-  return !Number.isFinite(timestamp) ||
-    timestamp < HISTORY_AUTHOR_ATTRIBUTION_BASELINE_MS
-    ? "legacy_unknown"
-    : "actionable_unknown";
+  const authorClass = Number(["", "unknown"].includes(author)) as 0 | 1;
+  const timestampClass = Number(
+    Date.parse(historyStringValue(record.ts)) >=
+      HISTORY_AUTHOR_ATTRIBUTION_BASELINE_MS,
+  ) as 0 | 1;
+  return HISTORY_AUTHOR_EVENT_CLASSIFICATIONS[authorClass][timestampClass];
 };
 
 /** Inspect one readable JSONL stream without performing filesystem I/O. */

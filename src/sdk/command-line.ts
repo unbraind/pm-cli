@@ -18,7 +18,20 @@ export const quoteCommandArg = (
     return arg;
   }
   if (platform === "win32") {
-    return `"${arg.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, "$1$1")}"`;
+    let escaped = '"';
+    let pendingBackslashes = 0;
+    for (const character of arg) {
+      if (character === "\\") {
+        pendingBackslashes += 1;
+        continue;
+      }
+      escaped += "\\".repeat(
+        character === '"' ? pendingBackslashes * 2 + 1 : pendingBackslashes,
+      );
+      escaped += character;
+      pendingBackslashes = 0;
+    }
+    return `${escaped}${"\\".repeat(pendingBackslashes * 2)}"`;
   }
   return `"${arg.replace(/(["\\$`])/g, "\\$1")}"`;
 };
