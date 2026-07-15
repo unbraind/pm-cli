@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: architecture,"area:governance","area:sdk"
 created_at: "2026-07-05T04:54:11.132Z"
-updated_at: "2026-07-15T11:09:40.480Z"
+updated_at: "2026-07-15T14:00:03.866Z"
 assignee: codex-root
 author: maintainer-agent
 estimated_minutes: 360
@@ -26,7 +26,7 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-d4ns,related,"2026-07-15T09:27:30.799Z",codex-root,null
   pm-demq,related,"2026-07-15T09:27:30.799Z",codex-root,null
   pm-u5zr,related,"2026-07-15T09:27:30.799Z",codex-root,null
-comments[17]{created_at,author,text}:
+comments[19]{created_at,author,text}:
   "2026-07-06T21:58:32.680Z",maintainer-agent,"Audit #15 scope note: decide telemetry-queue/runtime primitives here — either promote them with validate/health/gc (they share the ops noun per pm-6apl) or explicitly document them as CLI-only in the SDK reference. The SDK domain matrix should leave no command family unmapped."
   "2026-07-07T20:44:48.118Z",codex-agent,"Implementation start: bundled governance/health/maintenance SDK primitives with adjacent SDK-context work. Live duplicate/context check found this domain still open; telemetry queue/runtime decision will be documented in SDK docs rather than hidden."
   "2026-07-08T06:06:37.127Z",codex,"Evidence: broad command/runtime coverage remained green after the SDK public-result hardening: node scripts/run-tests.mjs coverage passed 266 files / 5459 tests with 100% statements, branches, functions, and lines."
@@ -44,12 +44,17 @@ comments[17]{created_at,author,text}:
   "2026-07-15T10:28:50.429Z",codex-root,"DeepSource structural correction (2026-07-15): the current-head dashboard exposed 15 diff findings that GitHub inline comments omitted—complexity in quoteCommandArg, extension policy normalization, copy safety, and install locks plus global declarations/docstrings. Windows quoting is now split into a public linear primitive; copy-safety and owner-bound lock orchestration moved into src/sdk/extension/install-runtime.ts with typed reusable APIs; extension policy defaults use normalized object composition. The monolith shrank and strict file-length/static/docstring/package/token gates pass. Typecheck, 143 focused tests, and full 291-file/5,721-test coverage pass at exact 100/100/100/100 (37,038 statements, 26,514 branches, 7,467 functions, 36,153 lines)."
   "2026-07-15T10:47:54.120Z",codex-root,"DeepSource follow-up batch (2026-07-15): the prior 15 findings were cleared; the next capped report exposed the analyzer's invalid global-scope rule across ESM helpers plus lifecycle suggestion complexity and one use-before-definition ordering issue. Converted all 50 top-level extension helpers to module-scoped arrow constants, flattened lifecycle target ranking into a deterministic distance pipeline, and ordered copy primitives before consumers. Typecheck, strict static/docstring/file-length/package/token gates, 136 focused tests, and full 291-file/5,721-test coverage pass at exact 100/100/100/100 (37,075 statements, 26,504 branches, 7,469 functions, 36,190 lines)."
   "2026-07-15T11:09:40.479Z",codex,"DeepSource convergence evidence (third capped batch): documented 40 module-scoped extension lifecycle helpers, replaced implicit-action branching with a typed action table, converted update-check resolution to ordered typed resolvers, and separated installed-extension directory inspection from aggregation. Verification: pnpm typecheck passed; tests/unit/extensions/extension-command.spec.ts passed 124/124; pnpm quality:static passed including 100% docstrings/package-boundary/token gates; full coverage passed 291 files and 5721 tests at 100/100/100/100 (37064 statements, 26496 branches, 7476 functions, 36179 lines)."
+  "2026-07-15T13:25:45.850Z",codex-root,"Final review-correction evidence 2026-07-15: validation now owns linked-command parsing in the SDK and receives typed mutation services, eliminating the remaining SDK-to-CLI dependency; CLI and SDK runtime inject update behavior explicitly. Extension lifecycle/install/update/adopt/doctor/explore paths were decomposed into typed, documented primitives until every function in src/sdk/extension.ts passes complexity <=5. Review edge cases now cover git scan timeout, bounded health author samples, null policy overrides, root realpath fallback, owner-write cleanup failures, and preserved lock defaults. Final verification passed typecheck, ESLint, zero clones, static quality, 100% docstrings, package boundary, token budgets, diff check, and 291 files / 5723 tests at exact 100%: statements 37144/37144, branches 26451/26451, functions 7517/7517, lines 36264/36264. Isolated packed-tarball acceptance initialized a clean tracker, scaffolded and installed proof-package, discovered one managed active command/action package, and returned validate ok plus health ok with zero warnings."
+  "2026-07-15T14:00:03.866Z",codex-root,"Mandatory pre-push review evidence 2026-07-15: Greptile reviewed committed head c61f0ccc against main at confidence 5/5 with zero comments and no security findings. The review explicitly verified the SDK governance ownership move, linked-command parser extraction, typed validation service injection, extension install/runtime extraction, author-attribution behavior, Windows quoting, and public SDK exports. No source changes were requested."
 notes[1]{created_at,author,text}:
   "2026-07-10T17:45:58.049Z",maintainer-agent,"Promotion slicing S1-S4 (pass #53 code survey). Territory = ~5.1k lines of CLI-side domain logic: validate.ts 2623 + health.ts 2161 + gc.ts 341; SDK index exports NOTHING for validate/health/gc today. Both blockers (pm-lodl, pm-muhw) closed - actionable now.\nS1 validate check-engine (~150m): check orchestration lives in cli/commands/validate.ts - it imports core scanners (scanHistoryDrift, findDuplicateIssueCodes, buildMissingByTypeCounts, core/validate/* helpers) but assembles checks/counts/worklists inside the command. Extract a typed check-producer registry into core/validate/ and export runValidateChecks() returning the same structured envelope (checks[].status, *_count scalars, details.*_item_ids); validate.ts shrinks to flag-parse + render.\nS2 health probe registry (~120m): same move for health.ts - probes (store layout, scanLockHealth, vectorization staleness via collectStaleVectorizationIds, extension registrations, history drift + stream policy) become typed producers; export runHealthProbes(). Natural fix site for GH-457/pm-tu71 - promotion adds a per-probe timeout surface.\nS3 gc primitive (~45m): gc.ts is small (341 lines, 4 fns); export typed gc plan/apply primitive; CLI consumes it.\nS4 reporting/remediation hooks (~60m): expose buildRemediationCommands (core/diagnostics/remediation.ts) through the SDK; type the changelog/reporting hooks; docstrings + linked tests + SDK reference docs for S1-S3 exports.\nZero-behavior-change gate: validate/health/gc CLI JSON output byte-identical, existing specs green. Recommended entry: S1 (largest file, self-contained)."
-files[15]{path,scope,note}:
+files[23]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Project changelog generator updated to published pm-changelog 2026.7.15-1
   eslint-suppressions.json,project,Preserves unchanged health and validate legacy lint baseline after SDK ownership move
+  scripts/release/static-quality-gate.mjs,project,Strict suppression baseline ratcheted after extension lifecycle complexity cleanup
   src/cli/commands/gc.ts,project,Thin CLI compatibility adapter
   src/cli/commands/health.ts,project,Thin CLI compatibility adapter
+  src/cli/commands/test.ts,project,CLI test command consumes and re-exports the SDK parser for compatibility
   src/cli/commands/validate.ts,project,Thin CLI compatibility adapter
   src/sdk/author-attribution.ts,project,Reusable author-event classification keeps SDK governance diagnostics below strict complexity ceiling
   src/sdk/command-line.ts,project,Review-driven Windows-safe remediation command rendering
@@ -60,9 +65,18 @@ files[15]{path,scope,note}:
   src/sdk/governance/validate.ts,project,Public validation implementation
   src/sdk/index.ts,project,SDK barrel exports governance primitive contracts
   src/sdk/runtime.ts,project,SDK runtime exposes validate/health/gc governance primitives
+  src/sdk/test/linked-command-detection.ts,project,SDK-owned linked command reference parser removes governance validation dependency on CLI presentation code
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,SDK validation mutation-service injection integration proof
+  tests/unit/commands/health-command.spec.ts,project,Bounded health storage attribution summary coverage
+  tests/unit/commands/linked-command-detection.spec.ts,project,SDK parser compatibility and stale-reference detection coverage
+  tests/unit/extensions/extension-command.spec.ts,project,Review-driven lifecycle install update adopt doctor and policy regression coverage
   tests/unit/extensions/extension-copy-safety.spec.ts,project,Cross-platform junction-compatible copy containment proof
   tests/unit/sdk/sdk-context-primitives.spec.ts,project,SDK governance primitive coverage
-tests[4]:
+tests[5]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 300
+    note: Final 5723-test exact 100 percent global coverage proof
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/extensions/extension-copy-safety.spec.ts tests/unit/extensions/extension-command.spec.ts tests/unit/commands/health-command.spec.ts
     scope: project
     timeout_seconds: 240
@@ -79,6 +93,7 @@ tests[4]:
     scope: project
     timeout_seconds: 300
     note: 5721 tests and exact 100 percent coverage
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated from final tracker state using published pm-changelog 2026.7.15-1
   docs/SDK.md,project,SDK governance primitive reference docs
 body: ""

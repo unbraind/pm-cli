@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isPmExecutableToken } from "../../../src/cli/commands/test/linked-command-detection.js";
+import { isPmExecutableToken } from "../../../src/sdk/test/linked-command-detection.js";
 
 describe("isPmExecutableToken", () => {
   it("detects bare and path-suffixed pm executables, including Windows forms", () => {

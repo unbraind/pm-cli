@@ -217,6 +217,26 @@ describe("runHealth", () => {
         3,
       ),
     ).toMatchObject({ activation: { failed: { count: 0 }, warnings: { count: 0 } } });
+    expect(
+      healthInternals.summarizeHealthCheckDetails(
+        {
+          name: "storage",
+          status: "warn",
+          details: {
+            author_attribution: {
+              affected_item_ids: ["pm-a", "pm-b"],
+              samples: [{ item_id: "pm-a" }, { item_id: "pm-b" }],
+            },
+          },
+        },
+        1,
+      ),
+    ).toMatchObject({
+      author_attribution: {
+        affected_item_ids: { count: 2, sample: ["pm-a"], truncated: true },
+        samples: { count: 2, sample: [{ item_id: "pm-a" }], truncated: true },
+      },
+    });
 
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-health-list-paths-"));
     try {

@@ -25,6 +25,7 @@ import {
   runExtension,
   parseExtensionInstallSource,
   readManagedExtensionState,
+  resolveCanonicalExtensionInstallDestination,
   validateExtensionDirectory,
 } from "../../../src/cli/commands/extension.js";
 import {
@@ -424,6 +425,28 @@ describe("extension command runtime", () => {
     });
     expect(extensionCommandTestOnly.buildExtensionPolicyDetails(undefined).extension_overrides).toEqual([]);
     expect(extensionCommandTestOnly.buildExtensionPolicyDetails(null).trusted_extensions).toEqual([]);
+    expect(extensionCommandTestOnly.buildExtensionPolicyDetails({ extension_overrides: null } as never).extension_overrides).toEqual([]);
+    expect(extensionCommandTestOnly.projectExtensionUpdateCheck(undefined)).toEqual({
+      update_check_status: null,
+      update_check_reason: null,
+    });
+    expect(
+      extensionCommandTestOnly.projectExtensionUpdateCheck({
+        update_check_status: "checked",
+        update_check_reason: "up_to_date",
+      } as never),
+    ).toEqual({ update_check_status: "checked", update_check_reason: "up_to_date" });
+    expect(
+      extensionCommandTestOnly.buildAdoptedExtensionSource(
+        "owner/repo/extensions/example",
+        "example",
+        "/tmp/example",
+        "main",
+      ),
+    ).toMatchObject({ kind: "github", location: "extensions/example", subpath: "extensions/example" });
+    expect(
+      extensionCommandTestOnly.buildAdoptedExtensionSource("owner/repo", "example", "/tmp/example", undefined),
+    ).toMatchObject({ kind: "github", location: "." });
 
     expect(_testOnlyBundledCatalog.parsePackageCatalogFields(undefined)).toBeUndefined();
     expect(_testOnlyBundledCatalog.parsePackageCatalogFields("alias, category,display_name")).toEqual([
@@ -4768,9 +4791,29 @@ describe("extension command runtime", () => {
     try {
       const result = await extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "lock-ext", async () => "locked");
       expect(result).toBe("locked");
+      await expect(
+        extensionCommandTestOnly.withExtensionInstallLock(
+          tempRoot,
+          "defaulted-lock-ext",
+          async () => "defaulted",
+          { attempts: undefined, delay_ms: undefined, stale_ms: undefined } as never,
+        ),
+      ).resolves.toBe("defaulted");
       await expect(readdir(path.join(tempRoot, "runtime", "extension-install-locks"))).resolves.toEqual([]);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("falls back to the parsed filesystem root when root canonicalization fails", async () => {
+    const realpathSpy = vi.spyOn(fsPromises, "realpath").mockRejectedValueOnce(new Error("root unavailable"));
+    try {
+      const root = path.parse(process.cwd()).root;
+      await expect(resolveCanonicalExtensionInstallDestination(path.join(root, "missing", "extension"))).resolves.toBe(
+        path.join(root, "missing", "extension"),
+      );
+    } finally {
+      realpathSpy.mockRestore();
     }
   });
 
@@ -4836,6 +4879,21 @@ describe("extension command runtime", () => {
       await expect(readdir(path.join(tempRoot, "runtime", "extension-install-locks"))).resolves.toEqual([]);
     } finally {
       writeFileSpy.mockRestore();
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("preserves owner metadata write failures when best-effort lock cleanup also fails", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-double-failure-"));
+    const writeFileSpy = vi.spyOn(fsPromises, "writeFile").mockRejectedValueOnce(new Error("owner write failed"));
+    const rmSpy = vi.spyOn(fsPromises, "rm").mockRejectedValueOnce(new Error("cleanup failed"));
+    try {
+      await expect(
+        extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "double-failure-ext", async () => "unreachable"),
+      ).rejects.toThrow("owner write failed");
+    } finally {
+      writeFileSpy.mockRestore();
+      rmSpy.mockRestore();
       await rm(tempRoot, { recursive: true, force: true });
     }
   });

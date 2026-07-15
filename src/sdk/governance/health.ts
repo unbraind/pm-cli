@@ -1149,8 +1149,28 @@ const HEALTH_DETAIL_SUMMARIZERS = {
       ),
     };
   },
-  // Storage details are already compact counters; keep the pre-refactor pass-through shape.
-  storage: (details) => details,
+  storage: (details, limit) => {
+    const authorAttribution =
+      typeof details.author_attribution === "object" &&
+      details.author_attribution !== null
+        ? (details.author_attribution as Record<string, unknown>)
+        : undefined;
+    return {
+      ...details,
+      ...(authorAttribution
+        ? {
+            author_attribution: {
+              ...authorAttribution,
+              affected_item_ids: summarizeStringList(
+                authorAttribution.affected_item_ids,
+                limit,
+              ),
+              samples: summarizeRecordList(authorAttribution.samples, limit),
+            },
+          }
+        : {}),
+    };
+  },
   locks: (details) => ({
     active_lock_count: details.active_lock_count,
     stale_lock_count: details.stale_lock_count,

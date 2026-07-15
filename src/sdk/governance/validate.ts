@@ -84,8 +84,7 @@ import {
 } from "../relationships.js";
 import { runDocs } from "../docs.js";
 import { runFiles } from "../files.js";
-import { extractReferencedPmItemIdsFromCommand } from "../../cli/commands/test.js";
-import { runUpdate } from "../../cli/commands/update.js";
+import { extractReferencedPmItemIdsFromCommand } from "../test/linked-command-detection.js";
 
 type ValidateCheckName =
   | "metadata"
@@ -248,6 +247,7 @@ const METADATA_TRUNCATED_KEY_BY_FIELD: Record<
   release: "missing_release_truncated",
 };
 const GIT_LS_FILES_MAX_BUFFER = 32 * 1024 * 1024;
+const GIT_LS_FILES_TIMEOUT_MS = 10_000;
 const FILE_LIST_SUMMARY_LIMIT = 40;
 const DIAGNOSTIC_LIST_SUMMARY_LIMIT = 5;
 // Conservative pre-stat guard for common filesystem limits; over-limit links are unreadable, not prune-safe.
@@ -297,6 +297,16 @@ export interface ValidateCommandOptions {
   fixScope?: string[];
   /** Value that configures or reports prune missing for this contract. */
   pruneMissing?: boolean;
+}
+
+/** Mutation operations injected when validation is allowed to apply audited fixes. */
+export interface ValidateMutationServices {
+  /** Apply one update through the host's canonical audited mutation path. */
+  runUpdate?: (
+    id: string,
+    options: Record<string, unknown>,
+    global: GlobalOptions,
+  ) => Promise<unknown>;
 }
 
 /** Documents the validate check payload exchanged by command, SDK, and package integrations. */
@@ -837,6 +847,7 @@ async function collectTrackedGitFileCandidates(
       encoding: "utf8",
       maxBuffer: GIT_LS_FILES_MAX_BUFFER,
       windowsHide: true,
+      timeout: GIT_LS_FILES_TIMEOUT_MS,
     });
     const discovered = stdout
       .split("\0")
@@ -2933,6 +2944,7 @@ const VALIDATE_AUTO_FIX_MESSAGE = "pm validate auto-fix";
 async function applyValidateFix(
   fix: ValidateFixRecord,
   global: GlobalOptions,
+  services: ValidateMutationServices,
 ): Promise<void> {
   switch (fix.kind) {
     case "set_resolution":
@@ -2954,7 +2966,13 @@ async function applyValidateFix(
       } else {
         updateOptions.unset = ["parent"];
       }
-      await runUpdate(fix.item_id, updateOptions, global);
+      if (!services.runUpdate) {
+        throw new PmCliError(
+          "Applying validate metadata/lifecycle fixes requires a runUpdate mutation service.",
+          EXIT_CODE.USAGE,
+        );
+      }
+      await services.runUpdate(fix.item_id, updateOptions, global);
       return;
     }
     case "prune_file_link": {
@@ -2978,6 +2996,7 @@ function pruneBatchKey(fix: ValidateFixRecord): string | null {
 async function applyValidateFixes(
   applicable: ValidateFixRecord[],
   global: GlobalOptions,
+  services: ValidateMutationServices,
 ): Promise<{
   applied: ValidateFixRecord[];
   failed: Array<{ fix: ValidateFixRecord; error: unknown }>;
@@ -2990,7 +3009,7 @@ async function applyValidateFixes(
     const batchKey = pruneBatchKey(fix);
     if (batchKey === null) {
       try {
-        await applyValidateFix(fix, global);
+        await applyValidateFix(fix, global, services);
         applied.push(fix);
       } catch (error) {
         failed.push({ fix, error });
@@ -3254,6 +3273,7 @@ async function buildValidateFixesSummary(
   settings: LoadedValidateSettings,
   grantedFixScopes: Set<ValidateFixScope>,
   global: GlobalOptions,
+  services: ValidateMutationServices,
 ): Promise<ValidateFixesSummary | undefined> {
   if (options.autoFix !== true && options.pruneMissing !== true) {
     return undefined;
@@ -3267,7 +3287,7 @@ async function buildValidateFixesSummary(
   const appliedFixRows: Array<Record<string, unknown>> = [];
   const failedFixRows: Array<Record<string, unknown>> = [];
   if (!dryRun) {
-    const applied = await applyValidateFixes(applicable, global);
+    const applied = await applyValidateFixes(applicable, global, services);
     appliedFixRows.push(...applied.applied.map(toFixOutputRow));
     failedFixRows.push(
       ...applied.failed.map(({ fix, error }) => ({
@@ -3303,6 +3323,7 @@ async function buildValidateFixesSummary(
 export async function runValidate(
   options: ValidateCommandOptions,
   global: GlobalOptions,
+  services: ValidateMutationServices = {},
 ): Promise<ValidateResult> {
   const fixesRequested =
     options.autoFix === true || options.pruneMissing === true;
@@ -3402,6 +3423,7 @@ export async function runValidate(
         settings,
         grantedFixScopes,
         global,
+        services,
       )
     : undefined;
 

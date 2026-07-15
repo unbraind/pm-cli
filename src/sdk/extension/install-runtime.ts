@@ -84,7 +84,9 @@ export const resolveCanonicalExtensionInstallDestination = async (
   const resolvedDestination = path.resolve(destinationDirectory);
   const destinationParent = path.dirname(resolvedDestination);
   const destinationRoot = path.parse(destinationParent).root;
-  let canonicalDestinationParent = await fs.realpath(destinationRoot);
+  let canonicalDestinationParent = await fs
+    .realpath(destinationRoot)
+    .catch(() => destinationRoot);
   const relativeDestinationParent = path.relative(
     destinationRoot,
     destinationParent,
@@ -287,7 +289,7 @@ const createExtensionInstallLock = async (
       "utf8",
     );
   } catch (error: unknown) {
-    await fs.rm(lockPath, { recursive: true, force: true });
+    await fs.rm(lockPath, { recursive: true, force: true }).catch(() => {});
     throw error;
   }
 };
@@ -330,20 +332,18 @@ export const withExtensionInstallLock = async <T>(
   );
   const lockPath = path.join(lockRoot, "scope.lock");
   await fs.mkdir(lockRoot, { recursive: true });
-  const normalizedOptions = Object.assign(
-    {
-      attempts: EXTENSION_INSTALL_LOCK_ATTEMPTS,
-      delay_ms: EXTENSION_INSTALL_LOCK_DELAY_MS,
-      stale_ms: EXTENSION_INSTALL_LOCK_STALE_MS,
-    },
-    options,
-  );
-  const attempts = Math.max(1, Math.floor(normalizedOptions.attempts));
-  const delayMs = Math.max(0, Math.floor(normalizedOptions.delay_ms));
-  const staleMs = Math.max(0, Math.floor(normalizedOptions.stale_ms));
+  const {
+    attempts: rawAttempts = EXTENSION_INSTALL_LOCK_ATTEMPTS,
+    delay_ms: rawDelayMs = EXTENSION_INSTALL_LOCK_DELAY_MS,
+    stale_ms: rawStaleMs = EXTENSION_INSTALL_LOCK_STALE_MS,
+    heartbeat_ms: rawHeartbeatMs,
+  } = options ?? {};
+  const attempts = Math.max(1, Math.floor(rawAttempts));
+  const delayMs = Math.max(0, Math.floor(rawDelayMs));
+  const staleMs = Math.max(0, Math.floor(rawStaleMs));
   const heartbeatMs = Math.max(
     1,
-    Math.floor(normalizedOptions.heartbeat_ms ?? Math.max(1, staleMs / 3)),
+    Math.floor(rawHeartbeatMs ?? Math.max(1, staleMs / 3)),
   );
   const owner: ExtensionInstallLockOwner = {
     pid: process.pid,

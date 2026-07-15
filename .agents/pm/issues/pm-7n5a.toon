@@ -2,28 +2,33 @@ id: pm-7n5a
 title: "Sentry PM-CLI-29: external Neo4j command reports missing configuration as a high pm-cli error"
 description: "Investigate and correctly classify or re-home the live Sentry high CommandError emitted when an external Neo4j command runs without NEO4J_URI, NEO4J_USER, and NEO4J_PASSWORD. The pm-cli repository contains no Neo4j implementation or configuration references, so ownership likely belongs to an extension or downstream integration; prevent unrelated external expected-configuration errors from blocking pm-cli release gates while preserving actionable attribution."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[3]: "area:observability",external-integration,sentry
 created_at: "2026-07-14T07:55:43.315Z"
-updated_at: "2026-07-15T07:26:17.254Z"
-assignee: codex-root
+updated_at: "2026-07-15T13:31:52.468Z"
+closed_at: "2026-07-15T13:31:21.562Z"
 author: codex-gpt5-root
 estimated_minutes: 120
 acceptance_criteria: Identify the emitting package and release; attribute the Sentry event to the owning project or classify the expected configuration error without hiding real pm-cli failures; sentry-telemetry-gate reports zero unrelated highs; document verification with current issue/event evidence.
 parent: pm-5oj5
 risk: medium
 confidence: 70
+resolution: Released the owner-side expected-error classification in pm-graph@2026.7.15 and resolved the stale pre-fix Sentry group after clean publish/install proof.
+expected_result: Missing optional Neo4j configuration is a deterministic usage error and does not block pm-cli releases as a high core failure.
+actual_result: pm-graph@2026.7.15 returns the shared PmCliError usage classification; PM-CLI-29 has no post-fix events and the live Sentry gate reports zero highs.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-ju83,related,"2026-07-14T07:55:43.315Z",null,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-14T07:55:43.315Z",codex-gpt5-root,"Duplicate check 2026-07-14: pm search 'Neo4j not configured NEO4J_URI PM-CLI-29' --status all and pm search neo4j --status all found no canonical Neo4j/Sentry item; gh issue search found no matching GitHub issue. Live release gate reports PM-CLI-29 high, while repository rg finds no Neo4j implementation, so this is filed as external-integration observability ownership under pm-5oj5."
   "2026-07-14T10:15:56.325Z",codex-gpt5,"Live verification 2026-07-14: pnpm release:gates passed build, typecheck, docs, static quality, 100/100/100/100 coverage (5,678 tests), version, secrets, packed npx smoke, and 88-command package-first dogfood, then failed only sentry-telemetry-gate because current PM-CLI-29 remains one high. Sentry event is handled=yes from pm-cli@2026.7.13 on an external Object.run command requiring Neo4j configuration; current SDK relationship changes contain no Neo4j surface. Telemetry was healthy: 0.29% finish error rate, zero failures missing error_code."
   "2026-07-14T18:05:31.353Z",codex-root,"Live Sentry evidence 2026-07-14: pnpm sentry:telemetry:gate reports exactly two actionable highs in the 14-day window; PM-CLI-29 remains the separately tracked external Neo4j configuration error and PM-CLI-2B is pm-d4ns. Seventeen handled expected events are filtered, with zero criticals. This bundle does not claim or implement pm-7n5a."
   "2026-07-14T23:43:59.531Z",unknown,"Live verification 2026-07-15: PM-CLI-29 remains unresolved high with 193 handled events on pm-cli@2026.7.13, last seen 2026-07-14T11:21:30Z. The stack remains an external Object.run Neo4j command; this SDK/config/author bundle contains no Neo4j surface and does not claim pm-7n5a."
   "2026-07-15T07:26:17.231Z",codex-root,"Owner fix shipped for review as pm-graph PR #25: bundled errors use the PmCliError discriminant and missing optional Neo4j configuration exits with expected usage code 2. Owner acceptance passed 67 tests, typecheck, zero-vulnerability audit, pack and changelog checks. Keep in progress until owner PR merges and published package is verified."
+  "2026-07-15T13:31:20.643Z",codex-root,"Completion evidence 2026-07-15: pm-graph PR #25 merged as 16d1c9ddb66d3b1d7a121d8340cc42e6b0dc1a92; merge-head CI and changelog runs passed. Daily Release run 29419241776 passed all checks, npm publish, Bun clean-install verification, tag push, and GitHub release creation. npm latest is pm-graph@2026.7.15. Sentry PM-CLI-29 had no event after 2026-07-14T11:21:30Z, is resolved after the fixed owner release, and the live pm-cli Sentry/telemetry gate reports critical=0 high=0."
 notes[1]{created_at,author,text}:
   "2026-07-15T06:21:23.749Z",maintainer-agent,"Now RELEASE-BLOCKING: 2026-07-15 scheduled Auto Release run 29390986598 failed its Sentry gate on this issue (PM-CLI-29, high, 2-of-2 blocking set with pm-d4ns). pm next currently recommends this item. Every daily release stays blocked until fixed or specifically classified."
 files[1]{path,scope,note}:
   "https://github.com/unbraind/pm-graph/pull/25",global,Owner-repository expected error PR
+close_reason: "Fixed in pm-graph@2026.7.15: optional Neo4j configuration errors now use the shared expected CLI error discriminant and usage exit code; owner CI/release/install proof passed and Sentry/release gate is clean."
 body: ""

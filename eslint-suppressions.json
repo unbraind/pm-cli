@@ -114,14 +114,6 @@
       "count": 2
     }
   },
-  "src/sdk/governance/health.ts": {
-    "no-useless-assignment": {
-      "count": 3
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "src/cli/commands/history.ts": {
     "complexity": {
       "count": 1
@@ -153,7 +145,7 @@
   },
   "src/cli/commands/test.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 6
+      "count": 1
     },
     "complexity": {
       "count": 1
@@ -167,14 +159,6 @@
   "src/cli/commands/update.ts": {
     "complexity": {
       "count": 1
-    }
-  },
-  "src/sdk/governance/validate.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 6
     }
   },
   "src/cli/error-guidance.ts": {
@@ -348,9 +332,20 @@
       "count": 1
     }
   },
-  "src/sdk/extension.ts": {
-    "complexity": {
+  "src/sdk/governance/health.ts": {
+    "no-useless-assignment": {
+      "count": 3
+    },
+    "sonarjs/cognitive-complexity": {
       "count": 1
+    }
+  },
+  "src/sdk/governance/validate.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 6
     }
   },
   "src/sdk/package-import-adapters.ts": {

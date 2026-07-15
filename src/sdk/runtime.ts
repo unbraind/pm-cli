@@ -92,7 +92,11 @@ import {
   type UpgradeCommandOptions,
   type UpgradeResult,
 } from "../cli/commands/index.js";
-import { runGc, type GcCommandOptions, type GcResult } from "./governance/gc.js";
+import {
+  runGc,
+  type GcCommandOptions,
+  type GcResult,
+} from "./governance/gc.js";
 import {
   runHealth,
   type HealthResult,
@@ -3844,7 +3848,10 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   test: (ctx) => runTest(requireMcpItemId(ctx), ctx.options, ctx.global),
   "test-all": (ctx) => runTestAll(ctx.options, ctx.global),
   telemetry: runMcpTelemetryAction,
-  validate: (ctx) => runValidate(ctx.options, ctx.global),
+  validate: (ctx) =>
+    runValidate(ctx.options, ctx.global, {
+      runUpdate: (id, options, global) => runUpdate(id, options, global),
+    }),
   health: runMcpHealthAction,
   contracts: (ctx) => runContracts(ctx.options, ctx.global),
   config: runMcpConfigAction,

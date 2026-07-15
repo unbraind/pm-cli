@@ -12,6 +12,8 @@
 
 ### Fixed
 
+- Sentry PM-CLI-2B: external extension subprocess cannot resolve pm executable ([pm-d4ns](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-d4ns.toon))
+- Sentry PM-CLI-29: external Neo4j command reports missing configuration as a high pm-cli error ([pm-7n5a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7n5a.toon))
 - Nightly windows/Node24: package-manifest SDK-surface exemption uses POSIX endsWith — governance-audit runtime.ts check fails on backslash paths ([pm-u5zr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u5zr.toon))
 - GH-522: Windows nightly red — init next-steps hints POSIX-quote native Windows paths (quoteCommandArg backslash escaping) ([pm-b24b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b24b.toon))
 - GH-567: macOS+Windows nightly red — extension-install copy self-nesting check misses symlinked/short-name temp paths (realpath fallback asymmetry) ([pm-0fhw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0fhw.toon))

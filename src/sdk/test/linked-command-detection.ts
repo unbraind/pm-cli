@@ -1,14 +1,32 @@
 /**
- * @module cli/commands/test/linked-command-detection
+ * @module sdk/test/linked-command-detection
  *
  * Parses linked-test command invocations for sandbox and context-safety checks.
  */
 // Pure, leaf-level helpers for detecting how linked-test shell commands invoke
 // the pm CLI (directly, via npx/pnpm/npm exec, or a launcher subcommand) and for
 // pulling structured context (subcommand, referenced item ids, runner) out of a
-// normalized command string. Extracted from test.ts to keep that command file
-// under the per-file LOC budget; consumers re-export these from test.ts so no
-// caller outside test.ts changes.
+// normalized command string. Kept in core so SDK governance and CLI test
+// execution share one dependency-direction-safe parser.
+
+const PM_SUBCOMMANDS_WITH_ITEM_REFERENCE = new Set([
+  "get",
+  "history",
+  "restore",
+  "update",
+  "close",
+  "delete",
+  "append",
+  "claim",
+  "release",
+  "comments",
+  "notes",
+  "learnings",
+  "files",
+  "docs",
+  "deps",
+  "test",
+]);
 
 /** Public contract for pm global flags with value, shared by SDK and presentation-layer consumers. */
 export const PM_GLOBAL_FLAGS_WITH_VALUE = new Set(["--path"]);
@@ -62,6 +80,71 @@ export function splitNormalizedCommandSegments(
     .map((segment) => segment.trim())
     .filter((segment) => segment.length > 0);
 }
+
+/** Extract pm CLI arguments from one normalized shell-command segment. */
+export function extractPmInvocationArgsFromSegment(
+  segment: string,
+): string[] | null {
+  const tokens = stripLeadingEnvAssignments(
+    segment.split(" ").filter((token) => token.length > 0),
+  );
+  if (tokens.length === 0) return null;
+  const [executable, ...args] = tokens;
+  if (isPmExecutableToken(executable) || isPmCliScriptToken(executable)) {
+    return args;
+  }
+  if (executable === "node" && args[0] && isPmCliScriptToken(args[0])) {
+    return args.slice(1);
+  }
+  const invocation =
+    executable === "npx" || executable === "bunx"
+      ? parseNpxCommand(args)
+      : executable === "pnpm"
+        ? parsePnpmDlxCommand(args)
+        : executable === "npm"
+          ? parseNpmExecCommand(args)
+          : null;
+  return invocation &&
+    (isPmExecutableToken(invocation.command) ||
+      isPmCliPackageToken(invocation.command))
+    ? invocation.args
+    : null;
+}
+
+/** Extract referenced item IDs from pm CLI invocations embedded in one command. */
+export const extractReferencedPmItemIdsFromCommand = (
+  command: string,
+  idPrefix = "pm",
+): string[] => {
+  const normalizedPrefix = idPrefix.trim().toLowerCase().replace(/-+$/, "");
+  if (normalizedPrefix.length === 0) return [];
+  const normalizedCommand = command
+    .trim()
+    .replaceAll("\\", "/")
+    .replaceAll('"', "")
+    .replaceAll("'", "")
+    .replaceAll(/\s+/g, " ")
+    .toLowerCase();
+  const ids = new Set<string>();
+  for (const segment of splitNormalizedCommandSegments(normalizedCommand)) {
+    const invocationArgs = extractPmInvocationArgsFromSegment(segment);
+    const context = invocationArgs
+      ? resolvePmSubcommandContext(invocationArgs)
+      : null;
+    const candidate =
+      context && PM_SUBCOMMANDS_WITH_ITEM_REFERENCE.has(context.subcommand)
+        ? firstPositionalToken(context.remaining)
+        : undefined;
+    const normalizedCandidate = candidate?.trim().toLowerCase();
+    if (
+      normalizedCandidate?.startsWith(`${normalizedPrefix}-`) === true &&
+      normalizedCandidate.length > normalizedPrefix.length + 1
+    ) {
+      ids.add(candidate as string);
+    }
+  }
+  return [...ids].sort((left, right) => left.localeCompare(right));
+};
 
 /** Implements strip leading env assignments for the public runtime surface of this module. */
 export function stripLeadingEnvAssignments(tokens: string[]): string[] {
