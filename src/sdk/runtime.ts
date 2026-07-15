@@ -3825,10 +3825,10 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   "test-all": (ctx) => runTestAll(ctx.options, ctx.global),
   "test-runs": (ctx) => runTestRunsAction(readString(ctx.args, "subcommand") ?? readRequiredString(ctx.options, "subcommand"), readString(ctx.args, "runId") ?? readString(ctx.options, "runId"), ctx.options, ctx.global),
   "test-runs-list": (ctx) => runTestRunsAction("list", undefined, ctx.options, ctx.global),
-  "test-runs-status": (ctx) => runTestRunsAction("status", readRequiredString(ctx.args, "runId"), ctx.options, ctx.global),
-  "test-runs-logs": (ctx) => runTestRunsAction("logs", readRequiredString(ctx.options, "runId"), ctx.options, ctx.global),
-  "test-runs-stop": (ctx) => runTestRunsAction("stop", readRequiredString(ctx.options, "runId"), ctx.options, ctx.global),
-  "test-runs-resume": (ctx) => runTestRunsAction("resume", readRequiredString(ctx.options, "runId"), ctx.options, ctx.global),
+  "test-runs-status": (ctx) => runTestRunsAction("status", readString(ctx.args, "runId") ?? readRequiredString(ctx.options, "runId"), ctx.options, ctx.global),
+  "test-runs-logs": (ctx) => runTestRunsAction("logs", readString(ctx.args, "runId") ?? readRequiredString(ctx.options, "runId"), ctx.options, ctx.global),
+  "test-runs-stop": (ctx) => runTestRunsAction("stop", readString(ctx.args, "runId") ?? readRequiredString(ctx.options, "runId"), ctx.options, ctx.global),
+  "test-runs-resume": (ctx) => runTestRunsAction("resume", readString(ctx.args, "runId") ?? readRequiredString(ctx.options, "runId"), ctx.options, ctx.global),
   eval: (ctx) =>
     runSearchEval(ctx.options, ctx.global, (query, options, global) =>
       runSearch(query, options, global),

@@ -108,6 +108,14 @@ function buildCommandMocks() {
     runDocs: vi.fn(async () => ({ action: "docs" })),
     runTest: vi.fn(async () => ({ action: "test" })),
     runTestAll: vi.fn(async () => ({ action: "test-all" })),
+    runTestRunsAction: vi.fn(async (subcommand: string, runId?: string) => {
+      if (subcommand === "unknown") {
+        throw Object.assign(new Error("unknown test-runs action"), {
+          exitCode: EXIT_CODE.USAGE,
+        });
+      }
+      return { action: `test-runs-${subcommand}`, runId };
+    }),
     runTestRunsList: vi.fn(async () => ({ action: "test-runs-list" })),
     runTestRunsStatus: vi.fn(async () => ({ action: "test-runs-status" })),
     runTestRunsLogs: vi.fn(async () => ({ action: "test-runs-logs" })),
@@ -154,16 +162,7 @@ async function importServerWithCommandMocks(
     runTest: commandMocks.runTest,
   }));
   vi.doMock(TEST_RUNS_SDK_MODULE, () => ({
-    runTestRunsAction: vi.fn(
-      async (subcommand: string) => {
-        if (subcommand === "unknown") {
-          throw Object.assign(new Error("unknown test-runs action"), {
-            exitCode: EXIT_CODE.USAGE,
-          });
-        }
-        return { action: `test-runs-${subcommand}` };
-      },
-    ),
+    runTestRunsAction: commandMocks.runTestRunsAction,
     runTestRunsList: commandMocks.runTestRunsList,
     runTestRunsStatus: commandMocks.runTestRunsStatus,
     runTestRunsLogs: commandMocks.runTestRunsLogs,
@@ -211,6 +210,7 @@ describe("mcp server branch residual coverage", () => {
     vi.doUnmock(TELEMETRY_SDK_MODULE);
     vi.doUnmock(TEST_BATCH_SDK_MODULE);
     vi.doUnmock(TEST_EXECUTION_SDK_MODULE);
+    vi.doUnmock(TEST_RUNS_SDK_MODULE);
     vi.doUnmock(HISTORY_COMPACT_SDK_MODULE);
     vi.doUnmock(HISTORY_REDACT_SDK_MODULE);
     vi.doUnmock(HISTORY_REPAIR_SDK_MODULE);
@@ -352,19 +352,40 @@ describe("mcp server branch residual coverage", () => {
       options: { id: "pm-12", add: "node test.js" },
     });
     await runAction({ action: "test-runs-list", options: { status: "running" } });
-    await runAction({ action: "test-runs-status", runId: "tr-status" });
+    await runAction({ action: "test-runs-status", runId: "tr-status-arg" });
+    await runAction({ action: "test-runs-status", options: { runId: "tr-status-option" } });
     await runAction({
       action: "test-runs-logs",
-      options: { runId: "tr-logs", stream: "stderr" },
+      runId: "tr-logs-arg",
+      options: { stream: "stderr" },
     });
+    await runAction({ action: "test-runs-logs", options: { runId: "tr-logs-option" } });
     await runAction({
       action: "test-runs-stop",
-      options: { runId: "tr-stop", force: true },
+      runId: "tr-stop-arg",
+      options: { force: true },
     });
+    await runAction({ action: "test-runs-stop", options: { runId: "tr-stop-option" } });
     await runAction({
       action: "test-runs-resume",
-      options: { runId: "tr-resume", author: "resume-host" },
+      runId: "tr-resume-arg",
+      options: { author: "resume-host" },
     });
+    await runAction({ action: "test-runs-resume", options: { runId: "tr-resume-option" } });
+    expect(
+      commandMocks.runTestRunsAction.mock.calls
+        .slice(1, 9)
+        .map(([subcommand, runId]) => [subcommand, runId]),
+    ).toEqual([
+      ["status", "tr-status-arg"],
+      ["status", "tr-status-option"],
+      ["logs", "tr-logs-arg"],
+      ["logs", "tr-logs-option"],
+      ["stop", "tr-stop-arg"],
+      ["stop", "tr-stop-option"],
+      ["resume", "tr-resume-arg"],
+      ["resume", "tr-resume-option"],
+    ]);
     for (const subcommand of ["list", "status", "logs", "stop", "resume"]) {
       await runAction({
         action: "test-runs",
