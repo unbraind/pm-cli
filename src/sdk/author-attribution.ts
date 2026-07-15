@@ -41,24 +41,24 @@ export interface HistoryAuthorAttributionScan {
 }
 
 /** Classifies one parsed history event by author provenance and baseline age. */
-export function classifyHistoryAuthorEvent(
+export const classifyHistoryAuthorEvent = (
   parsed: unknown,
-): "attributed" | "legacy_unknown" | "actionable_unknown" {
+): "attributed" | "legacy_unknown" | "actionable_unknown" => {
   const record =
-    typeof parsed === "object" && parsed !== null
+    Object(parsed) === parsed
       ? (parsed as { author?: unknown; ts?: unknown })
-      : undefined;
-  const author = typeof record?.author === "string" ? record.author.trim() : "";
-  if (author.length > 0 && author.toLowerCase() !== "unknown") {
+      : {};
+  const author =
+    typeof record.author === "string" ? record.author.trim().toLowerCase() : "";
+  if (!["", "unknown"].includes(author)) {
     return "attributed";
   }
   const timestamp =
-    typeof record?.ts === "string" ? Date.parse(record.ts) : Number.NaN;
-  return Number.isFinite(timestamp) &&
-    timestamp < HISTORY_AUTHOR_ATTRIBUTION_BASELINE_MS
+    typeof record.ts === "string" ? Date.parse(record.ts) : Number.NaN;
+  return timestamp < HISTORY_AUTHOR_ATTRIBUTION_BASELINE_MS
     ? "legacy_unknown"
     : "actionable_unknown";
-}
+};
 
 /** Inspect one readable JSONL stream without performing filesystem I/O. */
 export function inspectHistoryAuthorStream(
@@ -74,15 +74,13 @@ export function inspectHistoryAuthorStream(
   | "samples"
 > {
   const samples: UnknownAuthorHistoryEvent[] = [];
+  const unknownCounts = {
+    legacy_unknown: 0,
+    actionable_unknown: 0,
+  };
+  const boundedSampleLimit = Math.max(0, sampleLimit);
   let checkedEvents = 0;
-  let unknownEventCount = 0;
-  let legacyUnknownEventCount = 0;
-  let actionableUnknownEventCount = 0;
-  for (const [index, rawLine] of raw.split(/\r?\n/).entries()) {
-    const line = rawLine.trim();
-    if (line.length === 0) {
-      continue;
-    }
+  for (const [index, line] of raw.split(/\r?\n/).entries()) {
     let parsed: unknown;
     try {
       parsed = JSON.parse(line);
@@ -94,21 +92,17 @@ export function inspectHistoryAuthorStream(
     if (classification === "attributed") {
       continue;
     }
-    unknownEventCount += 1;
-    if (classification === "legacy_unknown") {
-      legacyUnknownEventCount += 1;
-    } else {
-      actionableUnknownEventCount += 1;
-    }
-    if (samples.length < Math.max(0, sampleLimit)) {
+    unknownCounts[classification] += 1;
+    if (samples.length < boundedSampleLimit) {
       samples.push({ item_id: itemId, line: index + 1 });
     }
   }
   return {
     checked_events: checkedEvents,
-    unknown_event_count: unknownEventCount,
-    legacy_unknown_event_count: legacyUnknownEventCount,
-    actionable_unknown_event_count: actionableUnknownEventCount,
+    unknown_event_count:
+      unknownCounts.legacy_unknown + unknownCounts.actionable_unknown,
+    legacy_unknown_event_count: unknownCounts.legacy_unknown,
+    actionable_unknown_event_count: unknownCounts.actionable_unknown,
     samples,
   };
 }
