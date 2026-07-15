@@ -44,10 +44,7 @@ export interface HistoryAuthorAttributionScan {
 export const classifyHistoryAuthorEvent = (
   parsed: unknown,
 ): "attributed" | "legacy_unknown" | "actionable_unknown" => {
-  const record =
-    Object(parsed) === parsed
-      ? (parsed as { author?: unknown; ts?: unknown })
-      : {};
+  const record = (parsed ?? {}) as { author?: unknown; ts?: unknown };
   const author =
     typeof record.author === "string" ? record.author.trim().toLowerCase() : "";
   if (!["", "unknown"].includes(author)) {
@@ -61,7 +58,7 @@ export const classifyHistoryAuthorEvent = (
 };
 
 /** Inspect one readable JSONL stream without performing filesystem I/O. */
-export function inspectHistoryAuthorStream(
+export const inspectHistoryAuthorStream = (
   itemId: string,
   raw: string,
   sampleLimit = 20,
@@ -72,7 +69,7 @@ export function inspectHistoryAuthorStream(
   | "legacy_unknown_event_count"
   | "actionable_unknown_event_count"
   | "samples"
-> {
+> => {
   const samples: UnknownAuthorHistoryEvent[] = [];
   const unknownCounts = {
     legacy_unknown: 0,
@@ -105,16 +102,16 @@ export function inspectHistoryAuthorStream(
     actionable_unknown_event_count: unknownCounts.actionable_unknown,
     samples,
   };
-}
+};
 
 /**
  * Scan append-only tracker history for missing or `unknown` author values.
  * Malformed and unreadable streams are deliberately left to integrity diagnostics.
  */
-export async function scanHistoryAuthorAttribution(
+export const scanHistoryAuthorAttribution = async (
   pmRoot: string,
   sampleLimit = 20,
-): Promise<HistoryAuthorAttributionScan> {
+): Promise<HistoryAuthorAttributionScan> => {
   const historyDirectory = path.join(pmRoot, "history");
   let fileNames: string[];
   try {
@@ -165,4 +162,4 @@ export async function scanHistoryAuthorAttribution(
     ),
     samples,
   };
-}
+};
