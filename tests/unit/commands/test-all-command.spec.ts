@@ -6,6 +6,7 @@ import { _testOnlyTestAll, runTestAll } from "../../../src/cli/commands/test-all
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import * as itemTestRunTracking from "../../../src/core/test/item-test-run-tracking.js";
+import { PmClient } from "../../../src/sdk/index.js";
 import {
   loadTaskMetadata,
   overwriteTaskTests,
@@ -935,6 +936,33 @@ describe("runTestAll", () => {
           process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM = previousResumedFrom;
         }
       }
+    });
+  });
+
+  it("preserves the SDK client author when tracking test-all summaries", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskWithTests(context, {
+        title: "Track SDK Test-All Author",
+        status: "open",
+        testEntries: ["command=node --version,scope=project"],
+      });
+      await setTestResultTracking(context.pmPath, true);
+      const appendSummary = vi.spyOn(
+        itemTestRunTracking,
+        "appendTrackedTestRunSummary",
+      );
+
+      const client = new PmClient({
+        pmRoot: context.pmPath,
+        author: "sdk-test-all-author",
+        noExtensions: true,
+      });
+      const result = await client.testAll({ status: "open", timeout: "20" });
+
+      expect(result.failed).toBe(0);
+      expect(appendSummary).toHaveBeenCalledWith(
+        expect.objectContaining({ author: "sdk-test-all-author" }),
+      );
     });
   });
 

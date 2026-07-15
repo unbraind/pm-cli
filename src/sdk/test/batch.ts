@@ -69,6 +69,8 @@ export interface TestAllCommandOptions {
   checkContext?: boolean;
   /** Value that configures or reports auto pm context for this contract. */
   autoPmContext?: boolean;
+  /** Invocation author used when durable per-item run summaries are recorded. */
+  author?: string;
 }
 
 /** Documents the test all item result payload exchanged by command, SDK, and package integrations. */
@@ -596,7 +598,10 @@ function buildTestAllItemRunContext(params: {
     resultByTestKey: new Map<string, TestRunResult>(),
     effectiveTimeoutByKey: buildEffectiveTimeoutByKey(params.itemTests),
     trackingEnabled: params.settings.testing.record_results_to_items === true,
-    trackingAuthor: resolveAuthor(undefined, params.settings.author_default),
+    trackingAuthor: resolveAuthor(
+      params.options.author,
+      params.settings.author_default,
+    ),
     trackingRunId: resolveTrackedRunId(),
     trackingAttempt:
       Number.isFinite(trackingParsedAttempt) && trackingParsedAttempt >= 1
