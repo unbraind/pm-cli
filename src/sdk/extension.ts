@@ -629,6 +629,7 @@ const buildExtensionPolicyDetails = (
   };
 };
 
+/** Resolve a lifecycle target against managed extension names, aliases, and directories. */
 const resolveInstalledExtensionCandidate = async (
   installed: ManagedExtensionSummary[],
   extensionTarget: string,
@@ -663,6 +664,7 @@ const resolveInstalledExtensionCandidate = async (
   return undefined;
 };
 
+/** Return whether one extension is enabled after explicit enabled and disabled settings are applied. */
 const isExtensionEnabled = (settings: PmSettings, name: string): boolean => {
   const normalizedName = name.trim();
   const enabled = new Set(normalizeStringList(settings.extensions.enabled));
@@ -676,6 +678,7 @@ const isExtensionEnabled = (settings: PmSettings, name: string): boolean => {
   return enabled.has(normalizedName);
 };
 
+/** Mutate extension settings to activate one name and report whether persisted state changed. */
 const ensureActivated = (settings: PmSettings, name: string): boolean => {
   const normalizedName = name.trim();
   const enabled = new Set(normalizeStringList(settings.extensions.enabled));
@@ -700,6 +703,7 @@ const ensureActivated = (settings: PmSettings, name: string): boolean => {
   );
 };
 
+/** Mutate extension settings to deactivate one name and report whether persisted state changed. */
 const ensureDeactivated = (settings: PmSettings, name: string): boolean => {
   const normalizedName = name.trim();
   const enabled = new Set(normalizeStringList(settings.extensions.enabled));
@@ -722,6 +726,7 @@ const ensureDeactivated = (settings: PmSettings, name: string): boolean => {
   );
 };
 
+/** Remove one extension from explicit enabled and disabled settings and report whether state changed. */
 const clearExtensionState = (settings: PmSettings, name: string): boolean => {
   const normalizedName = name.trim();
   const enabled = new Set(normalizeStringList(settings.extensions.enabled));
@@ -744,6 +749,7 @@ const clearExtensionState = (settings: PmSettings, name: string): boolean => {
   );
 };
 
+/** Return the nearest valid lifecycle action and flag for one user-provided target. */
 const suggestLifecycleActionTarget = (
   target: string,
 ): { action: ExtensionCommandAction; flag: `--${string}` } | null => {
@@ -780,6 +786,7 @@ const suggestLifecycleActionTarget = (
   return nearest ? { action: nearest.action, flag: nearest.flag } : null;
 };
 
+/** Build structured recovery guidance for an unknown extension lifecycle action. */
 const buildUnknownLifecycleActionError = (
   target: string,
   options: ExtensionCommandOptions,
@@ -838,34 +845,28 @@ const EXTENSION_ACTION_FLAG_SELECTORS = [
   ExtensionCommandAction,
 ])[];
 
+/** Positional lifecycle shorthand mapped to the canonical extension action. */
+const IMPLICIT_EXTENSION_ACTIONS: Readonly<
+  Record<string, ExtensionCommandAction>
+> = {
+  doctor: "doctor",
+  reload: "reload",
+  catalog: "catalog",
+  init: "init",
+  scaffold: "init",
+  explore: "explore",
+  manage: "manage",
+  list: "explore",
+  "": "explore",
+};
+
 /** Map a bare positional token (already trimmed and lower-cased) to the lifecycle action it implies for `pm extension <token>` / `pm package <token>`: the `doctor`/`reload`/`catalog`/`init`/`scaffold`/`explore`/`manage` keywords, with `list` and the empty string both meaning `explore`. Returns `null` for anything else so the caller can raise a did-you-mean error. */
 const resolveImplicitActionFromTarget = (
   normalizedTarget: string,
-): ExtensionCommandAction | null => {
-  if (normalizedTarget === "doctor") {
-    return "doctor";
-  }
-  if (normalizedTarget === "reload") {
-    return "reload";
-  }
-  if (normalizedTarget === "catalog") {
-    return "catalog";
-  }
-  if (normalizedTarget === "init" || normalizedTarget === "scaffold") {
-    return "init";
-  }
-  if (normalizedTarget === "explore") {
-    return "explore";
-  }
-  if (normalizedTarget === "manage") {
-    return "manage";
-  }
-  if (normalizedTarget === "list" || normalizedTarget === "") {
-    return "explore";
-  }
-  return null;
-};
+): ExtensionCommandAction | null =>
+  IMPLICIT_EXTENSION_ACTIONS[normalizedTarget] ?? null;
 
+/** Resolve mutually exclusive lifecycle flags and positional shorthand into one extension action. */
 const resolveAction = (
   target: string | undefined,
   options: ExtensionCommandOptions,
@@ -898,6 +899,7 @@ const resolveAction = (
   return selected[0];
 };
 
+/** Resolve project or global extension scope while rejecting conflicting scope flags. */
 const resolveScope = (options: ExtensionCommandOptions): ExtensionScope => {
   const projectLike = options.project === true || options.local === true;
   const global = options.global === true;
@@ -909,51 +911,63 @@ const resolveScope = (options: ExtensionCommandOptions): ExtensionScope => {
   }
   return global ? "global" : "project";
 };
+
+type ExtensionUpdateCheckResolver = (
+  managedEntry: ManagedExtensionRecord | undefined,
+) => ExtensionUpdateCheckResolution | null;
+
+/** Ordered update-check policies from unmanaged and non-GitHub cases through recorded outcomes. */
+const EXTENSION_UPDATE_CHECK_RESOLVERS: ExtensionUpdateCheckResolver[] = [
+  (managedEntry) =>
+    managedEntry
+      ? null
+      : {
+          status: "skipped_unmanaged",
+          reason: "extension_not_managed",
+        },
+  (managedEntry) =>
+    managedEntry && managedEntry.source.kind !== "github"
+      ? {
+          status: "skipped_non_github",
+          reason: `managed_source_kind_${managedEntry.source.kind}`,
+        }
+      : null,
+  (managedEntry) => {
+    const updateError =
+      typeof managedEntry?.update_error === "string"
+        ? managedEntry.update_error.trim()
+        : "";
+    return updateError.length > 0
+      ? { status: "failed", reason: updateError }
+      : null;
+  },
+  (managedEntry) => {
+    const checkedAt =
+      typeof managedEntry?.last_update_check_at === "string"
+        ? managedEntry.last_update_check_at.trim()
+        : "";
+    if (checkedAt.length === 0) {
+      return null;
+    }
+    const reason =
+      managedEntry?.update_available === true
+        ? "update_available"
+        : managedEntry?.update_available === false
+          ? "up_to_date"
+          : "checked_without_commit_baseline";
+    return { status: "checked", reason };
+  },
+];
+
+/** Project managed-source update metadata into one deterministic update-check result. */
 const resolveUpdateCheckResolution = (
   managedEntry: ManagedExtensionRecord | undefined,
 ): ExtensionUpdateCheckResolution => {
-  if (!managedEntry) {
-    return {
-      status: "skipped_unmanaged",
-      reason: "extension_not_managed",
-    };
-  }
-  if (managedEntry.source.kind !== "github") {
-    return {
-      status: "skipped_non_github",
-      reason: `managed_source_kind_${managedEntry.source.kind}`,
-    };
-  }
-  const updateError =
-    typeof managedEntry.update_error === "string"
-      ? managedEntry.update_error.trim()
-      : "";
-  if (updateError.length > 0) {
-    return {
-      status: "failed",
-      reason: updateError,
-    };
-  }
-  if (
-    typeof managedEntry.last_update_check_at === "string" &&
-    managedEntry.last_update_check_at.trim().length > 0
-  ) {
-    if (managedEntry.update_available === true) {
-      return {
-        status: "checked",
-        reason: "update_available",
-      };
+  for (const resolve of EXTENSION_UPDATE_CHECK_RESOLVERS) {
+    const resolution = resolve(managedEntry);
+    if (resolution) {
+      return resolution;
     }
-    if (managedEntry.update_available === false) {
-      return {
-        status: "checked",
-        reason: "up_to_date",
-      };
-    }
-    return {
-      status: "checked",
-      reason: "checked_without_commit_baseline",
-    };
   }
   return {
     status: "not_checked",
@@ -1001,6 +1015,79 @@ const buildInstalledExtensionSummary = (
   };
 };
 
+interface InstalledExtensionDirectoryInspection {
+  summary?: ManagedExtensionSummary;
+  warning?: string;
+}
+
+/** Inspect one installed extension directory and project its manifest or warning. */
+const inspectInstalledExtensionDirectory = async (
+  extensionsRoot: string,
+  directoryName: string,
+  scope: ExtensionScope,
+  settings: PmSettings,
+  managedByName: ReadonlyMap<string, ManagedExtensionRecord>,
+  managedByDirectory: ReadonlyMap<string, ManagedExtensionRecord>,
+): Promise<InstalledExtensionDirectoryInspection> => {
+  const extensionDirectory = path.join(extensionsRoot, directoryName);
+  const manifestPath = path.join(extensionDirectory, "manifest.json");
+  if (!(await pathExists(manifestPath))) {
+    const managedEntry = managedByDirectory.get(
+      normalizeExtensionNameForMatch(directoryName),
+    );
+    return {
+      warning: `extension_manifest_missing:${scope}:${directoryName}`,
+      summary: buildInstalledExtensionSummary(
+        {
+          name: managedEntry?.name ?? directoryName,
+          directory: directoryName,
+          version: managedEntry?.manifest_version ?? "unknown",
+          entry: managedEntry?.manifest_entry ?? "unknown",
+          enabled: managedEntry
+            ? isExtensionEnabled(settings, managedEntry.name)
+            : false,
+        },
+        scope,
+        managedEntry,
+        resolveUpdateCheckResolution(managedEntry),
+      ),
+    };
+  }
+
+  let rawManifest: unknown;
+  try {
+    rawManifest = JSON.parse(
+      await fs.readFile(manifestPath, "utf8"),
+    ) as unknown;
+  } catch {
+    return {
+      warning: `extension_manifest_invalid_json:${scope}:${directoryName}`,
+    };
+  }
+  const manifest = parseExtensionManifest(rawManifest);
+  if (!manifest) {
+    return { warning: `extension_manifest_invalid:${scope}:${directoryName}` };
+  }
+  const managedEntry =
+    managedByName.get(normalizeExtensionNameForMatch(manifest.name)) ??
+    managedByDirectory.get(normalizeExtensionNameForMatch(directoryName));
+  return {
+    summary: buildInstalledExtensionSummary(
+      {
+        name: manifest.name,
+        directory: directoryName,
+        version: manifest.version,
+        entry: manifest.entry,
+        enabled: isExtensionEnabled(settings, manifest.name),
+      },
+      scope,
+      managedEntry,
+      resolveUpdateCheckResolution(managedEntry),
+    ),
+  };
+};
+
+/** List managed and unmanaged extensions with activation, update, and command summaries. */
 const listInstalledExtensions = async (
   extensionsRoot: string,
   scope: ExtensionScope,
@@ -1020,81 +1107,36 @@ const listInstalledExtensions = async (
     .map((entry) => entry.name)
     .sort((left, right) => left.localeCompare(right));
 
-  const managedByName = new Map<string, ManagedExtensionRecord>();
-  const managedByDirectory = new Map<string, ManagedExtensionRecord>();
-  for (const managedEntry of state.entries) {
-    managedByName.set(
+  const managedByName = new Map(
+    state.entries.map((managedEntry) => [
       normalizeExtensionNameForMatch(managedEntry.name),
       managedEntry,
-    );
-    managedByDirectory.set(
+    ]),
+  );
+  const managedByDirectory = new Map(
+    state.entries.map((managedEntry) => [
       normalizeExtensionNameForMatch(managedEntry.directory),
       managedEntry,
-    );
-  }
+    ]),
+  );
 
   const warnings: string[] = [];
   const summaries: ManagedExtensionSummary[] = [];
   for (const directoryName of directories) {
-    const extensionDirectory = path.join(extensionsRoot, directoryName);
-    const manifestPath = path.join(extensionDirectory, "manifest.json");
-    if (!(await pathExists(manifestPath))) {
-      warnings.push(`extension_manifest_missing:${scope}:${directoryName}`);
-      const managedEntry = managedByDirectory.get(
-        normalizeExtensionNameForMatch(directoryName),
-      );
-      summaries.push(
-        buildInstalledExtensionSummary(
-          {
-            name: managedEntry?.name ?? directoryName,
-            directory: directoryName,
-            version: managedEntry?.manifest_version ?? "unknown",
-            entry: managedEntry?.manifest_entry ?? "unknown",
-            enabled: managedEntry
-              ? isExtensionEnabled(settings, managedEntry.name)
-              : false,
-          },
-          scope,
-          managedEntry,
-          resolveUpdateCheckResolution(managedEntry),
-        ),
-      );
-      continue;
-    }
-
-    let rawManifest: unknown;
-    try {
-      rawManifest = JSON.parse(
-        await fs.readFile(manifestPath, "utf8"),
-      ) as unknown;
-    } catch {
-      warnings.push(
-        `extension_manifest_invalid_json:${scope}:${directoryName}`,
-      );
-      continue;
-    }
-    const manifest = parseExtensionManifest(rawManifest);
-    if (!manifest) {
-      warnings.push(`extension_manifest_invalid:${scope}:${directoryName}`);
-      continue;
-    }
-    const managedEntry =
-      managedByName.get(normalizeExtensionNameForMatch(manifest.name)) ??
-      managedByDirectory.get(normalizeExtensionNameForMatch(directoryName));
-    summaries.push(
-      buildInstalledExtensionSummary(
-        {
-          name: manifest.name,
-          directory: directoryName,
-          version: manifest.version,
-          entry: manifest.entry,
-          enabled: isExtensionEnabled(settings, manifest.name),
-        },
-        scope,
-        managedEntry,
-        resolveUpdateCheckResolution(managedEntry),
-      ),
+    const inspected = await inspectInstalledExtensionDirectory(
+      extensionsRoot,
+      directoryName,
+      scope,
+      settings,
+      managedByName,
+      managedByDirectory,
     );
+    if (inspected.warning) {
+      warnings.push(inspected.warning);
+    }
+    if (inspected.summary) {
+      summaries.push(inspected.summary);
+    }
   }
   return {
     extensions: summaries.sort((left, right) =>
@@ -1133,6 +1175,7 @@ interface ActivationFailureDiagnostic {
   };
 }
 
+/** Return stable runtime command paths registered by one extension. */
 const summarizeRuntimeCommandPathsForExtension = (
   extensionName: string,
   installed: ManagedExtensionSummary[],
@@ -1152,6 +1195,7 @@ const summarizeRuntimeCommandPathsForExtension = (
   };
 };
 
+/** Resolve the package vocabulary name used in extension command discovery. */
 const resolveCommandDiscoveryPackageName = (
   extensionName: string,
   source: ManagedExtensionSource,
@@ -1169,6 +1213,7 @@ const resolveCommandDiscoveryPackageName = (
   return extensionName;
 };
 
+/** Build post-install command discovery and activation guidance for one extension. */
 const buildInstallCommandDiscovery = (
   extensionName: string,
   source: ManagedExtensionSource,
@@ -1203,6 +1248,7 @@ const buildInstallCommandDiscovery = (
   };
 };
 
+/** Project one activation failure into a bounded diagnostic summary. */
 const summarizeActivationFailureForDiagnostics = (
   failure: ActivationFailureEntry,
 ): ActivationFailureDiagnostic => {
@@ -1234,6 +1280,7 @@ const summarizeActivationFailureForDiagnostics = (
   };
 };
 
+/** Collect activation failures that match one extension identity. */
 const collectActivationFailureDiagnostics = (
   failures: ActivationFailureEntry[],
 ): ActivationFailureDiagnostic[] => {
@@ -1246,6 +1293,7 @@ const collectActivationFailureDiagnostics = (
     );
 };
 
+/** Find the first activation failure matching one normalized extension name. */
 const findActivationFailureByName = (
   extensionName: string,
   failures: ActivationFailureDiagnostic[],
@@ -1259,6 +1307,7 @@ const findActivationFailureByName = (
   );
 };
 
+/** Resolve post-install runtime activation status from load and activation evidence. */
 const resolveInstallRuntimeActivationStatus = (
   extensionName: string,
   scope: ExtensionScope,
@@ -1277,6 +1326,7 @@ const resolveInstallRuntimeActivationStatus = (
   );
 };
 
+/** Probe a temporary installed extension for runtime command registrations. */
 const probeRuntimeCommandPathsForInstall = async (
   pmRoot: string,
   settings: PmSettings,
@@ -1340,6 +1390,7 @@ const probeRuntimeCommandPathsForInstall = async (
   });
 };
 
+/** Compare one managed GitHub extension against its remote revision. */
 const checkGithubUpdate = async (
   source: ManagedExtensionSource,
   gitCommandRunner: typeof runGitCommand = runGitCommand,
@@ -1418,6 +1469,7 @@ interface AdoptUnmanagedExtensionsResult {
   already_managed_count: number;
 }
 
+/** Adopt unmanaged extension directories into deterministic managed state. */
 const adoptUnmanagedExtensions = async (
   extensionsRoot: string,
   scope: ExtensionScope,
@@ -1479,6 +1531,7 @@ const adoptUnmanagedExtensions = async (
   };
 };
 
+/** Resolve project and global extension roots for one lifecycle scope. */
 const resolveExtensionRootsForScope = (
   scope: ExtensionScope,
   global: GlobalOptions,
@@ -1503,6 +1556,7 @@ const resolveExtensionRootsForScope = (
   };
 };
 
+/** Normalize the GitHub repository option accepted by extension lifecycle actions. */
 const resolveGithubOption = (
   options: ExtensionCommandOptions,
 ): string | undefined => {
@@ -1525,12 +1579,14 @@ const resolveGithubOption = (
   return undefined;
 };
 
+/** Return the canonical command-line flag for one extension lifecycle action. */
 const getLifecycleActionFlag = (
   action: ExtensionCommandAction,
 ): `--${string}` => {
   return LIFECYCLE_ACTION_FLAGS[action];
 };
 
+/** Return a required lifecycle target or throw structured usage guidance. */
 const requireTarget = (
   target: string | undefined,
   action: ExtensionCommandAction,
@@ -1578,6 +1634,7 @@ const requireTarget = (
   return normalized;
 };
 
+/** Collect doctor warnings for unsafe global output override registrations. */
 const collectGlobalOutputOverrideDoctorWarnings = (
   activationResult: Awaited<ReturnType<typeof activateExtensions>>,
 ): string[] => {
@@ -1835,6 +1892,7 @@ export const runExtension = async (
   return EXTENSION_ACTION_HANDLERS[action](ctx);
 };
 
+/** Scaffold a new extension project from normalized lifecycle options. */
 const runExtensionInitAction = async (
   ctx: ExtensionActionContext,
 ): Promise<ExtensionCommandResult> => {
@@ -1907,6 +1965,7 @@ const runExtensionInitAction = async (
   });
 };
 
+/** Reload extension runtime state and report the new generation token. */
 const runExtensionReloadAction = async (
   ctx: ExtensionActionContext,
 ): Promise<ExtensionCommandResult> => {
@@ -1974,6 +2033,7 @@ const runExtensionReloadAction = async (
   return withResult(details);
 };
 
+/** List bundled and installed extension catalog entries. */
 const runExtensionCatalogAction = async (
   ctx: ExtensionActionContext,
 ): Promise<ExtensionCommandResult> => {
@@ -2234,6 +2294,7 @@ const performExtensionInstallUnderLock = async (
   );
 };
 
+/** Install one extension source under the owner-bound lifecycle lock. */
 const runExtensionInstallAction = async (
   ctx: ExtensionActionContext,
 ): Promise<ExtensionCommandResult> => {
@@ -2367,6 +2428,7 @@ const runExtensionInstallAction = async (
   }
 };
 
+/** Adopt every eligible unmanaged extension in the selected scope. */
 const runExtensionAdoptAllAction = async (
   ctx: ExtensionActionContext,
 ): Promise<ExtensionCommandResult> => {
@@ -2463,6 +2525,7 @@ const runExtensionAdoptAllAction = async (
   /* c8 ignore stop */
 };
 
+/** Adopt one unmanaged extension into managed lifecycle state. */
 const runExtensionAdoptAction = async (
   ctx: ExtensionActionContext,
 ): Promise<ExtensionCommandResult> => {
@@ -2598,6 +2661,7 @@ const runExtensionAdoptAction = async (
   /* c8 ignore stop */
 };
 
+/** Resolve a required installed extension or throw structured not-found guidance. */
 const resolveRequiredInstalledExtension = async (
   ctx: ExtensionActionContext,
 ) => {
@@ -2629,6 +2693,7 @@ const resolveRequiredInstalledExtension = async (
   return { settings, managedStateRead, candidate };
 };
 
+/** Uninstall one managed extension and update lifecycle state. */
 const runExtensionUninstallAction = async (
   ctx: ExtensionActionContext,
 ): Promise<ExtensionCommandResult> => {
@@ -2676,6 +2741,7 @@ const runExtensionUninstallAction = async (
   });
 };
 
+/** Activate or deactivate one installed extension and persist the resulting state. */
 const runExtensionActivateDeactivateAction = async (
   ctx: ExtensionActionContext,
 ): Promise<ExtensionCommandResult> => {
@@ -2750,6 +2816,7 @@ const buildDoctorRemediation = (
   ];
 };
 
+/** Return whether doctor details contain any global-layer diagnostics. */
 const hasGlobalLayerDiagnostics = (
   loadResult: Awaited<ReturnType<typeof loadExtensions>>,
 ): boolean => {
@@ -2760,6 +2827,7 @@ const hasGlobalLayerDiagnostics = (
   );
 };
 
+/** Build the project-isolation remediation hint for global extension conflicts. */
 const buildDoctorIsolationHint = (
   scope: ExtensionScope,
   isolated: boolean,
@@ -2816,6 +2884,7 @@ const buildDoctorIsolationMetadata = (
   };
 };
 
+/** Run extension integrity, activation, policy, and isolation diagnostics. */
 const runExtensionDoctorAction = async (
   ctx: ExtensionActionContext,
 ): Promise<ExtensionCommandResult> => {
@@ -3143,6 +3212,7 @@ const runExtensionDoctorAction = async (
   return withResult(details);
 };
 
+/** Describe one installed extension and its runtime registrations. */
 const runExtensionDescribeAction = async (
   ctx: ExtensionActionContext,
 ): Promise<ExtensionCommandResult> => {
@@ -3204,6 +3274,7 @@ const runExtensionDescribeAction = async (
 };
 
 /* c8 ignore start -- explore/manage action split is validated by dedicated command-action tests */
+/** Explore installed extensions or mutate managed lifecycle state. */
 const runExtensionExploreManageAction = async (
   ctx: ExtensionActionContext,
 ): Promise<ExtensionCommandResult> => {
