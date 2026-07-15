@@ -4,6 +4,8 @@
 
 ### Added
 
+- GH-444: ergonomic author attribution — global --author, init author_default, unknown-author advisory ([pm-cpja](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cpja.toon))
+- Promote schema, config, profile, and init primitives to the public SDK: full workspace customization programmatically ([pm-3mna](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3mna.toon))
 - Promote package & extension lifecycle primitives to the public SDK: install, upgrade, extension list/enable/disable, managed-package state ([pm-x6jf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-x6jf.toon))
 - Promote annotation and link primitives to the public SDK: comments, notes, learnings, files, docs, deps, append metadata ([pm-zwpp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-zwpp.toon))
 - Point-in-time read projection: pm get --at <version\|timestamp\> renders reconstructed historical item state without mutating ([pm-hib1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hib1.toon))
