@@ -224,9 +224,13 @@ export function parseExtensionInstallSource(
 export async function runGitCommand(
   args: string[],
   execRunner: typeof execFileAsync = execFileAsync,
+  timeoutMs?: number,
 ): Promise<string> {
   try {
-    const result = await execRunner("git", args, { encoding: "utf8" });
+    const result = await execRunner("git", args, {
+      encoding: "utf8",
+      timeout: timeoutMs,
+    });
     return (result.stdout ?? "").trim();
   } catch (error: unknown) {
     /* c8 ignore start -- stderr-vs-error-message precedence is validated in integration command-runner paths */

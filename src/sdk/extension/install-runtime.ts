@@ -338,13 +338,26 @@ export const withExtensionInstallLock = async <T>(
     stale_ms: rawStaleMs = EXTENSION_INSTALL_LOCK_STALE_MS,
     heartbeat_ms: rawHeartbeatMs,
   } = options ?? {};
+  if (
+    ![rawAttempts, rawDelayMs, rawStaleMs, rawHeartbeatMs]
+      .filter((value): value is number => value !== undefined)
+      .every(Number.isFinite)
+  ) {
+    throw new PmCliError(
+      "Extension install lock timings must be finite numbers.",
+      EXIT_CODE.USAGE,
+    );
+  }
   const attempts = Math.max(1, Math.floor(rawAttempts));
   const delayMs = Math.max(0, Math.floor(rawDelayMs));
-  const staleMs = Math.max(0, Math.floor(rawStaleMs));
-  const heartbeatMs = Math.max(
-    1,
-    Math.floor(rawHeartbeatMs ?? Math.max(1, staleMs / 3)),
-  );
+  const staleMs = Math.floor(rawStaleMs);
+  const heartbeatMs = Math.floor(rawHeartbeatMs ?? staleMs / 3);
+  if (staleMs <= 0 || heartbeatMs <= 0 || heartbeatMs >= staleMs) {
+    throw new PmCliError(
+      "Extension install lock timings require stale_ms > 0 and 0 < heartbeat_ms < stale_ms.",
+      EXIT_CODE.USAGE,
+    );
+  }
   const owner: ExtensionInstallLockOwner = {
     pid: process.pid,
     token: randomUUID(),

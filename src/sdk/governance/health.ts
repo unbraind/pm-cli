@@ -61,9 +61,6 @@ import {
   TELEMETRY_SCHEMA_VERSION,
 } from "../../core/telemetry/runtime.js";
 
-const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(
-  PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
-);
 import {
   getItemFormatFromPath,
   getSettingsPath,
@@ -89,6 +86,10 @@ import {
   buildRegistrationCollisionRemediation,
   collectUnknownCapabilityGuidance,
 } from "../extension/doctor.js";
+
+const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(
+  PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
+);
 
 type HealthStatus = "ok" | "warn";
 type MigrationRuntimeStatus = "pending" | "failed" | "applied";

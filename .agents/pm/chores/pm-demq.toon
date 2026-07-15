@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-07-15T06:22:12.276Z"
-updated_at: "2026-07-15T13:25:46.551Z"
+updated_at: "2026-07-15T15:12:55.539Z"
 assignee: codex-root
 author: maintainer-agent
 estimated_minutes: 90
@@ -23,11 +23,12 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-u14c,related,"2026-07-15T06:22:12.276Z",null,null
   pm-wenq,related,"2026-07-15T06:22:12.276Z",null,null
   pm-oxrw,related,"2026-07-15T09:27:31.615Z",codex-root,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-15T07:25:20.200Z",codex-root,"Evidence: immutable unknown-author events before the 2026-07-15 baseline remain visible as legacy counts while only undated/post-baseline events are actionable warnings. Health and validation share the SDK attribution primitive; full coverage and static gates pass."
   "2026-07-15T09:27:57.039Z",codex-root,"Review correction evidence: actionable post-baseline unknown authors now keep the storage check at warn and make HealthResult.ok false; legacy unknown authors remain informational and non-blocking. Windows remediation command rendering now implements quote, preceding-backslash, and trailing-backslash escaping. Focused attribution/argv tests and strict gates pass."
   "2026-07-15T09:59:26.223Z",codex-root,"Pre-push release evidence (2026-07-15): all local pm-cli gates and exact 100/100/100/100 coverage pass. Sentry/telemetry gate reports telemetry healthy (0.33% finish error rate, zero missing error-code rows) and precisely two high owner-package events: PM-CLI-2B and PM-CLI-29, already tracked by active pm-d4ns and pm-7n5a. No generic suppression was added."
   "2026-07-15T13:25:46.551Z",codex-root,"Final bundled verification 2026-07-15: the SDK-owned validation boundary and review corrections preserve legacy/actionable author classification while bounding health brief attribution samples. Full repository proof passed 291 files / 5723 tests with exact 100/100/100/100 coverage; typecheck, ESLint, zero-duplication, static/docstring/package/token gates, and installed-package acceptance are clean."
+  "2026-07-15T15:12:55.539Z",codex-root,"Verification evidence 2026-07-15: the broad PR author-attribution and legacy unknown-author remediation remains covered by the complete sandbox suite (5730 tests; exact 100/100/100/100), static/docstring/package-boundary gates, packed-package smoke, 88-command package-first dogfood, pm validate with zero history drift, and pm health with zero warnings. The item remains active until the hosted review and merge proof complete."
 files[5]{path,scope,note}:
   src/sdk/author-attribution.ts,project,Legacy and actionable unknown-author classification
   src/sdk/command-line.ts,project,Windows command quoting review correction for governance remediation hints
