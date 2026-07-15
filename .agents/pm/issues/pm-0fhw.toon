@@ -2,19 +2,32 @@ id: pm-0fhw
 title: "GH-567: macOS+Windows nightly red — extension-install copy self-nesting check misses symlinked/short-name temp paths (realpath fallback asymmetry)"
 description: "copyExtensionDirectoryWithoutSelfNesting (src/sdk/extension.ts ~L666-693, promoted in PR#565) realpaths the SOURCE but canonicalizes the DESTINATION via realpath(dirname(dest)).catch(() => destinationParent) — when the destination parent does not exist yet, the fallback keeps the NON-canonical path. On macOS os.tmpdir() is a symlink (/var/folders -> /private/var/folders) and on Windows mkdtemp can return 8.3 short names (RUNNER~1), so canonicalSource and canonicalDestination land in different path namespaces, isPathWithinDirectory misses the nesting, the plain-copy branch runs, and Node fs.cp fails with EINVAL 'cannot copy ... to a subdirectory of self'. Ubuntu /tmp is not a symlink -> green, which is why PR CI cannot catch it. First red: Nightly 2026-07-15 (run 29393793337) — macOS/Node24 leg is ENTIRELY this defect (1 fail/5719); windows/Node24 leg now has it as failure 7 of 7 (other 6 = pm-b24b + pm-u5zr). Class precedent pm-dprb/pm-gf6f (tmpdir canonicalization) but this is a PRODUCT defect, not spec-side: real installs on macOS/Windows hit EINVAL whenever the destination parent is not yet created. Fix direction: canonicalize the deepest EXISTING ancestor of the destination parent and re-append the remaining segments (or realpath both sides through a shared existing root) so both comparands are in the same namespace; never fix spec-side-only (pm-gf6f precedent)."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: extensions,macos,nightly,windows
 created_at: "2026-07-15T06:39:34.147Z"
-updated_at: "2026-07-15T06:39:34.147Z"
+updated_at: "2026-07-15T07:25:45.842Z"
+closed_at: "2026-07-15T07:25:45.071Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "isPathWithinDirectory comparison uses consistently canonicalized source AND destination when the destination parent does not exist, on symlinked (macOS) and short-name (Windows) temp paths; extension-copy-safety.spec.ts passes on all 5 nightly legs; regression coverage pins the nonexistent-destination-parent + symlinked-tmpdir case"
 parent: pm-ugqx
 risk: medium
 confidence: high
+resolution: Canonicalize each destination ancestor from the filesystem root before containment checks and stage nested copies safely.
+expected_result: Extension installation succeeds through symlinked macOS temp roots and Windows alternate path namespaces.
+actual_result: Missing-parent symlink regression and all cross-platform contract tests pass.
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-b24b,related,"2026-07-15T06:39:34.147Z",null,null
   pm-g072,related,"2026-07-15T06:39:34.147Z",null,null
   pm-u5zr,related,"2026-07-15T06:39:34.147Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-15T07:25:44.196Z",codex-root,"Evidence: destination canonicalization now walks root-to-leaf, retaining missing suffix segments after the deepest resolvable ancestor; source-contained installs stage externally. 5,721 tests and exact coverage pass."
+files[3]{path,scope,note}:
+  src/sdk/extension.ts,project,Canonical destination ancestry and safe staging
+  tests/unit/extensions/extension-copy-safety.spec.ts,project,Symlinked missing-tree regression
+  .github/workflows/ci.yml,project,Required Windows regression surface
+tests[1]{command,scope,timeout_seconds,note}:
+  "pnpm test:coverage",project,300,5721 tests exact 100 percent coverage
+close_reason: Fixed cross-platform extension-copy containment canonicalization with regression coverage and required Windows CI inclusion.
 body: ""

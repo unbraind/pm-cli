@@ -28,6 +28,9 @@ export {
 } from "./author-attribution.js";
 export { createPmCliProgram } from "./cli-program.js";
 export { quoteCommandArg, renderPmCommand } from "./command-line.js";
+export * from "./governance/gc.js";
+export * from "./governance/health.js";
+export * from "./governance/validate.js";
 export { runExtension } from "./extension.js";
 export { applyInvocationAuthorOverride } from "./invocation-author.js";
 export {

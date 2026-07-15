@@ -675,9 +675,27 @@ async function copyExtensionDirectoryWithoutSelfNesting(
     .realpath(resolvedSource)
     .catch(() => resolvedSource);
   const destinationParent = path.dirname(resolvedDestination);
-  const canonicalDestinationParent = await fs
-    .realpath(destinationParent)
-    .catch(() => destinationParent);
+  const destinationRoot = path.parse(destinationParent).root;
+  let canonicalDestinationParent = await fs.realpath(destinationRoot);
+  const relativeDestinationParent = path.relative(
+    destinationRoot,
+    destinationParent,
+  );
+  const destinationSegments = relativeDestinationParent === ""
+    ? []
+    : relativeDestinationParent.split(path.sep);
+  for (const [index, segment] of destinationSegments.entries()) {
+    const candidate = path.join(canonicalDestinationParent, segment);
+    try {
+      canonicalDestinationParent = await fs.realpath(candidate);
+    } catch {
+      canonicalDestinationParent = path.join(
+        canonicalDestinationParent,
+        ...destinationSegments.slice(index),
+      );
+      break;
+    }
+  }
   const canonicalDestination = path.join(
     canonicalDestinationParent,
     path.basename(resolvedDestination),

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Promote governance, validation, health, and maintenance primitives to the public SDK: validate, health, gc, changelog/reporting hooks ([pm-oxrw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-oxrw.toon))
 - GH-444: ergonomic author attribution — global --author, init author_default, unknown-author advisory ([pm-cpja](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cpja.toon))
 - Promote schema, config, profile, and init primitives to the public SDK: full workspace customization programmatically ([pm-3mna](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3mna.toon))
 - Promote package & extension lifecycle primitives to the public SDK: install, upgrade, extension list/enable/disable, managed-package state ([pm-x6jf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-x6jf.toon))
@@ -12,6 +13,9 @@
 
 ### Fixed
 
+- Nightly windows/Node24: package-manifest SDK-surface exemption uses POSIX endsWith — governance-audit runtime.ts check fails on backslash paths ([pm-u5zr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u5zr.toon))
+- GH-522: Windows nightly red — init next-steps hints POSIX-quote native Windows paths (quoteCommandArg backslash escaping) ([pm-b24b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b24b.toon))
+- GH-567: macOS+Windows nightly red — extension-install copy self-nesting check misses symlinked/short-name temp paths (realpath fallback asymmetry) ([pm-0fhw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0fhw.toon))
 - Adopt CodSpeed continuous CPU benchmarking in CI: review/land PR\#564 and establish the per-PR perf-regression signal ([pm-yh6t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yh6t.toon))
 - GH-562: pm init rejects --id-prefix/--prefix flag though id prefix is only positional ([pm-nmzx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nmzx.toon))
 - GH-560: extension renderer overrides diverge between SDK harness and real CLI output ([pm-as4a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-as4a.toon))
@@ -29,6 +33,7 @@
 
 ### Other
 
+- validate_history_unknown_author_events: legacy/actionable split for immutable unknown-author history events + first-party automation author coverage ([pm-demq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-demq.toon))
 - Ship DeepSource, DeepScan, and Scrutinizer CI free-OSS analyzer configurations with documented activation ([pm-3a68](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3a68.toon))
 - ADR: relationship graph semantics — typed directional, ordering, provenance, evidence, and associative edges with schema-extensible invariants ([pm-4jqm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-4jqm.toon))
 

@@ -72,9 +72,7 @@ import {
   runCreate,
   runDelete,
   runFocus,
-  runGc,
   runGet,
-  runHealth,
   runHistory,
   runLearnings,
   runList,
@@ -93,8 +91,18 @@ import {
   runUpgrade,
   type UpgradeCommandOptions,
   type UpgradeResult,
-  runValidate,
 } from "../cli/commands/index.js";
+import { runGc, type GcCommandOptions, type GcResult } from "./governance/gc.js";
+import {
+  runHealth,
+  type HealthResult,
+  type RunHealthOptions,
+} from "./governance/health.js";
+import {
+  runValidate,
+  type ValidateCommandOptions,
+  type ValidateResult,
+} from "./governance/validate.js";
 import {
   runExtension,
   type ExtensionCommandOptions,
@@ -192,8 +200,6 @@ import type {
   FilesDiscoverResult,
   FilesResult,
 } from "./files.js";
-import type { GcCommandOptions, GcResult } from "../cli/commands/gc.js";
-import type { HealthResult, RunHealthOptions } from "../cli/commands/health.js";
 import type { InitCommandOptions, InitResult } from "../cli/commands/init.js";
 import type {
   LearningsCommandOptions,
@@ -250,10 +256,6 @@ import {
   type SchemaShowStatusResult,
   type SchemaSubcommand,
 } from "./schema.js";
-import type {
-  ValidateCommandOptions,
-  ValidateResult,
-} from "../cli/commands/validate.js";
 
 export type {
   ClaimResult,

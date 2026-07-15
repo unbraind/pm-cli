@@ -45,6 +45,8 @@ describe("SDK author attribution primitives", () => {
     ).toEqual({
       checked_events: 2,
       unknown_event_count: 1,
+      legacy_unknown_event_count: 0,
+      actionable_unknown_event_count: 1,
       samples: [{ item_id: "pm-memory", line: 2 }],
     });
   });
@@ -73,6 +75,8 @@ describe("SDK author attribution primitives", () => {
       checked_streams: 2,
       checked_events: 5,
       unknown_event_count: 4,
+      legacy_unknown_event_count: 0,
+      actionable_unknown_event_count: 4,
       affected_item_ids: ["pm-a", "pm-b"],
       samples: [
         { item_id: "pm-a", line: 1 },
@@ -91,6 +95,8 @@ describe("SDK author attribution primitives", () => {
       checked_streams: 0,
       checked_events: 0,
       unknown_event_count: 0,
+      legacy_unknown_event_count: 0,
+      actionable_unknown_event_count: 0,
       affected_item_ids: [],
       samples: [],
     });
@@ -215,7 +221,7 @@ describe("SDK author attribution primitives", () => {
     );
     await writeFile(
       path.join(pmRoot, "history", "pm-legacy.jsonl"),
-      `${JSON.stringify({ author: "unknown" })}\n`,
+      `${JSON.stringify({ ts: "2026-07-14T00:00:00.000Z", author: "unknown" })}\n`,
     );
 
     const health = await runHealth(
@@ -228,16 +234,20 @@ describe("SDK author attribution primitives", () => {
       },
     );
     expect(health.ok).toBe(true);
-    expect(health.warnings).toContain("history_unknown_author_events:1");
+    expect(health.warnings).not.toContain("history_unknown_author_events:1");
     expect(
       health.checks.find((check) => check.name === "storage")?.details,
     ).toMatchObject({
-      author_attribution: { unknown_event_count: 1 },
+      author_attribution: {
+        unknown_event_count: 1,
+        legacy_unknown_event_count: 1,
+        actionable_unknown_event_count: 0,
+      },
     });
 
     const validation = await runValidate({}, { path: pmRoot });
     expect(validation.ok).toBe(true);
-    expect(validation.warnings).toContain(
+    expect(validation.warnings).not.toContain(
       "validate_history_unknown_author_events:1",
     );
     const filesOnlyValidation = await runValidate(
@@ -245,6 +255,19 @@ describe("SDK author attribution primitives", () => {
       { path: pmRoot },
     );
     expect(filesOnlyValidation.warnings).not.toContain(
+      "validate_history_unknown_author_events:1",
+    );
+
+    await writeFile(
+      path.join(pmRoot, "history", "pm-actionable.jsonl"),
+      `${JSON.stringify({ ts: "2026-07-15T07:00:00.000Z", author: "unknown" })}\n`,
+    );
+    const actionableHealth = await runHealth(
+      { path: pmRoot },
+      { checkOnly: true, skipIntegrity: true, skipDrift: true, skipVectors: true },
+    );
+    expect(actionableHealth.warnings).toContain("history_unknown_author_events:1");
+    expect((await runValidate({}, { path: pmRoot })).warnings).toContain(
       "validate_history_unknown_author_events:1",
     );
   });

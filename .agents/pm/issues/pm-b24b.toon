@@ -2,28 +2,39 @@ id: pm-b24b
 title: "GH-522: Windows nightly red — init next-steps hints POSIX-quote native Windows paths (quoteCommandArg backslash escaping)"
 description: Make init next-step command quoting platform-aware so native Windows paths remain copy-paste-safe in cmd and PowerShell and nightly tests stay green.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: agent-ux,ci,windows
 created_at: "2026-07-12T07:11:22.870Z"
-updated_at: "2026-07-14T10:18:56.664Z"
+updated_at: "2026-07-15T07:25:48.216Z"
+closed_at: "2026-07-15T07:25:47.438Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "quoteCommandArg (or a platform-aware wrapper) renders native Windows paths in scoped init hints copy-paste-valid for cmd/PowerShell (no doubled backslashes); the 5 failing specs (4x init-command.spec.ts, 1x init-path-guard.integration.spec.ts) pass on windows-latest Node 24 without weakening the POSIX replacement-sensitive quoting expectations; tests/unit/commands/init-command.spec.ts + tests/integration/init-path-guard.integration.spec.ts pinned into the CI windows-regression suite list (class 8) so this class fails per-PR, not nightly-only; next Nightly Validation windows leg green"
 parent: pm-mpbb
 risk: medium
 confidence: high
+resolution: Render command arguments using platform-specific safe tokens and preserve Windows backslashes inside quoted paths.
+expected_result: Windows init follow-up commands remain executable native paths.
+actual_result: Win32 path regression passes without doubled separators.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-dprb,related,"2026-07-12T07:12:02.961Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-12T13:35:09.548Z",maintainer-agent,"External-report sweep 2026-07-12: GitHub issue #522 remains the canonical open Windows nightly failure; no duplicate item created. This performance lane will not change its status or implementation scope."
   "2026-07-14T06:44:00.318Z",codex-root,"Live GitHub evidence 2026-07-14: Nightly Validation run 29310713878 on main dcd58521 failed only windows-latest/Node 24. Four init-command specs plus init-path-guard reproduced this canonical native-path quoting defect; macOS and Ubuntu Node 22/24/25 legs passed. GitHub issue #522 remains canonical; item stays open and unclaimed outside PR #549 scope."
   "2026-07-14T10:18:56.663Z",codex-gpt5,"Live nightly evidence 2026-07-14: Nightly Validation run 29310713878 failed again on dcd58521; GitHub issue #522 remains open and canonical. The failure lineage is already fully owned here, so no duplicate was created or claimed in this relationship SDK lane."
+  "2026-07-15T07:25:46.484Z",codex-root,"Evidence: quoteCommandArg and renderPmCommand accept an explicit platform contract; Windows-safe tokens include backslashes and quoted native paths preserve separators. Full coverage and workflow contract gates pass."
 notes[1]{created_at,author,text}:
   "2026-07-12T07:14:29.716Z",maintainer-agent,"Blast radius (2026-07-12 pass): renderPmCommand has 9 call sites across src/cli/{error-guidance,commander-usage,help-json-payload,main,commands/init}.ts — every rendered retry/recovery/usage hint that embeds a native Windows path (e.g. --pm-path values in suggested_retry bundles) ships the same doubled-backslash POSIX escaping, not just init next-steps. The nightly specs only pin the init surface; the fix must land centrally in quoteCommandArg so all surfaces inherit it. Do NOT fix per-call-site."
-files[4]{path,scope,note}:
+files[7]{path,scope,note}:
   src/cli/argv-utils.ts,project,null
   src/cli/commands/init.ts,project,null
   tests/integration/init-path-guard.integration.spec.ts,project,null
   tests/unit/commands/init-command.spec.ts,project,null
+  src/sdk/command-line.ts,project,Platform-aware command argument rendering
+  tests/unit/cli/argv-utils.spec.ts,project,Native Windows path quoting regression
+  .github/workflows/ci.yml,project,Windows regression gate
+tests[1]{command,scope,timeout_seconds,note}:
+  "pnpm test:coverage",project,300,Full exact coverage gate
+close_reason: Fixed native Windows command hint quoting and pinned the regression in required CI.
 body: "Nightly Validation windows-latest / Node 24 red since 2026-07-11 (GH-522 filed off the 2026-07-12 run 29182914361 on c7b56e73; the 07-11 leg failed identically but was masked by the macOS pm-dprb failure fixed in PR#520).\n\nBisect (clean): 07-10 nightly green on 1bdca537 (pre-PR#491); PR#491 (b5a41fba, merged 2026-07-10 10:25) introduced buildInitNextSteps pm-path scoping — every scoped hint renders through renderPmCommand → quoteCommandArg (src/cli/argv-utils.ts:41).\n\nRoot cause: quoteCommandArg's safe charset `[A-Za-z0-9._:/@=-]` omits backslash, and its escaper doubles `\\`. Any native Windows tracker path (e.g. C:\\tmp\\tracker) therefore renders as `--pm-path \"C:\\\\tmp\\\\tracker\"`. This is a PRODUCT defect, not just a spec mismatch: the copy-paste hint is POSIX-shell quoting shown to cmd/PowerShell users — doubled backslashes are a literal wrong path there.\n\nFailing specs (windows-only, deterministic): tests/unit/commands/init-command.spec.ts (covers init option normalizers / normalized prefix / preset registration / guidance status — all assert bare `${path.resolve(...)}` in hints) + tests/integration/init-path-guard.integration.spec.ts (path-like positional guard).\n\nFix direction (code-side, NOT spec-side — pm-gf6f precedent shows spec-only fixes let the class recur): platform-aware quoting — on win32 quote only when the arg needs it and never backslash-escape path separators (cmd/PowerShell rules); keep POSIX behavior (incl. the `$`-escaping the replacement-sensitive spec pins) unchanged. Alternative (admitting `\\` to the safe charset) breaks paths with spaces and mis-escapes inside quotes — rejected.\n\nOracle gap: PR CI's windows-regression job does not run these suites, so nightly is the sole oracle for this class (same gap shape as pm-dprb/GH-510 on macOS)."

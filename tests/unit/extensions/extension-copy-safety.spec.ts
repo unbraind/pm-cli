@@ -51,6 +51,31 @@ describe("extension install copy containment", () => {
     );
   });
 
+  it("canonicalizes a missing destination tree through its deepest existing ancestor", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-extension-copy-canonical-"));
+    tempRoots.push(root);
+    const source = path.join(root, "source");
+    const sourceAlias = path.join(root, "source-alias");
+    await mkdir(source, { recursive: true });
+    await writeFile(path.join(source, "manifest.json"), "manifest\n", "utf8");
+    await symlink(source, sourceAlias, "dir");
+    const destination = path.join(
+      sourceAlias,
+      "missing-parent",
+      "extensions",
+      "demo",
+    );
+
+    await _testOnly.copyExtensionDirectoryWithoutSelfNesting(
+      source,
+      destination,
+      cp,
+    );
+    expect(await readFile(path.join(destination, "manifest.json"), "utf8")).toBe(
+      "manifest\n",
+    );
+  });
+
   it("moves staging outside a source that contains the configured temp directory", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-extension-copy-temp-"));
     tempRoots.push(root);

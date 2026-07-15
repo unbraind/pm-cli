@@ -6,7 +6,7 @@ import { _testOnlyHealthCommand as healthInternals, runHealth } from "../../../s
 import {
   buildCapabilityContractMetadata as doctorBuildCapabilityContractMetadata,
   collectUnknownCapabilityGuidance as doctorCollectUnknownCapabilityGuidance,
-} from "../../../src/cli/commands/extension/doctor.js";
+} from "../../../src/sdk/extension/doctor.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../../src/core/extensions/index.js";
 import { writeVectorizationStatusLedger } from "../../../src/core/search/cache.js";
 import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";

@@ -6,6 +6,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+/** First release-governance anchor after which unknown authors require remediation. */
+export const HISTORY_AUTHOR_ATTRIBUTION_BASELINE = "2026-07-15T06:22:12.276Z";
+
+/** Parsed epoch for the immutable attribution baseline used by every stream scan. */
+const HISTORY_AUTHOR_ATTRIBUTION_BASELINE_MS = Date.parse(
+  HISTORY_AUTHOR_ATTRIBUTION_BASELINE,
+);
+
 /** Identifies one history event whose mutation author is absent or explicitly unknown. */
 export interface UnknownAuthorHistoryEvent {
   /** Item whose history stream contains the event. */
@@ -22,6 +30,10 @@ export interface HistoryAuthorAttributionScan {
   checked_events: number;
   /** Number of events without attributable authorship. */
   unknown_event_count: number;
+  /** Immutable pre-baseline events retained as historical information. */
+  legacy_unknown_event_count: number;
+  /** Post-baseline or undated events that require author-attribution fixes. */
+  actionable_unknown_event_count: number;
   /** Stable, sorted item ids containing unknown-author events. */
   affected_item_ids: string[];
   /** Bounded examples suitable for diagnostic output. */
@@ -35,11 +47,17 @@ export function inspectHistoryAuthorStream(
   sampleLimit = 20,
 ): Pick<
   HistoryAuthorAttributionScan,
-  "checked_events" | "unknown_event_count" | "samples"
+  | "checked_events"
+  | "unknown_event_count"
+  | "legacy_unknown_event_count"
+  | "actionable_unknown_event_count"
+  | "samples"
 > {
   const samples: UnknownAuthorHistoryEvent[] = [];
   let checkedEvents = 0;
   let unknownEventCount = 0;
+  let legacyUnknownEventCount = 0;
+  let actionableUnknownEventCount = 0;
   for (const [index, rawLine] of raw.split(/\r?\n/).entries()) {
     const line = rawLine.trim();
     if (line.length === 0) {
@@ -62,6 +80,20 @@ export function inspectHistoryAuthorStream(
       continue;
     }
     unknownEventCount += 1;
+    const timestamp =
+      typeof parsed === "object" &&
+      parsed !== null &&
+      typeof (parsed as { ts?: unknown }).ts === "string"
+        ? Date.parse((parsed as { ts: string }).ts)
+        : Number.NaN;
+    if (
+      Number.isFinite(timestamp) &&
+      timestamp < HISTORY_AUTHOR_ATTRIBUTION_BASELINE_MS
+    ) {
+      legacyUnknownEventCount += 1;
+    } else {
+      actionableUnknownEventCount += 1;
+    }
     if (samples.length < Math.max(0, sampleLimit)) {
       samples.push({ item_id: itemId, line: index + 1 });
     }
@@ -69,6 +101,8 @@ export function inspectHistoryAuthorStream(
   return {
     checked_events: checkedEvents,
     unknown_event_count: unknownEventCount,
+    legacy_unknown_event_count: legacyUnknownEventCount,
+    actionable_unknown_event_count: actionableUnknownEventCount,
     samples,
   };
 }
@@ -95,6 +129,8 @@ export async function scanHistoryAuthorAttribution(
   let checkedStreams = 0;
   let checkedEvents = 0;
   let unknownEventCount = 0;
+  let legacyUnknownEventCount = 0;
+  let actionableUnknownEventCount = 0;
   for (const fileName of fileNames) {
     let raw: string;
     try {
@@ -111,6 +147,8 @@ export async function scanHistoryAuthorAttribution(
     checkedStreams += 1;
     checkedEvents += inspected.checked_events;
     unknownEventCount += inspected.unknown_event_count;
+    legacyUnknownEventCount += inspected.legacy_unknown_event_count;
+    actionableUnknownEventCount += inspected.actionable_unknown_event_count;
     if (inspected.unknown_event_count > 0) {
       affectedItemIds.add(itemId);
     }
@@ -120,6 +158,8 @@ export async function scanHistoryAuthorAttribution(
     checked_streams: checkedStreams,
     checked_events: checkedEvents,
     unknown_event_count: unknownEventCount,
+    legacy_unknown_event_count: legacyUnknownEventCount,
+    actionable_unknown_event_count: actionableUnknownEventCount,
     affected_item_ids: [...affectedItemIds].sort((left, right) =>
       left.localeCompare(right),
     ),

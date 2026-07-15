@@ -45,4 +45,19 @@ describe("argv-utils.quoteCommandArg / renderPmCommand", () => {
     expect(renderPmCommand(["create", "--title", "hello world"])).toBe('pm create --title "hello world"');
     expect(renderPmCommand([])).toBe("pm");
   });
+
+  it("preserves native Windows path separators in copy-safe command hints", () => {
+    expect(quoteCommandArg("C:\\workspace\\.agents\\pm", "win32")).toBe(
+      "C:\\workspace\\.agents\\pm",
+    );
+    expect(
+      renderPmCommand(
+        ["--pm-path", "C:\\project files\\.agents\\pm", "init"],
+        "win32",
+      ),
+    ).toBe('pm --pm-path "C:\\project files\\.agents\\pm" init');
+    expect(quoteCommandArg('title "quoted"', "win32")).toBe(
+      '"title ""quoted"""',
+    );
+  });
 });

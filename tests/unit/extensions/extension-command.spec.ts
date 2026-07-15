@@ -58,7 +58,7 @@ import {
   classifyDoctorActivationFailureWarnings,
   classifyUnusedCapabilityWarnings,
   collectUnknownCapabilityGuidance,
-} from "../../../src/cli/commands/extension/doctor.js";
+} from "../../../src/sdk/extension/doctor.js";
 import { activateExtensions } from "../../../src/core/extensions/loader.js";
 import type { ExtensionApi } from "../../../src/core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../../../src/core/extensions/extension-types.js";
