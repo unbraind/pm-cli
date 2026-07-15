@@ -6,11 +6,15 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-07-14T22:41:44.652Z"
-updated_at: "2026-07-14T22:41:44.652Z"
+updated_at: "2026-07-15T04:15:05.255Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "Top rules by occurrence enumerated (authenticated dashboard/API) and dispositioned rule-by-rule: conflicts with repo idioms (TS-first patterns, docstring gate scope, intentional CLI process.exit etc.) get skipcq/toml suppressions WITH written rationale; genuinely useful rules stay enabled; post-alignment counts recorded on pm-vlnc; no blanket category disables without rationale"
 parent: pm-vlnc
 risk: medium
 confidence: high
+comments[1]{created_at,author,text}:
+  "2026-07-15T04:15:05.254Z",codex-root,"Live PR #565 evidence 2026-07-15: DeepSource dashboard payload, not .deepsource.toml, is authoritative. It reports dialect=typescript, environment=nodejs+vitest, style_guide=airbnb, ecma_version=2020, module_system=commonjs, cyclomatic threshold=low, documentation coverage 36.75%, and 1,937 JavaScript findings on the PR. The repo is ESM and its mandatory local/CI gate proves 100% module/export/member docstrings, so these dashboard settings conflict with repo policy. Repository TOML now states es-modules, but changing the external dashboard requires authenticated DeepSource access; this environment has neither CLI nor DSN/API credential. Do not blanket-disable source categories: first switch the dashboard to use repository TOML or align its settings per this item's acceptance criteria, then re-run and disposition remaining rules."
+files[1]{path,scope,note}:
+  .deepsource.toml,project,Repository-side analyzer intent; currently ignored because DeepSource dashboard configuration is authoritative
 body: ""
