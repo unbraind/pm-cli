@@ -2228,7 +2228,7 @@ const persistExtensionInstall = async (
         throw new AggregateError(
           [error, rollbackError],
           `Extension install failed: ${String(error)}; rollback failed: ${String(rollbackError)}`,
-          { cause: error },
+          { cause: rollbackError },
         );
       }
       throw error;

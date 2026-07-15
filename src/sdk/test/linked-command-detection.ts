@@ -245,26 +245,17 @@ export function parseNpxCommand(
     if (!token.startsWith("-")) {
       break;
     }
-    const inlineCommandFlag = [...NPX_COMMAND_STRING_FLAGS].find((flag) =>
-      token.startsWith(`${flag}=`),
-    );
-    if (inlineCommandFlag) {
-      const command = token.slice(inlineCommandFlag.length + 1);
+    const inlineCommandMatch = /^(?:-c|--call)=(.*)$/.exec(token);
+    if (inlineCommandMatch) {
+      const command = inlineCommandMatch[1];
       return command ? { command, args: tokens.slice(index + 1) } : null;
     }
     if (NPX_COMMAND_STRING_FLAGS.has(token)) {
       index += 1;
       break;
     }
-    if (token.includes("=")) {
-      index += 1;
-      continue;
-    }
-    if (NPX_FLAGS_WITH_VALUE.has(token)) {
-      index += 2;
-      continue;
-    }
-    index += 1;
+    index +=
+      NPX_FLAGS_WITH_VALUE.has(token) && !token.includes("=") ? 2 : 1;
   }
   const command = tokens[index];
   if (!command) {
