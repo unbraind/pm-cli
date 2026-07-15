@@ -1,0 +1,41 @@
+{
+  "name": "@unbrained/pm-sdk-tool",
+  "version": "2026.7.15",
+  "private": true,
+  "type": "module",
+  "description": "Standalone project-management tool exemplar built exclusively on the public pm SDK.",
+  "homepage": "https://github.com/unbraind/pm-cli/tree/main/packages/sdk-tool#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unbraind/pm-cli.git",
+    "directory": "packages/sdk-tool"
+  },
+  "bugs": {
+    "url": "https://github.com/unbraind/pm-cli/issues"
+  },
+  "bin": {
+    "pm-sdk-tool": "bin/pm-sdk-tool.mjs"
+  },
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "files": [
+    "bin/**",
+    "index.mjs",
+    "README.md"
+  ],
+  "keywords": [
+    "project-management",
+    "sdk",
+    "custom-tool",
+    "exemplar",
+    "automation"
+  ],
+  "dependencies": {
+    "@unbrained/pm-cli": ">=2026.7.15"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "license": "MIT"
+}

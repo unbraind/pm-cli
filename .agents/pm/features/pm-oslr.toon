@@ -2,21 +2,56 @@ id: pm-oslr
 title: "Promote execution and diagnostics primitives to the public SDK: linked-test running and test-run lifecycle, search eval harness, telemetry stats/export"
 description: "Completes SDK coverage of the command surface beyond pm-oxrw (which covers validate/health/gc only): pm test / test-all execution plus the test-runs worker lifecycle (list/status/logs/stop/resume), the search eval benchmark harness (pm eval, offline BM25 vs provider comparison from PR#314), and telemetry stats/percentiles/export hooks (PR#286, PR#233 OTLP queue). pm-zwpp promotes linked-test STORAGE; this item promotes EXECUTION. The pm-lodl inventory validates this is the final uncovered family. Duplicate check: no open SDK-promotion overlap (searched test/eval/telemetry promote)."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[4]: architecture,"area:sdk","area:telemetry","area:test"
 created_at: "2026-07-05T05:09:19.981Z"
-updated_at: "2026-07-10T21:31:12.240Z"
+updated_at: "2026-07-15T21:08:52.258Z"
+closed_at: "2026-07-15T21:08:51.361Z"
 author: maintainer-agent
 estimated_minutes: 300
 acceptance_criteria: "SDK exports typed primitives for linked-test execution and run lifecycle control, eval harness runs, and telemetry stats/export returning the same structured outputs the CLI prints; CLI commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (test-runner, eval, telemetry specs green)."
 parent: pm-usfg
 risk: medium
 confidence: medium
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-lodl,blocked_by,"2026-07-05T05:09:19.981Z",null,null
-  pm-muhw,blocked_by,"2026-07-05T05:09:19.981Z",null,null
+resolution: "Promoted test, batch/run lifecycle, stats, consent-aware telemetry, and injectable evaluation into the public SDK."
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-atfm,related,"2026-07-10T21:31:12.222Z",null,null
+  pm-cbwg,related,"2026-07-15T21:08:44.998Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-15T20:21:22.186Z",codex-root-20260715,"Implementation scope 2026-07-15: promote linked-test execution, batch/background supervision, test-run lifecycle, search evaluation, and telemetry diagnostics into SDK-owned modules with thin CLI adapters and typed public exports. Bundle shares one SDK boundary and acceptance surface with pm-cbwg, pm-w89s, and pm-9x6e."
+  "2026-07-15T21:08:47.398Z",codex-root-20260715,"Completion evidence 2026-07-15: moved linked-test execution, batch orchestration, background run inspection, linked-test parsing, stats, telemetry, and evaluation into SDK-owned modules. PmClient plus one-off helpers expose typed execution/diagnostic results; runSearchEval accepts injected retrieval; telemetry consent remains inside the SDK. CLI files are compatibility adapters. Strict static quality reports 100% source/export/member docstrings, zero new or stale boundary edges, and the linked SDK tests pass. Full repository proof passes 293 files / 5,741 tests at exact 100% statements, branches, functions, and lines."
 notes[1]{created_at,author,text}:
   "2026-07-10T21:30:53.991Z",maintainer-agent,"Implementation slicing 2026-07-10 (grounded in current src state). Already public — do NOT redo: partial core substrate exists — src/core/test (background-runs.ts, item-test-run-tracking.ts, run-selectors.ts) and src/core/telemetry (consent.ts, observability.ts, runtime.ts); the stats facade is exported from src/sdk/index.ts. The actual gap: orchestration is command-side — test.ts (2,358, the largest command module in the repo) + linked-test-parsers.ts (576) + test-all.ts (632) + test-runs.ts (312) + eval.ts (223) + telemetry.ts (463) + stats.ts (229), ~4.8k lines total. Suggested slices: S1 linked-test execution + run lifecycle primitives (~120m) — move test.ts orchestration onto core/test; the parser layer (linked-test-parsers, 576 lines) is pure functions and promotes almost for free; cover test-runs list/status/logs/stop/resume as one lifecycle primitive. S2 batch execution + background-run supervision (~60m) — test-all.ts; preserve the Windows detached-spawn child.on(\"error\") handling (PR#365 regression class). S3 search-eval harness primitive (~60m) — eval.ts; this is the substrate pm-atfm (graded golden-workspace eval harness) builds on — coordinate; promoting S3 early cheapens pm-atfm, which sits `related` to wave-2 frontier item pm-55ra. S4 telemetry stats/export + typed facades + SDK reference docs/tests (~60m) — consent gating must live in the primitive, never CLI-only, so SDK consumers cannot bypass it. Order: S1 first (bulk + risk), S3 next (unblocks eval work), S2, S4 last. P3 overall — this slice serves tooling depth, not the pm-w89s universality story, so schedule after zwpp/3mna/oxrw."
+files[23]{path,scope,note}:
+  eslint-suppressions.json,project,Relocated unchanged linked-test complexity ratchet to SDK owner
+  scripts/release/sdk-import-boundary-baseline.json,project,Reduced SDK boundary debt baseline
+  src/cli/commands/eval.ts,project,CLI search adapter over injectable SDK evaluator
+  src/cli/commands/linked-test-entry.ts,project,Thin CLI compatibility adapter
+  src/cli/commands/linked-test-parsers.ts,project,Thin CLI compatibility adapter
+  src/cli/commands/stats.ts,project,Thin CLI compatibility adapter
+  src/cli/commands/telemetry.ts,project,Thin CLI compatibility adapter
+  src/cli/commands/test-all.ts,project,Thin CLI compatibility adapter
+  src/cli/commands/test-runs.ts,project,Thin CLI compatibility adapter
+  src/cli/commands/test.ts,project,Thin CLI compatibility adapter
+  src/sdk/client-read-operations.ts,project,Modular one-off read execution and diagnostics facade
+  src/sdk/diagnostics/stats.ts,project,SDK-owned project statistics engine
+  src/sdk/diagnostics/telemetry.ts,project,SDK-owned consent-aware telemetry administration
+  src/sdk/eval.ts,project,SDK-owned injectable search evaluation engine
+  src/sdk/index.ts,project,Public SDK barrel exports
+  src/sdk/runtime.ts,project,Typed client and one-off execution helpers
+  src/sdk/test/batch.ts,project,SDK-owned batch linked-test orchestration
+  src/sdk/test/execution.ts,project,SDK-owned linked-test execution engine
+  src/sdk/test/linked-test-entry.ts,project,SDK-owned linked-test normalization
+  src/sdk/test/linked-test-parsers.ts,project,SDK-owned linked-test option parsers
+  src/sdk/test/runs.ts,project,SDK-owned background test-run inspection
+  tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,SDK-owned handler mock and activation-fallback parity
+  tests/unit/sdk/sdk-execution-diagnostics.spec.ts,project,Public ownership and typed dispatch verification
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-execution-diagnostics.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrmkh913-myn4iq,test,passed,"2026-07-15T21:02:51.541Z","2026-07-15T21:03:06.231Z","2026-07-15T21:03:06.231Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Execution and diagnostics SDK consumer guide
+close_reason: "SDK now owns execution and diagnostics engines with typed client/direct APIs, CLI adapters, docs, and exact full-coverage proof."
 body: ""

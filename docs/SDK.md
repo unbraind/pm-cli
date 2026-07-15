@@ -122,6 +122,8 @@ Command/action contract exports:
 - `PmClient` / `runAction` (high-level in-process action execution for custom tools, bots, CI, and embedded runtimes)
 - Typed read primitives on `PmClient`: `get` (including `GetOptions.at` point-in-time reads), `list`, `search`, `context`, `next`, `aggregate`, and `stats`; direct `getItemAt` reconstructs a canonical historical document without mutation
 - Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`
+- Typed execution and diagnostics primitives on `PmClient`: `test`, `testAll`, `telemetry`, and `evaluate`; matching top-level helpers support one-off consumers.
+- Execution and diagnostics contracts: `TestCommandOptions` / `TestResult`, `TestAllCommandOptions` / `TestAllResult`, `TelemetryCommandOptions` / `TelemetryResult`, `EvalOptions` / `EvalResult`, and the direct `runTest`, `runTestAll`, `runTelemetry`, `runStats`, and `runSearchEval` engines. The CLI modules are compatibility adapters over these SDK-owned implementations.
 - Context relevance primitives: `buildItemContextRelevanceCandidates`, `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
 - Context relevance contracts: `ContextRelevanceCandidate`, `ContextRelevanceSignals`, `ContextRelevanceScorer`, `ContextRelevanceReport`, `ContextEvaluationReader`, `ContextEvaluationScenario`, `ContextEvaluationScenarioReport`, `ContextEvaluationThresholds`, and `ContextEvaluationCorpusReport`
 - Context packing and feedback primitives: `packContextCandidates`, `recordContextUsageServing`, `recordContextUsageTouch`, `recordContextUsageTouches`, and `readContextUsageAffinity`
@@ -784,6 +786,43 @@ read-only diagnostics, and `pm.gc` runs dry-run or explicit cleanup paths throug
 the same bounded maintenance engine as the CLI. Prefer these typed calls over
 shelling out when building CI, editor integrations, or long-running agent
 runtimes.
+
+### Execution and diagnostics
+
+Tracked by [pm-oslr](../.agents/pm/features/pm-oslr.toon).
+
+Linked-test execution, batch orchestration, background-run inspection, project
+statistics, telemetry administration, and golden-query evaluation are owned by
+the SDK. CLI commands preserve their existing imports as thin compatibility
+adapters, while embedded hosts can use typed `PmClient` methods or call the
+engines directly when they already own a `GlobalOptions` context:
+
+```ts
+import { PmClient } from "@unbrained/pm-cli/sdk";
+
+const pm = new PmClient({
+  pmRoot: "/path/to/project/.agents/pm",
+  author: "quality-host",
+});
+
+await pm.test("pm-feature", { list: true });
+const suite = await pm.testAll({ status: "in_progress", progress: true });
+const stats = await pm.stats({ metadataCoverage: true, fieldUtilization: true });
+const telemetry = await pm.telemetry({ subcommand: "status" });
+const evaluation = await pm.evaluate({ k: 10, failUnder: 0.9 });
+```
+
+`runSearchEval` accepts an injected retrieval adapter. A custom search engine
+can therefore reuse pm's nDCG, MRR, precision, recall, threshold, and golden-set
+contracts without importing the canonical CLI search implementation. Telemetry
+consent resolution stays inside the SDK engine so embedded tools cannot bypass
+the same opt-in policy used by the CLI.
+
+The linked-test engine keeps sandbox validation, context preflight, timeout and
+buffer enforcement, failure categorization, progress events, background-run
+records, and result envelopes in one implementation. SDK and CLI consumers
+therefore cannot drift on what constitutes a passed, failed, skipped, or unsafe
+test run.
 
 ### Context relevance and evaluation
 
@@ -2228,6 +2267,7 @@ Runnable examples:
 
 - [SDK contract consumer](examples/sdk-contract-consumer/README.md)
 - [SDK app embedding](examples/sdk-app-embedding/README.md)
+- [Standalone SDK custom tool](../packages/sdk-tool/README.md)
 - [CI examples](examples/ci/)
 
 ## CLI Simplification Migration

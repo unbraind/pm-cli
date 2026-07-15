@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- SDK-only exemplar: minimal custom PM CLI package proving the universal-tool story end-to-end ([pm-cbwg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cbwg.toon))
+- Promote execution and diagnostics primitives to the public SDK: linked-test running and test-run lifecycle, search eval harness, telemetry stats/export ([pm-oslr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-oslr.toon))
+
 ### Other
 
 - 2026-07-15 full CLI SDK and ecosystem manual audit and optimization plan (review pass 91) ([pm-45lr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-45lr.toon))

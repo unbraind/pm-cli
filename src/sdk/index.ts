@@ -35,6 +35,17 @@ export {
 export * from "./governance/gc.js";
 export * from "./governance/health.js";
 export * from "./governance/validate.js";
+export {
+  _testOnly as _testOnlyStats,
+  runStats,
+} from "./diagnostics/stats.js";
+export * from "./diagnostics/telemetry.js";
+export * from "./eval.js";
+export * from "./test/batch.js";
+export * from "./test/execution.js";
+export * from "./test/linked-test-entry.js";
+export * from "./test/linked-test-parsers.js";
+export * from "./test/runs.js";
 export { runExtension } from "./extension.js";
 export { applyInvocationAuthorOverride } from "./invocation-author.js";
 export {
@@ -434,6 +445,7 @@ export {
   extensionActivate,
   extensionDeactivate,
   extensionList,
+  evaluate,
   files,
   filesDiscover,
   focus,
@@ -486,6 +498,9 @@ export {
   search,
   startTask,
   stats,
+  telemetry,
+  test,
+  testAll,
   update,
   upgrade,
   validate,

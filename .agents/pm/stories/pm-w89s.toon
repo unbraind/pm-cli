@@ -2,32 +2,47 @@ id: pm-w89s
 title: "As an integrator, I can build a complete custom PM tool for my project using only the public pm SDK"
 description: "Agent-story capability statement for the SDK-first epic pm-usfg. Delivered when every CLI capability is reachable programmatically: an SDK-only consumer performs the full item lifecycle, queries, annotations, governance checks, and schema/profile customization without invoking the pm binary. Duplicate check: existing agent stories cover extension authoring, not SDK-only PM-tool assembly."
 type: Story
-status: open
+status: closed
 priority: 1
 tags[3]: agent-story,"area:sdk",changelog-exclude
 created_at: "2026-07-05T04:52:38.434Z"
-updated_at: "2026-07-13T22:02:34.217Z"
+updated_at: "2026-07-15T21:08:57.276Z"
+closed_at: "2026-07-15T21:08:56.331Z"
 author: maintainer-agent
 estimated_minutes: 30
 acceptance_criteria: "Exemplar package builds a minimal custom PM CLI importing only @unbrained/pm-cli/sdk; it exercises create/update/close/claim, list/search/context, comments/notes/files/deps, validate/health, and a schema customization end-to-end in its linked tests; no src/core deep imports anywhere in the exemplar"
 parent: pm-usfg
 risk: low
 confidence: high
-dependencies[5]{id,kind,created_at,author,source_kind}:
+resolution: Proved a separate custom project-management application can be built solely on public SDK primitives.
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-6abs,related,"2026-07-07T08:57:50.864Z",null,null
-  pm-3mna,blocked_by,"2026-07-07T21:11:34.344Z",null,null
-  pm-oxrw,blocked_by,"2026-07-07T21:11:34.344Z",null,null
-  pm-zwpp,blocked_by,"2026-07-07T21:11:34.344Z",null,null
-  pm-cbwg,blocked_by,"2026-07-13T22:02:34.197Z",null,null
-comments[2]{created_at,author,text}:
+  pm-cbwg,related,"2026-07-15T21:08:46.601Z",null,null
+  pm-oslr,related,"2026-07-15T21:08:46.601Z",null,null
+comments[4]{created_at,author,text}:
   "2026-07-07T09:44:04.849Z",codex-agent,"Integrator story update: pm-6abs adds hermetic package smoke-test diagnostics. A package author can run pm package doctor --project --isolated --detail deep --trace or isolate PM_GLOBAL_PATH for a whole test process; temp-dir dogfood proved a fresh package loaded only project:pm-temp-smoke."
   "2026-07-08T06:06:35.422Z",codex,"Evidence: package-consumer SDK proof now exercises the installed @unbrained/pm-cli SDK from a packed tarball in /tmp, covering init/create/update/claim/release/comments/notes/learnings/files/docs/deps/schema/profile/context/next/health/validate and returning ok with created item pm-yp8p and child pm-gps8."
-files[3]{path,scope,note}:
-  src/sdk/runtime.ts,project,Integrator SDK primitive runtime surface
+  "2026-07-15T20:21:23.814Z",codex-root-20260715,"Implementation scope 2026-07-15: satisfy the SDK-only integrator story through the pm-cbwg executable exemplar and temp-installed acceptance flow; no private core imports are permitted."
+  "2026-07-15T21:08:49.219Z",codex-root-20260715,"Acceptance evidence 2026-07-15: the SDK-only integrator story is executable rather than illustrative. A fresh consumer installs the packed pm distribution and runs the nested pm-sdk-tool binary without CLI implementation or private-core imports. The story exercises lifecycle, domain schema, ownership handoff, annotations, linked artifacts, bounded queries/context, relationship traversal, validation, and health before closure. Integration proof passes and the repository remains exact 100/100/100/100 coverage."
+files[6]{path,scope,note}:
+  packages/sdk-tool/bin/pm-sdk-tool.mjs,project,Standalone application entrypoint
+  packages/sdk-tool/index.mjs,project,Executable integrator lifecycle story
   src/sdk/index.ts,project,Integrator SDK barrel exports
+  src/sdk/runtime.ts,project,Integrator SDK primitive runtime surface
+  tests/integration/sdk-custom-tool-exemplar.integration.spec.ts,project,End-to-end integrator acceptance proof
   tests/unit/sdk/sdk-context-primitives.spec.ts,project,SDK-only custom PM primitive proof
-tests[1]{command,scope,timeout_seconds,pm_context_mode}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts,project,120,tracker
-docs[1]{path,scope,note}:
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/sdk-custom-tool-exemplar.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts
+    scope: project
+    timeout_seconds: 120
+    pm_context_mode: tracker
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrmki633-ywwiy8,test,passed,"2026-07-15T21:03:23.035Z","2026-07-15T21:03:49.072Z","2026-07-15T21:03:49.072Z",2,0,0
+docs[2]{path,scope,note}:
   docs/SDK.md,project,Custom PM tool SDK reference
+  packages/sdk-tool/README.md,project,Runnable integrator story
+close_reason: "Executable SDK integrator story passes full lifecycle, context, graph, and governance acceptance."
 body: ""

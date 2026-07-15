@@ -19,7 +19,12 @@ const COMMANDS_MODULE = "../../../src/cli/commands/index.js";
 const CONFIG_SDK_MODULE = "../../../src/sdk/config.js";
 const DEPENDENCIES_SDK_MODULE = "../../../src/sdk/dependencies.js";
 const DOCS_SDK_MODULE = "../../../src/sdk/docs.js";
+const EVAL_SDK_MODULE = "../../../src/sdk/eval.js";
 const FILES_SDK_MODULE = "../../../src/sdk/files.js";
+const STATS_SDK_MODULE = "../../../src/sdk/diagnostics/stats.js";
+const TELEMETRY_SDK_MODULE = "../../../src/sdk/diagnostics/telemetry.js";
+const TEST_BATCH_SDK_MODULE = "../../../src/sdk/test/batch.js";
+const TEST_EXECUTION_SDK_MODULE = "../../../src/sdk/test/execution.js";
 const HISTORY_COMPACT_SDK_MODULE = "../../../src/sdk/history-compact.js";
 const HISTORY_REDACT_SDK_MODULE = "../../../src/sdk/history-redact.js";
 const HISTORY_REPAIR_SDK_MODULE = "../../../src/sdk/history-repair.js";
@@ -90,12 +95,18 @@ function buildCommandMocks() {
     runSchemaAddType: vi.fn(async () => ({ action: "schema-add-type" })),
     runSchemaInferTypes: vi.fn(async () => ({ action: "schema-infer-types" })),
     runStats: vi.fn(async () => ({ action: "stats" })),
+    runSearch: vi.fn(async () => ({ items: [] })),
+    runSearchEval: vi.fn(async (_options, global, search) => {
+      await search("sdk evaluation", {}, global);
+      return { action: "eval" };
+    }),
     runAppend: vi.fn(async () => ({ action: "append" })),
     runUpdateMany: vi.fn(async () => ({ action: "update-many" })),
     runCloseMany: vi.fn(async () => ({ action: "close-many" })),
     runDeps: vi.fn(async () => ({ action: "deps" })),
     runDocs: vi.fn(async () => ({ action: "docs" })),
     runTest: vi.fn(async () => ({ action: "test" })),
+    runTestAll: vi.fn(async () => ({ action: "test-all" })),
     runDelete: vi.fn(async () => ({ action: "delete" })),
     runHistoryRepair: vi.fn(async () => ({ action: "history-repair" })),
     runHistoryRepairAll: vi.fn(async () => ({ action: "history-repair-all" })),
@@ -119,9 +130,22 @@ async function importServerWithCommandMocks(
   vi.doMock(DEPENDENCIES_SDK_MODULE, () => ({ runDeps: commandMocks.runDeps }));
   vi.doMock(CONFIG_SDK_MODULE, () => ({ runConfig: commandMocks.runConfig }));
   vi.doMock(DOCS_SDK_MODULE, () => ({ runDocs: commandMocks.runDocs }));
+  vi.doMock(EVAL_SDK_MODULE, () => ({
+    runSearchEval: commandMocks.runSearchEval,
+  }));
   vi.doMock(FILES_SDK_MODULE, () => ({
     runFiles: commandMocks.runFiles,
     runFilesDiscover: commandMocks.runFilesDiscover,
+  }));
+  vi.doMock(STATS_SDK_MODULE, () => ({ runStats: commandMocks.runStats }));
+  vi.doMock(TELEMETRY_SDK_MODULE, () => ({
+    runTelemetry: commandMocks.runTelemetry,
+  }));
+  vi.doMock(TEST_BATCH_SDK_MODULE, () => ({
+    runTestAll: commandMocks.runTestAll,
+  }));
+  vi.doMock(TEST_EXECUTION_SDK_MODULE, () => ({
+    runTest: commandMocks.runTest,
   }));
   vi.doMock(HISTORY_COMPACT_SDK_MODULE, () => ({
     assertHistoryCompactTarget: commandMocks.assertHistoryCompactTarget,
@@ -158,7 +182,12 @@ describe("mcp server branch residual coverage", () => {
     vi.doUnmock(CONFIG_SDK_MODULE);
     vi.doUnmock(DEPENDENCIES_SDK_MODULE);
     vi.doUnmock(DOCS_SDK_MODULE);
+    vi.doUnmock(EVAL_SDK_MODULE);
     vi.doUnmock(FILES_SDK_MODULE);
+    vi.doUnmock(STATS_SDK_MODULE);
+    vi.doUnmock(TELEMETRY_SDK_MODULE);
+    vi.doUnmock(TEST_BATCH_SDK_MODULE);
+    vi.doUnmock(TEST_EXECUTION_SDK_MODULE);
     vi.doUnmock(HISTORY_COMPACT_SDK_MODULE);
     vi.doUnmock(HISTORY_REDACT_SDK_MODULE);
     vi.doUnmock(HISTORY_REPAIR_SDK_MODULE);
@@ -418,6 +447,7 @@ describe("mcp server branch residual coverage", () => {
     });
     await runAction({ action: "stats", options: { tagPrefix: "topic:" } });
     await runAction({ action: "stats", options: { tagPrefix: 42 } });
+    await runAction({ action: "eval", options: { k: 5 } });
     await runAction({
       action: "append",
       options: { id: "pm-17", body: "body" },
@@ -569,6 +599,11 @@ describe("mcp server branch residual coverage", () => {
     expect(commandMocks.runHistoryRepairAll).toHaveBeenCalledTimes(1);
     expect(commandMocks.assertHistoryRepairTarget).toHaveBeenCalledTimes(2);
     expect(commandMocks.runSchemaInferTypes).toHaveBeenCalledTimes(1);
+    expect(commandMocks.runSearch).toHaveBeenCalledWith(
+      "sdk evaluation",
+      {},
+      expect.any(Object),
+    );
     expect(commandMocks.runPlan).toHaveBeenCalledWith(
       expect.objectContaining({ id: "pm-16a", reorderTo: 4 }),
     );

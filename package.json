@@ -60,6 +60,7 @@
     ".claude-plugin/**",
     "plugins/**",
     "packages/pm-*/**",
+    "packages/sdk-tool/**",
     "scripts/bundle-cli.mjs",
     "scripts/finalize-build.mjs",
     "scripts/install.sh",

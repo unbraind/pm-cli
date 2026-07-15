@@ -82,16 +82,37 @@ import {
   runRestore,
   runRelease,
   runSearch,
-  runStats,
-  runTelemetry,
-  runTest,
-  runTestAll,
   runUpdate,
   runUpdateMany,
   runUpgrade,
   type UpgradeCommandOptions,
   type UpgradeResult,
 } from "../cli/commands/index.js";
+import {
+  runStats,
+  type StatsCommandOptions,
+  type StatsResult,
+} from "./diagnostics/stats.js";
+import {
+  runTelemetry,
+  type TelemetryCommandOptions,
+  type TelemetryResult,
+} from "./diagnostics/telemetry.js";
+import {
+  runTest,
+  type TestCommandOptions,
+  type TestResult,
+} from "./test/execution.js";
+import {
+  runTestAll,
+  type TestAllCommandOptions,
+  type TestAllResult,
+} from "./test/batch.js";
+import {
+  runSearchEval,
+  type EvalOptions,
+  type EvalResult,
+} from "./eval.js";
 import {
   runGc,
   type GcCommandOptions,
@@ -179,10 +200,6 @@ import type {
   PlanSubcommand,
 } from "../cli/commands/plan.js";
 import type { SearchOptions, SearchResult } from "../cli/commands/search.js";
-import type {
-  StatsCommandOptions,
-  StatsResult,
-} from "../cli/commands/stats.js";
 import { resolveStartTaskInProgressStatus } from "./start-task-status.js";
 import type { FocusResult } from "../cli/commands/focus.js";
 import type { RestoreResult } from "../cli/commands/restore.js";
@@ -442,7 +459,7 @@ export {
   runStats,
   type StatsCommandOptions,
   type StatsResult,
-} from "../cli/commands/stats.js";
+} from "./diagnostics/stats.js";
 export {
   renderCalendarMarkdown,
   renderCalendarToon,
@@ -490,7 +507,7 @@ export {
   type TestRunsLogsCommandOptions,
   type TestRunsResumeCommandOptions,
   type TestRunsStopCommandOptions,
-} from "../cli/commands/test-runs.js";
+} from "./test/runs.js";
 export {
   CONFIDENCE_TEXT_VALUES,
   DEPENDENCY_KIND_VALUES,
@@ -758,6 +775,26 @@ export class PmClient {
   /** Return project tracker statistics with the same sections as `pm stats`. */
   stats(options: StatsCommandOptions = {}): Promise<StatsResult> {
     return this.runTyped("stats", { options });
+  }
+
+  /** Add, inspect, or execute one item's linked tests. */
+  test(id: string, options: TestCommandOptions = {}): Promise<TestResult> {
+    return this.runTyped("test", { id, options });
+  }
+
+  /** Execute linked tests across the selected tracker items. */
+  testAll(options: TestAllCommandOptions = {}): Promise<TestAllResult> {
+    return this.runTyped("test-all", { options });
+  }
+
+  /** Inspect, flush, aggregate, or clear the local telemetry queue. */
+  telemetry(options: TelemetryCommandOptions = {}): Promise<TelemetryResult> {
+    return this.runTyped("telemetry", { options });
+  }
+
+  /** Evaluate canonical search rankings against a golden query set. */
+  evaluate(options: EvalOptions = {}): Promise<EvalResult> {
+    return this.runTyped("eval", { options });
   }
 
   /** List, add, edit, or delete item comments. */
@@ -1483,63 +1520,9 @@ export class PmClient {
   }
 }
 
-/** Return the same context snapshot produced by `pm context` without constructing a reusable client. */
-export function context(
-  options: ContextOptions = {},
-  clientOptions: PmClientOptions = {},
-): Promise<ContextResult> {
-  return new PmClient(clientOptions).context(options);
-}
-
-/** List items with the MCP/agent compact defaults without constructing a reusable client. */
-export function list(
-  options: ListOptions = {},
-  clientOptions: PmClientOptions = {},
-): Promise<ListResult> {
-  return new PmClient(clientOptions).list(options);
-}
-
-/** Search items with the MCP/agent compact defaults without constructing a reusable client. */
-export function search(
-  query: string,
-  options: SearchOptions = {},
-  clientOptions: PmClientOptions = {},
-): Promise<SearchResult> {
-  return new PmClient(clientOptions).search(query, options);
-}
-
-/** Read one item by id without constructing a reusable client. */
-export function get(
-  id: string,
-  options: GetOptions = {},
-  clientOptions: PmClientOptions = {},
-): Promise<GetResult> {
-  return new PmClient(clientOptions).get(id, options);
-}
-
-/** Return the ranked next-work recommendation produced by `pm next` without constructing a reusable client. */
-export function next(
-  options: NextOptions = {},
-  clientOptions: PmClientOptions = {},
-): Promise<NextResult> {
-  return new PmClient(clientOptions).next(options);
-}
-
-/** Group matching items with the same semantics as `pm aggregate` without constructing a reusable client. */
-export function aggregate(
-  options: AggregateOptions = {},
-  clientOptions: PmClientOptions = {},
-): Promise<AggregateResult> {
-  return new PmClient(clientOptions).aggregate(options);
-}
-
-/** Return project tracker statistics with the same sections as `pm stats` without constructing a reusable client. */
-export function stats(
-  options: StatsCommandOptions = {},
-  clientOptions: PmClientOptions = {},
-): Promise<StatsResult> {
-  return new PmClient(clientOptions).stats(options);
-}
+export {
+  aggregate, context, evaluate, get, list, next, search, stats, telemetry, test, testAll,
+} from "./client-read-operations.js";
 
 /** List, add, edit, or delete item comments without constructing a reusable client. */
 export function comments(
@@ -3847,6 +3830,10 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
     runDocs(requireMcpItemId(ctx), withAddNoteOption(ctx.options), ctx.global),
   test: (ctx) => runTest(requireMcpItemId(ctx), ctx.options, ctx.global),
   "test-all": (ctx) => runTestAll(ctx.options, ctx.global),
+  eval: (ctx) =>
+    runSearchEval(ctx.options, ctx.global, (query, options, global) =>
+      runSearch(query, options, global),
+    ),
   telemetry: runMcpTelemetryAction,
   validate: (ctx) =>
     runValidate(ctx.options, ctx.global, {
@@ -4030,4 +4017,12 @@ export type {
   UpgradeResult,
   ValidateCommandOptions,
   ValidateResult,
+  EvalOptions,
+  EvalResult,
+  TelemetryCommandOptions,
+  TelemetryResult,
+  TestAllCommandOptions,
+  TestAllResult,
+  TestCommandOptions,
+  TestResult,
 };
