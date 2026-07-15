@@ -8,7 +8,7 @@ import path from "node:path";
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { runActiveOnWriteHooks } from "../core/extensions/index.js";
-import { pathExists } from "../core/fs/fs-utils.js";
+import { pathExists, writeFileAtomic } from "../core/fs/fs-utils.js";
 import type { PmSettings } from "../types/index.js";
 
 /** Restricts init agent guidance mode values accepted by command, SDK, and storage contracts. */
@@ -382,7 +382,7 @@ async function writeGuidanceFile(
   if (!nextContent.changed) {
     return { changed: false, warnings: [] };
   }
-  await fs.writeFile(filePath, nextContent.next_content, "utf8");
+  await writeFileAtomic(filePath, nextContent.next_content);
   return {
     changed: true,
     warnings: await runActiveOnWriteHooks({

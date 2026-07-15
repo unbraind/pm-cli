@@ -1440,6 +1440,12 @@ describe("runConfig", () => {
         runConfig("project", "set", "context", { staleThresholdDays: "NaN" }, globalOptions),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
       await expect(
+        runConfig("project", "set", "context", { activityLimit: "10days" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runConfig("project", "set", "context", { staleThresholdDays: "9007199254740992" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
         runConfig("project", "set", "context", { sectionTests: "maybe" }, globalOptions),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
     });

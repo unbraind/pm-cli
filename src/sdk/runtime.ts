@@ -71,9 +71,6 @@ import {
   runCopy,
   runCreate,
   runDelete,
-  runExtension,
-  type ExtensionCommandOptions,
-  type ExtensionCommandResult,
   runFocus,
   runGc,
   runGet,
@@ -98,6 +95,11 @@ import {
   type UpgradeResult,
   runValidate,
 } from "../cli/commands/index.js";
+import {
+  runExtension,
+  type ExtensionCommandOptions,
+  type ExtensionCommandResult,
+} from "./extension.js";
 import { runConfig } from "./config.js";
 import { runInit } from "./init.js";
 import {

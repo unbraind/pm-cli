@@ -70,7 +70,7 @@ import {
   type ProfileChangeStatus,
   type ProfileCurrentState,
 } from "../core/profile/profile-plan.js";
-import { ensureTypeFolderScaffold } from "../cli/commands/schema.js";
+import { ensureTypeFolderScaffold } from "./schema.js";
 import { runTemplatesSave } from "./templates.js";
 
 /** Ordered `pm profile` subcommands. */

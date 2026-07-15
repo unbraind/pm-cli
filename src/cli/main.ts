@@ -61,7 +61,6 @@ import {
 } from "../core/shared/errors.js";
 import {
   asRecordOrNull,
-  toNonEmptyStringOrUndefined,
 } from "../core/shared/primitives.js";
 import { printError, printResult } from "../core/output/output.js";
 import { maybeRunFirstUseTelemetryPrompt } from "../core/telemetry/consent.js";
@@ -3531,11 +3530,16 @@ export async function runPmCli(
     ...invocationArgv,
   ];
   const isBareInvocation = invocationArgv.length === 0;
-  let restorePmAuthor = (): void => {};
+  let restorePmAuthor: (() => void) | undefined;
   try {
-    restorePmAuthor = applyInvocationAuthorOverride(
-      parseBootstrapGlobalOptions(invocationArgv).author,
-    );
+    const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
+    if (bootstrapGlobal.authorMissingValue) {
+      throw new PmCliError("--author requires a non-empty value.", EXIT_CODE.USAGE, {
+        code: "missing_required_argument",
+        nextSteps: ["Pass an explicit author identifier with --author <id>."],
+      });
+    }
+    restorePmAuthor = applyInvocationAuthorOverride(bootstrapGlobal.author);
     enforceExplicitRetryForFlagTypos(bootstrapInvocation);
     applyBootstrapPagerPolicy(invocationArgv);
     const registrationSelection =
@@ -3577,7 +3581,7 @@ export async function runPmCli(
   } catch (error: unknown) {
     await handleRunPmCliError({ error, invocationArgv });
   } finally {
-    restorePmAuthor();
+    restorePmAuthor?.();
   }
 }
 

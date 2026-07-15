@@ -7,6 +7,7 @@ import { acquireLock } from "../../../src/core/lock/lock.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../../src/core/extensions/index.js";
 import { splitFrontMatter } from "../../../src/core/item/item-format.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
+import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
 import { runTodosExport, runTodosImport } from "../../../packages/pm-todos/extensions/todos/runtime.ts";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -742,6 +743,8 @@ describe("built-in todos extension import/export", () => {
 
   it("covers import fallback branches, lock conflicts, and deterministic warnings", async () => {
     await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      await writeSettings(context.pmPath, { ...settings, author_default: "" });
       const sourceFolder = path.join(context.tempRoot, "todos-branch-source");
       await mkdir(sourceFolder, { recursive: true });
 

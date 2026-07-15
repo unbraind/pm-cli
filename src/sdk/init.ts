@@ -52,7 +52,7 @@ import { renderPmCommand } from "./command-line.js";
 import {
   runExtension,
   type ExtensionCommandResult,
-} from "../cli/commands/extension.js";
+} from "./extension.js";
 import {
   INIT_AGENT_GUIDANCE_MODE_VALUES,
   runInitAgentGuidance,
@@ -1159,6 +1159,7 @@ export async function runInit(
   );
   const pmRoot = invocation.pmRoot;
   prefixArg = resolveInitPrefixInput(invocation.prefixArg, options.idPrefix);
+  const normalizedOptions = normalizeInitCommandOptions(options);
   await assertExplicitTrackerPathIsNotWorkspaceRoot(
     pmRoot,
     invocation.target.mode === "tracker-path",
@@ -1172,7 +1173,6 @@ export async function runInit(
 
   const settingsPath = path.join(pmRoot, "settings.json");
   const settingsExists = await pathExists(settingsPath);
-  const normalizedOptions = normalizeInitCommandOptions(options);
   const settingsResolution = await resolveInitSettings({
     pmRoot,
     settingsPath,
@@ -1185,9 +1185,10 @@ export async function runInit(
   });
   let { settings } = settingsResolution;
 
+  const workspaceRoot = resolveInitWorkspaceRoot(invocation.target);
   const agentGuidance = await applyInitAgentGuidance({
     pmRoot,
-    cwd,
+    cwd: workspaceRoot ?? cwd,
     agentGuidanceMode: normalizedOptions.agentGuidanceMode,
     settings,
     warnings,
@@ -1208,7 +1209,6 @@ export async function runInit(
   }
 
   await ensureInitTypeDirectories({ pmRoot, settings, createdDirs, warnings });
-  const workspaceRoot = resolveInitWorkspaceRoot(invocation.target);
   if (workspaceRoot) {
     const gitignore = await ensurePmGitignore(workspaceRoot);
     if (gitignore.changed) {

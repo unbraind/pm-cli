@@ -167,6 +167,9 @@ describe("SDK author attribution primitives", () => {
     expect(program.options.some((option) => option.long === "--author")).toBe(
       true,
     );
+    expect(
+      program.options.find((option) => option.long === "--author")?.required,
+    ).toBe(true);
     expect(typeof runConfig).toBe("function");
     expect(runProfileList().profiles.length).toBeGreaterThan(0);
 
@@ -235,6 +238,13 @@ describe("SDK author attribution primitives", () => {
     const validation = await runValidate({}, { path: pmRoot });
     expect(validation.ok).toBe(true);
     expect(validation.warnings).toContain(
+      "validate_history_unknown_author_events:1",
+    );
+    const filesOnlyValidation = await runValidate(
+      { checkFiles: true },
+      { path: pmRoot },
+    );
+    expect(filesOnlyValidation.warnings).not.toContain(
       "validate_history_unknown_author_events:1",
     );
   });

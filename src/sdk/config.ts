@@ -1014,6 +1014,19 @@ function parseSectionToggle(raw: string | undefined): boolean | undefined {
   );
 }
 
+/** Parse a complete positive integer used by context configuration options. */
+function parsePositiveContextInteger(rawValue: string, option: string): number {
+  const raw = rawValue.trim();
+  const parsed = Number(raw);
+  if (/^\d+$/u.test(raw) && Number.isSafeInteger(parsed) && parsed > 0) {
+    return parsed;
+  }
+  throw new PmCliError(
+    `Context ${option} must be a positive integer`,
+    EXIT_CODE.USAGE,
+  );
+}
+
 async function applyContextConfig(
   settings: PmSettings,
   options: ConfigCommandOptions,
@@ -1039,13 +1052,10 @@ async function applyContextConfig(
   }
 
   if (options.activityLimit !== undefined) {
-    const parsed = parseInt(options.activityLimit.trim(), 10);
-    if (isNaN(parsed) || parsed <= 0) {
-      throw new PmCliError(
-        "Context --activity-limit must be a positive integer",
-        EXIT_CODE.USAGE,
-      );
-    }
+    const parsed = parsePositiveContextInteger(
+      options.activityLimit,
+      "--activity-limit",
+    );
     if (ctx.activity_limit !== parsed) {
       ctx.activity_limit = parsed;
       changed = true;
@@ -1053,13 +1063,10 @@ async function applyContextConfig(
   }
 
   if (options.staleThresholdDays !== undefined) {
-    const parsed = parseInt(options.staleThresholdDays.trim(), 10);
-    if (isNaN(parsed) || parsed <= 0) {
-      throw new PmCliError(
-        "Context --stale-threshold-days must be a positive integer",
-        EXIT_CODE.USAGE,
-      );
-    }
+    const parsed = parsePositiveContextInteger(
+      options.staleThresholdDays,
+      "--stale-threshold-days",
+    );
     if (ctx.stale_threshold_days !== parsed) {
       ctx.stale_threshold_days = parsed;
       changed = true;

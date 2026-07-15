@@ -70,6 +70,13 @@ describe("parseBootstrapGlobalOptions", () => {
     expect(result.path).toBe("/foo");
   });
 
+  it("reports author overrides that omit their required value", () => {
+    expect(parseBootstrapGlobalOptions(["--author", "--json", "list"])).toMatchObject({
+      authorMissingValue: true,
+      json: true,
+    });
+  });
+
   it("prefers --pm-path over legacy --path regardless of argument order", () => {
     expect(parseBootstrapGlobalOptions(["--pm-path", "/preferred", "--path", "/legacy"]).path).toBe("/preferred");
     expect(parseBootstrapGlobalOptions(["--path", "/legacy", "--pm-path", "/preferred"]).path).toBe("/preferred");

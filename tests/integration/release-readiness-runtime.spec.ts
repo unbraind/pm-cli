@@ -1677,6 +1677,7 @@ describe("release readiness runtime coverage", () => {
           "runtime comment positional",
           "--json",
           "--author",
+          "runtime-author",
         ],
         {
           expectJson: true,

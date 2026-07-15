@@ -15,17 +15,19 @@ const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>([
   "--author",
 ]);
 
-function isInlineGlobalValueToken(token: string): boolean {
+/** Whether a global value-consuming flag uses its inline `--flag=value` form. */
+const isInlineGlobalValueToken = (token: string): boolean => {
   const equalsIndex = token.indexOf("=");
   return (
     equalsIndex > 0 &&
     GLOBAL_VALUE_CONSUMING_FLAGS.has(token.slice(0, equalsIndex))
   );
-}
+};
 
-function consumesBootstrapAuthorValue(next: string | undefined): boolean {
+/** Whether optional bootstrap author syntax consumes the following token. */
+const consumesBootstrapAuthorValue = (next: string | undefined): boolean => {
   return typeof next === "string" && !next.startsWith("-");
-}
+};
 
 function parseBootstrapPathToken(
   token: string,
@@ -68,21 +70,6 @@ function parseBootstrapPathToken(
   };
 }
 
-function parseBootstrapAuthorToken(
-  token: string,
-  next: string | undefined,
-): { consumed: number; author?: string } | null {
-  if (token === "--author") {
-    return consumesBootstrapAuthorValue(next)
-      ? { consumed: 2, author: next }
-      : { consumed: 1 };
-  }
-  if (!token.startsWith("--author=")) {
-    return null;
-  }
-  return { consumed: 1, author: token.slice("--author=".length) };
-}
-
 /** Documents the bootstrap global options payload exchanged by command, SDK, and package integrations. */
 export interface BootstrapGlobalOptions {
   /** Filesystem path used for path resolution. */
@@ -97,6 +84,8 @@ export interface BootstrapGlobalOptions {
   quiet: boolean;
   /** Invocation-wide mutation author override. */
   author?: string;
+  /** Whether `--author` was present without its required value. */
+  authorMissingValue?: true;
 }
 
 /** Implements parse bootstrap global options for the public runtime surface of this module. */
@@ -110,6 +99,7 @@ export function parseBootstrapGlobalOptions(
   let json = false;
   let quiet = false;
   let author: string | undefined;
+  let authorMissingValue = false;
   let index = 0;
   while (index < argv.length) {
     const token = argv[index];
@@ -148,10 +138,19 @@ export function parseBootstrapGlobalOptions(
       index += parsedPath.consumed;
       continue;
     }
-    const parsedAuthor = parseBootstrapAuthorToken(token, argv[index + 1]);
-    if (parsedAuthor) {
-      author = parsedAuthor.author;
-      index += parsedAuthor.consumed;
+    if (token === "--author") {
+      if (consumesBootstrapAuthorValue(argv[index + 1])) {
+        author = argv[index + 1];
+        index += 2;
+      } else {
+        authorMissingValue = true;
+        index += 1;
+      }
+      continue;
+    }
+    if (token.startsWith("--author=")) {
+      author = token.slice("--author=".length);
+      index += 1;
       continue;
     }
     index += 1;
@@ -163,6 +162,7 @@ export function parseBootstrapGlobalOptions(
     json,
     quiet,
     ...(author !== undefined ? { author } : {}),
+    ...(authorMissingValue ? { authorMissingValue: true } : {}),
   };
 }
 

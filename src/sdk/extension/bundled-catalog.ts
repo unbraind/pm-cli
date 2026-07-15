@@ -1,5 +1,5 @@
 /**
- * @module cli/commands/extension/bundled-catalog
+ * @module sdk/extension/bundled-catalog
  *
  * Implements extension package-management support for Bundled Catalog.
  */
@@ -9,15 +9,15 @@ import {
   collectPackageExtensionDirectories,
   PM_PACKAGE_RESOURCE_KINDS,
   readPmPackageManifest,
-} from "../../../core/packages/manifest.js";
-import { resolvePmPackageRootFromModule } from "../../../core/packages/root.js";
-import { pathExists } from "../../../core/fs/fs-utils.js";
-import { EXIT_CODE } from "../../../core/shared/constants.js";
-import type { GlobalOptions } from "../../../core/shared/command-types.js";
-import { PmCliError } from "../../../core/shared/errors.js";
-import { splitCommaList } from "../../../core/shared/split-comma-list.js";
-import { resolveExtensionRoots } from "../../../core/extensions/loader.js";
-import { resolvePmRoot } from "../../../core/store/paths.js";
+} from "../../core/packages/manifest.js";
+import { resolvePmPackageRootFromModule } from "../../core/packages/root.js";
+import { pathExists } from "../../core/fs/fs-utils.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
+import type { GlobalOptions } from "../../core/shared/command-types.js";
+import { PmCliError } from "../../core/shared/errors.js";
+import { splitCommaList } from "../../core/shared/split-comma-list.js";
+import { resolveExtensionRoots } from "../../core/extensions/loader.js";
+import { resolvePmRoot } from "../../core/store/paths.js";
 import { validateExtensionDirectory } from "./shared.js";
 import { readManagedExtensionState } from "./managed-state.js";
 import type { ExtensionCommandOptions, ExtensionScope } from "../extension.js";
@@ -54,7 +54,7 @@ function resolvePackageRootCandidates(): string[] {
   }
   /* c8 ignore stop */
   candidates.push(
-    resolvePmPackageRootFromModule(import.meta.url, ["../../../.."]),
+    resolvePmPackageRootFromModule(import.meta.url, ["../../.."]),
   );
   return [...new Set(candidates)];
 }

@@ -3343,13 +3343,15 @@ export async function runValidate(
     itemReadWarnings,
     settings.schema,
   );
-  const authorAttribution = await scanHistoryAuthorAttribution(pmRoot);
-  if (authorAttribution.unknown_event_count > 0) {
-    itemReadWarnings.push(
-      `validate_history_unknown_author_events:${authorAttribution.unknown_event_count}`,
-    );
-  }
   const requestedChecks = resolveRequestedChecks(options);
+  if (requestedChecks.has("history_drift")) {
+    const authorAttribution = await scanHistoryAuthorAttribution(pmRoot);
+    if (authorAttribution.unknown_event_count > 0) {
+      itemReadWarnings.push(
+        `validate_history_unknown_author_events:${authorAttribution.unknown_event_count}`,
+      );
+    }
+  }
   const metadataProfileSource: "default" | "settings" | "option" =
     typeof options.metadataProfile === "string" ? "option" : "settings";
   const metadataProfile = resolveValidateMetadataProfile(

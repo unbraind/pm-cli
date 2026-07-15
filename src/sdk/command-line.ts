@@ -14,5 +14,6 @@ export function quoteCommandArg(arg: string): string {
 
 /** Render a complete pm command from already-tokenized arguments. */
 export function renderPmCommand(argv: string[]): string {
-  return `pm ${argv.map((token) => quoteCommandArg(token)).join(" ")}`;
+  const args = argv.map((token) => quoteCommandArg(token)).join(" ");
+  return args.length > 0 ? `pm ${args}` : "pm";
 }

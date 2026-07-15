@@ -1239,6 +1239,15 @@ describe("CLI bootstrap entrypoints", () => {
       expect(result.code).toBe(EXIT_CODE.USAGE);
       expect(result.stdout).toBe("");
       expect(result.stderr).toContain("--author requires a non-empty value");
+
+      const missingValue = await runSourceCli(
+        ["--author", "--json", "list"],
+        context.env,
+      );
+      expect(missingValue.code).toBe(EXIT_CODE.USAGE);
+      expect(JSON.parse(missingValue.stderr)).toMatchObject({
+        code: "missing_required_argument",
+      });
     });
   });
 

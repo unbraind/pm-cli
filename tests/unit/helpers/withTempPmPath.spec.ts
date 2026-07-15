@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { applyTempPmEnv, TEMP_PM_ENV_KEYS } from "../../helpers/withTempPmPath.js";
+import { readSettings } from "../../../src/core/store/settings.js";
+import {
+  applyTempPmEnv,
+  TEMP_PM_ENV_KEYS,
+  withTempPmPath,
+} from "../../helpers/withTempPmPath.js";
 
 describe("withTempPmPath env helpers", () => {
   it("deletes missing temp env keys instead of assigning undefined", () => {
@@ -28,5 +33,13 @@ describe("withTempPmPath env helpers", () => {
         }
       }
     }
+  });
+
+  it("keeps fresh initialization author attribution representative", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await expect(readSettings(pmPath)).resolves.toMatchObject({
+        author_default: "test-author",
+      });
+    });
   });
 });

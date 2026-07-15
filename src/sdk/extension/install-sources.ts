@@ -1,5 +1,5 @@
 /**
- * @module cli/commands/extension/install-sources
+ * @module sdk/extension/install-sources
  *
  * Implements extension package-management support for Install Sources.
  */
@@ -9,15 +9,15 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { collectPackageExtensionDirectories } from "../../../core/packages/manifest.js";
-import { resolvePmPackageRootFromModule } from "../../../core/packages/root.js";
-import { pathExists } from "../../../core/fs/fs-utils.js";
-import { isPathWithinDirectory } from "../../../core/fs/path-utils.js";
-import { EXIT_CODE } from "../../../core/shared/constants.js";
+import { collectPackageExtensionDirectories } from "../../core/packages/manifest.js";
+import { resolvePmPackageRootFromModule } from "../../core/packages/root.js";
+import { pathExists } from "../../core/fs/fs-utils.js";
+import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
 import {
   PmCliError,
   type PmCliErrorContext,
-} from "../../../core/shared/errors.js";
+} from "../../core/shared/errors.js";
 import { listBundledPackageAliases } from "./bundled-catalog.js";
 
 const execFileAsync = promisify(execFile);
@@ -744,7 +744,7 @@ function removeHostedPmCliDependency(manifest: Record<string, unknown>): void {
 
 async function linkHostedPmCliDependency(packageRoot: string): Promise<void> {
   const hostPackageRoot = resolvePmPackageRootFromModule(import.meta.url, [
-    "../../../..",
+    "../../..",
   ]);
   const [scope, packageName] = PM_CLI_PACKAGE_NAME.split("/");
   const scopedDirectory = path.join(packageRoot, "node_modules", scope);

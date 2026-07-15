@@ -32,7 +32,7 @@ import {
   sortManagedEntries,
   upsertManagedEntry,
   writeManagedExtensionState,
-} from "../../../src/cli/commands/extension/managed-state.js";
+} from "../../../src/sdk/extension/managed-state.js";
 import { SCAFFOLD_PM_MIN_VERSION } from "../../../src/cli/commands/extension/scaffold.js";
 import {
   buildNpmNotFoundRecovery,
@@ -45,7 +45,7 @@ import {
   resolveNpmCommandName,
   shouldRunNpmCommandInShell,
   wrapNpmPackResolutionError,
-} from "../../../src/cli/commands/extension/install-sources.js";
+} from "../../../src/sdk/extension/install-sources.js";
 import {
   applyDoctorRuntimeActivationState,
   buildCapabilityContractMetadata,
@@ -67,7 +67,7 @@ import {
   resolveBundledAliasManifestName,
   resolveBundledExtensionAliasSource,
   resolveBundledPackageNpmName,
-} from "../../../src/cli/commands/extension/bundled-catalog.js";
+} from "../../../src/sdk/extension/bundled-catalog.js";
 import { normalizeManagedDirectoryName } from "../../../src/cli/commands/extension/shared.js";
 import {
   coerceLooseCommandOptionsWithFlagDefinitions,

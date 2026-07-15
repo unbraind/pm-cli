@@ -43,5 +43,6 @@ describe("argv-utils.quoteCommandArg / renderPmCommand", () => {
 
   it("renders a pm command line with per-token quoting", () => {
     expect(renderPmCommand(["create", "--title", "hello world"])).toBe('pm create --title "hello world"');
+    expect(renderPmCommand([])).toBe("pm");
   });
 });

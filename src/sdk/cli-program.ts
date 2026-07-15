@@ -48,6 +48,6 @@ export function createPmCliProgram(version: string): Command {
       "Render extended rationale and examples in help output",
     )
     .option("--profile", "Print deterministic timing diagnostics")
-    .option("--author [id]", "Override mutation author for this invocation")
+    .option("--author <id>", "Override mutation author for this invocation")
     .exitOverride();
 }

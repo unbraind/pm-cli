@@ -3,7 +3,6 @@ import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { runInit } from "../../src/cli/commands/init.js";
-import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import {
   runDirectDistCli,
   runInProcessDistCli,
@@ -401,10 +400,6 @@ export async function withTempPmPath<T>(
       },
       { defaults: true },
     );
-    const legacyFixtureSettings = await readSettings(pmPath);
-    legacyFixtureSettings.author_default = "";
-    await writeSettings(pmPath, legacyFixtureSettings);
-
     return await callback({
       tempRoot,
       pmPath,

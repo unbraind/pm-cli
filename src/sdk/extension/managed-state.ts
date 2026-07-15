@@ -1,13 +1,13 @@
 /**
- * @module cli/commands/extension/managed-state
+ * @module sdk/extension/managed-state
  *
  * Implements extension package-management support for Managed State.
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { EXIT_CODE } from "../../../core/shared/constants.js";
-import { PmCliError } from "../../../core/shared/errors.js";
-import { nowIso } from "../../../core/shared/time.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
+import { PmCliError } from "../../core/shared/errors.js";
+import { nowIso } from "../../core/shared/time.js";
 import {
   normalizeExtensionNameForMatch,
   normalizeStringList,

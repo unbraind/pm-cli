@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: architecture,"area:cli","area:mcp","area:sdk",ci
 created_at: "2026-07-06T13:13:21.203Z"
-updated_at: "2026-07-14T23:31:19.842Z"
+updated_at: "2026-07-15T01:03:57.611Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: sdk-import-boundary-baseline.json reaches zero entries and is deleted; static-quality-gate hard-denies any private src/core import from src/cli/** and src/mcp/** with no baseline escape hatch; src/mcp handlers consume only src/sdk primitives; full test suite + 100% coverage gate green with zero CLI/MCP behavior change
@@ -22,27 +22,49 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-oxrw,related,"2026-07-06T13:13:21.203Z",null,null
   pm-rjqr,related,"2026-07-06T13:13:21.203Z",null,null
   pm-zwpp,related,"2026-07-06T13:13:21.203Z",null,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-14T19:24:59.262Z",codex-gpt5,"Implementation start 2026-07-14: actively shrinking the enforced CLI/MCP private-core baseline through the pm-3mna schema ownership extraction. This run will not claim the capstone complete unless the baseline truly reaches zero."
   "2026-07-14T19:41:00.327Z",codex-gpt5,"Progress evidence: removed all 17 schema-domain private-core edges previously attributed to src/cli/commands/schema.ts. The boundary ratchet passes with zero new imports; the broader baseline remains intentionally open and is not claimed complete."
   "2026-07-14T20:19:49.227Z",codex-root,"Final branch evidence: removed all 17 private-core imports formerly owned by src/cli/commands/schema.ts and deleted that stale baseline block. pnpm quality:static passes with no new private imports, no stale baseline entries, zero unsupported dynamic imports, 100% docstrings, and token budgets green. The repository-wide boundary baseline is not yet zero, so this capstone returns to open for the remaining command families."
   "2026-07-14T22:56:38.841Z",codex-root,"Implementation start 2026-07-15: actively removing config/profile/init baseline entries as part of pm-3mna. This capstone will close only if the full repository baseline reaches zero; otherwise exact progress will be recorded and it will return to open."
   "2026-07-14T23:31:17.495Z",codex-root,"Progress evidence 2026-07-15: moved config, profile, init, init-agent-guidance, and templates into SDK ownership and removed their 54 grandfathered CLI-to-core edges. The static boundary gate reports actual_edge_count=642, baseline_edge_count=642, zero new imports, zero stale entries, and zero unsupported dynamic imports. Because 642 edges remain and the acceptance criterion requires zero plus deletion of the baseline, this capstone is deliberately returning to open rather than being falsely closed."
+  "2026-07-15T01:03:56.201Z",codex-root,"Review-driven implementation evidence 2026-07-15: promoted the complete extension lifecycle engine and cohesive helpers from src/cli/commands/extension* into src/sdk/extension*, kept only thin CLI compatibility re-exports, and made SDK runtime/init consume the SDK implementation directly. This removed 45 additional grandfathered private-core edges: static quality reports actual_edge_count=597, baseline_edge_count=597, zero new/stale/dynamic violations. Suppression pruning reduced the mandatory budget 170 -> 167. Final all-source verification passes 291 files / 5,713 tests at exact 100%: 36,940 statements, 26,521 branches, 7,450 functions, 36,055 lines. The capstone remains incomplete because 597 edges remain, so it is returning to open."
 learnings[2]{created_at,author,text}:
   "2026-07-14T20:19:49.944Z",codex-root,Boundary burn-down is strongest when the implementation itself moves to an SDK-owned module; deleting a baseline block without changing ownership would only hide the dependency direction.
   "2026-07-14T23:31:18.238Z",codex-root,Compatibility shims must remain locally referenced or be deleted after SDK promotion; the orphan-module gate correctly prevents dead presentation paths from surviving solely for tests.
-files[9]{path,scope,note}:
+files[24]{path,scope,note}:
+  eslint-suppressions.json,project,Extension engine SDK promotion and boundary ratchet burn-down
   scripts/release/sdk-import-boundary-baseline.json,project,the baseline this task drives to zero and deletes
   scripts/release/static-quality-gate.mjs,project,ratchet implementation to flip to hard-deny
   src/cli/commands/config.ts,project,Compatibility-only SDK re-export
+  src/cli/commands/extension.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
+  src/cli/commands/extension/describe.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
+  src/cli/commands/extension/doctor.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
+  src/cli/commands/extension/scaffold.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
+  src/cli/commands/extension/shared.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
   src/cli/commands/init-agent-guidance.ts,project,Compatibility-only SDK re-export
   src/cli/commands/init.ts,project,Compatibility-only SDK re-export
   src/cli/commands/profile.ts,project,Compatibility-only SDK re-export
   src/cli/commands/schema.ts,project,thin SDK re-export replaces CLI-owned implementation
+  src/sdk/extension.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
+  src/sdk/extension/bundled-catalog.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
+  src/sdk/extension/describe.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
+  src/sdk/extension/doctor.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
+  src/sdk/extension/install-sources.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
+  src/sdk/extension/managed-state.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
+  src/sdk/extension/scaffold.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
+  src/sdk/extension/shared.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
+  src/sdk/index.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
   src/sdk/runtime.ts,project,SDK runtime imports schema primitives directly
   src/sdk/schema.ts,project,promoted domain implementation eliminates CLI private-core imports
-tests[1]{command,scope,timeout_seconds}:
-  "pnpm quality:static",project,300
+tests[2]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 600
+    note: Exact all-source coverage after extension SDK promotion
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 300
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrl3h543-8h8nz8,test,passed,"2026-07-14T20:18:58.822Z","2026-07-14T20:19:21.507Z","2026-07-14T20:19:21.507Z",1,0,0
 docs[1]{path,scope,note}:

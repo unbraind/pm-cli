@@ -92,6 +92,29 @@ function createTask(
 }
 
 describe("runGet and runAppend", () => {
+  it("attributes usage touches through settings and legacy unknown fallbacks", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "get-usage-author-fallback",
+        body: "usage author body",
+      });
+      const previousAuthor = process.env.PM_AUTHOR;
+      delete process.env.PM_AUTHOR;
+      try {
+        await runGet(id, { path: context.pmPath });
+        const settings = await readSettings(context.pmPath);
+        await writeSettings(context.pmPath, { ...settings, author_default: "" });
+        await runGet(id, { path: context.pmPath });
+      } finally {
+        if (previousAuthor === undefined) {
+          delete process.env.PM_AUTHOR;
+        } else {
+          process.env.PM_AUTHOR = previousAuthor;
+        }
+      }
+    });
+  });
+
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-get-append-not-init-"));
     try {

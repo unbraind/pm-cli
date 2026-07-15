@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[4]: architecture,"area:config","area:schema","area:sdk"
 created_at: "2026-07-05T04:54:11.971Z"
-updated_at: "2026-07-14T23:47:52.707Z"
+updated_at: "2026-07-15T01:07:24.059Z"
 assignee: codex-root
 author: maintainer-agent
 estimated_minutes: 360
@@ -18,7 +18,7 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-lodl,blocked_by,"2026-07-05T04:55:07.462Z",null,null
   pm-muhw,blocked_by,"2026-07-05T04:55:08.057Z",null,null
   pm-69nl,related,"2026-07-10T17:32:56.925Z",null,null
-comments[15]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-07-07T20:44:47.549Z",codex-agent,"Implementation start: bundled with pm-zwpp, pm-oxrw, pm-m4iu, pm-cbwg, pm-w89s, and pm-usfg. Live duplicate/context check found no closed schema/config/profile SDK primitive completion; prior read/lifecycle/package primitives remain separate shipped or in-progress domains."
   "2026-07-07T22:45:27.701Z",claude-code-agent,"Evidence: post-review docs/API cleanup keeps package authors on the correct context-management primitive shapes: linked file/doc adds use string arrays and top-level note, while SchemaResult documents the generic schema customization result union. Verified through docs gate, typecheck, focused SDK tests, and packed installed SDK proof."
   "2026-07-07T23:52:21.378Z",claude-code-agent,"Review follow-up evidence: the generic SDK schema() return type now explicitly includes all concrete inspect results as well as schema mutation results, preserving compile-time safety for customization primitive consumers. Focused SDK test and full coverage passed."
@@ -34,22 +34,28 @@ comments[15]{created_at,author,text}:
   "2026-07-14T20:44:53.761Z",codex-root,"PR #563 round-1 review: accepted both CodeRabbit maintainability findings. runSchemaAddType and loadSchemaInspectionContext now share ensureInitialized; all eight mutation results use finalizeWarnings for stable dedupe/sort. Focused schema/init/MCP tests, typecheck, static quality, and exact 100/100/100/100 coverage pass. The CodeRabbit external docstring heuristic warning is contradicted by the repository's mandatory 100% module/export/member docstring gate, which remains green."
   "2026-07-14T22:56:34.037Z",codex-root,"Implementation start 2026-07-15: live 1,834-item all-status tracker, full item comments/notes/learnings/dependency graph, and GitHub PR/issue/security/dependency state were reconciled. This broad lane completes config/profile/init SDK ownership after schema, preserves CLI behavior, updates docs/tests/boundary ratchets, and includes packed temp-consumer proof."
   "2026-07-14T23:44:00.374Z",unknown,"Verification evidence 2026-07-15: final all-source coverage passed 291 files / 5,708 tests at exact 100% (36,925 statements, 26,508 branches, 7,449 functions, 36,040 lines). Release readiness also passed build/typecheck, docs/skills, 100% module/export/member docstrings, package boundary, token budgets, version policy, secret scan, packed npx smoke, and 88-command package-first dogfood. The aggregate gate stops only on pre-existing external Sentry highs PM-CLI-2B/pm-d4ns and PM-CLI-29/pm-7n5a; telemetry is healthy at 0.34% finish errors with zero missing error-code rows."
+  "2026-07-15T01:07:24.059Z",codex-root,"PR #565 round-1 hardening and acceptance evidence: accepted actionable Greptile/CodeRabbit findings for scoped history validation, strict global author parsing, exact config integer validation, atomic guidance writes, pre-mutation init validation, resolved-workspace guidance, and fixture fidelity. Promoted the extension lifecycle engine into SDK ownership when review exposed the remaining init-to-CLI boundary. Final exact all-source gate: 291 files / 5,713 tests; 36,940/36,940 statements, 26,521/26,521 branches, 7,450/7,450 functions, 36,055/36,055 lines. Strict lint, 100% module/export/member docstrings, package boundary, token budget, zero clones, contracts, and static ratchets pass. Fresh packed-tarball temp consumer installed all 12 aliases, initialized a real tracker with persistent author_default, created/commented with invocation overrides, validated zero history drift/unknown authors, managed 11 unique extensions, and imported the SDK-owned CLI program/scanner/extension engine successfully."
 notes[3]{created_at,author,text}:
   "2026-07-10T17:32:56.449Z",maintainer-agent,"Implementation slicing 2026-07-10 (grounded in current src state). Already public — do NOT redo: profile read-side (presets/plan/describe/lint exported via src/sdk/index.ts), schema runtime registries (resolveRuntimeFieldRegistry/resolveRuntimeStatusRegistry via src/sdk/runtime.ts), and generic PmClient.runTyped wrappers for the schema/config/profile/init actions. The actual gap: domain logic lives in CLI command modules — src/cli/commands/schema.ts (1973 lines), config.ts (1576), init.ts (955) + init-agent-guidance.ts (566), ~5.1k lines total — so SDK consumers reach these domains only through generic action dispatch, not typed primitives. Suggested slices: S1 schema mutation primitives (~150m) — extract add-type/add-field/status-def write paths into src/core/schema (fields-file/item-types-file/status-defs-file already own the file formats); command becomes parse+render. S2 config/settings primitives (~90m) — extract read/write/validate onto src/core/config/nested-settings; preserve the settings validator's unknown-key-stripping semantics (PR#314). S3 init + workspace-discovery primitive (~90m) — single source of truth for discovery; this is where the GH-501/pm-69nl class (init target invisible to discovery) gets fixed at the primitive level — coordinate with pm-69nl, do not duplicate its fix. S4 typed PmClient facades + SDK reference docs/tests (~60m) — replace generic payloads with typed inputs/outputs; each primitive must match the equivalent runAction result shape (semantics oracle, pm-usfg 07-06 note). Order: S1 first (schema gates the pm-w89s universality story); S2/S3 independent; S4 last."
   "2026-07-12T06:11:44.315Z",maintainer-agent,"Adjacent ship, scope intact: PR#520 (2026-07-12) promoted the FIRST workspace-customization primitive through the public SDK (ensurePmGitignore/getPmGitignoreBlock in src/sdk/workspace.ts) and made init consume it — proof the init-adjacent SDK boundary works end-to-end (packed-tarball external-consumer proof in PR verification). This does NOT deliver S1: schema/config/profile/init command families are still CLI-owned. Use src/sdk/workspace.ts as the pattern exemplar when starting S1."
   "2026-07-12T08:43:59.620Z",codex-root,"Execution rule from user escalation (23rd recurrence): this active delivery lane must not stop at partial implementation, local verification, commit, PR creation, pending checks, or pending bot review. Continue through the requested green reviewed PR, merge, merged-head/release/Sentry/telemetry proof, tracker closure, claim release, and return to main; only a genuine exhausted blocker permits stopping."
 learnings[1]{created_at,author,text}:
   "2026-07-14T20:19:48.566Z",codex-root,"Moving a CLI command engine into the SDK must also migrate its lint baseline, residual test mocks, and runtime imports; keeping a tiny CLI re-export preserves compatibility while the SDK becomes the single implementation owner."
-files[23]{path,scope,note}:
+files[40]{path,scope,note}:
   eslint-suppressions.json,project,Remove stale CLI schema suppressions after SDK extraction and lint cleanup
   scripts/release/sdk-import-boundary-baseline.json,project,schema CLI private-core edges removed from ratchet baseline
   scripts/release/static-quality-gate.mjs,project,Ratchet ESLint suppressions budget from 174 to 170 after schema CLI suppressions are eliminated
+  src/cli/bootstrap-args.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
   src/cli/commands/config.ts,project,CLI compatibility re-export over SDK config engine
   src/cli/commands/index.ts,project,Compatibility export for SDK-owned guidance primitives
   src/cli/commands/init-agent-guidance.ts,project,CLI compatibility re-export over SDK guidance engine
   src/cli/commands/init.ts,project,CLI compatibility re-export over SDK init engine
   src/cli/commands/profile.ts,project,CLI compatibility re-export over SDK profile engine
   src/cli/commands/schema.ts,project,presentation compatibility re-export over SDK schema engine
+  src/cli/commands/validate.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  src/cli/main.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  src/sdk/cli-contracts/flag-contracts.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  src/sdk/cli-program.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
   src/sdk/command-line.ts,project,SDK-owned command rendering used by init
   src/sdk/config.ts,project,SDK-owned configuration engine
   src/sdk/index.ts,project,SDK barrel exports customization primitive contracts
@@ -60,8 +66,20 @@ files[23]{path,scope,note}:
   src/sdk/schema.ts,project,SDK-owned schema inspection and mutation engine
   src/sdk/templates.ts,project,SDK-owned profile template persistence
   src/sdk/workspace.ts,project,Public workspace customization primitive
+  tests/helpers/withTempPmPath.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  tests/integration/release-readiness-runtime.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  tests/unit/cli/argv-utils.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  tests/unit/cli/bootstrap-args.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  tests/unit/cli/cli-main-errors.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  tests/unit/commands/claim-command.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  tests/unit/commands/config-command.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  tests/unit/commands/get-append-command.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  tests/unit/commands/init-command.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
   tests/unit/commands/templates-command.spec.ts,project,SDK-owned template engine coverage
+  tests/unit/helpers/withTempPmPath.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
   tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,MCP direct SDK config ownership coverage
+  tests/unit/packages/beads-command.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  tests/unit/packages/todos-extension.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
   tests/unit/sdk/author-attribution.spec.ts,project,Packed-facing SDK customization and init coverage
   tests/unit/sdk/sdk-context-primitives.spec.ts,project,SDK customization primitive coverage
 tests[5]:
