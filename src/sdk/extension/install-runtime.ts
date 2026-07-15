@@ -204,16 +204,27 @@ export const copyExtensionDirectoryForInstall = async (
 const readExtensionInstallLockOwnerToken = async (
   lockPath: string,
 ): Promise<string | null> => {
+  let ownerContents: string;
   try {
-    const parsed = JSON.parse(
-      await fs.readFile(path.join(lockPath, "owner.json"), "utf8"),
-    ) as Record<string, unknown>;
-    return typeof parsed.token === "string" && parsed.token.length > 0
-      ? parsed.token
-      : null;
+    ownerContents = await fs.readFile(
+      path.join(lockPath, "owner.json"),
+      "utf8",
+    );
+  } catch (error: unknown) {
+    if (!isErrnoCode(error, "ENOENT")) throw error;
+    return null;
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(ownerContents);
   } catch {
     return null;
   }
+  if (typeof parsed !== "object" || parsed === null || !("token" in parsed)) {
+    return null;
+  }
+  const token = (parsed as { token?: unknown }).token;
+  return typeof token === "string" && token.length > 0 ? token : null;
 };
 
 /** Remove an extension scope lock only while its persisted owner token still matches. */

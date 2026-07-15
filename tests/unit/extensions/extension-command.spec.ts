@@ -5090,12 +5090,22 @@ describe("extension command runtime", () => {
   it("reclaims stale scope locks without a valid owner token", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-invalid-owner-"));
     try {
-      const invalidOwners = [JSON.stringify({ token: 1 }), JSON.stringify({ token: "" }), "{"];
+      const invalidOwners = [
+        null,
+        JSON.stringify("owner"),
+        JSON.stringify(null),
+        JSON.stringify({}),
+        JSON.stringify({ token: 1 }),
+        JSON.stringify({ token: "" }),
+        "{",
+      ];
       for (const [index, ownerContents] of invalidOwners.entries()) {
         const settingsRoot = path.join(tempRoot, String(index));
         const lockPath = path.join(settingsRoot, "runtime", "extension-install-locks", "scope.lock");
         await mkdir(lockPath, { recursive: true });
-        await writeFile(path.join(lockPath, "owner.json"), `${ownerContents}\n`, "utf8");
+        if (ownerContents !== null) {
+          await writeFile(path.join(lockPath, "owner.json"), `${ownerContents}\n`, "utf8");
+        }
         const staleDate = new Date(Date.now() - 10 * 60 * 1000);
         await utimes(lockPath, staleDate, staleDate);
 
@@ -5109,6 +5119,34 @@ describe("extension command runtime", () => {
         ).resolves.toBe("recovered");
       }
     } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("preserves stale scope locks when owner metadata is temporarily unreadable", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-owner-read-"));
+    const lockPath = path.join(tempRoot, "runtime", "extension-install-locks", "scope.lock");
+    await mkdir(lockPath, { recursive: true });
+    await writeFile(path.join(lockPath, "owner.json"), '{"token":"active-owner"}\n', "utf8");
+    const staleDate = new Date(Date.now() - 10 * 60 * 1000);
+    await utimes(lockPath, staleDate, staleDate);
+    const readError = new Error("owner metadata temporarily unreadable") as NodeJS.ErrnoException;
+    readError.code = "EACCES";
+    const readFileSpy = vi.spyOn(fsPromises, "readFile").mockRejectedValueOnce(readError);
+    try {
+      await expect(
+        extensionCommandTestOnly.withExtensionInstallLock(
+          tempRoot,
+          "protected-ext",
+          async () => "unreachable",
+          { attempts: 1, delay_ms: 0, stale_ms: 3 },
+        ),
+      ).rejects.toThrow("owner metadata temporarily unreadable");
+      await expect(readFile(path.join(lockPath, "owner.json"), "utf8")).resolves.toContain(
+        '"token":"active-owner"',
+      );
+    } finally {
+      readFileSpy.mockRestore();
       await rm(tempRoot, { recursive: true, force: true });
     }
   });
