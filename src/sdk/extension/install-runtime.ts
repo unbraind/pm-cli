@@ -77,37 +77,6 @@ export const ensureExtensionModuleTypeMarker = async (
   );
 };
 
-/** Copy one extension directory with bounded transient-race retries. */
-export const copyExtensionDirectoryForInstall = async (
-  sourceDirectory: string,
-  destinationDirectory: string,
-  copyDirectory: typeof fs.cp = fs.cp,
-): Promise<void> => {
-  for (
-    let attempt = 1;
-    attempt <= EXTENSION_INSTALL_COPY_ATTEMPTS;
-    attempt += 1
-  ) {
-    try {
-      await fs.rm(destinationDirectory, { recursive: true, force: true });
-      await copyExtensionDirectoryWithoutSelfNesting(
-        sourceDirectory,
-        destinationDirectory,
-        copyDirectory,
-      );
-      return;
-    } catch (error: unknown) {
-      if (
-        !isRetriableExtensionInstallCopyError(error) ||
-        attempt === EXTENSION_INSTALL_COPY_ATTEMPTS
-      ) {
-        throw error;
-      }
-      await sleep(EXTENSION_INSTALL_LOCK_DELAY_MS);
-    }
-  }
-};
-
 /** Resolve a possibly partial extension destination through every existing symlink segment. */
 export const resolveCanonicalExtensionInstallDestination = async (
   destinationDirectory: string,
@@ -195,6 +164,37 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
     });
   } finally {
     await fs.rm(stagingRoot, { recursive: true, force: true });
+  }
+};
+
+/** Copy one extension directory with bounded transient-race retries. */
+export const copyExtensionDirectoryForInstall = async (
+  sourceDirectory: string,
+  destinationDirectory: string,
+  copyDirectory: typeof fs.cp = fs.cp,
+): Promise<void> => {
+  for (
+    let attempt = 1;
+    attempt <= EXTENSION_INSTALL_COPY_ATTEMPTS;
+    attempt += 1
+  ) {
+    try {
+      await fs.rm(destinationDirectory, { recursive: true, force: true });
+      await copyExtensionDirectoryWithoutSelfNesting(
+        sourceDirectory,
+        destinationDirectory,
+        copyDirectory,
+      );
+      return;
+    } catch (error: unknown) {
+      if (
+        !isRetriableExtensionInstallCopyError(error) ||
+        attempt === EXTENSION_INSTALL_COPY_ATTEMPTS
+      ) {
+        throw error;
+      }
+      await sleep(EXTENSION_INSTALL_LOCK_DELAY_MS);
+    }
   }
 };
 
