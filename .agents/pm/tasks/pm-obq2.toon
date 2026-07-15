@@ -1,12 +1,12 @@
 id: pm-obq2
 title: "Scorecard Code-Review (0→10): approved-review discipline for merged changesets"
-description: ""
+description: Establish a sustainable approved-review discipline for agent-authored changes and decide whether repository rules should enforce one human approval.
 type: Task
 status: open
 priority: 2
-tags: []
+tags[4]: code-review,governance,scorecard,security
 created_at: "2026-07-14T22:40:59.570Z"
-updated_at: "2026-07-15T06:29:47.862Z"
+updated_at: "2026-07-15T19:59:05.355Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: A workable review flow is decided and documented (maintainer approves agent-lane PRs via GitHub review before merge; bot reviews do not count); ruleset optionally enforces 1 approving review; Code-Review score trends toward 10 over the rolling 30-changeset window; decision recorded here

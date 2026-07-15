@@ -1,12 +1,12 @@
 id: pm-gknu
 title: "Uniform multi-value filter-value grammar: --status accepts CSV but --type/--priority fail fast and --tag silently matches the literal CSV string"
-description: ""
+description: "Unify multi-value filter parsing so status, type, priority, tag, assignee, sprint, and release accept one predictable CSV grammar with explicit literal-comma handling."
 type: Issue
 status: open
 priority: 2
-tags: []
+tags[4]: agent-ux,"area:cli",consistency,filters
 created_at: "2026-07-15T06:25:23.773Z"
-updated_at: "2026-07-15T06:25:36.043Z"
+updated_at: "2026-07-15T19:59:06.391Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "every enumerable filter flag on list/search/aggregate/update-many (--type, --priority, --status, --assignee, --sprint, --release) accepts the same CSV multi-value grammar as --status with per-token validation and fail-fast on any invalid token; free-form --tag defines explicit CSV OR-semantics with a documented escape for literal commas; contracts + docs + completion updated via the full new-flag checklist; no existing single-value spelling breaks"

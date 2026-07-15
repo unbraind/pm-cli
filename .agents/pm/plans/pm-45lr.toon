@@ -1,0 +1,92 @@
+id: pm-45lr
+title: 2026-07-15 full CLI SDK and ecosystem manual audit and optimization plan (review pass 91)
+description: "Tracker-only manual audit of the complete pm CLI, public SDK, repository architecture, agent UX, performance, security, code quality, tests, docs, skills, bundled packages, installed packages, and all 18 active external pm package repositories. This plan records findings and sequencing only; no product implementation belongs in this session."
+type: Plan
+status: closed
+priority: 1
+tags[5]: agent-ux,architecture,audit,ecosystem,sdk
+created_at: "2026-07-15T19:57:25.865Z"
+updated_at: "2026-07-15T20:14:00.814Z"
+closed_at: "2026-07-15T20:09:07.394Z"
+author: codex-audit-20260715
+estimated_minutes: 360
+acceptance_criteria: "Every pm item status and metadata surface is reviewed through live CLI inventory; CLI and SDK architecture, quality, security, performance, agent UX, organization, tests, docs, skills, dependencies, bundled packages, installed package state, and all 18 active external package repositories are assessed; every finding is checked against all pm statuses; canonical items receive evidence; only non-duplicate gaps get focused items with complete metadata; no product implementation is performed; tracker health/history/duplicates are verified; tracker-only changes are committed and pushed directly to main."
+parent: pm-doxj
+risk: low
+confidence: high
+resolution: "Completed a tracker-only review pass, enriched canonical roadmap items, backfilled active metadata, and filed exactly three deduplicated focused gaps without implementing product changes."
+expected_result: "A complete live CLI, SDK, repository, performance, security, quality, package-lifecycle, and 18-repository ecosystem audit documented through pm, with canonical ownership, runnable evidence, no duplicate roadmap growth, and direct-main publication."
+actual_result: "All requested surfaces were audited and documented; twenty descriptions and seventeen tag sets were backfilled; pm-2tan, pm-ld0z, and pm-nf7q were created; broad findings were routed to existing owners; final tracker-context linked run passed 8 of 8 checks; no product files changed."
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-92if,related,"2026-07-15T19:57:25.865Z",null,null
+  pm-9rxu,related,"2026-07-15T19:57:25.865Z",null,null
+  pm-doxj,parent,"2026-07-15T19:57:25.865Z",null,null
+  pm-n7rr,related,"2026-07-15T19:57:25.865Z",null,null
+  pm-ugqx,related,"2026-07-15T19:57:25.865Z",null,null
+  pm-usfg,related,"2026-07-15T19:57:25.865Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-15T19:57:37.772Z",codex-audit-20260715,"Duplicate-check evidence: searched all statuses for ecosystem audit, SDK architecture, simplification, performance, security, external-package, test-organization, renderer-scoping, and plan-help terms; reviewed prior closed audit lineages plus live review pass 90 notes. No active audit execution item represented this new manual pass, so this short-lived Plan is the evidence container; implementation findings remain or are filed under their canonical capability parents."
+  "2026-07-15T20:09:05.506Z",codex-audit-20260715,"Completion evidence: linked verification passed for build, typecheck, ESLint, jscpd zero-clone scan, security scan, docs/skills gate, health, and validate. Final health is ok with zero warnings; validation is ok with the known 276 historical resolution metadata warnings; open exact/fuzzy/parent-scope dedupe audits are empty; 225 open items have descriptions and tags; all linked files/docs resolve; git diff --check passes. No issue implementation, product code, test, public doc, or skill content was changed."
+  "2026-07-15T20:14:00.807Z",codex-audit-20260715,"Evidence correction: the initial default-context aggregate linked run is visibly retained as 6 passed / 2 failed and must not be read as green. After inspecting the live run record, the complete suite was rerun with explicit tracker context and context preflight; the final run passed 8/8 with zero failures, zero skips, and zero PM context mismatches. Separate tracker-context health and validate reruns also passed. Terminal resolution, expected_result, and actual_result metadata are now populated so this audit does not add to historical close-metadata debt."
+notes[1]{created_at,author,text}:
+  "2026-07-15T20:06:37.689Z",codex-audit-20260715,"Roadmap sequence: SDK and package-boundary primitives; SDK folder and oversized-file decomposition with compatibility tests; help/context projection unification; persistent derived indexes and measured latency budgets; then external package trust tiers and dependency-range convergence. Each slice must preserve feature parity and record before/after latency plus output-byte evidence."
+learnings[3]{created_at,author,text}:
+  "2026-07-15T20:06:38.577Z",codex-audit-20260715,"All-status metadata review prevented duplicate architecture, performance, strictness, dependency, and package-trust items; only three focused gaps remained. Future ecosystem passes should treat terminal items and recent audit comments as lineage, then prefer enriching canonical work over adding new umbrellas."
+  "2026-07-15T20:06:39.347Z",codex-audit-20260715,"Agent-oriented help must model positional actions as first-class discoverable contracts. A command can execute successfully and still block agents when nested help, JSON contracts, and completion disagree about its shape."
+  "2026-07-15T20:06:40.190Z",codex-audit-20260715,"Package collision diagnostics need semantic ownership, not only hook-name equality. A renderer that returns null outside a marker-scoped payload composes differently from an unconditional global renderer and should be represented explicitly in the SDK contract."
+files[6]{path,scope,note}:
+  package.json,project,Dependency scripts exports and package contract audit baseline
+  scripts/release/static-quality-gate.mjs,project,Static quality policy baseline
+  src/cli/main.ts,project,CLI composition and large-file baseline
+  src/sdk/index.ts,project,Public SDK barrel and topology baseline
+  src/sdk/runtime.ts,project,Large runtime SDK surface reviewed
+  tsconfig.json,project,TypeScript strictness baseline
+tests[8]{command,scope,timeout_seconds}:
+  pm health --check-only --summary,project,120
+  pm validate --check-resolution --check-history-drift,project,240
+  pnpm build,project,240
+  "pnpm lint:duplicates",project,240
+  "pnpm lint:eslint",project,240
+  "pnpm quality:docs-skills",project,240
+  "pnpm security:scan",project,240
+  pnpm typecheck,project,240
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrmiisle-6spbi0,test,failed,"2026-07-15T20:06:59.199Z","2026-07-15T20:08:19.010Z","2026-07-15T20:08:19.010Z",6,2,0
+  test-local-mrmil5h6-047j60,test,passed,"2026-07-15T20:10:03.105Z","2026-07-15T20:10:09.018Z","2026-07-15T20:10:09.018Z",1,0,0
+  test-local-mrmiltxh-9rqzvj,test,passed,"2026-07-15T20:10:09.817Z","2026-07-15T20:10:40.709Z","2026-07-15T20:10:40.709Z",1,0,0
+  test-local-mrmimqu8-ir1pya,test,passed,"2026-07-15T20:10:52.178Z","2026-07-15T20:11:23.360Z","2026-07-15T20:11:23.360Z",1,0,0
+  test-local-mrmipo0u-eu08zo,test,passed,"2026-07-15T20:11:44.839Z","2026-07-15T20:13:39.679Z","2026-07-15T20:13:39.679Z",8,0,0
+docs[5]{path,scope,note}:
+  AGENTS.md,project,Repository agent workflow contract
+  docs/AGENT_GUIDE.md,project,Agent context and ownership workflow
+  docs/EXTENSIONS.md,project,Package and extension lifecycle
+  docs/SDK.md,project,Public SDK authoring surface
+  docs/TESTING.md,project,Sandbox-safe verification policy
+close_reason: "Completed review pass 91 as a planning-only audit. Full live tracker, CLI, SDK, repository, security, quality, performance, token-output, package lifecycle, and all 18 active external package repositories were reviewed; canonical items were enriched; three non-duplicate focused gaps were filed; metadata and all linked validation gates passed; no product work was implemented."
+plan_mode: review
+plan_scope: Audit and document the latest pm CLI SDK and package ecosystem without implementing findings
+plan_harness: codex
+plan_resume_context: "Review pass 91: current main 9b5b98a6, pm 2026.7.15, 1842 items/1850 history streams, zero drift; continue by recording deduplicated findings, validating tracker state, and publishing tracker-only changes to main."
+plan_validation[4]{text,command,expected}:
+  "All eight linked checks completed successfully through pm test --run: build, typecheck, ESLint, duplicate-code scan, docs/skills quality, security scan, health, and validate.",pm test pm-45lr --run --progress,"Every linked test passes without failure, timeout, or infrastructure collision"
+  "Final tracker audit is healthy: health has zero warnings; validation is ok with only the known 276 historical resolution-metadata warnings; exact, fuzzy, and parent-scope open duplicate audits each return zero clusters; all 225 open items have descriptions and tags; the living roadmap milestone is the sole intentional root; normalization proposes no mutations.",pm health; pm validate; pm dedupe-audit in three modes; pm normalize --dry-run; pm list --status open --full,"No new health, history, duplicate, metadata, lineage, or normalization defect"
+  "Every file and documentation link on pm-45lr, pm-2tan, pm-ld0z, and pm-nf7q resolves in the repository. git diff --check passes and no product source, test, documentation, or skill file was changed.",pm files and pm docs --validate-paths for four items; git diff --check; git status --short,All linked paths exist and the diff is tracker/planning evidence only
+  "Correction to the earlier aggregate-run wording: the first default schema-context run recorded 6 passed and 2 failed, so it is retained as diagnostic history and is not the final passing proof. A full rerun with explicit tracker context and context preflight passed all 8 of 8 linked commands with zero failures and zero context mismatches.",pm test pm-45lr --run --pm-context tracker --override-linked-pm-context --check-context --progress,"8 passed, 0 failed, 0 skipped; two tracker-read commands have matching source and sandbox item counts"
+plan_decisions[1]{ts,author,decision,rationale,evidence}:
+  "2026-07-15T20:05:29.103Z",codex-audit-20260715,Preserve the existing capability roadmap and add only three focused gaps.,"All-status searches and full live metadata showed the structural SDK, performance, strictness, dependency, package-trust, duplication, and simplification findings already have canonical ownership. Creating parallel epics would fragment context and violate duplicate-safe planning.","Reused pm-801d, pm-kb5h, pm-onpb, pm-tll8, pm-o8um, pm-quzx, pm-usfg, pm-n7rr, pm-92if, and pm-doxj; created only pm-2tan, pm-ld0z, and pm-nf7q."
+plan_discoveries[7]{ts,author,text}:
+  "2026-07-15T20:05:24.157Z",codex-audit-20260715,"Live inventory found 1842 items: 1608 closed, 222 open, and 12 canceled; 1850 history streams and 29511 events; zero lock, integrity, history-drift, semantic-staleness, exact-title-duplicate, fuzzy-duplicate, or normalization findings. The only systematic metadata gap was 20 open descriptions and 17 open tag sets, now backfilled through pm."
+  "2026-07-15T20:05:24.814Z",codex-audit-20260715,"The SDK remains dense at 70 source files and roughly 52k raw lines, with 46 files at src/sdk root; canonical pm-kb5h already owns the topology migration. Largest implementation units remain 3.4k-4.0k lines and are already owned by pm-yh8r, pm-kb5h, and pm-usfg. Eight test suites are 3.3k-7.3k lines and lacked a focused intra-file decomposition ratchet, now captured by pm-ld0z."
+  "2026-07-15T20:05:25.460Z",codex-audit-20260715,"Fresh local quality evidence passed build, typecheck, ESLint, duplicate-code detection across 621 files and 357795 lines with zero clones, security scan, docs/skills quality, static quality, and package boundary checks. pnpm audit found zero advisories across 330 dependencies. Strict TypeScript is active but noUncheckedIndexedAccess, exactOptionalPropertyTypes, and noImplicitOverride remain disabled under canonical pm-onpb."
+  "2026-07-15T20:05:26.124Z",codex-audit-20260715,"Three-run local CLI timing showed version 56.8-71.5ms, get 484.7-1091ms, list-open 727-993ms, context 949-987ms, search 803-898ms, and next 913-1663ms. TOON reduced context output from 6141 to 4255 bytes and list-open from 5213 to 3950 bytes versus JSON. Existing pm-801d owns the persistent derived-index solution; this pass adds fresh jitter evidence only."
+  "2026-07-15T20:05:26.776Z",codex-audit-20260715,"All 18 active public external pm repositories were checked against live source manifests and npm latest metadata. Versions align, every package declares Node 22.18 or newer, and the release/audit/pack/test/check baseline is broadly consistent. Canonical pm-o8um and pm-quzx own the remaining trust-tier, dependency-range, parity, and duplicate-package policy."
+  "2026-07-15T20:05:27.486Z",codex-audit-20260715,"Isolated deep package doctor is non-blocking but reports two renderer override warnings for pm-changelog JSON and TOON renderers. The callbacks are marker-scoped and return null outside their payload, so permanent warning state does not distinguish safe scoped composition from an actual global replacement. New focused issue pm-nf7q owns this contract gap."
+  "2026-07-15T20:05:28.316Z",codex-audit-20260715,"Agent help has a positional-action blind spot: pm plan advertises create as an action and the command executes, but pm plan create --help --json is rejected as unknown_command while the help model reports no subcommands. New focused issue pm-2tan owns unified positional-action help, contracts, and completion discoverability."
+plan_steps[6]{id,order,title,status,created_at,updated_at,evidence,completed_at}:
+  plan-step-001,1,"Inventory all pm statuses, metadata, history, graph, health, validation, and duplicate state",completed,"2026-07-15T19:57:25.915Z","2026-07-15T20:05:29.796Z","Completed live all-status inventory, metadata/history review, graph/health/validation/dedupe checks, and metadata backfill. Baseline: 1842 items, 1850 streams, 29511 events, zero drift and duplicate clusters.","2026-07-15T20:05:29.796Z"
+  plan-step-002,2,"Audit CLI and SDK architecture, folder density, large files, type safety, dead/duplicate code, dependencies, security, performance, UX, docs, tests, and skills",completed,"2026-07-15T19:57:25.915Z","2026-07-15T20:05:30.441Z","Completed manual CLI/SDK architecture, source/test size, type safety, dependency, security, duplicate, performance, output-efficiency, docs, skills, and repository organization review with fresh local gates.","2026-07-15T20:05:30.441Z"
+  plan-step-003,3,"Audit bundled, installed, global, and all active external pm packages against SDK and lifecycle contracts",completed,"2026-07-15T19:57:25.915Z","2026-07-15T20:05:31.139Z","Completed bundled, installed, global, catalog, lifecycle, isolated-doctor, and live 18-repository external package review against source and npm metadata.","2026-07-15T20:05:31.139Z"
+  plan-step-004,4,Deduplicate every finding across all statuses and enrich canonical roadmap items,completed,"2026-07-15T19:57:25.915Z","2026-07-15T20:05:31.787Z",Every finding was searched across all statuses and routed to canonical owners. Twenty description gaps and seventeen tag gaps were filled on existing open items without changing their scope.,"2026-07-15T20:05:31.787Z"
+  plan-step-005,5,"Create only missing focused work items with evidence, acceptance criteria, relationships, and execution guidance",completed,"2026-07-15T19:57:25.915Z","2026-07-15T20:05:32.558Z","Created only pm-2tan for positional plan-help discovery, pm-ld0z for giant test-suite decomposition, and pm-nf7q for scoped renderer doctor semantics; each has full metadata, relations, files, docs, tests, and duplicate-check evidence.","2026-07-15T20:05:32.558Z"
+  plan-step-006,6,Validate the final tracker-only state and publish it directly to main,completed,"2026-07-15T19:57:25.915Z","2026-07-15T20:09:06.336Z","Validated all linked gates, tracker health/history/duplicates/metadata, link existence, and diff hygiene. The resulting tracker-only plan and findings are ready for the requested direct-main commit and push.","2026-07-15T20:09:06.336Z"
+body: "AUDIT OUTCOME\n\nThe project management system is structurally healthy and already expresses the philosophy project management equals context management through full metadata, history, graph, contracts, packages, context views, and agent-oriented TOON output. This pass found no security advisory, integrity drift, exact or fuzzy active duplicate cluster, normalization requirement, exact duplicate code clone, or exact duplicate Markdown or skill body.\n\nThe primary optimization direction remains simplification through one SDK-backed source of truth: thin CLI adapters, public SDK primitives, runtime contracts, capability-scoped packages, persistent derived indexes, compact projected output, and explicit compatibility policy. Existing roadmap owners cover that direction and should be executed in dependency order rather than replaced by another umbrella.\n\nNewly isolated work is intentionally narrow:\n1. pm-2tan makes positional plan actions discoverable through the same help, JSON contract, and completion surfaces as ordinary subcommands.\n2. pm-ld0z splits the largest 3.3k-7.3k-line test files by behavioral boundary and introduces a maintainability ratchet without reducing coverage.\n3. pm-nf7q lets package doctor distinguish globally replacing renderers from marker-scoped composable renderers, retaining collision safety without permanent false-positive warnings.\n\nExecution guidance: complete shared SDK and package-boundary primitives first; then folder and file decomposition; then help and context projection unification; then persistent read indexes and latency budgets; then external-package trust tiers and dependency policy. Preserve every public feature, require compatibility tests for moves, and measure user-visible output bytes and warm/cold latency before and after each slice."

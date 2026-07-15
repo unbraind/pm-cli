@@ -1,12 +1,12 @@
 id: pm-gydv
 title: "Scorecard Signed-Releases (-1→10): attach signed build artifacts with provenance to GitHub releases"
-description: ""
+description: "Publish signed release artifacts, checksums, and verifiable provenance so GitHub releases provide supply-chain evidence and Scorecard can score Signed-Releases."
 type: Task
 status: open
 priority: 2
-tags: []
+tags[4]: provenance,releases,scorecard,security
 created_at: "2026-07-14T22:40:27.908Z"
-updated_at: "2026-07-14T22:40:27.908Z"
+updated_at: "2026-07-15T19:59:15.219Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: The release workflow uploads the packed npm tarball (plus checksums) as GitHub release assets with cryptographic signatures/provenance (SLSA generator or cosign keyless — free for public repos); Scorecard Signed-Releases scores on the next release; documented in docs

@@ -1,0 +1,32 @@
+id: pm-2tan
+title: "Plan positional-action help is undiscoverable: pm plan create --help is rejected as an unknown command"
+description: Make the documented plan action grammar self-describing so agents can inspect exact create and step flags without falling into generic unknown-command recovery.
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"area:cli",contracts,help,plan
+created_at: "2026-07-15T20:00:17.934Z"
+updated_at: "2026-07-15T20:01:44.680Z"
+author: codex-audit-20260715
+estimated_minutes: 120
+acceptance_criteria: "pm plan create --help and --help --json resolve to action-specific help or an equally precise positional-action help view; pm help plan create and command-scoped contracts expose the same effective flags; shell completion advertises plan actions; pm plan --help no longer reports an empty subcommands array while describing subcommands only in a positional argument; documented pm plan create examples remain valid; regression tests cover help JSON, contracts, completion, and unknown-command recovery"
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-gdi7,related,"2026-07-15T20:01:02.758Z",codex-audit-20260715,null
+  pm-n7rr,related,"2026-07-15T20:01:02.758Z",codex-audit-20260715,null
+comments[1]{created_at,author,text}:
+  "2026-07-15T20:00:17.934Z",codex-audit-20260715,"Duplicate check evidence: all-status searches for plan create help unknown command positional action contracts found only broad roadmap and historical audit entries with no focused active or terminal owner."
+files[5]{path,scope,note}:
+  src/cli/commands/plan.ts,project,Positional plan action parser and runtime behavior
+  src/cli/help-content.ts,project,Help bundle and path narrative resolution
+  src/cli/help-json-payload.ts,project,Structured help path payload and subcommand projection
+  tests/unit/commands/completion-command.spec.ts,project,Plan action completion coverage
+  tests/unit/commands/plan-command.spec.ts,project,Plan action and help regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts,project,240
+docs[2]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Current documented plan create workflow
+  docs/COMMANDS.md,project,Plan grammar and examples
+body: "Live reproduction on pm 2026.7.15: pm plan create --help --json exits 2 with unknown_command and says the plan create path is not exposed. The same runtime documents create in the positional subcommand argument of pm plan --help while returning subcommands as an empty array. This violates the repository rule that agents should inspect exact runtime help before mutation. Fix the model coherently: either register real nested subcommands or teach help, contracts, and completion that positional plan actions are command paths. Preserve all plan features and aliases."

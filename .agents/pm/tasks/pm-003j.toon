@@ -1,12 +1,12 @@
 id: pm-003j
 title: "Scorecard Token-Permissions (0→10): declare least-privilege top-level permissions in every GitHub workflow"
-description: ""
+description: Raise OpenSSF Scorecard Token-Permissions to 10 by declaring explicit least-privilege permissions in every workflow and limiting elevations to the jobs that require them.
 type: Task
 status: open
 priority: 1
-tags: []
+tags[4]: github-actions,least-privilege,scorecard,security
 created_at: "2026-07-14T22:40:26.943Z"
-updated_at: "2026-07-15T06:29:47.265Z"
+updated_at: "2026-07-15T19:59:01.893Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Every workflow under .github/workflows declares an explicit top-level permissions block (least privilege, job-level elevation only where required, matching the scorecard.yml/security.yml pattern); actionlint + Trivy misconfig green; next Scorecard run reports Token-Permissions 10"

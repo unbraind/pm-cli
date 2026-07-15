@@ -1,12 +1,12 @@
 id: pm-4ze3
 title: "DeepSource Typecheck category to zero (baseline: 2 issues)"
-description: ""
+description: Reconcile the two DeepSource typecheck findings with the repository's strict-green TypeScript build and remove the analyzer-environment discrepancy.
 type: Task
 status: open
 priority: 2
-tags: []
+tags[4]: code-quality,deepsource,quality,type-safety
 created_at: "2026-07-14T22:41:45.327Z"
-updated_at: "2026-07-14T22:41:57.088Z"
+updated_at: "2026-07-15T19:59:10.885Z"
 author: maintainer-agent
 estimated_minutes: 30
 acceptance_criteria: "Both typecheck findings root-caused and fixed in source (repo tsc is already strict-green, so these are DeepSource-environment discrepancies worth understanding); category reads 0"

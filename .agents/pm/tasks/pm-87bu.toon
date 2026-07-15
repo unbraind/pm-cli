@@ -1,12 +1,12 @@
 id: pm-87bu
 title: "DeepSource ruleset alignment: tune .deepsource.toml so reported issues reflect repo policy (lands before all category triage)"
-description: ""
+description: Align authenticated DeepSource project settings and repository configuration with the ESM TypeScript codebase before treating the legacy dashboard backlog as actionable signal.
 type: Task
 status: open
 priority: 2
-tags: []
+tags[4]: code-quality,configuration,deepsource,governance
 created_at: "2026-07-14T22:41:44.652Z"
-updated_at: "2026-07-15T04:45:32.602Z"
+updated_at: "2026-07-15T19:59:07.295Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "Top rules by occurrence enumerated (authenticated dashboard/API) and dispositioned rule-by-rule: conflicts with repo idioms (TS-first patterns, docstring gate scope, intentional CLI process.exit etc.) get skipcq/toml suppressions WITH written rationale; genuinely useful rules stay enabled; post-alignment counts recorded on pm-vlnc; no blanket category disables without rationale"

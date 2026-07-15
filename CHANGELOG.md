@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Other
+
+- 2026-07-15 full CLI SDK and ecosystem manual audit and optimization plan (review pass 91) ([pm-45lr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-45lr.toon))
+
 ## 2026.7.15 - 2026-07-15
 
 ### Added

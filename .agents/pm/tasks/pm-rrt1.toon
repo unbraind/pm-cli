@@ -1,12 +1,12 @@
 id: pm-rrt1
 title: "Scorecard CII-Best-Practices (0→≥5): earn the OpenSSF Best Practices badge at passing level"
-description: ""
+description: "Prepare and submit the OpenSSF Best Practices questionnaire to earn at least the passing badge, with agent-drafted answers and maintainer-controlled submission."
 type: Task
 status: open
 priority: 3
-tags: []
+tags[4]: best-practices,governance,scorecard,security
 created_at: "2026-07-14T22:41:01.099Z"
-updated_at: "2026-07-15T06:29:48.544Z"
+updated_at: "2026-07-15T19:59:17.446Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "Project registered at bestpractices.dev (free), questionnaire completed to PASSING level (agent drafts all answers as a note here; maintainer submits), badge added to README; Scorecard CII-Best-Practices scores ≥5 (passing=5, silver=7, gold=10)"

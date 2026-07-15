@@ -1,12 +1,12 @@
 id: pm-onpb
 title: "TypeScript compiler hardening: adopt noUncheckedIndexedAccess, exactOptionalPropertyTypes, noImplicitOverride behind a ratcheted migration"
-description: ""
+description: "Harden static type safety by measuring and ratcheting noUncheckedIndexedAccess, exactOptionalPropertyTypes, and noImplicitOverride without introducing assertion escape hatches."
 type: Chore
 status: open
 priority: 3
 tags[2]: "area:quality",type-safety
 created_at: "2026-07-15T19:26:39.712Z"
-updated_at: "2026-07-15T19:26:39.712Z"
+updated_at: "2026-07-15T20:06:31.006Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: tsconfig.json enables the three flags (or documents a rejected-with-rationale decision per flag); all src+tests type-check clean; no any-cast escape hatches introduced (assertion count measured before/after); gates stay green
@@ -15,4 +15,6 @@ risk: medium
 confidence: 70
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-4ze3,related,"2026-07-15T19:26:39.712Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-15T20:06:31.003Z",codex-audit-20260715,"Review pass 91 type-safety evidence: pnpm typecheck passes and strict mode is enabled. noUncheckedIndexedAccess, exactOptionalPropertyTypes, and noImplicitOverride are still absent; source scan found two as-any casts and no ts-ignore or ts-expect-error directives. This confirms the existing strictness ratchet scope without creating a duplicate."
 body: "## Why (review pass 2026-07-15)\ntsconfig.json has strict:true but none of the newer hardening flags: noUncheckedIndexedAccess, exactOptionalPropertyTypes, noImplicitOverride are all unset. For a store-backed CLI whose core loops index into parsed TOON/JSONL rows and dynamic record maps, unchecked index access is the highest-value gap: it converts a whole class of undefined-at-runtime defects (exactly the shape of past silent-zero filter bugs) into compile errors.\n\n## Approach\n- Measure blast radius first: enable each flag in a scratch branch, count errors per src directory; expect noUncheckedIndexedAccess to dominate.\n- Ratchet, do not big-bang: per-directory adoption is not natively supported by tsc, so either (a) fix-all in one mechanical PR per flag, or (b) adopt exactOptionalPropertyTypes + noImplicitOverride first (small blast radius) and stage noUncheckedIndexedAccess as its own PR.\n- Reject-with-rationale is an acceptable outcome per flag (record the decision in this body) — e.g. exactOptionalPropertyTypes can fight Commander option shapes.\n- Coordinate with pm-4ze3 (DeepSource typecheck category) so both close from the same sweep.\n\n## Fence\nDoes NOT own runtime validation or DeepSource category burn-down (pm-vlnc children). Only tsc-level compiler flags."

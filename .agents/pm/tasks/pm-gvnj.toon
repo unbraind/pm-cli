@@ -1,12 +1,12 @@
 id: pm-gvnj
 title: "DeepSource Documentation category to zero (baseline: ~2.8k issues)"
-description: ""
+description: Reconcile DeepSource documentation rules with the repository's 100% public-surface docstring gate and eliminate only the genuine remaining documentation gaps.
 type: Task
 status: open
 priority: 3
-tags: []
+tags[4]: code-quality,deepsource,documentation,quality
 created_at: "2026-07-14T22:42:24.715Z"
-updated_at: "2026-07-14T22:42:24.715Z"
+updated_at: "2026-07-15T19:59:19.465Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Documentation rules reconciled with the repo's own docstring gate (quality:docs-skills + docstring coverage): rules duplicating the gate's scope get suppressed with rationale; genuinely missing public-surface docs get written; category reads 0"

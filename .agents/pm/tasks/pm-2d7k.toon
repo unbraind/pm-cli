@@ -1,12 +1,12 @@
 id: pm-2d7k
 title: "Scorecard Security-Policy (4→10): enrich SECURITY.md to full scoring depth"
-description: ""
+description: "Expand the public security policy with disclosure timelines, private reporting, supported-version guidance, and links so it meets the full Scorecard contract."
 type: Task
 status: open
 priority: 2
-tags: []
+tags[4]: documentation,policy,scorecard,security
 created_at: "2026-07-14T22:40:30.936Z"
-updated_at: "2026-07-15T06:29:49.239Z"
+updated_at: "2026-07-15T19:59:04.384Z"
 author: maintainer-agent
 estimated_minutes: 30
 acceptance_criteria: "SECURITY.md contains disclosure process with expected response timelines, a private reporting channel (GitHub private vulnerability reporting is already enabled), supported-versions statement aligned with date-based releases, and links; Scorecard Security-Policy reports 10"

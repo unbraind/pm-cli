@@ -1,0 +1,36 @@
+id: pm-ld0z
+title: Decompose monolithic 3k-7k LOC test suites and add a maintainability ratchet for spec files
+description: "Split the largest scenario-dense test files into module-mirrored focused suites with shared fixtures so tests remain navigable, independently targetable, and cheap for agents to understand."
+type: Chore
+status: open
+priority: 2
+tags[5]: agent-ux,code-quality,maintainability,refactor,tests
+created_at: "2026-07-15T20:00:18.867Z"
+updated_at: "2026-07-15T20:01:18.930Z"
+author: codex-audit-20260715
+estimated_minutes: 600
+acceptance_criteria: "A measured effective-LOC or complexity ratchet covers test specs with documented exemptions and no arbitrary churn; current outliers are decomposed starting with extension-command.spec.ts 7267 lines, cli.integration.spec.ts 7044, extension-loader.spec.ts 5787, cli-main-errors.spec.ts 5534, sdk-index.spec.ts 4357, create-command.spec.ts 4069, update-command.spec.ts 3754, and search-command.spec.ts 3381; splits follow the module-mirrored convention from pm-kjmx and scenario names remain grep-friendly; shared fixtures replace copied setup; jscpd remains zero; literal 100 percent coverage and test counts do not regress; targeted filters can run each new suite independently; full CI and nightly matrices stay green"
+parent: pm-92if
+risk: medium
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-kb5h,related,"2026-07-15T20:01:09.442Z",codex-audit-20260715,null
+  pm-kjmx,related,"2026-07-15T20:01:09.442Z",codex-audit-20260715,null
+comments[1]{created_at,author,text}:
+  "2026-07-15T20:00:18.867Z",codex-audit-20260715,"Duplicate check evidence: all-status searches for monolithic test suite file size gate 5000 LOC and extension-command decomposition found no focused item. Closed pm-2nqx and pm-kjmx cover dedup and naming conventions but not current file-size outliers."
+files[8]{path,scope,note}:
+  tests/integration/cli.integration.spec.ts,project,Current largest integration spec at 7044 lines
+  tests/unit/cli/cli-main-errors.spec.ts,project,Large CLI error spec at 5534 lines
+  tests/unit/commands/create-command.spec.ts,project,Large create command spec at 4069 lines
+  tests/unit/commands/search-command.spec.ts,project,Large search command spec at 3381 lines
+  tests/unit/commands/update-command.spec.ts,project,Large update command spec at 3754 lines
+  tests/unit/extensions/extension-command.spec.ts,project,Current largest unit spec at 7267 lines
+  tests/unit/extensions/extension-loader.spec.ts,project,Large loader spec at 5787 lines
+  tests/unit/sdk/sdk-index.spec.ts,project,Large public SDK barrel spec at 4357 lines
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,1200
+  "pnpm lint:duplicates",project,240
+  "pnpm quality:static",project,600
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Test organization and sandbox guidance
+body: "The current repository passes duplication and coverage gates but several test modules have become books. Large spec files increase agent context cost, hide duplicated setup below the current clone threshold, and make focused failures harder to isolate. This item is organizational only: preserve every assertion and behavior while splitting by coherent scenarios and extracting shared fixtures when repeated setup is proven. Coordinate with pm-kb5h folder-density tranches so each file moves at most once."

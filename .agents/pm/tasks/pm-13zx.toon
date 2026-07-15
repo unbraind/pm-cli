@@ -1,12 +1,12 @@
 id: pm-13zx
 title: "DeepSource Performance category to zero (baseline: 36 issues)"
-description: ""
+description: "Disposition every DeepSource performance finding against measured hot paths, benchmark real optimizations, and suppress non-issues with explicit rationale."
 type: Task
 status: open
 priority: 3
-tags: []
+tags[4]: benchmarking,code-quality,deepsource,performance
 created_at: "2026-07-14T22:42:23.658Z"
-updated_at: "2026-07-14T22:42:23.658Z"
+updated_at: "2026-07-15T19:59:20.914Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "All 36 performance findings dispositioned: real wins land as fixes benchmarked against the pm-mi2x scale harness / CodSpeed benches when on hot paths; non-issues suppressed with rationale; category reads 0"

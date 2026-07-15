@@ -1,12 +1,12 @@
 id: pm-lguv
 title: "DeepSource Bug Risk category to zero (baseline: ~1.2k issues)"
-description: ""
+description: "Triage the post-alignment DeepSource Bug Risk backlog, fix genuine defects with regression coverage, and suppress false positives only with rule-level rationale."
 type: Task
 status: open
 priority: 2
-tags: []
+tags[4]: bug-risk,code-quality,deepsource,quality
 created_at: "2026-07-14T22:42:22.344Z"
-updated_at: "2026-07-14T22:42:22.344Z"
+updated_at: "2026-07-15T19:59:09.716Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "Post-alignment bug-risk findings triaged newest-first by rule: real defects fixed (with covering spec per repo policy) and cross-filed as pm defects when user-visible; false positives suppressed per-rule with rationale; category reads 0; count trajectory noted on pm-vlnc"
