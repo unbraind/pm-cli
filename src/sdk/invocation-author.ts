@@ -18,6 +18,10 @@ export function applyInvocationAuthorOverride(
     throw new PmCliError(
       "--author requires a non-empty value.",
       EXIT_CODE.USAGE,
+      {
+        code: "missing_required_argument",
+        nextSteps: ["Pass an explicit author identifier with --author <id>."],
+      },
     );
   }
   const previousAuthor = process.env.PM_AUTHOR;

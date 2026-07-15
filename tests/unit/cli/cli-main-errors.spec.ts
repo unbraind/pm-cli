@@ -1234,11 +1234,15 @@ describe("CLI bootstrap entrypoints", () => {
 
   it("renders empty invocation author overrides through the central usage handler", async () => {
     await withTempPmPath(async (context) => {
-      const result = await runSourceCli(["--author=", "list"], context.env);
+      const result = await runSourceCli(["--json", "--author=", "list"], context.env);
 
       expect(result.code).toBe(EXIT_CODE.USAGE);
       expect(result.stdout).toBe("");
       expect(result.stderr).toContain("--author requires a non-empty value");
+      expect(JSON.parse(result.stderr)).toMatchObject({
+        code: "missing_required_argument",
+        next_steps: ["Pass an explicit author identifier with --author <id>."],
+      });
 
       const missingValue = await runSourceCli(
         ["--author", "--json", "list"],
