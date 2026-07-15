@@ -85,7 +85,7 @@ export const checkGithubUpdate = async (
     return {
       checked_at: checkedAt,
       available: null,
-      error: String(error).replace(/^Error: /, ""),
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 };

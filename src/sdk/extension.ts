@@ -20,7 +20,6 @@ import { PmCliError } from "../core/shared/errors.js";
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import { nowIso } from "../core/shared/time.js";
 import {
-  getSettingsPath,
   resolveGlobalPmRoot,
   resolvePmRoot,
 } from "../core/store/paths.js";
@@ -88,6 +87,11 @@ import {
 } from "./extension/install-runtime.js";
 import { mapWithFixedConcurrency } from "./extension/concurrency.js";
 import { checkGithubUpdate } from "./extension/update-check.js";
+import {
+  captureExtensionInstallSnapshot,
+  readOptionalMetadataFile,
+  restoreExtensionInstallSnapshot,
+} from "./extension/install-snapshot.js";
 // Re-export the public surface that lives in sibling modules but was previously
 // exported from this file (used by sdk barrels, upgrade.ts, and tests).
 export {
@@ -2125,59 +2129,6 @@ const resolveManagedInstallTimestamps = (
   };
 };
 
-interface ExtensionInstallSnapshot {
-  backupDirectory: string;
-  destinationDirectory: string;
-  destinationExists: boolean;
-  managedStatePath: string;
-  managedStateContents: Buffer | null;
-  settingsPath: string;
-  settingsContents: Buffer | null;
-}
-
-/** Capture one optional metadata file without weakening non-ENOENT failures. */
-const readOptionalMetadataFile = async (
-  filePath: string,
-): Promise<Buffer | null> =>
-  fs.readFile(filePath).catch((error: unknown) => {
-    if (isErrnoCode(error, "ENOENT")) return null;
-    throw error;
-  });
-
-/** Restore one exact optional metadata file snapshot. */
-const restoreOptionalMetadataFile = async (
-  filePath: string,
-  contents: Buffer | null,
-): Promise<void> => {
-  if (contents === null) {
-    await fs.rm(filePath, { force: true });
-    return;
-  }
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, contents);
-};
-
-/** Restore directory and metadata snapshots after a partially persisted extension install. */
-const restoreExtensionInstallSnapshot = async (
-  snapshot: ExtensionInstallSnapshot,
-): Promise<void> => {
-  await fs.rm(snapshot.destinationDirectory, { recursive: true, force: true });
-  if (snapshot.destinationExists) {
-    await fs.cp(snapshot.backupDirectory, snapshot.destinationDirectory, {
-      recursive: true,
-      force: true,
-    });
-  }
-  await restoreOptionalMetadataFile(
-    snapshot.managedStatePath,
-    snapshot.managedStateContents,
-  );
-  await restoreOptionalMetadataFile(
-    snapshot.settingsPath,
-    snapshot.settingsContents,
-  );
-};
-
 /** Copy and persist one validated extension before its runtime activation probe. */
 const persistExtensionInstall = async (
   ctx: ExtensionActionContext,
@@ -2212,90 +2163,90 @@ const persistExtensionInstall = async (
     path.join(resolvedRoots.selected_root, ".pm-extension-install-backup-"),
   );
   const backupDirectory = path.join(backupRoot, "destination");
-  if (destinationExists) {
-    await fs.cp(destinationDirectory, backupDirectory, {
-      recursive: true,
-      force: true,
-    });
-  }
-  const managedStatePath = resolveManagedExtensionStatePath(
-    resolvedRoots.selected_root,
-  );
-  const settingsPath = getSettingsPath(resolvedRoots.settings_root);
-  const [managedStateContents, settingsContents] = await Promise.all([
-    readOptionalMetadataFile(managedStatePath),
-    readOptionalMetadataFile(settingsPath),
-  ]);
-  const snapshot: ExtensionInstallSnapshot = {
-    backupDirectory,
-    destinationDirectory,
-    destinationExists,
-    managedStatePath,
-    managedStateContents,
-    settingsPath,
-    settingsContents,
-  };
-  const sourceRecord = buildInstallManagedSource(
-    input.bundledAliasName,
-    input.bundledPackageName,
-    input.installSource,
-    input.resolvedSource,
-  );
-  const existingManagedEntry = managedStateRead.state.entries.find(
-    (entry) =>
-      normalizeExtensionNameForMatch(entry.name) ===
-      normalizeExtensionNameForMatch(validated.manifest.name),
-  );
-  const timestamps = resolveManagedInstallTimestamps(
-    existingManagedEntry,
-    validated.manifest.version,
-    sourceRecord,
-    nowIso(),
-  );
-  const managedState = upsertManagedEntry(managedStateRead.state, {
-    name: validated.manifest.name,
-    directory: destinationDirectoryName,
-    scope,
-    manifest_version: validated.manifest.version,
-    manifest_entry: validated.manifest.entry,
-    capabilities: [...validated.manifest.capabilities],
-    ...timestamps,
-    source: sourceRecord,
-  });
-  const activationChanged = ensureActivated(settings, validated.manifest.name);
   try {
-    if (!installInPlace) {
-      await copyExtensionDirectoryForInstall(
-        validated.directory,
-        destinationDirectory,
+    const snapshot = await captureExtensionInstallSnapshot(
+      resolvedRoots.selected_root,
+      resolvedRoots.settings_root,
+      destinationDirectory,
+      destinationExists,
+      backupDirectory,
+    );
+    const sourceRecord = buildInstallManagedSource(
+      input.bundledAliasName,
+      input.bundledPackageName,
+      input.installSource,
+      input.resolvedSource,
+    );
+    const existingManagedEntry = managedStateRead.state.entries.find(
+      (entry) =>
+        normalizeExtensionNameForMatch(entry.name) ===
+        normalizeExtensionNameForMatch(validated.manifest.name),
+    );
+    const timestamps = resolveManagedInstallTimestamps(
+      existingManagedEntry,
+      validated.manifest.version,
+      sourceRecord,
+      nowIso(),
+    );
+    const managedState = upsertManagedEntry(managedStateRead.state, {
+      name: validated.manifest.name,
+      directory: destinationDirectoryName,
+      scope,
+      manifest_version: validated.manifest.version,
+      manifest_entry: validated.manifest.entry,
+      capabilities: [...validated.manifest.capabilities],
+      ...timestamps,
+      source: sourceRecord,
+    });
+    const activationChanged = ensureActivated(
+      settings,
+      validated.manifest.name,
+    );
+    try {
+      if (!installInPlace) {
+        await copyExtensionDirectoryForInstall(
+          validated.directory,
+          destinationDirectory,
+        );
+      }
+      await ensureExtensionModuleTypeMarker(destinationDirectory);
+      await writeManagedExtensionState(
+        resolvedRoots.selected_root,
+        managedState,
       );
+      if (activationChanged) {
+        await writeSettings(
+          resolvedRoots.settings_root,
+          settings,
+          "settings:write",
+        );
+      }
+    } catch (error: unknown) {
+      try {
+        await restoreExtensionInstallSnapshot(snapshot);
+      } catch (rollbackError: unknown) {
+        throw new AggregateError(
+          [error, rollbackError],
+          `Extension install failed: ${String(error)}; rollback failed: ${String(rollbackError)}`,
+          { cause: error },
+        );
+      }
+      throw error;
     }
-    await ensureExtensionModuleTypeMarker(destinationDirectory);
-    await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
-    if (activationChanged) {
-      await writeSettings(
-        resolvedRoots.settings_root,
-        settings,
-        "settings:write",
-      );
-    }
-  } catch (error: unknown) {
-    await restoreExtensionInstallSnapshot(snapshot).catch(() => undefined);
-    throw error;
+    return {
+      settings,
+      managedState,
+      sourceRecord,
+      destinationDirectory,
+      destinationExists,
+      installInPlace,
+      activationChanged,
+    };
   } finally {
     await fs
       .rm(backupRoot, { recursive: true, force: true })
       .catch(() => undefined);
   }
-  return {
-    settings,
-    managedState,
-    sourceRecord,
-    destinationDirectory,
-    destinationExists,
-    installInPlace,
-    activationChanged,
-  };
 };
 
 /** Scaffold project folders contributed by item types from the installed extension. */

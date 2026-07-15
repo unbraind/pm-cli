@@ -1151,6 +1151,7 @@ const HEALTH_DETAIL_SUMMARIZERS = {
     };
   },
   storage: (details, limit) => {
+    // Preserve compatibility with brief payloads from older builds and extensions.
     const authorAttribution =
       typeof details.author_attribution === "object" &&
       details.author_attribution !== null
@@ -2358,15 +2359,30 @@ function buildSettingsValuesHealthCheck(
   };
 }
 
+/** Preserve unknown-author totals for current and legacy scan payloads. */
+const resolveUnknownAuthorEventCount = (
+  authorAttribution: HistoryAuthorAttributionScan,
+): number => authorAttribution.unknown_event_count ?? 0;
+
+/** Preserve actionable-author semantics for current and legacy scan payloads. */
+const resolveActionableUnknownAuthorEventCount = (
+  authorAttribution: HistoryAuthorAttributionScan,
+): number =>
+  authorAttribution.actionable_unknown_event_count ??
+  resolveUnknownAuthorEventCount(authorAttribution);
+
 function buildStorageHealthCheck(
   items: Array<ItemMetadata | ItemWithBody>,
   settings: PmSettings,
   historySummary: HistoryStreamSummary,
   authorAttribution: HistoryAuthorAttributionScan,
 ): HealthCheck {
-  const hasAuthorEvents = authorAttribution.unknown_event_count > 0;
-  const hasActionableAuthorWarnings =
-    authorAttribution.actionable_unknown_event_count > 0;
+  const unknownAuthorEventCount =
+    resolveUnknownAuthorEventCount(authorAttribution);
+  const actionableUnknownAuthorEventCount =
+    resolveActionableUnknownAuthorEventCount(authorAttribution);
+  const hasAuthorEvents = unknownAuthorEventCount > 0;
+  const hasActionableAuthorWarnings = actionableUnknownAuthorEventCount > 0;
   return {
     name: "storage",
     status:
@@ -2583,11 +2599,11 @@ export async function runHealth(
     settings.history.compact_policy,
   );
   const authorAttribution = await scanHistoryAuthorAttribution(pmRoot);
+  const actionableUnknownAuthorEventCount =
+    resolveActionableUnknownAuthorEventCount(authorAttribution);
   const authorAttributionWarnings =
-    authorAttribution.actionable_unknown_event_count > 0
-      ? [
-          `history_unknown_author_events:${authorAttribution.actionable_unknown_event_count}`,
-        ]
+    actionableUnknownAuthorEventCount > 0
+      ? [`history_unknown_author_events:${actionableUnknownAuthorEventCount}`]
       : [];
   const locksCheck = await buildLocksCheck(pmRoot);
   const integrityCheck = skipPolicy.skipIntegrity
@@ -2690,6 +2706,8 @@ export const _testOnlyHealthCommand = {
   normalizeExtensionNameForMatch,
   parseTelemetryQueue,
   probeTelemetryEndpointHealth,
+  resolveActionableUnknownAuthorEventCount,
+  resolveUnknownAuthorEventCount,
   selectStaleItemDetail,
   summarizeHealthCheckDetails,
   summarizeExtensionList,

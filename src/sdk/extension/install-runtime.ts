@@ -244,9 +244,11 @@ const reclaimStaleExtensionInstallLock = async (
     return false;
   }
   const staleOwnerToken = await readExtensionInstallLockOwnerToken(lockPath);
-  return staleOwnerToken === null
-    ? false
-    : removeExtensionInstallLockIfOwned(lockPath, staleOwnerToken);
+  if (staleOwnerToken === null) {
+    await fs.rm(lockPath, { recursive: true, force: true });
+    return true;
+  }
+  return removeExtensionInstallLockIfOwned(lockPath, staleOwnerToken);
 };
 
 /** Start an owner-bound lease heartbeat and return an async stop barrier. */
@@ -310,7 +312,9 @@ const acquireExtensionInstallLock = async (
       if (!isErrnoCode(error, "EEXIST")) {
         throw error;
       }
-      if (!(await reclaimStaleExtensionInstallLock(lockPath, staleMs))) {
+      if (await reclaimStaleExtensionInstallLock(lockPath, staleMs)) {
+        attempt -= 1;
+      } else {
         await sleep(delayMs);
       }
     }

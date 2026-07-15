@@ -82,6 +82,31 @@ describe("runHealth", () => {
     }
   });
 
+  it("preserves actionable unknown-author counts for legacy public payloads", () => {
+    expect(
+      healthInternals.resolveUnknownAuthorEventCount({
+        unknown_event_count: 3,
+      } as never),
+    ).toBe(3);
+    expect(
+      healthInternals.resolveUnknownAuthorEventCount({} as never),
+    ).toBe(0);
+    expect(
+      healthInternals.resolveActionableUnknownAuthorEventCount({
+        actionable_unknown_event_count: 2,
+        unknown_event_count: 3,
+      } as never),
+    ).toBe(2);
+    expect(
+      healthInternals.resolveActionableUnknownAuthorEventCount({
+        unknown_event_count: 3,
+      } as never),
+    ).toBe(3);
+    expect(
+      healthInternals.resolveActionableUnknownAuthorEventCount({} as never),
+    ).toBe(0);
+  });
+
   it("covers pure health helper normalization and summarization branches", () => {
     const previousDisabled = process.env.PM_TELEMETRY_DISABLED;
     try {

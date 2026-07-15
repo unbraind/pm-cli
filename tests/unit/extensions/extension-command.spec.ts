@@ -747,6 +747,20 @@ describe("extension command runtime", () => {
         available: null,
         error: "runner-failed",
       });
+      const namedErrorFailure = await extensionCommandTestOnly.checkGithubUpdate(
+        {
+          kind: "github",
+          input: "owner/repo",
+          location: ".",
+          repository: "https://example.test/repo.git",
+        } as never,
+        async () => {
+          const error = new Error("runner message");
+          error.name = "PmCliError";
+          throw error;
+        },
+      );
+      expect(namedErrorFailure.error).toBe("runner message");
 
       if (isPosix) {
         const readonlyRoot = path.join(tempRoot, "readonly-root");
@@ -4873,7 +4887,9 @@ describe("extension command runtime", () => {
       try {
         await expect(
           runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath }),
-        ).rejects.toThrow("fresh managed state persistence failed");
+        ).rejects.toThrow(
+          "Extension install failed: Error: fresh managed state persistence failed; rollback failed: Error: rollback settings restoration failed",
+        );
       } finally {
         writeFileSpy.mockRestore();
       }
@@ -5011,6 +5027,11 @@ describe("extension command runtime", () => {
   });
 
   it("maps extension update work through a fixed concurrency pool", async () => {
+    for (const invalidConcurrency of [0, -1, 1.5, Number.NaN]) {
+      await expect(
+        extensionCommandTestOnly.mapWithFixedConcurrency([], invalidConcurrency, async (value) => value),
+      ).rejects.toThrow("concurrency must be a positive integer");
+    }
     let active = 0;
     let maximumActive = 0;
     const results = await extensionCommandTestOnly.mapWithFixedConcurrency(
@@ -5066,7 +5087,7 @@ describe("extension command runtime", () => {
     }
   });
 
-  it("does not reclaim stale scope locks without a valid owner token", async () => {
+  it("reclaims stale scope locks without a valid owner token", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-invalid-owner-"));
     try {
       const invalidOwners = [JSON.stringify({ token: 1 }), JSON.stringify({ token: "" }), "{"];
@@ -5081,11 +5102,11 @@ describe("extension command runtime", () => {
         await expect(
           extensionCommandTestOnly.withExtensionInstallLock(
             settingsRoot,
-            "blocked-ext",
-            async () => "unreachable",
+            "recovered-ext",
+            async () => "recovered",
             { attempts: 1, delay_ms: 0, stale_ms: 3 },
           ),
-        ).rejects.toMatchObject({ exitCode: EXIT_CODE.CONFLICT });
+        ).resolves.toBe("recovered");
       }
     } finally {
       await rm(tempRoot, { recursive: true, force: true });

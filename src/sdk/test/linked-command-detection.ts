@@ -31,12 +31,9 @@ const PM_SUBCOMMANDS_WITH_ITEM_REFERENCE = new Set([
 /** Public contract for pm global flags with value, shared by SDK and presentation-layer consumers. */
 export const PM_GLOBAL_FLAGS_WITH_VALUE = new Set(["--path"]);
 /** Public contract for npx flags with value, shared by SDK and presentation-layer consumers. */
-export const NPX_FLAGS_WITH_VALUE = new Set([
-  "-p",
-  "--package",
-  "-c",
-  "--call",
-]);
+export const NPX_FLAGS_WITH_VALUE = new Set(["-p", "--package"]);
+/** Public contract for npx flags whose value is the command string itself. */
+export const NPX_COMMAND_STRING_FLAGS = new Set(["-c", "--call"]);
 /** Public contract for pnpm global flags with value, shared by SDK and presentation-layer consumers. */
 export const PNPM_GLOBAL_FLAGS_WITH_VALUE = new Set([
   "-c",
@@ -246,6 +243,17 @@ export function parseNpxCommand(
       break;
     }
     if (!token.startsWith("-")) {
+      break;
+    }
+    const inlineCommandFlag = [...NPX_COMMAND_STRING_FLAGS].find((flag) =>
+      token.startsWith(`${flag}=`),
+    );
+    if (inlineCommandFlag) {
+      const command = token.slice(inlineCommandFlag.length + 1);
+      return command ? { command, args: tokens.slice(index + 1) } : null;
+    }
+    if (NPX_COMMAND_STRING_FLAGS.has(token)) {
+      index += 1;
       break;
     }
     if (token.includes("=")) {

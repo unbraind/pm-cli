@@ -10,6 +10,9 @@ export const mapWithFixedConcurrency = async <Input, Output>(
   concurrency: number,
   mapper: (input: Input) => Promise<Output>,
 ): Promise<Output[]> => {
+  if (!Number.isInteger(concurrency) || concurrency < 1) {
+    throw new RangeError("concurrency must be a positive integer");
+  }
   const results = new Array<Output>(inputs.length);
   let nextIndex = 0;
   const workers = Array.from(
