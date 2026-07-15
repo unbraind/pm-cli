@@ -40,6 +40,26 @@ export interface HistoryAuthorAttributionScan {
   samples: UnknownAuthorHistoryEvent[];
 }
 
+/** Classifies one parsed history event by author provenance and baseline age. */
+export function classifyHistoryAuthorEvent(
+  parsed: unknown,
+): "attributed" | "legacy_unknown" | "actionable_unknown" {
+  const record =
+    typeof parsed === "object" && parsed !== null
+      ? (parsed as { author?: unknown; ts?: unknown })
+      : undefined;
+  const author = typeof record?.author === "string" ? record.author.trim() : "";
+  if (author.length > 0 && author.toLowerCase() !== "unknown") {
+    return "attributed";
+  }
+  const timestamp =
+    typeof record?.ts === "string" ? Date.parse(record.ts) : Number.NaN;
+  return Number.isFinite(timestamp) &&
+    timestamp < HISTORY_AUTHOR_ATTRIBUTION_BASELINE_MS
+    ? "legacy_unknown"
+    : "actionable_unknown";
+}
+
 /** Inspect one readable JSONL stream without performing filesystem I/O. */
 export function inspectHistoryAuthorStream(
   itemId: string,
@@ -70,26 +90,12 @@ export function inspectHistoryAuthorStream(
       continue;
     }
     checkedEvents += 1;
-    const author =
-      typeof parsed === "object" &&
-      parsed !== null &&
-      typeof (parsed as { author?: unknown }).author === "string"
-        ? (parsed as { author: string }).author.trim()
-        : "";
-    if (author.length > 0 && author.toLowerCase() !== "unknown") {
+    const classification = classifyHistoryAuthorEvent(parsed);
+    if (classification === "attributed") {
       continue;
     }
     unknownEventCount += 1;
-    const timestamp =
-      typeof parsed === "object" &&
-      parsed !== null &&
-      typeof (parsed as { ts?: unknown }).ts === "string"
-        ? Date.parse((parsed as { ts: string }).ts)
-        : Number.NaN;
-    if (
-      Number.isFinite(timestamp) &&
-      timestamp < HISTORY_AUTHOR_ATTRIBUTION_BASELINE_MS
-    ) {
+    if (classification === "legacy_unknown") {
       legacyUnknownEventCount += 1;
     } else {
       actionableUnknownEventCount += 1;

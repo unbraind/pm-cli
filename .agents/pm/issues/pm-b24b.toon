@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,ci,windows
 created_at: "2026-07-12T07:11:22.870Z"
-updated_at: "2026-07-15T07:25:48.216Z"
+updated_at: "2026-07-15T07:56:49.553Z"
 closed_at: "2026-07-15T07:25:47.438Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -19,21 +19,22 @@ expected_result: Windows init follow-up commands remain executable native paths.
 actual_result: Win32 path regression passes without doubled separators.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-dprb,related,"2026-07-12T07:12:02.961Z",null,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-12T13:35:09.548Z",maintainer-agent,"External-report sweep 2026-07-12: GitHub issue #522 remains the canonical open Windows nightly failure; no duplicate item created. This performance lane will not change its status or implementation scope."
   "2026-07-14T06:44:00.318Z",codex-root,"Live GitHub evidence 2026-07-14: Nightly Validation run 29310713878 on main dcd58521 failed only windows-latest/Node 24. Four init-command specs plus init-path-guard reproduced this canonical native-path quoting defect; macOS and Ubuntu Node 22/24/25 legs passed. GitHub issue #522 remains canonical; item stays open and unclaimed outside PR #549 scope."
   "2026-07-14T10:18:56.663Z",codex-gpt5,"Live nightly evidence 2026-07-14: Nightly Validation run 29310713878 failed again on dcd58521; GitHub issue #522 remains open and canonical. The failure lineage is already fully owned here, so no duplicate was created or claimed in this relationship SDK lane."
   "2026-07-15T07:25:46.484Z",codex-root,"Evidence: quoteCommandArg and renderPmCommand accept an explicit platform contract; Windows-safe tokens include backslashes and quoted native paths preserve separators. Full coverage and workflow contract gates pass."
+  "2026-07-15T07:56:49.552Z",codex-root,"Hosted Windows correction evidence: platform-neutral tests now derive init command hints through the public platform-aware renderer instead of hard-coding POSIX quoting, while explicit Linux and Windows escaping contracts remain independently asserted. Focused init/argv tests and the complete 5,721-test exact-coverage gate pass."
 notes[1]{created_at,author,text}:
   "2026-07-12T07:14:29.716Z",maintainer-agent,"Blast radius (2026-07-12 pass): renderPmCommand has 9 call sites across src/cli/{error-guidance,commander-usage,help-json-payload,main,commands/init}.ts — every rendered retry/recovery/usage hint that embeds a native Windows path (e.g. --pm-path values in suggested_retry bundles) ships the same doubled-backslash POSIX escaping, not just init next-steps. The nightly specs only pin the init surface; the fix must land centrally in quoteCommandArg so all surfaces inherit it. Do NOT fix per-call-site."
 files[7]{path,scope,note}:
+  .github/workflows/ci.yml,project,Windows regression gate
   src/cli/argv-utils.ts,project,null
   src/cli/commands/init.ts,project,null
-  tests/integration/init-path-guard.integration.spec.ts,project,null
-  tests/unit/commands/init-command.spec.ts,project,null
   src/sdk/command-line.ts,project,Platform-aware command argument rendering
+  tests/integration/init-path-guard.integration.spec.ts,project,null
   tests/unit/cli/argv-utils.spec.ts,project,Native Windows path quoting regression
-  .github/workflows/ci.yml,project,Windows regression gate
+  tests/unit/commands/init-command.spec.ts,project,null
 tests[1]{command,scope,timeout_seconds,note}:
   "pnpm test:coverage",project,300,Full exact coverage gate
 close_reason: Fixed native Windows command hint quoting and pinned the regression in required CI.

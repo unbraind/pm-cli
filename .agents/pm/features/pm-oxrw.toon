@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: architecture,"area:governance","area:sdk"
 created_at: "2026-07-05T04:54:11.132Z"
-updated_at: "2026-07-15T07:34:37.999Z"
+updated_at: "2026-07-15T07:56:48.605Z"
 closed_at: "2026-07-15T07:25:18.740Z"
 author: maintainer-agent
 estimated_minutes: 360
@@ -19,25 +19,28 @@ expected_result: Packages and embedded applications can invoke the same typed go
 actual_result: "Public SDK exports runValidate, runHealth, and runGc from SDK-owned modules; CLI and runtime consume those modules and all gates pass."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-tu71,related,"2026-07-10T17:46:36.343Z",null,null
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-06T21:58:32.680Z",maintainer-agent,"Audit #15 scope note: decide telemetry-queue/runtime primitives here — either promote them with validate/health/gc (they share the ops noun per pm-6apl) or explicitly document them as CLI-only in the SDK reference. The SDK domain matrix should leave no command family unmapped."
   "2026-07-07T20:44:48.118Z",codex-agent,"Implementation start: bundled governance/health/maintenance SDK primitives with adjacent SDK-context work. Live duplicate/context check found this domain still open; telemetry queue/runtime decision will be documented in SDK docs rather than hidden."
   "2026-07-08T06:06:37.127Z",codex,"Evidence: broad command/runtime coverage remained green after the SDK public-result hardening: node scripts/run-tests.mjs coverage passed 266 files / 5459 tests with 100% statements, branches, functions, and lines."
   "2026-07-15T06:48:49.673Z",codex-root,"Implementation scope 2026-07-15: extract typed validate/health/gc/remediation primitives into the public SDK, make CLI adapters consume them, preserve output contracts, and pair the promotion with cross-platform nightly and release-gate proof. This is the primary feature item for the wide bundle."
   "2026-07-15T07:25:17.739Z",codex-root,"Evidence: validate, health, and gc implementations now live under src/sdk/governance and are exported directly by the public SDK; CLI modules are thin compatibility adapters. Runtime no longer sources these primitives from CLI code. Full 5,721-test coverage is 100/100/100/100; static quality, 100% docstrings, package boundary, context evaluation, docs, secrets, 88-command dogfood, and packed-npx acceptance all pass."
   "2026-07-15T07:34:37.998Z",codex-root,"Pre-push Greptile review 0b7745fd-4cf0-43db-a31d-f89048a4d524 confidence 4/5: accepted all three P2 observations. Attribution baseline epoch is precomputed once; Windows embedded quotes now use native cmd doubled-quote escaping with regression coverage. Focused tests and strict static gates pass."
+  "2026-07-15T07:56:48.602Z",codex-root,"Hosted correction evidence: path-keyed legacy lint suppressions now follow the promoted SDK health/validate modules, and author provenance classification is a documented reusable SDK primitive under the strict complexity ceiling. Focused 61-test regression, ESLint, static quality/docstrings/package boundary/token gates, and the complete 291-file/5,721-test suite pass with exact 100% statements (37,004/37,004), branches (26,554/26,554), functions (7,458/7,458), and lines (36,119/36,119)."
 notes[1]{created_at,author,text}:
   "2026-07-10T17:45:58.049Z",maintainer-agent,"Promotion slicing S1-S4 (pass #53 code survey). Territory = ~5.1k lines of CLI-side domain logic: validate.ts 2623 + health.ts 2161 + gc.ts 341; SDK index exports NOTHING for validate/health/gc today. Both blockers (pm-lodl, pm-muhw) closed - actionable now.\nS1 validate check-engine (~150m): check orchestration lives in cli/commands/validate.ts - it imports core scanners (scanHistoryDrift, findDuplicateIssueCodes, buildMissingByTypeCounts, core/validate/* helpers) but assembles checks/counts/worklists inside the command. Extract a typed check-producer registry into core/validate/ and export runValidateChecks() returning the same structured envelope (checks[].status, *_count scalars, details.*_item_ids); validate.ts shrinks to flag-parse + render.\nS2 health probe registry (~120m): same move for health.ts - probes (store layout, scanLockHealth, vectorization staleness via collectStaleVectorizationIds, extension registrations, history drift + stream policy) become typed producers; export runHealthProbes(). Natural fix site for GH-457/pm-tu71 - promotion adds a per-probe timeout surface.\nS3 gc primitive (~45m): gc.ts is small (341 lines, 4 fns); export typed gc plan/apply primitive; CLI consumes it.\nS4 reporting/remediation hooks (~60m): expose buildRemediationCommands (core/diagnostics/remediation.ts) through the SDK; type the changelog/reporting hooks; docstrings + linked tests + SDK reference docs for S1-S3 exports.\nZero-behavior-change gate: validate/health/gc CLI JSON output byte-identical, existing specs green. Recommended entry: S1 (largest file, self-contained)."
-files[9]{path,scope,note}:
-  src/sdk/runtime.ts,project,SDK runtime exposes validate/health/gc governance primitives
-  src/sdk/index.ts,project,SDK barrel exports governance primitive contracts
-  tests/unit/sdk/sdk-context-primitives.spec.ts,project,SDK governance primitive coverage
-  src/sdk/governance/validate.ts,project,Public validation implementation
-  src/sdk/governance/health.ts,project,Public health implementation
-  src/sdk/governance/gc.ts,project,Public maintenance implementation
-  src/cli/commands/validate.ts,project,Thin CLI compatibility adapter
-  src/cli/commands/health.ts,project,Thin CLI compatibility adapter
+files[11]{path,scope,note}:
+  eslint-suppressions.json,project,Preserves unchanged health and validate legacy lint baseline after SDK ownership move
   src/cli/commands/gc.ts,project,Thin CLI compatibility adapter
+  src/cli/commands/health.ts,project,Thin CLI compatibility adapter
+  src/cli/commands/validate.ts,project,Thin CLI compatibility adapter
+  src/sdk/author-attribution.ts,project,Reusable author-event classification keeps SDK governance diagnostics below strict complexity ceiling
+  src/sdk/governance/gc.ts,project,Public maintenance implementation
+  src/sdk/governance/health.ts,project,Public health implementation
+  src/sdk/governance/validate.ts,project,Public validation implementation
+  src/sdk/index.ts,project,SDK barrel exports governance primitive contracts
+  src/sdk/runtime.ts,project,SDK runtime exposes validate/health/gc governance primitives
+  tests/unit/sdk/sdk-context-primitives.spec.ts,project,SDK governance primitive coverage
 tests[3]:
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts
     scope: project

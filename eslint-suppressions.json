@@ -114,7 +114,7 @@
       "count": 2
     }
   },
-  "src/cli/commands/health.ts": {
+  "src/sdk/governance/health.ts": {
     "no-useless-assignment": {
       "count": 3
     },
@@ -169,7 +169,7 @@
       "count": 1
     }
   },
-  "src/cli/commands/validate.ts": {
+  "src/sdk/governance/validate.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },

@@ -30,19 +30,30 @@ describe("argv-utils.normalizeLongFlag", () => {
 describe("argv-utils.extractProvidedOptionFlags", () => {
   it("collects long flags in first-seen order and dedupes repeated flags", () => {
     expect(
-      extractProvidedOptionFlags(["create", "--type", "Task", "--tag", "a", "--tag", "b", "positional"]),
+      extractProvidedOptionFlags([
+        "create",
+        "--type",
+        "Task",
+        "--tag",
+        "a",
+        "--tag",
+        "b",
+        "positional",
+      ]),
     ).toEqual(["--type", "--tag"]);
   });
 });
 
 describe("argv-utils.quoteCommandArg / renderPmCommand", () => {
   it("leaves safe tokens bare and quotes/escapes unsafe tokens", () => {
-    expect(quoteCommandArg("src/cli/main.ts")).toBe("src/cli/main.ts");
-    expect(quoteCommandArg('a "b" $c')).toBe('"a \\"b\\" \\$c"');
+    expect(quoteCommandArg("src/cli/main.ts", "linux")).toBe("src/cli/main.ts");
+    expect(quoteCommandArg('a "b" $c', "linux")).toBe('"a \\"b\\" \\$c"');
   });
 
   it("renders a pm command line with per-token quoting", () => {
-    expect(renderPmCommand(["create", "--title", "hello world"])).toBe('pm create --title "hello world"');
+    expect(renderPmCommand(["create", "--title", "hello world"])).toBe(
+      'pm create --title "hello world"',
+    );
     expect(renderPmCommand([])).toBe("pm");
   });
 
