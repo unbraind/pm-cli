@@ -2,12 +2,12 @@ id: pm-oxrw
 title: "Promote governance, validation, health, and maintenance primitives to the public SDK: validate, health, gc, changelog/reporting hooks"
 description: "Typed SDK access to the governance engine (metadata profiles, resolution checks, lifecycle rules, file-link validation, history-drift), health checks, and gc/maintenance so integrators can enforce the same quality bars programmatically. Duplicate check: no existing governance-primitive SDK item."
 type: Feature
-status: in_progress
+status: closed
 priority: 2
 tags[3]: architecture,"area:governance","area:sdk"
 created_at: "2026-07-05T04:54:11.132Z"
-updated_at: "2026-07-15T16:52:37.767Z"
-assignee: codex-root
+updated_at: "2026-07-15T17:11:45.800Z"
+closed_at: "2026-07-15T17:11:40.002Z"
 author: maintainer-agent
 estimated_minutes: 360
 acceptance_criteria: SDK exports typed validate/health/gc primitives returning the same structured check results the CLI prints; ops commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change
@@ -106,4 +106,5 @@ tests[5]:
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated from final tracker state using published pm-changelog 2026.7.15-1
   docs/SDK.md,project,SDK governance primitive reference docs
+close_reason: "Delivered public SDK governance validate/health/gc primitives, thin CLI adapters, typed remediation and attribution contracts, extension lifecycle reliability modules, cross-platform quoting, linked-command SDK parsing, exhaustive review corrections, installed-package acceptance, and exact 5,733-test 100/100/100/100 coverage. PR #568 final code head 3792401d passed committed-head Greptile 5/5."
 body: ""

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Promote governance, validation, health, and maintenance primitives to the public SDK: validate, health, gc, changelog/reporting hooks ([pm-oxrw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-oxrw.toon))
 - GH-444: ergonomic author attribution — global --author, init author_default, unknown-author advisory ([pm-cpja](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cpja.toon))
 - Promote schema, config, profile, and init primitives to the public SDK: full workspace customization programmatically ([pm-3mna](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3mna.toon))
 - Promote package & extension lifecycle primitives to the public SDK: install, upgrade, extension list/enable/disable, managed-package state ([pm-x6jf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-x6jf.toon))
@@ -34,6 +35,7 @@
 
 ### Other
 
+- validate_history_unknown_author_events: legacy/actionable split for immutable unknown-author history events + first-party automation author coverage ([pm-demq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-demq.toon))
 - Ship DeepSource, DeepScan, and Scrutinizer CI free-OSS analyzer configurations with documented activation ([pm-3a68](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3a68.toon))
 - ADR: relationship graph semantics — typed directional, ordering, provenance, evidence, and associative edges with schema-extensible invariants ([pm-4jqm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-4jqm.toon))
 
