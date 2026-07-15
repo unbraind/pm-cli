@@ -39,7 +39,6 @@ import {
   normalizeStructuredLinkedTestEntry,
 } from "./linked-test-entry.js";
 import {
-  LINKED_TEST_ENV_NAME_PATTERN,
   LINKED_TEST_PM_CONTEXT_MODE_VALUES as PM_CONTEXT_MODE_VALUES,
   LINKED_TEST_PROTECTED_ENV_KEYS,
   parseLinkedTestAssertionEqualsMap,
@@ -58,7 +57,6 @@ import {
   parseOnlyIndexValue,
   resolveLinkedTestRunSelection,
   type LinkedTestRunSelection,
-  type LinkedTestSelectorKind,
 } from "../../core/test/run-selectors.js";
 import { SCOPE_VALUES } from "../../types/index.js";
 import type { LinkedTest, LinkScope } from "../../types/index.js";
@@ -89,24 +87,6 @@ const LINKED_TEST_INFRA_COLLISION_PATTERNS = [
   /web server[^.\n]*already running/i,
   /failed to listen on/i,
 ];
-const PM_SUBCOMMANDS_WITH_ITEM_REFERENCE = new Set([
-  "get",
-  "history",
-  "restore",
-  "update",
-  "close",
-  "delete",
-  "append",
-  "claim",
-  "release",
-  "comments",
-  "notes",
-  "learnings",
-  "files",
-  "docs",
-  "deps",
-  "test",
-]);
 const PM_TRACKER_READ_SUBCOMMANDS = new Set([
   "activity",
   "calendar",
@@ -533,20 +513,16 @@ function mergeEnvClearDirectives(
 // here so no consumer outside this file changes.
 import {
   BUN_GLOBAL_FLAGS_WITH_VALUE,
-  NPM_EXEC_SUBCOMMANDS,
   NPM_GLOBAL_FLAGS_WITH_VALUE,
-  NPX_FLAGS_WITH_VALUE,
-  PM_GLOBAL_FLAGS_WITH_VALUE,
   PNPM_GLOBAL_FLAGS_WITH_VALUE,
   SCRIPT_RUN_FLAGS_WITH_VALUE,
   SCRIPT_RUN_SUBCOMMANDS,
   YARN_GLOBAL_FLAGS_WITH_VALUE,
   firstPmSubcommand,
-  firstPositionalToken,
+  extractPmInvocationArgsFromSegment,
   isPmCliPackageToken,
   isPmCliScriptToken,
   isPmExecutableToken,
-  normalizePackageSpecifier,
   parseLauncherSubcommand,
   parseNpmExecCommand,
   parseNpxCommand,
@@ -554,66 +530,9 @@ import {
   resolvePmSubcommandContext,
   splitNormalizedCommandSegments,
   stripLeadingEnvAssignments,
-} from "./test/linked-command-detection.js";
+} from "../../sdk/test/linked-command-detection.js";
 
-function looksLikePrefixedItemId(token: string, idPrefix: string): boolean {
-  const normalizedPrefix = idPrefix.trim().toLowerCase().replace(/-+$/, "");
-  if (normalizedPrefix.length === 0) {
-    return false;
-  }
-  const normalized = token.trim().toLowerCase();
-  if (!normalized.startsWith(`${normalizedPrefix}-`)) {
-    return false;
-  }
-  return normalized.length > normalizedPrefix.length + 1;
-}
-
-function extractPmInvocationArgsFromSegment(segment: string): string[] | null {
-  const rawTokens = segment.split(" ").filter((token) => token.length > 0);
-  const tokens = stripLeadingEnvAssignments(rawTokens);
-  if (tokens.length === 0) {
-    return null;
-  }
-  const [executable, ...args] = tokens;
-  if (isPmExecutableToken(executable) || isPmCliScriptToken(executable)) {
-    return args;
-  }
-  if (executable === "node" && args.length > 0 && isPmCliScriptToken(args[0])) {
-    return args.slice(1);
-  }
-  return extractPackageManagerPmInvocationArgs(executable, args);
-}
-
-function extractPackageManagerPmInvocationArgs(
-  executable: string,
-  args: string[],
-): string[] | null {
-  const parsed = parsePackageManagerPmInvocation(executable, args);
-  if (
-    !parsed ||
-    (!isPmExecutableToken(parsed.command) &&
-      !isPmCliPackageToken(parsed.command))
-  ) {
-    return null;
-  }
-  return parsed.args;
-}
-
-function parsePackageManagerPmInvocation(
-  executable: string,
-  args: string[],
-): { command: string; args: string[] } | null {
-  if (executable === "npx" || executable === "bunx") {
-    return parseNpxCommand(args);
-  }
-  if (executable === "pnpm") {
-    return parsePnpmDlxCommand(args);
-  }
-  if (executable === "npm") {
-    return parseNpmExecCommand(args);
-  }
-  return null;
-}
+export { extractReferencedPmItemIdsFromCommand } from "../../sdk/test/linked-command-detection.js";
 
 function commandInvokesPmCli(command: string): boolean {
   const normalizedCommand = normalizeCommandForValidation(command);
@@ -636,38 +555,6 @@ function commandInvokesPmTrackerReadCommand(command: string): boolean {
     return PM_TRACKER_READ_SUBCOMMANDS.has(context.subcommand);
   });
 }
-
-/* c8 ignore start -- command-token extraction edge permutations are covered by integration command-parser tests */
-/** Implements extract referenced pm item ids from command for the public runtime surface of this module. */
-export function extractReferencedPmItemIdsFromCommand(
-  command: string,
-  idPrefix = "pm",
-): string[] {
-  const normalizedCommand = normalizeCommandForValidation(command);
-  const ids = new Set<string>();
-  for (const segment of splitNormalizedCommandSegments(normalizedCommand)) {
-    const invocationArgs = extractPmInvocationArgsFromSegment(segment);
-    if (!invocationArgs) {
-      continue;
-    }
-    const context = resolvePmSubcommandContext(invocationArgs);
-    if (!context) {
-      continue;
-    }
-    if (!PM_SUBCOMMANDS_WITH_ITEM_REFERENCE.has(context.subcommand)) {
-      continue;
-    }
-    const candidate = firstPositionalToken(context.remaining);
-    if (!candidate) {
-      continue;
-    }
-    if (looksLikePrefixedItemId(candidate, idPrefix)) {
-      ids.add(candidate);
-    }
-  }
-  return [...ids].sort((left, right) => left.localeCompare(right));
-}
-/* c8 ignore stop */
 
 function resolveDirectRunnerSubcommand(
   parsed: { subcommand: string; args: string[] } | null,
@@ -856,7 +743,10 @@ function packageManagerInvokesUnsafeDirectTestRunner(
   if (executable === "pnpm" || executable === "npm") {
     return (
       isDirectTestRunnerSubcommand(
-        parsePackageManagerPmInvocation(executable, args)?.command,
+        (executable === "pnpm"
+          ? parsePnpmDlxCommand(args)
+          : parseNpmExecCommand(args)
+        )?.command,
       ) || firstDirectTestRunnerSubcommand(executable, args) === "vitest"
     );
   }

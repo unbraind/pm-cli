@@ -858,7 +858,9 @@ describe("pm package manifest model", () => {
         // The generated loader stays import-light so copied installs load it without
         // resolving the SDK at module-evaluation time.
         expect(source, sourceFile).not.toContain("@unbrained/pm-cli");
-      } else if (sourceFile.endsWith("governance-audit/runtime.ts")) {
+      } else if (
+        sourceFile.endsWith(path.join("governance-audit", "runtime.ts"))
+      ) {
         expect(source, sourceFile).toContain('from "./sdk.ts"');
       } else {
         // index.ts / runtime.ts author against the published SDK specifier (resolved

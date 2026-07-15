@@ -680,6 +680,7 @@ describe("runTest", () => {
     expect(extractReferencedPmItemIdsFromCommand("FOO=bar")).toEqual([]);
     expect(extractReferencedPmItemIdsFromCommand("   ")).toEqual([]);
     expect(extractReferencedPmItemIdsFromCommand("echo no pm invocation")).toEqual([]);
+    expect(extractReferencedPmItemIdsFromCommand("pm get pm-z9 && pm get pm-a1")).toEqual(["pm-a1", "pm-z9"]);
   });
 
   it("counts failure categories only for failed run results", () => {

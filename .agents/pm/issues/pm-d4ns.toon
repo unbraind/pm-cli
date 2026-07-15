@@ -2,25 +2,34 @@ id: pm-d4ns
 title: "Sentry PM-CLI-2B: external extension subprocess cannot resolve pm executable"
 description: Investigate and correctly attribute the single handled spawnSync pm ENOENT event emitted by an external readPmItems extension command. Determine the owning package and replace PATH-dependent recursive CLI invocation with the public pm SDK or an explicit executable contract; prevent downstream extension failures from being attributed as high pm-cli core errors without hiding actionable failures.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: "area:observability",external-integration,sdk-adoption,sentry
 created_at: "2026-07-14T13:16:38.180Z"
-updated_at: "2026-07-15T06:21:23.181Z"
+updated_at: "2026-07-15T13:31:53.135Z"
+closed_at: "2026-07-15T13:31:24.347Z"
 author: codex-root
 estimated_minutes: 120
 acceptance_criteria: Identify the emitting extension/package and release; remove or harden the PATH-dependent spawnSync pm call in the owning repository; use the public SDK where appropriate; PM-CLI-2B no longer blocks the pm-cli Sentry gate; document fresh event and telemetry evidence.
 parent: pm-5oj5
 risk: medium
 confidence: 70
+resolution: Released PATH-independent pm executable resolution in pm-changelog@2026.7.15-1 and resolved the stale pre-fix Sentry group after clean publish/install proof.
+expected_result: pm-changelog item reads invoke the installed pm-cli binary without relying on a globally discoverable pm executable.
+actual_result: pm-changelog@2026.7.15-1 resolves the package binary through process.execPath; PM-CLI-2B has no recurrence and the live Sentry gate reports zero highs.
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-59gj,related,"2026-07-14T13:16:38.180Z",null,null
   pm-7n5a,related,"2026-07-14T13:16:38.180Z",null,null
   pm-xzhz,related,"2026-07-14T13:16:38.180Z",null,null
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-14T13:16:52.339Z",codex-root,"Duplicate check 2026-07-14: all-status searches for PM-CLI-2B, spawnSync pm ENOENT, and readPmItems plus direct tracker scans found no canonical item. Live Sentry issue https://unbrained.sentry.io/issues/134232002/ is one handled high event from pm-cli@2026.7.11 at 2026-07-14T11:55:59Z on external host e2b.local; repository source and installed project extensions contain no readPmItems implementation, so ownership discovery remains required."
   "2026-07-14T18:05:30.724Z",codex-root,"Live Sentry evidence 2026-07-14: PM-CLI-2B remains unresolved high, one handled event on pm-cli@2026.7.11, first/last seen 2026-07-14T11:55:59Z. Stack identifies an external extension readPmItems spawnSync('pm') ENOENT path; no recurrence was present. pnpm sentry:telemetry:gate classifies this as one of two actionable highs. This bundle does not claim or implement pm-d4ns."
   "2026-07-14T23:43:58.860Z",unknown,"Live verification 2026-07-15: release readiness again reports PM-CLI-2B as unresolved high with exactly one handled event, first/last seen 2026-07-14T11:55:59Z on pm-cli@2026.7.11. The stack still enters through an external extension readPmItems implementation that recursively spawnSyncs the pm executable; no recurrence or pm-cli-core implementation ownership is visible. This SDK/config/author bundle does not claim pm-d4ns."
+  "2026-07-15T07:26:16.586Z",codex-root,"Owner fix shipped for review as pm-changelog PR #76: default reads resolve @unbrained/pm-cli/package.json and invoke its declared pm binary through process.execPath; explicit pmBin overrides remain. Owner release gate passed 130 tests, zero vulnerabilities, pack and changelog checks. Keep in progress until owner PR merges and published package is verified."
+  "2026-07-15T13:31:23.244Z",codex-root,"Completion evidence 2026-07-15: pm-changelog PR #76 merged as 687027f772a3761dbabf53ba569d685b2bdd7daa; merge-head CI passed. Daily Release run 29419241725 passed all checks, protected release-metadata merge, npm publish, Bun clean-install verification, tag push, and GitHub release creation. npm latest is pm-changelog@2026.7.15-1. Sentry PM-CLI-2B remains a single event last seen 2026-07-14T11:55:59Z, is resolved after the fixed owner release, and the live pm-cli Sentry/telemetry gate reports critical=0 high=0."
 notes[1]{created_at,author,text}:
   "2026-07-15T06:21:23.181Z",maintainer-agent,"Now RELEASE-BLOCKING: 2026-07-15 scheduled Auto Release run 29390986598 failed its Sentry gate on this issue (PM-CLI-2B, high, 2-of-2 blocking set with pm-7n5a). Every daily release stays blocked until this is fixed or the gate classifies it as expected-handled with a specific (never generic) pattern."
+files[1]{path,scope,note}:
+  "https://github.com/unbraind/pm-changelog/pull/76",global,Owner-repository executable resolution PR
+close_reason: "Fixed in pm-changelog@2026.7.15-1: default item reads resolve the installed pm-cli package binary through process.execPath instead of PATH-dependent spawnSync pm; owner CI/release/install proof passed and Sentry/release gate is clean."
 body: ""

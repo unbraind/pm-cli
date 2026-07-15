@@ -1475,6 +1475,21 @@ describe("MCP dynamic package actions", () => {
           item: { close_reason?: string };
         }).item.close_reason,
       ).toBe("MCP close reason");
+      const validateFix = await handleRequest({
+        jsonrpc: "2.0",
+        id: 129,
+        method: "tools/call",
+        params: {
+          name: "pm_validate",
+          arguments: { path: context.pmPath, options: { autoFix: true } },
+        },
+      });
+      expect(validateFix?.isError).not.toBe(true);
+      expect(
+        (context.runCli(["get", id, "--json"], { expectJson: true }).json as {
+          item: { resolution?: string };
+        }).item.resolution,
+      ).toBe("MCP close reason");
     });
   });
 

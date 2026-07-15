@@ -25,6 +25,7 @@ import {
   runExtension,
   parseExtensionInstallSource,
   readManagedExtensionState,
+  resolveCanonicalExtensionInstallDestination,
   validateExtensionDirectory,
 } from "../../../src/cli/commands/extension.js";
 import {
@@ -58,7 +59,7 @@ import {
   classifyDoctorActivationFailureWarnings,
   classifyUnusedCapabilityWarnings,
   collectUnknownCapabilityGuidance,
-} from "../../../src/cli/commands/extension/doctor.js";
+} from "../../../src/sdk/extension/doctor.js";
 import { activateExtensions } from "../../../src/core/extensions/loader.js";
 import type { ExtensionApi } from "../../../src/core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../../../src/core/extensions/extension-types.js";
@@ -424,6 +425,28 @@ describe("extension command runtime", () => {
     });
     expect(extensionCommandTestOnly.buildExtensionPolicyDetails(undefined).extension_overrides).toEqual([]);
     expect(extensionCommandTestOnly.buildExtensionPolicyDetails(null).trusted_extensions).toEqual([]);
+    expect(extensionCommandTestOnly.buildExtensionPolicyDetails({ extension_overrides: null } as never).extension_overrides).toEqual([]);
+    expect(extensionCommandTestOnly.projectExtensionUpdateCheck(undefined)).toEqual({
+      update_check_status: null,
+      update_check_reason: null,
+    });
+    expect(
+      extensionCommandTestOnly.projectExtensionUpdateCheck({
+        update_check_status: "checked",
+        update_check_reason: "up_to_date",
+      } as never),
+    ).toEqual({ update_check_status: "checked", update_check_reason: "up_to_date" });
+    expect(
+      extensionCommandTestOnly.buildAdoptedExtensionSource(
+        "owner/repo/extensions/example",
+        "example",
+        "/tmp/example",
+        "main",
+      ),
+    ).toMatchObject({ kind: "github", location: "extensions/example", subpath: "extensions/example" });
+    expect(
+      extensionCommandTestOnly.buildAdoptedExtensionSource("owner/repo", "example", "/tmp/example", undefined),
+    ).toMatchObject({ kind: "github", location: "." });
 
     expect(_testOnlyBundledCatalog.parsePackageCatalogFields(undefined)).toBeUndefined();
     expect(_testOnlyBundledCatalog.parsePackageCatalogFields("alias, category,display_name")).toEqual([
@@ -667,6 +690,34 @@ describe("extension command runtime", () => {
         available: null,
         error: "no_remote_reference_found",
       });
+      let githubRunnerArgs: string[] = [];
+      let githubRunnerTimeout: number | undefined;
+      const annotatedTag = await extensionCommandTestOnly.checkGithubUpdate(
+        {
+          kind: "github",
+          input: "owner/repo",
+          location: ".",
+          repository: "https://example.test/repo.git",
+          ref: "v1.0.0",
+          commit: "peeled-commit",
+        } as never,
+        async (args, _runner, timeoutMs) => {
+          githubRunnerArgs = args;
+          githubRunnerTimeout = timeoutMs;
+          return "tag-object\trefs/tags/v1.0.0\npeeled-commit\trefs/tags/v1.0.0^{}\n";
+        },
+      );
+      expect(githubRunnerArgs).toEqual([
+        "ls-remote",
+        "https://example.test/repo.git",
+        "v1.0.0",
+        "v1.0.0^{}",
+      ]);
+      expect(githubRunnerTimeout).toBe(10_000);
+      expect(annotatedTag).toMatchObject({
+        available: false,
+        remote_commit: "peeled-commit",
+      });
       const missingCommit = await extensionCommandTestOnly.checkGithubUpdate(
         {
           kind: "github",
@@ -696,6 +747,20 @@ describe("extension command runtime", () => {
         available: null,
         error: "runner-failed",
       });
+      const namedErrorFailure = await extensionCommandTestOnly.checkGithubUpdate(
+        {
+          kind: "github",
+          input: "owner/repo",
+          location: ".",
+          repository: "https://example.test/repo.git",
+        } as never,
+        async () => {
+          const error = new Error("runner message");
+          error.name = "PmCliError";
+          throw error;
+        },
+      );
+      expect(namedErrorFailure.error).toBe("runner message");
 
       if (isPosix) {
         const readonlyRoot = path.join(tempRoot, "readonly-root");
@@ -1564,7 +1629,10 @@ describe("extension command runtime", () => {
       expect(() => parseExtensionInstallSource("owner/.git", { forceGithub: true })).toThrow(/GitHub/);
 
       await expect(
-        runGitCommand(["status"], async () => ({ stdout: undefined, stderr: "" } as never)),
+        runGitCommand(["status"], async (_file, _args, options) => {
+          expect(options).toMatchObject({ encoding: "utf8", timeout: 321 });
+          return { stdout: undefined, stderr: "" } as never;
+        }, 321),
       ).resolves.toBe("");
       await expect(
         runGitCommand(["status"], async () => {
@@ -2370,6 +2438,21 @@ describe("extension command runtime", () => {
         ok: true,
         command: "starter starter package ping",
       });
+    });
+  });
+
+  it("shell-quotes substitution characters in scaffold next steps", async () => {
+    if (!isPosix) return;
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-$(touch injected)-`id`");
+      const scaffold = await runExtension(
+        scaffoldPath,
+        { init: true, project: true },
+        { path: context.pmPath },
+      );
+      const nextSteps = (scaffold.details as { next_steps?: string[] }).next_steps ?? [];
+      expect(nextSteps.join("\n")).toContain("\\$(touch injected)");
+      expect(nextSteps.join("\n")).toContain("\\`id\\`");
     });
   });
 
@@ -4717,6 +4800,136 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("rolls back replaced extension files and metadata when persistence fails", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "rollback-source-ext");
+      await writeTestExtension({ root: sourceDir, name: "rollback-ext" });
+      await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+
+      const destinationEntry = path.join(context.pmPath, "extensions", "rollback-ext", "index.js");
+      const managedStatePath = path.join(context.pmPath, "extensions", ".managed-extensions.json");
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const before = {
+        entry: await readFile(destinationEntry, "utf8"),
+        managedState: await readFile(managedStatePath, "utf8"),
+        settings: await readFile(settingsPath, "utf8"),
+      };
+      await writeFile(
+        path.join(sourceDir, "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "rollback-ext",
+            version: "2.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(sourceDir, "index.js"),
+        "export default { version: 'replacement' };\n",
+        "utf8",
+      );
+
+      const originalWriteFile = fsPromises.writeFile;
+      let rejectedManagedStateWrite = false;
+      const writeFileSpy = vi.spyOn(fsPromises, "writeFile").mockImplementation(async (file, data, options) => {
+        if (!rejectedManagedStateWrite && String(file) === managedStatePath) {
+          rejectedManagedStateWrite = true;
+          throw new Error("managed state persistence failed");
+        }
+        return originalWriteFile(file, data, options);
+      });
+      try {
+        await expect(
+          runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath }),
+        ).rejects.toThrow("managed state persistence failed");
+      } finally {
+        writeFileSpy.mockRestore();
+      }
+
+      expect(rejectedManagedStateWrite).toBe(true);
+      await expect(readFile(destinationEntry, "utf8")).resolves.toBe(before.entry);
+      await expect(readFile(managedStatePath, "utf8")).resolves.toBe(before.managedState);
+      await expect(readFile(settingsPath, "utf8")).resolves.toBe(before.settings);
+      await expect(
+        readdir(path.join(context.pmPath, "extensions")),
+      ).resolves.not.toEqual(
+        expect.arrayContaining([expect.stringContaining(".pm-extension-install-backup-")]),
+      );
+    });
+  });
+
+  it("removes fresh install output and preserves the original error when rollback metadata restoration fails", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "fresh-rollback-source-ext");
+      await writeTestExtension({ root: sourceDir, name: "fresh-rollback-ext" });
+      const managedStatePath = path.join(context.pmPath, "extensions", ".managed-extensions.json");
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const originalSettings = await readFile(settingsPath, "utf8");
+      const originalWriteFile = fsPromises.writeFile;
+      let rejectedManagedStateWrite = false;
+      let rejectedRollbackWrite = false;
+      const writeFileSpy = vi.spyOn(fsPromises, "writeFile").mockImplementation(async (file, data, options) => {
+        if (!rejectedManagedStateWrite && String(file) === managedStatePath) {
+          rejectedManagedStateWrite = true;
+          throw new Error("fresh managed state persistence failed");
+        }
+        if (rejectedManagedStateWrite && !rejectedRollbackWrite && String(file) === settingsPath) {
+          rejectedRollbackWrite = true;
+          throw new Error("rollback settings restoration failed");
+        }
+        return originalWriteFile(file, data, options);
+      });
+      try {
+        await expect(
+          runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath }),
+        ).rejects.toThrow(
+          "Extension install failed: Error: fresh managed state persistence failed; rollback failed: Error: rollback settings restoration failed",
+        );
+      } finally {
+        writeFileSpy.mockRestore();
+      }
+      expect(rejectedRollbackWrite).toBe(true);
+      await expect(
+        readFile(path.join(context.pmPath, "extensions", "fresh-rollback-ext", "index.js"), "utf8"),
+      ).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(readFile(managedStatePath, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(readFile(settingsPath, "utf8")).resolves.toBe(originalSettings);
+    });
+  });
+
+  it("does not fail a completed install when backup cleanup is unavailable", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "cleanup-warning-source-ext");
+      await writeTestExtension({ root: sourceDir, name: "cleanup-warning-ext" });
+      const originalRm = fsPromises.rm;
+      let rejectedBackupCleanup = false;
+      const rmSpy = vi.spyOn(fsPromises, "rm").mockImplementation(async (target, options) => {
+        if (!rejectedBackupCleanup && String(target).includes(".pm-extension-install-backup-")) {
+          rejectedBackupCleanup = true;
+          throw new Error("backup cleanup unavailable");
+        }
+        return originalRm(target, options);
+      });
+      try {
+        await expect(
+          runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath }),
+        ).resolves.toMatchObject({ action: "install", ok: true });
+      } finally {
+        rmSpy.mockRestore();
+      }
+      expect(rejectedBackupCleanup).toBe(true);
+      const extensionEntries = await readdir(path.join(context.pmPath, "extensions"));
+      for (const entry of extensionEntries.filter((name) => name.startsWith(".pm-extension-install-backup-"))) {
+        await rm(path.join(context.pmPath, "extensions", entry), { recursive: true, force: true });
+      }
+    });
+  });
+
   it("installs in place when source is already in extension root", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.pmPath, "extensions", "inline-ext");
@@ -4768,9 +4981,83 @@ describe("extension command runtime", () => {
     try {
       const result = await extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "lock-ext", async () => "locked");
       expect(result).toBe("locked");
+      await expect(
+        extensionCommandTestOnly.withExtensionInstallLock(
+          tempRoot,
+          "defaulted-lock-ext",
+          async () => "defaulted",
+          { attempts: undefined, delay_ms: undefined, stale_ms: undefined } as never,
+        ),
+      ).resolves.toBe("defaulted");
       await expect(readdir(path.join(tempRoot, "runtime", "extension-install-locks"))).resolves.toEqual([]);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("preserves non-missing metadata snapshot read failures", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "pm-extension-metadata-read-"));
+    try {
+      await expect(
+        extensionCommandTestOnly.readOptionalMetadataFile(directory),
+      ).rejects.toBeTruthy();
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects non-finite and unsafe extension lock lease timings", async () => {
+    const invalidOptions = [
+      { attempts: Number.POSITIVE_INFINITY },
+      { delay_ms: Number.NaN },
+      { stale_ms: 0 },
+      { stale_ms: 10, heartbeat_ms: 10 },
+      { stale_ms: 10, heartbeat_ms: -1 },
+    ];
+    for (const [index, options] of invalidOptions.entries()) {
+      await expect(
+        extensionCommandTestOnly.withExtensionInstallLock(
+          path.join(os.tmpdir(), `pm-extension-invalid-lock-${process.pid}-${index}`),
+          "invalid-lock",
+          async () => "unreachable",
+          options,
+        ),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    }
+  });
+
+  it("maps extension update work through a fixed concurrency pool", async () => {
+    for (const invalidConcurrency of [0, -1, 1.5, Number.NaN]) {
+      await expect(
+        extensionCommandTestOnly.mapWithFixedConcurrency([], invalidConcurrency, async (value) => value),
+      ).rejects.toThrow("concurrency must be a positive integer");
+    }
+    let active = 0;
+    let maximumActive = 0;
+    const results = await extensionCommandTestOnly.mapWithFixedConcurrency(
+      Array.from({ length: 12 }, (_, index) => index),
+      4,
+      async (value) => {
+        active += 1;
+        maximumActive = Math.max(maximumActive, active);
+        await delay(5);
+        active -= 1;
+        return value * 2;
+      },
+    );
+    expect(results).toEqual(Array.from({ length: 12 }, (_, index) => index * 2));
+    expect(maximumActive).toBe(4);
+  });
+
+  it("falls back to the parsed filesystem root when root canonicalization fails", async () => {
+    const realpathSpy = vi.spyOn(fsPromises, "realpath").mockRejectedValueOnce(new Error("root unavailable"));
+    try {
+      const root = path.parse(process.cwd()).root;
+      await expect(resolveCanonicalExtensionInstallDestination(path.join(root, "missing", "extension"))).resolves.toBe(
+        path.join(root, "missing", "extension"),
+      );
+    } finally {
+      realpathSpy.mockRestore();
     }
   });
 
@@ -4800,28 +5087,66 @@ describe("extension command runtime", () => {
     }
   });
 
-  it("does not reclaim stale scope locks without a valid owner token", async () => {
+  it("reclaims stale scope locks without a valid owner token", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-invalid-owner-"));
     try {
-      const invalidOwners = [JSON.stringify({ token: 1 }), JSON.stringify({ token: "" }), "{"];
+      const invalidOwners = [
+        null,
+        JSON.stringify("owner"),
+        JSON.stringify(null),
+        JSON.stringify({}),
+        JSON.stringify({ token: 1 }),
+        JSON.stringify({ token: "" }),
+        "{",
+      ];
       for (const [index, ownerContents] of invalidOwners.entries()) {
         const settingsRoot = path.join(tempRoot, String(index));
         const lockPath = path.join(settingsRoot, "runtime", "extension-install-locks", "scope.lock");
         await mkdir(lockPath, { recursive: true });
-        await writeFile(path.join(lockPath, "owner.json"), `${ownerContents}\n`, "utf8");
+        if (ownerContents !== null) {
+          await writeFile(path.join(lockPath, "owner.json"), `${ownerContents}\n`, "utf8");
+        }
         const staleDate = new Date(Date.now() - 10 * 60 * 1000);
         await utimes(lockPath, staleDate, staleDate);
 
         await expect(
           extensionCommandTestOnly.withExtensionInstallLock(
             settingsRoot,
-            "blocked-ext",
-            async () => "unreachable",
-            { attempts: 1, delay_ms: 0, stale_ms: 1 },
+            "recovered-ext",
+            async () => "recovered",
+            { attempts: 1, delay_ms: 0, stale_ms: 3 },
           ),
-        ).rejects.toMatchObject({ exitCode: EXIT_CODE.CONFLICT });
+        ).resolves.toBe("recovered");
       }
     } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("preserves stale scope locks when owner metadata is temporarily unreadable", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-owner-read-"));
+    const lockPath = path.join(tempRoot, "runtime", "extension-install-locks", "scope.lock");
+    await mkdir(lockPath, { recursive: true });
+    await writeFile(path.join(lockPath, "owner.json"), '{"token":"active-owner"}\n', "utf8");
+    const staleDate = new Date(Date.now() - 10 * 60 * 1000);
+    await utimes(lockPath, staleDate, staleDate);
+    const readError = new Error("owner metadata temporarily unreadable") as NodeJS.ErrnoException;
+    readError.code = "EACCES";
+    const readFileSpy = vi.spyOn(fsPromises, "readFile").mockRejectedValueOnce(readError);
+    try {
+      await expect(
+        extensionCommandTestOnly.withExtensionInstallLock(
+          tempRoot,
+          "protected-ext",
+          async () => "unreachable",
+          { attempts: 1, delay_ms: 0, stale_ms: 3 },
+        ),
+      ).rejects.toThrow("owner metadata temporarily unreadable");
+      await expect(readFile(path.join(lockPath, "owner.json"), "utf8")).resolves.toContain(
+        '"token":"active-owner"',
+      );
+    } finally {
+      readFileSpy.mockRestore();
       await rm(tempRoot, { recursive: true, force: true });
     }
   });
@@ -4836,6 +5161,21 @@ describe("extension command runtime", () => {
       await expect(readdir(path.join(tempRoot, "runtime", "extension-install-locks"))).resolves.toEqual([]);
     } finally {
       writeFileSpy.mockRestore();
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("preserves owner metadata write failures when best-effort lock cleanup also fails", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-double-failure-"));
+    const writeFileSpy = vi.spyOn(fsPromises, "writeFile").mockRejectedValueOnce(new Error("owner write failed"));
+    const rmSpy = vi.spyOn(fsPromises, "rm").mockRejectedValueOnce(new Error("cleanup failed"));
+    try {
+      await expect(
+        extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "double-failure-ext", async () => "unreachable"),
+      ).rejects.toThrow("owner write failed");
+    } finally {
+      writeFileSpy.mockRestore();
+      rmSpy.mockRestore();
       await rm(tempRoot, { recursive: true, force: true });
     }
   });

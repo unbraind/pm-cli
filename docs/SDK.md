@@ -42,6 +42,9 @@ Source of truth:
 - [`src/sdk/relationships.ts`](../src/sdk/relationships.ts)
 - [`src/sdk/relationship-history.ts`](../src/sdk/relationship-history.ts)
 - [`src/sdk/relationship-context.ts`](../src/sdk/relationship-context.ts)
+- [`src/sdk/governance/validate.ts`](../src/sdk/governance/validate.ts)
+- [`src/sdk/governance/health.ts`](../src/sdk/governance/health.ts)
+- [`src/sdk/governance/gc.ts`](../src/sdk/governance/gc.ts)
 - [`src/sdk/cli-contracts.ts`](../src/sdk/cli-contracts.ts)
 - [`src/sdk/cli-contracts/commander-types.ts`](../src/sdk/cli-contracts/commander-types.ts)
 - [`src/sdk/cli-contracts/commander-mutation-options.ts`](../src/sdk/cli-contracts/commander-mutation-options.ts)
@@ -133,6 +136,7 @@ Command/action contract exports:
 - Customization primitive option/result contracts: `InitCommandOptions` / `InitResult`, `ConfigCommandOptions` / `ConfigResult`, `SchemaSubcommand` / `SchemaResult` / `SchemaInspectResult`, `SchemaListResult`, `SchemaShowResult`, `SchemaAddTypeResult`, `SchemaRemoveTypeResult`, `SchemaAddStatusResult`, `SchemaRemoveStatusResult`, `SchemaAddFieldResult`, `SchemaRemoveFieldResult`, `SchemaListFieldsResult`, `SchemaShowFieldResult`, `SchemaApplyPresetResult`, `SchemaAddTypeInferResult`, `SchemaShowStatusResult`, `ProfileSubcommand` / `ProfileResult`, `ProfileListResult`, `ProfileShowResult`, `ProfileApplyResult`, `ProfileLintResult`
 - Typed governance and maintenance primitives on `PmClient`: `validate`, `health`, `gc`, `historyRedact`, `historyRepair`, `historyRepairAll`, `historyCompact`, and `historyCompactBulk`
 - Governance and maintenance option/result contracts: `ValidateCommandOptions` / `ValidateResult`, `RunHealthOptions` / `HealthResult`, `GcCommandOptions` / `GcResult`, `HistoryRedactCommandOptions` / `HistoryRedactResult`, `HistoryRepairCommandOptions` / `HistoryRepairResult` / `HistoryRepairAllResult`, and `HistoryCompactCommandOptions` / `HistoryCompactResult` / `HistoryCompactBulkCommandOptions` / `HistoryCompactBulkResult`
+- Direct governance engines: `runValidate`, `runHealth`, and `runGc` are public SDK exports used by the CLI compatibility adapters and by custom policy engines that already own `GlobalOptions`. Their structured results are identical to CLI JSON output; no shell process or private core import is required.
 - Typed plan workflow primitives on `PmClient`: `plan`, `planCreate`, `planShow`, `planAddStep`, `planUpdateStep`, `planCompleteStep`, `planBlockStep`, `planReorderStep`, `planRemoveStep`, `planLink`, `planUnlink`, `planDecision`, `planDiscovery`, `planValidation`, `planResume`, `planApprove`, and `planMaterialize`
 - Plan contracts: `PlanSubcommand`, `PlanCommandOptions`, `PlanCommandResult`, `PlanResultPlan`, `PlanStepSummary`, `PlanShowDepth`, and `PlanTemplateName`
 - Typed package and extension lifecycle primitives on `PmClient`: `extension`, `extensionList`, `extensionActivate`, `extensionDeactivate`, `package`, `packageList`, `packageInstall`, `packageUninstall`, `packageDoctor`, `packageManage`, `packageDescribe`, `packageReload`, `packageCatalog`, `packageActivate`, `packageDeactivate`, and `upgrade`

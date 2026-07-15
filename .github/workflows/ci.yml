@@ -417,7 +417,9 @@ jobs:
       #     send OS-level signals to the Vitest worker process on Windows
       #     (GH-376), and
       # (7) stale lock cleanup races, whose owner-path and orphan-gate probes
-      #     must stay portable on Windows Node 24 (GH-427).
+      #     must stay portable on Windows Node 24 (GH-427), and
+      # (8) native-path command rendering plus package-source suffix checks,
+      #     which must preserve Windows separators (GH-522 / pm-u5zr).
       # The two non-scripts guards (cli-main-errors, runtime-schema-path-win32)
       # plus the harness contract test stay pinned; the full tests/unit/scripts/
       # directory now runs so a fresh Windows-only script regression fails this
@@ -425,7 +427,7 @@ jobs:
       - name: Run Windows source-import and script regression tests
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/runtime-loaders.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts
+        run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/runtime-loaders.spec.ts tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/unit/commands/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts
 
       # The packed-npm-extension install path exercises the Windows `.cmd` npm
       # spawn + tar extraction + hosted-SDK junction class that only the Node 24

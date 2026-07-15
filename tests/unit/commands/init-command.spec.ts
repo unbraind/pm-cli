@@ -25,6 +25,7 @@ import {
 } from "../../../src/core/extensions/index.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { readSettings } from "../../../src/core/store/settings.js";
+import { renderPmCommand } from "../../../src/sdk/command-line.js";
 
 describe("runInit", () => {
   beforeEach(() => {
@@ -243,7 +244,7 @@ describe("runInit", () => {
         },
       }),
     ).toContain(
-      `Run pm --pm-path "${replacementSensitivePath.replaceAll("$", "\\$")}" context before editing.`,
+      `Run ${renderPmCommand(["--pm-path", replacementSensitivePath, "context"])} before editing.`,
     );
 
     expect(initInternals.normalizeInitAgentGuidanceMode(undefined)).toBe("ask");
@@ -753,7 +754,7 @@ describe("runInit", () => {
         applied: false,
       });
       expect(result.next_steps).toContain(
-        `Add workflow guidance later: pm --pm-path ${tempRoot} init --agent-guidance add`,
+        `Add workflow guidance later: ${renderPmCommand(["--pm-path", tempRoot, "init", "--agent-guidance", "add"])}`,
       );
 
       for (const subdir of PM_REQUIRED_SUBDIRS) {
@@ -864,7 +865,7 @@ describe("runInit", () => {
       });
       expect(result.warnings).toContain("registered_type_preset:agile");
       expect(result.next_steps).toContain(
-        `Inspect registered preset types: pm --pm-path ${tempRoot} schema list, pm --pm-path ${tempRoot} schema show Story`,
+        `Inspect registered preset types: ${renderPmCommand(["--pm-path", tempRoot, "schema", "list"])}, ${renderPmCommand(["--pm-path", tempRoot, "schema", "show", "Story"])}`,
       );
       expect((await stat(path.join(tempRoot, "stories"))).isDirectory()).toBe(
         true,
@@ -1095,7 +1096,7 @@ describe("runInit", () => {
       });
       expect(statusMissing.warnings).toContain("agent_guidance:missing");
       expect(statusMissing.next_steps).toContain(
-        `Add workflow guidance later: pm --pm-path ${tempRoot} init --agent-guidance add`,
+        `Add workflow guidance later: ${renderPmCommand(["--pm-path", tempRoot, "init", "--agent-guidance", "add"])}`,
       );
 
       const skipped = await runInit(
@@ -1281,7 +1282,9 @@ describe("runInit", () => {
         "guidance",
         "guidance-bad",
       ]) {
-        await expect(stat(path.join(tempRoot, directory))).rejects.toMatchObject({
+        await expect(
+          stat(path.join(tempRoot, directory)),
+        ).rejects.toMatchObject({
           code: "ENOENT",
         });
       }
@@ -1306,9 +1309,9 @@ describe("runInit", () => {
         },
       );
       expect(result.target.workspace_root).toBe(workspace);
-      expect(await readFile(path.join(workspace, "AGENTS.md"), "utf8")).toContain(
-        "pm Workflow (Agent Quickstart)",
-      );
+      expect(
+        await readFile(path.join(workspace, "AGENTS.md"), "utf8"),
+      ).toContain("pm Workflow (Agent Quickstart)");
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

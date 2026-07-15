@@ -6,7 +6,9 @@
   "allowed_private_core_imports": [
     {
       "source": "src/cli/bootstrap-args.ts",
-      "imports": ["src/core/shared/levenshtein.ts"]
+      "imports": [
+        "src/core/shared/levenshtein.ts"
+      ]
     },
     {
       "source": "src/cli/commander-usage.ts",
@@ -148,7 +150,10 @@
     },
     {
       "source": "src/cli/commands/completion.ts",
-      "imports": ["src/core/shared/constants.ts", "src/core/shared/errors.ts"]
+      "imports": [
+        "src/core/shared/constants.ts",
+        "src/core/shared/errors.ts"
+      ]
     },
     {
       "source": "src/cli/commands/context.ts",
@@ -280,21 +285,6 @@
       ]
     },
     {
-      "source": "src/cli/commands/gc.ts",
-      "imports": [
-        "src/core/checkpoint/checkpoint-gc.ts",
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/lock/lock-gc.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
       "source": "src/cli/commands/get.ts",
       "imports": [
         "src/core/extensions/index.ts",
@@ -320,38 +310,6 @@
       ]
     },
     {
-      "source": "src/cli/commands/health.ts",
-      "imports": [
-        "src/core/diagnostics/remediation.ts",
-        "src/core/extensions/index.ts",
-        "src/core/extensions/item-fields.ts",
-        "src/core/extensions/loader.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/history/drift-scan.ts",
-        "src/core/history/history-stream-policy.ts",
-        "src/core/item/item-format-version.ts",
-        "src/core/item/item-format.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/lock/lock-gc.ts",
-        "src/core/search/cache.ts",
-        "src/core/search/providers.ts",
-        "src/core/search/semantic-defaults.ts",
-        "src/core/search/staleness.ts",
-        "src/core/search/vector-stores.ts",
-        "src/core/search/vectorization-metadata.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/conflict-markers.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/primitives.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts",
-        "src/core/telemetry/runtime.ts"
-      ]
-    },
-    {
       "source": "src/cli/commands/history.ts",
       "imports": [
         "src/core/extensions/index.ts",
@@ -372,19 +330,29 @@
     },
     {
       "source": "src/cli/commands/learnings.ts",
-      "imports": ["src/core/shared/command-types.ts"]
+      "imports": [
+        "src/core/shared/command-types.ts"
+      ]
     },
     {
       "source": "src/cli/commands/legacy-none-tokens.ts",
-      "imports": ["src/core/shared/constants.ts", "src/core/shared/errors.ts"]
+      "imports": [
+        "src/core/shared/constants.ts",
+        "src/core/shared/errors.ts"
+      ]
     },
     {
       "source": "src/cli/commands/lifecycle-transitions.ts",
-      "imports": ["src/core/schema/runtime-schema.ts"]
+      "imports": [
+        "src/core/schema/runtime-schema.ts"
+      ]
     },
     {
       "source": "src/cli/commands/linked-test-entry.ts",
-      "imports": ["src/core/shared/constants.ts", "src/core/shared/errors.ts"]
+      "imports": [
+        "src/core/shared/constants.ts",
+        "src/core/shared/errors.ts"
+      ]
     },
     {
       "source": "src/cli/commands/linked-test-parsers.ts",
@@ -442,7 +410,9 @@
     },
     {
       "source": "src/cli/commands/notes.ts",
-      "imports": ["src/core/shared/command-types.ts"]
+      "imports": [
+        "src/core/shared/command-types.ts"
+      ]
     },
     {
       "source": "src/cli/commands/plan.ts",
@@ -530,7 +500,9 @@
     },
     {
       "source": "src/cli/commands/scheduling-shortcuts.ts",
-      "imports": ["src/core/shared/command-types.ts"]
+      "imports": [
+        "src/core/shared/command-types.ts"
+      ]
     },
     {
       "source": "src/cli/commands/search.ts",
@@ -727,39 +699,16 @@
       ]
     },
     {
-      "source": "src/cli/commands/validate.ts",
+      "source": "src/cli/error-guidance.ts",
       "imports": [
-        "src/core/diagnostics/remediation.ts",
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/governance/issue-codes.ts",
-        "src/core/history/drift-scan.ts",
-        "src/core/item/item-format-version.ts",
-        "src/core/item/status.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/primitives.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts",
-        "src/core/validate/fix-planning.ts",
-        "src/core/validate/linked-artifact-reference.ts",
-        "src/core/validate/missing-by-type.ts",
-        "src/core/validate/missing-link-owners.ts",
-        "src/core/validate/stale-file-classification.ts"
+        "src/core/shared/errors.ts"
       ]
     },
     {
-      "source": "src/cli/error-guidance.ts",
-      "imports": ["src/core/shared/errors.ts"]
-    },
-    {
       "source": "src/cli/extension-command-help.ts",
-      "imports": ["src/core/extensions/index.ts"]
+      "imports": [
+        "src/core/extensions/index.ts"
+      ]
     },
     {
       "source": "src/cli/extension-command-options.ts",
@@ -888,7 +837,9 @@
     },
     {
       "source": "src/cli/telemetry-flush.ts",
-      "imports": ["src/core/telemetry/runtime.ts"]
+      "imports": [
+        "src/core/telemetry/runtime.ts"
+      ]
     },
     {
       "source": "src/mcp/server.ts",
