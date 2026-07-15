@@ -49,7 +49,8 @@ export function normalizeManagedDirectoryName(name: string): string {
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9._-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
   if (normalized.length === 0) {
     throw new PmCliError(
       "Extension manifest name must resolve to a non-empty directory name.",

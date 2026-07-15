@@ -14,6 +14,7 @@ describe("normalizeManagedDirectoryName", () => {
   it("normalizes a manifest name into a safe directory slug", () => {
     expect(normalizeManagedDirectoryName("My Extension!")).toBe("my-extension");
     expect(normalizeManagedDirectoryName("  beads.todos  ")).toBe("beads.todos");
+    expect(normalizeManagedDirectoryName(`${"-".repeat(10_000)}safe${"-".repeat(10_000)}`)).toBe("safe");
   });
 
   it("rejects names that resolve to traversal directory names", () => {
