@@ -136,7 +136,7 @@ describe("config command helper coverage", () => {
     expect(_testOnlyConfigCommand.hasGovernanceValidationMirrorChange("strict", "strict", "strict")).toBe(false);
   });
 
-  it("covers positional routing defensive guards and conflict errors", () => {
+  it("covers positional routing defensive guards", () => {
     const usageError = expect.objectContaining({ exitCode: EXIT_CODE.USAGE });
 
     expect(() =>
@@ -147,16 +147,6 @@ describe("config command helper coverage", () => {
       _testOnlyConfigCommand.applyPositionalValue("set", "item-format", undefined, undefined, "toon", {}),
     ).toThrow(usageError);
 
-    expect(() =>
-      _testOnlyConfigCommand.applyPositionalValue(
-        "set",
-        "item-format",
-        "item_format",
-        undefined,
-        "toon",
-        { format: "json_markdown" },
-      ),
-    ).toThrow(usageError);
   });
 
   it("preserves a pre-existing --value for nested settings when no positional value is given", () => {
@@ -1991,17 +1981,6 @@ describe("runConfig", () => {
             { policy: "enabled" },
             { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
             "off",
-          ),
-        ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
-
-        await expect(
-          runConfig(
-            "project",
-            "set",
-            "item-format",
-            { format: "json_markdown" },
-            { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
-            "toon",
           ),
         ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
 

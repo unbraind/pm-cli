@@ -57,55 +57,6 @@ import { CONTEXT_DEPTH_VALUES } from "../types/index.js";
 const CONFIG_SCOPE_VALUES = ["project", "global"] as const;
 type ConfigScope = (typeof CONFIG_SCOPE_VALUES)[number];
 
-const CONFIG_KEY_VALUES = [
-  "definition-of-done",
-  "definition_of_done",
-  "item-format",
-  "item_format",
-  "history-missing-stream-policy",
-  "history_missing_stream_policy",
-  "sprint-release-format-policy",
-  "sprint_release_format_policy",
-  "parent-reference-policy",
-  "parent_reference_policy",
-  "metadata-validation-profile",
-  "metadata_validation_profile",
-  "metadata-required-fields",
-  "metadata_required_fields",
-  "lifecycle-stale-blocker-reason-patterns",
-  "lifecycle_stale_blocker_reason_patterns",
-  "lifecycle-closure-like-blocked-reason-patterns",
-  "lifecycle_closure_like_blocked_reason_patterns",
-  "lifecycle-closure-like-resolution-patterns",
-  "lifecycle_closure_like_resolution_patterns",
-  "lifecycle-closure-like-actual-result-patterns",
-  "lifecycle_closure_like_actual_result_patterns",
-  "governance-preset",
-  "governance_preset",
-  "governance-ownership-enforcement",
-  "governance_ownership_enforcement",
-  "governance-create-mode-default",
-  "governance_create_mode_default",
-  "governance-close-validation-default",
-  "governance_close_validation_default",
-  "governance-require-close-reason",
-  "governance_require_close_reason",
-  "governance-create-default-type",
-  "governance_create_default_type",
-  "governance-workflow-enforcement",
-  "governance_workflow_enforcement",
-  "governance-parent-reference-policy",
-  "governance_parent_reference_policy",
-  "governance-metadata-validation-profile",
-  "governance_metadata_validation_profile",
-  "governance-force-required-for-stale-lock",
-  "governance_force_required_for_stale_lock",
-  "test-result-tracking",
-  "test_result_tracking",
-  "telemetry-tracking",
-  "telemetry_tracking",
-  "context",
-] as const;
 type ConfigAction = "get" | "set" | "list" | "export";
 type HistoryMissingStreamPolicy = "auto_create" | "strict_error";
 type TestResultTrackingPolicy = "enabled" | "disabled";
@@ -334,7 +285,7 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
 
 // Canonical kebab-case forms (first alias entry per key). Used for the invalid-key
 // hint so agents see ~21 keys instead of all ~45 kebab+snake variants; snake_case
-// forms stay fully accepted as input via CONFIG_KEY_VALUES/normalizeKey.
+// forms stay fully accepted as input via CONFIG_KEY_ALIASES/normalizeKey.
 const CANONICAL_CONFIG_KEYS: readonly string[] = (
   Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]
 ).map((candidate) => CONFIG_KEY_ALIASES[candidate][0]);
@@ -1176,17 +1127,6 @@ function applyPositionalValue(
   }
 
   if (routed.flag === "format") {
-    /* c8 ignore start -- only `toon` is valid, so normalized explicit/positional formats cannot conflict. */
-    if (
-      options.format !== undefined &&
-      normalizeItemFormat(options.format) !== normalizeItemFormat(routed.value)
-    ) {
-      throw new PmCliError(
-        `Config set ${keyValue} received both positional value "${valueValue}" and --format "${options.format}". Pass only one.`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    /* c8 ignore stop */
     return { ...options, format: routed.value };
   }
 
