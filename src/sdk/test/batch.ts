@@ -137,7 +137,7 @@ interface TestAllItemRunContext {
   options: TestAllCommandOptions;
   defaultTimeoutSeconds: number | undefined;
   sourceRoots: { projectPmRoot: string; globalPmRoot: string };
-  seenTestKeys: Set<string>;
+  resultByTestKey: Map<string, TestRunResult>;
   effectiveTimeoutByKey: Map<string, number | undefined>;
   trackingEnabled: boolean;
   trackingAuthor: string;
@@ -444,11 +444,13 @@ async function runTestAllItem(
   context: TestAllItemRunContext,
 ): Promise<TestAllItemExecution> {
   const testsToRun: LinkedTest[] = [];
+  const pendingTestKeys = new Set<string>();
   const keyedTests = entry.tests.map((test) => {
     const key = buildLinkedTestKey(test);
-    const duplicate = context.seenTestKeys.has(key);
+    const duplicate =
+      context.resultByTestKey.has(key) || pendingTestKeys.has(key);
     if (!duplicate) {
-      context.seenTestKeys.add(key);
+      pendingTestKeys.add(key);
       const effectiveTimeoutSeconds = context.effectiveTimeoutByKey.get(key);
       testsToRun.push(
         effectiveTimeoutSeconds === undefined
@@ -477,17 +479,19 @@ async function runTestAllItem(
         })
       : [];
   let executedIndex = 0;
-  const runResults = keyedTests.map(({ test, key, duplicate }) => {
+  for (const { key, duplicate } of keyedTests) {
     if (!duplicate) {
-      const executed = executedResults[executedIndex];
+      const executed = executedResults[executedIndex] as TestRunResult;
       executedIndex += 1;
-      return executed;
+      context.resultByTestKey.set(key, executed);
     }
+  }
+  const runResults = keyedTests.map(({ test, key }) => {
+    const executed = context.resultByTestKey.get(key) as TestRunResult;
     return {
+      ...executed,
       command: test.command,
       path: test.path,
-      status: "skipped" as const,
-      error: `Duplicate linked test skipped (key=${key}).`,
     };
   });
   const summary = countStatuses(runResults);
@@ -589,7 +593,7 @@ function buildTestAllItemRunContext(params: {
       projectPmRoot: params.pmRoot,
       globalPmRoot: resolveGlobalPmRoot(process.cwd()),
     },
-    seenTestKeys: new Set<string>(),
+    resultByTestKey: new Map<string, TestRunResult>(),
     effectiveTimeoutByKey: buildEffectiveTimeoutByKey(params.itemTests),
     trackingEnabled: params.settings.testing.record_results_to_items === true,
     trackingAuthor: resolveAuthor(undefined, params.settings.author_default),

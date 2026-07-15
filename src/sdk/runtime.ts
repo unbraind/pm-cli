@@ -109,6 +109,9 @@ import {
   type TestAllResult,
 } from "./test/batch.js";
 import {
+  runTestRunsAction,
+} from "./test/runs.js";
+import {
   runSearchEval,
   type EvalOptions,
   type EvalResult,
@@ -497,17 +500,7 @@ export {
   type TemplatesSaveResult,
   type TemplatesShowResult,
 } from "./templates.js";
-export {
-  runTestRunsList,
-  runTestRunsLogs,
-  runTestRunsResume,
-  runTestRunsStatus,
-  runTestRunsStop,
-  type TestRunsListCommandOptions,
-  type TestRunsLogsCommandOptions,
-  type TestRunsResumeCommandOptions,
-  type TestRunsStopCommandOptions,
-} from "./test/runs.js";
+export * from "./test/runs.js";
 export {
   CONFIDENCE_TEXT_VALUES,
   DEPENDENCY_KIND_VALUES,
@@ -3830,6 +3823,12 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
     runDocs(requireMcpItemId(ctx), withAddNoteOption(ctx.options), ctx.global),
   test: (ctx) => runTest(requireMcpItemId(ctx), ctx.options, ctx.global),
   "test-all": (ctx) => runTestAll(ctx.options, ctx.global),
+  "test-runs": (ctx) => runTestRunsAction(readString(ctx.args, "subcommand") ?? readRequiredString(ctx.options, "subcommand"), readString(ctx.args, "runId") ?? readString(ctx.options, "runId"), ctx.options, ctx.global),
+  "test-runs-list": (ctx) => runTestRunsAction("list", undefined, ctx.options, ctx.global),
+  "test-runs-status": (ctx) => runTestRunsAction("status", readRequiredString(ctx.args, "runId"), ctx.options, ctx.global),
+  "test-runs-logs": (ctx) => runTestRunsAction("logs", readRequiredString(ctx.options, "runId"), ctx.options, ctx.global),
+  "test-runs-stop": (ctx) => runTestRunsAction("stop", readRequiredString(ctx.options, "runId"), ctx.options, ctx.global),
+  "test-runs-resume": (ctx) => runTestRunsAction("resume", readRequiredString(ctx.options, "runId"), ctx.options, ctx.global),
   eval: (ctx) =>
     runSearchEval(ctx.options, ctx.global, (query, options, global) =>
       runSearch(query, options, global),

@@ -310,22 +310,20 @@ describe("runTestAll", () => {
       const result = await runTestAll({ status: "open", timeout: "30" }, { path: context.pmPath });
       expect(result.totals.items).toBe(2);
       expect(result.totals.linked_tests).toBe(5);
-      expect(result.passed).toBe(2);
+      expect(result.passed).toBe(3);
       expect(result.failed).toBe(0);
-      expect(result.skipped).toBe(3);
+      expect(result.skipped).toBe(2);
 
       const runResults = result.results.flatMap((entry) => entry.run_results);
       const duplicateCommandRuns = runResults.filter((entry) => (entry.command ?? "").includes("dup-command-token"));
       expect(duplicateCommandRuns).toHaveLength(2);
-      expect(duplicateCommandRuns.filter((entry) => entry.status === "passed")).toHaveLength(1);
-      expect(duplicateCommandRuns.filter((entry) => entry.status === "skipped")).toHaveLength(1);
-      expect(duplicateCommandRuns.some((entry) => (entry.error ?? "").includes("Duplicate linked test skipped"))).toBe(true);
+      expect(duplicateCommandRuns.filter((entry) => entry.status === "passed")).toHaveLength(2);
 
       const duplicatePathRuns = runResults.filter((entry) => entry.path === "tests/duplicate-path.spec.ts");
       expect(duplicatePathRuns).toHaveLength(2);
       expect(duplicatePathRuns.filter((entry) => entry.status === "skipped")).toHaveLength(2);
       expect(duplicatePathRuns.some((entry) => (entry.error ?? "").includes("No command configured"))).toBe(true);
-      expect(duplicatePathRuns.some((entry) => (entry.error ?? "").includes("Duplicate linked test skipped"))).toBe(true);
+      expect(duplicatePathRuns.every((entry) => (entry.error ?? "").includes("No command configured"))).toBe(true);
 
       const uniqueCommandRuns = runResults.filter((entry) => (entry.command ?? "").includes("unique-command-token"));
       expect(uniqueCommandRuns).toHaveLength(1);
@@ -477,16 +475,14 @@ describe("runTestAll", () => {
       const result = await runTestAll({ status: "open" }, { path: context.pmPath });
       expect(result.totals.items).toBe(2);
       expect(result.totals.linked_tests).toBe(2);
-      expect(result.passed).toBe(1);
+      expect(result.passed).toBe(2);
       expect(result.failed).toBe(0);
-      expect(result.skipped).toBe(1);
+      expect(result.skipped).toBe(0);
 
       const runResults = result.results.flatMap((entry) => entry.run_results);
       const slowRuns = runResults.filter((entry) => (entry.command ?? "").includes("slow-dup-timeout-token"));
       expect(slowRuns).toHaveLength(2);
-      expect(slowRuns.filter((entry) => entry.status === "passed")).toHaveLength(1);
-      expect(slowRuns.filter((entry) => entry.status === "skipped")).toHaveLength(1);
-      expect(slowRuns.some((entry) => (entry.error ?? "").includes("Duplicate linked test skipped"))).toBe(true);
+      expect(slowRuns.filter((entry) => entry.status === "passed")).toHaveLength(2);
     });
   });
 
@@ -504,16 +500,15 @@ describe("runTestAll", () => {
       const result = await runTestAll({ status: "open" }, { path: context.pmPath });
       expect(result.totals.items).toBe(1);
       expect(result.totals.linked_tests).toBe(2);
-      expect(result.passed).toBe(1);
+      expect(result.passed).toBe(2);
       expect(result.failed).toBe(0);
-      expect(result.skipped).toBe(1);
+      expect(result.skipped).toBe(0);
 
       const timeoutRuns = result.results
         .flatMap((entry) => entry.run_results)
         .filter((entry) => (entry.command ?? "").includes("single-item-timeout-token"));
       expect(timeoutRuns).toHaveLength(2);
-      expect(timeoutRuns.filter((entry) => entry.status === "passed")).toHaveLength(1);
-      expect(timeoutRuns.filter((entry) => entry.status === "skipped")).toHaveLength(1);
+      expect(timeoutRuns.filter((entry) => entry.status === "passed")).toHaveLength(2);
     });
   });
 
@@ -530,15 +525,14 @@ describe("runTestAll", () => {
       const result = await runTestAll({ status: "open" }, { path: context.pmPath });
       expect(result.totals.items).toBe(1);
       expect(result.totals.linked_tests).toBe(2);
-      expect(result.passed).toBe(1);
+      expect(result.passed).toBe(2);
       expect(result.failed).toBe(0);
-      expect(result.skipped).toBe(1);
+      expect(result.skipped).toBe(0);
 
       const runResults = result.results.flatMap((entry) => entry.run_results);
       const equalRuns = runResults.filter((entry) => (entry.command ?? "").includes("equal-timeout-token"));
       expect(equalRuns).toHaveLength(2);
-      expect(equalRuns.filter((entry) => entry.status === "passed")).toHaveLength(1);
-      expect(equalRuns.filter((entry) => entry.status === "skipped")).toHaveLength(1);
+      expect(equalRuns.filter((entry) => entry.status === "passed")).toHaveLength(2);
     });
   });
 
@@ -564,9 +558,9 @@ describe("runTestAll", () => {
       const result = await runTestAll({ status: "open" }, { path: context.pmPath });
       expect(result.totals.items).toBe(1);
       expect(result.totals.linked_tests).toBe(2);
-      expect(result.passed).toBe(1);
+      expect(result.passed).toBe(2);
       expect(result.failed).toBe(0);
-      expect(result.skipped).toBe(1);
+      expect(result.skipped).toBe(0);
     });
   });
 
@@ -635,7 +629,7 @@ describe("runTestAll", () => {
       expect(runResults.some((entry) => (entry.error ?? "").includes("No command configured for this linked test."))).toBe(
         true,
       );
-      expect(runResults.some((entry) => (entry.error ?? "").includes("Duplicate linked test skipped"))).toBe(true);
+      expect(runResults.every((entry) => (entry.error ?? "").includes("No command configured"))).toBe(true);
     });
   });
 
@@ -828,7 +822,7 @@ describe("runTestAll", () => {
       process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = "20";
       try {
         const startedAt = Date.now();
-        const result = await runTestAll({ status: "open", timeout: "0.02" }, { path: context.pmPath });
+        const result = await runTestAll({ status: "open", timeout: "1" }, { path: context.pmPath });
         const elapsedMs = Date.now() - startedAt;
         const maxElapsedMs = process.platform === "win32" ? 10000 : 3000;
 

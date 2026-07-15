@@ -7,6 +7,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { cp, mkdir, mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { runInNewContext } from "node:vm";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -63,6 +64,7 @@ import type { LinkedTest, LinkScope } from "../../types/index.js";
 
 const TEST_OUTPUT_MAX_BUFFER_BYTES = 20 * 1024 * 1024;
 const DEFAULT_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = 3000;
+const REGEX_ASSERTION_TIMEOUT_MS = 100;
 const DEFAULT_LINKED_TEST_HEARTBEAT_INTERVAL_MS = 10000;
 const DEFAULT_LINKED_TEST_PIPE_CLOSE_GRACE_MS = 5000;
 const MAX_LINKED_TEST_COMMAND_LABEL_LENGTH = 120;
@@ -879,9 +881,22 @@ function parseLinkedTestTimeoutSeconds(
     );
   }
   const timeoutRaw = timeoutSecondsRaw ?? timeoutAliasRaw;
-  return timeoutRaw === undefined
-    ? undefined
-    : Math.floor(parseOptionalNumber(timeoutRaw, "timeout_seconds"));
+  if (timeoutRaw === undefined) {
+    return undefined;
+  }
+  const timeoutSeconds = parseOptionalNumber(timeoutRaw, "timeout_seconds");
+  assertPositiveIntegerTimeout(timeoutSeconds, "timeout_seconds");
+  return timeoutSeconds;
+}
+
+/** Reject timeout values that cannot represent a useful whole-second limit. */
+function assertPositiveIntegerTimeout(value: number, label: string): void {
+  if (!Number.isFinite(value) || !Number.isInteger(value) || value <= 0) {
+    throw new PmCliError(
+      `${label} must be a finite positive integer`,
+      EXIT_CODE.USAGE,
+    );
+  }
 }
 
 /* c8 ignore start -- add-json validation matrix is covered by linked-test parser integration suites */
@@ -1825,13 +1840,17 @@ function evaluateRegexAssertions(
   const failures: string[] = [];
   for (const pattern of patterns ?? []) {
     try {
-      const regex = new RegExp(pattern, "m");
-      if (!regex.test(output)) {
+      const matches = runInNewContext(
+        'new RegExp(pattern, "m").test(output)',
+        { pattern, output },
+        { timeout: REGEX_ASSERTION_TIMEOUT_MS },
+      ) as boolean;
+      if (!matches) {
         failures.push(`${streamName} failed regex assertion: /${pattern}/m`);
       }
     } catch (error: unknown) {
       failures.push(
-        `${streamName} regex assertion is invalid: /${pattern}/ (${error instanceof Error ? error.message : String(error)})`,
+        `${streamName} regex assertion is invalid: /${pattern}/ (${String(error)})`,
       );
     }
   }
@@ -2349,6 +2368,20 @@ export async function runLinkedTests(
   defaultTimeoutSeconds: number | undefined,
   options?: RunLinkedTestsOptions,
 ): Promise<TestRunResult[]> {
+  if (defaultTimeoutSeconds !== undefined) {
+    assertPositiveIntegerTimeout(
+      defaultTimeoutSeconds,
+      "defaultTimeoutSeconds",
+    );
+  }
+  for (const linkedTest of tests) {
+    if (linkedTest.timeout_seconds !== undefined) {
+      assertPositiveIntegerTimeout(
+        linkedTest.timeout_seconds,
+        "timeout_seconds",
+      );
+    }
+  }
   const results: TestRunResult[] = [];
   const sandboxRoot = await mkdtemp(path.join(tmpdir(), "pm-linked-test-"));
   const layout = createLinkedTestSandboxLayout(sandboxRoot);

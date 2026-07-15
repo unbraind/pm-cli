@@ -546,11 +546,12 @@ function buildTelemetryStatsBuckets(
 /** Implements run telemetry for the public runtime surface of this module. */
 export async function runTelemetry(
   options: TelemetryCommandOptions,
-  _global: GlobalOptions,
+  global: GlobalOptions,
 ): Promise<TelemetryResult> {
-  void _global;
   const subcommand = normalizeTelemetrySubcommand(options.subcommand);
-  const globalPmRoot = resolveGlobalPmRoot(process.cwd());
+  const globalPmRoot = global.path
+    ? path.resolve(global.path)
+    : resolveGlobalPmRoot(process.cwd());
   const queuePath = path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH);
   const statePath = path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH);
   if (subcommand === "status") {
@@ -571,7 +572,7 @@ export async function runTelemetry(
       subcommand,
       queue_entries_before: before.queue_entries,
       queue_entries_after: after.queue_entries,
-      queue_drained: after.queue_entries < before.queue_entries,
+      queue_drained: after.queue_entries === 0,
       status: after,
       generated_at: nowIso(),
     };

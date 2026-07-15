@@ -27,6 +27,8 @@ import { coercePositiveInteger } from "../core/shared/primitives.js";
 import { pathExists } from "../core/fs/fs-utils.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 
+export type { EvalSearchMode } from "../core/search/eval.js";
+
 /** Relative location (under the pm root) of the default golden-query set. A git-tracked, human-curated file so relevance ground truth lives alongside the tracker it evaluates. */
 export const DEFAULT_EVAL_QUERIES_RELATIVE_PATH = path.join(
   "search",
@@ -166,7 +168,15 @@ async function loadEvalQuerySet(
   let raw: string;
   try {
     raw = await fs.readFile(queriesPath, "utf8");
-  } catch {
+  } catch (error: unknown) {
+    if (
+      typeof error !== "object" ||
+      error === null ||
+      !("code" in error) ||
+      error.code !== "ENOENT"
+    ) {
+      throw error;
+    }
     throw new PmCliError(
       `Eval query set not found at ${queriesPath}`,
       EXIT_CODE.NOT_FOUND,

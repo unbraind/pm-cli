@@ -83,10 +83,12 @@ function resolveWhoamiFallback(): string | undefined {
 
 function resolveRequestedBy(
   author: string | undefined,
+  globalAuthor: string | undefined,
   fallback: string,
 ): string {
   const candidates = [
     author,
+    globalAuthor,
     process.env.PM_AUTHOR,
     fallback,
     process.env.USER,
@@ -152,6 +154,7 @@ export async function runStartBackgroundRun(
   const settings = await readSettings(pmRoot);
   const requestedBy = resolveRequestedBy(
     options.author,
+    global.author,
     settings.author_default,
   );
   const started = await startBackgroundTestRun({
@@ -173,7 +176,8 @@ export async function runStartBackgroundRun(
   const spawned = await spawnBackgroundTestRunWorker({
     pmRoot,
     runId: started.run.id,
-    noExtensions: options.noExtensions === true,
+    noExtensions:
+      options.noExtensions === true || global.noExtensions === true,
   });
   return {
     started: true,
@@ -317,18 +321,54 @@ export async function runTestRunsResume(
   const settings = await readSettings(pmRoot);
   const requestedBy = resolveRequestedBy(
     options.author,
+    global.author,
     settings.author_default,
   );
   const resumed = await resumeBackgroundTestRun(
     pmRoot,
     runId,
     requestedBy,
-    options.noExtensions === true,
+    options.noExtensions === true || global.noExtensions === true,
   );
   return {
     resumed_from: runId,
     run: resumed,
   };
+}
+
+/** Dispatch one public background-run lifecycle operation for SDK runtimes. */
+export function runTestRunsAction(
+  subcommand: string,
+  runId: string | undefined,
+  options: Record<string, unknown>,
+  global: GlobalOptions,
+): Promise<unknown> {
+  const normalized = subcommand.trim().toLowerCase();
+  if (normalized === "list") {
+    return runTestRunsList(options, global);
+  }
+  if (!runId) {
+    throw new PmCliError(
+      `test-runs ${normalized} requires runId`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (normalized === "status") {
+    return runTestRunsStatus(runId, global);
+  }
+  if (normalized === "logs") {
+    return runTestRunsLogs(runId, options, global);
+  }
+  if (normalized === "stop") {
+    return runTestRunsStop(runId, options, global);
+  }
+  if (normalized === "resume") {
+    return runTestRunsResume(runId, options, global);
+  }
+  throw new PmCliError(
+    `Unknown pm test-runs subcommand "${subcommand}". Allowed: list, status, logs, stop, resume`,
+    EXIT_CODE.USAGE,
+  );
 }
 
 /** Implements run test runs worker for the public runtime surface of this module. */

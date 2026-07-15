@@ -7,6 +7,7 @@ import {
   runTelemetry,
   runTest,
   runTestAll,
+  runLinkedTests,
   stats,
   telemetry,
   test as runLinkedTest,
@@ -95,5 +96,17 @@ describe("SDK execution and diagnostics ownership", () => {
       [{ subcommand: "status" }],
     ]);
     expect(searchEvaluation.mock.calls).toEqual([[{}], [{ k: 5 }]]);
+  });
+
+  it("rejects invalid timeout values at the public linked-test boundary", async () => {
+    await expect(
+      runLinkedTests([], 0),
+    ).rejects.toMatchObject({ exitCode: 2 });
+    await expect(
+      runLinkedTests(
+        [{ command: "node --version", timeout_seconds: 1.5 }],
+        undefined,
+      ),
+    ).rejects.toMatchObject({ exitCode: 2 });
   });
 });

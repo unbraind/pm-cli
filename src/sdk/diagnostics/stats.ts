@@ -86,6 +86,7 @@ export interface StatsResult {
   generated_at: string;
 }
 
+/** Initialize every configured item type with a zero count. */
 function zeroByType(itemTypes: string[]): Record<ItemType, number> {
   return itemTypes.reduce(
     (acc, value) => {
@@ -96,6 +97,7 @@ function zeroByType(itemTypes: string[]): Record<ItemType, number> {
   );
 }
 
+/** Initialize every configured lifecycle status with a zero count. */
 function zeroByStatus(statuses: string[]): Record<ItemStatus, number> {
   return statuses.reduce(
     (acc, value) => {
@@ -106,6 +108,7 @@ function zeroByStatus(statuses: string[]): Record<ItemStatus, number> {
   );
 }
 
+/** Count non-empty JSONL records without treating blank files as one record. */
 function countNonEmptyLines(raw: string): number {
   if (raw.trim().length === 0) {
     return 0;
@@ -113,6 +116,7 @@ function countNonEmptyLines(raw: string): number {
   return raw.split(/\r?\n/u).filter((line) => line.trim().length > 0).length;
 }
 
+/** Return whether a filesystem failure reports a missing path. */
 function isNotFoundError(error: unknown): boolean {
   return (
     typeof error === "object" &&
@@ -122,6 +126,7 @@ function isNotFoundError(error: unknown): boolean {
   );
 }
 
+/** Read stable history streams while tolerating files removed during discovery. */
 async function readHistoryStreamContents(
   pmRoot: string,
 ): Promise<Array<{ id: string; raw: string }>> {

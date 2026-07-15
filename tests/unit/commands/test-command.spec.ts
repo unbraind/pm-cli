@@ -289,6 +289,19 @@ describe("runTest", () => {
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+      for (const timeout of ["0", "-1", "1.5", "Infinity"]) {
+        await expect(
+          runTest(
+            id,
+            {
+              add: [
+                `command=node --version,scope=project,timeout_seconds=${timeout}`,
+              ],
+            },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      }
       await expect(runTest(id, { add: ["path=tests/path-only.spec.ts"] }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -1102,7 +1115,7 @@ describe("runTest", () => {
         id,
         {
           add: [
-            "command=node --version,timeout=2.9,note=implicit project scope",
+            "command=node --version,timeout=2,note=implicit project scope",
             "command=node --version,scope=project,timeout_seconds=2,note=duplicate",
             "command=node --version,scope=project,timeout_seconds=2,pm_context_mode=tracker,note=tracker-variant",
             "command=node -e \"process.stdout.write('path-metadata-token')\",path=tests/example.spec.ts,note=implicit project scope",
@@ -1437,7 +1450,7 @@ describe("runTest", () => {
         id,
         {
           run: true,
-          timeout: "0.01",
+          timeout: "1",
         },
         { path: context.pmPath },
       );
@@ -2022,27 +2035,17 @@ describe("runTest", () => {
       expect(invalidRegexMetadata.run_results[0]?.status).toBe("failed");
       expect(invalidRegexMetadata.run_results[0]?.error ?? "").toContain("regex assertion is invalid");
 
-      const realRegExp = globalThis.RegExp;
-      let nonErrorRegexFailure: string[] | undefined;
-      try {
-        const throwingRegExp = function throwingRegExp(pattern?: string | RegExp, flags?: string) {
-          if (pattern === "will-throw") {
-            throw "regex-constructor-failure";
-          }
-          return new realRegExp(pattern, flags);
-        };
-        Object.setPrototypeOf(throwingRegExp, realRegExp);
-        throwingRegExp.prototype = realRegExp.prototype;
-        vi.stubGlobal("RegExp", throwingRegExp as unknown as RegExpConstructor);
-        nonErrorRegexFailure = testInternals.evaluateLinkedTestAssertions(
-          { command: "node --version", assert_stdout_regex: ["will-throw"] },
-          "plain",
-          "",
-        );
-      } finally {
-        vi.stubGlobal("RegExp", realRegExp);
-      }
-      expect(nonErrorRegexFailure?.[0]).toContain("regex-constructor-failure");
+      const boundedRegexStartedAt = Date.now();
+      const boundedRegexFailure = testInternals.evaluateLinkedTestAssertions(
+        {
+          command: "node --version",
+          assert_stdout_regex: ["(a+)+$"],
+        },
+        `${"a".repeat(100_000)}!`,
+        "",
+      );
+      expect(boundedRegexFailure[0]).toContain("regex assertion is invalid");
+      expect(Date.now() - boundedRegexStartedAt).toBeLessThan(1_000);
     });
   });
 
@@ -2170,7 +2173,7 @@ describe("runTest", () => {
           id,
           {
             run: true,
-            timeout: "0.02",
+            timeout: "1",
           },
           { path: context.pmPath },
         );

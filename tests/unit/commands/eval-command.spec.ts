@@ -149,9 +149,21 @@ describe("runEval", () => {
   });
 
   it("throws NOT_FOUND with guidance when the golden set is missing", async () => {
-    readFileMock.mockRejectedValue(new Error("ENOENT"));
+    readFileMock.mockRejectedValue(
+      Object.assign(new Error("missing"), { code: "ENOENT" }),
+    );
     await expect(runEval({}, GLOBAL)).rejects.toBeInstanceOf(PmCliError);
     await expect(runEval({}, GLOBAL)).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
+  });
+
+  it("preserves non-missing filesystem failures", async () => {
+    const denied = Object.assign(new Error("permission denied"), {
+      code: "EACCES",
+    });
+    readFileMock.mockRejectedValue(denied);
+    await expect(runEval({}, GLOBAL)).rejects.toBe(denied);
+    readFileMock.mockRejectedValue("non-object failure");
+    await expect(runEval({}, GLOBAL)).rejects.toBe("non-object failure");
   });
 
   it("throws USAGE when the golden set is not valid JSON", async () => {

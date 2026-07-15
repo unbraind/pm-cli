@@ -123,7 +123,7 @@ Command/action contract exports:
 - Typed read primitives on `PmClient`: `get` (including `GetOptions.at` point-in-time reads), `list`, `search`, `context`, `next`, `aggregate`, and `stats`; direct `getItemAt` reconstructs a canonical historical document without mutation
 - Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`
 - Typed execution and diagnostics primitives on `PmClient`: `test`, `testAll`, `telemetry`, and `evaluate`; matching top-level helpers support one-off consumers.
-- Execution and diagnostics contracts: `TestCommandOptions` / `TestResult`, `TestAllCommandOptions` / `TestAllResult`, `TelemetryCommandOptions` / `TelemetryResult`, `EvalOptions` / `EvalResult`, and the direct `runTest`, `runTestAll`, `runTelemetry`, `runStats`, and `runSearchEval` engines. The CLI modules are compatibility adapters over these SDK-owned implementations.
+- Execution and diagnostics contracts: `TestCommandOptions` / `TestResult`, `TestAllCommandOptions` / `TestAllResult`, `TelemetryCommandOptions` / `TelemetryResult`, `EvalOptions` / `EvalResult`, the durable `test-runs-*` actions, and the direct `runTest`, `runTestAll`, `runTelemetry`, `runStats`, `runSearchEval`, and `runTestRuns*` engines. The CLI modules are compatibility adapters over these SDK-owned implementations.
 - Context relevance primitives: `buildItemContextRelevanceCandidates`, `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
 - Context relevance contracts: `ContextRelevanceCandidate`, `ContextRelevanceSignals`, `ContextRelevanceScorer`, `ContextRelevanceReport`, `ContextEvaluationReader`, `ContextEvaluationScenario`, `ContextEvaluationScenarioReport`, `ContextEvaluationThresholds`, and `ContextEvaluationCorpusReport`
 - Context packing and feedback primitives: `packContextCandidates`, `recordContextUsageServing`, `recordContextUsageTouch`, `recordContextUsageTouches`, and `readContextUsageAffinity`
@@ -807,6 +807,9 @@ const pm = new PmClient({
 
 await pm.test("pm-feature", { list: true });
 const suite = await pm.testAll({ status: "in_progress", progress: true });
+const backgroundRuns = await pm.run("test-runs-list", {
+  options: { status: "running", limit: "20" },
+});
 const stats = await pm.stats({ metadataCoverage: true, fieldUtilization: true });
 const telemetry = await pm.telemetry({ subcommand: "status" });
 const evaluation = await pm.evaluate({ k: 10, failUnder: 0.9 });
@@ -822,7 +825,12 @@ The linked-test engine keeps sandbox validation, context preflight, timeout and
 buffer enforcement, failure categorization, progress events, background-run
 records, and result envelopes in one implementation. SDK and CLI consumers
 therefore cannot drift on what constitutes a passed, failed, skipped, or unsafe
-test run.
+test run. Timeout values must be finite positive whole seconds at both metadata
+parsing and direct SDK boundaries. User-supplied regex assertions execute in an
+isolated VM context with a finite per-pattern limit, so pathological patterns
+cannot stall an embedded host indefinitely. Batch deduplication executes each
+identity once and attributes the same pass, failure, or skip outcome to every
+owning item.
 
 ### Context relevance and evaluation
 

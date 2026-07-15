@@ -6,6 +6,7 @@ import * as fsPromises from "node:fs/promises";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   runStartBackgroundRun,
+  runTestRunsAction,
   runTestRunsList,
   runTestRunsLogs,
   runTestRunsResume,
@@ -213,6 +214,25 @@ describe("test-runs command attribution fallback", () => {
     });
   });
 
+  it("prefers the invocation-wide SDK author and isolation defaults", async () => {
+    await withTempPmPath(async (context) => {
+      const started = await runStartBackgroundRun(
+        {
+          kind: "test",
+          commandArgs: ["test", "pm-sdk-author"],
+        },
+        {
+          path: context.pmPath,
+          author: "sdk-global-author",
+          noExtensions: true,
+        },
+      );
+      expect((started.run as { requested_by?: string }).requested_by).toBe(
+        "sdk-global-author",
+      );
+    });
+  });
+
   it("falls back to os.userInfo username when env candidates are blank", async () => {
     await withTempPmPath(async (context) => {
       await setSettingsAuthorDefault(context.pmPath, " ");
@@ -275,6 +295,26 @@ describe("test-runs command attribution fallback", () => {
 describe("background test run lifecycle", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("dispatches every SDK background-run lifecycle action", async () => {
+    await withTempPmPath(async (context) => {
+      const global = { path: context.pmPath };
+      await expect(
+        runTestRunsAction(" list ", undefined, {}, global),
+      ).resolves.toMatchObject({ count: 0 });
+      for (const subcommand of ["status", "logs", "stop", "resume"]) {
+        await expect(
+          runTestRunsAction(subcommand, "missing-run", {}, global),
+        ).rejects.toThrow("missing-run");
+      }
+      expect(() =>
+        runTestRunsAction("status", undefined, {}, global),
+      ).toThrow("requires runId");
+      expect(() =>
+        runTestRunsAction("unknown", "missing-run", {}, global),
+      ).toThrow("Unknown pm test-runs subcommand");
+    });
   });
 
   it("rejects invalid records and empty background command arguments", async () => {
@@ -523,9 +563,15 @@ describe("background test run lifecycle", () => {
       await writeFile(cliEntry, "setTimeout(() => process.exit(0), 10);\n", "utf8");
 
       await withTemporaryEnv("PM_BACKGROUND_CLI_ENTRY", cliEntry, async () => {
-        const resumed = await runTestRunsResume(started.run.id, { author: "resume-author", noExtensions: true }, {
-          path: context.pmPath,
-        });
+        const resumed = await runTestRunsResume(
+          started.run.id,
+          {},
+          {
+            path: context.pmPath,
+            author: "resume-author",
+            noExtensions: true,
+          },
+        );
         const run = resumed.run as { id: string; attempt?: number; resumed_from?: string; resumed_by?: string };
         expect(resumed.resumed_from).toBe(started.run.id);
         expect(run.id).not.toBe(started.run.id);

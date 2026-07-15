@@ -25,6 +25,7 @@ const STATS_SDK_MODULE = "../../../src/sdk/diagnostics/stats.js";
 const TELEMETRY_SDK_MODULE = "../../../src/sdk/diagnostics/telemetry.js";
 const TEST_BATCH_SDK_MODULE = "../../../src/sdk/test/batch.js";
 const TEST_EXECUTION_SDK_MODULE = "../../../src/sdk/test/execution.js";
+const TEST_RUNS_SDK_MODULE = "../../../src/sdk/test/runs.js";
 const HISTORY_COMPACT_SDK_MODULE = "../../../src/sdk/history-compact.js";
 const HISTORY_REDACT_SDK_MODULE = "../../../src/sdk/history-redact.js";
 const HISTORY_REPAIR_SDK_MODULE = "../../../src/sdk/history-repair.js";
@@ -107,6 +108,11 @@ function buildCommandMocks() {
     runDocs: vi.fn(async () => ({ action: "docs" })),
     runTest: vi.fn(async () => ({ action: "test" })),
     runTestAll: vi.fn(async () => ({ action: "test-all" })),
+    runTestRunsList: vi.fn(async () => ({ action: "test-runs-list" })),
+    runTestRunsStatus: vi.fn(async () => ({ action: "test-runs-status" })),
+    runTestRunsLogs: vi.fn(async () => ({ action: "test-runs-logs" })),
+    runTestRunsStop: vi.fn(async () => ({ action: "test-runs-stop" })),
+    runTestRunsResume: vi.fn(async () => ({ action: "test-runs-resume" })),
     runDelete: vi.fn(async () => ({ action: "delete" })),
     runHistoryRepair: vi.fn(async () => ({ action: "history-repair" })),
     runHistoryRepairAll: vi.fn(async () => ({ action: "history-repair-all" })),
@@ -146,6 +152,23 @@ async function importServerWithCommandMocks(
   }));
   vi.doMock(TEST_EXECUTION_SDK_MODULE, () => ({
     runTest: commandMocks.runTest,
+  }));
+  vi.doMock(TEST_RUNS_SDK_MODULE, () => ({
+    runTestRunsAction: vi.fn(
+      async (subcommand: string) => {
+        if (subcommand === "unknown") {
+          throw Object.assign(new Error("unknown test-runs action"), {
+            exitCode: EXIT_CODE.USAGE,
+          });
+        }
+        return { action: `test-runs-${subcommand}` };
+      },
+    ),
+    runTestRunsList: commandMocks.runTestRunsList,
+    runTestRunsStatus: commandMocks.runTestRunsStatus,
+    runTestRunsLogs: commandMocks.runTestRunsLogs,
+    runTestRunsStop: commandMocks.runTestRunsStop,
+    runTestRunsResume: commandMocks.runTestRunsResume,
   }));
   vi.doMock(HISTORY_COMPACT_SDK_MODULE, () => ({
     assertHistoryCompactTarget: commandMocks.assertHistoryCompactTarget,
@@ -328,6 +351,31 @@ describe("mcp server branch residual coverage", () => {
       action: "test",
       options: { id: "pm-12", add: "node test.js" },
     });
+    await runAction({ action: "test-runs-list", options: { status: "running" } });
+    await runAction({ action: "test-runs-status", runId: "tr-status" });
+    await runAction({
+      action: "test-runs-logs",
+      options: { runId: "tr-logs", stream: "stderr" },
+    });
+    await runAction({
+      action: "test-runs-stop",
+      options: { runId: "tr-stop", force: true },
+    });
+    await runAction({
+      action: "test-runs-resume",
+      options: { runId: "tr-resume", author: "resume-host" },
+    });
+    for (const subcommand of ["list", "status", "logs", "stop", "resume"]) {
+      await runAction({
+        action: "test-runs",
+        subcommand,
+        runId: "tr-generic",
+        options: {},
+      });
+    }
+    await expect(
+      runAction({ action: "test-runs", options: { subcommand: "unknown" } }),
+    ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
     await runAction({ action: "deps", options: { id: "pm-13" } });
     await runAction({ action: "delete", options: { id: "pm-14" } });
 

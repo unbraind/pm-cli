@@ -286,6 +286,76 @@ describe("runTelemetry", () => {
     });
   });
 
+  it("keeps queue_drained false when a bounded flush leaves queued events", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-partial-flush-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      delete process.env.PM_TELEMETRY_DISABLED;
+      delete process.env.PM_NO_TELEMETRY;
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.enabled = true;
+      settings.telemetry.endpoint = "https://pm-cli.unbrained.dev/v1/events";
+      settings.telemetry.installation_id = "test-installation";
+      await writeSettings(globalRoot, settings, "test:telemetry_partial_flush");
+      await writeQueue(
+        globalRoot,
+        Array.from({ length: 101 }, (_, index) =>
+          JSON.stringify({
+            client_schema_version: 1,
+            attempts: 0,
+            event: {
+              event_id: `evt-partial-${index}`,
+              event_type: "command_finish",
+              schema_version: 1,
+              occurred_at: new Date().toISOString(),
+              installation_id: "test-installation",
+              session_id: "session-partial",
+              command: "list-open",
+              payload: {},
+            },
+          }),
+        ),
+      );
+      globalThis.fetch = vi.fn(async () =>
+        new Response("ok", { status: 200 }),
+      ) as unknown as typeof fetch;
+
+      const result = await runTelemetry(
+        { subcommand: "flush" },
+        { path: globalRoot },
+      );
+      expect(result).toMatchObject({
+        queue_entries_before: 101,
+        queue_entries_after: 1,
+        queue_drained: false,
+      });
+    });
+  });
+
+  it("honors the SDK configured tracker root over the environment default", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-environment-root-", async (environmentRoot) => {
+      await withTempGlobalRoot("pm-cli-telemetry-client-root-", async (clientRoot) => {
+        process.env.PM_GLOBAL_PATH = environmentRoot;
+        await writeQueue(clientRoot, [
+          JSON.stringify({
+            client_schema_version: 1,
+            attempts: 0,
+            event: {
+              event_id: "evt-client-root",
+              event_type: "command_start",
+              schema_version: 1,
+              command: "context",
+            },
+          }),
+        ]);
+        const result = await runTelemetry(
+          { subcommand: "status" },
+          { path: clientRoot },
+        );
+        expect(result.status?.queue_entries).toBe(1);
+      });
+    });
+  });
+
   it("clears runtime queue artifacts and disables telemetry", async () => {
     await withTempGlobalRoot("pm-cli-telemetry-clear-", async (globalRoot) => {
       process.env.PM_GLOBAL_PATH = globalRoot;
