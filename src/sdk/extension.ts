@@ -774,6 +774,33 @@ async function reclaimStaleExtensionInstallLock(
     : removeExtensionInstallLockIfOwned(lockPath, staleOwnerToken);
 }
 
+/** Start an owner-bound lease heartbeat and return an async stop barrier for final cleanup. */
+function startExtensionInstallLockHeartbeat(
+  lockPath: string,
+  ownerToken: string,
+  intervalMs: number,
+): () => Promise<void> {
+  let heartbeat = Promise.resolve();
+  const timer = setInterval(() => {
+    heartbeat = heartbeat
+      .then(async () => {
+        if (
+          (await readExtensionInstallLockOwnerToken(lockPath)) !== ownerToken
+        ) {
+          return;
+        }
+        const heartbeatAt = new Date();
+        await fs.utimes(lockPath, heartbeatAt, heartbeatAt);
+      })
+      .catch(() => undefined);
+  }, intervalMs);
+  timer.unref();
+  return async () => {
+    clearInterval(timer);
+    await heartbeat;
+  };
+}
+
 async function withExtensionInstallLock<T>(
   settingsRoot: string,
   destinationDirectoryName: string,
@@ -782,6 +809,7 @@ async function withExtensionInstallLock<T>(
     attempts?: number;
     delay_ms?: number;
     stale_ms?: number;
+    heartbeat_ms?: number;
   },
 ): Promise<T> {
   const lockRoot = path.join(
@@ -802,6 +830,10 @@ async function withExtensionInstallLock<T>(
   const staleMs = Math.max(
     0,
     Math.floor(options?.stale_ms ?? EXTENSION_INSTALL_LOCK_STALE_MS),
+  );
+  const heartbeatMs = Math.max(
+    1,
+    Math.floor(options?.heartbeat_ms ?? Math.max(1, staleMs / 3)),
   );
 
   const owner: ExtensionInstallLockOwner = {
@@ -844,9 +876,15 @@ async function withExtensionInstallLock<T>(
     );
   }
 
+  const stopHeartbeat = startExtensionInstallLockHeartbeat(
+    lockPath,
+    owner.token,
+    heartbeatMs,
+  );
   try {
     return await run();
   } finally {
+    await stopHeartbeat();
     await removeExtensionInstallLockIfOwned(lockPath, owner.token).catch(
       () => false,
     );

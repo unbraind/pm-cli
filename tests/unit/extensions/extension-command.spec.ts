@@ -15,6 +15,7 @@ import {
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -4910,6 +4911,68 @@ describe("extension command runtime", () => {
     }
   });
 
+  it("keeps a long-running scope owner leased beyond the stale threshold", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-heartbeat-"));
+    let releaseOwner: () => void = () => undefined;
+    let ownerRun: Promise<string> | null = null;
+    try {
+      let markOwnerStarted: () => void = () => undefined;
+      const ownerStarted = new Promise<void>((resolve) => {
+        markOwnerStarted = resolve;
+      });
+      const ownerReleased = new Promise<void>((resolve) => {
+        releaseOwner = resolve;
+      });
+      ownerRun = extensionCommandTestOnly.withExtensionInstallLock(
+        tempRoot,
+        "long-running-ext",
+        async () => {
+          markOwnerStarted();
+          await ownerReleased;
+          return "owner-finished";
+        },
+        { stale_ms: 20, heartbeat_ms: 2 },
+      );
+      await ownerStarted;
+      await delay(35);
+
+      await expect(
+        extensionCommandTestOnly.withExtensionInstallLock(
+          tempRoot,
+          "competing-ext",
+          async () => "unreachable",
+          { attempts: 1, delay_ms: 0, stale_ms: 20, heartbeat_ms: 2 },
+        ),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.CONFLICT });
+      releaseOwner();
+      await expect(ownerRun).resolves.toBe("owner-finished");
+    } finally {
+      releaseOwner();
+      await ownerRun?.catch(() => undefined);
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps extension installation running when a lease heartbeat write fails", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-heartbeat-error-"));
+    const utimesSpy = vi.spyOn(fsPromises, "utimes").mockRejectedValueOnce(new Error("heartbeat failed"));
+    try {
+      const result = await extensionCommandTestOnly.withExtensionInstallLock(
+        tempRoot,
+        "heartbeat-error-ext",
+        async () => {
+          await delay(5);
+          return "install-finished";
+        },
+        { heartbeat_ms: 1 },
+      );
+      expect(result).toBe("install-finished");
+    } finally {
+      utimesSpy.mockRestore();
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it("preserves a replacement scope lock when the original owner finishes", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-owner-"));
     try {
@@ -4930,8 +4993,10 @@ describe("extension command runtime", () => {
             })}\n`,
             "utf8",
           );
+          await delay(5);
           return "replacement-installed";
         },
+        { heartbeat_ms: 1 },
       );
 
       expect(result).toBe("replacement-installed");
