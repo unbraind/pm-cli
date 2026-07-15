@@ -307,6 +307,14 @@ export interface TestRunsResumeCommandOptions {
   noExtensions?: boolean;
 }
 
+/** Typed option union accepted by the public background-run lifecycle dispatcher. */
+export type TestRunsActionOptions =
+  | StartBackgroundRunCommandOptions
+  | TestRunsListCommandOptions
+  | TestRunsLogsCommandOptions
+  | TestRunsStopCommandOptions
+  | TestRunsResumeCommandOptions;
+
 /** Implements run test runs resume for the public runtime surface of this module. */
 export async function runTestRunsResume(
   runId: string,
@@ -340,12 +348,18 @@ export async function runTestRunsResume(
 export function runTestRunsAction(
   subcommand: string,
   runId: string | undefined,
-  options: Record<string, unknown>,
+  options: TestRunsActionOptions,
   global: GlobalOptions,
 ): Promise<unknown> {
   const normalized = subcommand.trim().toLowerCase();
+  if (normalized === "start") {
+    return runStartBackgroundRun(
+      options as StartBackgroundRunCommandOptions,
+      global,
+    );
+  }
   if (normalized === "list") {
-    return runTestRunsList(options, global);
+    return runTestRunsList(options as TestRunsListCommandOptions, global);
   }
   if (!runId) {
     throw new PmCliError(
@@ -357,16 +371,28 @@ export function runTestRunsAction(
     return runTestRunsStatus(runId, global);
   }
   if (normalized === "logs") {
-    return runTestRunsLogs(runId, options, global);
+    return runTestRunsLogs(
+      runId,
+      options as TestRunsLogsCommandOptions,
+      global,
+    );
   }
   if (normalized === "stop") {
-    return runTestRunsStop(runId, options, global);
+    return runTestRunsStop(
+      runId,
+      options as TestRunsStopCommandOptions,
+      global,
+    );
   }
   if (normalized === "resume") {
-    return runTestRunsResume(runId, options, global);
+    return runTestRunsResume(
+      runId,
+      options as TestRunsResumeCommandOptions,
+      global,
+    );
   }
   throw new PmCliError(
-    `Unknown pm test-runs subcommand "${subcommand}". Allowed: list, status, logs, stop, resume`,
+    `Unknown pm test-runs subcommand "${subcommand}". Allowed: start, list, status, logs, stop, resume`,
     EXIT_CODE.USAGE,
   );
 }

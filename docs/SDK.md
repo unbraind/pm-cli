@@ -807,6 +807,9 @@ const pm = new PmClient({
 
 await pm.test("pm-feature", { list: true });
 const suite = await pm.testAll({ status: "in_progress", progress: true });
+const startedRun = await pm.run("test-runs-start", {
+  options: { kind: "test", commandArgs: ["test", "pm-feature"] },
+});
 const backgroundRuns = await pm.run("test-runs-list", {
   options: { status: "running", limit: "20" },
 });
@@ -831,6 +834,12 @@ isolated VM context with a finite per-pattern limit, so pathological patterns
 cannot stall an embedded host indefinitely. Batch deduplication executes each
 identity once and attributes the same pass, failure, or skip outcome to every
 owning item.
+
+Durable background runs expose the complete native SDK lifecycle through
+`test-runs-start`, `test-runs-list`, `test-runs-status`, `test-runs-logs`,
+`test-runs-stop`, and `test-runs-resume`. Start requests use the exported typed
+options contract; management actions accept `runId` either as a top-level action
+argument or inside `options`.
 
 ### Context relevance and evaluation
 

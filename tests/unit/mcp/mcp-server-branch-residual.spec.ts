@@ -352,6 +352,10 @@ describe("mcp server branch residual coverage", () => {
       options: { id: "pm-12", add: "node test.js" },
     });
     await runAction({ action: "test-runs-list", options: { status: "running" } });
+    await runAction({
+      action: "test-runs-start",
+      options: { kind: "test", commandArgs: ["test", "pm-12"] },
+    });
     await runAction({ action: "test-runs-status", runId: "tr-status-arg" });
     await runAction({ action: "test-runs-status", options: { runId: "tr-status-option" } });
     await runAction({
@@ -374,9 +378,10 @@ describe("mcp server branch residual coverage", () => {
     await runAction({ action: "test-runs-resume", options: { runId: "tr-resume-option" } });
     expect(
       commandMocks.runTestRunsAction.mock.calls
-        .slice(1, 9)
+        .slice(1, 10)
         .map(([subcommand, runId]) => [subcommand, runId]),
     ).toEqual([
+      ["start", undefined],
       ["status", "tr-status-arg"],
       ["status", "tr-status-option"],
       ["logs", "tr-logs-arg"],

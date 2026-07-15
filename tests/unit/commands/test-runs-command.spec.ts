@@ -5,6 +5,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import * as fsPromises from "node:fs/promises";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  type StartBackgroundRunResult,
   runStartBackgroundRun,
   runTestRunsAction,
   runTestRunsList,
@@ -198,7 +199,9 @@ describe("test-runs command attribution fallback", () => {
     await withTempPmPath(async (context) => {
       await setSettingsAuthorDefault(context.pmPath, "   ");
       await withTemporaryEnvValues({ PM_AUTHOR: "   ", USER: "fallback-user" }, async () => {
-        const started = await runStartBackgroundRun(
+        const started = (await runTestRunsAction(
+          "start",
+          undefined,
           {
             kind: "test",
             commandArgs: ["test-runs", "list", "--json"],
@@ -208,7 +211,7 @@ describe("test-runs command attribution fallback", () => {
             path: context.pmPath,
             noExtensions: true,
           },
-        );
+        )) as StartBackgroundRunResult;
         expect((started.run as { requested_by?: string }).requested_by).toBe("fallback-user");
       });
     });

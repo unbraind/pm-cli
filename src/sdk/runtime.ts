@@ -3824,6 +3824,7 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   test: (ctx) => runTest(requireMcpItemId(ctx), ctx.options, ctx.global),
   "test-all": (ctx) => runTestAll(ctx.options, ctx.global),
   "test-runs": (ctx) => runTestRunsAction(readString(ctx.args, "subcommand") ?? readRequiredString(ctx.options, "subcommand"), readString(ctx.args, "runId") ?? readString(ctx.options, "runId"), ctx.options, ctx.global),
+  "test-runs-start": (ctx) => runTestRunsAction("start", undefined, ctx.options, ctx.global),
   "test-runs-list": (ctx) => runTestRunsAction("list", undefined, ctx.options, ctx.global),
   "test-runs-status": (ctx) => runTestRunsAction("status", readString(ctx.args, "runId") ?? readRequiredString(ctx.options, "runId"), ctx.options, ctx.global),
   "test-runs-logs": (ctx) => runTestRunsAction("logs", readString(ctx.args, "runId") ?? readRequiredString(ctx.options, "runId"), ctx.options, ctx.global),

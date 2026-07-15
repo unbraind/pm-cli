@@ -721,6 +721,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     telemetry: {
       optional: ["subcommand", "limit"],
     },
+    "test-runs-start": {
+      required: ["kind", "commandArgs"],
+      optional: ["targetId", "statusFilter", "author", "noExtensions"],
+    },
     "test-runs-list": {
       optional: ["status", "limit"],
     },
