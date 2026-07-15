@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   extractReferencedPmItemIdsFromCommand,
+  firstPositionalToken,
   isPmExecutableToken,
+  PM_ITEM_REFERENCE_FLAGS_WITH_VALUE,
   parseNpxCommand,
 } from "../../../src/sdk/test/linked-command-detection.js";
 
@@ -37,5 +39,54 @@ describe("npx command-string parsing", () => {
     expect(
       extractReferencedPmItemIdsFromCommand("npx --call 'pm get pm-dead'"),
     ).toEqual(["pm-dead"]);
+  });
+});
+
+describe("item-reference positional parsing", () => {
+  it("skips command and global option values before the item positional", () => {
+    expect(
+      extractReferencedPmItemIdsFromCommand(
+        "pm get --format json --at 2026-07-15 pm-dead",
+      ),
+    ).toEqual(["pm-dead"]);
+    expect(
+      extractReferencedPmItemIdsFromCommand(
+        "pm history --limit 10 --field status pm-beef",
+      ),
+    ).toEqual(["pm-beef"]);
+    expect(
+      extractReferencedPmItemIdsFromCommand(
+        "pm --author release-bot get --format json pm-cafe",
+      ),
+    ).toEqual(["pm-cafe"]);
+  });
+
+  it("does not confuse pm-shaped option values with the item positional", () => {
+    expect(
+      extractReferencedPmItemIdsFromCommand(
+        "pm update --parent pm-parent --assignee pm-owner pm-target",
+      ),
+    ).toEqual(["pm-target"]);
+    expect(
+      extractReferencedPmItemIdsFromCommand(
+        "pm get --format=pm-format --json pm-target",
+      ),
+    ).toEqual(["pm-target"]);
+  });
+
+  it("preserves boolean flags, option terminators, and the helper default", () => {
+    expect(
+      extractReferencedPmItemIdsFromCommand("pm get --json pm-dead"),
+    ).toEqual(["pm-dead"]);
+    expect(extractReferencedPmItemIdsFromCommand("pm get -- pm-beef")).toEqual([
+      "pm-beef",
+    ]);
+    expect(firstPositionalToken(["--json", "pm-cafe"])).toBe("pm-cafe");
+    expect(
+      firstPositionalToken(
+        ["--format", "json", "pm-dead"],
+        PM_ITEM_REFERENCE_FLAGS_WITH_VALUE.get,
+      ),
+    ).toBe("pm-dead");
   });
 });

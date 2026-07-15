@@ -29,7 +29,209 @@ const PM_SUBCOMMANDS_WITH_ITEM_REFERENCE = new Set([
 ]);
 
 /** Public contract for pm global flags with value, shared by SDK and presentation-layer consumers. */
-export const PM_GLOBAL_FLAGS_WITH_VALUE = new Set(["--path"]);
+export const PM_GLOBAL_FLAGS_WITH_VALUE = new Set([
+  "--pm-path",
+  "--path",
+  "--author",
+]);
+/** Value-bearing flags accepted before item positionals by item-referencing commands. */
+export const PM_ITEM_REFERENCE_FLAGS_WITH_VALUE: Readonly<
+  Record<string, ReadonlySet<string>>
+> = {
+  get: new Set([
+    "--depth",
+    "--fields",
+    "--tree-depth",
+    "--tree_depth",
+    "--at",
+    "--format",
+  ]),
+  history: new Set(["--limit", "--field", "--format"]),
+  restore: new Set(["--message"]),
+  update: new Set([
+    "--title",
+    "-t",
+    "--description",
+    "-d",
+    "--body",
+    "-b",
+    "--status",
+    "-s",
+    "--close-reason",
+    "--close_reason",
+    "--priority",
+    "-p",
+    "--type",
+    "--tags",
+    "--add-tags",
+    "--add_tags",
+    "--remove-tags",
+    "--remove_tags",
+    "--deadline",
+    "--estimated-minutes",
+    "--estimate",
+    "--estimated_minutes",
+    "--acceptance-criteria",
+    "--ac",
+    "--acceptance_criteria",
+    "--definition-of-ready",
+    "--definition_of_ready",
+    "--order",
+    "--rank",
+    "--goal",
+    "--objective",
+    "--value",
+    "--impact",
+    "--outcome",
+    "--why-now",
+    "--why_now",
+    "--message",
+    "--assignee",
+    "--parent",
+    "--reviewer",
+    "--risk",
+    "--confidence",
+    "--sprint",
+    "--release",
+    "--blocked-by",
+    "--blocked_by",
+    "--blocked-reason",
+    "--blocked_reason",
+    "--unblock-note",
+    "--unblock_note",
+    "--reporter",
+    "--severity",
+    "--environment",
+    "--repro-steps",
+    "--repro_steps",
+    "--resolution",
+    "--expected-result",
+    "--expected_result",
+    "--expected",
+    "--actual-result",
+    "--actual_result",
+    "--actual",
+    "--affected-version",
+    "--affected_version",
+    "--fixed-version",
+    "--fixed_version",
+    "--component",
+    "--regression",
+    "--customer-impact",
+    "--customer_impact",
+    "--dep",
+    "--dep-remove",
+    "--dep_remove",
+    "--comment",
+    "--note",
+    "--learning",
+    "--file",
+    "--test",
+    "--doc",
+    "--reminder",
+    "--event",
+    "--type-option",
+    "--type_option",
+    "--field",
+    "--unset",
+    "--body-file",
+  ]),
+  close: new Set([
+    "--reason",
+    "-r",
+    "--close-reason",
+    "--duplicate-of",
+    "-d",
+    "--message",
+    "-m",
+    "--validate-close",
+    "--resolution",
+    "--expected-result",
+    "--expected_result",
+    "--expected",
+    "--actual-result",
+    "--actual_result",
+    "--actual",
+  ]),
+  delete: new Set(["--message"]),
+  append: new Set(["--body", "--text", "--message"]),
+  claim: new Set([
+    "--assignee",
+    "--message",
+    "--type",
+    "--tag",
+    "--priority",
+    "--assignee-filter",
+    "--parent",
+    "--sprint",
+    "--release",
+    "--max-attempts",
+  ]),
+  release: new Set(["--assignee", "--message"]),
+  comments: new Set([
+    "--add",
+    "--body",
+    "--comment",
+    "--file",
+    "--edit",
+    "--delete",
+    "--limit",
+    "--message",
+  ]),
+  notes: new Set([
+    "--add",
+    "--file",
+    "--edit",
+    "--delete",
+    "--limit",
+    "--message",
+  ]),
+  learnings: new Set([
+    "--add",
+    "--file",
+    "--edit",
+    "--delete",
+    "--limit",
+    "--message",
+  ]),
+  files: new Set([
+    "--add",
+    "--add-glob",
+    "--remove",
+    "--migrate",
+    "--note",
+    "--message",
+  ]),
+  docs: new Set([
+    "--add",
+    "--add-glob",
+    "--remove",
+    "--migrate",
+    "--note",
+    "--message",
+  ]),
+  deps: new Set([
+    "--format",
+    "--max-depth",
+    "--collapse",
+    "--node-limit",
+    "--edge-limit",
+    "--token-budget",
+    "--cursor",
+  ]),
+  test: new Set([
+    "--add",
+    "--add-json",
+    "--remove",
+    "--match",
+    "--only-index",
+    "--timeout",
+    "--env-set",
+    "--env-clear",
+    "--pm-context",
+    "--message",
+  ]),
+};
 /** Public contract for npx flags with value, shared by SDK and presentation-layer consumers. */
 export const NPX_FLAGS_WITH_VALUE = new Set(["-p", "--package"]);
 /** Public contract for npx flags whose value is the command string itself. */
@@ -130,7 +332,10 @@ export const extractReferencedPmItemIdsFromCommand = (
       : null;
     const candidate =
       context && PM_SUBCOMMANDS_WITH_ITEM_REFERENCE.has(context.subcommand)
-        ? firstPositionalToken(context.remaining)
+        ? firstPositionalToken(
+            context.remaining,
+            PM_ITEM_REFERENCE_FLAGS_WITH_VALUE[context.subcommand],
+          )
         : undefined;
     const normalizedCandidate = candidate?.trim().toLowerCase();
     if (
@@ -254,8 +459,7 @@ export function parseNpxCommand(
       index += 1;
       break;
     }
-    index +=
-      NPX_FLAGS_WITH_VALUE.has(token) && !token.includes("=") ? 2 : 1;
+    index += NPX_FLAGS_WITH_VALUE.has(token) && !token.includes("=") ? 2 : 1;
   }
   const command = tokens[index];
   if (!command) {
@@ -349,10 +553,23 @@ export function resolvePmSubcommandContext(
 }
 
 /** Implements first positional token for the public runtime surface of this module. */
-export function firstPositionalToken(tokens: string[]): string | undefined {
-  for (const token of tokens) {
+export function firstPositionalToken(
+  tokens: string[],
+  flagsWithValue: ReadonlySet<string> = new Set(),
+): string | undefined {
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    if (token === "--") {
+      return tokens[index + 1];
+    }
     if (!token.startsWith("-")) {
       return token;
+    }
+    if (
+      !token.includes("=") &&
+      (PM_GLOBAL_FLAGS_WITH_VALUE.has(token) || flagsWithValue.has(token))
+    ) {
+      index += 1;
     }
   }
   return undefined;

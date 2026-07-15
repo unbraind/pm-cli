@@ -519,7 +519,6 @@ import {
   SCRIPT_RUN_SUBCOMMANDS,
   YARN_GLOBAL_FLAGS_WITH_VALUE,
   firstPmSubcommand,
-  extractReferencedPmItemIdsFromCommand,
   extractPmInvocationArgsFromSegment,
   isPmCliPackageToken,
   isPmCliScriptToken,
