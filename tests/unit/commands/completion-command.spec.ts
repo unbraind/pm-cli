@@ -124,6 +124,7 @@ describe("generateBashScript", () => {
     expect(script).toContain("--force");
     expect(script).toContain("--message");
     expect(script).toContain("--author");
+    expect(script).not.toContain("--author <id>");
     expect(script).toContain("--dep");
     expect(script).toContain("--dep-remove");
     expect(script).toContain("--replace-deps");

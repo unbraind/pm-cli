@@ -354,9 +354,6 @@
   "src/sdk/extension.ts": {
     "complexity": {
       "count": 1
-    },
-    "no-useless-assignment": {
-      "count": 1
     }
   },
   "src/sdk/package-import-adapters.ts": {

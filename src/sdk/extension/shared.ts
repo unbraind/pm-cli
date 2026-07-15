@@ -48,16 +48,23 @@ export function normalizeManagedDirectoryName(name: string): string {
   const normalized = name
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, "-")
-    .replace(/^-+/, "")
-    .replace(/-+$/, "");
-  if (normalized.length === 0) {
+    .replace(/[^a-z0-9._-]+/g, "-");
+  let start = 0;
+  while (normalized[start] === "-") {
+    start += 1;
+  }
+  let end = normalized.length;
+  while (end > start && normalized[end - 1] === "-") {
+    end -= 1;
+  }
+  const directoryName = normalized.slice(start, end);
+  if (directoryName.length === 0) {
     throw new PmCliError(
       "Extension manifest name must resolve to a non-empty directory name.",
       EXIT_CODE.USAGE,
     );
   }
-  if (normalized === "." || normalized === "..") {
+  if (directoryName === "." || directoryName === "..") {
     // Manifest-controlled input must resolve to a dedicated child directory, never
     // the extensions root itself or its parent (path-traversal guard).
     throw new PmCliError(
@@ -65,7 +72,7 @@ export function normalizeManagedDirectoryName(name: string): string {
       EXIT_CODE.USAGE,
     );
   }
-  return normalized;
+  return directoryName;
 }
 
 function parseOptionalManifestPriority(value: unknown): number | null {

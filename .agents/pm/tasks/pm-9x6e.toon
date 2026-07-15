@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: architecture,"area:cli","area:mcp","area:sdk",ci
 created_at: "2026-07-06T13:13:21.203Z"
-updated_at: "2026-07-15T01:25:57.071Z"
+updated_at: "2026-07-15T02:25:00.675Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: sdk-import-boundary-baseline.json reaches zero entries and is deleted; static-quality-gate hard-denies any private src/core import from src/cli/** and src/mcp/** with no baseline escape hatch; src/mcp handlers consume only src/sdk primitives; full test suite + 100% coverage gate green with zero CLI/MCP behavior change
@@ -22,7 +22,7 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-oxrw,related,"2026-07-06T13:13:21.203Z",null,null
   pm-rjqr,related,"2026-07-06T13:13:21.203Z",null,null
   pm-zwpp,related,"2026-07-06T13:13:21.203Z",null,null
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-14T19:24:59.262Z",codex-gpt5,"Implementation start 2026-07-14: actively shrinking the enforced CLI/MCP private-core baseline through the pm-3mna schema ownership extraction. This run will not claim the capstone complete unless the baseline truly reaches zero."
   "2026-07-14T19:41:00.327Z",codex-gpt5,"Progress evidence: removed all 17 schema-domain private-core edges previously attributed to src/cli/commands/schema.ts. The boundary ratchet passes with zero new imports; the broader baseline remains intentionally open and is not claimed complete."
   "2026-07-14T20:19:49.227Z",codex-root,"Final branch evidence: removed all 17 private-core imports formerly owned by src/cli/commands/schema.ts and deleted that stale baseline block. pnpm quality:static passes with no new private imports, no stale baseline entries, zero unsupported dynamic imports, 100% docstrings, and token budgets green. The repository-wide boundary baseline is not yet zero, so this capstone returns to open for the remaining command families."
@@ -30,13 +30,16 @@ comments[7]{created_at,author,text}:
   "2026-07-14T23:31:17.495Z",codex-root,"Progress evidence 2026-07-15: moved config, profile, init, init-agent-guidance, and templates into SDK ownership and removed their 54 grandfathered CLI-to-core edges. The static boundary gate reports actual_edge_count=642, baseline_edge_count=642, zero new imports, zero stale entries, and zero unsupported dynamic imports. Because 642 edges remain and the acceptance criterion requires zero plus deletion of the baseline, this capstone is deliberately returning to open rather than being falsely closed."
   "2026-07-15T01:03:56.201Z",codex-root,"Review-driven implementation evidence 2026-07-15: promoted the complete extension lifecycle engine and cohesive helpers from src/cli/commands/extension* into src/sdk/extension*, kept only thin CLI compatibility re-exports, and made SDK runtime/init consume the SDK implementation directly. This removed 45 additional grandfathered private-core edges: static quality reports actual_edge_count=597, baseline_edge_count=597, zero new/stale/dynamic violations. Suppression pruning reduced the mandatory budget 170 -> 167. Final all-source verification passes 291 files / 5,713 tests at exact 100%: 36,940 statements, 26,521 branches, 7,450 functions, 36,055 lines. The capstone remains incomplete because 597 edges remain, so it is returning to open."
   "2026-07-15T01:25:55.511Z",codex-root,"Second-head CodeQL evidence: accepted the polynomial-regex finding introduced by relocating the extension helper into the PR diff. Replaced the overlapping anchored alternation with two linear anchored trims and added a 20,004-character adversarial hyphen-run regression. Focused extension tests pass 125/125; strict lint/static quality pass; final all-source coverage remains exact 100/100/100/100 across 5,713 tests. Thread reacted to, replied inline, and resolved."
-learnings[2]{created_at,author,text}:
+  "2026-07-15T02:24:58.381Z",codex-root,"Third-head review evidence: replaced per-destination extension install locking with one scope-wide transaction lock carrying a UUID owner token; stale and final cleanup re-read ownership before removal, and regressions prove cross-destination serialization, invalid/stale-owner refusal, replacement-owner preservation, and owner-write cleanup. Install activation now requires explicit runtime status ok. Executable aliases moved into SDK contracts so SDK scaffolding has no reverse CLI dependency. Directory normalization uses linear index scans, eliminating both CodeQL regex findings. Focused extension/bootstrap tests pass 216/216; repository verification passes 291 files / 5,717 tests at exact 100%: 36,962 statements, 26,531 branches, 7,453 functions, 36,077 lines. Typecheck, lint, duplicates, static/docstring/package/token gates pass; suppression budget improved 167 -> 166. Temp-directory package-first dogfood passed 88 real CLI/SDK/package commands."
+learnings[3]{created_at,author,text}:
   "2026-07-14T20:19:49.944Z",codex-root,Boundary burn-down is strongest when the implementation itself moves to an SDK-owned module; deleting a baseline block without changing ownership would only hide the dependency direction.
   "2026-07-14T23:31:18.238Z",codex-root,Compatibility shims must remain locally referenced or be deleted after SDK promotion; the orphan-module gate correctly prevents dead presentation paths from surviving solely for tests.
-files[25]{path,scope,note}:
+  "2026-07-15T02:24:59.166Z",codex-root,Shared extension managed-state and settings mutations require scope-level serialization; destination-level locks protect copies but cannot protect shared snapshots. Persisted unique ownership must be re-read before stale reclaim and final release so an earlier installer cannot delete a replacement lock.
+files[28]{path,scope,note}:
   eslint-suppressions.json,project,Extension engine SDK promotion and boundary ratchet burn-down
   scripts/release/sdk-import-boundary-baseline.json,project,the baseline this task drives to zero and deletes
   scripts/release/static-quality-gate.mjs,project,ratchet implementation to flip to hard-deny
+  src/cli/bootstrap-args.ts,project,CLI consumes and re-exports SDK alias contract
   src/cli/commands/config.ts,project,Compatibility-only SDK re-export
   src/cli/commands/extension.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
   src/cli/commands/extension/describe.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
@@ -47,6 +50,7 @@ files[25]{path,scope,note}:
   src/cli/commands/init.ts,project,Compatibility-only SDK re-export
   src/cli/commands/profile.ts,project,Compatibility-only SDK re-export
   src/cli/commands/schema.ts,project,thin SDK re-export replaces CLI-owned implementation
+  src/sdk/cli-contracts/command-aliases.ts,project,SDK-owned executable alias contract after review
   src/sdk/extension.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
   src/sdk/extension/bundled-catalog.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
   src/sdk/extension/describe.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
@@ -58,6 +62,7 @@ files[25]{path,scope,note}:
   src/sdk/index.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
   src/sdk/runtime.ts,project,SDK runtime imports schema primitives directly
   src/sdk/schema.ts,project,promoted domain implementation eliminates CLI private-core imports
+  tests/unit/extensions/extension-command.spec.ts,project,Scope-lock ownership and activation regressions
   tests/unit/extensions/extension-shared-helpers.spec.ts,project,Adversarial CodeQL regex-complexity regression coverage
 tests[2]:
   - command: node scripts/run-tests.mjs coverage

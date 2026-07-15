@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[4]: agent-ux,"area:cli",gh-issue,multi-agent
 created_at: "2026-07-06T08:03:06.673Z"
-updated_at: "2026-07-15T01:47:04.851Z"
+updated_at: "2026-07-15T02:40:52.575Z"
 assignee: codex-root
 author: maintainer-agent
 estimated_minutes: 150
@@ -16,7 +16,7 @@ risk: low
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-u14c,related,"2026-07-14T17:05:04.337Z",null,null
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-14T22:56:36.829Z",codex-root,"Implementation start 2026-07-15: bundled with pm-3mna because global author attribution, init author_default, config persistence, and health/validate remediation share the same workspace-customization primitives. Live GH-444 and all-status duplicate lineage confirmed this is canonical."
   "2026-07-14T23:44:01.801Z",unknown,"Verification evidence 2026-07-15: final all-source coverage passed 291 files / 5,708 tests at exact 100% (36,925 statements, 26,508 branches, 7,449 functions, 36,040 lines). Packed clean-install proof confirms global --author precedence for init/create/comments, non-empty init author_default, exported SDK program/scanner primitives, and advisory non-blocking unknown-author health/validate diagnostics. Release readiness passed all code/package/security gates and stops only on separately tracked external Sentry highs; live telemetry is healthy at 0.34% errors with complete error codes."
   "2026-07-15T00:04:34.200Z",unknown,"Greptile pre-push review 6357789e-57bf-4116-be0e-52d29e120d5b: accepted both findings. Bootstrap author parsing now preserves following flags under Commander optional-value semantics, and invocation-author validation runs inside the central CLI catch/finally path so formatted errors, telemetry, exit codes, and environment restoration remain intact. Regression suite passes 132/132; final all-source coverage passes 291 files / 5,709 tests at exact 100%: 36,933 statements, 26,518 branches, 7,451 functions, 36,048 lines. Strict lint/static/package-boundary/token gates remain green."
@@ -24,7 +24,8 @@ comments[7]{created_at,author,text}:
   "2026-07-15T00:14:44.637Z",codex-root,"Greptile pre-push rerun 5b5f653b-6605-467e-84a2-176f40445f0a completed at confidence 5/5, safe to merge, with no review comments. It explicitly verified both prior blockers resolved: flag-like tokens are not consumed as optional author values, and author override validation/restoration stays within the central catch/finally lifecycle."
   "2026-07-15T01:07:24.805Z",codex-root,"PR #565 round-1 and packed acceptance evidence: global --author now requires an explicit non-flag value, missing values flow through the central JSON/telemetry error path, empty rendered commands are stable, fresh init persists a non-empty default, legacy blank-setting fallback remains explicitly covered, and scoped validate avoids unrelated attribution scans. Final all-source coverage is exact 100/100/100/100 across 5,713 tests. A fresh installed tarball proved init/create/comments author precedence plus zero unknown history events through the public SDK scanner."
   "2026-07-15T01:47:04.851Z",codex-root,"Pre-push Greptile consistency follow-up: although the review was confidence 5/5 with no comments, its reasoning noted that inline-empty --author= lacked the structured code/next_steps supplied for a missing value. Both malformed forms now emit missing_required_argument plus the explicit --author <id> recovery step through the central JSON handler. Focused tests pass 132/132 and final all-source coverage remains exact 100/100/100/100 across 5,713 tests."
-files[26]{path,scope,note}:
+  "2026-07-15T02:40:52.572Z",codex-root,"Greptile follow-up evidence: accepted the completion-contract finding. Global author metadata now encodes the canonical flag separately from value_name=id, so Bash completion suggests --author but never the literal <id> placeholder. Focused completion/bootstrap/action-schema tests pass 197/197; strict lint/static/docstring/package/token gates pass; exact all-source coverage remains 291 files / 5,717 tests at 100/100/100/100 (36,962 statements, 26,531 branches, 7,453 functions, 36,077 lines)."
+files[27]{path,scope,note}:
   src/cli/bootstrap-args.ts,project,Invocation-wide author parsing
   src/cli/commands/health.ts,project,Advisory provenance health diagnostic
   src/cli/commands/validate.ts,project,Advisory provenance validation diagnostic
@@ -46,6 +47,7 @@ files[26]{path,scope,note}:
   tests/unit/cli/bootstrap-args.spec.ts,project,Author attribution review hardening and fallback coverage
   tests/unit/cli/cli-main-errors.spec.ts,project,Central author override error handling regression
   tests/unit/commands/claim-command.spec.ts,project,Author attribution review hardening and fallback coverage
+  tests/unit/commands/completion-command.spec.ts,project,Author placeholder completion regression
   tests/unit/commands/get-append-command.spec.ts,project,Author attribution review hardening and fallback coverage
   tests/unit/helpers/withTempPmPath.spec.ts,project,Author attribution review hardening and fallback coverage
   tests/unit/packages/beads-command.spec.ts,project,Author attribution review hardening and fallback coverage

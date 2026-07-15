@@ -4,9 +4,11 @@
  * Provides CLI runtime support for Bootstrap Args.
  */
 import {
+  EXECUTABLE_COMMAND_ALIASES,
   resolveSubcommandFlagContractsForCommand,
   type CliFlagContract,
 } from "../sdk/cli-contracts.js";
+export { EXECUTABLE_COMMAND_ALIASES };
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 
 const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>([
@@ -400,14 +402,6 @@ type BootstrapNormalizationReason =
 type BootstrapNormalizationConfidence = "high" | "medium";
 
 /** Executable command aliases: a leading command token here is rewritten to its canonical command BEFORE commander parses, so the alias actually runs instead of merely being suggested. These are the highest-frequency aliases real agents type (telemetry: `pm show <id>` alone is the single most common unknown-command) and each target takes the same positional/flags as the alias (with `--comment`/ `--note`/`--learning` flag-aliased to `--add` on the target command). Keeping this in one place means the alias is consistent across registration, commander dispatch, telemetry, and error handling — all of which read the normalized argv. */
-export const EXECUTABLE_COMMAND_ALIASES: Readonly<Record<string, string>> = {
-  show: "get",
-  view: "get",
-  comment: "comments",
-  note: "notes",
-  learning: "learnings",
-};
-
 /**
  * Rewrite a leading command-alias token (e.g. `show` -> `get`) in place. Only the
  * command position is considered — the same token appearing later as an argument

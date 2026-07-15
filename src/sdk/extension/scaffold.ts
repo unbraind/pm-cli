@@ -5,11 +5,13 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { EXECUTABLE_COMMAND_ALIASES } from "../../cli/bootstrap-args.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { PM_CORE_COMMAND_NAMES } from "../cli-contracts.js";
+import {
+  EXECUTABLE_COMMAND_ALIASES,
+  PM_CORE_COMMAND_NAMES,
+} from "../cli-contracts.js";
 import { normalizeManagedDirectoryName } from "./shared.js";
 
 // Safe compatibility floor emitted into scaffolded manifests. The current

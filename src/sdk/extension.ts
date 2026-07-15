@@ -3,6 +3,7 @@
  *
  * Implements the pm extension command surface and its agent-facing runtime behavior.
  */
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -96,6 +97,13 @@ const EXTENSION_INSTALL_COPY_ATTEMPTS = 3;
 const EXTENSION_INSTALL_LOCK_ATTEMPTS = 120;
 const EXTENSION_INSTALL_LOCK_DELAY_MS = 250;
 const EXTENSION_INSTALL_LOCK_STALE_MS = 120_000;
+
+interface ExtensionInstallLockOwner {
+  pid: number;
+  token: string;
+  created_at: string;
+  destination: string;
+}
 
 /** Restricts extension command action values accepted by command, SDK, and storage contracts. */
 export type ExtensionCommandAction =
@@ -717,6 +725,55 @@ async function copyExtensionDirectoryWithoutSelfNesting(
   }
 }
 
+/** Read the unique owner token recorded for one extension scope lock. */
+async function readExtensionInstallLockOwnerToken(
+  lockPath: string,
+): Promise<string | null> {
+  try {
+    const parsed = JSON.parse(
+      await fs.readFile(path.join(lockPath, "owner.json"), "utf8"),
+    ) as Record<string, unknown>;
+    return typeof parsed.token === "string" && parsed.token.length > 0
+      ? parsed.token
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Remove an extension scope lock only while its persisted owner token still matches. */
+async function removeExtensionInstallLockIfOwned(
+  lockPath: string,
+  ownerToken: string,
+): Promise<boolean> {
+  const currentOwnerToken = await readExtensionInstallLockOwnerToken(lockPath);
+  if (currentOwnerToken !== ownerToken) {
+    return false;
+  }
+  await fs.rm(lockPath, { recursive: true, force: true });
+  return true;
+}
+
+/** Reclaim an expired extension scope lock when its persisted owner remains unchanged. */
+async function reclaimStaleExtensionInstallLock(
+  lockPath: string,
+  staleMs: number,
+): Promise<boolean> {
+  let stat: Awaited<ReturnType<typeof fs.stat>>;
+  try {
+    stat = await fs.stat(lockPath);
+  } catch {
+    return false;
+  }
+  if (Date.now() - stat.mtimeMs <= staleMs) {
+    return false;
+  }
+  const staleOwnerToken = await readExtensionInstallLockOwnerToken(lockPath);
+  return staleOwnerToken === null
+    ? false
+    : removeExtensionInstallLockIfOwned(lockPath, staleOwnerToken);
+}
+
 async function withExtensionInstallLock<T>(
   settingsRoot: string,
   destinationDirectoryName: string,
@@ -732,7 +789,7 @@ async function withExtensionInstallLock<T>(
     "runtime",
     "extension-install-locks",
   );
-  const lockPath = path.join(lockRoot, `${destinationDirectoryName}.lock`);
+  const lockPath = path.join(lockRoot, "scope.lock");
   await fs.mkdir(lockRoot, { recursive: true });
   const attempts = Math.max(
     1,
@@ -747,29 +804,33 @@ async function withExtensionInstallLock<T>(
     Math.floor(options?.stale_ms ?? EXTENSION_INSTALL_LOCK_STALE_MS),
   );
 
+  const owner: ExtensionInstallLockOwner = {
+    pid: process.pid,
+    token: randomUUID(),
+    created_at: nowIso(),
+    destination: destinationDirectoryName,
+  };
   let acquired = false;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
       await fs.mkdir(lockPath);
+      try {
+        await fs.writeFile(
+          path.join(lockPath, "owner.json"),
+          `${JSON.stringify(owner, null, 2)}\n`,
+          "utf8",
+        );
+      } catch (error: unknown) {
+        await fs.rm(lockPath, { recursive: true, force: true });
+        throw error;
+      }
       acquired = true;
-      await fs.writeFile(
-        path.join(lockPath, "owner.json"),
-        `${JSON.stringify({ pid: process.pid, created_at: nowIso(), destination: destinationDirectoryName }, null, 2)}\n`,
-        "utf8",
-      );
       break;
     } catch (error: unknown) {
       if (!isErrnoCode(error, "EEXIST")) {
         throw error;
       }
-      let stat: Awaited<ReturnType<typeof fs.stat>> | null = null;
-      try {
-        stat = await fs.stat(lockPath);
-      } catch {
-        stat = null;
-      }
-      if (stat && Date.now() - stat.mtimeMs > staleMs) {
-        await fs.rm(lockPath, { recursive: true, force: true });
+      if (await reclaimStaleExtensionInstallLock(lockPath, staleMs)) {
         continue;
       }
       await sleep(delayMs);
@@ -786,9 +847,9 @@ async function withExtensionInstallLock<T>(
   try {
     return await run();
   } finally {
-    await fs
-      .rm(lockPath, { recursive: true, force: true })
-      .catch(() => undefined);
+    await removeExtensionInstallLockIfOwned(lockPath, owner.token).catch(
+      () => false,
+    );
   }
 }
 
@@ -2201,7 +2262,7 @@ function buildInstallManagedSource(
 }
 /* c8 ignore stop */
 
-/** Run the install body while holding the per-destination install lock: read settings and managed state, copy the validated extension into the scope root unless it is already installed in place, upsert the managed entry and activation state, scaffold any contributed item-type folders, runtime-probe the freshly installed command paths, and return the install result envelope. */
+/** Run the install body while holding the scope-wide install lock: read settings and managed state, copy the validated extension into the scope root unless it is already installed in place, upsert the managed entry and activation state, scaffold any contributed item-type folders, runtime-probe the freshly installed command paths, and return the install result envelope. */
 async function performExtensionInstallUnderLock(
   ctx: ExtensionActionContext,
   input: {
@@ -2342,7 +2403,7 @@ async function performExtensionInstallUnderLock(
     installActivationFailure,
   );
   const activated =
-    !runtimeProbe.extensions_disabled && runtimeActivationStatus !== "failed";
+    !runtimeProbe.extensions_disabled && runtimeActivationStatus === "ok";
   if (!activated) {
     warnings.push(
       `extension_install_activation_failed:${scope}:${validated.manifest.name}:${runtimeActivationStatus}`,

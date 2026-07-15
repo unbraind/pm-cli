@@ -14,6 +14,7 @@ export type {
   CommanderOptionAliasContract,
   CommanderOptionRegistrationContract,
 } from "./cli-contracts/commander-types.js";
+export { EXECUTABLE_COMMAND_ALIASES } from "./cli-contracts/command-aliases.js";
 export {
   ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
   CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
