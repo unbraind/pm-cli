@@ -67,29 +67,20 @@ import {
   runClose,
   runCloseMany,
   runComments,
-  runConfig,
   runContext,
   runCopy,
   runCreate,
   runDelete,
-  runExtension,
-  type ExtensionCommandOptions,
-  type ExtensionCommandResult,
   runFocus,
   runGc,
   runGet,
   runHealth,
   runHistory,
-  runInit,
   runLearnings,
   runList,
   runNext,
   runNotes,
   runPlan,
-  runProfileApply,
-  runProfileLint,
-  runProfileList,
-  runProfileShow,
   runRestore,
   runRelease,
   runSearch,
@@ -104,6 +95,19 @@ import {
   type UpgradeResult,
   runValidate,
 } from "../cli/commands/index.js";
+import {
+  runExtension,
+  type ExtensionCommandOptions,
+  type ExtensionCommandResult,
+} from "./extension.js";
+import { runConfig } from "./config.js";
+import { runInit } from "./init.js";
+import {
+  runProfileApply,
+  runProfileLint,
+  runProfileList,
+  runProfileShow,
+} from "./profile.js";
 import {
   type HistoryCompactBulkCommandOptions,
   type HistoryCompactBulkResult,
@@ -469,7 +473,7 @@ export {
   type TemplatesListResult,
   type TemplatesSaveResult,
   type TemplatesShowResult,
-} from "../cli/commands/templates.js";
+} from "./templates.js";
 export {
   runTestRunsList,
   runTestRunsLogs,

@@ -61,9 +61,8 @@ import {
 } from "../core/shared/errors.js";
 import {
   asRecordOrNull,
-  toNonEmptyStringOrUndefined,
 } from "../core/shared/primitives.js";
-import { printError, printResult, writeStdout } from "../core/output/output.js";
+import { printError, printResult } from "../core/output/output.js";
 import { maybeRunFirstUseTelemetryPrompt } from "../core/telemetry/consent.js";
 import {
   emitTelemetryErrorEvent,
@@ -155,6 +154,8 @@ import {
   normalizeBootstrapInvocation,
   stripGlobalBootstrapTokens,
 } from "./bootstrap-args.js";
+import { applyInvocationAuthorOverride } from "../sdk/invocation-author.js";
+import { createPmCliProgram } from "../sdk/cli-program.js";
 import {
   type MandatoryMigrationBlocker,
   collectMandatoryMigrationBlockers,
@@ -187,7 +188,8 @@ if (
   process.env[PM_PACKAGE_ROOT_ENV] = resolvePmPackageRoot();
 }
 
-let activeExtensionHookContext: ActiveExtensionHookContext<MandatoryMigrationBlocker> | null = null;
+let activeExtensionHookContext: ActiveExtensionHookContext<MandatoryMigrationBlocker> | null =
+  null;
 let activeTelemetryCommandContext: ActiveTelemetryCommand | null = null;
 
 function setActiveExtensionHookContextForTest(
@@ -777,9 +779,12 @@ async function runAndClearAfterCommandHooks(
   let hookWarnings: string[] = [];
   const affected = consumeAfterCommandAffectedItems();
   try {
-    if (process.env.PM_CONTEXT_USAGE_DISABLED !== "1") await recordContextUsageTouches({
+    if (process.env.PM_CONTEXT_USAGE_DISABLED !== "1")
+      await recordContextUsageTouches({
         pmRoot: runtime.pmRoot,
-        author: process.env.PM_AUTHOR ?? (await readSettings(runtime.pmRoot)).author_default,
+        author:
+          process.env.PM_AUTHOR ??
+          (await readSettings(runtime.pmRoot)).author_default,
         itemIds: outcome.ok ? (affected?.map((item) => item.id) ?? []) : [],
         intent: runtime.commandName,
       });
@@ -2501,46 +2506,7 @@ async function registerDynamicExtensionCommandPaths(
 const CLI_VERSION = resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0";
 /* c8 ignore stop */
 
-const program = new Command();
-program
-  .name("pm")
-  .description(
-    "Universal, flexible, extensible, agent-optimized project management CLI for any project or programming language.",
-  )
-  .version(CLI_VERSION)
-  .showHelpAfterError(false)
-  .allowExcessArguments(false)
-  .allowUnknownOption(false)
-  .configureOutput({
-    writeOut: (str) => {
-      writeStdout(str);
-    },
-    // Commander errors are rendered in our own catch path.
-    writeErr: () => {},
-  })
-  .option("--json", "Output JSON instead of TOON")
-  .option("--quiet", "Suppress stdout output")
-  .option(
-    "--no-changed-fields",
-    "Omit the changed_fields array from mutation output (keeps changed_field_count)",
-  )
-  .option(
-    "--id-only",
-    "Print only id and status for single-item mutation output",
-  )
-  .option(
-    "--pm-path <dir>",
-    "Explicit tracker storage path for this command (preferred over --path)",
-  )
-  .option(
-    "--path <dir>",
-    "Backward-compatible alias for --pm-path; this is the tracker storage path, not a workspace cwd",
-  )
-  .option("--no-extensions", "Disable extension loading")
-  .option("--no-pager", "Disable pager integration for help and long output")
-  .option("--explain", "Render extended rationale and examples in help output")
-  .option("--profile", "Print deterministic timing diagnostics")
-  .exitOverride();
+const program = createPmCliProgram(CLI_VERSION);
 
 /* c8 ignore start */
 program.hook("preAction", async (_thisCommand, actionCommand) => {
@@ -3564,7 +3530,16 @@ export async function runPmCli(
     ...invocationArgv,
   ];
   const isBareInvocation = invocationArgv.length === 0;
+  let restorePmAuthor: (() => void) | undefined;
   try {
+    const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
+    if (bootstrapGlobal.authorMissingValue) {
+      throw new PmCliError("--author requires a non-empty value.", EXIT_CODE.USAGE, {
+        code: "missing_required_argument",
+        nextSteps: ["Pass an explicit author identifier with --author <id>."],
+      });
+    }
+    restorePmAuthor = applyInvocationAuthorOverride(bootstrapGlobal.author);
     enforceExplicitRetryForFlagTypos(bootstrapInvocation);
     applyBootstrapPagerPolicy(invocationArgv);
     const registrationSelection =
@@ -3605,6 +3580,8 @@ export async function runPmCli(
     await program.parseAsync(invocationProcessArgv);
   } catch (error: unknown) {
     await handleRunPmCliError({ error, invocationArgv });
+  } finally {
+    restorePmAuthor?.();
   }
 }
 

@@ -4,10 +4,32 @@
  * Provides CLI runtime support for Bootstrap Args.
  */
 import {
+  EXECUTABLE_COMMAND_ALIASES,
   resolveSubcommandFlagContractsForCommand,
   type CliFlagContract,
 } from "../sdk/cli-contracts.js";
+export { EXECUTABLE_COMMAND_ALIASES };
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
+
+const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>([
+  "--pm-path",
+  "--path",
+  "--author",
+]);
+
+/** Whether a global value-consuming flag uses its inline `--flag=value` form. */
+const isInlineGlobalValueToken = (token: string): boolean => {
+  const equalsIndex = token.indexOf("=");
+  return (
+    equalsIndex > 0 &&
+    GLOBAL_VALUE_CONSUMING_FLAGS.has(token.slice(0, equalsIndex))
+  );
+};
+
+/** Whether optional bootstrap author syntax consumes the following token. */
+const consumesBootstrapAuthorValue = (next: string | undefined): boolean => {
+  return typeof next === "string" && !next.startsWith("-");
+};
 
 function parseBootstrapPathToken(
   token: string,
@@ -62,6 +84,10 @@ export interface BootstrapGlobalOptions {
   json: boolean;
   /** Value that configures or reports quiet for this contract. */
   quiet: boolean;
+  /** Invocation-wide mutation author override. */
+  author?: string;
+  /** Whether `--author` was present without its required value. */
+  authorMissingValue?: true;
 }
 
 /** Implements parse bootstrap global options for the public runtime surface of this module. */
@@ -74,6 +100,8 @@ export function parseBootstrapGlobalOptions(
   let noPager = false;
   let json = false;
   let quiet = false;
+  let author: string | undefined;
+  let authorMissingValue = false;
   let index = 0;
   while (index < argv.length) {
     const token = argv[index];
@@ -112,6 +140,21 @@ export function parseBootstrapGlobalOptions(
       index += parsedPath.consumed;
       continue;
     }
+    if (token === "--author") {
+      if (consumesBootstrapAuthorValue(argv[index + 1])) {
+        author = argv[index + 1];
+        index += 2;
+      } else {
+        authorMissingValue = true;
+        index += 1;
+      }
+      continue;
+    }
+    if (token.startsWith("--author=")) {
+      author = token.slice("--author=".length);
+      index += 1;
+      continue;
+    }
     index += 1;
   }
   return {
@@ -120,6 +163,8 @@ export function parseBootstrapGlobalOptions(
     noPager,
     json,
     quiet,
+    ...(author !== undefined ? { author } : {}),
+    ...(authorMissingValue ? { authorMissingValue: true } : {}),
   };
 }
 
@@ -144,11 +189,15 @@ export function stripGlobalBootstrapTokens(argv: string[]): string[] {
       index += 1;
       continue;
     }
-    if (token === "--path" || token === "--pm-path") {
+    if (token === "--author") {
+      index += consumesBootstrapAuthorValue(argv[index + 1]) ? 2 : 1;
+      continue;
+    }
+    if (GLOBAL_VALUE_CONSUMING_FLAGS.has(token)) {
       index += 2;
       continue;
     }
-    if (token.startsWith("--path=") || token.startsWith("--pm-path=")) {
+    if (isInlineGlobalValueToken(token)) {
       index += 1;
       continue;
     }
@@ -223,13 +272,16 @@ function findCommandTokenIndex(argv: string[]): number | undefined {
     if (token === "--") {
       return undefined;
     }
-    if (token === "--path" || token === "--pm-path") {
+    if (token === "--author") {
+      index += consumesBootstrapAuthorValue(argv[index + 1]) ? 1 : 0;
+      continue;
+    }
+    if (GLOBAL_VALUE_CONSUMING_FLAGS.has(token)) {
       index += 1;
       continue;
     }
     if (
-      token.startsWith("--path=") ||
-      token.startsWith("--pm-path=") ||
+      isInlineGlobalValueToken(token) ||
       token === "--json" ||
       token === "--quiet" ||
       token === "--no-extensions" ||
@@ -350,14 +402,6 @@ type BootstrapNormalizationReason =
 type BootstrapNormalizationConfidence = "high" | "medium";
 
 /** Executable command aliases: a leading command token here is rewritten to its canonical command BEFORE commander parses, so the alias actually runs instead of merely being suggested. These are the highest-frequency aliases real agents type (telemetry: `pm show <id>` alone is the single most common unknown-command) and each target takes the same positional/flags as the alias (with `--comment`/ `--note`/`--learning` flag-aliased to `--add` on the target command). Keeping this in one place means the alias is consistent across registration, commander dispatch, telemetry, and error handling — all of which read the normalized argv. */
-export const EXECUTABLE_COMMAND_ALIASES: Readonly<Record<string, string>> = {
-  show: "get",
-  view: "get",
-  comment: "comments",
-  note: "notes",
-  learning: "learnings",
-};
-
 /**
  * Rewrite a leading command-alias token (e.g. `show` -> `get`) in place. Only the
  * command position is considered — the same token appearing later as an argument
@@ -643,8 +687,6 @@ function normalizeLongOptionToken(
 // flag during coalescing. `--pm-path <dir>` and its legacy `--path <dir>`
 // alias are the documented cases; other globals
 // (--json/--quiet/--no-extensions/--no-pager/--profile) are boolean.
-const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>(["--pm-path", "--path"]);
-
 function splitCanonicalListToken(
   token: string,
 ): { flag: string; inlineValue?: string } | null {

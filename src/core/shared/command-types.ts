@@ -21,6 +21,8 @@ export interface GlobalOptions {
   noPager?: boolean;
   /** Value that configures or reports profile for this contract. */
   profile?: boolean;
+  /** Invocation-wide mutation author override. */
+  author?: string;
   /** Fallback output format used when callers do not provide an override. */
   defaultOutputFormat?: "toon" | "json";
 }

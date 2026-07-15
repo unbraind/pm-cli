@@ -1,5 +1,5 @@
 /**
- * @module cli/commands/templates
+ * @module sdk/templates
  *
  * Implements the pm templates command surface and its agent-facing runtime behavior.
  */
@@ -9,13 +9,13 @@ import {
   pathExists,
   readFileIfExists,
   writeFileAtomic,
-} from "../../core/fs/fs-utils.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { nowIso } from "../../core/shared/time.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS } from "../../sdk/cli-contracts.js";
+} from "../core/fs/fs-utils.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
+import type { GlobalOptions } from "../core/shared/command-types.js";
+import { PmCliError } from "../core/shared/errors.js";
+import { nowIso } from "../core/shared/time.js";
+import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import { CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS } from "./cli-contracts.js";
 
 const TEMPLATE_DIRECTORY_NAME = "templates";
 const TEMPLATE_FILE_EXTENSION = ".json";

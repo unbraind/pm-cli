@@ -1272,6 +1272,43 @@ describe("runInit", () => {
       ).rejects.toMatchObject<PmCliError>({
         message: expect.stringContaining("Invalid --agent-guidance value"),
       });
+      for (const directory of [
+        "preset",
+        "preset-bad",
+        "type",
+        "type-bad",
+        "author",
+        "guidance",
+        "guidance-bad",
+      ]) {
+        await expect(stat(path.join(tempRoot, directory))).rejects.toMatchObject({
+          code: "ENOENT",
+        });
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("writes agent guidance to the explicitly resolved workspace", async () => {
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-init-explicit-workspace-"),
+    );
+    const workspace = path.join(tempRoot, "workspace");
+    try {
+      const result = await runInit(
+        undefined,
+        {},
+        {
+          workspace,
+          defaults: true,
+          agentGuidance: "add",
+        },
+      );
+      expect(result.target.workspace_root).toBe(workspace);
+      expect(await readFile(path.join(workspace, "AGENTS.md"), "utf8")).toContain(
+        "pm Workflow (Agent Quickstart)",
+      );
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
@@ -1367,10 +1404,10 @@ describe("runInit", () => {
       },
       warnings: [],
     }));
-    vi.doMock("../../../src/cli/commands/extension.js", async () => {
+    vi.doMock("../../../src/sdk/extension.js", async () => {
       const actual = await vi.importActual<
-        typeof import("../../../src/cli/commands/extension.js")
-      >("../../../src/cli/commands/extension.js");
+        typeof import("../../../src/sdk/extension.js")
+      >("../../../src/sdk/extension.js");
       return {
         ...actual,
         runExtension: runExtensionMock,
@@ -1424,7 +1461,7 @@ describe("runInit", () => {
         await rm(emptyFailureRoot, { recursive: true, force: true });
       }
     } finally {
-      vi.doUnmock("../../../src/cli/commands/extension.js");
+      vi.doUnmock("../../../src/sdk/extension.js");
       vi.resetModules();
     }
   });

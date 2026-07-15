@@ -73,6 +73,10 @@ import {
 } from "../../core/store/paths.js";
 import { readSettingsWithMetadata } from "../../core/store/settings.js";
 import { buildRemediationMap } from "../../core/diagnostics/remediation.js";
+import {
+  scanHistoryAuthorAttribution,
+  type HistoryAuthorAttributionScan,
+} from "../../sdk/author-attribution.js";
 import type {
   HistoryCompactPolicy,
   ItemFormat,
@@ -234,7 +238,8 @@ const TELEMETRY_SERVER_MAX_SCHEMA_VERSION_HEADERS = [
 function isAdvisoryHealthWarning(warning: string): boolean {
   return (
     warning.startsWith("telemetry_") ||
-    warning.startsWith("history_stream_over_compact_threshold:")
+    warning.startsWith("history_stream_over_compact_threshold:") ||
+    warning.startsWith("history_unknown_author_events:")
   );
 }
 
@@ -2337,13 +2342,19 @@ function buildStorageHealthCheck(
   items: Array<ItemMetadata | ItemWithBody>,
   settings: PmSettings,
   historySummary: HistoryStreamSummary,
+  authorAttribution: HistoryAuthorAttributionScan,
 ): HealthCheck {
+  const hasAuthorWarnings = authorAttribution.unknown_event_count > 0;
   return {
     name: "storage",
-    status: historySummary.over_threshold.length === 0 ? "ok" : "warn",
+    status:
+      historySummary.over_threshold.length === 0 && !hasAuthorWarnings
+        ? "ok"
+        : "warn",
     details: {
       items: items.length,
       history_streams: historySummary.count,
+      ...(hasAuthorWarnings ? { author_attribution: authorAttribution } : {}),
       ...(historySummary.max_entries !== null
         ? {
             compact_policy: {
@@ -2368,6 +2379,7 @@ function collectHealthWarnings(params: {
   extensionCheck: HealthCheckResult;
   historyPolicyWarnings: string[];
   historySummary: HistoryStreamSummary;
+  authorAttributionWarnings: string[];
   locksCheck: HealthCheckResult;
   integrityCheck: HealthCheckResult;
   historyDriftCheck: HealthCheckResult;
@@ -2384,6 +2396,7 @@ function collectHealthWarnings(params: {
     ...params.extensionCheck.warnings,
     ...params.historyPolicyWarnings,
     ...params.historySummary.warnings,
+    ...params.authorAttributionWarnings,
     ...params.locksCheck.warnings,
     ...params.integrityCheck.warnings,
     ...params.historyDriftCheck.warnings,
@@ -2409,6 +2422,7 @@ function buildHealthRemediationSources(params: {
   telemetryCheck: HealthCheckResult;
   extensionCheck: HealthCheckResult;
   historySummary: HistoryStreamSummary;
+  authorAttributionWarnings: string[];
   locksCheck: HealthCheckResult;
   integrityCheck: HealthCheckResult;
   historyDriftCheck: HealthCheckResult;
@@ -2422,9 +2436,12 @@ function buildHealthRemediationSources(params: {
     settings_values: params.settingWarnings,
     telemetry: params.telemetryCheck.warnings,
     extensions: params.extensionCheck.warnings,
-    storage: params.historySummary.over_threshold.map(
-      (id) => `history_stream_over_compact_threshold:${id}`,
-    ),
+    storage: [
+      ...params.historySummary.over_threshold.map(
+        (id) => `history_stream_over_compact_threshold:${id}`,
+      ),
+      ...params.authorAttributionWarnings,
+    ],
     locks: params.locksCheck.warnings,
     integrity: params.integrityCheck.warnings,
     history_drift: params.historyDriftCheck.warnings,
@@ -2543,6 +2560,13 @@ export async function runHealth(
     pmRoot,
     settings.history.compact_policy,
   );
+  const authorAttribution = await scanHistoryAuthorAttribution(pmRoot);
+  const authorAttributionWarnings =
+    authorAttribution.unknown_event_count > 0
+      ? [
+          `history_unknown_author_events:${authorAttribution.unknown_event_count}`,
+        ]
+      : [];
   const locksCheck = await buildLocksCheck(pmRoot);
   const integrityCheck = skipPolicy.skipIntegrity
     ? buildSkippedHealthCheck("integrity")
@@ -2574,7 +2598,7 @@ export async function runHealth(
     buildSettingsValuesHealthCheck(settingWarnings),
     telemetryCheck.check,
     extensionCheck.check,
-    buildStorageHealthCheck(items, settings, historySummary),
+    buildStorageHealthCheck(items, settings, historySummary, authorAttribution),
     locksCheck.check,
     integrityCheck.check,
     historyDriftCheck.check,
@@ -2590,6 +2614,7 @@ export async function runHealth(
     extensionCheck,
     historyPolicyWarnings: historyPolicy.warnings,
     historySummary,
+    authorAttributionWarnings,
     locksCheck,
     integrityCheck,
     historyDriftCheck,
@@ -2604,6 +2629,7 @@ export async function runHealth(
       telemetryCheck,
       extensionCheck,
       historySummary,
+      authorAttributionWarnings,
       locksCheck,
       integrityCheck,
       historyDriftCheck,

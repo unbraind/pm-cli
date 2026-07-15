@@ -82,14 +82,6 @@
       "count": 1
     }
   },
-  "src/cli/commands/config.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "src/cli/commands/contracts.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
@@ -111,17 +103,6 @@
       "count": 1
     },
     "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "src/cli/commands/extension.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    },
-    "complexity": {
-      "count": 1
-    },
-    "no-useless-assignment": {
       "count": 1
     }
   },
@@ -154,11 +135,6 @@
       "count": 1
     }
   },
-  "src/cli/commands/profile.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "src/cli/commands/reindex.ts": {
     "no-useless-assignment": {
       "count": 1
@@ -171,11 +147,6 @@
     "complexity": {
       "count": 1
     },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "src/cli/commands/templates.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
@@ -217,11 +188,6 @@
     },
     "sonarjs/cognitive-complexity": {
       "count": 3
-    }
-  },
-  "src/cli/main.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
     }
   },
   "src/cli/registration-helpers.ts": {
@@ -377,8 +343,28 @@
       "count": 1
     }
   },
+  "src/sdk/config.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/sdk/extension.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
   "src/sdk/package-import-adapters.ts": {
     "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/sdk/profile.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/sdk/templates.ts": {
+    "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },

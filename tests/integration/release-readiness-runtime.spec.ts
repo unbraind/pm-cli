@@ -1677,6 +1677,7 @@ describe("release readiness runtime coverage", () => {
           "runtime comment positional",
           "--json",
           "--author",
+          "runtime-author",
         ],
         {
           expectJson: true,
@@ -2567,7 +2568,7 @@ describe("release readiness runtime coverage", () => {
       "node scripts/release-version.mjs next",
     );
     expect(packageJson.scripts?.["quality:static"]).toBe(
-      "pnpm build && node scripts/release/static-quality-gate.mjs --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs",
+      "pnpm build && node scripts/release/static-quality-gate.mjs --max-eslint-suppressions 165 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs",
     );
     expect(packageJson.scripts?.["quality:token-budget"]).toBe(
       "node scripts/release/token-budget-gate.mjs",

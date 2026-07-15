@@ -1069,7 +1069,7 @@ export function checkCodeFactorComplexity(maxComplexity, changedPaths = collectC
 // gate and its pre-existing violations are grandfathered in the same change
 // (as with sonarjs/cognitive-complexity <= 16, re-baselined 104 -> 180; the
 // burn-down of that slice is tracked on the pm-92if epic).
-export const MAX_ESLINT_SUPPRESSIONS = 170;
+export const MAX_ESLINT_SUPPRESSIONS = 165;
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);

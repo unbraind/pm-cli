@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { runBeadsImport } from "../../../packages/pm-beads/extensions/beads/runtime.ts";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../../src/core/extensions/index.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
+import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
 import type { TempPmContext } from "../../helpers/withTempPmPath.js";
 import { readJsonlFixture } from "../../helpers/fixtures.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -691,6 +692,8 @@ describe("runBeadsImport", () => {
 
   it("uses default relative source path and unknown author fallback deterministically", async () => {
     await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      await writeSettings(context.pmPath, { ...settings, author_default: "" });
       const beadsDir = path.join(context.tempRoot, ".beads");
       await mkdir(beadsDir, { recursive: true });
       await writeFile(

@@ -202,6 +202,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     summary:
       "The history stream exceeds the configured compaction threshold; compact it (pm history-compact --all-streams sweeps every over-threshold stream in one pass).",
   },
+  {
+    code: "history_unknown_author_events",
+    command: "pm validate --check-history-drift --fix-hints",
+    summary:
+      "Historical mutations lack attributable authorship. Configure PM_AUTHOR, pass global --author, or set author_default so future audit events are attributable.",
+  },
   // --- pm health: locks ---
   {
     code: "locks_stale_count",
@@ -394,6 +400,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     command: "pm history-repair <id>",
     summary:
       "Re-anchor the history chains of the items with a broken history chain.",
+  },
+  {
+    code: "validate_history_unknown_author_events",
+    command: "pm config project set author_default <stable-agent-id>",
+    summary:
+      "Historical mutations lack attributable authorship. Set a stable default or use invocation-wide --author for future events; existing audit history remains append-only.",
   },
   // --- pm validate: command_references ---
   {

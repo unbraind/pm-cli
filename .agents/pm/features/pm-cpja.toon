@@ -2,17 +2,68 @@ id: pm-cpja
 title: "GH-444: ergonomic author attribution — global --author, init author_default, unknown-author advisory"
 description: "Dogfood GH-444: stateless CLI agents lose PM_AUTHOR between shell calls and mutations degrade to author 'unknown', breaking provenance. Duplicate check: searched author attribution/unknown fallback — only closed dedup refactor pm-xh0y; no open overlap."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",gh-issue,multi-agent
 created_at: "2026-07-06T08:03:06.673Z"
-updated_at: "2026-07-14T17:05:04.356Z"
+updated_at: "2026-07-15T04:45:56.792Z"
+closed_at: "2026-07-15T04:45:36.902Z"
 author: maintainer-agent
 estimated_minutes: 150
 acceptance_criteria: "Global --author flag works on all mutations; pm init records non-empty author_default; health/validate advisory flags recent author:unknown mutations with fix-hint; docs updated"
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: Completed
+expected_result: "Every mutation can receive strict global author attribution, fresh init persists a stable default, and recent unknown history emits actionable advisory diagnostics."
+actual_result: "Global --author, scoped PM_AUTHOR restoration, init author_default, public attribution scanner, and health/validate remediation shipped and passed installed-package acceptance."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-u14c,related,"2026-07-14T17:05:04.337Z",null,null
+comments[10]{created_at,author,text}:
+  "2026-07-14T22:56:36.829Z",codex-root,"Implementation start 2026-07-15: bundled with pm-3mna because global author attribution, init author_default, config persistence, and health/validate remediation share the same workspace-customization primitives. Live GH-444 and all-status duplicate lineage confirmed this is canonical."
+  "2026-07-14T23:44:01.801Z",unknown,"Verification evidence 2026-07-15: final all-source coverage passed 291 files / 5,708 tests at exact 100% (36,925 statements, 26,508 branches, 7,449 functions, 36,040 lines). Packed clean-install proof confirms global --author precedence for init/create/comments, non-empty init author_default, exported SDK program/scanner primitives, and advisory non-blocking unknown-author health/validate diagnostics. Release readiness passed all code/package/security gates and stops only on separately tracked external Sentry highs; live telemetry is healthy at 0.34% errors with complete error codes."
+  "2026-07-15T00:04:34.200Z",unknown,"Greptile pre-push review 6357789e-57bf-4116-be0e-52d29e120d5b: accepted both findings. Bootstrap author parsing now preserves following flags under Commander optional-value semantics, and invocation-author validation runs inside the central CLI catch/finally path so formatted errors, telemetry, exit codes, and environment restoration remain intact. Regression suite passes 132/132; final all-source coverage passes 291 files / 5,709 tests at exact 100%: 36,933 statements, 26,518 branches, 7,451 functions, 36,048 lines. Strict lint/static/package-boundary/token gates remain green."
+  "2026-07-15T00:04:44.823Z",codex-root,"Attribution correction: the immediately preceding two verification comments were written by codex-root from shell calls that omitted PM_AUTHOR against this legacy tracker, and are intentionally preserved append-only as live evidence for the new advisory. All subsequent mutations set explicit attribution; no history is rewritten."
+  "2026-07-15T00:14:44.637Z",codex-root,"Greptile pre-push rerun 5b5f653b-6605-467e-84a2-176f40445f0a completed at confidence 5/5, safe to merge, with no review comments. It explicitly verified both prior blockers resolved: flag-like tokens are not consumed as optional author values, and author override validation/restoration stays within the central catch/finally lifecycle."
+  "2026-07-15T01:07:24.805Z",codex-root,"PR #565 round-1 and packed acceptance evidence: global --author now requires an explicit non-flag value, missing values flow through the central JSON/telemetry error path, empty rendered commands are stable, fresh init persists a non-empty default, legacy blank-setting fallback remains explicitly covered, and scoped validate avoids unrelated attribution scans. Final all-source coverage is exact 100/100/100/100 across 5,713 tests. A fresh installed tarball proved init/create/comments author precedence plus zero unknown history events through the public SDK scanner."
+  "2026-07-15T01:47:04.851Z",codex-root,"Pre-push Greptile consistency follow-up: although the review was confidence 5/5 with no comments, its reasoning noted that inline-empty --author= lacked the structured code/next_steps supplied for a missing value. Both malformed forms now emit missing_required_argument plus the explicit --author <id> recovery step through the central JSON handler. Focused tests pass 132/132 and final all-source coverage remains exact 100/100/100/100 across 5,713 tests."
+  "2026-07-15T02:40:52.572Z",codex-root,"Greptile follow-up evidence: accepted the completion-contract finding. Global author metadata now encodes the canonical flag separately from value_name=id, so Bash completion suggests --author but never the literal <id> placeholder. Focused completion/bootstrap/action-schema tests pass 197/197; strict lint/static/docstring/package/token gates pass; exact all-source coverage remains 291 files / 5,717 tests at 100/100/100/100 (36,962 statements, 26,531 branches, 7,453 functions, 36,077 lines)."
+  "2026-07-15T03:35:20.455Z",codex-root,"Final local verification refresh 2026-07-15: the broad PR remains exact 100/100/100/100 across 291 files and 5,719 tests after external analyzer cleanup; strict lint/static/package/token gates pass, with global author completion and provenance paths unchanged. Hosted analyzer and bot proof will be recorded after the final pushed head completes."
+  "2026-07-15T04:45:31.700Z",codex-root,"Final delivery evidence on PR #565 head 4d3795d0: global --author is strict, non-greedy, centrally handled, scoped/restored, represented correctly in contracts/completion, and proven across init/create/comments. Fresh init persists a stable author_default; SDK history scanning feeds advisory health/validate remediation without blocking healthy operation. Packed installed-package acceptance and exact 100/100/100/100 coverage pass; hosted exact-head review has Greptile 5/5, CodeRabbit complete, zero unresolved threads, and all repository-owned checks green."
+files[27]{path,scope,note}:
+  src/cli/bootstrap-args.ts,project,Invocation-wide author parsing
+  src/cli/commands/health.ts,project,Advisory provenance health diagnostic
+  src/cli/commands/validate.ts,project,Advisory provenance validation diagnostic
+  src/cli/main.ts,project,Author lifecycle integration
+  src/cli/registration-helpers.ts,project,Global author option propagation
+  src/core/diagnostics/remediation.ts,project,Actionable author remediation
+  src/core/shared/command-types.ts,project,Global author option contract
+  src/sdk/author-attribution.ts,project,Reusable provenance scanner
+  src/sdk/cli-contracts/flag-contracts.ts,project,Runtime global author flag contract
+  src/sdk/cli-program.ts,project,Reusable universal CLI root
+  src/sdk/command-line.ts,project,Reusable author-aware command hint rendering
+  src/sdk/config.ts,project,Author attribution review hardening and fallback coverage
+  src/sdk/index.ts,project,Public attribution and CLI program exports
+  src/sdk/init.ts,project,Persistent non-empty init author default
+  src/sdk/invocation-author.ts,project,Long-lived host author scoping
+  tests/helpers/withTempPmPath.ts,project,Legacy empty-author fixture remains explicit
+  tests/integration/release-readiness-runtime.spec.ts,project,Author attribution review hardening and fallback coverage
+  tests/unit/cli/argv-utils.spec.ts,project,Author attribution review hardening and fallback coverage
+  tests/unit/cli/bootstrap-args.spec.ts,project,Author attribution review hardening and fallback coverage
+  tests/unit/cli/cli-main-errors.spec.ts,project,Central author override error handling regression
+  tests/unit/commands/claim-command.spec.ts,project,Author attribution review hardening and fallback coverage
+  tests/unit/commands/completion-command.spec.ts,project,Author placeholder completion regression
+  tests/unit/commands/get-append-command.spec.ts,project,Author attribution review hardening and fallback coverage
+  tests/unit/helpers/withTempPmPath.spec.ts,project,Author attribution review hardening and fallback coverage
+  tests/unit/packages/beads-command.spec.ts,project,Author attribution review hardening and fallback coverage
+  tests/unit/packages/todos-extension.spec.ts,project,Author attribution review hardening and fallback coverage
+  tests/unit/sdk/author-attribution.spec.ts,project,Author precedence scanner and advisory coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,600
+  node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/validate-command.spec.ts tests/unit/cli/bootstrap-args.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrlaxud9-4bcttj,test,passed,"2026-07-14T23:47:56.720Z","2026-07-14T23:48:18.045Z","2026-07-14T23:48:18.045Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK_CUSTOMIZATION_PRIMITIVES.md,project,Author precedence and diagnostics
+close_reason: "Delivered GH-444 global author attribution, persistent init default, public scanner, and advisory health/validate remediation with installed-package acceptance, exact 100% coverage, and clean PR #565 review state."
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/444\n\n## Problem\nMutations fall back to author \"unknown\" when PM_AUTHOR is unset and author_default is empty (the init default). Stateless CLI agents get a fresh env per shell call, so attribution silently degrades to \"unknown\" — breaking history/claims/comments provenance that multi-agent coordination depends on.\n\n## Proposed fix\n(1) top-level global `--author <id>` flag; (2) `pm init` records a stable author_default (prompt or derive from git config/hostname); (3) pm health/validate warning when recent mutations carry author \"unknown\" with fix-hint `pm config set author-default <id>`.\n\n## Definition of done\nGlobal --author works on all mutations; init writes a non-empty author_default; unknown-author advisory ships with remediation-registry entry; docs/AGENTS.md updated. Related: GH-458 item covers the claim-time --assignee alias."

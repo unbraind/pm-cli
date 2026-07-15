@@ -20,6 +20,7 @@ name = "javascript"
 
   [analyzers.meta]
   environment = ["nodejs"]
+  module_system = "es-modules"
 
 [[analyzers]]
 name = "secrets"

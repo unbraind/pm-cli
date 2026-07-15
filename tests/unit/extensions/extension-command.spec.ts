@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import fsPromises from "node:fs/promises";
 import {
   chmod,
   cp as fsPromisesCp,
@@ -14,8 +15,9 @@ import {
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   _testOnly as extensionCommandTestOnly,
   copyExtensionDirectoryForInstall,
@@ -32,7 +34,7 @@ import {
   sortManagedEntries,
   upsertManagedEntry,
   writeManagedExtensionState,
-} from "../../../src/cli/commands/extension/managed-state.js";
+} from "../../../src/sdk/extension/managed-state.js";
 import { SCAFFOLD_PM_MIN_VERSION } from "../../../src/cli/commands/extension/scaffold.js";
 import {
   buildNpmNotFoundRecovery,
@@ -45,7 +47,7 @@ import {
   resolveNpmCommandName,
   shouldRunNpmCommandInShell,
   wrapNpmPackResolutionError,
-} from "../../../src/cli/commands/extension/install-sources.js";
+} from "../../../src/sdk/extension/install-sources.js";
 import {
   applyDoctorRuntimeActivationState,
   buildCapabilityContractMetadata,
@@ -67,7 +69,7 @@ import {
   resolveBundledAliasManifestName,
   resolveBundledExtensionAliasSource,
   resolveBundledPackageNpmName,
-} from "../../../src/cli/commands/extension/bundled-catalog.js";
+} from "../../../src/sdk/extension/bundled-catalog.js";
 import { normalizeManagedDirectoryName } from "../../../src/cli/commands/extension/shared.js";
 import {
   coerceLooseCommandOptionsWithFlagDefinitions,
@@ -707,7 +709,7 @@ describe("extension command runtime", () => {
       }
 
       const busyRoot = path.join(tempRoot, "busy-root");
-      const busyLockPath = path.join(busyRoot, "runtime", "extension-install-locks", "busy-ext.lock");
+      const busyLockPath = path.join(busyRoot, "runtime", "extension-install-locks", "scope.lock");
       await mkdir(busyLockPath, { recursive: true });
       await expect(
         extensionCommandTestOnly.withExtensionInstallLock(
@@ -4776,8 +4778,18 @@ describe("extension command runtime", () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-stale-"));
     try {
       const lockRoot = path.join(tempRoot, "runtime", "extension-install-locks");
-      const lockPath = path.join(lockRoot, "stale-ext.lock");
+      const lockPath = path.join(lockRoot, "scope.lock");
       await mkdir(lockPath, { recursive: true });
+      await writeFile(
+        path.join(lockPath, "owner.json"),
+        `${JSON.stringify({
+          pid: 1,
+          token: "stale-owner",
+          created_at: "2026-01-01T00:00:00.000Z",
+          destination: "stale-ext",
+        })}\n`,
+        "utf8",
+      );
       const staleDate = new Date(Date.now() - 10 * 60 * 1000);
       await utimes(lockPath, staleDate, staleDate);
 
@@ -4788,10 +4800,50 @@ describe("extension command runtime", () => {
     }
   });
 
+  it("does not reclaim stale scope locks without a valid owner token", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-invalid-owner-"));
+    try {
+      const invalidOwners = [JSON.stringify({ token: 1 }), JSON.stringify({ token: "" }), "{"];
+      for (const [index, ownerContents] of invalidOwners.entries()) {
+        const settingsRoot = path.join(tempRoot, String(index));
+        const lockPath = path.join(settingsRoot, "runtime", "extension-install-locks", "scope.lock");
+        await mkdir(lockPath, { recursive: true });
+        await writeFile(path.join(lockPath, "owner.json"), `${ownerContents}\n`, "utf8");
+        const staleDate = new Date(Date.now() - 10 * 60 * 1000);
+        await utimes(lockPath, staleDate, staleDate);
+
+        await expect(
+          extensionCommandTestOnly.withExtensionInstallLock(
+            settingsRoot,
+            "blocked-ext",
+            async () => "unreachable",
+            { attempts: 1, delay_ms: 0, stale_ms: 1 },
+          ),
+        ).rejects.toMatchObject({ exitCode: EXIT_CODE.CONFLICT });
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("removes a newly created scope lock when owner metadata cannot be written", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-owner-write-"));
+    const writeFileSpy = vi.spyOn(fsPromises, "writeFile").mockRejectedValueOnce(new Error("owner write failed"));
+    try {
+      await expect(
+        extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "write-failure-ext", async () => "unreachable"),
+      ).rejects.toThrow("owner write failed");
+      await expect(readdir(path.join(tempRoot, "runtime", "extension-install-locks"))).resolves.toEqual([]);
+    } finally {
+      writeFileSpy.mockRestore();
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it("times out when a non-stale extension install lock remains held", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-timeout-"));
     try {
-      const lockPath = path.join(tempRoot, "runtime", "extension-install-locks", "busy-ext.lock");
+      const lockPath = path.join(tempRoot, "runtime", "extension-install-locks", "scope.lock");
       await mkdir(lockPath, { recursive: true });
       await expect(
         extensionCommandTestOnly.withExtensionInstallLock(
@@ -4812,7 +4864,7 @@ describe("extension command runtime", () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-stat-missing-"));
     try {
       const lockRoot = path.join(tempRoot, "runtime", "extension-install-locks");
-      const lockPath = path.join(lockRoot, "missing-stat-ext.lock");
+      const lockPath = path.join(lockRoot, "scope.lock");
       await mkdir(lockRoot, { recursive: true });
       await symlink(path.join(lockRoot, "does-not-exist"), lockPath);
       await expect(
@@ -4825,6 +4877,132 @@ describe("extension command runtime", () => {
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,
       });
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("serializes installs across destinations within one extension scope", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-scope-"));
+    try {
+      const lockPath = path.join(tempRoot, "runtime", "extension-install-locks", "scope.lock");
+      await mkdir(lockPath, { recursive: true });
+      await writeFile(
+        path.join(lockPath, "owner.json"),
+        `${JSON.stringify({
+          pid: process.pid,
+          token: "first-install-owner",
+          created_at: new Date().toISOString(),
+          destination: "first-ext",
+        })}\n`,
+        "utf8",
+      );
+
+      await expect(
+        extensionCommandTestOnly.withExtensionInstallLock(
+          tempRoot,
+          "second-ext",
+          async () => "unreachable",
+          { attempts: 1, delay_ms: 0, stale_ms: 60_000 },
+        ),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.CONFLICT });
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps a long-running scope owner leased beyond the stale threshold", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-heartbeat-"));
+    let releaseOwner: () => void = () => undefined;
+    let ownerRun: Promise<string> | null = null;
+    try {
+      let markOwnerStarted: () => void = () => undefined;
+      const ownerStarted = new Promise<void>((resolve) => {
+        markOwnerStarted = resolve;
+      });
+      const ownerReleased = new Promise<void>((resolve) => {
+        releaseOwner = resolve;
+      });
+      ownerRun = extensionCommandTestOnly.withExtensionInstallLock(
+        tempRoot,
+        "long-running-ext",
+        async () => {
+          markOwnerStarted();
+          await ownerReleased;
+          return "owner-finished";
+        },
+        { stale_ms: 50, heartbeat_ms: 5 },
+      );
+      await ownerStarted;
+      await delay(90);
+
+      await expect(
+        extensionCommandTestOnly.withExtensionInstallLock(
+          tempRoot,
+          "competing-ext",
+          async () => "unreachable",
+          { attempts: 1, delay_ms: 0, stale_ms: 50, heartbeat_ms: 5 },
+        ),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.CONFLICT });
+      releaseOwner();
+      await expect(ownerRun).resolves.toBe("owner-finished");
+    } finally {
+      releaseOwner();
+      await ownerRun?.catch(() => undefined);
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps extension installation running when a lease heartbeat write fails", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-heartbeat-error-"));
+    const utimesSpy = vi.spyOn(fsPromises, "utimes").mockRejectedValueOnce(new Error("heartbeat failed"));
+    try {
+      const result = await extensionCommandTestOnly.withExtensionInstallLock(
+        tempRoot,
+        "heartbeat-error-ext",
+        async () => {
+          await delay(30);
+          return "install-finished";
+        },
+        { stale_ms: 50, heartbeat_ms: 5 },
+      );
+      expect(result).toBe("install-finished");
+    } finally {
+      utimesSpy.mockRestore();
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("preserves a replacement scope lock when the original owner finishes", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-owner-"));
+    try {
+      const lockPath = path.join(tempRoot, "runtime", "extension-install-locks", "scope.lock");
+      const result = await extensionCommandTestOnly.withExtensionInstallLock(
+        tempRoot,
+        "original-ext",
+        async () => {
+          await rm(lockPath, { recursive: true, force: true });
+          await mkdir(lockPath, { recursive: true });
+          await writeFile(
+            path.join(lockPath, "owner.json"),
+            `${JSON.stringify({
+              pid: process.pid,
+              token: "replacement-owner",
+              created_at: new Date().toISOString(),
+              destination: "replacement-ext",
+            })}\n`,
+            "utf8",
+          );
+          await delay(5);
+          return "replacement-installed";
+        },
+        { heartbeat_ms: 1 },
+      );
+
+      expect(result).toBe("replacement-installed");
+      await expect(readFile(path.join(lockPath, "owner.json"), "utf8")).resolves.toContain(
+        '"token":"replacement-owner"',
+      );
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

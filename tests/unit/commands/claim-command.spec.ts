@@ -6,6 +6,7 @@ import { claimNextFromRecommendations, isAlreadyClaimedError, parseClaimNextAtte
 import type { GlobalOptions } from "../../../src/core/shared/command-types.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
 function createTask(
@@ -431,6 +432,8 @@ describe("runClaim/runRelease", () => {
   it("covers missing PM_AUTHOR fallback for claim and release", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, { title: "author-fallback", status: "open" });
+      const settings = await readSettings(context.pmPath);
+      await writeSettings(context.pmPath, { ...settings, author_default: "" });
       const previousAuthor = process.env.PM_AUTHOR;
       delete process.env.PM_AUTHOR;
       try {

@@ -20,6 +20,59 @@ export {
   type AnnotationSourceOptions,
   type OwnershipConflictGuidance,
 } from "./annotations.js";
+export {
+  inspectHistoryAuthorStream,
+  scanHistoryAuthorAttribution,
+  type HistoryAuthorAttributionScan,
+  type UnknownAuthorHistoryEvent,
+} from "./author-attribution.js";
+export { createPmCliProgram } from "./cli-program.js";
+export { quoteCommandArg, renderPmCommand } from "./command-line.js";
+export { runExtension } from "./extension.js";
+export { applyInvocationAuthorOverride } from "./invocation-author.js";
+export {
+  _testOnly as _testOnlyTemplates,
+  type TemplateSource,
+} from "./templates.js";
+export {
+  runConfig,
+  _testOnlyConfigCommand,
+  type NestedSettingResultValue,
+} from "./config.js";
+export {
+  INIT_AGENT_GUIDANCE_MODE_VALUES,
+  runInitAgentGuidance,
+  _testOnly as _testOnlyInitAgentGuidance,
+  type InitAgentGuidanceMode,
+  type InitAgentGuidanceSummary,
+  type RunInitAgentGuidanceOptions,
+  type RunInitAgentGuidanceResult,
+} from "./init-agent-guidance.js";
+export {
+  runInit,
+  summarizeInitResult,
+  _testOnly as _testOnlyInit,
+  type InitAgentGuidanceResult,
+  type InitConciseResult,
+  type InitInstalledPackagesSummary,
+  type InitRegisteredTypePresetSummary,
+  type InitTargetResolution,
+  type InitTypePresetName,
+} from "./init.js";
+export {
+  PROFILE_SUBCOMMANDS,
+  formatProfileApplyHuman,
+  formatProfileLintHuman,
+  formatProfileListHuman,
+  formatProfileShowHuman,
+  runProfileApply,
+  runProfileLint,
+  runProfileList,
+  runProfileShow,
+  type ProfileApplyDimension,
+  type ProfileComposition,
+  type ProfileListEntry,
+} from "./profile.js";
 import {
   EXTENSION_CAPABILITY_CONTRACT,
   EXTENSION_CAPABILITY_CONTRACT_VERSION,
