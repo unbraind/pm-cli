@@ -3,9 +3,7 @@
  *
  * Implements the pm extension command surface and its agent-facing runtime behavior.
  */
-import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import {
   activateExtensions,
@@ -15,7 +13,6 @@ import {
 } from "../core/extensions/index.js";
 import { resolveExtensionRoots } from "../core/extensions/loader.js";
 import { pathExists } from "../core/fs/fs-utils.js";
-import { isPathWithinDirectory } from "../core/fs/path-utils.js";
 import { resolvePmPackageRootFromModule } from "../core/packages/root.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
@@ -76,6 +73,15 @@ import {
   buildCapabilityContractMetadata,
   buildDoctorConsistencySummary,
 } from "./extension/doctor.js";
+import {
+  copyExtensionDirectoryForInstall,
+  copyExtensionDirectoryWithoutSelfNesting,
+  ensureExtensionModuleTypeMarker,
+  isErrnoCode,
+  isRetriableExtensionInstallCopyError,
+  resolveCanonicalExtensionInstallDestination,
+  withExtensionInstallLock,
+} from "./extension/install-runtime.js";
 // Re-export the public surface that lives in sibling modules but was previously
 // exported from this file (used by sdk barrels, upgrade.ts, and tests).
 export {
@@ -85,6 +91,8 @@ export {
   writeManagedExtensionState,
   resolveManagedExtensionStatePath,
   parseExtensionInstallSource,
+  copyExtensionDirectoryForInstall,
+  resolveCanonicalExtensionInstallDestination,
 };
 export type {
   ManagedExtensionSource,
@@ -92,18 +100,6 @@ export type {
   ManagedExtensionState,
 };
 export type { ManagedExtensionStateReadResult } from "./extension/managed-state.js";
-
-const EXTENSION_INSTALL_COPY_ATTEMPTS = 3;
-const EXTENSION_INSTALL_LOCK_ATTEMPTS = 120;
-const EXTENSION_INSTALL_LOCK_DELAY_MS = 250;
-const EXTENSION_INSTALL_LOCK_STALE_MS = 120_000;
-
-interface ExtensionInstallLockOwner {
-  pid: number;
-  token: string;
-  created_at: string;
-  destination: string;
-}
 
 /** Restricts extension command action values accepted by command, SDK, and storage contracts. */
 export type ExtensionCommandAction =
@@ -445,12 +441,7 @@ const EXTENSION_POLICY_OVERRIDE_BOOLEAN_FIELDS = [
   "require_trusted",
   "require_provenance",
 ] as const;
-const RETRIABLE_EXTENSION_INSTALL_COPY_CODES = new Set([
-  "EEXIST",
-  "ENOTEMPTY",
-  "ENOENT",
-]);
-const DEFAULT_EXTENSION_POLICY_DETAILS: PmSettings["extensions"]["policy"] = {
+const DEFAULT_EXTENSION_POLICY_DETAILS: ExtensionPolicyDetails = {
   mode: "off",
   trust_mode: "off",
   require_provenance: false,
@@ -607,18 +598,21 @@ const normalizeExtensionPolicyOverrides = (
 const buildExtensionPolicyDetails = (
   policy: PmSettings["extensions"]["policy"] | null | undefined,
 ): ExtensionPolicyDetails => {
-  const safePolicy = policy ?? DEFAULT_EXTENSION_POLICY_DETAILS;
+  const safePolicy = Object.assign(
+    {},
+    DEFAULT_EXTENSION_POLICY_DETAILS,
+    policy ?? {},
+  );
   const rootLists = normalizePolicyRootLists(policy);
   const overrides = normalizeExtensionPolicyOverrides(
-    safePolicy.extension_overrides ?? [],
+    safePolicy.extension_overrides,
   );
   return {
-    mode: safePolicy.mode ?? DEFAULT_EXTENSION_POLICY_DETAILS.mode,
-    trust_mode:
-      safePolicy.trust_mode ?? DEFAULT_EXTENSION_POLICY_DETAILS.trust_mode,
+    mode: safePolicy.mode,
+    trust_mode: safePolicy.trust_mode,
     require_provenance: safePolicy.require_provenance === true,
     trusted_extensions: rootLists.trusted_extensions,
-    default_sandbox_profile: safePolicy.default_sandbox_profile ?? "none",
+    default_sandbox_profile: safePolicy.default_sandbox_profile,
     allowed_extensions: rootLists.allowed_extensions,
     blocked_extensions: rootLists.blocked_extensions,
     allowed_capabilities: rootLists.allowed_capabilities,
@@ -634,321 +628,6 @@ const buildExtensionPolicyDetails = (
     extension_overrides: overrides,
   };
 };
-
-/** Return an errno-style code from an unknown failure when one is present. */
-const errnoCode = (error: unknown): unknown =>
-  typeof error === "object" && error !== null && "code" in error
-    ? (error as { code?: unknown }).code
-    : undefined;
-
-/** Identify transient copy races that are safe to retry during extension installation. */
-const isRetriableExtensionInstallCopyError = (error: unknown): boolean =>
-  RETRIABLE_EXTENSION_INSTALL_COPY_CODES.has(String(errnoCode(error)));
-
-/** Test an unknown failure against one expected errno-style code. */
-const isErrnoCode = (error: unknown, code: string): boolean =>
-  errnoCode(error) === code;
-
-/** Delay an extension filesystem retry without blocking the event loop. */
-const sleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-
-/** Ensure the installed extension directory carries a `package.json` with `"type": "module"`. Extension entrypoints are ESM TypeScript; without a nearby package.json Node resolves the module type from the HOST project's package.json, so installs into `"type": "commonjs"` projects fail activation with `extension_load_failed` (pm-r0m4). Extensions that ship their own package.json are left untouched. */
-async function ensureExtensionModuleTypeMarker(
-  destinationDirectory: string,
-): Promise<void> {
-  const markerPath = path.join(destinationDirectory, "package.json");
-  if (await pathExists(markerPath)) {
-    return;
-  }
-  await fs.writeFile(
-    markerPath,
-    `${JSON.stringify({ type: "module" }, null, 2)}\n`,
-    "utf8",
-  );
-}
-
-/** Implements copy extension directory for install for the public runtime surface of this module. */
-export async function copyExtensionDirectoryForInstall(
-  sourceDirectory: string,
-  destinationDirectory: string,
-  copyDirectory: typeof fs.cp = fs.cp,
-): Promise<void> {
-  for (
-    let attempt = 1;
-    attempt <= EXTENSION_INSTALL_COPY_ATTEMPTS;
-    attempt += 1
-  ) {
-    try {
-      if (await pathExists(destinationDirectory)) {
-        await fs.rm(destinationDirectory, { recursive: true, force: true });
-      }
-      await copyExtensionDirectoryWithoutSelfNesting(
-        sourceDirectory,
-        destinationDirectory,
-        copyDirectory,
-      );
-      return;
-    } catch (error: unknown) {
-      if (
-        !isRetriableExtensionInstallCopyError(error) ||
-        attempt === EXTENSION_INSTALL_COPY_ATTEMPTS
-      ) {
-        throw error;
-      }
-      await sleep(EXTENSION_INSTALL_LOCK_DELAY_MS);
-    }
-  }
-}
-
-async function copyExtensionDirectoryWithoutSelfNesting(
-  sourceDirectory: string,
-  destinationDirectory: string,
-  copyDirectory: typeof fs.cp,
-  temporaryDirectory = os.tmpdir(),
-): Promise<void> {
-  const resolvedSource = path.resolve(sourceDirectory);
-  const resolvedDestination = path.resolve(destinationDirectory);
-  const canonicalSource = await fs
-    .realpath(resolvedSource)
-    .catch(() => resolvedSource);
-  const destinationParent = path.dirname(resolvedDestination);
-  const destinationRoot = path.parse(destinationParent).root;
-  let canonicalDestinationParent = await fs.realpath(destinationRoot);
-  const relativeDestinationParent = path.relative(
-    destinationRoot,
-    destinationParent,
-  );
-  const destinationSegments =
-    relativeDestinationParent === ""
-      ? []
-      : relativeDestinationParent.split(path.sep);
-  for (const [index, segment] of destinationSegments.entries()) {
-    const candidate = path.join(canonicalDestinationParent, segment);
-    try {
-      canonicalDestinationParent = await fs.realpath(candidate);
-    } catch {
-      canonicalDestinationParent = path.join(
-        canonicalDestinationParent,
-        ...destinationSegments.slice(index),
-      );
-      break;
-    }
-  }
-  const canonicalDestination = path.join(
-    canonicalDestinationParent,
-    path.basename(resolvedDestination),
-  );
-  if (canonicalSource === canonicalDestination) {
-    return;
-  }
-  if (!isPathWithinDirectory(canonicalSource, canonicalDestination)) {
-    await copyDirectory(sourceDirectory, destinationDirectory, {
-      recursive: true,
-      force: true,
-    });
-    return;
-  }
-
-  const systemTempDirectory = path.resolve(temporaryDirectory);
-  const stagingBase = isPathWithinDirectory(
-    canonicalSource,
-    systemTempDirectory,
-  )
-    ? path.dirname(canonicalSource)
-    : systemTempDirectory;
-  if (isPathWithinDirectory(canonicalSource, stagingBase)) {
-    throw new PmCliError(
-      `Extension source "${sourceDirectory}" contains its install destination and no external staging directory is available. Install a narrower package directory instead.`,
-      EXIT_CODE.USAGE,
-      { code: "extension_install_source_contains_destination" },
-    );
-  }
-  const stagingRoot = await fs.mkdtemp(
-    path.join(stagingBase, "pm-extension-copy-"),
-  );
-  const stagedDirectory = path.join(stagingRoot, "extension");
-  try {
-    await copyDirectory(sourceDirectory, stagedDirectory, {
-      recursive: true,
-      force: true,
-    });
-    await copyDirectory(stagedDirectory, destinationDirectory, {
-      recursive: true,
-      force: true,
-    });
-  } finally {
-    await fs.rm(stagingRoot, { recursive: true, force: true });
-  }
-}
-
-/** Read the unique owner token recorded for one extension scope lock. */
-async function readExtensionInstallLockOwnerToken(
-  lockPath: string,
-): Promise<string | null> {
-  try {
-    const parsed = JSON.parse(
-      await fs.readFile(path.join(lockPath, "owner.json"), "utf8"),
-    ) as Record<string, unknown>;
-    return typeof parsed.token === "string" && parsed.token.length > 0
-      ? parsed.token
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Remove an extension scope lock only while its persisted owner token still matches. */
-async function removeExtensionInstallLockIfOwned(
-  lockPath: string,
-  ownerToken: string,
-): Promise<boolean> {
-  const currentOwnerToken = await readExtensionInstallLockOwnerToken(lockPath);
-  if (currentOwnerToken !== ownerToken) {
-    return false;
-  }
-  await fs.rm(lockPath, { recursive: true, force: true });
-  return true;
-}
-
-/** Reclaim an expired extension scope lock when its persisted owner remains unchanged. */
-async function reclaimStaleExtensionInstallLock(
-  lockPath: string,
-  staleMs: number,
-): Promise<boolean> {
-  let stat: Awaited<ReturnType<typeof fs.stat>>;
-  try {
-    stat = await fs.stat(lockPath);
-  } catch {
-    return false;
-  }
-  if (Date.now() - stat.mtimeMs <= staleMs) {
-    return false;
-  }
-  const staleOwnerToken = await readExtensionInstallLockOwnerToken(lockPath);
-  return staleOwnerToken === null
-    ? false
-    : removeExtensionInstallLockIfOwned(lockPath, staleOwnerToken);
-}
-
-/** Start an owner-bound lease heartbeat and return an async stop barrier for final cleanup. */
-function startExtensionInstallLockHeartbeat(
-  lockPath: string,
-  ownerToken: string,
-  intervalMs: number,
-): () => Promise<void> {
-  let heartbeat = Promise.resolve();
-  const timer = setInterval(() => {
-    heartbeat = heartbeat
-      .then(async () => {
-        if (
-          (await readExtensionInstallLockOwnerToken(lockPath)) !== ownerToken
-        ) {
-          return;
-        }
-        const heartbeatAt = new Date();
-        await fs.utimes(lockPath, heartbeatAt, heartbeatAt);
-      })
-      .catch(() => undefined);
-  }, intervalMs);
-  timer.unref();
-  return async () => {
-    clearInterval(timer);
-    await heartbeat;
-  };
-}
-
-async function withExtensionInstallLock<T>(
-  settingsRoot: string,
-  destinationDirectoryName: string,
-  run: () => Promise<T>,
-  options?: {
-    attempts?: number;
-    delay_ms?: number;
-    stale_ms?: number;
-    heartbeat_ms?: number;
-  },
-): Promise<T> {
-  const lockRoot = path.join(
-    settingsRoot,
-    "runtime",
-    "extension-install-locks",
-  );
-  const lockPath = path.join(lockRoot, "scope.lock");
-  await fs.mkdir(lockRoot, { recursive: true });
-  const attempts = Math.max(
-    1,
-    Math.floor(options?.attempts ?? EXTENSION_INSTALL_LOCK_ATTEMPTS),
-  );
-  const delayMs = Math.max(
-    0,
-    Math.floor(options?.delay_ms ?? EXTENSION_INSTALL_LOCK_DELAY_MS),
-  );
-  const staleMs = Math.max(
-    0,
-    Math.floor(options?.stale_ms ?? EXTENSION_INSTALL_LOCK_STALE_MS),
-  );
-  const heartbeatMs = Math.max(
-    1,
-    Math.floor(options?.heartbeat_ms ?? Math.max(1, staleMs / 3)),
-  );
-
-  const owner: ExtensionInstallLockOwner = {
-    pid: process.pid,
-    token: randomUUID(),
-    created_at: nowIso(),
-    destination: destinationDirectoryName,
-  };
-  let acquired = false;
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    try {
-      await fs.mkdir(lockPath);
-      try {
-        await fs.writeFile(
-          path.join(lockPath, "owner.json"),
-          `${JSON.stringify(owner, null, 2)}\n`,
-          "utf8",
-        );
-      } catch (error: unknown) {
-        await fs.rm(lockPath, { recursive: true, force: true });
-        throw error;
-      }
-      acquired = true;
-      break;
-    } catch (error: unknown) {
-      if (!isErrnoCode(error, "EEXIST")) {
-        throw error;
-      }
-      if (await reclaimStaleExtensionInstallLock(lockPath, staleMs)) {
-        continue;
-      }
-      await sleep(delayMs);
-    }
-  }
-
-  if (!acquired) {
-    throw new PmCliError(
-      `Timed out waiting for extension install lock for "${destinationDirectoryName}".`,
-      EXIT_CODE.CONFLICT,
-    );
-  }
-
-  const stopHeartbeat = startExtensionInstallLockHeartbeat(
-    lockPath,
-    owner.token,
-    heartbeatMs,
-  );
-  try {
-    return await run();
-  } finally {
-    await stopHeartbeat();
-    await removeExtensionInstallLockIfOwned(lockPath, owner.token).catch(
-      () => false,
-    );
-  }
-}
 
 async function resolveInstalledExtensionCandidate(
   installed: ManagedExtensionSummary[],

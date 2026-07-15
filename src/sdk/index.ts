@@ -27,7 +27,11 @@ export {
   type UnknownAuthorHistoryEvent,
 } from "./author-attribution.js";
 export { createPmCliProgram } from "./cli-program.js";
-export { quoteCommandArg, renderPmCommand } from "./command-line.js";
+export {
+  quoteCommandArg,
+  quoteWindowsCommandArg,
+  renderPmCommand,
+} from "./command-line.js";
 export * from "./governance/gc.js";
 export * from "./governance/health.js";
 export * from "./governance/validate.js";
