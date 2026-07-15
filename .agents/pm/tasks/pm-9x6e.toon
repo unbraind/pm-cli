@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: architecture,"area:cli","area:mcp","area:sdk",ci
 created_at: "2026-07-06T13:13:21.203Z"
-updated_at: "2026-07-15T23:06:09.065Z"
+updated_at: "2026-07-15T23:25:19.173Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: sdk-import-boundary-baseline.json reaches zero entries and is deleted; static-quality-gate hard-denies any private src/core import from src/cli/** and src/mcp/** with no baseline escape hatch; src/mcp handlers consume only src/sdk primitives; full test suite + 100% coverage gate green with zero CLI/MCP behavior change
@@ -22,7 +22,7 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-oxrw,related,"2026-07-06T13:13:21.203Z",null,null
   pm-rjqr,related,"2026-07-06T13:13:21.203Z",null,null
   pm-zwpp,related,"2026-07-06T13:13:21.203Z",null,null
-comments[17]{created_at,author,text}:
+comments[18]{created_at,author,text}:
   "2026-07-14T19:24:59.262Z",codex-gpt5,"Implementation start 2026-07-14: actively shrinking the enforced CLI/MCP private-core baseline through the pm-3mna schema ownership extraction. This run will not claim the capstone complete unless the baseline truly reaches zero."
   "2026-07-14T19:41:00.327Z",codex-gpt5,"Progress evidence: removed all 17 schema-domain private-core edges previously attributed to src/cli/commands/schema.ts. The boundary ratchet passes with zero new imports; the broader baseline remains intentionally open and is not claimed complete."
   "2026-07-14T20:19:49.227Z",codex-root,"Final branch evidence: removed all 17 private-core imports formerly owned by src/cli/commands/schema.ts and deleted that stale baseline block. pnpm quality:static passes with no new private imports, no stale baseline entries, zero unsupported dynamic imports, 100% docstrings, and token budgets green. The repository-wide boundary baseline is not yet zero, so this capstone returns to open for the remaining command families."
@@ -40,6 +40,7 @@ comments[17]{created_at,author,text}:
   "2026-07-15T22:23:30.704Z",codex-sdk-platform,"Local Greptile review 411cf305-6dd5-44bb-b874-933a418079db identified one public-contract ergonomics gap: EvalSearchRunner exposed EvalSearchMode without a named SDK re-export. Accepted and fixed by re-exporting EvalSearchMode from sdk/eval; focused eval tests pass 16/16 and the complete package/example typecheck passes."
   "2026-07-15T22:38:32.201Z",codex-sdk-platform,"Committed-diff Greptile review ee8717e3-18e3-411e-abb0-e96c0c11352d identified inconsistent runId placement and a leaked test-runs SDK mock. Accepted both: every dedicated test-runs lifecycle action now accepts runId from either top-level action arguments or nested options, regression assertions prove both paths for status/logs/stop/resume, and teardown explicitly un-mocks the SDK module. Focused MCP tests pass 7/7, strict static quality passes, and full verification remains exact 100/100/100/100 across 293 files / 5,747 tests (37,271 statements, 26,553 branches, 7,549 functions, 36,374 lines)."
   "2026-07-15T23:06:07.430Z",codex-sdk-platform,"Second exact-head bot evidence: accepted Greptile thread 3591300444 and CodeRabbit thread 3591304225. Added native test-runs-start runtime dispatch plus a public TestRunsActionOptions union, explicitly narrowed each lifecycle branch, registered the start parameter contract, documented the complete durable lifecycle, and extended direct/MCP regressions. Verification: focused 37/37, contracts current, static/docstring/package/token gates green, and full coverage exact 100/100/100/100 across 293 files / 5,747 tests (37,274 statements, 26,555 branches, 7,550 functions, 36,377 lines)."
+  "2026-07-15T23:25:17.080Z",codex-sdk-platform,"Final analyzer-head evidence 2026-07-16: DeepScan public defect 230757853 correctly identified a redundant maxBufferExceeded guard after the earlier terminal-state return; simplified the branch without behavior change. DeepSource's current dashboard run was configured as commonjs despite the checked-in module_system=es-modules contract, producing invalid ESM global findings; ESLint now explicitly declares module source type and disables the browser-script-only no-implicit-globals rule, while every tool-schema helper has substantive documentation. Verification passes: focused 225/225, typecheck, ESLint, zero-duplicate jscpd, contracts, 100% source/export/member docstrings, package boundary and token gates; full coverage is exact 100/100/100/100 across 293 files / 5,747 tests (37,274 statements, 26,555 branches, 7,550 functions, 36,377 lines). The boundary remains 54 source files / 466 edges, so this capstone returns to open."
 notes[1]{created_at,author,text}:
   "2026-07-15T06:21:39.876Z",maintainer-agent,"PR#565 progress (2026-07-15): 54 obsolete CLI-to-core import-boundary allowances removed; pm-3mna slice shipped (SDK owns config/profile/init/agent-guidance/templates/extension + createPmCliProgram + renderPmCommand). Baseline scripts/release/sdk-import-boundary-baseline.json still holds ~60 source files (commands/*, main.ts, register-*, mcp/server.ts) — the zero target remains. With 3mna/4a7m/hib1/zwpp shipped, remaining prerequisite slices are pm-oxrw (governance/health) then pm-oslr (execution/diagnostics)."
 learnings[4]{created_at,author,text}:
@@ -47,9 +48,10 @@ learnings[4]{created_at,author,text}:
   "2026-07-14T23:31:18.238Z",codex-root,Compatibility shims must remain locally referenced or be deleted after SDK promotion; the orphan-module gate correctly prevents dead presentation paths from surviving solely for tests.
   "2026-07-15T02:24:59.166Z",codex-root,Shared extension managed-state and settings mutations require scope-level serialization; destination-level locks protect copies but cannot protect shared snapshots. Persisted unique ownership must be re-read before stale reclaim and final release so an earlier installer cannot delete a replacement lock.
   "2026-07-15T03:10:17.167Z",codex-root,"A stale timeout is a lease duration, not an install duration: long-running owners must refresh liveness under the same persisted owner token, and cleanup must await any in-flight heartbeat before comparing and releasing ownership."
-files[45]{path,scope,note}:
+files[47]{path,scope,note}:
   CHANGELOG.md,project,Package-owned changelog regenerated after closing the shipped SDK bundle
   eslint-suppressions.json,project,Extension engine SDK promotion and boundary ratchet burn-down
+  eslint.config.mjs,project,Explicit ESM lint semantics for third-party analyzer parity
   scripts/release/sdk-import-boundary-baseline.json,project,the baseline this task drives to zero and deletes
   scripts/release/static-quality-gate.mjs,project,ratchet implementation to flip to hard-deny
   src/cli/bootstrap-args.ts,project,CLI consumes and re-exports SDK alias contract
@@ -64,6 +66,7 @@ files[45]{path,scope,note}:
   src/cli/commands/profile.ts,project,Compatibility-only SDK re-export
   src/cli/commands/schema.ts,project,thin SDK re-export replaces CLI-owned implementation
   src/sdk/cli-contracts/command-aliases.ts,project,SDK-owned executable alias contract after review
+  src/sdk/cli-contracts/tool-schema.ts,project,Complete substantive helper documentation for provider-neutral tool contracts
   src/sdk/diagnostics/stats.ts,project,Complete SDK diagnostics docstring coverage
   src/sdk/diagnostics/telemetry.ts,project,Honor configured SDK root and exact queue drain semantics
   src/sdk/eval.ts,project,Preserve non-ENOENT query-set filesystem failures

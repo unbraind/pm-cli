@@ -88,6 +88,7 @@ export interface PmActionSchemaContract {
   >;
 }
 
+/** Normalize schema parameter keys into stable first-seen order without duplicates. */
 function toSchemaKeyList(values: string[]): string[] {
   return normalizeUniqueStringList(values);
 }
@@ -263,6 +264,7 @@ const MANAGED_EXTENSION_PACKAGE_OPTION_KEYS = [
   "failOnWarn",
 ];
 
+/** Build the shared action-schema family for extension or package lifecycle commands. */
 function managedLifecycleSchemaContracts(
   prefix: "extension" | "package",
 ): Record<string, PmActionSchemaContract> {
@@ -860,6 +862,7 @@ export const PM_TOOL_ACTION_PARAMETER_CONTRACTS: Readonly<
   ),
 ) as Readonly<Record<PmToolAction, PmActionSchemaContract>>;
 
+/** Derive a readable sentence when a tool parameter has no curated description. */
 function fallbackToolParameterDescription(key: string): string {
   return key
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
@@ -869,6 +872,7 @@ function fallbackToolParameterDescription(key: string): string {
     .concat(".");
 }
 
+/** Attach shared descriptions and examples to one base tool parameter schema. */
 function decorateToolParameterDefinition(
   key: string,
   definition: unknown,
@@ -885,6 +889,7 @@ function decorateToolParameterDefinition(
   };
 }
 
+/** Resolve action-specific parameter metadata before falling back to shared metadata. */
 function actionScopedToolParameterMetadata(
   action: PmToolAction,
   key: string,
@@ -905,6 +910,7 @@ function actionScopedToolParameterMetadata(
   return PM_TOOL_PARAMETER_METADATA[key];
 }
 
+/** Attach the metadata selected for one action and parameter to its schema. */
 function decorateActionScopedToolParameterDefinition(
   action: PmToolAction,
   key: string,
@@ -922,6 +928,7 @@ function decorateActionScopedToolParameterDefinition(
   };
 }
 
+/** Resolve the base parameter schema for action-specific format and plan overrides. */
 function actionScopedToolParameterDefinition(
   action: PmToolAction,
   key: string,
@@ -1056,6 +1063,7 @@ function buildActionScopedAllOf(
   return allOf;
 }
 
+/** Build the complete provider-neutral parameter schema for a native action. */
 function buildActionScopedToolSchema(
   action: PmToolAction,
 ): Record<string, unknown> {
@@ -1098,6 +1106,7 @@ function buildActionScopedToolSchema(
 // on the hot CLI path that imports this module for flag contracts. Wrap them in a
 // memoized lazy Proxy so the build is deferred until first property access and the
 // object API (`.type`, `.oneOf`, spread, JSON.stringify) stays identical.
+/** Defer schema construction until a provider or consumer first reads the contract. */
 function createLazyContractSchema(
   build: () => Record<string, unknown>,
 ): Record<string, unknown> {
@@ -1141,6 +1150,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> =
     oneOf: PM_TOOL_ACTIONS.map((action) => buildActionScopedToolSchema(action)),
   }));
 
+/** Remove unsupported schema features while preserving provider-safe validation metadata. */
 function toProviderCompatibleParameterDefinition(
   key: string,
   definition: unknown,
@@ -1172,6 +1182,7 @@ function toProviderCompatibleParameterDefinition(
   };
 }
 
+/** Build the provider-compatible union schema for all public pm tool actions. */
 function buildProviderCompatibleToolSchema(): Record<string, unknown> {
   const properties: Record<string, unknown> = {
     action: {

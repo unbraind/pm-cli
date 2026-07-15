@@ -65,10 +65,16 @@ export default [
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    languageOptions: { globals: NODE_GLOBALS },
+    languageOptions: { globals: NODE_GLOBALS, sourceType: "module" },
     linterOptions: { reportUnusedDisableDirectives: "error" },
     plugins: { sonarjs, unicorn },
-    rules: CODEFACTOR_MAINTAINABILITY_RULES,
+    rules: {
+      ...CODEFACTOR_MAINTAINABILITY_RULES,
+      // Every linted JavaScript/TypeScript source is an ESM module. This rule
+      // models browser scripts and produces invalid global-pollution findings
+      // when third-party analyzers disregard the explicit module source type.
+      "no-implicit-globals": "off",
+    },
   },
   {
     files: ["**/*.cjs"],

@@ -1185,7 +1185,7 @@ function appendLinkedTestOutputChunk(
   const bufferExceeded =
     state.stdoutBytes > TEST_OUTPUT_MAX_BUFFER_BYTES ||
     state.stderrBytes > TEST_OUTPUT_MAX_BUFFER_BYTES;
-  if (!state.maxBufferExceeded && bufferExceeded) {
+  if (bufferExceeded) {
     state.maxBufferExceeded = true;
     return true;
   }
