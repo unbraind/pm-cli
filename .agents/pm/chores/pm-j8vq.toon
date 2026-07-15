@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[2]: code-quality,codefactor
 created_at: "2026-07-12T07:36:30.261Z"
-updated_at: "2026-07-15T09:27:06.559Z"
+updated_at: "2026-07-15T18:51:51.690Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "eslint-suppressions.json total reduced from 180 back toward 104 as functions are decomposed; MAX_ESLINT_SUPPRESSIONS lowered in lockstep (never raised); worst offenders first (extension-command-options.ts cog 34, lock-gc.ts 29, checkpoint-gc.ts 28, lock.ts 27, fs-utils.ts 27); each refactor keeps the 100% coverage gate green"
@@ -16,8 +16,9 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-yh8r,related,"2026-07-14T17:05:09.432Z",null,null
   pm-vlnc,related,"2026-07-15T09:27:06.534Z",codex-root,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-15T09:27:04.865Z",codex-root,"GitHub report coverage 2026-07-15: GH-569 reports a Complex Method in src/cli/bootstrap-args.ts. All-status exact search found no dedicated duplicate; this canonical complexity-baseline chore owns the report alongside the existing <=16 ratchet. The report is documented but remains open/unclaimed because PR #568 is actively limited to governance SDK review convergence."
+  "2026-07-15T18:51:51.689Z",maintainer-agent,"GH-569 (CodeFactor Complex Method, src/cli/bootstrap-args.ts:94-169 parseBootstrapGlobalOptions) mapped here 2026-07-15 — file holds 2 grandfathered sonarjs/cognitive-complexity suppressions in eslint-suppressions.json. Close GH-569 when the bootstrap-args entries are burned down. No standalone item per baseline policy (GH-518/pm-2gvp precedent)."
 files[1]{path,scope,note}:
   "https://github.com/unbraind/pm-cli/issues/569",global,GH-569 bootstrap-args Complex Method report
 body: "The GH-518/pm-2gvp gate fix added sonarjs/cognitive-complexity <=16 and lowered the cyclomatic ceiling 17->16 (policy: no function over 16 on either metric). 76 pre-existing violations were grandfathered into eslint-suppressions.json (104 -> 180): 62 functions with cognitive complexity >16 and 14 at cyclomatic exactly 17. The ratchet already prevents ANY new violation and any worsening of a suppressed file; this chore owns shrinking the baseline itself.\n\nMethod per slice: pick a file from eslint-suppressions.json, decompose the offending function(s) below both ceilings, run pnpm lint (stale suppressions fail the run) + pnpm lint:eslint:prune, commit the smaller baseline. Never edit suppression counts by hand; never raise MAX_ESLINT_SUPPRESSIONS.\n\nTop offenders by cognitive score (2026-07-12 scan): src/cli/extension-command-options.ts:371 (34) + :206 (23), src/core/lock/lock-gc.ts:246 (29), src/core/checkpoint/checkpoint-gc.ts:135 (28), src/core/lock/lock.ts:520 (27), src/core/fs/fs-utils.ts:42 (27), src/core/store/item-format-migration.ts:60 (26), src/core/extensions/item-fields.ts:289 (24), src/cli/commands/shared-unset-fields.ts:311 (24), src/cli/commands/health.ts:388 (24)."
