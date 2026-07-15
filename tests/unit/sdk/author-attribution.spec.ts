@@ -40,14 +40,22 @@ describe("SDK author attribution primitives", () => {
     expect(
       inspectHistoryAuthorStream(
         "pm-memory",
-        `${JSON.stringify({ author: "agent" })}\n${JSON.stringify({})}\n`,
+        [
+          JSON.stringify({ author: "agent" }),
+          JSON.stringify({}),
+          JSON.stringify({ ts: "not-a-date", author: "unknown" }),
+          "",
+        ].join("\n"),
       ),
     ).toEqual({
-      checked_events: 2,
-      unknown_event_count: 1,
-      legacy_unknown_event_count: 0,
-      actionable_unknown_event_count: 1,
-      samples: [{ item_id: "pm-memory", line: 2 }],
+      checked_events: 3,
+      unknown_event_count: 2,
+      legacy_unknown_event_count: 2,
+      actionable_unknown_event_count: 0,
+      samples: [
+        { item_id: "pm-memory", line: 2 },
+        { item_id: "pm-memory", line: 3 },
+      ],
     });
   });
 
@@ -59,7 +67,10 @@ describe("SDK author attribution primitives", () => {
       path.join(historyDirectory, "pm-b.jsonl"),
       [
         JSON.stringify({ author: "agent-b" }),
-        JSON.stringify({ author: "unknown" }),
+        JSON.stringify({
+          ts: "2026-07-15T07:00:00.000Z",
+          author: "unknown",
+        }),
         "not-json",
         JSON.stringify(null),
         "",
@@ -75,8 +86,8 @@ describe("SDK author attribution primitives", () => {
       checked_streams: 2,
       checked_events: 5,
       unknown_event_count: 4,
-      legacy_unknown_event_count: 0,
-      actionable_unknown_event_count: 4,
+      legacy_unknown_event_count: 3,
+      actionable_unknown_event_count: 1,
       affected_item_ids: ["pm-a", "pm-b"],
       samples: [
         { item_id: "pm-a", line: 1 },
@@ -147,9 +158,9 @@ describe("SDK author attribution primitives", () => {
     ]);
     expect(flagFollowingAuthor.author).toBeUndefined();
     expect(flagFollowingAuthor.json).toBe(true);
-    expect(
-      stripGlobalBootstrapTokens(["--author", "--json", "list"]),
-    ).toEqual(["list"]);
+    expect(stripGlobalBootstrapTokens(["--author", "--json", "list"])).toEqual([
+      "list",
+    ]);
     expect(parseBootstrapCommandName(["--author", "--json", "list"])).toBe(
       "list",
     );
@@ -264,9 +275,17 @@ describe("SDK author attribution primitives", () => {
     );
     const actionableHealth = await runHealth(
       { path: pmRoot },
-      { checkOnly: true, skipIntegrity: true, skipDrift: true, skipVectors: true },
+      {
+        checkOnly: true,
+        skipIntegrity: true,
+        skipDrift: true,
+        skipVectors: true,
+      },
     );
-    expect(actionableHealth.warnings).toContain("history_unknown_author_events:1");
+    expect(actionableHealth.warnings).toContain(
+      "history_unknown_author_events:1",
+    );
+    expect(actionableHealth.ok).toBe(false);
     expect((await runValidate({}, { path: pmRoot })).warnings).toContain(
       "validate_history_unknown_author_events:1",
     );

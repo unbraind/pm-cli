@@ -14,6 +14,10 @@ const HISTORY_AUTHOR_ATTRIBUTION_BASELINE_MS = Date.parse(
   HISTORY_AUTHOR_ATTRIBUTION_BASELINE,
 );
 
+/** Return history string fields unchanged while normalizing other values to empty text. */
+const historyStringValue = (value: unknown): string =>
+  typeof value === "string" ? value : "";
+
 /** Identifies one history event whose mutation author is absent or explicitly unknown. */
 export interface UnknownAuthorHistoryEvent {
   /** Item whose history stream contains the event. */
@@ -32,7 +36,7 @@ export interface HistoryAuthorAttributionScan {
   unknown_event_count: number;
   /** Immutable pre-baseline events retained as historical information. */
   legacy_unknown_event_count: number;
-  /** Post-baseline or undated events that require author-attribution fixes. */
+  /** Timestamped post-baseline events that require author-attribution fixes. */
   actionable_unknown_event_count: number;
   /** Stable, sorted item ids containing unknown-author events. */
   affected_item_ids: string[];
@@ -45,14 +49,13 @@ export const classifyHistoryAuthorEvent = (
   parsed: unknown,
 ): "attributed" | "legacy_unknown" | "actionable_unknown" => {
   const record = (parsed ?? {}) as { author?: unknown; ts?: unknown };
-  const author =
-    typeof record.author === "string" ? record.author.trim().toLowerCase() : "";
+  const author = historyStringValue(record.author).trim().toLowerCase();
   if (!["", "unknown"].includes(author)) {
     return "attributed";
   }
-  const timestamp =
-    typeof record.ts === "string" ? Date.parse(record.ts) : Number.NaN;
-  return timestamp < HISTORY_AUTHOR_ATTRIBUTION_BASELINE_MS
+  const timestamp = Date.parse(historyStringValue(record.ts));
+  return !Number.isFinite(timestamp) ||
+    timestamp < HISTORY_AUTHOR_ATTRIBUTION_BASELINE_MS
     ? "legacy_unknown"
     : "actionable_unknown";
 };

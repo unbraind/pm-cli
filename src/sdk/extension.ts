@@ -440,6 +440,16 @@ const EXTENSION_POLICY_OVERRIDE_LIST_FIELDS = [
   "allowed_services",
   "blocked_services",
 ] as const;
+const EXTENSION_POLICY_OVERRIDE_BOOLEAN_FIELDS = [
+  "disabled",
+  "require_trusted",
+  "require_provenance",
+] as const;
+const RETRIABLE_EXTENSION_INSTALL_COPY_CODES = new Set([
+  "EEXIST",
+  "ENOTEMPTY",
+  "ENOENT",
+]);
 const DEFAULT_EXTENSION_POLICY_DETAILS: PmSettings["extensions"]["policy"] = {
   mode: "off",
   trust_mode: "off",
@@ -465,6 +475,8 @@ type ExtensionPolicyRootListField =
   (typeof EXTENSION_POLICY_ROOT_LIST_FIELDS)[number];
 type ExtensionPolicyOverrideListField =
   (typeof EXTENSION_POLICY_OVERRIDE_LIST_FIELDS)[number];
+type ExtensionPolicyOverrideBooleanField =
+  (typeof EXTENSION_POLICY_OVERRIDE_BOOLEAN_FIELDS)[number];
 
 interface ExtensionPolicyOverrideDetails {
   name: string;
@@ -505,70 +517,101 @@ interface ExtensionPolicyDetails {
   extension_overrides: ExtensionPolicyOverrideDetails[];
 }
 
-function normalizePolicyRootLists(
+/** Normalize every root-level extension policy list into a stable unique sequence. */
+const normalizePolicyRootLists = (
   policy: PmSettings["extensions"]["policy"] | null | undefined,
-): Record<ExtensionPolicyRootListField, string[]> {
+): Record<ExtensionPolicyRootListField, string[]> => {
   const safePolicy = policy ?? DEFAULT_EXTENSION_POLICY_DETAILS;
   const lists = {} as Record<ExtensionPolicyRootListField, string[]>;
   for (const field of EXTENSION_POLICY_ROOT_LIST_FIELDS) {
     lists[field] = normalizeStringList(safePolicy[field] ?? []);
   }
   return lists;
-}
+};
 
-function appendNonEmptyPolicyLists(
+/** Attach only populated override lists so diagnostics remain compact. */
+const appendNonEmptyPolicyLists = (
   target: ExtensionPolicyOverrideDetails,
   lists: Record<ExtensionPolicyOverrideListField, string[]>,
-): ExtensionPolicyOverrideDetails {
+): ExtensionPolicyOverrideDetails => {
   for (const field of EXTENSION_POLICY_OVERRIDE_LIST_FIELDS) {
     if (lists[field].length > 0) {
       target[field] = lists[field];
     }
   }
   return target;
-}
+};
 
-function buildExtensionPolicyOverrideDetails(
+/** Attach explicitly enabled scalar fields to one normalized extension override. */
+const appendEnabledPolicyScalars = (
+  target: ExtensionPolicyOverrideDetails,
   override: NonNullable<
     PmSettings["extensions"]["policy"]["extension_overrides"]
   >[number],
-): ExtensionPolicyOverrideDetails | null {
-  const name = typeof override.name === "string" ? override.name.trim() : "";
-  if (name.length === 0) {
-    return null;
-  }
-  const details: ExtensionPolicyOverrideDetails = { name };
-  if (override.disabled === true) {
-    details.disabled = true;
-  }
-  if (override.require_trusted === true) {
-    details.require_trusted = true;
-  }
-  if (override.require_provenance === true) {
-    details.require_provenance = true;
+): ExtensionPolicyOverrideDetails => {
+  for (const field of EXTENSION_POLICY_OVERRIDE_BOOLEAN_FIELDS) {
+    if (override[field] === true) {
+      target[field as ExtensionPolicyOverrideBooleanField] = true;
+    }
   }
   if (override.sandbox_profile) {
-    details.sandbox_profile = override.sandbox_profile;
+    target.sandbox_profile = override.sandbox_profile;
   }
+  return target;
+};
+
+/** Normalize every list field from one extension policy override. */
+const normalizePolicyOverrideLists = (
+  override: NonNullable<
+    PmSettings["extensions"]["policy"]["extension_overrides"]
+  >[number],
+): Record<ExtensionPolicyOverrideListField, string[]> => {
   const lists = {} as Record<ExtensionPolicyOverrideListField, string[]>;
   for (const field of EXTENSION_POLICY_OVERRIDE_LIST_FIELDS) {
     lists[field] = normalizeStringList(override[field] ?? []);
   }
-  return appendNonEmptyPolicyLists(details, lists);
-}
+  return lists;
+};
 
-function buildExtensionPolicyDetails(
-  policy: PmSettings["extensions"]["policy"] | null | undefined,
-): ExtensionPolicyDetails {
-  const safePolicy = policy ?? DEFAULT_EXTENSION_POLICY_DETAILS;
-  const rootLists = normalizePolicyRootLists(policy);
-  const overrides = (safePolicy.extension_overrides ?? [])
+/** Build deterministic diagnostic details for one valid named extension override. */
+const buildExtensionPolicyOverrideDetails = (
+  override: NonNullable<
+    PmSettings["extensions"]["policy"]["extension_overrides"]
+  >[number],
+): ExtensionPolicyOverrideDetails | null => {
+  const name = typeof override.name === "string" ? override.name.trim() : "";
+  if (name.length === 0) {
+    return null;
+  }
+  return appendNonEmptyPolicyLists(
+    appendEnabledPolicyScalars({ name }, override),
+    normalizePolicyOverrideLists(override),
+  );
+};
+
+/** Normalize and sort all named extension policy overrides. */
+const normalizeExtensionPolicyOverrides = (
+  overrides: NonNullable<
+    PmSettings["extensions"]["policy"]["extension_overrides"]
+  >,
+): ExtensionPolicyOverrideDetails[] =>
+  overrides
     .map((override) => buildExtensionPolicyOverrideDetails(override))
     .filter(
       (override): override is ExtensionPolicyOverrideDetails =>
         override !== null,
     )
     .sort((left, right) => left.name.localeCompare(right.name));
+
+/** Build the normalized extension policy representation exposed by diagnostics. */
+const buildExtensionPolicyDetails = (
+  policy: PmSettings["extensions"]["policy"] | null | undefined,
+): ExtensionPolicyDetails => {
+  const safePolicy = policy ?? DEFAULT_EXTENSION_POLICY_DETAILS;
+  const rootLists = normalizePolicyRootLists(policy);
+  const overrides = normalizeExtensionPolicyOverrides(
+    safePolicy.extension_overrides ?? [],
+  );
   return {
     mode: safePolicy.mode ?? DEFAULT_EXTENSION_POLICY_DETAILS.mode,
     trust_mode:
@@ -590,30 +633,27 @@ function buildExtensionPolicyDetails(
     blocked_services: rootLists.blocked_services,
     extension_overrides: overrides,
   };
-}
+};
 
-function isRetriableExtensionInstallCopyError(error: unknown): boolean {
-  if (typeof error !== "object" || error === null || !("code" in error)) {
-    return false;
-  }
-  const code = (error as { code?: unknown }).code;
-  return code === "EEXIST" || code === "ENOTEMPTY" || code === "ENOENT";
-}
+/** Return an errno-style code from an unknown failure when one is present. */
+const errnoCode = (error: unknown): unknown =>
+  typeof error === "object" && error !== null && "code" in error
+    ? (error as { code?: unknown }).code
+    : undefined;
 
-function isErrnoCode(error: unknown, code: string): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: unknown }).code === code
-  );
-}
+/** Identify transient copy races that are safe to retry during extension installation. */
+const isRetriableExtensionInstallCopyError = (error: unknown): boolean =>
+  RETRIABLE_EXTENSION_INSTALL_COPY_CODES.has(String(errnoCode(error)));
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
+/** Test an unknown failure against one expected errno-style code. */
+const isErrnoCode = (error: unknown, code: string): boolean =>
+  errnoCode(error) === code;
+
+/** Delay an extension filesystem retry without blocking the event loop. */
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
-}
 
 /** Ensure the installed extension directory carries a `package.json` with `"type": "module"`. Extension entrypoints are ESM TypeScript; without a nearby package.json Node resolves the module type from the HOST project's package.json, so installs into `"type": "commonjs"` projects fail activation with `extension_load_failed` (pm-r0m4). Extensions that ship their own package.json are left untouched. */
 async function ensureExtensionModuleTypeMarker(
@@ -681,9 +721,10 @@ async function copyExtensionDirectoryWithoutSelfNesting(
     destinationRoot,
     destinationParent,
   );
-  const destinationSegments = relativeDestinationParent === ""
-    ? []
-    : relativeDestinationParent.split(path.sep);
+  const destinationSegments =
+    relativeDestinationParent === ""
+      ? []
+      : relativeDestinationParent.split(path.sep);
   for (const [index, segment] of destinationSegments.entries()) {
     const candidate = path.join(canonicalDestinationParent, segment);
     try {

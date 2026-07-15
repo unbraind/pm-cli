@@ -68,7 +68,10 @@ describe("argv-utils.quoteCommandArg / renderPmCommand", () => {
       ),
     ).toBe('pm --pm-path "C:\\project files\\.agents\\pm" init');
     expect(quoteCommandArg('title "quoted"', "win32")).toBe(
-      '"title ""quoted"""',
+      '"title \\"quoted\\""',
+    );
+    expect(quoteCommandArg("C:\\Program Files\\pm\\", "win32")).toBe(
+      '"C:\\Program Files\\pm\\\\"',
     );
   });
 });

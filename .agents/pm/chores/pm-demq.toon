@@ -2,12 +2,12 @@ id: pm-demq
 title: "validate_history_unknown_author_events: legacy/actionable split for immutable unknown-author history events + first-party automation author coverage"
 description: ""
 type: Chore
-status: closed
+status: in_progress
 priority: 2
 tags: []
 created_at: "2026-07-15T06:22:12.276Z"
-updated_at: "2026-07-15T07:26:30.095Z"
-closed_at: "2026-07-15T07:25:21.163Z"
+updated_at: "2026-07-15T09:59:26.223Z"
+assignee: codex-root
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "validate/health advisory distinguishes actionable unknown-author events (post-baseline-anchor or recent-window) from the 162 legacy immutable events, which surface as an informational count only; check reports ok when actionable=0; all first-party automation paths (CI gates, Auto Release pipeline, changelog regen, MCP server defaults) are verified to stamp an explicit author; docs state legacy events are permanent by design because history streams are append-only"
@@ -17,18 +17,23 @@ confidence: 80
 resolution: Established a timestamp baseline that separates immutable legacy unknown-author events from actionable regressions.
 expected_result: Legacy unknown authors remain observable but do not fail health or validation; new unknown authors do.
 actual_result: Health and validation report legacy and actionable counts independently and warn only for actionable events.
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-cpja,related,"2026-07-15T06:22:12.276Z",null,null
   pm-e9zh,related,"2026-07-15T06:22:12.276Z",null,null
   pm-u14c,related,"2026-07-15T06:22:12.276Z",null,null
   pm-wenq,related,"2026-07-15T06:22:12.276Z",null,null
-comments[1]{created_at,author,text}:
+  pm-oxrw,related,"2026-07-15T09:27:31.615Z",codex-root,null
+comments[3]{created_at,author,text}:
   "2026-07-15T07:25:20.200Z",codex-root,"Evidence: immutable unknown-author events before the 2026-07-15 baseline remain visible as legacy counts while only undated/post-baseline events are actionable warnings. Health and validation share the SDK attribution primitive; full coverage and static gates pass."
-files[3]{path,scope,note}:
+  "2026-07-15T09:27:57.039Z",codex-root,"Review correction evidence: actionable post-baseline unknown authors now keep the storage check at warn and make HealthResult.ok false; legacy unknown authors remain informational and non-blocking. Windows remediation command rendering now implements quote, preceding-backslash, and trailing-backslash escaping. Focused attribution/argv tests and strict gates pass."
+  "2026-07-15T09:59:26.223Z",codex-root,"Pre-push release evidence (2026-07-15): all local pm-cli gates and exact 100/100/100/100 coverage pass. Sentry/telemetry gate reports telemetry healthy (0.33% finish error rate, zero missing error-code rows) and precisely two high owner-package events: PM-CLI-2B and PM-CLI-29, already tracked by active pm-d4ns and pm-7n5a. No generic suppression was added."
+files[5]{path,scope,note}:
   src/sdk/author-attribution.ts,project,Legacy and actionable unknown-author classification
+  src/sdk/command-line.ts,project,Windows command quoting review correction for governance remediation hints
   src/sdk/governance/health.ts,project,Actionable health severity
   src/sdk/governance/validate.ts,project,Actionable validation severity
-tests[1]{command,scope,timeout_seconds,note}:
+  tests/unit/cli/argv-utils.spec.ts,project,Windows quote and trailing-backslash regression coverage
+tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts,project,120,Attribution baseline regression suite
-close_reason: Separated legacy unknown-author history from actionable regressions in the shared SDK primitive while retaining transparent totals.
+  node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/cli/argv-utils.spec.ts,project,180,Actionable attribution severity and Windows remediation command coverage
 body: "Why this exists: PR#565 (pm-cpja) shipped scanHistoryAuthorAttribution scanning ALL history with no window (src/sdk/author-attribution.ts). The 162 flagged events predate author discipline and can NEVER be repaired: history streams are append-only immutable proof, so rewriting authors is forbidden by design. Without a legacy/actionable split the warning is permanent noise that violates the every-warning-maps-to-an-actionable-owner invariant. Precedents: pm-2ler (dangling_dependency_references active-only gating with legacy informational count) and pm-e9zh (missing_close_reason legacy set, never hand-backfill). Remediation for NEW events is prevention only: PM_AUTHOR, global --author, or config author_default."

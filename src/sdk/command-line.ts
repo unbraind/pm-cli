@@ -5,10 +5,10 @@
  */
 
 /** Quote one command argument only when platform shell-significant characters require it. */
-export function quoteCommandArg(
+export const quoteCommandArg = (
   arg: string,
   platform: NodeJS.Platform = process.platform,
-): string {
+): string => {
   if (
     (platform === "win32"
       ? /^[A-Za-z0-9._:/\\@=-]+$/
@@ -18,16 +18,16 @@ export function quoteCommandArg(
     return arg;
   }
   if (platform === "win32") {
-    return `"${arg.replace(/"/g, '""')}"`;
+    return `"${arg.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, "$1$1")}"`;
   }
   return `"${arg.replace(/(["\\$`])/g, "\\$1")}"`;
-}
+};
 
 /** Render a complete pm command from already-tokenized arguments. */
-export function renderPmCommand(
+export const renderPmCommand = (
   argv: string[],
   platform: NodeJS.Platform = process.platform,
-): string {
+): string => {
   const args = argv.map((token) => quoteCommandArg(token, platform)).join(" ");
   return args.length > 0 ? `pm ${args}` : "pm";
-}
+};

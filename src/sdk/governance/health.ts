@@ -238,8 +238,7 @@ const TELEMETRY_SERVER_MAX_SCHEMA_VERSION_HEADERS = [
 function isAdvisoryHealthWarning(warning: string): boolean {
   return (
     warning.startsWith("telemetry_") ||
-    warning.startsWith("history_stream_over_compact_threshold:") ||
-    warning.startsWith("history_unknown_author_events:")
+    warning.startsWith("history_stream_over_compact_threshold:")
   );
 }
 
