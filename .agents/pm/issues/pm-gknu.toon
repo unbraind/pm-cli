@@ -1,0 +1,20 @@
+id: pm-gknu
+title: "Uniform multi-value filter-value grammar: --status accepts CSV but --type/--priority fail fast and --tag silently matches the literal CSV string"
+description: ""
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-07-15T06:25:23.773Z"
+updated_at: "2026-07-15T06:25:36.043Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: "every enumerable filter flag on list/search/aggregate/update-many (--type, --priority, --status, --assignee, --sprint, --release) accepts the same CSV multi-value grammar as --status with per-token validation and fail-fast on any invalid token; free-form --tag defines explicit CSV OR-semantics with a documented escape for literal commas; contracts + docs + completion updated via the full new-flag checklist; no existing single-value spelling breaks"
+parent: pm-mpbb
+risk: medium
+confidence: 85
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-fgih,related,"2026-07-15T06:25:23.773Z",null,null
+  pm-plwm,related,"2026-07-15T06:25:23.773Z",null,null
+  pm-srns,related,"2026-07-15T06:25:23.773Z",null,null
+body: "Evidence 2026-07-15 (v2026.7.14 main build): pm list --status open,in_progress works (CSV); pm list --type Epic,Milestone exits 2 invalid_argument_value (single-value only, 18 Epics exist); pm list --priority 0,1 exits 2 (single-value only); pm list --tag security,performance exits 0 with items:[] count:0 while --tag security alone matches 45 — the CSV string is matched as ONE literal tag, the last silent-zero member of the pm-kj4k class (enum halves fail fast correctly since PR#545; the free-form tag half cannot be enum-validated, so it needs CSV semantics instead). Class fix only: one shared multi-value filter parser; never file per-flag point patches — cite this item. Input-side grammar twin of pm-srns (output), tactical subset of pm-plwm (--where predicates); filter-parity precedent pm-13nx (closed)."

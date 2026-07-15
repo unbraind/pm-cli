@@ -6,13 +6,15 @@ status: open
 priority: 3
 tags[2]: audit-followup,extensions
 created_at: "2026-07-04T08:31:42.675Z"
-updated_at: "2026-07-10T05:48:02.568Z"
+updated_at: "2026-07-15T06:29:50.644Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: builtin-calendar and builtin-guide-shell no longer collide on the output_format service; doctor flags first-party service collisions.
 parent: pm-ugqx
 risk: low
 confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-srns,related,"2026-07-15T06:29:50.614Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-10T05:48:02.567Z",codex-root-20260709,"Fresh packed-package evidence (2026-07-10): path-target init --with-packages activated all 11 bundled packages with zero blocking failures, but isolated deep package doctor still reports exactly two extension_output_service_override_global:output_format warnings for builtin-calendar and builtin-guide-shell. Canonical item confirmed; no duplicate created. Temp proof: /tmp/pm-cli-sdk-path-proof-XIsSsh."
 body: "## Context\n2026-07-04 sandbox review: with all bundled packages installed, `pm extension --doctor` warns extension_output_service_override_global:output_format for BOTH builtin-calendar and builtin-guide-shell — two first-party packages contend for the same global output_format service, so a full first-party install is never warning-free and last-activated silently wins.\n\n## Decision needed (then implement)\nPick the owner of the global output_format override (guide-shell is the likelier owner as the interactive surface; calendar probably only needs it for its own command scope) — or scope one override to its owning commands via the action-scoped mechanism from PR#406. Record the choice as a comment here (or an ADR under pm-m2u1 if the service-ownership rule generalizes).\n\n## Definition of done\nFresh sandbox with ALL bundled packages installed shows zero doctor warnings; the ownership/scoping rule is documented in EXTENSIONS.md; regression spec asserts the doctor output stays clean."

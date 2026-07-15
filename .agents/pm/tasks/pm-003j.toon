@@ -6,11 +6,13 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-07-14T22:40:26.943Z"
-updated_at: "2026-07-14T22:40:26.943Z"
+updated_at: "2026-07-15T06:29:47.265Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Every workflow under .github/workflows declares an explicit top-level permissions block (least privilege, job-level elevation only where required, matching the scorecard.yml/security.yml pattern); actionlint + Trivy misconfig green; next Scorecard run reports Token-Permissions 10"
 parent: pm-gnzh
 risk: low
 confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-5zca,related,"2026-07-15T06:29:47.248Z",null,null
 body: ""

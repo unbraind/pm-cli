@@ -6,11 +6,13 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-07-14T22:40:59.570Z"
-updated_at: "2026-07-14T22:40:59.570Z"
+updated_at: "2026-07-15T06:29:47.862Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: A workable review flow is decided and documented (maintainer approves agent-lane PRs via GitHub review before merge; bot reviews do not count); ruleset optionally enforces 1 approving review; Code-Review score trends toward 10 over the rolling 30-changeset window; decision recorded here
 parent: pm-gnzh
 risk: medium
 confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-5zca,related,"2026-07-15T06:29:47.844Z",null,null
 body: ""

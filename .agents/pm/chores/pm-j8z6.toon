@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: context-management,linked-files,review
 created_at: "2026-06-25T05:01:04.319Z"
-updated_at: "2026-07-14T21:35:13.365Z"
+updated_at: "2026-07-15T06:21:59.862Z"
 author: codex-ecosystem-auditor
 estimated_minutes: 180
 acceptance_criteria: "Historical linked-file ownership debt is reconciled in a dedicated tracker-only migration without polluting a product release changelog; pm validate --check-files residual rows are grouped by deleted, moved, and unowned current paths with owner candidates; no broad historical PM mutations are bundled into unrelated code PRs."
@@ -15,7 +15,7 @@ risk: medium
 confidence: medium
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-kb5h,related,"2026-07-14T17:05:10.148Z",null,null
-comments[13]:
+comments[14]:
   - created_at: "2026-06-25T05:01:11.314Z"
     author: codex-ecosystem-auditor
     text: "Duplicate check: searched all statuses for linked-file validation, orphaned paths, missing linked paths, and stale linked artifacts. Prior canonical items (for example pm-xz1p and pm-0v2m) are closed; this item tracks the current 2026-06-25 audit finding under pm-57vh."
@@ -56,6 +56,9 @@ comments[13]:
     author: maintainer-agent
     text: "Pass #85 verification 2026-07-14 (post PR#563): files baseline STABLE at 162 missing (112 moved / 50 deleted, orphaned 0) — unchanged since the pass #81 reading; PR#563 deleted/renamed no files (schema command became a re-export in place). Correction: pass #76's '161' and #81's 'was 161' bracket the same +1 linked-artifacts.ts row recorded 2026-07-13 post-PR#543; no new drift this pass."
     edited_at: "2026-07-14T21:35:13.365Z"
+  - created_at: "2026-07-15T06:21:59.857Z"
+    author: maintainer-agent
+    text: "Baseline change 2026-07-15: files missing_linked_paths_total 162 -> 166 (moved 111 -> 116, deleted stable 50, orphaned 0). The +5 moved rows come from PR#565 relocating config/profile/init/template/extension engines into src/sdk ownership; closed lane items still link the old src/cli paths. Moved rows remain mechanical-relink territory per this item; CREATE-ONLY on closed holders (changelog drag)."
 notes[3]{created_at,author,text}:
   "2026-07-06T08:22:48.232Z",maintainer-agent,"2026-07-06 audit #8 recount — pm validate now reports validate_files_missing_linked_paths 146 and validate_files_orphaned_paths 131 (workspace-wide, 2545 linked commands scanned). Counts unchanged in character since filing; still the single tracked owner of both warning classes."
   "2026-07-10T12:16:07.271Z",maintainer-agent,"2026-07-10 review pass: validate_files_missing_linked_paths rose 147 -> 154 (+7); orphaned_paths steady at 124. Likely cause: commits 21a7d884 (untracked vendored pm-changelog extension dist) and b573ef14 (contracts-snapshot gate rework) relocated/removed files still referenced by item linked paths. Worklist ids via pm validate --json .details.*_item_ids when picking this up."

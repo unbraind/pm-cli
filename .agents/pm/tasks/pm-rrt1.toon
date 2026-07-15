@@ -6,11 +6,13 @@ status: open
 priority: 3
 tags: []
 created_at: "2026-07-14T22:41:01.099Z"
-updated_at: "2026-07-14T22:41:01.099Z"
+updated_at: "2026-07-15T06:29:48.544Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "Project registered at bestpractices.dev (free), questionnaire completed to PASSING level (agent drafts all answers as a note here; maintainer submits), badge added to README; Scorecard CII-Best-Practices scores ≥5 (passing=5, silver=7, gold=10)"
 parent: pm-gnzh
 risk: low
 confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2d7k,related,"2026-07-15T06:29:48.526Z",null,null
 body: ""
