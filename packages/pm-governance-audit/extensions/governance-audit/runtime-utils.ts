@@ -175,12 +175,14 @@ interface CommandResultPayload {
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
+  /** Narrow an unknown payload to a non-null object record. */
   return typeof value === "object" && value !== null
     ? (value as Record<string, unknown>)
     : undefined;
 }
 
 function hasUpdateAuditBypass(options: Record<string, unknown>): boolean {
+  /** Detect every supported update-audit bypass alias. */
   return (
     options.allowAuditUpdate === true ||
     options.allow_audit_update === true ||
@@ -193,6 +195,7 @@ async function decorateLinkedArtifactResult(
   payload: CommandResultPayload,
   result: Record<string, unknown>,
 ): Promise<Record<string, unknown> | undefined> {
+  /** Add reverse linked-artifact attribution to eligible files/docs results. */
   if (
     (payload.command !== "files" && payload.command !== "docs") ||
     payload.options?.audit !== true ||

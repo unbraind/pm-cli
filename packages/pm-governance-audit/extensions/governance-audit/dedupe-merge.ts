@@ -127,6 +127,7 @@ interface ResolvedItem {
 
 /** Parses a single required item id, rejecting blank input with usage guidance. */
 function parseRequiredId(raw: string | undefined, flag: string): string {
+  /** Require and normalize one item identity option. */
   const trimmed = (raw ?? "").trim();
   if (trimmed.length === 0) {
     throw new PmCliError(
@@ -148,6 +149,7 @@ function parseDuplicateIds(
   raw: string | string[] | undefined,
   keep: string,
 ): string[] {
+  /** Parse unique duplicate identities while excluding the canonical item. */
   const collected = Array.isArray(raw) ? raw : raw === undefined ? [] : [raw];
   const ids: string[] = [];
   const seen = new Set<string>();
@@ -193,6 +195,7 @@ async function loadItem(
   settings: Awaited<ReturnType<typeof readSettings>>,
   id: string,
 ): Promise<ResolvedItem | null> {
+  /** Load one schema-aware item record or report that it is absent. */
   const typeToFolder = resolveItemTypeRegistry(
     settings,
     getActiveExtensionRegistrations(),
@@ -256,6 +259,7 @@ async function applyDedupeMergeReparents(params: {
     reason: "terminal";
   }[];
 }> {
+  /** Plan or apply active-child reparenting for one duplicate item. */
   const reparentEnabled = params.options.reparentChildren !== false;
   const reparentTargets = reparentEnabled
     ? params.children.filter((child) => !child.terminal)
@@ -310,6 +314,7 @@ async function applyDedupeMergeClose(params: {
   statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>;
   warnings: string[];
 }): Promise<DedupeMergeCloseAction> {
+  /** Plan, skip, or apply the terminal duplicate close action. */
   const reason = `Duplicate of ${params.keep}`;
   const close: DedupeMergeCloseAction = {
     duplicate_of: params.keep,
