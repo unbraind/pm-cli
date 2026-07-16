@@ -2506,32 +2506,152 @@ async function registerDynamicExtensionCommandPaths(
 const CLI_VERSION = resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0";
 /* c8 ignore stop */
 
-const program = createPmCliProgram(CLI_VERSION);
+let program = createPmCliProgram(CLI_VERSION);
 
 /* c8 ignore start */
-program.hook("preAction", async (_thisCommand, actionCommand) => {
-  activeExtensionHookContext = null;
-  activeTelemetryCommandContext = null;
-  clearActiveExtensionHooks();
-  clearResolvedGlobalOptions(actionCommand);
-  const bootstrapGlobalOptions = getGlobalOptions(actionCommand);
-  const commandPath = getCommandPath(actionCommand);
-  let commandArgs = actionCommand.args.map(String);
-  let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs);
-  let globalOptions = { ...bootstrapGlobalOptions };
-  await maybeRunFirstUseTelemetryPrompt(commandPath, globalOptions);
-  const fallbackPmRoot = resolvePmRoot(
-    process.cwd(),
-    bootstrapGlobalOptions.path,
-  );
-  const runtimeExtensions = await maybeLoadRuntimeExtensions(actionCommand);
-  if (!runtimeExtensions) {
-    activeExtensionHookContext = createCoreCommandHookContext({
+function attachProgramLifecycleHooks(rootProgram: Command): void {
+  rootProgram.hook("preAction", async (_thisCommand, actionCommand) => {
+    activeExtensionHookContext = null;
+    activeTelemetryCommandContext = null;
+    clearActiveExtensionHooks();
+    clearResolvedGlobalOptions(actionCommand);
+    const bootstrapGlobalOptions = getGlobalOptions(actionCommand);
+    const commandPath = getCommandPath(actionCommand);
+    let commandArgs = actionCommand.args.map(String);
+    let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs);
+    let globalOptions = { ...bootstrapGlobalOptions };
+    await maybeRunFirstUseTelemetryPrompt(commandPath, globalOptions);
+    const fallbackPmRoot = resolvePmRoot(
+      process.cwd(),
+      bootstrapGlobalOptions.path,
+    );
+    const runtimeExtensions = await maybeLoadRuntimeExtensions(actionCommand);
+    if (!runtimeExtensions) {
+      activeExtensionHookContext = createCoreCommandHookContext({
+        commandName: commandPath,
+        commandArgs,
+        commandOptions,
+        globalOptions,
+        pmRoot: fallbackPmRoot,
+      });
+      activeTelemetryCommandContext = await startTelemetryCommand({
+        command: commandPath,
+        pm_version: CLI_VERSION,
+        args: commandArgs,
+        options: commandOptions,
+        global: globalOptions,
+        pm_root: fallbackPmRoot,
+      });
+      sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
+        source_context: activeTelemetryCommandContext?.source_context,
+        source_context_source:
+          activeTelemetryCommandContext?.source_context_source,
+      });
+      sentryStartCommandSpan(commandPath);
+      await enforceItemFormatWriteGateAndPreflightMigration(
+        commandPath,
+        commandOptions,
+        fallbackPmRoot,
+        defaultPreflightDecision(),
+      );
+      return;
+    }
+
+    setActiveExtensionHooks(runtimeExtensions.hooks);
+    setActiveExtensionCommands(runtimeExtensions.commands);
+    setActiveExtensionParsers(runtimeExtensions.parsers);
+    setActiveExtensionPreflight(runtimeExtensions.preflight);
+    setActiveExtensionServices(runtimeExtensions.services);
+    setActiveExtensionRenderers(runtimeExtensions.renderers);
+    setActiveExtensionRegistrations(runtimeExtensions.registrations);
+
+    const extensionFlagDefinitions = collectExtensionFlagDefinitionsForInvocation(
+      runtimeExtensions.registrations,
+      commandPath,
+      commandArgs,
+    );
+    commandOptions = extractCommandScopedOptions(
+      actionCommand,
+      commandArgs,
+      extensionFlagDefinitions,
+    );
+    const parserOverride = await runActiveParserOverride({
+      command: commandPath,
+      args: commandArgs,
+      options: commandOptions,
+      global: globalOptions,
+      pm_root: runtimeExtensions.pmRoot,
+    });
+    /* c8 ignore next */
+    if (globalOptions.profile && parserOverride.warnings.length > 0) {
+      printError(
+        `profile:extensions parser_warnings=${formatHookWarnings(parserOverride.warnings)}`,
+      );
+    }
+    commandArgs = parserOverride.context.args;
+    commandOptions = parserOverride.context.options;
+    globalOptions = parserOverride.context.global;
+    syncCommanderActionOptions(actionCommand, commandOptions);
+
+    const preflightOverride = await runActivePreflightOverride({
+      command: commandPath,
+      args: commandArgs,
+      options: commandOptions,
+      global: globalOptions,
+      pm_root: runtimeExtensions.pmRoot,
+      decision: defaultPreflightDecision(),
+    });
+    /* c8 ignore next */
+    if (globalOptions.profile && preflightOverride.warnings.length > 0) {
+      printError(
+        `profile:extensions preflight_warnings=${formatHookWarnings(preflightOverride.warnings)}`,
+      );
+    }
+    commandArgs = preflightOverride.context.args;
+    commandOptions = preflightOverride.context.options;
+    globalOptions = preflightOverride.context.global;
+    syncCommanderActionOptions(actionCommand, commandOptions);
+    const preflightDecision = preflightOverride.decision;
+
+    await enforceItemFormatWriteGateAndPreflightMigration(
+      commandPath,
+      commandOptions,
+      runtimeExtensions.pmRoot,
+      preflightDecision,
+    );
+
+    /* c8 ignore next */
+    const migrationWarnings = preflightDecision.run_extension_migrations
+      ? await executeRegisteredRuntimeMigrations(
+          runtimeExtensions.registrations.migrations,
+          runtimeExtensions.pmRoot,
+        )
+      : [];
+    if (globalOptions.profile && migrationWarnings.length > 0) {
+      printError(
+        `profile:extensions migration_warnings=${formatHookWarnings(migrationWarnings)}`,
+      );
+    }
+    const migrationBlockers = collectMandatoryMigrationBlockers(
+      runtimeExtensions.registrations.migrations,
+    );
+    activeExtensionHookContext = {
+      hooks: runtimeExtensions.hooks,
       commandName: commandPath,
       commandArgs,
-      commandOptions,
-      globalOptions,
-      pmRoot: fallbackPmRoot,
+      commandOptions: { ...commandOptions },
+      globalOptions: { ...globalOptions },
+      pmRoot: runtimeExtensions.pmRoot,
+      profileEnabled: Boolean(globalOptions.profile),
+      migrationBlockers,
+    };
+    setActiveCommandResult(undefined);
+    setActiveCommandContext({
+      command: commandPath,
+      args: commandArgs,
+      options: { ...commandOptions },
+      global: { ...globalOptions },
+      pm_root: runtimeExtensions.pmRoot,
     });
     activeTelemetryCommandContext = await startTelemetryCommand({
       command: commandPath,
@@ -2539,168 +2659,51 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
       args: commandArgs,
       options: commandOptions,
       global: globalOptions,
-      pm_root: fallbackPmRoot,
+      pm_root: runtimeExtensions.pmRoot,
     });
     sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
       source_context: activeTelemetryCommandContext?.source_context,
-      source_context_source:
-        activeTelemetryCommandContext?.source_context_source,
+      source_context_source: activeTelemetryCommandContext?.source_context_source,
     });
     sentryStartCommandSpan(commandPath);
-    await enforceItemFormatWriteGateAndPreflightMigration(
-      commandPath,
-      commandOptions,
-      fallbackPmRoot,
-      defaultPreflightDecision(),
-    );
-    return;
-  }
 
-  setActiveExtensionHooks(runtimeExtensions.hooks);
-  setActiveExtensionCommands(runtimeExtensions.commands);
-  setActiveExtensionParsers(runtimeExtensions.parsers);
-  setActiveExtensionPreflight(runtimeExtensions.preflight);
-  setActiveExtensionServices(runtimeExtensions.services);
-  setActiveExtensionRenderers(runtimeExtensions.renderers);
-  setActiveExtensionRegistrations(runtimeExtensions.registrations);
+    const hookWarnings = await runBeforeCommandHooks(runtimeExtensions.hooks, {
+      command: commandPath,
+      args: commandArgs,
+      options: { ...commandOptions },
+      global: { ...globalOptions },
+      pm_root: runtimeExtensions.pmRoot,
+    });
+    /* c8 ignore next */
+    if (globalOptions.profile && hookWarnings.length > 0) {
+      printError(
+        `profile:extensions hook_warnings=${formatHookWarnings(hookWarnings)}`,
+      );
+    }
+    /* c8 ignore next */
+    if (preflightDecision.enforce_mandatory_migration_gate) {
+      enforceMandatoryMigrationWriteGate(
+        commandPath,
+        commandOptions,
+        migrationBlockers,
+      );
+    }
+  });
+  /* c8 ignore stop */
 
-  const extensionFlagDefinitions = collectExtensionFlagDefinitionsForInvocation(
-    runtimeExtensions.registrations,
-    commandPath,
-    commandArgs,
-  );
-  commandOptions = extractCommandScopedOptions(
-    actionCommand,
-    commandArgs,
-    extensionFlagDefinitions,
-  );
-  const parserOverride = await runActiveParserOverride({
-    command: commandPath,
-    args: commandArgs,
-    options: commandOptions,
-    global: globalOptions,
-    pm_root: runtimeExtensions.pmRoot,
+  rootProgram.hook("postAction", async () => {
+    const outcome = buildPostActionTelemetryOutcome();
+    sentryFinishCommandSpan(outcome.ok, outcome.error, {
+      error_code: outcome.error_code,
+      error_category: outcome.error_category,
+      exit_code: outcome.exit_code,
+      command_resolution: outcome.command_resolution,
+      resolution_stage: outcome.resolution_stage,
+    });
+    await runAndClearAfterCommandHooks(outcome);
   });
-  /* c8 ignore next */
-  if (globalOptions.profile && parserOverride.warnings.length > 0) {
-    printError(
-      `profile:extensions parser_warnings=${formatHookWarnings(parserOverride.warnings)}`,
-    );
-  }
-  commandArgs = parserOverride.context.args;
-  commandOptions = parserOverride.context.options;
-  globalOptions = parserOverride.context.global;
-  syncCommanderActionOptions(actionCommand, commandOptions);
-
-  const preflightOverride = await runActivePreflightOverride({
-    command: commandPath,
-    args: commandArgs,
-    options: commandOptions,
-    global: globalOptions,
-    pm_root: runtimeExtensions.pmRoot,
-    decision: defaultPreflightDecision(),
-  });
-  /* c8 ignore next */
-  if (globalOptions.profile && preflightOverride.warnings.length > 0) {
-    printError(
-      `profile:extensions preflight_warnings=${formatHookWarnings(preflightOverride.warnings)}`,
-    );
-  }
-  commandArgs = preflightOverride.context.args;
-  commandOptions = preflightOverride.context.options;
-  globalOptions = preflightOverride.context.global;
-  syncCommanderActionOptions(actionCommand, commandOptions);
-  const preflightDecision = preflightOverride.decision;
-
-  await enforceItemFormatWriteGateAndPreflightMigration(
-    commandPath,
-    commandOptions,
-    runtimeExtensions.pmRoot,
-    preflightDecision,
-  );
-
-  /* c8 ignore next */
-  const migrationWarnings = preflightDecision.run_extension_migrations
-    ? await executeRegisteredRuntimeMigrations(
-        runtimeExtensions.registrations.migrations,
-        runtimeExtensions.pmRoot,
-      )
-    : [];
-  if (globalOptions.profile && migrationWarnings.length > 0) {
-    printError(
-      `profile:extensions migration_warnings=${formatHookWarnings(migrationWarnings)}`,
-    );
-  }
-  const migrationBlockers = collectMandatoryMigrationBlockers(
-    runtimeExtensions.registrations.migrations,
-  );
-  activeExtensionHookContext = {
-    hooks: runtimeExtensions.hooks,
-    commandName: commandPath,
-    commandArgs,
-    commandOptions: { ...commandOptions },
-    globalOptions: { ...globalOptions },
-    pmRoot: runtimeExtensions.pmRoot,
-    profileEnabled: Boolean(globalOptions.profile),
-    migrationBlockers,
-  };
-  setActiveCommandResult(undefined);
-  setActiveCommandContext({
-    command: commandPath,
-    args: commandArgs,
-    options: { ...commandOptions },
-    global: { ...globalOptions },
-    pm_root: runtimeExtensions.pmRoot,
-  });
-  activeTelemetryCommandContext = await startTelemetryCommand({
-    command: commandPath,
-    pm_version: CLI_VERSION,
-    args: commandArgs,
-    options: commandOptions,
-    global: globalOptions,
-    pm_root: runtimeExtensions.pmRoot,
-  });
-  sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
-    source_context: activeTelemetryCommandContext?.source_context,
-    source_context_source: activeTelemetryCommandContext?.source_context_source,
-  });
-  sentryStartCommandSpan(commandPath);
-
-  const hookWarnings = await runBeforeCommandHooks(runtimeExtensions.hooks, {
-    command: commandPath,
-    args: commandArgs,
-    options: { ...commandOptions },
-    global: { ...globalOptions },
-    pm_root: runtimeExtensions.pmRoot,
-  });
-  /* c8 ignore next */
-  if (globalOptions.profile && hookWarnings.length > 0) {
-    printError(
-      `profile:extensions hook_warnings=${formatHookWarnings(hookWarnings)}`,
-    );
-  }
-  /* c8 ignore next */
-  if (preflightDecision.enforce_mandatory_migration_gate) {
-    enforceMandatoryMigrationWriteGate(
-      commandPath,
-      commandOptions,
-      migrationBlockers,
-    );
-  }
-});
-/* c8 ignore stop */
-
-program.hook("postAction", async () => {
-  const outcome = buildPostActionTelemetryOutcome();
-  sentryFinishCommandSpan(outcome.ok, outcome.error, {
-    error_code: outcome.error_code,
-    error_category: outcome.error_category,
-    exit_code: outcome.exit_code,
-    command_resolution: outcome.command_resolution,
-    resolution_stage: outcome.resolution_stage,
-  });
-  await runAndClearAfterCommandHooks(outcome);
-});
+}
+attachProgramLifecycleHooks(program);
 
 const VERSION_FLAG_TOKENS = new Set(["--version", "-V"]);
 const SETUP_COMMAND_NAMES = new Set([
@@ -3510,6 +3513,8 @@ async function handleRunPmCliError(params: {
 export async function runPmCli(
   rawArgv: string[] = process.argv.slice(2),
 ): Promise<void> {
+  program = createPmCliProgram(CLI_VERSION);
+  attachProgramLifecycleHooks(program);
   // The runtime-extension snapshot caches dedupe discovery work within a
   // single invocation only. Reset them on entry so long-lived embeddings
   // (in-process test runners, future SDK hosts) observe the same fresh
@@ -3531,6 +3536,7 @@ export async function runPmCli(
   ];
   const isBareInvocation = invocationArgv.length === 0;
   let restorePmAuthor: (() => void) | undefined;
+  let restorePagerPolicy: (() => void) | undefined;
   try {
     const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
     if (bootstrapGlobal.authorMissingValue) {
@@ -3541,7 +3547,7 @@ export async function runPmCli(
     }
     restorePmAuthor = applyInvocationAuthorOverride(bootstrapGlobal.author);
     enforceExplicitRetryForFlagTypos(bootstrapInvocation);
-    applyBootstrapPagerPolicy(invocationArgv);
+    restorePagerPolicy = applyBootstrapPagerPolicy(invocationArgv);
     const registrationSelection =
       resolveCoreCommandRegistrationSelection(invocationArgv);
     await registerCoreCommandFamilies(program, registrationSelection);
@@ -3581,6 +3587,7 @@ export async function runPmCli(
   } catch (error: unknown) {
     await handleRunPmCliError({ error, invocationArgv });
   } finally {
+    restorePagerPolicy?.();
     restorePmAuthor?.();
   }
 }

@@ -2,32 +2,55 @@ id: pm-w89s
 title: "As an integrator, I can build a complete custom PM tool for my project using only the public pm SDK"
 description: "Agent-story capability statement for the SDK-first epic pm-usfg. Delivered when every CLI capability is reachable programmatically: an SDK-only consumer performs the full item lifecycle, queries, annotations, governance checks, and schema/profile customization without invoking the pm binary. Duplicate check: existing agent stories cover extension authoring, not SDK-only PM-tool assembly."
 type: Story
-status: open
+status: closed
 priority: 1
 tags[3]: agent-story,"area:sdk",changelog-exclude
 created_at: "2026-07-05T04:52:38.434Z"
-updated_at: "2026-07-13T22:02:34.217Z"
+updated_at: "2026-07-16T22:10:29.542Z"
+closed_at: "2026-07-16T21:18:44.175Z"
 author: maintainer-agent
 estimated_minutes: 30
 acceptance_criteria: "Exemplar package builds a minimal custom PM CLI importing only @unbrained/pm-cli/sdk; it exercises create/update/close/claim, list/search/context, comments/notes/files/deps, validate/health, and a schema customization end-to-end in its linked tests; no src/core deep imports anywhere in the exemplar"
 parent: pm-usfg
 risk: low
 confidence: high
-dependencies[5]{id,kind,created_at,author,source_kind}:
+resolution: Completed the SDK-only integrator story with a real universal-tool exemplar and packed-consumer proof.
+expected_result: An integrator can build a complete custom project-management tool using only public pm SDK primitives.
+actual_result: "The exemplar covers every acceptance primitive without spawning pm or importing src/core, with linked and packed acceptance tests green."
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-6abs,related,"2026-07-07T08:57:50.864Z",null,null
-  pm-3mna,blocked_by,"2026-07-07T21:11:34.344Z",null,null
-  pm-oxrw,blocked_by,"2026-07-07T21:11:34.344Z",null,null
-  pm-zwpp,blocked_by,"2026-07-07T21:11:34.344Z",null,null
-  pm-cbwg,blocked_by,"2026-07-13T22:02:34.197Z",null,null
-comments[2]{created_at,author,text}:
+  pm-cbwg,related,"2026-07-16T22:10:29.493Z",null,null
+  pm-qfdd,related,"2026-07-16T22:10:29.493Z",null,null
+comments[5]{created_at,author,text}:
   "2026-07-07T09:44:04.849Z",codex-agent,"Integrator story update: pm-6abs adds hermetic package smoke-test diagnostics. A package author can run pm package doctor --project --isolated --detail deep --trace or isolate PM_GLOBAL_PATH for a whole test process; temp-dir dogfood proved a fresh package loaded only project:pm-temp-smoke."
   "2026-07-08T06:06:35.422Z",codex,"Evidence: package-consumer SDK proof now exercises the installed @unbrained/pm-cli SDK from a packed tarball in /tmp, covering init/create/update/claim/release/comments/notes/learnings/files/docs/deps/schema/profile/context/next/health/validate and returning ok with created item pm-yp8p and child pm-gps8."
-files[3]{path,scope,note}:
-  src/sdk/runtime.ts,project,Integrator SDK primitive runtime surface
+  "2026-07-16T20:25:24.310Z",codex-wide-sdk-20260716,"Acceptance implementation start 2026-07-16: validate the complete custom-tool story through a real SDK-only exemplar and packed temporary consumer proof."
+  "2026-07-16T21:18:33.308Z",codex-wide-sdk-20260716,"Acceptance evidence: the SDK-only exemplar now exercises create, update, claim, release, close, list, search, context, comments, notes, learnings, files, docs, dependencies, schema customization, health, and validate. Both linked SDK suites passed, installed-tarball proof passed in a fresh consumer, and repo-wide coverage is 100/100/100/100."
+  "2026-07-16T22:10:15.082Z",codex-wide-sdk-20260716,"Acceptance follow-up: the SDK-only consumer is now directly executable through its declared pm-custom bin and completes the real customization/lifecycle/context/graph/governance scenario with PM_AUTHOR propagation, structured JSON output, clean health, and clean history validation."
+learnings[1]{created_at,author,text}:
+  "2026-07-16T21:18:34.288Z",codex-wide-sdk-20260716,"The universal-tool story is strongest when one coherent consumer crosses customization, lifecycle, context, graph, evidence, and governance boundaries and returns machine-checkable proof rather than isolated API snippets."
+files[9]{path,scope,note}:
+  docs/examples/sdk-custom-tool/package.json,project,Standalone exemplar package contract
+  docs/examples/sdk-custom-tool/src/cli.ts,project,Thin domain CLI adapter
+  docs/examples/sdk-custom-tool/src/entry.ts,project,Executable proof for the public-SDK integrator story
+  docs/examples/sdk-custom-tool/src/index.ts,project,SDK-only universal project tool implementation
   src/sdk/index.ts,project,Integrator SDK barrel exports
+  src/sdk/runtime.ts,project,Integrator SDK primitive runtime surface
   tests/unit/sdk/sdk-context-primitives.spec.ts,project,SDK-only custom PM primitive proof
-tests[1]{command,scope,timeout_seconds,pm_context_mode}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts,project,120,tracker
-docs[1]{path,scope,note}:
+  tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts,project,End-to-end executable integrator acceptance
+  tests/unit/sdk/sdk-universal-tool-exemplar.spec.ts,project,End-to-end SDK-only acceptance coverage
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts
+    scope: project
+    timeout_seconds: 120
+    pm_context_mode: tracker
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-universal-tool-exemplar.spec.ts
+    scope: project
+    timeout_seconds: 180
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mro01439-a5ma7u,test,passed,"2026-07-16T21:05:51.780Z","2026-07-16T21:06:13.365Z","2026-07-16T21:06:13.365Z",2,0,0
+docs[2]{path,scope,note}:
+  docs/examples/sdk-custom-tool/README.md,project,Copyable build-your-own-tool guide
   docs/SDK.md,project,Custom PM tool SDK reference
+close_reason: "Complete public-SDK integrator story proved across lifecycle, context, graph, customization, evidence, and governance primitives."
 body: ""

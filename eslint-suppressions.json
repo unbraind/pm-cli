@@ -67,7 +67,7 @@
       "count": 1
     }
   },
-  "src/cli/bootstrap-args.ts": {
+  "src/sdk/cli-bootstrap.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 2
     }

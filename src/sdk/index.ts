@@ -27,6 +27,26 @@ export {
   type UnknownAuthorHistoryEvent,
 } from "./author-attribution.js";
 export { createPmCliProgram } from "./cli-program.js";
+export { runSearchRefreshWorkerEntrypoint } from "./search-refresh-worker.js";
+export { flushTelemetryQueue } from "./telemetry-flush.js";
+export {
+  EXECUTABLE_COMMAND_ALIASES,
+  applyBootstrapPagerPolicy,
+  coalesceRepeatedListFlags,
+  listAliasPluralKeys,
+  mergeLinkedTestTwoTokenEntries,
+  normalizeBootstrapInvocation,
+  normalizeLegacyExtensionActionSyntax,
+  parseBootstrapCommandName,
+  parseBootstrapGlobalOptions,
+  parseBootstrapHelpRequest,
+  parseBootstrapTypeValue,
+  stripGlobalBootstrapTokens,
+  type BootstrapGlobalOptions,
+  type BootstrapHelpRequest,
+  type BootstrapInvocationNormalizationResult,
+  type BootstrapNormalizationEvent,
+} from "./cli-bootstrap.js";
 export {
   quoteCommandArg,
   quoteWindowsCommandArg,

@@ -15,123 +15,11 @@
  * bridge routes them to the spawn runner instead.
  */
 import { parentPort } from "node:worker_threads";
-import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 /** Lazily imported dist main module (imported once per worker lifetime). */
 let distMainPromise = null;
-
-/** Same-graph core extensions module, for post-invocation taint inspection. */
-let distExtensionsPromise = null;
-
-/**
- * Sticky flag: once an invocation may have mutated the module-level commander
- * program (dynamic extension commands/flags or workspace-defined runtime
- * schema fields), every later invocation in this worker is suspect and the
- * bridge must not reuse the worker for the next test context.
- */
-let programTainted = false;
-
-/**
- * Args that mutate extension/schema topology. Mostly redundant with the
- * directory/registration signals below, but they close ordering gaps such as
- * an uninstall that empties the extensions directory AFTER its own bootstrap
- * already registered the extension's dynamic paths on the program.
- */
-const TAINTING_COMMAND_TOKENS = new Set(["install", "uninstall", "extension", "schema"]);
-
-/**
- * True when the directory exists and contains at least one entry. A pristine
- * default-init workspace has an EMPTY `extensions/` directory, so any content
- * — regardless of how it arrived (extension install, `init --install`,
- * direct fixture writes) — means dynamic extension paths may have been
- * registered on the shared commander program during this invocation.
- */
-function directoryHasEntries(directoryPath) {
-  try {
-    return fs.readdirSync(directoryPath).length > 0;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * True when the env value names a workspace whose `extensions/` directory has
- * any content — a pristine default-init workspace keeps it empty.
- */
-function workspaceHasExtensionContent(workspacePath) {
-  return (
-    typeof workspacePath === "string" &&
-    workspacePath.length > 0 &&
-    directoryHasEntries(path.join(workspacePath, "extensions"))
-  );
-}
-
-/**
- * True when the invocation left non-empty active extension registrations
- * behind (the runPmCli entry reset only clears them at the NEXT invocation).
- * Treats inspection failure as tainted — reuse must be provably safe.
- */
-async function invocationLeftExtensionRegistrations(workspaceRoot) {
-  try {
-    if (distExtensionsPromise === null) {
-      const extensionsModulePath = path.resolve(workspaceRoot, "dist/core/extensions/index.js");
-      distExtensionsPromise = import(pathToFileURL(extensionsModulePath).href);
-    }
-    const extensions = await distExtensionsPromise;
-    const registrations = extensions.getActiveExtensionRegistrations?.();
-    if (registrations === null || registrations === undefined) {
-      return false;
-    }
-    return Object.values(registrations).some((entries) => Array.isArray(entries) && entries.length > 0);
-  } catch {
-    return true;
-  }
-}
-
-/**
- * True when workspace settings define custom item types, which register
- * runtime schema field flags on the shared program. CLI-driven schema changes
- * are caught by the "schema" argv token; this catches direct settings writes
- * (tests/helpers/pmWorkspace.ts writeItemTypeDefinitions). The default
- * settings `schema` pointer block is present in every workspace and is
- * deliberately NOT a taint signal.
- */
-function workspaceDefinesCustomItemTypes(pmPath) {
-  if (typeof pmPath !== "string" || pmPath.length === 0) {
-    return false;
-  }
-  try {
-    const settings = JSON.parse(fs.readFileSync(path.join(pmPath, "settings.json"), "utf8"));
-    const typeDefinitions = settings?.item_types?.definitions;
-    return Array.isArray(typeDefinitions) && typeDefinitions.length > 0;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Detect whether the finished invocation could have registered dynamic
- * commands, extension flags, or runtime schema field flags on the shared
- * commander program. Signals, all route-independent: extension content in the
- * project or global workspace, active extension registrations left by the
- * invocation, extension/schema-mutating argv, and workspace settings defining
- * custom item types.
- */
-async function detectProgramTaint(request) {
-  const firstCommandToken = request.args.find((token) => !token.startsWith("-"));
-  if (firstCommandToken !== undefined && TAINTING_COMMAND_TOKENS.has(firstCommandToken)) {
-    return true;
-  }
-  if (workspaceHasExtensionContent(request.env.PM_PATH) || workspaceHasExtensionContent(request.env.PM_GLOBAL_PATH)) {
-    return true;
-  }
-  if (await invocationLeftExtensionRegistrations(request.workspaceRoot)) {
-    return true;
-  }
-  return workspaceDefinesCustomItemTypes(request.env.PM_PATH);
-}
 
 /**
  * Import the built CLI entry module once and memoize it for the lifetime of
@@ -288,18 +176,13 @@ async function executeCliInvocation(request) {
 parentPort.on("message", (message) => {
   const { port, signal, request } = message;
   void executeCliInvocation(request)
-    .then(async (result) => {
-      if (!programTainted) {
-        programTainted = await detectProgramTaint(request);
-      }
-      port.postMessage({ ok: true, result, tainted: programTainted });
+    .then((result) => {
+      port.postMessage({ ok: true, result });
     })
     .catch((error) => {
-      programTainted = true;
       port.postMessage({
         ok: false,
         errorMessage: error instanceof Error ? error.message : String(error),
-        tainted: true,
       });
     })
     .finally(() => {

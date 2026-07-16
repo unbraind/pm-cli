@@ -2,20 +2,46 @@ id: pm-qfdd
 title: "cli/main.ts commander program is a module-level singleton: dynamically registered extension commands/flags persist across in-process invocations"
 description: "Third member of the pm-8fxc re-entrancy class, found while validating the pm-kvd0 worker bridge: 'const program = new Command()' lives at module scope (src/cli/main.ts:2494), and registerDynamicExtensionCommandPaths/addRuntimeFieldOption mutate that singleton per invocation. One-shot processes discard the mutations by exiting, but any long-lived host observes cross-invocation leakage: a kit extension registering --kit-note on core 'list' in workspace A makes 'pm list --type Task' in unrelated workspace B fail usage-validation ('Unknown option --type for extension command list. Expected one of: --kit-note'), and a 'pm --no-extensions beads import' after an earlier beads install in another workspace returns generic-failure instead of unknown_command. The pm-8fxc entry resets (snapshot caches + active-extension registries) cannot cover commander's own command/option registry. Interim isolation: the test bridge disposes its worker per test context. Real fix: construct the program per invocation inside runPmCli (or an unregister seam for dynamic paths) — a prerequisite for true SDK embedding of the CLI runtime; sequence with the pm-yh8r decomposition seam and pm-usfg SDK-first slices."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "area:cli",defect-class,re-entrancy,sdk-first
 created_at: "2026-07-12T12:25:25.346Z"
-updated_at: "2026-07-12T19:39:39.607Z"
+updated_at: "2026-07-16T22:10:04.293Z"
+closed_at: "2026-07-16T21:18:40.311Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "runPmCli invocations are fully re-entrant in one process: dynamic extension commands/flags registered by invocation N are invisible to invocation N+1 unless re-discovered from the active workspace; existing one-shot CLI behavior and startup latency unchanged; test bridge no longer needs per-test worker disposal"
 parent: pm-usfg
 risk: medium
 confidence: medium
-dependencies[2]{id,kind,created_at,author,source_kind}:
+resolution: Replaced module-level mutable Commander state with an invocation-owned program and lifecycle hooks.
+expected_result: Sequential in-process CLI invocations do not retain extension commands or flags from earlier workspaces.
+actual_result: Persistent-worker regression passes across extension and clean workspaces without worker disposal; all-source coverage is exact 100 percent.
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-8fxc,related,"2026-07-12T12:25:25.346Z",null,null
   pm-yh8r,related,"2026-07-12T12:25:25.346Z",null,null
-files[1]{path,scope,note}:
+  pm-9x6e,related,"2026-07-16T20:38:56.912Z",null,null
+  pm-cbwg,related,"2026-07-16T20:38:56.912Z",null,null
+  pm-w89s,related,"2026-07-16T20:38:56.912Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-07-16T20:25:22.624Z",codex-wide-sdk-20260716,"Implementation start 2026-07-16: replace the module-level mutable Commander graph with invocation-owned program state and prove extension commands/flags cannot leak between sequential in-process runs."
+  "2026-07-16T21:18:25.844Z",codex-wide-sdk-20260716,"Evidence: runPmCli now constructs and lifecycle-hooks a fresh Commander graph on every in-process invocation. The persistent worker bridge no longer detects/disposes tainted state, and the cross-workspace regression proves an extension-injected list flag from workspace A is absent in workspace B. Linked test passed; full repository coverage passed 294 files / 5,751 tests at exact 100/100/100/100."
+  "2026-07-16T21:34:47.688Z",codex-wide-sdk-20260716,"Pre-push Greptile review 95f483bd-d4a2-4019-a3a4-f57ca1f0cd21 completed at confidence 4/5 and safe-to-merge. Accepted its sole P2: indented the full attachProgramLifecycleHooks body for readable block structure. Focused re-entrancy test, strict ESLint, static/docstring, package-boundary, and token gates pass after the fix."
+  "2026-07-16T22:10:04.293Z",codex-wide-sdk-20260716,"Hosted review follow-up evidence: accepted all invocation-isolation findings. The regression now awaits runCliInProcess twice, pager environment mutations restore in runPmCli finally, empty inline authors fail usage validation, path values beginning with option syntax stay literal, extension legacy actions only rewrite the command token, and --type parsing respects the argument terminator. Focused CLI suites passed 217 tests; full repository coverage passed 296 files / 5,758 tests at exact 100/100/100/100."
+learnings[1]{created_at,author,text}:
+  "2026-07-16T21:18:26.575Z",codex-wide-sdk-20260716,Re-entrant CLI embedding requires invocation-owned parser state as well as resettable SDK registries; recreating the Commander graph makes workspace isolation structural instead of test-helper cleanup.
+files[7]{path,scope,note}:
   src/cli/main.ts,project,module-level 'const program = new Command()' (line ~2494) + registerDynamicExtensionCommandPaths mutations
+  src/sdk/cli-bootstrap.ts,project,Invocation-scoped bootstrap author pager and argument normalization fixes
+  tests/helpers/cliWorkerBridge.ts,project,Remove obsolete taint state
+  tests/helpers/cliWorkerBridge.worker.mjs,project,Persistent worker no longer needs program-taint disposal
+  tests/helpers/withTempPmPath.ts,project,Reuse safe re-entrant worker across workspaces
+  tests/unit/cli/bootstrap-args.spec.ts,project,Review regression coverage for isolated bootstrap parsing and environment restoration
+  tests/unit/cli/cli-main-reentrancy.spec.ts,project,Cross-workspace extension leakage regression
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/cli/cli-main-reentrancy.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-reentrancy.spec.ts,project,180
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mro00c04-ere090,test,passed,"2026-07-16T21:05:27.292Z","2026-07-16T21:05:36.964Z","2026-07-16T21:05:36.964Z",1,0,0
+close_reason: Re-entrant invocation-owned Commander graph shipped with cross-workspace regression and exact full coverage.
 body: ""

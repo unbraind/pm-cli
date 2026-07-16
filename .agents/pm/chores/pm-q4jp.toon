@@ -6,13 +6,14 @@ status: closed
 priority: 3
 tags[3]: monitoring,pm-cli,sentry
 created_at: "2026-05-01T22:38:36.842Z"
-updated_at: "2026-05-02T07:15:35.123Z"
+updated_at: "2026-07-16T21:18:38.708Z"
 author: audit-agent
 parent: pm-rrjv
 resolution: "Resolution normalized from close_reason: Sentry CLI successfully queried 5 issues using Sentry token with [redacted_scope]. [redacted_scope] was sufficient for issue list/analysis. Full analysis report created at scripts/prod/telemetry/reports/2026-05-02-sentry-analysis.md."
 expected_result: "Expected closure outcome: Sentry CLI successfully queried 5 issues using Sentry token with [redacted_scope]. [redacted_scope] was sufficient for issue list/analysis. Full analysis report created at scripts/prod/telemetry/reports/2026-05-02-sentry-analysis.md."
 actual_result: "Actual closure outcome: Sentry CLI successfully queried 5 issues using Sentry token with [redacted_scope]. [redacted_scope] was sufficient for issue list/analysis. Full analysis report created at scripts/prod/telemetry/reports/2026-05-02-sentry-analysis.md."
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-01T23:43:55.257Z",audit-agent,"2026-05-02 Sentry analysis: 8 issues total, all are PmCliError (validation errors, not crashes). PM-CLI-7/8 are audit probes. PM-CLI-1 is setup verification. Real user issues: PM-CLI-2 (no update flags), PM-CLI-3/4 (note/file parse errors), PM-CLI-5 (status via update instead of close), PM-CLI-6 (already-terminal close). Zero unhandled exceptions. Error guidance already good. Scrubbing confirmed working: no PII in any Sentry event."
+  "2026-07-16T21:18:38.708Z",codex-wide-sdk-20260716,"2026-07-16 configuration observation (does not invalidate the completed historical resolution): legacy sentry-cli config exposes only org:ci, while the current sentry CLI credential can list issues and passes the strict release query when supplied as SENTRY_PERSONAL_ADMIN_TOKEN. No token value was logged. Release environments remain healthy; local release-gate invocations should source the read credential explicitly."
 close_reason: "Sentry CLI successfully queried 5 issues using Sentry token with [redacted_scope]. [redacted_scope] was sufficient for issue list/analysis. Full analysis report created at scripts/prod/telemetry/reports/2026-05-02-sentry-analysis.md."
 body: ""

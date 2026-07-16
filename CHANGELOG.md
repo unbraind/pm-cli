@@ -4,12 +4,18 @@
 
 ### Added
 
+- SDK-only exemplar: minimal custom PM CLI package proving the universal-tool story end-to-end ([pm-cbwg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cbwg.toon))
 - Promote query/read primitives to the public SDK: list, get, search, context, next, aggregate, stats ([pm-rjqr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rjqr.toon))
 - Promote execution and diagnostics primitives to the public SDK: linked-test running and test-run lifecycle, search eval harness, telemetry stats/export ([pm-oslr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-oslr.toon))
 
 ### Fixed
 
+- cli/main.ts commander program is a module-level singleton: dynamically registered extension commands/flags persist across in-process invocations ([pm-qfdd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qfdd.toon))
 - Windows packed-extension install regression exceeds the generic Vitest timeout ([pm-ph3i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ph3i.toon))
+
+### Other
+
+- Sentry CLI token needs broader scopes for issue analysis ([pm-q4jp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-q4jp.toon))
 
 ## 2026.7.16 - 2026-07-16
 
@@ -1708,7 +1714,6 @@
 - Lower Sentry tracesSampleRate from 1.0 to 0.2 for free plan quota ([pm-wvhs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wvhs.toon))
 - 2026-05-01 Full PM CLI Audit Implementation ([pm-twpc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-twpc.toon))
 - 2026-05-02 Comprehensive PM CLI Audit ([pm-rrjv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-rrjv.toon))
-- Sentry CLI token needs broader scopes for issue analysis ([pm-q4jp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-q4jp.toon))
 - Dead code: root-level facade re-export shims unused ([pm-nr8k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-nr8k.toon))
 - Decision: 2026-05-02 Comprehensive Audit Results ([pm-mve5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-mve5.toon))
 - Telemetry: Backfill legacy source_context ([pm-dqer](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-dqer.toon))

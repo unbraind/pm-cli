@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: architecture,"area:cli","area:mcp","area:sdk",ci
 created_at: "2026-07-06T13:13:21.203Z"
-updated_at: "2026-07-16T18:03:52.930Z"
+updated_at: "2026-07-16T21:18:46.823Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: sdk-import-boundary-baseline.json reaches zero entries and is deleted; static-quality-gate hard-denies any private src/core import from src/cli/** and src/mcp/** with no baseline escape hatch; src/mcp handlers consume only src/sdk primitives; full test suite + 100% coverage gate green with zero CLI/MCP behavior change
@@ -22,7 +22,7 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-oxrw,related,"2026-07-06T13:13:21.203Z",null,null
   pm-rjqr,related,"2026-07-06T13:13:21.203Z",null,null
   pm-zwpp,related,"2026-07-06T13:13:21.203Z",null,null
-comments[38]{created_at,author,text}:
+comments[41]{created_at,author,text}:
   "2026-07-14T19:24:59.262Z",codex-gpt5,"Implementation start 2026-07-14: actively shrinking the enforced CLI/MCP private-core baseline through the pm-3mna schema ownership extraction. This run will not claim the capstone complete unless the baseline truly reaches zero."
   "2026-07-14T19:41:00.327Z",codex-gpt5,"Progress evidence: removed all 17 schema-domain private-core edges previously attributed to src/cli/commands/schema.ts. The boundary ratchet passes with zero new imports; the broader baseline remains intentionally open and is not claimed complete."
   "2026-07-14T20:19:49.227Z",codex-root,"Final branch evidence: removed all 17 private-core imports formerly owned by src/cli/commands/schema.ts and deleted that stale baseline block. pnpm quality:static passes with no new private imports, no stale baseline entries, zero unsupported dynamic imports, 100% docstrings, and token budgets green. The repository-wide boundary baseline is not yet zero, so this capstone returns to open for the remaining command families."
@@ -61,15 +61,19 @@ comments[38]{created_at,author,text}:
   "2026-07-16T15:18:14.999Z",codex-gpt5-root,"Sixth exact-run remediation evidence: extracted SDK eval input parsing, file/JSON/contract validation, query scoring, path resolution, and result shaping into documented lexical primitives with cyclomatic complexity below the hosted threshold. Replaced the last string concatenation with a template literal and preserved sequential search semantics plus raw-metric gating. Focused eval tests pass 15/15; strict lint, zero duplicates, 100% docstring/static, package-boundary, and token gates pass. Full coverage passes 292 files / 5,745 tests at exact 100/100/100/100 (37,501 statements, 26,351 branches, 7,631 functions, 36,591 lines). The capstone remains open at 51 source allowances / 412 edges."
   "2026-07-16T15:36:15.470Z",codex-gpt5-root,"Review follow-up start: current PR #573 Gemini threads 3596478654 and 3596478682 request explicit unknown annotations for two dedupe-merge catch variables. TypeScript already infers unknown under the strict config, but this active change will make the contract explicit and rerun the focused governance plus full coverage gates."
   "2026-07-16T15:43:48.493Z",codex-gpt5-root,"Gemini follow-up evidence: both dedupe-merge catch bindings now declare unknown explicitly; focused dedupe merge coverage passes 9/9 and the combined quality/release/governance suite passes 115/115."
+  "2026-07-16T20:25:25.023Z",codex-wide-sdk-20260716,"Implementation start 2026-07-16: continue the terminal boundary burn-down alongside the re-entrant embedded CLI and SDK-only exemplar. This item will close only if the enforced baseline reaches zero; otherwise it will return to open with exact remaining source/edge evidence."
+  "2026-07-16T20:38:35.315Z",codex-wide-sdk-20260716,"Boundary checkpoint: SDK ownership of bootstrap normalization, semantic-refresh worker execution, and telemetry flushing reduces the enforced baseline from 51 sources / 412 edges to 48 sources / 407 edges. Static quality reports zero new/stale/dynamic violations; capstone remains active until final closeout returns it open or reaches zero."
+  "2026-07-16T21:18:36.039Z",codex-wide-sdk-20260716,"Boundary closeout for this bundle: bootstrap normalization, semantic-refresh worker execution, and telemetry flushing now live under SDK ownership. The enforced ratchet improves from 51 sources / 412 edges to 48 sources / 407 edges with zero new, stale, or dynamic violations. Exact 100/100/100/100 coverage and static boundary gates pass, but the zero-baseline acceptance criterion is not yet met, so this capstone returns to open. The linked release gate's only failure was sandbox-stripped Sentry auth; the same gate query with the authenticated read token passed critical=0/high=0, telemetry error rate 0.33%, and zero missing error codes."
 notes[2]{created_at,author,text}:
   "2026-07-15T06:21:39.876Z",maintainer-agent,"PR#565 progress (2026-07-15): 54 obsolete CLI-to-core import-boundary allowances removed; pm-3mna slice shipped (SDK owns config/profile/init/agent-guidance/templates/extension + createPmCliProgram + renderPmCommand). Baseline scripts/release/sdk-import-boundary-baseline.json still holds ~60 source files (commands/*, main.ts, register-*, mcp/server.ts) — the zero target remains. With 3mna/4a7m/hib1/zwpp shipped, remaining prerequisite slices are pm-oxrw (governance/health) then pm-oslr (execution/diagnostics)."
   "2026-07-16T18:03:52.929Z",maintainer-agent,"Remainder after PR#573 (2026-07-16): 51 source files / 412 edges in scripts/release/sdk-import-boundary-baseline.json (was 62/538 pre-#573, 82/761 pre-#568). All six domain slices shipped — every remaining edge is now mechanical flip territory (commands/*, main.ts, register-*, mcp/server.ts) with no missing SDK primitive blocking it."
-learnings[4]{created_at,author,text}:
+learnings[5]{created_at,author,text}:
   "2026-07-14T20:19:49.944Z",codex-root,Boundary burn-down is strongest when the implementation itself moves to an SDK-owned module; deleting a baseline block without changing ownership would only hide the dependency direction.
   "2026-07-14T23:31:18.238Z",codex-root,Compatibility shims must remain locally referenced or be deleted after SDK promotion; the orphan-module gate correctly prevents dead presentation paths from surviving solely for tests.
   "2026-07-15T02:24:59.166Z",codex-root,Shared extension managed-state and settings mutations require scope-level serialization; destination-level locks protect copies but cannot protect shared snapshots. Persisted unique ownership must be re-read before stale reclaim and final release so an earlier installer cannot delete a replacement lock.
   "2026-07-15T03:10:17.167Z",codex-root,"A stale timeout is a lease duration, not an install duration: long-running owners must refresh liveness under the same persisted owner token, and cleanup must await any in-flight heartbeat before comparing and releasing ownership."
-files[69]{path,scope,note}:
+  "2026-07-16T21:18:36.790Z",codex-wide-sdk-20260716,CLI bootstrap parsing and background worker entrypoints can move under SDK ownership while CLI files remain executable adapters; preserve the ratchet checkpoint and keep the zero-baseline capstone open until all 48 remaining sources are gone.
+files[74]{path,scope,note}:
   eslint-suppressions.json,project,Extension engine SDK promotion and boundary ratchet burn-down
   package.json,project,Boundary burn-down lowers mandatory suppression budget
   packages/pm-governance-audit/extensions/governance-audit/comments-audit.ts,project,PR #573 review hardening and regression coverage
@@ -92,6 +96,9 @@ files[69]{path,scope,note}:
   src/cli/commands/profile.ts,project,Compatibility-only SDK re-export
   src/cli/commands/schema.ts,project,thin SDK re-export replaces CLI-owned implementation
   src/cli/commands/update-many.ts,project,PR #573 review hardening and regression coverage
+  src/cli/search-refresh.ts,project,SDK ownership and private-core boundary burn-down
+  src/cli/telemetry-flush.ts,project,SDK ownership and private-core boundary burn-down
+  src/sdk/cli-bootstrap.ts,project,SDK ownership and private-core boundary burn-down
   src/sdk/cli-contracts/command-aliases.ts,project,SDK-owned executable alias contract after review
   src/sdk/eval.ts,project,Evaluation directly consumes SDK search ownership
   src/sdk/extension.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
@@ -114,7 +121,9 @@ files[69]{path,scope,note}:
   src/sdk/query/search.ts,project,SDK-owned search engine consumed by eval and public runtime
   src/sdk/runtime.ts,project,SDK runtime imports schema primitives directly
   src/sdk/schema.ts,project,promoted domain implementation eliminates CLI private-core imports
+  src/sdk/search-refresh-worker.ts,project,SDK ownership and private-core boundary burn-down
   src/sdk/stats.ts,project,PR #573 review hardening and regression coverage
+  src/sdk/telemetry-flush.ts,project,SDK ownership and private-core boundary burn-down
   src/sdk/test/batch.ts,project,PR #573 review hardening and regression coverage
   src/sdk/test/entry.ts,project,PR #573 review hardening and regression coverage
   src/sdk/test/execution.ts,project,PR #573 review hardening and regression coverage
@@ -154,8 +163,10 @@ tests[4]:
     scope: project
     timeout_seconds: 900
     note: Full release-grade verification including exact coverage packed smoke and temp dogfood
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrl3h543-8h8nz8,test,passed,"2026-07-14T20:18:58.822Z","2026-07-14T20:19:21.507Z","2026-07-14T20:19:21.507Z",1,0,0
+  test-local-mro01twi-hrii4z,test,passed,"2026-07-16T21:06:33.932Z","2026-07-16T21:06:46.818Z","2026-07-16T21:06:46.818Z",1,0,0
+  test-local-mro09w8f-jthr10,test,failed,"2026-07-16T21:06:47.455Z","2026-07-16T21:13:03.087Z","2026-07-16T21:13:03.087Z",0,1,0
 docs[3]{path,scope,note}:
   docs/SDK_CUSTOMIZATION_PRIMITIVES.md,project,Import-boundary guarantee
   docs/SDK_PRIMITIVE_INVENTORY.md,project,Boundary burn-down evidence

@@ -5,12 +5,6 @@
   "purpose": "Current-state ratchet for private src/core imports from src/cli and src/mcp while pm SDK primitives are promoted.",
   "allowed_private_core_imports": [
     {
-      "source": "src/cli/bootstrap-args.ts",
-      "imports": [
-        "src/core/shared/levenshtein.ts"
-      ]
-    },
-    {
       "source": "src/cli/commander-usage.ts",
       "imports": [
         "src/core/extensions/index.ts",
@@ -644,20 +638,6 @@
         "src/core/shared/errors.ts",
         "src/core/store/paths.ts",
         "src/core/store/settings.ts"
-      ]
-    },
-    {
-      "source": "src/cli/search-refresh.ts",
-      "imports": [
-        "src/core/search/background-refresh.ts",
-        "src/core/search/cache.ts",
-        "src/core/store/paths.ts"
-      ]
-    },
-    {
-      "source": "src/cli/telemetry-flush.ts",
-      "imports": [
-        "src/core/telemetry/runtime.ts"
       ]
     },
     {
