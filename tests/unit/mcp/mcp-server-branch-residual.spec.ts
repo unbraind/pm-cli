@@ -108,6 +108,10 @@ function buildCommandMocks() {
     runDocs: vi.fn(async () => ({ action: "docs" })),
     runTest: vi.fn(async () => ({ action: "test" })),
     runTestAll: vi.fn(async () => ({ action: "test-all" })),
+    hoistTestRunsActionOptions: vi.fn(
+      (action: string, args: Record<string, unknown>, options: Record<string, unknown>) =>
+        action.startsWith("test-runs-") ? { ...args, ...options } : options,
+    ),
     runTestRunsAction: vi.fn(async (subcommand: string, runId?: string) => {
       if (subcommand === "unknown") {
         throw Object.assign(new Error("unknown test-runs action"), {
@@ -162,6 +166,7 @@ async function importServerWithCommandMocks(
     runTest: commandMocks.runTest,
   }));
   vi.doMock(TEST_RUNS_SDK_MODULE, () => ({
+    hoistTestRunsActionOptions: commandMocks.hoistTestRunsActionOptions,
     runTestRunsAction: commandMocks.runTestRunsAction,
     runTestRunsList: commandMocks.runTestRunsList,
     runTestRunsStatus: commandMocks.runTestRunsStatus,
@@ -354,20 +359,21 @@ describe("mcp server branch residual coverage", () => {
     await runAction({ action: "test-runs-list", options: { status: "running" } });
     await runAction({
       action: "test-runs-start",
-      options: { kind: "test", commandArgs: ["test", "pm-12"] },
+      kind: "test",
+      commandArgs: ["test", "pm-12"],
     });
     await runAction({ action: "test-runs-status", runId: "tr-status-arg" });
     await runAction({ action: "test-runs-status", options: { runId: "tr-status-option" } });
     await runAction({
       action: "test-runs-logs",
       runId: "tr-logs-arg",
-      options: { stream: "stderr" },
+      stream: "stderr",
     });
     await runAction({ action: "test-runs-logs", options: { runId: "tr-logs-option" } });
     await runAction({
       action: "test-runs-stop",
       runId: "tr-stop-arg",
-      options: { force: true },
+      force: true,
     });
     await runAction({ action: "test-runs-stop", options: { runId: "tr-stop-option" } });
     await runAction({
@@ -391,6 +397,16 @@ describe("mcp server branch residual coverage", () => {
       ["resume", "tr-resume-arg"],
       ["resume", "tr-resume-option"],
     ]);
+    expect(commandMocks.runTestRunsAction.mock.calls[1]?.[2]).toMatchObject({
+      kind: "test",
+      commandArgs: ["test", "pm-12"],
+    });
+    expect(commandMocks.runTestRunsAction.mock.calls[4]?.[2]).toMatchObject({
+      stream: "stderr",
+    });
+    expect(commandMocks.runTestRunsAction.mock.calls[6]?.[2]).toMatchObject({
+      force: true,
+    });
     for (const subcommand of ["list", "status", "logs", "stop", "resume"]) {
       await runAction({
         action: "test-runs",

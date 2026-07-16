@@ -963,6 +963,14 @@ describe("runTestAll", () => {
       expect(appendSummary).toHaveBeenCalledWith(
         expect.objectContaining({ author: "sdk-test-all-author" }),
       );
+
+      await runTestAll(
+        { status: "open", timeout: "20" },
+        { path: context.pmPath, author: "cli-global-test-all-author" },
+      );
+      expect(appendSummary).toHaveBeenLastCalledWith(
+        expect.objectContaining({ author: "cli-global-test-all-author" }),
+      );
     });
   });
 

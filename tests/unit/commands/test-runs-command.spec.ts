@@ -6,6 +6,7 @@ import * as fsPromises from "node:fs/promises";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   type StartBackgroundRunResult,
+  hoistTestRunsActionOptions,
   runStartBackgroundRun,
   runTestRunsAction,
   runTestRunsList,
@@ -298,6 +299,20 @@ describe("test-runs command attribution fallback", () => {
 describe("background test run lifecycle", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("hoists top-level action options while preserving nested precedence", () => {
+    const unchanged = { stream: "stdout" };
+    expect(
+      hoistTestRunsActionOptions("test-runs", { tail: "4" }, unchanged),
+    ).toBe(unchanged);
+    expect(
+      hoistTestRunsActionOptions(
+        "test-runs-logs",
+        { stream: "stderr", tail: "4" },
+        unchanged,
+      ),
+    ).toMatchObject({ stream: "stdout", tail: "4" });
   });
 
   it("dispatches every SDK background-run lifecycle action", async () => {

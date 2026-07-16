@@ -108,9 +108,7 @@ import {
   type TestAllCommandOptions,
   type TestAllResult,
 } from "./test/batch.js";
-import {
-  runTestRunsAction,
-} from "./test/runs.js";
+import { hoistTestRunsActionOptions, runTestRunsAction } from "./test/runs.js";
 import {
   runSearchEval,
   type EvalOptions,
@@ -3878,7 +3876,7 @@ async function dispatchAction(
   global: GlobalOptions,
   activeExtensions: ActiveExtensionRuntime | null,
 ): Promise<unknown> {
-  const options = optionsWithAuthor(args, action);
+  const options = hoistTestRunsActionOptions(action, args, optionsWithAuthor(args, action));
   const ctx: McpActionDispatchContext = {
     action,
     args,

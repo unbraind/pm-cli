@@ -578,6 +578,7 @@ function buildTestAllItemRunContext(params: {
   options: TestAllCommandOptions;
   itemTests: TestAllItemTests[];
   defaultTimeoutSeconds: number | undefined;
+  globalAuthor: string | undefined;
   runStartedAt: string;
 }): TestAllItemRunContext {
   const trackingAttemptRaw = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT?.trim();
@@ -599,7 +600,7 @@ function buildTestAllItemRunContext(params: {
     effectiveTimeoutByKey: buildEffectiveTimeoutByKey(params.itemTests),
     trackingEnabled: params.settings.testing.record_results_to_items === true,
     trackingAuthor: resolveAuthor(
-      params.options.author,
+      params.options.author ?? params.globalAuthor,
       params.settings.author_default,
     ),
     trackingRunId: resolveTrackedRunId(),
@@ -760,6 +761,7 @@ export async function runTestAll(
     options,
     itemTests,
     defaultTimeoutSeconds,
+    globalAuthor: global.author,
     runStartedAt,
   });
   await runTestAllItems(itemTests, itemRunContext, accumulation);

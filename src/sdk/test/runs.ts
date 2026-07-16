@@ -315,6 +315,38 @@ export type TestRunsActionOptions =
   | TestRunsStopCommandOptions
   | TestRunsResumeCommandOptions;
 
+const TEST_RUN_ACTION_OPTION_KEYS = [
+  "kind",
+  "commandArgs",
+  "targetId",
+  "statusFilter",
+  "noExtensions",
+  "status",
+  "limit",
+  "runId",
+  "stream",
+  "tail",
+  "force",
+] as const;
+
+/** Hoist action-scoped tool parameters while preserving explicit nested options. */
+export function hoistTestRunsActionOptions(
+  action: string,
+  args: Record<string, unknown>,
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  if (!action.startsWith("test-runs-")) {
+    return options;
+  }
+  const result = { ...options };
+  for (const key of TEST_RUN_ACTION_OPTION_KEYS) {
+    if (result[key] === undefined && args[key] !== undefined) {
+      result[key] = args[key];
+    }
+  }
+  return result;
+}
+
 /** Implements run test runs resume for the public runtime surface of this module. */
 export async function runTestRunsResume(
   runId: string,
