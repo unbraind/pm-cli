@@ -161,29 +161,33 @@ const CLOSED_BACKFILL_FIELD_RULES: Array<{
   { field: "actual_result", optionKey: "actualResult" },
 ];
 
-function normalizeComparableText(value: string): string {
+const normalizeComparableText = (value: string): string => {
+  /** Normalize free text for stable lifecycle-pattern comparisons. */
   return value.trim().toLowerCase().replaceAll(/\s+/g, " ");
-}
+};
 
-function isLowSignalText(value: string | undefined): boolean {
+const isLowSignalText = (value: string | undefined): boolean => {
+  /** Detect placeholder text that carries no useful lifecycle evidence. */
   /* c8 ignore start -- undefined input is guarded by higher-level normalization callers. */
   if (!value) {
     return false;
   }
   /* c8 ignore stop */
   return LOW_SIGNAL_TEXT_TOKENS.has(normalizeComparableText(value));
-}
+};
 
-function sanitizeBeforeValue(value: unknown): unknown {
+const sanitizeBeforeValue = (value: unknown): unknown => {
+  /** Project absent before-values as explicit nulls in mutation evidence. */
   if (value === undefined) {
     return null;
   }
   return value;
-}
+};
 
-function normalizeLifecyclePatternList(
+const normalizeLifecyclePatternList = (
   values: readonly string[] | undefined,
-): string[] {
+): string[] => {
+  /** Normalize, de-duplicate, and sort configured lifecycle patterns. */
   /* c8 ignore start -- settings schema always materializes lifecycle arrays before command execution. */
   return [
     ...new Set(
@@ -193,11 +197,12 @@ function normalizeLifecyclePatternList(
     ),
   ].sort((left, right) => left.localeCompare(right));
   /* c8 ignore stop */
-}
+};
 
-function resolveLifecyclePatternPolicy(
+const resolveLifecyclePatternPolicy = (
   settings: LifecyclePatternSettingsSource,
-): LifecyclePatternPolicy {
+): LifecyclePatternPolicy => {
+  /** Build the normalized closure-pattern policy from project settings. */
   return {
     closure_like_metadata_field_patterns: {
       blocked_reason: normalizeLifecyclePatternList(
@@ -211,20 +216,22 @@ function resolveLifecyclePatternPolicy(
       ),
     },
   };
-}
+};
 
-function toMeaningfulCloseReason(value: unknown): string | undefined {
+const toMeaningfulCloseReason = (value: unknown): string | undefined => {
+  /** Retain only non-placeholder close reasons as normalization evidence. */
   const normalized = toNonEmptyStringOrUndefined(value);
   if (!normalized || isLowSignalText(normalized)) {
     return undefined;
   }
   return normalized;
-}
+};
 
-function normalizeStatusFilter(
+const normalizeStatusFilter = (
   value: string | undefined,
   statusRegistry: RuntimeStatusRegistry,
-): ItemStatus | undefined {
+): ItemStatus | undefined => {
+  /** Validate one optional status filter against the active schema. */
   if (value === undefined) {
     return undefined;
   }
@@ -239,71 +246,76 @@ function normalizeStatusFilter(
     );
   }
   return normalized;
-}
+};
 
-function buildClosedBackfillValue(
+const buildClosedBackfillValue = (
   field: "resolution" | "expected_result" | "actual_result",
   closeReason: string | undefined,
-): string {
+): string => {
+  /** Build deterministic closure evidence for one missing terminal field. */
   const closureEvidenceSuffix = closeReason
     ? "existing close_reason remains the detailed closure evidence."
     : "the field was missing or low-signal.";
-  if (closeReason) {
-    if (field === "resolution") {
-      return `Resolution normalized from closed status; ${closureEvidenceSuffix}`;
-    }
-    if (field === "expected_result") {
-      return `Expected closure outcome normalized from closed status; ${closureEvidenceSuffix}`;
-    }
-    return `Actual closure outcome normalized from closed status; ${closureEvidenceSuffix}`;
-  }
-  if (field === "resolution") {
-    return `Resolution normalized from closed status because ${closureEvidenceSuffix}`;
-  }
-  if (field === "expected_result") {
-    return `Expected closure outcome normalized from closed status because ${closureEvidenceSuffix}`;
-  }
-  return `Actual closure outcome normalized from closed status because ${closureEvidenceSuffix}`;
-}
+  const labelByField = {
+    resolution: "Resolution",
+    expected_result: "Expected closure outcome",
+    actual_result: "Actual closure outcome",
+  } as const;
+  const connector = closeReason ? ";" : " because";
+  return `${labelByField[field]} normalized from closed status${connector} ${closureEvidenceSuffix}`;
+};
 
-function isTerminalStatus(
+const isTerminalStatus = (
   item: ListedItem,
   statusRegistry: RuntimeStatusRegistry,
-): boolean {
+): boolean => {
+  /** Test whether an item belongs to any schema-defined terminal status. */
   /* c8 ignore next -- normalizeStatusInput currently resolves all command-level status values. */
   const normalized =
     normalizeStatusInput(item.status, statusRegistry) ?? item.status;
   return statusRegistry.terminal_statuses.has(normalized);
-}
+};
 
-function isTerminalDoneStatus(
+const isTerminalDoneStatus = (
   item: ListedItem,
   terminalDoneStatuses: ReadonlySet<string>,
   statusRegistry: RuntimeStatusRegistry,
-): boolean {
+): boolean => {
+  /** Test whether an item requires completed-outcome backfill semantics. */
   /* c8 ignore next -- normalizeStatusInput currently resolves all command-level status values. */
   const normalized =
     normalizeStatusInput(item.status, statusRegistry) ?? item.status;
   return terminalDoneStatuses.has(normalized);
-}
+};
 
-function planActiveItemCleanup(
+const shouldClearActiveField = (
+  itemRecord: Record<string, unknown>,
+  lifecyclePatterns: LifecyclePatternPolicy,
+  field: LifecyclePatternFieldKey,
+): boolean => {
+  /** Decide whether one active-item field contains closure-like or placeholder text. */
+  const currentValue = toNonEmptyStringOrUndefined(itemRecord[field]);
+  if (!currentValue) return false;
+  const normalized = normalizeComparableText(currentValue);
+  const hasClosurePattern =
+    lifecyclePatterns.closure_like_metadata_field_patterns[field].some(
+      (pattern) => normalized.includes(pattern),
+    );
+  return hasClosurePattern || isLowSignalText(currentValue);
+};
+
+const planActiveItemCleanup = (
   itemRecord: Record<string, unknown>,
   lifecyclePatterns: LifecyclePatternPolicy,
   changes: NormalizePlannedChange[],
   unsetFields: Set<string>,
-): void {
+): void => {
+  /** Plan removal of closure-only metadata from an active item. */
   for (const definition of ACTIVE_CLEAR_FIELD_RULES) {
-    const currentValue = toNonEmptyStringOrUndefined(
-      itemRecord[definition.field],
-    );
-    if (!currentValue) continue;
-    const normalized = normalizeComparableText(currentValue);
-    const hasClosurePattern =
-      lifecyclePatterns.closure_like_metadata_field_patterns[
-        definition.field
-      ].some((pattern) => normalized.includes(pattern));
-    if (!hasClosurePattern && !isLowSignalText(currentValue)) continue;
+    if (
+      !shouldClearActiveField(itemRecord, lifecyclePatterns, definition.field)
+    )
+      continue;
     unsetFields.add(definition.unsetField);
     changes.push({
       field: definition.field,
@@ -321,13 +333,14 @@ function planActiveItemCleanup(
       rule: RULE_ACTIVE_CLOSE_REASON,
     });
   }
-}
+};
 
-function planTerminalItemBackfills(
+const planTerminalItemBackfills = (
   itemRecord: Record<string, unknown>,
   updates: UpdateCommandOptions,
   changes: NormalizePlannedChange[],
-): void {
+): void => {
+  /** Plan stable evidence backfills for completed terminal items. */
   const closeReason = toMeaningfulCloseReason(itemRecord.close_reason);
   for (const definition of CLOSED_BACKFILL_FIELD_RULES) {
     const currentValue = toNonEmptyStringOrUndefined(
@@ -343,14 +356,15 @@ function planTerminalItemBackfills(
       rule: RULE_CLOSED_RESOLUTION_BACKFILL,
     });
   }
-}
+};
 
-function buildNormalizePlan(
+const buildNormalizePlan = (
   item: ListedItem,
   statusRegistry: RuntimeStatusRegistry,
   terminalDoneStatuses: ReadonlySet<string>,
   lifecyclePatterns: LifecyclePatternPolicy,
-): NormalizeInternalItemPlan {
+): NormalizeInternalItemPlan => {
+  /** Build one deterministic, non-mutating normalization plan. */
   const updates: UpdateCommandOptions = {};
   const changes: NormalizePlannedChange[] = [];
   const unsetFields = new Set<string>();
@@ -382,11 +396,12 @@ function buildNormalizePlan(
     changes,
     update: updates,
   };
-}
+};
 
-function summarizeRuleCounts(
+const summarizeRuleCounts = (
   itemPlans: NormalizeItemPlan[],
-): NormalizeRuleCount[] {
+): NormalizeRuleCount[] => {
+  /** Count affected items once per normalization rule. */
   const counts = new Map<string, number>();
   for (const plan of itemPlans) {
     const planRules = new Set(plan.changes.map((change) => change.rule));
@@ -397,19 +412,89 @@ function summarizeRuleCounts(
   return [...counts.entries()]
     .map(([rule, count]) => ({ rule, count }))
     .sort((left, right) => left.rule.localeCompare(right.rule));
-}
+};
 
-function toNormalizeWarnings(ruleCounts: NormalizeRuleCount[]): string[] {
+const toNormalizeWarnings = (ruleCounts: NormalizeRuleCount[]): string[] => {
+  /** Render rule counts as stable agent-facing warning tokens. */
   return ruleCounts
     .map((entry) => `normalize_${entry.rule}:${entry.count}`)
     .sort((left, right) => left.localeCompare(right));
-}
+};
 
-/** Implements run normalize for the public runtime surface of this module. */
-export async function runNormalize(
+const assertNormalizeOptionCombination = (
+  options: NormalizeCommandOptions,
+): void => {
+  /** Reject contradictory mutation-mode flags before loading tracker data. */
+  if (options.apply === true && options.dryRun === true) {
+    throw new PmCliError(
+      "--dry-run cannot be combined with --apply",
+      EXIT_CODE.USAGE,
+    );
+  }
+};
+
+const buildNormalizeUpdateBase = (
+  options: NormalizeCommandOptions,
+): Pick<UpdateCommandOptions, "author" | "message" | "force"> & {
+  ownershipMetadataBypass?: boolean;
+} => {
+  /** Resolve shared mutation metadata for every applied normalization plan. */
+  const message =
+    typeof options.message === "string" && options.message.trim().length > 0
+      ? options.message
+      : "normalize apply";
+  return {
+    author: options.author,
+    message,
+    force: options.force === true ? true : undefined,
+    ownershipMetadataBypass:
+      options.allowAuditUpdate === true ? true : undefined,
+  };
+};
+
+const applyNormalizePlans = async (
+  planned: NormalizeInternalItemPlan[],
   options: NormalizeCommandOptions,
   global: GlobalOptions,
-): Promise<NormalizeResult> {
+): Promise<{ rows: NormalizeApplyResultRow[]; updatedIds: string[] }> => {
+  /** Apply non-empty plans sequentially and preserve per-item failure evidence. */
+  const rows: NormalizeApplyResultRow[] = [];
+  const updatedIds: string[] = [];
+  const updateBaseOptions = buildNormalizeUpdateBase(options);
+  for (const plan of planned) {
+    if (plan.changes.length === 0) {
+      rows.push({ id: plan.id, status: "skipped" });
+      continue;
+    }
+    try {
+      const result = await runUpdate(
+        plan.id,
+        { ...plan.update, ...updateBaseOptions },
+        global,
+      );
+      rows.push({
+        id: plan.id,
+        status: "updated",
+        changed_fields: result.changed_fields,
+        warnings: result.warnings,
+      });
+      updatedIds.push(plan.id);
+    } catch (error: unknown) {
+      rows.push({
+        id: plan.id,
+        status: "failed",
+        error: toErrorMessage(error),
+      });
+    }
+  }
+  return { rows, updatedIds };
+};
+
+/** Implements run normalize for the public runtime surface of this module. */
+export const runNormalize = async (
+  options: NormalizeCommandOptions,
+  global: GlobalOptions,
+): Promise<NormalizeResult> => {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   /* c8 ignore next -- tracker bootstrap failure path is validated in broader CLI tests. */
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
@@ -425,14 +510,8 @@ export async function runNormalize(
     settings as unknown as LifecyclePatternSettingsSource,
   );
   const statusFilter = normalizeStatusFilter(options.status, statusRegistry);
-  const dryRun = options.apply === true ? false : true;
-
-  if (options.apply === true && options.dryRun === true) {
-    throw new PmCliError(
-      "--dry-run cannot be combined with --apply",
-      EXIT_CODE.USAGE,
-    );
-  }
+  const dryRun = options.apply !== true;
+  assertNormalizeOptionCombination(options);
 
   const listed = await runList(
     statusFilter,
@@ -490,55 +569,11 @@ export async function runNormalize(
     };
   }
 
-  const applyRows: NormalizeApplyResultRow[] = [];
-  const updatedIds: string[] = [];
-  const applyMessage =
-    typeof options.message === "string" && options.message.trim().length > 0
-      ? options.message
-      : "normalize apply";
-  const updateBaseOptions: Pick<
-    UpdateCommandOptions,
-    "author" | "message" | "force"
-  > & { ownershipMetadataBypass?: boolean } = {
-    author: options.author,
-    message: applyMessage,
-    force: options.force === true ? true : undefined,
-    ownershipMetadataBypass:
-      options.allowAuditUpdate === true ? true : undefined,
-  };
-
-  for (const plan of planned) {
-    if (plan.changes.length === 0) {
-      applyRows.push({
-        id: plan.id,
-        status: "skipped",
-      });
-      continue;
-    }
-    try {
-      const result = await runUpdate(
-        plan.id,
-        {
-          ...plan.update,
-          ...updateBaseOptions,
-        },
-        global,
-      );
-      applyRows.push({
-        id: plan.id,
-        status: "updated",
-        changed_fields: result.changed_fields,
-        warnings: result.warnings,
-      });
-      updatedIds.push(plan.id);
-    } catch (error: unknown) {
-      applyRows.push({
-        id: plan.id,
-        status: "failed",
-        error: toErrorMessage(error),
-      });
-    }
-  }
+  const { rows: applyRows, updatedIds } = await applyNormalizePlans(
+    planned,
+    options,
+    global,
+  );
 
   const updatedCount = applyRows.filter(
     (row) => row.status === "updated",
@@ -564,4 +599,4 @@ export async function runNormalize(
     ids: updatedIds,
     generated_at: generatedAt,
   };
-}
+};

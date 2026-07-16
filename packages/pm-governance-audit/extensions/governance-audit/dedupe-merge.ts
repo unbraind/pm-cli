@@ -315,6 +315,30 @@ const applyDedupeMergeReparents = async (params: {
   return { reparented, skippedChildren };
 };
 
+const buildTerminalCloseAction = (
+  params: {
+    duplicate: ResolvedItem;
+    keep: string;
+    statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>;
+    warnings: string[];
+  },
+  close: DedupeMergeCloseAction,
+): DedupeMergeCloseAction | undefined => {
+  /** Return an already-terminal close result while preserving mismatch evidence. */
+  if (
+    !isTerminalStatus(params.duplicate.metadata.status, params.statusRegistry)
+  ) {
+    return undefined;
+  }
+  close.skipped_reason = "already_terminal";
+  if (params.duplicate.metadata.duplicate_of?.trim() !== params.keep) {
+    params.warnings.push(
+      `close_skipped_terminal:${params.duplicate.id}:already_closed`,
+    );
+  }
+  return close;
+};
+
 const applyDedupeMergeClose = async (params: {
   duplicate: ResolvedItem;
   keep: string;
@@ -331,17 +355,8 @@ const applyDedupeMergeClose = async (params: {
     reason,
     applied: false,
   };
-  if (
-    isTerminalStatus(params.duplicate.metadata.status, params.statusRegistry)
-  ) {
-    close.skipped_reason = "already_terminal";
-    if (params.duplicate.metadata.duplicate_of?.trim() !== params.keep) {
-      params.warnings.push(
-        `close_skipped_terminal:${params.duplicate.id}:already_closed`,
-      );
-    }
-    return close;
-  }
+  const terminalClose = buildTerminalCloseAction(params, close);
+  if (terminalClose) return terminalClose;
   if (!params.apply) {
     close.skipped_reason = "dry_run";
     return close;
@@ -431,15 +446,24 @@ const buildDedupeMergeOutcome = async (params: {
     global: params.global,
     warnings: params.warnings,
   });
-  const close = await applyDedupeMergeClose({
-    duplicate,
-    keep: params.canonical.id,
-    apply: params.apply,
-    options: params.options,
-    global: params.global,
-    statusRegistry: params.statusRegistry,
-    warnings: params.warnings,
-  });
+  const reparentFailed =
+    params.apply && reparented.some((child) => !child.applied);
+  const close: DedupeMergeCloseAction = reparentFailed
+    ? {
+        duplicate_of: params.canonical.id,
+        reason: `Duplicate of ${params.canonical.id}`,
+        applied: false,
+        skipped_reason: "failed",
+      }
+    : await applyDedupeMergeClose({
+        duplicate,
+        keep: params.canonical.id,
+        apply: params.apply,
+        options: params.options,
+        global: params.global,
+        statusRegistry: params.statusRegistry,
+        warnings: params.warnings,
+      });
   return {
     duplicate_id: duplicate.id,
     duplicate_title: duplicate.title,

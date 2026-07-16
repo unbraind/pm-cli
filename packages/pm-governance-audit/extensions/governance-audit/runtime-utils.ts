@@ -198,13 +198,13 @@ const resolveLinkedArtifactAuditKey = (
   payload: CommandResultPayload,
 ): "files" | "docs" | undefined => {
   /** Resolve the supported linked-artifact result key for an eligible audit request. */
-  if (payload.command !== "files" && payload.command !== "docs") {
-    return undefined;
-  }
-  if (payload.options?.audit !== true || !payload.pm_root) {
-    return undefined;
-  }
-  return payload.command;
+  const artifactKey = (["files", "docs"] as const).find(
+    (candidate) => candidate === payload.command,
+  );
+  if (artifactKey === undefined) return undefined;
+  if (payload.options?.audit !== true) return undefined;
+  if (!payload.pm_root) return undefined;
+  return artifactKey;
 };
 
 const decorateLinkedArtifactResult = async (
@@ -249,15 +249,23 @@ const decorateLinkedArtifactResult = async (
   };
 };
 
-const decorateAuditBypassResult = (
+const decorateUpdateAuditBypassResult = (
   payload: CommandResultPayload,
   result: Record<string, unknown>,
 ): Record<string, unknown> | undefined => {
-  /** Add the package-owned audit marker for explicit update or release bypasses. */
+  /** Add the package-owned audit marker for an explicit update bypass. */
   const isUpdate = ["update", "update-many"].includes(String(payload.command));
   if (isUpdate && hasUpdateAuditBypass(payload.options)) {
     return { ...result, audit_update: true };
   }
+  return undefined;
+};
+
+const decorateReleaseAuditBypassResult = (
+  payload: CommandResultPayload,
+  result: Record<string, unknown>,
+): Record<string, unknown> | undefined => {
+  /** Add the package-owned audit marker for an explicit release bypass. */
   if (
     payload.command === "release" &&
     payload.options?.allowAuditRelease === true
@@ -280,5 +288,9 @@ export const decorateGovernanceCommandResult = async (
     result,
   );
   if (linkedArtifactResult) return linkedArtifactResult;
-  return decorateAuditBypassResult(payload, result) ?? result;
+  const bypassResult = [
+    decorateUpdateAuditBypassResult(payload, result),
+    decorateReleaseAuditBypassResult(payload, result),
+  ].find((candidate) => candidate !== undefined);
+  return bypassResult ?? result;
 };
