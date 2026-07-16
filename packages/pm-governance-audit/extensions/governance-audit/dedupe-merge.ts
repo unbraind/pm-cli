@@ -126,7 +126,7 @@ interface ResolvedItem {
 }
 
 /** Parses a single required item id, rejecting blank input with usage guidance. */
-function parseRequiredId(raw: string | undefined, flag: string): string {
+const parseRequiredId = (raw: string | undefined, flag: string): string => {
   /** Require and normalize one item identity option. */
   const trimmed = (raw ?? "").trim();
   if (trimmed.length === 0) {
@@ -142,13 +142,13 @@ function parseRequiredId(raw: string | undefined, flag: string): string {
     );
   }
   return trimmed;
-}
+};
 
 /** Parses the duplicate id list, splitting csv values and de-duplicating while preserving first-seen order so the result is deterministic. */
-function parseDuplicateIds(
+const parseDuplicateIds = (
   raw: string | string[] | undefined,
   keep: string,
-): string[] {
+): string[] => {
   /** Parse unique duplicate identities while excluding the canonical item. */
   const collected = Array.isArray(raw) ? raw : raw === undefined ? [] : [raw];
   const ids: string[] = [];
@@ -188,13 +188,13 @@ function parseDuplicateIds(
     );
   }
   return ids;
-}
+};
 
-async function loadItem(
+const loadItem = async (
   pmRoot: string,
   settings: Awaited<ReturnType<typeof readSettings>>,
   id: string,
-): Promise<ResolvedItem | null> {
+): Promise<ResolvedItem | null> => {
   /** Load one schema-aware item record or report that it is absent. */
   const typeToFolder = resolveItemTypeRegistry(
     settings,
@@ -216,12 +216,12 @@ async function loadItem(
     title: loaded.document.metadata.title,
     metadata: loaded.document.metadata,
   };
-}
+};
 
-function buildChildrenByParentForDedupeMerge(
+const buildChildrenByParentForDedupeMerge = (
   items: ItemMetadata[],
   statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>,
-): Map<string, { id: string; title: string; terminal: boolean }[]> {
+): Map<string, { id: string; title: string; terminal: boolean }[]> => {
   /** Index child identity and terminal state for deterministic merge validation. */
   const childrenByParent = new Map<
     string,
@@ -241,9 +241,9 @@ function buildChildrenByParentForDedupeMerge(
     childrenByParent.set(parent, bucket);
   }
   return childrenByParent;
-}
+};
 
-async function applyDedupeMergeReparents(params: {
+const applyDedupeMergeReparents = async (params: {
   children: { id: string; title: string; terminal: boolean }[];
   duplicateId: string;
   keep: string;
@@ -258,7 +258,7 @@ async function applyDedupeMergeReparents(params: {
     child_title: string;
     reason: "terminal";
   }[];
-}> {
+}> => {
   /** Plan or apply active-child reparenting for one duplicate item. */
   const reparentEnabled = params.options.reparentChildren !== false;
   const reparentTargets = reparentEnabled
@@ -303,9 +303,9 @@ async function applyDedupeMergeReparents(params: {
     reparented.push(record);
   }
   return { reparented, skippedChildren };
-}
+};
 
-async function applyDedupeMergeClose(params: {
+const applyDedupeMergeClose = async (params: {
   duplicate: ResolvedItem;
   keep: string;
   apply: boolean;
@@ -313,7 +313,7 @@ async function applyDedupeMergeClose(params: {
   global: GlobalOptions;
   statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>;
   warnings: string[];
-}): Promise<DedupeMergeCloseAction> {
+}): Promise<DedupeMergeCloseAction> => {
   /** Plan, skip, or apply the terminal duplicate close action. */
   const reason = `Duplicate of ${params.keep}`;
   const close: DedupeMergeCloseAction = {
@@ -357,7 +357,7 @@ async function applyDedupeMergeClose(params: {
     );
   }
   return close;
-}
+};
 
 /** Implements run dedupe merge for the public runtime surface of this module. */
 export async function runDedupeMerge(

@@ -178,7 +178,7 @@ export interface DedupeAuditResult {
   warnings?: string[];
 }
 
-function parseMode(raw: string | undefined): DedupeAuditMode {
+const parseMode = (raw: string | undefined): DedupeAuditMode => {
   /** Normalize the optional strategy name against the supported audit modes. */
   const normalized = (raw ?? "title_exact").trim().toLowerCase();
   if (!DEDUPE_AUDIT_MODES.includes(normalized as DedupeAuditMode)) {
@@ -188,7 +188,7 @@ function parseMode(raw: string | undefined): DedupeAuditMode {
     );
   }
   return normalized as DedupeAuditMode;
-}
+};
 
 let dedupeAllowedStatuses = new Set<string>([
   "draft",
@@ -201,7 +201,7 @@ let dedupeAllowedStatuses = new Set<string>([
 let dedupeTerminalStatuses = new Set<string>(["closed", "canceled"]);
 let dedupeStatusRegistry: RuntimeStatusRegistry | null = null;
 
-function parseStatus(raw: string | undefined): ItemStatus | undefined {
+const parseStatus = (raw: string | undefined): ItemStatus | undefined => {
   /** Normalize an optional status token against the active audit registry. */
   if (raw === undefined) {
     return undefined;
@@ -214,9 +214,9 @@ function parseStatus(raw: string | undefined): ItemStatus | undefined {
     );
   }
   return normalized as ItemStatus;
-}
+};
 
-function parseThreshold(raw: string | undefined): number | undefined {
+const parseThreshold = (raw: string | undefined): number | undefined => {
   /** Parse an optional fuzzy-match threshold on the inclusive zero-to-one scale. */
   if (raw === undefined) {
     return undefined;
@@ -229,21 +229,21 @@ function parseThreshold(raw: string | undefined): number | undefined {
     );
   }
   return parsed;
-}
+};
 
-function isTerminal(status: ItemStatus): boolean {
+const isTerminal = (status: ItemStatus): boolean => {
   /** Resolve terminality through the active schema with a built-in fallback. */
   if (dedupeStatusRegistry) {
     return isTerminalStatus(status, dedupeStatusRegistry);
   }
   const normalized = normalizeStatusInput(status) ?? status;
   return dedupeTerminalStatuses.has(normalized);
-}
+};
 
-function compareCandidates(
+const compareCandidates = (
   left: DedupeAuditPreparedCandidate,
   right: DedupeAuditPreparedCandidate,
-): number {
+): number => {
   /** Rank canonical candidates by lifecycle, priority, recency, and identity. */
   const leftTerminal = isTerminal(left.status);
   const rightTerminal = isTerminal(right.status);
@@ -259,11 +259,11 @@ function compareCandidates(
     return byUpdated;
   }
   return left.id.localeCompare(right.id);
-}
+};
 
-function toCandidate(
+const toCandidate = (
   candidate: DedupeAuditPreparedCandidate,
-): DedupeAuditCandidate {
+): DedupeAuditCandidate => {
   /** Project one prepared comparison record into the public candidate shape. */
   return {
     id: candidate.id,
@@ -275,13 +275,13 @@ function toCandidate(
     created_at: candidate.created_at,
     updated_at: candidate.updated_at,
   };
-}
+};
 
-function toMergeSuggestion(
+const toMergeSuggestion = (
   duplicate: DedupeAuditPreparedCandidate,
   canonical: DedupeAuditPreparedCandidate,
   mode: DedupeAuditMode,
-): DedupeMergeSuggestion {
+): DedupeMergeSuggestion => {
   /** Build an executable close recommendation for one duplicate candidate. */
   const closeReason = `Duplicate of ${canonical.id}`;
   const message = `Close ${duplicate.id} as duplicate of ${canonical.id} from pm dedupe-audit (${mode}).`;
@@ -294,15 +294,15 @@ function toMergeSuggestion(
     suggested_message: message,
     suggested_command: `pm close ${duplicate.id} "${escapedReason}" --message "${escapedMessage}"`,
   };
-}
+};
 
-function clusterFromMembers(
+const clusterFromMembers = (
   mode: DedupeAuditMode,
   key: string,
   members: DedupeAuditPreparedCandidate[],
   matchReason: string,
   threshold: number | undefined,
-): DedupeAuditCluster {
+): DedupeAuditCluster => {
   /** Assemble one deterministic cluster and its optional similarity envelope. */
   const sortedMembers = [...members].sort(compareCandidates);
   const canonical = sortedMembers[0];
@@ -350,22 +350,22 @@ function clusterFromMembers(
     };
   }
   return cluster;
-}
+};
 
-function similarityScore(
+const similarityScore = (
   left: DedupeAuditPreparedCandidate,
   right: DedupeAuditPreparedCandidate,
-): number {
+): number => {
   /** Score exact normalized titles first, then fall back to token overlap. */
   if (left.normalized_title === right.normalized_title) {
     return 1;
   }
   return jaccardSimilarity(left.title_tokens, right.title_tokens);
-}
+};
 
-function collectExactTitleClusters(
+const collectExactTitleClusters = (
   items: DedupeAuditPreparedCandidate[],
-): DedupeAuditCluster[] {
+): DedupeAuditCluster[] => {
   /** Group candidates that share the same normalized title. */
   const byTitle = new Map<string, DedupeAuditPreparedCandidate[]>();
   for (const item of items) {
@@ -395,11 +395,11 @@ function collectExactTitleClusters(
     );
   }
   return clusters;
-}
+};
 
-function collectParentScopedClusters(
+const collectParentScopedClusters = (
   items: DedupeAuditPreparedCandidate[],
-): DedupeAuditCluster[] {
+): DedupeAuditCluster[] => {
   /** Group normalized-title duplicates only when they share a parent. */
   const byParentAndTitle = new Map<string, DedupeAuditPreparedCandidate[]>();
   for (const item of items) {
@@ -430,9 +430,9 @@ function collectParentScopedClusters(
     );
   }
   return clusters;
-}
+};
 
-function findRoot(parents: number[], index: number): number {
+const findRoot = (parents: number[], index: number): number => {
   /** Find and compress one disjoint-set root for fuzzy clustering. */
   let current = index;
   while (parents[current] !== current) {
@@ -440,9 +440,9 @@ function findRoot(parents: number[], index: number): number {
     current = parents[current];
   }
   return current;
-}
+};
 
-function unionRoots(parents: number[], left: number, right: number): void {
+const unionRoots = (parents: number[], left: number, right: number): void => {
   /** Join two fuzzy-cluster roots under the lower deterministic index. */
   const leftRoot = findRoot(parents, left);
   const rightRoot = findRoot(parents, right);
@@ -454,12 +454,12 @@ function unionRoots(parents: number[], left: number, right: number): void {
   } else {
     parents[leftRoot] = rightRoot;
   }
-}
+};
 
-function collectFuzzyTitleClusters(
+const collectFuzzyTitleClusters = (
   items: DedupeAuditPreparedCandidate[],
   threshold: number,
-): DedupeAuditCluster[] {
+): DedupeAuditCluster[] => {
   /** Build transitive fuzzy-title clusters at the requested similarity floor. */
   if (items.length <= 1) {
     return [];
@@ -508,25 +508,25 @@ function collectFuzzyTitleClusters(
     );
   }
   return clusters;
-}
+};
 
-function compareClusters(
+const compareClusters = (
   left: DedupeAuditCluster,
   right: DedupeAuditCluster,
-): number {
+): number => {
   /** Order larger clusters first and break ties by canonical identity. */
   const bySize = right.cluster_size - left.cluster_size;
   if (bySize !== 0) {
     return bySize;
   }
   return left.canonical.id.localeCompare(right.canonical.id);
-}
+};
 
-function collectDedupeClusters(
+const collectDedupeClusters = (
   mode: DedupeAuditMode,
   prepared: DedupeAuditPreparedCandidate[],
   fuzzyThreshold: number,
-): DedupeAuditCluster[] {
+): DedupeAuditCluster[] => {
   /** Dispatch candidate collection to the selected comparison strategy. */
   if (mode === "title_exact") {
     return collectExactTitleClusters(prepared);
@@ -535,11 +535,11 @@ function collectDedupeClusters(
     return collectParentScopedClusters(prepared);
   }
   return collectFuzzyTitleClusters(prepared, fuzzyThreshold);
-}
+};
 
-function toPreparedDedupeCandidate(
+const toPreparedDedupeCandidate = (
   item: ListedItem,
-): DedupeAuditPreparedCandidate {
+): DedupeAuditPreparedCandidate => {
   /** Precompute normalized fields used by every dedupe comparison strategy. */
   return {
     id: item.id,
@@ -553,15 +553,15 @@ function toPreparedDedupeCandidate(
     normalized_title: normalizeLowercaseWhitespace(item.title),
     title_tokens: tokenizeAlphaNumeric(item.title),
   };
-}
+};
 
-function buildDedupeAuditFilters(params: {
+const buildDedupeAuditFilters = (params: {
   mode: DedupeAuditMode;
   status: ItemStatus | undefined;
   options: DedupeAuditOptions;
   limit: number | undefined;
   fuzzyThreshold: number;
-}): DedupeAuditResult["filters"] {
+}): DedupeAuditResult["filters"] => {
   /** Echo normalized audit filters in the stable public result shape. */
   return {
     mode: params.mode,
@@ -579,7 +579,7 @@ function buildDedupeAuditFilters(params: {
     limit: params.limit ?? null,
     threshold: params.mode === "title_fuzzy" ? params.fuzzyThreshold : null,
   };
-}
+};
 
 /** Implements run dedupe audit for the public runtime surface of this module. */
 export async function runDedupeAudit(

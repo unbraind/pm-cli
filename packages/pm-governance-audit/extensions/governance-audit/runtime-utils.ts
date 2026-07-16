@@ -174,14 +174,14 @@ interface CommandResultPayload {
   result?: unknown;
 }
 
-function asRecord(value: unknown): Record<string, unknown> | undefined {
+const asRecord = (value: unknown): Record<string, unknown> | undefined => {
   /** Narrow an unknown payload to a non-null object record. */
   return typeof value === "object" && value !== null
     ? (value as Record<string, unknown>)
     : undefined;
-}
+};
 
-function hasUpdateAuditBypass(options: Record<string, unknown>): boolean {
+const hasUpdateAuditBypass = (options: Record<string, unknown>): boolean => {
   /** Detect every supported update-audit bypass alias. */
   return (
     options.allowAuditUpdate === true ||
@@ -189,12 +189,12 @@ function hasUpdateAuditBypass(options: Record<string, unknown>): boolean {
     options.allowAuditDepUpdate === true ||
     options.allow_audit_dep_update === true
   );
-}
+};
 
-async function decorateLinkedArtifactResult(
+const decorateLinkedArtifactResult = async (
   payload: CommandResultPayload,
   result: Record<string, unknown>,
-): Promise<Record<string, unknown> | undefined> {
+): Promise<Record<string, unknown> | undefined> => {
   /** Add reverse linked-artifact attribution to eligible files/docs results. */
   if (
     (payload.command !== "files" && payload.command !== "docs") ||
@@ -236,7 +236,7 @@ async function decorateLinkedArtifactResult(
     ...result,
     audit: buildLinkedArtifactAudit({ paths, items }),
   };
-}
+};
 
 /** Add package-owned fields to a completed core command result. */
 export async function decorateGovernanceCommandResult(

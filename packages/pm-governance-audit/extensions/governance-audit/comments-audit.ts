@@ -172,10 +172,10 @@ export interface CommentsAuditHistoryRow {
   text: string;
 }
 
-function parseStatus(
+const parseStatus = (
   raw: string | undefined,
   statusRegistry: RuntimeStatusRegistry,
-): ItemStatus | undefined {
+): ItemStatus | undefined => {
   /** Normalize one optional status filter against the active project schema. */
   if (raw === undefined) {
     return undefined;
@@ -188,12 +188,12 @@ function parseStatus(
     );
   }
   return normalized;
-}
+};
 
-function parseNonNegativeInteger(
+const parseNonNegativeInteger = (
   raw: string | undefined,
   flag: string,
-): number | undefined {
+): number | undefined => {
   /** Parse an optional count flag without accepting fractions or negative values. */
   if (raw === undefined) {
     return undefined;
@@ -206,17 +206,19 @@ function parseNonNegativeInteger(
     );
   }
   return parsed;
-}
+};
 
-function limitComments(values: Comment[], latest: number): Comment[] {
+const limitComments = (values: Comment[], latest: number): Comment[] => {
   /** Retain only the requested trailing comments while preserving chronology. */
   if (latest <= 0) {
     return [];
   }
   return values.slice(Math.max(0, values.length - latest));
-}
+};
 
-function toHistoryRows(items: CommentsAuditEntry[]): CommentsAuditHistoryRow[] {
+const toHistoryRows = (
+  items: CommentsAuditEntry[],
+): CommentsAuditHistoryRow[] => {
   /** Flatten per-item comments into stable export rows with item context. */
   const rows: CommentsAuditHistoryRow[] = [];
   for (const item of items) {
@@ -238,12 +240,12 @@ function toHistoryRows(items: CommentsAuditEntry[]): CommentsAuditHistoryRow[] {
     }
   }
   return rows;
-}
+};
 
-function ratioPercent(
+const ratioPercent = (
   numerator: number,
   denominator: number,
-): { ratio: number; percent: number } {
+): { ratio: number; percent: number } => {
   /** Render a bounded ratio and percentage with deterministic precision. */
   if (denominator <= 0) {
     return {
@@ -256,11 +258,11 @@ function ratioPercent(
     ratio: Number(ratio.toFixed(4)),
     percent: Number((ratio * 100).toFixed(2)),
   };
-}
+};
 
-function buildCommentsAuditSummary(
+const buildCommentsAuditSummary = (
   items: CommentsAuditEntry[],
-): CommentsAuditSummary {
+): CommentsAuditSummary => {
   /** Aggregate comment coverage globally and by project item type. */
   const itemsScanned = items.length;
   const itemsWithComments = items.filter(
@@ -333,13 +335,15 @@ function buildCommentsAuditSummary(
     },
     by_type: byType,
   };
-}
+};
 
-function resolveCommentsAuditLimits(options: CommentsAuditOptions): {
+const resolveCommentsAuditLimits = (
+  options: CommentsAuditOptions,
+): {
   fullHistory: boolean;
   latest: number | undefined;
   limitItems: number | undefined;
-} {
+} => {
   /** Reconcile history and item-limit aliases into one validated selection. */
   const fullHistory = options.fullHistory === true;
   const latestParsed = parseNonNegativeInteger(options.latest, "--latest");
@@ -372,12 +376,12 @@ function resolveCommentsAuditLimits(options: CommentsAuditOptions): {
     latest,
     limitItems: distinctItemLimits.values().next().value,
   };
-}
+};
 
-function toCommentsAuditEntry(
+const toCommentsAuditEntry = (
   item: ListedItem,
   latest: number | undefined,
-): CommentsAuditEntry {
+): CommentsAuditEntry => {
   /** Project one complete list record into the bounded comments-audit shape. */
   const comments = item.comments ?? [];
   return {
@@ -390,15 +394,15 @@ function toCommentsAuditEntry(
     comment_count: comments.length,
     comments: latest === undefined ? comments : limitComments(comments, latest),
   };
-}
+};
 
-function buildCommentsAuditFilters(
+const buildCommentsAuditFilters = (
   options: CommentsAuditOptions,
   status: ItemStatus | undefined,
   limitItems: number | undefined,
   latest: number | undefined,
   fullHistory: boolean,
-): CommentsAuditResult["filters"] {
+): CommentsAuditResult["filters"] => {
   /** Preserve active audit filters in a stable nullable response envelope. */
   const toNullable = <Value>(value: Value | undefined): Value | null =>
     value === undefined ? null : value;
@@ -416,7 +420,7 @@ function buildCommentsAuditFilters(
     latest: toNullable(latest),
     full_history: fullHistory,
   };
-}
+};
 
 /** Implements run comments audit for the public runtime surface of this module. */
 export async function runCommentsAudit(
