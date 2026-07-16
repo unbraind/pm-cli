@@ -215,7 +215,9 @@ async function loadItem(
   };
 }
 
-/** Index child identity and terminal state for deterministic merge validation. */
+/**
+ * Index child identity and terminal state for deterministic merge validation.
+ */
 function buildChildrenByParentForDedupeMerge(
   items: ItemMetadata[],
   statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>,
