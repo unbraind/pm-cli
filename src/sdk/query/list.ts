@@ -83,7 +83,7 @@ export interface ListOptions extends SharedItemFilterOptions {
   offset?: string;
   /** Opaque cursor returned by a previous list page. */
   after?: string;
-  /** Value that configures or reports no truncate for this contract. */
+  /** Force the complete matched set and deliberately override `limit`; use plain `limit` for bounded pagination. */
   noTruncate?: boolean;
   /** Value that configures or reports include body for this contract. */
   includeBody?: boolean;
