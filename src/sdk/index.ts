@@ -645,6 +645,61 @@ export {
   type WorkspaceContracts,
   type WorkspaceContractsOptions,
 } from "./runtime.js";
+export { runStats } from "./stats.js";
+export {
+  DEFAULT_EVAL_QUERIES_RELATIVE_PATH,
+  runEval,
+  type EvalOptions,
+  type EvalQueryReport,
+  type EvalResult,
+} from "./eval.js";
+export {
+  runTelemetry,
+  TELEMETRY_SUBCOMMANDS,
+  type TelemetryCommandOptions,
+  type TelemetrySubcommand,
+} from "./telemetry.js";
+export {
+  classifyLinkedTestFailure,
+  countFailureCategories,
+  extractReferencedPmItemIdsFromCommand,
+  resolveLinkedTestFailureExitCode,
+  runLinkedTests,
+  runTest,
+  summarizeContextPreflight,
+  type LinkedTestFailureCategory,
+  type TestCommandOptions,
+  type TestResult,
+  type TestRunResult,
+} from "./test/execution.js";
+export {
+  runTestAll,
+  type TestAllCommandOptions,
+  type TestAllItemResult,
+  type TestAllResult,
+} from "./test/batch.js";
+export {
+  LINKED_TEST_ENV_NAME_PATTERN,
+  LINKED_TEST_PM_CONTEXT_MODE_VALUES,
+  LINKED_TEST_PROTECTED_ENV_KEYS,
+  parseLinkedTestAssertionEqualsMap,
+  parseLinkedTestAssertionGteMap,
+  parseLinkedTestBoolean,
+  parseLinkedTestContextMode,
+  parseLinkedTestEnvClear,
+  parseLinkedTestEnvSet,
+  parseLinkedTestJsonEntries,
+  parseLinkedTestMinLines,
+  parseLinkedTestRegexList,
+  parseLinkedTestStringList,
+  type LinkedTestPmContextMode,
+} from "./test/parsers.js";
+export {
+  runStartBackgroundRun,
+  runTestRunsWorker,
+  type StartBackgroundRunCommandOptions,
+  type StartBackgroundRunResult,
+} from "./test/runs.js";
 export {
   BUILTIN_PROFILES,
   listProfiles,

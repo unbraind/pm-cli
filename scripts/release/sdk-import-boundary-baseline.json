@@ -249,18 +249,6 @@
       ]
     },
     {
-      "source": "src/cli/commands/eval.ts",
-      "imports": [
-        "src/core/fs/fs-utils.ts",
-        "src/core/search/eval.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/primitives.ts",
-        "src/core/store/paths.ts"
-      ]
-    },
-    {
       "source": "src/cli/commands/event-validation-messages.ts",
       "imports": [
         "src/core/shared/constants.ts",
@@ -345,22 +333,6 @@
       "source": "src/cli/commands/lifecycle-transitions.ts",
       "imports": [
         "src/core/schema/runtime-schema.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/linked-test-entry.ts",
-      "imports": [
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/linked-test-parsers.ts",
-      "imports": [
-        "src/core/item/parse.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/split-comma-list.ts"
       ]
     },
     {
@@ -547,90 +519,6 @@
         "src/core/schema/runtime-schema.ts",
         "src/core/shared/constants.ts",
         "src/core/shared/errors.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/stats.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/governance/content-fields.ts",
-        "src/core/governance/metadata-coverage.ts",
-        "src/core/history/history-storage-stats.ts",
-        "src/core/history/history-stream-policy.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/telemetry.ts",
-      "imports": [
-        "src/core/fs/fs-utils.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts",
-        "src/core/telemetry/runtime.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/test-all.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/item/parse.ts",
-        "src/core/item/status.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/shared/author.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts",
-        "src/core/test/item-test-run-tracking.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/test-runs.ts",
-      "imports": [
-        "src/core/fs/fs-utils.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts",
-        "src/core/test/background-runs.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/test.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/item/parse.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/serialization.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts",
-        "src/core/test/item-test-run-tracking.ts",
-        "src/core/test/run-selectors.ts"
       ]
     },
     {

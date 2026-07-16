@@ -143,11 +143,6 @@
       "count": 1
     }
   },
-  "src/cli/commands/test.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/cli/commands/update-many.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 2

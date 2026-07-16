@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Promote execution and diagnostics primitives to the public SDK: linked-test running and test-run lifecycle, search eval harness, telemetry stats/export ([pm-oslr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-oslr.toon))
+
 ## 2026.7.16 - 2026-07-16
 
 ### Other

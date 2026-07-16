@@ -1,6 +1,6 @@
 # SDK Primitive Inventory
 
-Tracked work: [pm-lodl](../.agents/pm/tasks/pm-lodl.toon), [pm-8778](../.agents/pm/tasks/pm-8778.toon), parent [pm-usfg](../.agents/pm/epics/pm-usfg.toon).
+Tracked work: [pm-lodl](../.agents/pm/tasks/pm-lodl.toon), [pm-8778](../.agents/pm/tasks/pm-8778.toon), [pm-oslr](../.agents/pm/features/pm-oslr.toon), capstone [pm-9x6e](../.agents/pm/tasks/pm-9x6e.toon), parent [pm-usfg](../.agents/pm/epics/pm-usfg.toon).
 
 This inventory is the current SDK-first migration map for the principle `project management = context management`.
 The exact per-source CLI/MCP module inventory is checked in at [`scripts/release/sdk-import-boundary-baseline.json`](../scripts/release/sdk-import-boundary-baseline.json): each `allowed_private_core_imports[]` entry names one command, helper, or MCP source file and the private `src/core` modules it currently imports. The static quality gate reads that file and fails when `src/cli` or `src/mcp` adds a new private `src/core` import, uses a computed dynamic `import()` that cannot be ratcheted, or leaves a stale baseline entry after an import has been removed.
@@ -41,7 +41,8 @@ Use [`scripts/release/sdk-import-boundary-baseline.json`](../scripts/release/sdk
 | `schema`, `config`, `profile`, `init`, `init-agent-guidance` | [pm-3mna](../.agents/pm/features/pm-3mna.toon) | Universal customization requires programmatic schema, profile, and config APIs. |
 | `history`, `activity`, `history-redact`, `history-repair`, `history-compact` | [pm-4a7m](../.agents/pm/features/pm-4a7m.toon) | Audited history read, activity, rewrite, and checkpoint operations need explicit public contracts. |
 | `plan` | [pm-je50](../.agents/pm/features/pm-je50.toon) | Plan harness operations should be usable by external orchestrators through SDK calls. |
-| `test`, `test-all`, `test-runs`, `eval`, `telemetry`, `reindex` | [pm-oslr](../.agents/pm/features/pm-oslr.toon) | Execution helpers should return typed run state and diagnostics instead of CLI-only text. |
+| `test`, `test-all`, `test-runs`, `eval`, `telemetry`, `stats` | [pm-oslr](../.agents/pm/features/pm-oslr.toon) | Implementations live under `src/sdk/test/**`, `src/sdk/eval.ts`, `src/sdk/telemetry.ts`, and `src/sdk/stats.ts`; CLI paths are compatibility exports with typed structured results. |
+| `reindex` | [pm-rjqr](../.agents/pm/features/pm-rjqr.toon) / [pm-9x6e](../.agents/pm/tasks/pm-9x6e.toon) | Search-index refresh remains part of the query/read ownership and terminal boundary burn-down. |
 | `extension`, `upgrade`, package lifecycle helpers | [pm-ugqx](../.agents/pm/epics/pm-ugqx.toon) | Existing package-author SDK surfaces stay public; package lifecycle can move behind SDK runtime helpers. |
 | `src/mcp/**` | [pm-usfg](../.agents/pm/epics/pm-usfg.toon) | MCP tools should call SDK primitives directly once each family is promoted. |
 

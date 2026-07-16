@@ -45,6 +45,13 @@ Source of truth:
 - [`src/sdk/governance/validate.ts`](../src/sdk/governance/validate.ts)
 - [`src/sdk/governance/health.ts`](../src/sdk/governance/health.ts)
 - [`src/sdk/governance/gc.ts`](../src/sdk/governance/gc.ts)
+- [`src/sdk/test/execution.ts`](../src/sdk/test/execution.ts)
+- [`src/sdk/test/batch.ts`](../src/sdk/test/batch.ts)
+- [`src/sdk/test/runs.ts`](../src/sdk/test/runs.ts)
+- [`src/sdk/test/parsers.ts`](../src/sdk/test/parsers.ts)
+- [`src/sdk/eval.ts`](../src/sdk/eval.ts)
+- [`src/sdk/telemetry.ts`](../src/sdk/telemetry.ts)
+- [`src/sdk/stats.ts`](../src/sdk/stats.ts)
 - [`src/sdk/cli-contracts.ts`](../src/sdk/cli-contracts.ts)
 - [`src/sdk/cli-contracts/commander-types.ts`](../src/sdk/cli-contracts/commander-types.ts)
 - [`src/sdk/cli-contracts/commander-mutation-options.ts`](../src/sdk/cli-contracts/commander-mutation-options.ts)
@@ -137,6 +144,9 @@ Command/action contract exports:
 - Typed governance and maintenance primitives on `PmClient`: `validate`, `health`, `gc`, `historyRedact`, `historyRepair`, `historyRepairAll`, `historyCompact`, and `historyCompactBulk`
 - Governance and maintenance option/result contracts: `ValidateCommandOptions` / `ValidateResult`, `RunHealthOptions` / `HealthResult`, `GcCommandOptions` / `GcResult`, `HistoryRedactCommandOptions` / `HistoryRedactResult`, `HistoryRepairCommandOptions` / `HistoryRepairResult` / `HistoryRepairAllResult`, and `HistoryCompactCommandOptions` / `HistoryCompactResult` / `HistoryCompactBulkCommandOptions` / `HistoryCompactBulkResult`
 - Direct governance engines: `runValidate`, `runHealth`, and `runGc` are public SDK exports used by the CLI compatibility adapters and by custom policy engines that already own `GlobalOptions`. Their structured results are identical to CLI JSON output; no shell process or private core import is required.
+- Execution and diagnostics engines: `runTest`, `runLinkedTests`, `runTestAll`, `runStartBackgroundRun`, `runTestRunsList`, `runTestRunsStatus`, `runTestRunsLogs`, `runTestRunsStop`, `runTestRunsResume`, `runTestRunsWorker`, `runEval`, `runTelemetry`, and `runStats`. Their CLI modules are compatibility re-exports of SDK-owned implementations.
+- Execution and diagnostics contracts: `TestCommandOptions` / `TestResult` / `TestRunResult`, `TestAllCommandOptions` / `TestAllResult`, `StartBackgroundRunCommandOptions` / `StartBackgroundRunResult`, `TestRuns*CommandOptions`, `EvalOptions` / `EvalResult`, `TelemetryCommandOptions` / `TelemetrySubcommand`, and `StatsCommandOptions` / `StatsResult`.
+- Linked-test authoring primitives: `parseLinkedTestJsonEntries`, the `parseLinkedTest*` field parsers, `LINKED_TEST_PM_CONTEXT_MODE_VALUES`, `LINKED_TEST_PROTECTED_ENV_KEYS`, `classifyLinkedTestFailure`, `countFailureCategories`, and `summarizeContextPreflight` let custom hosts validate, execute, classify, and report linked tests without duplicating CLI policy.
 - Typed plan workflow primitives on `PmClient`: `plan`, `planCreate`, `planShow`, `planAddStep`, `planUpdateStep`, `planCompleteStep`, `planBlockStep`, `planReorderStep`, `planRemoveStep`, `planLink`, `planUnlink`, `planDecision`, `planDiscovery`, `planValidation`, `planResume`, `planApprove`, and `planMaterialize`
 - Plan contracts: `PlanSubcommand`, `PlanCommandOptions`, `PlanCommandResult`, `PlanResultPlan`, `PlanStepSummary`, `PlanShowDepth`, and `PlanTemplateName`
 - Typed package and extension lifecycle primitives on `PmClient`: `extension`, `extensionList`, `extensionActivate`, `extensionDeactivate`, `package`, `packageList`, `packageInstall`, `packageUninstall`, `packageDoctor`, `packageManage`, `packageDescribe`, `packageReload`, `packageCatalog`, `packageActivate`, `packageDeactivate`, and `upgrade`
@@ -784,6 +794,62 @@ read-only diagnostics, and `pm.gc` runs dry-run or explicit cleanup paths throug
 the same bounded maintenance engine as the CLI. Prefer these typed calls over
 shelling out when building CI, editor integrations, or long-running agent
 runtimes.
+
+### Execution and diagnostics
+
+Tracked by [pm-oslr](../.agents/pm/features/pm-oslr.toon) and the SDK boundary
+capstone [pm-9x6e](../.agents/pm/tasks/pm-9x6e.toon).
+
+Test execution, background-run supervision, search evaluation, telemetry
+inspection, and tracker statistics are SDK-owned primitives. A custom CI host or
+project-specific tool can compose the same sandboxing, context-preflight,
+deduplication, failure classification, progress, consent, and structured-result
+behavior as the CLI without spawning `pm` or importing `src/core` modules:
+
+```ts
+import {
+  runEval,
+  runTelemetry,
+  runTest,
+  runTestAll,
+  runTestRunsStatus,
+  type GlobalOptions,
+} from "@unbrained/pm-cli/sdk";
+
+const global: GlobalOptions = { path: pmRoot };
+
+const itemRun = await runTest(
+  itemId,
+  {
+    run: true,
+    autoPmContext: true,
+    checkContext: true,
+    failOnEmptyTestRun: true,
+  },
+  global,
+);
+
+const workspaceRun = await runTestAll(
+  { status: "open", autoPmContext: true, failOnSkipped: true },
+  global,
+);
+const background = await runTestRunsStatus(runId, global);
+const relevance = await runEval({ mode: "keyword", k: 10 }, global);
+const telemetry = await runTelemetry({ subcommand: "stats", limit: 20 }, global);
+```
+
+`runTest` and `runTestAll` always execute linked commands in isolated project and
+global tracker roots. `pm_context_mode`, run-level overrides, automatic tracker
+context, assertion requirements, empty-run detection, and failure categories are
+part of the SDK result contract rather than presentation-layer behavior.
+Background-run helpers return durable records and health/log projections; the
+host remains responsible for its own rendering and exit-code policy.
+
+`runTelemetry` retains consent and storage ownership inside the primitive:
+`status` and `stats` are observational, `flush` uses the consent-aware queue
+runtime, and `clear` disables telemetry and removes runtime artifacts. `runEval`
+uses the same live search path and unrounded gate decision as `pm eval`, returning
+compact rounded report metrics for stable machine output.
 
 ### Context relevance and evaluation
 
