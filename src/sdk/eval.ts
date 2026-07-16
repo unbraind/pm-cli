@@ -130,7 +130,7 @@ const parseEvalK = (raw: string | number | undefined): number => {
 const parseFailUnder = (
   raw: string | number | undefined,
 ): number | undefined => {
-  if (raw === undefined) {
+  if (raw === undefined || raw === "") {
     return undefined;
   }
   const normalized = String(raw).trim();

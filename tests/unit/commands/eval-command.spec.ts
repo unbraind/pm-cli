@@ -159,6 +159,18 @@ describe("runEval", () => {
     expect(result.passed).toBe(true);
   });
 
+  it("preserves an empty --fail-under as an omitted threshold", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]),
+    );
+    queueRankings(["pm-a"]);
+
+    const result = await runEval({ failUnder: "" }, GLOBAL);
+
+    expect(result).not.toHaveProperty("fail_under");
+    expect(result.passed).toBe(true);
+  });
+
   it("fails the gate when aggregate nDCG is below --fail-under", async () => {
     readFileMock.mockResolvedValue(
       JSON.stringify([{ query: "x", relevant_ids: ["pm-missing"] }]),
