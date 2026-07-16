@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import path from "node:path";
 import type { ItemMetadata } from "../../../src/types.js";
-import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
+import {
+  EXIT_CODE,
+  SETTINGS_DEFAULTS,
+} from "../../../src/core/shared/constants.js";
 import { serializeItemDocument } from "../../../src/core/item/item-format.js";
 import { runSearch } from "../../../src/cli/commands/search.js";
 import { readJsonFixture } from "../../helpers/fixtures.js";
@@ -18,7 +21,8 @@ const {
   pathExistsMock: vi.fn<() => Promise<boolean>>(),
   readSettingsMock: vi.fn<() => Promise<{ id_prefix: string }>>(),
   listAllItemMetadataMock: vi.fn<() => Promise<ItemMetadata[]>>(),
-  readFileMock: vi.fn<(targetPath: string, encoding: string) => Promise<string>>(),
+  readFileMock:
+    vi.fn<(targetPath: string, encoding: string) => Promise<string>>(),
   realpathMock: vi.fn<(targetPath: string) => Promise<string>>(),
   runActiveOnReadHooksMock: vi.fn<() => Promise<string[]>>(),
   spawnSyncMock: vi.fn(),
@@ -76,9 +80,14 @@ interface KeywordCorpusFixture {
   };
 }
 
-const keywordCorpusFixture = readJsonFixture<KeywordCorpusFixture>("search", "keyword-corpus.json");
+const keywordCorpusFixture = readJsonFixture<KeywordCorpusFixture>(
+  "search",
+  "keyword-corpus.json",
+);
 
-function makeItemMetadata(overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">): ItemMetadata {
+function makeItemMetadata(
+  overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">,
+): ItemMetadata {
   return {
     id: overrides.id,
     title: overrides.title ?? overrides.id,
@@ -136,12 +145,16 @@ function resolveFetchTarget(url: unknown): string {
 
 function parseJsonBody<T>(body: unknown): T {
   if (typeof body !== "string") {
-    throw new TypeError(`Expected string request body but received ${typeof body}`);
+    throw new TypeError(
+      `Expected string request body but received ${typeof body}`,
+    );
   }
   return JSON.parse(body) as T;
 }
 
-function makeSemanticSearchSettings(overrides: Record<string, unknown> = {}): { id_prefix: string } {
+function makeSemanticSearchSettings(overrides: Record<string, unknown> = {}): {
+  id_prefix: string;
+} {
   return {
     providers: {
       openai: {
@@ -177,7 +190,9 @@ function makeEmbeddingAndVectorSearchFetch(options: {
   return (async (url: unknown) => {
     const target = resolveFetchTarget(url);
     if (target.endsWith("/v1/embeddings")) {
-      return makeJsonResponse({ data: [{ embedding: options.embedding ?? [0.9, 0.1] }] });
+      return makeJsonResponse({
+        data: [{ embedding: options.embedding ?? [0.9, 0.1] }],
+      });
     }
     if (target.endsWith("/collections/pm_items/points/search")) {
       return makeJsonResponse({ result: options.vectorResult });
@@ -187,7 +202,9 @@ function makeEmbeddingAndVectorSearchFetch(options: {
 }
 
 function mockOllamaAutoDetectAvailable(): void {
-  readSettingsMock.mockResolvedValue(makeDefaultSettings() as unknown as { id_prefix: string });
+  readSettingsMock.mockResolvedValue(
+    makeDefaultSettings() as unknown as { id_prefix: string },
+  );
   spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
     if (args[0] === "--version") {
       return {
@@ -211,7 +228,9 @@ function mockOllamaAutoDetectAvailable(): void {
   });
 }
 
-function seedSingleTokenItem(overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">): void {
+function seedSingleTokenItem(
+  overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">,
+): void {
   const item = makeItemMetadata(overrides);
   listAllItemMetadataMock.mockResolvedValue([item]);
   readFileMock.mockResolvedValue(serializeDocument(item, "token body"));
@@ -227,10 +246,16 @@ function setupExtensionVectorAdapterScenario(options: {
   listAllItemMetadataMock.mockResolvedValue([item]);
   readFileMock.mockResolvedValue(serializeDocument(item, "semantic body"));
   readSettingsMock.mockResolvedValue(
-    makeSemanticSearchSettings({ vector_store: options.vectorStore ?? { adapter: "ext-vector" } }),
+    makeSemanticSearchSettings({
+      vector_store: options.vectorStore ?? { adapter: "ext-vector" },
+    }),
   );
   activeExtensionRegistrations = createExtensionRegistrations();
-  (activeExtensionRegistrations.vector_store_adapters as Array<Record<string, unknown>>).push({
+  (
+    activeExtensionRegistrations.vector_store_adapters as Array<
+      Record<string, unknown>
+    >
+  ).push({
     layer: "project",
     name: "vector-ext",
     definition: { name: "ext-vector" },
@@ -274,7 +299,9 @@ describe("runSearch", () => {
   it("fails when tracker is not initialized", async () => {
     pathExistsMock.mockResolvedValueOnce(false);
     const { runSearch } = await import("../../../src/cli/commands/search.js");
-    await expect(runSearch("token", {}, { path: "/tmp/not-init" })).rejects.toMatchObject({
+    await expect(
+      runSearch("token", {}, { path: "/tmp/not-init" }),
+    ).rejects.toMatchObject({
       exitCode: EXIT_CODE.NOT_FOUND,
     });
   });
@@ -288,7 +315,13 @@ describe("runSearch", () => {
         title: "token rich",
         description: "token rich description",
         tags: ["token"],
-        notes: [{ author: "a", created_at: "2026-02-18T00:00:00.000Z", text: "a note" }],
+        notes: [
+          {
+            author: "a",
+            created_at: "2026-02-18T00:00:00.000Z",
+            text: "a note",
+          },
+        ],
       }),
       // makeItemMetadata does not copy reviewer; attach it explicitly so the
       // serialized document carries governance-present metadata.
@@ -311,8 +344,14 @@ describe("runSearch", () => {
     const { runSearch } = await import("../../../src/cli/commands/search.js");
 
     // Content filter active: --has-notes keeps the noted item, excludes the bare one.
-    const hasNotes = await runSearch("token", { hasNotes: true }, { path: "/tmp/pm-search" });
-    expect(hasNotes.items.map((hit) => hit.item.id)).toEqual(["pm-search-filter-rich"]);
+    const hasNotes = await runSearch(
+      "token",
+      { hasNotes: true },
+      { path: "/tmp/pm-search" },
+    );
+    expect(hasNotes.items.map((hit) => hit.item.id)).toEqual([
+      "pm-search-filter-rich",
+    ]);
 
     // Governance-missing filter active: --filter-reviewer-missing keeps the bare item,
     // excludes the one carrying a reviewer.
@@ -321,7 +360,9 @@ describe("runSearch", () => {
       { filterReviewerMissing: true },
       { path: "/tmp/pm-search" },
     );
-    expect(reviewerMissing.items.map((hit) => hit.item.id)).toEqual(["pm-search-filter-bare"]);
+    expect(reviewerMissing.items.map((hit) => hit.item.id)).toEqual([
+      "pm-search-filter-bare",
+    ]);
   });
 
   it("matches exact and short item IDs as first-class search hits", async () => {
@@ -358,9 +399,14 @@ describe("runSearch", () => {
       title: "Custom prefix item",
       description: "No literal id token in content",
     });
-    readSettingsMock.mockResolvedValue({ ...makeDefaultSettings(), id_prefix: "custom-" } as never);
+    readSettingsMock.mockResolvedValue({
+      ...makeDefaultSettings(),
+      id_prefix: "custom-",
+    } as never);
     listAllItemMetadataMock.mockResolvedValue([customIdTarget]);
-    readFileMock.mockResolvedValue(serializeDocument(customIdTarget, "body without lookup token"));
+    readFileMock.mockResolvedValue(
+      serializeDocument(customIdTarget, "body without lookup token"),
+    );
     const custom = await runSearch("fk49", {}, { path: "/tmp/pm-search" });
     expect(custom.items[0]?.item.id).toBe("custom-fk49");
     expect(custom.items[0]?.matched_fields).toEqual(["id"]);
@@ -371,7 +417,13 @@ describe("runSearch", () => {
       id: "pm-jxyj",
       title: "Target item",
       description: "No exact id mention in description",
-      comments: [{ author: "a", created_at: "2026-02-18T00:00:00.000Z", text: "pm-jxyj self reference" }],
+      comments: [
+        {
+          author: "a",
+          created_at: "2026-02-18T00:00:00.000Z",
+          text: "pm-jxyj self reference",
+        },
+      ],
     });
     const descriptionMention = makeItemMetadata({
       id: "pm-mention-description",
@@ -381,17 +433,33 @@ describe("runSearch", () => {
     const commentMention = makeItemMetadata({
       id: "pm-mention-comment",
       title: "Comment mention",
-      comments: [{ author: "a", created_at: "2026-02-18T00:00:00.000Z", text: "pm-jxyj pm-jxyj" }],
+      comments: [
+        {
+          author: "a",
+          created_at: "2026-02-18T00:00:00.000Z",
+          text: "pm-jxyj pm-jxyj",
+        },
+      ],
     });
-    listAllItemMetadataMock.mockResolvedValue([descriptionMention, commentMention, target]);
+    listAllItemMetadataMock.mockResolvedValue([
+      descriptionMention,
+      commentMention,
+      target,
+    ]);
     readFileMock.mockImplementation(async (targetPath: string) => {
-      if (targetPath.includes("pm-jxyj")) return serializeDocument(target, "body without lookup token");
-      if (targetPath.includes("pm-mention-description")) return serializeDocument(descriptionMention, "body");
+      if (targetPath.includes("pm-jxyj"))
+        return serializeDocument(target, "body without lookup token");
+      if (targetPath.includes("pm-mention-description"))
+        return serializeDocument(descriptionMention, "body");
       return serializeDocument(commentMention, "body");
     });
 
     const { runSearch } = await import("../../../src/cli/commands/search.js");
-    const result = await runSearch("pm-jxyj", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    const result = await runSearch(
+      "pm-jxyj",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
 
     expect(result.items[0]?.item.id).toBe("pm-jxyj");
     expect(result.items[0]?.matched_fields).toEqual(["id"]);
@@ -399,13 +467,23 @@ describe("runSearch", () => {
   });
 
   it("ranks semantic/hybrid search with the offline BM25 provider and warns on auto-fallback (pm-75k9)", async () => {
-    const dbDoc = makeItemMetadata({ id: "pm-db", title: "database connection pool leak under load" });
-    const retryDoc = makeItemMetadata({ id: "pm-retry", title: "exponential backoff retry http client" });
-    const migrationDoc = makeItemMetadata({ id: "pm-mig", title: "database migration plan" });
+    const dbDoc = makeItemMetadata({
+      id: "pm-db",
+      title: "database connection pool leak under load",
+    });
+    const retryDoc = makeItemMetadata({
+      id: "pm-retry",
+      title: "exponential backoff retry http client",
+    });
+    const migrationDoc = makeItemMetadata({
+      id: "pm-mig",
+      title: "database migration plan",
+    });
     listAllItemMetadataMock.mockResolvedValue([dbDoc, retryDoc, migrationDoc]);
     readFileMock.mockImplementation(async (targetPath: string) => {
       if (targetPath.includes("pm-db")) return serializeDocument(dbDoc, "");
-      if (targetPath.includes("pm-retry")) return serializeDocument(retryDoc, "");
+      if (targetPath.includes("pm-retry"))
+        return serializeDocument(retryDoc, "");
       return serializeDocument(migrationDoc, "");
     });
     const bm25Settings = { ...makeDefaultSettings(), id_prefix: "pm-" };
@@ -416,37 +494,81 @@ describe("runSearch", () => {
     const { runSearch } = await import("../../../src/cli/commands/search.js");
 
     readSettingsMock.mockResolvedValueOnce(bm25Settings as never);
-    const semantic = await runSearch("database connection", { mode: "semantic" }, { path: "/tmp/pm-search" });
-    const semanticItems = semantic.items as Array<{ item: { id: string }; matched_fields?: string[] }>;
+    const semantic = await runSearch(
+      "database connection",
+      { mode: "semantic" },
+      { path: "/tmp/pm-search" },
+    );
+    const semanticItems = semantic.items as Array<{
+      item: { id: string };
+      matched_fields?: string[];
+    }>;
     expect(semantic.mode).toBe("semantic");
     expect(semanticItems.map((hit) => hit.item.id)).toContain("pm-db");
-    expect(semanticItems.every((hit) => hit.matched_fields?.includes("bm25"))).toBe(true);
+    expect(
+      semanticItems.every((hit) => hit.matched_fields?.includes("bm25")),
+    ).toBe(true);
 
     readSettingsMock.mockResolvedValueOnce(bm25Settings as never);
-    const hybrid = await runSearch("database connection", { mode: "hybrid" }, { path: "/tmp/pm-search" });
-    const hybridItems = hybrid.items as Array<{ item: { id: string }; matched_fields?: string[] }>;
+    const hybrid = await runSearch(
+      "database connection",
+      { mode: "hybrid" },
+      { path: "/tmp/pm-search" },
+    );
+    const hybridItems = hybrid.items as Array<{
+      item: { id: string };
+      matched_fields?: string[];
+    }>;
     expect(hybrid.mode).toBe("hybrid");
-    expect(hybridItems.some((hit) => hit.matched_fields?.includes("bm25"))).toBe(true);
+    expect(
+      hybridItems.some((hit) => hit.matched_fields?.includes("bm25")),
+    ).toBe(true);
 
     readSettingsMock.mockResolvedValueOnce(autoSettings as never);
-    const auto = await runSearch("database connection", { mode: "semantic" }, { path: "/tmp/pm-search" });
-    expect(auto.warnings).toContain("search_semantic_offline_bm25:no_embedding_provider:using_lexical_bm25");
+    const auto = await runSearch(
+      "database connection",
+      { mode: "semantic" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(auto.warnings).toContain(
+      "search_semantic_offline_bm25:no_embedding_provider:using_lexical_bm25",
+    );
   });
 
   it("resolves search max-results and score-threshold fallbacks deterministically", async () => {
-    const { resolveSearchMaxResults, resolveSearchScoreThreshold, resolveHybridSemanticWeight } = await import(
-      "../../../src/cli/commands/search.js"
-    );
+    const {
+      resolveSearchMaxResults,
+      resolveSearchScoreThreshold,
+      resolveHybridSemanticWeight,
+    } = await import("../../../src/cli/commands/search.js");
     expect(resolveSearchMaxResults({ search: { max_results: 7.9 } })).toBe(7);
     expect(resolveSearchMaxResults({ search: { max_results: 0 } })).toBe(50);
-    expect(resolveSearchMaxResults({ search: { max_results: "bad" } })).toBe(50);
-    expect(resolveSearchScoreThreshold({ search: { score_threshold: 0.42 } })).toBe(0.42);
-    expect(resolveSearchScoreThreshold({ search: { score_threshold: Number.NaN } })).toBe(0);
-    expect(resolveSearchScoreThreshold({ search: { score_threshold: "bad" } })).toBe(0);
-    expect(resolveHybridSemanticWeight({ search: { hybrid_semantic_weight: 0.2 } })).toBe(0.2);
-    expect(resolveHybridSemanticWeight({ search: { hybrid_semantic_weight: -0.1 } })).toBe(0.7);
-    expect(resolveHybridSemanticWeight({ search: { hybrid_semantic_weight: 1.1 } })).toBe(0.7);
-    expect(resolveHybridSemanticWeight({ search: { hybrid_semantic_weight: "bad" } })).toBe(0.7);
+    expect(resolveSearchMaxResults({ search: { max_results: "bad" } })).toBe(
+      50,
+    );
+    expect(
+      resolveSearchScoreThreshold({ search: { score_threshold: 0.42 } }),
+    ).toBe(0.42);
+    expect(
+      resolveSearchScoreThreshold({ search: { score_threshold: Number.NaN } }),
+    ).toBe(0);
+    expect(
+      resolveSearchScoreThreshold({ search: { score_threshold: "bad" } }),
+    ).toBe(0);
+    expect(
+      resolveHybridSemanticWeight({ search: { hybrid_semantic_weight: 0.2 } }),
+    ).toBe(0.2);
+    expect(
+      resolveHybridSemanticWeight({ search: { hybrid_semantic_weight: -0.1 } }),
+    ).toBe(0.7);
+    expect(
+      resolveHybridSemanticWeight({ search: { hybrid_semantic_weight: 1.1 } }),
+    ).toBe(0.7);
+    expect(
+      resolveHybridSemanticWeight({
+        search: { hybrid_semantic_weight: "bad" },
+      }),
+    ).toBe(0.7);
   });
 
   it("applies per-query semantic-weight override for hybrid mode and warns on invalid override", async () => {
@@ -477,7 +599,9 @@ describe("runSearch", () => {
       { path: "/tmp/pm-search" },
     );
     expect(validOverride.mode).toBe("hybrid");
-    expect(validOverride.filters).toMatchObject({ hybrid_semantic_weight: 0.9 });
+    expect(validOverride.filters).toMatchObject({
+      hybrid_semantic_weight: 0.9,
+    });
     expect(validOverride.warnings).toBeUndefined();
 
     readSettingsMock.mockResolvedValueOnce(semanticSearchSettings);
@@ -487,7 +611,9 @@ describe("runSearch", () => {
       { path: "/tmp/pm-search" },
     );
     expect(invalidOverride.mode).toBe("hybrid");
-    expect(invalidOverride.filters).toMatchObject({ hybrid_semantic_weight: 0.2 });
+    expect(invalidOverride.filters).toMatchObject({
+      hybrid_semantic_weight: 0.2,
+    });
     expect(invalidOverride.warnings).toContain(
       "search_hybrid_semantic_weight_override_invalid:using_settings_default",
     );
@@ -496,20 +622,38 @@ describe("runSearch", () => {
   it("validates query, mode, and filter inputs", async () => {
     const { runSearch } = await import("../../../src/cli/commands/search.js");
 
-    await expect(runSearch("   ", {}, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+    await expect(
+      runSearch("   ", {}, { path: "/tmp/pm-search" }),
+    ).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
-    const keywordDefaultNoSemantic = await runSearch("token", {}, { path: "/tmp/pm-search" });
+    const keywordDefaultNoSemantic = await runSearch(
+      "token",
+      {},
+      { path: "/tmp/pm-search" },
+    );
     expect(keywordDefaultNoSemantic.mode).toBe("keyword");
     expect(keywordDefaultNoSemantic.count).toBe(0);
     // Explicit semantic/hybrid with no embedding provider degrades to keyword
     // search (never blocks the agent) and reports a fallback warning.
-    const semanticUnconfigured = await runSearch("token", { mode: "semantic" }, { path: "/tmp/pm-search" });
+    const semanticUnconfigured = await runSearch(
+      "token",
+      { mode: "semantic" },
+      { path: "/tmp/pm-search" },
+    );
     expect(semanticUnconfigured.mode).toBe("keyword");
-    expect(semanticUnconfigured.warnings).toContain("search_semantic_fallback:error:using_keyword_mode");
-    const hybridUnconfigured = await runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+    expect(semanticUnconfigured.warnings).toContain(
+      "search_semantic_fallback:error:using_keyword_mode",
+    );
+    const hybridUnconfigured = await runSearch(
+      "token",
+      { mode: "hybrid" },
+      { path: "/tmp/pm-search" },
+    );
     expect(hybridUnconfigured.mode).toBe("keyword");
-    expect(hybridUnconfigured.warnings).toContain("search_hybrid_fallback:error:using_keyword_mode");
+    expect(hybridUnconfigured.warnings).toContain(
+      "search_hybrid_fallback:error:using_keyword_mode",
+    );
     readSettingsMock.mockResolvedValueOnce({
       providers: {
         openai: {
@@ -520,9 +664,15 @@ describe("runSearch", () => {
       },
     } as unknown as { id_prefix: string });
     // Provider present but no vector store also degrades instead of failing.
-    const semanticNoVector = await runSearch("token", { mode: "semantic" }, { path: "/tmp/pm-search" });
+    const semanticNoVector = await runSearch(
+      "token",
+      { mode: "semantic" },
+      { path: "/tmp/pm-search" },
+    );
     expect(semanticNoVector.mode).toBe("keyword");
-    expect(semanticNoVector.warnings).toContain("search_semantic_fallback:error:using_keyword_mode");
+    expect(semanticNoVector.warnings).toContain(
+      "search_semantic_fallback:error:using_keyword_mode",
+    );
     const openAiSemanticSettings = {
       providers: {
         openai: {
@@ -539,15 +689,27 @@ describe("runSearch", () => {
       },
     } as unknown as { id_prefix: string };
     readSettingsMock.mockResolvedValueOnce(openAiSemanticSettings);
-    const defaultKeywordNoItems = await runSearch("token", {}, { path: "/tmp/pm-search" });
+    const defaultKeywordNoItems = await runSearch(
+      "token",
+      {},
+      { path: "/tmp/pm-search" },
+    );
     expect(defaultKeywordNoItems.mode).toBe("keyword");
     expect(defaultKeywordNoItems.count).toBe(0);
     readSettingsMock.mockResolvedValueOnce(openAiSemanticSettings);
-    const semanticNoItems = await runSearch("token", { mode: "semantic" }, { path: "/tmp/pm-search" });
+    const semanticNoItems = await runSearch(
+      "token",
+      { mode: "semantic" },
+      { path: "/tmp/pm-search" },
+    );
     expect(semanticNoItems.mode).toBe("semantic");
     expect(semanticNoItems.count).toBe(0);
     readSettingsMock.mockResolvedValueOnce(openAiSemanticSettings);
-    const explicitKeywordNoItems = await runSearch("token", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    const explicitKeywordNoItems = await runSearch(
+      "token",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
     expect(explicitKeywordNoItems.mode).toBe("keyword");
     expect(explicitKeywordNoItems.count).toBe(0);
     readSettingsMock.mockResolvedValueOnce({
@@ -563,7 +725,11 @@ describe("runSearch", () => {
         },
       },
     } as unknown as { id_prefix: string });
-    const hybridNoItems = await runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+    const hybridNoItems = await runSearch(
+      "token",
+      { mode: "hybrid" },
+      { path: "/tmp/pm-search" },
+    );
     expect(hybridNoItems.mode).toBe("hybrid");
     expect(hybridNoItems.count).toBe(0);
     readSettingsMock.mockResolvedValueOnce(openAiSemanticSettings);
@@ -584,24 +750,38 @@ describe("runSearch", () => {
     );
     expect(monthRelativeFilter.count).toBe(0);
     expect(typeof monthRelativeFilter.filters.deadline_before).toBe("string");
-    await expect(runSearch("token", { mode: "bad-mode" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
-      exitCode: EXIT_CODE.USAGE,
-    });
-    await expect(runSearch("token", { type: "NotAType" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
-      exitCode: EXIT_CODE.USAGE,
-    });
-    await expect(runSearch("token", { priority: "8" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
-      exitCode: EXIT_CODE.USAGE,
-    });
-    await expect(runSearch("token", { priority: "1.5" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
-      exitCode: EXIT_CODE.USAGE,
-    });
     await expect(
-      runSearch("token", { deadlineBefore: "not-a-deadline" }, { path: "/tmp/pm-search" }),
+      runSearch("token", { mode: "bad-mode" }, { path: "/tmp/pm-search" }),
     ).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
-    await expect(runSearch("token", { limit: "-1" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+    await expect(
+      runSearch("token", { type: "NotAType" }, { path: "/tmp/pm-search" }),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(
+      runSearch("token", { priority: "8" }, { path: "/tmp/pm-search" }),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(
+      runSearch("token", { priority: "1.5" }, { path: "/tmp/pm-search" }),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(
+      runSearch(
+        "token",
+        { deadlineBefore: "not-a-deadline" },
+        { path: "/tmp/pm-search" },
+      ),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(
+      runSearch("token", { limit: "-1" }, { path: "/tmp/pm-search" }),
+    ).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
   });
@@ -631,17 +811,29 @@ describe("runSearch", () => {
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const implicitResult = await runSearch("token", {}, { path: "/tmp/pm-search" });
+      const implicitResult = await runSearch(
+        "token",
+        {},
+        { path: "/tmp/pm-search" },
+      );
       expect(implicitResult.mode).toBe("keyword");
       expect(implicitResult.count).toBe(1);
       expect(implicitResult.items[0].item.id).toBe("pm-ollama-auto-fallback");
       expect(implicitResult.warnings).toBeUndefined();
       expect(fetchMock).not.toHaveBeenCalled();
       // Explicit hybrid with an unreachable embedding backend degrades to keyword.
-      const hybridFallback = await runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      const hybridFallback = await runSearch(
+        "token",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
       expect(hybridFallback.mode).toBe("keyword");
       expect(hybridFallback.count).toBe(1);
-      expect(hybridFallback.warnings?.some((warning) => warning.startsWith("search_hybrid_fallback:"))).toBe(true);
+      expect(
+        hybridFallback.warnings?.some((warning) =>
+          warning.startsWith("search_hybrid_fallback:"),
+        ),
+      ).toBe(true);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -663,7 +855,11 @@ describe("runSearch", () => {
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const implicitResult = await runSearch("token", {}, { path: "/tmp/pm-search" });
+      const implicitResult = await runSearch(
+        "token",
+        {},
+        { path: "/tmp/pm-search" },
+      );
       expect(implicitResult.mode).toBe("keyword");
       expect(implicitResult.count).toBe(1);
       expect(implicitResult.warnings).toBeUndefined();
@@ -689,16 +885,28 @@ describe("runSearch", () => {
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const implicitResult = await runSearch("token", {}, { path: "/tmp/pm-search" });
+      const implicitResult = await runSearch(
+        "token",
+        {},
+        { path: "/tmp/pm-search" },
+      );
       expect(implicitResult.mode).toBe("keyword");
       expect(implicitResult.count).toBe(1);
       expect(implicitResult.warnings).toBeUndefined();
       expect(fetchMock).not.toHaveBeenCalled();
       // Explicit hybrid with a timing-out embedding backend degrades to keyword.
-      const hybridFallback = await runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      const hybridFallback = await runSearch(
+        "token",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
       expect(hybridFallback.mode).toBe("keyword");
       expect(hybridFallback.count).toBe(1);
-      expect(hybridFallback.warnings?.some((warning) => warning.startsWith("search_hybrid_fallback:"))).toBe(true);
+      expect(
+        hybridFallback.warnings?.some((warning) =>
+          warning.startsWith("search_hybrid_fallback:"),
+        ),
+      ).toBe(true);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -723,20 +931,30 @@ describe("runSearch", () => {
     });
 
     const fetchMock = vi.fn(async () => {
-      throw new Error("fetch should not be called for limit=0 semantic/hybrid search");
+      throw new Error(
+        "fetch should not be called for limit=0 semantic/hybrid search",
+      );
     });
     const originalFetch = globalThis.fetch;
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const semanticResult = await runSearch("token", { mode: "semantic", limit: "0" }, { path: "/tmp/pm-search" });
+      const semanticResult = await runSearch(
+        "token",
+        { mode: "semantic", limit: "0" },
+        { path: "/tmp/pm-search" },
+      );
       expect(semanticResult.mode).toBe("semantic");
       expect(semanticResult.count).toBe(0);
       expect(semanticResult.items).toEqual([]);
       expect(semanticResult.filters).toMatchObject({ limit: "0" });
 
-      const hybridResult = await runSearch("token", { mode: "hybrid", limit: "0" }, { path: "/tmp/pm-search" });
+      const hybridResult = await runSearch(
+        "token",
+        { mode: "hybrid", limit: "0" },
+        { path: "/tmp/pm-search" },
+      );
       expect(hybridResult.mode).toBe("hybrid");
       expect(hybridResult.count).toBe(0);
       expect(hybridResult.items).toEqual([]);
@@ -753,14 +971,20 @@ describe("runSearch", () => {
       title: "extension provider item",
     });
     listAllItemMetadataMock.mockResolvedValue([extensionItem]);
-    readFileMock.mockResolvedValue(serializeDocument(extensionItem, "extension body"));
+    readFileMock.mockResolvedValue(
+      serializeDocument(extensionItem, "extension body"),
+    );
     readSettingsMock.mockResolvedValue({
       search: {
         provider: "ext-provider",
       },
     } as unknown as { id_prefix: string });
     activeExtensionRegistrations = createExtensionRegistrations();
-    (activeExtensionRegistrations.search_providers as Array<Record<string, unknown>>).push({
+    (
+      activeExtensionRegistrations.search_providers as Array<
+        Record<string, unknown>
+      >
+    ).push({
       layer: "project",
       name: "provider-ext",
       definition: {
@@ -774,14 +998,20 @@ describe("runSearch", () => {
     });
 
     const fetchMock = vi.fn(async () => {
-      throw new Error("fetch should not be called when extension provider handles semantic search");
+      throw new Error(
+        "fetch should not be called when extension provider handles semantic search",
+      );
     });
     const originalFetch = globalThis.fetch;
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("extension", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "extension",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
       expect(result.mode).toBe("semantic");
       expect(result.count).toBe(1);
       expect(result.items[0].item.id).toBe("pm-ext-provider");
@@ -798,14 +1028,20 @@ describe("runSearch", () => {
       title: "extension provider item",
     });
     listAllItemMetadataMock.mockResolvedValue([extensionItem]);
-    readFileMock.mockResolvedValue(serializeDocument(extensionItem, "extension body"));
+    readFileMock.mockResolvedValue(
+      serializeDocument(extensionItem, "extension body"),
+    );
     readSettingsMock.mockResolvedValue({
       search: {
         provider: "ext-provider",
       },
     } as unknown as { id_prefix: string });
     activeExtensionRegistrations = createExtensionRegistrations();
-    (activeExtensionRegistrations.search_providers as Array<Record<string, unknown>>).push({
+    (
+      activeExtensionRegistrations.search_providers as Array<
+        Record<string, unknown>
+      >
+    ).push({
       layer: "project",
       name: "provider-ext",
       definition: {
@@ -820,10 +1056,18 @@ describe("runSearch", () => {
     });
 
     const { runSearch } = await import("../../../src/cli/commands/search.js");
-    const result = await runSearch("extension", { mode: "semantic" }, { path: "/tmp/pm-search" });
+    const result = await runSearch(
+      "extension",
+      { mode: "semantic" },
+      { path: "/tmp/pm-search" },
+    );
     expect(result.mode).toBe("keyword");
     expect(result.count).toBe(1);
-    expect(result.warnings?.some((warning) => warning.startsWith("search_semantic_fallback:"))).toBe(true);
+    expect(
+      result.warnings?.some((warning) =>
+        warning.startsWith("search_semantic_fallback:"),
+      ),
+    ).toBe(true);
   });
 
   it("supports extension vector adapter queries for semantic mode", async () => {
@@ -844,7 +1088,11 @@ describe("runSearch", () => {
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("vector", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "vector",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
       expect(result.mode).toBe("semantic");
       expect(result.count).toBe(1);
       expect(result.items[0].item.id).toBe("pm-vector-adapter");
@@ -877,16 +1125,28 @@ describe("runSearch", () => {
       // Semantic: ran without error, but no vector matches => mode stays semantic,
       // a degraded warning flags the lexical fallback, and the (now genuinely
       // lexical) keyword hits are returned so the agent still gets results.
-      const semanticResult = await runSearch("vector", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      const semanticResult = await runSearch(
+        "vector",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
       expect(semanticResult.mode).toBe("semantic");
-      expect(semanticResult.warnings).toContain("search_semantic_degraded:no_vector_matches:results_are_lexical");
+      expect(semanticResult.warnings).toContain(
+        "search_semantic_degraded:no_vector_matches:results_are_lexical",
+      );
       expect(semanticResult.count).toBe(1);
       expect(semanticResult.items[0].item.id).toBe("pm-empty-corpus");
 
       // Hybrid still surfaces keyword hits but flags the degraded semantic stage.
-      const hybridResult = await runSearch("vector", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      const hybridResult = await runSearch(
+        "vector",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
       expect(hybridResult.mode).toBe("hybrid");
-      expect(hybridResult.warnings).toContain("search_hybrid_degraded:no_vector_matches:results_are_lexical");
+      expect(hybridResult.warnings).toContain(
+        "search_hybrid_degraded:no_vector_matches:results_are_lexical",
+      );
       expect(hybridResult.count).toBe(1);
       expect(hybridResult.items[0].item.id).toBe("pm-empty-corpus");
     } finally {
@@ -912,10 +1172,16 @@ describe("runSearch", () => {
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("vector", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "vector",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
       expect(result.mode).toBe("semantic");
       expect(result.count).toBe(1);
-      expect(result.warnings ?? []).not.toContain("search_semantic_degraded:no_vector_matches:results_are_lexical");
+      expect(result.warnings ?? []).not.toContain(
+        "search_semantic_degraded:no_vector_matches:results_are_lexical",
+      );
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -940,10 +1206,14 @@ describe("runSearch", () => {
     const fetchMock = vi.fn(async (url: unknown) => {
       const target = resolveFetchTarget(url);
       if (target.endsWith("/v1/embeddings")) {
-        return makeJsonResponse({ data: [{ index: 0, embedding: [0.1, 0.2] }] });
+        return makeJsonResponse({
+          data: [{ index: 0, embedding: [0.1, 0.2] }],
+        });
       }
       if (target.endsWith("/collections/pm_items/points/search")) {
-        return makeJsonResponse({ result: [{ id: "pm-vector-fallback", score: 0.91 }] });
+        return makeJsonResponse({
+          result: [{ id: "pm-vector-fallback", score: 0.91 }],
+        });
       }
       throw new Error(`Unexpected fetch target: ${target}`);
     });
@@ -952,10 +1222,16 @@ describe("runSearch", () => {
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("vector", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "vector",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
       expect(result.mode).toBe("semantic");
       expect(result.items[0].item.id).toBe("pm-vector-fallback");
-      expect(result.warnings).toContain("search_vector_adapter_failed:ext-vector:using_builtin");
+      expect(result.warnings).toContain(
+        "search_vector_adapter_failed:ext-vector:using_builtin",
+      );
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -970,24 +1246,38 @@ describe("runSearch", () => {
       },
     });
 
-    const fetchMock = vi.fn(async () => makeJsonResponse({ data: [{ index: 0, embedding: [0.1, 0.2] }] }));
+    const fetchMock = vi.fn(async () =>
+      makeJsonResponse({ data: [{ index: 0, embedding: [0.1, 0.2] }] }),
+    );
     const originalFetch = globalThis.fetch;
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("vector", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "vector",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
       expect(result.mode).toBe("keyword");
       expect(result.count).toBe(1);
-      expect(result.warnings?.some((warning) => warning.startsWith("search_semantic_fallback:"))).toBe(true);
+      expect(
+        result.warnings?.some((warning) =>
+          warning.startsWith("search_semantic_fallback:"),
+        ),
+      ).toBe(true);
     } finally {
       globalThis.fetch = originalFetch;
     }
   });
 
   it("matches every keyword corpus field and applies metadata filters", async () => {
-    const matching = makeItemMetadata(keywordCorpusFixture.match_scenario.matching_overrides);
-    const nonMatch = makeItemMetadata(keywordCorpusFixture.match_scenario.non_matching_overrides);
+    const matching = makeItemMetadata(
+      keywordCorpusFixture.match_scenario.matching_overrides,
+    );
+    const nonMatch = makeItemMetadata(
+      keywordCorpusFixture.match_scenario.non_matching_overrides,
+    );
     const query = keywordCorpusFixture.match_scenario.query;
 
     listAllItemMetadataMock.mockResolvedValueOnce([nonMatch, matching]);
@@ -1044,7 +1334,9 @@ describe("runSearch", () => {
     const calendarHeavy = makeItemMetadata({
       id: "pm-calendar",
       title: "calendar workflow",
-      reminders: [{ at: "2026-02-18T09:00:00.000Z", text: "agent reminder token" }],
+      reminders: [
+        { at: "2026-02-18T09:00:00.000Z", text: "agent reminder token" },
+      ],
       events: [
         {
           start_at: "2026-02-18T10:00:00.000Z",
@@ -1064,23 +1356,42 @@ describe("runSearch", () => {
     listAllItemMetadataMock.mockResolvedValueOnce([calendarHeavy]);
     readFileMock.mockResolvedValueOnce(serializeDocument(calendarHeavy, ""));
     readFileMock.mockResolvedValueOnce(serializeDocument(calendarHeavy, ""));
-    const calendarSearch = await runSearch("roadmap reminder room-token all day", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    const calendarSearch = await runSearch(
+      "roadmap reminder room-token all day",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
     expect(calendarSearch.count).toBe(1);
     expect(calendarSearch.items[0].item.id).toBe("pm-calendar");
-    expect(calendarSearch.items[0].matched_fields).toEqual(["events", "reminders"]);
+    expect(calendarSearch.items[0].matched_fields).toEqual([
+      "events",
+      "reminders",
+    ]);
 
     listAllItemMetadataMock.mockResolvedValue([matching]);
     readFileMock.mockResolvedValue(serializeDocument(matching, "bodytoken"));
 
-    const wrongType = await runSearch("titletoken", { type: "Issue" }, { path: "/tmp/pm-search" });
+    const wrongType = await runSearch(
+      "titletoken",
+      { type: "Issue" },
+      { path: "/tmp/pm-search" },
+    );
     expect(wrongType.count).toBe(0);
     expect(wrongType.items).toEqual([]);
 
-    const normalizedType = await runSearch("titletoken", { type: "task" }, { path: "/tmp/pm-search" });
+    const normalizedType = await runSearch(
+      "titletoken",
+      { type: "task" },
+      { path: "/tmp/pm-search" },
+    );
     expect(normalizedType.count).toBe(1);
     expect(normalizedType.items[0].item.id).toBe("pm-match");
 
-    const wrongPriority = await runSearch("titletoken", { priority: "0" }, { path: "/tmp/pm-search" });
+    const wrongPriority = await runSearch(
+      "titletoken",
+      { priority: "0" },
+      { path: "/tmp/pm-search" },
+    );
     expect(wrongPriority.count).toBe(0);
 
     const deadlineBeforeMiss = await runSearch(
@@ -1117,7 +1428,11 @@ describe("runSearch", () => {
     readFileMock.mockResolvedValueOnce(serializeDocument(malformed, ""));
 
     const { runSearch } = await import("../../../src/cli/commands/search.js");
-    const result = await runSearch("stabletoken", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    const result = await runSearch(
+      "stabletoken",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
 
     expect(result.count).toBe(1);
     expect(result.items[0].item.id).toBe("pm-legacy-malformed");
@@ -1149,7 +1464,12 @@ describe("runSearch", () => {
       updated_at: "2026-02-18T00:04:00.000Z",
       priority: 2,
     });
-    const docs = [semanticTop, semanticAndLexical, lexicalOnly, semanticDropped];
+    const docs = [
+      semanticTop,
+      semanticAndLexical,
+      lexicalOnly,
+      semanticDropped,
+    ];
     listAllItemMetadataMock.mockResolvedValue(docs);
     readFileMock.mockImplementation(async (targetPath) => {
       const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
@@ -1204,10 +1524,10 @@ describe("runSearch", () => {
           json: async () => ({
             result: [
               { id: "pm-sem-top", score: 0.91 },
-                { id: "pm-sem-top", score: 0.9 },
-                { id: "pm-sem-lex", score: 0.58 },
-                { id: "pm-missing", score: 0.7 },
-                { id: "pm-sem-drop", score: 0.5 },
+              { id: "pm-sem-top", score: 0.9 },
+              { id: "pm-sem-lex", score: 0.58 },
+              { id: "pm-missing", score: 0.7 },
+              { id: "pm-sem-drop", score: 0.5 },
             ],
           }),
           text: async () => "",
@@ -1219,10 +1539,21 @@ describe("runSearch", () => {
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
 
-      const semanticResult = await runSearch("tok", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      const semanticResult = await runSearch(
+        "tok",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
       expect(semanticResult.mode).toBe("semantic");
-      expect(semanticResult.items.map((entry) => entry.item.id)).toEqual(["pm-sem-top", "pm-sem-lex"]);
-      expect(semanticResult.items.every((entry) => entry.matched_fields.includes("semantic"))).toBe(true);
+      expect(semanticResult.items.map((entry) => entry.item.id)).toEqual([
+        "pm-sem-top",
+        "pm-sem-lex",
+      ]);
+      expect(
+        semanticResult.items.every((entry) =>
+          entry.matched_fields.includes("semantic"),
+        ),
+      ).toBe(true);
 
       const hybridResult = await runSearch(
         "tok",
@@ -1230,11 +1561,17 @@ describe("runSearch", () => {
         { path: "/tmp/pm-search" },
       );
       expect(hybridResult.mode).toBe("hybrid");
-      expect(hybridResult.items.map((entry) => entry.item.id)).toEqual(["pm-lex-only", "pm-sem-lex", "pm-sem-top"]);
+      expect(hybridResult.items.map((entry) => entry.item.id)).toEqual([
+        "pm-lex-only",
+        "pm-sem-lex",
+        "pm-sem-top",
+      ]);
       expect(hybridResult.items[0]?.matched_fields).toContain("title");
       expect(hybridResult.items[1]?.matched_fields).toContain("semantic");
       expect(hybridResult.items[2]?.matched_fields).toContain("semantic");
-      expect(hybridResult.filters).toMatchObject({ hybrid_semantic_weight: 0.2 });
+      expect(hybridResult.filters).toMatchObject({
+        hybrid_semantic_weight: 0.2,
+      });
       expect(fetchCalls).toEqual([
         "https://api.example.test/v1/embeddings",
         "https://qdrant.example.test:6333/collections/pm_items/points/search",
@@ -1295,13 +1632,18 @@ describe("runSearch", () => {
       const target = resolveFetchTarget(url);
       if (target.endsWith("/v1/embeddings")) {
         const body = parseJsonBody<{ input?: string | string[] }>(init?.body);
-        const inputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
+        const inputs = Array.isArray(body.input)
+          ? body.input
+          : [body.input ?? ""];
         return {
           ok: true,
           status: 200,
           statusText: "OK",
           json: async () => ({
-            data: inputs.map((_entry, index) => ({ index, embedding: [index + 1, 0.1] })),
+            data: inputs.map((_entry, index) => ({
+              index,
+              embedding: [index + 1, 0.1],
+            })),
           }),
           text: async () => "",
         } as unknown as Response;
@@ -1314,11 +1656,12 @@ describe("runSearch", () => {
           status: 200,
           statusText: "OK",
           json: async () => ({
-            result: callIndex === 1
-              ? [{ id: "pm-qe-a", score: 0.5 }]
-              : callIndex === 2
-                ? [{ id: "pm-qe-b", score: 0.9 }]
-                : [],
+            result:
+              callIndex === 1
+                ? [{ id: "pm-qe-a", score: 0.5 }]
+                : callIndex === 2
+                  ? [{ id: "pm-qe-b", score: 0.9 }]
+                  : [],
           }),
           text: async () => "",
         } as unknown as Response;
@@ -1328,9 +1671,16 @@ describe("runSearch", () => {
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("project status", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "project status",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
       expect(result.mode).toBe("semantic");
-      expect(result.items.map((entry) => entry.item.id)).toEqual(["pm-qe-b", "pm-qe-a"]);
+      expect(result.items.map((entry) => entry.item.id)).toEqual([
+        "pm-qe-b",
+        "pm-qe-a",
+      ]);
       expect(result.filters).toMatchObject({
         query_expansion_enabled: true,
         query_expansion_provider: "openai",
@@ -1376,13 +1726,18 @@ describe("runSearch", () => {
       const target = resolveFetchTarget(url);
       if (target.endsWith("/v1/embeddings")) {
         const body = parseJsonBody<{ input?: string | string[] }>(init?.body);
-        const inputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
+        const inputs = Array.isArray(body.input)
+          ? body.input
+          : [body.input ?? ""];
         return {
           ok: true,
           status: 200,
           statusText: "OK",
           json: async () => ({
-            data: inputs.map((_entry, index) => ({ index, embedding: [0.7 + index, 0.2] })),
+            data: inputs.map((_entry, index) => ({
+              index,
+              embedding: [0.7 + index, 0.2],
+            })),
           }),
           text: async () => "",
         } as unknown as Response;
@@ -1392,7 +1747,9 @@ describe("runSearch", () => {
           ok: true,
           status: 200,
           statusText: "OK",
-          json: async () => ({ result: [{ id: "pm-qe-fallback", score: 0.8 }] }),
+          json: async () => ({
+            result: [{ id: "pm-qe-fallback", score: 0.8 }],
+          }),
           text: async () => "",
         } as unknown as Response;
       }
@@ -1401,9 +1758,15 @@ describe("runSearch", () => {
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("release", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "release",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
       expect(result.mode).toBe("semantic");
-      expect(result.warnings).toContain("search_query_expansion_provider_unavailable:ext-missing-provider:using_builtin");
+      expect(result.warnings).toContain(
+        "search_query_expansion_provider_unavailable:ext-missing-provider:using_builtin",
+      );
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -1451,8 +1814,13 @@ describe("runSearch", () => {
         if (embeddingCallCount === 1) {
           return makeJsonResponse({ data: [{ embedding: [1, 0] }] });
         }
-        const body = parseJsonBody<{ model?: string; input?: string | string[] }>(init?.body);
-        const rerankInputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
+        const body = parseJsonBody<{
+          model?: string;
+          input?: string | string[];
+        }>(init?.body);
+        const rerankInputs = Array.isArray(body.input)
+          ? body.input
+          : [body.input ?? ""];
         expect(body.model).toBe("rerank-model-v1");
         expect(rerankInputs).toHaveLength(3);
         return makeJsonResponse({
@@ -1476,7 +1844,11 @@ describe("runSearch", () => {
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("tok", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "tok",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
       expect(result.mode).toBe("hybrid");
       expect(result.items[0]?.item.id).toBe("pm-rerank-b");
       expect(result.items[0]?.matched_fields).toContain("rerank");
@@ -1533,7 +1905,9 @@ describe("runSearch", () => {
           return makeJsonResponse({ data: [{ embedding: [1, 0] }] });
         }
         const body = parseJsonBody<{ input?: string | string[] }>(init?.body);
-        const rerankInputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
+        const rerankInputs = Array.isArray(body.input)
+          ? body.input
+          : [body.input ?? ""];
         expect(rerankInputs).toHaveLength(2);
         return makeJsonResponse({
           data: [
@@ -1555,7 +1929,11 @@ describe("runSearch", () => {
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("tok", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "tok",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
       expect(result.mode).toBe("hybrid");
       expect(result.items.map((entry) => entry.item.id)).toEqual([
         "pm-rerank-priority-a",
@@ -1623,9 +2001,15 @@ describe("runSearch", () => {
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("tok", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "tok",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
       expect(result.mode).toBe("hybrid");
-      expect(result.warnings).toContain("search_rerank_failed:using_hybrid_scores");
+      expect(result.warnings).toContain(
+        "search_rerank_failed:using_hybrid_scores",
+      );
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -1704,13 +2088,28 @@ describe("runSearch", () => {
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const uniformScores = await runSearch("same", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      const uniformScores = await runSearch(
+        "same",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
       expect(uniformScores.count).toBe(2);
-      expect(uniformScores.items.map((entry) => entry.item.id)).toEqual(["pm-hybrid-a", "pm-hybrid-b"]);
+      expect(uniformScores.items.map((entry) => entry.item.id)).toEqual([
+        "pm-hybrid-a",
+        "pm-hybrid-b",
+      ]);
 
-      const emptyKeywordScores = await runSearch("vectoronly", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      const emptyKeywordScores = await runSearch(
+        "vectoronly",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
       expect(emptyKeywordScores.count).toBe(2);
-      expect(emptyKeywordScores.items.every((entry) => entry.matched_fields.includes("semantic"))).toBe(true);
+      expect(
+        emptyKeywordScores.items.every((entry) =>
+          entry.matched_fields.includes("semantic"),
+        ),
+      ).toBe(true);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -1772,13 +2171,19 @@ describe("runSearch", () => {
     }) as typeof globalThis.fetch;
 
     try {
-      const result = await runSearch("tok", { mode: "hybrid", limit: "1" }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "tok",
+        { mode: "hybrid", limit: "1" },
+        { path: "/tmp/pm-search" },
+      );
       expect(result.mode).toBe("hybrid");
       expect(result.count).toBe(1);
       // total is the sortable hybrid hit count before final output truncation:
       // pm-tail has a vector hit but drops below the mode-aware score threshold.
       expect(result.total).toBe(2);
-      expect(result.items.map((entry) => entry.item.id)).toEqual(["pm-fused-top"]);
+      expect(result.items.map((entry) => entry.item.id)).toEqual([
+        "pm-fused-top",
+      ]);
       expect(result.filters.limit).toBe("1");
       expect(result.next_cursor).toBeTypeOf("string");
 
@@ -1888,19 +2293,37 @@ describe("runSearch", () => {
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
 
-      const keywordResult = await runSearch("tok", { mode: "keyword" }, { path: "/tmp/pm-search" });
+      const keywordResult = await runSearch(
+        "tok",
+        { mode: "keyword" },
+        { path: "/tmp/pm-search" },
+      );
       expect(keywordResult.mode).toBe("keyword");
-      expect(keywordResult.items.map((entry) => entry.item.id)).toEqual(["pm-threshold-strong"]);
+      expect(keywordResult.items.map((entry) => entry.item.id)).toEqual([
+        "pm-threshold-strong",
+      ]);
       expect(keywordResult.filters).toMatchObject({ score_threshold: 20 });
 
-      const semanticResult = await runSearch("tok", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      const semanticResult = await runSearch(
+        "tok",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
       expect(semanticResult.mode).toBe("semantic");
-      expect(semanticResult.items.map((entry) => entry.item.id)).toEqual(["pm-threshold-strong"]);
+      expect(semanticResult.items.map((entry) => entry.item.id)).toEqual([
+        "pm-threshold-strong",
+      ]);
       expect(semanticResult.filters).toMatchObject({ score_threshold: 0.7 });
 
-      const hybridResult = await runSearch("tok", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      const hybridResult = await runSearch(
+        "tok",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
       expect(hybridResult.mode).toBe("hybrid");
-      expect(hybridResult.items.map((entry) => entry.item.id)).toEqual(["pm-threshold-strong"]);
+      expect(hybridResult.items.map((entry) => entry.item.id)).toEqual([
+        "pm-threshold-strong",
+      ]);
       expect(hybridResult.filters).toMatchObject({ score_threshold: 0.5 });
     } finally {
       globalThis.fetch = originalFetch;
@@ -1935,13 +2358,17 @@ describe("runSearch", () => {
         if (targetPath.endsWith("pm-linked-only.md")) {
           return serializeDocument(linkedOnlyMatch, "body without keyword");
         }
-        if (targetPath === path.resolve(process.cwd(), "docs/linked-project.md")) {
+        if (
+          targetPath === path.resolve(process.cwd(), "docs/linked-project.md")
+        ) {
           return "linkedtoken from project file";
         }
         if (targetPath === path.resolve(globalRoot, "linked-global.md")) {
           return "linkedtoken from global doc";
         }
-        if (targetPath === path.resolve(process.cwd(), "tests/linked-test.md")) {
+        if (
+          targetPath === path.resolve(process.cwd(), "tests/linked-test.md")
+        ) {
           return "linkedtoken from linked test";
         }
         throw new Error(`ENOENT: ${targetPath}`);
@@ -1949,11 +2376,19 @@ describe("runSearch", () => {
 
       const { runSearch } = await import("../../../src/cli/commands/search.js");
 
-      const withoutLinked = await runSearch("linkedtoken", {}, { path: "/tmp/pm-search" });
+      const withoutLinked = await runSearch(
+        "linkedtoken",
+        {},
+        { path: "/tmp/pm-search" },
+      );
       expect(withoutLinked.count).toBe(0);
       expect(withoutLinked.filters).toMatchObject({ include_linked: false });
 
-      const withLinked = await runSearch("linkedtoken", { includeLinked: true }, { path: "/tmp/pm-search" });
+      const withLinked = await runSearch(
+        "linkedtoken",
+        { includeLinked: true },
+        { path: "/tmp/pm-search" },
+      );
       expect(withLinked.count).toBe(1);
       expect(withLinked.items[0].item.id).toBe("pm-linked-only");
       expect(withLinked.items[0].matched_fields).toEqual(["linked_content"]);
@@ -1971,9 +2406,15 @@ describe("runSearch", () => {
         throw new Error(`ENOENT: ${targetPath}`);
       });
 
-      const includeLinkedNoEntries = await runSearch("linkedtoken", { includeLinked: true }, { path: "/tmp/pm-search" });
+      const includeLinkedNoEntries = await runSearch(
+        "linkedtoken",
+        { includeLinked: true },
+        { path: "/tmp/pm-search" },
+      );
       expect(includeLinkedNoEntries.count).toBe(0);
-      expect(includeLinkedNoEntries.filters).toMatchObject({ include_linked: true });
+      expect(includeLinkedNoEntries.filters).toMatchObject({
+        include_linked: true,
+      });
     } finally {
       if (previousGlobalPath === undefined) {
         delete process.env.PM_GLOBAL_PATH;
@@ -1994,7 +2435,10 @@ describe("runSearch", () => {
         files: [{ path: "../escape-project.md", scope: "project" }],
         docs: [{ path: "../escape-global.md", scope: "global" }],
       });
-      const escapedProjectPath = path.resolve(process.cwd(), "../escape-project.md");
+      const escapedProjectPath = path.resolve(
+        process.cwd(),
+        "../escape-project.md",
+      );
       const escapedGlobalPath = path.resolve(globalRoot, "../escape-global.md");
 
       listAllItemMetadataMock.mockResolvedValue([containedItem]);
@@ -2002,14 +2446,21 @@ describe("runSearch", () => {
         if (targetPath.endsWith("pm-linked-contained.md")) {
           return serializeDocument(containedItem, "body without token");
         }
-        if (targetPath === escapedProjectPath || targetPath === escapedGlobalPath) {
+        if (
+          targetPath === escapedProjectPath ||
+          targetPath === escapedGlobalPath
+        ) {
           return "escapetoken";
         }
         throw new Error(`ENOENT: ${targetPath}`);
       });
 
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("escapetoken", { includeLinked: true }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "escapetoken",
+        { includeLinked: true },
+        { path: "/tmp/pm-search" },
+      );
       expect(result.count).toBe(0);
       expect(readFileMock).not.toHaveBeenCalledWith(escapedProjectPath, "utf8");
       expect(readFileMock).not.toHaveBeenCalledWith(escapedGlobalPath, "utf8");
@@ -2041,17 +2492,29 @@ describe("runSearch", () => {
         files: [{ path: "docs/project-link.md", scope: "project" }],
         docs: [{ path: "docs/global-link.md", scope: "global" }],
       });
-      const projectLinkedPath = path.resolve(process.cwd(), "docs/project-link.md");
+      const projectLinkedPath = path.resolve(
+        process.cwd(),
+        "docs/project-link.md",
+      );
       const globalLinkedPath = path.resolve(globalRoot, "docs/global-link.md");
-      const escapedProjectRealpath = path.resolve(process.cwd(), "../project-realpath-escape.md");
-      const escapedGlobalRealpath = path.resolve(globalRoot, "../global-realpath-escape.md");
+      const escapedProjectRealpath = path.resolve(
+        process.cwd(),
+        "../project-realpath-escape.md",
+      );
+      const escapedGlobalRealpath = path.resolve(
+        globalRoot,
+        "../global-realpath-escape.md",
+      );
 
       listAllItemMetadataMock.mockResolvedValue([symlinkItem]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-linked-symlink-escape.md")) {
           return serializeDocument(symlinkItem, "body without token");
         }
-        if (targetPath === projectLinkedPath || targetPath === globalLinkedPath) {
+        if (
+          targetPath === projectLinkedPath ||
+          targetPath === globalLinkedPath
+        ) {
           return "symlinktoken";
         }
         throw new Error(`ENOENT: ${targetPath}`);
@@ -2067,7 +2530,11 @@ describe("runSearch", () => {
       });
 
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("symlinktoken", { includeLinked: true }, { path: "/tmp/pm-search-symlink" });
+      const result = await runSearch(
+        "symlinktoken",
+        { includeLinked: true },
+        { path: "/tmp/pm-search-symlink" },
+      );
       expect(result.count).toBe(0);
       expect(readFileMock).not.toHaveBeenCalledWith(projectLinkedPath, "utf8");
       expect(readFileMock).not.toHaveBeenCalledWith(globalLinkedPath, "utf8");
@@ -2099,7 +2566,10 @@ describe("runSearch", () => {
         files: [{ path: "docs/project-link.md", scope: "project" }],
         docs: [{ path: "docs/global-link.md", scope: "global" }],
       });
-      const projectLinkedPath = path.resolve(process.cwd(), "docs/project-link.md");
+      const projectLinkedPath = path.resolve(
+        process.cwd(),
+        "docs/project-link.md",
+      );
       const globalLinkedPath = path.resolve(globalRoot, "docs/global-link.md");
 
       listAllItemMetadataMock.mockResolvedValue([realpathFailureItem]);
@@ -2107,7 +2577,10 @@ describe("runSearch", () => {
         if (targetPath.endsWith("pm-linked-realpath-fail.md")) {
           return serializeDocument(realpathFailureItem, "body without token");
         }
-        if (targetPath === projectLinkedPath || targetPath === globalLinkedPath) {
+        if (
+          targetPath === projectLinkedPath ||
+          targetPath === globalLinkedPath
+        ) {
           return "realpathfailtoken";
         }
         throw new Error(`ENOENT: ${targetPath}`);
@@ -2123,7 +2596,11 @@ describe("runSearch", () => {
       });
 
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("realpathfailtoken", { includeLinked: true }, { path: "/tmp/pm-search-realpath-fail" });
+      const result = await runSearch(
+        "realpathfailtoken",
+        { includeLinked: true },
+        { path: "/tmp/pm-search-realpath-fail" },
+      );
       expect(result.count).toBe(0);
       expect(readFileMock).not.toHaveBeenCalledWith(projectLinkedPath, "utf8");
       expect(readFileMock).not.toHaveBeenCalledWith(globalLinkedPath, "utf8");
@@ -2161,7 +2638,9 @@ describe("runSearch", () => {
         if (targetPath.endsWith("pm-hooked.md")) {
           return serializeDocument(hookedItem, "body without hooktoken");
         }
-        if (targetPath === path.resolve(process.cwd(), "docs/hook-project.md")) {
+        if (
+          targetPath === path.resolve(process.cwd(), "docs/hook-project.md")
+        ) {
           return "hooktoken from project";
         }
         if (targetPath === path.resolve(globalRoot, "hook-global.md")) {
@@ -2171,7 +2650,11 @@ describe("runSearch", () => {
       });
 
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("hooktoken", { includeLinked: true }, { path: "/tmp/pm-search-hooks" });
+      const result = await runSearch(
+        "hooktoken",
+        { includeLinked: true },
+        { path: "/tmp/pm-search-hooks" },
+      );
       expect(result.count).toBe(1);
 
       expect(runActiveOnReadHooksMock).toHaveBeenCalledWith({
@@ -2246,10 +2729,21 @@ describe("runSearch", () => {
       updated_at: "2026-02-18T00:00:00.000Z",
     });
 
-    const allItems = [idB, terminal, priorityFirst, noHit, updatedOld, updatedNew, scoreTop, idA];
+    const allItems = [
+      idB,
+      terminal,
+      priorityFirst,
+      noHit,
+      updatedOld,
+      updatedNew,
+      scoreTop,
+      idA,
+    ];
     listAllItemMetadataMock.mockResolvedValueOnce(allItems);
     readFileMock.mockImplementation(async (targetPath) => {
-      const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
+      const match = allItems.find((item) =>
+        targetPath.endsWith(`${item.id}.md`),
+      );
       if (!match) {
         throw new Error(`Unexpected path: ${targetPath}`);
       }
@@ -2286,7 +2780,9 @@ describe("runSearch", () => {
     const allItems = [substringTitle, exactTokenTitle];
     listAllItemMetadataMock.mockResolvedValueOnce(allItems);
     readFileMock.mockImplementation(async (targetPath) => {
-      const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
+      const match = allItems.find((item) =>
+        targetPath.endsWith(`${item.id}.md`),
+      );
       if (!match) {
         throw new Error(`Unexpected path: ${targetPath}`);
       }
@@ -2294,9 +2790,16 @@ describe("runSearch", () => {
     });
 
     const { runSearch } = await import("../../../src/cli/commands/search.js");
-    const result = await runSearch("token", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    const result = await runSearch(
+      "token",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
 
-    expect(result.items.map((entry) => entry.item.id)).toEqual(["pm-exact-token", "pm-substring-token"]);
+    expect(result.items.map((entry) => entry.item.id)).toEqual([
+      "pm-exact-token",
+      "pm-substring-token",
+    ]);
     expect(result.items[0]?.score).toBeGreaterThan(result.items[1]?.score ?? 0);
   });
 
@@ -2315,7 +2818,9 @@ describe("runSearch", () => {
     const allItems = [nearMatch, exactTitle];
     listAllItemMetadataMock.mockResolvedValueOnce(allItems);
     readFileMock.mockImplementation(async (targetPath) => {
-      const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
+      const match = allItems.find((item) =>
+        targetPath.endsWith(`${item.id}.md`),
+      );
       if (!match) {
         throw new Error(`Unexpected path: ${targetPath}`);
       }
@@ -2330,7 +2835,9 @@ describe("runSearch", () => {
     );
 
     expect(result.filters).toMatchObject({ title_exact: true });
-    expect(result.items.map((entry) => entry.item.id)).toEqual(["pm-title-exact"]);
+    expect(result.items.map((entry) => entry.item.id)).toEqual([
+      "pm-title-exact",
+    ]);
   });
 
   it("supports --phrase-exact filtering for normalized phrase matches", async () => {
@@ -2348,12 +2855,17 @@ describe("runSearch", () => {
     const allItems = [tokenOnly, phraseInBody];
     listAllItemMetadataMock.mockResolvedValueOnce(allItems);
     readFileMock.mockImplementation(async (targetPath) => {
-      const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
+      const match = allItems.find((item) =>
+        targetPath.endsWith(`${item.id}.md`),
+      );
       if (!match) {
         throw new Error(`Unexpected path: ${targetPath}`);
       }
       if (match.id === "pm-phrase-body") {
-        return serializeDocument(match, "Planning uses the Cross-Epic Realism Dependency Council cadence.");
+        return serializeDocument(
+          match,
+          "Planning uses the Cross-Epic Realism Dependency Council cadence.",
+        );
       }
       return serializeDocument(
         match,
@@ -2369,7 +2881,9 @@ describe("runSearch", () => {
     );
 
     expect(result.filters).toMatchObject({ phrase_exact: true });
-    expect(result.items.map((entry) => entry.item.id)).toEqual(["pm-phrase-body"]);
+    expect(result.items.map((entry) => entry.item.id)).toEqual([
+      "pm-phrase-body",
+    ]);
   });
 
   it("boosts exact long-phrase title matches above partial lexical overlap noise", async () => {
@@ -2393,7 +2907,9 @@ describe("runSearch", () => {
     const allItems = [noisyPartial, exactTitle];
     listAllItemMetadataMock.mockResolvedValueOnce(allItems);
     readFileMock.mockImplementation(async (targetPath) => {
-      const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
+      const match = allItems.find((item) =>
+        targetPath.endsWith(`${item.id}.md`),
+      );
       if (!match) {
         throw new Error(`Unexpected path: ${targetPath}`);
       }
@@ -2412,7 +2928,8 @@ describe("runSearch", () => {
   });
 
   it("resolves search tuning parameters from settings", async () => {
-    const { resolveSearchTuning } = await import("../../../src/cli/commands/search.js");
+    const { resolveSearchTuning } =
+      await import("../../../src/cli/commands/search.js");
     const defaultTuning = resolveSearchTuning({});
     expect(defaultTuning.title_weight).toBe(8);
 
@@ -2445,17 +2962,26 @@ describe("runSearch", () => {
     const allItems = [titleHit, bodyHit];
     listAllItemMetadataMock.mockResolvedValue(allItems);
     readFileMock.mockImplementation(async (targetPath) => {
-      const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
+      const match = allItems.find((item) =>
+        targetPath.endsWith(`${item.id}.md`),
+      );
       if (!match) {
         throw new Error(`Unexpected path: ${targetPath}`);
       }
-      return serializeDocument(match, match.id === "pm-tuning-body" ? "tunetoken tunetoken" : "no token here");
+      return serializeDocument(
+        match,
+        match.id === "pm-tuning-body" ? "tunetoken tunetoken" : "no token here",
+      );
     });
 
     const { runSearch } = await import("../../../src/cli/commands/search.js");
 
     readSettingsMock.mockResolvedValueOnce({ id_prefix: "pm-" });
-    const defaultResult = await runSearch("tunetoken", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    const defaultResult = await runSearch(
+      "tunetoken",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
     expect(defaultResult.items[0]?.item.id).toBe("pm-tuning-title");
 
     readSettingsMock.mockResolvedValueOnce({
@@ -2468,7 +2994,11 @@ describe("runSearch", () => {
         },
       },
     } as unknown as { id_prefix: string });
-    const tunedResult = await runSearch("tunetoken", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    const tunedResult = await runSearch(
+      "tunetoken",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
     expect(tunedResult.items[0]?.item.id).toBe("pm-tuning-body");
   });
 
@@ -2494,7 +3024,11 @@ describe("runSearch", () => {
     });
 
     const { runSearch } = await import("../../../src/cli/commands/search.js");
-    const result = await runSearch("fallback", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    const result = await runSearch(
+      "fallback",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
     expect(result.items[0]?.item.id).toBe("pm-fallback-format");
     expect(runActiveOnReadHooksMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -2531,7 +3065,11 @@ describe("runSearch", () => {
     });
 
     const { runSearch } = await import("../../../src/cli/commands/search.js");
-    const result = await runSearch("fallback", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    const result = await runSearch(
+      "fallback",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
     expect(result.items[0]?.item.id).toBe("pm-fallback-toon");
     expect(runActiveOnReadHooksMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -2550,11 +3088,17 @@ describe("runSearch", () => {
       updated_at: "2026-02-18T00:03:00.000Z",
     });
     listAllItemMetadataMock.mockResolvedValue([projectedItem]);
-    readFileMock.mockResolvedValue(serializeDocument(projectedItem, "projection token body"));
+    readFileMock.mockResolvedValue(
+      serializeDocument(projectedItem, "projection token body"),
+    );
 
     const { runSearch } = await import("../../../src/cli/commands/search.js");
 
-    const fullResult = await runSearch("token", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    const fullResult = await runSearch(
+      "token",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
     expect(fullResult.projection).toEqual({
       mode: "full",
       fields: null,
@@ -2566,8 +3110,14 @@ describe("runSearch", () => {
       matched_fields: expect.arrayContaining(["title"]),
     });
 
-    const compactResult = await runSearch("token", { mode: "keyword", compact: true }, { path: "/tmp/pm-search" });
-    expect((compactResult as Record<string, unknown>).projection).toBeUndefined();
+    const compactResult = await runSearch(
+      "token",
+      { mode: "keyword", compact: true },
+      { path: "/tmp/pm-search" },
+    );
+    expect(
+      (compactResult as Record<string, unknown>).projection,
+    ).toBeUndefined();
     expect((compactResult as Record<string, unknown>).now).toBeUndefined();
     expect(compactResult.items[0]).toMatchObject({
       id: "pm-projection",
@@ -2578,7 +3128,9 @@ describe("runSearch", () => {
       score: expect.any(Number),
       matched_fields: expect.arrayContaining(["title"]),
     });
-    expect((compactResult.items[0] as Record<string, unknown>).item).toBeUndefined();
+    expect(
+      (compactResult.items[0] as Record<string, unknown>).item,
+    ).toBeUndefined();
 
     const fieldResult = await runSearch(
       "token",
@@ -2595,17 +3147,35 @@ describe("runSearch", () => {
     expect(projected["item.title"]).toBe("Projection title token");
     expect(projected["item.status"]).toBe("in_progress");
 
-    await expect(runSearch("token", { mode: "keyword", fields: "id,titel" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+    await expect(
+      runSearch(
+        "token",
+        { mode: "keyword", fields: "id,titel" },
+        { path: "/tmp/pm-search" },
+      ),
+    ).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
-      message: expect.stringContaining("Unknown search --fields value(s): titel"),
+      message: expect.stringContaining(
+        "Unknown search --fields value(s): titel",
+      ),
     });
 
     await expect(
-      runSearch("token", { mode: "keyword", compact: true, full: true }, { path: "/tmp/pm-search" }),
+      runSearch(
+        "token",
+        { mode: "keyword", compact: true, full: true },
+        { path: "/tmp/pm-search" },
+      ),
     ).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
-    await expect(runSearch("token", { mode: "keyword", fields: " , " }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+    await expect(
+      runSearch(
+        "token",
+        { mode: "keyword", fields: " , " },
+        { path: "/tmp/pm-search" },
+      ),
+    ).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
   });
@@ -2636,7 +3206,11 @@ describe("runSearch", () => {
     const { runSearch } = await import("../../../src/cli/commands/search.js");
 
     // --status open excludes the closed item via the open workflow-group alias.
-    const openResult = await runSearch("statustoken", { mode: "keyword", status: "open" }, { path: "/tmp/pm-search" });
+    const openResult = await runSearch(
+      "statustoken",
+      { mode: "keyword", status: "open" },
+      { path: "/tmp/pm-search" },
+    );
     expect(openResult.count).toBe(1);
     expect(openResult.items[0].item.id).toBe("pm-status-open");
     expect(openResult.filters.status).toBe("open");
@@ -2652,13 +3226,21 @@ describe("runSearch", () => {
     expect(closedResult.filters.status).toBe("closed");
 
     // No --status leaves the corpus unfiltered and echoes null.
-    const noStatus = await runSearch("statustoken", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    const noStatus = await runSearch(
+      "statustoken",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
     expect(noStatus.count).toBe(2);
     expect(noStatus.filters.status).toBeNull();
 
     // --status all is an explicit no-op status filter for duplicate discovery
     // across open/closed/canceled/custom lifecycle buckets.
-    const allStatus = await runSearch("statustoken", { mode: "keyword", status: "all" }, { path: "/tmp/pm-search" });
+    const allStatus = await runSearch(
+      "statustoken",
+      { mode: "keyword", status: "all" },
+      { path: "/tmp/pm-search" },
+    );
     expect(allStatus.count).toBe(2);
     expect(allStatus.items.map((hit) => hit.item.id).sort()).toEqual([
       "pm-status-closed",
@@ -2666,7 +3248,11 @@ describe("runSearch", () => {
     ]);
     expect(allStatus.filters.status).toBe("all");
 
-    const upperAllStatus = await runSearch("statustoken", { mode: "keyword", status: " ALL " }, { path: "/tmp/pm-search" });
+    const upperAllStatus = await runSearch(
+      "statustoken",
+      { mode: "keyword", status: " ALL " },
+      { path: "/tmp/pm-search" },
+    );
     expect(upperAllStatus.count).toBe(2);
     expect(upperAllStatus.filters.status).toBe("all");
   });
@@ -2674,13 +3260,21 @@ describe("runSearch", () => {
   it("rejects an unrecognized --status token strictly with a did-you-mean hint", async () => {
     const { runSearch } = await import("../../../src/cli/commands/search.js");
     await expect(
-      runSearch("statustoken", { mode: "keyword", status: "opne" }, { path: "/tmp/pm-search" }),
+      runSearch(
+        "statustoken",
+        { mode: "keyword", status: "opne" },
+        { path: "/tmp/pm-search" },
+      ),
     ).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
       message: expect.stringContaining('Invalid --status value "opne"'),
     });
     await expect(
-      runSearch("statustoken", { mode: "keyword", status: "opne" }, { path: "/tmp/pm-search" }),
+      runSearch(
+        "statustoken",
+        { mode: "keyword", status: "opne" },
+        { path: "/tmp/pm-search" },
+      ),
     ).rejects.toThrow(/Did you mean "open"\?/);
   });
 
@@ -2711,7 +3305,12 @@ describe("runSearch", () => {
       if (!match) {
         throw new Error(`Unexpected path: ${targetPath}`);
       }
-      return serializeDocument(match, match.id === "pm-rival" ? "pm-fk49 body mention pm-fk49" : "body without lookup token");
+      return serializeDocument(
+        match,
+        match.id === "pm-rival"
+          ? "pm-fk49 body mention pm-fk49"
+          : "body without lookup token",
+      );
     });
     readSettingsMock.mockResolvedValue(
       makeSemanticSearchSettings({
@@ -2732,7 +3331,11 @@ describe("runSearch", () => {
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const hybrid = await runSearch("pm-fk49", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      const hybrid = await runSearch(
+        "pm-fk49",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
       expect(hybrid.mode).toBe("hybrid");
       expect(hybrid.items[0]?.item.id).toBe("pm-fk49");
       expect(hybrid.items[0]?.matched_fields).toEqual(["id"]);
@@ -2774,7 +3377,10 @@ describe("runSearch", () => {
       if (!match) {
         throw new Error(`Unexpected path: ${targetPath}`);
       }
-      return serializeDocument(match, match.id === "pm-rival" ? "fk49 fk49 body" : "no lookup token");
+      return serializeDocument(
+        match,
+        match.id === "pm-rival" ? "fk49 fk49 body" : "no lookup token",
+      );
     });
     readSettingsMock.mockResolvedValue(
       makeSemanticSearchSettings({
@@ -2793,10 +3399,17 @@ describe("runSearch", () => {
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const hybrid = await runSearch("fk49", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      const hybrid = await runSearch(
+        "fk49",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
       expect(hybrid.mode).toBe("hybrid");
       // Full id ("fk49") above short id ("pm-fk49"); both above the rival.
-      expect(hybrid.items.slice(0, 2).map((entry) => entry.item.id)).toEqual(["fk49", "pm-fk49"]);
+      expect(hybrid.items.slice(0, 2).map((entry) => entry.item.id)).toEqual([
+        "fk49",
+        "pm-fk49",
+      ]);
       expect(hybrid.items[0]?.matched_fields).toEqual(["id"]);
       expect(hybrid.items[1]?.matched_fields).toEqual(["id"]);
       expect(hybrid.items[0]!.score).toBeGreaterThan(hybrid.items[1]!.score);
@@ -2842,7 +3455,11 @@ describe("runSearch", () => {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
       // --min-score above the reserved band's lower neighbors must not drop the
       // exact-id hit (threshold exemption).
-      const semantic = await runSearch("pm-fk49", { mode: "semantic", minScore: "5" }, { path: "/tmp/pm-search" });
+      const semantic = await runSearch(
+        "pm-fk49",
+        { mode: "semantic", minScore: "5" },
+        { path: "/tmp/pm-search" },
+      );
       expect(semantic.mode).toBe("semantic");
       expect(semantic.items[0]?.item.id).toBe("pm-fk49");
       expect(semantic.items[0]?.matched_fields).toEqual(["id"]);
@@ -2854,15 +3471,21 @@ describe("runSearch", () => {
 
 describe("classifyImplicitSemanticFallbackReason", () => {
   it("classifies timeouts from message and from a nested cause code", async () => {
-    const { classifyImplicitSemanticFallbackReason } = await import("../../../src/cli/commands/search.js");
-    expect(classifyImplicitSemanticFallbackReason(new Error("Embedding request timed out after 30000ms"))).toBe("timeout");
+    const { classifyImplicitSemanticFallbackReason } =
+      await import("../../../src/cli/commands/search.js");
+    expect(
+      classifyImplicitSemanticFallbackReason(
+        new Error("Embedding request timed out after 30000ms"),
+      ),
+    ).toBe("timeout");
     const etimedout = new Error("fetch failed");
     (etimedout as Error & { cause?: unknown }).cause = { code: "ETIMEDOUT" };
     expect(classifyImplicitSemanticFallbackReason(etimedout)).toBe("timeout");
   });
 
   it("classifies undici 'fetch failed' connection errors via error.cause.code", async () => {
-    const { classifyImplicitSemanticFallbackReason } = await import("../../../src/cli/commands/search.js");
+    const { classifyImplicitSemanticFallbackReason } =
+      await import("../../../src/cli/commands/search.js");
     // undici surfaces ECONNREFUSED as a generic 'fetch failed' message with the
     // real syscall code on cause.code — must be labelled connection, not error.
     const refused = new Error("fetch failed");
@@ -2874,17 +3497,25 @@ describe("classifyImplicitSemanticFallbackReason", () => {
     expect(classifyImplicitSemanticFallbackReason(reset)).toBe("connection");
 
     // Bare "fetch failed" with no cause still degrades to connection.
-    expect(classifyImplicitSemanticFallbackReason(new Error("fetch failed"))).toBe("connection");
+    expect(
+      classifyImplicitSemanticFallbackReason(new Error("fetch failed")),
+    ).toBe("connection");
   });
 
   it("falls back to error for unrelated failures and walks bounded cause depth", async () => {
-    const { classifyImplicitSemanticFallbackReason, collectErrorCauseCodes } = await import(
-      "../../../src/cli/commands/search.js"
-    );
-    expect(classifyImplicitSemanticFallbackReason(new Error("No embedding provider configured"))).toBe("error");
+    const { classifyImplicitSemanticFallbackReason, collectErrorCauseCodes } =
+      await import("../../../src/cli/commands/search.js");
+    expect(
+      classifyImplicitSemanticFallbackReason(
+        new Error("No embedding provider configured"),
+      ),
+    ).toBe("error");
     // Nested cause chain: the deep ENOTFOUND is still found within the depth budget.
     const deep = new Error("outer");
-    (deep as Error & { cause?: unknown }).cause = { message: "mid", cause: { code: "ENOTFOUND" } };
+    (deep as Error & { cause?: unknown }).cause = {
+      message: "mid",
+      cause: { code: "ENOTFOUND" },
+    };
     expect(classifyImplicitSemanticFallbackReason(deep)).toBe("connection");
     expect(collectErrorCauseCodes(deep)).toContain("enotfound");
     expect(collectErrorCauseCodes("plain string")).toBe("");
@@ -2898,16 +3529,27 @@ describe("classifyImplicitSemanticFallbackReason", () => {
     }
 
     it("ranks all-terms coverage above partial matches in default (or) mode and surfaces matched_all_terms only internally", async () => {
-      const allTerms = makeItemMetadata({ id: "pm-all", title: "alpha beta gamma" });
-      const partial = makeItemMetadata({ id: "pm-partial", title: "alpha only" });
+      const allTerms = makeItemMetadata({
+        id: "pm-all",
+        title: "alpha beta gamma",
+      });
+      const partial = makeItemMetadata({
+        id: "pm-partial",
+        title: "alpha only",
+      });
       listAllItemMetadataMock.mockResolvedValueOnce([partial, allTerms]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-all.md")) return makeBody(allTerms, "body");
-        if (targetPath.endsWith("pm-partial.md")) return makeBody(partial, "body");
+        if (targetPath.endsWith("pm-partial.md"))
+          return makeBody(partial, "body");
         throw new Error(`Unexpected path: ${targetPath}`);
       });
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("alpha beta gamma", { mode: "keyword", full: true }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "alpha beta gamma",
+        { mode: "keyword", full: true },
+        { path: "/tmp/pm-search" },
+      );
       expect(result.count).toBe(2);
       expect(result.items[0].item.id).toBe("pm-all");
       expect(result.items[1].item.id).toBe("pm-partial");
@@ -2917,39 +3559,64 @@ describe("classifyImplicitSemanticFallbackReason", () => {
     });
 
     it("hard-filters with --match-mode and (every distinct token must match)", async () => {
-      const allTerms = makeItemMetadata({ id: "pm-all", title: "alpha beta gamma" });
-      const partial = makeItemMetadata({ id: "pm-partial", title: "alpha only" });
+      const allTerms = makeItemMetadata({
+        id: "pm-all",
+        title: "alpha beta gamma",
+      });
+      const partial = makeItemMetadata({
+        id: "pm-partial",
+        title: "alpha only",
+      });
       listAllItemMetadataMock.mockResolvedValue([partial, allTerms]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-all.md")) return makeBody(allTerms, "body");
-        if (targetPath.endsWith("pm-partial.md")) return makeBody(partial, "body");
+        if (targetPath.endsWith("pm-partial.md"))
+          return makeBody(partial, "body");
         throw new Error(`Unexpected path: ${targetPath}`);
       });
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const andResult = await runSearch("alpha beta gamma", { matchMode: "and" }, { path: "/tmp/pm-search" });
+      const andResult = await runSearch(
+        "alpha beta gamma",
+        { matchMode: "and" },
+        { path: "/tmp/pm-search" },
+      );
       expect(andResult.count).toBe(1);
       expect(andResult.items[0].item.id).toBe("pm-all");
       expect(andResult.filters.match_mode).toBe("and");
     });
 
     it("requires a contiguous phrase with --match-mode exact", async () => {
-      const phrase = makeItemMetadata({ id: "pm-phrase", title: "alpha beta gamma" });
-      const scattered = makeItemMetadata({ id: "pm-scattered", title: "alpha gamma beta" });
+      const phrase = makeItemMetadata({
+        id: "pm-phrase",
+        title: "alpha beta gamma",
+      });
+      const scattered = makeItemMetadata({
+        id: "pm-scattered",
+        title: "alpha gamma beta",
+      });
       listAllItemMetadataMock.mockResolvedValue([phrase, scattered]);
       readFileMock.mockImplementation(async (targetPath) => {
-        if (targetPath.endsWith("pm-phrase.md")) return makeBody(phrase, "body");
-        if (targetPath.endsWith("pm-scattered.md")) return makeBody(scattered, "body");
+        if (targetPath.endsWith("pm-phrase.md"))
+          return makeBody(phrase, "body");
+        if (targetPath.endsWith("pm-scattered.md"))
+          return makeBody(scattered, "body");
         throw new Error(`Unexpected path: ${targetPath}`);
       });
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const exact = await runSearch("alpha beta gamma", { matchMode: "exact" }, { path: "/tmp/pm-search" });
+      const exact = await runSearch(
+        "alpha beta gamma",
+        { matchMode: "exact" },
+        { path: "/tmp/pm-search" },
+      );
       expect(exact.count).toBe(1);
       expect(exact.items[0].item.id).toBe("pm-phrase");
     });
 
     it("rejects an invalid --match-mode value", async () => {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      await expect(runSearch("token", { matchMode: "nope" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+      await expect(
+        runSearch("token", { matchMode: "nope" }, { path: "/tmp/pm-search" }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
     });
@@ -2960,15 +3627,24 @@ describe("classifyImplicitSemanticFallbackReason", () => {
       );
       listAllItemMetadataMock.mockResolvedValue(items);
       readFileMock.mockImplementation(async (targetPath) => {
-        const match = items.find((item) => targetPath.endsWith(`${item.id}.md`));
+        const match = items.find((item) =>
+          targetPath.endsWith(`${item.id}.md`),
+        );
         if (match) return makeBody(match, "body");
         throw new Error(`Unexpected path: ${targetPath}`);
       });
-      readSettingsMock.mockResolvedValue({ id_prefix: "pm-", search: { max_results: 2 } } as unknown as {
+      readSettingsMock.mockResolvedValue({
+        id_prefix: "pm-",
+        search: { max_results: 2 },
+      } as unknown as {
         id_prefix: string;
       });
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const limited = await runSearch("alpha", { mode: "keyword" }, { path: "/tmp/pm-search" });
+      const limited = await runSearch(
+        "alpha",
+        { mode: "keyword" },
+        { path: "/tmp/pm-search" },
+      );
       // No --limit → falls back to max_results=2; total reflects the 5 matches.
       expect(limited.count).toBe(2);
       expect(limited.total).toBe(5);
@@ -2980,12 +3656,18 @@ describe("classifyImplicitSemanticFallbackReason", () => {
       );
       listAllItemMetadataMock.mockResolvedValue(items);
       readFileMock.mockImplementation(async (targetPath) => {
-        const match = items.find((item) => targetPath.endsWith(`${item.id}.md`));
+        const match = items.find((item) =>
+          targetPath.endsWith(`${item.id}.md`),
+        );
         if (match) return makeBody(match, "body");
         throw new Error(`Unexpected path: ${targetPath}`);
       });
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const counted = await runSearch("alpha", { mode: "keyword", count: true, full: true }, { path: "/tmp/pm-search" });
+      const counted = await runSearch(
+        "alpha",
+        { mode: "keyword", count: true, full: true },
+        { path: "/tmp/pm-search" },
+      );
       expect(counted.count_only).toBe(true);
       expect(counted.count).toBe(3);
       expect(counted.total).toBe(3);
@@ -3005,18 +3687,31 @@ describe("classifyImplicitSemanticFallbackReason", () => {
         { mode: "keyword", count: true, fields: "id,score" },
         { path: "/tmp/pm-search" },
       );
-      expect(fieldsCounted.projection).toEqual({ mode: "fields", fields: ["id", "score"] });
+      expect(fieldsCounted.projection).toEqual({
+        mode: "fields",
+        fields: ["id", "score"],
+      });
     });
 
     it("keeps the count-only shape when --count matches nothing (empty-result path)", async () => {
-      listAllItemMetadataMock.mockResolvedValue([makeItemMetadata({ id: "pm-none", title: "alpha" })]);
+      listAllItemMetadataMock.mockResolvedValue([
+        makeItemMetadata({ id: "pm-none", title: "alpha" }),
+      ]);
       readFileMock.mockImplementation(async (targetPath) => {
-        if (targetPath.endsWith("pm-none.md")) return makeBody(makeItemMetadata({ id: "pm-none", title: "alpha" }), "body");
+        if (targetPath.endsWith("pm-none.md"))
+          return makeBody(
+            makeItemMetadata({ id: "pm-none", title: "alpha" }),
+            "body",
+          );
         throw new Error(`Unexpected path: ${targetPath}`);
       });
       const { runSearch } = await import("../../../src/cli/commands/search.js");
       // No token matches "zzznomatch" -> filteredDocuments empty -> emptySearchResult path.
-      const verbose = await runSearch("zzznomatch", { mode: "keyword", count: true, full: true }, { path: "/tmp/pm-search" });
+      const verbose = await runSearch(
+        "zzznomatch",
+        { mode: "keyword", count: true, full: true },
+        { path: "/tmp/pm-search" },
+      );
       expect(verbose.count_only).toBe(true);
       expect(verbose.count).toBe(0);
       expect(verbose.total).toBe(0);
@@ -3039,20 +3734,36 @@ describe("classifyImplicitSemanticFallbackReason", () => {
         throw new Error(`Unexpected path: ${targetPath}`);
       });
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const dropped = await runSearch("alpha", { mode: "keyword", minScore: "1000" }, { path: "/tmp/pm-search" });
+      const dropped = await runSearch(
+        "alpha",
+        { mode: "keyword", minScore: "1000" },
+        { path: "/tmp/pm-search" },
+      );
       expect(dropped.count).toBe(0);
       expect(dropped.filters.score_threshold).toBe(1000);
-      const kept = await runSearch("alpha", { mode: "keyword", minScore: "0" }, { path: "/tmp/pm-search" });
+      const kept = await runSearch(
+        "alpha",
+        { mode: "keyword", minScore: "0" },
+        { path: "/tmp/pm-search" },
+      );
       expect(kept.count).toBe(1);
       expect(kept.filters.score_threshold).toBe(0);
     });
 
     it("rejects an invalid --min-score value", async () => {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      await expect(runSearch("token", { minScore: "-1" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+      await expect(
+        runSearch("token", { minScore: "-1" }, { path: "/tmp/pm-search" }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runSearch("token", { minScore: "not-a-number" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+      await expect(
+        runSearch(
+          "token",
+          { minScore: "not-a-number" },
+          { path: "/tmp/pm-search" },
+        ),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
     });
@@ -3080,12 +3791,17 @@ describe("classifyImplicitSemanticFallbackReason", () => {
       });
       listAllItemMetadataMock.mockResolvedValue([target, other]);
       readFileMock.mockImplementation(async (targetPath) => {
-        if (targetPath.endsWith("pm-target.md")) return makeBody(target, "body");
+        if (targetPath.endsWith("pm-target.md"))
+          return makeBody(target, "body");
         if (targetPath.endsWith("pm-other.md")) return makeBody(other, "body");
         throw new Error(`Unexpected path: ${targetPath}`);
       });
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const byAssignee = await runSearch("alpha", { mode: "keyword", assignee: "alice" }, { path: "/tmp/pm-search" });
+      const byAssignee = await runSearch(
+        "alpha",
+        { mode: "keyword", assignee: "alice" },
+        { path: "/tmp/pm-search" },
+      );
       expect(byAssignee.count).toBe(1);
       expect(byAssignee.items[0].item.id).toBe("pm-target");
       expect(byAssignee.filters.assignee).toBe("alice");
@@ -3100,7 +3816,11 @@ describe("classifyImplicitSemanticFallbackReason", () => {
 
       const byUpdatedWindow = await runSearch(
         "alpha",
-        { mode: "keyword", updatedAfter: "2026-02-01T00:00:00.000Z", createdAfter: "2026-02-01T00:00:00.000Z" },
+        {
+          mode: "keyword",
+          updatedAfter: "2026-02-01T00:00:00.000Z",
+          createdAfter: "2026-02-01T00:00:00.000Z",
+        },
         { path: "/tmp/pm-search" },
       );
       expect(byUpdatedWindow.count).toBe(1);
@@ -3108,7 +3828,11 @@ describe("classifyImplicitSemanticFallbackReason", () => {
 
       const byUpdatedBefore = await runSearch(
         "alpha",
-        { mode: "keyword", updatedBefore: "2026-02-01T00:00:00.000Z", createdBefore: "2026-02-01T00:00:00.000Z" },
+        {
+          mode: "keyword",
+          updatedBefore: "2026-02-01T00:00:00.000Z",
+          createdBefore: "2026-02-01T00:00:00.000Z",
+        },
         { path: "/tmp/pm-search" },
       );
       expect(byUpdatedBefore.count).toBe(1);
@@ -3117,13 +3841,20 @@ describe("classifyImplicitSemanticFallbackReason", () => {
 
     it("rejects --assignee none/null (matching pm list)", async () => {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      await expect(runSearch("token", { assignee: "none" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+      await expect(
+        runSearch("token", { assignee: "none" }, { path: "/tmp/pm-search" }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
     });
 
     it("echoes new filters and match_mode in the compact filter summary", async () => {
-      const item = makeItemMetadata({ id: "pm-cf", title: "alpha", assignee: "alice", sprint: "S1" });
+      const item = makeItemMetadata({
+        id: "pm-cf",
+        title: "alpha",
+        assignee: "alice",
+        sprint: "S1",
+      });
       listAllItemMetadataMock.mockResolvedValue([item]);
       readFileMock.mockImplementation(async (targetPath) => {
         if (targetPath.endsWith("pm-cf.md")) return makeBody(item, "body");
@@ -3132,10 +3863,20 @@ describe("classifyImplicitSemanticFallbackReason", () => {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
       const compact = await runSearch(
         "alpha",
-        { mode: "keyword", compact: true, matchMode: "and", assignee: "alice", sprint: "S1" },
+        {
+          mode: "keyword",
+          compact: true,
+          matchMode: "and",
+          assignee: "alice",
+          sprint: "S1",
+        },
         { path: "/tmp/pm-search" },
       );
-      expect(compact.filters).toMatchObject({ match_mode: "and", assignee: "alice", sprint: "S1" });
+      expect(compact.filters).toMatchObject({
+        match_mode: "and",
+        assignee: "alice",
+        sprint: "S1",
+      });
 
       const compactAllStatus = await runSearch(
         "alpha",
@@ -3149,7 +3890,9 @@ describe("classifyImplicitSemanticFallbackReason", () => {
         { mode: "keyword", compact: true, status: "open" },
         { path: "/tmp/pm-search" },
       );
-      expect(compactWarning.warnings).toEqual(["search_inline_filter_ignored:status:flag_takes_precedence"]);
+      expect(compactWarning.warnings).toEqual([
+        "search_inline_filter_ignored:status:flag_takes_precedence",
+      ]);
     });
   });
 });
@@ -3164,15 +3907,24 @@ describe("inline query syntax and highlighting (GH-157)", () => {
 
   describe("parseInlineQueryFilters", () => {
     it("extracts recognized field:value tokens, keeps colon-bearing values, and returns the residual query", async () => {
-      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
-      const result = _testOnlySearchCommand.parseInlineQueryFilters("auth tag:area:search status:open relevance");
+      const { _testOnlySearchCommand } =
+        await import("../../../src/cli/commands/search.js");
+      const result = _testOnlySearchCommand.parseInlineQueryFilters(
+        "auth tag:area:search status:open relevance",
+      );
       expect(result.residualQuery).toBe("auth relevance");
-      expect(result.inlineFilters).toEqual({ tag: "area:search", status: "open" });
+      expect(result.inlineFilters).toEqual({
+        tag: "area:search",
+        status: "open",
+      });
     });
 
     it("captures the first occurrence per field and leaves later duplicates plus unknown prefixes in the residual", async () => {
-      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
-      const result = _testOnlySearchCommand.parseInlineQueryFilters("type:Task type:Bug foo:bar plain status:");
+      const { _testOnlySearchCommand } =
+        await import("../../../src/cli/commands/search.js");
+      const result = _testOnlySearchCommand.parseInlineQueryFilters(
+        "type:Task type:Bug foo:bar plain status:",
+      );
       // First type wins; the duplicate, the unknown field, the bare word, and the
       // empty-valued token all fall through to the residual query.
       expect(result.inlineFilters).toEqual({ type: "Task" });
@@ -3180,8 +3932,10 @@ describe("inline query syntax and highlighting (GH-157)", () => {
     });
 
     it("returns an empty filter set for a query with no inline tokens", async () => {
-      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
-      const result = _testOnlySearchCommand.parseInlineQueryFilters("just plain words");
+      const { _testOnlySearchCommand } =
+        await import("../../../src/cli/commands/search.js");
+      const result =
+        _testOnlySearchCommand.parseInlineQueryFilters("just plain words");
       expect(result.inlineFilters).toEqual({});
       expect(result.residualQuery).toBe("just plain words");
     });
@@ -3189,7 +3943,8 @@ describe("inline query syntax and highlighting (GH-157)", () => {
 
   describe("applyInlineQueryFilters", () => {
     it("applies an inline value only when the flag is unset and never mutates the input", async () => {
-      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      const { _testOnlySearchCommand } =
+        await import("../../../src/cli/commands/search.js");
       const warnings: string[] = [];
       const options = { priority: "2" } as Record<string, unknown>;
       const merged = _testOnlySearchCommand.applyInlineQueryFilters(
@@ -3200,72 +3955,144 @@ describe("inline query syntax and highlighting (GH-157)", () => {
       expect(merged.tag).toBe("area:search");
       // Explicit flag wins; the conflicting inline token is recorded, not silent.
       expect(merged.priority).toBe("2");
-      expect(warnings).toEqual(["search_inline_filter_ignored:priority:flag_takes_precedence"]);
+      expect(warnings).toEqual([
+        "search_inline_filter_ignored:priority:flag_takes_precedence",
+      ]);
       expect(options).toEqual({ priority: "2" });
     });
   });
 
   describe("markTokenRuns", () => {
     it("wraps case-insensitive matches and escapes regex metacharacters in tokens", async () => {
-      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
-      expect(_testOnlySearchCommand.markTokenRuns("Auth and AUTH", ["auth"])).toBe("«Auth» and «AUTH»");
+      const { _testOnlySearchCommand } =
+        await import("../../../src/cli/commands/search.js");
+      expect(
+        _testOnlySearchCommand.markTokenRuns("Auth and AUTH", ["auth"]),
+      ).toBe("«Auth» and «AUTH»");
       // A token carrying regex-special characters must match literally.
-      expect(_testOnlySearchCommand.markTokenRuns("c++ and c++", ["c++"])).toBe("«c++» and «c++»");
+      expect(_testOnlySearchCommand.markTokenRuns("c++ and c++", ["c++"])).toBe(
+        "«c++» and «c++»",
+      );
     });
 
     it("returns the text unchanged when there are no non-empty tokens", async () => {
-      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
-      expect(_testOnlySearchCommand.markTokenRuns("unchanged", [""])).toBe("unchanged");
+      const { _testOnlySearchCommand } =
+        await import("../../../src/cli/commands/search.js");
+      expect(_testOnlySearchCommand.markTokenRuns("unchanged", [""])).toBe(
+        "unchanged",
+      );
     });
 
     it("prefers the longest token so a prefix token does not shadow a longer match", async () => {
-      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      const { _testOnlySearchCommand } =
+        await import("../../../src/cli/commands/search.js");
       // "auth" is a prefix of "authority"; length-descending ordering must mark
       // the full "authority" rather than «auth»ority.
-      expect(_testOnlySearchCommand.markTokenRuns("authority check", ["auth", "authority"])).toBe(
-        "«authority» check",
-      );
+      expect(
+        _testOnlySearchCommand.markTokenRuns("authority check", [
+          "auth",
+          "authority",
+        ]),
+      ).toBe("«authority» check");
     });
   });
 
   describe("highlightFieldSnippet", () => {
     it("returns null for empty text and for text with no token match", async () => {
-      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
-      expect(_testOnlySearchCommand.highlightFieldSnippet("", ["auth"])).toBeNull();
-      expect(_testOnlySearchCommand.highlightFieldSnippet("nothing here", ["auth", ""])).toBeNull();
+      const { _testOnlySearchCommand } =
+        await import("../../../src/cli/commands/search.js");
+      expect(
+        _testOnlySearchCommand.highlightFieldSnippet("", ["auth"]),
+      ).toBeNull();
+      expect(
+        _testOnlySearchCommand.highlightFieldSnippet("nothing here", [
+          "auth",
+          "",
+        ]),
+      ).toBeNull();
     });
 
     it("wraps the match without ellipsis when the field fits the window", async () => {
-      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
-      expect(_testOnlySearchCommand.highlightFieldSnippet("Fix auth login bug", ["auth"])).toBe(
-        "Fix «auth» login bug",
-      );
+      const { _testOnlySearchCommand } =
+        await import("../../../src/cli/commands/search.js");
+      expect(
+        _testOnlySearchCommand.highlightFieldSnippet("Fix auth login bug", [
+          "auth",
+        ]),
+      ).toBe("Fix «auth» login bug");
     });
 
     it("anchors the window on the earliest matching token across the token set", async () => {
-      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      const { _testOnlySearchCommand } =
+        await import("../../../src/cli/commands/search.js");
       // "alpha" is listed first but appears later than "beta"; the window must
       // anchor on the earliest match (beta) regardless of token order.
-      expect(_testOnlySearchCommand.highlightFieldSnippet("zzz beta yyy alpha", ["alpha", "beta"])).toBe(
-        "zzz «beta» yyy «alpha»",
-      );
+      expect(
+        _testOnlySearchCommand.highlightFieldSnippet("zzz beta yyy alpha", [
+          "alpha",
+          "beta",
+        ]),
+      ).toBe("zzz «beta» yyy «alpha»");
     });
 
     it("windows long text around the first match with leading and trailing ellipsis", async () => {
-      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      const { _testOnlySearchCommand } =
+        await import("../../../src/cli/commands/search.js");
       const long = `${"x".repeat(80)} needle ${"y".repeat(80)}`;
-      const snippet = _testOnlySearchCommand.highlightFieldSnippet(long, ["needle"]);
+      const snippet = _testOnlySearchCommand.highlightFieldSnippet(long, [
+        "needle",
+      ]);
       expect(snippet).not.toBeNull();
       expect(snippet?.startsWith("…")).toBe(true);
       expect(snippet?.endsWith("…")).toBe(true);
       expect(snippet).toContain("«needle»");
     });
+
+    it("keeps a match longer than the context radius intact", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../src/cli/commands/search.js");
+      const token = "n".repeat(80);
+      const snippet = _testOnlySearchCommand.highlightFieldSnippet(
+        `${"x".repeat(80)}${token}${"y".repeat(80)}`,
+        [token],
+      );
+      expect(snippet).toContain(`«${token}»`);
+    });
+
+    it("removes every internal ranking signal from full projections", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../src/cli/commands/search.js");
+      expect(
+        _testOnlySearchCommand.projectSearchHits(
+          [
+            {
+              item: makeItemMetadata({ id: "pm-exact" }),
+              score: 1,
+              matched_fields: ["id"],
+              matched_all_terms: true,
+              exact_id_match: true,
+            },
+          ],
+          { mode: "full", fields: [] },
+        ),
+      ).toEqual([
+        {
+          item: makeItemMetadata({ id: "pm-exact" }),
+          score: 1,
+          matched_fields: ["id"],
+        },
+      ]);
+    });
   });
 
   describe("buildHitHighlights", () => {
     it("emits snippets for matched document fields in order and skips synthetic and unmatched fields", async () => {
-      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
-      const document = makeDoc({ id: "pm-hl", title: "Auth flow", tags: ["area:auth"] }, "auth body");
+      const { _testOnlySearchCommand } =
+        await import("../../../src/cli/commands/search.js");
+      const document = makeDoc(
+        { id: "pm-hl", title: "Auth flow", tags: ["area:auth"] },
+        "auth body",
+      );
       const highlights = _testOnlySearchCommand.buildHitHighlights(
         document,
         // "semantic" is synthetic (no document field), "description" has no match.
@@ -3311,31 +4138,47 @@ describe("inline query syntax and highlighting (GH-157)", () => {
       });
       listAllItemMetadataMock.mockResolvedValue([authItem, searchItem]);
       readFileMock.mockImplementation(async (targetPath: string) =>
-        targetPath.includes("pm-lgn1") ? serializeDocument(authItem, "auth body") : serializeDocument(searchItem, "auth body"),
+        targetPath.includes("pm-lgn1")
+          ? serializeDocument(authItem, "auth body")
+          : serializeDocument(searchItem, "auth body"),
       );
     }
 
     it("parses an inline tag token from the query string and applies it as a filter", async () => {
       seedAuthCorpus();
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("auth tag:area:auth", {}, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "auth tag:area:auth",
+        {},
+        { path: "/tmp/pm-search" },
+      );
       expect(result.query).toBe("auth");
       expect(result.filters).toMatchObject({ tag: "area:auth" });
-      expect(result.items.map((hit) => (hit as { item: ItemMetadata }).item.id)).toEqual(["pm-lgn1"]);
+      expect(
+        result.items.map((hit) => (hit as { item: ItemMetadata }).item.id),
+      ).toEqual(["pm-lgn1"]);
     });
 
     it("lets an explicit flag win over a conflicting inline token and warns", async () => {
       seedAuthCorpus();
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("auth tag:area:search", { tag: "area:auth" }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "auth tag:area:search",
+        { tag: "area:auth" },
+        { path: "/tmp/pm-search" },
+      );
       expect(result.filters).toMatchObject({ tag: "area:auth" });
-      expect(result.warnings).toContain("search_inline_filter_ignored:tag:flag_takes_precedence");
+      expect(result.warnings).toContain(
+        "search_inline_filter_ignored:tag:flag_takes_precedence",
+      );
     });
 
     it("rejects a query whose inline tokens consume every search term", async () => {
       seedAuthCorpus();
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      await expect(runSearch("tag:area:auth", {}, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+      await expect(
+        runSearch("tag:area:auth", {}, { path: "/tmp/pm-search" }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
     });
@@ -3343,17 +4186,31 @@ describe("inline query syntax and highlighting (GH-157)", () => {
     it("attaches per-field highlights on full hits when --highlight is set", async () => {
       seedAuthCorpus();
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("auth", { full: true, highlight: true }, { path: "/tmp/pm-search" });
-      const first = result.items[0] as { highlights?: Array<{ field: string; snippet: string }> };
+      const result = await runSearch(
+        "auth",
+        { full: true, highlight: true },
+        { path: "/tmp/pm-search" },
+      );
+      const first = result.items[0] as {
+        highlights?: Array<{ field: string; snippet: string }>;
+      };
       expect(
-        first.highlights?.some((entry) => entry.field === "title" && entry.snippet.toLowerCase().includes("«auth»")),
+        first.highlights?.some(
+          (entry) =>
+            entry.field === "title" &&
+            entry.snippet.toLowerCase().includes("«auth»"),
+        ),
       ).toBe(true);
     });
 
     it("adds highlights to the compact projection field set and echoes it", async () => {
       seedAuthCorpus();
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("auth", { compact: true, highlight: true }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "auth",
+        { compact: true, highlight: true },
+        { path: "/tmp/pm-search" },
+      );
       const first = result.items[0] as Record<string, unknown>;
       expect(first).toHaveProperty("highlights");
     });
@@ -3373,7 +4230,11 @@ describe("inline query syntax and highlighting (GH-157)", () => {
     it("omits highlights entirely when --highlight is not set", async () => {
       seedAuthCorpus();
       const { runSearch } = await import("../../../src/cli/commands/search.js");
-      const result = await runSearch("auth", { full: true }, { path: "/tmp/pm-search" });
+      const result = await runSearch(
+        "auth",
+        { full: true },
+        { path: "/tmp/pm-search" },
+      );
       const first = result.items[0] as Record<string, unknown>;
       expect(first).not.toHaveProperty("highlights");
     });

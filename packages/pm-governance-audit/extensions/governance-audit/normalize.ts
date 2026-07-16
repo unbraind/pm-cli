@@ -294,12 +294,15 @@ function planActiveItemCleanup(
   unsetFields: Set<string>,
 ): void {
   for (const definition of ACTIVE_CLEAR_FIELD_RULES) {
-    const currentValue = toNonEmptyStringOrUndefined(itemRecord[definition.field]);
+    const currentValue = toNonEmptyStringOrUndefined(
+      itemRecord[definition.field],
+    );
     if (!currentValue) continue;
     const normalized = normalizeComparableText(currentValue);
-    const hasClosurePattern = lifecyclePatterns.closure_like_metadata_field_patterns[
-      definition.field
-    ].some((pattern) => normalized.includes(pattern));
+    const hasClosurePattern =
+      lifecyclePatterns.closure_like_metadata_field_patterns[
+        definition.field
+      ].some((pattern) => normalized.includes(pattern));
     if (!hasClosurePattern && !isLowSignalText(currentValue)) continue;
     unsetFields.add(definition.unsetField);
     changes.push({
@@ -327,7 +330,9 @@ function planTerminalItemBackfills(
 ): void {
   const closeReason = toMeaningfulCloseReason(itemRecord.close_reason);
   for (const definition of CLOSED_BACKFILL_FIELD_RULES) {
-    const currentValue = toNonEmptyStringOrUndefined(itemRecord[definition.field]);
+    const currentValue = toNonEmptyStringOrUndefined(
+      itemRecord[definition.field],
+    );
     if (currentValue && !isLowSignalText(currentValue)) continue;
     const replacement = buildClosedBackfillValue(definition.field, closeReason);
     updates[definition.optionKey] = replacement;
@@ -433,8 +438,12 @@ export async function runNormalize(
     statusFilter,
     {
       ...options.list,
+      compact: undefined,
+      brief: undefined,
+      fields: undefined,
       includeBody: true,
       excludeTerminal: false,
+      full: true as const,
     },
     global,
   );

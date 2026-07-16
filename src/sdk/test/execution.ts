@@ -424,13 +424,13 @@ function resolveLinkedTestEffectiveContextMode(
 function hasLinkedTestAssertions(linkedTest: LinkedTest): boolean {
   return Object.entries(linkedTest)
     .filter(([key]) => key.startsWith("assert_"))
-    .some(
-      ([, value]) =>
-        typeof value === "number" ||
-        (typeof value === "object" &&
-          value !== null &&
-          Object.keys(value).length > 0),
-    );
+    .some(([, value]) => {
+      if (value === undefined || value === null) return false;
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === "object") return Object.keys(value).length > 0;
+      if (typeof value === "string") return value.trim().length > 0;
+      return true;
+    });
 }
 
 /* c8 ignore start -- pm-context mismatch hint combinations are validated by tracker/schema integration runs */
@@ -619,6 +619,19 @@ function parsedLauncherInvokesRecursiveTestAll(
   return firstPmSubcommand(parsed.args) === "test-all";
 }
 
+const SHELL_COMMAND_FLAG_PATTERNS = new Map<string, RegExp>([
+  ...["sh", "bash", "dash", "zsh"].map(
+    (executable) => [executable, /^(?:-c|-[a-z]*c[a-z]*)$/u] as const,
+  ),
+  ...["cmd", "cmd.exe"].map(
+    (executable) => [executable, /^\/[ck]$/u] as const,
+  ),
+  ...["powershell", "powershell.exe", "pwsh", "pwsh.exe"].map(
+    (executable) => [executable, /^-(?:c|command)$/u] as const,
+  ),
+]);
+const PACKAGE_EXEC_EXECUTABLES = new Set(["npx", "bunx"]);
+
 function segmentInvokesRecursiveTestAll(segment: string): boolean {
   const rawTokens = segment.split(" ").filter((token) => token.length > 0);
   const tokens = stripLeadingEnvAssignments(rawTokens);
@@ -627,6 +640,17 @@ function segmentInvokesRecursiveTestAll(segment: string): boolean {
   }
 
   const [executable, ...args] = tokens;
+  const shellCommandFlagPattern = SHELL_COMMAND_FLAG_PATTERNS.get(executable);
+  if (shellCommandFlagPattern) {
+    const commandFlagIndex = args.findIndex((arg) =>
+      shellCommandFlagPattern.test(arg),
+    );
+    return commandFlagIndex >= 0
+      ? segmentInvokesRecursiveTestAll(
+          args.slice(commandFlagIndex + 1).join(" "),
+        )
+      : false;
+  }
   if (isPmExecutableToken(executable) || isPmCliScriptToken(executable)) {
     return firstPmSubcommand(args) === "test-all";
   }
@@ -635,7 +659,7 @@ function segmentInvokesRecursiveTestAll(segment: string): boolean {
     return firstPmSubcommand(args.slice(1)) === "test-all";
   }
 
-  if (executable === "npx" || executable === "bunx") {
+  if (PACKAGE_EXEC_EXECUTABLES.has(executable)) {
     return parsedLauncherInvokesRecursiveTestAll(parseNpxCommand(args));
   }
 
@@ -877,9 +901,17 @@ function parseLinkedTestTimeoutSeconds(
     );
   }
   const timeoutRaw = timeoutSecondsRaw ?? timeoutAliasRaw;
-  return timeoutRaw === undefined
-    ? undefined
-    : Math.floor(parseOptionalNumber(timeoutRaw, "timeout_seconds"));
+  if (timeoutRaw === undefined) return undefined;
+  const timeout = Math.floor(
+    parseOptionalNumber(timeoutRaw, "timeout_seconds"),
+  );
+  if (timeout <= 0) {
+    throw new PmCliError(
+      "--add timeout_seconds must be a positive integer",
+      EXIT_CODE.USAGE,
+    );
+  }
+  return timeout;
 }
 
 /* c8 ignore start -- add-json validation matrix is covered by linked-test parser integration suites */
@@ -1647,7 +1679,7 @@ function readJsonPathValue(
     if (
       typeof current !== "object" ||
       current === null ||
-      !(segment in current)
+      !Object.prototype.hasOwnProperty.call(current, segment)
     ) {
       return { found: false, value: undefined };
     }
@@ -2039,7 +2071,9 @@ function buildLinkedTestExecutionContext(params: {
     sandbox_global_item_count: selectedSandboxGlobalItemCount,
     mismatch_detected:
       params.isPmCommand &&
-      params.counts.sourceProjectItemCount !== selectedSandboxProjectItemCount,
+      (params.counts.sourceProjectItemCount !==
+        selectedSandboxProjectItemCount ||
+        params.counts.sourceGlobalItemCount !== selectedSandboxGlobalItemCount),
     project_extensions_seeded: Boolean(params.sourceRoots),
     global_extensions_seeded: Boolean(params.sourceRoots),
   };
@@ -2588,11 +2622,18 @@ function resolveTestRunOptions(
     options.run === true
       ? resolveLinkedTestRunSelection(tests, selectorInput)
       : undefined;
+  const defaultTimeoutSeconds =
+    options.timeout === undefined
+      ? undefined
+      : parseOptionalNumber(options.timeout, "timeout");
+  if (defaultTimeoutSeconds !== undefined && defaultTimeoutSeconds <= 0) {
+    throw new PmCliError(
+      "Test timeout must be a positive integer",
+      EXIT_CODE.USAGE,
+    );
+  }
   return {
-    defaultTimeoutSeconds:
-      options.timeout === undefined
-        ? undefined
-        : parseOptionalNumber(options.timeout, "timeout"),
+    defaultTimeoutSeconds,
     pmContextMode: parsePmContextMode(options.pmContext),
     runSelection,
     testsToRun: runSelection?.selected ?? tests,
@@ -2821,6 +2862,7 @@ export async function runTest(
 
 /** Public contract for test only test command, shared by SDK and presentation-layer consumers. */
 export const _testOnlyTestCommand = {
+  buildLinkedTestExecutionContext,
   buildPmContextMismatchHint,
   commandInvokesPmCli,
   commandInvokesPmTrackerReadCommand,
@@ -2832,6 +2874,7 @@ export const _testOnlyTestCommand = {
   firstDirectTestRunnerSubcommand,
   hasLinkedTestAssertions,
   parseAddJsonEntries,
+  parseLinkedTestTimeoutSeconds,
   parsePmContextMode,
   readJsonPathValue,
   resolveAuthor,
@@ -2839,11 +2882,13 @@ export const _testOnlyTestCommand = {
   resolveLinkedTestEffectiveContextMode,
   resolveLinkedTestFailureExitCode,
   resolveLinkedTestRequestedContextMode,
+  resolveTestRunOptions,
   resolveTrackedRunId,
   runLinkedTestCommand,
   appendLinkedTestOutputChunk,
   seedLinkedTestSandbox,
   seedLinkedTestTrackerData,
+  segmentInvokesRecursiveTestAll,
   splitJsonPathSegments,
   summarizeRunResultStatuses,
 };

@@ -15,6 +15,7 @@ import {
   runList,
   type GlobalOptions,
   type ItemStatus,
+  type ListedItem,
   type RuntimeStatusRegistry,
 } from "./sdk.ts";
 import {
@@ -521,7 +522,7 @@ function collectDedupeClusters(
 }
 
 function toPreparedDedupeCandidate(
-  item: Awaited<ReturnType<typeof runList>>["items"][number],
+  item: ListedItem,
 ): DedupeAuditPreparedCandidate {
   return {
     id: item.id,
@@ -581,7 +582,11 @@ export async function runDedupeAudit(
   const threshold = parseThreshold(options.threshold);
   const fuzzyThreshold = threshold ?? 0.8;
 
-  const listed = await runList(status, buildListQueryFilters(options), global);
+  const listed = await runList(
+    status,
+    { ...buildListQueryFilters(options), full: true as const },
+    global,
+  );
 
   const prepared = listed.items.map((item) => toPreparedDedupeCandidate(item));
 

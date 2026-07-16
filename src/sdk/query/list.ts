@@ -15,11 +15,7 @@ import {
   resolveItemTypeRegistry,
   type ItemTypeRegistry,
 } from "../../core/item/type-registry.js";
-import {
-  parseIntegerLimit,
-  parsePriority,
-  parseType,
-} from "./parsers.js";
+import { parseIntegerLimit, parsePriority, parseType } from "./parsers.js";
 import {
   collectRuntimeFilterValues,
   matchesRuntimeFilters,
@@ -63,11 +59,7 @@ import {
 import { HEAVY_METADATA_KEYS } from "../../core/store/item-metadata-cache.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type {
-  ItemMetadata,
-  ItemStatus,
-  ItemType,
-} from "../../types/index.js";
+import type { ItemMetadata, ItemStatus, ItemType } from "../../types/index.js";
 import type { SharedItemFilterOptions } from "./item-filter-options.js";
 import {
   createQueryFingerprint,
@@ -250,6 +242,27 @@ export function resolveContentFieldFilters(
 /** Restricts listed item values accepted by command, SDK, and storage contracts. */
 export type ListedItem = ItemMetadata | (ItemMetadata & { body: string });
 
+/** Tree-only metadata added when list results are ordered hierarchically. */
+export interface ListTreeMetadata {
+  /** Zero-based depth relative to the selected tree root. */
+  tree_depth: number;
+  /** Parent item ID, or null for a root row. */
+  tree_parent: string | null;
+  /** Number of direct children represented by the row. */
+  tree_children: number;
+  /** Indented display title for token-efficient tree rendering. */
+  tree_title: string;
+}
+
+/** Full metadata enriched with tree-only fields. */
+export type ListTreeItem = ListedItem & ListTreeMetadata;
+
+/** A compact or explicitly selected field projection. */
+export type ListProjectedItem = Record<string, unknown>;
+
+/** Honest union of item shapes returned by the list engine. */
+export type ListResultItem = ListedItem | ListTreeItem | ListProjectedItem;
+
 type ListProjectionMode = "full" | "compact" | "fields";
 
 interface ListProjectionConfig {
@@ -300,7 +313,7 @@ const HEAVY_PROJECTION_FIELDS: ReadonlySet<string> = new Set<string>(
 );
 
 interface ListResultBase {
-  items: ListedItem[];
+  items: ListResultItem[];
   count: number;
   // Total rows matched before pagination; only emitted when --limit/--offset
   // omitted rows, so agents know how many remain (GH-154).
@@ -344,6 +357,17 @@ export interface ListVerboseResult extends ListResultBase {
   };
   /** Value that configures or reports now for this contract. */
   now: string;
+}
+
+/** Verbose full-record result returned when `full: true` is requested. */
+export interface ListFullResult extends ListVerboseResult {
+  /** Full metadata rows, optionally enriched with tree metadata. */
+  items: Array<ListedItem | ListTreeItem>;
+  /** Discriminator proving that rows are complete metadata records. */
+  projection: {
+    mode: "full";
+    fields: null;
+  };
 }
 
 /** Restricts list result values accepted by command, SDK, and storage contracts. */
@@ -708,7 +732,8 @@ function parseIdsFilter(raw: unknown): Set<string> | undefined {
 
 function parseOffset(raw: string | undefined): number | undefined {
   if (raw === undefined) return undefined;
-  const parsed = Number(raw);
+  const normalized = String(raw).trim();
+  const parsed = normalized.length === 0 ? Number.NaN : Number(normalized);
   if (!Number.isInteger(parsed) || parsed < 0) {
     throw new PmCliError(
       "Offset filter must be a non-negative integer",
@@ -1129,7 +1154,7 @@ function withTreeMetadata(
   item: ListedItem,
   depth: number,
   childCount: number,
-): ListedItem {
+): ListTreeItem {
   const itemRecord = toItemRecord(item);
   const title = typeof itemRecord.title === "string" ? itemRecord.title : "";
   const parent =
@@ -1142,7 +1167,7 @@ function withTreeMetadata(
     tree_parent: parent,
     tree_children: childCount,
     tree_title: `${"  ".repeat(depth)}${title}`,
-  } as ListedItem;
+  };
 }
 
 function orderItemsAsTree(
@@ -1298,7 +1323,7 @@ function projectListItems(
   items: ListedItem[],
   projection: ListProjectionConfig,
   treeMode = false,
-): ListedItem[] {
+): ListResultItem[] {
   if (projection.mode === "full") {
     return items;
   }
@@ -1307,7 +1332,7 @@ function projectListItems(
     for (const field of projection.fields) {
       projected[field] = readListFieldValue(item, field, treeMode);
     }
-    return projected as unknown as ListedItem;
+    return projected;
   });
 }
 
@@ -1346,7 +1371,7 @@ interface ResolvedListStatus {
 }
 
 interface ListPageResult {
-  projected: ListedItem[];
+  projected: ListResultItem[];
   totalMatched: number;
   truncationExtras: { total: number } | Record<string, never>;
   pageExtras: {
@@ -1644,7 +1669,19 @@ function buildVerboseListFilters(params: {
   return filters;
 }
 
+/** Return complete item metadata when the caller explicitly requests full projection. */
+export function runList(
+  status: ItemStatus | undefined,
+  options: ListOptions & { full: true },
+  global: GlobalOptions,
+): Promise<ListFullResult>;
 /** Implements run list for the public runtime surface of this module. */
+export function runList(
+  status: ItemStatus | undefined,
+  options: ListOptions,
+  global: GlobalOptions,
+): Promise<ListResult>;
+/** Execute a list query with projection-aware public result typing. */
 export async function runList(
   status: ItemStatus | undefined,
   options: ListOptions,

@@ -216,7 +216,7 @@ async function loadItem(
 }
 
 function buildChildrenByParentForDedupeMerge(
-  items: Awaited<ReturnType<typeof runList>>["items"],
+  items: ItemMetadata[],
   statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>,
 ): Map<string, { id: string; title: string; terminal: boolean }[]> {
   const childrenByParent = new Map<
@@ -386,7 +386,7 @@ export async function runDedupeMerge(
 
   // A single full listing supplies every child lookup without re-reading the
   // corpus per duplicate.
-  const corpus = await runList(undefined, {}, global);
+  const corpus = await runList(undefined, { full: true as const }, global);
   const childrenByParent = buildChildrenByParentForDedupeMerge(
     corpus.items,
     statusRegistry,

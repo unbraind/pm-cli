@@ -18,7 +18,8 @@ export function parseIntegerLimit(
   label = "--limit",
 ): number | undefined {
   if (raw === undefined) return undefined;
-  const parsed = Number(raw);
+  const normalized = String(raw).trim();
+  const parsed = normalized.length === 0 ? Number.NaN : Number(normalized);
   if (!Number.isInteger(parsed) || parsed < 0) {
     throw new PmCliError(
       `${label} must be a non-negative integer`,
@@ -34,7 +35,8 @@ export function parsePriority(
   label = "--priority",
 ): number | undefined {
   if (raw === undefined) return undefined;
-  const parsed = Number(raw);
+  const normalized = String(raw).trim();
+  const parsed = normalized.length === 0 ? Number.NaN : Number(normalized);
   if (!Number.isInteger(parsed) || parsed < 0 || parsed > 4) {
     throw new PmCliError(`${label} filter must be 0..4`, EXIT_CODE.USAGE);
   }

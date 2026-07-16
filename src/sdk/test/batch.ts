@@ -294,17 +294,17 @@ function normalizeAssertionSignature(test: LinkedTest): string {
 }
 
 function buildLinkedTestKey(test: LinkedTest): string {
+  const envSet = normalizeEnvSetSignature(test.env_set);
+  const envClear = normalizeEnvClearSignature(test.env_clear);
+  const pmContextMode = normalizePmContextModeSignature(test.pm_context_mode);
+  const sharedHostSafe = test.shared_host_safe === true ? "true" : "false";
+  const assertions = normalizeAssertionSignature(test);
   const command = test.command?.trim();
   if (command && command.length > 0) {
-    const envSet = normalizeEnvSetSignature(test.env_set);
-    const envClear = normalizeEnvClearSignature(test.env_clear);
-    const pmContextMode = normalizePmContextModeSignature(test.pm_context_mode);
-    const sharedHostSafe = test.shared_host_safe === true ? "true" : "false";
-    const assertions = normalizeAssertionSignature(test);
     return `command:${test.scope}:${normalizeCommand(command)}:${envSet}:${envClear}:${pmContextMode}:${sharedHostSafe}:${assertions}`;
   }
   const linkedPath = test.path?.trim() ?? "";
-  return `path:${test.scope}:${linkedPath}`;
+  return `path:${test.scope}:${linkedPath}:${envSet}:${envClear}:${pmContextMode}:${sharedHostSafe}:${assertions}`;
 }
 
 function maxTimeoutSeconds(
@@ -781,5 +781,6 @@ export async function runTestAll(
 
 /** Public contract for test only test all, shared by SDK and presentation-layer consumers. */
 export const _testOnlyTestAll = {
+  buildLinkedTestKey,
   formatTrackingError,
 };

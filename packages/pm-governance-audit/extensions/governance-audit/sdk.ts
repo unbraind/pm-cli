@@ -50,9 +50,11 @@ export const {
   resolvePmRoot,
   resolveRuntimeStatusRegistry,
   runClose,
-  runList,
   runUpdate,
 } = runtime;
+
+/** Preserve the host SDK list overloads across the dynamic runtime boundary. */
+export const runList: typeof RuntimeSdk.runList = runtime.runList;
 
 /** Runtime status registry inferred from the host SDK's schema resolver. */
 export type RuntimeStatusRegistry = ReturnType<

@@ -212,12 +212,18 @@ async function decorateLinkedArtifactResult(
     noTruncate: true,
     fields: `id,${artifactKey}`,
   });
-  const items = listed.items.map((item) => ({
-    id: item.id,
-    artifacts: Array.isArray(item[artifactKey])
-      ? (item[artifactKey] as Array<{ path: string }>)
-      : undefined,
-  }));
+  const items = listed.items.flatMap((item) =>
+    typeof item.id === "string"
+      ? [
+          {
+            id: item.id,
+            artifacts: Array.isArray(item[artifactKey])
+              ? (item[artifactKey] as Array<{ path: string }>)
+              : undefined,
+          },
+        ]
+      : [],
+  );
   return {
     ...result,
     audit: buildLinkedArtifactAudit({ paths, items }),

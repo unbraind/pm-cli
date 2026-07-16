@@ -61,7 +61,7 @@ export function parseLinkedTestEnvSet(
       EXIT_CODE.USAGE,
     );
   }
-  const envSet: Record<string, string> = {};
+  const envSet: Record<string, string> = Object.create(null);
   for (const assignment of assignments) {
     const separatorIndex = assignment.indexOf("=");
     if (separatorIndex <= 0) {
@@ -238,7 +238,7 @@ export function parseLinkedTestAssertionEqualsMap(
       EXIT_CODE.USAGE,
     );
   }
-  const values: Record<string, string> = {};
+  const values: Record<string, string> = Object.create(null);
   for (const assignment of assignments) {
     const separatorIndex = assignment.indexOf("=");
     if (separatorIndex <= 0) {
@@ -280,7 +280,7 @@ export function parseLinkedTestAssertionGteMap(
       EXIT_CODE.USAGE,
     );
   }
-  const values: Record<string, number> = {};
+  const values: Record<string, number> = Object.create(null);
   for (const assignment of assignments) {
     const separatorIndex = assignment.indexOf("=");
     if (separatorIndex <= 0) {
@@ -297,7 +297,7 @@ export function parseLinkedTestAssertionGteMap(
         EXIT_CODE.USAGE,
       );
     }
-    const value = Number.parseFloat(valueRaw);
+    const value = Number(valueRaw);
     if (!Number.isFinite(value)) {
       throw new PmCliError(
         `${optionName} assert_json_field_gte value for "${key}" must be numeric`,
@@ -493,7 +493,7 @@ function readJsonEntryEnvSet(
       'field "env_set" must be a JSON object mapping environment names to string values',
     );
   }
-  const envSet: Record<string, string> = {};
+  const envSet: Record<string, string> = Object.create(null);
   for (const [key, entryValue] of Object.entries(value)) {
     if (typeof entryValue !== "string") {
       throw fail(`field "env_set" value for "${key}" must be a string`);
@@ -582,7 +582,7 @@ function readJsonEntryEqualsMap(
       'field "assert_json_field_equals" must be a JSON object mapping field paths to expected values',
     );
   }
-  const values: Record<string, string> = {};
+  const values: Record<string, string> = Object.create(null);
   for (const [key, entryValue] of Object.entries(value)) {
     if (key.trim().length === 0) {
       throw fail(
@@ -619,7 +619,7 @@ function readJsonEntryGteMap(
       'field "assert_json_field_gte" must be a JSON object mapping field paths to numeric minimums',
     );
   }
-  const values: Record<string, number> = {};
+  const values: Record<string, number> = Object.create(null);
   for (const [key, entryValue] of Object.entries(value)) {
     if (key.trim().length === 0) {
       throw fail(

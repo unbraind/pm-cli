@@ -22,7 +22,11 @@ describe("linked-test constants", () => {
     expect(LINKED_TEST_PROTECTED_ENV_KEYS.has("PM_PATH")).toBe(true);
     expect(LINKED_TEST_ENV_NAME_PATTERN.test("PORT")).toBe(true);
     expect(LINKED_TEST_ENV_NAME_PATTERN.test("1BAD")).toBe(false);
-    expect([...LINKED_TEST_PM_CONTEXT_MODE_VALUES]).toEqual(["schema", "tracker", "auto"]);
+    expect([...LINKED_TEST_PM_CONTEXT_MODE_VALUES]).toEqual([
+      "schema",
+      "tracker",
+      "auto",
+    ]);
   });
 });
 
@@ -33,23 +37,33 @@ describe("parseLinkedTestEnvSet", () => {
   });
 
   it("parses KEY=VALUE assignments", () => {
-    expect(parseLinkedTestEnvSet("PORT=0;BASE=http://x", "--test")).toEqual({ PORT: "0", BASE: "http://x" });
+    const parsed = parseLinkedTestEnvSet("PORT=0;BASE=http://x", "--test");
+    expect(parsed).toEqual({ PORT: "0", BASE: "http://x" });
+    expect(Object.getPrototypeOf(parsed)).toBeNull();
   });
 
   it("throws when only delimiters are provided", () => {
-    expect(() => parseLinkedTestEnvSet(";;", "--test")).toThrow(/at least one KEY=VALUE/);
+    expect(() => parseLinkedTestEnvSet(";;", "--test")).toThrow(
+      /at least one KEY=VALUE/,
+    );
   });
 
   it("throws on missing separator", () => {
-    expect(() => parseLinkedTestEnvSet("PORT", "--test")).toThrow(/must use KEY=VALUE/);
+    expect(() => parseLinkedTestEnvSet("PORT", "--test")).toThrow(
+      /must use KEY=VALUE/,
+    );
   });
 
   it("throws on invalid key name", () => {
-    expect(() => parseLinkedTestEnvSet("1BAD=1", "--test")).toThrow(/is invalid/);
+    expect(() => parseLinkedTestEnvSet("1BAD=1", "--test")).toThrow(
+      /is invalid/,
+    );
   });
 
   it("throws on protected key", () => {
-    expect(() => parseLinkedTestEnvSet("pm_path=x", "--test")).toThrow(/reserved for sandbox safety/);
+    expect(() => parseLinkedTestEnvSet("pm_path=x", "--test")).toThrow(
+      /reserved for sandbox safety/,
+    );
   });
 });
 
@@ -63,15 +77,21 @@ describe("parseLinkedTestEnvClear", () => {
   });
 
   it("throws when only delimiters are provided", () => {
-    expect(() => parseLinkedTestEnvClear(";,", "--test")).toThrow(/at least one environment variable/);
+    expect(() => parseLinkedTestEnvClear(";,", "--test")).toThrow(
+      /at least one environment variable/,
+    );
   });
 
   it("throws on invalid key", () => {
-    expect(() => parseLinkedTestEnvClear("1BAD", "--test")).toThrow(/is invalid/);
+    expect(() => parseLinkedTestEnvClear("1BAD", "--test")).toThrow(
+      /is invalid/,
+    );
   });
 
   it("throws on protected key", () => {
-    expect(() => parseLinkedTestEnvClear("FORCE_COLOR", "--test")).toThrow(/reserved for sandbox safety/);
+    expect(() => parseLinkedTestEnvClear("FORCE_COLOR", "--test")).toThrow(
+      /reserved for sandbox safety/,
+    );
   });
 });
 
@@ -90,7 +110,9 @@ describe("parseLinkedTestBoolean", () => {
   });
 
   it("throws on invalid value", () => {
-    expect(() => parseLinkedTestBoolean("maybe", "--test", "flag")).toThrow(/must be one of true\|false/);
+    expect(() => parseLinkedTestBoolean("maybe", "--test", "flag")).toThrow(
+      /must be one of true\|false/,
+    );
   });
 });
 
@@ -104,7 +126,9 @@ describe("parseLinkedTestContextMode", () => {
   });
 
   it("throws on invalid mode", () => {
-    expect(() => parseLinkedTestContextMode("bogus", "--test")).toThrow(/pm_context_mode must be one of/);
+    expect(() => parseLinkedTestContextMode("bogus", "--test")).toThrow(
+      /pm_context_mode must be one of/,
+    );
   });
 });
 
@@ -124,16 +148,24 @@ describe("parseLinkedTestStringList", () => {
 
 describe("parseLinkedTestRegexList", () => {
   it("returns undefined for empty list", () => {
-    expect(parseLinkedTestRegexList(undefined, "--test", "assert_stdout_regex")).toBeUndefined();
-    expect(parseLinkedTestRegexList(";;", "--test", "assert_stdout_regex")).toBeUndefined();
+    expect(
+      parseLinkedTestRegexList(undefined, "--test", "assert_stdout_regex"),
+    ).toBeUndefined();
+    expect(
+      parseLinkedTestRegexList(";;", "--test", "assert_stdout_regex"),
+    ).toBeUndefined();
   });
 
   it("returns validated patterns", () => {
-    expect(parseLinkedTestRegexList("^a$;b+", "--test", "assert_stdout_regex")).toEqual(["^a$", "b+"]);
+    expect(
+      parseLinkedTestRegexList("^a$;b+", "--test", "assert_stdout_regex"),
+    ).toEqual(["^a$", "b+"]);
   });
 
   it("throws on invalid regex", () => {
-    expect(() => parseLinkedTestRegexList("(", "--test", "assert_stdout_regex")).toThrow(/includes invalid regex/);
+    expect(() =>
+      parseLinkedTestRegexList("(", "--test", "assert_stdout_regex"),
+    ).toThrow(/includes invalid regex/);
   });
 });
 
@@ -148,30 +180,44 @@ describe("parseLinkedTestMinLines", () => {
   });
 
   it("throws for non-integer or negative values", () => {
-    expect(() => parseLinkedTestMinLines("1.5", "--test")).toThrow(/integer >= 0/);
-    expect(() => parseLinkedTestMinLines("-1", "--test")).toThrow(/integer >= 0/);
+    expect(() => parseLinkedTestMinLines("1.5", "--test")).toThrow(
+      /integer >= 0/,
+    );
+    expect(() => parseLinkedTestMinLines("-1", "--test")).toThrow(
+      /integer >= 0/,
+    );
   });
 });
 
 describe("parseLinkedTestAssertionEqualsMap", () => {
   it("returns undefined for falsy input", () => {
-    expect(parseLinkedTestAssertionEqualsMap(undefined, "--test")).toBeUndefined();
+    expect(
+      parseLinkedTestAssertionEqualsMap(undefined, "--test"),
+    ).toBeUndefined();
   });
 
   it("parses path=value pairs", () => {
-    expect(parseLinkedTestAssertionEqualsMap("a=1;b=2", "--test")).toEqual({ a: "1", b: "2" });
+    const parsed = parseLinkedTestAssertionEqualsMap("a=1;b=2", "--test");
+    expect(parsed).toEqual({ a: "1", b: "2" });
+    expect(Object.getPrototypeOf(parsed)).toBeNull();
   });
 
   it("throws when only delimiters are provided", () => {
-    expect(() => parseLinkedTestAssertionEqualsMap(";;", "--test")).toThrow(/at least one path=value/);
+    expect(() => parseLinkedTestAssertionEqualsMap(";;", "--test")).toThrow(
+      /at least one path=value/,
+    );
   });
 
   it("throws on missing separator", () => {
-    expect(() => parseLinkedTestAssertionEqualsMap("a", "--test")).toThrow(/must use path=value/);
+    expect(() => parseLinkedTestAssertionEqualsMap("a", "--test")).toThrow(
+      /must use path=value/,
+    );
   });
 
   it("throws on empty path or value", () => {
-    expect(() => parseLinkedTestAssertionEqualsMap("a=", "--test")).toThrow(/non-empty path and value/);
+    expect(() => parseLinkedTestAssertionEqualsMap("a=", "--test")).toThrow(
+      /non-empty path and value/,
+    );
   });
 });
 
@@ -181,29 +227,43 @@ describe("parseLinkedTestAssertionGteMap", () => {
   });
 
   it("parses numeric path=value pairs", () => {
-    expect(parseLinkedTestAssertionGteMap("a=1;b=2.5", "--test")).toEqual({ a: 1, b: 2.5 });
+    const parsed = parseLinkedTestAssertionGteMap("a=1;b=2.5", "--test");
+    expect(parsed).toEqual({ a: 1, b: 2.5 });
+    expect(Object.getPrototypeOf(parsed)).toBeNull();
   });
 
   it("throws when only delimiters are provided", () => {
-    expect(() => parseLinkedTestAssertionGteMap(";;", "--test")).toThrow(/at least one path=value/);
+    expect(() => parseLinkedTestAssertionGteMap(";;", "--test")).toThrow(
+      /at least one path=value/,
+    );
   });
 
   it("throws on missing separator", () => {
-    expect(() => parseLinkedTestAssertionGteMap("a", "--test")).toThrow(/must use path=value/);
+    expect(() => parseLinkedTestAssertionGteMap("a", "--test")).toThrow(
+      /must use path=value/,
+    );
   });
 
   it("throws on empty path or value", () => {
-    expect(() => parseLinkedTestAssertionGteMap("a=", "--test")).toThrow(/non-empty path and value/);
+    expect(() => parseLinkedTestAssertionGteMap("a=", "--test")).toThrow(
+      /non-empty path and value/,
+    );
   });
 
   it("throws on non-numeric value", () => {
-    expect(() => parseLinkedTestAssertionGteMap("a=x", "--test")).toThrow(/must be numeric/);
+    expect(() => parseLinkedTestAssertionGteMap("a=x", "--test")).toThrow(
+      /must be numeric/,
+    );
+    expect(() => parseLinkedTestAssertionGteMap("a=10oops", "--test")).toThrow(
+      /must be numeric/,
+    );
   });
 });
 
 describe("parseLinkedTestJsonEntries", () => {
   it("preserves complex command strings and parses linked-test metadata", () => {
-    const command = "node scripts/run-tests.mjs test -- tests/unit/output.spec.ts --reporter='dot,verbose'";
+    const command =
+      "node scripts/run-tests.mjs test -- tests/unit/output.spec.ts --reporter='dot,verbose'";
     expect(
       parseLinkedTestJsonEntries(
         JSON.stringify({
@@ -244,65 +304,119 @@ describe("parseLinkedTestJsonEntries", () => {
           { command: "pnpm build", timeout: 120 },
         ]),
         "--add-json",
-      ).map((entry) => ({ command: entry.command, timeout_seconds: entry.timeout_seconds, scope: entry.scope })),
+      ).map((entry) => ({
+        command: entry.command,
+        timeout_seconds: entry.timeout_seconds,
+        scope: entry.scope,
+      })),
     ).toEqual([
-      { command: "node --version", timeout_seconds: undefined, scope: "project" },
+      {
+        command: "node --version",
+        timeout_seconds: undefined,
+        scope: "project",
+      },
       { command: "pnpm build", timeout_seconds: 120, scope: "project" },
     ]);
   });
 
   it("rejects invalid JSON, unknown keys, unsafe env, and conflicting aliases", () => {
-    expect(() => parseLinkedTestJsonEntries("{", "--add-json")).toThrow(/not valid JSON/);
-    expect(() => parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", bogus: 1 }), "--add-json")).toThrow(
-      /does not recognize key/,
+    expect(() => parseLinkedTestJsonEntries("{", "--add-json")).toThrow(
+      /not valid JSON/,
     );
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", env_set: { PM_PATH: "/tmp/unsafe" } }), "--add-json"),
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", bogus: 1 }),
+        "--add-json",
+      ),
+    ).toThrow(/does not recognize key/);
+    expect(() =>
+      parseLinkedTestJsonEntries(
+        JSON.stringify({
+          command: "node --version",
+          env_set: { PM_PATH: "/tmp/unsafe" },
+        }),
+        "--add-json",
+      ),
     ).toThrow(/reserved for sandbox safety/);
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", cmd: "node --help" }), "--add-json"),
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", cmd: "node --help" }),
+        "--add-json",
+      ),
     ).toThrow(/command and cmd must match/);
   });
 
   it("treats an empty path string as undefined and pluralizes multiple unknown keys", () => {
-    const [entry] = parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", path: "" }), "--add-json");
+    const [entry] = parseLinkedTestJsonEntries(
+      JSON.stringify({ command: "node --version", path: "" }),
+      "--add-json",
+    );
     expect(entry.path).toBeUndefined();
     const [withPath] = parseLinkedTestJsonEntries(
-      JSON.stringify({ command: "node --version", path: "tests/unit/linked-test-parsers.spec.ts" }),
+      JSON.stringify({
+        command: "node --version",
+        path: "tests/unit/linked-test-parsers.spec.ts",
+      }),
       "--add-json",
     );
     expect(withPath.path).toBe("tests/unit/linked-test-parsers.spec.ts");
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", bogus: 1, other: 2 }), "--add-json"),
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", bogus: 1, other: 2 }),
+        "--add-json",
+      ),
     ).toThrow(/does not recognize keys "bogus", "other"/);
   });
 
   it("rejects empty numeric strings and non-positive or fractional timeouts", () => {
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", assert_stdout_min_lines: "" }), "--add-json"),
+      parseLinkedTestJsonEntries(
+        JSON.stringify({
+          command: "node --version",
+          assert_stdout_min_lines: "",
+        }),
+        "--add-json",
+      ),
     ).toThrow(/finite number/);
-    expect(() => parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", timeout_seconds: 0 }), "--add-json")).toThrow(
-      /positive integer/,
-    );
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", timeout_seconds: 1.5 }), "--add-json"),
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", timeout_seconds: 0 }),
+        "--add-json",
+      ),
+    ).toThrow(/positive integer/);
+    expect(() =>
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", timeout_seconds: 1.5 }),
+        "--add-json",
+      ),
     ).toThrow(/positive integer/);
   });
 
   it("validates JSON entry shapes and normalized key collisions", () => {
-    expect(() => parseLinkedTestJsonEntries("[]", "--add-json")).toThrow(/array must include at least one/);
-    expect(() => parseLinkedTestJsonEntries(JSON.stringify(["node --version"]), "--add-json")).toThrow(
-      /must be a JSON object/,
+    expect(() => parseLinkedTestJsonEntries("[]", "--add-json")).toThrow(
+      /array must include at least one/,
     );
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", COMMAND: "node --version" }), "--add-json"),
+      parseLinkedTestJsonEntries(
+        JSON.stringify(["node --version"]),
+        "--add-json",
+      ),
+    ).toThrow(/must be a JSON object/);
+    expect(() =>
+      parseLinkedTestJsonEntries(
+        JSON.stringify({
+          command: "node --version",
+          COMMAND: "node --version",
+        }),
+        "--add-json",
+      ),
     ).toThrow(/more than once after case normalization/);
-    expect(() => parseLinkedTestJsonEntries(JSON.stringify({ command: "" }), "--add-json")).toThrow(
-      /requires a non-empty "command"/,
-    );
-    expect(() => parseLinkedTestJsonEntries(JSON.stringify({ command: 42 }), "--add-json")).toThrow(
-      /field "command" must be a JSON string/,
-    );
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "" }), "--add-json"),
+    ).toThrow(/requires a non-empty "command"/);
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: 42 }), "--add-json"),
+    ).toThrow(/field "command" must be a JSON string/);
   });
 
   it("validates JSON scalar aliases and assertion fields", () => {
@@ -318,84 +432,155 @@ describe("parseLinkedTestJsonEntries", () => {
         }),
         "--add-json",
       ),
-    ).toEqual([{ command: "node --version", scope: "project", timeout_seconds: 120 }]);
+    ).toEqual([
+      { command: "node --version", scope: "project", timeout_seconds: 120 },
+    ]);
 
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", timeout: 120, timeout_seconds: 121 }), "--add-json"),
+      parseLinkedTestJsonEntries(
+        JSON.stringify({
+          command: "node --version",
+          timeout: 120,
+          timeout_seconds: 121,
+        }),
+        "--add-json",
+      ),
     ).toThrow(/timeout and timeout_seconds must match/);
-    expect(() => parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", scope: "team" }), "--add-json")).toThrow(
-      /field "scope" must be one of/,
-    );
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", pm_context_mode: "manual" }), "--add-json"),
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", scope: "team" }),
+        "--add-json",
+      ),
+    ).toThrow(/field "scope" must be one of/);
+    expect(() =>
+      parseLinkedTestJsonEntries(
+        JSON.stringify({
+          command: "node --version",
+          pm_context_mode: "manual",
+        }),
+        "--add-json",
+      ),
     ).toThrow(/field "pm_context_mode" must be one of/);
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", shared_host_safe: "yes" }), "--add-json"),
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", shared_host_safe: "yes" }),
+        "--add-json",
+      ),
     ).toThrow(/field "shared_host_safe" must be a JSON boolean/);
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", assert_stdout_contains: [1] }), "--add-json"),
-    ).toThrow(/field "assert_stdout_contains" must be a string or an array of strings/);
+      parseLinkedTestJsonEntries(
+        JSON.stringify({
+          command: "node --version",
+          assert_stdout_contains: [1],
+        }),
+        "--add-json",
+      ),
+    ).toThrow(
+      /field "assert_stdout_contains" must be a string or an array of strings/,
+    );
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", assert_stdout_regex: "(" }), "--add-json"),
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", assert_stdout_regex: "(" }),
+        "--add-json",
+      ),
     ).toThrow(/includes invalid regex/);
   });
 
   it("validates JSON env maps and numeric assertion maps", () => {
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", env_set: "PORT=0" }), "--add-json"),
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", env_set: "PORT=0" }),
+        "--add-json",
+      ),
     ).toThrow(/field "env_set" must be a JSON object/);
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", env_set: { PORT: 0 } }), "--add-json"),
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", env_set: { PORT: 0 } }),
+        "--add-json",
+      ),
     ).toThrow(/value for "PORT" must be a string/);
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", env_set: { "1BAD": "0" } }), "--add-json"),
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", env_set: { "1BAD": "0" } }),
+        "--add-json",
+      ),
     ).toThrow(/key "1BAD" is invalid/);
     expect(() =>
-      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", env_clear: "PM_GLOBAL_PATH" }), "--add-json"),
+      parseLinkedTestJsonEntries(
+        JSON.stringify({
+          command: "node --version",
+          env_clear: "PM_GLOBAL_PATH",
+        }),
+        "--add-json",
+      ),
     ).toThrow(/reserved for sandbox safety/);
     expect(() =>
       parseLinkedTestJsonEntries(
-        JSON.stringify({ command: "node --version", assert_json_field_equals: { " ": "bad" } }),
+        JSON.stringify({
+          command: "node --version",
+          assert_json_field_equals: { " ": "bad" },
+        }),
         "--add-json",
       ),
     ).toThrow(/keys must be non-empty/);
     expect(() =>
       parseLinkedTestJsonEntries(
-        JSON.stringify({ command: "node --version", assert_json_field_equals: { ok: { nested: true } } }),
+        JSON.stringify({
+          command: "node --version",
+          assert_json_field_equals: { ok: { nested: true } },
+        }),
         "--add-json",
       ),
     ).toThrow(/value for "ok" must be a string, number, or boolean/);
     expect(() =>
       parseLinkedTestJsonEntries(
-        JSON.stringify({ command: "node --version", assert_json_field_gte: { count: false } }),
+        JSON.stringify({
+          command: "node --version",
+          assert_json_field_gte: { count: false },
+        }),
         "--add-json",
       ),
     ).toThrow(/must be a finite number/);
     expect(() =>
       parseLinkedTestJsonEntries(
-        JSON.stringify({ command: "node --version", assert_json_field_gte: { " ": 1 } }),
+        JSON.stringify({
+          command: "node --version",
+          assert_json_field_gte: { " ": 1 },
+        }),
         "--add-json",
       ),
     ).toThrow(/keys must be non-empty/);
     expect(() =>
       parseLinkedTestJsonEntries(
-        JSON.stringify({ command: "node --version", assert_json_field_equals: [] }),
+        JSON.stringify({
+          command: "node --version",
+          assert_json_field_equals: [],
+        }),
         "--add-json",
       ),
     ).toThrow(/field "assert_json_field_equals" must be a JSON object/);
     expect(() =>
       parseLinkedTestJsonEntries(
-        JSON.stringify({ command: "node --version", assert_json_field_gte: [] }),
+        JSON.stringify({
+          command: "node --version",
+          assert_json_field_gte: [],
+        }),
         "--add-json",
       ),
     ).toThrow(/field "assert_json_field_gte" must be a JSON object/);
   });
 
   it("rejects blank JSON text and accepts JSON min-line assertions", () => {
-    expect(() => parseLinkedTestJsonEntries("   ", "--add-json")).toThrow(/requires a JSON object or array/);
+    expect(() => parseLinkedTestJsonEntries("   ", "--add-json")).toThrow(
+      /requires a JSON object or array/,
+    );
     expect(
       parseLinkedTestJsonEntries(
-        JSON.stringify({ command: "node --version", assert_stdout_min_lines: 2, assert_stdout_regex: "^v" }),
+        JSON.stringify({
+          command: "node --version",
+          assert_stdout_min_lines: 2,
+          assert_stdout_regex: "^v",
+        }),
         "--add-json",
       )[0]?.assert_stdout_min_lines,
     ).toBe(2);
@@ -407,7 +592,10 @@ describe("parseLinkedTestJsonEntries", () => {
     ).toThrow(/field "env_clear" key "1BAD" is invalid/);
     expect(() =>
       parseLinkedTestJsonEntries(
-        JSON.stringify({ command: "node --version", assert_stdout_min_lines: -1 }),
+        JSON.stringify({
+          command: "node --version",
+          assert_stdout_min_lines: -1,
+        }),
         "--add-json",
       ),
     ).toThrow(/integer >= 0/);

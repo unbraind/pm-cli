@@ -62,6 +62,12 @@ export function normalizeStructuredLinkedTestEntry(
       unknownKeys.push(key);
       continue;
     }
+    if (Object.hasOwn(normalizedKv, normalizedKey)) {
+      throw new PmCliError(
+        `${optionName} provides key "${key}" more than once after case normalization`,
+        EXIT_CODE.USAGE,
+      );
+    }
     normalizedKv[normalizedKey] = value;
   }
   if (unknownKeys.length > 0) {

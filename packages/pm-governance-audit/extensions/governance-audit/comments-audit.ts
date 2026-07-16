@@ -15,6 +15,7 @@ import {
   type GlobalOptions,
   type ItemMetadata,
   type ItemStatus,
+  type ListedItem,
   type RuntimeStatusRegistry,
 } from "./sdk.ts";
 
@@ -364,7 +365,7 @@ function resolveCommentsAuditLimits(options: CommentsAuditOptions): {
 }
 
 function toCommentsAuditEntry(
-  item: Awaited<ReturnType<typeof runList>>["items"][number],
+  item: ListedItem,
   latest: number | undefined,
 ): CommentsAuditEntry {
   const comments = item.comments ?? [];
@@ -427,6 +428,7 @@ export async function runCommentsAudit(
       assignee: options.assignee,
       assigneeFilter: options.assigneeFilter,
       limit: limitItems === undefined ? undefined : String(limitItems),
+      full: true as const,
     },
     global,
   );

@@ -86,7 +86,10 @@ import {
   hasContentFieldFilter,
   itemMatchesContentFilters,
 } from "../../core/governance/content-fields.js";
-import { resolveContentFieldFilters, resolveMissingMetadataFilters } from "./list.js";
+import {
+  resolveContentFieldFilters,
+  resolveMissingMetadataFilters,
+} from "./list.js";
 import {
   buildCompactSearchFilterSummary,
   buildVerboseSearchFilters,
@@ -750,6 +753,7 @@ export const _testOnlySearchCommand = {
   parseProjectionConfig,
   parseTimestampWindow,
   parseTokens,
+  projectSearchHits,
   readSearchFieldValue,
   requireSemanticDependencies,
   resolveExtensionSearchProvider,
@@ -1482,6 +1486,7 @@ function highlightFieldSnippet(text: string, tokens: string[]): string | null {
   }
   const lowerText = text.toLowerCase();
   let firstMatchIndex = -1;
+  let firstMatchLength = 0;
   for (const token of tokens) {
     if (token.length === 0) {
       continue;
@@ -1489,6 +1494,7 @@ function highlightFieldSnippet(text: string, tokens: string[]): string | null {
     const index = lowerText.indexOf(token);
     if (index >= 0 && (firstMatchIndex < 0 || index < firstMatchIndex)) {
       firstMatchIndex = index;
+      firstMatchLength = token.length;
     }
   }
   if (firstMatchIndex < 0) {
@@ -1497,7 +1503,7 @@ function highlightFieldSnippet(text: string, tokens: string[]): string | null {
   const windowStart = Math.max(0, firstMatchIndex - HIGHLIGHT_SNIPPET_RADIUS);
   const windowEnd = Math.min(
     text.length,
-    firstMatchIndex + HIGHLIGHT_SNIPPET_RADIUS,
+    firstMatchIndex + firstMatchLength + HIGHLIGHT_SNIPPET_RADIUS,
   );
   const marked = markTokenRuns(text.slice(windowStart, windowEnd), tokens);
   const prefix = windowStart > 0 ? "…" : "";
@@ -2909,7 +2915,13 @@ function projectSearchHits(
   if (projection.mode === "full") {
     // matched_all_terms is an internal ranking signal (GH-181); strip it from
     // full-mode output rows so the public hit shape stays { item, score, matched_fields }.
-    return hits.map(({ matched_all_terms: _matchedAllTerms, ...hit }) => hit);
+    return hits.map(
+      ({
+        matched_all_terms: _matchedAllTerms,
+        exact_id_match: _exactIdMatch,
+        ...hit
+      }) => hit,
+    );
   }
   return hits.map((hit) => {
     const projected: Record<string, unknown> = {};
@@ -3006,9 +3018,7 @@ interface SearchModeExecutionResult {
   hits: SearchHit[];
 }
 
-function resolveQueryExpansionExtension(
-  queryExpansion: QueryExpansionConfig,
-): {
+function resolveQueryExpansionExtension(queryExpansion: QueryExpansionConfig): {
   providerName: string;
   expand: ExtensionSearchProviderQueryExpansion;
 } | null {

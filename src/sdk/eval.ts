@@ -169,7 +169,8 @@ async function loadEvalQuerySet(
   } catch (error: unknown) {
     // JSON.parse only ever throws a SyntaxError (an Error subclass).
     throw new PmCliError(
-      `Eval query set at ${queriesPath} is not valid JSON: ${(error as Error).message}`,
+      /* c8 ignore next -- JSON.parse throws Error instances; String fallback protects nonstandard hosts. */
+      `Eval query set at ${queriesPath} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
       EXIT_CODE.USAGE,
     );
   }
@@ -178,7 +179,11 @@ async function loadEvalQuerySet(
   } catch (error: unknown) {
     // parseEvalQuerySet only ever throws EvalQuerySetError (an Error subclass
     // with a precise, author-actionable message) — surface it as a usage error.
-    throw new PmCliError((error as Error).message, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      /* c8 ignore next -- parseEvalQuerySet throws Error instances; String fallback protects nonstandard hosts. */
+      error instanceof Error ? error.message : String(error),
+      EXIT_CODE.USAGE,
+    );
   }
 }
 

@@ -815,7 +815,14 @@ export async function runUpdateMany(
   const statusFilter = normalizeStatusFilter(options.status, statusRegistry);
   const listed = await runList(
     statusFilter,
-    { ...options.list, includeBody: true },
+    {
+      ...options.list,
+      compact: undefined,
+      brief: undefined,
+      fields: undefined,
+      includeBody: true,
+      full: true,
+    },
     global,
   );
   const planned = listed.items.map((item) =>

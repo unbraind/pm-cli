@@ -172,7 +172,11 @@ import type {
   PlanCommandResult,
   PlanSubcommand,
 } from "../cli/commands/plan.js";
-import { runSearch, type SearchOptions, type SearchResult } from "./query/search.js";
+import {
+  runSearch,
+  type SearchOptions,
+  type SearchResult,
+} from "./query/search.js";
 import {
   runStats,
   type StatsCommandOptions,
@@ -402,12 +406,17 @@ export {
 } from "../cli/commands/get.js";
 export {
   runList,
+  type ListFullResult,
   type ListCompactResult,
   type ListedItem,
   type ListOptions,
+  type ListProjectedItem,
   type ListResult,
+  type ListResultItem,
   type ListSortField,
   type ListSortOrder,
+  type ListTreeItem,
+  type ListTreeMetadata,
   type ListVerboseResult,
 } from "./query/list.js";
 export { runClose, type CloseCommandOptions } from "../cli/commands/close.js";
@@ -3968,22 +3977,13 @@ async function loadWorkspaceExtensionRegistrations(
 
 export type { ContractsCommandOptions, ContractsResult };
 export type {
-  AppendCommandOptions,
-  AppendResult,
-  CommentsCommandOptions,
-  CommentsResult,
-  ConfigCommandOptions,
-  ConfigResult,
-  DepsCommandOptions,
-  DepsResult,
-  DocsCommandOptions,
-  DocsResult,
-  ExtensionCommandOptions,
-  ExtensionCommandResult,
-  FilesCommandOptions,
-  FilesDiscoverOptions,
-  FilesDiscoverResult,
-  FilesResult,
+  AppendCommandOptions, AppendResult,
+  CommentsCommandOptions, CommentsResult,
+  ConfigCommandOptions, ConfigResult,
+  DepsCommandOptions, DepsResult,
+  DocsCommandOptions, DocsResult,
+  ExtensionCommandOptions, ExtensionCommandResult,
+  FilesCommandOptions, FilesDiscoverOptions, FilesDiscoverResult, FilesResult,
   GcCommandOptions,
   GcResult,
   HealthResult,

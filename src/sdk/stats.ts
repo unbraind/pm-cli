@@ -20,7 +20,7 @@ import {
   type GroupedBreakdown,
   type MetadataCoverageReport,
 } from "../core/governance/metadata-coverage.js";
-import { pathExists } from "../core/fs/fs-utils.js";
+import { pathExists, readFileIfExists } from "../core/fs/fs-utils.js";
 import { enforceHistoryStreamPolicyForItems } from "../core/history/history-stream-policy.js";
 import {
   computeHistoryStorageStats,
@@ -113,15 +113,6 @@ function countNonEmptyLines(raw: string): number {
   return raw.split(/\r?\n/u).filter((line) => line.trim().length > 0).length;
 }
 
-function isNotFoundError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: unknown }).code === "ENOENT"
-  );
-}
-
 async function readHistoryStreamContents(
   pmRoot: string,
 ): Promise<Array<{ id: string; raw: string }>> {
@@ -141,14 +132,9 @@ async function readHistoryStreamContents(
   const streams: Array<{ id: string; raw: string }> = [];
   for (const file of historyFiles) {
     const historyPath = path.join(historyDir, file);
-    let raw: string;
-    try {
-      raw = await fs.readFile(historyPath, "utf8");
-    } catch (error) {
-      if (isNotFoundError(error)) {
-        continue;
-      }
-      throw error;
+    const raw = await readFileIfExists(historyPath);
+    if (raw === null) {
+      continue;
     }
     await runActiveOnReadHooks({
       path: historyPath,

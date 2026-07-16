@@ -814,6 +814,12 @@ the SDK search engine directly. Package authors can import these functions and
 their typed result contracts from `@unbrained/pm-cli/sdk` without importing CLI
 implementation modules.
 
+List result rows are modeled by projection: `ListFullResult` contains complete
+`ListedItem` records, tree ordering may enrich them with `ListTreeMetadata`, and
+compact or `fields` projections return `ListProjectedItem` dictionaries. Use
+`full: true` when an integration requires complete item metadata; the overload
+then returns `ListFullResult` without an assertion or cast.
+
 ### Execution and diagnostics
 
 Tracked by [pm-oslr](../.agents/pm/features/pm-oslr.toon) and the SDK boundary
@@ -835,6 +841,9 @@ import {
   type GlobalOptions,
 } from "@unbrained/pm-cli/sdk";
 
+const pmRoot = "/path/to/project/.agents/pm";
+const itemId = "pm-example";
+const runId = "test-run-example";
 const global: GlobalOptions = { path: pmRoot };
 
 const itemRun = await runTest(
@@ -854,7 +863,10 @@ const workspaceRun = await runTestAll(
 );
 const background = await runTestRunsStatus(runId, global);
 const relevance = await runEval({ mode: "keyword", k: 10 }, global);
-const telemetry = await runTelemetry({ subcommand: "stats", limit: 20 }, global);
+const telemetry = await runTelemetry(
+  { subcommand: "stats", limit: 20 },
+  global,
+);
 ```
 
 `runTest` and `runTestAll` always execute linked commands in isolated project and
