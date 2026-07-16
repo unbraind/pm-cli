@@ -104,7 +104,7 @@ The full set of pre-existing violations is grandfathered in
 
 Do not regenerate the whole baseline (`pnpm lint:complexity:baseline`) to silence a
 new violation; that defeats the gate — and the static quality gate enforces a hard
-budget (`MAX_ESLINT_SUPPRESSIONS` in `scripts/release/static-quality-gate.mjs`) on
+budget (`MAX_ESLINT_SUPPRESSIONS` in `scripts/release/static-quality-gate.mts`) on
 the baseline's total size, so growing it fails CI outright. Lower the budget as the
 baseline burns down. Driving the baseline to empty is the path to a CodeFactor
 **A+** (tracked under epic `pm-92if`).
@@ -119,7 +119,7 @@ inline escape hatches that could otherwise silence a gate without touching any
 config file a reviewer would watch: inline `eslint-disable` comments, coverage
 ignore pragmas (`v8 ignore` / `c8 ignore` / `istanbul ignore`), and
 `jscpd:ignore` blocks (budget 0 — never allowed). The ceilings live in
-`scripts/release/static-quality-gate.mjs` (`MAX_INLINE_ESLINT_DISABLES`,
+`scripts/release/static-quality-gate.mts` (`MAX_INLINE_ESLINT_DISABLES`,
 `MAX_COVERAGE_IGNORE_PRAGMAS`, `MAX_JSCPD_IGNORE_PRAGMAS`); adding a new pragma
 anywhere in the scanned surfaces fails CI. Lower the budgets as usage burns
 down — never raise them.

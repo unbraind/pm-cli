@@ -91,7 +91,7 @@ describe("scripts/release/run-gates", () => {
       spawnSync.mock.calls.some((c) => {
         const args = (c[1] as string[] | undefined) ?? [];
         const joined = [c[0], ...args].join(" ");
-        return joined.includes("static-quality-gate.mjs") && !joined.includes("quality:static");
+        return joined.includes("static-quality-gate.mts") && !joined.includes("quality:static");
       }),
     ).toBe(false);
     expect(

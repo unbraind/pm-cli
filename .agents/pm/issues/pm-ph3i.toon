@@ -1,0 +1,26 @@
+id: pm-ph3i
+title: Windows packed-extension install regression exceeds the generic Vitest timeout
+description: "PR #573 Windows regression run 29511033166 job 87664537351 failed only because the real packed npm extension installation test exceeded Vitest's generic 30-second timeout (about 36.2 seconds). The operation itself completed; the test needs an explicit install-aware timeout that preserves the real end-to-end assertion. Duplicate-safe all-status searches reviewed closed Windows/npm lineage pm-xaib, pm-2kkl, pm-gf6f, pm-arax, and pm-0fhw; those items describe completed historical failures, not this current timing regression."
+type: Issue
+status: in_progress
+priority: 1
+tags[4]: ci,extensions,regression-testing,windows
+created_at: "2026-07-16T15:36:00.902Z"
+updated_at: "2026-07-16T15:58:41.471Z"
+assignee: codex-gpt5-root
+author: codex-gpt5-root
+acceptance_criteria: The packed-extension install integration test passes on Windows Node 24 without weakening its real npm-install assertions; focused local test and the hosted Windows regression job pass
+parent: pm-doxj
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-2kkl,related,"2026-07-16T15:36:00.902Z",null,null
+  pm-xaib,related,"2026-07-16T15:36:00.902Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-16T15:43:46.896Z",codex-gpt5-root,"Implementation evidence: the failing hosted run completed the underlying npm work but exceeded Vitest's generic 30-second ceiling at about 36.2 seconds. The existing real pack/install/doctor assertions are unchanged; only this integration test now declares a 60-second external-install budget. Focused execution passes locally in 1.48 seconds."
+  "2026-07-16T15:58:41.470Z",codex-gpt5-root,"Full-corpus proof: all 292 files / 5,746 tests pass at exact 100/100/100/100 with the real packed npm extension test preserved and included. Hosted Windows confirmation remains pending on the next PR head, so this issue remains actively in progress."
+files[1]{path,scope,note}:
+  tests/integration/cli.integration.spec.ts,project,Install-aware timeout for the real packed npm extension regression
+tests[1]{command,scope,timeout_seconds,note}:
+  "node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"installs runtime dependencies for packed npm package extensions\"",project,90,Real packed-extension npm install smoke
+body: ""

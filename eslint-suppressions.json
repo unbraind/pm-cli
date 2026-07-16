@@ -42,7 +42,7 @@
       "count": 1
     }
   },
-  "scripts/release/static-quality-gate.mjs": {
+  "scripts/release/static-quality-gate.mts": {
     "sonarjs/cognitive-complexity": {
       "count": 2
     }

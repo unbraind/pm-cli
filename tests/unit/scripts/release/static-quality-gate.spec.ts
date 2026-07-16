@@ -8,7 +8,7 @@ import { createScriptHarness } from "../../../helpers/scriptModule";
 
 const harness = createScriptHarness(["../../../../scripts/release/utils.mjs"]);
 
-const SCRIPT = "scripts/release/static-quality-gate.mjs";
+const SCRIPT = "scripts/release/static-quality-gate.mts";
 
 function normalizeMockPath(value: unknown): string {
   return String(value).replaceAll("\\", "/");
@@ -414,6 +414,7 @@ describe("static-quality-gate", () => {
           "export function alsoMissing() { return false; }",
           "export default function () { return false; }",
           "export const missingArrow = () => false;",
+          "export const { destructured } = { destructured: true };",
           "/** Describes exported options. */",
           "export interface Options { ok: boolean; }",
           "function internal() { return true; }",
@@ -425,14 +426,15 @@ describe("static-quality-gate", () => {
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const report = mod.checkExportedDocstringCoverage(Object.keys(fileBodies), 100);
       expect(report.ok).toBe(false);
-      expect(report.total).toBe(6);
+      expect(report.total).toBe(7);
       expect(report.documented).toBe(2);
-      expect(report.coverage_percent).toBe(33.33);
+      expect(report.coverage_percent).toBe(28.57);
       expect(report.missing).toEqual([
         { path: "src/a.ts", line: 8, name: "missing", reason: "missing_exported_docstring" },
         { path: "src/a.ts", line: 9, name: "alsoMissing", reason: "missing_exported_docstring" },
         { path: "src/a.ts", line: 10, name: "exported_declaration", reason: "missing_exported_docstring" },
         { path: "src/a.ts", line: 11, name: "missingArrow", reason: "missing_exported_docstring" },
+        { path: "src/a.ts", line: 12, name: "exported_value", reason: "missing_exported_docstring" },
       ]);
       // No exported declarations in scope → 100% by definition.
       expect(mod.checkExportedDocstringCoverage([], 100)).toMatchObject({
@@ -1481,13 +1483,20 @@ describe("static-quality-gate", () => {
       await writeFile(`${root}/src/a.d.ts`, "export declare const a: number;\n", "utf8");
       await writeFile(`${root}/src/readme.md`, "not code\n", "utf8");
       await writeFile(`${root}/scripts/b.mjs`, "export const b = 2;\n", "utf8");
+      await writeFile(`${root}/scripts/b.mts`, "export const typed = 2;\n", "utf8");
       await writeFile(`${root}/scripts/c.cjs`, "module.exports = 3;\n", "utf8");
       await writeFile(`${root}/plugins/c.js`, "module.exports = 3;\n", "utf8");
       await writeFile(`${root}/plugins/node_modules/dep.js`, "module.exports = 4;\n", "utf8");
       mockUtils(root);
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const relative = mod.collectPragmaScanFiles().map((p) => p.slice(root.length + 1).replaceAll("\\", "/"));
-      expect(relative).toEqual(["plugins/c.js", "scripts/b.mjs", "scripts/c.cjs", "src/a.ts"]);
+      expect(relative).toEqual([
+        "plugins/c.js",
+        "scripts/b.mjs",
+        "scripts/b.mts",
+        "scripts/c.cjs",
+        "src/a.ts",
+      ]);
     });
 
     it("collectTypeScriptFiles: skips package node_modules trees", async () => {

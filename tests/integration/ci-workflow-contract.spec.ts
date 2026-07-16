@@ -2,12 +2,12 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { checkDirectoryLoad, collectTypeScriptFiles, relativeToRepo } from "../../scripts/release/static-quality-gate.mjs";
+import { checkDirectoryLoad, collectTypeScriptFiles, relativeToRepo } from "../../scripts/release/static-quality-gate.mts";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 /**
- * Per-directory `.ts` file cap enforced by `scripts/release/static-quality-gate.mjs`
+ * Per-directory `.ts` file cap enforced by `scripts/release/static-quality-gate.mts`
  * (`--max-files-per-dir`, default 120) and run via the `quality:static` CI gate.
  * Kept in sync with the gate source by the contract test below so the magic
  * number cannot silently drift between the gate and this guardrail.
@@ -574,7 +574,7 @@ describe("GitHub workflow contract", () => {
 
 describe("static-quality-gate directory-load contract (pm-wc0d)", () => {
   it("keeps the per-directory file cap pinned to the gate default", async () => {
-    const gateSource = await readFile(path.resolve(repoRoot, "scripts/release/static-quality-gate.mjs"), "utf8");
+    const gateSource = await readFile(path.resolve(repoRoot, "scripts/release/static-quality-gate.mts"), "utf8");
     // The cap this guardrail asserts must match the gate's own default so the
     // two cannot drift out of sync (e.g. the gate raising it without updating us).
     expect(gateSource).toContain(`parseNumberFlag(flags, "max-files-per-dir", ${MAX_FILES_PER_DIRECTORY})`);

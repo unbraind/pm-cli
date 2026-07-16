@@ -4,20 +4,24 @@ import path from "node:path";
 import { afterEach, vi } from "vitest";
 
 /**
- * Reduce a repo-root-relative script path (e.g. `scripts/release/utils.mjs`) to
- * its `scripts/`-relative name without extension (`release/utils`). Splits on
+ * Reduce a repo-root-relative script path (for example, `scripts/release/utils.mjs`)
+ * to its `scripts/`-relative name and runtime extension. Splits on
  * both separators so a caller passing a Windows-style path is normalized
  * regardless of the host platform.
  */
-function toScriptName(relativePath: string): string {
+function toScriptIdentity(relativePath: string): { name: string; extension: ".mjs" | ".mts" } {
   const posixPath = relativePath.split(/[\\/]/).join("/").replace(/^(?:\.\/)+/, "").replace(/^\/+/, "");
-  return posixPath.replace(/^scripts\//, "").replace(/\.mjs$/, "");
+  const extension = posixPath.endsWith(".mts") ? ".mts" : ".mjs";
+  return {
+    name: posixPath.replace(/^scripts\//, "").replace(/\.(?:mjs|mts)$/, ""),
+    extension,
+  };
 }
 
 /**
  * Import a repository script through a Vite-transformable specifier.
  *
- * The literal `../../scripts/…` prefix and `.mjs` suffix are required for
+ * The literal `../../scripts/…` prefix and `.mjs`/`.mts` suffixes are required for
  * cross-platform correctness. Vite's `dynamic-import-vars` transform only
  * rewrites a dynamic `import()` when its static parts include a directory
  * prefix AND a file extension, and the variable part may only span a single
@@ -35,11 +39,14 @@ function toScriptName(relativePath: string): string {
  * matching, since Vite no longer has a parent query to propagate.
  */
 async function importTransformedScript<T>(relativePath: string): Promise<T> {
-  const name = toScriptName(relativePath);
+  const { name, extension } = toScriptIdentity(relativePath);
   const releasePrefix = "release/";
   if (name.startsWith(releasePrefix)) {
     const leaf = name.slice(releasePrefix.length);
     assertSingleSegment(leaf, relativePath);
+    if (extension === ".mts") {
+      return (await import(`../../scripts/release/${leaf}.mts`)) as T;
+    }
     return (await import(`../../scripts/release/${leaf}.mjs`)) as T;
   }
   assertSingleSegment(name, relativePath);

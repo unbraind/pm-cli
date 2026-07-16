@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: architecture,"area:cli","area:mcp","area:sdk",ci
 created_at: "2026-07-06T13:13:21.203Z"
-updated_at: "2026-07-16T15:18:16.573Z"
+updated_at: "2026-07-16T15:59:08.849Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: sdk-import-boundary-baseline.json reaches zero entries and is deleted; static-quality-gate hard-denies any private src/core import from src/cli/** and src/mcp/** with no baseline escape hatch; src/mcp handlers consume only src/sdk primitives; full test suite + 100% coverage gate green with zero CLI/MCP behavior change
@@ -22,7 +22,7 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-oxrw,related,"2026-07-06T13:13:21.203Z",null,null
   pm-rjqr,related,"2026-07-06T13:13:21.203Z",null,null
   pm-zwpp,related,"2026-07-06T13:13:21.203Z",null,null
-comments[36]{created_at,author,text}:
+comments[38]{created_at,author,text}:
   "2026-07-14T19:24:59.262Z",codex-gpt5,"Implementation start 2026-07-14: actively shrinking the enforced CLI/MCP private-core baseline through the pm-3mna schema ownership extraction. This run will not claim the capstone complete unless the baseline truly reaches zero."
   "2026-07-14T19:41:00.327Z",codex-gpt5,"Progress evidence: removed all 17 schema-domain private-core edges previously attributed to src/cli/commands/schema.ts. The boundary ratchet passes with zero new imports; the broader baseline remains intentionally open and is not claimed complete."
   "2026-07-14T20:19:49.227Z",codex-root,"Final branch evidence: removed all 17 private-core imports formerly owned by src/cli/commands/schema.ts and deleted that stale baseline block. pnpm quality:static passes with no new private imports, no stale baseline entries, zero unsupported dynamic imports, 100% docstrings, and token budgets green. The repository-wide boundary baseline is not yet zero, so this capstone returns to open for the remaining command families."
@@ -59,6 +59,8 @@ comments[36]{created_at,author,text}:
   "2026-07-16T14:55:15.984Z",codex-gpt5-root,"DeepSource exact-head remediation evidence: documented every newly analyzer-visible update-many helper, reordered the defaulted preview argument behind its required registry, and removed redundant async from the promise-returning rollback delegator. Focused update-many tests pass 45/45; strict lint reports zero duplicate clones; static quality remains 100% docstrings with package-boundary and token gates green; full all-source proof passes 292 files / 5,745 tests at exact 100/100/100/100 (37,487 statements, 26,356 branches, 7,625 functions, 36,577 lines). The capstone remains open because 51 source allowances / 412 edges remain."
   "2026-07-16T15:10:34.404Z",codex-gpt5-root,"Sixth review-loop start: exact head a33572ca has 31 green hosted checks including Greptile, CodeQL, Semgrep, Windows, coverage, and smokes. DeepSource advanced serial analysis into sdk/eval (undocumented declarations and medium complexity), while static quality itself passed but its token-budget temp cleanup hit ENOTEMPTY. Actively hardening both without analyzer exclusions or gate weakening."
   "2026-07-16T15:18:14.999Z",codex-gpt5-root,"Sixth exact-run remediation evidence: extracted SDK eval input parsing, file/JSON/contract validation, query scoring, path resolution, and result shaping into documented lexical primitives with cyclomatic complexity below the hosted threshold. Replaced the last string concatenation with a template literal and preserved sequential search semantics plus raw-metric gating. Focused eval tests pass 15/15; strict lint, zero duplicates, 100% docstring/static, package-boundary, and token gates pass. Full coverage passes 292 files / 5,745 tests at exact 100/100/100/100 (37,501 statements, 26,351 branches, 7,631 functions, 36,591 lines). The capstone remains open at 51 source allowances / 412 edges."
+  "2026-07-16T15:36:15.470Z",codex-gpt5-root,"Review follow-up start: current PR #573 Gemini threads 3596478654 and 3596478682 request explicit unknown annotations for two dedupe-merge catch variables. TypeScript already infers unknown under the strict config, but this active change will make the contract explicit and rerun the focused governance plus full coverage gates."
+  "2026-07-16T15:43:48.493Z",codex-gpt5-root,"Gemini follow-up evidence: both dedupe-merge catch bindings now declare unknown explicitly; focused dedupe merge coverage passes 9/9 and the combined quality/release/governance suite passes 115/115."
 notes[1]{created_at,author,text}:
   "2026-07-15T06:21:39.876Z",maintainer-agent,"PR#565 progress (2026-07-15): 54 obsolete CLI-to-core import-boundary allowances removed; pm-3mna slice shipped (SDK owns config/profile/init/agent-guidance/templates/extension + createPmCliProgram + renderPmCommand). Baseline scripts/release/sdk-import-boundary-baseline.json still holds ~60 source files (commands/*, main.ts, register-*, mcp/server.ts) — the zero target remains. With 3mna/4a7m/hib1/zwpp shipped, remaining prerequisite slices are pm-oxrw (governance/health) then pm-oslr (execution/diagnostics)."
 learnings[4]{created_at,author,text}:

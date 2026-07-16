@@ -304,7 +304,7 @@ const applyDedupeMergeReparents = async (params: {
         params.global,
       );
       record.applied = true;
-    } catch (error) {
+    } catch (error: unknown) {
       params.warnings.push(
         `reparent_failed:${record.child_id}:${formatUnknownError(error)}`,
       );
@@ -374,7 +374,7 @@ const applyDedupeMergeClose = async (params: {
       params.global,
     );
     close.applied = true;
-  } catch (error) {
+  } catch (error: unknown) {
     close.skipped_reason = "failed";
     params.warnings.push(
       `close_failed:${params.duplicate.id}:${formatUnknownError(error)}`,

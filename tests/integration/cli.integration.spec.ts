@@ -371,7 +371,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect((doctor.json as { warnings?: string[] }).warnings ?? []).not.toContain("extension_load_failed:npm-package-with-deps");
       expect(JSON.stringify(doctor.json)).toContain("npm sdk smoke");
     });
-  });
+  }, 60_000);
 
   it("accepts --ac as create alias for acceptance criteria", async () => {
     await withTempPmPath(async (context) => {

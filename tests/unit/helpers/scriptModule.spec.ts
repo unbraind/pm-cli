@@ -4,7 +4,7 @@ import { createScriptHarness } from "../../helpers/scriptModule";
 
 /**
  * Locks the Windows-safety contract of the shared script-test harness: imports
- * must route through Vite-transformable `../../scripts/${name}.mjs` specifiers
+ * must route through Vite-transformable `../../scripts/${name}.mjs|mts` specifiers
  * so the `#!/usr/bin/env node` shebang is stripped on every platform, and any
  * path Vite's `dynamic-import-vars` transform cannot match must fail fast on
  * Linux rather than silently regress on Windows.
@@ -20,6 +20,13 @@ describe("scriptModule harness imports", () => {
   it("imports a nested scripts/release/ module via its dedicated branch", async () => {
     const mod = await harness.importModuleStable<Record<string, unknown>>("scripts/release/utils.mjs");
     expect(mod).toBeTypeOf("object");
+  });
+
+  it("imports a TypeScript-module release script through the extension-aware branch", async () => {
+    const mod = await harness.importModuleStable<Record<string, unknown>>(
+      "scripts/release/static-quality-gate.mts",
+    );
+    expect(mod.MAX_ESLINT_SUPPRESSIONS).toBeTypeOf("number");
   });
 
   it("normalizes Windows separators, leading slash, and a ./ prefix to the same module", async () => {

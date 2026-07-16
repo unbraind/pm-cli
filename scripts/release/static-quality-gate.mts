@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env -S pnpm exec tsx
 
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
@@ -272,8 +272,7 @@ function exportedDocstringTarget(node) {
 function declarationName(node) {
   if (ts.isVariableStatement(node)) {
     const declaration = node.declarationList.declarations[0];
-    /* c8 ignore next -- exported variable-function targets require an identifier declaration name */
-    return declaration && ts.isIdentifier(declaration.name) ? declaration.name.text : "exported_value";
+    return ts.isIdentifier(declaration.name) ? declaration.name.text : "exported_value";
   }
   return node.name && ts.isIdentifier(node.name) ? node.name.text : "exported_declaration";
 }
@@ -588,8 +587,7 @@ export function checkOrphanSourceModules(files) {
       ) {
         const resolved = resolveRelativeImport(absolutePath, statement.moduleSpecifier.text);
         if (resolved && incoming.has(resolved)) {
-          /* c8 ignore next -- `incoming.has(resolved)` guarantees a numeric entry; the `?? 0` fallback is unreachable */
-          incoming.set(resolved, (incoming.get(resolved) ?? 0) + 1);
+          incoming.set(resolved, incoming.get(resolved) + 1);
         }
       }
     }
@@ -1148,6 +1146,7 @@ const PRAGMA_SCAN_ROOTS = ["src", "tests", "packages", "scripts", "plugins", "do
 export function collectPragmaScanFiles() {
   const matcher = (absolutePath) =>
     (absolutePath.endsWith(".ts") && !absolutePath.endsWith(".d.ts")) ||
+    absolutePath.endsWith(".mts") ||
     absolutePath.endsWith(".mjs") ||
     absolutePath.endsWith(".js") ||
     absolutePath.endsWith(".cjs");
@@ -1227,7 +1226,7 @@ export function checkInlinePragmaBudgets(budgets = {}, files = collectPragmaScan
 
 export function usage() {
   console.log(`Usage:
-  node scripts/release/static-quality-gate.mjs [--json]
+  pnpm exec tsx scripts/release/static-quality-gate.mts [--json]
     [--max-lines 3400]
     [--max-lines-tests 7000]
     [--max-complexity 260]
