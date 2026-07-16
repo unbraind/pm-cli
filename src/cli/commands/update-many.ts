@@ -373,18 +373,22 @@ const hasAnyUpdateMutationInput = (options: UpdateCommandOptions): boolean => {
 
 type PreviewValueNormalizer = (value: unknown) => unknown;
 
+/** Trims string preview values while preserving non-string inputs. */
 const trimPreviewValue: PreviewValueNormalizer = (value) =>
   typeof value === "string" ? value.trim() : value;
+/** Converts integer-like preview values to their storage representation. */
 const normalizeIntegerPreviewValue: PreviewValueNormalizer = (value) => {
   const trimmed = String(value).trim();
   const parsed = Number(trimmed);
   return Number.isInteger(parsed) ? parsed : trimmed;
 };
+/** Converts finite numeric preview values to their storage representation. */
 const normalizeNumericPreviewValue: PreviewValueNormalizer = (value) => {
   const trimmed = String(value).trim();
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : trimmed;
 };
+/** Converts supported regression tokens to their boolean storage representation. */
 const normalizeRegressionPreviewValue: PreviewValueNormalizer = (value) => {
   const normalized = String(value).trim().toLowerCase();
   const parsed = new Map<string, boolean>([
@@ -630,8 +634,8 @@ const appendUnsetMutationPlans = (
 /** Builds the complete storage-shaped mutation preview for one item. */
 const buildPlannedItemDiff = (
   item: ListedItem,
-  update: UpdateCommandOptions = {},
   runtimeFieldRegistry: RuntimeFieldRegistry,
+  update: UpdateCommandOptions = {},
 ): PlannedItemDiff => {
   const row = toItemRecord(item);
   const changes: PlannedChange[] = [];
@@ -885,7 +889,7 @@ const loadUpdateManyRuntimeContext = async (
 };
 
 /** Validates rollback exclusivity before restoring a checkpoint. */
-const runRequestedUpdateManyRollback = async (params: {
+const runRequestedUpdateManyRollback = (params: {
   runtime: UpdateManyRuntimeContext;
   rollbackId: string;
   options: UpdateManyCommandOptions;
@@ -944,8 +948,8 @@ const buildUpdateManyPlan = async (params: {
   const planned = listed.items.map((item) =>
     buildPlannedItemDiff(
       item,
-      params.options.update,
       params.runtime.runtimeFieldRegistry,
+      params.options.update,
     ),
   );
   return {
@@ -1072,6 +1076,7 @@ const applyUpdateManyPlan = async (params: {
     global: params.global,
     checkpointId,
   });
+  /** Counts apply rows with one terminal status. */
   const countStatus = (status: UpdateManyApplyResultRow["status"]): number =>
     applied.rows.filter((row) => row.status === status).length;
   return {
