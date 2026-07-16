@@ -2536,18 +2536,16 @@ describe("runSearch", () => {
         { path: "/tmp/pm-search-symlink" },
       );
       expect(result.count).toBe(0);
-      expect(readFileMock.mock.calls).not.toEqual(
-        expect.arrayContaining([
-          [projectLinkedPath, "utf8"],
-          [globalLinkedPath, "utf8"],
-        ]),
-      );
-      expect(runActiveOnReadHooksMock.mock.calls).not.toEqual(
-        expect.arrayContaining([
-          [{ path: projectLinkedPath, scope: "project" }],
-          [{ path: globalLinkedPath, scope: "global" }],
-        ]),
-      );
+      for (const [linkedPath, scope] of [
+        [projectLinkedPath, "project"],
+        [globalLinkedPath, "global"],
+      ] as const) {
+        expect(readFileMock).not.toHaveBeenCalledWith(linkedPath, "utf8");
+        expect(runActiveOnReadHooksMock).not.toHaveBeenCalledWith({
+          path: linkedPath,
+          scope,
+        });
+      }
     } finally {
       if (previousGlobalPath === undefined) {
         delete process.env.PM_GLOBAL_PATH;

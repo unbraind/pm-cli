@@ -176,6 +176,7 @@ function parseStatus(
   raw: string | undefined,
   statusRegistry: RuntimeStatusRegistry,
 ): ItemStatus | undefined {
+  /** Normalize one optional status filter against the active project schema. */
   if (raw === undefined) {
     return undefined;
   }
@@ -193,6 +194,7 @@ function parseNonNegativeInteger(
   raw: string | undefined,
   flag: string,
 ): number | undefined {
+  /** Parse an optional count flag without accepting fractions or negative values. */
   if (raw === undefined) {
     return undefined;
   }
@@ -207,6 +209,7 @@ function parseNonNegativeInteger(
 }
 
 function limitComments(values: Comment[], latest: number): Comment[] {
+  /** Retain only the requested trailing comments while preserving chronology. */
   if (latest <= 0) {
     return [];
   }
@@ -214,6 +217,7 @@ function limitComments(values: Comment[], latest: number): Comment[] {
 }
 
 function toHistoryRows(items: CommentsAuditEntry[]): CommentsAuditHistoryRow[] {
+  /** Flatten per-item comments into stable export rows with item context. */
   const rows: CommentsAuditHistoryRow[] = [];
   for (const item of items) {
     for (let index = 0; index < item.comments.length; index += 1) {
@@ -240,6 +244,7 @@ function ratioPercent(
   numerator: number,
   denominator: number,
 ): { ratio: number; percent: number } {
+  /** Render a bounded ratio and percentage with deterministic precision. */
   if (denominator <= 0) {
     return {
       ratio: 0,
@@ -256,6 +261,7 @@ function ratioPercent(
 function buildCommentsAuditSummary(
   items: CommentsAuditEntry[],
 ): CommentsAuditSummary {
+  /** Aggregate comment coverage globally and by project item type. */
   const itemsScanned = items.length;
   const itemsWithComments = items.filter(
     (entry) => entry.comment_count > 0,
@@ -334,6 +340,7 @@ function resolveCommentsAuditLimits(options: CommentsAuditOptions): {
   latest: number | undefined;
   limitItems: number | undefined;
 } {
+  /** Reconcile history and item-limit aliases into one validated selection. */
   const fullHistory = options.fullHistory === true;
   const latestParsed = parseNonNegativeInteger(options.latest, "--latest");
   if (fullHistory && latestParsed !== undefined) {
@@ -347,19 +354,22 @@ function resolveCommentsAuditLimits(options: CommentsAuditOptions): {
     "--limit-items",
   );
   const limitItemsAlias = parseNonNegativeInteger(options.limit, "--limit");
-  if (
-    limitItemsPrimary !== undefined &&
-    limitItemsAlias !== undefined &&
-    limitItemsPrimary !== limitItemsAlias
-  ) {
+  const distinctItemLimits = new Set(
+    [limitItemsPrimary, limitItemsAlias].filter(
+      (value): value is number => value !== undefined,
+    ),
+  );
+  if (distinctItemLimits.size > 1) {
     throw new PmCliError(
       "--limit and --limit-items must match when both are provided",
       EXIT_CODE.USAGE,
     );
   }
+  let latest: number | undefined = latestParsed ?? 1;
+  if (fullHistory) latest = undefined;
   return {
     fullHistory,
-    latest: fullHistory ? undefined : (latestParsed ?? 1),
+    latest,
     limitItems: limitItemsPrimary ?? limitItemsAlias,
   };
 }

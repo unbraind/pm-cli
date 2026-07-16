@@ -260,7 +260,13 @@ describe("packages/pm-governance-audit runtime", () => {
       const projectedWithoutId = vi
         .spyOn(PmClient.prototype, "list")
         .mockResolvedValueOnce({
-          items: [{ files: [{ path: "shared.ts" }] }],
+          items: [
+            { files: [{ path: "shared.ts" }] },
+            {
+              id: "pm-malformed-artifacts",
+              files: [null, "invalid", { path: 1 }, { path: "shared.ts" }],
+            },
+          ],
         } as never);
       await expect(
         decorateGovernanceCommandResult({
@@ -271,7 +277,13 @@ describe("packages/pm-governance-audit runtime", () => {
         }),
       ).resolves.toEqual({
         files: [{ path: "shared.ts" }],
-        audit: [{ path: "shared.ts", linked_by_count: 0, linked_item_ids: [] }],
+        audit: [
+          {
+            path: "shared.ts",
+            linked_by_count: 1,
+            linked_item_ids: ["pm-malformed-artifacts"],
+          },
+        ],
       });
       projectedWithoutId.mockRestore();
     });

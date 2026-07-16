@@ -218,7 +218,12 @@ async function decorateLinkedArtifactResult(
           {
             id: item.id,
             artifacts: Array.isArray(item[artifactKey])
-              ? (item[artifactKey] as Array<{ path: string }>)
+              ? item[artifactKey].flatMap((entry) => {
+                  const artifact = asRecord(entry);
+                  return typeof artifact?.path === "string"
+                    ? [{ path: artifact.path }]
+                    : [];
+                })
               : undefined,
           },
         ]
