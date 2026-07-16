@@ -6,16 +6,17 @@ status: open
 priority: 2
 tags[4]: code-quality,configuration,deepsource,governance
 created_at: "2026-07-14T22:41:44.652Z"
-updated_at: "2026-07-15T19:59:07.295Z"
+updated_at: "2026-07-16T00:21:30.043Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "Top rules by occurrence enumerated (authenticated dashboard/API) and dispositioned rule-by-rule: conflicts with repo idioms (TS-first patterns, docstring gate scope, intentional CLI process.exit etc.) get skipcq/toml suppressions WITH written rationale; genuinely useful rules stay enabled; post-alignment counts recorded on pm-vlnc; no blanket category disables without rationale"
 parent: pm-vlnc
 risk: medium
 confidence: high
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-15T04:15:05.254Z",codex-root,"Live PR #565 evidence 2026-07-15: DeepSource dashboard payload, not .deepsource.toml, is authoritative. It reports dialect=typescript, environment=nodejs+vitest, style_guide=airbnb, ecma_version=2020, module_system=commonjs, cyclomatic threshold=low, documentation coverage 36.75%, and 1,937 JavaScript findings on the PR. The repo is ESM and its mandatory local/CI gate proves 100% module/export/member docstrings, so these dashboard settings conflict with repo policy. Repository TOML now states es-modules, but changing the external dashboard requires authenticated DeepSource access; this environment has neither CLI nor DSN/API credential. Do not blanket-disable source categories: first switch the dashboard to use repository TOML or align its settings per this item's acceptance criteria, then re-run and disposition remaining rules."
   "2026-07-15T04:45:32.601Z",codex-root,"PR #565 final external-analyzer evidence: on head 4d3795d0 all 32 repository-owned/compatible checks are green, DeepSource Secrets and Shell pass, and only DeepSource JavaScript repeats the dashboard-owned legacy baseline. The repo-side ESM TOML and stronger exact 100% docstring/static/complexity gates are ready; authenticated dashboard alignment remains this open item's work and was intentionally not claimed in PR #565."
+  "2026-07-16T00:21:30.042Z",codex-sdk-platform,"PR #571 exact-head evidence (ae27caceac71835caff33bc3df7c1028f144682f, 2026-07-16): DeepSource run https://app.deepsource.com/gh/unbraind/pm-cli/run/22b619dc-db39-4522-99d3-7f6ddf008f6f/javascript/ fails with 414/414 JavaScript issues while DeepScan reports 0 new and 1 fixed. The run payload still embeds module_system=commonjs and reports import/export parsing failures for eslint.config.mjs and packages/sdk-tool/*.mjs, despite checked-in .deepsource.toml declaring module_system=es-modules. Repo-owned gates are green, including exact 100% statement/branch/function/line coverage, 100% docstring coverage, TypeScript, ESLint, complexity, zero-duplicate jscpd, contracts, security, and package gates. No DEEPSOURCE environment variable or matching Actions secret is available here, so the external project setting cannot be changed from this checkout. Required remediation remains: enable DeepSource's repository .deepsource.toml configuration (or set dashboard JavaScript module system to ES modules), rerun, then disposition only genuine residual findings. This item stays open and unclaimed; no duplicate was created."
 files[1]{path,scope,note}:
   .deepsource.toml,project,Repository-side analyzer intent; currently ignored because DeepSource dashboard configuration is authoritative
 body: ""
