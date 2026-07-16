@@ -2,12 +2,11 @@ id: pm-9x6e
 title: "Capstone: zero the SDK import-boundary baseline (91 entries) — flip remaining CLI/MCP private-core imports to SDK primitives and harden the ratchet into a hard boundary gate"
 description: "pm-8778 shipped the ratchet gate; scripts/release/sdk-import-boundary-baseline.json currently allows 91 private src/core imports from src/cli + src/mcp. Each SDK promotion item (pm-rjqr/98cz/zwpp/je50/4a7m/3mna/oxrw/oslr) flips its own domain's CLI handlers, but no child owns the terminal state: (1) residual imports not covered by any single domain promotion, (2) the MCP-layer flip — promotion ACs name CLI handlers only while the epic AC requires src/mcp to shrink to SDK-only too, (3) emptying + deleting the baseline file, (4) flipping static-quality-gate from ratchet mode to unconditional hard-deny so the boundary can never regress. Duplicate check 2026-07-06: pm-8778 (closed) built the gate mechanism; the 8 promotion items shrink the baseline domain-by-domain; searched 'boundary ratchet zero sdk-only imports capstone' — no existing item owns baseline-to-zero + gate hardening."
 type: Task
-status: in_progress
+status: open
 priority: 2
 tags[5]: architecture,"area:cli","area:mcp","area:sdk",ci
 created_at: "2026-07-06T13:13:21.203Z"
-updated_at: "2026-07-16T07:35:08.461Z"
-assignee: codex-wide-sdk-20260716
+updated_at: "2026-07-16T07:45:07.875Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: sdk-import-boundary-baseline.json reaches zero entries and is deleted; static-quality-gate hard-denies any private src/core import from src/cli/** and src/mcp/** with no baseline escape hatch; src/mcp handlers consume only src/sdk primitives; full test suite + 100% coverage gate green with zero CLI/MCP behavior change
@@ -23,7 +22,7 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-oxrw,related,"2026-07-06T13:13:21.203Z",null,null
   pm-rjqr,related,"2026-07-06T13:13:21.203Z",null,null
   pm-zwpp,related,"2026-07-06T13:13:21.203Z",null,null
-comments[17]{created_at,author,text}:
+comments[18]{created_at,author,text}:
   "2026-07-14T19:24:59.262Z",codex-gpt5,"Implementation start 2026-07-14: actively shrinking the enforced CLI/MCP private-core baseline through the pm-3mna schema ownership extraction. This run will not claim the capstone complete unless the baseline truly reaches zero."
   "2026-07-14T19:41:00.327Z",codex-gpt5,"Progress evidence: removed all 17 schema-domain private-core edges previously attributed to src/cli/commands/schema.ts. The boundary ratchet passes with zero new imports; the broader baseline remains intentionally open and is not claimed complete."
   "2026-07-14T20:19:49.227Z",codex-root,"Final branch evidence: removed all 17 private-core imports formerly owned by src/cli/commands/schema.ts and deleted that stale baseline block. pnpm quality:static passes with no new private imports, no stale baseline entries, zero unsupported dynamic imports, 100% docstrings, and token budgets green. The repository-wide boundary baseline is not yet zero, so this capstone returns to open for the remaining command families."
@@ -41,6 +40,7 @@ comments[17]{created_at,author,text}:
   "2026-07-16T06:56:15.098Z",codex-wide-sdk-20260716,"Duplicate/lineage check: all-status searches found closed pm-rjqr as the completed public query-wrapper feature and no active duplicate implementation-ownership item. The zero-boundary capstone owns this concrete SDK search promotion; closed lineage remains closed."
   "2026-07-16T07:04:07.920Z",codex-wide-sdk-20260716,"Greptile P2 addressed: promoted list + search and their cohesive query helpers into src/sdk/query, removed the SDK eval reverse dependency, and removed 54 additional grandfathered edges. Static quality passes with 51 source entries / 412 edges remaining, zero new/stale/dynamic boundary violations."
   "2026-07-16T07:35:08.461Z",codex-wide-sdk-20260716,"Final local verification after query promotion: pnpm release:gates passed; 292 files / 5,738 tests at exact 100% coverage (37,232 statements, 26,504 branches, 7,533 functions, 36,335 lines); static/docstring/package/token/security/version gates passed; 12-package packed npx smoke and 88-command temp dogfood passed. Installed tarball proof in /tmp/pm-sdk-query-proof-4WKmtO returned list=1, search=1, eval nDCG=1 through public SDK exports."
+  "2026-07-16T07:45:05.670Z",codex-wide-sdk-20260716,"Exact-head Greptile pre-push review 255811b3-17cc-4808-8b44-407ed3aff65b completed at confidence 5/5 with no review comments. Its two cosmetic observations were verified as branch-local: removed npm-generated legacy package.json main/directories fields and updated the promoted SDK query parser module description. Build, 100% docstring/static quality, package boundary, and token-budget gates pass after cleanup. The capstone remains incomplete only because 51 source entries / 412 import edges remain."
 notes[1]{created_at,author,text}:
   "2026-07-15T06:21:39.876Z",maintainer-agent,"PR#565 progress (2026-07-15): 54 obsolete CLI-to-core import-boundary allowances removed; pm-3mna slice shipped (SDK owns config/profile/init/agent-guidance/templates/extension + createPmCliProgram + renderPmCommand). Baseline scripts/release/sdk-import-boundary-baseline.json still holds ~60 source files (commands/*, main.ts, register-*, mcp/server.ts) — the zero target remains. With 3mna/4a7m/hib1/zwpp shipped, remaining prerequisite slices are pm-oxrw (governance/health) then pm-oslr (execution/diagnostics)."
 learnings[4]{created_at,author,text}:

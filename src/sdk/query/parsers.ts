@@ -1,7 +1,7 @@
 /**
  * @module sdk/query/parsers
  *
- * Provides CLI runtime support for Shared Parsers.
+ * Provides shared query parsers for SDK and CLI runtime consumers.
  */
 import { PmCliError } from "../../core/shared/errors.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
