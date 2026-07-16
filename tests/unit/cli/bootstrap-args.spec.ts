@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   _testOnly,
+  applyBootstrapPagerPolicy,
   parseBootstrapGlobalOptions,
   stripGlobalBootstrapTokens,
   parseBootstrapHelpRequest,
@@ -74,6 +75,15 @@ describe("parseBootstrapGlobalOptions", () => {
     expect(parseBootstrapGlobalOptions(["--author", "--json", "list"])).toMatchObject({
       authorMissingValue: true,
       json: true,
+    });
+  });
+
+  it("reports an empty inline author override as missing", () => {
+    expect(parseBootstrapGlobalOptions(["--author=", "list"])).toMatchObject({
+      authorMissingValue: true,
+    });
+    expect(parseBootstrapGlobalOptions(["--author=agent", "list"])).toMatchObject({
+      author: "agent",
     });
   });
 
@@ -193,6 +203,14 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
     expect(result).toEqual(["list", "--json"]);
   });
 
+  it("does not reinterpret extension when it is a positional argument", () => {
+    expect(normalizeLegacyExtensionActionSyntax(["search", "extension", "install"])).toEqual([
+      "search",
+      "extension",
+      "install",
+    ]);
+  });
+
   it("does not transform when --help is present", () => {
     const result = normalizeLegacyExtensionActionSyntax(["extension", "install", "--help"]);
     expect(result).toEqual(["extension", "install", "--help"]);
@@ -274,6 +292,19 @@ describe("normalizeBootstrapInvocation", () => {
       "high",
     ]);
     expect(normalized.trace.some((entry) => entry.reason === "flag_alias")).toBe(true);
+  });
+
+  it("preserves path values beginning with long-option syntax", () => {
+    expect(normalizeBootstrapInvocation(["--path", "--estimated_minutes", "list"]).argv).toEqual([
+      "--pm-path",
+      "--estimated_minutes",
+      "list",
+    ]);
+    expect(normalizeBootstrapInvocation(["--pm-path", "--acceptanceCriteria", "list"]).argv).toEqual([
+      "--pm-path",
+      "--acceptanceCriteria",
+      "list",
+    ]);
   });
 
   it("normalizes minor long-option typos when unambiguous", () => {
@@ -755,6 +786,46 @@ describe("parseBootstrapTypeValue", () => {
     expect(parseBootstrapTypeValue(["create", "--type="])).toBeUndefined();
     expect(parseBootstrapTypeValue(["create", "--type", "  "])).toBeUndefined();
   });
+
+  it("does not read type options after the argument terminator", () => {
+    expect(parseBootstrapTypeValue(["create", "--", "--type", "Issue"])).toBeUndefined();
+  });
+});
+
+describe("applyBootstrapPagerPolicy", () => {
+  it("restores pager variables changed for a non-interactive help invocation", () => {
+    const previousPager = process.env.PAGER;
+    const previousManpager = process.env.MANPAGER;
+    const previousGitPager = process.env.GIT_PAGER;
+    const previousLess = process.env.LESS;
+    const stdoutDescriptor = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
+    try {
+      Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: false });
+      process.env.PAGER = "less";
+      delete process.env.MANPAGER;
+      process.env.GIT_PAGER = "more";
+      delete process.env.LESS;
+
+      const restore = applyBootstrapPagerPolicy(["list", "--help"]);
+      expect(process.env).toMatchObject({ PAGER: "cat", MANPAGER: "cat", GIT_PAGER: "cat", LESS: "FRX" });
+      restore();
+
+      expect(process.env.PAGER).toBe("less");
+      expect(process.env.MANPAGER).toBeUndefined();
+      expect(process.env.GIT_PAGER).toBe("more");
+      expect(process.env.LESS).toBeUndefined();
+    } finally {
+      if (stdoutDescriptor) Object.defineProperty(process.stdout, "isTTY", stdoutDescriptor);
+      if (previousPager === undefined) delete process.env.PAGER;
+      else process.env.PAGER = previousPager;
+      if (previousManpager === undefined) delete process.env.MANPAGER;
+      else process.env.MANPAGER = previousManpager;
+      if (previousGitPager === undefined) delete process.env.GIT_PAGER;
+      else process.env.GIT_PAGER = previousGitPager;
+      if (previousLess === undefined) delete process.env.LESS;
+      else process.env.LESS = previousLess;
+    }
+  });
 });
 
 describe("bootstrap-args helper edge branches", () => {
@@ -834,5 +905,10 @@ describe("bootstrap-args helper edge branches", () => {
 
     const coalesced = coalesceRepeatedListFlags(["--pm-path"], new Set(["--tags"]), new Set(["--pm-path"]));
     expect(coalesced).toEqual({ argv: ["--pm-path"], events: [] });
+  });
+
+  it("tracks only structurally consumed path values for literal normalization", () => {
+    expect([..._testOnly.collectBootstrapPathValueIndices(["--path", "--path", "--estimated_minutes"])]).toEqual([1]);
+    expect([..._testOnly.collectBootstrapPathValueIndices(["list", "--pm-path", "--acceptanceCriteria"])]).toEqual([2]);
   });
 });

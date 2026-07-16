@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "SDK-only exemplar for building a complete custom project-management tool on pm primitives.",
+  "bin": {
+    "pm-custom": "src/entry.ts"
+  },
   "peerDependencies": {
     "@unbrained/pm-cli": ">=2026.7.16"
   }

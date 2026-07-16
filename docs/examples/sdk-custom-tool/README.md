@@ -22,5 +22,6 @@ the work with resolution evidence, and returns health/history verification as
 structured JSON. It never imports `src/core`, `src/cli`, or spawns `pm`.
 
 Use [src/index.ts](src/index.ts) as the copyable library pattern and
-[src/cli.ts](src/cli.ts) as the process-independent executable adapter to wire
-to the argument and output ports of a domain-specific binary.
+[src/cli.ts](src/cli.ts) as the process-independent executable adapter. The
+package maps `pm-custom` to [src/entry.ts](src/entry.ts), which wires that
+adapter to Node.js arguments, author identity, output streams, and exit status.

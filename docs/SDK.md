@@ -166,9 +166,6 @@ Command/action contract exports:
 
 ### Build an entire custom project tool
 
-Tracked: [pm-cbwg](../.agents/pm/features/pm-cbwg.toon) and
-[pm-w89s](../.agents/pm/stories/pm-w89s.toon).
-
 The [SDK-only custom-tool exemplar](examples/sdk-custom-tool/README.md)
 is the acceptance reference for applications that use pm as a universal
 context engine rather than as an extension host. It imports only

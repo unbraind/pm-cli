@@ -3536,6 +3536,7 @@ export async function runPmCli(
   ];
   const isBareInvocation = invocationArgv.length === 0;
   let restorePmAuthor: (() => void) | undefined;
+  let restorePagerPolicy: (() => void) | undefined;
   try {
     const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
     if (bootstrapGlobal.authorMissingValue) {
@@ -3546,7 +3547,7 @@ export async function runPmCli(
     }
     restorePmAuthor = applyInvocationAuthorOverride(bootstrapGlobal.author);
     enforceExplicitRetryForFlagTypos(bootstrapInvocation);
-    applyBootstrapPagerPolicy(invocationArgv);
+    restorePagerPolicy = applyBootstrapPagerPolicy(invocationArgv);
     const registrationSelection =
       resolveCoreCommandRegistrationSelection(invocationArgv);
     await registerCoreCommandFamilies(program, registrationSelection);
@@ -3586,6 +3587,7 @@ export async function runPmCli(
   } catch (error: unknown) {
     await handleRunPmCliError({ error, invocationArgv });
   } finally {
+    restorePagerPolicy?.();
     restorePmAuthor?.();
   }
 }

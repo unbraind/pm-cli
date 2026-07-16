@@ -101,7 +101,6 @@ export function parseBootstrapGlobalOptions(
   let json = false;
   let quiet = false;
   let author: string | undefined;
-  let authorMissingValue = false;
   let index = 0;
   while (index < argv.length) {
     const token = argv[index];
@@ -145,7 +144,7 @@ export function parseBootstrapGlobalOptions(
         author = argv[index + 1];
         index += 2;
       } else {
-        authorMissingValue = true;
+        author = "";
         index += 1;
       }
       continue;
@@ -163,8 +162,11 @@ export function parseBootstrapGlobalOptions(
     noPager,
     json,
     quiet,
-    ...(author !== undefined ? { author } : {}),
-    ...(authorMissingValue ? { authorMissingValue: true } : {}),
+    ...(author === ""
+      ? { authorMissingValue: true }
+      : author !== undefined
+        ? { author }
+        : {}),
   };
 }
 
@@ -321,10 +323,27 @@ function shouldDisablePagerForInvocation(
 }
 
 /** Implements apply bootstrap pager policy for the public runtime surface of this module. */
-export function applyBootstrapPagerPolicy(argv: string[]): void {
+export function applyBootstrapPagerPolicy(argv: string[]): () => void {
+  const pagerEnvironmentKeys = [
+    "PAGER",
+    "MANPAGER",
+    "GIT_PAGER",
+    "LESS",
+  ] as const;
+  const previousValues = pagerEnvironmentKeys.map((key) => process.env[key]);
+  const restore = (): void => {
+    for (const [index, key] of pagerEnvironmentKeys.entries()) {
+      const value = previousValues[index];
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  };
   const bootstrapGlobal = parseBootstrapGlobalOptions(argv);
   if (!shouldDisablePagerForInvocation(argv, bootstrapGlobal)) {
-    return;
+    return restore;
   }
   process.env.PAGER = "cat";
   process.env.MANPAGER = "cat";
@@ -335,6 +354,7 @@ export function applyBootstrapPagerPolicy(argv: string[]): void {
   ) {
     process.env.LESS = "FRX";
   }
+  return restore;
 }
 
 type ExtensionSubcommandAction =
@@ -363,8 +383,8 @@ const EXTENSION_ACTION_SYNTAX_TOKENS = new Set<ExtensionSubcommandAction>([
 
 /** Implements normalize legacy extension action syntax for the public runtime surface of this module. */
 export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
-  const extensionIndex = argv.findIndex((token) => token === "extension");
-  if (extensionIndex < 0) {
+  const extensionIndex = findCommandTokenIndex(argv);
+  if (extensionIndex === undefined || argv[extensionIndex] !== "extension") {
     return [...argv];
   }
   const actionToken = argv[extensionIndex + 1];
@@ -630,8 +650,9 @@ export function listAliasPluralKeys(normalizedKey: string): string[] {
 
 function parseBareKeyValueToken(
   token: string,
+  preserve = false,
 ): { key: string; value: string } | null {
-  if (token.includes("://")) {
+  if (preserve || token.includes("://")) {
     return null;
   }
   const match = token.match(/^([A-Za-z][A-Za-z0-9_-]{1,63})([:=])(.*)$/);
@@ -652,8 +673,9 @@ function parseBareKeyValueToken(
 function normalizeLongOptionToken(
   token: string,
   lookup: FlagLookup,
+  preserve = false,
 ): { tokens: string[]; event?: BootstrapNormalizationEvent } {
-  if (!token.startsWith("--")) {
+  if (preserve || !token.startsWith("--")) {
     return { tokens: [token] };
   }
   const equalsIndex = token.indexOf("=");
@@ -680,6 +702,22 @@ function normalizeLongOptionToken(
       confidence: resolution.confidence,
     },
   };
+}
+
+/** Locate global path-value tokens that normalization must preserve literally. */
+function collectBootstrapPathValueIndices(argv: string[]): Set<number> {
+  const indices = new Set<number>();
+  let expectsValue = false;
+  for (let index = 0; index < argv.length; index += 1) {
+    if (expectsValue) {
+      indices.add(index);
+      expectsValue = false;
+      continue;
+    }
+    const token = argv[index];
+    expectsValue = token === "--path" || token === "--pm-path";
+  }
+  return indices;
 }
 
 // Global option flags whose value may legitimately begin with "--" (commander
@@ -1014,22 +1052,28 @@ export function normalizeBootstrapInvocation(
   const commandPathName = parseBootstrapCommandPathName(aliasNormalized);
   const lookup = buildFlagLookup(commandPathName ?? commandName);
   const normalizedArgv: string[] = [];
+  const pathValueIndices = collectBootstrapPathValueIndices(aliasNormalized);
   for (let index = 0; index < aliasNormalized.length; index += 1) {
     const token = aliasNormalized[index];
     if (token === "--") {
       normalizedArgv.push(...aliasNormalized.slice(index));
       break;
     }
+    const preserveCurrentToken = pathValueIndices.has(index);
     const previous = normalizedArgv[normalizedArgv.length - 1];
     if (token.startsWith("--")) {
-      const normalizedToken = normalizeLongOptionToken(token, lookup);
+      const normalizedToken = normalizeLongOptionToken(
+        token,
+        lookup,
+        preserveCurrentToken,
+      );
       normalizedArgv.push(...normalizedToken.tokens);
       if (normalizedToken.event) {
         trace.push(normalizedToken.event);
       }
       continue;
     }
-    const bareKeyValue = parseBareKeyValueToken(token);
+    const bareKeyValue = parseBareKeyValueToken(token, preserveCurrentToken);
     if (
       bareKeyValue &&
       !(typeof previous === "string" && previous.startsWith("-")) &&
@@ -1090,6 +1134,9 @@ function parseBootstrapCommandPathName(argv: string[]): string | undefined {
 export function parseBootstrapTypeValue(argv: string[]): string | undefined {
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
+    if (token === "--") {
+      break;
+    }
     if (token === "--type") {
       const candidate = argv[index + 1];
       if (typeof candidate === "string" && candidate.trim().length > 0) {
@@ -1110,6 +1157,7 @@ export function parseBootstrapTypeValue(argv: string[]): string | undefined {
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   buildFlagLookup,
+  collectBootstrapPathValueIndices,
   collectLongFlagCandidates,
   markUnambiguousFlag,
   normalizeLongOptionToken,

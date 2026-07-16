@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * @module docs/examples/sdk-custom-tool/cli
  *

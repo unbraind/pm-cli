@@ -27,12 +27,16 @@ export default {
 `,
       });
 
-      const enhanced = first.runCli(["list", "--workspace-note", "first"]);
+      const enhanced = await first.runCliInProcess([
+        "list",
+        "--workspace-note",
+        "first",
+      ]);
       expect(enhanced.code).toBe(0);
     });
 
     await withTempPmPath(async (second) => {
-      const isolated = second.runCli(["list", "--type", "Task"]);
+      const isolated = await second.runCliInProcess(["list", "--type", "Task"]);
       expect(isolated.code).toBe(0);
       expect(isolated.stderr).not.toContain("--workspace-note");
     });
