@@ -160,7 +160,7 @@
     "greptile": "^3.1.1",
     "jscpd": "^5.0.11",
     "tsx": "^4.23.0",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.62.1",
     "vitest": "^4.1.9"
   }
