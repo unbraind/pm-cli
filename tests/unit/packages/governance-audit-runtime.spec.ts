@@ -189,6 +189,12 @@ describe("packages/pm-governance-audit runtime", () => {
     ).resolves.toEqual({ ok: true, audit_update: true });
     await expect(
       decorateGovernanceCommandResult({
+        command: "update",
+        result: { ok: true },
+      }),
+    ).resolves.toEqual({ ok: true });
+    await expect(
+      decorateGovernanceCommandResult({
         command: "release",
         options: { allowAuditRelease: true },
         result: { ok: true },

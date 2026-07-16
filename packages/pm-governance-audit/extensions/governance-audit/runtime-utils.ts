@@ -181,14 +181,30 @@ const asRecord = (value: unknown): Record<string, unknown> | undefined => {
     : undefined;
 };
 
-const hasUpdateAuditBypass = (options: Record<string, unknown>): boolean => {
+const hasUpdateAuditBypass = (
+  options: Record<string, unknown> | undefined,
+): boolean => {
   /** Detect every supported update-audit bypass alias. */
+  const resolved = options ?? {};
   return (
-    options.allowAuditUpdate === true ||
-    options.allow_audit_update === true ||
-    options.allowAuditDepUpdate === true ||
-    options.allow_audit_dep_update === true
+    resolved.allowAuditUpdate === true ||
+    resolved.allow_audit_update === true ||
+    resolved.allowAuditDepUpdate === true ||
+    resolved.allow_audit_dep_update === true
   );
+};
+
+const resolveLinkedArtifactAuditKey = (
+  payload: CommandResultPayload,
+): "files" | "docs" | undefined => {
+  /** Resolve the supported linked-artifact result key for an eligible audit request. */
+  if (payload.command !== "files" && payload.command !== "docs") {
+    return undefined;
+  }
+  if (payload.options?.audit !== true || !payload.pm_root) {
+    return undefined;
+  }
+  return payload.command;
 };
 
 const decorateLinkedArtifactResult = async (
@@ -196,20 +212,15 @@ const decorateLinkedArtifactResult = async (
   result: Record<string, unknown>,
 ): Promise<Record<string, unknown> | undefined> => {
   /** Add reverse linked-artifact attribution to eligible files/docs results. */
-  if (
-    (payload.command !== "files" && payload.command !== "docs") ||
-    payload.options?.audit !== true ||
-    !payload.pm_root
-  ) {
-    return undefined;
-  }
-  const artifactKey = payload.command;
+  const artifactKey = resolveLinkedArtifactAuditKey(payload);
+  if (artifactKey === undefined) return undefined;
   const artifacts = Array.isArray(result[artifactKey])
-    ? (result[artifactKey] as Array<{ path?: unknown }>)
+    ? result[artifactKey]
     : [];
-  const paths = artifacts.flatMap((entry) =>
-    typeof entry.path === "string" ? [entry.path] : [],
-  );
+  const paths = artifacts.flatMap((entry) => {
+    const artifact = asRecord(entry);
+    return typeof artifact?.path === "string" ? [artifact.path] : [];
+  });
   const listed = await new PmClient({ pmRoot: payload.pm_root }).list({
     status: "all",
     noTruncate: true,
@@ -238,30 +249,36 @@ const decorateLinkedArtifactResult = async (
   };
 };
 
+const decorateAuditBypassResult = (
+  payload: CommandResultPayload,
+  result: Record<string, unknown>,
+): Record<string, unknown> | undefined => {
+  /** Add the package-owned audit marker for explicit update or release bypasses. */
+  const isUpdate = ["update", "update-many"].includes(String(payload.command));
+  if (isUpdate && hasUpdateAuditBypass(payload.options)) {
+    return { ...result, audit_update: true };
+  }
+  if (
+    payload.command === "release" &&
+    payload.options?.allowAuditRelease === true
+  ) {
+    return { ...result, audit_release: true };
+  }
+  return undefined;
+};
+
 /** Add package-owned fields to a completed core command result. */
-export async function decorateGovernanceCommandResult(
+export const decorateGovernanceCommandResult = async (
   raw: unknown,
-): Promise<unknown> {
+): Promise<unknown> => {
   const payload = asRecord(raw) as CommandResultPayload | undefined;
-  const result = asRecord(payload?.result);
-  const options = payload?.options ?? {};
-  if (!payload || !result) return payload?.result;
+  if (!payload) return undefined;
+  const result = asRecord(payload.result);
+  if (!result) return payload.result;
   const linkedArtifactResult = await decorateLinkedArtifactResult(
     payload,
     result,
   );
   if (linkedArtifactResult) return linkedArtifactResult;
-
-  if (
-    (payload.command === "update" || payload.command === "update-many") &&
-    hasUpdateAuditBypass(options)
-  ) {
-    return { ...result, audit_update: true };
-  }
-
-  if (payload.command === "release" && options.allowAuditRelease === true) {
-    return { ...result, audit_release: true };
-  }
-
-  return result;
-}
+  return decorateAuditBypassResult(payload, result) ?? result;
+};

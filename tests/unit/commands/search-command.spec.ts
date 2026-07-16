@@ -3691,6 +3691,16 @@ describe("classifyImplicitSemanticFallbackReason", () => {
         mode: "fields",
         fields: ["id", "score"],
       });
+
+      const zeroLimitedCounted = await runSearch(
+        "alpha",
+        { mode: "keyword", count: true, limit: "0", full: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(zeroLimitedCounted.count_only).toBe(true);
+      expect(zeroLimitedCounted.count).toBe(3);
+      expect(zeroLimitedCounted.total).toBe(3);
+      expect(zeroLimitedCounted.items).toEqual([]);
     });
 
     it("keeps the count-only shape when --count matches nothing (empty-result path)", async () => {

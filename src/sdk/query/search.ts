@@ -3724,7 +3724,8 @@ export async function runSearch(
   };
   if (
     runtime.effectiveMode === "keyword" &&
-    (corpus.filteredDocuments.length === 0 || prepared.limit === 0)
+    (corpus.filteredDocuments.length === 0 ||
+      (prepared.limit === 0 && !prepared.countOnly))
   ) {
     return buildEmptySearchResultFromContext(
       { ...responseBase, effectiveMode: runtime.effectiveMode },
@@ -3747,7 +3748,8 @@ export async function runSearch(
   if (
     modeResult.effectiveMode !== "keyword" &&
     modeResult.hits.length === 0 &&
-    (corpus.filteredDocuments.length === 0 || prepared.limit === 0)
+    (corpus.filteredDocuments.length === 0 ||
+      (prepared.limit === 0 && !prepared.countOnly))
   ) {
     return buildEmptySearchResultFromContext(
       { ...responseBase, effectiveMode: modeResult.effectiveMode },

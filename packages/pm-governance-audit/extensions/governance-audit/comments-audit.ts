@@ -423,10 +423,10 @@ const buildCommentsAuditFilters = (
 };
 
 /** Implements run comments audit for the public runtime surface of this module. */
-export async function runCommentsAudit(
+export const runCommentsAudit = async (
   options: CommentsAuditOptions,
   global: GlobalOptions,
-): Promise<CommentsAuditResult> {
+): Promise<CommentsAuditResult> => {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
@@ -480,4 +480,4 @@ export async function runCommentsAudit(
   }
   if (listed.warnings?.length) result.warnings = listed.warnings;
   return result;
-}
+};
