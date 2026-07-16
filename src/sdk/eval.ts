@@ -94,7 +94,10 @@ const VALID_EVAL_MODES: ReadonlySet<string> = new Set<EvalSearchMode>([
   "hybrid",
 ]);
 
-function parseEvalMode(raw: string | undefined): EvalSearchMode {
+type EvalQuery = ReturnType<typeof parseEvalQuerySet>["queries"][number];
+
+/** Resolves and validates the default retrieval mode for an evaluation run. */
+const parseEvalMode = (raw: string | undefined): EvalSearchMode => {
   if (raw === undefined) {
     return "keyword";
   }
@@ -106,9 +109,10 @@ function parseEvalMode(raw: string | undefined): EvalSearchMode {
     );
   }
   return normalized as EvalSearchMode;
-}
+};
 
-function parseEvalK(raw: string | number | undefined): number {
+/** Resolves and validates the positive ranking cutoff for an evaluation run. */
+const parseEvalK = (raw: string | number | undefined): number => {
   if (raw === undefined || raw === "") {
     return DEFAULT_EVAL_K;
   }
@@ -120,48 +124,48 @@ function parseEvalK(raw: string | number | undefined): number {
     );
   }
   return parsed;
-}
+};
 
-function parseFailUnder(raw: string | number | undefined): number | undefined {
+/** Resolves and validates an optional normalized nDCG gate threshold. */
+const parseFailUnder = (
+  raw: string | number | undefined,
+): number | undefined => {
   if (raw === undefined) {
     return undefined;
   }
   const normalized = String(raw).trim();
-  if (normalized.length === 0) {
-    throw new PmCliError(
-      "Eval --fail-under must be a number in the range [0, 1]",
-      EXIT_CODE.USAGE,
-    );
-  }
   const parsed = Number(normalized);
-  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
+  if (
+    [
+      normalized.length === 0,
+      !Number.isFinite(parsed),
+      parsed < 0,
+      parsed > 1,
+    ].includes(true)
+  ) {
     throw new PmCliError(
       "Eval --fail-under must be a number in the range [0, 1]",
       EXIT_CODE.USAGE,
     );
   }
   return parsed;
-}
+};
 
 /** Round a metric to four decimals to keep the JSON output compact and stable. */
-function roundMetric(value: number): number {
-  return Math.round(value * 10_000) / 10_000;
-}
+const roundMetric = (value: number): number =>
+  Math.round(value * 10_000) / 10_000;
 
-async function loadEvalQuerySet(
-  queriesPath: string,
-): Promise<ReturnType<typeof parseEvalQuerySet>> {
-  let raw: string;
+/** Reads a golden-query file and translates missing-file failures to CLI guidance. */
+const readEvalQuerySetFile = async (queriesPath: string): Promise<string> => {
   try {
-    raw = await fs.readFile(queriesPath, "utf8");
+    return await fs.readFile(queriesPath, "utf8");
   } catch {
     throw new PmCliError(
       `Eval query set not found at ${queriesPath}`,
       EXIT_CODE.NOT_FOUND,
       {
         examples: [
-          'echo \'[{"query":"offline search","relevant_ids":["pm-75k9"]}]\' > ' +
-            queriesPath,
+          `echo '[{"query":"offline search","relevant_ids":["pm-75k9"]}]' > ${queriesPath}`,
           "pm eval --queries ./my-eval.json",
         ],
         nextSteps: [
@@ -170,29 +174,111 @@ async function loadEvalQuerySet(
       },
     );
   }
-  let parsed: unknown;
+};
+
+/** Parses golden-query JSON while preserving a path-specific usage diagnostic. */
+const parseEvalQuerySetJson = (raw: string, queriesPath: string): unknown => {
   try {
-    parsed = JSON.parse(raw);
+    return JSON.parse(raw);
   } catch (error: unknown) {
-    // JSON.parse only ever throws a SyntaxError (an Error subclass).
     throw new PmCliError(
       /* c8 ignore next -- JSON.parse throws Error instances; String fallback protects nonstandard hosts. */
       `Eval query set at ${queriesPath} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
       EXIT_CODE.USAGE,
     );
   }
+};
+
+/** Applies the structured golden-query contract and preserves its diagnostics. */
+const validateEvalQuerySet = (
+  parsed: unknown,
+): ReturnType<typeof parseEvalQuerySet> => {
   try {
     return parseEvalQuerySet(parsed);
   } catch (error: unknown) {
-    // parseEvalQuerySet only ever throws EvalQuerySetError (an Error subclass
-    // with a precise, author-actionable message) — surface it as a usage error.
     throw new PmCliError(
       /* c8 ignore next -- parseEvalQuerySet throws Error instances; String fallback protects nonstandard hosts. */
       error instanceof Error ? error.message : String(error),
       EXIT_CODE.USAGE,
     );
   }
-}
+};
+
+/** Loads and validates a golden-query set from one resolved filesystem path. */
+const loadEvalQuerySet = async (
+  queriesPath: string,
+): Promise<ReturnType<typeof parseEvalQuerySet>> =>
+  validateEvalQuerySet(
+    parseEvalQuerySetJson(await readEvalQuerySetFile(queriesPath), queriesPath),
+  );
+
+/** Resolves the caller override or tracker-owned default golden-query path. */
+const resolveEvalQueriesPath = (
+  pmRoot: string,
+  queries: string | undefined,
+): string =>
+  queries
+    ? path.resolve(process.cwd(), queries)
+    : path.join(pmRoot, DEFAULT_EVAL_QUERIES_RELATIVE_PATH);
+
+/** Executes and scores one golden query without rounding its aggregate input. */
+const evaluateEvalQuery = async (
+  evalQuery: EvalQuery,
+  defaultMode: EvalSearchMode,
+  k: number,
+  global: GlobalOptions,
+): Promise<{ report: EvalQueryReport; metrics: QueryEvalMetrics }> => {
+  const mode = evalQuery.mode ?? defaultMode;
+  const searchResult = await runSearch(
+    evalQuery.query,
+    { mode, limit: String(k), fields: "id" },
+    global,
+  );
+  const rankedIds = searchResult.items
+    .map((item) => (item as { id?: unknown }).id)
+    .filter((id): id is string => typeof id === "string");
+  const metrics = evaluateRanking(
+    rankedIds,
+    new Set(evalQuery.relevant_ids),
+    k,
+  );
+  return {
+    metrics,
+    report: {
+      query: evalQuery.query,
+      mode,
+      relevant_total: metrics.relevant_total,
+      retrieved_relevant: metrics.retrieved_relevant,
+      ndcg: roundMetric(metrics.ndcg),
+      mrr: roundMetric(metrics.mrr),
+      precision: roundMetric(metrics.precision),
+      recall: roundMetric(metrics.recall),
+    },
+  };
+};
+
+/** Shapes rounded aggregate metrics and the optional gate result. */
+const buildEvalResult = (
+  k: number,
+  reports: EvalQueryReport[],
+  rawMetrics: QueryEvalMetrics[],
+  failUnder: number | undefined,
+): EvalResult => {
+  const aggregate = aggregateEvalMetrics(rawMetrics);
+  return {
+    k,
+    query_count: reports.length,
+    aggregate: {
+      ndcg: roundMetric(aggregate.ndcg),
+      mrr: roundMetric(aggregate.mrr),
+      precision: roundMetric(aggregate.precision),
+      recall: roundMetric(aggregate.recall),
+    },
+    queries: reports,
+    ...(failUnder !== undefined ? { fail_under: failUnder } : {}),
+    passed: failUnder === undefined || aggregate.ndcg >= failUnder,
+  };
+};
 
 /**
  * Run the search-relevance evaluation (pm-u8n5). Loads the golden-query set
@@ -203,10 +289,10 @@ async function loadEvalQuerySet(
  * aggregate nDCG@k cleared the threshold; the CLI layer maps a failed gate to a
  * non-zero exit code.
  */
-export async function runEval(
+export const runEval = async (
   options: EvalOptions,
   global: GlobalOptions,
-): Promise<EvalResult> {
+): Promise<EvalResult> => {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(
@@ -217,9 +303,7 @@ export async function runEval(
   const k = parseEvalK(options.k);
   const defaultMode = parseEvalMode(options.mode);
   const failUnder = parseFailUnder(options.failUnder);
-  const queriesPath = options.queries
-    ? path.resolve(process.cwd(), options.queries)
-    : path.join(pmRoot, DEFAULT_EVAL_QUERIES_RELATIVE_PATH);
+  const queriesPath = resolveEvalQueriesPath(pmRoot, options.queries);
   const querySet = await loadEvalQuerySet(queriesPath);
 
   const reports: EvalQueryReport[] = [];
@@ -227,46 +311,14 @@ export async function runEval(
   // emitted report values so display precision never flips a --fail-under decision.
   const rawMetrics: QueryEvalMetrics[] = [];
   for (const evalQuery of querySet.queries) {
-    const mode = evalQuery.mode ?? defaultMode;
-    const searchResult = await runSearch(
-      evalQuery.query,
-      { mode, limit: String(k), fields: "id" },
+    const { report, metrics } = await evaluateEvalQuery(
+      evalQuery,
+      defaultMode,
+      k,
       global,
     );
-    const rankedIds = searchResult.items
-      .map((item) => (item as { id?: unknown }).id)
-      .filter((id): id is string => typeof id === "string");
-    const metrics = evaluateRanking(
-      rankedIds,
-      new Set(evalQuery.relevant_ids),
-      k,
-    );
     rawMetrics.push(metrics);
-    reports.push({
-      query: evalQuery.query,
-      mode,
-      relevant_total: metrics.relevant_total,
-      retrieved_relevant: metrics.retrieved_relevant,
-      ndcg: roundMetric(metrics.ndcg),
-      mrr: roundMetric(metrics.mrr),
-      precision: roundMetric(metrics.precision),
-      recall: roundMetric(metrics.recall),
-    });
+    reports.push(report);
   }
-
-  const aggregate = aggregateEvalMetrics(rawMetrics);
-  const passed = failUnder === undefined || aggregate.ndcg >= failUnder;
-  return {
-    k,
-    query_count: querySet.queries.length,
-    aggregate: {
-      ndcg: roundMetric(aggregate.ndcg),
-      mrr: roundMetric(aggregate.mrr),
-      precision: roundMetric(aggregate.precision),
-      recall: roundMetric(aggregate.recall),
-    },
-    queries: reports,
-    ...(failUnder !== undefined ? { fail_under: failUnder } : {}),
-    passed,
-  };
-}
+  return buildEvalResult(k, reports, rawMetrics, failUnder);
+};

@@ -6,11 +6,18 @@ status: open
 priority: 2
 tags[5]: "area:cli",dx,perf,scripts,tech-debt
 created_at: "2026-07-06T09:04:36.860Z"
-updated_at: "2026-07-07T14:17:46.063Z"
+updated_at: "2026-07-16T15:14:53.370Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: compile-cache dir bounded (stale entries pruned or non-current versions dropped); every mkdtemp-using script cleans its sandbox via try/finally + signal handlers; aborted smoke runs leave no >100MB residue in /tmp
 parent: pm-u9d0
 risk: low
 confidence: high
+comments[1]{created_at,author,text}:
+  "2026-07-16T15:14:51.889Z",codex-gpt5-root,"PR #573 CI evidence: static quality, package boundary, and all token-budget measurements passed, but final rmSync of /tmp/pm-token-budget-AclN4M hit transient ENOTEMPTY. The same gate passed locally before and after the run; this confirms the existing broader temp-lifecycle chore still owns cleanup retry/signal hardening. No script implementation was added in this review slice because the next PR head naturally reruns the full gate and this item's acceptance criteria also require compile-cache plus every mkdtemp caller, not a one-line partial close."
+files[2]{path,scope,note}:
+  scripts/release/token-budget-gate.mjs,project,Bounded retry cleanup for token-budget sandbox
+  tests/unit/scripts/release/token-budget-gate.spec.ts,project,Cleanup option regression contract
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/token-budget-gate.spec.ts,project,240
 body: "Proposed work:\n1. src/cli.ts: prune the compile-cache dir opportunistically (e.g. drop entries older than N days, or cap total size; Node exposes no API so a lightweight best-effort sweep of stale subdirs on startup-idle or via pm gc is fine). Alternatively scope the dir per package version and delete non-current versions.\n2. Wire cleanupTempRoot (scripts/smoke-cleanup.mjs) into every mkdtemp-using script (smoke-external-packages, dogfood-package-first, plugin-mcp-smoke-harness, contracts-snapshot, run-tests) via try/finally + process signal handlers so aborted runs do not leak multi-hundred-MB sandboxes.\n3. Consider a pm gc advisory that reports oversized pm-owned temp artifacts.\n\nEvidence: /tmp inventory during 2026-07-06 review: 1.7G compile cache, 882M+662M+441M scaffold-review smokes, 7x ~112M changelog sandboxes; total tmpfs 80% full which exhausted the per-user quota and broke tooling."
