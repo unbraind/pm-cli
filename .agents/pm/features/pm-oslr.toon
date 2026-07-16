@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: architecture,"area:sdk","area:telemetry","area:test"
 created_at: "2026-07-05T05:09:19.981Z"
-updated_at: "2026-07-16T06:42:59.092Z"
+updated_at: "2026-07-16T18:00:54.853Z"
 closed_at: "2026-07-16T06:42:57.356Z"
 author: maintainer-agent
 estimated_minutes: 300
@@ -14,6 +14,9 @@ acceptance_criteria: "SDK exports typed primitives for linked-test execution and
 parent: pm-usfg
 risk: medium
 confidence: medium
+resolution: "shipped: execution/diagnostics SDK family (runList/runSearch/runEval/runStats/runTelemetry/runTest/runTestAll + test-run lifecycle) public via PR#573; CLI commands are identity-preserving re-export shells; boundary baseline 62/538 -> 51/412; suppressions 158 -> 157"
+expected_result: "All execution and diagnostics primitives (linked-test running, test-run lifecycle, eval harness, telemetry/stats) callable from the public SDK with typed exports, CLI parity preserved, boundary ratchet reduced"
+actual_result: "PR#573 merged: typed SDK APIs live, CLI thin compat exports with reference-identity tests, boundary 51 sources/412 edges, suppressions 157, exact 100% coverage 5738 tests, packed-tarball public-SDK proof (list=1, search=1, eval nDCG=1)"
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-atfm,related,"2026-07-10T21:31:12.222Z",null,null
 comments[4]{created_at,author,text}:

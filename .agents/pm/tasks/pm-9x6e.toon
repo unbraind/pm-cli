@@ -1,12 +1,12 @@
 id: pm-9x6e
-title: "Capstone: zero the SDK import-boundary baseline (91 entries) — flip remaining CLI/MCP private-core imports to SDK primitives and harden the ratchet into a hard boundary gate"
+title: "Capstone: zero the SDK import-boundary baseline — flip remaining CLI/MCP private-core imports to SDK primitives and harden the ratchet into a hard boundary gate"
 description: "pm-8778 shipped the ratchet gate; scripts/release/sdk-import-boundary-baseline.json currently allows 91 private src/core imports from src/cli + src/mcp. Each SDK promotion item (pm-rjqr/98cz/zwpp/je50/4a7m/3mna/oxrw/oslr) flips its own domain's CLI handlers, but no child owns the terminal state: (1) residual imports not covered by any single domain promotion, (2) the MCP-layer flip — promotion ACs name CLI handlers only while the epic AC requires src/mcp to shrink to SDK-only too, (3) emptying + deleting the baseline file, (4) flipping static-quality-gate from ratchet mode to unconditional hard-deny so the boundary can never regress. Duplicate check 2026-07-06: pm-8778 (closed) built the gate mechanism; the 8 promotion items shrink the baseline domain-by-domain; searched 'boundary ratchet zero sdk-only imports capstone' — no existing item owns baseline-to-zero + gate hardening."
 type: Task
 status: open
 priority: 2
 tags[5]: architecture,"area:cli","area:mcp","area:sdk",ci
 created_at: "2026-07-06T13:13:21.203Z"
-updated_at: "2026-07-16T15:59:08.849Z"
+updated_at: "2026-07-16T18:03:52.930Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: sdk-import-boundary-baseline.json reaches zero entries and is deleted; static-quality-gate hard-denies any private src/core import from src/cli/** and src/mcp/** with no baseline escape hatch; src/mcp handlers consume only src/sdk primitives; full test suite + 100% coverage gate green with zero CLI/MCP behavior change
@@ -61,8 +61,9 @@ comments[38]{created_at,author,text}:
   "2026-07-16T15:18:14.999Z",codex-gpt5-root,"Sixth exact-run remediation evidence: extracted SDK eval input parsing, file/JSON/contract validation, query scoring, path resolution, and result shaping into documented lexical primitives with cyclomatic complexity below the hosted threshold. Replaced the last string concatenation with a template literal and preserved sequential search semantics plus raw-metric gating. Focused eval tests pass 15/15; strict lint, zero duplicates, 100% docstring/static, package-boundary, and token gates pass. Full coverage passes 292 files / 5,745 tests at exact 100/100/100/100 (37,501 statements, 26,351 branches, 7,631 functions, 36,591 lines). The capstone remains open at 51 source allowances / 412 edges."
   "2026-07-16T15:36:15.470Z",codex-gpt5-root,"Review follow-up start: current PR #573 Gemini threads 3596478654 and 3596478682 request explicit unknown annotations for two dedupe-merge catch variables. TypeScript already infers unknown under the strict config, but this active change will make the contract explicit and rerun the focused governance plus full coverage gates."
   "2026-07-16T15:43:48.493Z",codex-gpt5-root,"Gemini follow-up evidence: both dedupe-merge catch bindings now declare unknown explicitly; focused dedupe merge coverage passes 9/9 and the combined quality/release/governance suite passes 115/115."
-notes[1]{created_at,author,text}:
+notes[2]{created_at,author,text}:
   "2026-07-15T06:21:39.876Z",maintainer-agent,"PR#565 progress (2026-07-15): 54 obsolete CLI-to-core import-boundary allowances removed; pm-3mna slice shipped (SDK owns config/profile/init/agent-guidance/templates/extension + createPmCliProgram + renderPmCommand). Baseline scripts/release/sdk-import-boundary-baseline.json still holds ~60 source files (commands/*, main.ts, register-*, mcp/server.ts) — the zero target remains. With 3mna/4a7m/hib1/zwpp shipped, remaining prerequisite slices are pm-oxrw (governance/health) then pm-oslr (execution/diagnostics)."
+  "2026-07-16T18:03:52.929Z",maintainer-agent,"Remainder after PR#573 (2026-07-16): 51 source files / 412 edges in scripts/release/sdk-import-boundary-baseline.json (was 62/538 pre-#573, 82/761 pre-#568). All six domain slices shipped — every remaining edge is now mechanical flip territory (commands/*, main.ts, register-*, mcp/server.ts) with no missing SDK primitive blocking it."
 learnings[4]{created_at,author,text}:
   "2026-07-14T20:19:49.944Z",codex-root,Boundary burn-down is strongest when the implementation itself moves to an SDK-owned module; deleting a baseline block without changing ownership would only hide the dependency direction.
   "2026-07-14T23:31:18.238Z",codex-root,Compatibility shims must remain locally referenced or be deleted after SDK promotion; the orphan-module gate correctly prevents dead presentation paths from surviving solely for tests.

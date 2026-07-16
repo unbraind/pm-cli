@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: context-management,linked-files,review
 created_at: "2026-06-25T05:01:04.319Z"
-updated_at: "2026-07-15T18:52:22.867Z"
+updated_at: "2026-07-16T18:02:00.934Z"
 author: codex-ecosystem-auditor
 estimated_minutes: 180
 acceptance_criteria: "Historical linked-file ownership debt is reconciled in a dedicated tracker-only migration without polluting a product release changelog; pm validate --check-files residual rows are grouped by deleted, moved, and unowned current paths with owner candidates; no broad historical PM mutations are bundled into unrelated code PRs."
@@ -15,7 +15,7 @@ risk: medium
 confidence: medium
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-kb5h,related,"2026-07-14T17:05:10.148Z",null,null
-comments[15]:
+comments[16]:
   - created_at: "2026-06-25T05:01:11.314Z"
     author: codex-ecosystem-auditor
     text: "Duplicate check: searched all statuses for linked-file validation, orphaned paths, missing linked paths, and stale linked artifacts. Prior canonical items (for example pm-xz1p and pm-0v2m) are closed; this item tracks the current 2026-06-25 audit finding under pm-57vh."
@@ -62,6 +62,9 @@ comments[15]:
   - created_at: "2026-07-15T18:52:22.866Z"
     author: maintainer-agent
     text: "Baseline 2026-07-15 (post-PR#568): missing=168 = 118 moved + 50 deleted, orphaned=0. +2 moved vs pass #86 (166=116+50) from PR#568 SDK relocations (validate/health/gc engines moved to src/sdk/governance/, extension runtime split into install-runtime/install-snapshot/concurrency/update-check under src/sdk/extension/). Mechanical-relink class, no judgment rows added."
+  - created_at: "2026-07-16T18:02:00.933Z"
+    author: maintainer-agent
+    text: "Files baseline moved 168 -> 172 on 2026-07-16 (pass #93): PR#573 SDK execution/diagnostics promotion relocated command internals; split now 121 moved (+3) + 51 deleted (+1), orphaned=0. Moved rows remain mechanical relink; the +1 deleted row needs judgment at burn-down."
 notes[3]{created_at,author,text}:
   "2026-07-06T08:22:48.232Z",maintainer-agent,"2026-07-06 audit #8 recount — pm validate now reports validate_files_missing_linked_paths 146 and validate_files_orphaned_paths 131 (workspace-wide, 2545 linked commands scanned). Counts unchanged in character since filing; still the single tracked owner of both warning classes."
   "2026-07-10T12:16:07.271Z",maintainer-agent,"2026-07-10 review pass: validate_files_missing_linked_paths rose 147 -> 154 (+7); orphaned_paths steady at 124. Likely cause: commits 21a7d884 (untracked vendored pm-changelog extension dist) and b573ef14 (contracts-snapshot gate rework) relocated/removed files still referenced by item linked paths. Worklist ids via pm validate --json .details.*_item_ids when picking this up."
