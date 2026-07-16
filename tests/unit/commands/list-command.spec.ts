@@ -2,24 +2,36 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { _testOnly as listInternals, runList } from "../../../src/cli/commands/list.js";
+import {
+  _testOnly as listInternals,
+  runList,
+} from "../../../src/cli/commands/list.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
-import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
+import {
+  EXIT_CODE,
+  SETTINGS_DEFAULTS,
+} from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../helpers/withTempPmPath.js";
 
-function createItem(context: TempPmContext, params: {
-  title: string;
-  status: "open" | "triage" | "blocked" | "closed";
-  priority: string;
-  tags: string;
-  deadline: string;
-  assignee?: string;
-  parent?: string;
-  sprint?: string;
-  release?: string;
-  body?: string;
-}): string {
+function createItem(
+  context: TempPmContext,
+  params: {
+    title: string;
+    status: "open" | "triage" | "blocked" | "closed";
+    priority: string;
+    tags: string;
+    deadline: string;
+    assignee?: string;
+    parent?: string;
+    sprint?: string;
+    release?: string;
+    body?: string;
+  },
+): string {
   const args = [
     "create",
     "--json",
@@ -80,7 +92,9 @@ function createItem(context: TempPmContext, params: {
 
 describe("runList", () => {
   it("covers list helper branches for projection, filters, sorting, and tree metadata", () => {
-    const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const statusRegistry = resolveRuntimeStatusRegistry(
+      SETTINGS_DEFAULTS.schema,
+    );
     const openItem = {
       id: "pm-open",
       title: "Open",
@@ -102,21 +116,34 @@ describe("runList", () => {
       updated_at: "2026-01-03T00:00:00.000Z",
     };
 
-    expect(listInternals.parseIdsFilter(" pm-a, ,pm-b ")).toEqual(new Set(["pm-a", "pm-b"]));
+    expect(listInternals.parseIdsFilter(" pm-a, ,pm-b ")).toEqual(
+      new Set(["pm-a", "pm-b"]),
+    );
     expect(() => listInternals.parseIdsFilter(" , ")).toThrow(PmCliError);
     expect(listInternals.parseOffset("2")).toBe(2);
     expect(() => listInternals.parseOffset("-1")).toThrow(PmCliError);
+    expect(() => listInternals.parseOffset("   ")).toThrow(PmCliError);
     expect(listInternals.resolveListPageLimit({}, 9_999)).toBeUndefined();
     expect(listInternals.resolveListPageLimit({}, 10_000)).toBe(20);
     expect(listInternals.resolveListPageLimit({ limit: "7" }, 10_000)).toBe(7);
-    expect(listInternals.parseFieldSelectors("id,item.title,id")).toEqual(["id", "item.title"]);
-    expect(() => listInternals.parseFieldSelectors(" , ")).toThrow(PmCliError);
-    expect(listInternals.runtimeMetadataKeysForProjection([{ metadata_key: "severity" }, { metadata_key: "owner" }])).toEqual([
-      "severity",
-      "owner",
+    expect(listInternals.parseFieldSelectors("id,item.title,id")).toEqual([
+      "id",
+      "item.title",
     ]);
-    expect(listInternals.parseProjectionConfig({ brief: true })).toEqual({ mode: "compact", fields: ["id", "status", "type", "title"] });
-    expect(() => listInternals.parseProjectionConfig({ brief: true, full: true })).toThrow(PmCliError);
+    expect(() => listInternals.parseFieldSelectors(" , ")).toThrow(PmCliError);
+    expect(
+      listInternals.runtimeMetadataKeysForProjection([
+        { metadata_key: "severity" },
+        { metadata_key: "owner" },
+      ]),
+    ).toEqual(["severity", "owner"]);
+    expect(listInternals.parseProjectionConfig({ brief: true })).toEqual({
+      mode: "compact",
+      fields: ["id", "status", "type", "title"],
+    });
+    expect(() =>
+      listInternals.parseProjectionConfig({ brief: true, full: true }),
+    ).toThrow(PmCliError);
     expect(listInternals.normalizeProjectionField("item.title")).toBe("title");
     expect(listInternals.parseSortField("updated")).toBe("updated_at");
     expect(() => listInternals.parseSortField("bad")).toThrow(PmCliError);
@@ -124,15 +151,26 @@ describe("runList", () => {
     expect(() => listInternals.parseSortOrder("sideways")).toThrow(PmCliError);
     expect(listInternals.parseAssigneeFilter("assigned")).toBe("assigned");
     expect(() => listInternals.parseAssigneeFilter("   ")).toThrow(PmCliError);
-    expect(() => listInternals.parseAssigneeFilter("nobody")).toThrow(PmCliError);
+    expect(() => listInternals.parseAssigneeFilter("nobody")).toThrow(
+      PmCliError,
+    );
 
     expect(listInternals.compareNullableString(null, "a")).toBe(1);
     expect(listInternals.compareNullableString("a", null)).toBe(-1);
     expect(listInternals.compareNullableString("same", "same")).toBe(0);
     expect(listInternals.compareNullableString("b", "a")).toBeGreaterThan(0);
-    expect(listInternals.compareNullableTimestamp(null, "2026-01-01T00:00:00.000Z")).toBe(1);
-    expect(listInternals.compareNullableTimestamp("2026-01-01T00:00:00.000Z", null)).toBe(-1);
-    expect(listInternals.compareNullableTimestamp("2026-01-01T00:00:00.000Z", "2026-01-01T00:00:00.000Z")).toBe(0);
+    expect(
+      listInternals.compareNullableTimestamp(null, "2026-01-01T00:00:00.000Z"),
+    ).toBe(1);
+    expect(
+      listInternals.compareNullableTimestamp("2026-01-01T00:00:00.000Z", null),
+    ).toBe(-1);
+    expect(
+      listInternals.compareNullableTimestamp(
+        "2026-01-01T00:00:00.000Z",
+        "2026-01-01T00:00:00.000Z",
+      ),
+    ).toBe(0);
     expect(listInternals.trimNonEmpty(undefined)).toBeUndefined();
     expect(
       listInternals.compareBySortField(
@@ -141,9 +179,27 @@ describe("runList", () => {
         "deadline",
       ),
     ).toBe(1);
-    expect(listInternals.compareBySortField(openItem as never, closedItem as never, "updated_at")).toBeLessThan(0);
-    expect(listInternals.compareBySortField(openItem as never, closedItem as never, "created_at")).toBe(0);
-    expect(listInternals.compareBySortField(openItem as never, closedItem as never, "title")).toBeGreaterThan(0);
+    expect(
+      listInternals.compareBySortField(
+        openItem as never,
+        closedItem as never,
+        "updated_at",
+      ),
+    ).toBeLessThan(0);
+    expect(
+      listInternals.compareBySortField(
+        openItem as never,
+        closedItem as never,
+        "created_at",
+      ),
+    ).toBe(0);
+    expect(
+      listInternals.compareBySortField(
+        openItem as never,
+        closedItem as never,
+        "title",
+      ),
+    ).toBeGreaterThan(0);
     expect(
       listInternals.compareBySortField(
         { ...openItem, id: "pm-title-a", title: undefined } as never,
@@ -151,9 +207,27 @@ describe("runList", () => {
         "title",
       ),
     ).toBe(0);
-    expect(listInternals.compareBySortField(openItem as never, closedItem as never, "parent")).toBe(0);
-    expect(listInternals.compareBySortField(openItem as never, closedItem as never, "unknown" as never)).toBe(0);
-    expect(listInternals.compareDefaultSort(closedItem as never, openItem as never, statusRegistry)).toBe(1);
+    expect(
+      listInternals.compareBySortField(
+        openItem as never,
+        closedItem as never,
+        "parent",
+      ),
+    ).toBe(0);
+    expect(
+      listInternals.compareBySortField(
+        openItem as never,
+        closedItem as never,
+        "unknown" as never,
+      ),
+    ).toBe(0);
+    expect(
+      listInternals.compareDefaultSort(
+        closedItem as never,
+        openItem as never,
+        statusRegistry,
+      ),
+    ).toBe(1);
     expect(
       listInternals.compareDefaultSort(
         { ...openItem, id: undefined } as never,
@@ -161,79 +235,145 @@ describe("runList", () => {
         statusRegistry,
       ),
     ).toBe(0);
-    expect(listInternals.sortItems([closedItem, openItem] as never, undefined, "asc", statusRegistry).map((item) => item.id)).toEqual([
-      "pm-open",
-      "pm-closed",
-    ]);
     expect(
-      listInternals.sortItems(
-        [
-          { ...openItem, id: "pm-b", title: "Same", priority: 1, deadline: "2026-01-01T00:00:00.000Z" },
-          { ...openItem, id: "pm-a", title: "Same", priority: 1, deadline: "2026-01-01T00:00:00.000Z" },
-        ] as never,
-        "deadline",
-        "desc",
-        statusRegistry,
-      ).map((item) => item.id),
+      listInternals
+        .sortItems(
+          [closedItem, openItem] as never,
+          undefined,
+          "asc",
+          statusRegistry,
+        )
+        .map((item) => item.id),
+    ).toEqual(["pm-open", "pm-closed"]);
+    expect(
+      listInternals
+        .sortItems(
+          [
+            {
+              ...openItem,
+              id: "pm-b",
+              title: "Same",
+              priority: 1,
+              deadline: "2026-01-01T00:00:00.000Z",
+            },
+            {
+              ...openItem,
+              id: "pm-a",
+              title: "Same",
+              priority: 1,
+              deadline: "2026-01-01T00:00:00.000Z",
+            },
+          ] as never,
+          "deadline",
+          "desc",
+          statusRegistry,
+        )
+        .map((item) => item.id),
     ).toEqual(["pm-b", "pm-a"]);
-    expect(listInternals.withTreeMetadata({ ...openItem, parent: "  " } as never, 2, 0)).toMatchObject({
+    expect(
+      listInternals.withTreeMetadata(
+        { ...openItem, parent: "  " } as never,
+        2,
+        0,
+      ),
+    ).toMatchObject({
       tree_depth: 2,
       tree_parent: null,
       tree_title: "    Open",
     });
-    expect(listInternals.withTreeMetadata({ ...openItem, parent: 42 } as never, 1, 0)).toMatchObject({
+    expect(
+      listInternals.withTreeMetadata(
+        { ...openItem, parent: 42 } as never,
+        1,
+        0,
+      ),
+    ).toMatchObject({
       tree_depth: 1,
       tree_parent: null,
     });
-    expect(listInternals.withTreeMetadata({ ...openItem, title: 42 } as never, 0, 0)).toMatchObject({
+    expect(
+      listInternals.withTreeMetadata({ ...openItem, title: 42 } as never, 0, 0),
+    ).toMatchObject({
       tree_title: "",
     });
-    expect(listInternals.readListFieldValue({ ...openItem, tree_title: "Tree" } as never, "item.title", true)).toBe("Tree");
-    expect(listInternals.readListFieldValue(openItem as never, "   ")).toBeNull();
+    expect(
+      listInternals.readListFieldValue(
+        { ...openItem, tree_title: "Tree" } as never,
+        "item.title",
+        true,
+      ),
+    ).toBe("Tree");
+    expect(
+      listInternals.readListFieldValue(openItem as never, "   "),
+    ).toBeNull();
     expect(
       listInternals.readListFieldValue(
         { ...openItem, id: "pm-custom", custom_field: undefined } as never,
         "custom_field",
       ),
     ).toBeNull();
-    expect(listInternals.projectListItems([openItem] as never, { mode: "full", fields: [] })).toEqual([openItem]);
-    expect(listInternals.projectListItems([openItem] as never, { mode: "fields", fields: ["id", "missing"] })).toEqual([
-      { id: "pm-open", missing: null },
-    ]);
     expect(
-      listInternals.orderItemsAsTree(
-        [
-          { ...openItem, id: "pm-root", title: "Root", parent: "" },
-          { ...openItem, id: "pm-child", title: "Child", parent: "pm-root" },
-          { ...openItem, id: "pm-grandchild", title: "Grandchild", parent: "pm-child" },
-        ] as never,
-        undefined,
-        1,
-      ).map((item) => [item.id, item.tree_depth, item.tree_children]),
+      listInternals.projectListItems([openItem] as never, {
+        mode: "full",
+        fields: [],
+      }),
+    ).toEqual([openItem]);
+    expect(
+      listInternals.projectListItems([openItem] as never, {
+        mode: "fields",
+        fields: ["id", "missing"],
+      }),
+    ).toEqual([{ id: "pm-open", missing: null }]);
+    expect(
+      listInternals
+        .orderItemsAsTree(
+          [
+            { ...openItem, id: "pm-root", title: "Root", parent: "" },
+            { ...openItem, id: "pm-child", title: "Child", parent: "pm-root" },
+            {
+              ...openItem,
+              id: "pm-grandchild",
+              title: "Grandchild",
+              parent: "pm-child",
+            },
+          ] as never,
+          undefined,
+          1,
+        )
+        .map((item) => [item.id, item.tree_depth, item.tree_children]),
     ).toEqual([
       ["pm-root", 0, 1],
       ["pm-child", 1, 1],
     ]);
     expect(
-      listInternals.orderItemsAsTree(
-        [
-          { ...openItem, id: "pm-root", title: "Root", parent: "" },
-          { ...openItem, id: "pm-child", title: "Child", parent: "pm-root" },
-        ] as never,
-        "pm-root",
-        undefined,
-      ).map((item) => item.id),
+      listInternals
+        .orderItemsAsTree(
+          [
+            { ...openItem, id: "pm-root", title: "Root", parent: "" },
+            { ...openItem, id: "pm-child", title: "Child", parent: "pm-root" },
+          ] as never,
+          "pm-root",
+          undefined,
+        )
+        .map((item) => item.id),
     ).toEqual(["pm-child"]);
     expect(
-      listInternals.orderItemsAsTree(
-        [
-          { ...openItem, id: "pm-a", title: "A", parent: "pm-b" },
-          { ...openItem, id: "pm-b", title: "B", parent: "pm-a" },
-          { ...openItem, id: "pm-orphan", title: "Orphan", parent: "pm-missing" },
-        ] as never,
-        "pm-a",
-        undefined,
-      ).map((item) => item.id),
+      listInternals
+        .orderItemsAsTree(
+          [
+            { ...openItem, id: "pm-a", title: "A", parent: "pm-b" },
+            { ...openItem, id: "pm-b", title: "B", parent: "pm-a" },
+            {
+              ...openItem,
+              id: "pm-orphan",
+              title: "Orphan",
+              parent: "pm-missing",
+            },
+          ] as never,
+          "pm-a",
+          undefined,
+        )
+        .map((item) => item.id),
     ).toEqual(["pm-b", "pm-a"]);
     expect(
       listInternals.buildCompactListFilterSummary({
@@ -300,7 +440,9 @@ describe("runList", () => {
       runtime_filters: { severity: "high" },
     });
 
-    const permissiveTypeRegistry = { type_to_folder: new Map<string, string>() };
+    const permissiveTypeRegistry = {
+      type_to_folder: new Map<string, string>(),
+    };
     expect(
       listInternals.applyFilters(
         [{ ...openItem }],
@@ -389,15 +531,17 @@ describe("runList", () => {
       ),
     ).toEqual([]);
     expect(
-      listInternals.orderItemsAsTree(
-        [
-          { ...openItem, id: "pm-root-2", parent: "" },
-          { ...openItem, id: "pm-child-a", parent: "pm-root-2" },
-          { ...openItem, id: "pm-child-b", parent: "pm-root-2" },
-        ] as never,
-        undefined,
-        undefined,
-      ).map((item) => item.id),
+      listInternals
+        .orderItemsAsTree(
+          [
+            { ...openItem, id: "pm-root-2", parent: "" },
+            { ...openItem, id: "pm-child-a", parent: "pm-root-2" },
+            { ...openItem, id: "pm-child-b", parent: "pm-root-2" },
+          ] as never,
+          undefined,
+          undefined,
+        )
+        .map((item) => item.id),
     ).toEqual(["pm-root-2", "pm-child-a", "pm-child-b"]);
     expect(
       listInternals.orderItemsAsTree(
@@ -410,26 +554,50 @@ describe("runList", () => {
       ),
     ).toEqual([]);
     expect(
-      listInternals.sortItems(
-        [
-          { ...openItem, id: "pm-fallback-2", title: "Same", updated_at: "2026-01-03T00:00:00.000Z" },
-          { ...openItem, id: "pm-fallback-1", title: "Same", updated_at: "2026-01-02T00:00:00.000Z" },
-        ] as never,
-        "title",
-        "desc",
-        statusRegistry,
-      ).map((item) => item.id),
+      listInternals
+        .sortItems(
+          [
+            {
+              ...openItem,
+              id: "pm-fallback-2",
+              title: "Same",
+              updated_at: "2026-01-03T00:00:00.000Z",
+            },
+            {
+              ...openItem,
+              id: "pm-fallback-1",
+              title: "Same",
+              updated_at: "2026-01-02T00:00:00.000Z",
+            },
+          ] as never,
+          "title",
+          "desc",
+          statusRegistry,
+        )
+        .map((item) => item.id),
     ).toEqual(["pm-fallback-1", "pm-fallback-2"]);
     expect(
-      listInternals.sortItems(
-        [
-          { ...openItem, id: "pm-fallback-2", title: "Same", updated_at: "2026-01-03T00:00:00.000Z" },
-          { ...openItem, id: "pm-fallback-1", title: "Same", updated_at: "2026-01-02T00:00:00.000Z" },
-        ] as never,
-        "title",
-        "asc",
-        statusRegistry,
-      ).map((item) => item.id),
+      listInternals
+        .sortItems(
+          [
+            {
+              ...openItem,
+              id: "pm-fallback-2",
+              title: "Same",
+              updated_at: "2026-01-03T00:00:00.000Z",
+            },
+            {
+              ...openItem,
+              id: "pm-fallback-1",
+              title: "Same",
+              updated_at: "2026-01-02T00:00:00.000Z",
+            },
+          ] as never,
+          "title",
+          "asc",
+          statusRegistry,
+        )
+        .map((item) => item.id),
     ).toEqual(["pm-fallback-2", "pm-fallback-1"]);
   });
 
@@ -452,8 +620,16 @@ describe("runList", () => {
       });
 
       const tasksDir = path.join(context.pmPath, "tasks");
-      await writeFile(path.join(tasksDir, "invalid-a.toon"), "id: invalid-a\nstatus: open\n", "utf8");
-      await writeFile(path.join(tasksDir, "invalid-b.toon"), "this is not TOON item metadata\n", "utf8");
+      await writeFile(
+        path.join(tasksDir, "invalid-a.toon"),
+        "id: invalid-a\nstatus: open\n",
+        "utf8",
+      );
+      await writeFile(
+        path.join(tasksDir, "invalid-b.toon"),
+        "this is not TOON item metadata\n",
+        "utf8",
+      );
 
       const fullResult = await runList(
         undefined,
@@ -476,7 +652,11 @@ describe("runList", () => {
         filter_metadata_missing: true,
       });
       expect(fullResult.warnings?.length ?? 0).toBeGreaterThanOrEqual(2);
-      expect(fullResult.warnings).toEqual([...(fullResult.warnings ?? [])].sort((left, right) => left.localeCompare(right)));
+      expect(fullResult.warnings).toEqual(
+        [...(fullResult.warnings ?? [])].sort((left, right) =>
+          left.localeCompare(right),
+        ),
+      );
 
       const compactResult = await runList(
         undefined,
@@ -492,7 +672,11 @@ describe("runList", () => {
         tree_depth: 1,
       });
       expect(compactResult.warnings?.length ?? 0).toBeGreaterThanOrEqual(2);
-      expect(compactResult.warnings).toEqual([...(compactResult.warnings ?? [])].sort((left, right) => left.localeCompare(right)));
+      expect(compactResult.warnings).toEqual(
+        [...(compactResult.warnings ?? [])].sort((left, right) =>
+          left.localeCompare(right),
+        ),
+      );
 
       const fullTreeWithoutDepth = await runList(
         undefined,
@@ -612,20 +796,32 @@ describe("runList", () => {
       });
 
       const ids = `${firstId},${secondId}`;
-      const result = context.runCli(["list", "--ids", ids, "--json"], { expectJson: true });
+      const result = context.runCli(["list", "--ids", ids, "--json"], {
+        expectJson: true,
+      });
       expect(result.code).toBe(0);
-      const payload = result.json as { count: number; filters: Record<string, unknown>; items: Array<{ id: string }> };
+      const payload = result.json as {
+        count: number;
+        filters: Record<string, unknown>;
+        items: Array<{ id: string }>;
+      };
       expect(payload.count).toBe(2);
-      expect(payload.items.map((item) => item.id).sort()).toEqual([firstId, secondId].sort());
+      expect(payload.items.map((item) => item.id).sort()).toEqual(
+        [firstId, secondId].sort(),
+      );
       expect(payload.filters.ids).toBe(ids);
 
-      const miss = context.runCli(["list", "--ids", "pm-missing", "--json"], { expectJson: true });
+      const miss = context.runCli(["list", "--ids", "pm-missing", "--json"], {
+        expectJson: true,
+      });
       expect(miss.code).toBe(0);
       expect((miss.json as { count: number }).count).toBe(0);
 
       const noIds = context.runCli(["list", "--json"], { expectJson: true });
       expect(noIds.code).toBe(0);
-      expect((noIds.json as { filters: Record<string, unknown> }).filters.ids).toBeNull();
+      expect(
+        (noIds.json as { filters: Record<string, unknown> }).filters.ids,
+      ).toBeNull();
     });
   });
 
@@ -654,20 +850,31 @@ describe("runList", () => {
       });
 
       const ids = `${firstId},${secondId}`;
-      const result = await runList("open", { ids, brief: true }, { path: context.pmPath });
+      const result = await runList(
+        "open",
+        { ids, brief: true },
+        { path: context.pmPath },
+      );
 
       expect(result.count).toBe(2);
-      expect(result.items.map((item) => item.id).sort()).toEqual([firstId, secondId].sort());
+      expect(result.items.map((item) => item.id).sort()).toEqual(
+        [firstId, secondId].sort(),
+      );
       expect(result.filters.ids).toBe(ids);
       expect(result.filters.status).toBe("open");
-      expect(result.projection).toEqual({ mode: "compact", fields: ["id", "status", "type", "title"] });
+      expect(result.projection).toEqual({
+        mode: "compact",
+        fields: ["id", "status", "type", "title"],
+      });
     });
   });
 
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-list-not-init-"));
     try {
-      await expect(runList(undefined, {}, { path: tempDir })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runList(undefined, {}, { path: tempDir }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
     } finally {
@@ -709,11 +916,19 @@ describe("runList", () => {
       expect(openResult.items[0].tags).toContain("alpha");
       expect(openResult.filters.limit).toBe("1");
 
-      const blockedResult = await runList("blocked", {}, { path: context.pmPath });
+      const blockedResult = await runList(
+        "blocked",
+        {},
+        { path: context.pmPath },
+      );
       expect(blockedResult.count).toBe(1);
       expect(blockedResult.items[0].status).toBe("blocked");
 
-      const offsetResult = await runList(undefined, { offset: "1", limit: "1" }, { path: context.pmPath });
+      const offsetResult = await runList(
+        undefined,
+        { offset: "1", limit: "1" },
+        { path: context.pmPath },
+      );
       expect(offsetResult.count).toBe(1);
       expect(offsetResult.items[0].title).toBe("Blocked Beta");
       expect(offsetResult.filters.offset).toBe("1");
@@ -733,7 +948,11 @@ describe("runList", () => {
       );
       expect(flexibleDateString.count).toBe(3);
 
-      const monthRelativeFilter = await runList(undefined, { deadlineAfter: "+1m" }, { path: context.pmPath });
+      const monthRelativeFilter = await runList(
+        undefined,
+        { deadlineAfter: "+1m" },
+        { path: context.pmPath },
+      );
       expect(monthRelativeFilter.count).toBe(0);
     });
   });
@@ -741,7 +960,11 @@ describe("runList", () => {
   it("maps list-open filters to workflow open_status", async () => {
     await withTempPmPath(async (context) => {
       const statusesPath = path.join(context.pmPath, "schema", "statuses.json");
-      const workflowsPath = path.join(context.pmPath, "schema", "workflows.json");
+      const workflowsPath = path.join(
+        context.pmPath,
+        "schema",
+        "workflows.json",
+      );
       await writeFile(
         statusesPath,
         `${JSON.stringify(
@@ -752,8 +975,14 @@ describe("runList", () => {
               { id: "open", roles: ["active"] },
               { id: "in_progress", roles: ["active"] },
               { id: "blocked", roles: ["blocked"] },
-              { id: "closed", roles: ["terminal", "terminal_done", "default_close"] },
-              { id: "canceled", roles: ["terminal", "terminal_canceled", "default_cancel"] },
+              {
+                id: "closed",
+                roles: ["terminal", "terminal_done", "default_close"],
+              },
+              {
+                id: "canceled",
+                roles: ["terminal", "terminal_canceled", "default_cancel"],
+              },
             ],
           },
           null,
@@ -819,7 +1048,11 @@ describe("runList", () => {
       expect(withoutBody.filters.include_body).toBeNull();
       expect(withoutBody.items[0]).not.toHaveProperty("body");
 
-      const withBody = await runList("open", { includeBody: true }, { path: context.pmPath });
+      const withBody = await runList(
+        "open",
+        { includeBody: true },
+        { path: context.pmPath },
+      );
       expect(withBody.count).toBe(1);
       expect(withBody.filters.include_body).toBe(true);
       expect(withBody.items[0]).toHaveProperty("body", "Projected list body");
@@ -848,12 +1081,24 @@ describe("runList", () => {
       });
 
       // Active content filter + item matches (kept) AND item does not match (excluded).
-      const hasBody = await runList(undefined, { hasBody: true }, { path: context.pmPath });
-      expect(hasBody.items.map((item) => item.title).sort()).toEqual(["WithBody"]);
+      const hasBody = await runList(
+        undefined,
+        { hasBody: true },
+        { path: context.pmPath },
+      );
+      expect(hasBody.items.map((item) => item.title).sort()).toEqual([
+        "WithBody",
+      ]);
 
       // Opposite content predicate flips which item is kept vs excluded.
-      const emptyBody = await runList(undefined, { emptyBody: true }, { path: context.pmPath });
-      expect(emptyBody.items.map((item) => item.title).sort()).toEqual(["EmptyBody"]);
+      const emptyBody = await runList(
+        undefined,
+        { emptyBody: true },
+        { path: context.pmPath },
+      );
+      expect(emptyBody.items.map((item) => item.title).sort()).toEqual([
+        "EmptyBody",
+      ]);
     });
   });
 
@@ -882,26 +1127,46 @@ describe("runList", () => {
       });
 
       // excludeTerminal=true: should exclude closed and blocked is still shown
-      const activeOnly = await runList(undefined, { excludeTerminal: true }, { path: context.pmPath });
+      const activeOnly = await runList(
+        undefined,
+        { excludeTerminal: true },
+        { path: context.pmPath },
+      );
       expect(activeOnly.count).toBe(2);
-      expect(activeOnly.items.every((item) => item.status !== "closed" && item.status !== "canceled")).toBe(true);
+      expect(
+        activeOnly.items.every(
+          (item) => item.status !== "closed" && item.status !== "canceled",
+        ),
+      ).toBe(true);
 
       // excludeTerminal=false (or undefined): should include all items
       const allItems = await runList(undefined, {}, { path: context.pmPath });
       expect(allItems.count).toBe(3);
 
       // status filter takes precedence over excludeTerminal (status filter is exact match)
-      const closedExplicit = await runList("closed", { excludeTerminal: true }, { path: context.pmPath });
+      const closedExplicit = await runList(
+        "closed",
+        { excludeTerminal: true },
+        { path: context.pmPath },
+      );
       expect(closedExplicit.count).toBe(0);
 
       // explicit --status on bare list should override active-only default filtering
-      const closedViaStatusOption = await runList(undefined, { status: "closed", excludeTerminal: true }, { path: context.pmPath });
+      const closedViaStatusOption = await runList(
+        undefined,
+        { status: "closed", excludeTerminal: true },
+        { path: context.pmPath },
+      );
       expect(closedViaStatusOption.count).toBe(1);
       expect(closedViaStatusOption.items[0].status).toBe("closed");
 
       // --status all is also explicit: keep every lifecycle bucket while echoing
       // the caller intent instead of falling back to the active-only default.
-      const allViaStatusOption = await runList(undefined, { status: "all", excludeTerminal: true }, { path: context.pmPath });
+      const allViaStatusOption = await runList(
+        undefined,
+        { status: "all", excludeTerminal: true },
+        { path: context.pmPath },
+      );
       expect(allViaStatusOption.count).toBe(3);
       expect(allViaStatusOption.filters.status).toBe("all");
     });
@@ -909,7 +1174,9 @@ describe("runList", () => {
 
   it("validates filter values", async () => {
     await withTempPmPath(async (context) => {
-      await expect(runList(undefined, { priority: "8" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runList(undefined, { priority: "8" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
@@ -918,7 +1185,11 @@ describe("runList", () => {
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runList(undefined, { deadlineBefore: "bad-deadline" }, { path: context.pmPath }),
+        runList(
+          undefined,
+          { deadlineBefore: "bad-deadline" },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -927,7 +1198,9 @@ describe("runList", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runList(undefined, { limit: "-1" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runList(undefined, { limit: "-1" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
@@ -935,7 +1208,9 @@ describe("runList", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runList(undefined, { offset: "-1" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runList(undefined, { offset: "-1" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
@@ -956,16 +1231,32 @@ describe("runList", () => {
         deadline: "+1d",
       });
 
-      const wrongType = await runList(undefined, { type: "Issue" }, { path: context.pmPath });
+      const wrongType = await runList(
+        undefined,
+        { type: "Issue" },
+        { path: context.pmPath },
+      );
       expect(wrongType.count).toBe(0);
 
-      const normalizedType = await runList(undefined, { type: "task" }, { path: context.pmPath });
+      const normalizedType = await runList(
+        undefined,
+        { type: "task" },
+        { path: context.pmPath },
+      );
       expect(normalizedType.count).toBe(1);
 
-      const wrongTag = await runList(undefined, { tag: "missing-tag" }, { path: context.pmPath });
+      const wrongTag = await runList(
+        undefined,
+        { tag: "missing-tag" },
+        { path: context.pmPath },
+      );
       expect(wrongTag.count).toBe(0);
 
-      const wrongPriority = await runList(undefined, { priority: "4" }, { path: context.pmPath });
+      const wrongPriority = await runList(
+        undefined,
+        { priority: "4" },
+        { path: context.pmPath },
+      );
       expect(wrongPriority.count).toBe(0);
     });
   });
@@ -988,26 +1279,48 @@ describe("runList", () => {
         deadline: "+1d",
       });
       const unsetResult = context.runCli(
-        ["update", unassignedId, "--json", "--unset", "assignee", "--author", "seed-assignee"],
+        [
+          "update",
+          unassignedId,
+          "--json",
+          "--unset",
+          "assignee",
+          "--author",
+          "seed-assignee",
+        ],
         { expectJson: true },
       );
       expect(unsetResult.code).toBe(0);
 
-      const byAssignee = await runList(undefined, { assignee: "agent-a" }, { path: context.pmPath });
+      const byAssignee = await runList(
+        undefined,
+        { assignee: "agent-a" },
+        { path: context.pmPath },
+      );
       expect(byAssignee.count).toBe(1);
       expect(byAssignee.items[0].assignee).toBe("agent-a");
       expect(byAssignee.filters.assignee).toBe("agent-a");
 
-      const unassigned = await runList(undefined, { assigneeFilter: "unassigned" }, { path: context.pmPath });
+      const unassigned = await runList(
+        undefined,
+        { assigneeFilter: "unassigned" },
+        { path: context.pmPath },
+      );
       expect(unassigned.count).toBe(1);
       expect(unassigned.items[0].title).toBe("Unassigned Item");
       expect(unassigned.filters.assignee_filter).toBe("unassigned");
 
-      await expect(runList(undefined, { assignee: "none" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runList(undefined, { assignee: "none" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
 
-      const noMatch = await runList(undefined, { assignee: "agent-z" }, { path: context.pmPath });
+      const noMatch = await runList(
+        undefined,
+        { assignee: "agent-z" },
+        { path: context.pmPath },
+      );
       expect(noMatch.count).toBe(0);
     });
   });
@@ -1033,20 +1346,36 @@ describe("runList", () => {
         release: "v2.0",
       });
 
-      const bySprint = await runList(undefined, { sprint: "sprint-1" }, { path: context.pmPath });
+      const bySprint = await runList(
+        undefined,
+        { sprint: "sprint-1" },
+        { path: context.pmPath },
+      );
       expect(bySprint.count).toBe(1);
       expect(bySprint.items[0].title).toBe("Sprint Item");
       expect(bySprint.filters.sprint).toBe("sprint-1");
 
-      const byRelease = await runList(undefined, { release: "v2.0" }, { path: context.pmPath });
+      const byRelease = await runList(
+        undefined,
+        { release: "v2.0" },
+        { path: context.pmPath },
+      );
       expect(byRelease.count).toBe(1);
       expect(byRelease.items[0].title).toBe("Other Sprint Item");
       expect(byRelease.filters.release).toBe("v2.0");
 
-      const noSprintMatch = await runList(undefined, { sprint: "sprint-99" }, { path: context.pmPath });
+      const noSprintMatch = await runList(
+        undefined,
+        { sprint: "sprint-99" },
+        { path: context.pmPath },
+      );
       expect(noSprintMatch.count).toBe(0);
 
-      const noReleaseMatch = await runList(undefined, { release: "v99.0" }, { path: context.pmPath });
+      const noReleaseMatch = await runList(
+        undefined,
+        { release: "v99.0" },
+        { path: context.pmPath },
+      );
       expect(noReleaseMatch.count).toBe(0);
     });
   });
@@ -1091,13 +1420,21 @@ describe("runList", () => {
         deadline: "+1d",
       });
 
-      const parentFiltered = await runList(undefined, { parent: parentA }, { path: context.pmPath });
+      const parentFiltered = await runList(
+        undefined,
+        { parent: parentA },
+        { path: context.pmPath },
+      );
       expect(parentFiltered.count).toBe(1);
       expect(parentFiltered.items[0].title).toBe("Child A1");
       expect(parentFiltered.items[0].parent).toBe(parentA);
       expect(parentFiltered.filters.parent).toBe(parentA);
 
-      const parentMiss = await runList(undefined, { parent: "pm-missing-parent" }, { path: context.pmPath });
+      const parentMiss = await runList(
+        undefined,
+        { parent: "pm-missing-parent" },
+        { path: context.pmPath },
+      );
       expect(parentMiss.count).toBe(0);
       expect(parentMiss.filters.parent).toBe("pm-missing-parent");
     });
@@ -1113,15 +1450,34 @@ describe("runList", () => {
         deadline: "+1d",
       });
 
-      const compact = await runList(undefined, { compact: true }, { path: context.pmPath });
+      const compact = await runList(
+        undefined,
+        { compact: true },
+        { path: context.pmPath },
+      );
       expect((compact as Record<string, unknown>).projection).toBeUndefined();
       expect((compact as Record<string, unknown>).sorting).toBeUndefined();
       expect((compact as Record<string, unknown>).now).toBeUndefined();
-      const compactItem = compact.items[0] as unknown as Record<string, unknown>;
-      expect(Object.keys(compactItem)).toEqual(["id", "title", "status", "type", "priority", "parent", "updated_at"]);
+      const compactItem = compact.items[0] as unknown as Record<
+        string,
+        unknown
+      >;
+      expect(Object.keys(compactItem)).toEqual([
+        "id",
+        "title",
+        "status",
+        "type",
+        "priority",
+        "parent",
+        "updated_at",
+      ]);
       expect(compactItem.id).toBe(id);
 
-      const fields = await runList(undefined, { fields: "id,title,parent" }, { path: context.pmPath });
+      const fields = await runList(
+        undefined,
+        { fields: "id,title,parent" },
+        { path: context.pmPath },
+      );
       expect(fields.projection).toEqual({
         mode: "fields",
         fields: ["id", "title", "parent"],
@@ -1131,7 +1487,11 @@ describe("runList", () => {
       expect(fieldItem.id).toBe(id);
       expect(fieldItem.title).toBe("Projection Target");
 
-      const full = await runList(undefined, { full: true }, { path: context.pmPath });
+      const full = await runList(
+        undefined,
+        { full: true },
+        { path: context.pmPath },
+      );
       expect(full.projection).toEqual({
         mode: "full",
         fields: null,
@@ -1164,10 +1524,16 @@ describe("runList", () => {
         deadline: "+1d",
       });
 
-      const result = await runList(undefined, { status: "open,blocked", tag: "status" }, { path: context.pmPath });
+      const result = await runList(
+        undefined,
+        { status: "open,blocked", tag: "status" },
+        { path: context.pmPath },
+      );
 
       expect(result.filters.status).toEqual(["open", "blocked"]);
-      expect(result.items.map((item) => item.id).sort()).toEqual([blockedId, openId].sort());
+      expect(result.items.map((item) => item.id).sort()).toEqual(
+        [blockedId, openId].sort(),
+      );
     });
   });
 
@@ -1195,44 +1561,82 @@ describe("runList", () => {
         deadline: "+1d",
       });
 
-      const byTitleAsc = await runList(undefined, { sort: "title", order: "asc" }, { path: context.pmPath });
+      const byTitleAsc = await runList(
+        undefined,
+        { sort: "title", order: "asc" },
+        { path: context.pmPath },
+      );
       expect(byTitleAsc.sorting).toEqual({
         sort: "title",
         order: "asc",
       });
-      expect(byTitleAsc.items.map((item) => item.title)).toEqual(["Alpha", "Bravo", "Charlie"]);
+      expect(byTitleAsc.items.map((item) => item.title)).toEqual([
+        "Alpha",
+        "Bravo",
+        "Charlie",
+      ]);
 
-      const byPriorityDesc = await runList(undefined, { sort: "priority", order: "desc" }, { path: context.pmPath });
+      const byPriorityDesc = await runList(
+        undefined,
+        { sort: "priority", order: "desc" },
+        { path: context.pmPath },
+      );
       expect(byPriorityDesc.sorting).toEqual({
         sort: "priority",
         order: "desc",
       });
-      expect(byPriorityDesc.items.map((item) => item.priority)).toEqual([2, 1, 0]);
+      expect(byPriorityDesc.items.map((item) => item.priority)).toEqual([
+        2, 1, 0,
+      ]);
 
-      const byDeadlineAsc = await runList(undefined, { sort: "deadline", order: "asc" }, { path: context.pmPath });
-      expect(byDeadlineAsc.items.map((item) => item.title)).toEqual(["Charlie", "Bravo", "Alpha"]);
+      const byDeadlineAsc = await runList(
+        undefined,
+        { sort: "deadline", order: "asc" },
+        { path: context.pmPath },
+      );
+      expect(byDeadlineAsc.items.map((item) => item.title)).toEqual([
+        "Charlie",
+        "Bravo",
+        "Alpha",
+      ]);
     });
   });
 
   it("accepts updated/created sort field aliases and rejects unknown sort fields with the alias hint", async () => {
     await withTempPmPath(async (context) => {
-      createItem(context, { title: "Alpha", status: "open", priority: "0", tags: "sort,alias", deadline: "+1d" });
+      createItem(context, {
+        title: "Alpha",
+        status: "open",
+        priority: "0",
+        tags: "sort,alias",
+        deadline: "+1d",
+      });
 
-      const byUpdated = await runList(undefined, { sort: "updated", order: "desc" }, { path: context.pmPath });
+      const byUpdated = await runList(
+        undefined,
+        { sort: "updated", order: "desc" },
+        { path: context.pmPath },
+      );
       expect(byUpdated.sorting).toEqual({ sort: "updated_at", order: "desc" });
 
-      const byCreated = await runList(undefined, { sort: "created", order: "asc" }, { path: context.pmPath });
+      const byCreated = await runList(
+        undefined,
+        { sort: "created", order: "asc" },
+        { path: context.pmPath },
+      );
       expect(byCreated.sorting).toEqual({ sort: "created_at", order: "asc" });
 
-      await expect(runList(undefined, { sort: "bogus" }, { path: context.pmPath })).rejects.toThrow(
+      await expect(
+        runList(undefined, { sort: "bogus" }, { path: context.pmPath }),
+      ).rejects.toThrow(
         /Sort field must be one of .*aliases: updated->updated_at/,
       );
 
       // Prototype-chain keys must not resolve to a truthy alias (no prototype pollution).
       for (const polluted of ["__proto__", "constructor", "toString"]) {
-        await expect(runList(undefined, { sort: polluted }, { path: context.pmPath })).rejects.toThrow(
-          /Sort field must be one of/,
-        );
+        await expect(
+          runList(undefined, { sort: polluted }, { path: context.pmPath }),
+        ).rejects.toThrow(/Sort field must be one of/);
       }
     });
   });
@@ -1255,88 +1659,156 @@ describe("runList", () => {
       });
 
       // updated-after: relative past offset keeps all just-created items.
-      const updatedAfterRecent = context.runCli(["list", "--updated-after=-1h", "--json"], { expectJson: true });
+      const updatedAfterRecent = context.runCli(
+        ["list", "--updated-after=-1h", "--json"],
+        { expectJson: true },
+      );
       expect(updatedAfterRecent.code).toBe(0);
-      const recentPayload = updatedAfterRecent.json as { count: number; filters: Record<string, unknown> };
+      const recentPayload = updatedAfterRecent.json as {
+        count: number;
+        filters: Record<string, unknown>;
+      };
       expect(recentPayload.count).toBeGreaterThan(0);
       // The result echoes the RAW input string, not the resolved ISO timestamp.
       expect(recentPayload.filters.updated_after).toBe("-1h");
 
-      const todayResult = context.runCli(["list", "--today", "--json"], { expectJson: true });
+      const todayResult = context.runCli(["list", "--today", "--json"], {
+        expectJson: true,
+      });
       expect(todayResult.code).toBe(0);
-      const todayPayload = todayResult.json as { count: number; filters: Record<string, unknown> };
+      const todayPayload = todayResult.json as {
+        count: number;
+        filters: Record<string, unknown>;
+      };
       expect(todayPayload.count).toBeGreaterThan(0);
       expect(todayPayload.filters.today).toBe(true);
       expect(todayPayload.filters.updated_after).toBeNull();
 
-      const recentResult = context.runCli(["list", "--recent", "--json"], { expectJson: true });
+      const recentResult = context.runCli(["list", "--recent", "--json"], {
+        expectJson: true,
+      });
       expect(recentResult.code).toBe(0);
-      const recentWindowPayload = recentResult.json as { count: number; filters: Record<string, unknown> };
+      const recentWindowPayload = recentResult.json as {
+        count: number;
+        filters: Record<string, unknown>;
+      };
       expect(recentWindowPayload.count).toBeGreaterThan(0);
       expect(recentWindowPayload.filters.recent).toBe(true);
       expect(recentWindowPayload.filters.updated_after).toBeNull();
 
-      const programmaticToday = await runList(undefined, { today: true }, { path: context.pmPath });
+      const programmaticToday = await runList(
+        undefined,
+        { today: true },
+        { path: context.pmPath },
+      );
       expect(programmaticToday.count).toBeGreaterThan(0);
       expect(programmaticToday.filters.today).toBe(true);
 
-      const programmaticRecent = await runList(undefined, { recent: true }, { path: context.pmPath });
+      const programmaticRecent = await runList(
+        undefined,
+        { recent: true },
+        { path: context.pmPath },
+      );
       expect(programmaticRecent.count).toBeGreaterThan(0);
       expect(programmaticRecent.filters.recent).toBe(true);
 
       expect(() =>
-        listInternals.resolveListUpdatedAfter({ today: true, updatedAfter: "-1h" }),
+        listInternals.resolveListUpdatedAfter({
+          today: true,
+          updatedAfter: "-1h",
+        }),
       ).toThrow("Choose only one updated_at window");
-      expect(listInternals.resolveListUpdatedAfter({ today: true, updatedAfter: null as unknown as string })).toMatch(
-        /^\d{4}-\d{2}-\d{2}T/,
-      );
-      expect(listInternals.resolveListUpdatedAfter({ today: true, updatedAfter: "   " })).toMatch(
-        /^\d{4}-\d{2}-\d{2}T/,
-      );
+      expect(
+        listInternals.resolveListUpdatedAfter({
+          today: true,
+          updatedAfter: null as unknown as string,
+        }),
+      ).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+      expect(
+        listInternals.resolveListUpdatedAfter({
+          today: true,
+          updatedAfter: "   ",
+        }),
+      ).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 
-      const conflictingWindows = context.runCli(["list", "--today", "--updated-after=-1h", "--json"]);
+      const conflictingWindows = context.runCli([
+        "list",
+        "--today",
+        "--updated-after=-1h",
+        "--json",
+      ]);
       expect(conflictingWindows.code).not.toBe(0);
-      expect(`${conflictingWindows.stderr}${conflictingWindows.stdout}`).toContain("Choose only one updated_at window");
+      expect(
+        `${conflictingWindows.stderr}${conflictingWindows.stdout}`,
+      ).toContain("Choose only one updated_at window");
+
+      const futureDate = new Date();
+      futureDate.setUTCFullYear(futureDate.getUTCFullYear() + 1);
+      const futureDateOnly = futureDate.toISOString().slice(0, 10);
 
       // updated-after: a future ISO threshold filters everything out.
-      const updatedAfterFuture = context.runCli(["list", "--updated-after", "2030-01-01", "--json"], {
-        expectJson: true,
-      });
+      const updatedAfterFuture = context.runCli(
+        ["list", "--updated-after", futureDateOnly, "--json"],
+        {
+          expectJson: true,
+        },
+      );
       expect(updatedAfterFuture.code).toBe(0);
-      const futurePayload = updatedAfterFuture.json as { count: number; filters: Record<string, unknown> };
+      const futurePayload = updatedAfterFuture.json as {
+        count: number;
+        filters: Record<string, unknown>;
+      };
       expect(futurePayload.count).toBe(0);
-      expect(futurePayload.filters.updated_after).toBe("2030-01-01");
+      expect(futurePayload.filters.updated_after).toBe(futureDateOnly);
 
       // created-before: a far-future ISO threshold keeps all items.
-      const createdBeforeFuture = context.runCli(["list", "--created-before", "2030-01-01", "--json"], {
-        expectJson: true,
-      });
+      const createdBeforeFuture = context.runCli(
+        ["list", "--created-before", futureDateOnly, "--json"],
+        {
+          expectJson: true,
+        },
+      );
       expect(createdBeforeFuture.code).toBe(0);
       const createdFuturePayload = createdBeforeFuture.json as {
         count: number;
         filters: Record<string, unknown>;
       };
       expect(createdFuturePayload.count).toBeGreaterThan(0);
-      expect(createdFuturePayload.filters.created_before).toBe("2030-01-01");
+      expect(createdFuturePayload.filters.created_before).toBe(futureDateOnly);
 
       // created-before: a relative past offset filters everything out.
-      const createdBeforePast = context.runCli(["list", "--created-before=-1h", "--json"], { expectJson: true });
+      const createdBeforePast = context.runCli(
+        ["list", "--created-before=-1h", "--json"],
+        { expectJson: true },
+      );
       expect(createdBeforePast.code).toBe(0);
-      const createdPastPayload = createdBeforePast.json as { count: number; filters: Record<string, unknown> };
+      const createdPastPayload = createdBeforePast.json as {
+        count: number;
+        filters: Record<string, unknown>;
+      };
       expect(createdPastPayload.count).toBe(0);
       expect(createdPastPayload.filters.created_before).toBe("-1h");
 
       // Date-window filters default to null when absent.
-      const noFilters = context.runCli(["list", "--json"], { expectJson: true });
+      const noFilters = context.runCli(["list", "--json"], {
+        expectJson: true,
+      });
       expect(noFilters.code).toBe(0);
-      const noFiltersPayload = noFilters.json as { filters: Record<string, unknown> };
+      const noFiltersPayload = noFilters.json as {
+        filters: Record<string, unknown>;
+      };
       expect(noFiltersPayload.filters.updated_after).toBeNull();
       expect(noFiltersPayload.filters.updated_before).toBeNull();
       expect(noFiltersPayload.filters.created_after).toBeNull();
       expect(noFiltersPayload.filters.created_before).toBeNull();
 
       // An unparseable date-window value is a USAGE error (non-zero exit + "Invalid").
-      const invalid = context.runCli(["list", "--updated-after", "totally-not-a-date", "--json"]);
+      const invalid = context.runCli([
+        "list",
+        "--updated-after",
+        "totally-not-a-date",
+        "--json",
+      ]);
       expect(invalid.code).not.toBe(0);
       expect(`${invalid.stderr}${invalid.stdout}`).toContain("Invalid");
     });
@@ -1352,35 +1824,69 @@ describe("runList", () => {
         deadline: "+1d",
       });
 
-      await expect(runList(undefined, { compact: true, fields: "id" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.USAGE,
-      });
-      await expect(runList(undefined, { full: true, fields: "id" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.USAGE,
-      });
-      await expect(runList(undefined, { fields: "   " }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.USAGE,
-      });
-      await expect(runList(undefined, { fields: "id,bogus" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.USAGE,
-        message: expect.stringContaining("Unknown list --fields value(s): bogus"),
-      });
-      await expect(runList(undefined, { order: "asc" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.USAGE,
-      });
-      await expect(runList(undefined, { treeDepth: "1" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runList(
+          undefined,
+          { compact: true, fields: "id" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runList(undefined, { assignee: "seed-assignee", assigneeFilter: "unassigned" }, { path: context.pmPath }),
+        runList(
+          undefined,
+          { full: true, fields: "id" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runList(undefined, { fields: "   " }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runList(undefined, { fields: "id,bogus" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining(
+          "Unknown list --fields value(s): bogus",
+        ),
+      });
+      await expect(
+        runList(undefined, { order: "asc" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runList(undefined, { treeDepth: "1" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runList(
+          undefined,
+          { assignee: "seed-assignee", assigneeFilter: "unassigned" },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
         message: "Cannot combine --assignee with --assignee-filter unassigned",
       });
-      await expect(runList(undefined, { sort: "unknown" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runList(undefined, { sort: "unknown" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runList(undefined, { sort: "title", order: "sideways" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runList(
+          undefined,
+          { sort: "title", order: "sideways" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
     });
@@ -1389,16 +1895,30 @@ describe("runList", () => {
   it("--no-truncate overrides --limit and surfaces the pre-pagination total (GH-154)", async () => {
     await withTempPmPath(async (context) => {
       for (let index = 0; index < 4; index += 1) {
-        createItem(context, { title: `Bulk ${index}`, status: "open", priority: "1", tags: "bulk", deadline: "+1d" });
+        createItem(context, {
+          title: `Bulk ${index}`,
+          status: "open",
+          priority: "1",
+          tags: "bulk",
+          deadline: "+1d",
+        });
       }
 
       // A truncating --limit reports how many rows were omitted via total.
-      const limited = await runList(undefined, { limit: "1" }, { path: context.pmPath });
+      const limited = await runList(
+        undefined,
+        { limit: "1" },
+        { path: context.pmPath },
+      );
       expect(limited.count).toBe(1);
       expect(limited.total).toBe(4);
       expect(limited.next_cursor).toBeTypeOf("string");
 
-      const zero = await runList(undefined, { limit: "0" }, { path: context.pmPath });
+      const zero = await runList(
+        undefined,
+        { limit: "0" },
+        { path: context.pmPath },
+      );
       expect(zero.count).toBe(0);
       expect(zero.has_more).toBeUndefined();
       expect(zero.next_cursor).toBeUndefined();
@@ -1418,22 +1938,40 @@ describe("runList", () => {
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
 
       // --no-truncate returns everything and omits total (nothing was dropped).
-      const full = await runList(undefined, { noTruncate: true }, { path: context.pmPath });
+      const full = await runList(
+        undefined,
+        { noTruncate: true },
+        { path: context.pmPath },
+      );
       expect(full.count).toBe(4);
       expect(full.total).toBeUndefined();
 
       // --no-truncate wins even when --limit is also supplied, and echoes the flag.
-      const override = await runList(undefined, { noTruncate: true, limit: "1" }, { path: context.pmPath });
+      const override = await runList(
+        undefined,
+        { noTruncate: true, limit: "1" },
+        { path: context.pmPath },
+      );
       expect(override.count).toBe(4);
-      expect((override.filters as { no_truncate?: boolean }).no_truncate).toBe(true);
+      expect((override.filters as { no_truncate?: boolean }).no_truncate).toBe(
+        true,
+      );
 
       // Offset-only pagination also surfaces the total of matched rows.
-      const offset = await runList(undefined, { offset: "1" }, { path: context.pmPath });
+      const offset = await runList(
+        undefined,
+        { offset: "1" },
+        { path: context.pmPath },
+      );
       expect(offset.count).toBe(3);
       expect(offset.total).toBe(4);
 
       // Compact summary path carries the same total when truncated.
-      const compact = await runList(undefined, { limit: "1", compact: true }, { path: context.pmPath });
+      const compact = await runList(
+        undefined,
+        { limit: "1", compact: true },
+        { path: context.pmPath },
+      );
       expect(compact.count).toBe(1);
       expect(compact.total).toBe(4);
     });

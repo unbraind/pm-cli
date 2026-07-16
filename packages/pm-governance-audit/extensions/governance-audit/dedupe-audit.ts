@@ -15,6 +15,7 @@ import {
   runList,
   type GlobalOptions,
   type ItemStatus,
+  type ListedItem,
   type RuntimeStatusRegistry,
 } from "./sdk.ts";
 import {
@@ -177,7 +178,8 @@ export interface DedupeAuditResult {
   warnings?: string[];
 }
 
-function parseMode(raw: string | undefined): DedupeAuditMode {
+const parseMode = (raw: string | undefined): DedupeAuditMode => {
+  /** Normalize the optional strategy name against the supported audit modes. */
   const normalized = (raw ?? "title_exact").trim().toLowerCase();
   if (!DEDUPE_AUDIT_MODES.includes(normalized as DedupeAuditMode)) {
     throw new PmCliError(
@@ -186,7 +188,7 @@ function parseMode(raw: string | undefined): DedupeAuditMode {
     );
   }
   return normalized as DedupeAuditMode;
-}
+};
 
 let dedupeAllowedStatuses = new Set<string>([
   "draft",
@@ -199,7 +201,8 @@ let dedupeAllowedStatuses = new Set<string>([
 let dedupeTerminalStatuses = new Set<string>(["closed", "canceled"]);
 let dedupeStatusRegistry: RuntimeStatusRegistry | null = null;
 
-function parseStatus(raw: string | undefined): ItemStatus | undefined {
+const parseStatus = (raw: string | undefined): ItemStatus | undefined => {
+  /** Normalize an optional status token against the active audit registry. */
   if (raw === undefined) {
     return undefined;
   }
@@ -211,9 +214,10 @@ function parseStatus(raw: string | undefined): ItemStatus | undefined {
     );
   }
   return normalized as ItemStatus;
-}
+};
 
-function parseThreshold(raw: string | undefined): number | undefined {
+const parseThreshold = (raw: string | undefined): number | undefined => {
+  /** Parse an optional fuzzy-match threshold on the inclusive zero-to-one scale. */
   if (raw === undefined) {
     return undefined;
   }
@@ -225,20 +229,22 @@ function parseThreshold(raw: string | undefined): number | undefined {
     );
   }
   return parsed;
-}
+};
 
-function isTerminal(status: ItemStatus): boolean {
+const isTerminal = (status: ItemStatus): boolean => {
+  /** Resolve terminality through the active schema with a built-in fallback. */
   if (dedupeStatusRegistry) {
     return isTerminalStatus(status, dedupeStatusRegistry);
   }
   const normalized = normalizeStatusInput(status) ?? status;
   return dedupeTerminalStatuses.has(normalized);
-}
+};
 
-function compareCandidates(
+const compareCandidates = (
   left: DedupeAuditPreparedCandidate,
   right: DedupeAuditPreparedCandidate,
-): number {
+): number => {
+  /** Rank canonical candidates by lifecycle, priority, recency, and identity. */
   const leftTerminal = isTerminal(left.status);
   const rightTerminal = isTerminal(right.status);
   if (leftTerminal !== rightTerminal) {
@@ -253,11 +259,12 @@ function compareCandidates(
     return byUpdated;
   }
   return left.id.localeCompare(right.id);
-}
+};
 
-function toCandidate(
+const toCandidate = (
   candidate: DedupeAuditPreparedCandidate,
-): DedupeAuditCandidate {
+): DedupeAuditCandidate => {
+  /** Project one prepared comparison record into the public candidate shape. */
   return {
     id: candidate.id,
     title: candidate.title,
@@ -268,13 +275,14 @@ function toCandidate(
     created_at: candidate.created_at,
     updated_at: candidate.updated_at,
   };
-}
+};
 
-function toMergeSuggestion(
+const toMergeSuggestion = (
   duplicate: DedupeAuditPreparedCandidate,
   canonical: DedupeAuditPreparedCandidate,
   mode: DedupeAuditMode,
-): DedupeMergeSuggestion {
+): DedupeMergeSuggestion => {
+  /** Build an executable close recommendation for one duplicate candidate. */
   const closeReason = `Duplicate of ${canonical.id}`;
   const message = `Close ${duplicate.id} as duplicate of ${canonical.id} from pm dedupe-audit (${mode}).`;
   const escapedReason = closeReason.replaceAll('"', '\\"');
@@ -286,15 +294,57 @@ function toMergeSuggestion(
     suggested_message: message,
     suggested_command: `pm close ${duplicate.id} "${escapedReason}" --message "${escapedMessage}"`,
   };
-}
+};
 
-function clusterFromMembers(
+const similarityScore = (
+  left: DedupeAuditPreparedCandidate,
+  right: DedupeAuditPreparedCandidate,
+): number => {
+  /** Score exact normalized titles first, then fall back to token overlap. */
+  if (left.normalized_title === right.normalized_title) {
+    return 1;
+  }
+  return jaccardSimilarity(left.title_tokens, right.title_tokens);
+};
+
+const forEachCandidatePair = (
+  items: DedupeAuditPreparedCandidate[],
+  visit: (
+    left: DedupeAuditPreparedCandidate,
+    right: DedupeAuditPreparedCandidate,
+    leftIndex: number,
+    rightIndex: number,
+  ) => void,
+): void => {
+  /** Visit each unordered candidate pair exactly once. */
+  for (let leftIndex = 0; leftIndex < items.length; leftIndex += 1) {
+    for (
+      let rightIndex = leftIndex + 1;
+      rightIndex < items.length;
+      rightIndex += 1
+    ) {
+      visit(items[leftIndex], items[rightIndex], leftIndex, rightIndex);
+    }
+  }
+};
+
+const extremeOrDefault = (
+  values: number[],
+  select: (...candidates: number[]) => number,
+  fallback: number,
+): number => {
+  /** Select one numeric extreme while preserving a deterministic empty fallback. */
+  return values.length === 0 ? fallback : select(...values);
+};
+
+const clusterFromMembers = (
   mode: DedupeAuditMode,
   key: string,
   members: DedupeAuditPreparedCandidate[],
   matchReason: string,
-  threshold: number | undefined,
-): DedupeAuditCluster {
+  threshold?: number,
+): DedupeAuditCluster => {
+  /** Assemble one deterministic cluster and its optional similarity envelope. */
   const sortedMembers = [...members].sort(compareCandidates);
   const canonical = sortedMembers[0];
   const duplicates = sortedMembers.slice(1);
@@ -311,125 +361,91 @@ function clusterFromMembers(
     merge_suggestions: mergeSuggestions,
   };
   if (mode === "title_fuzzy") {
-    let min = Number.POSITIVE_INFINITY;
-    let max = Number.NEGATIVE_INFINITY;
-    for (let leftIndex = 0; leftIndex < sortedMembers.length; leftIndex += 1) {
-      for (
-        let rightIndex = leftIndex + 1;
-        rightIndex < sortedMembers.length;
-        rightIndex += 1
-      ) {
-        const score = similarityScore(
-          sortedMembers[leftIndex],
-          sortedMembers[rightIndex],
-        );
-        min = Math.min(min, score);
-        max = Math.max(max, score);
-      }
-    }
-    if (!Number.isFinite(min)) {
-      min = 1;
-    }
-    if (!Number.isFinite(max)) {
-      max = 1;
-    }
+    const scores: number[] = [];
+    forEachCandidatePair(sortedMembers, (left, right) => {
+      scores.push(similarityScore(left, right));
+    });
     cluster.similarity = {
       metric: "token_jaccard",
       threshold: threshold ?? 0.8,
-      min,
-      max,
+      min: extremeOrDefault(scores, Math.min, 1),
+      max: extremeOrDefault(scores, Math.max, 1),
     };
   }
   return cluster;
-}
+};
 
-function similarityScore(
-  left: DedupeAuditPreparedCandidate,
-  right: DedupeAuditPreparedCandidate,
-): number {
-  if (left.normalized_title === right.normalized_title) {
-    return 1;
-  }
-  return jaccardSimilarity(left.title_tokens, right.title_tokens);
-}
-
-function collectExactTitleClusters(
+const collectGroupedCandidates = (
   items: DedupeAuditPreparedCandidate[],
-): DedupeAuditCluster[] {
-  const byTitle = new Map<string, DedupeAuditPreparedCandidate[]>();
+  keyFor: (item: DedupeAuditPreparedCandidate) => string | undefined,
+): Map<string, DedupeAuditPreparedCandidate[]> => {
+  /** Group candidates by a caller-defined non-empty comparison key. */
+  const groups = new Map<string, DedupeAuditPreparedCandidate[]>();
   for (const item of items) {
-    if (item.normalized_title.length === 0) {
-      continue;
-    }
-    const existing = byTitle.get(item.normalized_title);
-    if (existing) {
-      existing.push(item);
-    } else {
-      byTitle.set(item.normalized_title, [item]);
-    }
+    const key = keyFor(item);
+    if (key === undefined) continue;
+    const members = groups.get(key) ?? [];
+    members.push(item);
+    groups.set(key, members);
   }
-  const clusters: DedupeAuditCluster[] = [];
-  for (const [title, members] of byTitle.entries()) {
-    if (members.length <= 1) {
-      continue;
-    }
-    clusters.push(
-      clusterFromMembers(
-        "title_exact",
-        title,
-        members,
-        "exact_normalized_title_match",
-        undefined,
-      ),
-    );
-  }
-  return clusters;
-}
+  return groups;
+};
 
-function collectParentScopedClusters(
+const clustersFromGroups = (
+  groups: Map<string, DedupeAuditPreparedCandidate[]>,
+  mode: DedupeAuditMode,
+  matchReason: string,
+): DedupeAuditCluster[] => {
+  /** Convert non-singleton candidate groups into deterministic clusters. */
+  return [...groups.entries()]
+    .filter(([, members]) => members.length > 1)
+    .map(([key, members]) =>
+      clusterFromMembers(mode, key, members, matchReason),
+    );
+};
+
+const collectExactTitleClusters = (
   items: DedupeAuditPreparedCandidate[],
-): DedupeAuditCluster[] {
-  const byParentAndTitle = new Map<string, DedupeAuditPreparedCandidate[]>();
-  for (const item of items) {
-    if (!item.parent || item.normalized_title.length === 0) {
-      continue;
-    }
-    const key = `${item.parent}|${item.normalized_title}`;
-    const existing = byParentAndTitle.get(key);
-    if (existing) {
-      existing.push(item);
-    } else {
-      byParentAndTitle.set(key, [item]);
-    }
-  }
-  const clusters: DedupeAuditCluster[] = [];
-  for (const [key, members] of byParentAndTitle.entries()) {
-    if (members.length <= 1) {
-      continue;
-    }
-    clusters.push(
-      clusterFromMembers(
-        "parent_scope",
-        key,
-        members,
-        "same_parent_and_exact_normalized_title",
-        undefined,
-      ),
-    );
-  }
-  return clusters;
-}
+): DedupeAuditCluster[] => {
+  /** Group candidates that share the same normalized title. */
+  const groups = collectGroupedCandidates(items, (item) =>
+    item.normalized_title.length === 0 ? undefined : item.normalized_title,
+  );
+  return clustersFromGroups(
+    groups,
+    "title_exact",
+    "exact_normalized_title_match",
+  );
+};
 
-function findRoot(parents: number[], index: number): number {
+const collectParentScopedClusters = (
+  items: DedupeAuditPreparedCandidate[],
+): DedupeAuditCluster[] => {
+  /** Group normalized-title duplicates only when they share a parent. */
+  const groups = collectGroupedCandidates(items, (item) =>
+    item.parent && item.normalized_title.length > 0
+      ? `${item.parent}|${item.normalized_title}`
+      : undefined,
+  );
+  return clustersFromGroups(
+    groups,
+    "parent_scope",
+    "same_parent_and_exact_normalized_title",
+  );
+};
+
+const findRoot = (parents: number[], index: number): number => {
+  /** Find and compress one disjoint-set root for fuzzy clustering. */
   let current = index;
   while (parents[current] !== current) {
     parents[current] = parents[parents[current]];
     current = parents[current];
   }
   return current;
-}
+};
 
-function unionRoots(parents: number[], left: number, right: number): void {
+const unionRoots = (parents: number[], left: number, right: number): void => {
+  /** Join two fuzzy-cluster roots under the lower deterministic index. */
   const leftRoot = findRoot(parents, left);
   const rightRoot = findRoot(parents, right);
   if (leftRoot === rightRoot) {
@@ -440,77 +456,62 @@ function unionRoots(parents: number[], left: number, right: number): void {
   } else {
     parents[leftRoot] = rightRoot;
   }
-}
+};
 
-function collectFuzzyTitleClusters(
+const collectFuzzyTitleClusters = (
   items: DedupeAuditPreparedCandidate[],
   threshold: number,
-): DedupeAuditCluster[] {
-  if (items.length <= 1) {
-    return [];
-  }
+): DedupeAuditCluster[] => {
+  /** Build transitive fuzzy-title clusters at the requested similarity floor. */
   const parents = items.map((_item, index) => index);
-  for (let leftIndex = 0; leftIndex < items.length; leftIndex += 1) {
-    for (
-      let rightIndex = leftIndex + 1;
-      rightIndex < items.length;
-      rightIndex += 1
-    ) {
-      const score = similarityScore(items[leftIndex], items[rightIndex]);
-      if (score >= threshold) {
-        unionRoots(parents, leftIndex, rightIndex);
-      }
+  forEachCandidatePair(items, (left, right, leftIndex, rightIndex) => {
+    if (similarityScore(left, right) >= threshold) {
+      unionRoots(parents, leftIndex, rightIndex);
     }
-  }
+  });
   const groupedIndices = new Map<number, number[]>();
   for (let index = 0; index < items.length; index += 1) {
     const root = findRoot(parents, index);
-    const existing = groupedIndices.get(root);
-    if (existing) {
-      existing.push(index);
-    } else {
-      groupedIndices.set(root, [index]);
-    }
+    const indices = groupedIndices.get(root) ?? [];
+    indices.push(index);
+    groupedIndices.set(root, indices);
   }
-  const clusters: DedupeAuditCluster[] = [];
-  for (const indices of groupedIndices.values()) {
-    if (indices.length <= 1) {
-      continue;
-    }
-    const members = indices.map((index) => items[index]);
-    /* c8 ignore next -- clusters with indices.length > 1 always produce at least one member id. */
-    const canonicalKey =
-      [...members].sort(compareCandidates)[0]?.id ??
-      `cluster-${clusters.length + 1}`;
-    clusters.push(
-      clusterFromMembers(
+  return [...groupedIndices.values()]
+    .filter((indices) => indices.length > 1)
+    .map((indices, clusterIndex) => {
+      const members = indices.map((index) => items[index]);
+      /* c8 ignore next -- production item ids are required; malformed helper fixtures retain a deterministic key. */
+      const canonicalKey =
+        [...members].sort(compareCandidates)[0]?.id ??
+        `cluster-${clusterIndex + 1}`;
+      return clusterFromMembers(
         "title_fuzzy",
         canonicalKey,
         members,
         "title_token_jaccard_above_threshold",
         threshold,
-      ),
-    );
-  }
-  return clusters;
-}
+      );
+    });
+};
 
-function compareClusters(
+const compareClusters = (
   left: DedupeAuditCluster,
   right: DedupeAuditCluster,
-): number {
+): number => {
+  /** Order larger clusters first and break ties by canonical identity. */
   const bySize = right.cluster_size - left.cluster_size;
   if (bySize !== 0) {
     return bySize;
   }
   return left.canonical.id.localeCompare(right.canonical.id);
-}
+};
 
-function collectDedupeClusters(
+const collectDedupeClusters = (
   mode: DedupeAuditMode,
   prepared: DedupeAuditPreparedCandidate[],
   fuzzyThreshold: number,
-): DedupeAuditCluster[] {
+): DedupeAuditCluster[] => {
+  /** Dispatch candidate collection to the selected comparison strategy. */
   if (mode === "title_exact") {
     return collectExactTitleClusters(prepared);
   }
@@ -518,11 +519,12 @@ function collectDedupeClusters(
     return collectParentScopedClusters(prepared);
   }
   return collectFuzzyTitleClusters(prepared, fuzzyThreshold);
-}
+};
 
-function toPreparedDedupeCandidate(
-  item: Awaited<ReturnType<typeof runList>>["items"][number],
-): DedupeAuditPreparedCandidate {
+const toPreparedDedupeCandidate = (
+  item: ListedItem,
+): DedupeAuditPreparedCandidate => {
+  /** Precompute normalized fields used by every dedupe comparison strategy. */
   return {
     id: item.id,
     title: item.title,
@@ -535,38 +537,43 @@ function toPreparedDedupeCandidate(
     normalized_title: normalizeLowercaseWhitespace(item.title),
     title_tokens: tokenizeAlphaNumeric(item.title),
   };
-}
+};
 
-function buildDedupeAuditFilters(params: {
+/** Preserve a defined filter value or project its absence as an explicit null. */
+const toNullable = <Value>(value: Value | undefined): Value | null =>
+  value ?? null;
+
+const buildDedupeAuditFilters = (params: {
   mode: DedupeAuditMode;
   status: ItemStatus | undefined;
   options: DedupeAuditOptions;
   limit: number | undefined;
   fuzzyThreshold: number;
-}): DedupeAuditResult["filters"] {
+}): DedupeAuditResult["filters"] => {
+  /** Echo normalized audit filters in the stable public result shape. */
   return {
     mode: params.mode,
-    status: params.status ?? null,
-    type: params.options.type ?? null,
-    tag: params.options.tag ?? null,
-    priority: params.options.priority ?? null,
-    deadline_before: params.options.deadlineBefore ?? null,
-    deadline_after: params.options.deadlineAfter ?? null,
-    assignee: params.options.assignee ?? null,
-    assignee_filter: params.options.assigneeFilter ?? null,
-    parent: params.options.parent ?? null,
-    sprint: params.options.sprint ?? null,
-    release: params.options.release ?? null,
-    limit: params.limit ?? null,
+    status: toNullable(params.status),
+    type: toNullable(params.options.type),
+    tag: toNullable(params.options.tag),
+    priority: toNullable(params.options.priority),
+    deadline_before: toNullable(params.options.deadlineBefore),
+    deadline_after: toNullable(params.options.deadlineAfter),
+    assignee: toNullable(params.options.assignee),
+    assignee_filter: toNullable(params.options.assigneeFilter),
+    parent: toNullable(params.options.parent),
+    sprint: toNullable(params.options.sprint),
+    release: toNullable(params.options.release),
+    limit: toNullable(params.limit),
     threshold: params.mode === "title_fuzzy" ? params.fuzzyThreshold : null,
   };
-}
+};
 
 /** Implements run dedupe audit for the public runtime surface of this module. */
-export async function runDedupeAudit(
+export const runDedupeAudit = async (
   options: DedupeAuditOptions,
   global: GlobalOptions,
-): Promise<DedupeAuditResult> {
+): Promise<DedupeAuditResult> => {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
@@ -581,7 +588,11 @@ export async function runDedupeAudit(
   const threshold = parseThreshold(options.threshold);
   const fuzzyThreshold = threshold ?? 0.8;
 
-  const listed = await runList(status, buildListQueryFilters(options), global);
+  const listed = await runList(
+    status,
+    { ...buildListQueryFilters(options), full: true as const },
+    global,
+  );
 
   const prepared = listed.items.map((item) => toPreparedDedupeCandidate(item));
 
@@ -598,11 +609,7 @@ export async function runDedupeAudit(
     (total, cluster) => total + cluster.merge_suggestions.length,
     0,
   );
-  /* c8 ignore next -- list warnings are normalized upstream in command-level tests. */
-  const warnings =
-    listed.warnings && listed.warnings.length > 0 ? listed.warnings : undefined;
-
-  return {
+  const result: DedupeAuditResult = {
     mode,
     clusters: limitedClusters,
     count: limitedClusters.length,
@@ -619,10 +626,11 @@ export async function runDedupeAudit(
       fuzzyThreshold,
     }),
     now: nowIso(),
-    /* c8 ignore next -- warnings are omitted when undefined to keep stable result payloads. */
-    ...(warnings ? { warnings } : {}),
   };
-}
+  /* c8 ignore next -- list warnings are normalized upstream in command-level tests. */
+  if (listed.warnings?.length) result.warnings = listed.warnings;
+  return result;
+};
 
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {

@@ -1,12 +1,22 @@
-import fs, { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { _testOnly as statsInternals, runStats } from "../../../src/cli/commands/stats.js";
-import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../../src/core/extensions/index.js";
+import {
+  _testOnly as statsInternals,
+  runStats,
+} from "../../../src/cli/commands/stats.js";
+import {
+  clearActiveExtensionHooks,
+  setActiveExtensionHooks,
+} from "../../../src/core/extensions/index.js";
+import * as fsUtils from "../../../src/core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../helpers/withTempPmPath.js";
 
 function createItem(
   context: TempPmContext,
@@ -85,34 +95,54 @@ describe("runStats", () => {
   });
 
   it("covers stats pure helper branches", async () => {
-    expect(statsInternals.zeroByType(["Task", "Custom"])).toEqual({ Task: 0, Custom: 0 });
-    expect(statsInternals.zeroByStatus(["open", "qa"])).toEqual({ open: 0, qa: 0 });
+    expect(statsInternals.zeroByType(["Task", "Custom"])).toEqual({
+      Task: 0,
+      Custom: 0,
+    });
+    expect(statsInternals.zeroByStatus(["open", "qa"])).toEqual({
+      open: 0,
+      qa: 0,
+    });
     expect(statsInternals.countNonEmptyLines("")).toBe(0);
     expect(statsInternals.countNonEmptyLines("  \n\t\n")).toBe(0);
     expect(statsInternals.countNonEmptyLines("one\n\n two \n")).toBe(2);
 
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-stats-helper-"));
     try {
-      expect(await statsInternals.readHistoryStreamContents(tempDir)).toEqual([]);
+      expect(await statsInternals.readHistoryStreamContents(tempDir)).toEqual(
+        [],
+      );
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
   });
 
   it("skips history streams that disappear between directory listing and read", async () => {
-    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-stats-history-race-"));
+    const tempDir = await mkdtemp(
+      path.join(os.tmpdir(), "pm-stats-history-race-"),
+    );
     try {
       const historyDir = path.join(tempDir, "history");
       await mkdir(historyDir, { recursive: true });
-      await writeFile(path.join(historyDir, "pm-ghost.jsonl"), "ghost\n", "utf8");
-      await writeFile(path.join(historyDir, "pm-present.jsonl"), "present\n", "utf8");
+      await writeFile(
+        path.join(historyDir, "pm-ghost.jsonl"),
+        "ghost\n",
+        "utf8",
+      );
+      await writeFile(
+        path.join(historyDir, "pm-present.jsonl"),
+        "present\n",
+        "utf8",
+      );
 
-      const readFile = vi.spyOn(fs, "readFile").mockImplementation(async (file, options) => {
-        if (String(file).endsWith("pm-ghost.jsonl")) {
-          throw Object.assign(new Error("gone"), { code: "ENOENT" });
-        }
-        return "present\n" as Awaited<ReturnType<typeof fs.readFile>>;
-      });
+      const readFile = vi
+        .spyOn(fsUtils, "readFileIfExists")
+        .mockImplementation(async (file) => {
+          if (file.endsWith("pm-ghost.jsonl")) {
+            return null;
+          }
+          return "present\n";
+        });
 
       const streams = await statsInternals.readHistoryStreamContents(tempDir);
 
@@ -125,15 +155,25 @@ describe("runStats", () => {
   });
 
   it("still surfaces non-ENOENT history stream read failures", async () => {
-    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-stats-history-read-failure-"));
+    const tempDir = await mkdtemp(
+      path.join(os.tmpdir(), "pm-stats-history-read-failure-"),
+    );
     try {
       const historyDir = path.join(tempDir, "history");
       await mkdir(historyDir, { recursive: true });
-      await writeFile(path.join(historyDir, "pm-broken.jsonl"), "broken\n", "utf8");
+      await writeFile(
+        path.join(historyDir, "pm-broken.jsonl"),
+        "broken\n",
+        "utf8",
+      );
 
-      vi.spyOn(fs, "readFile").mockRejectedValue(Object.assign(new Error("permission denied"), { code: "EACCES" }));
+      vi.spyOn(fsUtils, "readFileIfExists").mockRejectedValue(
+        Object.assign(new Error("permission denied"), { code: "EACCES" }),
+      );
 
-      await expect(statsInternals.readHistoryStreamContents(tempDir)).rejects.toMatchObject({ code: "EACCES" });
+      await expect(
+        statsInternals.readHistoryStreamContents(tempDir),
+      ).rejects.toMatchObject({ code: "EACCES" });
     } finally {
       vi.restoreAllMocks();
       await rm(tempDir, { recursive: true, force: true });
@@ -143,7 +183,9 @@ describe("runStats", () => {
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-stats-not-init-"));
     try {
-      await expect(runStats({ path: tempDir })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runStats({ path: tempDir }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
     } finally {
@@ -153,7 +195,10 @@ describe("runStats", () => {
 
   it("returns zeroed history totals when history directory is missing", async () => {
     await withTempPmPath(async (context) => {
-      await rm(path.join(context.pmPath, "history"), { recursive: true, force: true });
+      await rm(path.join(context.pmPath, "history"), {
+        recursive: true,
+        force: true,
+      });
       const stats = await runStats({ path: context.pmPath });
       expect(stats.totals).toEqual({
         items: 0,
@@ -193,13 +238,25 @@ describe("runStats", () => {
         status: "open",
       });
       const strictSet = context.runCli(
-        ["config", "project", "set", "history-missing-stream-policy", "--policy", "strict_error", "--json"],
+        [
+          "config",
+          "project",
+          "set",
+          "history-missing-stream-policy",
+          "--policy",
+          "strict_error",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(strictSet.code).toBe(0);
-      await rm(path.join(context.pmPath, "history", `${id}.jsonl`), { force: true });
+      await rm(path.join(context.pmPath, "history", `${id}.jsonl`), {
+        force: true,
+      });
 
-      await expect(runStats({ path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runStats({ path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
     });
@@ -224,18 +281,42 @@ describe("runStats", () => {
       });
 
       const update = context.runCli(
-        ["update", epicId, "--json", "--description", "updated", "--author", "test-author", "--message", "Update epic"],
+        [
+          "update",
+          epicId,
+          "--json",
+          "--description",
+          "updated",
+          "--author",
+          "test-author",
+          "--message",
+          "Update epic",
+        ],
         { expectJson: true },
       );
       expect(update.code).toBe(0);
 
       const append = context.runCli(
-        ["append", epicId, "--json", "--body", "extra body", "--author", "test-author", "--message", "Append epic body"],
+        [
+          "append",
+          epicId,
+          "--json",
+          "--body",
+          "extra body",
+          "--author",
+          "test-author",
+          "--message",
+          "Append epic body",
+        ],
         { expectJson: true },
       );
       expect(append.code).toBe(0);
 
-      await writeFile(path.join(context.pmPath, "history", "empty.jsonl"), "", "utf8");
+      await writeFile(
+        path.join(context.pmPath, "history", "empty.jsonl"),
+        "",
+        "utf8",
+      );
 
       const stats = await runStats({ path: context.pmPath });
       expect(stats.totals).toEqual({
@@ -281,7 +362,17 @@ describe("runStats", () => {
         status: "open",
       });
       const update = context.runCli(
-        ["update", epicId, "--json", "--description", "deeper", "--author", "test-author", "--message", "Deepen epic stream"],
+        [
+          "update",
+          epicId,
+          "--json",
+          "--description",
+          "deeper",
+          "--author",
+          "test-author",
+          "--message",
+          "Deepen epic stream",
+        ],
         { expectJson: true },
       );
       expect(update.code).toBe(0);
@@ -289,17 +380,29 @@ describe("runStats", () => {
       const withoutStorage = await runStats({ path: context.pmPath });
       expect(withoutStorage.storage).toBeUndefined();
 
-      const withStorage = await runStats({ path: context.pmPath }, { storage: true });
+      const withStorage = await runStats(
+        { path: context.pmPath },
+        { storage: true },
+      );
       expect(withStorage.storage).toBeDefined();
       const storage = withStorage.storage!;
       expect(storage.total_streams).toBe(withStorage.totals.history_streams);
       expect(storage.total_lines).toBe(withStorage.totals.history_entries);
       expect(storage.total_bytes).toBeGreaterThan(0);
       // The epic has the deepest stream (create + update = 2 entries).
-      expect(storage.deepest_by_lines[0]).toMatchObject({ id: epicId, lines: 2 });
+      expect(storage.deepest_by_lines[0]).toMatchObject({
+        id: epicId,
+        lines: 2,
+      });
       expect(storage.largest_by_bytes.length).toBeGreaterThan(0);
-      expect(storage.oldest_entry).toMatchObject({ id: expect.any(String), ts: expect.any(String) });
-      expect(storage.newest_entry).toMatchObject({ id: expect.any(String), ts: expect.any(String) });
+      expect(storage.oldest_entry).toMatchObject({
+        id: expect.any(String),
+        ts: expect.any(String),
+      });
+      expect(storage.newest_entry).toMatchObject({
+        id: expect.any(String),
+        ts: expect.any(String),
+      });
     });
   });
 
@@ -326,7 +429,15 @@ describe("runStats", () => {
         { path: context.pmPath },
         { byAssignee: true, byTag: true, byPriority: true, tagPrefix: "stats" },
       );
-      const openOnlyBuckets = { open: 1, in_progress: 0, blocked: 0, draft: 0, closed: 0, canceled: 0, other: 0 };
+      const openOnlyBuckets = {
+        open: 1,
+        in_progress: 0,
+        blocked: 0,
+        draft: 0,
+        closed: 0,
+        canceled: 0,
+        other: 0,
+      };
       // The prefix filter keeps only "stats"-prefixed tags: "coverage" and
       // "other:y" must not surface as rows.
       expect(stats.breakdowns?.tag).toEqual({
@@ -334,15 +445,30 @@ describe("runStats", () => {
         total_items: 2,
         rows: [
           { label: "stats", key: "stats", total: 1, buckets: openOnlyBuckets },
-          { label: "stats:x", key: "stats:x", total: 1, buckets: openOnlyBuckets },
+          {
+            label: "stats:x",
+            key: "stats:x",
+            total: 1,
+            buckets: openOnlyBuckets,
+          },
         ],
       });
       expect(stats.breakdowns?.assignee).toEqual({
         dimension: "assignee",
         total_items: 2,
         rows: [
-          { label: "stats-owner", key: "stats-owner", total: 1, buckets: openOnlyBuckets },
-          { label: "(unassigned)", key: null, total: 1, buckets: openOnlyBuckets },
+          {
+            label: "stats-owner",
+            key: "stats-owner",
+            total: 1,
+            buckets: openOnlyBuckets,
+          },
+          {
+            label: "(unassigned)",
+            key: null,
+            total: 1,
+            buckets: openOnlyBuckets,
+          },
         ],
       });
       expect(stats.breakdowns?.priority).toEqual({
@@ -367,7 +493,10 @@ describe("runStats", () => {
       const withoutCoverage = await runStats({ path: context.pmPath });
       expect(withoutCoverage.metadata_coverage).toBeUndefined();
 
-      const stats = await runStats({ path: context.pmPath }, { metadataCoverage: true });
+      const stats = await runStats(
+        { path: context.pmPath },
+        { metadataCoverage: true },
+      );
       // The seeded open Task has acceptance criteria, an estimate, and tags but
       // no parent; resolution only applies to terminal items (applicable 0).
       const expectedCoverage = {
@@ -400,7 +529,15 @@ describe("runStats", () => {
       // Populate a heavy collection (notes) on one item so the with-body reader
       // surfaces it — the light reader drops these fields entirely.
       const noteAdd = context.runCli(
-        ["notes", noteId, "--add", "a real note", "--json", "--author", "test-author"],
+        [
+          "notes",
+          noteId,
+          "--add",
+          "a real note",
+          "--json",
+          "--author",
+          "test-author",
+        ],
         { expectJson: true },
       );
       expect(noteAdd.code).toBe(0);
@@ -408,19 +545,38 @@ describe("runStats", () => {
       const withoutUtilization = await runStats({ path: context.pmPath });
       expect(withoutUtilization.field_utilization).toBeUndefined();
 
-      const stats = await runStats({ path: context.pmPath }, { fieldUtilization: true });
+      const stats = await runStats(
+        { path: context.pmPath },
+        { fieldUtilization: true },
+      );
       const report = stats.field_utilization;
       expect(report).toBeDefined();
       expect(report!.total_items).toBe(2);
       // Both items seed a non-empty body via createItem (--body "seed body").
-      expect(report!.fields.body).toEqual({ present: 2, total: 2, percent: 100 });
-      expect(report!.body_populated).toEqual({ present: 2, total: 2, percent: 100 });
+      expect(report!.fields.body).toEqual({
+        present: 2,
+        total: 2,
+        percent: 100,
+      });
+      expect(report!.body_populated).toEqual({
+        present: 2,
+        total: 2,
+        percent: 100,
+      });
       expect(report!.empty_body).toEqual({ present: 0, total: 2, percent: 0 });
       // Notes are a heavy collection: the with-body reader sees the one item we
       // appended a note to, proving the light path was NOT taken.
-      expect(report!.fields.notes).toEqual({ present: 1, total: 2, percent: 50 });
+      expect(report!.fields.notes).toEqual({
+        present: 1,
+        total: 2,
+        percent: 50,
+      });
       // A field nothing populates stays at 0% — the dormant-feature signal GH-241 targets.
-      expect(report!.fields.learnings).toEqual({ present: 0, total: 2, percent: 0 });
+      expect(report!.fields.learnings).toEqual({
+        present: 0,
+        total: 2,
+        percent: 0,
+      });
     });
   });
 
@@ -431,7 +587,11 @@ describe("runStats", () => {
         type: "Task",
         status: "open",
       });
-      await writeFile(path.join(context.pmPath, "history", "extra.jsonl"), "", "utf8");
+      await writeFile(
+        path.join(context.pmPath, "history", "extra.jsonl"),
+        "",
+        "utf8",
+      );
 
       const events: string[] = [];
       setActiveExtensionHooks({

@@ -1,12 +1,12 @@
 /**
- * @module cli/commands/search-pagination
+ * @module sdk/query/search-pagination
  *
  * Applies the shared SDK cursor contract to ranked search results.
  */
 import {
   createQueryFingerprint,
   paginateQueryRows,
-} from "../../sdk/pagination.js";
+} from "../pagination.js";
 import type { SearchHit, SearchOptions } from "./search.js";
 import type { SearchMode } from "./search-rendering.js";
 

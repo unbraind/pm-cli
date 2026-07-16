@@ -4,7 +4,7 @@ import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
 
 /**
- * Strip the leading `#!/usr/bin/env node` shebang from repository `.mjs`
+ * Strip the leading runtime shebang from repository `.mjs` and `.mts`
  * scripts before they are compiled under test.
  *
  * The script-test harness ({@link ./tests/helpers/scriptModule.ts}) imports
@@ -21,7 +21,7 @@ const stripScriptShebang: Plugin = {
   name: "pm-strip-script-shebang",
   enforce: "pre",
   transform(code, id) {
-    if (!/[\\/]scripts[\\/][^?]*\.mjs(\?|$)/.test(id)) {
+    if (!/[\\/]scripts[\\/][^?]*\.m(?:j|t)s(\?|$)/.test(id)) {
       return null;
     }
     // Tolerate a leading UTF-8 BOM (Windows editors sometimes prepend one)
@@ -95,6 +95,8 @@ export default defineConfig({
         "packages/**/*.ts",
         "scripts/*.mjs",
         "scripts/**/*.mjs",
+        "scripts/*.mts",
+        "scripts/**/*.mts",
         "plugins/*.mjs",
         "plugins/**/*.mjs",
         // The reference extensions (starter/policy-restricted) are authored AND

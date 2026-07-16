@@ -2,21 +2,62 @@ id: pm-oslr
 title: "Promote execution and diagnostics primitives to the public SDK: linked-test running and test-run lifecycle, search eval harness, telemetry stats/export"
 description: "Completes SDK coverage of the command surface beyond pm-oxrw (which covers validate/health/gc only): pm test / test-all execution plus the test-runs worker lifecycle (list/status/logs/stop/resume), the search eval benchmark harness (pm eval, offline BM25 vs provider comparison from PR#314), and telemetry stats/percentiles/export hooks (PR#286, PR#233 OTLP queue). pm-zwpp promotes linked-test STORAGE; this item promotes EXECUTION. The pm-lodl inventory validates this is the final uncovered family. Duplicate check: no open SDK-promotion overlap (searched test/eval/telemetry promote)."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[4]: architecture,"area:sdk","area:telemetry","area:test"
 created_at: "2026-07-05T05:09:19.981Z"
-updated_at: "2026-07-10T21:31:12.240Z"
+updated_at: "2026-07-16T06:42:59.092Z"
+closed_at: "2026-07-16T06:42:57.356Z"
 author: maintainer-agent
 estimated_minutes: 300
 acceptance_criteria: "SDK exports typed primitives for linked-test execution and run lifecycle control, eval harness runs, and telemetry stats/export returning the same structured outputs the CLI prints; CLI commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (test-runner, eval, telemetry specs green)."
 parent: pm-usfg
 risk: medium
 confidence: medium
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-lodl,blocked_by,"2026-07-05T05:09:19.981Z",null,null
-  pm-muhw,blocked_by,"2026-07-05T05:09:19.981Z",null,null
+dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-atfm,related,"2026-07-10T21:31:12.222Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-07-16T05:59:51.443Z",codex-wide-sdk-20260716,"Implementation start 2026-07-16: promote linked-test parsing/execution, test-all orchestration, background run lifecycle, search eval, telemetry, and stats into SDK-owned modules; retain thin CLI compatibility exports and verify the packed public SDK surface."
+  "2026-07-16T06:10:45.946Z",codex-wide-sdk-20260716,"Implementation checkpoint: promoted test execution, batch execution, persisted test-run workers, linked-test parsing, eval, telemetry, and stats into SDK-owned modules; retained thin CLI compatibility exports; exposed the typed primitives through the public SDK barrel and runtime."
+  "2026-07-16T06:41:40.255Z",codex-wide-sdk-20260716,"Observability investigation: release gates found Sentry PM-CLI-10 high, last seen 2026-07-16T06:04:22Z as a handled ERR_MODULE_NOT_FOUND from this workstation during the intermediate ownership move. The event has system-only frames, cli.version/release 2026.7.16, isUnhandled=false, and coincides with a local guide-shell install while checkout modules were being relocated. Final built tarball verification installs guide-shell and successfully runs pm guide sdk plus completion (25,984 bytes), so the final package root/runtime module graph is intact. Telemetry gate is healthy at 0.33% finish error rate and zero failures without error codes. Resolve PM-CLI-10 after this direct final-artifact reproduction; any recurrence on the final release/commit must reopen and be treated as a package-runtime regression."
+  "2026-07-16T06:42:53.668Z",codex-wide-sdk-20260716,"Final local evidence: focused ownership/behavior suite 9 files / 213 tests passed; MCP ownership regression suite passed; pnpm lint, strict static/docstring/package-boundary/token gates, docs/skills, secrets scan, and typecheck passed. Full release gates passed every repository-owned step: 292 files / 5,738 tests at exact 100% (37,232 statements, 26,504 branches, 7,533 functions, 36,335 lines), version/sync/security, 12-package npx smoke, and 88-command package-first dogfood. Isolated installed tarball at /tmp/pm-sdk-execution-proof-mDWutj loaded eight public execution/diagnostics exports, initialized a strict tracker, ran a linked Node command, returned stats/telemetry, installed guide-shell, rendered SDK guidance, and generated shell completion. Live Sentry/telemetry gate passes critical=0 high=0 with telemetry error rate 0.33% and zero missing error codes."
 notes[1]{created_at,author,text}:
   "2026-07-10T21:30:53.991Z",maintainer-agent,"Implementation slicing 2026-07-10 (grounded in current src state). Already public — do NOT redo: partial core substrate exists — src/core/test (background-runs.ts, item-test-run-tracking.ts, run-selectors.ts) and src/core/telemetry (consent.ts, observability.ts, runtime.ts); the stats facade is exported from src/sdk/index.ts. The actual gap: orchestration is command-side — test.ts (2,358, the largest command module in the repo) + linked-test-parsers.ts (576) + test-all.ts (632) + test-runs.ts (312) + eval.ts (223) + telemetry.ts (463) + stats.ts (229), ~4.8k lines total. Suggested slices: S1 linked-test execution + run lifecycle primitives (~120m) — move test.ts orchestration onto core/test; the parser layer (linked-test-parsers, 576 lines) is pure functions and promotes almost for free; cover test-runs list/status/logs/stop/resume as one lifecycle primitive. S2 batch execution + background-run supervision (~60m) — test-all.ts; preserve the Windows detached-spawn child.on(\"error\") handling (PR#365 regression class). S3 search-eval harness primitive (~60m) — eval.ts; this is the substrate pm-atfm (graded golden-workspace eval harness) builds on — coordinate; promoting S3 early cheapens pm-atfm, which sits `related` to wave-2 frontier item pm-55ra. S4 telemetry stats/export + typed facades + SDK reference docs/tests (~60m) — consent gating must live in the primitive, never CLI-only, so SDK consumers cannot bypass it. Order: S1 first (bulk + risk), S3 next (unblocks eval work), S2, S4 last. P3 overall — this slice serves tooling depth, not the pm-w89s universality story, so schedule after zwpp/3mna/oxrw."
+learnings[1]{created_at,author,text}:
+  "2026-07-16T06:42:54.426Z",codex-wide-sdk-20260716,SDK ownership promotion must move residual module mocks and prune path-keyed lint suppressions; compatibility shims should export the same function identities while runtime/MCP import the SDK implementation directly.
+files[25]{path,scope,note}:
+  eslint-suppressions.json,project,Remove obsolete CLI-path complexity suppression after inlining one-use assertion helper
+  package.json,project,Strict suppression ratchet follows SDK ownership promotion
+  scripts/release/static-quality-gate.mjs,project,Strict suppression ratchet follows SDK ownership promotion
+  src/cli/commands/eval.ts,project,SDK execution and diagnostics ownership promotion
+  src/cli/commands/linked-test-entry.ts,project,SDK execution and diagnostics ownership promotion
+  src/cli/commands/linked-test-parsers.ts,project,SDK execution and diagnostics ownership promotion
+  src/cli/commands/stats.ts,project,SDK execution and diagnostics ownership promotion
+  src/cli/commands/telemetry.ts,project,SDK execution and diagnostics ownership promotion
+  src/cli/commands/test-all.ts,project,SDK execution and diagnostics ownership promotion
+  src/cli/commands/test-runs.ts,project,SDK execution and diagnostics ownership promotion
+  src/cli/commands/test.ts,project,SDK execution and diagnostics ownership promotion
+  src/sdk/eval.ts,project,SDK execution and diagnostics ownership promotion
+  src/sdk/index.ts,project,SDK execution and diagnostics ownership promotion
+  src/sdk/runtime.ts,project,SDK execution and diagnostics ownership promotion
+  src/sdk/stats.ts,project,SDK execution and diagnostics ownership promotion
+  src/sdk/telemetry.ts,project,SDK execution and diagnostics ownership promotion
+  src/sdk/test/batch.ts,project,SDK execution and diagnostics ownership promotion
+  src/sdk/test/entry.ts,project,SDK execution and diagnostics ownership promotion
+  src/sdk/test/execution.ts,project,SDK execution and diagnostics ownership promotion
+  src/sdk/test/parsers.ts,project,SDK execution and diagnostics ownership promotion
+  src/sdk/test/runs.ts,project,SDK execution and diagnostics ownership promotion
+  tests/integration/release-automation-contract.spec.ts,project,Strict suppression ratchet follows SDK ownership promotion
+  tests/integration/release-readiness-runtime.spec.ts,project,Strict suppression ratchet follows SDK ownership promotion
+  tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,MCP ownership-boundary mock parity after SDK promotion
+  tests/unit/sdk/execution-diagnostics-primitives.spec.ts,project,SDK execution and diagnostics ownership promotion
+tests[4]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,1200
+  node scripts/run-tests.mjs test -- tests/unit/sdk/execution-diagnostics-primitives.spec.ts tests/unit/commands/linked-test-parsers.spec.ts tests/unit/commands/linked-test-entry.spec.ts tests/unit/commands/test-runs-command.spec.ts tests/unit/commands/test-command.spec.ts tests/unit/commands/test-all-command.spec.ts tests/unit/commands/telemetry-command.spec.ts tests/unit/commands/eval-command.spec.ts tests/unit/commands/stats-command.spec.ts,project,300
+  "pnpm quality:static",project,300
+  "pnpm release:gates",project,1200
+docs[2]{path,scope,note}:
+  docs/SDK_PRIMITIVE_INVENTORY.md,project,Ownership inventory update
+  docs/SDK.md,project,Public execution and diagnostics SDK contracts
+close_reason: "Delivered the complete execution and diagnostics SDK family with typed public exports, identity-preserving CLI adapters, runtime/MCP ownership parity, strict quality ratchet reduction, full documentation, exact 100% all-source coverage, packed-package acceptance, and live observability proof."
 body: ""

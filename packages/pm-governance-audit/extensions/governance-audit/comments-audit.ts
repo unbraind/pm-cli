@@ -15,6 +15,7 @@ import {
   type GlobalOptions,
   type ItemMetadata,
   type ItemStatus,
+  type ListedItem,
   type RuntimeStatusRegistry,
 } from "./sdk.ts";
 
@@ -171,10 +172,11 @@ export interface CommentsAuditHistoryRow {
   text: string;
 }
 
-function parseStatus(
+const parseStatus = (
   raw: string | undefined,
   statusRegistry: RuntimeStatusRegistry,
-): ItemStatus | undefined {
+): ItemStatus | undefined => {
+  /** Normalize one optional status filter against the active project schema. */
   if (raw === undefined) {
     return undefined;
   }
@@ -186,12 +188,13 @@ function parseStatus(
     );
   }
   return normalized;
-}
+};
 
-function parseNonNegativeInteger(
+const parseNonNegativeInteger = (
   raw: string | undefined,
   flag: string,
-): number | undefined {
+): number | undefined => {
+  /** Parse an optional count flag without accepting fractions or negative values. */
   if (raw === undefined) {
     return undefined;
   }
@@ -203,16 +206,20 @@ function parseNonNegativeInteger(
     );
   }
   return parsed;
-}
+};
 
-function limitComments(values: Comment[], latest: number): Comment[] {
+const limitComments = (values: Comment[], latest: number): Comment[] => {
+  /** Retain only the requested trailing comments while preserving chronology. */
   if (latest <= 0) {
     return [];
   }
   return values.slice(Math.max(0, values.length - latest));
-}
+};
 
-function toHistoryRows(items: CommentsAuditEntry[]): CommentsAuditHistoryRow[] {
+const toHistoryRows = (
+  items: CommentsAuditEntry[],
+): CommentsAuditHistoryRow[] => {
+  /** Flatten per-item comments into stable export rows with item context. */
   const rows: CommentsAuditHistoryRow[] = [];
   for (const item of items) {
     for (let index = 0; index < item.comments.length; index += 1) {
@@ -233,12 +240,13 @@ function toHistoryRows(items: CommentsAuditEntry[]): CommentsAuditHistoryRow[] {
     }
   }
   return rows;
-}
+};
 
-function ratioPercent(
+const ratioPercent = (
   numerator: number,
   denominator: number,
-): { ratio: number; percent: number } {
+): { ratio: number; percent: number } => {
+  /** Render a bounded ratio and percentage with deterministic precision. */
   if (denominator <= 0) {
     return {
       ratio: 0,
@@ -250,11 +258,12 @@ function ratioPercent(
     ratio: Number(ratio.toFixed(4)),
     percent: Number((ratio * 100).toFixed(2)),
   };
-}
+};
 
-function buildCommentsAuditSummary(
+const buildCommentsAuditSummary = (
   items: CommentsAuditEntry[],
-): CommentsAuditSummary {
+): CommentsAuditSummary => {
+  /** Aggregate comment coverage globally and by project item type. */
   const itemsScanned = items.length;
   const itemsWithComments = items.filter(
     (entry) => entry.comment_count > 0,
@@ -326,16 +335,19 @@ function buildCommentsAuditSummary(
     },
     by_type: byType,
   };
-}
+};
 
-function resolveCommentsAuditLimits(options: CommentsAuditOptions): {
+const resolveCommentsAuditLimits = (
+  options: CommentsAuditOptions,
+): {
   fullHistory: boolean;
   latest: number | undefined;
   limitItems: number | undefined;
-} {
+} => {
+  /** Reconcile history and item-limit aliases into one validated selection. */
   const fullHistory = options.fullHistory === true;
   const latestParsed = parseNonNegativeInteger(options.latest, "--latest");
-  if (fullHistory && latestParsed !== undefined) {
+  if ([fullHistory, latestParsed !== undefined].every(Boolean)) {
     throw new PmCliError(
       "--full-history cannot be combined with --latest",
       EXIT_CODE.USAGE,
@@ -346,27 +358,31 @@ function resolveCommentsAuditLimits(options: CommentsAuditOptions): {
     "--limit-items",
   );
   const limitItemsAlias = parseNonNegativeInteger(options.limit, "--limit");
-  if (
-    limitItemsPrimary !== undefined &&
-    limitItemsAlias !== undefined &&
-    limitItemsPrimary !== limitItemsAlias
-  ) {
+  const distinctItemLimits = new Set(
+    [limitItemsPrimary, limitItemsAlias].filter(
+      (value): value is number => value !== undefined,
+    ),
+  );
+  if (distinctItemLimits.size > 1) {
     throw new PmCliError(
       "--limit and --limit-items must match when both are provided",
       EXIT_CODE.USAGE,
     );
   }
+  let latest: number | undefined = latestParsed ?? 1;
+  if (fullHistory) latest = undefined;
   return {
     fullHistory,
-    latest: fullHistory ? undefined : (latestParsed ?? 1),
-    limitItems: limitItemsPrimary ?? limitItemsAlias,
+    latest,
+    limitItems: distinctItemLimits.values().next().value,
   };
-}
+};
 
-function toCommentsAuditEntry(
-  item: Awaited<ReturnType<typeof runList>>["items"][number],
+const toCommentsAuditEntry = (
+  item: ListedItem,
   latest: number | undefined,
-): CommentsAuditEntry {
+): CommentsAuditEntry => {
+  /** Project one complete list record into the bounded comments-audit shape. */
   const comments = item.comments ?? [];
   return {
     id: item.id,
@@ -378,36 +394,39 @@ function toCommentsAuditEntry(
     comment_count: comments.length,
     comments: latest === undefined ? comments : limitComments(comments, latest),
   };
-}
+};
 
-function buildCommentsAuditFilters(
+const buildCommentsAuditFilters = (
   options: CommentsAuditOptions,
   status: ItemStatus | undefined,
   limitItems: number | undefined,
   latest: number | undefined,
   fullHistory: boolean,
-): CommentsAuditResult["filters"] {
+): CommentsAuditResult["filters"] => {
+  /** Preserve active audit filters in a stable nullable response envelope. */
+  const toNullable = <Value>(value: Value | undefined): Value | null =>
+    value === undefined ? null : value;
   return {
-    status: status ?? null,
-    type: options.type ?? null,
-    tag: options.tag ?? null,
+    status: toNullable(status),
+    type: toNullable(options.type),
+    tag: toNullable(options.tag),
     priority: options.priority === undefined ? null : Number(options.priority),
-    parent: options.parent ?? null,
-    sprint: options.sprint ?? null,
-    release: options.release ?? null,
-    assignee: options.assignee ?? null,
-    assignee_filter: options.assigneeFilter ?? null,
-    limit_items: limitItems ?? null,
-    latest: latest ?? null,
+    parent: toNullable(options.parent),
+    sprint: toNullable(options.sprint),
+    release: toNullable(options.release),
+    assignee: toNullable(options.assignee),
+    assignee_filter: toNullable(options.assigneeFilter),
+    limit_items: toNullable(limitItems),
+    latest: toNullable(latest),
     full_history: fullHistory,
   };
-}
+};
 
 /** Implements run comments audit for the public runtime surface of this module. */
-export async function runCommentsAudit(
+export const runCommentsAudit = async (
   options: CommentsAuditOptions,
   global: GlobalOptions,
-): Promise<CommentsAuditResult> {
+): Promise<CommentsAuditResult> => {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
@@ -427,18 +446,17 @@ export async function runCommentsAudit(
       assignee: options.assignee,
       assigneeFilter: options.assigneeFilter,
       limit: limitItems === undefined ? undefined : String(limitItems),
+      full: true as const,
     },
     global,
   );
 
   const items = listed.items.map((item) => toCommentsAuditEntry(item, latest));
-  const rows = fullHistory ? toHistoryRows(items) : undefined;
   const latestRowCount = items.reduce(
     (sum, entry) => sum + entry.comments.length,
     0,
   );
-
-  return {
+  const result: CommentsAuditResult = {
     items,
     count: items.length,
     summary: buildCommentsAuditSummary(items),
@@ -450,14 +468,16 @@ export async function runCommentsAudit(
       fullHistory,
     ),
     export: {
-      mode: fullHistory ? "full_history" : "latest",
-      /* c8 ignore next -- rows is always materialized from toHistoryRows() when fullHistory=true. */
-      row_count: fullHistory ? (rows?.length ?? 0) : latestRowCount,
+      mode: "latest",
+      row_count: latestRowCount,
     },
-    ...(rows ? { rows } : {}),
     now: listed.now ?? nowIso(),
-    ...(listed.warnings && listed.warnings.length > 0
-      ? { warnings: listed.warnings }
-      : {}),
   };
-}
+  if (fullHistory) {
+    const rows = toHistoryRows(items);
+    result.rows = rows;
+    result.export = { mode: "full_history", row_count: rows.length };
+  }
+  if (listed.warnings?.length) result.warnings = listed.warnings;
+  return result;
+};

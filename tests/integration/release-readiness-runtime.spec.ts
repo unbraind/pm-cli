@@ -2568,7 +2568,7 @@ describe("release readiness runtime coverage", () => {
       "node scripts/release-version.mjs next",
     );
     expect(packageJson.scripts?.["quality:static"]).toBe(
-      "pnpm build && node scripts/release/static-quality-gate.mjs --max-eslint-suppressions 158 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs",
+      "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 154 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs",
     );
     expect(packageJson.scripts?.["quality:token-budget"]).toBe(
       "node scripts/release/token-budget-gate.mjs",
@@ -2675,7 +2675,7 @@ describe("release readiness runtime coverage", () => {
     const sourceFiles = [
       ...(await listFilesRelativeToRepo("src", [".ts"])),
       ...(await listFilesRelativeToRepo("packages", [".ts"])),
-      ...(await listFilesRelativeToRepo("scripts", [".mjs"])),
+      ...(await listFilesRelativeToRepo("scripts", [".mjs", ".mts"])),
       ...(await listFilesRelativeToRepo("plugins", [".mjs"])),
       // The reference extensions are authored AND loaded as TypeScript (ADR
       // pm-2c28 / pm-m1uz): `.ts` is both the covered source and the manifest entry
@@ -2696,6 +2696,8 @@ describe("release readiness runtime coverage", () => {
         "packages/**/*.ts",
         "scripts/*.mjs",
         "scripts/**/*.mjs",
+        "scripts/*.mts",
+        "scripts/**/*.mts",
         "plugins/*.mjs",
         "plugins/**/*.mjs",
         "docs/examples/**/*.ts",
@@ -2757,7 +2759,7 @@ describe("release readiness runtime coverage", () => {
       "scripts/release-version.mjs",
       "scripts/release/compatibility-check.mjs",
       "scripts/release/docs-skills-gate.mjs",
-      "scripts/release/static-quality-gate.mjs",
+      "scripts/release/static-quality-gate.mts",
       "scripts/release/sentry-telemetry-gate.mjs",
       "scripts/release/run-gates.mjs",
       "scripts/release/run-release-pipeline.mjs",
@@ -2819,7 +2821,7 @@ describe("release readiness runtime coverage", () => {
     );
 
     const staticQualityScript = await readRepoText(
-      "scripts/release/static-quality-gate.mjs",
+      "scripts/release/static-quality-gate.mts",
     );
     expect(staticQualityScript).toContain("orphan_modules");
     expect(staticQualityScript).toContain("duplicate_chunks");

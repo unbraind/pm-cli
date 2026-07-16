@@ -1,4 +1,12 @@
-import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -29,7 +37,10 @@ import {
   setTestResultTracking,
   writeSchemaTypeExtension,
 } from "../../helpers/pmWorkspace.js";
-import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../helpers/withTempPmPath.js";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -43,7 +54,10 @@ function createTask(context: TempPmContext, title: string): string {
   });
 }
 
-async function latestHistoryAuthor(pmPath: string, id: string): Promise<string> {
+async function latestHistoryAuthor(
+  pmPath: string,
+  id: string,
+): Promise<string> {
   const historyPath = path.join(pmPath, "history", `${id}.jsonl`);
   const raw = await readFile(historyPath, "utf8");
   const lines = raw
@@ -54,11 +68,20 @@ async function latestHistoryAuthor(pmPath: string, id: string): Promise<string> 
   return last.author ?? "";
 }
 
-async function setSettingsAuthorDefault(pmPath: string, authorDefault: string): Promise<void> {
+async function setSettingsAuthorDefault(
+  pmPath: string,
+  authorDefault: string,
+): Promise<void> {
   const settingsPath = path.join(pmPath, "settings.json");
-  const settings = JSON.parse(await readFile(settingsPath, "utf8")) as { author_default?: string };
+  const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+    author_default?: string;
+  };
   settings.author_default = authorDefault;
-  await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+  await writeFile(
+    settingsPath,
+    `${JSON.stringify(settings, null, 2)}\n`,
+    "utf8",
+  );
 }
 
 async function expectHeartbeatProgressRun(
@@ -66,14 +89,17 @@ async function expectHeartbeatProgressRun(
   id: string,
   options: { isTTY: boolean; progress?: boolean },
 ): Promise<void> {
-  const previousHeartbeatInterval = process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
+  const previousHeartbeatInterval =
+    process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
   process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = "10";
   const originalIsTTY = process.stderr.isTTY;
   Object.defineProperty(process.stderr, "isTTY", {
     value: options.isTTY,
     configurable: true,
   });
-  const stderrWriteSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+  const stderrWriteSpy = vi
+    .spyOn(process.stderr, "write")
+    .mockImplementation(() => true);
   try {
     const run = await runTest(
       id,
@@ -87,15 +113,20 @@ async function expectHeartbeatProgressRun(
     expect(run.run_results).toHaveLength(1);
     expect(run.run_results[0]?.status).toBe("passed");
 
-    const stderrOutput = stderrWriteSpy.mock.calls.map((entry) => String(entry[0])).join("");
+    const stderrOutput = stderrWriteSpy.mock.calls
+      .map((entry) => String(entry[0]))
+      .join("");
     expect(stderrOutput).toContain("[pm test] linked-test 1/1 start");
     expect(stderrOutput).toContain("[pm test] linked-test 1/1 running");
-    expect(stderrOutput).toContain("[pm test] linked-test 1/1 end status=passed");
+    expect(stderrOutput).toContain(
+      "[pm test] linked-test 1/1 end status=passed",
+    );
   } finally {
     if (previousHeartbeatInterval === undefined) {
       delete process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
     } else {
-      process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = previousHeartbeatInterval;
+      process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS =
+        previousHeartbeatInterval;
     }
     Object.defineProperty(process.stderr, "isTTY", {
       value: originalIsTTY,
@@ -240,11 +271,17 @@ describe("runTest", () => {
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-test-not-init-"));
     try {
-      await expect(runTest("pm-missing", {}, { path: tempDir })).rejects.toMatchObject({
+      await expect(
+        runTest("pm-missing", {}, { path: tempDir }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
       await expect(
-        runTest("pm-missing", { add: ["command=node --version,scope=project"] }, { path: tempDir }),
+        runTest(
+          "pm-missing",
+          { add: ["command=node --version,scope=project"] },
+          { path: tempDir },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
@@ -257,12 +294,26 @@ describe("runTest", () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "test-list-flag");
       context.runCli(
-        ["test", id, "--add", "command=node --version,scope=project,note=seed", "--json", "--author", "owner-a"],
+        [
+          "test",
+          id,
+          "--add",
+          "command=node --version,scope=project,note=seed",
+          "--json",
+          "--author",
+          "owner-a",
+        ],
         { expectJson: true },
       );
-      const listed = context.runCli(["test", id, "--list", "--json", "--author", "owner-a"], { expectJson: true });
+      const listed = context.runCli(
+        ["test", id, "--list", "--json", "--author", "owner-a"],
+        { expectJson: true },
+      );
       expect(listed.code).toBe(0);
-      const payload = listed.json as { tests?: Array<{ command?: string }>; count?: number };
+      const payload = listed.json as {
+        tests?: Array<{ command?: string }>;
+        count?: number;
+      };
       expect(payload.count).toBe(1);
       expect(payload.tests?.[0]?.command).toContain("node --version");
     });
@@ -272,158 +323,337 @@ describe("runTest", () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "validate-test-command");
 
-      await expect(runTest(id, { add: ["scope=project"] }, { path: context.pmPath })).rejects.toMatchObject({
-        exitCode: EXIT_CODE.USAGE,
-      });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=workspace"] }, { path: context.pmPath }),
+        runTest(id, { add: ["scope=project"] }, { path: context.pmPath }),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
         runTest(
           id,
-          { add: ["command=node --version,scope=project,timeout=10,timeout_seconds=11"] },
+          { add: ["command=node --version,scope=workspace"] },
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { add: ["path=tests/path-only.spec.ts"] }, { path: context.pmPath })).rejects.toMatchObject({
-        exitCode: EXIT_CODE.USAGE,
-      });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,env_set=invalid-assignment"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          {
+            add: [
+              "command=node --version,scope=project,timeout=10,timeout_seconds=11",
+            ],
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,env_set=;;"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          { add: ["path=tests/path-only.spec.ts"] },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,env_set=1INVALID=value"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          {
+            add: [
+              "command=node --version,scope=project,env_set=invalid-assignment",
+            ],
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,env_set=PM_PATH=/tmp/unsafe"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          { add: ["command=node --version,scope=project,env_set=;;"] },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,env_clear=FORCE_COLOR"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          {
+            add: [
+              "command=node --version,scope=project,env_set=1INVALID=value",
+            ],
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,env_clear=;;"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          {
+            add: [
+              "command=node --version,scope=project,env_set=PM_PATH=/tmp/unsafe",
+            ],
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,env_clear=1INVALID"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          {
+            add: ["command=node --version,scope=project,env_clear=FORCE_COLOR"],
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,shared_host_safe=maybe"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          { add: ["command=node --version,scope=project,env_clear=;;"] },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,assert_stdout_regex=["] }, { path: context.pmPath }),
+        runTest(
+          id,
+          { add: ["command=node --version,scope=project,env_clear=1INVALID"] },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,assert_stderr_regex=["] }, { path: context.pmPath }),
+        runTest(
+          id,
+          {
+            add: [
+              "command=node --version,scope=project,shared_host_safe=maybe",
+            ],
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,assert_stdout_min_lines=-1"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          {
+            add: ["command=node --version,scope=project,assert_stdout_regex=["],
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,assert_stdout_min_lines=1.5"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          {
+            add: ["command=node --version,scope=project,assert_stderr_regex=["],
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,assert_json_field_equals=count"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          {
+            add: [
+              "command=node --version,scope=project,assert_stdout_min_lines=-1",
+            ],
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,assert_json_field_equals==value"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          {
+            add: [
+              "command=node --version,scope=project,assert_stdout_min_lines=1.5",
+            ],
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,assert_json_field_gte=count"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          {
+            add: [
+              "command=node --version,scope=project,assert_json_field_equals=count",
+            ],
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,assert_json_field_gte=count=abc"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          {
+            add: [
+              "command=node --version,scope=project,assert_json_field_equals==value",
+            ],
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runTest(id, { add: ["command=node --version,scope=project,pm_context_mode=invalid"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          {
+            add: [
+              "command=node --version,scope=project,assert_json_field_gte=count",
+            ],
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { remove: ["   "] }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(
+          id,
+          {
+            add: [
+              "command=node --version,scope=project,assert_json_field_gte=count=abc",
+            ],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { remove: ["scope=project"] }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(
+          id,
+          {
+            add: [
+              "command=node --version,scope=project,pm_context_mode=invalid",
+            ],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { run: true, timeout: "not-a-number" }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(id, { remove: ["   "] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { run: true, pmContext: "invalid" }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(id, { remove: ["scope=project"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { envSet: ["PORT=0"] }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(
+          id,
+          { run: true, timeout: "not-a-number" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { pmContext: "tracker" }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(
+          id,
+          { run: true, pmContext: "invalid" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { overrideLinkedPmContext: true }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(id, { envSet: ["PORT=0"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { failOnContextMismatch: true }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(id, { pmContext: "tracker" }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { failOnSkipped: true }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(
+          id,
+          { overrideLinkedPmContext: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { failOnEmptyTestRun: true }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(id, { failOnContextMismatch: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { requireAssertionsForPm: true }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(id, { failOnSkipped: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { checkContext: true }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(id, { failOnEmptyTestRun: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { autoPmContext: true }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(id, { requireAssertionsForPm: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { checkContext: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { autoPmContext: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
 
       const seeded = await runTest(
         id,
-        { add: ["command=node --version,scope=project,shared_host_safe=false"], message: "seed bool false" },
+        {
+          add: ["command=node --version,scope=project,shared_host_safe=false"],
+          message: "seed bool false",
+        },
         { path: context.pmPath },
       );
-      expect(seeded.tests.some((entry) => entry.command === "node --version")).toBe(true);
-      expect(seeded.tests.every((entry) => entry.shared_host_safe !== true)).toBe(true);
+      expect(
+        seeded.tests.some((entry) => entry.command === "node --version"),
+      ).toBe(true);
+      expect(
+        seeded.tests.every((entry) => entry.shared_host_safe !== true),
+      ).toBe(true);
 
       const seededAssertions = await runTest(
         id,
@@ -435,7 +665,9 @@ describe("runTest", () => {
         },
         { path: context.pmPath },
       );
-      const assertedEntry = seededAssertions.tests.find((entry) => entry.path === "tests/path-metadata.spec.ts");
+      const assertedEntry = seededAssertions.tests.find(
+        (entry) => entry.path === "tests/path-metadata.spec.ts",
+      );
       expect(assertedEntry).toMatchObject({
         assert_stdout_contains: ["v"],
         assert_stdout_regex: ["v\\\\d+"],
@@ -449,17 +681,26 @@ describe("runTest", () => {
 
       const removedByPath = await runTest(
         id,
-        { remove: ["tests/path-metadata.spec.ts"], message: "remove path metadata entry" },
+        {
+          remove: ["tests/path-metadata.spec.ts"],
+          message: "remove path metadata entry",
+        },
         { path: context.pmPath },
       );
-      expect(removedByPath.tests.some((entry) => entry.path === "tests/path-metadata.spec.ts")).toBe(false);
+      expect(
+        removedByPath.tests.some(
+          (entry) => entry.path === "tests/path-metadata.spec.ts",
+        ),
+      ).toBe(false);
 
       const runWithEmptyRuntimeDirectives = await runTest(
         id,
         { run: true, envSet: [""], envClear: ["", "DELETE_ME"], timeout: "5" },
         { path: context.pmPath },
       );
-      expect(runWithEmptyRuntimeDirectives.run_results.length).toBeGreaterThanOrEqual(1);
+      expect(
+        runWithEmptyRuntimeDirectives.run_results.length,
+      ).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -468,14 +709,21 @@ describe("runTest", () => {
       const id = createTask(context, "cmd-alias-test");
       const result = await runTest(
         id,
-        { add: ["CMD=node --version,SCOPE=project,note=cmd alias"], message: "seed cmd alias" },
+        {
+          add: ["CMD=node --version,SCOPE=project,note=cmd alias"],
+          message: "seed cmd alias",
+        },
         { path: context.pmPath },
       );
       const entry = result.tests.find((test) => test.note === "cmd alias");
       expect(entry?.command).toBe("node --version");
       // The whole pair must NOT be stored as the command (the original bug).
-      expect(result.tests.some((test) => test.command.includes("cmd="))).toBe(false);
-      expect(result.tests.some((test) => test.command.includes("name="))).toBe(false);
+      expect(result.tests.some((test) => test.command.includes("cmd="))).toBe(
+        false,
+      );
+      expect(result.tests.some((test) => test.command.includes("name="))).toBe(
+        false,
+      );
     });
   });
 
@@ -484,11 +732,18 @@ describe("runTest", () => {
       const id = createTask(context, "cmd-alias-comma-test");
       const result = await runTest(
         id,
-        { add: ["cmd=node -e \"console.log('a,b')\",scope=project,note=cmd comma alias"], message: "seed cmd comma alias" },
+        {
+          add: [
+            "cmd=node -e \"console.log('a,b')\",scope=project,note=cmd comma alias",
+          ],
+          message: "seed cmd comma alias",
+        },
         { path: context.pmPath },
       );
 
-      const entry = result.tests.find((test) => test.note === "cmd comma alias");
+      const entry = result.tests.find(
+        (test) => test.note === "cmd comma alias",
+      );
       expect(entry?.command).toBe("node -e \"console.log('a,b')\"");
     });
   });
@@ -499,17 +754,31 @@ describe("runTest", () => {
       // The original bug: `cmd=...,name=...` was stored verbatim as the command
       // because `name` was unrecognized. Now this must error loudly.
       await expect(
-        runTest(id, { add: ["cmd=node --version,name=smoke"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          { add: ["cmd=node --version,name=smoke"] },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
       await expect(
-        runTest(id, { add: ["command=node --version,bogus=1,scope=project"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          { add: ["command=node --version,bogus=1,scope=project"] },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
       // command/cmd conflict is rejected.
       await expect(
-        runTest(id, { add: ["command=node --version,cmd=node --help"] }, { path: context.pmPath }),
+        runTest(
+          id,
+          { add: ["command=node --version,cmd=node --help"] },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
       // No test entries should have been stored from the rejected payloads.
-      const listed = context.runCli(["test", id, "--list", "--json"], { expectJson: true });
+      const listed = context.runCli(["test", id, "--list", "--json"], {
+        expectJson: true,
+      });
       const payload = listed.json as { count?: number };
       expect(payload.count).toBe(0);
     });
@@ -520,10 +789,18 @@ describe("runTest", () => {
       const id = createTask(context, "bare-command-with-equals");
       const result = await runTest(
         id,
-        { add: ["node scripts/run-tests.mjs test --reporter=dot"], message: "seed bare command" },
+        {
+          add: ["node scripts/run-tests.mjs test --reporter=dot"],
+          message: "seed bare command",
+        },
         { path: context.pmPath },
       );
-      expect(result.tests.some((test) => test.command === "node scripts/run-tests.mjs test --reporter=dot")).toBe(true);
+      expect(
+        result.tests.some(
+          (test) =>
+            test.command === "node scripts/run-tests.mjs test --reporter=dot",
+        ),
+      ).toBe(true);
     });
   });
 
@@ -532,17 +809,29 @@ describe("runTest", () => {
       const id = createTask(context, "history-drift-tests-add");
       await runTest(
         id,
-        { add: ["command=node --version,scope=project"], message: "seed test entry" },
+        {
+          add: ["command=node --version,scope=project"],
+          message: "seed test entry",
+        },
         { path: context.pmPath },
       );
-      const verify = context.runCli(["history", id, "--verify", "--json", "--full"], { expectJson: true });
+      const verify = context.runCli(
+        ["history", id, "--verify", "--json", "--full"],
+        { expectJson: true },
+      );
       expect(verify.code).toBe(0);
       const payload = verify.json as {
-        verification: { ok: boolean; errors?: string[]; current_matches_latest: boolean };
+        verification: {
+          ok: boolean;
+          errors?: string[];
+          current_matches_latest: boolean;
+        };
       };
       expect(payload.verification.ok).toBe(true);
       expect(payload.verification.current_matches_latest).toBe(true);
-      expect(payload.verification.errors ?? []).not.toContain("verify_failed:current_item_hash_mismatch");
+      expect(payload.verification.errors ?? []).not.toContain(
+        "verify_failed:current_item_hash_mismatch",
+      );
     });
   });
 
@@ -580,10 +869,17 @@ describe("runTest", () => {
         "command=npm exec --package=pm-cli -- pm --json test-all,scope=project",
         "command=node ./dist/cli.js test-all --json,scope=project",
         "command=node dist/cli.js --json test-all,scope=project",
+        'command=sh -c "pm test-all --json",scope=project',
+        'command=bash -lc "pm test-all --json",scope=project',
+        'command=cmd /c "pm test-all --json",scope=project',
+        'command=powershell -Command "pm test-all --json",scope=project',
+        'command=pwsh -c "pm test-all --json",scope=project',
       ];
 
       for (const addEntry of recursiveCommands) {
-        await expect(runTest(id, { add: [addEntry] }, { path: context.pmPath })).rejects.toMatchObject({
+        await expect(
+          runTest(id, { add: [addEntry] }, { path: context.pmPath }),
+        ).rejects.toMatchObject({
           exitCode: EXIT_CODE.USAGE,
         });
       }
@@ -620,40 +916,71 @@ describe("runTest", () => {
           timeout_seconds: 20,
         },
         {
+          command: 'bash -lc "pm test-all --json"',
+          scope: "project",
+          timeout_seconds: 20,
+        },
+        {
           command: "node --version",
           scope: "project",
           timeout_seconds: 20,
         },
       ]);
 
-      const result = await runTest(id, { run: true, timeout: "20" }, { path: context.pmPath });
+      const result = await runTest(
+        id,
+        { run: true, timeout: "20" },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.changed).toBe(false);
-      expect(result.count).toBe(6);
-      expect(result.run_results).toHaveLength(6);
+      expect(result.count).toBe(7);
+      expect(result.run_results).toHaveLength(7);
 
-      const recursiveEntries = result.run_results.filter((entry) => entry.command?.includes("test-all"));
-      expect(recursiveEntries).toHaveLength(5);
-      expect(recursiveEntries.every((entry) => entry.status === "skipped")).toBe(true);
-      expect(recursiveEntries.every((entry) => (entry.error ?? "").includes("must not invoke \"pm test-all\""))).toBe(true);
+      const recursiveEntries = result.run_results.filter((entry) =>
+        entry.command?.includes("test-all"),
+      );
+      expect(recursiveEntries).toHaveLength(6);
+      expect(
+        recursiveEntries.every((entry) => entry.status === "skipped"),
+      ).toBe(true);
+      expect(
+        recursiveEntries.every((entry) =>
+          (entry.error ?? "").includes('must not invoke "pm test-all"'),
+        ),
+      ).toBe(true);
 
-      const safe = result.run_results.find((entry) => entry.command === "node --version");
+      const safe = result.run_results.find(
+        (entry) => entry.command === "node --version",
+      );
       expect(safe?.status).toBe("passed");
       expect(safe?.exit_code).toBe(0);
     });
   });
 
   it("extracts referenced PM item ids from linked command variants", () => {
-    expect(extractReferencedPmItemIdsFromCommand("pm get pm-a1b2")).toEqual(["pm-a1b2"]);
-    expect(extractReferencedPmItemIdsFromCommand("node dist/cli.js close pm-z9x8 done")).toEqual(["pm-z9x8"]);
+    expect(extractReferencedPmItemIdsFromCommand("pm get pm-a1b2")).toEqual([
+      "pm-a1b2",
+    ]);
     expect(
-      extractReferencedPmItemIdsFromCommand("npx @unbrained/pm-cli@latest update pm-b2c3 --status open --json"),
+      extractReferencedPmItemIdsFromCommand(
+        "node dist/cli.js close pm-z9x8 done",
+      ),
+    ).toEqual(["pm-z9x8"]);
+    expect(
+      extractReferencedPmItemIdsFromCommand(
+        "npx @unbrained/pm-cli@latest update pm-b2c3 --status open --json",
+      ),
     ).toEqual(["pm-b2c3"]);
     expect(
-      extractReferencedPmItemIdsFromCommand("bunx @unbrained/pm-cli@latest update pm-b2c4 --status open --json"),
+      extractReferencedPmItemIdsFromCommand(
+        "bunx @unbrained/pm-cli@latest update pm-b2c4 --status open --json",
+      ),
     ).toEqual(["pm-b2c4"]);
     expect(
-      extractReferencedPmItemIdsFromCommand("npm exec -- @unbrained/pm-cli@latest test pm-t123 --run --json"),
+      extractReferencedPmItemIdsFromCommand(
+        "npm exec -- @unbrained/pm-cli@latest test pm-t123 --run --json",
+      ),
     ).toEqual(["pm-t123"]);
     expect(
       extractReferencedPmItemIdsFromCommand(
@@ -665,32 +992,74 @@ describe("runTest", () => {
         "npm --silent exec -- @unbrained/pm-cli@latest claim pm-k7m6 --force --author qa",
       ),
     ).toEqual(["pm-k7m6"]);
-    expect(extractReferencedPmItemIdsFromCommand("pm --path /tmp get pm-p1q2 --json")).toEqual(["pm-p1q2"]);
-    expect(extractReferencedPmItemIdsFromCommand("pm --path /tmp -- get pm-r3s4 --json")).toEqual(["pm-r3s4"]);
+    expect(
+      extractReferencedPmItemIdsFromCommand(
+        "pm --path /tmp get pm-p1q2 --json",
+      ),
+    ).toEqual(["pm-p1q2"]);
+    expect(
+      extractReferencedPmItemIdsFromCommand(
+        "pm --path /tmp -- get pm-r3s4 --json",
+      ),
+    ).toEqual(["pm-r3s4"]);
     expect(extractReferencedPmItemIdsFromCommand("pm --path /tmp")).toEqual([]);
     expect(extractReferencedPmItemIdsFromCommand("pm get --json")).toEqual([]);
-    expect(extractReferencedPmItemIdsFromCommand("pm -h get pm-h1i2")).toEqual(["pm-h1i2"]);
-    expect(extractReferencedPmItemIdsFromCommand("pm list-open --limit 1 --json")).toEqual([]);
-    expect(extractReferencedPmItemIdsFromCommand("pm stats --json")).toEqual([]);
+    expect(extractReferencedPmItemIdsFromCommand("pm -h get pm-h1i2")).toEqual([
+      "pm-h1i2",
+    ]);
+    expect(
+      extractReferencedPmItemIdsFromCommand("pm list-open --limit 1 --json"),
+    ).toEqual([]);
+    expect(extractReferencedPmItemIdsFromCommand("pm stats --json")).toEqual(
+      [],
+    );
     expect(extractReferencedPmItemIdsFromCommand("pnpm install")).toEqual([]);
-    expect(extractReferencedPmItemIdsFromCommand("npm run test -- --runInBand")).toEqual([]);
-    expect(extractReferencedPmItemIdsFromCommand("pm get custom-123", "custom-")).toEqual(["custom-123"]);
-    expect(extractReferencedPmItemIdsFromCommand("pm get pm-a1b2", "")).toEqual([]);
-    expect(extractReferencedPmItemIdsFromCommand("pm get bad-id", "pm-")).toEqual([]);
+    expect(
+      extractReferencedPmItemIdsFromCommand("npm run test -- --runInBand"),
+    ).toEqual([]);
+    expect(
+      extractReferencedPmItemIdsFromCommand("pm get custom-123", "custom-"),
+    ).toEqual(["custom-123"]);
+    expect(extractReferencedPmItemIdsFromCommand("pm get pm-a1b2", "")).toEqual(
+      [],
+    );
+    expect(
+      extractReferencedPmItemIdsFromCommand("pm get bad-id", "pm-"),
+    ).toEqual([]);
     expect(extractReferencedPmItemIdsFromCommand("FOO=bar")).toEqual([]);
     expect(extractReferencedPmItemIdsFromCommand("   ")).toEqual([]);
-    expect(extractReferencedPmItemIdsFromCommand("echo no pm invocation")).toEqual([]);
-    expect(extractReferencedPmItemIdsFromCommand("pm get pm-z9 && pm get pm-a1")).toEqual(["pm-a1", "pm-z9"]);
+    expect(
+      extractReferencedPmItemIdsFromCommand("echo no pm invocation"),
+    ).toEqual([]);
+    expect(
+      extractReferencedPmItemIdsFromCommand("pm get pm-z9 && pm get pm-a1"),
+    ).toEqual(["pm-a1", "pm-z9"]);
   });
 
   it("counts failure categories only for failed run results", () => {
     const counts = countFailureCategories([
       { status: "passed", command: "node --version" },
-      { status: "failed", command: "node -e \"process.exit(1)\"", failure_category: "assertion_failure" },
-      { status: "failed", command: "node -e \"process.exit(1)\"", failure_category: "assertion_failure" },
-      { status: "failed", command: "node -e \"console.log('No tests found')\"", failure_category: "empty_run" },
-      { status: "failed", command: "node -e \"setTimeout(() => {}, 1)\"", failure_category: "timeout" },
-      { status: "failed", command: "node -e \"setTimeout(() => {}, 1)\"" },
+      {
+        status: "failed",
+        command: 'node -e "process.exit(1)"',
+        failure_category: "assertion_failure",
+      },
+      {
+        status: "failed",
+        command: 'node -e "process.exit(1)"',
+        failure_category: "assertion_failure",
+      },
+      {
+        status: "failed",
+        command: "node -e \"console.log('No tests found')\"",
+        failure_category: "empty_run",
+      },
+      {
+        status: "failed",
+        command: 'node -e "setTimeout(() => {}, 1)"',
+        failure_category: "timeout",
+      },
+      { status: "failed", command: 'node -e "setTimeout(() => {}, 1)"' },
       { status: "skipped", command: "pm test-all", error: "skipped recursive" },
     ]);
     expect(counts.assertion_failure).toBe(2);
@@ -705,10 +1074,16 @@ describe("runTest", () => {
     try {
       delete process.env.PM_AUTHOR;
       delete process.env.PM_BACKGROUND_TEST_RUN_ID;
-      expect(testInternals.resolveAuthor(undefined, "fallback-author")).toBe("fallback-author");
+      expect(testInternals.resolveAuthor(undefined, "fallback-author")).toBe(
+        "fallback-author",
+      );
       process.env.PM_AUTHOR = " env-author ";
-      expect(testInternals.resolveAuthor(undefined, "fallback-author")).toBe("env-author");
-      expect(testInternals.resolveAuthor("   ", "fallback-author")).toBe("unknown");
+      expect(testInternals.resolveAuthor(undefined, "fallback-author")).toBe(
+        "env-author",
+      );
+      expect(testInternals.resolveAuthor("   ", "fallback-author")).toBe(
+        "unknown",
+      );
       process.env.PM_BACKGROUND_TEST_RUN_ID = " run-from-env ";
       expect(testInternals.resolveTrackedRunId("test")).toBe("run-from-env");
     } finally {
@@ -724,50 +1099,144 @@ describe("runTest", () => {
       }
     }
 
-    expect(testInternals.summarizeRunResultStatuses([
-      { status: "passed" },
-      { status: "failed" },
-      { status: "skipped" },
-      { status: "unknown" },
-    ] as never)).toEqual({ passed: 1, failed: 1, skipped: 2 });
+    expect(
+      testInternals.summarizeRunResultStatuses([
+        { status: "passed" },
+        { status: "failed" },
+        { status: "skipped" },
+        { status: "unknown" },
+      ] as never),
+    ).toEqual({ passed: 1, failed: 1, skipped: 2 });
     expect(testInternals.ensureScope(undefined)).toBe("project");
-    expect(() => testInternals.ensureScope("workspace")).toThrow('Invalid scope "workspace"');
+    expect(() => testInternals.ensureScope("workspace")).toThrow(
+      'Invalid scope "workspace"',
+    );
     expect(testInternals.parsePmContextMode(undefined)).toBe("schema");
     expect(testInternals.parsePmContextMode(" AUTO ")).toBe("auto");
-    expect(() => testInternals.parsePmContextMode("bad")).toThrow("Invalid --pm-context value");
-    expect(testInternals.resolveLinkedTestRequestedContextMode({ pm_context_mode: "tracker" } as never, "schema", false)).toBe(
-      "tracker",
+    expect(() => testInternals.parsePmContextMode("bad")).toThrow(
+      "Invalid --pm-context value",
     );
-    expect(testInternals.resolveLinkedTestRequestedContextMode({ pm_context_mode: "tracker" } as never, "schema", true)).toBe(
-      "schema",
-    );
-    expect(testInternals.resolveLinkedTestEffectiveContextMode("auto", true)).toBe("tracker");
-    expect(testInternals.resolveLinkedTestEffectiveContextMode("auto", false)).toBe("schema");
-    expect(testInternals.hasLinkedTestAssertions({ assert_stdout_contains: ["ok"] } as never)).toBe(true);
-    expect(testInternals.hasLinkedTestAssertions({ assert_json_field_equals: { ok: true } } as never)).toBe(true);
+    expect(
+      testInternals.resolveLinkedTestRequestedContextMode(
+        { pm_context_mode: "tracker" } as never,
+        "schema",
+        false,
+      ),
+    ).toBe("tracker");
+    expect(
+      testInternals.resolveLinkedTestRequestedContextMode(
+        { pm_context_mode: "tracker" } as never,
+        "schema",
+        true,
+      ),
+    ).toBe("schema");
+    expect(
+      testInternals.resolveLinkedTestEffectiveContextMode("auto", true),
+    ).toBe("tracker");
+    expect(
+      testInternals.resolveLinkedTestEffectiveContextMode("auto", false),
+    ).toBe("schema");
+    expect(
+      testInternals.hasLinkedTestAssertions({
+        assert_stdout_contains: ["ok"],
+      } as never),
+    ).toBe(true);
+    expect(
+      testInternals.hasLinkedTestAssertions({
+        assert_json_field_equals: { ok: true },
+      } as never),
+    ).toBe(true);
+    expect(
+      testInternals.hasLinkedTestAssertions({ assert_future: true } as never),
+    ).toBe(true);
+    expect(
+      testInternals.hasLinkedTestAssertions({ assert_future: " ok " } as never),
+    ).toBe(true);
+    expect(
+      testInternals.hasLinkedTestAssertions({ assert_future: [] } as never),
+    ).toBe(false);
+    expect(
+      testInternals.hasLinkedTestAssertions({ assert_future: {} } as never),
+    ).toBe(false);
+    expect(
+      testInternals.hasLinkedTestAssertions({ assert_future: "   " } as never),
+    ).toBe(false);
+    expect(
+      testInternals.hasLinkedTestAssertions({ assert_future: null } as never),
+    ).toBe(false);
     expect(testInternals.hasLinkedTestAssertions({} as never)).toBe(false);
-    expect(testInternals.commandInvokesPmCli("A=1 pm get pm-123 --json && echo done")).toBe(true);
+    expect(
+      testInternals.commandInvokesPmCli(
+        "A=1 pm get pm-123 --json && echo done",
+      ),
+    ).toBe(true);
     expect(testInternals.commandInvokesPmCli("echo pm get pm-123")).toBe(false);
-    expect(testInternals.commandInvokesPmTrackerReadCommand("pm get pm-123 --json")).toBe(true);
-    expect(testInternals.commandInvokesPmTrackerReadCommand("pm create --title x")).toBe(false);
-    expect(testInternals.commandInvokesPmTrackerReadCommand("echo no pm command")).toBe(false);
-    expect(testInternals.commandInvokesPmTrackerReadCommand("pm --path /tmp")).toBe(false);
-    expect(testInternals.resolveDirectRunnerSubcommand({ subcommand: "vitest", args: [] })).toBe("vitest");
+    expect(
+      testInternals.commandInvokesPmTrackerReadCommand("pm get pm-123 --json"),
+    ).toBe(true);
+    expect(
+      testInternals.commandInvokesPmTrackerReadCommand("pm create --title x"),
+    ).toBe(false);
+    expect(
+      testInternals.commandInvokesPmTrackerReadCommand("echo no pm command"),
+    ).toBe(false);
+    expect(
+      testInternals.commandInvokesPmTrackerReadCommand("pm --path /tmp"),
+    ).toBe(false);
+    expect(
+      testInternals.resolveDirectRunnerSubcommand({
+        subcommand: "vitest",
+        args: [],
+      }),
+    ).toBe("vitest");
     expect(testInternals.resolveDirectRunnerSubcommand(null)).toBeUndefined();
-    expect(testInternals.firstDirectTestRunnerSubcommand("npx", ["--yes", "vitest", "run"])).toBe("vitest");
-    expect(testInternals.firstDirectTestRunnerSubcommand("bunx", ["--bun", "vitest", "run"])).toBe("vitest");
-    expect(testInternals.firstDirectTestRunnerSubcommand("pmx", ["test"])).toBeUndefined();
-    expect(testInternals.extractPmInvocationArgsFromSegment("echo nothing")).toBeNull();
-    expect(testInternals.extractPmInvocationArgsFromSegment("npx --yes pm get pm-a1b2 --json")).toEqual([
-      "get",
-      "pm-a1b2",
-      "--json",
-    ]);
-    expect(testInternals.extractPmInvocationArgsFromSegment("bunx --bun pm get pm-a1b3 --json")).toEqual([
-      "get",
-      "pm-a1b3",
-      "--json",
-    ]);
+    expect(
+      testInternals.firstDirectTestRunnerSubcommand("npx", [
+        "--yes",
+        "vitest",
+        "run",
+      ]),
+    ).toBe("vitest");
+    expect(
+      testInternals.firstDirectTestRunnerSubcommand("bunx", [
+        "--bun",
+        "vitest",
+        "run",
+      ]),
+    ).toBe("vitest");
+    expect(
+      testInternals.firstDirectTestRunnerSubcommand("pmx", ["test"]),
+    ).toBeUndefined();
+    expect(testInternals.segmentInvokesRecursiveTestAll("sh pm test-all")).toBe(
+      false,
+    );
+    expect(
+      testInternals.segmentInvokesRecursiveTestAll("cmd /q pm test-all"),
+    ).toBe(false);
+    expect(
+      testInternals.segmentInvokesRecursiveTestAll("pwsh -file script.ps1"),
+    ).toBe(false);
+    expect(
+      testInternals.segmentInvokesRecursiveTestAll("cmd.exe /k pm test-all"),
+    ).toBe(true);
+    expect(
+      testInternals.segmentInvokesRecursiveTestAll(
+        "powershell.exe -command pm test-all",
+      ),
+    ).toBe(true);
+    expect(
+      testInternals.extractPmInvocationArgsFromSegment("echo nothing"),
+    ).toBeNull();
+    expect(
+      testInternals.extractPmInvocationArgsFromSegment(
+        "npx --yes pm get pm-a1b2 --json",
+      ),
+    ).toEqual(["get", "pm-a1b2", "--json"]);
+    expect(
+      testInternals.extractPmInvocationArgsFromSegment(
+        "bunx --bun pm get pm-a1b3 --json",
+      ),
+    ).toEqual(["get", "pm-a1b3", "--json"]);
     expect(
       testInternals.buildPmContextMismatchHint({
         executionContext: {
@@ -815,24 +1284,96 @@ describe("runTest", () => {
         runLevelPmContextMode: "tracker",
         linkedOverridePmContextMode: "schema",
       }),
-    ).toContain("pm_context_mode=schema overrides run-level --pm-context tracker");
-    expect(testInternals.splitJsonPathSegments("items[0].status")).toEqual(["items", 0, "status"]);
-    expect(testInternals.splitJsonPathSegments("items[-1]")).toEqual(["items", "-1"]);
+    ).toContain(
+      "pm_context_mode=schema overrides run-level --pm-context tracker",
+    );
+    expect(testInternals.splitJsonPathSegments("items[0].status")).toEqual([
+      "items",
+      0,
+      "status",
+    ]);
+    expect(testInternals.splitJsonPathSegments("items[-1]")).toEqual([
+      "items",
+      "-1",
+    ]);
     expect(testInternals.splitJsonPathSegments("items[]")).toEqual(["items"]);
-    expect(testInternals.splitJsonPathSegments(`items[${"9".repeat(500)}]`)).toEqual([]);
-    expect(testInternals.readJsonPathValue({ items: [{ status: "ok" }] }, "items[0].status")).toEqual({
+    expect(
+      testInternals.splitJsonPathSegments(`items[${"9".repeat(500)}]`),
+    ).toEqual([]);
+    expect(
+      testInternals.readJsonPathValue(
+        { items: [{ status: "ok" }] },
+        "items[0].status",
+      ),
+    ).toEqual({
       found: true,
       value: "ok",
+    });
+    expect(testInternals.readJsonPathValue({}, "toString")).toEqual({
+      found: false,
+      value: undefined,
     });
     expect(testInternals.readJsonPathValue({ ok: true }, "   ")).toEqual({
       found: false,
       value: undefined,
     });
-    expect(testInternals.readJsonPathValue({ items: [{ status: "ok" }] }, "items.status")).toEqual({
+    expect(
+      testInternals.parseLinkedTestTimeoutSeconds(undefined, undefined),
+    ).toBeUndefined();
+    expect(testInternals.parseLinkedTestTimeoutSeconds("5", undefined)).toBe(5);
+    expect(() =>
+      testInternals.parseLinkedTestTimeoutSeconds("0", undefined),
+    ).toThrow(/positive integer/);
+    expect(testInternals.parseLinkedTestTimeoutSeconds("1.5", undefined)).toBe(
+      1,
+    );
+    expect(() =>
+      testInternals.resolveTestRunOptions({ timeout: "0" }, []),
+    ).toThrow(/positive number/);
+    expect(
+      testInternals.resolveTestRunOptions({ timeout: "1.5" }, [])
+        .defaultTimeoutSeconds,
+    ).toBe(1.5);
+    expect(
+      testInternals.buildLinkedTestExecutionContext({
+        layout: {
+          root: "/tmp/root",
+          schemaProjectPmPath: "/tmp/schema/project",
+          schemaGlobalPmPath: "/tmp/schema/global",
+          trackerProjectPmPath: "/tmp/tracker/project",
+          trackerGlobalPmPath: "/tmp/tracker/global",
+        },
+        counts: {
+          sourceProjectItemCount: 1,
+          sourceGlobalItemCount: 1,
+          schemaProjectItemCount: 1,
+          schemaGlobalItemCount: 0,
+          trackerProjectItemCount: 1,
+          trackerGlobalItemCount: 1,
+        },
+        sourceRoots: {
+          projectPmRoot: "/source/project",
+          globalPmRoot: "/source/global",
+        },
+        isPmCommand: true,
+        isPmTrackerReadCommand: true,
+        requestedPmContextMode: "schema",
+        effectivePmContextMode: "schema",
+        autoPmContextApplied: false,
+      }).mismatch_detected,
+    ).toBe(true);
+    expect(
+      testInternals.readJsonPathValue(
+        { items: [{ status: "ok" }] },
+        "items.status",
+      ),
+    ).toEqual({
       found: false,
       value: undefined,
     });
-    expect(testInternals.readJsonPathValue({ items: [] }, "items[1].status")).toEqual({
+    expect(
+      testInternals.readJsonPathValue({ items: [] }, "items[1].status"),
+    ).toEqual({
       found: false,
       value: undefined,
     });
@@ -844,7 +1385,7 @@ describe("runTest", () => {
     expect(
       testInternals.evaluateLinkedTestAssertions(
         {
-          command: "node -e \"0\"",
+          command: 'node -e "0"',
           scope: "project",
           assert_stdout_regex: ["required-output"],
           assert_stderr_regex: ["("],
@@ -873,7 +1414,13 @@ describe("runTest", () => {
       stderrBytes: 0,
       maxBufferExceeded: true,
     };
-    expect(testInternals.appendLinkedTestOutputChunk(exceededBuffer, Buffer.from("ignored"), "stdout")).toBe(false);
+    expect(
+      testInternals.appendLinkedTestOutputChunk(
+        exceededBuffer,
+        Buffer.from("ignored"),
+        "stdout",
+      ),
+    ).toBe(false);
     expect(exceededBuffer.stdoutBytes).toBe(0);
     const nearlyFullBuffer = {
       stdout: "",
@@ -882,40 +1429,84 @@ describe("runTest", () => {
       stderrBytes: 0,
       maxBufferExceeded: false,
     };
-    expect(testInternals.appendLinkedTestOutputChunk(nearlyFullBuffer, Buffer.from("abcd"), "stdout")).toBe(true);
+    expect(
+      testInternals.appendLinkedTestOutputChunk(
+        nearlyFullBuffer,
+        Buffer.from("abcd"),
+        "stdout",
+      ),
+    ).toBe(true);
     expect(nearlyFullBuffer.stdout).toBe("ab");
     expect(nearlyFullBuffer.stdoutBytes).toBe(20 * 1024 * 1024 + 2);
     expect(nearlyFullBuffer.maxBufferExceeded).toBe(true);
 
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-test-command-helpers-"));
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-test-command-helpers-"),
+    );
     try {
       const source = path.join(tempRoot, "source");
       const target = path.join(tempRoot, "target", "copied.txt");
       await mkdir(source, { recursive: true });
       await writeFile(path.join(source, "copied.txt"), "copy me", "utf8");
-      await testInternals.copyIntoSandboxIfPresent(path.join(source, "missing.txt"), path.join(tempRoot, "missing.txt"));
-      await testInternals.copyIntoSandboxIfPresent(path.join(source, "copied.txt"), target);
+      await testInternals.copyIntoSandboxIfPresent(
+        path.join(source, "missing.txt"),
+        path.join(tempRoot, "missing.txt"),
+      );
+      await testInternals.copyIntoSandboxIfPresent(
+        path.join(source, "copied.txt"),
+        target,
+      );
       expect(await readFile(target, "utf8")).toBe("copy me");
       await mkdir(path.join(source, "pm", "tasks"), { recursive: true });
-      await writeFile(path.join(source, "pm", "tasks", "pm-a.toon"), "item", "utf8");
-      await mkdir(path.join(source, "pm", "tasks", "nested"), { recursive: true });
+      await writeFile(
+        path.join(source, "pm", "tasks", "pm-a.toon"),
+        "item",
+        "utf8",
+      );
+      await mkdir(path.join(source, "pm", "tasks", "nested"), {
+        recursive: true,
+      });
       try {
-        await symlink("tasks/pm-a.toon", path.join(source, "pm", "tasks-link"), "file");
+        await symlink(
+          "tasks/pm-a.toon",
+          path.join(source, "pm", "tasks-link"),
+          "file",
+        );
       } catch (err) {
-        const code = typeof err === "object" && err !== null && "code" in err ? err.code : undefined;
-        if (process.platform !== "win32" || (code !== "EPERM" && code !== "EACCES")) {
+        const code =
+          typeof err === "object" && err !== null && "code" in err
+            ? err.code
+            : undefined;
+        if (
+          process.platform !== "win32" ||
+          (code !== "EPERM" && code !== "EACCES")
+        ) {
           throw err;
         }
       }
       await mkdir(path.join(source, "pm", "history"), { recursive: true });
-      await writeFile(path.join(source, "pm", "history", "pm-a.jsonl"), "history", "utf8");
+      await writeFile(
+        path.join(source, "pm", "history", "pm-a.jsonl"),
+        "history",
+        "utf8",
+      );
       const restrictedDir = path.join(source, "pm", "blocked-folder");
       await mkdir(restrictedDir, { recursive: true });
       await chmod(restrictedDir, 0);
-      expect(await testInternals.countLinkedTestItemFiles(path.join(source, "pm"))).toBe(1);
+      expect(
+        await testInternals.countLinkedTestItemFiles(path.join(source, "pm")),
+      ).toBe(1);
       await chmod(restrictedDir, 0o755);
-      await testInternals.seedLinkedTestTrackerData(path.join(source, "pm"), path.join(tempRoot, "sandbox-pm"));
-      expect(await readFile(path.join(tempRoot, "sandbox-pm", "tasks", "pm-a.toon"), "utf8")).toBe("item");
+      await testInternals.seedLinkedTestTrackerData(
+        path.join(source, "pm"),
+        path.join(tempRoot, "sandbox-pm"),
+      );
+      expect(
+        await readFile(
+          path.join(tempRoot, "sandbox-pm", "tasks", "pm-a.toon"),
+          "utf8",
+        ),
+      ).toBe("item");
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
@@ -941,7 +1532,9 @@ describe("runTest", () => {
       ];
 
       for (const addEntry of unsafeRunnerCommands) {
-        await expect(runTest(id, { add: [addEntry] }, { path: context.pmPath })).rejects.toMatchObject({
+        await expect(
+          runTest(id, { add: [addEntry] }, { path: context.pmPath }),
+        ).rejects.toMatchObject({
           exitCode: EXIT_CODE.USAGE,
         });
       }
@@ -950,14 +1543,22 @@ describe("runTest", () => {
       // in the parent shell does not satisfy the guard. Previously the
       // message said "set both PM_PATH and PM_GLOBAL_PATH" without that
       // distinction, leading to repeated agent retries.
-      await expect(runTest(id, { add: ["command=vitest run,scope=project"] }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(
+          id,
+          { add: ["command=vitest run,scope=project"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
         message: expect.stringContaining("INLINE in the command string"),
       });
 
       const safeWithRunner = await runTest(
         id,
         {
-          add: ["command=node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,scope=project"],
+          add: [
+            "command=node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,scope=project",
+          ],
         },
         { path: context.pmPath },
       );
@@ -966,7 +1567,9 @@ describe("runTest", () => {
       const safeWithExplicitEnv = await runTest(
         id,
         {
-          add: ["command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global pnpm test -- --runInBand,scope=project"],
+          add: [
+            "command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global pnpm test -- --runInBand,scope=project",
+          ],
         },
         { path: context.pmPath },
       );
@@ -975,7 +1578,9 @@ describe("runTest", () => {
       const safeRunScriptWithExplicitEnv = await runTest(
         id,
         {
-          add: ["command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global npm run test -- --runInBand,scope=project"],
+          add: [
+            "command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global npm run test -- --runInBand,scope=project",
+          ],
         },
         { path: context.pmPath },
       );
@@ -984,7 +1589,9 @@ describe("runTest", () => {
       const safeFlaggedWithExplicitEnv = await runTest(
         id,
         {
-          add: ["command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global pnpm --dir /tmp test -- --runInBand,scope=project"],
+          add: [
+            "command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global pnpm --dir /tmp test -- --runInBand,scope=project",
+          ],
         },
         { path: context.pmPath },
       );
@@ -1026,28 +1633,50 @@ describe("runTest", () => {
         "command=bun --cwd /tmp test,scope=project",
         "command=bun run test,scope=project",
       ];
-      const packageScripts = await runTest(id, { add: safePackageScriptEntries }, { path: context.pmPath });
+      const packageScripts = await runTest(
+        id,
+        { add: safePackageScriptEntries },
+        { path: context.pmPath },
+      );
       expect(packageScripts.count).toBe(18);
 
-      const nonRunnerCommand = await runTest(id, { add: ["command=pnpm build,scope=project"] }, { path: context.pmPath });
+      const nonRunnerCommand = await runTest(
+        id,
+        { add: ["command=pnpm build,scope=project"] },
+        { path: context.pmPath },
+      );
       expect(nonRunnerCommand.count).toBe(19);
 
       const envOnlyCommand = await runTest(
         id,
         {
-          add: ["command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global,scope=project"],
+          add: [
+            "command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global,scope=project",
+          ],
         },
         { path: context.pmPath },
       );
       expect(envOnlyCommand.count).toBe(20);
 
-      const npxFlagOnlyCommand = await runTest(id, { add: ["command=npx --yes,scope=project"] }, { path: context.pmPath });
+      const npxFlagOnlyCommand = await runTest(
+        id,
+        { add: ["command=npx --yes,scope=project"] },
+        { path: context.pmPath },
+      );
       expect(npxFlagOnlyCommand.count).toBe(21);
 
-      const pmFlagsOnlyCommand = await runTest(id, { add: ["command=pm --json,scope=project"] }, { path: context.pmPath });
+      const pmFlagsOnlyCommand = await runTest(
+        id,
+        { add: ["command=pm --json,scope=project"] },
+        { path: context.pmPath },
+      );
       expect(pmFlagsOnlyCommand.count).toBe(22);
 
-      const npxNonPmCommand = await runTest(id, { add: ["command=npx cowsay hello,scope=project"] }, { path: context.pmPath });
+      const npxNonPmCommand = await runTest(
+        id,
+        { add: ["command=npx cowsay hello,scope=project"] },
+        { path: context.pmPath },
+      );
       expect(npxNonPmCommand.count).toBe(23);
 
       const npxScopedNonPmCommand = await runTest(
@@ -1082,7 +1711,9 @@ describe("runTest", () => {
 
   it("lists linked tests and returns not-found for unknown ids", async () => {
     await withTempPmPath(async (context) => {
-      await expect(runTest("pm-does-not-exist", {}, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest("pm-does-not-exist", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
 
@@ -1114,30 +1745,42 @@ describe("runTest", () => {
 
       expect(added.changed).toBe(true);
       expect(added.count).toBe(3);
-      const commandEntry = added.tests.find((entry) => entry.command === "node --version" && !entry.pm_context_mode);
+      const commandEntry = added.tests.find(
+        (entry) => entry.command === "node --version" && !entry.pm_context_mode,
+      );
       expect(commandEntry?.scope).toBe("project");
       expect(commandEntry?.timeout_seconds).toBe(2);
       const trackerContextCommandEntry = added.tests.find(
-        (entry) => entry.command === "node --version" && entry.pm_context_mode === "tracker",
+        (entry) =>
+          entry.command === "node --version" &&
+          entry.pm_context_mode === "tracker",
       );
       expect(trackerContextCommandEntry?.scope).toBe("project");
       expect(trackerContextCommandEntry?.timeout_seconds).toBe(2);
-      const pathEntry = added.tests.find((entry) => entry.path === "tests/example.spec.ts");
+      const pathEntry = added.tests.find(
+        (entry) => entry.path === "tests/example.spec.ts",
+      );
       expect(pathEntry?.scope).toBe("project");
 
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
-      const historyBeforeDuplicate = (await readFile(historyPath, "utf8")).trim().split("\n").length;
+      const historyBeforeDuplicate = (await readFile(historyPath, "utf8"))
+        .trim()
+        .split("\n").length;
       const duplicateOnly = await runTest(
         id,
         {
-          add: ["command=node --version,scope=project,timeout_seconds=2,note=duplicate only"],
+          add: [
+            "command=node --version,scope=project,timeout_seconds=2,note=duplicate only",
+          ],
           message: "attempt duplicate linked test",
         },
         { path: context.pmPath },
       );
       expect(duplicateOnly.changed).toBe(false);
       expect(duplicateOnly.count).toBe(3);
-      const historyAfterDuplicate = (await readFile(historyPath, "utf8")).trim().split("\n").length;
+      const historyAfterDuplicate = (await readFile(historyPath, "utf8"))
+        .trim()
+        .split("\n").length;
       expect(historyAfterDuplicate).toBe(historyBeforeDuplicate);
 
       const noOpRemoval = await runTest(
@@ -1154,7 +1797,11 @@ describe("runTest", () => {
       const removed = await runTest(
         id,
         {
-          remove: ["path=tests/example.spec.ts", "command=node --version", "node --version"],
+          remove: [
+            "path=tests/example.spec.ts",
+            "command=node --version",
+            "node --version",
+          ],
           message: "remove all linked tests",
         },
         { path: context.pmPath },
@@ -1188,26 +1835,35 @@ describe("runTest", () => {
         ...settings.history,
         missing_stream: "strict_error",
       };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeFile(
+        settingsPath,
+        `${JSON.stringify(settings, null, 2)}\n`,
+        "utf8",
+      );
 
       const duplicateOnly = await runTest(
         id,
         {
-          add: ["command=node --version,scope=project,timeout_seconds=2,note=duplicate only"],
+          add: [
+            "command=node --version,scope=project,timeout_seconds=2,note=duplicate only",
+          ],
           message: "attempt duplicate linked test with strict missing history",
         },
         { path: context.pmPath },
       );
       expect(duplicateOnly.changed).toBe(false);
       expect(duplicateOnly.count).toBe(1);
-      await expect(readFile(historyPath, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(readFile(historyPath, "utf8")).rejects.toMatchObject({
+        code: "ENOENT",
+      });
     });
   });
 
   it("adds linked tests from JSON without losing complex command syntax", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "json-linked-test-add");
-      const command = "node -e \"process.stdout.write('comma,value -- flag $tmp')\"";
+      const command =
+        "node -e \"process.stdout.write('comma,value -- flag $tmp')\"";
 
       const result = await runTest(
         id,
@@ -1257,7 +1913,11 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
 
-      const matched = await runTest(id, { run: true, match: "beta" }, { path: context.pmPath });
+      const matched = await runTest(
+        id,
+        { run: true, match: "beta" },
+        { path: context.pmPath },
+      );
       expect(matched.count).toBe(3);
       expect(matched.run_results).toHaveLength(1);
       expect(matched.run_results[0]?.stdout).toBe("beta");
@@ -1268,12 +1928,22 @@ describe("runTest", () => {
         selected_count: 1,
         skipped_count: 2,
       });
-      expect(matched.warnings?.[0]).toContain("linked_test_selection:match=beta");
+      expect(matched.warnings?.[0]).toContain(
+        "linked_test_selection:match=beta",
+      );
 
-      const indexed = await runTest(id, { run: true, onlyIndex: 1 }, { path: context.pmPath });
+      const indexed = await runTest(
+        id,
+        { run: true, onlyIndex: 1 },
+        { path: context.pmPath },
+      );
       expect(indexed.run_results[0]?.stdout).toBe("alpha");
 
-      const last = await runTest(id, { run: true, onlyLast: true }, { path: context.pmPath });
+      const last = await runTest(
+        id,
+        { run: true, onlyLast: true },
+        { path: context.pmPath },
+      );
       expect(last.run_results[0]?.stdout).toBe("gamma");
     });
   });
@@ -1283,26 +1953,45 @@ describe("runTest", () => {
       const id = createTask(context, "invalid-linked-test-selector");
       await runTest(
         id,
-        { addJson: [JSON.stringify({ command: "node --version" })], message: "seed selector validation" },
+        {
+          addJson: [JSON.stringify({ command: "node --version" })],
+          message: "seed selector validation",
+        },
         { path: context.pmPath },
       );
 
-      await expect(runTest(id, { run: true, match: "node", onlyLast: true }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(
+          id,
+          { run: true, match: "node", onlyLast: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { run: true, onlyIndex: 0 }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(id, { run: true, onlyIndex: 0 }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { run: true, match: "missing" }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(id, { run: true, match: "missing" }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { match: "node" }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(id, { match: "node" }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { onlyIndex: 1 }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(id, { onlyIndex: 1 }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runTest(id, { onlyLast: true }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(
+        runTest(id, { onlyLast: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
     });
@@ -1311,7 +2000,11 @@ describe("runTest", () => {
   it("accepts bare commands for agent-friendly linked test entries", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "bare-test-command");
-      const result = await runTest(id, { add: ["pnpm build"], message: "add bare command" }, { path: context.pmPath });
+      const result = await runTest(
+        id,
+        { add: ["pnpm build"], message: "add bare command" },
+        { path: context.pmPath },
+      );
 
       expect(result.changed).toBe(true);
       expect(result.count).toBe(1);
@@ -1330,29 +2023,53 @@ describe("runTest", () => {
       const stdinSpy = vi.spyOn(process, "stdin", "get");
 
       const addStdin = new PassThrough();
-      addStdin.end(["command: node --version", "scope: project", "note: from stdin"].join("\n"));
-      Object.defineProperty(addStdin, "isTTY", { value: false, configurable: true });
+      addStdin.end(
+        ["command: node --version", "scope: project", "note: from stdin"].join(
+          "\n",
+        ),
+      );
+      Object.defineProperty(addStdin, "isTTY", {
+        value: false,
+        configurable: true,
+      });
       stdinSpy.mockReturnValue(addStdin as unknown as NodeJS.ReadStream);
-      const addedFromStdin = await runTest(id, { add: ["-"] }, { path: context.pmPath });
+      const addedFromStdin = await runTest(
+        id,
+        { add: ["-"] },
+        { path: context.pmPath },
+      );
       expect(addedFromStdin.count).toBe(1);
 
       const addedMarkdown = await runTest(
         id,
         {
-          add: ["command:node --help,path:tests/markdown-test.spec.ts,scope:project,timeout:5"],
+          add: [
+            "command:node --help,path:tests/markdown-test.spec.ts,scope:project,timeout:5",
+          ],
         },
         { path: context.pmPath },
       );
       expect(addedMarkdown.count).toBe(2);
 
-      const removedMarkdown = await runTest(id, { remove: ["path: tests/markdown-test.spec.ts"] }, { path: context.pmPath });
+      const removedMarkdown = await runTest(
+        id,
+        { remove: ["path: tests/markdown-test.spec.ts"] },
+        { path: context.pmPath },
+      );
       expect(removedMarkdown.count).toBe(1);
 
       const removeStdin = new PassThrough();
       removeStdin.end("command: node --version\n");
-      Object.defineProperty(removeStdin, "isTTY", { value: false, configurable: true });
+      Object.defineProperty(removeStdin, "isTTY", {
+        value: false,
+        configurable: true,
+      });
       stdinSpy.mockReturnValue(removeStdin as unknown as NodeJS.ReadStream);
-      const removedFromStdin = await runTest(id, { remove: ["-"] }, { path: context.pmPath });
+      const removedFromStdin = await runTest(
+        id,
+        { remove: ["-"] },
+        { path: context.pmPath },
+      );
       expect(removedFromStdin.count).toBe(0);
     });
   });
@@ -1369,11 +2086,22 @@ describe("runTest", () => {
         },
         { path: context.pmPath },
       );
-      expect(await latestHistoryAuthor(context.pmPath, explicitId)).toBe("explicit-author");
+      expect(await latestHistoryAuthor(context.pmPath, explicitId)).toBe(
+        "explicit-author",
+      );
 
       const envId = createTask(context, "env-author-test");
-      await runTest(envId, { add: ["command=node --version,scope=project"], message: "env author" }, { path: context.pmPath });
-      expect(await latestHistoryAuthor(context.pmPath, envId)).toBe("test-author");
+      await runTest(
+        envId,
+        {
+          add: ["command=node --version,scope=project"],
+          message: "env author",
+        },
+        { path: context.pmPath },
+      );
+      expect(await latestHistoryAuthor(context.pmPath, envId)).toBe(
+        "test-author",
+      );
 
       const previousPmAuthor = process.env.PM_AUTHOR;
       delete process.env.PM_AUTHOR;
@@ -1388,7 +2116,9 @@ describe("runTest", () => {
           },
           { path: context.pmPath },
         );
-        expect(await latestHistoryAuthor(context.pmPath, settingsId)).toBe("settings-author");
+        expect(await latestHistoryAuthor(context.pmPath, settingsId)).toBe(
+          "settings-author",
+        );
 
         await setSettingsAuthorDefault(context.pmPath, "   ");
         const unknownId = createTask(context, "unknown-author-test");
@@ -1401,7 +2131,9 @@ describe("runTest", () => {
           },
           { path: context.pmPath },
         );
-        expect(await latestHistoryAuthor(context.pmPath, unknownId)).toBe("unknown");
+        expect(await latestHistoryAuthor(context.pmPath, unknownId)).toBe(
+          "unknown",
+        );
       } finally {
         if (previousPmAuthor === undefined) {
           delete process.env.PM_AUTHOR;
@@ -1420,8 +2152,8 @@ describe("runTest", () => {
         {
           add: [
             "command=node -e \"console.log(process.env.PM_PATH||'');console.log(process.env.PM_GLOBAL_PATH||'')\",scope=project,timeout_seconds=20",
-            "command=node -e \"process.exit(3)\",scope=project,timeout_seconds=20",
-            "command=node -e \"setTimeout(() => {}, 2000)\",scope=project",
+            'command=node -e "process.exit(3)",scope=project,timeout_seconds=20',
+            'command=node -e "setTimeout(() => {}, 2000)",scope=project',
           ],
           message: "seed run entries",
         },
@@ -1450,22 +2182,32 @@ describe("runTest", () => {
       expect(passed?.command).toContain("process.env.PM_PATH");
       expect(passed?.stdout ?? "").toContain("pm-linked-test-");
       expect(passed?.stdout ?? "").not.toContain(context.pmPath);
-      expect(passed?.stdout ?? "").not.toContain(context.env.PM_GLOBAL_PATH ?? "");
+      expect(passed?.stdout ?? "").not.toContain(
+        context.env.PM_GLOBAL_PATH ?? "",
+      );
 
-      const commandFailure = run.run_results.find((entry) => entry.command?.includes("process.exit(3)"));
+      const commandFailure = run.run_results.find((entry) =>
+        entry.command?.includes("process.exit(3)"),
+      );
       expect(commandFailure?.status).toBe("failed");
       expect(commandFailure?.exit_code).toBe(3);
       expect(commandFailure?.failure_category).toBe("assertion_failure");
 
-      const timeoutFailure = run.run_results.find((entry) => entry.command?.includes("setTimeout(() => {}, 2000)"));
+      const timeoutFailure = run.run_results.find((entry) =>
+        entry.command?.includes("setTimeout(() => {}, 2000)"),
+      );
       expect(timeoutFailure?.status).toBe("failed");
       expect(timeoutFailure?.exit_code).toBe(1);
       expect(timeoutFailure?.failure_category).toBe("timeout");
       expect(timeoutFailure?.error ?? "").toContain("timed out after");
-      expect(run.failure_categories.assertion_failure).toBeGreaterThanOrEqual(1);
+      expect(run.failure_categories.assertion_failure).toBeGreaterThanOrEqual(
+        1,
+      );
       expect(run.failure_categories.timeout).toBeGreaterThanOrEqual(1);
 
-      const skipped = run.run_results.find((entry) => entry.status === "skipped");
+      const skipped = run.run_results.find(
+        (entry) => entry.status === "skipped",
+      );
       expect(skipped?.path).toBe("tests/no-command.spec.ts");
       expect(skipped?.error ?? "").toContain("No command configured");
     });
@@ -1474,7 +2216,9 @@ describe("runTest", () => {
   it("runs package-script linked tests with sandboxed PM roots", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "package-script-sandbox-roots");
-      const packageDir = await mkdtemp(path.join(os.tmpdir(), "pm-linked-package-script-"));
+      const packageDir = await mkdtemp(
+        path.join(os.tmpdir(), "pm-linked-package-script-"),
+      );
       try {
         await writeFile(
           path.join(packageDir, "package.json"),
@@ -1496,13 +2240,19 @@ describe("runTest", () => {
         await runTest(
           id,
           {
-            add: [`command=npm --prefix ${packageDir} run -s probe,scope=project,timeout_seconds=20`],
+            add: [
+              `command=npm --prefix ${packageDir} run -s probe,scope=project,timeout_seconds=20`,
+            ],
             message: "seed package script sandbox probe",
           },
           { path: context.pmPath },
         );
 
-        const run = await runTest(id, { run: true, timeout: "20" }, { path: context.pmPath });
+        const run = await runTest(
+          id,
+          { run: true, timeout: "20" },
+          { path: context.pmPath },
+        );
         expect(run.ok).toBe(true);
         expect(run.run_results[0]?.status).toBe("passed");
         const stdout = run.run_results[0]?.stdout ?? "";
@@ -1591,8 +2341,16 @@ describe("runTest", () => {
       const id = createTask(context, "linked-sandbox-extension-parity");
       const globalPmRoot = context.env.PM_GLOBAL_PATH;
       expect(typeof globalPmRoot).toBe("string");
-      await writeSchemaTypeExtension(context.pmPath, "project-linked-type", "ProjectAsset");
-      await writeSchemaTypeExtension(globalPmRoot as string, "global-linked-type", "GlobalAsset");
+      await writeSchemaTypeExtension(
+        context.pmPath,
+        "project-linked-type",
+        "ProjectAsset",
+      );
+      await writeSchemaTypeExtension(
+        globalPmRoot as string,
+        "global-linked-type",
+        "GlobalAsset",
+      );
 
       const seeded = await runTest(
         id,
@@ -1617,7 +2375,9 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(run.run_results).toHaveLength(2);
-      expect(run.run_results.every((entry) => entry.status === "passed")).toBe(true);
+      expect(run.run_results.every((entry) => entry.status === "passed")).toBe(
+        true,
+      );
     });
   });
 
@@ -1626,8 +2386,14 @@ describe("runTest", () => {
       const id = createTask(context, "linked-sandbox-runtime-skip");
       const globalPmRoot = context.env.PM_GLOBAL_PATH;
       expect(typeof globalPmRoot).toBe("string");
-      await mkdir(path.join(context.pmPath, "runtime", "telemetry", "flush.lock"), { recursive: true });
-      await mkdir(path.join(globalPmRoot as string, "runtime", "telemetry", "flush.lock"), { recursive: true });
+      await mkdir(
+        path.join(context.pmPath, "runtime", "telemetry", "flush.lock"),
+        { recursive: true },
+      );
+      await mkdir(
+        path.join(globalPmRoot as string, "runtime", "telemetry", "flush.lock"),
+        { recursive: true },
+      );
       await runTest(
         id,
         {
@@ -1659,7 +2425,9 @@ describe("runTest", () => {
       await runTest(
         id,
         {
-          add: ["command=node dist/cli.js list-all --type Task --limit 200 --json,scope=project,timeout_seconds=30"],
+          add: [
+            "command=node dist/cli.js list-all --type Task --limit 200 --json,scope=project,timeout_seconds=30",
+          ],
           message: "seed PM context command",
         },
         { path: context.pmPath },
@@ -1681,7 +2449,9 @@ describe("runTest", () => {
         is_pm_command: true,
         is_pm_tracker_read_command: true,
       });
-      expect(schemaResult?.execution_context?.source_project_item_count ?? 0).toBeGreaterThan(0);
+      expect(
+        schemaResult?.execution_context?.source_project_item_count ?? 0,
+      ).toBeGreaterThan(0);
       expect(schemaResult?.execution_context?.mismatch_detected).toBe(true);
       expect(schemaResult?.error ?? "").toContain("context mismatch");
 
@@ -1695,8 +2465,12 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(schemaPreflight.run_results[0]?.status).toBe("failed");
-      expect(schemaPreflight.run_results[0]?.error ?? "").toContain("preflight PM context mismatch");
-      expect(schemaPreflight.warnings?.[0] ?? "").toContain("context_preflight:");
+      expect(schemaPreflight.run_results[0]?.error ?? "").toContain(
+        "preflight PM context mismatch",
+      );
+      expect(schemaPreflight.warnings?.[0] ?? "").toContain(
+        "context_preflight:",
+      );
 
       const autoPreflight = await runTest(
         id,
@@ -1709,9 +2483,17 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(autoPreflight.run_results[0]?.status).toBe("passed");
-      expect(autoPreflight.run_results[0]?.execution_context?.requested_pm_context_mode).toBe("auto");
-      expect(autoPreflight.run_results[0]?.execution_context?.auto_pm_context_applied).toBe(true);
-      expect(autoPreflight.run_results[0]?.execution_context?.pm_context_mode).toBe("tracker");
+      expect(
+        autoPreflight.run_results[0]?.execution_context
+          ?.requested_pm_context_mode,
+      ).toBe("auto");
+      expect(
+        autoPreflight.run_results[0]?.execution_context
+          ?.auto_pm_context_applied,
+      ).toBe(true);
+      expect(
+        autoPreflight.run_results[0]?.execution_context?.pm_context_mode,
+      ).toBe("tracker");
       expect(autoPreflight.warnings?.[0] ?? "").toContain("auto_remediated=1");
 
       const strictMismatch = await runTest(
@@ -1724,7 +2506,9 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(strictMismatch.run_results[0]?.status).toBe("failed");
-      expect(strictMismatch.run_results[0]?.error ?? "").toContain("context mismatch");
+      expect(strictMismatch.run_results[0]?.error ?? "").toContain(
+        "context mismatch",
+      );
 
       const trackerMode = await runTest(
         id,
@@ -1737,8 +2521,12 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(trackerMode.run_results[0]?.status).toBe("passed");
-      expect(trackerMode.run_results[0]?.execution_context?.pm_context_mode).toBe("tracker");
-      expect(trackerMode.run_results[0]?.execution_context?.mismatch_detected).toBe(false);
+      expect(
+        trackerMode.run_results[0]?.execution_context?.pm_context_mode,
+      ).toBe("tracker");
+      expect(
+        trackerMode.run_results[0]?.execution_context?.mismatch_detected,
+      ).toBe(false);
 
       const autoMode = await runTest(
         id,
@@ -1751,8 +2539,12 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(autoMode.run_results[0]?.status).toBe("passed");
-      expect(autoMode.run_results[0]?.execution_context?.pm_context_mode).toBe("tracker");
-      expect(autoMode.run_results[0]?.execution_context?.mismatch_detected).toBe(false);
+      expect(autoMode.run_results[0]?.execution_context?.pm_context_mode).toBe(
+        "tracker",
+      );
+      expect(
+        autoMode.run_results[0]?.execution_context?.mismatch_detected,
+      ).toBe(false);
 
       await overwriteTaskTests(context, id, [
         {
@@ -1770,8 +2562,12 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(perTestTracker.run_results[0]?.status).toBe("passed");
-      expect(perTestTracker.run_results[0]?.execution_context?.pm_context_mode).toBe("tracker");
-      expect(perTestTracker.run_results[0]?.execution_context?.mismatch_detected).toBe(false);
+      expect(
+        perTestTracker.run_results[0]?.execution_context?.pm_context_mode,
+      ).toBe("tracker");
+      expect(
+        perTestTracker.run_results[0]?.execution_context?.mismatch_detected,
+      ).toBe(false);
 
       await overwriteTaskTests(context, id, [
         {
@@ -1790,9 +2586,17 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(perTestSchemaOverride.run_results[0]?.status).toBe("failed");
-      expect(perTestSchemaOverride.run_results[0]?.execution_context?.pm_context_mode).toBe("schema");
-      expect(perTestSchemaOverride.run_results[0]?.execution_context?.mismatch_detected).toBe(true);
-      expect(perTestSchemaOverride.run_results[0]?.error ?? "").toContain("context mismatch");
+      expect(
+        perTestSchemaOverride.run_results[0]?.execution_context
+          ?.pm_context_mode,
+      ).toBe("schema");
+      expect(
+        perTestSchemaOverride.run_results[0]?.execution_context
+          ?.mismatch_detected,
+      ).toBe(true);
+      expect(perTestSchemaOverride.run_results[0]?.error ?? "").toContain(
+        "context mismatch",
+      );
       expect(perTestSchemaOverride.run_results[0]?.error ?? "").toContain(
         "pm_context_mode=schema overrides run-level --pm-context tracker",
       );
@@ -1809,8 +2613,12 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(runLevelOverride.run_results[0]?.status).toBe("passed");
-      expect(runLevelOverride.run_results[0]?.execution_context?.pm_context_mode).toBe("tracker");
-      expect(runLevelOverride.run_results[0]?.execution_context?.mismatch_detected).toBe(false);
+      expect(
+        runLevelOverride.run_results[0]?.execution_context?.pm_context_mode,
+      ).toBe("tracker");
+      expect(
+        runLevelOverride.run_results[0]?.execution_context?.mismatch_detected,
+      ).toBe(false);
     });
   });
 
@@ -1819,7 +2627,7 @@ describe("runTest", () => {
       const id = createTask(context, "linked-test-assertions");
       await overwriteTaskTests(context, id, [
         {
-          command: "node -e \"process.stdout.write(JSON.stringify({count:2}))\"",
+          command: 'node -e "process.stdout.write(JSON.stringify({count:2}))"',
           scope: "project",
           assert_stdout_contains: ["count"],
           assert_stdout_regex: ["count"],
@@ -1841,7 +2649,7 @@ describe("runTest", () => {
 
       await overwriteTaskTests(context, id, [
         {
-          command: "node -e \"process.stdout.write(JSON.stringify({count:2}))\"",
+          command: 'node -e "process.stdout.write(JSON.stringify({count:2}))"',
           scope: "project",
           assert_json_field_gte: {
             count: 5,
@@ -1857,8 +2665,12 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(failingAssertions.run_results[0]?.status).toBe("failed");
-      expect(failingAssertions.run_results[0]?.failure_category).toBe("assertion_failure");
-      expect(failingAssertions.run_results[0]?.error ?? "").toContain("assert_json_field_gte");
+      expect(failingAssertions.run_results[0]?.failure_category).toBe(
+        "assertion_failure",
+      );
+      expect(failingAssertions.run_results[0]?.error ?? "").toContain(
+        "assert_json_field_gte",
+      );
 
       await overwriteTaskTests(context, id, [
         {
@@ -1877,7 +2689,9 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(strictPmAssertions.run_results[0]?.status).toBe("failed");
-      expect(strictPmAssertions.run_results[0]?.error ?? "").toContain("requires assertions");
+      expect(strictPmAssertions.run_results[0]?.error ?? "").toContain(
+        "requires assertions",
+      );
     });
   });
 
@@ -1894,7 +2708,7 @@ describe("runTest", () => {
           assert_json_field_equals: {
             flag: "true",
             nil: "null",
-            obj: "{\"a\":1}",
+            obj: '{"a":1}',
             literal: "{bad}",
             count: "2",
             label: "ok",
@@ -1916,10 +2730,11 @@ describe("runTest", () => {
 
       await overwriteTaskTests(context, id, [
         {
-          command: "node -e \"process.stdout.write(JSON.stringify({obj:{b:2,a:1}}))\"",
+          command:
+            'node -e "process.stdout.write(JSON.stringify({obj:{b:2,a:1}}))"',
           scope: "project",
           assert_json_field_equals: {
-            obj: "{\"a\":1,\"b\":2}",
+            obj: '{"a":1,"b":2}',
           },
         },
       ]);
@@ -1951,11 +2766,14 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(invalidJson.run_results[0]?.status).toBe("failed");
-      expect(invalidJson.run_results[0]?.error ?? "").toContain("not valid JSON");
+      expect(invalidJson.run_results[0]?.error ?? "").toContain(
+        "not valid JSON",
+      );
 
       await overwriteTaskTests(context, id, [
         {
-          command: "node -e \"process.stdout.write(JSON.stringify({count:'abc'}))\"",
+          command:
+            "node -e \"process.stdout.write(JSON.stringify({count:'abc'}))\"",
           scope: "project",
           assert_json_field_equals: {
             missing: "1",
@@ -1974,12 +2792,17 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(missingAndNonNumeric.run_results[0]?.status).toBe("failed");
-      expect(missingAndNonNumeric.run_results[0]?.error ?? "").toContain("assert_json_field_equals missing path");
-      expect(missingAndNonNumeric.run_results[0]?.error ?? "").toContain("resolved to non-numeric value");
+      expect(missingAndNonNumeric.run_results[0]?.error ?? "").toContain(
+        "assert_json_field_equals missing path",
+      );
+      expect(missingAndNonNumeric.run_results[0]?.error ?? "").toContain(
+        "resolved to non-numeric value",
+      );
 
       await overwriteTaskTests(context, id, [
         {
-          command: "node -e \"process.stdout.write(JSON.stringify({items:[{value:2}]}))\"",
+          command:
+            'node -e "process.stdout.write(JSON.stringify({items:[{value:2}]}))"',
           scope: "project",
           assert_json_field_equals: {
             "[]": "1",
@@ -1998,7 +2821,9 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(invalidPathSyntax.run_results[0]?.status).toBe("failed");
-      expect(invalidPathSyntax.run_results[0]?.error ?? "").toContain('assert_json_field_equals missing path "[]"');
+      expect(invalidPathSyntax.run_results[0]?.error ?? "").toContain(
+        'assert_json_field_equals missing path "[]"',
+      );
       expect(invalidPathSyntax.run_results[0]?.error ?? "").toContain(
         'assert_json_field_gte missing path "items[2].value"',
       );
@@ -2020,12 +2845,17 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(invalidRegexMetadata.run_results[0]?.status).toBe("failed");
-      expect(invalidRegexMetadata.run_results[0]?.error ?? "").toContain("regex assertion is invalid");
+      expect(invalidRegexMetadata.run_results[0]?.error ?? "").toContain(
+        "regex assertion is invalid",
+      );
 
       const realRegExp = globalThis.RegExp;
       let nonErrorRegexFailure: string[] | undefined;
       try {
-        const throwingRegExp = function throwingRegExp(pattern?: string | RegExp, flags?: string) {
+        const throwingRegExp = function throwingRegExp(
+          pattern?: string | RegExp,
+          flags?: string,
+        ) {
           if (pattern === "will-throw") {
             throw "regex-constructor-failure";
           }
@@ -2049,7 +2879,9 @@ describe("runTest", () => {
   it("reports fail-on-skipped policy triggers", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "linked-test-fail-on-skipped");
-      await overwriteTaskTests(context, id, [{ path: "tests/legacy-path-only.spec.ts", scope: "project" }]);
+      await overwriteTaskTests(context, id, [
+        { path: "tests/legacy-path-only.spec.ts", scope: "project" },
+      ]);
       const run = await runTest(
         id,
         {
@@ -2069,7 +2901,9 @@ describe("runTest", () => {
       await runTest(
         id,
         {
-          add: ["command=node -e \"console.log('No projects matched the filters')\",scope=project"],
+          add: [
+            "command=node -e \"console.log('No projects matched the filters')\",scope=project",
+          ],
           message: "seed empty-run detector command",
         },
         { path: context.pmPath },
@@ -2096,14 +2930,21 @@ describe("runTest", () => {
       );
       expect(runWithGuard.run_results[0]?.status).toBe("failed");
       expect(runWithGuard.run_results[0]?.failure_category).toBe("empty_run");
-      expect(runWithGuard.run_results[0]?.error ?? "").toContain("empty test run");
+      expect(runWithGuard.run_results[0]?.error ?? "").toContain(
+        "empty test run",
+      );
       expect(runWithGuard.failure_categories.empty_run).toBe(1);
 
-      const safeId = createTask(context, "linked-test-fail-on-empty-run-safe-output");
+      const safeId = createTask(
+        context,
+        "linked-test-fail-on-empty-run-safe-output",
+      );
       await runTest(
         safeId,
         {
-          add: ['command=node -e "console.log(\'executed tests: 1\')",scope=project'],
+          add: [
+            "command=node -e \"console.log('executed tests: 1')\",scope=project",
+          ],
           message: "seed non-empty-run output",
         },
         { path: context.pmPath },
@@ -2128,7 +2969,9 @@ describe("runTest", () => {
       await runTest(
         id,
         {
-          add: ['command=node -e "process.stdout.write(\'x\'.repeat(22 * 1024 * 1024))",scope=project,timeout_seconds=20'],
+          add: [
+            "command=node -e \"process.stdout.write('x'.repeat(22 * 1024 * 1024))\",scope=project,timeout_seconds=20",
+          ],
           message: "seed maxBuffer test",
         },
         { path: context.pmPath },
@@ -2156,13 +2999,16 @@ describe("runTest", () => {
       await runTest(
         id,
         {
-          add: ['command=node -e "process.on(\'SIGTERM\', () => {}); setInterval(() => {}, 1000)",scope=project'],
+          add: [
+            "command=node -e \"process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)\",scope=project",
+          ],
           message: "seed stubborn timeout command",
         },
         { path: context.pmPath },
       );
 
-      const previousForceKillDelay = process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS;
+      const previousForceKillDelay =
+        process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS;
       process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = "20";
       try {
         const startedAt = Date.now();
@@ -2184,7 +3030,8 @@ describe("runTest", () => {
         if (previousForceKillDelay === undefined) {
           delete process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS;
         } else {
-          process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = previousForceKillDelay;
+          process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS =
+            previousForceKillDelay;
         }
       }
     });
@@ -2192,17 +3039,23 @@ describe("runTest", () => {
 
   it("settles on normal close before the pipe grace fallback even with invalid grace env", async () => {
     await withTempPmPath(async (context) => {
-      const id = createTask(context, "linked-test-normal-close-invalid-pipe-grace");
+      const id = createTask(
+        context,
+        "linked-test-normal-close-invalid-pipe-grace",
+      );
       await runTest(
         id,
         {
-          add: ['command=node -e "process.stdout.write(\'normal-close\')",scope=project'],
+          add: [
+            "command=node -e \"process.stdout.write('normal-close')\",scope=project",
+          ],
           message: "seed normal close command",
         },
         { path: context.pmPath },
       );
 
-      const previousPipeCloseGrace = process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS;
+      const previousPipeCloseGrace =
+        process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS;
       process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS = "not-a-number";
       try {
         const startedAt = Date.now();
@@ -2225,7 +3078,8 @@ describe("runTest", () => {
         if (previousPipeCloseGrace === undefined) {
           delete process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS;
         } else {
-          process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS = previousPipeCloseGrace;
+          process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS =
+            previousPipeCloseGrace;
         }
       }
     });
@@ -2234,7 +3088,10 @@ describe("runTest", () => {
   it("finishes when a linked command exits but a descendant keeps inherited pipes open", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "linked-test-inherited-pipe-descendant");
-      const scriptPath = path.join(context.tempRoot, "inherited-pipe-descendant.cjs");
+      const scriptPath = path.join(
+        context.tempRoot,
+        "inherited-pipe-descendant.cjs",
+      );
       await writeFile(
         scriptPath,
         [
@@ -2255,7 +3112,8 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
 
-      const previousPipeCloseGrace = process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS;
+      const previousPipeCloseGrace =
+        process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS;
       process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS = "20";
       try {
         const startedAt = Date.now();
@@ -2277,7 +3135,8 @@ describe("runTest", () => {
         if (previousPipeCloseGrace === undefined) {
           delete process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS;
         } else {
-          process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS = previousPipeCloseGrace;
+          process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS =
+            previousPipeCloseGrace;
         }
       }
     });
@@ -2289,7 +3148,9 @@ describe("runTest", () => {
       await runTest(
         id,
         {
-          add: ['command=node -e "setTimeout(() => {}, 60)",scope=project,timeout_seconds=5'],
+          add: [
+            'command=node -e "setTimeout(() => {}, 60)",scope=project,timeout_seconds=5',
+          ],
           message: "seed heartbeat command",
         },
         { path: context.pmPath },
@@ -2305,13 +3166,18 @@ describe("runTest", () => {
       await runTest(
         id,
         {
-          add: ['command=node -e "setTimeout(() => {}, 60)",scope=project,timeout_seconds=5'],
+          add: [
+            'command=node -e "setTimeout(() => {}, 60)",scope=project,timeout_seconds=5',
+          ],
           message: "seed forced progress command",
         },
         { path: context.pmPath },
       );
 
-      await expectHeartbeatProgressRun(context, id, { isTTY: false, progress: true });
+      await expectHeartbeatProgressRun(context, id, {
+        isTTY: false,
+        progress: true,
+      });
     });
   });
 
@@ -2328,22 +3194,25 @@ describe("runTest", () => {
                   "command=PM_SIGNAL_TARGET=$$ node -e \"process.kill(Number(process.env.PM_SIGNAL_TARGET),'SIGTERM')\",scope=project,timeout_seconds=5",
                 ]
               : []),
-            "command=node -e \"setTimeout(() => {}, 2000)\" && echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,scope=project,timeout_seconds=1",
-            'command=node -e "process.stdout.write(\'x\'.repeat(22 * 1024 * 1024))",scope=project,timeout_seconds=20',
+            'command=node -e "setTimeout(() => {}, 2000)" && echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,scope=project,timeout_seconds=1',
+            "command=node -e \"process.stdout.write('x'.repeat(22 * 1024 * 1024))\",scope=project,timeout_seconds=20",
           ],
           message: "seed progress reason commands",
         },
         { path: context.pmPath },
       );
 
-      const previousHeartbeatInterval = process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
+      const previousHeartbeatInterval =
+        process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
       process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = "not-a-number";
       const originalIsTTY = process.stderr.isTTY;
       Object.defineProperty(process.stderr, "isTTY", {
         value: false,
         configurable: true,
       });
-      const stderrWriteSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+      const stderrWriteSpy = vi
+        .spyOn(process.stderr, "write")
+        .mockImplementation(() => true);
       try {
         const run = await runTest(
           id,
@@ -2358,9 +3227,15 @@ describe("runTest", () => {
           .filter((entry) => entry.status === "failed")
           .map((entry) => entry.failure_category)
           .sort();
-        expect(categories).toEqual(includeSignalFixture ? ["max_buffer", "signal", "timeout"] : ["max_buffer", "timeout"]);
+        expect(categories).toEqual(
+          includeSignalFixture
+            ? ["max_buffer", "signal", "timeout"]
+            : ["max_buffer", "timeout"],
+        );
 
-        const stderrOutput = stderrWriteSpy.mock.calls.map((entry) => String(entry[0])).join("");
+        const stderrOutput = stderrWriteSpy.mock.calls
+          .map((entry) => String(entry[0]))
+          .join("");
         expect(stderrOutput).toContain("reason=timeout");
         expect(stderrOutput).toContain("reason=max_buffer");
         if (includeSignalFixture) {
@@ -2370,7 +3245,8 @@ describe("runTest", () => {
         if (previousHeartbeatInterval === undefined) {
           delete process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
         } else {
-          process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = previousHeartbeatInterval;
+          process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS =
+            previousHeartbeatInterval;
         }
         Object.defineProperty(process.stderr, "isTTY", {
           value: originalIsTTY,
@@ -2387,7 +3263,7 @@ describe("runTest", () => {
         id,
         {
           add: [
-            "command=node -e \"process.stdout.write(JSON.stringify({count:1}))\",scope=project,assert_json_field_equals=count=2,assert_json_field_gte=missing=1",
+            'command=node -e "process.stdout.write(JSON.stringify({count:1}))",scope=project,assert_json_field_equals=count=2,assert_json_field_gte=missing=1',
           ],
         },
         { path: context.pmPath },
@@ -2403,8 +3279,12 @@ describe("runTest", () => {
       );
       expect(result.run_results).toHaveLength(1);
       expect(result.run_results[0]?.status).toBe("failed");
-      expect(result.run_results[0]?.error ?? "").toContain("assert_json_field_equals mismatch");
-      expect(result.run_results[0]?.error ?? "").toContain('assert_json_field_gte missing path "missing"');
+      expect(result.run_results[0]?.error ?? "").toContain(
+        "assert_json_field_equals mismatch",
+      );
+      expect(result.run_results[0]?.error ?? "").toContain(
+        'assert_json_field_gte missing path "missing"',
+      );
     });
   });
 
@@ -2434,7 +3314,9 @@ describe("runTest", () => {
       const error = result.run_results[0]?.error ?? "";
       expect(error).toContain('stderr missing required text: "boom"');
       expect(error).toContain("stderr failed regex assertion: /boom.*/m");
-      expect(error).toContain("stdout line count 1 is below required minimum 2");
+      expect(error).toContain(
+        "stdout line count 1 is below required minimum 2",
+      );
     });
   });
 
@@ -2445,7 +3327,7 @@ describe("runTest", () => {
         id,
         {
           add: [
-            "command=node -e \"process.stdout.write(JSON.stringify({items:[{flag:true}]}))\",scope=project,assert_stdout_contains=missing-text,assert_json_field_equals=items[0].flag=false",
+            'command=node -e "process.stdout.write(JSON.stringify({items:[{flag:true}]}))",scope=project,assert_stdout_contains=missing-text,assert_json_field_equals=items[0].flag=false',
           ],
         },
         { path: context.pmPath },
@@ -2463,7 +3345,9 @@ describe("runTest", () => {
       expect(result.run_results[0]?.status).toBe("failed");
       const error = result.run_results[0]?.error ?? "";
       expect(error).toContain('stdout missing required text: "missing-text"');
-      expect(error).toContain('assert_json_field_equals mismatch at "items[0].flag"');
+      expect(error).toContain(
+        'assert_json_field_equals mismatch at "items[0].flag"',
+      );
     });
   });
 
@@ -2481,7 +3365,8 @@ describe("runTest", () => {
 
       const previousRunId = process.env.PM_BACKGROUND_TEST_RUN_ID;
       const previousAttempt = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT;
-      const previousResumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM;
+      const previousResumedFrom =
+        process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM;
       process.env.PM_BACKGROUND_TEST_RUN_ID = "tr-unit-success";
       process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT = "2";
       process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM = "tr-previous";
@@ -2496,7 +3381,9 @@ describe("runTest", () => {
         );
         expect(result.warnings).toBeUndefined();
         const itemMetadata = await loadTaskMetadata(context, id);
-        const testRuns = (itemMetadata.test_runs ?? []) as Array<Record<string, unknown>>;
+        const testRuns = (itemMetadata.test_runs ?? []) as Array<
+          Record<string, unknown>
+        >;
         expect(testRuns).toHaveLength(1);
         expect(testRuns[0]).toMatchObject({
           run_id: "tr-unit-success",
@@ -2554,7 +3441,10 @@ describe("runTest", () => {
 
   it("normalizes invalid background metadata while tracking test_runs summaries", async () => {
     await withTempPmPath(async (context) => {
-      const id = createTask(context, "track-test-run-invalid-background-metadata");
+      const id = createTask(
+        context,
+        "track-test-run-invalid-background-metadata",
+      );
       await runTest(
         id,
         {
@@ -2566,7 +3456,8 @@ describe("runTest", () => {
 
       const previousRunId = process.env.PM_BACKGROUND_TEST_RUN_ID;
       const previousAttempt = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT;
-      const previousResumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM;
+      const previousResumedFrom =
+        process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM;
       process.env.PM_BACKGROUND_TEST_RUN_ID = "  ";
       process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT = "not-a-number";
       process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM = "   ";
@@ -2581,7 +3472,9 @@ describe("runTest", () => {
         );
         expect(result.warnings).toBeUndefined();
         const itemMetadata = await loadTaskMetadata(context, id);
-        const testRuns = (itemMetadata.test_runs ?? []) as Array<Record<string, unknown>>;
+        const testRuns = (itemMetadata.test_runs ?? []) as Array<
+          Record<string, unknown>
+        >;
         expect(testRuns).toHaveLength(1);
         expect(testRuns[0]?.run_id).toMatch(/^test-local-/);
         expect(testRuns[0]).toMatchObject({
@@ -2679,8 +3572,13 @@ describe("runTest", () => {
       }
 
       const itemMetadata = await loadTaskMetadata(context, id);
-      const testRuns = (itemMetadata.test_runs ?? []) as Array<Record<string, unknown>>;
-      expect(testRuns.map((entry) => `${entry.run_id}:${entry.kind}`)).toEqual(["tr-same:test-all", "tr-newer:test"]);
+      const testRuns = (itemMetadata.test_runs ?? []) as Array<
+        Record<string, unknown>
+      >;
+      expect(testRuns.map((entry) => `${entry.run_id}:${entry.kind}`)).toEqual([
+        "tr-same:test-all",
+        "tr-newer:test",
+      ]);
 
       process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT = "invalid";
       try {
@@ -2710,8 +3608,12 @@ describe("runTest", () => {
       }
 
       const afterInvalidLimit = await loadTaskMetadata(context, id);
-      const afterRuns = (afterInvalidLimit.test_runs ?? []) as Array<Record<string, unknown>>;
-      expect(afterRuns.map((entry) => entry.run_id)).toContain("tr-after-invalid-limit");
+      const afterRuns = (afterInvalidLimit.test_runs ?? []) as Array<
+        Record<string, unknown>
+      >;
+      expect(afterRuns.map((entry) => entry.run_id)).toContain(
+        "tr-after-invalid-limit",
+      );
 
       const sortId = createTask(context, "append-tracked-test-run-run-id-sort");
       await overwriteTaskTestRuns(context, sortId, [
@@ -2745,7 +3647,9 @@ describe("runTest", () => {
         },
       });
       const sortedItemMetadata = await loadTaskMetadata(context, sortId);
-      const sortedRuns = (sortedItemMetadata.test_runs ?? []) as Array<Record<string, unknown>>;
+      const sortedRuns = (sortedItemMetadata.test_runs ?? []) as Array<
+        Record<string, unknown>
+      >;
       expect(sortedRuns.map((entry) => entry.run_id)).toEqual(["tr-a", "tr-b"]);
     });
   });
@@ -2763,7 +3667,15 @@ describe("runTest", () => {
       );
       await setTestResultTracking(context.pmPath, true);
       const reassigned = context.runCli(
-        ["update", "--json", id, "--assignee", "other-owner", "--message", "Reassign for tracking warning branch"],
+        [
+          "update",
+          "--json",
+          id,
+          "--assignee",
+          "other-owner",
+          "--message",
+          "Reassign for tracking warning branch",
+        ],
         { expectJson: true },
       );
       expect(reassigned.code).toBe(0);
@@ -2776,7 +3688,9 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(result.run_results[0]?.status).toBe("passed");
-      expect(result.warnings?.[0] ?? "").toContain("test_result_tracking_failed");
+      expect(result.warnings?.[0] ?? "").toContain(
+        "test_result_tracking_failed",
+      );
     });
   });
 });
@@ -2796,20 +3710,39 @@ describe("linked test run selectors", () => {
     expect(description).toContain("3. <no command>");
 
     // A label that normalizes to an empty string falls back to the placeholder.
-    expect(describeLinkedTestEntries([{ command: "   ", scope: "project" as const }])).toBe("1. <no command>");
+    expect(
+      describeLinkedTestEntries([
+        { command: "   ", scope: "project" as const },
+      ]),
+    ).toBe("1. <no command>");
 
     expect(parseOnlyIndexValue(" 2 ")).toBe(2);
-    expect(() => parseOnlyIndexValue("0", "--only-index")).toThrow(/1-based integer index/);
-    expect(() => resolveLinkedTestRunSelection(tests, { match: "output", onlyLast: true })).toThrow(/Combine at most one/);
-    expect(() => resolveLinkedTestRunSelection([], { onlyLast: true })).toThrow(/this item has none/);
-    expect(() => resolveLinkedTestRunSelection(tests, { match: "   " })).toThrow(/non-empty substring/);
-    expect(() => resolveLinkedTestRunSelection(tests, { match: "missing" })).toThrow(/Available entries/);
-    expect(() => resolveLinkedTestRunSelection(tests, { onlyIndex: 9 })).toThrow(/out of range/);
+    expect(() => parseOnlyIndexValue("0", "--only-index")).toThrow(
+      /1-based integer index/,
+    );
+    expect(() =>
+      resolveLinkedTestRunSelection(tests, { match: "output", onlyLast: true }),
+    ).toThrow(/Combine at most one/);
+    expect(() => resolveLinkedTestRunSelection([], { onlyLast: true })).toThrow(
+      /this item has none/,
+    );
+    expect(() =>
+      resolveLinkedTestRunSelection(tests, { match: "   " }),
+    ).toThrow(/non-empty substring/);
+    expect(() =>
+      resolveLinkedTestRunSelection(tests, { match: "missing" }),
+    ).toThrow(/Available entries/);
+    expect(() =>
+      resolveLinkedTestRunSelection(tests, { onlyIndex: 9 }),
+    ).toThrow(/out of range/);
   });
 
   it("selects all, matching, indexed, and last linked tests", () => {
     const tests = [
-      { command: "pnpm test -- tests/unit/output.spec.ts", scope: "project" as const },
+      {
+        command: "pnpm test -- tests/unit/output.spec.ts",
+        scope: "project" as const,
+      },
       { path: "tests/unit/settings-store.spec.ts", scope: "project" as const },
       { command: "pnpm typecheck", scope: "project" as const },
     ];
@@ -2820,20 +3753,26 @@ describe("linked test run selectors", () => {
       selected_count: 3,
       skipped_count: 0,
     });
-    expect(resolveLinkedTestRunSelection(tests, { match: "SETTINGS" })).toMatchObject({
+    expect(
+      resolveLinkedTestRunSelection(tests, { match: "SETTINGS" }),
+    ).toMatchObject({
       selector: "match",
       requested: "SETTINGS",
       selected_indexes: [2],
       selected_count: 1,
       skipped_count: 2,
     });
-    expect(resolveLinkedTestRunSelection(tests, { onlyIndex: 1 })).toMatchObject({
+    expect(
+      resolveLinkedTestRunSelection(tests, { onlyIndex: 1 }),
+    ).toMatchObject({
       selector: "only-index",
       requested: "1",
       selected: [tests[0]],
       selected_indexes: [1],
     });
-    expect(resolveLinkedTestRunSelection(tests, { onlyLast: true })).toMatchObject({
+    expect(
+      resolveLinkedTestRunSelection(tests, { onlyLast: true }),
+    ).toMatchObject({
       selector: "only-last",
       requested: "last",
       selected: [tests[2]],

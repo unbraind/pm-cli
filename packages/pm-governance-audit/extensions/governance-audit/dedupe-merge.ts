@@ -125,8 +125,19 @@ interface ResolvedItem {
   metadata: ItemMetadata;
 }
 
+/** Return a defined value or the supplied fallback without truthiness coercion. */
+const valueOrDefault = <Value>(
+  value: Value | undefined,
+  fallback: Value,
+): Value => (value === undefined ? fallback : value);
+
+/** Normalize an unknown thrown value into a stable warning message. */
+const formatUnknownError = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
 /** Parses a single required item id, rejecting blank input with usage guidance. */
-function parseRequiredId(raw: string | undefined, flag: string): string {
+const parseRequiredId = (raw: string | undefined, flag: string): string => {
+  /** Require and normalize one item identity option. */
   const trimmed = (raw ?? "").trim();
   if (trimmed.length === 0) {
     throw new PmCliError(
@@ -141,26 +152,23 @@ function parseRequiredId(raw: string | undefined, flag: string): string {
     );
   }
   return trimmed;
-}
+};
 
 /** Parses the duplicate id list, splitting csv values and de-duplicating while preserving first-seen order so the result is deterministic. */
-function parseDuplicateIds(
+const parseDuplicateIds = (
   raw: string | string[] | undefined,
   keep: string,
-): string[] {
+): string[] => {
+  /** Parse unique duplicate identities while excluding the canonical item. */
   const collected = Array.isArray(raw) ? raw : raw === undefined ? [] : [raw];
-  const ids: string[] = [];
-  const seen = new Set<string>();
-  for (const entry of collected) {
-    for (const id of splitCommaList(entry)) {
-      const trimmed = id.trim();
-      if (trimmed.length === 0 || seen.has(trimmed)) {
-        continue;
-      }
-      seen.add(trimmed);
-      ids.push(trimmed);
-    }
-  }
+  const ids = [
+    ...new Set(
+      collected
+        .flatMap((entry) => splitCommaList(entry))
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0),
+    ),
+  ];
   if (ids.length === 0) {
     throw new PmCliError(
       "pm dedupe-merge requires at least one --close <id> duplicate",
@@ -173,7 +181,7 @@ function parseDuplicateIds(
       },
     );
   }
-  if (seen.has(keep)) {
+  if (ids.includes(keep)) {
     throw new PmCliError(
       `Cannot close the canonical item ${keep} as a duplicate of itself`,
       EXIT_CODE.USAGE,
@@ -186,13 +194,14 @@ function parseDuplicateIds(
     );
   }
   return ids;
-}
+};
 
-async function loadItem(
+const loadItem = async (
   pmRoot: string,
   settings: Awaited<ReturnType<typeof readSettings>>,
   id: string,
-): Promise<ResolvedItem | null> {
+): Promise<ResolvedItem | null> => {
+  /** Load one schema-aware item record or report that it is absent. */
   const typeToFolder = resolveItemTypeRegistry(
     settings,
     getActiveExtensionRegistrations(),
@@ -213,12 +222,13 @@ async function loadItem(
     title: loaded.document.metadata.title,
     metadata: loaded.document.metadata,
   };
-}
+};
 
-function buildChildrenByParentForDedupeMerge(
-  items: Awaited<ReturnType<typeof runList>>["items"],
+const buildChildrenByParentForDedupeMerge = (
+  items: ItemMetadata[],
   statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>,
-): Map<string, { id: string; title: string; terminal: boolean }[]> {
+): Map<string, { id: string; title: string; terminal: boolean }[]> => {
+  /** Index child identity and terminal state for deterministic merge validation. */
   const childrenByParent = new Map<
     string,
     { id: string; title: string; terminal: boolean }[]
@@ -237,9 +247,9 @@ function buildChildrenByParentForDedupeMerge(
     childrenByParent.set(parent, bucket);
   }
   return childrenByParent;
-}
+};
 
-async function applyDedupeMergeReparents(params: {
+const applyDedupeMergeReparents = async (params: {
   children: { id: string; title: string; terminal: boolean }[];
   duplicateId: string;
   keep: string;
@@ -254,53 +264,80 @@ async function applyDedupeMergeReparents(params: {
     child_title: string;
     reason: "terminal";
   }[];
-}> {
+}> => {
+  /** Plan or apply active-child reparenting for one duplicate item. */
   const reparentEnabled = params.options.reparentChildren !== false;
-  const reparentTargets = reparentEnabled
-    ? params.children.filter((child) => !child.terminal)
-    : [];
-  const skippedChildren = (
-    reparentEnabled ? params.children.filter((child) => child.terminal) : []
-  ).map((child) => ({
-    child_id: child.id,
-    child_title: child.title,
-    reason: "terminal" as const,
-  }));
-  const reparented: DedupeMergeChildReparent[] = [];
-  for (const child of reparentTargets) {
-    const record: DedupeMergeChildReparent = {
+  const reparentTargets = params.children.filter(
+    (child) => reparentEnabled && !child.terminal,
+  );
+  const skippedChildren = params.children
+    .filter((child) => reparentEnabled && child.terminal)
+    .map((child) => ({
+      child_id: child.id,
+      child_title: child.title,
+      reason: "terminal" as const,
+    }));
+  const reparented: DedupeMergeChildReparent[] = reparentTargets.map(
+    (child) => ({
       child_id: child.id,
       child_title: child.title,
       from_parent: params.duplicateId,
       to_parent: params.keep,
       applied: false,
-    };
-    if (params.apply) {
-      try {
-        await runUpdate(
-          child.id,
-          {
-            parent: params.keep,
-            author: params.options.author,
-            message:
-              params.options.message ??
-              `dedupe-merge: re-parent from ${params.duplicateId} to ${params.keep}`,
-          },
-          params.global,
-        );
-        record.applied = true;
-      } catch (error) {
-        params.warnings.push(
-          `reparent_failed:${child.id}:${error instanceof Error ? error.message : String(error)}`,
-        );
-      }
+    }),
+  );
+  if (!params.apply) {
+    return { reparented, skippedChildren };
+  }
+  for (const record of reparented) {
+    try {
+      await runUpdate(
+        record.child_id,
+        {
+          parent: params.keep,
+          author: params.options.author,
+          message: valueOrDefault(
+            params.options.message,
+            `dedupe-merge: re-parent from ${params.duplicateId} to ${params.keep}`,
+          ),
+        },
+        params.global,
+      );
+      record.applied = true;
+    } catch (error: unknown) {
+      params.warnings.push(
+        `reparent_failed:${record.child_id}:${formatUnknownError(error)}`,
+      );
     }
-    reparented.push(record);
   }
   return { reparented, skippedChildren };
-}
+};
 
-async function applyDedupeMergeClose(params: {
+const buildTerminalCloseAction = (
+  params: {
+    duplicate: ResolvedItem;
+    keep: string;
+    statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>;
+    warnings: string[];
+  },
+  close: DedupeMergeCloseAction,
+): DedupeMergeCloseAction | undefined => {
+  /** Return an already-terminal close result while preserving mismatch evidence. */
+  if (
+    !isTerminalStatus(params.duplicate.metadata.status, params.statusRegistry)
+  ) {
+    return undefined;
+  }
+  close.skipped_reason = "already_terminal";
+  if (params.duplicate.metadata.duplicate_of?.trim() !== params.keep) {
+    params.warnings.push(
+      `close_skipped_terminal:${params.duplicate.id}:already_closed`,
+    );
+  }
+  return close;
+};
+
+const applyDedupeMergeClose = async (params: {
   duplicate: ResolvedItem;
   keep: string;
   apply: boolean;
@@ -308,24 +345,16 @@ async function applyDedupeMergeClose(params: {
   global: GlobalOptions;
   statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>;
   warnings: string[];
-}): Promise<DedupeMergeCloseAction> {
+}): Promise<DedupeMergeCloseAction> => {
+  /** Plan, skip, or apply the terminal duplicate close action. */
   const reason = `Duplicate of ${params.keep}`;
   const close: DedupeMergeCloseAction = {
     duplicate_of: params.keep,
     reason,
     applied: false,
   };
-  if (
-    isTerminalStatus(params.duplicate.metadata.status, params.statusRegistry)
-  ) {
-    close.skipped_reason = "already_terminal";
-    if (params.duplicate.metadata.duplicate_of?.trim() !== params.keep) {
-      params.warnings.push(
-        `close_skipped_terminal:${params.duplicate.id}:already_closed`,
-      );
-    }
-    return close;
-  }
+  const terminalClose = buildTerminalCloseAction(params, close);
+  if (terminalClose) return terminalClose;
   if (!params.apply) {
     close.skipped_reason = "dry_run";
     return close;
@@ -337,27 +366,117 @@ async function applyDedupeMergeClose(params: {
       {
         duplicateOf: params.keep,
         author: params.options.author,
-        message:
-          params.options.message ??
+        message: valueOrDefault(
+          params.options.message,
           `dedupe-merge: close ${params.duplicate.id} as duplicate of ${params.keep}`,
+        ),
       },
       params.global,
     );
     close.applied = true;
-  } catch (error) {
+  } catch (error: unknown) {
     close.skipped_reason = "failed";
     params.warnings.push(
-      `close_failed:${params.duplicate.id}:${error instanceof Error ? error.message : String(error)}`,
+      `close_failed:${params.duplicate.id}:${formatUnknownError(error)}`,
     );
   }
   return close;
-}
+};
+
+const loadRequiredDedupeItem = async (
+  pmRoot: string,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  id: string,
+  role: "Canonical" | "Duplicate",
+): Promise<ResolvedItem> => {
+  /** Load one required merge participant with role-specific recovery guidance. */
+  const item = await loadItem(pmRoot, settings, id);
+  if (item) return item;
+  throw new PmCliError(`${role} item ${id} not found`, EXIT_CODE.NOT_FOUND, {
+    code: "item_not_found",
+    nextSteps: [`Verify the ${role.toLowerCase()} id with: pm get ${id}`],
+  });
+};
+
+const buildDedupeMergeOutcome = async (params: {
+  duplicateId: string;
+  canonical: ResolvedItem;
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  childrenByParent: Map<
+    string,
+    { id: string; title: string; terminal: boolean }[]
+  >;
+  apply: boolean;
+  options: DedupeMergeOptions;
+  global: GlobalOptions;
+  statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>;
+  warnings: string[];
+}): Promise<DedupeMergeDuplicateOutcome> => {
+  /** Build and optionally apply every mutation for one duplicate participant. */
+  const duplicate = await loadRequiredDedupeItem(
+    params.pmRoot,
+    params.settings,
+    params.duplicateId,
+    "Duplicate",
+  );
+  if (duplicate.id === params.canonical.id) {
+    throw new PmCliError(
+      `Cannot close the canonical item ${params.canonical.id} as a duplicate of itself`,
+      EXIT_CODE.USAGE,
+      {
+        code: "invalid_option_combination",
+        nextSteps: [
+          "Pass distinct ids: --keep <canonical> and --close <duplicate>.",
+        ],
+      },
+    );
+  }
+  const children = (params.childrenByParent.get(duplicate.id) ?? []).filter(
+    (child) => child.id !== params.canonical.id,
+  );
+  const { reparented, skippedChildren } = await applyDedupeMergeReparents({
+    children,
+    duplicateId: duplicate.id,
+    keep: params.canonical.id,
+    apply: params.apply,
+    options: params.options,
+    global: params.global,
+    warnings: params.warnings,
+  });
+  const reparentFailed =
+    params.apply && reparented.some((child) => !child.applied);
+  const close: DedupeMergeCloseAction = reparentFailed
+    ? {
+        duplicate_of: params.canonical.id,
+        reason: `Duplicate of ${params.canonical.id}`,
+        applied: false,
+        skipped_reason: "failed",
+      }
+    : await applyDedupeMergeClose({
+        duplicate,
+        keep: params.canonical.id,
+        apply: params.apply,
+        options: params.options,
+        global: params.global,
+        statusRegistry: params.statusRegistry,
+        warnings: params.warnings,
+      });
+  return {
+    duplicate_id: duplicate.id,
+    duplicate_title: duplicate.title,
+    canonical_id: params.canonical.id,
+    reparented_children: reparented,
+    skipped_children: skippedChildren,
+    close,
+  };
+};
 
 /** Implements run dedupe merge for the public runtime surface of this module. */
-export async function runDedupeMerge(
+export const runDedupeMerge = async (
   options: DedupeMergeOptions,
   global: GlobalOptions,
-): Promise<DedupeMergeResult> {
+): Promise<DedupeMergeResult> => {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(
@@ -372,21 +491,20 @@ export async function runDedupeMerge(
   // Explicit dry-run always wins over apply so a preview can be forced safely.
   const apply = options.apply === true && options.dryRun !== true;
 
-  const canonical = await loadItem(pmRoot, settings, keep);
-  if (!canonical) {
-    throw new PmCliError(
-      `Canonical item ${keep} not found`,
-      EXIT_CODE.NOT_FOUND,
-      {
-        code: "item_not_found",
-        nextSteps: [`Verify the canonical id with: pm get ${keep}`],
-      },
-    );
-  }
+  const canonical = await loadRequiredDedupeItem(
+    pmRoot,
+    settings,
+    keep,
+    "Canonical",
+  );
 
   // A single full listing supplies every child lookup without re-reading the
   // corpus per duplicate.
-  const corpus = await runList(undefined, {}, global);
+  const corpus = await runList(
+    undefined,
+    { full: true as const, noTruncate: true },
+    global,
+  );
   const childrenByParent = buildChildrenByParentForDedupeMerge(
     corpus.items,
     statusRegistry,
@@ -395,61 +513,20 @@ export async function runDedupeMerge(
   const warnings: string[] = [];
   const outcomes: DedupeMergeDuplicateOutcome[] = [];
   for (const duplicateId of duplicateIds) {
-    const duplicate = await loadItem(pmRoot, settings, duplicateId);
-    if (!duplicate) {
-      throw new PmCliError(
-        `Duplicate item ${duplicateId} not found`,
-        EXIT_CODE.NOT_FOUND,
-        {
-          code: "item_not_found",
-          nextSteps: [`Verify the duplicate id with: pm get ${duplicateId}`],
-        },
-      );
-    }
-    if (duplicate.id === canonical.id) {
-      throw new PmCliError(
-        `Cannot close the canonical item ${canonical.id} as a duplicate of itself`,
-        EXIT_CODE.USAGE,
-        {
-          code: "invalid_option_combination",
-          nextSteps: [
-            "Pass distinct ids: --keep <canonical> and --close <duplicate>.",
-          ],
-        },
-      );
-    }
-    // The canonical can never be re-parented onto itself; terminal children are
-    // historical and keep their frozen parent link, so only active children move.
-    const children = (childrenByParent.get(duplicate.id) ?? []).filter(
-      (child) => child.id !== keep,
+    outcomes.push(
+      await buildDedupeMergeOutcome({
+        duplicateId,
+        canonical,
+        pmRoot,
+        settings,
+        childrenByParent,
+        apply,
+        options,
+        global,
+        statusRegistry,
+        warnings,
+      }),
     );
-    const { reparented, skippedChildren } = await applyDedupeMergeReparents({
-      children,
-      duplicateId: duplicate.id,
-      keep,
-      apply,
-      options,
-      global,
-      warnings,
-    });
-    const close = await applyDedupeMergeClose({
-      duplicate,
-      keep,
-      apply,
-      options,
-      global,
-      statusRegistry,
-      warnings,
-    });
-
-    outcomes.push({
-      duplicate_id: duplicate.id,
-      duplicate_title: duplicate.title,
-      canonical_id: keep,
-      reparented_children: reparented,
-      skipped_children: skippedChildren,
-      close,
-    });
   }
 
   const childrenReparented = outcomes.reduce(
@@ -462,10 +539,7 @@ export async function runDedupeMerge(
     (total, outcome) => total + outcome.skipped_children.length,
     0,
   );
-  const closed = outcomes.reduce(
-    (total, outcome) => total + (outcome.close.applied ? 1 : 0),
-    0,
-  );
+  const closed = outcomes.filter((outcome) => outcome.close.applied).length;
 
   return {
     canonical_id: canonical.id,
@@ -481,7 +555,7 @@ export async function runDedupeMerge(
     warnings,
     now: nowIso(),
   };
-}
+};
 
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {

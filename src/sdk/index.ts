@@ -32,9 +32,23 @@ export {
   quoteWindowsCommandArg,
   renderPmCommand,
 } from "./command-line.js";
-export * from "./governance/gc.js";
-export * from "./governance/health.js";
-export * from "./governance/validate.js";
+export {
+  runGc,
+  type GcCheckpointsSummary,
+  type GcLocksSummary,
+} from "./governance/gc.js";
+export {
+  _testOnlyHealthCommand,
+  runHealth,
+  type HealthCheck,
+} from "./governance/health.js";
+export {
+  _testOnlyValidateCommand,
+  runValidate,
+  type ValidateCheck,
+  type ValidateFixesSummary,
+  type ValidateMutationServices,
+} from "./governance/validate.js";
 export { runExtension } from "./extension.js";
 export { applyInvocationAuthorOverride } from "./invocation-author.js";
 export {
@@ -296,6 +310,8 @@ export {
   type PathMigration,
 } from "./linked-artifacts.js";
 export * from "./pagination.js";
+export * from "./query/item-filter-options.js";
+export * from "./query/parsers.js";
 export * from "./output.js";
 export * from "./relationship-analytics.js";
 export * from "./relationship-context.js";
@@ -385,6 +401,7 @@ export {
   runCalendar,
   runCompletion,
   runGuide,
+  runList,
   runReindex,
   runSearch,
   runTemplatesList,
@@ -554,10 +571,15 @@ export {
   type LinkedTest,
   type ListedItem,
   type ListCompactResult,
+  type ListFullResult,
   type ListOptions,
+  type ListProjectedItem,
   type ListResult,
+  type ListResultItem,
   type ListSortField,
   type ListSortOrder,
+  type ListTreeItem,
+  type ListTreeMetadata,
   type ListVerboseResult,
   type LogNote,
   type NextActionableItem,
@@ -645,6 +667,61 @@ export {
   type WorkspaceContracts,
   type WorkspaceContractsOptions,
 } from "./runtime.js";
+export { runStats } from "./stats.js";
+export {
+  DEFAULT_EVAL_QUERIES_RELATIVE_PATH,
+  runEval,
+  type EvalOptions,
+  type EvalQueryReport,
+  type EvalResult,
+} from "./eval.js";
+export {
+  runTelemetry,
+  TELEMETRY_SUBCOMMANDS,
+  type TelemetryCommandOptions,
+  type TelemetrySubcommand,
+} from "./telemetry.js";
+export {
+  classifyLinkedTestFailure,
+  countFailureCategories,
+  extractReferencedPmItemIdsFromCommand,
+  resolveLinkedTestFailureExitCode,
+  runLinkedTests,
+  runTest,
+  summarizeContextPreflight,
+  type LinkedTestFailureCategory,
+  type TestCommandOptions,
+  type TestResult,
+  type TestRunResult,
+} from "./test/execution.js";
+export {
+  runTestAll,
+  type TestAllCommandOptions,
+  type TestAllItemResult,
+  type TestAllResult,
+} from "./test/batch.js";
+export {
+  LINKED_TEST_ENV_NAME_PATTERN,
+  LINKED_TEST_PM_CONTEXT_MODE_VALUES,
+  LINKED_TEST_PROTECTED_ENV_KEYS,
+  parseLinkedTestAssertionEqualsMap,
+  parseLinkedTestAssertionGteMap,
+  parseLinkedTestBoolean,
+  parseLinkedTestContextMode,
+  parseLinkedTestEnvClear,
+  parseLinkedTestEnvSet,
+  parseLinkedTestJsonEntries,
+  parseLinkedTestMinLines,
+  parseLinkedTestRegexList,
+  parseLinkedTestStringList,
+  type LinkedTestPmContextMode,
+} from "./test/parsers.js";
+export {
+  runStartBackgroundRun,
+  runTestRunsWorker,
+  type StartBackgroundRunCommandOptions,
+  type StartBackgroundRunResult,
+} from "./test/runs.js";
 export {
   BUILTIN_PROFILES,
   listProfiles,

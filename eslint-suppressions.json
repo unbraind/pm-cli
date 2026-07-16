@@ -42,7 +42,7 @@
       "count": 1
     }
   },
-  "scripts/release/static-quality-gate.mjs": {
+  "scripts/release/static-quality-gate.mts": {
     "sonarjs/cognitive-complexity": {
       "count": 2
     }
@@ -141,16 +141,6 @@
     },
     "sonarjs/cognitive-complexity": {
       "count": 1
-    }
-  },
-  "src/cli/commands/test.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "src/cli/commands/update-many.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 2
     }
   },
   "src/cli/commands/update.ts": {
@@ -436,11 +426,6 @@
     }
   },
   "tests/unit/commands/register-commands.spec.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "tests/unit/commands/stats-command.spec.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }

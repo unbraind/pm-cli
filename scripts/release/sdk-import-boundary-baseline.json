@@ -249,18 +249,6 @@
       ]
     },
     {
-      "source": "src/cli/commands/eval.ts",
-      "imports": [
-        "src/core/fs/fs-utils.ts",
-        "src/core/search/eval.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/primitives.ts",
-        "src/core/store/paths.ts"
-      ]
-    },
-    {
       "source": "src/cli/commands/event-validation-messages.ts",
       "imports": [
         "src/core/shared/constants.ts",
@@ -345,45 +333,6 @@
       "source": "src/cli/commands/lifecycle-transitions.ts",
       "imports": [
         "src/core/schema/runtime-schema.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/linked-test-entry.ts",
-      "imports": [
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/linked-test-parsers.ts",
-      "imports": [
-        "src/core/item/parse.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/split-comma-list.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/list.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/governance/content-fields.ts",
-        "src/core/governance/metadata-coverage.ts",
-        "src/core/item/item-record.ts",
-        "src/core/item/status-filter.ts",
-        "src/core/item/status.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/schema/runtime-field-filters.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-metadata-cache.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
       ]
     },
     {
@@ -505,132 +454,11 @@
       ]
     },
     {
-      "source": "src/cli/commands/search.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/extensions/item-fields.ts",
-        "src/core/extensions/runtime-registrations.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/fs/path-utils.ts",
-        "src/core/governance/content-fields.ts",
-        "src/core/governance/metadata-coverage.ts",
-        "src/core/item/item-format.ts",
-        "src/core/item/item-record.ts",
-        "src/core/item/status-filter.ts",
-        "src/core/item/status.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/schema/runtime-field-filters.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/search/bm25.ts",
-        "src/core/search/cache.ts",
-        "src/core/search/corpus.ts",
-        "src/core/search/providers.ts",
-        "src/core/search/relevance.ts",
-        "src/core/search/semantic-defaults.ts",
-        "src/core/search/staleness.ts",
-        "src/core/search/vector-stores.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/primitives.ts",
-        "src/core/shared/text-normalization.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-metadata-cache.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
       "source": "src/cli/commands/shared-unset-fields.ts",
       "imports": [
         "src/core/schema/runtime-schema.ts",
         "src/core/shared/constants.ts",
         "src/core/shared/errors.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/stats.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/governance/content-fields.ts",
-        "src/core/governance/metadata-coverage.ts",
-        "src/core/history/history-storage-stats.ts",
-        "src/core/history/history-stream-policy.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/telemetry.ts",
-      "imports": [
-        "src/core/fs/fs-utils.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts",
-        "src/core/telemetry/runtime.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/test-all.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/item/parse.ts",
-        "src/core/item/status.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/schema/runtime-schema.ts",
-        "src/core/shared/author.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts",
-        "src/core/test/item-test-run-tracking.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/test-runs.ts",
-      "imports": [
-        "src/core/fs/fs-utils.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts",
-        "src/core/test/background-runs.ts"
-      ]
-    },
-    {
-      "source": "src/cli/commands/test.ts",
-      "imports": [
-        "src/core/extensions/index.ts",
-        "src/core/fs/fs-utils.ts",
-        "src/core/item/parse.ts",
-        "src/core/item/type-registry.ts",
-        "src/core/shared/command-types.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/serialization.ts",
-        "src/core/shared/time.ts",
-        "src/core/store/item-store.ts",
-        "src/core/store/paths.ts",
-        "src/core/store/settings.ts",
-        "src/core/test/item-test-run-tracking.ts",
-        "src/core/test/run-selectors.ts"
       ]
     },
     {
@@ -824,15 +652,6 @@
         "src/core/search/background-refresh.ts",
         "src/core/search/cache.ts",
         "src/core/store/paths.ts"
-      ]
-    },
-    {
-      "source": "src/cli/shared-parsers.ts",
-      "imports": [
-        "src/core/item/type-registry.ts",
-        "src/core/shared/constants.ts",
-        "src/core/shared/errors.ts",
-        "src/core/shared/numeric-parsers.ts"
       ]
     },
     {

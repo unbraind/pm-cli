@@ -3,14 +3,28 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import type { GlobalOptions } from "../../../src/core/shared/command-types.js";
-import type { SearchResult } from "../../../src/cli/commands/search.js";
+import type { SearchResult } from "../../../src/sdk/query/search.js";
 
-const { pathExistsMock, readFileMock, resolvePmRootMock, getSettingsPathMock, runSearchMock } = vi.hoisted(() => ({
+const {
+  pathExistsMock,
+  readFileMock,
+  resolvePmRootMock,
+  getSettingsPathMock,
+  runSearchMock,
+} = vi.hoisted(() => ({
   pathExistsMock: vi.fn<() => Promise<boolean>>(),
-  readFileMock: vi.fn<(targetPath: string, encoding: string) => Promise<string>>(),
+  readFileMock:
+    vi.fn<(targetPath: string, encoding: string) => Promise<string>>(),
   resolvePmRootMock: vi.fn<() => string>(),
   getSettingsPathMock: vi.fn<() => string>(),
-  runSearchMock: vi.fn<(query: string, options: unknown, global: GlobalOptions) => Promise<SearchResult>>(),
+  runSearchMock:
+    vi.fn<
+      (
+        query: string,
+        options: unknown,
+        global: GlobalOptions,
+      ) => Promise<SearchResult>
+    >(),
 }));
 
 vi.mock("node:fs/promises", () => ({
@@ -23,7 +37,7 @@ vi.mock("../../../src/core/store/paths.js", () => ({
   resolvePmRoot: resolvePmRootMock,
   getSettingsPath: getSettingsPathMock,
 }));
-vi.mock("../../../src/cli/commands/search.js", () => ({
+vi.mock("../../../src/sdk/query/search.js", () => ({
   runSearch: runSearchMock,
 }));
 
@@ -63,29 +77,58 @@ describe("runEval", () => {
 
     expect(result.k).toBe(10);
     expect(result.query_count).toBe(2);
-    expect(result.queries[0]).toMatchObject({ query: "database connection", mode: "keyword", mrr: 1, ndcg: 1 });
-    expect(result.queries[1]).toMatchObject({ query: "retry backoff", mode: "hybrid", mrr: 0.5 });
+    expect(result.queries[0]).toMatchObject({
+      query: "database connection",
+      mode: "keyword",
+      mrr: 1,
+      ndcg: 1,
+    });
+    expect(result.queries[1]).toMatchObject({
+      query: "retry backoff",
+      mode: "hybrid",
+      mrr: 0.5,
+    });
     expect(result.passed).toBe(true);
     expect(result).not.toHaveProperty("fail_under");
     // First query ran keyword mode with the configured cutoff + id projection.
-    expect(runSearchMock).toHaveBeenNthCalledWith(1, "database connection", { mode: "keyword", limit: "10", fields: "id" }, GLOBAL);
-    expect(runSearchMock).toHaveBeenNthCalledWith(2, "retry backoff", { mode: "hybrid", limit: "10", fields: "id" }, GLOBAL);
+    expect(runSearchMock).toHaveBeenNthCalledWith(
+      1,
+      "database connection",
+      { mode: "keyword", limit: "10", fields: "id" },
+      GLOBAL,
+    );
+    expect(runSearchMock).toHaveBeenNthCalledWith(
+      2,
+      "retry backoff",
+      { mode: "hybrid", limit: "10", fields: "id" },
+      GLOBAL,
+    );
   });
 
   it("applies the default --mode to queries without their own and honors --k", async () => {
-    readFileMock.mockResolvedValue(JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]));
+    readFileMock.mockResolvedValue(
+      JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]),
+    );
     queueRankings(["pm-a"]);
 
     const result = await runEval({ mode: "semantic", k: "5" }, GLOBAL);
 
     expect(result.k).toBe(5);
     expect(result.queries[0].mode).toBe("semantic");
-    expect(runSearchMock).toHaveBeenCalledWith("x", { mode: "semantic", limit: "5", fields: "id" }, GLOBAL);
+    expect(runSearchMock).toHaveBeenCalledWith(
+      "x",
+      { mode: "semantic", limit: "5", fields: "id" },
+      GLOBAL,
+    );
   });
 
   it("ignores non-string ids in the search result ranking", async () => {
-    readFileMock.mockResolvedValue(JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]));
-    runSearchMock.mockResolvedValueOnce({ items: [{ id: 7 }, { id: "pm-a" }] } as unknown as SearchResult);
+    readFileMock.mockResolvedValue(
+      JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]),
+    );
+    runSearchMock.mockResolvedValueOnce({
+      items: [{ id: 7 }, { id: "pm-a" }],
+    } as unknown as SearchResult);
 
     const result = await runEval({}, GLOBAL);
     // The non-string id is dropped, so pm-a is the only ranked id (rank 1).
@@ -94,7 +137,9 @@ describe("runEval", () => {
   });
 
   it("passes the gate when aggregate nDCG meets --fail-under", async () => {
-    readFileMock.mockResolvedValue(JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]));
+    readFileMock.mockResolvedValue(
+      JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]),
+    );
     queueRankings(["pm-a"]);
 
     const result = await runEval({ failUnder: "0.5" }, GLOBAL);
@@ -103,7 +148,9 @@ describe("runEval", () => {
   });
 
   it("accepts numeric --k and --fail-under (programmatic invocation)", async () => {
-    readFileMock.mockResolvedValue(JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]));
+    readFileMock.mockResolvedValue(
+      JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]),
+    );
     queueRankings(["pm-a"]);
 
     const result = await runEval({ k: 5, failUnder: 0.5 }, GLOBAL);
@@ -112,8 +159,22 @@ describe("runEval", () => {
     expect(result.passed).toBe(true);
   });
 
+  it("preserves an empty --fail-under as an omitted threshold", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]),
+    );
+    queueRankings(["pm-a"]);
+
+    const result = await runEval({ failUnder: "" }, GLOBAL);
+
+    expect(result).not.toHaveProperty("fail_under");
+    expect(result.passed).toBe(true);
+  });
+
   it("fails the gate when aggregate nDCG is below --fail-under", async () => {
-    readFileMock.mockResolvedValue(JSON.stringify([{ query: "x", relevant_ids: ["pm-missing"] }]));
+    readFileMock.mockResolvedValue(
+      JSON.stringify([{ query: "x", relevant_ids: ["pm-missing"] }]),
+    );
     queueRankings(["pm-other"]);
 
     const result = await runEval({ failUnder: "0.5" }, GLOBAL);
@@ -122,7 +183,9 @@ describe("runEval", () => {
   });
 
   it("reads the golden set from an explicit --queries path", async () => {
-    readFileMock.mockResolvedValue(JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]));
+    readFileMock.mockResolvedValue(
+      JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]),
+    );
     queueRankings(["pm-a"]);
 
     await runEval({ queries: "custom/eval.json" }, GLOBAL);
@@ -132,7 +195,9 @@ describe("runEval", () => {
   });
 
   it("defaults the golden-set path under the pm root", async () => {
-    readFileMock.mockResolvedValue(JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]));
+    readFileMock.mockResolvedValue(
+      JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]),
+    );
     queueRankings(["pm-a"]);
 
     await runEval({}, GLOBAL);
@@ -145,37 +210,60 @@ describe("runEval", () => {
 
   it("throws NOT_FOUND when the tracker is not initialized", async () => {
     pathExistsMock.mockResolvedValue(false);
-    await expect(runEval({}, GLOBAL)).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
+    await expect(runEval({}, GLOBAL)).rejects.toMatchObject({
+      exitCode: EXIT_CODE.NOT_FOUND,
+    });
   });
 
   it("throws NOT_FOUND with guidance when the golden set is missing", async () => {
     readFileMock.mockRejectedValue(new Error("ENOENT"));
     await expect(runEval({}, GLOBAL)).rejects.toBeInstanceOf(PmCliError);
-    await expect(runEval({}, GLOBAL)).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
+    await expect(runEval({}, GLOBAL)).rejects.toMatchObject({
+      exitCode: EXIT_CODE.NOT_FOUND,
+    });
   });
 
   it("throws USAGE when the golden set is not valid JSON", async () => {
     readFileMock.mockResolvedValue("{ not json");
-    await expect(runEval({}, GLOBAL)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    await expect(runEval({}, GLOBAL)).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
   });
 
   it("throws USAGE when the golden set is structurally invalid", async () => {
     readFileMock.mockResolvedValue(JSON.stringify([{ query: "" }]));
-    await expect(runEval({}, GLOBAL)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    await expect(runEval({}, GLOBAL)).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
   });
 
   it("rejects an invalid --mode", async () => {
-    readFileMock.mockResolvedValue(JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]));
-    await expect(runEval({ mode: "fuzzy" }, GLOBAL)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    readFileMock.mockResolvedValue(
+      JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]),
+    );
+    await expect(runEval({ mode: "fuzzy" }, GLOBAL)).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
   });
 
   it("rejects a non-positive --k", async () => {
-    readFileMock.mockResolvedValue(JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]));
-    await expect(runEval({ k: "0" }, GLOBAL)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    readFileMock.mockResolvedValue(
+      JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]),
+    );
+    await expect(runEval({ k: "0" }, GLOBAL)).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
   });
 
   it("rejects an out-of-range --fail-under", async () => {
-    readFileMock.mockResolvedValue(JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]));
-    await expect(runEval({ failUnder: "1.5" }, GLOBAL)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    readFileMock.mockResolvedValue(
+      JSON.stringify([{ query: "x", relevant_ids: ["pm-a"] }]),
+    );
+    await expect(runEval({ failUnder: "1.5" }, GLOBAL)).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(runEval({ failUnder: "   " }, GLOBAL)).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
   });
 });

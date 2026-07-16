@@ -24,6 +24,9 @@ const HISTORY_COMPACT_SDK_MODULE = "../../../src/sdk/history-compact.js";
 const HISTORY_REDACT_SDK_MODULE = "../../../src/sdk/history-redact.js";
 const HISTORY_REPAIR_SDK_MODULE = "../../../src/sdk/history-repair.js";
 const SCHEMA_SDK_MODULE = "../../../src/sdk/schema.js";
+const STATS_SDK_MODULE = "../../../src/sdk/stats.js";
+const TELEMETRY_SDK_MODULE = "../../../src/sdk/telemetry.js";
+const TEST_EXECUTION_SDK_MODULE = "../../../src/sdk/test/execution.js";
 const PACKAGE_ROOT_MODULE = "../../../src/core/packages/root.js";
 const EXTENSIONS_MODULE = "../../../src/core/extensions/index.js";
 const TOOLS_MODULE = "../../../src/mcp/tool-definitions.js";
@@ -148,6 +151,27 @@ async function importServerWithCommandMocks(
       runSchemaInferTypes: commandMocks.runSchemaInferTypes,
     };
   });
+  vi.doMock(STATS_SDK_MODULE, async () => {
+    const actual =
+      await vi.importActual<typeof import("../../../src/sdk/stats.js")>(
+        STATS_SDK_MODULE,
+      );
+    return { ...actual, runStats: commandMocks.runStats };
+  });
+  vi.doMock(TELEMETRY_SDK_MODULE, async () => {
+    const actual =
+      await vi.importActual<typeof import("../../../src/sdk/telemetry.js")>(
+        TELEMETRY_SDK_MODULE,
+      );
+    return { ...actual, runTelemetry: commandMocks.runTelemetry };
+  });
+  vi.doMock(TEST_EXECUTION_SDK_MODULE, async () => {
+    const actual =
+      await vi.importActual<typeof import("../../../src/sdk/test/execution.js")>(
+        TEST_EXECUTION_SDK_MODULE,
+      );
+    return { ...actual, runTest: commandMocks.runTest };
+  });
   return import("../../../src/mcp/server.js");
 }
 
@@ -163,6 +187,9 @@ describe("mcp server branch residual coverage", () => {
     vi.doUnmock(HISTORY_REDACT_SDK_MODULE);
     vi.doUnmock(HISTORY_REPAIR_SDK_MODULE);
     vi.doUnmock(SCHEMA_SDK_MODULE);
+    vi.doUnmock(STATS_SDK_MODULE);
+    vi.doUnmock(TELEMETRY_SDK_MODULE);
+    vi.doUnmock(TEST_EXECUTION_SDK_MODULE);
     vi.doUnmock(PACKAGE_ROOT_MODULE);
     vi.doUnmock(EXTENSIONS_MODULE);
     vi.doUnmock(TOOLS_MODULE);

@@ -32,7 +32,7 @@ describe("release automation contract", () => {
       "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/bundle-cli.mjs && node scripts/finalize-build.mjs",
     );
     expect(packageJson.scripts?.["quality:static"]).toBe(
-      "pnpm build && node scripts/release/static-quality-gate.mjs --max-eslint-suppressions 158 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs",
+      "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 154 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs",
     );
     expect(packageJson.scripts?.["quality:token-budget"]).toBe(
       "node scripts/release/token-budget-gate.mjs",
@@ -144,7 +144,7 @@ describe("release automation contract", () => {
 
   it("keeps the ESLint suppressions budget pinned to the current baseline", async () => {
     const staticQualityGate = await readFile(
-      path.join(repoRoot, "scripts/release/static-quality-gate.mjs"),
+      path.join(repoRoot, "scripts/release/static-quality-gate.mts"),
       "utf8",
     );
     const suppressionsRaw = await readFile(

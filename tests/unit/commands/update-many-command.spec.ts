@@ -193,8 +193,8 @@ describe("update-many command helper coverage", () => {
         title: "preview",
         status: "open",
       },
-      undefined,
       emptyRuntimeRegistry,
+      undefined,
     );
     expect(noUpdateDiff).toEqual({
       id: "pm-preview",

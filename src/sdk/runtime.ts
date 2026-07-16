@@ -75,17 +75,11 @@ import {
   runGet,
   runHistory,
   runLearnings,
-  runList,
   runNext,
   runNotes,
   runPlan,
   runRestore,
   runRelease,
-  runSearch,
-  runStats,
-  runTelemetry,
-  runTest,
-  runTestAll,
   runUpdate,
   runUpdateMany,
   runUpgrade,
@@ -171,18 +165,26 @@ import {
 import type { CopyResult } from "../cli/commands/copy.js";
 import type { CreateResult } from "../cli/commands/create.js";
 import type { DeleteResult } from "../cli/commands/delete.js";
-import type { ListOptions, ListResult } from "../cli/commands/list.js";
+import { runList, type ListOptions, type ListResult } from "./query/list.js";
 import type { NextOptions, NextResult } from "../cli/commands/next.js";
 import type {
   PlanCommandOptions,
   PlanCommandResult,
   PlanSubcommand,
 } from "../cli/commands/plan.js";
-import type { SearchOptions, SearchResult } from "../cli/commands/search.js";
-import type {
-  StatsCommandOptions,
-  StatsResult,
-} from "../cli/commands/stats.js";
+import {
+  runSearch,
+  type SearchOptions,
+  type SearchResult,
+} from "./query/search.js";
+import {
+  runStats,
+  type StatsCommandOptions,
+  type StatsResult,
+} from "./stats.js";
+import { runTelemetry } from "./telemetry.js";
+import { runTest } from "./test/execution.js";
+import { runTestAll } from "./test/batch.js";
 import { resolveStartTaskInProgressStatus } from "./start-task-status.js";
 import type { FocusResult } from "../cli/commands/focus.js";
 import type { RestoreResult } from "../cli/commands/restore.js";
@@ -404,14 +406,19 @@ export {
 } from "../cli/commands/get.js";
 export {
   runList,
+  type ListFullResult,
   type ListCompactResult,
   type ListedItem,
   type ListOptions,
+  type ListProjectedItem,
   type ListResult,
+  type ListResultItem,
   type ListSortField,
   type ListSortOrder,
+  type ListTreeItem,
+  type ListTreeMetadata,
   type ListVerboseResult,
-} from "../cli/commands/list.js";
+} from "./query/list.js";
 export { runClose, type CloseCommandOptions } from "../cli/commands/close.js";
 export {
   runUpdate,
@@ -437,12 +444,12 @@ export {
   type SearchResult,
   type SearchResultItem,
   type SearchVerboseResult,
-} from "../cli/commands/search.js";
+} from "./query/search.js";
 export {
   runStats,
   type StatsCommandOptions,
   type StatsResult,
-} from "../cli/commands/stats.js";
+} from "./stats.js";
 export {
   renderCalendarMarkdown,
   renderCalendarToon,
@@ -490,7 +497,7 @@ export {
   type TestRunsLogsCommandOptions,
   type TestRunsResumeCommandOptions,
   type TestRunsStopCommandOptions,
-} from "../cli/commands/test-runs.js";
+} from "./test/runs.js";
 export {
   CONFIDENCE_TEXT_VALUES,
   DEPENDENCY_KIND_VALUES,
@@ -3970,22 +3977,13 @@ async function loadWorkspaceExtensionRegistrations(
 
 export type { ContractsCommandOptions, ContractsResult };
 export type {
-  AppendCommandOptions,
-  AppendResult,
-  CommentsCommandOptions,
-  CommentsResult,
-  ConfigCommandOptions,
-  ConfigResult,
-  DepsCommandOptions,
-  DepsResult,
-  DocsCommandOptions,
-  DocsResult,
-  ExtensionCommandOptions,
-  ExtensionCommandResult,
-  FilesCommandOptions,
-  FilesDiscoverOptions,
-  FilesDiscoverResult,
-  FilesResult,
+  AppendCommandOptions, AppendResult,
+  CommentsCommandOptions, CommentsResult,
+  ConfigCommandOptions, ConfigResult,
+  DepsCommandOptions, DepsResult,
+  DocsCommandOptions, DocsResult,
+  ExtensionCommandOptions, ExtensionCommandResult,
+  FilesCommandOptions, FilesDiscoverOptions, FilesDiscoverResult, FilesResult,
   GcCommandOptions,
   GcResult,
   HealthResult,
