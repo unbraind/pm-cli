@@ -2628,7 +2628,7 @@ function resolveTestRunOptions(
       : parseOptionalNumber(options.timeout, "timeout");
   if (defaultTimeoutSeconds !== undefined && defaultTimeoutSeconds <= 0) {
     throw new PmCliError(
-      "Test timeout must be a positive integer",
+      "Test timeout must be a positive number",
       EXIT_CODE.USAGE,
     );
   }

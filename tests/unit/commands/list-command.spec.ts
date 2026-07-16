@@ -1742,9 +1742,13 @@ describe("runList", () => {
         `${conflictingWindows.stderr}${conflictingWindows.stdout}`,
       ).toContain("Choose only one updated_at window");
 
+      const futureDate = new Date();
+      futureDate.setUTCFullYear(futureDate.getUTCFullYear() + 1);
+      const futureDateOnly = futureDate.toISOString().slice(0, 10);
+
       // updated-after: a future ISO threshold filters everything out.
       const updatedAfterFuture = context.runCli(
-        ["list", "--updated-after", "2030-01-01", "--json"],
+        ["list", "--updated-after", futureDateOnly, "--json"],
         {
           expectJson: true,
         },
@@ -1755,11 +1759,11 @@ describe("runList", () => {
         filters: Record<string, unknown>;
       };
       expect(futurePayload.count).toBe(0);
-      expect(futurePayload.filters.updated_after).toBe("2030-01-01");
+      expect(futurePayload.filters.updated_after).toBe(futureDateOnly);
 
       // created-before: a far-future ISO threshold keeps all items.
       const createdBeforeFuture = context.runCli(
-        ["list", "--created-before", "2030-01-01", "--json"],
+        ["list", "--created-before", futureDateOnly, "--json"],
         {
           expectJson: true,
         },
@@ -1770,7 +1774,7 @@ describe("runList", () => {
         filters: Record<string, unknown>;
       };
       expect(createdFuturePayload.count).toBeGreaterThan(0);
-      expect(createdFuturePayload.filters.created_before).toBe("2030-01-01");
+      expect(createdFuturePayload.filters.created_before).toBe(futureDateOnly);
 
       // created-before: a relative past offset filters everything out.
       const createdBeforePast = context.runCli(

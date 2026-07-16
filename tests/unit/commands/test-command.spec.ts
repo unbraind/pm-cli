@@ -1329,7 +1329,7 @@ describe("runTest", () => {
     );
     expect(() =>
       testInternals.resolveTestRunOptions({ timeout: "0" }, []),
-    ).toThrow(/positive integer/);
+    ).toThrow(/positive number/);
     expect(
       testInternals.resolveTestRunOptions({ timeout: "1.5" }, [])
         .defaultTimeoutSeconds,
