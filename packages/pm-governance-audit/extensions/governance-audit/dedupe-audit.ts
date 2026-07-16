@@ -521,12 +521,10 @@ function collectDedupeClusters(
   return collectFuzzyTitleClusters(prepared, fuzzyThreshold);
 }
 
-/**
- * Precompute normalized fields used by every dedupe comparison strategy.
- */
 function toPreparedDedupeCandidate(
   item: ListedItem,
 ): DedupeAuditPreparedCandidate {
+  /** Precompute normalized fields used by every dedupe comparison strategy. */
   return {
     id: item.id,
     title: item.title,

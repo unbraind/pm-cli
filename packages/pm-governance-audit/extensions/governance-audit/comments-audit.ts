@@ -364,13 +364,11 @@ function resolveCommentsAuditLimits(options: CommentsAuditOptions): {
   };
 }
 
-/**
- * Project one complete list record into the bounded comments-audit shape.
- */
 function toCommentsAuditEntry(
   item: ListedItem,
   latest: number | undefined,
 ): CommentsAuditEntry {
+  /** Project one complete list record into the bounded comments-audit shape. */
   const comments = item.comments ?? [];
   return {
     id: item.id,
