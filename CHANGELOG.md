@@ -7,6 +7,10 @@
 - Promote query/read primitives to the public SDK: list, get, search, context, next, aggregate, stats ([pm-rjqr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rjqr.toon))
 - Promote execution and diagnostics primitives to the public SDK: linked-test running and test-run lifecycle, search eval harness, telemetry stats/export ([pm-oslr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-oslr.toon))
 
+### Fixed
+
+- Windows packed-extension install regression exceeds the generic Vitest timeout ([pm-ph3i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ph3i.toon))
+
 ## 2026.7.16 - 2026-07-16
 
 ### Other

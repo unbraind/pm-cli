@@ -116,7 +116,7 @@ export interface ListOptions extends SharedItemFilterOptions {
 }
 
 /** Extract the missing-metadata selection filters from list/update-many options. */
-export function resolveMissingMetadataFilters(options: {
+export const resolveMissingMetadataFilters = (options: {
   filterAcMissing?: boolean;
   filterEstimatesMissing?: boolean;
   filterResolutionMissing?: boolean;
@@ -126,7 +126,7 @@ export function resolveMissingMetadataFilters(options: {
   filterConfidenceMissing?: boolean;
   filterSprintMissing?: boolean;
   filterReleaseMissing?: boolean;
-}): MissingMetadataFilters {
+}): MissingMetadataFilters => {
   return {
     acMissing: options.filterAcMissing === true,
     estimatesMissing: options.filterEstimatesMissing === true,
@@ -138,7 +138,7 @@ export function resolveMissingMetadataFilters(options: {
     sprintMissing: options.filterSprintMissing === true,
     releaseMissing: options.filterReleaseMissing === true,
   };
-}
+};
 
 /** Per content field: the present flag and the absence flag on the options shape. */
 interface ContentFieldFlagMapping {
@@ -217,27 +217,34 @@ const CONTENT_FIELD_FLAG_MAPPINGS: readonly ContentFieldFlagMapping[] = [
 ] as const;
 
 /** Resolve the content-field presence/absence selections from list/search options. A field requested both present AND absent is a usage error (the two selections are mutually exclusive). Returns an empty object when no content-field filter is active. */
-export function resolveContentFieldFilters(
+export const resolveContentFieldFilters = (
   options: Record<string, unknown>,
-): ContentFieldFilters {
-  const filters: ContentFieldFilters = {};
-  for (const mapping of CONTENT_FIELD_FLAG_MAPPINGS) {
-    const present = options[mapping.presentKey] === true;
-    const absent = options[mapping.absentKey] === true;
-    if (present && absent) {
-      throw new PmCliError(
-        `Cannot combine ${mapping.presentFlag} with ${mapping.absentFlag} for the same field.`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    if (present) {
-      filters[mapping.field] = "present";
-    } else if (absent) {
-      filters[mapping.field] = "absent";
-    }
+): ContentFieldFilters => {
+  const conflict = CONTENT_FIELD_FLAG_MAPPINGS.find(
+    (mapping) =>
+      options[mapping.presentKey] === true &&
+      options[mapping.absentKey] === true,
+  );
+  if (conflict) {
+    throw new PmCliError(
+      `Cannot combine ${conflict.presentFlag} with ${conflict.absentFlag} for the same field.`,
+      EXIT_CODE.USAGE,
+    );
   }
-  return filters;
-}
+  return Object.fromEntries(
+    CONTENT_FIELD_FLAG_MAPPINGS.flatMap<[
+      ContentField,
+      "present" | "absent",
+    ]>((mapping) => {
+      if (options[mapping.presentKey] === true) {
+        return [[mapping.field, "present"]];
+      }
+      return options[mapping.absentKey] === true
+        ? [[mapping.field, "absent"]]
+        : [];
+    }),
+  ) as ContentFieldFilters;
+};
 
 /** Restricts listed item values accepted by command, SDK, and storage contracts. */
 export type ListedItem = ItemMetadata | (ItemMetadata & { body: string });

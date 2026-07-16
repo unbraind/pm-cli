@@ -32,9 +32,23 @@ export {
   quoteWindowsCommandArg,
   renderPmCommand,
 } from "./command-line.js";
-export * from "./governance/gc.js";
-export * from "./governance/health.js";
-export * from "./governance/validate.js";
+export {
+  runGc,
+  type GcCheckpointsSummary,
+  type GcLocksSummary,
+} from "./governance/gc.js";
+export {
+  _testOnlyHealthCommand,
+  runHealth,
+  type HealthCheck,
+} from "./governance/health.js";
+export {
+  _testOnlyValidateCommand,
+  runValidate,
+  type ValidateCheck,
+  type ValidateFixesSummary,
+  type ValidateMutationServices,
+} from "./governance/validate.js";
 export { runExtension } from "./extension.js";
 export { applyInvocationAuthorOverride } from "./invocation-author.js";
 export {
