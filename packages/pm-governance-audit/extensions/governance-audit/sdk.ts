@@ -6,16 +6,63 @@
  */
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type * as RuntimeSdk from "@unbrained/pm-cli/sdk/runtime";
+import type {
+  EXIT_CODE as RuntimeExitCode,
+  PmCliError as RuntimePmCliError,
+  PmClient as RuntimePmClient,
+  getActiveExtensionRegistrations as runtimeGetActiveExtensionRegistrations,
+  getSettingsPath as runtimeGetSettingsPath,
+  isTerminalStatus as runtimeIsTerminalStatus,
+  locateItem as runtimeLocateItem,
+  normalizeStatusInput as runtimeNormalizeStatusInput,
+  nowIso as runtimeNowIso,
+  pathExists as runtimePathExists,
+  readBooleanOption as runtimeReadBooleanOption,
+  readCsvListOption as runtimeReadCsvListOption,
+  readLocatedItem as runtimeReadLocatedItem,
+  readSettings as runtimeReadSettings,
+  readStringOption as runtimeReadStringOption,
+  resolveItemTypeRegistry as runtimeResolveItemTypeRegistry,
+  resolvePmRoot as runtimeResolvePmRoot,
+  resolveRuntimeStatusRegistry as runtimeResolveRuntimeStatusRegistry,
+  runClose as runtimeRunClose,
+  runList as runtimeRunList,
+  runUpdate as runtimeRunUpdate,
+} from "@unbrained/pm-cli/sdk/runtime";
+
+/** Typed host-runtime values consumed through the package's dynamic boundary. */
+interface RuntimeSdkModule {
+  EXIT_CODE: typeof RuntimeExitCode;
+  PmCliError: typeof RuntimePmCliError;
+  PmClient: typeof RuntimePmClient;
+  getActiveExtensionRegistrations: typeof runtimeGetActiveExtensionRegistrations;
+  getSettingsPath: typeof runtimeGetSettingsPath;
+  isTerminalStatus: typeof runtimeIsTerminalStatus;
+  locateItem: typeof runtimeLocateItem;
+  normalizeStatusInput: typeof runtimeNormalizeStatusInput;
+  nowIso: typeof runtimeNowIso;
+  pathExists: typeof runtimePathExists;
+  readBooleanOption: typeof runtimeReadBooleanOption;
+  readCsvListOption: typeof runtimeReadCsvListOption;
+  readLocatedItem: typeof runtimeReadLocatedItem;
+  readSettings: typeof runtimeReadSettings;
+  readStringOption: typeof runtimeReadStringOption;
+  resolveItemTypeRegistry: typeof runtimeResolveItemTypeRegistry;
+  resolvePmRoot: typeof runtimeResolvePmRoot;
+  resolveRuntimeStatusRegistry: typeof runtimeResolveRuntimeStatusRegistry;
+  runClose: typeof runtimeRunClose;
+  runList: typeof runtimeRunList;
+  runUpdate: typeof runtimeRunUpdate;
+}
 
 const packageRoot = process.env.PM_CLI_PACKAGE_ROOT?.trim();
-let loadedRuntime: typeof RuntimeSdk;
+let loadedRuntime: RuntimeSdkModule;
 /* c8 ignore start -- copied installs exercise PM_CLI_PACKAGE_ROOT in subprocess integration coverage. */
 try {
   if (packageRoot) {
     loadedRuntime = (await import(
       pathToFileURL(path.join(packageRoot, "dist", "sdk", "runtime.js")).href
-    )) as typeof RuntimeSdk;
+    )) as RuntimeSdkModule;
   } else {
     loadedRuntime = await import("@unbrained/pm-cli/sdk/runtime");
   }
@@ -54,7 +101,7 @@ export const {
 } = runtime;
 
 /** Preserve the host SDK list overloads across the dynamic runtime boundary. */
-export const runList: typeof RuntimeSdk.runList = runtime.runList;
+export const runList: typeof runtimeRunList = runtime.runList;
 
 /** Runtime status registry inferred from the host SDK's schema resolver. */
 export type RuntimeStatusRegistry = ReturnType<

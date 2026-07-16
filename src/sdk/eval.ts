@@ -123,10 +123,17 @@ function parseEvalK(raw: string | number | undefined): number {
 }
 
 function parseFailUnder(raw: string | number | undefined): number | undefined {
-  if (raw === undefined || raw === "") {
+  if (raw === undefined) {
     return undefined;
   }
-  const parsed = typeof raw === "number" ? raw : Number(String(raw).trim());
+  const normalized = String(raw).trim();
+  if (normalized.length === 0) {
+    throw new PmCliError(
+      "Eval --fail-under must be a number in the range [0, 1]",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const parsed = Number(normalized);
   if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
     throw new PmCliError(
       "Eval --fail-under must be a number in the range [0, 1]",

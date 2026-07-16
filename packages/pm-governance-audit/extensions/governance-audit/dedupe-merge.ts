@@ -160,9 +160,7 @@ const parseDuplicateIds = (
   keep: string,
 ): string[] => {
   /** Parse unique duplicate identities while excluding the canonical item. */
-  const collected = Array.isArray(raw)
-    ? raw
-    : Array.of(valueOrDefault(raw, ""));
+  const collected = Array.isArray(raw) ? raw : raw === undefined ? [] : [raw];
   const ids = [
     ...new Set(
       collected

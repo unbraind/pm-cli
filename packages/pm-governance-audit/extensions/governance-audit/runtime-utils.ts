@@ -7,7 +7,7 @@
 import { EXIT_CODE, PmCliError, PmClient, type ListOptions } from "./sdk.ts";
 
 /** Retain only list filters that the package-owned audit queries may forward. */
-export function buildListQueryFilters(
+export const buildListQueryFilters = (
   filters: Pick<
     ListOptions,
     | "type"
@@ -21,7 +21,7 @@ export function buildListQueryFilters(
     | "sprint"
     | "release"
   >,
-): ListOptions {
+): ListOptions => {
   const {
     type,
     tag,
@@ -46,48 +46,50 @@ export function buildListQueryFilters(
     sprint,
     release,
   };
-}
+};
 
 /** Order valid timestamps chronologically and malformed values lexicographically. */
-export function compareTimestampStrings(left: string, right: string): number {
+export const compareTimestampStrings = (
+  left: string,
+  right: string,
+): number => {
   const leftMs = Date.parse(left);
   const rightMs = Date.parse(right);
   if (Number.isFinite(leftMs) && Number.isFinite(rightMs) && leftMs !== rightMs)
     return leftMs - rightMs;
   return left.localeCompare(right);
-}
+};
 
 /** Measure set overlap between two token lists on the inclusive zero-to-one scale. */
-export function jaccardSimilarity(
+export const jaccardSimilarity = (
   leftTokens: string[],
   rightTokens: string[],
-): number {
-  if (leftTokens.length === 0 && rightTokens.length === 0) return 1;
-  if (leftTokens.length === 0 || rightTokens.length === 0) return 0;
+): number => {
   const left = new Set(leftTokens);
   const right = new Set(rightTokens);
-  let intersection = 0;
-  for (const token of left) if (right.has(token)) intersection += 1;
-  return intersection / new Set([...left, ...right]).size;
-}
+  const union = new Set([...left, ...right]);
+  if (union.size === 0) return 1;
+  const intersection = [...left].filter((token) => right.has(token)).length;
+  return intersection / union.size;
+};
 
 /** Trim, lowercase, and collapse internal whitespace for stable audit comparisons. */
-export function normalizeLowercaseWhitespace(value: string): string {
+export const normalizeLowercaseWhitespace = (value: string): string => {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
-}
+};
 
 /** Split normalized text into non-empty lowercase ASCII alphanumeric tokens. */
-export function tokenizeAlphaNumeric(value: string): string[] {
+export const tokenizeAlphaNumeric = (value: string): string[] => {
   return normalizeLowercaseWhitespace(value)
     .split(/[^a-z0-9]+/)
     .filter((token) => token.length > 0);
-}
+};
 
 /** Parse an optional non-negative integer limit with package-specific error context. */
-export function parseIntegerLimit(
+export const parseIntegerLimit = (
   raw: string | undefined,
   label = "--limit",
-): number | undefined {
+): number | undefined => {
   if (raw === undefined) return undefined;
   const parsed = Number(raw);
   if (!Number.isInteger(parsed) || parsed < 0)
@@ -96,31 +98,31 @@ export function parseIntegerLimit(
       EXIT_CODE.USAGE,
     );
   return parsed;
-}
+};
 
 /** Normalize an optional comma-separated value into trimmed non-empty entries. */
-export function splitCommaList(raw: string | undefined | null): string[] {
+export const splitCommaList = (raw: string | undefined | null): string[] => {
   if (raw == null) return [];
   return raw
     .split(",")
     .map((entry) => entry.trim())
     .filter(Boolean);
-}
+};
 
 /** Convert thrown values to a concise message suitable for audit result envelopes. */
-export function toErrorMessage(error: unknown): string {
+export const toErrorMessage = (error: unknown): string => {
   if (error instanceof Error) return error.message.trim() || error.name;
   return String(error);
-}
+};
 
 /** Return trimmed non-empty text while rejecting non-string and blank values. */
-export function toNonEmptyStringOrUndefined(
+export const toNonEmptyStringOrUndefined = (
   value: unknown,
-): string | undefined {
+): string | undefined => {
   if (typeof value !== "string") return undefined;
   const normalized = value.trim();
   return normalized.length > 0 ? normalized : undefined;
-}
+};
 
 /** Inputs used to attribute linked paths to every item that references them. */
 export interface LinkedArtifactAuditPayload {
@@ -141,18 +143,22 @@ export interface LinkedArtifactAuditEntry {
 }
 
 /** Build sorted, duplicate-free reverse attribution for requested artifact paths. */
-export function buildLinkedArtifactAudit(
+export const buildLinkedArtifactAudit = (
   input: LinkedArtifactAuditPayload,
-): LinkedArtifactAuditEntry[] {
+): LinkedArtifactAuditEntry[] => {
+  /** Build a stable reverse index over optional item and path collections. */
+  /** Normalize an optional read-only collection into an iterable array. */
+  const optionalArray = <Value>(values: readonly Value[] | undefined) =>
+    values ?? [];
   const index = new Map<string, Set<string>>();
-  for (const item of input.items ?? []) {
-    for (const artifact of item.artifacts ?? []) {
+  for (const item of optionalArray(input.items)) {
+    for (const artifact of optionalArray(item.artifacts)) {
       const ids = index.get(artifact.path) ?? new Set<string>();
       ids.add(item.id);
       index.set(artifact.path, ids);
     }
   }
-  return [...new Set(input.paths ?? [])]
+  return [...new Set(optionalArray(input.paths))]
     .sort((left, right) => left.localeCompare(right))
     .map((linkedPath) => {
       const linkedItemIds = [...(index.get(linkedPath) ?? [])].sort(
@@ -164,7 +170,7 @@ export function buildLinkedArtifactAudit(
         linked_item_ids: linkedItemIds,
       };
     });
-}
+};
 
 interface CommandResultPayload {
   command?: string;
