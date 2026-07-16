@@ -142,6 +142,16 @@ describe("runTestAll", () => {
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(
+        runTestAll({ timeout: "0" }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTestAll({ timeout: "-1" }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 

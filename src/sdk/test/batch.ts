@@ -172,10 +172,10 @@ interface TestAllAccumulation {
   trackingWarnings: string[];
 }
 
-function parseStatus(
+const parseStatus = (
   raw: string | undefined,
   statusRegistry: RuntimeStatusRegistry,
-): ItemStatus | undefined {
+): ItemStatus | undefined => {
   if (raw === undefined) {
     return undefined;
   }
@@ -190,19 +190,23 @@ function parseStatus(
     );
   }
   return normalized;
-}
+};
 
-function parseTimeout(raw: string | undefined): number | undefined {
+const parseTimeout = (raw: string | undefined): number | undefined => {
   if (raw === undefined) {
     return undefined;
   }
-  return parseOptionalNumber(raw, "timeout");
-}
+  const parsed = parseOptionalNumber(raw, "timeout");
+  if (parsed <= 0) {
+    throw new PmCliError("timeout must be a positive number", EXIT_CODE.USAGE);
+  }
+  return parsed;
+};
 
-function parseNonNegativeInteger(
+const parseNonNegativeInteger = (
   raw: string | undefined,
   flag: string,
-): number | undefined {
+): number | undefined => {
   if (raw === undefined) {
     return undefined;
   }
@@ -214,25 +218,25 @@ function parseNonNegativeInteger(
     );
   }
   return parsed;
-}
+};
 
-function formatTrackingError(error: unknown): string {
+const formatTrackingError = (error: unknown): string => {
   return error instanceof Error ? error.message : String(error);
-}
+};
 
-function resolveTrackedRunId(): string {
+const resolveTrackedRunId = (): string => {
   const fromEnv = process.env.PM_BACKGROUND_TEST_RUN_ID?.trim();
   if (fromEnv && fromEnv.length > 0) {
     return fromEnv;
   }
   return `test-all-local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
+};
 
-function normalizeCommand(command: string): string {
+const normalizeCommand = (command: string): string => {
   return command.trim().replaceAll(/\s+/g, " ");
-}
+};
 
-function normalizeEnvSetSignature(value: LinkedTest["env_set"]): string {
+const normalizeEnvSetSignature = (value: LinkedTest["env_set"]): string => {
   if (!value || Object.keys(value).length === 0) {
     return "{}";
   }
@@ -243,74 +247,85 @@ function normalizeEnvSetSignature(value: LinkedTest["env_set"]): string {
       ),
     ),
   );
-}
+};
 
-function normalizeEnvClearSignature(value: LinkedTest["env_clear"]): string {
+const normalizeEnvClearSignature = (value: LinkedTest["env_clear"]): string => {
   if (!value || value.length === 0) {
     return "[]";
   }
   return JSON.stringify(
     [...value].sort((left, right) => left.localeCompare(right)),
   );
-}
+};
 
-function normalizePmContextModeSignature(
+const normalizePmContextModeSignature = (
   value: LinkedTest["pm_context_mode"],
-): string {
+): string => {
   const normalized = value?.trim().toLowerCase();
   return normalized && normalized.length > 0 ? normalized : "none";
-}
+};
 
-function normalizeAssertionSignature(test: LinkedTest): string {
+/** Sorts and deduplicates optional assertion string lists. */
+const normalizeAssertionStrings = (values: string[] | undefined): string[] =>
+  [...new Set(values ?? [])].sort((left, right) => left.localeCompare(right));
+
+/** Sorts optional assertion maps into deterministic key order. */
+const normalizeAssertionMap = <Value>(
+  value: Record<string, Value> | undefined,
+): Record<string, Value> =>
+  Object.fromEntries(
+    Object.entries(value ?? {}).sort(([left], [right]) =>
+      left.localeCompare(right),
+    ),
+  );
+
+/** Keeps a numeric assertion threshold while omitting other runtime shapes. */
+const normalizeAssertionLineCount = (value: unknown): number | undefined =>
+  typeof value === "number" ? value : undefined;
+
+const normalizeAssertionSignature = (test: LinkedTest): string => {
   const normalized = {
-    assert_stdout_contains: [
-      ...new Set(test.assert_stdout_contains ?? []),
-    ].sort((left, right) => left.localeCompare(right)),
-    assert_stdout_regex: [...new Set(test.assert_stdout_regex ?? [])].sort(
-      (left, right) => left.localeCompare(right),
+    assert_stdout_contains: normalizeAssertionStrings(
+      test.assert_stdout_contains,
     ),
-    assert_stderr_contains: [
-      ...new Set(test.assert_stderr_contains ?? []),
-    ].sort((left, right) => left.localeCompare(right)),
-    assert_stderr_regex: [...new Set(test.assert_stderr_regex ?? [])].sort(
-      (left, right) => left.localeCompare(right),
+    assert_stdout_regex: normalizeAssertionStrings(test.assert_stdout_regex),
+    assert_stderr_contains: normalizeAssertionStrings(
+      test.assert_stderr_contains,
     ),
-    assert_stdout_min_lines:
-      typeof test.assert_stdout_min_lines === "number"
-        ? test.assert_stdout_min_lines
-        : undefined,
-    assert_json_field_equals: Object.fromEntries(
-      Object.entries(test.assert_json_field_equals ?? {}).sort(
-        ([left], [right]) => left.localeCompare(right),
-      ),
+    assert_stderr_regex: normalizeAssertionStrings(test.assert_stderr_regex),
+    assert_stdout_min_lines: normalizeAssertionLineCount(
+      test.assert_stdout_min_lines,
     ),
-    assert_json_field_gte: Object.fromEntries(
-      Object.entries(test.assert_json_field_gte ?? {}).sort(([left], [right]) =>
-        left.localeCompare(right),
-      ),
+    assert_json_field_equals: normalizeAssertionMap(
+      test.assert_json_field_equals,
     ),
+    assert_json_field_gte: normalizeAssertionMap(test.assert_json_field_gte),
   };
   return JSON.stringify(normalized);
-}
+};
 
-function buildLinkedTestKey(test: LinkedTest): string {
+/** Resolves a linked test's command-or-path identity segment. */
+const resolveLinkedTestTargetSignature = (test: LinkedTest): string => {
+  const command = resolveOptionalEnvironmentValue(test.command);
+  if (command !== undefined) {
+    return `command:${test.scope}:${normalizeCommand(command)}`;
+  }
+  return `path:${test.scope}:${resolveOptionalEnvironmentValue(test.path) ?? ""}`;
+};
+
+const buildLinkedTestKey = (test: LinkedTest): string => {
   const envSet = normalizeEnvSetSignature(test.env_set);
   const envClear = normalizeEnvClearSignature(test.env_clear);
   const pmContextMode = normalizePmContextModeSignature(test.pm_context_mode);
   const sharedHostSafe = test.shared_host_safe === true ? "true" : "false";
   const assertions = normalizeAssertionSignature(test);
-  const command = test.command?.trim();
-  if (command && command.length > 0) {
-    return `command:${test.scope}:${normalizeCommand(command)}:${envSet}:${envClear}:${pmContextMode}:${sharedHostSafe}:${assertions}`;
-  }
-  const linkedPath = test.path?.trim() ?? "";
-  return `path:${test.scope}:${linkedPath}:${envSet}:${envClear}:${pmContextMode}:${sharedHostSafe}:${assertions}`;
-}
+  return `${resolveLinkedTestTargetSignature(test)}:${envSet}:${envClear}:${pmContextMode}:${sharedHostSafe}:${assertions}`;
+};
 
-function maxTimeoutSeconds(
+const maxTimeoutSeconds = (
   current: number | undefined,
   candidate: number | undefined,
-): number | undefined {
+): number | undefined => {
   if (candidate === undefined) {
     /* c8 ignore next - exercised implicitly by duplicate timeout normalization */
     return current;
@@ -319,13 +334,15 @@ function maxTimeoutSeconds(
     return candidate;
   }
   return current;
-}
+};
 
-function countStatuses(runResults: TestRunResult[]): {
+const countStatuses = (
+  runResults: TestRunResult[],
+): {
   passed: number;
   failed: number;
   skipped: number;
-} {
+} => {
   let passed = 0;
   let failed = 0;
   let skipped = 0;
@@ -341,21 +358,21 @@ function countStatuses(runResults: TestRunResult[]): {
     skipped += 1;
   }
   return { passed, failed, skipped };
-}
+};
 
-function mergeFailureCategoryCounts(
+const mergeFailureCategoryCounts = (
   target: Record<LinkedTestFailureCategory, number>,
   source: Record<LinkedTestFailureCategory, number>,
-): void {
+): void => {
   for (const [key, value] of Object.entries(source)) {
     target[key as LinkedTestFailureCategory] += value;
   }
-}
+};
 
-function emitTestAllProgress(
+const emitTestAllProgress = (
   options: TestAllCommandOptions,
   message: string,
-): void {
+): void => {
   if (options.progress !== true) {
     return;
   }
@@ -364,13 +381,13 @@ function emitTestAllProgress(
   } catch {
     // Ignore transient stderr write failures.
   }
-}
+};
 
-async function collectTestAllItemTests(
+const collectTestAllItemTests = async (
   filteredItems: TestAllSelectedItem[],
   global: GlobalOptions,
   pmRoot: string,
-): Promise<{ itemTests: TestAllItemTests[]; linkedTests: number }> {
+): Promise<{ itemTests: TestAllItemTests[]; linkedTests: number }> => {
   const itemTests: TestAllItemTests[] = [];
   let linkedTests = 0;
   for (const item of filteredItems) {
@@ -386,13 +403,13 @@ async function collectTestAllItemTests(
     itemTests.push({ item, tests: readResult.tests });
   }
   return { itemTests, linkedTests };
-}
+};
 
-async function selectTestAllItems(params: {
+const selectTestAllItems = async (params: {
   pmRoot: string;
   settings: Awaited<ReturnType<typeof readSettings>>;
   options: TestAllCommandOptions;
-}): Promise<TestAllSelection> {
+}): Promise<TestAllSelection> => {
   const statusRegistry = resolveRuntimeStatusRegistry(params.settings.schema);
   const typeRegistry = resolveItemTypeRegistry(
     params.settings,
@@ -417,11 +434,11 @@ async function selectTestAllItems(params: {
       ? statusFilteredItems.slice(offsetFilter)
       : statusFilteredItems.slice(offsetFilter, offsetFilter + limitFilter);
   return { filteredItems, statusFilter, limitFilter, offsetFilter };
-}
+};
 
-function buildEffectiveTimeoutByKey(
+const buildEffectiveTimeoutByKey = (
   itemTests: TestAllItemTests[],
-): Map<string, number | undefined> {
+): Map<string, number | undefined> => {
   const effectiveTimeoutByKey = new Map<string, number | undefined>();
   for (const { tests } of itemTests) {
     for (const test of tests) {
@@ -437,12 +454,12 @@ function buildEffectiveTimeoutByKey(
     }
   }
   return effectiveTimeoutByKey;
-}
+};
 
-async function runTestAllItem(
+const runTestAllItem = async (
   entry: TestAllItemTests,
   context: TestAllItemRunContext,
-): Promise<TestAllItemExecution> {
+): Promise<TestAllItemExecution> => {
   const testsToRun: LinkedTest[] = [];
   const keyedTests = entry.tests.map((test) => {
     const key = buildLinkedTestKey(test);
@@ -517,17 +534,32 @@ async function runTestAllItem(
       failure_categories: failureCategories,
     },
   };
-}
+};
 
-async function appendTestAllItemTracking(
+/** Resolves whether skip policy makes a tracked item run fail. */
+const trackedRunFailed = (
+  summary: { passed: number; failed: number; skipped: number },
+  options: TestAllCommandOptions,
+): boolean =>
+  [
+    summary.failed > 0,
+    options.failOnSkipped === true && summary.skipped > 0,
+  ].includes(true);
+
+/** Projects true flags while keeping false values absent from persisted rows. */
+const optionalTrue = (value: boolean): true | undefined =>
+  value ? true : undefined;
+
+const appendTestAllItemTracking = async (
   entry: TestAllItemTests,
   summary: { passed: number; failed: number; skipped: number },
   context: TestAllItemRunContext,
-): Promise<string[]> {
+): Promise<string[]> => {
   if (!context.trackingEnabled) {
     return [];
   }
   try {
+    const failed = trackedRunFailed(summary, context.options);
     await appendTrackedTestRunSummary({
       pmRoot: context.pmRoot,
       settings: context.settings,
@@ -537,11 +569,7 @@ async function appendTestAllItemTracking(
       entry: {
         run_id: context.trackingRunId,
         kind: "test-all",
-        status:
-          summary.failed > 0 ||
-          (context.options.failOnSkipped === true && summary.skipped > 0)
-            ? "failed"
-            : "passed",
+        status: failed ? "failed" : "passed",
         started_at: context.runStartedAt,
         finished_at: nowIso(),
         recorded_at: nowIso(),
@@ -552,10 +580,9 @@ async function appendTestAllItemTracking(
         skipped: summary.skipped,
         items: 1,
         linked_tests: entry.tests.length,
-        fail_on_skipped_triggered:
-          context.options.failOnSkipped === true && summary.skipped > 0
-            ? true
-            : undefined,
+        fail_on_skipped_triggered: optionalTrue(
+          context.options.failOnSkipped === true && summary.skipped > 0,
+        ),
       },
     });
   } catch (error: unknown) {
@@ -564,22 +591,31 @@ async function appendTestAllItemTracking(
     ];
   }
   return [];
-}
+};
 
-function buildTestAllItemRunContext(params: {
+/** Parses the optional background-attempt environment contract. */
+const resolveTrackingAttempt = (): number | undefined => {
+  const raw = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT?.trim();
+  const parsed = raw ? Number.parseInt(raw, 10) : Number.NaN;
+  return Number.isFinite(parsed) && parsed >= 1 ? parsed : undefined;
+};
+
+/** Normalizes an optional non-blank environment value. */
+const resolveOptionalEnvironmentValue = (
+  value: string | undefined,
+): string | undefined => {
+  const trimmed = value?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : undefined;
+};
+
+const buildTestAllItemRunContext = (params: {
   pmRoot: string;
   settings: Awaited<ReturnType<typeof readSettings>>;
   options: TestAllCommandOptions;
   itemTests: TestAllItemTests[];
   defaultTimeoutSeconds: number | undefined;
   runStartedAt: string;
-}): TestAllItemRunContext {
-  const trackingAttemptRaw = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT?.trim();
-  const trackingParsedAttempt = trackingAttemptRaw
-    ? Number.parseInt(trackingAttemptRaw, 10)
-    : Number.NaN;
-  const trackingResumedFrom =
-    process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM?.trim();
+}): TestAllItemRunContext => {
   return {
     pmRoot: params.pmRoot,
     settings: params.settings,
@@ -594,23 +630,22 @@ function buildTestAllItemRunContext(params: {
     trackingEnabled: params.settings.testing.record_results_to_items === true,
     trackingAuthor: resolveAuthor(undefined, params.settings.author_default),
     trackingRunId: resolveTrackedRunId(),
-    trackingAttempt:
-      Number.isFinite(trackingParsedAttempt) && trackingParsedAttempt >= 1
-        ? trackingParsedAttempt
-        : undefined,
-    trackingResumedFrom:
-      trackingResumedFrom && trackingResumedFrom.length > 0
-        ? trackingResumedFrom
-        : undefined,
+    trackingAttempt: resolveTrackingAttempt(),
+    trackingResumedFrom: resolveOptionalEnvironmentValue(
+      process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM,
+    ),
     runStartedAt: params.runStartedAt,
   };
-}
+};
 
-function initializeTestAllAccumulation(
+const initializeTestAllAccumulation = (
   options: TestAllCommandOptions,
   linkedTests: number,
   filteredItems: TestAllSelectedItem[],
-): { accumulation: TestAllAccumulation; failOnEmptyTestRunTriggered: boolean } {
+): {
+  accumulation: TestAllAccumulation;
+  failOnEmptyTestRunTriggered: boolean;
+} => {
   const accumulation: TestAllAccumulation = {
     results: [],
     passed: 0,
@@ -629,13 +664,13 @@ function initializeTestAllAccumulation(
     );
   }
   return { accumulation, failOnEmptyTestRunTriggered };
-}
+};
 
-async function runTestAllItems(
+const runTestAllItems = async (
   itemTests: TestAllItemTests[],
   context: TestAllItemRunContext,
   accumulation: TestAllAccumulation,
-): Promise<void> {
+): Promise<void> => {
   for (const [itemIndex, entry] of itemTests.entries()) {
     emitTestAllProgress(
       context.options,
@@ -658,12 +693,12 @@ async function runTestAllItems(
         ` passed=${execution.passed} failed=${execution.failed} skipped=${execution.skipped}`,
     );
   }
-}
+};
 
-function appendContextPreflightWarning(
+const appendContextPreflightWarning = (
   options: TestAllCommandOptions,
   accumulation: TestAllAccumulation,
-): void {
+): void => {
   if (options.checkContext !== true) {
     return;
   }
@@ -677,16 +712,16 @@ function appendContextPreflightWarning(
       `mismatches=${preflight.mismatches};` +
       `auto_remediated=${preflight.auto_remediated}`,
   );
-}
+};
 
-function buildTestAllResult(params: {
+const buildTestAllResult = (params: {
   ok: boolean;
   filteredItems: TestAllSelectedItem[];
   linkedTests: number;
   accumulation: TestAllAccumulation;
   failOnSkippedTriggered: boolean;
   failOnEmptyTestRunTriggered: boolean;
-}): TestAllResult {
+}): TestAllResult => {
   return {
     ok: params.ok,
     totals: {
@@ -710,13 +745,41 @@ function buildTestAllResult(params: {
         : undefined,
     results: params.accumulation.results,
   };
+};
+
+interface PreparedTestAllRun {
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  filteredItems: TestAllSelectedItem[];
+  itemTests: TestAllItemTests[];
+  linkedTests: number;
+  defaultTimeoutSeconds: number | undefined;
+  runStartedAt: string;
 }
 
-/** Implements run test all for the public runtime surface of this module. */
-export async function runTestAll(
+/** Formats the selected test-all window without branching command execution. */
+const buildTestAllSelectionProgress = (params: {
+  filteredItems: TestAllSelectedItem[];
+  linkedTests: number;
+  statusFilter: ItemStatus | undefined;
+  limitFilter: number | undefined;
+  offsetFilter: number;
+}): string =>
+  [
+    `selection items=${params.filteredItems.length}`,
+    `linked_tests=${params.linkedTests}`,
+    params.statusFilter === undefined ? "" : `status=${params.statusFilter}`,
+    params.limitFilter === undefined ? "" : `limit=${params.limitFilter}`,
+    params.offsetFilter > 0 ? `offset=${params.offsetFilter}` : "",
+  ]
+    .filter((entry) => entry.length > 0)
+    .join(" ");
+
+/** Loads the tracker selection and linked tests for one test-all run. */
+const prepareTestAllRun = async (
   options: TestAllCommandOptions,
   global: GlobalOptions,
-): Promise<TestAllResult> {
+): Promise<PreparedTestAllRun> => {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(
@@ -724,60 +787,91 @@ export async function runTestAll(
       EXIT_CODE.NOT_FOUND,
     );
   }
-
   const settings = await readSettings(pmRoot);
-  const { filteredItems, statusFilter, limitFilter, offsetFilter } =
-    await selectTestAllItems({ pmRoot, settings, options });
+  const selection = await selectTestAllItems({ pmRoot, settings, options });
   const defaultTimeoutSeconds = parseTimeout(options.timeout);
   const runStartedAt = nowIso();
-  const { itemTests, linkedTests } = await collectTestAllItemTests(
-    filteredItems,
+  const collected = await collectTestAllItemTests(
+    selection.filteredItems,
     global,
     pmRoot,
   );
   emitTestAllProgress(
     options,
-    `selection items=${filteredItems.length} linked_tests=${linkedTests}` +
-      `${statusFilter ? ` status=${statusFilter}` : ""}` +
-      `${limitFilter === undefined ? "" : ` limit=${limitFilter}`}` +
-      `${offsetFilter > 0 ? ` offset=${offsetFilter}` : ""}`,
+    buildTestAllSelectionProgress({
+      ...selection,
+      linkedTests: collected.linkedTests,
+    }),
   );
-
-  const { accumulation, failOnEmptyTestRunTriggered } =
-    initializeTestAllAccumulation(options, linkedTests, filteredItems);
-  const itemRunContext = buildTestAllItemRunContext({
+  return {
     pmRoot,
     settings,
-    options,
-    itemTests,
+    filteredItems: selection.filteredItems,
+    itemTests: collected.itemTests,
+    linkedTests: collected.linkedTests,
     defaultTimeoutSeconds,
     runStartedAt,
-  });
-  await runTestAllItems(itemTests, itemRunContext, accumulation);
+  };
+};
 
+/** Resolves aggregate strict-policy state after every item has run. */
+const resolveTestAllOutcome = (params: {
+  options: TestAllCommandOptions;
+  accumulation: TestAllAccumulation;
+  failOnEmptyTestRunTriggered: boolean;
+}): { failOnSkippedTriggered: boolean; ok: boolean } => {
   const failOnSkippedTriggered =
-    options.failOnSkipped === true && accumulation.skipped > 0;
-  appendContextPreflightWarning(options, accumulation);
+    params.options.failOnSkipped === true && params.accumulation.skipped > 0;
+  const ok = ![
+    params.accumulation.failed > 0,
+    failOnSkippedTriggered,
+    params.failOnEmptyTestRunTriggered,
+  ].includes(true);
+  return { failOnSkippedTriggered, ok };
+};
 
-  const ok =
-    accumulation.failed === 0 &&
-    failOnSkippedTriggered !== true &&
-    failOnEmptyTestRunTriggered !== true;
+/** Implements run test all for the public runtime surface of this module. */
+export const runTestAll = async (
+  options: TestAllCommandOptions,
+  global: GlobalOptions,
+): Promise<TestAllResult> => {
+  const prepared = await prepareTestAllRun(options, global);
+  const { accumulation, failOnEmptyTestRunTriggered } =
+    initializeTestAllAccumulation(
+      options,
+      prepared.linkedTests,
+      prepared.filteredItems,
+    );
+  const itemRunContext = buildTestAllItemRunContext({
+    pmRoot: prepared.pmRoot,
+    settings: prepared.settings,
+    options,
+    itemTests: prepared.itemTests,
+    defaultTimeoutSeconds: prepared.defaultTimeoutSeconds,
+    runStartedAt: prepared.runStartedAt,
+  });
+  await runTestAllItems(prepared.itemTests, itemRunContext, accumulation);
+  appendContextPreflightWarning(options, accumulation);
+  const outcome = resolveTestAllOutcome({
+    options,
+    accumulation,
+    failOnEmptyTestRunTriggered,
+  });
   emitTestAllProgress(
     options,
-    `end status=${ok ? "passed" : "failed"} items=${filteredItems.length} linked_tests=${linkedTests}` +
+    `end status=${outcome.ok ? "passed" : "failed"} items=${prepared.filteredItems.length} linked_tests=${prepared.linkedTests}` +
       ` passed=${accumulation.passed} failed=${accumulation.failed} skipped=${accumulation.skipped}`,
   );
 
   return buildTestAllResult({
-    ok,
-    filteredItems,
-    linkedTests,
+    ok: outcome.ok,
+    filteredItems: prepared.filteredItems,
+    linkedTests: prepared.linkedTests,
     accumulation,
-    failOnSkippedTriggered,
+    failOnSkippedTriggered: outcome.failOnSkippedTriggered,
     failOnEmptyTestRunTriggered,
   });
-}
+};
 
 /** Public contract for test only test all, shared by SDK and presentation-layer consumers. */
 export const _testOnlyTestAll = {

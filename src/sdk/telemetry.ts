@@ -132,42 +132,43 @@ interface NormalizedTelemetryQueueEntry {
  * Uses the nearest-rank method (rank = ceil(fraction × n), 1-based, clamped into
  * range) so the result is always an observed sample value with no interpolation.
  */
-function nearestRankPercentile(
+const nearestRankPercentile = (
   sortedAscending: number[],
   fraction: number,
-): number {
+): number => {
   const rank = Math.ceil(fraction * sortedAscending.length);
   const index = Math.min(sortedAscending.length - 1, Math.max(0, rank - 1));
   return sortedAscending[index];
-}
+};
 
-function normalizeTelemetryQueueEntry(
+/** Normalizes optional text while substituting a stable fallback for blanks. */
+const normalizeTelemetryText = (value: unknown, fallback: string): string => {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+  return value.trim().length > 0 ? value : fallback;
+};
+
+/** Truncates finite numeric metadata while rejecting other runtime shapes. */
+const normalizeFiniteInteger = (value: unknown): number | undefined => {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return undefined;
+  }
+  return Math.trunc(value);
+};
+
+const normalizeTelemetryQueueEntry = (
   entry: QueuedTelemetryEventRecord,
-): NormalizedTelemetryQueueEntry {
-  const command =
-    typeof entry.event.command === "string" &&
-    entry.event.command.trim().length > 0
-      ? entry.event.command
-      : "<unknown>";
-  const eventType =
-    typeof entry.event.event_type === "string" &&
-    entry.event.event_type.trim().length > 0
-      ? entry.event.event_type
-      : "unknown";
-  const eventSchemaVersion =
-    typeof entry.event.schema_version === "number" &&
-    Number.isFinite(entry.event.schema_version)
-      ? Math.trunc(entry.event.schema_version)
-      : undefined;
-  const clientSchemaVersion =
-    typeof entry.client_schema_version === "number" &&
-    Number.isFinite(entry.client_schema_version)
-      ? Math.trunc(entry.client_schema_version)
-      : undefined;
-  return { command, eventType, eventSchemaVersion, clientSchemaVersion };
-}
+): NormalizedTelemetryQueueEntry => {
+  return {
+    command: normalizeTelemetryText(entry.event.command, "<unknown>"),
+    eventType: normalizeTelemetryText(entry.event.event_type, "unknown"),
+    eventSchemaVersion: normalizeFiniteInteger(entry.event.schema_version),
+    clientSchemaVersion: normalizeFiniteInteger(entry.client_schema_version),
+  };
+};
 
-function createTelemetryStatsAccumulator(): TelemetryStatsBucketAccumulator {
+const createTelemetryStatsAccumulator = (): TelemetryStatsBucketAccumulator => {
   return {
     count: 0,
     max_attempts: 0,
@@ -179,17 +180,39 @@ function createTelemetryStatsAccumulator(): TelemetryStatsBucketAccumulator {
     error_count: 0,
     resolution_counts: {},
   };
-}
+};
 
-function recordTelemetryFinishPayload(
+/** Keeps a finite duration sample from an optional finish payload. */
+const readTelemetryDuration = (
+  payload: Record<string, unknown> | undefined,
+): number | undefined => {
+  const value = payload?.duration_ms;
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
+};
+
+/** Keeps a non-blank resolution from an optional finish payload. */
+const readTelemetryResolution = (
+  payload: Record<string, unknown> | undefined,
+): string | undefined => {
+  const value = payload?.command_resolution;
+  return normalizeTelemetryText(value, "") || undefined;
+};
+
+/** Increments a named counter in an object-backed frequency map. */
+const incrementTelemetryCount = (
+  counts: Record<string, number>,
+  key: string,
+): void => {
+  counts[key] = (counts[key] ?? 0) + 1;
+};
+
+const recordTelemetryFinishPayload = (
   current: TelemetryStatsBucketAccumulator,
   payload: Record<string, unknown> | undefined,
-): void {
-  const durationMs =
-    typeof payload?.duration_ms === "number" &&
-    Number.isFinite(payload.duration_ms)
-      ? payload.duration_ms
-      : undefined;
+): void => {
+  const durationMs = readTelemetryDuration(payload);
   if (durationMs !== undefined) {
     current.finish_durations_ms.push(durationMs);
   }
@@ -198,47 +221,57 @@ function recordTelemetryFinishPayload(
   } else {
     current.error_count += 1;
   }
-  const resolution =
-    typeof payload?.command_resolution === "string" &&
-    payload.command_resolution.trim().length > 0
-      ? payload.command_resolution
-      : undefined;
+  const resolution = readTelemetryResolution(payload);
   if (resolution !== undefined) {
-    current.resolution_counts[resolution] =
-      (current.resolution_counts[resolution] ?? 0) + 1;
+    incrementTelemetryCount(current.resolution_counts, resolution);
   }
-}
+};
 
-function recordTelemetryQueueEntry(
+/** Normalizes retry attempts to a non-negative finite integer. */
+const normalizeTelemetryAttempts = (attempts: number): number =>
+  Number.isFinite(attempts) ? Math.max(0, Math.trunc(attempts)) : 0;
+
+/** Adds a defined numeric value to a set-backed telemetry dimension. */
+const addTelemetryDimension = (
+  values: Set<number>,
+  value: number | undefined,
+): void => {
+  if (value !== undefined) {
+    values.add(value);
+  }
+};
+
+const recordTelemetryQueueEntry = (
   grouped: Map<string, TelemetryStatsBucketAccumulator>,
   entry: QueuedTelemetryEventRecord,
-): void {
+): void => {
   const normalized = normalizeTelemetryQueueEntry(entry);
   const current =
     grouped.get(normalized.command) ?? createTelemetryStatsAccumulator();
-  const attempts = Number.isFinite(entry.attempts)
-    ? Math.max(0, Math.trunc(entry.attempts))
-    : 0;
   current.count += 1;
-  current.max_attempts = Math.max(current.max_attempts, attempts);
-  current.event_type_counts[normalized.eventType] =
-    (current.event_type_counts[normalized.eventType] ?? 0) + 1;
-  if (normalized.eventSchemaVersion !== undefined) {
-    current.event_schema_versions.add(normalized.eventSchemaVersion);
-  }
-  if (normalized.clientSchemaVersion !== undefined) {
-    current.client_schema_versions.add(normalized.clientSchemaVersion);
-  }
+  current.max_attempts = Math.max(
+    current.max_attempts,
+    normalizeTelemetryAttempts(entry.attempts),
+  );
+  incrementTelemetryCount(current.event_type_counts, normalized.eventType);
+  addTelemetryDimension(
+    current.event_schema_versions,
+    normalized.eventSchemaVersion,
+  );
+  addTelemetryDimension(
+    current.client_schema_versions,
+    normalized.clientSchemaVersion,
+  );
   if (normalized.eventType === "command_finish") {
     recordTelemetryFinishPayload(current, entry.event.payload);
   }
   grouped.set(normalized.command, current);
-}
+};
 
-function buildTelemetryStatsBucket(
+const buildTelemetryStatsBucket = (
   command: string,
   value: TelemetryStatsBucketAccumulator,
-): TelemetryStatsBucket {
+): TelemetryStatsBucket => {
   const finishCount = value.ok_count + value.error_count;
   const sortedDurations = [...value.finish_durations_ms].sort(
     (left, right) => left - right,
@@ -279,11 +312,11 @@ function buildTelemetryStatsBucket(
       ? { command_resolution_counts: Object.fromEntries(resolutionEntries) }
       : {}),
   };
-}
+};
 
-function normalizeTelemetrySubcommand(
+const normalizeTelemetrySubcommand = (
   value: string | undefined,
-): TelemetrySubcommand {
+): TelemetrySubcommand => {
   const normalized = (value ?? "status").trim().toLowerCase();
   if ((TELEMETRY_SUBCOMMANDS as readonly string[]).includes(normalized)) {
     return normalized as TelemetrySubcommand;
@@ -303,100 +336,141 @@ function normalizeTelemetrySubcommand(
       ],
     },
   );
-}
+};
 
-function parseTelemetryStatsLimit(raw: string | number | undefined): number {
+/** Throws the stable usage diagnostic for invalid telemetry stats windows. */
+const throwInvalidTelemetryLimit = (): never => {
+  throw new PmCliError("--limit must be a positive integer", EXIT_CODE.USAGE);
+};
+
+/** Validates one already-parsed stats limit. */
+const requirePositiveTelemetryLimit = (value: number): number => {
+  if (
+    [!Number.isFinite(value), !Number.isInteger(value), value <= 0].includes(
+      true,
+    )
+  ) {
+    return throwInvalidTelemetryLimit();
+  }
+  return value;
+};
+
+/** Parses and validates the string form accepted by the CLI flag surface. */
+const parseTelemetryStringLimit = (raw: string): number => {
+  const trimmed = raw.trim();
+  if ([trimmed.length === 0, !/^\d+$/.test(trimmed)].includes(true)) {
+    return throwInvalidTelemetryLimit();
+  }
+  return requirePositiveTelemetryLimit(Number.parseInt(trimmed, 10));
+};
+
+const parseTelemetryStatsLimit = (raw: unknown): number => {
   if (raw === undefined) {
     return DEFAULT_STATS_LIMIT;
   }
   if (typeof raw === "number") {
-    if (!Number.isFinite(raw) || !Number.isInteger(raw) || raw <= 0) {
-      throw new PmCliError(
-        "--limit must be a positive integer",
-        EXIT_CODE.USAGE,
-      );
-    }
-    return raw;
+    return requirePositiveTelemetryLimit(raw);
   }
-  const trimmed = raw.trim();
-  if (trimmed.length === 0 || !/^\d+$/.test(trimmed)) {
-    throw new PmCliError("--limit must be a positive integer", EXIT_CODE.USAGE);
+  if (typeof raw === "string") {
+    return parseTelemetryStringLimit(raw);
   }
-  const parsed = Number.parseInt(trimmed, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new PmCliError("--limit must be a positive integer", EXIT_CODE.USAGE);
-  }
-  return parsed;
-}
+  return throwInvalidTelemetryLimit();
+};
 
-function parseTelemetryQueue(raw: string | null): ParsedTelemetryQueue {
-  if (raw === null || raw.trim().length === 0) {
-    return {
-      rows_total: 0,
-      valid_entries: 0,
-      invalid_rows: 0,
-      entries: [],
-    };
+/** Recognizes the persisted telemetry queue record shape. */
+const isTelemetryQueueEntry = (
+  value: unknown,
+): value is QueuedTelemetryEventRecord => {
+  if (typeof value !== "object" || value === null) {
+    return false;
   }
+  const candidate = value as Partial<QueuedTelemetryEventRecord>;
+  return (
+    typeof candidate.attempts === "number" &&
+    typeof candidate.event === "object" &&
+    candidate.event !== null
+  );
+};
+
+/** Parses one non-blank queue row without leaking JSON failures. */
+const parseTelemetryQueueRow = (
+  row: string,
+): QueuedTelemetryEventRecord | undefined => {
+  try {
+    const parsed: unknown = JSON.parse(row);
+    return isTelemetryQueueEntry(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+/** Splits queue content into non-blank persisted rows. */
+const splitTelemetryQueueRows = (raw: string | null): string[] => {
+  if (raw === null) {
+    return [];
+  }
+  return raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+};
+
+const parseTelemetryQueue = (raw: string | null): ParsedTelemetryQueue => {
+  const rows = splitTelemetryQueueRows(raw);
   const entries: QueuedTelemetryEventRecord[] = [];
-  let rowsTotal = 0;
   let invalidRows = 0;
-  for (const line of raw.split("\n")) {
-    const trimmed = line.trim();
-    if (trimmed.length === 0) {
-      continue;
-    }
-    rowsTotal += 1;
-    try {
-      const parsed = JSON.parse(trimmed) as QueuedTelemetryEventRecord;
-      if (
-        typeof parsed === "object" &&
-        parsed !== null &&
-        typeof parsed.attempts === "number" &&
-        typeof parsed.event === "object" &&
-        parsed.event !== null
-      ) {
-        entries.push(parsed);
-      } else {
-        invalidRows += 1;
-      }
-    } catch {
+  for (const row of rows) {
+    const parsed = parseTelemetryQueueRow(row);
+    if (parsed === undefined) {
       invalidRows += 1;
+    } else {
+      entries.push(parsed);
     }
   }
   return {
-    rows_total: rowsTotal,
+    rows_total: rows.length,
     valid_entries: entries.length,
     invalid_rows: invalidRows,
     entries,
   };
-}
+};
 
-async function readTelemetryRuntimeState(
+/** Recognizes an object-shaped telemetry runtime state payload. */
+const isTelemetryRuntimeState = (
+  value: unknown,
+): value is TelemetryRuntimeStateRecord =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** Parses observational runtime state while treating malformed content as empty. */
+const parseTelemetryRuntimeState = (
+  raw: string,
+): TelemetryRuntimeStateRecord => {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return isTelemetryRuntimeState(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const readTelemetryRuntimeState = async (
   statePath: string,
-): Promise<TelemetryRuntimeStateRecord> {
+): Promise<TelemetryRuntimeStateRecord> => {
   const stateRaw = await readFileIfExists(statePath);
   if (stateRaw === null || stateRaw.trim().length === 0) {
     return {};
   }
-  try {
-    const parsed = JSON.parse(stateRaw) as TelemetryRuntimeStateRecord;
-    if (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      !Array.isArray(parsed)
-    ) {
-      return parsed;
-    }
-  } catch {
-    // Ignore malformed state files; status command is observational.
-  }
-  return {};
-}
+  return parseTelemetryRuntimeState(stateRaw);
+};
 
-async function buildTelemetryStatusSummary(
+/** Converts an optional telemetry state value to an explicit nullable field. */
+const nullableTelemetryStateValue = (
+  value: string | undefined,
+): string | null => value ?? null;
+
+const buildTelemetryStatusSummary = async (
   globalPmRoot: string,
-): Promise<TelemetryStatusSummary> {
+): Promise<TelemetryStatusSummary> => {
   const settings = await readSettings(globalPmRoot);
   const queuePath = path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH);
   const statePath = path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH);
@@ -411,18 +485,25 @@ async function buildTelemetryStatusSummary(
     queue_rows_total: queue.rows_total,
     queue_entries: queue.valid_entries,
     queue_invalid_rows: queue.invalid_rows,
-    queue_size_bytes:
-      queueRaw === null ? 0 : Buffer.byteLength(queueRaw, "utf8"),
-    last_attempted_flush_at: runtimeState.last_attempted_flush_at ?? null,
-    last_successful_flush_at: runtimeState.last_successful_flush_at ?? null,
-    last_failed_flush_at: runtimeState.last_failed_flush_at ?? null,
-    last_failed_flush_error: runtimeState.last_failed_flush_error ?? null,
+    queue_size_bytes: Buffer.byteLength(queueRaw ?? "", "utf8"),
+    last_attempted_flush_at: nullableTelemetryStateValue(
+      runtimeState.last_attempted_flush_at,
+    ),
+    last_successful_flush_at: nullableTelemetryStateValue(
+      runtimeState.last_successful_flush_at,
+    ),
+    last_failed_flush_at: nullableTelemetryStateValue(
+      runtimeState.last_failed_flush_at,
+    ),
+    last_failed_flush_error: nullableTelemetryStateValue(
+      runtimeState.last_failed_flush_error,
+    ),
   };
-}
+};
 
-function buildTelemetryStatsBuckets(
+const buildTelemetryStatsBuckets = (
   entries: QueuedTelemetryEventRecord[],
-): TelemetryStatsBucket[] {
+): TelemetryStatsBucket[] => {
   const grouped = new Map<string, TelemetryStatsBucketAccumulator>();
   for (const entry of entries) {
     // Latency + outcome distribution come from command_finish payloads only:
@@ -436,95 +517,126 @@ function buildTelemetryStatsBuckets(
       (left, right) =>
         right.count - left.count || left.command.localeCompare(right.command),
     );
+};
+
+interface TelemetryCommandContext {
+  globalPmRoot: string;
+  queuePath: string;
+  statePath: string;
 }
 
-/** Implements run telemetry for the public runtime surface of this module. */
-export async function runTelemetry(
+type TelemetryCommandHandler = (
   options: TelemetryCommandOptions,
-  _global: GlobalOptions,
-): Promise<Record<string, unknown>> {
-  void _global;
-  const subcommand = normalizeTelemetrySubcommand(options.subcommand);
-  const globalPmRoot = resolveGlobalPmRoot(process.cwd());
-  const queuePath = path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH);
-  const statePath = path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH);
-  if (subcommand === "status") {
-    return {
-      action: "telemetry",
-      subcommand,
-      status: await buildTelemetryStatusSummary(globalPmRoot),
-      generated_at: nowIso(),
-    };
-  }
+  context: TelemetryCommandContext,
+) => Promise<Record<string, unknown>>;
 
-  if (subcommand === "flush") {
-    const before = await buildTelemetryStatusSummary(globalPmRoot);
-    await flushTelemetryQueueNow(globalPmRoot);
-    const after = await buildTelemetryStatusSummary(globalPmRoot);
-    return {
-      action: "telemetry",
-      subcommand,
-      queue_entries_before: before.queue_entries,
-      queue_entries_after: after.queue_entries,
-      queue_drained: after.queue_entries < before.queue_entries,
-      status: after,
-      generated_at: nowIso(),
-    };
-  }
+/** Returns current telemetry queue and runtime state without mutation. */
+const runTelemetryStatus: TelemetryCommandHandler = async (
+  _options,
+  context,
+) => ({
+  action: "telemetry",
+  subcommand: "status",
+  status: await buildTelemetryStatusSummary(context.globalPmRoot),
+  generated_at: nowIso(),
+});
 
-  if (subcommand === "stats") {
-    const limit = parseTelemetryStatsLimit(options.limit);
-    const queueRaw = await readFileIfExists(queuePath);
-    const queue = parseTelemetryQueue(queueRaw);
-    const buckets = buildTelemetryStatsBuckets(queue.entries);
-    const selected = buckets.slice(0, limit);
-    return {
-      action: "telemetry",
-      subcommand,
-      limit,
-      total_commands: buckets.length,
-      queue_entries: queue.valid_entries,
-      queue_invalid_rows: queue.invalid_rows,
-      queue_rows_total: queue.rows_total,
-      truncated: buckets.length > selected.length,
-      stats: selected,
-      generated_at: nowIso(),
-    };
-  }
+/** Flushes queued telemetry and reports the before/after queue state. */
+const runTelemetryFlush: TelemetryCommandHandler = async (
+  _options,
+  context,
+) => {
+  const before = await buildTelemetryStatusSummary(context.globalPmRoot);
+  await flushTelemetryQueueNow(context.globalPmRoot);
+  const after = await buildTelemetryStatusSummary(context.globalPmRoot);
+  return {
+    action: "telemetry",
+    subcommand: "flush",
+    queue_entries_before: before.queue_entries,
+    queue_entries_after: after.queue_entries,
+    queue_drained: after.queue_entries < before.queue_entries,
+    status: after,
+    generated_at: nowIso(),
+  };
+};
 
-  const settings = await readSettings(globalPmRoot);
-  const previousEnabled = settings.telemetry.enabled;
-  const previousInstallationId = settings.telemetry.installation_id;
-  const previousFirstRunPromptCompleted =
-    settings.telemetry.first_run_prompt_completed;
+/** Aggregates the offline telemetry queue into bounded command statistics. */
+const runTelemetryStats: TelemetryCommandHandler = async (options, context) => {
+  const limit = parseTelemetryStatsLimit(options.limit);
+  const queueRaw = await readFileIfExists(context.queuePath);
+  const queue = parseTelemetryQueue(queueRaw);
+  const buckets = buildTelemetryStatsBuckets(queue.entries);
+  const selected = buckets.slice(0, limit);
+  return {
+    action: "telemetry",
+    subcommand: "stats",
+    limit,
+    total_commands: buckets.length,
+    queue_entries: queue.valid_entries,
+    queue_invalid_rows: queue.invalid_rows,
+    queue_rows_total: queue.rows_total,
+    truncated: buckets.length > selected.length,
+    stats: selected,
+    generated_at: nowIso(),
+  };
+};
+
+/** Clears local telemetry consent identifiers, queue data, and runtime state. */
+const runTelemetryClear: TelemetryCommandHandler = async (
+  _options,
+  context,
+) => {
+  const settings = await readSettings(context.globalPmRoot);
+  const settingsChanged = [
+    settings.telemetry.enabled !== false,
+    settings.telemetry.installation_id !== "",
+    settings.telemetry.first_run_prompt_completed !== true,
+  ].includes(true);
   settings.telemetry.enabled = false;
   settings.telemetry.first_run_prompt_completed = true;
   settings.telemetry.installation_id = "";
-  const settingsChanged =
-    previousEnabled !== settings.telemetry.enabled ||
-    previousInstallationId !== settings.telemetry.installation_id ||
-    previousFirstRunPromptCompleted !==
-      settings.telemetry.first_run_prompt_completed;
   if (settingsChanged) {
-    await writeSettings(globalPmRoot, settings, "telemetry:clear");
+    await writeSettings(context.globalPmRoot, settings, "telemetry:clear");
   }
-
   const telemetryRuntimePath = path.join(
-    globalPmRoot,
+    context.globalPmRoot,
     TELEMETRY_RUNTIME_RELATIVE_PATH,
   );
   const existed = await pathExists(telemetryRuntimePath);
   await fs.rm(telemetryRuntimePath, { recursive: true, force: true });
-  const queueExistsAfter = await pathExists(queuePath);
-  const stateExistsAfter = await pathExists(statePath);
   return {
     action: "telemetry",
-    subcommand,
+    subcommand: "clear",
     settings_changed: settingsChanged,
     runtime_dir_removed: existed && !(await pathExists(telemetryRuntimePath)),
-    queue_exists_after: queueExistsAfter,
-    state_exists_after: stateExistsAfter,
-    status: await buildTelemetryStatusSummary(globalPmRoot),
+    queue_exists_after: await pathExists(context.queuePath),
+    state_exists_after: await pathExists(context.statePath),
+    status: await buildTelemetryStatusSummary(context.globalPmRoot),
     generated_at: nowIso(),
   };
-}
+};
+
+const TELEMETRY_COMMAND_HANDLERS: Record<
+  TelemetrySubcommand,
+  TelemetryCommandHandler
+> = {
+  status: runTelemetryStatus,
+  flush: runTelemetryFlush,
+  stats: runTelemetryStats,
+  clear: runTelemetryClear,
+};
+
+/** Implements run telemetry for the public runtime surface of this module. */
+export const runTelemetry = async (
+  options: TelemetryCommandOptions,
+  _global: GlobalOptions,
+): Promise<Record<string, unknown>> => {
+  void _global;
+  const subcommand = normalizeTelemetrySubcommand(options.subcommand);
+  const globalPmRoot = resolveGlobalPmRoot(process.cwd());
+  return TELEMETRY_COMMAND_HANDLERS[subcommand](options, {
+    globalPmRoot,
+    queuePath: path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH),
+    statePath: path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH),
+  });
+};

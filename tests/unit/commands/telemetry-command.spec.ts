@@ -308,6 +308,8 @@ describe("runTelemetry", () => {
       expect(settings.telemetry.enabled).toBe(false);
       expect(settings.telemetry.installation_id).toBe("");
       expect(settings.telemetry.first_run_prompt_completed).toBe(true);
+      const repeated = await runTelemetry({ subcommand: "clear" }, {});
+      expect(repeated.settings_changed).toBe(false);
     });
   });
 
@@ -382,6 +384,9 @@ describe("runTelemetry", () => {
       await expect(runTelemetry({ subcommand: "stats", limit: "0" }, {})).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(runTelemetry({ subcommand: "stats", limit: {} as never }, {})).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 
@@ -404,12 +409,28 @@ describe("runTelemetry", () => {
         JSON.stringify({ attempts: "nope", event: { command: "x" } }),
         JSON.stringify({ attempts: 0, event: null }),
         JSON.stringify([1, 2, 3]),
+        JSON.stringify(null),
       ]);
       const result = await runTelemetry({ subcommand: "status" }, {});
       expect(result.status).toMatchObject({
         queue_entries: 0,
-        queue_invalid_rows: 3,
-        queue_rows_total: 3,
+        queue_invalid_rows: 4,
+        queue_rows_total: 4,
+      });
+    });
+  });
+
+  it("ignores malformed runtime state JSON", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-state-malformed-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      await fs.mkdir(path.dirname(statePath(globalRoot)), { recursive: true });
+      await fs.writeFile(statePath(globalRoot), "{not-json\n", "utf8");
+      const result = await runTelemetry({ subcommand: "status" }, {});
+      expect(result.status).toMatchObject({
+        last_attempted_flush_at: null,
+        last_successful_flush_at: null,
+        last_failed_flush_at: null,
+        last_failed_flush_error: null,
       });
     });
   });

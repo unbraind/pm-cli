@@ -500,7 +500,11 @@ export const runDedupeMerge = async (
 
   // A single full listing supplies every child lookup without re-reading the
   // corpus per duplicate.
-  const corpus = await runList(undefined, { full: true as const }, global);
+  const corpus = await runList(
+    undefined,
+    { full: true as const, noTruncate: true },
+    global,
+  );
   const childrenByParent = buildChildrenByParentForDedupeMerge(
     corpus.items,
     statusRegistry,

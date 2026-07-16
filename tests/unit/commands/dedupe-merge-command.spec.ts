@@ -6,6 +6,7 @@ import {
   _testOnly as mergeInternals,
   runDedupeMerge,
 } from "../../../packages/pm-governance-audit/extensions/governance-audit/dedupe-merge.ts";
+import * as governanceSdk from "../../../packages/pm-governance-audit/extensions/governance-audit/sdk.ts";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
@@ -70,6 +71,7 @@ describe("runDedupeMerge", () => {
 
   it("previews a merge without mutating by default (dry-run)", async () => {
     await withTempPmPath(async (context) => {
+      const listSpy = vi.spyOn(governanceSdk, "runList");
       const keep = createItem(context, {
         title: "Canonical security work",
         type: "Feature",
@@ -111,6 +113,11 @@ describe("runDedupeMerge", () => {
         children_skipped: 1,
         closed: 0,
       });
+      expect(listSpy).toHaveBeenCalledWith(
+        undefined,
+        expect.objectContaining({ full: true, noTruncate: true }),
+        { path: context.pmPath },
+      );
 
       // Nothing was actually written.
       expect(getItem(context, activeChild).parent).toBe(duplicate);
