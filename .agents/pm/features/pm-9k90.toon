@@ -6,15 +6,16 @@ status: open
 priority: 2
 tags[4]: agents,ergonomics,mcp,token-surface
 created_at: "2026-07-13T09:32:01.899Z"
-updated_at: "2026-07-15T19:27:28.270Z"
+updated_at: "2026-07-16T05:45:15.776Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "Profile selection via MCP server config/env with core as a deliberate product decision for the default; tools/list payload for core measured via scripts/measure-agent-token-surface.mjs and published (baseline: 28 tools = 32979 B ~= 8.2k tokens per pm-a22j); custom allowlist validated against known tool names with clear errors; profiles documented in registry metadata and plugin docs; contract/drift gates cover per-profile tool sets; existing integration suites pass under every profile"
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-wjfa,related,"2026-07-13T09:32:01.899Z",null,null
+  pm-xwah,related,"2026-07-16T05:45:15.759Z",null,null
 notes[2]{created_at,author,text}:
   "2026-07-13T09:32:19.589Z",maintainer-agent,"Rationale evidence: June 2026 tool-selection study (arxiv 2606.30317) found substantial accuracy degradation as available tool count grows (threshold varies by model); Task Master independently ships core/standard/full MCP tiers with explicit token budgets for the same reason. Pair with MCP resources+prompts (owned by pm-z3ez) so stable reference context does not need to be a tool. Selection quality is an agent-acquisition lever, not just a token saving — a smaller, sharper surface makes agents pick pm tools correctly more often."
   "2026-07-15T19:27:28.263Z",maintainer-agent,"Re-measurement 2026-07-15 (review pass #89, scripts/measure-agent-token-surface.mjs): MCP tools/list 33,314 B / 8,329 tokens / 28 tools — up from the pm-a22j baseline 32,979 B (2026-07-11). Every session with the MCP server attached pays ~8.3k tokens before the first call, and each new tool/flag grows it; the core/standard/full profile tiers this item owns are the structural fix. Companion figure: full-format single-item surface is 539,946 B (~135k tokens) vs summary_json 4,426 B — the 122x spread shows how much the profile/format choices matter for agent context budgets."

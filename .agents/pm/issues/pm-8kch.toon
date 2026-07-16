@@ -1,0 +1,26 @@
+id: pm-8kch
+title: pm deps context format reports missing_count without enumerating missing references and disagrees with tree format
+description: "pm deps --format context returns a top-level missing_count scalar (3 on pm-96h7) but the payload contains no list of which references are missing or which neighbor declares them; pm deps --format tree on the same item reports missing_count 0. Agents cannot distinguish ignorable legacy ghosts on closed neighbors from repairable typos on active items, and the two formats contradict each other."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"area:cli",contracts,graph,sdk
+created_at: "2026-07-16T05:50:30.876Z"
+updated_at: "2026-07-16T05:50:52.545Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: "context and tree formats agree on missing_count semantics for the same item and depth, or the difference is explicitly documented in the payload; the context payload enumerates missing references with the declaring node id, the dangling target id, and edge kind, bounded by the existing node/edge limits; missing references are classified active vs legacy-terminal following the pm-2ler split so agents know what is repairable; JSON and TOON shapes stay in sync with cli-contracts and the MCP schema; covering spec added"
+parent: pm-96h7
+risk: low
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-2ler,related,"2026-07-16T05:50:30.876Z",null,null
+  pm-8xr8,related,"2026-07-16T05:50:30.876Z",null,null
+  pm-p9sc,related,"2026-07-16T05:50:30.876Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-16T05:50:52.543Z",maintainer-agent,"Duplicate check: searched all-status for 'deps context missing count enumerate', 'missing_count', 'graph context missing references' — only pm-p9sc (closed, inverse defect), pm-8xr8 (consumer story), pm-2ler (closed classification precedent). No open owner; registry consulted."
+files[3]{path,scope,note}:
+  src/cli/commands/deps.ts,project,deps command wiring for tree/graph/context formats
+  src/sdk/dependencies.ts,project,Owns missing_count computation for deps payloads
+  src/sdk/relationship-context.ts,project,Bounded context traversal; has no missing-reference handling today
+body: "Evidence (2026-07-16, v2026.7.16 on main): `pm deps pm-96h7 --format context` returns missing_count:3 with node_count:21/edge_count:12, meta shows visitedNodes:737/inspectedEdges:1223 — but no missing-reference rows anywhere in the payload; `pm deps pm-96h7 --json` (tree) returns missing_count:0 and missing:null for the same root. No CLI flag enumerates the refs (--help audited). Validate's dependency_references check is status:ok with active=0, so the 3 are almost certainly legacy-terminal ghosts encountered on closed depth-2 neighbors (pm-2ler class) — exactly why enumeration + classification matters: an agent seeing a bare count cannot tell repairable active typos from ignorable history. Sibling precedent: pm-p9sc (GH-535, CLOSED PR#545) fixed the inverse contradiction (deps under-reporting vs validate). Fix should surface bounded missing rows (declaring node, dangling target, kind, active|legacy classification) in context format and align tree-format semantics."

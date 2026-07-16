@@ -6,13 +6,15 @@ status: open
 priority: 2
 tags[2]: "area:quality",refactor
 created_at: "2026-07-04T08:32:10.019Z"
-updated_at: "2026-07-13T09:49:55.267Z"
+updated_at: "2026-07-16T05:45:18.344Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "search.ts split into rendering, query-parsing, and inline-field modules each under the LOC cap; coverage stays at 100 and search output byte-identical on golden queries."
 parent: pm-92if
 risk: low
 confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-yh8r,related,"2026-07-16T05:45:18.323Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-10T23:16:46.855Z",codex-gpt5,"Implementation evidence: search rendering extraction remains in the broad docstring bundle; shared list/search timestamp predicates removed the final cross-command clone without changing filter semantics. pnpm typecheck, pnpm lint (0 clones), and focused search/list regression suites passed."
   "2026-07-11T00:02:35.336Z",codex-gpt5,"Scope boundary: this PR extracted search rendering and shared list/search timestamp filtering, reducing duplication to zero, but query-parsing and inline-field extraction remain outstanding and the acceptance target of <=1500 LOC per module is not yet met. Returning the item to open so only actively worked items remain in_progress."
