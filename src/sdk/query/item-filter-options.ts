@@ -1,5 +1,5 @@
 /**
- * @module cli/commands/item-filter-options
+ * @module sdk/query/item-filter-options
  *
  * Shared item-filter option contracts used by command implementations and SDK-facing types.
  */

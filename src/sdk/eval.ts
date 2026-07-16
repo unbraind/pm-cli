@@ -25,7 +25,7 @@ import { PmCliError } from "../core/shared/errors.js";
 import { coercePositiveInteger } from "../core/shared/primitives.js";
 import { pathExists } from "../core/fs/fs-utils.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
-import { runSearch } from "../cli/commands/search.js";
+import { runSearch } from "./query/search.js";
 
 /** Relative location (under the pm root) of the default golden-query set. A git-tracked, human-curated file so relevance ground truth lives alongside the tracker it evaluates. */
 export const DEFAULT_EVAL_QUERIES_RELATIVE_PATH = path.join(

@@ -1,5 +1,5 @@
 /**
- * @module cli/commands/search-rendering
+ * @module sdk/query/search-rendering
  *
  * Builds stable compact and verbose filter projections for search responses.
  */

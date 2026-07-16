@@ -374,7 +374,7 @@ describe("runNormalize", () => {
       expect(baseItem).toBeDefined();
 
       vi.resetModules();
-      vi.doMock("../../../src/cli/commands/list.js", () => ({
+      vi.doMock("../../../src/sdk/query/list.js", () => ({
         runList: vi.fn().mockResolvedValue({
           items: [{ ...baseItem, status: "mystery_status" }],
           filters: { tag: "normalize-unknown-status" },
@@ -396,7 +396,7 @@ describe("runNormalize", () => {
         expect(result.matched_count).toBe(1);
         expect(result.item_plans[0]?.id).toBe(id);
       } finally {
-        vi.doUnmock("../../../src/cli/commands/list.js");
+        vi.doUnmock("../../../src/sdk/query/list.js");
         vi.resetModules();
       }
     });
@@ -405,7 +405,7 @@ describe("runNormalize", () => {
   it("falls back to nowIso when list output omits timestamp", async () => {
     await withTempPmPath(async (context) => {
       vi.resetModules();
-      vi.doMock("../../../src/cli/commands/list.js", () => ({
+      vi.doMock("../../../src/sdk/query/list.js", () => ({
         runList: vi.fn().mockResolvedValue({
           items: [],
           filters: {},
@@ -418,7 +418,7 @@ describe("runNormalize", () => {
         const result = await mockedRunNormalize({ list: {}, dryRun: true }, { path: context.pmPath });
         expect(result.generated_at).toMatch(/[0-9]{4}-[0-9]{2}-[0-9]{2}T/);
       } finally {
-        vi.doUnmock("../../../src/cli/commands/list.js");
+        vi.doUnmock("../../../src/sdk/query/list.js");
         vi.resetModules();
       }
     });

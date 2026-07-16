@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import type { GlobalOptions } from "../../../src/core/shared/command-types.js";
-import type { SearchResult } from "../../../src/cli/commands/search.js";
+import type { SearchResult } from "../../../src/sdk/query/search.js";
 
 const { pathExistsMock, readFileMock, resolvePmRootMock, getSettingsPathMock, runSearchMock } = vi.hoisted(() => ({
   pathExistsMock: vi.fn<() => Promise<boolean>>(),
@@ -23,7 +23,7 @@ vi.mock("../../../src/core/store/paths.js", () => ({
   resolvePmRoot: resolvePmRootMock,
   getSettingsPath: getSettingsPathMock,
 }));
-vi.mock("../../../src/cli/commands/search.js", () => ({
+vi.mock("../../../src/sdk/query/search.js", () => ({
   runSearch: runSearchMock,
 }));
 

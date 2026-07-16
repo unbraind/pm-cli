@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { runEval as runCliEval } from "../../../src/cli/commands/eval.js";
 import { runStats as runCliStats } from "../../../src/cli/commands/stats.js";
+import { runList as runCliList } from "../../../src/cli/commands/list.js";
+import { runSearch as runCliSearch } from "../../../src/cli/commands/search.js";
 import { runTelemetry as runCliTelemetry } from "../../../src/cli/commands/telemetry.js";
 import { runTestAll as runCliTestAll } from "../../../src/cli/commands/test-all.js";
 import {
@@ -16,6 +18,8 @@ import {
   runEval,
   runStartBackgroundRun,
   runStats,
+  runList,
+  runSearch,
   runTelemetry,
   runTest,
   runTestAll,
@@ -38,6 +42,8 @@ describe("SDK execution and diagnostics ownership", () => {
     expect(runCliEval).toBe(runEval);
     expect(runCliTelemetry).toBe(runTelemetry);
     expect(runCliStats).toBe(runStats);
+    expect(runCliList).toBe(runList);
+    expect(runCliSearch).toBe(runSearch);
   });
 
   it("exports typed execution options and linked-test parsers from the public barrel", () => {

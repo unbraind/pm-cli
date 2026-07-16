@@ -529,7 +529,7 @@ describe("runComments", () => {
         definitions: [{ id: "open" }, { id: "closed" }],
       })),
     }));
-    vi.doMock("../../../src/cli/commands/list.js", () => ({
+    vi.doMock("../../../src/sdk/query/list.js", () => ({
       runList: vi.fn(async () => ({
         items: [
           {
@@ -558,7 +558,7 @@ describe("runComments", () => {
     vi.doUnmock("../../../src/core/store/paths.js");
     vi.doUnmock("../../../src/core/store/settings.js");
     vi.doUnmock("../../../src/core/schema/runtime-schema.js");
-    vi.doUnmock("../../../src/cli/commands/list.js");
+    vi.doUnmock("../../../src/sdk/query/list.js");
     await vi.resetModules();
   });
 

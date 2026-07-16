@@ -45,6 +45,12 @@ Source of truth:
 - [`src/sdk/governance/validate.ts`](../src/sdk/governance/validate.ts)
 - [`src/sdk/governance/health.ts`](../src/sdk/governance/health.ts)
 - [`src/sdk/governance/gc.ts`](../src/sdk/governance/gc.ts)
+- [`src/sdk/query/list.ts`](../src/sdk/query/list.ts)
+- [`src/sdk/query/search.ts`](../src/sdk/query/search.ts)
+- [`src/sdk/query/search-pagination.ts`](../src/sdk/query/search-pagination.ts)
+- [`src/sdk/query/search-rendering.ts`](../src/sdk/query/search-rendering.ts)
+- [`src/sdk/query/item-filter-options.ts`](../src/sdk/query/item-filter-options.ts)
+- [`src/sdk/query/parsers.ts`](../src/sdk/query/parsers.ts)
 - [`src/sdk/test/execution.ts`](../src/sdk/test/execution.ts)
 - [`src/sdk/test/batch.ts`](../src/sdk/test/batch.ts)
 - [`src/sdk/test/runs.ts`](../src/sdk/test/runs.ts)
@@ -794,6 +800,19 @@ read-only diagnostics, and `pm.gc` runs dry-run or explicit cleanup paths throug
 the same bounded maintenance engine as the CLI. Prefer these typed calls over
 shelling out when building CI, editor integrations, or long-running agent
 runtimes.
+
+### Query execution
+
+Tracked by [pm-rjqr](../.agents/pm/features/pm-rjqr.toon) and the SDK boundary
+capstone [pm-9x6e](../.agents/pm/tasks/pm-9x6e.toon).
+
+`runList` and `runSearch` are SDK-owned query engines, including filtering,
+projection, pagination, keyword and semantic ranking, extension-provider
+dispatch, and token-efficient response metadata. Their historical CLI module
+paths are identity-preserving compatibility exports, while `runEval` consumes
+the SDK search engine directly. Package authors can import these functions and
+their typed result contracts from `@unbrained/pm-cli/sdk` without importing CLI
+implementation modules.
 
 ### Execution and diagnostics
 

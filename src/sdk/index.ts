@@ -296,6 +296,8 @@ export {
   type PathMigration,
 } from "./linked-artifacts.js";
 export * from "./pagination.js";
+export * from "./query/item-filter-options.js";
+export * from "./query/parsers.js";
 export * from "./output.js";
 export * from "./relationship-analytics.js";
 export * from "./relationship-context.js";
@@ -385,6 +387,7 @@ export {
   runCalendar,
   runCompletion,
   runGuide,
+  runList,
   runReindex,
   runSearch,
   runTemplatesList,

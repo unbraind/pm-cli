@@ -379,7 +379,7 @@ describe("runDedupeAudit", () => {
       ];
 
       vi.resetModules();
-      vi.doMock("../../../src/cli/commands/list.js", () => ({
+      vi.doMock("../../../src/sdk/query/list.js", () => ({
         runList: vi
           .fn()
           .mockResolvedValueOnce({
@@ -402,7 +402,7 @@ describe("runDedupeAudit", () => {
         const withWarnings = await mockedRunDedupeAudit({ mode: "title_exact" }, { path: context.pmPath });
         expect(withWarnings.warnings).toEqual(["synthetic_list_warning"]);
       } finally {
-        vi.doUnmock("../../../src/cli/commands/list.js");
+        vi.doUnmock("../../../src/sdk/query/list.js");
         vi.resetModules();
       }
     });

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Promote query/read primitives to the public SDK: list, get, search, context, next, aggregate, stats ([pm-rjqr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rjqr.toon))
 - Promote execution and diagnostics primitives to the public SDK: linked-test running and test-run lifecycle, search eval harness, telemetry stats/export ([pm-oslr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-oslr.toon))
 
 ## 2026.7.16 - 2026-07-16
@@ -247,7 +248,6 @@
 ### Added
 
 - Promote item lifecycle primitives to the public SDK: create, update, close, claim/release, copy, delete, restore, focus ([pm-98cz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-98cz.toon))
-- Promote query/read primitives to the public SDK: list, get, search, context, next, aggregate, stats ([pm-rjqr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rjqr.toon))
 
 ### Fixed
 

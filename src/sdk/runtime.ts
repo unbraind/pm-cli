@@ -75,13 +75,11 @@ import {
   runGet,
   runHistory,
   runLearnings,
-  runList,
   runNext,
   runNotes,
   runPlan,
   runRestore,
   runRelease,
-  runSearch,
   runUpdate,
   runUpdateMany,
   runUpgrade,
@@ -167,14 +165,14 @@ import {
 import type { CopyResult } from "../cli/commands/copy.js";
 import type { CreateResult } from "../cli/commands/create.js";
 import type { DeleteResult } from "../cli/commands/delete.js";
-import type { ListOptions, ListResult } from "../cli/commands/list.js";
+import { runList, type ListOptions, type ListResult } from "./query/list.js";
 import type { NextOptions, NextResult } from "../cli/commands/next.js";
 import type {
   PlanCommandOptions,
   PlanCommandResult,
   PlanSubcommand,
 } from "../cli/commands/plan.js";
-import type { SearchOptions, SearchResult } from "../cli/commands/search.js";
+import { runSearch, type SearchOptions, type SearchResult } from "./query/search.js";
 import {
   runStats,
   type StatsCommandOptions,
@@ -411,7 +409,7 @@ export {
   type ListSortField,
   type ListSortOrder,
   type ListVerboseResult,
-} from "../cli/commands/list.js";
+} from "./query/list.js";
 export { runClose, type CloseCommandOptions } from "../cli/commands/close.js";
 export {
   runUpdate,
@@ -437,7 +435,7 @@ export {
   type SearchResult,
   type SearchResultItem,
   type SearchVerboseResult,
-} from "../cli/commands/search.js";
+} from "./query/search.js";
 export {
   runStats,
   type StatsCommandOptions,
