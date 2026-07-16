@@ -6,11 +6,18 @@ status: open
 priority: 2
 tags[5]: "area:cli",dx,perf,scripts,tech-debt
 created_at: "2026-07-06T09:04:36.860Z"
-updated_at: "2026-07-07T14:17:46.063Z"
+updated_at: "2026-07-16T00:32:13.489Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: compile-cache dir bounded (stale entries pruned or non-current versions dropped); every mkdtemp-using script cleans its sandbox via try/finally + signal handlers; aborted smoke runs leave no >100MB residue in /tmp
 parent: pm-u9d0
 risk: low
 confidence: high
+comments[1]{created_at,author,text}:
+  "2026-07-16T00:32:11.882Z",codex-sdk-platform,"PR #571 review-loop fix: CI run 29461237015 failed Gates (static) with ENOTEMPTY removing /tmp/pm-token-budget-* after the token corpus completed. scripts/release/token-budget-gate.mjs now disables both telemetry paths for deterministic child commands and reuses the established removeTempDirectory retry/backoff helper. Evidence: focused token/cleanup tests 19/19; token budget real corpus passed three consecutive runs (14 surfaces each); pnpm quality:static passed; ESLint passed; full literal coverage passed 293 files / 5,749 tests at exactly 100% statements (37,282), branches (26,563), functions (7,551), and lines (36,385). This advances the sandbox-cleanup portion only; compile-cache pruning and the remaining acceptance criteria stay open."
+files[2]{path,scope,note}:
+  scripts/release/token-budget-gate.mjs,project,Disable background telemetry in deterministic token corpus and use retryable temp cleanup
+  tests/unit/scripts/release/token-budget-gate.spec.ts,project,Verify telemetry-disabled fixture environment and retryable cleanup contract
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/token-budget-gate.spec.ts tests/unit/scripts/contracts-snapshot-cleanup.spec.ts,project,240
 body: "Proposed work:\n1. src/cli.ts: prune the compile-cache dir opportunistically (e.g. drop entries older than N days, or cap total size; Node exposes no API so a lightweight best-effort sweep of stale subdirs on startup-idle or via pm gc is fine). Alternatively scope the dir per package version and delete non-current versions.\n2. Wire cleanupTempRoot (scripts/smoke-cleanup.mjs) into every mkdtemp-using script (smoke-external-packages, dogfood-package-first, plugin-mcp-smoke-harness, contracts-snapshot, run-tests) via try/finally + process signal handlers so aborted runs do not leak multi-hundred-MB sandboxes.\n3. Consider a pm gc advisory that reports oversized pm-owned temp artifacts.\n\nEvidence: /tmp inventory during 2026-07-06 review: 1.7G compile cache, 882M+662M+441M scaffold-review smokes, 7x ~112M changelog sandboxes; total tmpfs 80% full which exhausted the per-user quota and broke tooling."

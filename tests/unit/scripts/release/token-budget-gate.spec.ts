@@ -258,13 +258,20 @@ describe("scripts/release/token-budget-gate", () => {
     expect(runOptions?.env).toMatchObject({
       PM_AUTHOR: "token-budget-gate",
       PM_GLOBAL_PATH: path.join("/tmp/pm-token-budget-test", ".global-pm"),
+      PM_NO_TELEMETRY: "1",
       PM_PATH: path.join("/tmp/pm-token-budget-test", ".agents", "pm"),
+      PM_TELEMETRY_DISABLED: "1",
       PM_TOKEN_BUDGET_SENTINEL: "kept",
     });
     expect(runtime.writeFileSync).toHaveBeenCalledTimes(1);
     const written = JSON.parse(String(runtime.writeFileSync.mock.calls[0]?.[1])) as TokenBudgetManifest;
     expect(written.budgets.map((entry) => entry.id)).toEqual(CORPUS_IDS);
-    expect(runtime.rmSync).toHaveBeenCalledWith("/tmp/pm-token-budget-test", { recursive: true, force: true });
+    expect(runtime.rmSync).toHaveBeenCalledWith("/tmp/pm-token-budget-test", {
+      recursive: true,
+      force: true,
+      maxRetries: 3,
+      retryDelay: 50,
+    });
     expect(log).toHaveBeenCalledWith("Updated token budget manifest: budgets.json");
   });
 

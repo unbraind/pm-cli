@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { removeTempDirectory } from "../contracts-snapshot-cleanup.mjs";
 import { fail, parseFlags, repoRoot, runCommand } from "./utils.mjs";
 
 const MANIFEST_VERSION = 1;
@@ -19,6 +20,8 @@ function runCli(cliPath, args, options) {
     PM_AUTHOR: "token-budget-gate",
     PM_PATH: options.pmPath,
     PM_GLOBAL_PATH: options.globalPath,
+    PM_NO_TELEMETRY: "1",
+    PM_TELEMETRY_DISABLED: "1",
   };
   const result = runCommand(process.execPath, [cliPath, ...args], {
     cwd: options.workspaceRoot,
@@ -160,7 +163,7 @@ function measureCorpus(cliPath) {
       };
     });
   } finally {
-    rmSync(workspaceRoot, { recursive: true, force: true });
+    removeTempDirectory(workspaceRoot);
   }
 }
 
