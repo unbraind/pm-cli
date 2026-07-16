@@ -370,7 +370,7 @@ function resolveCommentsAuditLimits(options: CommentsAuditOptions): {
   return {
     fullHistory,
     latest,
-    limitItems: limitItemsPrimary ?? limitItemsAlias,
+    limitItems: distinctItemLimits.values().next().value,
   };
 }
 
@@ -399,18 +399,21 @@ function buildCommentsAuditFilters(
   latest: number | undefined,
   fullHistory: boolean,
 ): CommentsAuditResult["filters"] {
+  /** Preserve active audit filters in a stable nullable response envelope. */
+  const toNullable = <Value>(value: Value | undefined): Value | null =>
+    value === undefined ? null : value;
   return {
-    status: status ?? null,
-    type: options.type ?? null,
-    tag: options.tag ?? null,
+    status: toNullable(status),
+    type: toNullable(options.type),
+    tag: toNullable(options.tag),
     priority: options.priority === undefined ? null : Number(options.priority),
-    parent: options.parent ?? null,
-    sprint: options.sprint ?? null,
-    release: options.release ?? null,
-    assignee: options.assignee ?? null,
-    assignee_filter: options.assigneeFilter ?? null,
-    limit_items: limitItems ?? null,
-    latest: latest ?? null,
+    parent: toNullable(options.parent),
+    sprint: toNullable(options.sprint),
+    release: toNullable(options.release),
+    assignee: toNullable(options.assignee),
+    assignee_filter: toNullable(options.assigneeFilter),
+    limit_items: toNullable(limitItems),
+    latest: toNullable(latest),
     full_history: fullHistory,
   };
 }
@@ -445,13 +448,18 @@ export async function runCommentsAudit(
   );
 
   const items = listed.items.map((item) => toCommentsAuditEntry(item, latest));
-  const rows = fullHistory ? toHistoryRows(items) : undefined;
-  const latestRowCount = items.reduce(
+  let rows: CommentsAuditHistoryRow[] | undefined;
+  let exportMode: "latest" | "full_history" = "latest";
+  let exportRowCount = items.reduce(
     (sum, entry) => sum + entry.comments.length,
     0,
   );
-
-  return {
+  if (fullHistory) {
+    rows = toHistoryRows(items);
+    exportMode = "full_history";
+    exportRowCount = rows.length;
+  }
+  const result: CommentsAuditResult = {
     items,
     count: items.length,
     summary: buildCommentsAuditSummary(items),
@@ -463,14 +471,12 @@ export async function runCommentsAudit(
       fullHistory,
     ),
     export: {
-      mode: fullHistory ? "full_history" : "latest",
-      /* c8 ignore next -- rows is always materialized from toHistoryRows() when fullHistory=true. */
-      row_count: fullHistory ? (rows?.length ?? 0) : latestRowCount,
+      mode: exportMode,
+      row_count: exportRowCount,
     },
-    ...(rows ? { rows } : {}),
     now: listed.now ?? nowIso(),
-    ...(listed.warnings && listed.warnings.length > 0
-      ? { warnings: listed.warnings }
-      : {}),
   };
+  if (rows) result.rows = rows;
+  if (listed.warnings?.length) result.warnings = listed.warnings;
+  return result;
 }

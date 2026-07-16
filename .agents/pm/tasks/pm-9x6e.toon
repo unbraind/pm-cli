@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: architecture,"area:cli","area:mcp","area:sdk",ci
 created_at: "2026-07-06T13:13:21.203Z"
-updated_at: "2026-07-16T10:43:30.214Z"
+updated_at: "2026-07-16T11:02:07.755Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: sdk-import-boundary-baseline.json reaches zero entries and is deleted; static-quality-gate hard-denies any private src/core import from src/cli/** and src/mcp/** with no baseline escape hatch; src/mcp handlers consume only src/sdk primitives; full test suite + 100% coverage gate green with zero CLI/MCP behavior change
@@ -22,7 +22,7 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-oxrw,related,"2026-07-06T13:13:21.203Z",null,null
   pm-rjqr,related,"2026-07-06T13:13:21.203Z",null,null
   pm-zwpp,related,"2026-07-06T13:13:21.203Z",null,null
-comments[23]{created_at,author,text}:
+comments[24]{created_at,author,text}:
   "2026-07-14T19:24:59.262Z",codex-gpt5,"Implementation start 2026-07-14: actively shrinking the enforced CLI/MCP private-core baseline through the pm-3mna schema ownership extraction. This run will not claim the capstone complete unless the baseline truly reaches zero."
   "2026-07-14T19:41:00.327Z",codex-gpt5,"Progress evidence: removed all 17 schema-domain private-core edges previously attributed to src/cli/commands/schema.ts. The boundary ratchet passes with zero new imports; the broader baseline remains intentionally open and is not claimed complete."
   "2026-07-14T20:19:49.227Z",codex-root,"Final branch evidence: removed all 17 private-core imports formerly owned by src/cli/commands/schema.ts and deleted that stale baseline block. pnpm quality:static passes with no new private imports, no stale baseline entries, zero unsupported dynamic imports, 100% docstrings, and token budgets green. The repository-wide boundary baseline is not yet zero, so this capstone returns to open for the remaining command families."
@@ -46,6 +46,7 @@ comments[23]{created_at,author,text}:
   "2026-07-16T09:47:31.807Z",codex-wide-sdk-20260716,"PR #573 analyzer closeout: queried DeepScan public API for defect 230772515 and removed the redundant !state.maxBufferExceeded condition proven constant after the early-return guard. Converted the three DeepSource-targeted governance helper comments to full multiline JSDoc so both repository and hosted analyzers recognize them. Strict lint/static/docstring/boundary/token gates pass; focused execution/governance tests pass 60/60; final repository coverage remains 292 files / 5,744 tests at exact 100/100/100/100."
   "2026-07-16T10:01:38.541Z",codex-wide-sdk-20260716,"DeepSource compatibility follow-up: its own rule text permits documentation immediately inside a function declaration, so the three helper purpose comments now use that recognized placement without adding analyzer exclusions or weakening the repository 100% docstring gate. Full strict lint, zero-duplicate, static, package-boundary, and token gates pass."
   "2026-07-16T10:43:27.847Z",codex-root,"Exact-head hosted-review follow-up: replaced an unsafe linked-artifact cast with runtime structural validation and added a malformed-payload regression; converted the symlink escape regression to independent per-path assertions so neither project nor global reads can false-pass; documented all newly reported comments-audit helpers and reduced resolveCommentsAuditLimits complexity. Focused tests pass 136/136, strict lint passes with zero duplicates and 100% docstrings/static gates, and full coverage passes 292 files / 5,744 tests at exact 100/100/100/100 (37,267 statements, 26,519 branches, 7,538 functions, 36,366 lines)."
+  "2026-07-16T11:02:06.124Z",codex-root,"DeepSource strict-gate closeout: exact run 8ceb9f45 exposed the final undocumented parseMode/buildCommentsAuditFilters helpers and medium-complexity comments-audit result shaping. Added purpose documentation, consolidated nullable filter projection, and simplified limit/export/result construction without suppressions or threshold changes. Focused governance tests pass 62/62; strict lint/static/docstring/boundary/token gates pass with zero duplicates; full coverage passes 292 files / 5,744 tests at exact 100/100/100/100 (37,278 statements, 26,495 branches, 7,539 functions, 36,375 lines)."
 notes[1]{created_at,author,text}:
   "2026-07-15T06:21:39.876Z",maintainer-agent,"PR#565 progress (2026-07-15): 54 obsolete CLI-to-core import-boundary allowances removed; pm-3mna slice shipped (SDK owns config/profile/init/agent-guidance/templates/extension + createPmCliProgram + renderPmCommand). Baseline scripts/release/sdk-import-boundary-baseline.json still holds ~60 source files (commands/*, main.ts, register-*, mcp/server.ts) — the zero target remains. With 3mna/4a7m/hib1/zwpp shipped, remaining prerequisite slices are pm-oxrw (governance/health) then pm-oslr (execution/diagnostics)."
 learnings[4]{created_at,author,text}:

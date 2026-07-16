@@ -179,6 +179,7 @@ export interface DedupeAuditResult {
 }
 
 function parseMode(raw: string | undefined): DedupeAuditMode {
+  /** Normalize the optional strategy name against the supported audit modes. */
   const normalized = (raw ?? "title_exact").trim().toLowerCase();
   if (!DEDUPE_AUDIT_MODES.includes(normalized as DedupeAuditMode)) {
     throw new PmCliError(
