@@ -34,20 +34,9 @@ interface WorkerResponse {
   ok: boolean;
   result?: WorkerCliOutcome;
   errorMessage?: string;
-  tainted?: boolean;
 }
 
 let bridgeWorker: Worker | null = null;
-
-/**
- * True once the current worker reported that an invocation may have mutated
- * the CLI's module-level commander program (dynamic extension commands/flags
- * or workspace schema fields). A tainted worker is disposed at test-context
- * end instead of being reused; untainted workers are reused across contexts,
- * which is what keeps the per-test overhead near zero for the vast majority
- * of specs.
- */
-let bridgeWorkerTainted = false;
 
 function workerScriptPath(): string {
   return path.resolve(process.cwd(), "tests/helpers/cliWorkerBridge.worker.mjs");
@@ -56,7 +45,6 @@ function workerScriptPath(): string {
 function ensureBridgeWorker(): Worker {
   if (bridgeWorker === null) {
     bridgeWorker = new Worker(workerScriptPath());
-    bridgeWorkerTainted = false;
     // Never keep the vitest fork alive just because the bridge exists.
     bridgeWorker.unref();
   }
@@ -67,22 +55,6 @@ function teardownBridgeWorker(): void {
   if (bridgeWorker !== null) {
     void bridgeWorker.terminate();
     bridgeWorker = null;
-  }
-}
-
-/**
- * Dispose the current bridge worker so the next `runWorkerCli` call starts a
- * fresh one. `withTempPmPath` calls this when a test's temp workspace is torn
- * down: the CLI's module-level commander `program` accumulates dynamically
- * registered extension commands/flags across invocations (a one-shot process
- * discards them by exiting), so a context whose invocations may have mutated
- * the program must not leak its module instance into the next test. Untainted
- * workers are reused across contexts — that is what removes the per-call
- * spawn tax without paying a fresh bundle import per test.
- */
-export function disposeBridgeWorkerForTestContext(): void {
-  if (bridgeWorkerTainted) {
-    teardownBridgeWorker();
   }
 }
 
@@ -157,9 +129,6 @@ export function runWorkerCli(args: string[], options: DirectCliRunOptions = {}):
     return runDirectDistCli(args, options);
   }
 
-  if (message.message.tainted === true) {
-    bridgeWorkerTainted = true;
-  }
   const outcome = message.message.result;
   if (outcome.status !== 0 && process.env.PM_TEST_CLI_BRIDGE_DEBUG === "1") {
     // Debug aid: surfacing bridged-CLI stderr, which assertion failures on

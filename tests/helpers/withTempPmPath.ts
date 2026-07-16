@@ -8,10 +8,7 @@ import {
   runInProcessDistCli,
   type DirectCliRunResult,
 } from "./cliRunner.js";
-import {
-  disposeBridgeWorkerForTestContext,
-  runWorkerCli,
-} from "./cliWorkerBridge.js";
+import { runWorkerCli } from "./cliWorkerBridge.js";
 
 export type CliRunResult = DirectCliRunResult;
 
@@ -408,7 +405,6 @@ export async function withTempPmPath<T>(
       runCliInProcess,
     });
   } finally {
-    disposeBridgeWorkerForTestContext();
     restoreTempPmEnv(previousEnv);
     await removeTempRoot(tempRoot);
   }

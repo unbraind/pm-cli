@@ -59,6 +59,7 @@ Source of truth:
 - [`src/sdk/telemetry.ts`](../src/sdk/telemetry.ts)
 - [`src/sdk/stats.ts`](../src/sdk/stats.ts)
 - [`src/sdk/cli-contracts.ts`](../src/sdk/cli-contracts.ts)
+- [`src/sdk/cli-bootstrap.ts`](../src/sdk/cli-bootstrap.ts)
 - [`src/sdk/cli-contracts/commander-types.ts`](../src/sdk/cli-contracts/commander-types.ts)
 - [`src/sdk/cli-contracts/commander-mutation-options.ts`](../src/sdk/cli-contracts/commander-mutation-options.ts)
 
@@ -162,6 +163,32 @@ Command/action contract exports:
 - `PM_TOOL_PARAMETERS_SCHEMA`
 - `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`
 - `PM_TOOL_ACTION_PARAMETER_CONTRACTS`
+
+### Build an entire custom project tool
+
+Tracked: [pm-cbwg](../.agents/pm/features/pm-cbwg.toon) and
+[pm-w89s](../.agents/pm/stories/pm-w89s.toon).
+
+The [SDK-only custom-tool exemplar](examples/sdk-custom-tool/README.md)
+is the acceptance reference for applications that use pm as a universal
+context engine rather than as an extension host. It imports only
+`@unbrained/pm-cli/sdk` and composes schema customization, custom workflow
+statuses, lifecycle mutations, annotations, linked resources, dependency
+graphs, bounded context, search, health, and validation into a standalone
+domain CLI.
+
+Copy its reusable client pattern when building a company workflow,
+domain-specific tracker, VCS-like system, or other application whose durable
+state and business rules fit pm's public primitives. Keep the executable layer
+thin: domain logic belongs in a reusable SDK client, while argv parsing and
+rendering stay at the edge.
+
+Embedded hosts can also import the SDK-owned bootstrap normalization primitives
+(`normalizeBootstrapInvocation`, `parseBootstrapGlobalOptions`, and related
+contracts) when they intentionally expose pm-compatible argv. Every
+`runPmCli()` call constructs a fresh Commander graph, so extension commands,
+extension flags, and runtime schema options from one workspace cannot leak into
+the next in-process invocation.
 
 ### Plan workflows
 
@@ -2323,6 +2350,7 @@ search degrades gracefully and emits warning codes instead of hard-failing.
 
 Runnable examples:
 
+- [SDK-only custom project tool](examples/sdk-custom-tool/README.md)
 - [SDK contract consumer](examples/sdk-contract-consumer/README.md)
 - [SDK app embedding](examples/sdk-app-embedding/README.md)
 - [CI examples](examples/ci/)

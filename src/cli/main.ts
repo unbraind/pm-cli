@@ -2506,10 +2506,11 @@ async function registerDynamicExtensionCommandPaths(
 const CLI_VERSION = resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0";
 /* c8 ignore stop */
 
-const program = createPmCliProgram(CLI_VERSION);
+let program = createPmCliProgram(CLI_VERSION);
 
 /* c8 ignore start */
-program.hook("preAction", async (_thisCommand, actionCommand) => {
+function attachProgramLifecycleHooks(rootProgram: Command): void {
+rootProgram.hook("preAction", async (_thisCommand, actionCommand) => {
   activeExtensionHookContext = null;
   activeTelemetryCommandContext = null;
   clearActiveExtensionHooks();
@@ -2690,7 +2691,7 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
 });
 /* c8 ignore stop */
 
-program.hook("postAction", async () => {
+rootProgram.hook("postAction", async () => {
   const outcome = buildPostActionTelemetryOutcome();
   sentryFinishCommandSpan(outcome.ok, outcome.error, {
     error_code: outcome.error_code,
@@ -2701,6 +2702,8 @@ program.hook("postAction", async () => {
   });
   await runAndClearAfterCommandHooks(outcome);
 });
+}
+attachProgramLifecycleHooks(program);
 
 const VERSION_FLAG_TOKENS = new Set(["--version", "-V"]);
 const SETUP_COMMAND_NAMES = new Set([
@@ -3510,6 +3513,8 @@ async function handleRunPmCliError(params: {
 export async function runPmCli(
   rawArgv: string[] = process.argv.slice(2),
 ): Promise<void> {
+  program = createPmCliProgram(CLI_VERSION);
+  attachProgramLifecycleHooks(program);
   // The runtime-extension snapshot caches dedupe discovery work within a
   // single invocation only. Reset them on entry so long-lived embeddings
   // (in-process test runners, future SDK hosts) observe the same fresh

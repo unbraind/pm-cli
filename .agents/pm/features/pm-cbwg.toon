@@ -2,27 +2,46 @@ id: pm-cbwg
 title: "SDK-only exemplar: minimal custom PM CLI package proving the universal-tool story end-to-end"
 description: "A packages/ exemplar (e.g. pm-minimal) that assembles a working project-specific PM tool importing only @unbrained/pm-cli/sdk — custom types/statuses via schema primitives, custom commands via lifecycle/query primitives — serving as living documentation and the acceptance proof for story pm-w89s. Duplicate check: existing exemplars (pm-kanban etc.) demonstrate extension authoring, not SDK-only tool assembly."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: "area:extensions","area:sdk",docs,exemplar
 created_at: "2026-07-05T04:54:31.164Z"
-updated_at: "2026-07-10T05:12:48.433Z"
+updated_at: "2026-07-16T21:18:43.107Z"
+closed_at: "2026-07-16T21:18:42.251Z"
 author: maintainer-agent
 estimated_minutes: 300
 acceptance_criteria: "Exemplar package builds+tests using only public SDK imports; exercises lifecycle, query, annotations, governance, schema customization; linked tests run in CI; referenced from SDK docs as the build-your-own-PM-tool guide"
 parent: pm-usfg
 risk: low
 confidence: medium
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-98cz,blocked_by,"2026-07-05T04:55:08.957Z",null,null
-  pm-rjqr,blocked_by,"2026-07-05T04:55:09.465Z",null,null
-  pm-zwpp,blocked_by,"2026-07-05T04:55:09.910Z",null,null
-  pm-3mna,blocked_by,"2026-07-05T04:55:10.407Z",null,null
-  pm-oxrw,blocked_by,"2026-07-05T06:30:08.149Z",null,null
+resolution: Delivered a package-shaped SDK-only universal project tool exemplar and public guide.
+expected_result: "A copyable consumer uses only the public SDK for customization, lifecycle, queries, context, annotations, relationships, and governance."
+actual_result: Linked acceptance tests and an installed-tarball temporary consumer pass every required primitive with no CLI or private-core import.
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-6abs,related,"2026-07-07T08:57:39.012Z",null,null
-comments[4]{created_at,author,text}:
+  pm-9x6e,related,"2026-07-16T20:38:57.611Z",null,null
+  pm-qfdd,related,"2026-07-16T20:38:57.611Z",null,null
+comments[7]{created_at,author,text}:
   "2026-07-06T22:11:13.026Z",maintainer-agent,"Prior-art note (audit #15 follow-up): unbraind already ships pm-starter and pm-ts-starter (reference EXTENSIONS covering all capability types). This exemplar is deliberately different — a standalone custom PM tool composed only from public SDK primitives, not an extension scaffold. Reference the starters for structure/CI conventions, do not duplicate them; if the exemplar drifts toward 'reference extension', fold it into pm-ts-starter upstream instead."
   "2026-07-07T08:58:20.674Z",codex-agent,"Progress evidence: active PR bundle contributes SDK-only exemplar readiness by documenting and manually proving hermetic package doctor flows for package authors. This is evidence for the eventual SDK-only custom PM tool, not full exemplar completion; close remains dependent on the full exemplar package."
   "2026-07-07T09:44:05.259Z",codex-agent,"Package exemplar update: pm-6abs verifies package doctor isolation and docs now describe hermetic package-author smoke tests, reducing machine-local global extension leakage during package development."
   "2026-07-08T06:06:38.653Z",codex,"Evidence: agent-facing SDK ergonomics improved by exporting concrete lifecycle result contracts from the public SDK instead of forcing package authors to handle unknown returns for common mutation primitives."
+  "2026-07-16T20:25:23.492Z",codex-wide-sdk-20260716,"Implementation start 2026-07-16: build the canonical SDK-only custom PM tool exemplar as a tested package using public @unbrained/pm-cli/sdk exports only; cover customization, lifecycle, annotations, queries, governance, and context."
+  "2026-07-16T20:48:19.533Z",codex-wide-sdk-20260716,"Coverage integration finding: packages/pm-* is the installable extension catalog boundary. The SDK-only package exemplar now lives under docs/examples so it remains packed, typechecked, runnable, and independent without becoming a wildcard-install target."
+  "2026-07-16T21:18:28.456Z",codex-wide-sdk-20260716,"Evidence: added docs/examples/sdk-custom-tool as a standalone package-shaped consumer importing only @unbrained/pm-cli/sdk. It composes custom type/status registration, create/update/claim/release/close, annotations, linked resources, list/search/context, dependency graph, health, and history validation. Packed @unbrained/pm-cli acceptance in /tmp/pm-sdk-wide-pack-U7vgr1 returned Deliverable/reviewing/closed, activeItemsBeforeClose=2, dependencyEdges=1, healthOk=true, historyDriftOk=true."
+learnings[1]{created_at,author,text}:
+  "2026-07-16T21:18:31.145Z",codex-wide-sdk-20260716,Standalone SDK consumers belong outside packages/pm-* because that directory is the installable extension catalog boundary; docs/examples keeps the exemplar packed and typechecked without making it a wildcard extension-install target.
+files[4]{path,scope,note}:
+  docs/examples/sdk-custom-tool/package.json,project,Standalone exemplar package contract
+  docs/examples/sdk-custom-tool/src/cli.ts,project,Thin domain CLI adapter
+  docs/examples/sdk-custom-tool/src/index.ts,project,SDK-only universal project tool implementation
+  tests/unit/sdk/sdk-universal-tool-exemplar.spec.ts,project,End-to-end SDK-only acceptance coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-universal-tool-exemplar.spec.ts,project,180
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mro00n0e-uoqcoy,test,passed,"2026-07-16T21:05:37.547Z","2026-07-16T21:05:51.230Z","2026-07-16T21:05:51.230Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/examples/sdk-custom-tool/README.md,project,Copyable build-your-own-tool guide
+  docs/SDK.md,project,Public SDK reference and exemplar routing
+close_reason: "SDK-only universal project tool exemplar, docs, linked acceptance, and packed-consumer proof completed."
 body: ""

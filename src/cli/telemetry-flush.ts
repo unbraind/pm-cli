@@ -4,6 +4,6 @@
  *
  * Provides CLI runtime support for Telemetry Flush.
  */
-import { flushTelemetryQueueNow } from "../core/telemetry/runtime.js";
+import { flushTelemetryQueue } from "../sdk/telemetry-flush.js";
 
-await flushTelemetryQueueNow();
+await flushTelemetryQueue();
