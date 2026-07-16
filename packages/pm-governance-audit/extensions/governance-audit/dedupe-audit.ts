@@ -202,6 +202,7 @@ let dedupeTerminalStatuses = new Set<string>(["closed", "canceled"]);
 let dedupeStatusRegistry: RuntimeStatusRegistry | null = null;
 
 function parseStatus(raw: string | undefined): ItemStatus | undefined {
+  /** Normalize an optional status token against the active audit registry. */
   if (raw === undefined) {
     return undefined;
   }

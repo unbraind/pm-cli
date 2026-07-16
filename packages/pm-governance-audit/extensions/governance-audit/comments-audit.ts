@@ -343,7 +343,7 @@ function resolveCommentsAuditLimits(options: CommentsAuditOptions): {
   /** Reconcile history and item-limit aliases into one validated selection. */
   const fullHistory = options.fullHistory === true;
   const latestParsed = parseNonNegativeInteger(options.latest, "--latest");
-  if (fullHistory && latestParsed !== undefined) {
+  if ([fullHistory, latestParsed !== undefined].every(Boolean)) {
     throw new PmCliError(
       "--full-history cannot be combined with --latest",
       EXIT_CODE.USAGE,
@@ -448,17 +448,10 @@ export async function runCommentsAudit(
   );
 
   const items = listed.items.map((item) => toCommentsAuditEntry(item, latest));
-  let rows: CommentsAuditHistoryRow[] | undefined;
-  let exportMode: "latest" | "full_history" = "latest";
-  let exportRowCount = items.reduce(
+  const latestRowCount = items.reduce(
     (sum, entry) => sum + entry.comments.length,
     0,
   );
-  if (fullHistory) {
-    rows = toHistoryRows(items);
-    exportMode = "full_history";
-    exportRowCount = rows.length;
-  }
   const result: CommentsAuditResult = {
     items,
     count: items.length,
@@ -471,12 +464,16 @@ export async function runCommentsAudit(
       fullHistory,
     ),
     export: {
-      mode: exportMode,
-      row_count: exportRowCount,
+      mode: "latest",
+      row_count: latestRowCount,
     },
     now: listed.now ?? nowIso(),
   };
-  if (rows) result.rows = rows;
+  if (fullHistory) {
+    const rows = toHistoryRows(items);
+    result.rows = rows;
+    result.export = { mode: "full_history", row_count: rows.length };
+  }
   if (listed.warnings?.length) result.warnings = listed.warnings;
   return result;
 }
