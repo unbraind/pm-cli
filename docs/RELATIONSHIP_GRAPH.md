@@ -166,6 +166,26 @@ policy findings. A VCS, company operating model, digital twin, or other
 non-project domain can replace the assembly adapter while reusing the same
 registry, traversal, event, context, and audit contracts.
 
+The native workspace adapter is `pm graph <subcommand>`, also available as
+`PmClient.graph`, `runAction({ action: "graph" })`, and the MCP `pm_graph`
+tool. `ancestors`/`descendants`/`predecessors`/`successors` expose the
+semantic walks, `paths` exposes bounded simple-path enumeration, `impact`
+exposes reverse-reachability blast radius from `analyzeGraphImpact`,
+`analyze` combines `analyzeRelationshipExecution` and `analyzeKnowledgeGraph`
+into one counts-first workspace projection, and `audit` runs
+`auditWorkspaceRelationshipGraph` with `--sample` and `--exempt-isolate`
+policy controls. `communities` exposes `detectRelationshipCommunities`
+(deterministic asynchronous label propagation with lexicographic
+tie-breaking), `redundancy` exposes `findRedundantRelationshipEdges`
+(transitive-reduction scan over ordering and hierarchy families in semantic
+orientation, each finding carrying a bounded witness path), and `dominators`
+exposes `computeRelationshipDominators` (Cooper–Harvey–Kennedy immediate
+dominators over the root's reachable subgraph, ranking structural
+bottlenecks by gated work). All subcommands assemble the graph once per invocation via
+`assembleWorkspaceRelationshipGraph`, resolve ids case-insensitively, and
+report explicit `truncated` plus `cost` metadata so agents can budget
+follow-up reads; `--summary` returns envelopes without row collections.
+
 ## Compatibility and migration
 
 Aliases normalize at registry boundaries; stored values are not silently rewritten. Imports must carry or select a compatible registry version. Federation merges definitions before edges and rejects identifier or alias collisions. Rollback removes the custom definition and its derived index only after application-owned edges have been exported or superseded; immutable history is retained.

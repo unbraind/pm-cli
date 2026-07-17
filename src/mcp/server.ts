@@ -146,6 +146,7 @@ const HANDLERS: Record<string, ToolHandler> = {
   pm_notes: (args) => runAction({ ...args, action: "notes" }),
   pm_learnings: (args) => runAction({ ...args, action: "learnings" }),
   pm_deps: (args) => runAction({ ...args, action: "deps" }),
+  pm_graph: (args) => runAction({ ...args, action: "graph" }),
   pm_test: (args) => runAction({ ...args, action: "test" }),
   pm_validate: (args) => runAction({ ...args, action: "validate" }),
   pm_health: (args) => runAction({ ...args, action: "health" }),
@@ -212,7 +213,7 @@ export async function handleRequest(
       instructions:
         "You have access to native pm CLI tools for git-based project management. " +
         "Use pm_next to pick the next actionable item, or pm_context or pm_search before creating new work. " +
-        "Prefer narrow tools (pm_next, pm_context, pm_list, pm_get, pm_search, pm_create, pm_copy, pm_focus, pm_update, pm_append, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_test, pm_validate, pm_health, pm_contracts, pm_schema, pm_profile, pm_config, pm_plan) over pm_run when they cover the operation. " +
+        "Prefer narrow tools (pm_next, pm_context, pm_list, pm_get, pm_search, pm_create, pm_copy, pm_focus, pm_update, pm_append, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_graph, pm_test, pm_validate, pm_health, pm_contracts, pm_schema, pm_profile, pm_config, pm_plan) over pm_run when they cover the operation. " +
         "Use pm_plan for agent harness Plan workflows: it provides Codex/Claude/Cursor-style planning with durable steps, dependencies, decisions, discoveries, validation, and materialization. " +
         "Use pm_schema and pm_config for workspace configuration: pm_schema manages custom item types/statuses and pm_config reads or writes settings keys. " +
         "Use pm_run with an explicit action for active package-owned operations, plus activity, aggregate, history, stats, test-all, and gc. " +

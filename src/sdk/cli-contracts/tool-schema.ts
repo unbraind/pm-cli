@@ -670,6 +670,22 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       required: ["id"],
       optional: ["format", "maxDepth", "collapse", "summary", "nodeLimit", "edgeLimit", "tokenBudget", "cursor", "direction", "kind"],
     },
+    graph: {
+      required: ["subcommand"],
+      optional: [
+        "id",
+        "target",
+        "kind",
+        "maxDepth",
+        "limit",
+        "after",
+        "direction",
+        "maxPaths",
+        "sample",
+        "exemptIsolate",
+        "summary",
+      ],
+    },
     test: {
       required: ["id"],
       optional: [

@@ -3,7 +3,10 @@
  *
  * Defines the Tool Definitions module for pm CLI source.
  */
-import { PM_TOOL_ACTIONS } from "../sdk/cli-contracts/enum-contracts.js";
+import {
+  GRAPH_SUBCOMMAND_VALUES,
+  PM_TOOL_ACTIONS,
+} from "../sdk/cli-contracts/enum-contracts.js";
 import { COPY_FLAG_CONTRACTS } from "../sdk/cli-contracts/flag-contracts.js";
 import { RUNTIME_STATUS_ROLE_VALUES } from "../types.js";
 
@@ -437,6 +440,23 @@ export const TOOLS: ToolDefinition[] = [
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
       "id",
     ]),
+  },
+  {
+    name: "pm_graph",
+    description:
+      "Run bounded workspace relationship-graph queries: ancestors/descendants (hierarchy), predecessors/successors (ordering), paths, impact (blast radius), analyze (execution + knowledge analytics), audit (governance findings), communities (label-propagation clusters), redundancy (transitively implied edges), and dominators (structural bottlenecks). Traversals, paths, impact, and dominators require id; paths also requires target. Options support kind, maxDepth, limit, after, direction, maxPaths, sample, exemptIsolate, and counts-first summary.",
+    inputSchema: objectSchema(
+      {
+        subcommand: {
+          type: "string",
+          enum: [...GRAPH_SUBCOMMAND_VALUES],
+        },
+        id: idSchema,
+        target: idSchema,
+        options: { type: "object" },
+      },
+      ["subcommand"],
+    ),
   },
   {
     name: "pm_test",

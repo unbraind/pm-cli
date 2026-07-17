@@ -351,6 +351,16 @@
       "requires_extension": false
     },
     {
+      "action": "graph",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "graph",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "health",
       "available": true,
       "cli_exposed": true,
@@ -867,6 +877,7 @@
     "focus",
     "gc",
     "get",
+    "graph",
     "health",
     "history",
     "history-compact",
@@ -2479,6 +2490,41 @@
         },
         {
           "flag": "--format"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "graph",
+      "flags": [
+        {
+          "flag": "--kind",
+          "list": true
+        },
+        {
+          "flag": "--max-depth"
+        },
+        {
+          "flag": "--limit"
+        },
+        {
+          "flag": "--after"
+        },
+        {
+          "flag": "--direction"
+        },
+        {
+          "flag": "--max-paths"
+        },
+        {
+          "flag": "--sample"
+        },
+        {
+          "flag": "--exempt-isolate",
+          "list": true
+        },
+        {
+          "flag": "--summary"
         }
       ],
       "provider": "core"
@@ -8153,6 +8199,7 @@
     "focus",
     "gc",
     "get",
+    "graph",
     "health",
     "help",
     "history",
@@ -8844,6 +8891,61 @@
       ]
     },
     {
+      "description": "Run bounded workspace relationship-graph queries: ancestors/descendants (hierarchy), predecessors/successors (ordering), paths, impact (blast radius), analyze (execution + knowledge analytics), audit (governance findings), communities (label-propagation clusters), redundancy (transitively implied edges), and dominators (structural bottlenecks). Traversals, paths, impact, and dominators require id; paths also requires target. Options support kind, maxDepth, limit, after, direction, maxPaths, sample, exemptIsolate, and counts-first summary.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          },
+          "subcommand": {
+            "enum": [
+              "ancestors",
+              "descendants",
+              "predecessors",
+              "successors",
+              "paths",
+              "impact",
+              "analyze",
+              "audit",
+              "communities",
+              "redundancy",
+              "dominators"
+            ],
+            "type": "string"
+          },
+          "target": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subcommand"
+        ],
+        "type": "object"
+      },
+      "name": "pm_graph",
+      "required": [
+        "subcommand"
+      ]
+    },
+    {
       "description": "Run pm health diagnostics. Pass options.brief=true for compact low-token details, options.skipIntegrity=true, options.skipDrift=true, options.skipVectors=true for a fast status-only check, or options.full=true for the complete deep check.",
       "input_schema": {
         "additionalProperties": true,
@@ -9162,7 +9264,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, next, history, history-redact, history-repair, history-compact, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions are available dynamically when their provider package is installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, next, history, history-redact, history-repair, history-compact, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, graph, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions are available dynamically when their provider package is installed.",
             "type": "string"
           },
           "author": {
@@ -13795,6 +13897,13 @@
             "const": "list",
             "description": "Tool action to execute."
           },
+          "after": {
+            "description": "Resume a graph traversal after this previously returned node id.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
+          },
           "assignee": {
             "description": "Assignee identity.",
             "examples": [
@@ -14265,6 +14374,13 @@
           "action": {
             "const": "list-all",
             "description": "Tool action to execute."
+          },
+          "after": {
+            "description": "Resume a graph traversal after this previously returned node id.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
           },
           "assignee": {
             "description": "Assignee identity.",
@@ -14737,6 +14853,13 @@
             "const": "list-draft",
             "description": "Tool action to execute."
           },
+          "after": {
+            "description": "Resume a graph traversal after this previously returned node id.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
+          },
           "assignee": {
             "description": "Assignee identity.",
             "examples": [
@@ -15207,6 +15330,13 @@
           "action": {
             "const": "list-open",
             "description": "Tool action to execute."
+          },
+          "after": {
+            "description": "Resume a graph traversal after this previously returned node id.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
           },
           "assignee": {
             "description": "Assignee identity.",
@@ -15679,6 +15809,13 @@
             "const": "list-in-progress",
             "description": "Tool action to execute."
           },
+          "after": {
+            "description": "Resume a graph traversal after this previously returned node id.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
+          },
           "assignee": {
             "description": "Assignee identity.",
             "examples": [
@@ -16149,6 +16286,13 @@
           "action": {
             "const": "list-blocked",
             "description": "Tool action to execute."
+          },
+          "after": {
+            "description": "Resume a graph traversal after this previously returned node id.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
           },
           "assignee": {
             "description": "Assignee identity.",
@@ -16621,6 +16765,13 @@
             "const": "list-closed",
             "description": "Tool action to execute."
           },
+          "after": {
+            "description": "Resume a graph traversal after this previously returned node id.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
+          },
           "assignee": {
             "description": "Assignee identity.",
             "examples": [
@@ -17091,6 +17242,13 @@
           "action": {
             "const": "list-canceled",
             "description": "Tool action to execute."
+          },
+          "after": {
+            "description": "Resume a graph traversal after this previously returned node id.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
           },
           "assignee": {
             "description": "Assignee identity.",
@@ -17672,6 +17830,13 @@
               "20"
             ]
           },
+          "after": {
+            "description": "Resume a graph traversal after this previously returned node id.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
+          },
           "assignee": {
             "description": "Assignee identity.",
             "examples": [
@@ -17900,6 +18065,13 @@
               10,
               "20"
             ]
+          },
+          "after": {
+            "description": "Resume a graph traversal after this previously returned node id.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
           },
           "assignee": {
             "description": "Assignee identity.",
@@ -18243,6 +18415,13 @@
           "action": {
             "const": "search",
             "description": "Tool action to execute."
+          },
+          "after": {
+            "description": "Resume a graph traversal after this previously returned node id.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
           },
           "assignee": {
             "description": "Assignee identity.",
@@ -19545,7 +19724,7 @@
             "type": "array"
           },
           "subcommand": {
-            "description": "Subcommand selector for schema, profile, and telemetry actions.",
+            "description": "Subcommand selector for schema, profile, telemetry, and graph actions.",
             "type": "string"
           },
           "timeoutMs": {
@@ -19694,7 +19873,7 @@
             "type": "boolean"
           },
           "subcommand": {
-            "description": "Subcommand selector for schema, profile, and telemetry actions.",
+            "description": "Subcommand selector for schema, profile, telemetry, and graph actions.",
             "type": "string"
           },
           "timeoutMs": {
@@ -23071,6 +23250,209 @@
         "additionalProperties": false,
         "properties": {
           "action": {
+            "const": "graph",
+            "description": "Tool action to execute."
+          },
+          "after": {
+            "description": "Resume a graph traversal after this previously returned node id.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
+          },
+          "direction": {
+            "description": "Edge orientation for graph paths/impact/dominators queries (\"outgoing\", \"incoming\", or \"both\"; default \"both\").",
+            "enum": [
+              "outgoing",
+              "incoming",
+              "both"
+            ],
+            "examples": [
+              "incoming"
+            ],
+            "type": "string"
+          },
+          "exemptIsolate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Item ids the graph audit treats as explicitly valid isolates (string, comma-separated, or array).",
+            "examples": [
+              "pm-x1y2",
+              [
+                "pm-x1y2",
+                "pm-a3b4"
+              ]
+            ]
+          },
+          "id": {
+            "description": "Root item id for traversal, paths, impact, and dominators graph queries.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Registered relationship kinds narrowing the graph query (string, comma-separated, or array).",
+            "examples": [
+              "blocked_by",
+              [
+                "parent",
+                "related"
+              ]
+            ]
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum returned rows per bounded graph collection (traversal ids, impact rows, analyze/communities samples, redundancy rows, dominator bottlenecks).",
+            "examples": [
+              10,
+              "25"
+            ]
+          },
+          "maxDepth": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum graph traversal depth (non-negative integer).",
+            "examples": [
+              2,
+              "4"
+            ]
+          },
+          "maxPaths": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum enumerated paths for graph paths queries.",
+            "examples": [
+              5,
+              "10"
+            ]
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Pm Executable.",
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "sample": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum evidence sample entries per graph audit finding.",
+            "examples": [
+              10,
+              "25"
+            ]
+          },
+          "subcommand": {
+            "description": "Graph query selector: ancestors|descendants|predecessors|successors|paths|impact|analyze|audit|communities|redundancy|dominators. Traversals, paths, impact, and dominators require id; paths also requires target.",
+            "examples": [
+              "successors",
+              "audit"
+            ],
+            "type": "string"
+          },
+          "summary": {
+            "description": "When true, return counts-first graph envelopes without row collections.",
+            "type": "boolean"
+          },
+          "target": {
+            "description": "Target item id for graph paths queries.",
+            "examples": [
+              "pm-a3b4"
+            ],
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          }
+        },
+        "required": [
+          "action",
+          "subcommand"
+        ],
+        "title": "pm action \"graph\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
             "const": "test",
             "description": "Tool action to execute."
           },
@@ -23519,7 +23901,7 @@
             "type": "boolean"
           },
           "subcommand": {
-            "description": "Subcommand selector for schema, profile, and telemetry actions.",
+            "description": "Subcommand selector for schema, profile, telemetry, and graph actions.",
             "type": "string"
           },
           "timeoutMs": {

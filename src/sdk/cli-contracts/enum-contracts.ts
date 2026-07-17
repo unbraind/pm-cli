@@ -84,6 +84,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "context",
   "ctx",
   "get",
+  "graph",
   "search",
   "eval",
   "next",
@@ -126,6 +127,24 @@ export const PM_CORE_COMMAND_NAMES = [
   "remind",
   "help",
 ] as const;
+
+/** Supported values accepted by the graph subcommand contract across CLI, SDK, and MCP surfaces. */
+export const GRAPH_SUBCOMMAND_VALUES = [
+  "ancestors",
+  "descendants",
+  "predecessors",
+  "successors",
+  "paths",
+  "impact",
+  "analyze",
+  "audit",
+  "communities",
+  "redundancy",
+  "dominators",
+] as const;
+
+/** Restricts graph subcommand values accepted by command, SDK, and MCP contracts. */
+export type GraphSubcommand = (typeof GRAPH_SUBCOMMAND_VALUES)[number];
 
 /** Public contract for pm tool actions, shared by SDK and presentation-layer consumers. */
 export const PM_TOOL_ACTIONS = [
@@ -199,6 +218,7 @@ export const PM_TOOL_ACTIONS = [
   "files",
   "docs",
   "deps",
+  "graph",
   "test",
   "test-all",
   "telemetry",

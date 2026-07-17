@@ -45,11 +45,6 @@ import { createSerialQueue } from "../core/shared/serial-queue.js";
 import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
-import {
-  normalizeListOptions,
-  normalizeUpdateOptions,
-} from "../cli/registration-helpers.js";
-import { UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "./cli-contracts/commander-mutation-options.js";
 import type { PmToolAction } from "./cli-contracts/enum-contracts.js";
 import {
   clearWorkspaceContractsCache,
@@ -135,18 +130,36 @@ import {
   runMcpHistoryRepairAction,
 } from "./history-mcp.js";
 import {
-  isRuntimeRecord as isRecord,
+  actionGlobalOptions as globalOptions,
+  closeManyOptionsFromFlat,
+  extensionOptionsFromArgs,
+  graphOptionsFromFlat,
+  mutationListOptions,
+  normalizeActionName,
+  normalizeCommandPath,
+  normalizeMcpOptionsArrays,
+  normalizeMcpUpdateOptions,
+  optionsWithAuthor,
   parseRuntimeInteger as parseMcpInteger,
   readRuntimeScalarString as readScalarString,
   readRuntimeScalarStringAllowBlank as readScalarStringAllowBlank,
   readRuntimeString as readString,
+  readRuntimeStringArray as readStringArray,
+  updateManyOptionsFromFlat,
+  withAddNoteOption,
+  withFilesDiscoveryOptions,
+  withMutationCompaction,
 } from "./runtime-input.js";
 import { runDeps } from "./dependencies.js";
 import { runDocs } from "./docs.js";
+import {
+  runGraph,
+  type GraphCommandOptions,
+  type GraphResult,
+} from "./graph/run.js";
 import { runFiles, runFilesDiscover } from "./files.js";
 import type { ContextOptions, ContextResult } from "../cli/commands/context.js";
 import type { GetOptions, GetResult } from "../cli/commands/get.js";
-import type { CloseManyCommandOptions } from "../cli/commands/close-many.js";
 import type {
   AppendCommandOptions,
   AppendResult,
@@ -189,7 +202,6 @@ import { resolveStartTaskInProgressStatus } from "./start-task-status.js";
 import type { FocusResult } from "../cli/commands/focus.js";
 import type { RestoreResult } from "../cli/commands/restore.js";
 import type { UpdateResult } from "../cli/commands/update.js";
-import type { UpdateManyCommandOptions } from "../cli/commands/update-many.js";
 import type {
   CommentsCommandOptions,
   CommentsResult,
@@ -809,6 +821,15 @@ export class PmClient {
   /** Inspect item dependency relationships. */
   deps(id: string, options: DepsCommandOptions = {}): Promise<DepsResult> {
     return this.runTyped("deps", { id, options });
+  }
+
+  /** Run bounded workspace graph traversal, analytics, or governance-audit queries. */
+  graph(
+    subcommand: string,
+    ids: { id?: string; target?: string } = {},
+    options: GraphCommandOptions = {},
+  ): Promise<GraphResult> {
+    return this.runTyped("graph", { subcommand, ...ids, options });
   }
 
   /** Append markdown/body text to an item through the mutation pipeline. */
@@ -1611,6 +1632,16 @@ export function deps(
   return new PmClient(clientOptions).deps(id, options);
 }
 
+/** Run bounded workspace graph queries without constructing a reusable client. */
+export function graph(
+  subcommand: string,
+  ids: { id?: string; target?: string } = {},
+  options: GraphCommandOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<GraphResult> {
+  return new PmClient(clientOptions).graph(subcommand, ids, options);
+}
+
 /** Append markdown/body text to an item without constructing a reusable client. */
 export function append(
   id: string,
@@ -2237,263 +2268,6 @@ export function readRequiredString(
   return value;
 }
 
-function globalOptions(args: Record<string, unknown>): GlobalOptions {
-  return {
-    json: true,
-    quiet: true,
-    path: readString(args, "path"),
-    noExtensions: args.noExtensions === true || args.no_extensions === true,
-    noPager: true,
-  };
-}
-
-const ARRAY_TO_CSV_FIELDS = new Set([
-  "tags",
-  "blockedBy",
-  "blocked_by",
-  "skills",
-  "fields",
-]);
-
-const SCALAR_TO_ARRAY_FIELDS = new Set([
-  "comment",
-  "note",
-  "learning",
-  "reminder",
-  "event",
-  "dep",
-  "depRemove",
-  "dep_remove",
-  "file",
-  "doc",
-  "test",
-  "unset",
-  "addGlob",
-  "add_glob",
-  "migrate",
-  "envSet",
-  "env_set",
-  "envClear",
-  "env_clear",
-]);
-
-// Actions where the linked-resource fields `add` and `remove` are string[] arrays.
-// For other actions (comments/notes/learnings) `add` and `remove` are scalar strings
-// and must NOT be auto-promoted.
-const ARRAY_ADD_REMOVE_ACTIONS = new Set([
-  "files",
-  "files-discover",
-  "docs",
-  "test",
-  "test-all",
-]);
-
-const LIFECYCLE_AUTHOR_ALIAS_ACTIONS = new Set([
-  "claim",
-  "release",
-  "start-task",
-  "pause-task",
-  "close-task",
-]);
-
-function normalizeMcpOptionsArrays(
-  options: Record<string, unknown>,
-  action?: string,
-): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  const promoteAddRemove =
-    action !== undefined && ARRAY_ADD_REMOVE_ACTIONS.has(action);
-  const preserveStandaloneNote =
-    action === "files" || action === "files-discover" || action === "docs";
-  for (const [key, value] of Object.entries(options)) {
-    if (Array.isArray(value) && ARRAY_TO_CSV_FIELDS.has(key)) {
-      result[key] = value.join(",");
-      continue;
-    }
-    if (key === "note" && preserveStandaloneNote) {
-      result[key] = value;
-      continue;
-    }
-    if (typeof value === "string" && SCALAR_TO_ARRAY_FIELDS.has(key)) {
-      result[key] = [value];
-      continue;
-    }
-    if (
-      typeof value === "string" &&
-      promoteAddRemove &&
-      (key === "add" || key === "remove")
-    ) {
-      result[key] = [value];
-      continue;
-    }
-    result[key] = value;
-  }
-  return result;
-}
-
-function optionsWithAuthor(
-  args: Record<string, unknown>,
-  action?: string,
-): Record<string, unknown> {
-  const baseOptions = asRecordClone(args.options);
-  const hoistedTopLevel: Record<string, unknown> = {};
-  const hoistKey = (key: string): void => {
-    if (baseOptions[key] !== undefined || args[key] === undefined) {
-      return;
-    }
-    hoistedTopLevel[key] = args[key];
-  };
-  if (action === "list") {
-    hoistKey("status");
-    hoistKey("type");
-    hoistKey("tag");
-    hoistKey("priority");
-    hoistKey("limit");
-    hoistKey("offset");
-  } else if (action === "search") {
-    hoistKey("mode");
-    hoistKey("status");
-    hoistKey("type");
-    hoistKey("tag");
-    hoistKey("priority");
-    hoistKey("limit");
-  } else if (action === "create") {
-    hoistKey("title");
-    hoistKey("type");
-    hoistKey("status");
-    hoistKey("description");
-    hoistKey("body");
-    hoistKey("priority");
-    hoistKey("tags");
-    hoistKey("parent");
-    hoistKey("createMode");
-    hoistKey("create_mode");
-    hoistKey("allowMissingParent");
-  } else if (action === "close") {
-    hoistKey("duplicateOf");
-  } else if (action === "append") {
-    // pm-7u9j: the narrow pm_append tool declares `body` top-level; runAppend
-    // reads it from options, so hoist unless options.body already wins.
-    // (pm_schema/pm_config top-level args are consumed directly by runAction's
-    // schema/config cases, which read args before options — no hoist needed.)
-    hoistKey("body");
-  }
-  const options = normalizeMcpOptionsArrays(
-    { ...hoistedTopLevel, ...baseOptions },
-    action,
-  );
-  const author = readString(args, "author");
-  const authorFromAssignee =
-    action !== undefined && LIFECYCLE_AUTHOR_ALIAS_ACTIONS.has(action)
-      ? (readString(args, "assignee") ?? readString(options, "assignee"))
-      : undefined;
-  if (author && options.author === undefined) {
-    return { ...options, author };
-  }
-  if (authorFromAssignee && options.author === undefined) {
-    return { ...options, author: authorFromAssignee };
-  }
-  return options;
-}
-
-// GH-170 (pm-pfnx): the narrow pm_files/pm_docs tools spell the CLI --note flag
-// as `addNote` (the shared `note` parameter is the array-typed create/update
-// note seed). Translate it onto the runner's `note` option; an explicit
-// options.note (pm_run callers) wins.
-function withAddNoteOption(
-  options: Record<string, unknown>,
-): Record<string, unknown> {
-  if (options.addNote === undefined) {
-    return options;
-  }
-  const next: Record<string, unknown> = { ...options };
-  if (next.note === undefined && typeof next.addNote === "string") {
-    next.note = next.addNote;
-  }
-  delete next.addNote;
-  return next;
-}
-
-function withFilesDiscoveryOptions(
-  options: Record<string, unknown>,
-): Record<string, unknown> {
-  const next: Record<string, unknown> = { ...options };
-  if (
-    next.discoveryNote !== undefined &&
-    next.note === undefined &&
-    typeof next.discoveryNote === "string"
-  ) {
-    next.note = next.discoveryNote;
-  }
-  delete next.discover;
-  delete next.discoveryNote;
-  return next;
-}
-
-function normalizeActionName(value: string): string {
-  const chunks: string[] = [];
-  let lastWasSeparator = true;
-  for (const character of value.trim().toLowerCase()) {
-    const isAlphaNumeric =
-      (character >= "a" && character <= "z") ||
-      (character >= "0" && character <= "9");
-    if (isAlphaNumeric) {
-      chunks.push(character);
-      lastWasSeparator = false;
-      continue;
-    }
-    if (!lastWasSeparator) {
-      chunks.push("-");
-      lastWasSeparator = true;
-    }
-  }
-  if (chunks.at(-1) === "-") {
-    chunks.pop();
-  }
-  return chunks.join("");
-}
-
-function normalizeCommandPath(value: string): string {
-  return value.trim().toLowerCase().split(/\s+/).filter(Boolean).join(" ");
-}
-
-function readStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-  return value
-    .map((entry) => String(entry))
-    .filter((entry) => entry.length > 0);
-}
-
-function extensionOptionsFromArgs(
-  args: Record<string, unknown>,
-  options: Record<string, unknown>,
-): Record<string, unknown> {
-  const reserved = new Set([
-    "action",
-    "args",
-    "author",
-    "cwd",
-    "fullChangedFields",
-    "id",
-    "options",
-    "path",
-    "query",
-    "reason",
-    "target",
-  ]);
-  const passthrough: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(args)) {
-    if (!reserved.has(key)) {
-      passthrough[key] = value;
-    }
-  }
-  const normalizedOptions = { ...passthrough, ...options };
-  delete normalizedOptions.args;
-  return normalizedOptions;
-}
-
 // pm-bl6m / pm-zumn: every native MCP action runs inside an activation cycle that
 // mutates the process-global active extension registries (set globals -> run -> clear
 // globals in a finally). The stdio transport already processes JSON-RPC lines
@@ -2722,183 +2496,6 @@ async function withCwd<T>(cwd: string, run: () => Promise<T>): Promise<T> {
   }
 }
 
-/** Mutation tools (create/update/close/append/update-many) return a verbose `changed_fields` array. On the agent path we drop it to a `changed_field_count` by default for token efficiency, restoring the full array only when the caller explicitly passes the MCP-level fullChangedFields=true control. Mutation options are forwarded unchanged so runtime fields named `full` remain valid user data. */
-function withMutationCompaction(
-  args: Record<string, unknown>,
-  options?: Record<string, unknown> | null,
-): {
-  changedFields: "full" | "compact";
-  idOnly: boolean;
-  runnerOptions: Record<string, unknown>;
-} {
-  return {
-    changedFields: args.fullChangedFields === true ? "full" : "compact",
-    idOnly: args.idOnly === true,
-    runnerOptions: { ...options },
-  };
-}
-
-function mutationListOptions(options: Record<string, unknown>): ListOptions {
-  return {
-    type: readScalarString(options, "filterType"),
-    tag: readScalarString(options, "filterTag"),
-    priority: readScalarString(options, "filterPriority"),
-    deadlineBefore: readScalarString(options, "filterDeadlineBefore"),
-    deadlineAfter: readScalarString(options, "filterDeadlineAfter"),
-    updatedAfter: readScalarString(options, "filterUpdatedAfter"),
-    updatedBefore: readScalarString(options, "filterUpdatedBefore"),
-    createdAfter: readScalarString(options, "filterCreatedAfter"),
-    createdBefore: readScalarString(options, "filterCreatedBefore"),
-    ids: readScalarStringAllowBlank(options, "ids"),
-    assignee: readScalarString(options, "filterAssignee"),
-    assigneeFilter:
-      readScalarString(options, "filterAssigneeFilter") ??
-      readScalarString(options, "filterAssignee_filter"),
-    parent: readScalarString(options, "filterParent"),
-    sprint: readScalarString(options, "filterSprint"),
-    release: readScalarString(options, "filterRelease"),
-    limit: readScalarString(options, "limit"),
-    offset: readScalarString(options, "offset"),
-  };
-}
-
-function closeManyOptionsFromFlat(
-  options: Record<string, unknown>,
-): CloseManyCommandOptions {
-  return {
-    status: readString(options, "filterStatus"),
-    list: isRecord(options.list)
-      ? normalizeListOptions(options.list)
-      : mutationListOptions(options),
-    reason: readString(options, "reason"),
-    resolution: readString(options, "resolution"),
-    expectedResult:
-      readString(options, "expectedResult") ??
-      readString(options, "expected_result") ??
-      readString(options, "expected"),
-    actualResult:
-      readString(options, "actualResult") ??
-      readString(options, "actual_result") ??
-      readString(options, "actual"),
-    validateClose:
-      readString(options, "validateClose") ??
-      readString(options, "validate_close"),
-    author: readString(options, "author"),
-    message: readString(options, "message"),
-    force: options.force === true ? true : undefined,
-    dryRun:
-      options.dryRun === true || options.dry_run === true ? true : undefined,
-    rollback: readString(options, "rollback"),
-    checkpoint:
-      options.checkpoint === false ||
-      options.noCheckpoint === true ||
-      options.no_checkpoint === true
-        ? false
-        : undefined,
-  };
-}
-
-const UPDATE_MANY_FLAT_CONTROL_KEYS = new Set([
-  "filterStatus",
-  "filterType",
-  "filterTag",
-  "filterPriority",
-  "filterDeadlineBefore",
-  "filterDeadlineAfter",
-  "filterUpdatedAfter",
-  "filterUpdatedBefore",
-  "filterCreatedAfter",
-  "filterCreatedBefore",
-  "filterAssignee",
-  "filterAssigneeFilter",
-  "filterAssignee_filter",
-  "filterParent",
-  "filterSprint",
-  "filterRelease",
-  "ids",
-  "list",
-  "update",
-  "limit",
-  "offset",
-  "dryRun",
-  "dry_run",
-  "rollback",
-  "checkpoint",
-  "noCheckpoint",
-  "no_checkpoint",
-]);
-
-function updateManyUpdateOptionsFromFlat(
-  options: Record<string, unknown>,
-): Record<string, unknown> {
-  const update: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(options)) {
-    if (UPDATE_MANY_FLAT_CONTROL_KEYS.has(key)) {
-      continue;
-    }
-    update[key] = value;
-  }
-  return normalizeMcpUpdateOptions(update);
-}
-
-function normalizeMcpUpdateOptions(
-  options: Record<string, unknown>,
-): Record<string, unknown> {
-  const normalizedInput: Record<string, unknown> = normalizeMcpOptionsArrays(
-    options,
-    "update-many",
-  );
-  for (const contract of UPDATE_COMMANDER_STRING_OPTION_CONTRACTS) {
-    for (const key of contract.keys) {
-      const value = normalizedInput[key];
-      if (typeof value === "number" && Number.isFinite(value)) {
-        normalizedInput[key] = String(value);
-      }
-    }
-  }
-  return normalizeUpdateOptions(normalizedInput);
-}
-
-function updateManyOptionsFromFlat(
-  options: Record<string, unknown>,
-): UpdateManyCommandOptions {
-  if (isRecord(options.list) || isRecord(options.update)) {
-    const updateSource = isRecord(options.update)
-      ? options.update
-      : updateManyUpdateOptionsFromFlat(options);
-    return {
-      status: readScalarString(options, "filterStatus"),
-      list: isRecord(options.list)
-        ? normalizeListOptions(options.list)
-        : mutationListOptions(options),
-      update: normalizeMcpUpdateOptions(updateSource) as never,
-      dryRun:
-        options.dryRun === true || options.dry_run === true ? true : undefined,
-      rollback: readString(options, "rollback"),
-      checkpoint:
-        options.checkpoint === false ||
-        options.noCheckpoint === true ||
-        options.no_checkpoint === true
-          ? false
-          : undefined,
-    };
-  }
-  return {
-    status: readScalarString(options, "filterStatus"),
-    list: mutationListOptions(options),
-    update: updateManyUpdateOptionsFromFlat(options) as never,
-    dryRun:
-      options.dryRun === true || options.dry_run === true ? true : undefined,
-    rollback: readString(options, "rollback"),
-    checkpoint:
-      options.checkpoint === false ||
-      options.noCheckpoint === true ||
-      options.no_checkpoint === true
-        ? false
-        : undefined,
-  };
-}
-
 const WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS = new Set([
   "activity",
   "aggregate",
@@ -2907,6 +2504,7 @@ const WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS = new Set([
   "deps",
   "files-discover",
   "get",
+  "graph",
   "health",
   "history",
   "list",
@@ -3812,6 +3410,18 @@ async function runMcpCloseTaskAction(
   };
 }
 
+/** Dispatch the graph action merging flat MCP parameters onto runner options. */
+function runMcpGraphAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const merged = { ...ctx.args, ...ctx.options };
+  return runGraph(
+    readRequiredString(merged, "subcommand"),
+    readString(merged, "id") ?? ctx.id,
+    readString(merged, "target"),
+    graphOptionsFromFlat(merged),
+    ctx.global,
+  );
+}
+
 const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   init: (ctx) =>
     runInit(readString(ctx.args, "prefix"), ctx.global, ctx.options),
@@ -3875,6 +3485,7 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   upgrade: (ctx) => runUpgrade(readMcpTarget(ctx), ctx.options, ctx.global),
   delete: (ctx) => runDelete(requireMcpItemId(ctx), ctx.options, ctx.global),
   deps: (ctx) => runDeps(requireMcpItemId(ctx), ctx.options, ctx.global),
+  graph: runMcpGraphAction,
   "files-discover": (ctx) =>
     runFilesDiscover(requireMcpItemId(ctx), ctx.options, ctx.global),
   history: (ctx) => runHistory(requireMcpItemId(ctx), ctx.options, ctx.global),

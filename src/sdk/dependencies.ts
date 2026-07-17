@@ -192,7 +192,8 @@ function parseFormat(raw: string | undefined): DepsFormat {
   );
 }
 
-function parsePositiveInteger(raw: string | number | undefined, flag: string): number | undefined {
+/** Parse one positive-integer graph bound, failing fast with the offending flag name. */
+export function parsePositiveInteger(raw: string | number | undefined, flag: string): number | undefined {
   if (raw === undefined) return undefined;
   const value = typeof raw === "number" ? raw : Number(raw.trim());
   if (!Number.isInteger(value) || value < 1)
@@ -200,7 +201,8 @@ function parsePositiveInteger(raw: string | number | undefined, flag: string): n
   return value;
 }
 
-function parseMaxDepth(raw: string | number | undefined): number | undefined {
+/** Parse the shared non-negative --max-depth traversal bound. */
+export function parseMaxDepth(raw: string | number | undefined): number | undefined {
   if (raw === undefined) {
     return undefined;
   }
@@ -225,7 +227,8 @@ function parseCollapse(raw: string | undefined): DepsCollapseMode {
   );
 }
 
-function parseDirection(raw: string | undefined): DepsDirection {
+/** Parse the shared graph traversal --direction value, defaulting to "both". */
+export function parseDirection(raw: string | undefined): DepsDirection {
   const candidate = raw?.trim().toLowerCase() ?? "both";
   if ((DEPS_DIRECTION_VALUES as readonly string[]).includes(candidate)) {
     return candidate as DepsDirection;
@@ -241,7 +244,7 @@ function parseDirection(raw: string | undefined): DepsDirection {
  * relationship ontology, failing fast on unknown kinds instead of silently
  * matching nothing (the multi-value filter-grammar trap tracked by pm-gknu).
  */
-function parseKinds(raw: string | string[] | undefined): string[] | undefined {
+export function parseKinds(raw: string | string[] | undefined): string[] | undefined {
   if (raw === undefined) return undefined;
   const registry = createRelationshipKindRegistry();
   const values = (Array.isArray(raw) ? raw : [raw])

@@ -1384,6 +1384,49 @@ describe("MCP dynamic package actions", () => {
       });
       expect(deps?.isError).not.toBe(true);
 
+      // pm_deps is a read projection: it tolerates but never applies the
+      // mutation-shaped dep option above. Create the real edge through the
+      // supported pm_update path so the graph impact walk has work to report.
+      const linked = await handleRequest({
+        jsonrpc: "2.0",
+        id: 1230,
+        method: "tools/call",
+        params: {
+          name: "pm_update",
+          arguments: {
+            path: context.pmPath,
+            id,
+            author: "mcp-agent",
+            options: { dep: `id=${copyResult?.id},kind=related` },
+          },
+        },
+      });
+      expect(linked?.isError).not.toBe(true);
+
+      const graph = await handleRequest({
+        jsonrpc: "2.0",
+        id: 1231,
+        method: "tools/call",
+        params: {
+          name: "pm_graph",
+          arguments: {
+            path: context.pmPath,
+            subcommand: "impact",
+            id,
+            options: { direction: "both", summary: true },
+          },
+        },
+      });
+      expect(graph?.isError).not.toBe(true);
+      const graphResult = (
+        graph?.structuredContent as
+          | { result?: { subcommand?: string; count?: number; affected?: unknown } }
+          | undefined
+      )?.result;
+      expect(graphResult?.subcommand).toBe("impact");
+      expect(graphResult?.count).toBeGreaterThanOrEqual(1);
+      expect(graphResult?.affected).toBeUndefined();
+
       const history = await handleRequest({
         jsonrpc: "2.0",
         id: 124,

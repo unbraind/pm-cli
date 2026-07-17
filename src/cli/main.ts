@@ -2722,6 +2722,7 @@ const LIST_QUERY_COMMAND_NAMES = new Set([
   "context",
   "ctx",
   "get",
+  "graph",
   "history",
   "list",
   "list-all",

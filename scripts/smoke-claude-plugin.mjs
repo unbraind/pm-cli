@@ -131,7 +131,7 @@ try {
     "pm_run", "pm_context", "pm_next", "pm_search", "pm_list", "pm_get",
     "pm_create", "pm_copy", "pm_focus", "pm_update", "pm_append", "pm_claim", "pm_release", "pm_close",
     "pm_comments", "pm_files", "pm_docs", "pm_notes", "pm_learnings",
-    "pm_deps", "pm_test",
+    "pm_deps", "pm_graph", "pm_test",
     "pm_validate", "pm_health", "pm_contracts", "pm_schema", "pm_profile", "pm_config", "pm_plan",
   ];
   for (const name of required) {

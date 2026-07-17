@@ -16,6 +16,7 @@ import {
 } from "./commands/context.js";
 import { runEval } from "./commands/eval.js";
 import { runGet } from "./commands/get.js";
+import { runGraph } from "./commands/graph.js";
 import { runHistory } from "./commands/history.js";
 import { runList } from "./commands/list.js";
 import {
@@ -27,6 +28,7 @@ import { runSearch } from "./commands/search.js";
 import type { ItemStatus } from "../types/index.js";
 import {
   addHiddenOption,
+  collect,
   getGlobalOptions,
   normalizeAggregateOptions,
   normalizeActivityOptions,
@@ -619,6 +621,41 @@ async function runActivityAction(
   }
 }
 
+async function runGraphAction(
+  subcommand: string,
+  id: string | undefined,
+  target: string | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const result = await runGraph(
+    subcommand,
+    id,
+    target,
+    {
+      ...(Array.isArray(options.kind) ? { kind: options.kind as string[] } : {}),
+      maxDepth: typeof options.maxDepth === "string" ? options.maxDepth : undefined,
+      limit: typeof options.limit === "string" ? options.limit : undefined,
+      after: typeof options.after === "string" ? options.after : undefined,
+      direction:
+        typeof options.direction === "string" ? options.direction : undefined,
+      maxPaths: typeof options.maxPaths === "string" ? options.maxPaths : undefined,
+      sample: typeof options.sample === "string" ? options.sample : undefined,
+      ...(Array.isArray(options.exemptIsolate)
+        ? { exemptIsolate: options.exemptIsolate as string[] }
+        : {}),
+      summary: options.summary === true,
+    },
+    globalOptions,
+  );
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=graph took_ms=${Date.now() - startedAt}`);
+  }
+}
+
 /** Implements register list query commands for the public runtime surface of this module. */
 export function registerListQueryCommands(
   program: Command,
@@ -1095,6 +1132,50 @@ export function registerListQueryCommands(
       )
       .description("Show recent activity across items.")
       .action(runActivityAction);
+  }
+
+  if (shouldRegister("graph")) {
+    program
+      .command("graph")
+      .argument(
+        "<subcommand>",
+        "Graph query (ancestors, descendants, predecessors, successors, paths, impact, analyze, audit, communities, redundancy, dominators)",
+      )
+      .argument("[id]", "Root item id (traversals, paths, impact, and dominators)")
+      .argument("[target]", "Target item id (paths only)")
+      .option(
+        "--kind <value>",
+        "Restrict traversal to registered relationship kinds (repeatable or comma-separated)",
+        collect,
+      )
+      .option(
+        "--max-depth <value>",
+        "Maximum traversal depth (non-negative integer)",
+      )
+      .option("--limit <value>", "Maximum returned rows per bounded collection")
+      .option(
+        "--after <value>",
+        "Resume a traversal after this previously returned node id",
+      )
+      .option(
+        "--direction <value>",
+        "Edge orientation for paths/impact (outgoing, incoming, or both)",
+      )
+      .option("--max-paths <value>", "Maximum enumerated paths (paths only)")
+      .option(
+        "--sample <value>",
+        "Maximum evidence sample entries per audit finding (audit only)",
+      )
+      .option(
+        "--exempt-isolate <value>",
+        "Item ids treated as explicitly valid isolates by the audit (repeatable or comma-separated)",
+        collect,
+      )
+      .option("--summary", "Return counts-first envelopes without row collections")
+      .description(
+        "Bounded workspace relationship-graph queries, analytics, and governance audit.",
+      )
+      .action(runGraphAction);
   }
 }
 

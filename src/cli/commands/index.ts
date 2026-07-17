@@ -87,6 +87,13 @@ export {
 } from "./deps.js";
 export { runDocs } from "./docs.js";
 export {
+  runGraph,
+  GRAPH_SUBCOMMAND_VALUES,
+  type GraphCommandOptions,
+  type GraphResult,
+  type GraphSubcommand,
+} from "./graph.js";
+export {
   runExtension,
   type ExtensionCommandOptions,
   type ExtensionCommandResult,

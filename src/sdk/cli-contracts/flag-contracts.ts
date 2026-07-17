@@ -1362,6 +1362,19 @@ export const DEPS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--kind", list: true },
 ];
 
+/** Public contract for graph flag contracts, shared by SDK and presentation-layer consumers. */
+export const GRAPH_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--kind", list: true },
+  { flag: "--max-depth" },
+  { flag: "--limit" },
+  { flag: "--after" },
+  { flag: "--direction" },
+  { flag: "--max-paths" },
+  { flag: "--sample" },
+  { flag: "--exempt-isolate", list: true },
+  { flag: "--summary" },
+];
+
 /** Public contract for eval flag contracts, shared by SDK and presentation-layer consumers. */
 export const EVAL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--mode" },
@@ -1539,6 +1552,7 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["files", FILES_FLAG_CONTRACTS],
     ["docs", DOCS_FLAG_CONTRACTS],
     ["deps", DEPS_FLAG_CONTRACTS],
+    ["graph", GRAPH_FLAG_CONTRACTS],
     ["test", TEST_FLAG_CONTRACTS],
     ["test-all", TEST_ALL_FLAG_CONTRACTS],
     ["telemetry", TELEMETRY_FLAG_CONTRACTS],
