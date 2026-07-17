@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[2]: "area:docs","area:sdk"
 created_at: "2026-07-05T04:54:31.675Z"
-updated_at: "2026-07-13T22:03:50.227Z"
+updated_at: "2026-07-17T13:49:21.985Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: SDK reference covers all promoted primitives with runnable examples; architecture doc explains core/sdk/cli-mcp layering and the boundary gate; docs gates pass; docstring coverage epic (pm-4ak1) conventions followed
@@ -23,6 +23,15 @@ dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-oxrw,blocked_by,"2026-07-05T06:30:01.579Z",null,null
   pm-zwpp,blocked_by,"2026-07-05T06:30:01.579Z",null,null
   pm-ju83,blocked_by,"2026-07-13T22:03:49.643Z",null,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-13T22:03:50.226Z",codex-root,"Scope note 2026-07-13: when pm-ju83 lands, extend this task's SDK reference and migration work with relationship-kind registration, immutable relationship events, bounded adjacency/path/closure/impact queries, cursor and streaming contracts, compact CLI and MCP projections, explain/cost envelopes, legacy-kind migration, and shell pipeline examples. Link implementation docs to pm-96h7 and validate with the existing docs gates."
+  "2026-07-17T13:10:37.141Z",codex-root,"Documentation progress: SDK and relationship-graph references now cover public actionability, workspace assembly, semantic traversal, governance findings, layering boundaries, and a non-PM domain reuse pattern. Docs gate passes."
+  "2026-07-17T13:47:20.846Z",codex-root,"Verification evidence: linked docs-skills gate passed; SDK and relationship graph docs explain public actionability, assembly, semantic traversal, governance findings, layering, VCS/company reuse, bounds, and migration semantics. Strict 100% docstring coverage, docs links, package tarball, and runnable installed SDK examples pass. This documentation tranche is complete; the task remains open because its acceptance follows every future promoted primitive in pm-usfg/pm-ju83."
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/release/docs-skills-gate.mjs,project,180
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mrozdfjh-ex0kxp,test-all,passed,"2026-07-17T13:35:34.609Z","2026-07-17T13:35:45.263Z","2026-07-17T13:35:45.263Z",1,0,0,1,1
+docs[2]{path,scope,note}:
+  docs/RELATIONSHIP_GRAPH.md,project,assembly traversal governance and migration guidance
+  docs/SDK.md,project,promoted graph and actionability SDK reference
 body: ""

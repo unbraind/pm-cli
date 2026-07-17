@@ -1,0 +1,38 @@
+id: pm-qpfv
+title: "Sentry PM-CLI-2C: Node MaxListeners runtime warnings are promoted to high console errors"
+description: Classify Node runtime warnings captured by captureConsoleIntegration at capture time so system-only handled diagnostics stay observable without becoming release-blocking error groups.
+type: Issue
+status: closed
+priority: 1
+tags[4]: agent-ux,reliability,sentry,telemetry
+created_at: "2026-07-17T13:42:02.502Z"
+updated_at: "2026-07-17T13:49:20.522Z"
+closed_at: "2026-07-17T13:49:19.954Z"
+author: codex-root
+estimated_minutes: 90
+acceptance_criteria: Known Node runtime warning envelopes are downgraded to warning severity at Sentry capture time; unrelated console errors remain error-level; PM-CLI-2C is documented and no longer blocks the release reliability gate; focused and full coverage remain 100/100/100/100
+parent: pm-5oj5
+risk: low
+confidence: high
+resolution: Classified exact Node MaxListeners console envelopes as warning diagnostics at Sentry capture time while preserving unrelated errors.
+expected_result: Handled Node runtime diagnostics remain visible in Sentry without blocking daily release health as high-severity product failures.
+actual_result: Strict live Sentry gate reports critical=0 and high=0 after resolving PM-CLI-2C; focused and full exact coverage pass.
+affected_version: 2026.7.17
+fixed_version: next-release
+component: observability/sentry-capture
+regression: false
+customer_impact: Prevents a non-product runtime warning from halting automated releases while retaining diagnostic visibility.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-0yi7,related,"2026-07-17T13:42:02.502Z",codex-root,null
+  pm-c8qa,related,"2026-07-17T13:42:02.502Z",codex-root,null
+comments[3]{created_at,author,text}:
+  "2026-07-17T13:42:02.502Z",codex-root,"Duplicate check: all-status searches for PM-CLI-2C, MaxListenersExceededWarning, Socket listeners, and Sentry runtime warning severity found no canonical item. Live Sentry event e5bd8887fae0472883916b4548f890fe shows three handled system-only Node warnings at 2026-07-17T11:19:46Z, with fuzz breadcrumbs and no in-app frames; related capture policy is pm-c8qa and fuzzing program is pm-0yi7."
+  "2026-07-17T13:43:29.194Z",codex-root,"TDD evidence: reproduced the release-gate blocker as a failing beforeSend regression, then classified the exact Node MaxListenersExceededWarning console envelope as warning severity with pm.diagnostic_class=node_runtime_warning. Existing tags are preserved, message and exception forms are covered, and unrelated console errors remain error-level. Focused Sentry suite passes 48/48 and ESLint passes."
+  "2026-07-17T13:47:21.930Z",codex-root,"Live reliability evidence: PM-CLI-2C was resolved after root-cause capture and the strict Sentry/telemetry gate now passes with critical=0, high=0, 17 expected-handled groups, telemetry finish_error_rate_pct=0.3, and zero failures missing error_code. Full coverage passes 5,798 tests at exact 100/100/100/100; lint, zero clones, and static quality pass."
+files[2]{path,scope,note}:
+  src/core/sentry/instrument.ts,project,Capture-time Node runtime warning severity classification
+  tests/unit/core/sentry/sentry-helpers.spec.ts,project,Runtime warning and unrelated error regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/sentry/sentry-helpers.spec.ts tests/unit/core/sentry/instrument.spec.ts,project,300
+close_reason: Node runtime warnings remain observable without blocking release health; live Sentry and telemetry gates pass.
+body: ""

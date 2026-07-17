@@ -13,6 +13,10 @@ import {
   normalizeStatusInput,
 } from "../../core/item/status.js";
 import {
+  collectDependencyBlockedIds,
+  resolveItemBlockers,
+} from "../../sdk/actionability.js";
+import {
   resolveRuntimeStatusRegistry,
   type RuntimeStatusRegistry,
 } from "../../core/schema/runtime-schema.js";
@@ -1194,7 +1198,6 @@ function collectDescendants(
   }
   return result;
 }
-
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   buildActivity,
@@ -1249,6 +1252,7 @@ async function buildActivity(
 function buildProgress(
   allItems: ItemMetadata[],
   activeItems: ItemMetadata[],
+  blockedIds: ReadonlySet<string>,
   statusRegistry: RuntimeStatusRegistry,
   limit: number,
 ): ProgressEntry[] {
@@ -1275,9 +1279,11 @@ function buildProgress(
     let blocked = 0;
     /* c8 ignore start -- chained status-classification branch accounting is noisy under v8 for mixed descendant sets */
     for (const desc of descendants) {
+      // Blocked is edge-aware (GH-578): dependency-blocked descendants count as
+      // blocked regardless of lifecycle status, matching pm next and list-blocked.
       if (isClosedStatus(desc.status, statusRegistry)) closed++;
+      else if (blockedIds.has(desc.id.trim().toLowerCase())) blocked++;
       else if (isInProgressStatus(desc.status, statusRegistry)) inProgress++;
-      else if (isBlockedStatus(desc.status, statusRegistry)) blocked++;
       else if (isOpenStatus(desc.status, statusRegistry)) open++;
     }
     /* c8 ignore stop */
@@ -1302,17 +1308,29 @@ function buildProgress(
 
 function buildBlockers(
   blockedItems: ItemMetadata[],
-  itemMap: Map<string, ItemMetadata>,
+  fullCorpus: ItemMetadata[],
+  statusRegistry: RuntimeStatusRegistry,
   limit: number,
 ): BlockerEntry[] {
+  const itemsById = new Map(
+    fullCorpus.map((item) => [item.id.trim().toLowerCase(), item]),
+  );
   return blockedItems.slice(0, limit).map((item) => {
-    const blockerItem = item.blocked_by
-      ? itemMap.get(item.blocked_by)
+    // Prefer a currently open blocker edge. The legacy scalar may still name a
+    // resolved predecessor, so it is only a fallback when no open edge exists.
+    const openBlocker = resolveItemBlockers(
+      item,
+      itemsById,
+      statusRegistry,
+    ).find((blocker) => !blocker.resolved);
+    const blockedBy = openBlocker?.id ?? item.blocked_by ?? null;
+    const blockerItem = blockedBy
+      ? itemsById.get(blockedBy.trim().toLowerCase())
       : undefined;
     return {
       id: item.id,
       title: item.title,
-      blocked_by: item.blocked_by ?? null,
+      blocked_by: blockedBy,
       blocked_by_title: blockerItem?.title ?? null,
       blocked_by_status: blockerItem?.status ?? null,
       blocked_reason: item.blocked_reason ?? null,
@@ -1942,24 +1960,25 @@ async function loadContextCorpus(
   runtime: ContextRuntime,
 ): Promise<ContextCorpus> {
   const needsAllItems = contextNeedsAllItems(runtime.sectionsIncluded);
-  const listOptions = buildUnpaginatedContextListOptions(
-    runtime.baseListOptions,
-    { excludeTerminal: true },
+  // One full-corpus scan serves every consumer: runList always reads all item
+  // files before filtering, so deriving the non-terminal subset in memory is
+  // free and keeps terminal blocker targets available for the shared
+  // edge-aware blocked classification (GH-578).
+  const listed = await runList(
+    undefined,
+    buildUnpaginatedContextListOptions(runtime.baseListOptions, {
+      excludeTerminal: false,
+    }),
+    global,
   );
-  const listed = await runList(undefined, listOptions, global);
-  let listedItemMetadata = listed.items as ItemMetadata[];
-  let allItems: ItemMetadata[] = listedItemMetadata;
-  if (needsAllItems || runtime.parentScope !== undefined) {
-    const allListed = await runList(
-      undefined,
-      buildUnpaginatedContextListOptions(runtime.baseListOptions, {
-        excludeTerminal: false,
-      }),
-      global,
-    );
-    allItems = allListed.items as ItemMetadata[];
-  }
-  const fullCorpus = allItems;
+  const fullCorpus = listed.items as ItemMetadata[];
+  let listedItemMetadata = fullCorpus.filter(
+    (item) => !isTerminalStatus(item.status, runtime.statusRegistry),
+  );
+  let allItems: ItemMetadata[] =
+    needsAllItems || runtime.parentScope !== undefined
+      ? fullCorpus
+      : listedItemMetadata;
   const subtreeIds = resolveContextSubtreeIds(runtime.parentScope, fullCorpus);
   if (subtreeIds) {
     listedItemMetadata = listedItemMetadata.filter((item) =>
@@ -1992,6 +2011,7 @@ function resolveContextSubtreeIds(
 async function resolveContextFocusGroups(
   listedItemMetadata: ItemMetadata[],
   allItems: ItemMetadata[],
+  blockedIds: ReadonlySet<string>,
   statusRegistry: RuntimeStatusRegistry,
   sectionsIncluded: ContextSectionName[],
   limit: number,
@@ -2048,9 +2068,7 @@ async function resolveContextFocusGroups(
         )
       : undefined;
   const rankedBlockedItems = ranked.filter((item) =>
-    statusRegistry.blocked_statuses.has(
-      normalizeStatusForRegistry(item.status, statusRegistry),
-    ),
+    blockedIds.has(item.id.trim().toLowerCase()),
   );
   const packingIds = new Set([
     ...focusPage.map((item) => item.id),
@@ -2065,9 +2083,7 @@ async function resolveContextFocusGroups(
     activeStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
   );
   const blockedItems = packedItems.filter((item) =>
-    statusRegistry.blocked_statuses.has(
-      normalizeStatusForRegistry(item.status, statusRegistry),
-    ),
+    blockedIds.has(item.id.trim().toLowerCase()),
   );
   const childrenByParent = buildChildrenByParent(allItems);
   const focusChildrenByParent = contextNeedsAllItems(sectionsIncluded)
@@ -2182,13 +2198,14 @@ async function buildOptionalContextSections(params: {
   runtime: ContextRuntime;
   allItems: ItemMetadata[];
   fullCorpus: ItemMetadata[];
+  blockedIds: ReadonlySet<string>;
   focusGroups: ContextFocusGroups;
   now: string;
   global: GlobalOptions;
 }): Promise<ContextOptionalSections> {
-  const { runtime, allItems, fullCorpus, focusGroups, now, global } = params;
+  const { runtime, allItems, fullCorpus, blockedIds, focusGroups, now, global } =
+    params;
   const childrenByParent = buildChildrenByParent(allItems);
-  const itemMap = new Map(fullCorpus.map((item) => [item.id, item]));
   const allNonTerminal = allItems.filter(
     (item) => !isTerminalStatus(item.status, runtime.statusRegistry),
   );
@@ -2210,12 +2227,18 @@ async function buildOptionalContextSections(params: {
       ? buildProgress(
           allItems,
           focusGroups.activeItems,
+          blockedIds,
           runtime.statusRegistry,
           runtime.limit,
         )
       : undefined,
     blockersSection: has("blockers")
-      ? buildBlockers(focusGroups.blockedItems, itemMap, runtime.limit)
+      ? buildBlockers(
+          focusGroups.blockedItems,
+          fullCorpus,
+          runtime.statusRegistry,
+          runtime.limit,
+        )
       : undefined,
     recentlyCreated: has("recently_created")
       ? buildRecentlyCreated(
@@ -2384,9 +2407,16 @@ export async function runContext(
     ),
   };
   const author = process.env.PM_AUTHOR ?? runtime.settings.author_default;
+  // Single shared edge-aware blocked classification (GH-578): resolved against
+  // the full corpus so terminal blocker targets count as satisfied at every depth.
+  const blockedIds = collectDependencyBlockedIds(
+    corpus.fullCorpus,
+    runtime.statusRegistry,
+  );
   const focusGroups = await resolveContextFocusGroups(
     corpus.listedItemMetadata,
     corpus.allItems,
+    blockedIds,
     runtime.statusRegistry,
     runtime.sectionsIncluded,
     runtime.limit,
@@ -2422,6 +2452,7 @@ export async function runContext(
     runtime,
     allItems: corpus.allItems,
     fullCorpus: corpus.fullCorpus,
+    blockedIds,
     focusGroups,
     now: agendaContext.agenda.now,
     global,

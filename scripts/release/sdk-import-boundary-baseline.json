@@ -120,7 +120,6 @@
       "source": "src/cli/commands/close.ts",
       "imports": [
         "src/core/fs/fs-utils.ts",
-        "src/core/item/actionability.ts",
         "src/core/item/item-record.ts",
         "src/core/item/status.ts",
         "src/core/item/type-registry.ts",
@@ -340,7 +339,6 @@
     {
       "source": "src/cli/commands/next.ts",
       "imports": [
-        "src/core/item/actionability.ts",
         "src/core/item/status.ts",
         "src/core/schema/runtime-schema.ts",
         "src/core/shared/command-types.ts",

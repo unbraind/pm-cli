@@ -287,11 +287,7 @@ export * from "./history-repair.js";
 export * from "./item-children.js";
 export * from "./item-schedule.js";
 export {
-  collectDanglingDependencyReferences,
   runDeps,
-  type DanglingDependencyReference,
-  type DanglingDependencyReferenceSummary,
-  type DependencyReferenceHolder,
   type DepsCollapseMode,
   type DepsFormat,
   type DepsGraphEdge,
@@ -299,6 +295,7 @@ export {
   type DepsGraphResult,
   type DepsTreeNode,
 } from "./dependencies.js";
+export * from "./graph/index.js";
 export { runDocs } from "./docs.js";
 export {
   runFiles,
@@ -337,6 +334,7 @@ export * from "./relationship-analytics.js";
 export * from "./relationship-context.js";
 export * from "./relationship-history.js";
 export * from "./relationships.js";
+export * from "./actionability.js";
 export type {
   PlanCommandOptions,
   PlanCommandResult,

@@ -109,6 +109,60 @@ const packet = buildRelationshipContext(
 );
 ```
 
+## Semantic traversal and governance
+
+The `@unbrained/pm-cli/sdk` barrel exports registry-aware traversal primitives
+for domain packages that need more than generic adjacency:
+
+- `hierarchyAncestors` and `hierarchyDescendants` follow only hierarchy kinds
+  and honor each kind's declared parent endpoint.
+- `orderingPredecessors` and `orderingSuccessors` follow only order-bearing
+  kinds and honor declared precedence, so inverse spellings agree.
+- `enumerateRelationshipPaths` returns bounded simple paths with edge evidence,
+  cost metadata, cancellation, direction/kind filters, and explicit truncation.
+
+All semantic walks are breadth-first and deterministic. `limit`, `maxDepth`,
+and `after` provide bounded continuation for hierarchy and ordering walks;
+path enumeration separately bounds returned paths and expanded partial paths.
+Unknown kinds and cursors fail fast instead of silently degrading context.
+
+`assembleWorkspaceRelationshipGraph` is the shared normalization seam for
+dependency-shaped workspaces. It folds parent links, the legacy scalar
+`blocked_by`, and structured dependency edges into one graph, materializes
+missing endpoints as explainable placeholder nodes, and returns active versus
+terminal dangling-reference partitions. `auditWorkspaceRelationshipGraph`
+consumes that assembly and emits counts-first findings for active/terminal
+missing references, retired sentinels, ordering cycles, stale lifecycle blocks,
+and sparse or isolated active nodes. Findings include stable codes, severity,
+bounded deterministic samples, truncation, policy text, and safe remediation;
+the audit never invents an edge. Explicit isolate exemptions suppress policy
+findings without changing structural coverage metrics.
+
+```ts
+import {
+  assembleWorkspaceRelationshipGraph,
+  auditWorkspaceRelationshipGraph,
+  orderingPredecessors,
+} from "@unbrained/pm-cli/sdk";
+
+const assembly = assembleWorkspaceRelationshipGraph(items, isTerminalStatus);
+const prerequisites = orderingPredecessors(assembly.graph, "deploy", {
+  limit: 20,
+  maxDepth: 4,
+});
+const governance = auditWorkspaceRelationshipGraph(assembly, {
+  isTerminal: isTerminalStatus,
+  exemptIsolates: ["company-root"],
+  maxSampleSize: 25,
+});
+```
+
+The three layers are intentionally separate: assembly owns storage-shape
+normalization, traversal owns semantic graph algorithms, and governance owns
+policy findings. A VCS, company operating model, digital twin, or other
+non-project domain can replace the assembly adapter while reusing the same
+registry, traversal, event, context, and audit contracts.
+
 ## Compatibility and migration
 
 Aliases normalize at registry boundaries; stored values are not silently rewritten. Imports must carry or select a compatible registry version. Federation merges definitions before edges and rejects identifier or alias collisions. Rollback removes the custom definition and its derived index only after application-owned edges have been exported or superseded; immutable history is retained.

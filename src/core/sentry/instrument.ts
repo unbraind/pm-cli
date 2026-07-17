@@ -216,6 +216,25 @@ function isKnownNoisyConsoleEvent(event: {
   );
 }
 
+/** Detect handled Node listener-pressure warnings captured through console stderr. */
+function isNodeRuntimeWarningEvent(event: {
+  logger?: string;
+  message?: string;
+  exception?: { values?: Array<{ value?: string }> };
+}): boolean {
+  if (event.logger !== "console") return false;
+  const isRuntimeWarning = (value: unknown): boolean =>
+    typeof value === "string" &&
+    /^\(node:\d+\) MaxListenersExceededWarning: Possible EventEmitter memory leak detected\./.test(
+      value,
+    );
+  if (isRuntimeWarning(event.message)) return true;
+  return (
+    Array.isArray(event.exception?.values) &&
+    event.exception.values.some((entry) => isRuntimeWarning(entry.value))
+  );
+}
+
 function isExpectedCliErrorEvent(event: {
   exception?: { values?: Array<{ type?: string; value?: string }> };
   message?: string;
@@ -364,6 +383,13 @@ function scrubSentryRecordField(event: object, key: string): void {
 
 const beforeSend: NonNullable<NodeOptions["beforeSend"]> = (event) => {
   if (isExpectedCliErrorEvent(event) || isKnownNoisyConsoleEvent(event)) return null;
+  if (isNodeRuntimeWarningEvent(event)) {
+    event.level = "warning";
+    event.tags = {
+      ...event.tags,
+      "pm.diagnostic_class": "node_runtime_warning",
+    };
+  }
   if (event.message) event.message = scrubString(event.message, "message");
   if (event.transaction) event.transaction = scrubString(event.transaction, "transaction");
   scrubSentryExceptionValues(event);
@@ -452,6 +478,7 @@ export function getSentry(): SentryLike | undefined {
 export const _testOnly = {
   isExpectedCliErrorEvent,
   isKnownNoisyConsoleEvent,
+  isNodeRuntimeWarningEvent,
   isPmCliErrorBreadcrumb,
   isKnownNoisyConsoleBreadcrumb,
   scrubString,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   collectBlockedByIds,
+  collectDependencyBlockedIds,
   computeActionabilityReport,
   resolveItemBlockers,
 } from "../../../../src/core/item/actionability.js";
@@ -57,8 +58,16 @@ describe("collectBlockedByIds", () => {
   it("ignores a non-string scalar and absent dependencies", () => {
     expect(collectBlockedByIds({ blocked_by: 7 as never, dependencies: undefined })).toEqual([]);
   });
-});
 
+  it("ignores the retired no-active-blocker sentinel in scalar and edge forms", () => {
+    expect(
+      collectBlockedByIds({
+        blocked_by: " NO-ACTIVE-BLOCKER ",
+        dependencies: [blockedByDep("no-active-blocker")],
+      }),
+    ).toEqual([]);
+  });
+});
 describe("resolveItemBlockers", () => {
   it("keeps missing and non-terminal blockers unresolved while resolving terminal blockers", () => {
     const corpus = [
@@ -76,6 +85,38 @@ describe("resolveItemBlockers", () => {
       { id: "pm-missing", title: null, status: null, resolved: false },
       { id: "pm-open", title: "Item pm-open", status: "open", resolved: false },
     ]);
+  });
+});
+
+describe("collectDependencyBlockedIds", () => {
+  it("unifies lifecycle and open-edge blocking while ignoring resolved and terminal work", () => {
+    const openBlocker = item({ id: "pm-open-blocker", status: "open" });
+    const closedBlocker = item({ id: "pm-closed-blocker", status: "closed" });
+    const edgeBlocked = item({
+      id: "PM-EDGE-BLOCKED",
+      dependencies: [blockedByDep("PM-open-blocker")],
+    });
+    const resolved = item({
+      id: "pm-resolved",
+      dependencies: [blockedByDep("pm-closed-blocker")],
+    });
+    const lifecycleBlocked = item({ id: "pm-status-blocked", status: "blocked" });
+    const terminal = item({
+      id: "pm-terminal",
+      status: "closed",
+      dependencies: [blockedByDep("pm-open-blocker")],
+    });
+    expect(
+      [...collectDependencyBlockedIds(
+        [openBlocker, closedBlocker, edgeBlocked, resolved, lifecycleBlocked, terminal],
+        registry,
+      )].sort(),
+    ).toEqual(["pm-edge-blocked", "pm-status-blocked"]);
+  });
+
+  it("does not classify an active item with only a retired blocker sentinel as blocked", () => {
+    const sentinel = item({ id: "pm-sentinel", blocked_by: "no-active-blocker" });
+    expect([...collectDependencyBlockedIds([sentinel], registry)]).toEqual([]);
   });
 });
 

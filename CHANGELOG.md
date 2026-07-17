@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Sentry PM-CLI-2C: Node MaxListeners runtime warnings are promoted to high console errors ([pm-qpfv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qpfv.toon))
+- GH-578: pm context summary.blocked and pm list-blocked count status-only, disagreeing with edge-aware pm next ([pm-uxkf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-uxkf.toon))
 - pm deps context format reports missing_count without enumerating missing references and disagrees with tree format ([pm-8kch](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8kch.toon))
 
 ### Security

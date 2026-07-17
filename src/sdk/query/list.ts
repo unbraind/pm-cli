@@ -7,6 +7,7 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { isTerminalStatus } from "../../core/item/status.js";
+import { collectDependencyBlockedIds } from "../actionability.js";
 import {
   isStatusAllFilterInput,
   parseStatusFilterCsv,
@@ -105,6 +106,14 @@ export interface ListOptions extends SharedItemFilterOptions {
   treeDepth?: string;
   /** Value that configures or reports exclude terminal for this contract. */
   excludeTerminal?: boolean;
+  /**
+   * Select items that are blocked under the shared edge-aware definition
+   * (blocked lifecycle status OR at least one open `blocked_by` edge), the
+   * same classification `pm next` and `pm context` use (GH-578). Set by the
+   * `list-blocked` command variant; plain `--status blocked` stays a raw
+   * lifecycle-status filter.
+   */
+  dependencyBlocked?: boolean;
   /** Value that configures or reports filter ac missing for this contract. */
   filterAcMissing?: boolean;
   /** Value that configures or reports filter estimates missing for this contract. */
@@ -574,6 +583,9 @@ function buildCompactListFilterSummary(params: {
   const filters: Record<string, unknown> = {};
   if (filtersStatus !== null) {
     filters.status = filtersStatus;
+  }
+  if (options.dependencyBlocked === true) {
+    filters.blocked_semantics = "status_or_dependency";
   }
   applyFilterValueEcho(
     filters,
@@ -1648,6 +1660,9 @@ function buildVerboseListFilters(params: {
     runtimeFieldFilters,
   } = params;
   const filters: Record<string, unknown> = { status: filtersStatus };
+  if (options.dependencyBlocked === true) {
+    filters.blocked_semantics = "status_or_dependency";
+  }
   const optionRecord = options as Record<string, unknown>;
   for (const entry of VERBOSE_LIST_VALUE_FILTER_ECHO_ENTRIES) {
     filters[entry.summaryKey] = optionRecord[entry.optionKey] ?? null;
@@ -1711,8 +1726,23 @@ export async function runList(
     runtime.statusRegistry,
     runtime.runtimeFieldFilters,
   );
+  // Edge-aware blocked selection (GH-578): classify against the complete
+  // loaded corpus so terminal blocker targets count as satisfied, then narrow
+  // the already-filtered rows to the shared blocked set.
+  const scoped =
+    options.dependencyBlocked === true
+      ? (() => {
+          const blockedIds = collectDependencyBlockedIds(
+            items,
+            runtime.statusRegistry,
+          );
+          return filtered.filter((item) =>
+            blockedIds.has(item.id.trim().toLowerCase()),
+          );
+        })()
+      : filtered;
   const sorted = sortItems(
-    filtered,
+    scoped,
     ordering.sortField,
     ordering.sortOrder,
     runtime.statusRegistry,

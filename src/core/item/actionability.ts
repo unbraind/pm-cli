@@ -15,6 +15,8 @@ import type { ItemMetadata, ItemStatus } from "../../types/index.js";
 
 /** Dependency kind that marks "this item is blocked by the referenced item". */
 const BLOCKED_BY_DEPENDENCY_KIND = "blocked_by";
+/** Retired placeholder that explicitly means an item has no active blocker. */
+const NO_ACTIVE_BLOCKER_SENTINEL = "no-active-blocker";
 
 /**
  * Normalizes an item id / parent reference / blocker id to its canonical
@@ -33,14 +35,15 @@ export function collectBlockedByIds(
   const ids = new Set<string>();
   const scalar =
     typeof item.blocked_by === "string" ? item.blocked_by.trim() : "";
-  if (scalar.length > 0) {
+  if (scalar.length > 0 && scalar.toLowerCase() !== NO_ACTIVE_BLOCKER_SENTINEL) {
     ids.add(scalar);
   }
   for (const dependency of item.dependencies ?? []) {
     if (
       dependency.kind === BLOCKED_BY_DEPENDENCY_KIND &&
       typeof dependency.id === "string" &&
-      dependency.id.trim().length > 0
+      dependency.id.trim().length > 0 &&
+      dependency.id.trim().toLowerCase() !== NO_ACTIVE_BLOCKER_SENTINEL
     ) {
       ids.add(dependency.id.trim());
     }
@@ -78,6 +81,51 @@ export function resolveItemBlockers(
       resolved: isTerminalStatus(blocker.status, statusRegistry),
     };
   });
+}
+
+/**
+ * Collects the normalized (trimmed, lowercased) ids of every corpus item that is
+ * blocked under the single shared edge-aware definition: a non-terminal item
+ * whose lifecycle status is a blocked status OR that has at least one open
+ * blocker (a `blocked_by` reference whose target is non-terminal or unknown).
+ *
+ * This is the one source of truth GH-578 mandates across read surfaces —
+ * `pm next`'s blocked companion, `pm context` summary counters, and
+ * `pm list-blocked` all derive blocked-ness from this set so they can never
+ * silently disagree while auto-unblock keeps status-blocked items rare.
+ */
+export function collectDependencyBlockedIds(
+  corpus: ItemMetadata[],
+  statusRegistry: RuntimeStatusRegistry,
+): Set<string> {
+  const itemsById = new Map<string, ItemMetadata>(
+    corpus.map((item) => [normalizeItemId(item.id), item]),
+  );
+  // Same candidate gate as computeActionabilityReport: active statuses plus
+  // lifecycle-blocked statuses, so the two surfaces classify identically.
+  const candidateStatuses = new Set([
+    ...resolveActiveStatusSet(statusRegistry),
+    ...statusRegistry.blocked_statuses,
+  ]);
+  const blocked = new Set<string>();
+  for (const item of corpus) {
+    const normalizedStatus = normalizeStatusForRegistry(
+      item.status,
+      statusRegistry,
+    );
+    if (!candidateStatuses.has(normalizedStatus)) continue;
+    const lifecycleBlocked =
+      statusRegistry.blocked_statuses.has(normalizedStatus);
+    if (
+      lifecycleBlocked ||
+      resolveItemBlockers(item, itemsById, statusRegistry).some(
+        (blocker) => !blocker.resolved,
+      )
+    ) {
+      blocked.add(normalizeItemId(item.id));
+    }
+  }
+  return blocked;
 }
 
 /** A classified actionable item plus the context an agent needs to act on it. */

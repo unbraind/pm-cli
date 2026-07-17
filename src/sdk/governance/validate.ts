@@ -76,7 +76,7 @@ import type {
   ValidateMetadataProfile,
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
-import { collectDanglingDependencyReferences } from "../dependencies.js";
+import { collectDanglingDependencyReferences } from "../graph/assembly.js";
 import { scanHistoryAuthorAttribution } from "../author-attribution.js";
 import {
   createRelationshipKindRegistry,

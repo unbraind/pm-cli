@@ -25,14 +25,17 @@ import type {
   ItemType,
 } from "../types/index.js";
 import {
+  assembleWorkspaceRelationshipGraph,
+  collectDanglingDependencyReferences,
+  type DanglingDependencyReference,
+  type WorkspaceRelationshipAssembly,
+} from "./graph/assembly.js";
+import {
   buildRelationshipContext,
   type RelationshipContextOptions,
   type RelationshipContextResult,
 } from "./relationship-context.js";
-import {
-  RelationshipGraph,
-  createRelationshipKindRegistry,
-} from "./relationships.js";
+import { createRelationshipKindRegistry } from "./relationships.js";
 
 /** Supported values accepted by the deps format contract. */
 export const DEPS_FORMAT_VALUES = ["tree", "graph", "context"] as const;
@@ -82,155 +85,6 @@ interface IndexedItem {
 interface IndexedDependency {
   id: string;
   kind: string;
-}
-
-/** Minimal item shape inspected by dependency-reference governance. */
-export interface DependencyReferenceHolder {
-  /** Stable item identifier. */
-  id: string;
-  /** Lifecycle status used to separate actionable work from historical debt. */
-  status: ItemStatus;
-  /** Optional hierarchy parent reference. */
-  parent?: string;
-  /** Optional legacy scalar blocker reference. */
-  blocked_by?: string;
-  /** Structured dependency edges. */
-  dependencies?: Dependency[];
-}
-
-/** Storage surface that contributed a normalized dependency reference. */
-export type DependencyReferenceSource = "parent" | "blocked_by" | "dependency";
-
-/** One normalized dependency reference whose target is absent from the tracker. */
-export interface DanglingDependencyReference {
-  /** Item that owns the reference. */
-  holder_id: string;
-  /** Missing referenced item id or legacy sentinel. */
-  target_id: string;
-  /** Relationship field or dependency kind. */
-  kind: string;
-  /** Storage surface that owns the reference and determines its remediation. */
-  source: DependencyReferenceSource;
-  /** Current lifecycle status of the holder. */
-  holder_status: ItemStatus;
-  /** Whether the holder is terminal and therefore historical, non-actionable debt. */
-  legacy_terminal: boolean;
-  /** Whether the target is the pre-structured-dependency `no-active-blocker` sentinel. */
-  no_active_blocker_sentinel: boolean;
-}
-
-/** Actionable and historical partitions returned by dependency-reference governance. */
-export interface DanglingDependencyReferenceSummary {
-  /** Missing references held by active items; these may affect scheduling and should gate validation. */
-  active: DanglingDependencyReference[];
-  /** Missing references held only by terminal items; retained as informational history debt. */
-  legacy_terminal: DanglingDependencyReference[];
-  /** Legacy sentinel rows across active and terminal holders, called out separately from typo-like ids. */
-  no_active_blocker_sentinels: DanglingDependencyReference[];
-}
-
-/** Normalize a decoded reference target and reject empty legacy placeholders. */
-function normalizeDependencyReferenceTarget(target: unknown): string | undefined {
-  if (typeof target !== "string") return undefined;
-  const normalized = target.trim();
-  if (!normalized || ["none", "null", "n/a", "na"].includes(normalized.toLowerCase())) return undefined;
-  return normalized;
-}
-
-/** Normalize a graph target while removing the historical no-blocker marker. */
-function normalizeDependencyGraphTarget(target: unknown): string | undefined {
-  const normalized = normalizeDependencyReferenceTarget(target);
-  return normalized?.toLowerCase() === "no-active-blocker" ? undefined : normalized;
-}
-
-/**
- * Classify missing hierarchy and dependency targets without mutating their holders.
- *
- * Consumers provide the workspace's terminal-status predicate so custom lifecycle
- * schemas receive the same active-versus-historical behavior as the built-in
- * closed/canceled statuses.
- */
-export function collectDanglingDependencyReferences(
-  items: readonly DependencyReferenceHolder[],
-  isTerminal: (status: ItemStatus) => boolean = (status) =>
-    status === "closed" || status === "canceled",
-): DanglingDependencyReferenceSummary {
-  const knownIds = new Set(items.map((item) => item.id.trim().toLowerCase()));
-  const rows = new Map<string, DanglingDependencyReference>();
-  const addReference = (
-    item: DependencyReferenceHolder,
-    target: unknown,
-    kind: string,
-    source: DependencyReferenceSource,
-  ): void => {
-    const normalized = normalizeDependencyReferenceTarget(target);
-    if (!normalized || knownIds.has(normalized.toLowerCase())) {
-      return;
-    }
-    const row: DanglingDependencyReference = {
-      holder_id: item.id,
-      target_id: normalized,
-      kind,
-      source,
-      holder_status: item.status,
-      legacy_terminal: isTerminal(item.status),
-      no_active_blocker_sentinel:
-        normalized.toLowerCase() === "no-active-blocker",
-    };
-    rows.set(
-      `${row.holder_id}::${row.target_id}::${row.kind}::${row.source}`,
-      row,
-    );
-  };
-  for (const item of items) {
-    addReference(item, item.parent, "parent", "parent");
-    addReference(item, item.blocked_by, "blocked_by", "blocked_by");
-    for (const dependency of item.dependencies ?? []) {
-      // Public SDK callers may supply legacy or JSON-decoded payloads that do
-      // not yet satisfy the current structured dependency contract.
-      if (typeof dependency !== "object" || dependency === null) {
-        continue;
-      }
-      const legacyDependency = dependency as Partial<Dependency>;
-      addReference(
-        item,
-        legacyDependency.id,
-        typeof legacyDependency.kind === "string"
-          ? legacyDependency.kind
-          : "related",
-        "dependency",
-      );
-    }
-  }
-  const sorted = [...rows.values()].sort(
-    (left, right) =>
-      left.holder_id.localeCompare(right.holder_id) ||
-      left.target_id.localeCompare(right.target_id) ||
-      left.kind.localeCompare(right.kind) ||
-      left.source.localeCompare(right.source),
-  );
-  const legacyTerminal = sorted.filter((row) => row.legacy_terminal);
-  return {
-    active: sorted.filter((row) => !row.legacy_terminal),
-    legacy_terminal: legacyTerminal,
-    no_active_blocker_sentinels: sorted.filter(
-      (row) => row.no_active_blocker_sentinel,
-    ),
-  };
-}
-
-/** Return unique real missing targets while excluding the legacy no-blocker sentinel. */
-function collectMissingDependencyTargetIds(
-  dangling: DanglingDependencyReferenceSummary,
-): string[] {
-  const targets = new Map<string, string>();
-  for (const reference of [...dangling.active, ...dangling.legacy_terminal]) {
-    if (reference.no_active_blocker_sentinel) continue;
-    const target = reference.target_id.trim();
-    const key = target.toLowerCase();
-    if (!targets.has(key)) targets.set(key, target);
-  }
-  return [...targets.values()].sort((left, right) => left.localeCompare(right));
 }
 
 /** Documents the deps tree node payload exchanged by command, SDK, and package integrations. */
@@ -640,55 +494,6 @@ type DepsContextOptions = Pick<
   | "kind"
 >;
 
-interface DepsRelationshipAssembly {
-  graph: RelationshipGraph;
-  details: { id: string; title: string; status: string }[];
-  missingIdSet: Set<string>;
-  dangling: DanglingDependencyReferenceSummary;
-}
-
-/** Build the shared workspace relationship graph including missing placeholder nodes. */
-function assembleDepsRelationshipGraph(
-  items: readonly ItemMetadata[],
-  isTerminal?: (status: ItemStatus) => boolean,
-): DepsRelationshipAssembly {
-  const canonicalIds = new Map(items.map((item) => [item.id.trim().toLowerCase(), item.id.trim()]));
-  const dangling = collectDanglingDependencyReferences(items, isTerminal);
-  const missingIds = collectMissingDependencyTargetIds(dangling);
-  const graphItems = items.map((item) => {
-    const parent = normalizeDependencyGraphTarget(item.parent);
-    const blocker = normalizeDependencyGraphTarget(item.blocked_by);
-    const dependencies = (item.dependencies ?? []).flatMap((rawDependency) => {
-      if (typeof rawDependency !== "object" || rawDependency === null) return [];
-      const dependency = rawDependency as Partial<Dependency>;
-      const target = normalizeDependencyGraphTarget(dependency.id);
-      if (!target) return [];
-      return [{
-        id: canonicalIds.get(target.toLowerCase()) ?? target,
-        kind: typeof dependency.kind === "string" ? dependency.kind : "related",
-      }];
-    });
-    return {
-      id: item.id,
-      ...(parent ? { parent: canonicalIds.get(parent.toLowerCase()) ?? parent } : {}),
-      ...(blocker ? { blocked_by: canonicalIds.get(blocker.toLowerCase()) ?? blocker } : {}),
-      dependencies,
-    };
-  });
-  return {
-    graph: RelationshipGraph.fromItems([
-      ...graphItems,
-      ...missingIds.map((id) => ({ id })),
-    ]),
-    details: [
-      ...items.map((item) => ({ id: item.id, title: item.title, status: item.status })),
-      ...missingIds.map((id) => ({ id, title: `[missing] ${id}`, status: "missing" })),
-    ],
-    missingIdSet: new Set(missingIds.map((id) => id.toLowerCase())),
-    dangling,
-  };
-}
-
 /** Parse CLI-compatible deps context options once for packet and closure parity. */
 function parseDepsContextOptions(
   options: DepsContextOptions,
@@ -711,7 +516,7 @@ function parseDepsContextOptions(
 
 /** Build one bounded context packet from an assembled deps relationship graph. */
 function buildContextFromAssembly(
-  assembly: DepsRelationshipAssembly,
+  assembly: WorkspaceRelationshipAssembly,
   rootId: string,
   options: RelationshipContextOptions,
   rootEvidence: readonly string[],
@@ -736,7 +541,7 @@ export function buildDepsRelationshipContext(
   rootEvidence: readonly string[] = [],
 ): RelationshipContextResult {
   return buildContextFromAssembly(
-    assembleDepsRelationshipGraph(items),
+    assembleWorkspaceRelationshipGraph(items),
     rootId,
     parseDepsContextOptions(options),
     rootEvidence,
@@ -811,7 +616,7 @@ async function collectRootEvidence(
 
 /** Assemble the context-format deps result with traversal-scoped missing enumeration. */
 function buildContextDepsResult(params: {
-  assembly: DepsRelationshipAssembly;
+  assembly: WorkspaceRelationshipAssembly;
   canonicalId: string;
   options: DepsCommandOptions;
   rootEvidence: readonly string[];
@@ -949,7 +754,7 @@ export async function runDeps(
           settings,
           typeRegistry.type_to_folder,
         );
-    const assembly = assembleDepsRelationshipGraph(items, (status) =>
+    const assembly = assembleWorkspaceRelationshipGraph(items, (status) =>
       isTerminalStatus(status, statusRegistry),
     );
     return buildContextDepsResult({

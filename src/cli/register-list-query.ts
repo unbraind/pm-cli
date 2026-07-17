@@ -181,6 +181,7 @@ async function runRegisteredListCommand(params: {
   status?: ItemStatus;
   excludeTerminal?: boolean;
   defaultBrief?: boolean;
+  dependencyBlocked?: boolean;
   options: Record<string, unknown>;
   actionCommand: Command;
 }): Promise<void> {
@@ -189,7 +190,12 @@ async function runRegisteredListCommand(params: {
   const listOptions = normalizeListOptions(params.options);
   applyDefaultBriefListMode(listOptions, params.defaultBrief);
   if (params.excludeTerminal) listOptions.excludeTerminal = true;
-  const result = await runList(params.status, listOptions, globalOptions);
+  listOptions.dependencyBlocked = params.dependencyBlocked;
+  const result = await runList(
+    params.dependencyBlocked ? undefined : params.status,
+    listOptions,
+    globalOptions,
+  );
   const streamMode = params.options.stream === true;
   const listFormat = parseListFormat(params.options.format);
   const tabular = listFormat === "csv" || listFormat === "table";
@@ -239,6 +245,8 @@ interface ListCommandDescriptor {
   excludeTerminal?: boolean;
   allowStatusFilter?: boolean;
   defaultBrief?: boolean;
+  /** Select via the shared edge-aware blocked classification instead of a raw status filter (GH-578). */
+  dependencyBlocked?: boolean;
 }
 
 function registerListCommand(
@@ -252,6 +260,7 @@ function registerListCommand(
     excludeTerminal,
     allowStatusFilter,
     defaultBrief,
+    dependencyBlocked,
   } = descriptor;
   const command = program.command(name).description(description);
   if (allowStatusFilter) {
@@ -370,6 +379,7 @@ function registerListCommand(
       status,
       excludeTerminal,
       defaultBrief,
+      dependencyBlocked,
       options,
       actionCommand,
     });
@@ -654,8 +664,9 @@ export function registerListQueryCommands(
     },
     {
       name: "list-blocked",
-      description: "List blocked items with optional filters.",
-      status: "blocked",
+      description:
+        "List blocked items (blocked status or open blocked_by dependencies, matching pm next) with optional filters.",
+      dependencyBlocked: true,
       excludeTerminal: false,
       allowStatusFilter: false,
       defaultBrief: true,
