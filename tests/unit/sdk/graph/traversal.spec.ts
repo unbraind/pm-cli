@@ -107,10 +107,7 @@ describe("ordering traversal", () => {
       { id: "pm-b", dependencies: [dep("pm-c", "blocked_by")] },
       { id: "pm-c" },
     ]);
-    expect(orderingPredecessors(graph, "pm-a").value).toEqual([
-      "pm-b",
-      "pm-c",
-    ]);
+    expect(orderingPredecessors(graph, "pm-a").value).toEqual(["pm-b", "pm-c"]);
     expect(orderingSuccessors(graph, "pm-c").value).toEqual(["pm-b", "pm-a"]);
     expect(orderingPredecessors(graph, "pm-c").value).toEqual([]);
   });
@@ -240,7 +237,13 @@ describe("bounded traversal controls", () => {
 
 describe("enumerateRelationshipPaths", () => {
   const diamond = itemGraph([
-    { id: "pm-src", dependencies: [dep("pm-mid1", "blocked_by"), dep("pm-mid2", "blocked_by")] },
+    {
+      id: "pm-src",
+      dependencies: [
+        dep("pm-mid1", "blocked_by"),
+        dep("pm-mid2", "blocked_by"),
+      ],
+    },
     { id: "pm-mid1", dependencies: [dep("pm-dst", "blocked_by")] },
     { id: "pm-mid2", dependencies: [dep("pm-dst", "blocked_by")] },
     { id: "pm-dst" },
@@ -316,6 +319,27 @@ describe("enumerateRelationshipPaths", () => {
       maxVisitedPaths: 1,
     });
     expect(starved.meta.truncated).toBe(true);
+  });
+
+  it("rejects unsafe path-enumeration bounds before traversal", () => {
+    for (const options of [
+      { maxPaths: Number.NaN },
+      { maxPaths: Number.POSITIVE_INFINITY },
+      { maxPaths: 1.5 },
+      { maxPaths: -1 },
+      { maxVisitedPaths: Number.NaN },
+      { maxVisitedPaths: Number.POSITIVE_INFINITY },
+      { maxVisitedPaths: 1.5 },
+      { maxVisitedPaths: -1 },
+      { maxDepth: Number.NaN },
+      { maxDepth: Number.POSITIVE_INFINITY },
+      { maxDepth: 1.5 },
+      { maxDepth: -1 },
+    ]) {
+      expect(() =>
+        enumerateRelationshipPaths(diamond, "pm-src", "pm-dst", options),
+      ).toThrow(/Invalid path .* bound/);
+    }
   });
 
   it("honors direction and kind filters", () => {

@@ -22,8 +22,10 @@ import {
  * Semantic hierarchy and ordering orientation comes from the relationship-kind
  * registry, so callers cannot supply the generic graph `direction` option.
  */
-export interface GraphTraversalOptions
-  extends Omit<RelationshipQueryOptions, "direction"> {
+export interface GraphTraversalOptions extends Omit<
+  RelationshipQueryOptions,
+  "direction"
+> {
   /**
    * Resume emission after this previously returned node identifier. The
    * traversal re-walks the same deterministic sequence and starts emitting
@@ -57,6 +59,12 @@ const DEFAULT_MAX_PATHS = 5;
 const DEFAULT_MAX_VISITED_PATHS = 10_000;
 /** Default depth bound applied to bounded path enumeration. */
 const DEFAULT_PATH_MAX_DEPTH = 8;
+
+/** Require a finite non-negative integer for one path-enumeration bound. */
+function assertPathBound(name: string, value: number): void {
+  if (!Number.isFinite(value) || !Number.isInteger(value) || value < 0)
+    throw new TypeError(`Invalid path ${name} bound: ${String(value)}`);
+}
 
 /** Endpoint of a hierarchy edge that represents the structural parent. */
 function hierarchyParentEndpoint(
@@ -316,7 +324,8 @@ export function hierarchyAncestors(
     id,
     options,
     "hierarchy",
-    (row, definition) => hierarchyParentEndpoint(row.edge, definition) === row.id,
+    (row, definition) =>
+      hierarchyParentEndpoint(row.edge, definition) === row.id,
   );
 }
 
@@ -410,13 +419,8 @@ function enumerateNonZeroRelationshipPaths(
     visitedNodes += 1;
     if (partial.edges.length >= maxDepth) {
       if (
-        readPathContinuations(
-          graph,
-          partial,
-          options,
-          direction,
-          state,
-        ).length > 0
+        readPathContinuations(graph, partial, options, direction, state)
+          .length > 0
       )
         truncated = true;
       continue;
@@ -459,6 +463,9 @@ export function enumerateRelationshipPaths(
   const maxPaths = options.maxPaths ?? DEFAULT_MAX_PATHS;
   const maxVisitedPaths = options.maxVisitedPaths ?? DEFAULT_MAX_VISITED_PATHS;
   const maxDepth = options.maxDepth ?? DEFAULT_PATH_MAX_DEPTH;
+  assertPathBound("maxPaths", maxPaths);
+  assertPathBound("maxVisitedPaths", maxVisitedPaths);
+  assertPathBound("maxDepth", maxDepth);
   const direction = options.direction ?? "outgoing";
   options.signal?.throwIfAborted();
   for (const kind of options.kinds ?? []) graph.registry().require(kind);
