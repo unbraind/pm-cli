@@ -548,9 +548,10 @@ pm files <id> --add-glob "src/cli/**/*.ts"
 pm docs <id> --add path=docs/COMMANDS.md,note="public command docs"
 pm docs <id> --add docs/COMMANDS.md --note "public command docs"
 pm deps <id> --format tree
+pm deps <id> --format context --direction both --kind blocked_by,parent --token-budget 800
 ```
 
-Linked files and docs keep reviews reproducible. `deps` is read-only and projects item relationships. The standalone `--note <text>` flag annotates every link added by `--add`/`--add-glob` in the same invocation (a per-entry embedded `note=` wins); `--note` without an add is a usage error.
+Linked files and docs keep reviews reproducible. `deps` is read-only and projects item relationships. `--format context` returns one bounded, explainable relationship packet: a counts-first summary, per-node `role`/`via`/`reasons`, root evidence pointers, enumerated `missing_references` with active-versus-legacy classification, `meta.completeness`, and cursor continuation; `--direction`, repeatable or comma-separated `--kind`, `--max-depth`, `--node-limit`, `--edge-limit`, `--token-budget`, and `--cursor` control the traversal (see [Relationship Graph](RELATIONSHIP_GRAPH.md)). `--edge-limit` caps both returned graph edges and enumerated `missing_references`; `missing_reference_count` retains the total when rows are omitted. The standalone `--note <text>` flag annotates every link added by `--add`/`--add-glob` in the same invocation (a per-entry embedded `note=` wins); `--note` without an add is a usage error.
 
 Structured key/value forms reject unrecognized keys with an `Allowed keys: …` error (matching `test --add`), so a typoed key (`lable=` instead of `label=`) fails fast instead of being silently dropped: `--add`/`--file`/`--doc` accept `path,scope,note`; `--add-glob` accepts `pattern,glob,path,scope,note`; `--remove` accepts `path`; `--migrate` accepts `from,to`; `--dep` accepts `id,kind,type,author,created_at` (plus `source_kind` on update); `--reminder` accepts `at,date,text,title`; `--event` accepts `start,date,end,duration,title,description,location,timezone,all_day` and the `recur_*` recurrence keys. Bare values (`--add src/cli/main.ts`) skip key validation.
 

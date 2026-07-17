@@ -2,25 +2,42 @@ id: pm-8kch
 title: pm deps context format reports missing_count without enumerating missing references and disagrees with tree format
 description: "pm deps --format context returns a top-level missing_count scalar (3 on pm-96h7) but the payload contains no list of which references are missing or which neighbor declares them; pm deps --format tree on the same item reports missing_count 0. Agents cannot distinguish ignorable legacy ghosts on closed neighbors from repairable typos on active items, and the two formats contradict each other."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",contracts,graph,sdk
 created_at: "2026-07-16T05:50:30.876Z"
-updated_at: "2026-07-16T05:50:52.545Z"
+updated_at: "2026-07-17T06:47:05.279Z"
+closed_at: "2026-07-17T06:27:06.943Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "context and tree formats agree on missing_count semantics for the same item and depth, or the difference is explicitly documented in the payload; the context payload enumerates missing references with the declaring node id, the dangling target id, and edge kind, bounded by the existing node/edge limits; missing references are classified active vs legacy-terminal following the pm-2ler split so agents know what is repairable; JSON and TOON shapes stay in sync with cli-contracts and the MCP schema; covering spec added"
 parent: pm-96h7
 risk: low
 confidence: high
+resolution: fixed
+expected_result: "Tree and context formats report the same traversal-scoped missing nodes, while context enumerates bounded declaring references and classifies active versus terminal-history debt across JSON, TOON, CLI, SDK, and MCP surfaces."
+actual_result: "Context and tree now use traversal-scoped missing semantics; context enumerates bounded holder/target/kind/source/status rows with legacy-terminal classification, sentinel exclusion, and SDK/CLI/MCP/contract parity."
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-2ler,related,"2026-07-16T05:50:30.876Z",null,null
   pm-8xr8,related,"2026-07-16T05:50:30.876Z",null,null
   pm-p9sc,related,"2026-07-16T05:50:30.876Z",null,null
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-16T05:50:52.543Z",maintainer-agent,"Duplicate check: searched all-status for 'deps context missing count enumerate', 'missing_count', 'graph context missing references' — only pm-p9sc (closed, inverse defect), pm-8xr8 (consumer story), pm-2ler (closed classification precedent). No open owner; registry consulted."
+  "2026-07-17T06:12:22.519Z",maintainer-agent,"Fix evidence 2026-07-17: context format missing_count was workspace-global (counted every dangling target in the tracker) while tree counted traversal-encountered missing nodes - the pm-96h7 3-vs-0 contradiction. Now missing_count is traversal-scoped (missing nodes reachable under the same direction/kinds/max-depth that built the packet, independent of node/token pagination so it is stable across cursor pages), missing_scope:\"traversal\" documents the semantics in the payload, missing_reference_count totals the dangling declarations inside the packet, and missing_references enumerates bounded rows (holder_id, target_id, kind, source, holder_status, legacy_terminal) reusing the pm-2ler active/legacy split so agents can tell repairable typos from historical debt. no-active-blocker sentinels are excluded. Tree agreement verified in spec and in a packed-tarball E2E (tree missing:1 == context missing_count:1 on the same root/depth). Covering specs: deps-command.spec.ts (enumeration, bounding via --edge-limit, direction scoping, legacy classification on closed holders, sentinel skip via raw legacy fixture)."
+  "2026-07-17T06:16:03.410Z",codex-root,"Handoff accepted by codex-root: preserving the existing graph-context implementation and completing exact coverage, quality gates, temp-package proof, review convergence, merge, and merged-head verification."
+  "2026-07-17T06:27:05.189Z",maintainer-agent,"Final verification: linked sandbox test passed; focused graph/CLI surface passed 140 tests; full literal all-source coverage passed 296 files / 5,767 tests at exact 100/100/100/100; lint found zero warnings and zero clones; static quality/docstrings/package boundary/token budget/typecheck/contracts/docs/secret gates passed; packed @unbrained/pm-cli consumer proved tree/context missing_count parity, bounded enumeration/classification, direction/kind filtering, and cursor continuation."
+  "2026-07-17T06:47:05.278Z",maintainer-agent,"Greptile pre-push review 87d5938f (4/5, no correctness defects): accepted all three maintainability suggestions. Deps now parses direction/kinds/depth/bounds once and shares the typed options between packet assembly and missing closure; public docs/help state that --edge-limit also caps missing_references while missing_reference_count preserves the total; BFS queue now has an explicit minimal id/distance type. Focused build, 124 tests, ESLint, typecheck, and contract snapshot passed."
+learnings[1]{created_at,author,text}:
+  "2026-07-17T06:12:41.039Z",maintainer-agent,"When two output formats disagree on a count, scope the count to the traversal that produced the payload and stamp the scope into the payload (missing_scope) - agreement claims in docs alone rot; a self-describing field survives format evolution. Computing the missing set from an unbounded-closure over the same direction/kinds/depth (ignoring node/token pagination) keeps the count stable across cursor pages."
 files[3]{path,scope,note}:
   src/cli/commands/deps.ts,project,deps command wiring for tree/graph/context formats
   src/sdk/dependencies.ts,project,Owns missing_count computation for deps payloads
   src/sdk/relationship-context.ts,project,Bounded context traversal; has no missing-reference handling today
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/deps-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrojpeah-nf0spu,test,passed,"2026-07-17T06:16:47.391Z","2026-07-17T06:16:59.033Z","2026-07-17T06:16:59.033Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/RELATIONSHIP_GRAPH.md,project,documented missing_count traversal scope and tree-format agreement
+close_reason: "Delivered traversal-scoped missing-reference parity and bounded classification with exact coverage, contract parity, and installed-package proof."
 body: "Evidence (2026-07-16, v2026.7.16 on main): `pm deps pm-96h7 --format context` returns missing_count:3 with node_count:21/edge_count:12, meta shows visitedNodes:737/inspectedEdges:1223 — but no missing-reference rows anywhere in the payload; `pm deps pm-96h7 --json` (tree) returns missing_count:0 and missing:null for the same root. No CLI flag enumerates the refs (--help audited). Validate's dependency_references check is status:ok with active=0, so the 3 are almost certainly legacy-terminal ghosts encountered on closed depth-2 neighbors (pm-2ler class) — exactly why enumeration + classification matters: an agent seeing a bare count cannot tell repairable active typos from ignorable history. Sibling precedent: pm-p9sc (GH-535, CLOSED PR#545) fixed the inverse contradiction (deps under-reporting vs validate). Fix should surface bounded missing rows (declaring node, dangling target, kind, active|legacy classification) in context format and align tree-format semantics."

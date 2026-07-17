@@ -104,6 +104,14 @@ export interface RelationshipQueryResult<T> {
   meta: RelationshipQueryMeta;
 }
 
+/** One neighbor row pairing an adjacent node with the edge that connects it. */
+export interface RelationshipNeighborEdge {
+  /** Adjacent node identifier. */
+  id: string;
+  /** Edge connecting the queried node to this neighbor. */
+  edge: RelationshipEdge;
+}
+
 /** Induced subgraph returned by bounded traversal. */
 export interface RelationshipSubgraph {
   /** Deterministically ordered node identifiers. */
@@ -621,6 +629,30 @@ export class RelationshipGraph {
         inspectedEdges: rows.length,
         truncated: value.length < uniqueNeighbors.length,
         nextCursor: value.at(-1),
+      },
+    };
+  }
+
+  /** Return deterministic one-hop neighbor rows paired with each connecting edge. */
+  public neighborEdges(
+    id: string,
+    options: RelationshipQueryOptions = {},
+  ): RelationshipQueryResult<RelationshipNeighborEdge[]> {
+    this.#assertNode(id);
+    options.signal?.throwIfAborted();
+    const kinds = options.kinds
+      ? new Set(options.kinds.map((kind) => this.#registry.require(kind).kind))
+      : undefined;
+    const rows = this.#neighbors(id, options.direction ?? "outgoing", kinds);
+    const limit = options.limit ?? Number.POSITIVE_INFINITY;
+    const value = rows.slice(0, limit);
+    return {
+      value,
+      meta: {
+        visitedNodes: 1,
+        inspectedEdges: rows.length,
+        truncated: value.length < rows.length,
+        nextCursor: value.at(-1)?.id,
       },
     };
   }

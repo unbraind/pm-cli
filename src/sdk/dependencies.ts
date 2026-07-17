@@ -11,7 +11,11 @@ import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
-import { listAllItemMetadataLight } from "../core/store/item-store.js";
+import {
+  listAllItemMetadataLight,
+  locateItem,
+  readLocatedItem,
+} from "../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type {
@@ -22,9 +26,13 @@ import type {
 } from "../types/index.js";
 import {
   buildRelationshipContext,
+  type RelationshipContextOptions,
   type RelationshipContextResult,
 } from "./relationship-context.js";
-import { RelationshipGraph } from "./relationships.js";
+import {
+  RelationshipGraph,
+  createRelationshipKindRegistry,
+} from "./relationships.js";
 
 /** Supported values accepted by the deps format contract. */
 export const DEPS_FORMAT_VALUES = ["tree", "graph", "context"] as const;
@@ -34,6 +42,10 @@ export type DepsFormat = (typeof DEPS_FORMAT_VALUES)[number];
 export const DEPS_COLLAPSE_VALUES = ["none", "repeated"] as const;
 /** Restricts deps collapse mode values accepted by command, SDK, and storage contracts. */
 export type DepsCollapseMode = (typeof DEPS_COLLAPSE_VALUES)[number];
+/** Supported values accepted by the deps graph-context direction contract. */
+export const DEPS_DIRECTION_VALUES = ["outgoing", "incoming", "both"] as const;
+/** Restricts deps traversal-direction values accepted by command, SDK, and storage contracts. */
+export type DepsDirection = (typeof DEPS_DIRECTION_VALUES)[number];
 
 /** Documents the deps command options payload exchanged by command, SDK, and package integrations. */
 export interface DepsCommandOptions {
@@ -47,12 +59,16 @@ export interface DepsCommandOptions {
   summary?: boolean;
   /** Maximum graph-context nodes returned. */
   nodeLimit?: string | number;
-  /** Maximum graph-context edges returned. */
+  /** Maximum graph-context edges and enumerated missing-reference rows returned. */
   edgeLimit?: string | number;
   /** Maximum estimated graph-context output tokens. */
   tokenBudget?: string | number;
   /** Opaque continuation cursor for graph-context output. */
   cursor?: string;
+  /** Graph-context traversal direction relative to each visited node. */
+  direction?: string;
+  /** Registered relationship kinds narrowing graph-context traversal. */
+  kind?: string | string[];
 }
 
 interface IndexedItem {
@@ -287,8 +303,22 @@ export interface DepsResult {
   node_count: number;
   /** Number of edge entries represented by this result. */
   edge_count: number;
-  /** Number of missing entries represented by this result. */
+  /**
+   * Number of missing entries represented by this result.
+   *
+   * Tree and graph formats count missing nodes encountered while walking
+   * dependency edges; context format counts missing nodes reachable within the
+   * same bounded traversal (direction, kinds, and depth) that produced the
+   * packet, independent of node or token pagination, so the two formats agree
+   * for equal traversal parameters over the dependency edge family.
+   */
   missing_count: number;
+  /** Traversal scope documenting the missing_count semantics for context format. */
+  missing_scope?: "traversal";
+  /** Total dangling references declared into the traversed missing nodes. */
+  missing_reference_count?: number;
+  /** Bounded enumeration of dangling references, capped by the context edge limit. */
+  missing_references?: DanglingDependencyReference[];
   /** Value that configures or reports tree for this contract. */
   tree?: DepsTreeNode;
   /** Value that configures or reports graph for this contract. */
@@ -339,6 +369,48 @@ function parseCollapse(raw: string | undefined): DepsCollapseMode {
     `Invalid --collapse value "${raw}". Use "none" or "repeated".`,
     EXIT_CODE.USAGE,
   );
+}
+
+function parseDirection(raw: string | undefined): DepsDirection {
+  const candidate = raw?.trim().toLowerCase() ?? "both";
+  if ((DEPS_DIRECTION_VALUES as readonly string[]).includes(candidate)) {
+    return candidate as DepsDirection;
+  }
+  throw new PmCliError(
+    `Invalid --direction value "${raw}". Use "outgoing", "incoming", or "both".`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+/**
+ * Normalize repeatable and comma-separated --kind values against the built-in
+ * relationship ontology, failing fast on unknown kinds instead of silently
+ * matching nothing (the multi-value filter-grammar trap tracked by pm-gknu).
+ */
+function parseKinds(raw: string | string[] | undefined): string[] | undefined {
+  if (raw === undefined) return undefined;
+  const registry = createRelationshipKindRegistry();
+  const values = (Array.isArray(raw) ? raw : [raw])
+    .flatMap((value) => value.split(","))
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+  if (values.length === 0) return undefined;
+  const kinds = new Set<string>();
+  for (const value of values) {
+    const definition = registry.resolve(value);
+    if (!definition) {
+      const known = registry
+        .list()
+        .map((entry) => entry.kind)
+        .join(", ");
+      throw new PmCliError(
+        `Invalid --kind value "${value}". Registered kinds: ${known}.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    kinds.add(definition.kind);
+  }
+  return [...kinds].sort();
 }
 
 function normalizeDependencies(
@@ -556,18 +628,32 @@ function countDependencyGraph(
   };
 }
 
-/** Build the SDK-backed bounded relationship-context projection for deps. */
-export function buildDepsRelationshipContext(
-  rootId: string,
+/** Options subset consumed by the deps graph-context projection. */
+type DepsContextOptions = Pick<
+  DepsCommandOptions,
+  | "maxDepth"
+  | "nodeLimit"
+  | "edgeLimit"
+  | "tokenBudget"
+  | "cursor"
+  | "direction"
+  | "kind"
+>;
+
+interface DepsRelationshipAssembly {
+  graph: RelationshipGraph;
+  details: { id: string; title: string; status: string }[];
+  missingIdSet: Set<string>;
+  dangling: DanglingDependencyReferenceSummary;
+}
+
+/** Build the shared workspace relationship graph including missing placeholder nodes. */
+function assembleDepsRelationshipGraph(
   items: readonly ItemMetadata[],
-  options: Pick<DepsCommandOptions, "maxDepth" | "nodeLimit" | "edgeLimit" | "tokenBudget" | "cursor">,
-): RelationshipContextResult {
-  const maxDepth = parseMaxDepth(options.maxDepth);
-  const nodeLimit = parsePositiveInteger(options.nodeLimit, "node-limit");
-  const edgeLimit = parsePositiveInteger(options.edgeLimit, "edge-limit");
-  const tokenBudget = parsePositiveInteger(options.tokenBudget, "token-budget");
+  isTerminal?: (status: ItemStatus) => boolean,
+): DepsRelationshipAssembly {
   const canonicalIds = new Map(items.map((item) => [item.id.trim().toLowerCase(), item.id.trim()]));
-  const dangling = collectDanglingDependencyReferences(items);
+  const dangling = collectDanglingDependencyReferences(items, isTerminal);
   const missingIds = collectMissingDependencyTargetIds(dangling);
   const graphItems = items.map((item) => {
     const parent = normalizeDependencyGraphTarget(item.parent);
@@ -589,21 +675,213 @@ export function buildDepsRelationshipContext(
       dependencies,
     };
   });
-  return buildRelationshipContext(
-    RelationshipGraph.fromItems([...graphItems, ...missingIds.map((id) => ({ id }))]),
-    rootId,
-    [
+  return {
+    graph: RelationshipGraph.fromItems([
+      ...graphItems,
+      ...missingIds.map((id) => ({ id })),
+    ]),
+    details: [
       ...items.map((item) => ({ id: item.id, title: item.title, status: item.status })),
       ...missingIds.map((id) => ({ id, title: `[missing] ${id}`, status: "missing" })),
     ],
-    {
-      ...(maxDepth === undefined ? {} : { maxDepth }),
-      ...(nodeLimit === undefined ? {} : { nodeLimit }),
-      ...(edgeLimit === undefined ? {} : { edgeLimit }),
-      ...(tokenBudget === undefined ? {} : { tokenBudget }),
-      ...(options.cursor?.trim() ? { cursor: options.cursor.trim() } : {}),
-    },
+    missingIdSet: new Set(missingIds.map((id) => id.toLowerCase())),
+    dangling,
+  };
+}
+
+/** Parse CLI-compatible deps context options once for packet and closure parity. */
+function parseDepsContextOptions(
+  options: DepsContextOptions,
+): RelationshipContextOptions {
+  const maxDepth = parseMaxDepth(options.maxDepth);
+  const nodeLimit = parsePositiveInteger(options.nodeLimit, "node-limit");
+  const edgeLimit = parsePositiveInteger(options.edgeLimit, "edge-limit");
+  const tokenBudget = parsePositiveInteger(options.tokenBudget, "token-budget");
+  const kinds = parseKinds(options.kind);
+  return {
+    direction: parseDirection(options.direction),
+    ...(kinds === undefined ? {} : { kinds }),
+    ...(maxDepth === undefined ? {} : { maxDepth }),
+    ...(nodeLimit === undefined ? {} : { nodeLimit }),
+    ...(edgeLimit === undefined ? {} : { edgeLimit }),
+    ...(tokenBudget === undefined ? {} : { tokenBudget }),
+    ...(options.cursor?.trim() ? { cursor: options.cursor.trim() } : {}),
+  };
+}
+
+/** Build one bounded context packet from an assembled deps relationship graph. */
+function buildContextFromAssembly(
+  assembly: DepsRelationshipAssembly,
+  rootId: string,
+  options: RelationshipContextOptions,
+  rootEvidence: readonly string[],
+): RelationshipContextResult {
+  return buildRelationshipContext(
+    assembly.graph,
+    rootId,
+    assembly.details.map((detail) =>
+      detail.id === rootId && rootEvidence.length > 0
+        ? { ...detail, evidence: rootEvidence }
+        : detail,
+    ),
+    options,
   );
+}
+
+/** Build the SDK-backed bounded relationship-context projection for deps. */
+export function buildDepsRelationshipContext(
+  rootId: string,
+  items: readonly ItemMetadata[],
+  options: DepsContextOptions,
+  rootEvidence: readonly string[] = [],
+): RelationshipContextResult {
+  return buildContextFromAssembly(
+    assembleDepsRelationshipGraph(items),
+    rootId,
+    parseDepsContextOptions(options),
+    rootEvidence,
+  );
+}
+
+/** Append up to `limit` labeled pointers from one linked collection. */
+function appendEvidencePointers(
+  evidence: string[],
+  label: string,
+  values: readonly (string | undefined)[],
+  limit: number,
+): void {
+  for (const value of values.slice(0, limit)) {
+    const trimmed = value?.trim();
+    if (trimmed) evidence.push(`${label}:${trimmed}`);
+  }
+}
+
+/**
+ * Load bounded root evidence pointers (linked files, tests, docs, and
+ * annotation counts) so the context packet answers "where is the proof"
+ * without a follow-up item read.
+ */
+async function collectRootEvidence(
+  pmRoot: string,
+  id: string,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  typeToFolder: Record<string, string>,
+): Promise<string[]> {
+  const located = await locateItem(
+    pmRoot,
+    id,
+    settings.id_prefix,
+    settings.item_format,
+    typeToFolder,
+  );
+  // The caller already resolved the root against the light index, so a miss
+  // can only happen when storage mutates mid-read; degrade to no evidence.
+  /* c8 ignore start -- defensive: unreachable without a concurrent delete between the index scan and this read. */
+  if (!located) return [];
+  /* c8 ignore stop */
+  const { document } = await readLocatedItem(located, {
+    schema: settings.schema,
+  });
+  const metadata = document.metadata;
+  const files = metadata.files ?? [];
+  const tests = metadata.tests ?? [];
+  const docs = metadata.docs ?? [];
+  const counts = [
+    ["files", files.length],
+    ["tests", tests.length],
+    ["docs", docs.length],
+    ["comments", (metadata.comments ?? []).length],
+    ["notes", (metadata.notes ?? []).length],
+    ["learnings", (metadata.learnings ?? []).length],
+  ] as const;
+  if (counts.every(([, count]) => count === 0)) return [];
+  const evidence = [
+    `linked:${counts.map(([key, count]) => `${key}=${count}`).join(",")}`,
+  ];
+  appendEvidencePointers(evidence, "file", files.map((file) => file.path), 3);
+  appendEvidencePointers(
+    evidence,
+    "test",
+    tests.map((test) => test.command ?? test.path),
+    2,
+  );
+  appendEvidencePointers(evidence, "doc", docs.map((doc) => doc.path), 2);
+  return evidence;
+}
+
+/** Assemble the context-format deps result with traversal-scoped missing enumeration. */
+function buildContextDepsResult(params: {
+  assembly: DepsRelationshipAssembly;
+  canonicalId: string;
+  options: DepsCommandOptions;
+  rootEvidence: readonly string[];
+  summaryOnly: boolean;
+}): DepsResult {
+  const { assembly, canonicalId, options, rootEvidence, summaryOnly } = params;
+  const contextOptions = parseDepsContextOptions(options);
+  const context = buildContextFromAssembly(
+    assembly,
+    canonicalId,
+    contextOptions,
+    rootEvidence,
+  );
+  const reachable = assembly.graph.closure(canonicalId, {
+    direction: contextOptions.direction,
+    ...(contextOptions.kinds === undefined
+      ? {}
+      : { kinds: contextOptions.kinds }),
+    maxDepth: contextOptions.maxDepth ?? 3,
+  });
+  const missingReachable = reachable.value.filter((nodeId) =>
+    assembly.missingIdSet.has(nodeId.toLowerCase()),
+  );
+  const missingReachableSet = new Set(
+    missingReachable.map((nodeId) => nodeId.toLowerCase()),
+  );
+  const relationshipRegistry = createRelationshipKindRegistry();
+  const filteredKinds = contextOptions.kinds
+    ? new Set(
+        contextOptions.kinds.map(
+          (kind) => relationshipRegistry.require(kind).kind,
+        ),
+      )
+    : undefined;
+  const packetIds = new Set([canonicalId, ...reachable.value]);
+  const missingReferences = [
+    ...assembly.dangling.active,
+    ...assembly.dangling.legacy_terminal,
+  ].filter((row) => {
+    if (
+      row.no_active_blocker_sentinel ||
+      !missingReachableSet.has(row.target_id.trim().toLowerCase()) ||
+      !packetIds.has(row.holder_id)
+    )
+      return false;
+    if (filteredKinds === undefined) return true;
+    const definition = relationshipRegistry.resolve(row.kind);
+    return (
+      definition !== undefined &&
+      (filteredKinds.has(definition.kind) ||
+        (definition.inverse !== undefined &&
+          filteredKinds.has(definition.inverse)))
+    );
+  });
+  const referenceLimit = contextOptions.edgeLimit ?? 40;
+  return {
+    id: canonicalId,
+    format: "context",
+    node_count: context.nodes.length + 1,
+    edge_count: context.edges.length,
+    missing_count: missingReachable.length,
+    missing_scope: "traversal",
+    missing_reference_count: missingReferences.length,
+    ...(summaryOnly
+      ? {}
+      : {
+          missing_references: missingReferences.slice(0, referenceLimit),
+          context,
+        }),
+  };
 }
 
 /** Implements run deps for the public runtime surface of this module. */
@@ -663,15 +941,24 @@ export async function runDeps(
 
   if (format === "context") {
     const canonicalId = index.get(id.trim().toLowerCase())!.id;
-    const context = buildDepsRelationshipContext(canonicalId, items, options);
-    return {
-      id: canonicalId,
-      format,
-      node_count: context.nodes.length + 1,
-      edge_count: context.edges.length,
-      missing_count: collectMissingDependencyTargetIds(dangling).length,
-      ...(summaryOnly ? {} : { context }),
-    };
+    const rootEvidence = summaryOnly
+      ? []
+      : await collectRootEvidence(
+          pmRoot,
+          canonicalId,
+          settings,
+          typeRegistry.type_to_folder,
+        );
+    const assembly = assembleDepsRelationshipGraph(items, (status) =>
+      isTerminalStatus(status, statusRegistry),
+    );
+    return buildContextDepsResult({
+      assembly,
+      canonicalId,
+      options,
+      rootEvidence,
+      summaryOnly,
+    });
   }
 
   if (summaryOnly) {

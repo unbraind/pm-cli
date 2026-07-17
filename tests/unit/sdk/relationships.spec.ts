@@ -422,3 +422,65 @@ describe("relationship graph", () => {
     });
   });
 });
+
+describe("neighborEdges", () => {
+  const graph = new RelationshipGraph(
+    ["root", "alpha", "beta"],
+    [
+      { source: "root", target: "alpha", kind: "blocked_by" },
+      { source: "root", target: "alpha", kind: "related" },
+      { source: "beta", target: "root", kind: "parent" },
+    ],
+  );
+
+  it("returns deterministic neighbor rows paired with their connecting edges", () => {
+    const rows = graph.neighborEdges("root", { direction: "both" });
+    expect(rows.value.map(({ id, edge }) => `${id}:${edge.kind}`)).toEqual([
+      "alpha:blocked_by",
+      "alpha:related",
+      "beta:parent",
+    ]);
+    expect(rows.meta).toMatchObject({
+      visitedNodes: 1,
+      inspectedEdges: 3,
+      truncated: false,
+      nextCursor: "beta",
+    });
+  });
+
+  it("merges incident edges regardless of which direction sorts first", () => {
+    const incidentIds = (incomingSource: string) =>
+      new RelationshipGraph(
+        ["root", "alpha", incomingSource],
+        [
+          { source: "root", target: "alpha", kind: "blocked_by" },
+          { source: incomingSource, target: "root", kind: "parent" },
+        ],
+      )
+        .incidentEdges("root")
+        .map(({ source, target }) => `${source}:${target}`);
+
+    expect(incidentIds("beta")).toEqual(["beta:root", "root:alpha"]);
+    expect(incidentIds("zeta")).toEqual(["root:alpha", "zeta:root"]);
+  });
+
+  it("honors direction, kind filters, limits, and node validation", () => {
+    expect(graph.neighborEdges("beta").value.map(({ id }) => id)).toEqual([
+      "root",
+    ]);
+    expect(
+      graph.neighborEdges("root", { direction: "incoming" }).value.map(({ id }) => id),
+    ).toEqual(["alpha", "beta"]);
+    expect(
+      graph
+        .neighborEdges("root", { direction: "both", kinds: ["parent"] })
+        .value.map(({ id }) => id),
+    ).toEqual(["beta"]);
+    const bounded = graph.neighborEdges("root", { direction: "both", limit: 1 });
+    expect(bounded.value).toHaveLength(1);
+    expect(bounded.meta.truncated).toBe(true);
+    expect(() => graph.neighborEdges("missing-node", {})).toThrow(
+      "node not found",
+    );
+  });
+});

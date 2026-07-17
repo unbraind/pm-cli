@@ -433,7 +433,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "pm_deps",
     description:
-      "Read dependency trees/graphs or one bounded explainable relationship context packet. Use options.format=context with depth, node, edge, token, and cursor bounds.",
+      "Read dependency trees/graphs or one bounded explainable relationship context packet. Use options.format=context with direction, kind, depth, node, edge, token, and cursor bounds; context returns a counts-first summary, per-node roles/reasons, root evidence pointers, and enumerated missing references.",
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
       "id",
     ]),

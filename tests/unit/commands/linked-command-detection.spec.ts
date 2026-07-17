@@ -90,3 +90,24 @@ describe("item-reference positional parsing", () => {
     ).toBe("pm-dead");
   });
 });
+
+describe("id-prefix normalization", () => {
+  it("trims trailing dash runs linearly and rejects empty prefixes", () => {
+    expect(
+      extractReferencedPmItemIdsFromCommand("pm get pm-dead", "PM--"),
+    ).toEqual(["pm-dead"]);
+    expect(
+      extractReferencedPmItemIdsFromCommand("pm get pm-dead", "----"),
+    ).toEqual([]);
+    expect(
+      extractReferencedPmItemIdsFromCommand("pm get x-live", `x${"-".repeat(64)}`),
+    ).toEqual(["x-live"]);
+    // Pre-fix, the /-+$/ trim backtracked quadratically on a long dash run
+    // followed by a non-dash tail and never completed inside the suite
+    // timeout (CodeQL alert 27).
+    const hostilePrefix = `${"-".repeat(50_000)}x`;
+    expect(
+      extractReferencedPmItemIdsFromCommand("pm get pm-dead", hostilePrefix),
+    ).toEqual([]);
+  });
+});

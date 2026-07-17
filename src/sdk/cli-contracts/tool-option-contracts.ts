@@ -399,4 +399,6 @@ export const TOOL_DEPS_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "edgeLimit", flag: "--edge-limit" },
   { param: "tokenBudget", flag: "--token-budget" },
   { param: "cursor", flag: "--cursor" },
+  { param: "direction", flag: "--direction" },
+  { param: "kind", flag: "--kind", repeatable: true },
 ];

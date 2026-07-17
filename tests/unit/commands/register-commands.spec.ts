@@ -1278,6 +1278,11 @@ describe("mutation command actions", () => {
     expect(depsOptions.summary).toBe(true);
     expect(depsOptions.maxDepth).toBe("2");
     expect(depsOptions).toMatchObject({ nodeLimit: "5", edgeLimit: "8", tokenBudget: "400", cursor: "next-page" });
+    expect(depsOptions.kind).toBeUndefined();
+    await runCli("deps", "pm-1", "--format", "context", "--direction", "incoming", "--kind", "blocked_by", "--kind", "parent,related");
+    const filteredDepsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runDeps) as never, 1);
+    expect(filteredDepsOptions.direction).toBe("incoming");
+    expect(filteredDepsOptions.kind).toEqual(["blocked_by", "parent,related"]);
   });
 
   it("routes plan subcommands, aliases, positional titles, and reorder validation", async () => {

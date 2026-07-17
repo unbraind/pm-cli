@@ -1950,6 +1950,25 @@
         },
         {
           "flag": "--summary"
+        },
+        {
+          "flag": "--node-limit"
+        },
+        {
+          "flag": "--edge-limit"
+        },
+        {
+          "flag": "--token-budget"
+        },
+        {
+          "flag": "--cursor"
+        },
+        {
+          "flag": "--direction"
+        },
+        {
+          "flag": "--kind",
+          "list": true
         }
       ],
       "provider": "core"
@@ -8648,7 +8667,7 @@
       ]
     },
     {
-      "description": "Read dependency trees/graphs or one bounded explainable relationship context packet. Use options.format=context with depth, node, edge, token, and cursor bounds.",
+      "description": "Read dependency trees/graphs or one bounded explainable relationship context packet. Use options.format=context with direction, kind, depth, node, edge, token, and cursor bounds; context returns a counts-first summary, per-node roles/reasons, root evidence pointers, and enumerated missing references.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
@@ -22888,6 +22907,19 @@
             "description": "Opaque continuation cursor returned by deps --format context.",
             "type": "string"
           },
+          "direction": {
+            "description": "Graph-context traversal direction for deps action (\"outgoing\", \"incoming\", or \"both\").",
+            "enum": [
+              "outgoing",
+              "incoming",
+              "both"
+            ],
+            "examples": [
+              "both",
+              "incoming"
+            ],
+            "type": "string"
+          },
           "edgeLimit": {
             "anyOf": [
               {
@@ -22919,6 +22951,27 @@
             "default": true,
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Registered relationship kinds narrowing deps --format context traversal (string, comma-separated, or array).",
+            "examples": [
+              "blocked_by",
+              [
+                "parent",
+                "related"
+              ]
+            ]
           },
           "maxDepth": {
             "anyOf": [

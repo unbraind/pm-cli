@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- pm deps context format reports missing_count without enumerating missing references and disagrees with tree format ([pm-8kch](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8kch.toon))
+
 ## 2026.7.17 - 2026-07-17
 
 ### Added

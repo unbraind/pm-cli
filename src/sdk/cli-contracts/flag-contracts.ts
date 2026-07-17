@@ -1354,6 +1354,12 @@ export const DEPS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--max-depth" },
   { flag: "--collapse" },
   { flag: "--summary" },
+  { flag: "--node-limit" },
+  { flag: "--edge-limit" },
+  { flag: "--token-budget" },
+  { flag: "--cursor" },
+  { flag: "--direction" },
+  { flag: "--kind", list: true },
 ];
 
 /** Public contract for eval flag contracts, shared by SDK and presentation-layer consumers. */
