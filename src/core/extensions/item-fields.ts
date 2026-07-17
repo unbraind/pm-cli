@@ -21,13 +21,13 @@ export const RESERVED_ITEM_FIELD_NAMES: ReadonlySet<string> = Object.freeze({
   has(value: string): boolean {
     return reservedItemFieldNames.has(value);
   },
-  entries(): IterableIterator<[string, string]> {
+  entries(): SetIterator<[string, string]> {
     return reservedItemFieldNames.entries();
   },
-  keys(): IterableIterator<string> {
+  keys(): SetIterator<string> {
     return reservedItemFieldNames.keys();
   },
-  values(): IterableIterator<string> {
+  values(): SetIterator<string> {
     return reservedItemFieldNames.values();
   },
   forEach(
@@ -38,7 +38,7 @@ export const RESERVED_ITEM_FIELD_NAMES: ReadonlySet<string> = Object.freeze({
       callback.call(thisArg, value, value, RESERVED_ITEM_FIELD_NAMES),
     );
   },
-  [Symbol.iterator](): IterableIterator<string> {
+  [Symbol.iterator](): SetIterator<string> {
     return reservedItemFieldNames.values();
   },
 });
