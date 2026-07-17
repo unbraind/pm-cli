@@ -6,6 +6,10 @@
 
 - pm deps context format reports missing_count without enumerating missing references and disagrees with tree format ([pm-8kch](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8kch.toon))
 
+### Security
+
+- CodeQL alert 27: js/polynomial-redos in sdk/test/linked-command-detection.ts trailing-dash prefix trim ([pm-8og4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8og4.toon))
+
 ## 2026.7.17 - 2026-07-17
 
 ### Added

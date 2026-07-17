@@ -2,31 +2,36 @@ id: pm-8og4
 title: "CodeQL alert 27: js/polynomial-redos in sdk/test/linked-command-detection.ts trailing-dash prefix trim"
 description: "GitHub code scanning (CodeQL) alert #27 (created 2026-07-16, open): extractReferencedPmItemIdsFromCommand normalizes the workspace id prefix with idPrefix.trim().toLowerCase().replace(/-+$/, \"\") at src/sdk/test/linked-command-detection.ts:318. The /-+$/ pattern backtracks polynomially on adversarial prefixes consisting of long dash runs that fail to anchor at end-of-string. The prefix flows from workspace settings (id_prefix), so a hostile tracker config or crafted settings file can degrade linked-test governance scans. Duplicate check: Semgrep items (pm-t8e9 lineage) cover non-literal RegExp construction in the old src/cli/commands paths, a different rule and site; no existing item tracks CodeQL alert 27."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[3]: "area:sdk",code-scanning,security
 created_at: "2026-07-17T05:29:01.651Z"
-updated_at: "2026-07-17T08:29:05.021Z"
-assignee: maintainer-agent
+updated_at: "2026-07-17T09:56:08.522Z"
+closed_at: "2026-07-17T09:56:07.579Z"
 author: maintainer-agent
 estimated_minutes: 30
 acceptance_criteria: "The trailing-dash trim runs in linear time (index scan or equivalent, no ambiguous quantifier before an end anchor); CodeQL alert 27 closes on the default branch after merge; a regression test exercises a pathological dash-run prefix and asserts fast, correct normalization; behavior for normal prefixes is unchanged"
 parent: pm-qwoy
 risk: low
 confidence: high
+resolution: fixed
 expected_result: "Trailing-dash prefix normalization is linear-time for adversarial workspace settings, preserves normal linked-command detection, and CodeQL alert 27 closes on the default branch."
+actual_result: "Merged PR #577 replaced the polynomial trailing-dash regex with a linear backward scan, preserved linked-command detection for canonical and adversarial prefixes, and GitHub CodeQL alert 27 is fixed on default-branch commit 98d820520685e3c678275476ffe756e291aa5eaa."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-t8e9,related,"2026-07-17T05:29:01.651Z",null,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-17T06:12:23.138Z",maintainer-agent,"Fix evidence 2026-07-17: replaced idPrefix.trim().toLowerCase().replace(/-+$/, \"\") with a linear index scan trimming trailing dashes in extractReferencedPmItemIdsFromCommand (src/sdk/test/linked-command-detection.ts). Regression spec covers canonical \"PM--\" trimming, all-dash prefixes rejecting every id, a benign 64-dash decorated prefix still matching, and the pathological 50k-dash-run-plus-tail prefix that previously backtracked quadratically (pre-fix the assertion could not complete inside the suite timeout). Also extended the deps value-bearing flag set with --direction/--kind so linked-command item-reference parsing stays correct for the new flags. Alert 27 closure on the default branch to be verified after merge."
   "2026-07-17T06:16:04.041Z",codex-root,"Handoff accepted by codex-root: preserving the linear-time prefix normalization fix and completing security gates, review convergence, merge, and default-branch alert verification."
   "2026-07-17T06:27:11.653Z",maintainer-agent,"GitHub reconciliation 2026-07-17: alert #27 is this active item; Scorecard alerts #17-#23 remain mapped to canonical pm-gnzh children (pm-003j, pm-0yi7, pm-2d7k, pm-obq2, pm-rrt1); open Dependabot alerts=0 and secret-scanning alerts=0; all 26 open GitHub issues have all-status pm lineage. Sentry/telemetry gate reports critical=0/high=0 and fresh local telemetry recorded successful command completion. Keep this item active until PR/default-branch CodeQL proves #27 resolved."
   "2026-07-17T07:12:58.125Z",maintainer-agent,"PR #577 hosted evidence: CodeQL analysis passes on head d46b29d72f8fea5205caa355e7acfff0a47dc1ab. Item remains in progress intentionally until alert 27 is verified closed on the merged default branch; no other pm item is being kept in progress for this review loop."
   "2026-07-17T08:29:05.021Z",maintainer-agent,"Review follow-up evidence: removed the now-unused relationship-context counterpart parameter flagged by static analysis while retaining the linear trailing-dash linked-command scan and 50k-character regression. Exact full coverage remains 100/100/100/100. Item remains active until CodeQL alert 27 is verified closed on the merged default branch."
+  "2026-07-17T09:56:06.591Z",maintainer-agent,"Merged-head closeout evidence: PR #577 merged as 98d820520685e3c678275476ffe756e291aa5eaa. Default-branch CodeQL run 29571406419 completed successfully, and GitHub code-scanning alert 27 reports state=fixed with fixed_at=2026-07-17T09:54:06Z. All PR checks were green; final review inventory at head 178494f7 had zero unresolved threads and zero unreacted bot comments, reviews, or inline comments after evidence replies. Merged main rebuilt and installed as pm 2026.7.17."
 files[1]{path,scope,note}:
   src/sdk/test/linked-command-detection.ts,project,linear index-scan trailing-dash trim replacing /-+$/ (CodeQL alert 27)
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/linked-command-detection.spec.ts,project,120
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrojpp34-k4ngcb,test,passed,"2026-07-17T06:17:01.314Z","2026-07-17T06:17:13.024Z","2026-07-17T06:17:13.024Z",1,0,0
+  test-local-mrorj5wd-y4ysyk,test,passed,"2026-07-17T09:55:48.571Z","2026-07-17T09:56:05.149Z","2026-07-17T09:56:05.149Z",1,0,0
+close_reason: Fixed polynomial ReDoS with linear prefix normalization; pathological regression passes and default-branch CodeQL alert 27 is confirmed fixed after PR #577 merge.
 body: ""
