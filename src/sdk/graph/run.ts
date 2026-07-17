@@ -837,7 +837,11 @@ function buildGraphQueryKey(
     direction: invocation.direction,
     maxPaths: invocation.maxPaths ?? null,
     sample: invocation.sample ?? null,
-    exemptIsolates: invocation.exemptIsolates,
+    // The audit consumes exemptions as a case-insensitive set, so the key
+    // must not distinguish logically identical spellings or orderings.
+    exemptIsolates: [
+      ...new Set(invocation.exemptIsolates.map((id) => id.toLowerCase())),
+    ].sort(),
     summary: invocation.summary,
   });
 }

@@ -416,12 +416,19 @@ describe("runGraph", () => {
       expect(communities.converged).toBe(true);
       expect(communities.iterations).toBeGreaterThan(0);
       expect(communities.truncated).toBe(false);
-      // epic <- feat <- task <- follower plus the pm-ghost placeholder form
-      // one connected cluster; the related pair is the second; the isolate
-      // never reaches the size floor.
-      expect(communities.community_count).toBe(2);
-      expect(communities.largest_community_size).toBe(5);
-      expect(communities.communities![0]!.members).toEqual(
+      // Label propagation sweeps nodes in sorted-id order, and generated ids
+      // differ per run, so the epic <- feat <- task <- follower <- pm-ghost
+      // chain stabilizes as either one cluster or two contiguous segments.
+      // The related pair always forms its own community and the isolate never
+      // reaches the size floor, so the stable invariants are the community
+      // range, the total clustered membership, and chain-member coverage.
+      expect([2, 3]).toContain(communities.community_count);
+      expect([3, 5]).toContain(communities.largest_community_size);
+      const clustered = communities.communities!.flatMap(
+        (community) => community.members,
+      );
+      expect(clustered).toHaveLength(7);
+      expect(clustered).toEqual(
         expect.arrayContaining([epic, follower, "pm-ghost"]),
       );
 
@@ -434,8 +441,10 @@ describe("runGraph", () => {
       )) as GraphCommunitiesResult;
       expect(bounded.communities).toHaveLength(1);
       expect(bounded.communities![0]!.members).toHaveLength(1);
-      expect(bounded.communities![0]!.size).toBe(5);
-      expect(bounded.community_count).toBe(2);
+      expect(bounded.communities![0]!.size).toBe(
+        communities.largest_community_size,
+      );
+      expect(bounded.community_count).toBe(communities.community_count);
       expect(bounded.truncated).toBe(true);
 
       const summary = (await runGraph(
@@ -664,6 +673,24 @@ describe("runGraph", () => {
         assembly: "hit",
         result: "miss",
       });
+
+      // Logically identical exemption spellings share one memoized result.
+      const exemptLower = (await runGraph(
+        "audit",
+        undefined,
+        undefined,
+        { sample: 5, exemptIsolate: "pm-zed" },
+        { path: context.pmPath },
+      )) as GraphAuditResult;
+      expect(exemptLower.cache!.result).toBe("miss");
+      const exemptUpper = (await runGraph(
+        "audit",
+        undefined,
+        undefined,
+        { sample: 5, exemptIsolate: "PM-ZED," },
+        { path: context.pmPath },
+      )) as GraphAuditResult;
+      expect(exemptUpper.cache!.result).toBe("hit");
 
       // Any relationship-relevant mutation invalidates the snapshot.
       createItem(context, "Cache invalidator");

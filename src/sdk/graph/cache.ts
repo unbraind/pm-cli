@@ -102,7 +102,13 @@ export interface WorkspaceGraphCacheLookup {
   assemblyReused: boolean;
   /** Full fingerprint of the snapshot this lookup is bound to. */
   fingerprint: string;
-  /** Memoize one deterministic query result under this snapshot. */
+  /**
+   * Memoize one deterministic query result under this snapshot. On a miss the
+   * freshly computed value is returned as-is while an independent clone is
+   * stored, so mutating a miss result never corrupts the cache; every hit
+   * returns a fresh clone of the stored entry. Callers must not rely on the
+   * miss and hit paths returning the same object identity.
+   */
   memoize<T>(queryKey: string, compute: () => T): { value: T; reused: boolean };
 }
 
