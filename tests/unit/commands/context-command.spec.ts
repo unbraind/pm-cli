@@ -357,6 +357,17 @@ describe("context command module", () => {
       blocked_by_title: "Open task",
       blocked_by_status: "open",
     });
+    expect(
+      contextInternals.buildBlockers(
+        [
+          { ...blockedTask, blocked_by: "no-active-blocker", dependencies: [] },
+          { ...blockedTask, blocked_by: 7 as never, dependencies: [] },
+        ] as never,
+        [],
+        statusRegistry,
+        5,
+      ).map((entry) => entry.blocked_by),
+    ).toEqual([null, null]);
     expect(contextInternals.buildHotFiles(activeItems, 5)).toEqual([
       { path: "src/a.ts", references: 1, items: ["pm-open"] },
       { path: "src/b.ts", references: 1, items: ["pm-blocked"] },

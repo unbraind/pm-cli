@@ -255,29 +255,45 @@ function assertPathEndpoint(graph: RelationshipGraph, id: string): void {
     throw new TypeError(`Relationship node not found: ${id}`);
 }
 
-/** Expand one partial simple path and report whether the path cap was reached. */
+/** Return eligible simple-path continuations and account for inspected edges. */
+function readPathContinuations(
+  graph: RelationshipGraph,
+  partial: { nodes: string[]; nodeSet: Set<string>; edges: RelationshipEdge[] },
+  options: GraphPathOptions,
+  direction: "outgoing" | "incoming" | "both",
+  state: PathEnumerationState,
+): ReturnType<RelationshipGraph["neighborEdges"]>["value"] {
+  const rows = graph.neighborEdges(partial.nodes.at(-1)!, {
+    direction,
+    ...(options.kinds === undefined ? {} : { kinds: options.kinds }),
+  });
+  state.inspectedEdges += rows.meta.inspectedEdges;
+  return rows.value.filter((row) => !partial.nodeSet.has(row.id));
+}
+
+/** Expand one partial simple path and report whether the probe cap was reached. */
 function expandPartialPath(
   graph: RelationshipGraph,
   partial: { nodes: string[]; nodeSet: Set<string>; edges: RelationshipEdge[] },
   target: string,
   options: GraphPathOptions,
   direction: "outgoing" | "incoming" | "both",
-  maxPaths: number,
+  probeLimit: number,
   state: PathEnumerationState,
 ): boolean {
-  const rows = graph.neighborEdges(partial.nodes.at(-1)!, {
+  for (const row of readPathContinuations(
+    graph,
+    partial,
+    options,
     direction,
-    ...(options.kinds === undefined ? {} : { kinds: options.kinds }),
-  });
-  state.inspectedEdges += rows.meta.inspectedEdges;
-  for (const row of rows.value) {
-    if (partial.nodeSet.has(row.id)) continue;
+    state,
+  )) {
     const nodes = [...partial.nodes, row.id];
     const nodeSet = new Set(partial.nodeSet).add(row.id);
     const edges = [...partial.edges, row.edge];
     if (row.id === target) {
       state.value.push({ nodes, edges, length: edges.length });
-      if (state.value.length >= maxPaths) return true;
+      if (state.value.length >= probeLimit) return true;
     } else {
       state.queue.push({ nodes, nodeSet, edges });
     }
@@ -365,6 +381,67 @@ export function orderingSuccessors(
   );
 }
 
+/** Run bounded non-zero path enumeration after public option validation. */
+function enumerateNonZeroRelationshipPaths(
+  graph: RelationshipGraph,
+  source: string,
+  target: string,
+  options: GraphPathOptions,
+  maxPaths: number,
+  maxVisitedPaths: number,
+  maxDepth: number,
+  direction: "outgoing" | "incoming" | "both",
+): RelationshipQueryResult<RelationshipPath[]> {
+  const state: PathEnumerationState = {
+    value: [],
+    queue: [{ nodes: [source], nodeSet: new Set([source]), edges: [] }],
+    inspectedEdges: 0,
+  };
+  let visitedNodes = 0;
+  let truncated = false;
+  const probeLimit = maxPaths + 1;
+  for (let index = 0; index < state.queue.length; index += 1) {
+    options.signal?.throwIfAborted();
+    if (state.value.length >= probeLimit || visitedNodes >= maxVisitedPaths) {
+      truncated = true;
+      break;
+    }
+    const partial = state.queue[index]!;
+    visitedNodes += 1;
+    if (partial.edges.length >= maxDepth) {
+      if (
+        readPathContinuations(
+          graph,
+          partial,
+          options,
+          direction,
+          state,
+        ).length > 0
+      )
+        truncated = true;
+      continue;
+    }
+    if (
+      expandPartialPath(
+        graph,
+        partial,
+        target,
+        options,
+        direction,
+        probeLimit,
+        state,
+      )
+    ) {
+      truncated = true;
+      break;
+    }
+  }
+  return {
+    value: state.value.slice(0, maxPaths),
+    meta: { visitedNodes, inspectedEdges: state.inspectedEdges, truncated },
+  };
+}
+
 /**
  * Enumerate bounded simple paths between two nodes, shortest first and
  * lexicographic within equal length. Traversal honors direction and kind
@@ -383,48 +460,28 @@ export function enumerateRelationshipPaths(
   const maxVisitedPaths = options.maxVisitedPaths ?? DEFAULT_MAX_VISITED_PATHS;
   const maxDepth = options.maxDepth ?? DEFAULT_PATH_MAX_DEPTH;
   const direction = options.direction ?? "outgoing";
+  options.signal?.throwIfAborted();
+  for (const kind of options.kinds ?? []) graph.registry().require(kind);
   if (source === target) {
+    if (maxPaths === 0) {
+      return {
+        value: [],
+        meta: { visitedNodes: 1, inspectedEdges: 0, truncated: true },
+      };
+    }
     return {
       value: [{ nodes: [source], edges: [], length: 0 }],
       meta: { visitedNodes: 1, inspectedEdges: 0, truncated: false },
     };
   }
-  const state: PathEnumerationState = {
-    value: [],
-    queue: [{ nodes: [source], nodeSet: new Set([source]), edges: [] }],
-    inspectedEdges: 0,
-  };
-  let visitedNodes = 0;
-  let truncated = false;
-  for (let index = 0; index < state.queue.length; index += 1) {
-    options.signal?.throwIfAborted();
-    if (state.value.length >= maxPaths || visitedNodes >= maxVisitedPaths) {
-      truncated = true;
-      break;
-    }
-    const partial = state.queue[index]!;
-    visitedNodes += 1;
-    if (partial.edges.length >= maxDepth) {
-      truncated = true;
-      continue;
-    }
-    if (
-      expandPartialPath(
-        graph,
-        partial,
-        target,
-        options,
-        direction,
-        maxPaths,
-        state,
-      )
-    ) {
-      truncated = true;
-      break;
-    }
-  }
-  return {
-    value: state.value,
-    meta: { visitedNodes, inspectedEdges: state.inspectedEdges, truncated },
-  };
+  return enumerateNonZeroRelationshipPaths(
+    graph,
+    source,
+    target,
+    options,
+    maxPaths,
+    maxVisitedPaths,
+    maxDepth,
+    direction,
+  );
 }

@@ -1318,12 +1318,15 @@ function buildBlockers(
   return blockedItems.slice(0, limit).map((item) => {
     // Prefer a currently open blocker edge. The legacy scalar may still name a
     // resolved predecessor, so it is only a fallback when no open edge exists.
-    const openBlocker = resolveItemBlockers(
+    const blockers = resolveItemBlockers(
       item,
       itemsById,
       statusRegistry,
-    ).find((blocker) => !blocker.resolved);
-    const blockedBy = openBlocker?.id ?? item.blocked_by ?? null;
+    );
+    const blockedBy =
+      blockers.find((blocker) => !blocker.resolved)?.id ??
+      blockers[0]?.id ??
+      null;
     const blockerItem = blockedBy
       ? itemsById.get(blockedBy.trim().toLowerCase())
       : undefined;

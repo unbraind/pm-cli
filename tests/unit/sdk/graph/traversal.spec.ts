@@ -262,6 +262,23 @@ describe("enumerateRelationshipPaths", () => {
   it("returns the zero-length path for identical endpoints", () => {
     const paths = enumerateRelationshipPaths(diamond, "pm-src", "pm-src");
     expect(paths.value).toEqual([{ nodes: ["pm-src"], edges: [], length: 0 }]);
+    expect(
+      enumerateRelationshipPaths(diamond, "pm-src", "pm-src", {
+        maxPaths: 0,
+      }),
+    ).toMatchObject({ value: [], meta: { truncated: true } });
+    expect(() =>
+      enumerateRelationshipPaths(diamond, "pm-src", "pm-src", {
+        kinds: ["unknown-kind"],
+      }),
+    ).toThrow(/Unknown relationship kind/);
+    const controller = new AbortController();
+    controller.abort();
+    expect(() =>
+      enumerateRelationshipPaths(diamond, "pm-src", "pm-src", {
+        signal: controller.signal,
+      }),
+    ).toThrow();
   });
 
   it("returns no paths for disconnected endpoints", () => {
@@ -276,11 +293,25 @@ describe("enumerateRelationshipPaths", () => {
     });
     expect(capped.value).toHaveLength(1);
     expect(capped.meta.truncated).toBe(true);
+    const exactlyOne = itemGraph([
+      { id: "pm-one-src", dependencies: [dep("pm-one-dst", "blocked_by")] },
+      { id: "pm-one-dst" },
+    ]);
+    expect(
+      enumerateRelationshipPaths(exactlyOne, "pm-one-src", "pm-one-dst", {
+        maxPaths: 1,
+      }).meta.truncated,
+    ).toBe(false);
     const tooShallow = enumerateRelationshipPaths(diamond, "pm-src", "pm-dst", {
       maxDepth: 1,
     });
     expect(tooShallow.value).toEqual([]);
     expect(tooShallow.meta.truncated).toBe(true);
+    expect(
+      enumerateRelationshipPaths(diamond, "pm-dst", "pm-src", {
+        maxDepth: 0,
+      }).meta.truncated,
+    ).toBe(false);
     const starved = enumerateRelationshipPaths(diamond, "pm-src", "pm-dst", {
       maxVisitedPaths: 1,
     });

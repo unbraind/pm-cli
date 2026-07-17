@@ -60,6 +60,21 @@ describe("workspace relationship graph assembly", () => {
       title: "[missing] pm-missing",
       status: "missing",
     });
+
+    const padded = assembleWorkspaceRelationshipGraph([
+      {
+        id: " pm-padded ",
+        title: "Padded",
+        status: "open",
+        dependencies: [{ id: "pm-target", kind: "related" }],
+      },
+      { id: " pm-target ", title: "Target", status: "open" },
+    ] as never);
+    expect(padded.graph.nodes()).toEqual(["pm-padded", "pm-target"]);
+    expect(padded.details.map((detail) => detail.id)).toEqual([
+      "pm-padded",
+      "pm-target",
+    ]);
   });
 
   it("deduplicates missing ids case-insensitively and supports custom terminal predicates", () => {
@@ -157,12 +172,29 @@ describe("relationship graph governance", () => {
   });
 
   it("supports custom lifecycle policies, rejects invalid bounds, and honors cancellation", () => {
-    const custom = auditWorkspaceRelationshipGraph(assembly, {
+    const customAssembly = assembleWorkspaceRelationshipGraph([
+      ...assembly.details
+        .filter((detail) => detail.status !== "missing")
+        .map((detail) => ({ ...detail })),
+      {
+        id: "pm-custom-terminal",
+        title: "Custom terminal",
+        status: "blocked",
+        dependencies: [{ id: "pm-custom-missing", kind: "related" }],
+      },
+    ] as never);
+    const custom = auditWorkspaceRelationshipGraph(customAssembly, {
       isTerminal: (status) => status === "closed" || status === "blocked",
       isBlocked: () => false,
       exemptIsolates: ["pm-exempt"],
     });
     expect(custom.findings.some((finding) => finding.code === "stale_lifecycle_block")).toBe(false);
+    expect(
+      custom.findings.find((finding) => finding.code === "missing_reference_terminal")?.sample,
+    ).toContain("pm-custom-terminal -> pm-custom-missing (related)");
+    expect(
+      custom.findings.find((finding) => finding.code === "missing_reference_active")?.sample ?? [],
+    ).not.toContain("pm-custom-terminal -> pm-custom-missing (related)");
     expect(() => auditWorkspaceRelationshipGraph(assembly, { maxSampleSize: 0 })).toThrow(
       /Invalid audit sample bound/,
     );

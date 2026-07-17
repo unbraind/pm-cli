@@ -309,13 +309,18 @@ function appendFinding(
 /** Collect dangling-reference and retired-sentinel governance findings. */
 function collectIntegrityFindings(
   assembly: WorkspaceRelationshipAssembly,
+  isTerminal: (status: string) => boolean,
   maxSampleSize: number,
 ): RelationshipAuditFinding[] {
   const findings: RelationshipAuditFinding[] = [];
+  const references = [
+    ...assembly.dangling.active,
+    ...assembly.dangling.legacy_terminal,
+  ].filter((reference) => !reference.no_active_blocker_sentinel);
   appendFinding(
     findings,
-    assembly.dangling.active
-      .filter((reference) => !reference.no_active_blocker_sentinel)
+    references
+      .filter((reference) => !isTerminal(reference.holder_status))
       .map(formatDanglingReference),
     maxSampleSize,
     "missing_reference_active",
@@ -326,8 +331,8 @@ function collectIntegrityFindings(
   );
   appendFinding(
     findings,
-    assembly.dangling.legacy_terminal
-      .filter((reference) => !reference.no_active_blocker_sentinel)
+    references
+      .filter((reference) => isTerminal(reference.holder_status))
       .map(formatDanglingReference),
     maxSampleSize,
     "missing_reference_terminal",
@@ -516,7 +521,11 @@ export function auditWorkspaceRelationshipGraph(
   const edgesByKind: Record<string, number> = {};
   for (const edge of assembly.graph.edges())
     edgesByKind[edge.kind] = (edgesByKind[edge.kind] ?? 0) + 1;
-  const findings = collectIntegrityFindings(assembly, maxSampleSize);
+  const findings = collectIntegrityFindings(
+    assembly,
+    isTerminal,
+    maxSampleSize,
+  );
   options.signal?.throwIfAborted();
   findings.push(
     ...collectOrderingFindings(

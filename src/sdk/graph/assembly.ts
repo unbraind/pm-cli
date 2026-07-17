@@ -96,7 +96,7 @@ export function collectDanglingDependencyReferences(
       return;
     }
     const row: DanglingDependencyReference = {
-      holder_id: item.id,
+      holder_id: item.id.trim(),
       target_id: normalized,
       kind,
       source,
@@ -217,7 +217,7 @@ export function assembleWorkspaceRelationshipGraph(
       }];
     });
     return {
-      id: item.id,
+      id: item.id.trim(),
       ...(parent ? { parent: canonicalIds.get(parent.toLowerCase()) ?? parent } : {}),
       ...(blocker ? { blocked_by: canonicalIds.get(blocker.toLowerCase()) ?? blocker } : {}),
       dependencies,
@@ -229,7 +229,11 @@ export function assembleWorkspaceRelationshipGraph(
       ...missingIds.map((id) => ({ id })),
     ]),
     details: [
-      ...items.map((item) => ({ id: item.id, title: item.title, status: item.status })),
+      ...items.map((item) => ({
+        id: item.id.trim(),
+        title: item.title,
+        status: item.status,
+      })),
       ...missingIds.map((id) => ({ id, title: `[missing] ${id}`, status: "missing" })),
     ],
     missingIdSet: new Set(missingIds.map((id) => id.toLowerCase())),
