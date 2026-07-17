@@ -2,12 +2,11 @@ id: pm-6x7o
 title: "Relationship governance and completeness audit: semantic edge validation, graph coverage profiles, isolates, stale links, and remediation plans"
 description: "Add policy-aware graph quality checks and machine-executable remediation planning without assuming that every root, isolate, or sparse item is defective."
 type: Feature
-status: in_progress
+status: open
 priority: 1
 tags[6]: "area:governance","area:graph",audit,data-quality,relationships,validation
 created_at: "2026-07-13T21:59:02.798Z"
-updated_at: "2026-07-17T20:01:08.970Z"
-assignee: maintainer-agent
+updated_at: "2026-07-17T21:31:56.640Z"
 author: codex-root
 estimated_minutes: 480
 acceptance_criteria: "Audits validate registered kinds, endpoints, direction and inverse rules, payload schema, cardinality, canonical aliases, duplicate identity, provenance, and snapshot consistency; Cycle checks operate only over declared order-bearing kinds and remain separate from associative strongly connected component analysis; Coverage profiles vary by item type, lifecycle state, project profile, age, and role; roots, archives, decisions, reminders, and scratch work can be explicitly valid isolates; Reports include counts, rates, severity, deterministic bounded samples, cursors, change since baseline, and machine-readable issue and remediation codes; Dry-run plans propose exact add, remove, retype, supersede, waive, or investigate operations with confidence and source evidence; no auto-fix invents an edge; Active and terminal remediation are separated; closed-item changes require dedicated changelog-safe batches and immutable audit history; Health, validate, stats, aggregate, and package audit surfaces reuse one SDK policy and finding contract with token-efficient default output"

@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: agent-ux,"area:sdk",contracts,mcp
 created_at: "2026-07-17T20:00:29.397Z"
-updated_at: "2026-07-17T20:00:38.861Z"
+updated_at: "2026-07-17T21:31:25.688Z"
 author: maintainer-agent
 acceptance_criteria: tools/call surfaces a warning (matching the pm-qxwu top-level mechanism) for every options key absent from the invoked action's contract; contract tables stay the single source of truth; regression test covers a mutation-shaped key on a read tool
 parent: pm-96h7
@@ -15,4 +15,6 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-qxwu,related,"2026-07-17T20:00:29.397Z",null,null
   pm-xwah,related,"2026-07-17T20:00:29.397Z",null,null
+notes[1]{created_at,author,text}:
+  "2026-07-17T21:31:25.688Z",maintainer-agent,"Origin context preserved: discovered during PR #580 when a test assumed pm_deps options.dep mutates. The pm-qxwu top-level warning mechanism (TOOL_DECLARED_KEYS at tools/call) is the intended pattern to extend one level into options objects using the per-action optional lists in tool-schema.ts as the contract source."
 body: ""
