@@ -13,6 +13,7 @@ import {
   RelationshipGraph,
   type RelationshipEdge,
   type RelationshipKindDefinition,
+  type RelationshipNeighborEdge,
   type RelationshipQueryResult,
   type RelationshipTraversalDirection,
 } from "../relationships.js";
@@ -96,6 +97,8 @@ export interface GraphDominatorOptions {
   kinds?: readonly string[];
   /** Traversal direction relative to each visited node; defaults to "outgoing". */
   direction?: RelationshipTraversalDirection;
+  /** Maximum reachability depth from the root as a non-negative integer. */
+  maxDepth?: number;
   /** Abort signal checked once per processed node. */
   signal?: AbortSignal;
 }
@@ -477,6 +480,54 @@ interface ReachableSubgraph {
   predecessors: Map<string, Set<string>>;
   /** Candidate edges inspected while indexing. */
   inspectedEdges: number;
+  /** Whether the depth bound excluded reachable nodes. */
+  truncated: boolean;
+}
+
+/** Mutable frontier state threaded through bounded reachability expansion. */
+interface ReachabilityState {
+  /** Nodes already discovered. */
+  seen: Set<string>;
+  /** Pending breadth-first nodes and their depths. */
+  queue: { id: string; depth: number }[];
+  /** Reachable predecessor sets per discovered node. */
+  predecessors: Map<string, Set<string>>;
+  /** Whether the depth bound excluded reachable nodes. */
+  truncated: boolean;
+}
+
+/** Expand one node's neighbor rows into successors, predecessors, and frontier work. */
+function expandReachableNode(
+  id: string,
+  depth: number,
+  rows: readonly RelationshipNeighborEdge[],
+  maxDepth: number,
+  state: ReachabilityState,
+): string[] {
+  const nextSet = new Set<string>();
+  const nexts: string[] = [];
+  for (const row of rows) {
+    if (row.id === id || nextSet.has(row.id)) continue;
+    if (!state.seen.has(row.id)) {
+      // A depth-boundary node keeps its edges to already-indexed nodes but
+      // may not discover new ones; excluded discoveries mark truncation.
+      if (depth >= maxDepth) {
+        state.truncated = true;
+        continue;
+      }
+      state.seen.add(row.id);
+      state.queue.push({ id: row.id, depth: depth + 1 });
+    }
+    nextSet.add(row.id);
+    nexts.push(row.id);
+    let incoming = state.predecessors.get(row.id);
+    if (incoming === undefined) {
+      incoming = new Set();
+      state.predecessors.set(row.id, incoming);
+    }
+    incoming.add(id);
+  }
+  return nexts;
 }
 
 /** Index the bounded reachable subgraph used by dominator analysis. */
@@ -486,41 +537,34 @@ function indexReachableSubgraph(
   options: GraphDominatorOptions,
 ): ReachableSubgraph {
   const direction = options.direction ?? "outgoing";
+  const maxDepth = options.maxDepth ?? Number.POSITIVE_INFINITY;
   const order: string[] = [];
   const successors = new Map<string, string[]>();
-  const predecessors = new Map<string, Set<string>>();
-  const seen = new Set([root]);
-  const queue = [root];
+  const state: ReachabilityState = {
+    seen: new Set([root]),
+    queue: [{ id: root, depth: 0 }],
+    predecessors: new Map(),
+    truncated: false,
+  };
   let inspectedEdges = 0;
-  for (let index = 0; index < queue.length; index += 1) {
+  for (let index = 0; index < state.queue.length; index += 1) {
     options.signal?.throwIfAborted();
-    const id = queue[index]!;
+    const { id, depth } = state.queue[index]!;
     order.push(id);
     const rows = graph.neighborEdges(id, {
       direction,
       ...(options.kinds === undefined ? {} : { kinds: options.kinds }),
     });
     inspectedEdges += rows.meta.inspectedEdges;
-    const nextSet = new Set<string>();
-    const nexts: string[] = [];
-    for (const row of rows.value) {
-      if (row.id === id || nextSet.has(row.id)) continue;
-      nextSet.add(row.id);
-      nexts.push(row.id);
-      let incoming = predecessors.get(row.id);
-      if (incoming === undefined) {
-        incoming = new Set();
-        predecessors.set(row.id, incoming);
-      }
-      incoming.add(id);
-      if (!seen.has(row.id)) {
-        seen.add(row.id);
-        queue.push(row.id);
-      }
-    }
-    successors.set(id, nexts);
+    successors.set(id, expandReachableNode(id, depth, rows.value, maxDepth, state));
   }
-  return { order, successors, predecessors, inspectedEdges };
+  return {
+    order,
+    successors,
+    predecessors: state.predecessors,
+    inspectedEdges,
+    truncated: state.truncated,
+  };
 }
 
 /** Compute the deterministic reverse postorder of one reachable subgraph. */
@@ -590,9 +634,9 @@ function solveImmediateDominators(
   const idom = new Map<string, string>([[root, root]]);
   let changed = true;
   while (changed) {
-    signal?.throwIfAborted();
     changed = false;
     for (const id of order) {
+      signal?.throwIfAborted();
       if (id === root) continue;
       // Every non-root node in the order was discovered through at least one
       // predecessor, so the set is always present.
@@ -615,7 +659,8 @@ function solveImmediateDominators(
  * subgraph using the Cooper–Harvey–Kennedy fixed-point. A node dominates the
  * work that every path from the root must pass through it to reach, so rows
  * with a positive `dominatedCount` are the structural bottlenecks of the
- * root's blast radius. Rows sort by gating weight, then id.
+ * root's blast radius. Rows sort by gating weight, then id; `meta.truncated`
+ * reports when the `maxDepth` bound excluded reachable nodes.
  */
 export function computeRelationshipDominators(
   graph: RelationshipGraph,
@@ -624,6 +669,11 @@ export function computeRelationshipDominators(
 ): RelationshipQueryResult<RelationshipDominatorAnalysis> {
   if (!graph.hasNode(root))
     throw new TypeError(`Relationship node not found: ${root}`);
+  if (
+    options.maxDepth !== undefined &&
+    (!Number.isInteger(options.maxDepth) || options.maxDepth < 0)
+  )
+    throw new TypeError(`Invalid maxDepth bound: ${String(options.maxDepth)}`);
   const subgraph = indexReachableSubgraph(graph, root, options);
   const order = reversePostorder(subgraph, root);
   const ordinal = new Map(order.map((id, index) => [id, index]));
@@ -658,7 +708,7 @@ export function computeRelationshipDominators(
     meta: {
       visitedNodes: subgraph.order.length,
       inspectedEdges: subgraph.inspectedEdges,
-      truncated: false,
+      truncated: subgraph.truncated,
     },
   };
 }

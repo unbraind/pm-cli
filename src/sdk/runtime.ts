@@ -156,6 +156,7 @@ import {
   runGraph,
   type GraphCommandOptions,
   type GraphResult,
+  type GraphSubcommand,
 } from "./graph/run.js";
 import { runFiles, runFilesDiscover } from "./files.js";
 import type { ContextOptions, ContextResult } from "../cli/commands/context.js";
@@ -825,7 +826,7 @@ export class PmClient {
 
   /** Run bounded workspace graph traversal, analytics, or governance-audit queries. */
   graph(
-    subcommand: string,
+    subcommand: GraphSubcommand,
     ids: { id?: string; target?: string } = {},
     options: GraphCommandOptions = {},
   ): Promise<GraphResult> {
@@ -1634,7 +1635,7 @@ export function deps(
 
 /** Run bounded workspace graph queries without constructing a reusable client. */
 export function graph(
-  subcommand: string,
+  subcommand: GraphSubcommand,
   ids: { id?: string; target?: string } = {},
   options: GraphCommandOptions = {},
   clientOptions: PmClientOptions = {},

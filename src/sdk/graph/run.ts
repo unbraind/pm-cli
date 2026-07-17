@@ -269,7 +269,7 @@ export interface GraphCommunitiesResult {
   iterations: number;
   /** Whether labels stabilized before the iteration bound. */
   converged: boolean;
-  /** Whether the sample bound omitted community rows. */
+  /** Whether the iteration bound stopped propagation early or the sample bound omitted rows. */
   truncated: boolean;
   /** Query cost metadata. */
   cost: GraphQueryCost;
@@ -325,7 +325,7 @@ export interface GraphDominatorsResult {
   reachable_count: number;
   /** Total nodes gating at least one other reachable node. */
   bottleneck_count: number;
-  /** Whether the row limit omitted further bottleneck rows. */
+  /** Whether the depth bound cut reachability or the row limit omitted bottleneck rows. */
   truncated: boolean;
   /** Query cost metadata. */
   cost: GraphQueryCost;
@@ -640,7 +640,7 @@ function runGraphCommunities(
     largest_community_size: analysis.communities[0]?.size ?? 0,
     iterations: analysis.iterations,
     converged: analysis.converged,
-    truncated: analysis.communities.length > sampleLimit,
+    truncated: !analysis.converged || analysis.communities.length > sampleLimit,
     cost: {
       visited_nodes: result.meta.visitedNodes,
       inspected_edges: result.meta.inspectedEdges,
@@ -702,6 +702,9 @@ function runGraphDominators(
     {
       direction: invocation.direction,
       ...(invocation.kinds === undefined ? {} : { kinds: invocation.kinds }),
+      ...(invocation.maxDepth === undefined
+        ? {}
+        : { maxDepth: invocation.maxDepth }),
     },
   );
   const bottlenecks = result.value.rows.filter(
@@ -713,7 +716,7 @@ function runGraphDominators(
     direction: invocation.direction,
     reachable_count: result.value.reachableCount,
     bottleneck_count: bottlenecks.length,
-    truncated: bottlenecks.length > limit,
+    truncated: result.meta.truncated || bottlenecks.length > limit,
     cost: {
       visited_nodes: result.meta.visitedNodes,
       inspected_edges: result.meta.inspectedEdges,

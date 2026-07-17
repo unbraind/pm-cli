@@ -90,25 +90,32 @@ describe("detectRelationshipCommunities", () => {
   });
 
   it("weights parallel edges when breaking label ties", () => {
-    // pm-mid has one edge to pm-solo and two parallel edges to pm-pair, so
-    // the doubled neighbor label wins over the lexicographically smaller one.
+    // pm-mid bridges two anchored pairs: one edge to pm-a1 and two parallel
+    // edges to pm-z1. Unweighted adjacency would tie and send pm-mid to the
+    // lexicographically smaller a-side; edge multiplicity must pull it to
+    // the z-side, so the resulting partition itself proves the weighting.
     const graph = RelationshipGraph.fromItems([
+      { id: "pm-a1", dependencies: [dep("pm-a2", "related")] },
+      { id: "pm-a2" },
       {
         id: "pm-mid",
         dependencies: [
-          dep("pm-a-solo", "related"),
-          dep("pm-z-pair", "related"),
-          dep("pm-z-pair", "blocked_by"),
+          dep("pm-a1", "related"),
+          dep("pm-z1", "related"),
+          dep("pm-z1", "blocked_by"),
         ],
       },
-      { id: "pm-a-solo" },
-      { id: "pm-z-pair" },
+      { id: "pm-z1", dependencies: [dep("pm-z2", "related")] },
+      { id: "pm-z2" },
     ]);
     const result = detectRelationshipCommunities(graph);
-    const labels = result.value.communities.find((community) =>
-      community.members.includes("pm-mid"),
-    );
-    expect(labels?.members).toContain("pm-z-pair");
+    expect(result.value.converged).toBe(true);
+    expect(
+      result.value.communities.map((community) => community.members),
+    ).toEqual([
+      ["pm-mid", "pm-z1", "pm-z2"],
+      ["pm-a1", "pm-a2"],
+    ]);
   });
 
   it("reports non-convergence as truncation when the iteration bound stops the sweep", () => {
@@ -290,6 +297,31 @@ describe("computeRelationshipDominators", () => {
       { id: "pm-b", idom: "pm-root", dominatedCount: 0 },
       { id: "pm-deep", idom: "pm-gate", dominatedCount: 0 },
     ]);
+
+    const shallow = computeRelationshipDominators(graph, "pm-root", {
+      direction: "outgoing",
+      maxDepth: 1,
+    });
+    expect(shallow.value.reachableCount).toBe(3);
+    expect(shallow.meta.truncated).toBe(true);
+    expect(shallow.value.rows).toEqual([
+      { id: "pm-a", idom: "pm-root", dominatedCount: 0 },
+      { id: "pm-b", idom: "pm-root", dominatedCount: 0 },
+    ]);
+
+    const rootOnly = computeRelationshipDominators(graph, "pm-root", {
+      direction: "outgoing",
+      maxDepth: 0,
+    });
+    expect(rootOnly.value.reachableCount).toBe(1);
+    expect(rootOnly.value.rows).toEqual([]);
+    expect(rootOnly.meta.truncated).toBe(true);
+    expect(() =>
+      computeRelationshipDominators(graph, "pm-root", { maxDepth: -1 }),
+    ).toThrow(/Invalid maxDepth bound/);
+    expect(() =>
+      computeRelationshipDominators(graph, "pm-root", { maxDepth: 1.5 }),
+    ).toThrow(/Invalid maxDepth bound/);
   });
 
   it("converges on cycles and honors direction filters", () => {

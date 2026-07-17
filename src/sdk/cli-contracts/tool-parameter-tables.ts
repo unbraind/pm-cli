@@ -1417,7 +1417,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   after: {
     description:
-      "Resume a graph traversal after this previously returned node id.",
+      "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
     examples: ["pm-x1y2"],
   },
   maxPaths: {
@@ -1564,6 +1564,11 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     maxDepth: {
       description: "Maximum graph traversal depth (non-negative integer).",
       examples: [2, "4"],
+    },
+    after: {
+      description:
+        "Resume a hierarchy/ordering graph traversal after this previously returned node id.",
+      examples: ["pm-x1y2"],
     },
     limit: {
       description:

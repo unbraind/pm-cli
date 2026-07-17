@@ -530,6 +530,18 @@ describe("runGraph", () => {
       )) as GraphDominatorsResult;
       expect(summary.bottlenecks).toBeUndefined();
       expect(summary.reachable_count).toBeGreaterThan(0);
+
+      // Depth bound cuts the placeholder endpoint and reports truncation.
+      const shallow = (await runGraph(
+        "dominators",
+        follower,
+        undefined,
+        { direction: "outgoing", kind: "blocked_by", maxDepth: "1" },
+        { path: context.pmPath },
+      )) as GraphDominatorsResult;
+      expect(shallow.reachable_count).toBe(2);
+      expect(shallow.truncated).toBe(true);
+      expect(shallow.bottlenecks).toEqual([]);
     });
   });
 
