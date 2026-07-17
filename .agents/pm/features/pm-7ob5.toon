@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[7]: algorithms,"area:context","area:graph",context-management,performance,planning,scale
 created_at: "2026-07-13T21:58:35.029Z"
-updated_at: "2026-07-17T22:59:11.458Z"
+updated_at: "2026-07-17T23:53:01.514Z"
 assignee: maintainer-agent
 author: codex-root
 estimated_minutes: 900
@@ -27,7 +27,7 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-atfm,related,"2026-07-13T21:58:35.029Z",null,null
   pm-g2zz,related,"2026-07-13T21:58:35.029Z",null,null
   pm-ju83,blocked_by,"2026-07-13T21:58:35.029Z",null,null
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-07-13T21:58:35.029Z",codex-root,"Duplicate check 2026-07-13: context-engine items define relevance assembly and evaluation but no dedicated typed-graph analytics portfolio covering project planning,impact,community,and incremental temporal algorithms; this item supplies those graph primitives without duplicating ranking policy."
   "2026-07-14T09:43:36.815Z",codex-gpt5,"Implementation start 2026-07-14: deliver the first exact deterministic analytics tranche over registered relationship semantics, including execution-order and impact/knowledge signals with provenance rather than opaque scores."
   "2026-07-14T10:19:33.632Z",codex-gpt5,"Implementation evidence: added exact deterministic ordering analytics with Kahn layers, frontier, depth, topological order, critical path, and SCC cycle reporting; bounded impact with shortest explanation paths; weak/strong knowledge components, orphans, hubs; and temporal snapshot comparison. Associative relationships are excluded from execution blockers through registry precedence rather than hard-coded kind names."
@@ -38,18 +38,23 @@ comments[10]{created_at,author,text}:
   "2026-07-17T19:21:59.493Z",maintainer-agent,"Implementation progress: execution/knowledge/impact analytics are now operable from the workspace surface via pm graph analyze and pm graph impact (CLI + pm_graph MCP + PmClient.graph). analyze returns node/edge counts plus execution (acyclic, topological layers, prerequisite frontier, critical path, genuine ordering cycles) and knowledge (components, orphans, degree hubs) summaries with a shared bounded sample limit; impact returns discovery-ordered affected rows with distance and an explaining path, honoring direction/kind/depth/limit bounds and truncation metadata. Regression spec exercises both envelopes, summary suppression, and bound enforcement on a live temp workspace."
   "2026-07-17T20:19:41.275Z",maintainer-agent,"Analytics tranche verification (commit a3b47c97): detectRelationshipCommunities, findRedundantRelationshipEdges, and computeRelationshipDominators shipped with exact 100/100/100/100 coverage inside the 5,842-test full gate. Live-workspace sanity: communities converged in 5 sweeps over ~3.1k edges (149 clusters, largest 134), redundancy surfaced real blocked_by/blocks shortcut triples with witnesses, dominators over pm-usfg ranked pm-8a2s as the 91-item gate. Remaining canonical scope on this feature: incremental cached analytics only."
   "2026-07-17T21:31:25.092Z",maintainer-agent,"PR #580 MERGED (6b8ee9e4): communities/redundancy/dominators analytics are live on the public SDK and pm graph surface. Post-review upgrades: computeRelationshipDominators gained a maxDepth reachability bound with depth-truncation metadata, communities envelopes report iteration-bound non-convergence through truncated, and the redundancy/dominator index scans are Set-deduplicated. Feature stays open for incremental cached analytics only."
-notes[2]{created_at,author,text}:
+  "2026-07-17T23:52:43.910Z",maintainer-agent,"Implementation progress (graph-platform lane 2026-07-18): the recorded remaining scope (incremental cached analytics) shipped its first tranche — new src/sdk/graph/cache.ts WorkspaceGraphCache: SHA-256 fingerprint over every relationship-relevant item field (id/title/status/terminal-classification/parent/blocker/deps) keys reuse of the assembled workspace graph plus bounded memoization of deterministic query results (structuredClone isolation both directions, LRU eviction). runGraph and deps --format context share the cache; every pm graph envelope now carries cache {fingerprint, assembly, result} hit/miss observability. Live MCP-session proof: first audit miss/miss, repeat hit/hit, invalidation on any relationship-relevant mutation. Remaining canonical scope: true delta-incremental maintenance (label/index updates without full recompute), temporal/snapshot-comparison variants, and approximation-bounded algorithms per the AC."
+notes[3]{created_at,author,text}:
   "2026-07-14T10:19:36.348Z",codex-gpt5,"Remaining canonical scope after this PR: dominators, community algorithms beyond exact components, redundancy detection, incremental cached analytics, and CLI/MCP projections; keep feature open."
   "2026-07-17T20:01:05.109Z",maintainer-agent,"Implementation progress (graph-query-surface lane, 2026-07-17): three of this feature's recorded remaining-scope analytics shipped as public SDK primitives in new src/sdk/graph/analytics.ts — detectRelationshipCommunities (deterministic asynchronous label propagation, sorted sweeps, lexicographic tie-break, maxIterations/minSize bounds, convergence reporting), findRedundantRelationshipEdges (transitive-reduction scan joining each directed ordering/hierarchy kind with its inverse spelling in semantic orientation, per-edge bounded BFS witness paths), computeRelationshipDominators (Cooper-Harvey-Kennedy immediate dominators over the root's reachable subgraph with per-node gating weights). Exposed as pm graph communities/redundancy/dominators + pm_graph MCP + PmClient.graph with counts-first envelopes, sample bounds, and cost metadata. Remaining canonical scope: incremental cached analytics only (dominators/communities/redundancy now shipped)."
+  "2026-07-17T23:53:01.513Z",maintainer-agent,"Test-robustness finding (2026-07-18, fixed in-lane): the PR#580 communities run-spec asserted one exact partition for the seeded 5-node chain, but deterministic label propagation sweeps nodes in sorted-id order and generated ids differ per run — on a path graph two stable partitions are reachable ({5} or contiguous {3,2}), so the spec flaked (~1/5 runs). Fixed by asserting the stable invariants instead: community_count in [2,3], largest in {3,5}, clustered-membership total 7, chain-member coverage. Durable rule: LPA on path-like fixtures is sweep-order dependent; specs over generated ids must assert invariants, not one of several valid stable labelings (or use fixed-id RelationshipGraph fixtures like analytics.spec)."
 learnings[1]{created_at,author,text}:
   "2026-07-14T10:02:21.487Z",codex-gpt5,Execution analytics need an explicit precedence direction in each ordering-kind definition. An ordering boolean alone cannot distinguish source-blocks-target from source-blocked-by-target without guessing from labels.
-files[5]{path,scope,note}:
+files[7]{path,scope,note}:
   src/sdk/graph/analytics.ts,project,PR#580 shipped structural analytics (communities/redundancy/dominators) — 7ob5's merged tranche
+  src/sdk/graph/cache.ts,project,"fingerprint-keyed incremental analytics cache: assembly reuse + memoized query results with hit/miss observability"
   src/sdk/graph/run.ts,project,"pm graph impact/analyze subcommands: CLI/MCP adapter over execution,knowledge,and blast-radius analytics"
   src/sdk/relationship-analytics.ts,project,"exact execution,impact,knowledge,and temporal graph analytics"
   tests/unit/sdk/graph/analytics.spec.ts,project,covering spec for PR#580 structural analytics
+  tests/unit/sdk/graph/cache.spec.ts,project,fingerprint determinism + cache reuse/eviction/clone-isolation spec
   tests/unit/sdk/graph/run-defensive.spec.ts,project,defensive-path spec for sdk/graph/run.ts (PR#580)
-tests[1]{command,scope,timeout_seconds}:
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/graph/cache.spec.ts tests/unit/sdk/graph/run.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/sdk/relationships.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,project,240
 docs[1]{path,scope,note}:
   docs/RELATIONSHIP_GRAPH.md,project,"public event,snapshot,analytics,and graph-context contracts"

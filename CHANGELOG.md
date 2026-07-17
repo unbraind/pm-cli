@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- MCP nested options accept unknown keys silently (pm_deps options.dep no-ops) — extend pm-qxwu top-level warning into options objects ([pm-upi0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-upi0.toon))
 - Sentry PM-CLI-2C: classify Node MaxListeners runtime warnings as warning-level diagnostics ([pm-qpfv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qpfv.toon))
 - GH-578: align pm context and pm list-blocked with edge-aware pm next semantics ([pm-uxkf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-uxkf.toon))
 - pm deps context format reports missing_count without enumerating missing references and disagrees with tree format ([pm-8kch](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8kch.toon))
