@@ -1,0 +1,18 @@
+id: pm-upi0
+title: MCP nested options accept unknown keys silently (pm_deps options.dep no-ops) — extend pm-qxwu top-level warning into options objects
+description: "pm_deps with options.dep=id=...,kind=... returns success without applying or flagging anything: deps is a read projection whose options schema has no dep key, and unknown nested option keys are dropped before dispatch. The pm-qxwu warning mechanism only inspects top-level tool args, so mutation-shaped options silently no-op inside any narrow tool whose contract does not list them. Agents then build on state they never created (exactly how the PR#580-lane impact regression was born in mcp-dynamic-package-actions.spec)."
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,"area:sdk",contracts,mcp
+created_at: "2026-07-17T20:00:29.397Z"
+updated_at: "2026-07-17T20:00:38.861Z"
+author: maintainer-agent
+acceptance_criteria: tools/call surfaces a warning (matching the pm-qxwu top-level mechanism) for every options key absent from the invoked action's contract; contract tables stay the single source of truth; regression test covers a mutation-shaped key on a read tool
+parent: pm-96h7
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-qxwu,related,"2026-07-17T20:00:29.397Z",null,null
+  pm-xwah,related,"2026-07-17T20:00:29.397Z",null,null
+body: ""

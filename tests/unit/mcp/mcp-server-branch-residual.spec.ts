@@ -18,6 +18,7 @@ import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 const COMMANDS_MODULE = "../../../src/cli/commands/index.js";
 const CONFIG_SDK_MODULE = "../../../src/sdk/config.js";
 const DEPENDENCIES_SDK_MODULE = "../../../src/sdk/dependencies.js";
+const GRAPH_RUN_SDK_MODULE = "../../../src/sdk/graph/run.js";
 const DOCS_SDK_MODULE = "../../../src/sdk/docs.js";
 const FILES_SDK_MODULE = "../../../src/sdk/files.js";
 const HISTORY_COMPACT_SDK_MODULE = "../../../src/sdk/history-compact.js";
@@ -97,6 +98,7 @@ function buildCommandMocks() {
     runUpdateMany: vi.fn(async () => ({ action: "update-many" })),
     runCloseMany: vi.fn(async () => ({ action: "close-many" })),
     runDeps: vi.fn(async () => ({ action: "deps" })),
+    runGraph: vi.fn(async () => ({ action: "graph" })),
     runDocs: vi.fn(async () => ({ action: "docs" })),
     runTest: vi.fn(async () => ({ action: "test" })),
     runDelete: vi.fn(async () => ({ action: "delete" })),
@@ -120,6 +122,12 @@ async function importServerWithCommandMocks(
     };
   });
   vi.doMock(DEPENDENCIES_SDK_MODULE, () => ({ runDeps: commandMocks.runDeps }));
+  vi.doMock(GRAPH_RUN_SDK_MODULE, async () => {
+    const actual = await vi.importActual<
+      typeof import("../../../src/sdk/graph/run.js")
+    >(GRAPH_RUN_SDK_MODULE);
+    return { ...actual, runGraph: commandMocks.runGraph };
+  });
   vi.doMock(CONFIG_SDK_MODULE, () => ({ runConfig: commandMocks.runConfig }));
   vi.doMock(DOCS_SDK_MODULE, () => ({ runDocs: commandMocks.runDocs }));
   vi.doMock(FILES_SDK_MODULE, () => ({
@@ -327,6 +335,43 @@ describe("mcp server branch residual coverage", () => {
       options: { id: "pm-12", add: "node test.js" },
     });
     await runAction({ action: "deps", options: { id: "pm-13" } });
+    await runAction({ action: "graph", subcommand: "analyze", options: {} });
+    expect(commandMocks.runGraph).toHaveBeenLastCalledWith(
+      "analyze",
+      undefined,
+      undefined,
+      expect.objectContaining({ summary: false }),
+      expect.objectContaining({ json: true }),
+    );
+    await runAction({
+      action: "graph",
+      id: "pm-13a",
+      options: { subcommand: "impact", direction: "incoming", limit: 3 },
+    });
+    expect(commandMocks.runGraph).toHaveBeenLastCalledWith(
+      "impact",
+      "pm-13a",
+      undefined,
+      expect.objectContaining({ direction: "incoming", limit: 3 }),
+      expect.anything(),
+    );
+    await runAction({
+      action: "graph",
+      options: {
+        subcommand: "paths",
+        id: "pm-13b",
+        target: "pm-13c",
+        kind: "blocked_by",
+        maxPaths: "2",
+      },
+    });
+    expect(commandMocks.runGraph).toHaveBeenLastCalledWith(
+      "paths",
+      "pm-13b",
+      "pm-13c",
+      expect.objectContaining({ kind: "blocked_by", maxPaths: "2" }),
+      expect.anything(),
+    );
     await runAction({ action: "delete", options: { id: "pm-14" } });
 
     await runAction({ action: "telemetry", limit: 12, options: {} });

@@ -21,6 +21,7 @@ vi.mock("../../../src/cli/commands/next.js", () => ({
   renderNextMarkdown: vi.fn(),
 }));
 vi.mock("../../../src/cli/commands/list.js", () => ({ runList: vi.fn() }));
+vi.mock("../../../src/cli/commands/graph.js", () => ({ runGraph: vi.fn() }));
 
 vi.mock("../../../src/cli/registration-helpers.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../src/cli/registration-helpers.js")>();
@@ -44,7 +45,8 @@ import { runAggregate } from "../../../src/cli/commands/aggregate.js";
 import { renderContextMarkdown, resolveContextOutputFormat, runContext } from "../../../src/cli/commands/context.js";
 import { renderNextMarkdown, resolveNextOutputFormat, runNext } from "../../../src/cli/commands/next.js";
 import { runList } from "../../../src/cli/commands/list.js";
-import { printActivityJsonStream, printListJsonStream, printResult, writeStdout } from "../../../src/cli/registration-helpers.js";
+import { runGraph } from "../../../src/cli/commands/graph.js";
+import { printActivityJsonStream, printError, printListJsonStream, printResult, writeStdout } from "../../../src/cli/registration-helpers.js";
 
 let tmpRoot: string;
 
@@ -104,6 +106,12 @@ beforeEach(() => {
   vi.mocked(runNext).mockResolvedValue({ summary: {}, recommended: null } as never);
   vi.mocked(resolveNextOutputFormat).mockReturnValue("json" as never);
   vi.mocked(renderNextMarkdown).mockReturnValue("# Next" as never);
+  vi.mocked(runGraph).mockResolvedValue({
+    subcommand: "analyze",
+    node_count: 0,
+    edge_count: 0,
+    sample_limit: 10,
+  } as never);
   vi.mocked(runList).mockResolvedValue({
     items: [
       { id: "pm-1", status: "open", type: "Task", title: "First" },
@@ -365,6 +373,73 @@ describe("register-list-query activity streaming", () => {
   it("emits a JSON stream when --stream and --json are set", async () => {
     await runProfiled("activity", "--json", "--stream", "rows");
     expect(vi.mocked(printActivityJsonStream)).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("register-list-query graph action", () => {
+  it("maps repeatable and scalar graph options onto the runner contract", async () => {
+    await runRaw(
+      "graph",
+      "successors",
+      "pm-root",
+      "--kind",
+      "blocked_by",
+      "--kind",
+      "parent",
+      "--max-depth",
+      "3",
+      "--limit",
+      "5",
+      "--after",
+      "pm-cursor",
+      "--direction",
+      "outgoing",
+      "--summary",
+    );
+    expect(vi.mocked(runGraph)).toHaveBeenCalledWith(
+      "successors",
+      "pm-root",
+      undefined,
+      expect.objectContaining({
+        kind: ["blocked_by", "parent"],
+        maxDepth: "3",
+        limit: "5",
+        after: "pm-cursor",
+        direction: "outgoing",
+        summary: true,
+      }),
+      expect.objectContaining({ path: tmpRoot }),
+    );
+    expect(vi.mocked(printResult)).toHaveBeenCalledTimes(1);
+  });
+
+  it("passes paths positionals plus audit bounds and profiles timing", async () => {
+    await runProfiled(
+      "graph",
+      "paths",
+      "pm-a",
+      "pm-b",
+      "--max-paths",
+      "4",
+      "--sample",
+      "2",
+      "--exempt-isolate",
+      "pm-x,pm-y",
+    );
+    expect(vi.mocked(runGraph)).toHaveBeenCalledWith(
+      "paths",
+      "pm-a",
+      "pm-b",
+      expect.objectContaining({
+        maxPaths: "4",
+        sample: "2",
+        exemptIsolate: ["pm-x,pm-y"],
+        summary: false,
+      }),
+      expect.anything(),
+    );
+    const profiled = lastCall<string>(vi.mocked(printError) as never, 0);
+    expect(profiled).toMatch(/profile:command=graph took_ms=\d+/);
   });
 });
 

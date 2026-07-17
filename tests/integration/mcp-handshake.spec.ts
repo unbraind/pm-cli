@@ -17,7 +17,10 @@ import {
   createEmptyExtensionServiceRegistry,
 } from "../../src/core/extensions/extension-registries.js";
 import { createSerialQueue } from "../../src/core/shared/serial-queue.js";
-import { PM_TOOL_ACTIONS } from "../../src/sdk/cli-contracts/enum-contracts.js";
+import {
+  GRAPH_SUBCOMMAND_VALUES,
+  PM_TOOL_ACTIONS,
+} from "../../src/sdk/cli-contracts/enum-contracts.js";
 import { assertPmContextDepthProjection } from "../helpers/mcp-context-depth.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -48,6 +51,7 @@ const EXPECTED_TOOL_NAMES = [
   "pm_notes",
   "pm_learnings",
   "pm_deps",
+  "pm_graph",
   "pm_test",
   "pm_validate",
   "pm_health",
@@ -107,7 +111,7 @@ describe("MCP protocol handshake", () => {
     expect(result.capabilities).toMatchObject({ tools: {} });
   });
 
-  it("tools/list returns exactly the 28 expected tools including the new narrow tools", async () => {
+  it("tools/list returns exactly the 29 expected tools including the new narrow tools", async () => {
     const result = (await handleRequest({
       jsonrpc: "2.0",
       id: 2,
@@ -115,7 +119,7 @@ describe("MCP protocol handshake", () => {
     })) as { tools?: Array<{ name?: string; description?: string; inputSchema?: unknown }> };
 
     const tools = result.tools ?? [];
-    expect(tools).toHaveLength(28);
+    expect(tools).toHaveLength(29);
 
     const names = tools.map((tool) => tool.name);
     expect(new Set(names)).toEqual(new Set(EXPECTED_TOOL_NAMES));
@@ -147,6 +151,19 @@ describe("MCP protocol handshake", () => {
     });
     expect(contracts.find((contract) => contract.name === "pm_create")?.required).toEqual(["options"]);
     expect(contracts.find((contract) => contract.name === "pm_health")?.required).toEqual([]);
+  });
+
+  it("keeps the pm_graph subcommand enum in lockstep with the shared contract", () => {
+    const target = TOOLS.find((tool) => tool.name === "pm_graph");
+    expect(target).toBeDefined();
+    const schema = target!.inputSchema as {
+      properties: { subcommand: { enum: string[] } };
+    };
+    // Regression for the pre-push Greptile P1: a hardcoded enum silently
+    // dropped new subcommands, making them unreachable over MCP transport.
+    expect(schema.properties.subcommand.enum).toEqual([
+      ...GRAPH_SUBCOMMAND_VALUES,
+    ]);
   });
 
   it("treats malformed required schema fields as optional in MCP contracts", () => {

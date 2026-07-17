@@ -8,6 +8,19 @@
  * `sdk/relationships` and is safe for CLI, MCP, extension, and non-PM callers.
  */
 export {
+  computeRelationshipDominators,
+  detectRelationshipCommunities,
+  findRedundantRelationshipEdges,
+  type GraphCommunityOptions,
+  type GraphDominatorOptions,
+  type GraphRedundancyOptions,
+  type RedundantRelationshipEdge,
+  type RelationshipCommunity,
+  type RelationshipCommunityAnalysis,
+  type RelationshipDominatorAnalysis,
+  type RelationshipDominatorRow,
+} from "./analytics.js";
+export {
   assembleWorkspaceRelationshipGraph,
   collectDanglingDependencyReferences,
   collectMissingDependencyTargetIds,
@@ -38,3 +51,27 @@ export {
   type GraphTraversalOptions,
   type RelationshipPath,
 } from "./traversal.js";
+export {
+  GRAPH_SUBCOMMAND_VALUES,
+  parseGraphSubcommand,
+  runGraph,
+  type GraphAnalyzeResult,
+  type GraphAuditResult,
+  type GraphCommandOptions,
+  type GraphCommunitiesResult,
+  type GraphCommunityRow,
+  type GraphDominatorRow,
+  type GraphDominatorsResult,
+  type GraphExecutionSummary,
+  type GraphImpactResult,
+  type GraphImpactRow,
+  type GraphKnowledgeSummary,
+  type GraphPathRow,
+  type GraphPathsResult,
+  type GraphQueryCost,
+  type GraphRedundancyResult,
+  type GraphRedundancyRow,
+  type GraphResult,
+  type GraphSubcommand,
+  type GraphTraversalResult,
+} from "./run.js";

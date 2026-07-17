@@ -361,6 +361,15 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
       { type: "array", items: { type: "string" } },
     ],
   },
+  after: { type: "string" },
+  maxPaths: { anyOf: [{ type: "string" }, { type: "integer", minimum: 1 }] },
+  sample: { anyOf: [{ type: "string" }, { type: "integer", minimum: 1 }] },
+  exemptIsolate: {
+    anyOf: [
+      { type: "string" },
+      { type: "array", items: { type: "string" } },
+    ],
+  },
   collapse: { type: "string", enum: ["none", "repeated"] },
   shell: { type: "string", enum: ["bash", "zsh", "fish"] },
   stdin: { type: "boolean" },
@@ -713,7 +722,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   subcommand: {
     description:
-      "Subcommand selector for schema, profile, and telemetry actions.",
+      "Subcommand selector for schema, profile, telemetry, and graph actions.",
   },
   name: {
     description:
@@ -1406,6 +1415,25 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
       "Registered relationship kinds narrowing deps --format context traversal (string, comma-separated, or array).",
     examples: ["blocked_by", ["parent", "related"]],
   },
+  after: {
+    description:
+      "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
+    examples: ["pm-x1y2"],
+  },
+  maxPaths: {
+    description: "Maximum enumerated paths for graph paths queries.",
+    examples: [5, "10"],
+  },
+  sample: {
+    description:
+      "Maximum evidence sample entries per graph audit finding.",
+    examples: [10, "25"],
+  },
+  exemptIsolate: {
+    description:
+      "Item ids the graph audit treats as explicitly valid isolates (string, comma-separated, or array).",
+    examples: ["pm-x1y2", ["pm-x1y2", "pm-a3b4"]],
+  },
   collapse: {
     description:
       'Dependency tree collapse mode for deps action ("none" or "repeated").',
@@ -1506,6 +1534,50 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
       description:
         "Profile name for show/apply/lint. Built-in profiles are agile, ops, and research; an active extension can contribute additional archetype names that resolve here too.",
       examples: ["agile", "ops", "research"],
+    },
+  },
+  graph: {
+    subcommand: {
+      description:
+        "Graph query selector: ancestors|descendants|predecessors|successors|paths|impact|analyze|audit|communities|redundancy|dominators. Traversals, paths, impact, and dominators require id; paths also requires target.",
+      examples: ["successors", "audit"],
+    },
+    id: {
+      description:
+        "Root item id for traversal, paths, impact, and dominators graph queries.",
+      examples: ["pm-x1y2"],
+    },
+    target: {
+      description: "Target item id for graph paths queries.",
+      examples: ["pm-a3b4"],
+    },
+    direction: {
+      description:
+        'Edge orientation for graph paths/impact/dominators queries ("outgoing", "incoming", or "both"; default "both").',
+      examples: ["incoming"],
+    },
+    kind: {
+      description:
+        "Registered relationship kinds narrowing the graph query (string, comma-separated, or array).",
+      examples: ["blocked_by", ["parent", "related"]],
+    },
+    maxDepth: {
+      description: "Maximum graph traversal depth (non-negative integer).",
+      examples: [2, "4"],
+    },
+    after: {
+      description:
+        "Resume a hierarchy/ordering graph traversal after this previously returned node id.",
+      examples: ["pm-x1y2"],
+    },
+    limit: {
+      description:
+        "Maximum returned rows per bounded graph collection (traversal ids, impact rows, analyze/communities samples, redundancy rows, dominator bottlenecks).",
+      examples: [10, "25"],
+    },
+    summary: {
+      description:
+        "When true, return counts-first graph envelopes without row collections.",
     },
   },
 };

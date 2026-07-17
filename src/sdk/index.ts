@@ -474,6 +474,7 @@ export {
   focus,
   gc,
   get,
+  graph,
   health,
   historyCompact,
   historyCompactBulk,

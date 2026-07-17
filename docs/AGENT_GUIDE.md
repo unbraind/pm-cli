@@ -137,6 +137,7 @@ pm release <item-id>
 | Agent plan read | `pm plan show <plan-id> --depth brief` (or `--fields id,title,steps_summary`) |
 | Materialize plan steps | `pm plan materialize <plan-id> --steps plan-step-002 --materialize-type Task` |
 | Dependencies | `pm deps <id> --format tree` |
+| Graph queries | `pm graph successors <id> --limit 20` (also `ancestors`, `paths`, `impact`, `analyze`, `audit`, `communities`, `redundancy`, `dominators`) |
 | Bulk update by id allowlist | `pm update-many --ids pm-a,pm-b --priority 1 --dry-run` (preview, then drop `--dry-run`) |
 | Audited bulk close (sprint closeout) | `pm close-many --filter-sprint <s> --reason "<text>" --dry-run` (full `pm close` semantics per item; `--rollback <id>` to undo) |
 | Local docs routing | `pm install guide-shell --project`, then `pm guide <topic>` |

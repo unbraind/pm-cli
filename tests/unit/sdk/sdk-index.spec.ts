@@ -97,6 +97,7 @@ import {
   readFileIfExists,
   readPmPackageManifest,
   release,
+  graph as graphQuery,
   readSettings,
   restore,
   resolvePmRoot,
@@ -1537,6 +1538,48 @@ console.log(JSON.stringify(payload));`,
       };
       expect(defaultAuthorPaused.release?.item).toMatchObject({ id: itemId, status: "open" });
       expect(defaultAuthorPaused.release?.item?.assignee).toBeUndefined();
+    });
+  });
+
+  it("runs bounded graph queries through PmClient.graph and the module-level helper", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const client = new PmClient({
+        pmRoot: pmPath,
+        cwd: path.dirname(pmPath),
+        author: "sdk-graph-test",
+        noExtensions: true,
+      });
+      const parent = (await client.create({
+        title: "SDK graph parent",
+        type: "Task",
+        status: "open",
+        createMode: "progressive",
+      })) as { item?: { id?: string } };
+      const parentId = parent.item?.id ?? "";
+      const child = (await client.create({
+        title: "SDK graph child",
+        type: "Task",
+        status: "open",
+        createMode: "progressive",
+        parent: parentId,
+      })) as { item?: { id?: string } };
+      const childId = child.item?.id ?? "";
+
+      const ancestors = (await client.graph("ancestors", { id: childId })) as {
+        subcommand?: string;
+        ids?: string[];
+      };
+      expect(ancestors.subcommand).toBe("ancestors");
+      expect(ancestors.ids).toEqual([parentId]);
+
+      const analyze = (await graphQuery(
+        "analyze",
+        {},
+        { summary: true },
+        { pmRoot: pmPath, cwd: path.dirname(pmPath), noExtensions: true },
+      )) as { subcommand?: string; node_count?: number };
+      expect(analyze.subcommand).toBe("analyze");
+      expect(analyze.node_count).toBeGreaterThanOrEqual(2);
     });
   });
 

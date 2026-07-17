@@ -28,6 +28,7 @@ const REQUIRED_TOOLS = [
   "pm_notes",
   "pm_learnings",
   "pm_deps",
+  "pm_graph",
   "pm_test",
   "pm_validate",
   "pm_health",

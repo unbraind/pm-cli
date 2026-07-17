@@ -22,6 +22,7 @@ import {
   CREATE_FLAG_CONTRACTS,
   DEPS_FLAG_CONTRACTS,
   EXTENSION_FLAG_CONTRACTS,
+  GRAPH_FLAG_CONTRACTS,
   GET_FLAG_CONTRACTS,
   GUIDE_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
@@ -94,6 +95,7 @@ const CALENDAR_FLAGS = toCompletionFlagString(CALENDAR_FLAG_CONTRACTS);
 const CONTEXT_FLAGS = toCompletionFlagString(CONTEXT_FLAG_CONTRACTS);
 const NEXT_FLAGS = toCompletionFlagString(NEXT_FLAG_CONTRACTS);
 const DEPS_FLAGS = toCompletionFlagString(DEPS_FLAG_CONTRACTS);
+const GRAPH_FLAGS = toCompletionFlagString(GRAPH_FLAG_CONTRACTS);
 const GUIDE_FLAGS = toCompletionFlagString(GUIDE_FLAG_CONTRACTS);
 const SEARCH_FLAGS = toCompletionFlagString(SEARCH_FLAG_CONTRACTS);
 const HEALTH_FLAGS = toCompletionFlagString(HEALTH_FLAG_CONTRACTS);
@@ -196,6 +198,7 @@ const COMMAND_COMPLETION_DESCRIPTIONS = [
   ["files", "Manage linked files"],
   ["docs", "Manage linked docs"],
   ["deps", "Show dependency relationships for an item"],
+  ["graph", "Bounded graph traversal, analytics, and governance-audit queries"],
   ["test", "Manage linked tests and optionally run them"],
   ["test-all", "Run linked tests across matching items"],
   ["test-runs", "Manage background linked-test runs"],
@@ -797,6 +800,9 @@ export function generateBashScript(
     "      ;;",
     "    deps)",
     `      COMPREPLY=(${compgen(DEPS_FLAGS)})`,
+    "      ;;",
+    "    graph)",
+    `      COMPREPLY=(${compgen(`ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators ${GRAPH_FLAGS}`)})`,
     "      ;;",
     "    test)",
     `      COMPREPLY=(${compgen("--add --add-json --remove --list --run --match --only-index --only-last --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1534,6 +1540,21 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--cursor[Continue an equivalent context query]:cursor' \\
             '--direction[Context traversal direction]:(outgoing incoming both)' \\
             '--kind[Restrict context traversal to relationship kinds]:kind' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        graph)
+          _arguments \\
+            '1:subcommand:(ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators)' \\
+            '--kind[Restrict traversal to registered relationship kinds]:kind' \\
+            '--max-depth[Maximum traversal depth]:depth' \\
+            '--limit[Maximum returned rows per bounded collection]:number' \\
+            '--after[Resume a traversal after this node id]:id' \\
+            '--direction[Edge orientation for paths/impact]:(outgoing incoming both)' \\
+            '--max-paths[Maximum enumerated paths]:number' \\
+            '--sample[Maximum evidence sample entries per audit finding]:number' \\
+            '--exempt-isolate[Item ids treated as explicitly valid isolates]:id' \\
+            '--summary[Return counts-first envelopes without row collections]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -2441,6 +2462,16 @@ complete -c pm -n '__fish_seen_subcommand_from deps' -l token-budget -d 'Maximum
 complete -c pm -n '__fish_seen_subcommand_from deps' -l cursor -d 'Continue an equivalent context query' -r
 complete -c pm -n '__fish_seen_subcommand_from deps' -l direction -d 'Context traversal direction' -r -a 'outgoing incoming both'
 complete -c pm -n '__fish_seen_subcommand_from deps' -l kind -d 'Restrict context traversal to relationship kinds' -r
+complete -c pm -n '__fish_seen_subcommand_from graph' -a 'ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators' -d 'Graph query'
+complete -c pm -n '__fish_seen_subcommand_from graph' -l kind -d 'Restrict traversal to registered relationship kinds' -r
+complete -c pm -n '__fish_seen_subcommand_from graph' -l max-depth -d 'Maximum traversal depth' -r
+complete -c pm -n '__fish_seen_subcommand_from graph' -l limit -d 'Maximum returned rows per bounded collection' -r
+complete -c pm -n '__fish_seen_subcommand_from graph' -l after -d 'Resume a traversal after this node id' -r
+complete -c pm -n '__fish_seen_subcommand_from graph' -l direction -d 'Edge orientation for paths/impact' -r -a 'outgoing incoming both'
+complete -c pm -n '__fish_seen_subcommand_from graph' -l max-paths -d 'Maximum enumerated paths' -r
+complete -c pm -n '__fish_seen_subcommand_from graph' -l sample -d 'Maximum evidence sample entries per audit finding' -r
+complete -c pm -n '__fish_seen_subcommand_from graph' -l exempt-isolate -d 'Item ids treated as explicitly valid isolates' -r
+complete -c pm -n '__fish_seen_subcommand_from graph' -l summary -d 'Return counts-first envelopes without row collections'
 
 # comments / notes / learnings flags
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l add -d 'Add one entry (text=<value> or plain text)' -r

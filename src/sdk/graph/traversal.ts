@@ -67,7 +67,7 @@ function assertPathBound(name: string, value: number): void {
 }
 
 /** Endpoint of a hierarchy edge that represents the structural parent. */
-function hierarchyParentEndpoint(
+export function hierarchyParentEndpoint(
   edge: RelationshipEdge,
   definition: RelationshipKindDefinition,
 ): string {
@@ -79,7 +79,7 @@ function hierarchyParentEndpoint(
 }
 
 /** Endpoint of an ordering edge that must finish first. */
-function orderingPredecessorEndpoint(
+export function orderingPredecessorEndpoint(
   edge: RelationshipEdge,
   definition: RelationshipKindDefinition,
 ): string {

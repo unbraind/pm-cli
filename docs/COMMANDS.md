@@ -555,6 +555,22 @@ Linked files and docs keep reviews reproducible. `deps` is read-only and project
 
 Structured key/value forms reject unrecognized keys with an `Allowed keys: …` error (matching `test --add`), so a typoed key (`lable=` instead of `label=`) fails fast instead of being silently dropped: `--add`/`--file`/`--doc` accept `path,scope,note`; `--add-glob` accepts `pattern,glob,path,scope,note`; `--remove` accepts `path`; `--migrate` accepts `from,to`; `--dep` accepts `id,kind,type,author,created_at` (plus `source_kind` on update); `--reminder` accepts `at,date,text,title`; `--event` accepts `start,date,end,duration,title,description,location,timezone,all_day` and the `recur_*` recurrence keys. Bare values (`--add src/cli/main.ts`) skip key validation.
 
+## Graph Queries
+
+```bash
+pm graph ancestors <id> --max-depth 3
+pm graph successors <id> --kind blocked_by --limit 20
+pm graph paths <id> <target> --direction outgoing --max-paths 5
+pm graph impact <id> --direction incoming --summary
+pm graph analyze --limit 10
+pm graph audit --sample 5 --exempt-isolate pm-root
+pm graph communities --kind blocked_by --limit 5
+pm graph redundancy --max-depth 6 --limit 20
+pm graph dominators <id> --direction outgoing --limit 10
+```
+
+`graph` is read-only and answers workspace-wide relationship questions through the public SDK graph toolkit. `ancestors`/`descendants` walk registered hierarchy kinds, `predecessors`/`successors` walk order-bearing kinds, `paths` enumerates bounded simple paths between two items with per-edge kinds, and `impact` reports the bounded blast radius with an explaining path per affected item. `analyze` returns workspace execution analytics (topological layers, prerequisite frontier, critical path, genuine ordering cycles) plus knowledge-graph structure (components, orphans, hubs), and `audit` runs the policy-aware governance audit with counts-first findings, severities, and bounded evidence samples. `communities` clusters the undirected structure with deterministic label propagation (reporting `iterations` and `converged`), `redundancy` finds stored edges implied by a longer path of the same semantic family (`blocked_by`/`blocks` and hierarchy spellings witness each other, each row carrying its witness path), and `dominators` reports the structural bottlenecks of one item's reachable subgraph — nodes every path from the root must pass through, ranked by how much work they gate (`dominated_count`). Every envelope is counts-first with explicit `truncated` and `cost` (visited nodes, inspected edges) metadata; `--summary` suppresses row collections entirely. `--kind` accepts registered relationship kinds (repeatable or comma-separated) and fails fast on unknown values (`redundancy` additionally requires directed ordering or hierarchy kinds); `--after` resumes hierarchy/ordering walks after a previously returned node id (see [Relationship Graph](RELATIONSHIP_GRAPH.md)).
+
 ## Linked Tests
 
 ```bash

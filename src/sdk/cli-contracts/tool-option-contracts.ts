@@ -402,3 +402,16 @@ export const TOOL_DEPS_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "direction", flag: "--direction" },
   { param: "kind", flag: "--kind", repeatable: true },
 ];
+
+/** Maps pm_graph tool parameters onto graph CLI flag spellings. */
+export const TOOL_GRAPH_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  { param: "kind", flag: "--kind", repeatable: true },
+  { param: "maxDepth", flag: "--max-depth" },
+  { param: "limit", flag: "--limit" },
+  { param: "after", flag: "--after" },
+  { param: "direction", flag: "--direction" },
+  { param: "maxPaths", flag: "--max-paths" },
+  { param: "sample", flag: "--sample" },
+  { param: "exemptIsolate", flag: "--exempt-isolate", repeatable: true },
+  { param: "summary", flag: "--summary" },
+];

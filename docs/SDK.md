@@ -44,7 +44,9 @@ Source of truth:
 - [`src/sdk/graph/index.ts`](../src/sdk/graph/index.ts)
 - [`src/sdk/graph/assembly.ts`](../src/sdk/graph/assembly.ts)
 - [`src/sdk/graph/traversal.ts`](../src/sdk/graph/traversal.ts)
+- [`src/sdk/graph/analytics.ts`](../src/sdk/graph/analytics.ts)
 - [`src/sdk/graph/governance.ts`](../src/sdk/graph/governance.ts)
+- [`src/sdk/graph/run.ts`](../src/sdk/graph/run.ts)
 - [`src/sdk/relationship-history.ts`](../src/sdk/relationship-history.ts)
 - [`src/sdk/relationship-context.ts`](../src/sdk/relationship-context.ts)
 - [`src/sdk/governance/validate.ts`](../src/sdk/governance/validate.ts)
@@ -144,7 +146,9 @@ Command/action contract exports:
 - Context relevance primitives: `buildItemContextRelevanceCandidates`, `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
 - Context relevance contracts: `ContextRelevanceCandidate`, `ContextRelevanceSignals`, `ContextRelevanceScorer`, `ContextRelevanceReport`, `ContextEvaluationReader`, `ContextEvaluationScenario`, `ContextEvaluationScenarioReport`, `ContextEvaluationThresholds`, and `ContextEvaluationCorpusReport`
 - Context packing and feedback primitives: `packContextCandidates`, `recordContextUsageServing`, `recordContextUsageTouch`, `recordContextUsageTouches`, and `readContextUsageAffinity`
-- Typed annotation and relationship primitives on `PmClient`: `comments`, `notes`, `learnings`, `files`, `filesDiscover`, `docs`, `deps`, and `append`
+- Typed annotation and relationship primitives on `PmClient`: `comments`, `notes`, `learnings`, `files`, `filesDiscover`, `docs`, `deps`, `graph`, and `append`
+- Workspace graph-query runner: `runGraph` (with `GraphCommandOptions`, `GraphResult`, and per-subcommand envelopes) assembles the workspace relationship graph once and dispatches bounded `ancestors`/`descendants`/`predecessors`/`successors`/`paths`/`impact`/`analyze`/`audit`/`communities`/`redundancy`/`dominators` queries with counts-first cost and truncation metadata; the `pm graph` CLI command and `pm_graph` MCP tool are thin adapters over it.
+- Structural graph analytics: `detectRelationshipCommunities` (deterministic label-propagation clustering with `maxIterations`/`minSize` bounds and convergence reporting), `findRedundantRelationshipEdges` (transitive-reduction scan that joins each directed ordering or hierarchy kind with its inverse spelling and returns witness paths), and `computeRelationshipDominators` (Cooper–Harvey–Kennedy immediate dominators with per-node gating weights for bottleneck ranking) — all deterministic, cancellable, and cost-metered like every other graph query.
 - Annotation and relationship option/result contracts: `CommentsCommandOptions` / `CommentsResult`, `NotesCommandOptions` / `NotesResult`, `LearningsCommandOptions` / `LearningsResult`, `FilesCommandOptions` / `FilesResult`, `FilesDiscoverOptions` / `FilesDiscoverResult`, `DocsCommandOptions` / `DocsResult`, `DepsCommandOptions` / `DepsResult`, `AppendCommandOptions` / `AppendResult`
 - Annotation kernel primitives: `resolveAnnotationInput`, `runAnnotationCommand`, `resolveAnnotationIndex`, `parseAnnotationTextInput`, `limitAnnotationEntries`, `readAnnotationEntries`, `wrapOwnershipConflict`, `isErrnoError`, and their typed input/config/result contracts
 - Linked-resource kernel primitives: `runFiles`, `runFilesDiscover`, `runDocs`, `runDeps`, `runLinkedArtifacts`, parsing/normalization/path-validation helpers, and their typed contracts. The CLI files/docs/deps modules are presentation-only re-exports of these SDK implementations.
