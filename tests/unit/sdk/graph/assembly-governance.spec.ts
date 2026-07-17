@@ -154,6 +154,30 @@ describe("workspace relationship graph assembly", () => {
       no_active_blocker_sentinels: [],
     });
   });
+
+  it("canonicalizes case variants of the same missing endpoint", () => {
+    const assembly = assembleWorkspaceRelationshipGraph([
+      {
+        id: "pm-a",
+        title: "A",
+        status: "open",
+        dependencies: [{ id: "PM-MISSING", kind: "related" }],
+      },
+      {
+        id: "pm-b",
+        title: "B",
+        status: "open",
+        dependencies: [{ id: "pm-missing", kind: "related" }],
+      },
+    ] as never);
+
+    expect(assembly.graph.edges()).toHaveLength(2);
+    expect(new Set(assembly.graph.edges().map((edge) => edge.target))).toEqual(
+      new Set(["PM-MISSING"]),
+    );
+    expect(assembly.graph.nodes()).toContain("PM-MISSING");
+    expect(assembly.missingIdSet).toEqual(new Set(["pm-missing"]));
+  });
 });
 describe("relationship graph governance", () => {
   const assembly = assembleWorkspaceRelationshipGraph([

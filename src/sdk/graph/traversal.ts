@@ -151,14 +151,15 @@ function expandSemanticNeighbors(
   matches: SemanticNeighborPredicate,
 ): { neighbors: string[]; inspectedEdges: number } {
   const registry = graph.registry();
-  const rows = graph.neighborEdges(nodeId, { direction: "both" });
+  const rows = graph.neighborEdges(nodeId, {
+    direction: "both",
+    ...(familyKinds === undefined ? {} : { kinds: [...familyKinds] }),
+  });
   const neighbors: string[] = [];
   const seen = new Set<string>();
   for (const row of rows.value) {
     const definition = registry.require(row.edge.kind);
     if (!definition[family]) continue;
-    if (familyKinds !== undefined && !familyKinds.has(definition.kind))
-      continue;
     if (!matches(row, definition, nodeId)) continue;
     if (seen.has(row.id)) continue;
     seen.add(row.id);

@@ -225,6 +225,7 @@ export function assembleWorkspaceRelationshipGraph(
   );
   const dangling = collectDanglingDependencyReferences(safeItems, isTerminal);
   const missingIds = collectMissingDependencyTargetIds(dangling);
+  for (const id of missingIds) canonicalIds.set(id.toLowerCase(), id);
   const graphItems = safeItems.map((item) => {
     const parent = normalizeDependencyGraphTarget(item.parent);
     const blocker = normalizeDependencyGraphTarget(item.blocked_by);
@@ -236,7 +237,7 @@ export function assembleWorkspaceRelationshipGraph(
       if (!target) return [];
       return [
         {
-          id: canonicalIds.get(target.toLowerCase()) ?? target,
+          id: canonicalIds.get(target.toLowerCase())!,
           kind:
             typeof dependency.kind === "string" ? dependency.kind : "related",
         },
@@ -244,11 +245,9 @@ export function assembleWorkspaceRelationshipGraph(
     });
     return {
       id: item.id.trim(),
-      ...(parent
-        ? { parent: canonicalIds.get(parent.toLowerCase()) ?? parent }
-        : {}),
+      ...(parent ? { parent: canonicalIds.get(parent.toLowerCase())! } : {}),
       ...(blocker
-        ? { blocked_by: canonicalIds.get(blocker.toLowerCase()) ?? blocker }
+        ? { blocked_by: canonicalIds.get(blocker.toLowerCase())! }
         : {}),
       dependencies,
     };

@@ -86,10 +86,20 @@ describe("hierarchy traversal", () => {
   it("restricts the walk to the requested hierarchy kinds", () => {
     const graph = itemGraph([
       { id: "pm-epic" },
-      { id: "pm-task", parent: "pm-epic" },
+      {
+        id: "pm-task",
+        parent: "pm-epic",
+        dependencies: [dep("pm-related", "related")],
+      },
+      { id: "pm-related" },
     ]);
+    const ancestors = hierarchyAncestors(graph, "pm-task", {
+      kinds: ["parent"],
+    });
+    expect(ancestors.value).toEqual(["pm-epic"]);
+    expect(ancestors.meta.inspectedEdges).toBe(2);
     expect(
-      hierarchyAncestors(graph, "pm-task", { kinds: ["parent"] }).value,
+      hierarchyAncestors(graph, "pm-task", { kinds: ["child"] }).value,
     ).toEqual(["pm-epic"]);
     expect(() =>
       hierarchyAncestors(graph, "pm-task", { kinds: ["related"] }),
