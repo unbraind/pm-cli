@@ -1524,10 +1524,16 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         deps)
           _arguments \\
-            '--format[Output format]:(tree graph)' \\
+            '--format[Output format]:(tree graph context)' \\
             '--max-depth[Maximum traversal depth (0 keeps root only)]:depth' \\
             '--collapse[Collapse mode]:(none repeated)' \\
             '--summary[Return counts only without tree/graph payload]' \\
+            '--node-limit[Maximum nodes in context output]:number' \\
+            '--edge-limit[Maximum edges in context output]:number' \\
+            '--token-budget[Maximum estimated tokens in context output]:number' \\
+            '--cursor[Continue an equivalent context query]:cursor' \\
+            '--direction[Context traversal direction]:(outgoing incoming both)' \\
+            '--kind[Restrict context traversal to relationship kinds]:kind' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -2425,10 +2431,16 @@ complete -c pm -n '__fish_seen_subcommand_from contracts' -l flags-only -d 'Retu
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l availability-only -d 'Return action availability only'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l runtime-only -d 'Include only actions invocable in the current runtime'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l active-only -d 'Alias for --runtime-only'
-complete -c pm -n '__fish_seen_subcommand_from deps' -l format -d 'Output format' -r -a 'tree graph'
+complete -c pm -n '__fish_seen_subcommand_from deps' -l format -d 'Output format' -r -a 'tree graph context'
 complete -c pm -n '__fish_seen_subcommand_from deps' -l max-depth -d 'Maximum traversal depth (0 keeps root only)' -r
 complete -c pm -n '__fish_seen_subcommand_from deps' -l collapse -d 'Collapse mode' -r -a 'none repeated'
 complete -c pm -n '__fish_seen_subcommand_from deps' -l summary -d 'Return counts only without tree/graph payload'
+complete -c pm -n '__fish_seen_subcommand_from deps' -l node-limit -d 'Maximum nodes in context output' -r
+complete -c pm -n '__fish_seen_subcommand_from deps' -l edge-limit -d 'Maximum edges in context output' -r
+complete -c pm -n '__fish_seen_subcommand_from deps' -l token-budget -d 'Maximum estimated tokens in context output' -r
+complete -c pm -n '__fish_seen_subcommand_from deps' -l cursor -d 'Continue an equivalent context query' -r
+complete -c pm -n '__fish_seen_subcommand_from deps' -l direction -d 'Context traversal direction' -r -a 'outgoing incoming both'
+complete -c pm -n '__fish_seen_subcommand_from deps' -l kind -d 'Restrict context traversal to relationship kinds' -r
 
 # comments / notes / learnings flags
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l add -d 'Add one entry (text=<value> or plain text)' -r

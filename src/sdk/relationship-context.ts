@@ -17,6 +17,30 @@ import {
   type RelationshipTraversalDirection,
 } from "./relationships.js";
 
+/** Semantic family explaining why a node or edge participates in graph context. */
+export type RelationshipContextRole =
+  | "prerequisite"
+  | "dependent"
+  | "ancestor"
+  | "descendant"
+  | "provenance"
+  | "related";
+
+/**
+ * Completeness marker for one graph-context packet.
+ *
+ * The exact in-memory kernel only produces "complete" and "truncated" today;
+ * the remaining values are reserved so index-backed, sampled, or policy-redacted
+ * providers can report their result quality through the same contract.
+ */
+export type RelationshipContextCompleteness =
+  | "complete"
+  | "truncated"
+  | "sampled"
+  | "approximate"
+  | "stale_index"
+  | "redacted";
+
 /** Caller-owned compact node details joined into graph context. */
 export interface RelationshipContextNodeDetails {
   /** Stable graph node identifier. */
@@ -33,8 +57,38 @@ export interface RelationshipContextNodeDetails {
 export interface RelationshipContextNode extends RelationshipContextNodeDetails {
   /** Shortest bounded distance from the root. */
   distance: number;
+  /** Semantic family of this node relative to its discovery counterpart. */
+  role: RelationshipContextRole;
+  /** Node through which bounded traversal first discovered this node. */
+  via: string;
   /** Concise deterministic reasons the node was selected. */
   reasons: string[];
+}
+
+/** Counts-first packet overview served before any row payload. */
+export interface RelationshipContextSummary {
+  /** Root node identifier. */
+  rootId: string;
+  /** Root lifecycle status when the caller supplied node details. */
+  rootStatus?: string;
+  /** Root-incident edge counts per semantic family under the active filters. */
+  directEdges: Record<RelationshipContextRole, number>;
+  /** Total root-incident edges under the active filters. */
+  directTotal: number;
+  /** Nodes discovered by the bounded traversal, excluding the root. */
+  discoveredNodes: number;
+  /** Nodes returned in this page. */
+  returnedNodes: number;
+  /** Edges returned in this page. */
+  returnedEdges: number;
+  /** Discovered nodes omitted by pagination, node, or token bounds. */
+  omittedNodes: number;
+  /** Qualifying edges omitted by edge or token bounds. */
+  omittedEdges: number;
+  /** Root evidence pointers promoted into the packet. */
+  evidenceCount: number;
+  /** Whether a continuation cursor is available. */
+  hasMore: boolean;
 }
 
 /** Controls for bounded graph-context assembly. */
@@ -63,6 +117,8 @@ export interface RelationshipContextOptions {
 export interface RelationshipContextResult {
   /** Root node details. */
   root: RelationshipContextNodeDetails;
+  /** Counts-first overview of the packet. */
+  summary: RelationshipContextSummary;
   /** Bounded related-node page. */
   nodes: RelationshipContextNode[];
   /** Bounded edges whose endpoints are present in the packet. */
@@ -73,6 +129,7 @@ export interface RelationshipContextResult {
   meta: {
     exact: true;
     truncated: boolean;
+    completeness: RelationshipContextCompleteness;
     nodeLimit: number;
     edgeLimit: number;
     tokenBudget: number;
@@ -88,7 +145,19 @@ export interface RelationshipContextResult {
 interface DiscoveredNode {
   id: string;
   distance: number;
+  via: string;
+  role: RelationshipContextRole;
 }
+
+/** Deterministic priority used when one node matches several semantic families. */
+const RELATIONSHIP_CONTEXT_ROLE_PRIORITY: readonly RelationshipContextRole[] = [
+  "prerequisite",
+  "dependent",
+  "ancestor",
+  "descendant",
+  "provenance",
+  "related",
+];
 
 const tokenEncoder = new TextEncoder();
 
@@ -112,10 +181,10 @@ function estimateTokens(value: unknown): number {
 
 function explainDirectEdge(
   edge: RelationshipEdge,
-  root: string,
+  counterpart: string,
   node: string,
   registry: RelationshipKindRegistry,
-): string {
+): RelationshipContextRole {
   const definition = registry.require(edge.kind);
   if (definition.ordering) {
     // Legacy and JSON-parsed definitions may predate explicit precedence.
@@ -142,7 +211,7 @@ function directReasons(
   root: string,
   node: string,
   registry: RelationshipKindRegistry,
-): string[] {
+): RelationshipContextRole[] {
   const reasons = rootEdges
     .filter(
       (edge) =>
@@ -153,9 +222,21 @@ function directReasons(
   return [...new Set(reasons)].sort();
 }
 
+/** Pick the deterministic primary family when a node matches several. */
+function primaryRole(
+  roles: readonly RelationshipContextRole[],
+): RelationshipContextRole {
+  // Callers only pass non-empty classification sets drawn from the fixed
+  // family list, so a priority match always exists.
+  return RELATIONSHIP_CONTEXT_ROLE_PRIORITY.find((role) =>
+    roles.includes(role),
+  )!;
+}
+
 function discoverNodes(
   graph: RelationshipGraph,
   root: string,
+  registry: RelationshipKindRegistry,
   options: RelationshipContextOptions,
 ): {
   rows: DiscoveredNode[];
@@ -168,7 +249,9 @@ function discoverNodes(
   if (!Number.isInteger(maxDepth) || maxDepth < 0)
     throw new TypeError("Relationship context maxDepth must be non-negative");
   const seen = new Set([root]);
-  const queue = [{ id: root, distance: 0 }];
+  const queue: { id: string; distance: number }[] = [
+    { id: root, distance: 0 },
+  ];
   const rows: DiscoveredNode[] = [];
   let inspectedEdges = 0;
   let depthTruncated = false;
@@ -176,20 +259,25 @@ function discoverNodes(
     options.signal?.throwIfAborted();
     const current = queue[index]!;
     if (current.distance >= maxDepth && depthTruncated) continue;
-    const adjacent = graph.adjacency(current.id, {
+    const adjacent = graph.neighborEdges(current.id, {
       direction,
       kinds: options.kinds,
       signal: options.signal,
     });
     inspectedEdges += adjacent.meta.inspectedEdges;
     if (current.distance >= maxDepth) {
-      if (adjacent.value.some((id) => !seen.has(id))) depthTruncated = true;
+      if (adjacent.value.some((row) => !seen.has(row.id))) depthTruncated = true;
       continue;
     }
-    for (const id of adjacent.value) {
+    for (const { id, edge } of adjacent.value) {
       if (seen.has(id)) continue;
       seen.add(id);
-      const row = { id, distance: current.distance + 1 };
+      const row = {
+        id,
+        distance: current.distance + 1,
+        via: current.id,
+        role: explainDirectEdge(edge, current.id, id, registry),
+      };
       rows.push(row);
       queue.push(row);
     }
@@ -204,6 +292,31 @@ function discoverNodes(
     inspectedEdges,
     depthTruncated,
   };
+}
+
+/** Count root-incident edges per semantic family under the active filters. */
+function summarizeDirectEdges(
+  graph: RelationshipGraph,
+  root: string,
+  registry: RelationshipKindRegistry,
+  options: RelationshipContextOptions,
+): { directEdges: Record<RelationshipContextRole, number>; directTotal: number } {
+  const directEdges: Record<RelationshipContextRole, number> = {
+    prerequisite: 0,
+    dependent: 0,
+    ancestor: 0,
+    descendant: 0,
+    provenance: 0,
+    related: 0,
+  };
+  const rows = graph.neighborEdges(root, {
+    direction: options.direction ?? "both",
+    kinds: options.kinds,
+    signal: options.signal,
+  }).value;
+  for (const { id, edge } of rows)
+    directEdges[explainDirectEdge(edge, root, id, registry)] += 1;
+  return { directEdges, directTotal: rows.length };
 }
 
 function selectContextNodes(params: {
@@ -221,18 +334,21 @@ function selectContextNodes(params: {
   const rootEdges = params.graph.incidentEdges(params.rootId);
   for (const candidate of params.candidates) {
     if (nodes.length >= params.nodeLimit) break;
+    const direct =
+      candidate.distance === 1
+        ? directReasons(rootEdges, params.rootId, candidate.id, params.registry)
+        : [];
     const node: RelationshipContextNode = {
       ...(params.details.get(candidate.id) ?? { id: candidate.id }),
       distance: candidate.distance,
+      role: direct.length > 0 ? primaryRole(direct) : candidate.role,
+      via: candidate.via,
       reasons:
-        candidate.distance === 1
-          ? directReasons(
-              rootEdges,
-              params.rootId,
-              candidate.id,
-              params.registry,
-            )
-          : [`reachable at depth ${candidate.distance}`],
+        direct.length > 0
+          ? direct
+          : [
+              `${candidate.role} via ${candidate.via} (depth ${candidate.distance})`,
+            ],
     };
     const cost = estimateTokens(node);
     if (usedTokens + cost > params.tokenBudget) break;
@@ -247,6 +363,8 @@ function selectContextNodes(params: {
 function selectContextEdges(params: {
   graph: RelationshipGraph;
   included: ReadonlySet<string>;
+  options: RelationshipContextOptions;
+  registry: RelationshipKindRegistry;
   edgeLimit: number;
   tokenBudget: number;
   initialTokens: number;
@@ -255,11 +373,24 @@ function selectContextEdges(params: {
   usedTokens: number;
   candidateCount: number;
 } {
+  const kinds = params.options.kinds
+    ? new Set(
+        params.options.kinds.map((kind) => params.registry.require(kind).kind),
+      )
+    : undefined;
   const candidates = params.graph
     .edges()
     .filter(
-      (edge) =>
-        params.included.has(edge.source) && params.included.has(edge.target),
+      (edge) => {
+        const definition = params.registry.require(edge.kind);
+        return (
+          params.included.has(edge.source) &&
+          params.included.has(edge.target) &&
+          (kinds === undefined ||
+            kinds.has(edge.kind) ||
+            (definition.inverse !== undefined && kinds.has(definition.inverse)))
+        );
+      },
     );
   const edges: RelationshipEdge[] = [];
   let usedTokens = params.initialTokens;
@@ -292,7 +423,7 @@ export function buildRelationshipContext(
   };
   const { evidence: rootEvidence = [], ...root } = rootDetails;
   const evidence = [...rootEvidence];
-  const discovery = discoverNodes(graph, rootId, options);
+  const discovery = discoverNodes(graph, rootId, registry, options);
   const fingerprint = createQueryFingerprint("relationship-context", {
     rootId,
     direction: options.direction ?? "both",
@@ -327,6 +458,8 @@ export function buildRelationshipContext(
   const edgeSelection = selectContextEdges({
     graph,
     included,
+    options,
+    registry,
     edgeLimit,
     tokenBudget,
     initialTokens: nodeSelection.usedTokens,
@@ -339,14 +472,28 @@ export function buildRelationshipContext(
   const omittedEdges = edgeSelection.candidateCount - edges.length;
   const truncated =
     discovery.depthTruncated || hasMoreNodes || omittedEdges > 0;
+  const summary: RelationshipContextSummary = {
+    rootId,
+    ...(root.status === undefined ? {} : { rootStatus: root.status }),
+    ...summarizeDirectEdges(graph, rootId, registry, options),
+    discoveredNodes: discovery.rows.length,
+    returnedNodes: nodes.length,
+    returnedEdges: edges.length,
+    omittedNodes: discovery.rows.length - consumed,
+    omittedEdges,
+    evidenceCount: evidence.length,
+    hasMore: hasMoreNodes,
+  };
   return {
     root,
+    summary,
     nodes,
     edges,
     evidence,
     meta: {
       exact: true,
       truncated,
+      completeness: truncated ? "truncated" : "complete",
       nodeLimit,
       edgeLimit,
       tokenBudget,

@@ -354,6 +354,13 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   edgeLimit: { anyOf: [{ type: "string" }, { type: "integer", minimum: 1 }] },
   tokenBudget: { anyOf: [{ type: "string" }, { type: "integer", minimum: 1 }] },
   cursor: { type: "string" },
+  direction: { type: "string", enum: ["outgoing", "incoming", "both"] },
+  kind: {
+    anyOf: [
+      { type: "string" },
+      { type: "array", items: { type: "string" } },
+    ],
+  },
   collapse: { type: "string", enum: ["none", "repeated"] },
   shell: { type: "string", enum: ["bash", "zsh", "fish"] },
   stdin: { type: "boolean" },
@@ -1388,6 +1395,16 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   cursor: {
     description: "Opaque continuation cursor returned by deps --format context.",
+  },
+  direction: {
+    description:
+      'Graph-context traversal direction for deps action ("outgoing", "incoming", or "both").',
+    examples: ["both", "incoming"],
+  },
+  kind: {
+    description:
+      "Registered relationship kinds narrowing deps --format context traversal (string, comma-separated, or array).",
+    examples: ["blocked_by", ["parent", "related"]],
   },
   collapse: {
     description:

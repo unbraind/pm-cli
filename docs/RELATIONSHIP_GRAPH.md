@@ -67,15 +67,22 @@ Every analytics result identifies its algorithm and edge family. Exact algorithm
 
 ## Bounded agent context
 
-`buildRelationshipContext` joins caller-owned compact node details with the graph kernel in one request. The packet includes the root, shortest-distance related nodes, semantic selection reasons (`prerequisite`, `dependent`, `ancestor`, `descendant`, `provenance`, or bounded reachability), root evidence pointers, included edges, explicit work counts, token accounting, omitted counts, and an opaque continuation cursor.
+`buildRelationshipContext` joins caller-owned compact node details with the graph kernel in one request. The packet opens with a counts-first `summary` (root identity and status, root-incident edge counts per semantic family, discovered/returned/omitted node and edge counts, evidence count, and a continuation marker) followed by the root, shortest-distance related nodes, included edges, root evidence pointers, and the cost envelope.
+
+Every returned node is explainable: `role` names its semantic family (`prerequisite`, `dependent`, `ancestor`, `descendant`, `provenance`, or `related`), `via` names the node through which bounded traversal first discovered it, and `reasons` lists the direct classifications for depth-1 nodes or a `"<role> via <node> (depth N)"` chain explanation for deeper nodes. When a node matches several families, `role` picks the deterministic priority order `prerequisite > dependent > ancestor > descendant > provenance > related`.
+
+`meta.completeness` reports result quality: the exact in-memory kernel emits `complete` or `truncated`, and the contract reserves `sampled`, `approximate`, `stale_index`, and `redacted` for index-backed or policy-filtered providers so consumers can branch on one field.
 
 Node, edge, depth, kind, direction, and token bounds are independent. The cursor fingerprint covers semantic filters and traversal shape, so it is rejected when reused for a different root or query. Output remains a plain object suitable for TOON, JSON, JSONL, MCP, or a custom UI; adapters own rendering and do not reimplement traversal.
 
-The native adapter is `pm deps <id> --format context`. It is also available through `PmClient.deps`, `runAction({ action: "deps" })`, and the MCP `pm_deps` tool. `--max-depth`, `--node-limit`, `--edge-limit`, `--token-budget`, and `--cursor` map directly to the public SDK context options; `--summary` keeps only counts. Tree and graph formats remain compatible.
+The native adapter is `pm deps <id> --format context`. It is also available through `PmClient.deps`, `runAction({ action: "deps" })`, and the MCP `pm_deps` tool. `--max-depth`, `--node-limit`, `--edge-limit`, `--token-budget`, `--cursor`, `--direction`, and repeatable or comma-separated `--kind` map directly to the public SDK context options; `--summary` keeps only counts. Unknown `--kind` values fail fast with the registered-kind list instead of silently matching nothing. Tree and graph formats remain compatible.
+
+The context result also enumerates broken references instead of reporting a bare count: `missing_count` counts missing nodes reachable within the same bounded traversal that produced the packet (so it agrees with tree/graph semantics for equal traversal parameters and is documented by `missing_scope: "traversal"`), and `missing_references` lists each dangling declaration inside the packet with its declaring holder, dangling target, kind, source surface, and `legacy_terminal` classification so agents can separate repairable typos on active items from ignorable historical debt. `--edge-limit` caps both returned graph edges and enumerated missing-reference rows; `missing_reference_count` preserves the untruncated declaration total. The root's linked files, tests, docs, and annotation counts are promoted into `evidence` as bounded pointers.
 
 ```bash
 pm deps pm-example --format context --max-depth 3 \
-  --node-limit 20 --edge-limit 40 --token-budget 800
+  --node-limit 20 --edge-limit 40 --token-budget 800 \
+  --direction both --kind blocked_by,parent
 ```
 
 ```ts

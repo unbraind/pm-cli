@@ -2,11 +2,12 @@ id: pm-8xr8
 title: "As an agent, I can traverse why an item exists, what it affects, what blocks it, and its evidence chain from one bounded graph query"
 description: "Provide one explainable, token-budgeted graph read that answers origin, prerequisites, dependents, impact, and evidence without separate full-tracker scans."
 type: Story
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:graph",context-management,relationships,story,token-efficiency
 created_at: "2026-07-13T21:57:48.869Z"
-updated_at: "2026-07-16T05:51:23.569Z"
+updated_at: "2026-07-17T07:12:57.147Z"
+closed_at: "2026-07-17T06:12:59.865Z"
 author: codex-root
 estimated_minutes: 90
 acceptance_criteria: "One request returns bounded ancestors, prerequisites, dependents, provenance, linked evidence, and the reason each node or edge was selected; Callers control direction, kind families, depth, node and edge limits, history window, token budget, fields, and cursor continuation; Default output is compact and counts-first; expanded and JSON or JSONL modes remain composable with grep, jq, and scripts; The response distinguishes complete, truncated, sampled, approximate, stale-index, and permission-redacted results; Public SDK, thin CLI, MCP action, and shell pipelines share one contract and deterministic ordering; Tests cover disconnected items, cycles in associative edges, missing endpoints, deep paths, concurrent mutations, and million-item bounded behavior"
@@ -19,12 +20,14 @@ why_now: "Current context comes from several list, get, deps, comments, history,
 parent: pm-96h7
 risk: low
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
+resolution: fixed
+expected_result: "One bounded graph read answers origin, prerequisites, dependents, impact, and evidence with per-node selection reasons, caller-controlled direction/kinds/depth/limits/token budget/cursor, counts-first default output, and explicit completeness - one contract across SDK, CLI, MCP, and shell pipelines"
+actual_result: "Delivered exactly that via relationship-context summary/role/via/reasons/completeness, RelationshipGraph.neighborEdges, deps --direction/--kind with fail-fast registry validation, root evidence promotion, and contract/schema/completion parity; history-window control deliberately deferred to the durable event-store scope on pm-ju83"
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-4k6b,related,"2026-07-13T21:57:48.869Z",null,null
   pm-96h7,related,"2026-07-13T21:57:48.869Z",null,null
   pm-bwyw,related,"2026-07-13T21:57:48.869Z",null,null
-  pm-4jqm,blocked_by,"2026-07-13T22:05:14.194Z",null,null
-comments[13]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-07-13T21:57:48.869Z",codex-root,"Duplicate check 2026-07-13: all-status review found context packing and deps visualization items but no single agent story joining bounded lineage,impact,blockers,and evidence traversal; it belongs under pm-96h7."
   "2026-07-14T09:43:37.414Z",codex-gpt5,"Implementation start 2026-07-14: build one bounded graph-context SDK response joining lineage, prerequisites, dependents, impact, evidence reasons, cost/truncation metadata, and continuation on the shared graph kernel."
   "2026-07-14T10:19:34.281Z",codex-gpt5,"Implementation evidence: added buildRelationshipContext for one-call bounded graph context with semantic reasons, root details/evidence, node/edge/depth/token budgets, exact inspected/omitted cost metadata, cancellation, and query-fingerprinted continuation cursors. Fresh installed-package proof returned design/release context around build through the public SDK. Remaining CLI/MCP adapters stay explicitly in this open story."
@@ -38,19 +41,28 @@ comments[13]{created_at,author,text}:
   "2026-07-14T14:02:00.872Z",codex-gpt5,"Review-round evidence for PR #559: fixed Greptile's dangling-context finding. pm deps --format context now materializes unresolved parent, blocked_by, and dependency targets as explicit status=missing nodes with typed edges and a unique missing_count, while canonicalizing case-insensitive live IDs. Tests cover every relationship form and canonical/missing branch; full coverage remains exact 100/100/100/100."
   "2026-07-14T14:37:40.698Z",codex-gpt5,"PR #559 review round 2 evidence: legacy no-active-blocker references are now excluded from context graph construction and unique missing-target accounting, while real unresolved parent/blocker/dependency targets remain explicit missing nodes. Tests cover the sentinel plus duplicate target deduplication; exact full coverage remains 100/100/100/100."
   "2026-07-14T15:13:07.998Z",codex-gpt5,"PR #559 review round 3 evidence: one shared decoded-reference normalizer now rejects non-string, empty, and legacy placeholder parent/blocker/dependency inputs before graph construction; valid malformed legacy dependencies receive the same default related kind as governance collection. Behavioral malformed/sentinel/canonical tests pass."
+  "2026-07-17T06:12:21.940Z",maintainer-agent,"Implementation evidence 2026-07-17: deps --format context is now the one bounded explainable graph read. SDK buildRelationshipContext gained a counts-first summary (root identity/status, root-incident edge counts per semantic family, discovered/returned/omitted node+edge counts, evidence count, continuation marker), per-node role + via + chain reasons (\"<role> via <node> (depth N)\") derived from the actual discovering edge via the new public RelationshipGraph.neighborEdges primitive, and meta.completeness (complete|truncated produced; sampled/approximate/stale_index/redacted reserved). Deps layer promotes root linked files/tests/docs/annotation counts into bounded evidence pointers and exposes --direction plus repeatable/CSV --kind (registry-validated fail-fast, pm-gknu-safe) across CLI, MCP contracts, tool schemas, and bash/zsh/fish completions (zsh/fish deps blocks were stale: missing context format entirely; DEPS_FLAG_CONTRACTS was missing all four context flags - both drifts fixed). Verification: full coverage exact 100/100/100/100 (296 files, 5767+ tests), lint/static/boundary/token gates green, packed-tarball E2E in temp dir exercised summary/roles/evidence/direction/kind/cursor/error paths, SDK-only consumer proved custom owns/ships_before kinds classify ancestor/dependent through the same packet."
+  "2026-07-17T07:12:57.147Z",maintainer-agent,"PR #577 review-loop evidence: accepted Greptile's current-head P1 that kind-filtered context packets leaked unrelated induced edges. selectContextEdges now applies canonical relationship-kind/inverse matching before returned/omitted edge accounting, with a mixed blocked_by/related regression assertion. Focused 23-test SDK suite and TypeScript checks pass. Gemini's three inline suggestions were rejected with source-boundary evidence, reacted to, replied in-thread, and resolved; CodeRabbit/Sourcery rate-limit notices and DeepSource/Codecov/CodSpeed reports were individually acknowledged."
 notes[2]{created_at,author,text}:
   "2026-07-14T10:19:37.025Z",codex-gpt5,"Remaining canonical scope after this PR: thin CLI, shell, and MCP parity plus million-item latency acceptance; keep story open."
   "2026-07-16T05:51:23.568Z",maintainer-agent,"Evidence 2026-07-16 (pass #92 dogfood, v2026.7.16): the shipped bounded graph surface already delivers the story's core promise at depth — pm deps pm-96h7 --format context visited 737 nodes / inspected 1223 edges, honored tokenBudget 1200 (usedTokens 1196), returned 21 nodes / 12 edges with per-node distance + reasons (ancestor/descendant/related/reachable-at-depth-2), exact:true counts, and a resumable nextCursor. Remaining explainability gap on this surface is missing-reference enumeration/classification, now tracked as pm-8kch."
-learnings[1]{created_at,author,text}:
+learnings[2]{created_at,author,text}:
   "2026-07-14T10:02:22.070Z",codex-gpt5,"A graph-context packet stays agent-efficient when semantic reasons, evidence pointers, exact cost, omitted counts, and continuation share one bounded envelope instead of requiring separate deps, get, history, and files calls."
-files[4]{path,scope,note}:
+  "2026-07-17T06:12:40.315Z",maintainer-agent,"Explaining deep nodes requires the discovering edge, not just distance: switching BFS discovery from adjacency() (ids only) to neighborEdges() (id+edge rows) let every node carry role/via/chain-reason at zero extra traversal cost, because the first sorted edge to an unseen node is already the deterministic discovery witness."
+files[7]{path,scope,note}:
+  src/cli/commands/completion.ts,project,zsh/fish deps blocks were stale (no context format); fixed + new flags
   src/cli/register-mutation.ts,project,CLI depth/node/edge/token/cursor bounds
   src/mcp/tool-definitions.ts,project,MCP parity
+  src/sdk/cli-contracts/flag-contracts.ts,project,DEPS_FLAG_CONTRACTS completed (context flags were missing) + direction/kind
   src/sdk/dependencies.ts,project,one bounded item relationship context
   src/sdk/relationship-context.ts,project,bounded explainable graph-context packet with continuation
-tests[2]{command,scope,timeout_seconds}:
+  src/sdk/relationships.ts,project,public neighborEdges primitive pairing neighbors with discovering edges
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/deps-command.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/sdk/relationship-history-analytics.spec.ts tests/unit/sdk/relationships.spec.ts tests/unit/commands/deps-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/sdk/relationships.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,project,240
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,deps context flags and payload summary
   docs/RELATIONSHIP_GRAPH.md,project,"public event,snapshot,analytics,and graph-context contracts"
+close_reason: "Shipped the bounded explainable graph query: deps --format context now returns counts-first summary, per-node role/via/chain reasons, root evidence pointers, completeness marker, direction/kind controls shared across SDK/CLI/MCP contracts and completions; verified by exact 100/100/100/100 coverage, packed-tarball E2E, and an SDK-only custom-domain consumer"
 body: "## User story\n\nAs a coding or planning agent, I want one bounded and explainable relationship query for an item so that I can understand its purpose, execution order, downstream impact, and supporting evidence without guessing or loading unrelated history.\n\n## Token contract\n\nReturn the smallest useful summary first: item identity, state, immediate typed edges, critical path or blockers, evidence pointers, omitted counts, and a continuation token. Expand only on explicit demand or relevance thresholds.\n\n## Explainability contract\n\nEvery included node and edge carries a concise selection reason, source, age or freshness, and whether it is authoritative, inferred, approximate, or user-authored."

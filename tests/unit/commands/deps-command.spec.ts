@@ -487,6 +487,289 @@ describe("runDeps", () => {
     });
   });
 
+  it("controls context traversal with direction and kind filters shared across surfaces", async () => {
+    await withTempPmPath(async (context) => {
+      const prerequisiteId = createTask(context, "ctxdir-prerequisite");
+      const rootId = createTask(context, "ctxdir-root", [
+        `id=${prerequisiteId},kind=blocked_by,author=test-author,created_at=now`,
+      ]);
+      const dependentId = createTask(context, "ctxdir-dependent", [
+        `id=${rootId},kind=blocked_by,author=test-author,created_at=now`,
+      ]);
+      const child = context.runCli(
+        ["create", "ctxdir-child", "--type", "Task", "--parent", rootId, "--json"],
+        { expectJson: true },
+      );
+      const childId = (child.json as { item: { id: string } }).item.id;
+
+      const both = await runDeps(rootId, { format: "context" }, { path: context.pmPath });
+      expect(both.context?.summary).toMatchObject({
+        rootId,
+        rootStatus: "open",
+        directEdges: {
+          prerequisite: 1,
+          dependent: 1,
+          ancestor: 0,
+          descendant: 1,
+          provenance: 0,
+          related: 0,
+        },
+        directTotal: 3,
+        hasMore: false,
+      });
+      expect(both.context?.nodes.map(({ id, role }) => `${id}:${role}`).sort()).toEqual(
+        [
+          `${prerequisiteId}:prerequisite`,
+          `${dependentId}:dependent`,
+          `${childId}:descendant`,
+        ].sort(),
+      );
+
+      const outgoing = await runDeps(
+        rootId,
+        { format: "context", direction: "outgoing" },
+        { path: context.pmPath },
+      );
+      expect(outgoing.context?.nodes.map(({ id }) => id)).toEqual([prerequisiteId]);
+
+      const incoming = await runDeps(
+        rootId,
+        { format: "context", direction: "incoming" },
+        { path: context.pmPath },
+      );
+      expect(incoming.context?.nodes.map(({ id }) => id).sort()).toEqual(
+        [dependentId, childId].sort(),
+      );
+
+      const parentOnly = await runDeps(
+        rootId,
+        { format: "context", kind: ["parent"] },
+        { path: context.pmPath },
+      );
+      expect(parentOnly.context?.nodes.map(({ id }) => id)).toEqual([childId]);
+
+      const aliasCsv = await runDeps(
+        rootId,
+        { format: "context", kind: "depends_on,related" },
+        { path: context.pmPath },
+      );
+      expect(aliasCsv.context?.nodes.map(({ id }) => id).sort()).toEqual(
+        [prerequisiteId, dependentId].sort(),
+      );
+
+      const blankKinds = await runDeps(
+        rootId,
+        { format: "context", kind: [" , "] },
+        { path: context.pmPath },
+      );
+      expect(blankKinds.context?.nodes).toHaveLength(3);
+
+      await expect(
+        runDeps(rootId, { format: "context", direction: "sideways" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runDeps(rootId, { format: "context", kind: "ownz" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("promotes bounded root evidence pointers into context packets", async () => {
+    await withTempPmPath(async (context) => {
+      const rootId = createTask(context, "ctxev-root");
+      expect(
+        context.runCli(["files", rootId, "--add", "src/example.ts", "--json"], {
+          expectJson: true,
+        }).code,
+      ).toBe(0);
+      expect(
+        context.runCli(["docs", rootId, "--add", "docs/example.md", "--json"], {
+          expectJson: true,
+        }).code,
+      ).toBe(0);
+      expect(
+        context.runCli(["test", rootId, "--add", "command=echo ok", "--json"], {
+          expectJson: true,
+        }).code,
+      ).toBe(0);
+      expect(
+        context.runCli(["comments", rootId, "--add", "evidence trail", "--json"], {
+          expectJson: true,
+        }).code,
+      ).toBe(0);
+
+      const result = await runDeps(rootId, { format: "context" }, { path: context.pmPath });
+      expect(result.context?.evidence).toEqual([
+        "linked:files=1,tests=1,docs=1,comments=1,notes=0,learnings=0",
+        "file:src/example.ts",
+        "test:echo ok",
+        "doc:docs/example.md",
+      ]);
+      expect(result.context?.summary.evidenceCount).toBe(4);
+
+      const bareId = createTask(context, "ctxev-bare");
+      const bare = await runDeps(bareId, { format: "context" }, { path: context.pmPath });
+      expect(bare.context?.evidence).toEqual([]);
+
+      // Legacy stores can hold linked tests with a path but no command, or
+      // with neither; the pointer projection falls back and then skips.
+      const located = await locateItem(context.pmPath, rootId);
+      expect(located).not.toBeNull();
+      if (!located) return;
+      const { raw } = await readLocatedItem(located);
+      await writeFile(
+        located.itemPath,
+        raw.replace(
+          "tests[1]{command,scope}:\n  echo ok,project",
+          "tests[1]{path,scope}:\n  tests/example.spec.ts,project",
+        ),
+        "utf8",
+      );
+      const pathOnly = await runDeps(rootId, { format: "context" }, { path: context.pmPath });
+      expect(pathOnly.context?.evidence).toContain("test:tests/example.spec.ts");
+      await writeFile(
+        located.itemPath,
+        raw.replace(
+          "tests[1]{command,scope}:\n  echo ok,project",
+          "tests[1]{scope}:\n  project",
+        ),
+        "utf8",
+      );
+      const pointerless = await runDeps(rootId, { format: "context" }, { path: context.pmPath });
+      expect(pointerless.context?.evidence).toEqual([
+        "linked:files=1,tests=1,docs=1,comments=1,notes=0,learnings=0",
+        "file:src/example.ts",
+        "doc:docs/example.md",
+      ]);
+
+      const summaryOnly = await runDeps(
+        rootId,
+        { format: "context", summary: true },
+        { path: context.pmPath },
+      );
+      expect(summaryOnly.context).toBeUndefined();
+    });
+  });
+
+  it("enumerates traversal-scoped missing references and agrees with tree semantics", async () => {
+    await withTempPmPath(async (context) => {
+      const rootId = createTask(context, "ctxmiss-root", [
+        "id=pm-ctxmiss-gone,kind=blocked_by,author=test-author,created_at=now",
+        "id=pm-ctxmiss-lost,kind=related,author=test-author,created_at=now",
+      ]);
+
+      const result = await runDeps(rootId, { format: "context" }, { path: context.pmPath });
+      expect(result).toMatchObject({
+        missing_count: 2,
+        missing_scope: "traversal",
+        missing_reference_count: 2,
+      });
+      expect(result.missing_references).toEqual([
+        expect.objectContaining({
+          holder_id: rootId,
+          target_id: "pm-ctxmiss-gone",
+          kind: "blocked_by",
+          source: "dependency",
+          legacy_terminal: false,
+        }),
+        expect.objectContaining({
+          holder_id: rootId,
+          target_id: "pm-ctxmiss-lost",
+          kind: "related",
+          legacy_terminal: false,
+        }),
+      ]);
+
+      const tree = await runDeps(rootId, { format: "tree" }, { path: context.pmPath });
+      expect(tree.missing_count).toBe(result.missing_count);
+
+      const bounded = await runDeps(
+        rootId,
+        { format: "context", edgeLimit: 1 },
+        { path: context.pmPath },
+      );
+      expect(bounded.missing_reference_count).toBe(2);
+      expect(bounded.missing_references).toHaveLength(1);
+
+      const paged = await runDeps(
+        rootId,
+        { format: "context", nodeLimit: 1 },
+        { path: context.pmPath },
+      );
+      expect(paged.missing_count).toBe(2);
+
+      // Directed blocked_by edges drop out of an incoming-only traversal while
+      // the undirected related edge still reaches its missing target.
+      const incomingOnly = await runDeps(
+        rootId,
+        { format: "context", direction: "incoming" },
+        { path: context.pmPath },
+      );
+      expect(incomingOnly).toMatchObject({
+        missing_count: 1,
+        missing_reference_count: 1,
+      });
+      expect(incomingOnly.missing_references).toEqual([
+        expect.objectContaining({ target_id: "pm-ctxmiss-lost", kind: "related" }),
+      ]);
+
+      const summaryOnly = await runDeps(
+        rootId,
+        { format: "context", summary: true },
+        { path: context.pmPath },
+      );
+      expect(summaryOnly.missing_reference_count).toBe(2);
+      expect(summaryOnly.missing_references).toBeUndefined();
+    });
+  });
+
+  it("classifies missing references on terminal holders as legacy and skips sentinels", async () => {
+    await withTempPmPath(async (context) => {
+      const holderId = createTask(context, "ctxlegacy-holder", [
+        "id=pm-ctxlegacy-gone,kind=related,author=test-author,created_at=now",
+      ]);
+      const rootId = createTask(context, "ctxlegacy-root", [
+        `id=${holderId},kind=related,author=test-author,created_at=now`,
+      ]);
+      expect(
+        context.runCli(
+          ["close", holderId, "verified legacy classification fixture", "--json"],
+          { expectJson: true },
+        ).code,
+      ).toBe(0);
+
+      const result = await runDeps(rootId, { format: "context" }, { path: context.pmPath });
+      expect(result.missing_references).toEqual([
+        expect.objectContaining({
+          holder_id: holderId,
+          target_id: "pm-ctxlegacy-gone",
+          legacy_terminal: true,
+          holder_status: "closed",
+        }),
+      ]);
+
+      // Create-time id normalization prefixes bare targets, so write the raw
+      // legacy sentinel form directly like historical pre-structured items.
+      const sentinelId = createTask(context, "ctxlegacy-sentinel", [
+        "id=pm-no-active-blocker,kind=blocked_by,author=test-author,created_at=now",
+      ]);
+      const located = await locateItem(context.pmPath, sentinelId);
+      expect(located).not.toBeNull();
+      if (!located) return;
+      const { raw } = await readLocatedItem(located);
+      await writeFile(
+        located.itemPath,
+        raw.replace("pm-no-active-blocker", "no-active-blocker"),
+        "utf8",
+      );
+      const sentinel = await runDeps(sentinelId, { format: "context" }, { path: context.pmPath });
+      expect(sentinel).toMatchObject({
+        missing_count: 0,
+        missing_reference_count: 0,
+        missing_references: [],
+      });
+    });
+  });
+
   it("accepts numeric max-depth values and keeps deterministic ordering for duplicate dependency edges", async () => {
     await withTempPmPath(async (context) => {
       const targetId = createTask(context, "deps-order-target");

@@ -218,6 +218,8 @@ export const PM_ITEM_REFERENCE_FLAGS_WITH_VALUE: Readonly<
     "--edge-limit",
     "--token-budget",
     "--cursor",
+    "--direction",
+    "--kind",
   ]),
   test: new Set([
     "--add",
@@ -315,7 +317,13 @@ export const extractReferencedPmItemIdsFromCommand = (
   command: string,
   idPrefix = "pm",
 ): string[] => {
-  const normalizedPrefix = idPrefix.trim().toLowerCase().replace(/-+$/, "");
+  // Trim trailing dashes with an index scan: the prefix flows from workspace
+  // settings, and a /-+$/ regex backtracks polynomially on hostile dash runs
+  // (CodeQL js/polynomial-redos, alert 27).
+  const lowered = idPrefix.trim().toLowerCase();
+  let prefixEnd = lowered.length;
+  while (prefixEnd > 0 && lowered[prefixEnd - 1] === "-") prefixEnd -= 1;
+  const normalizedPrefix = lowered.slice(0, prefixEnd);
   if (normalizedPrefix.length === 0) return [];
   const normalizedCommand = command
     .trim()

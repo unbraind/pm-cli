@@ -668,7 +668,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     },
     deps: {
       required: ["id"],
-      optional: ["format", "maxDepth", "collapse", "summary", "nodeLimit", "edgeLimit", "tokenBudget", "cursor"],
+      optional: ["format", "maxDepth", "collapse", "summary", "nodeLimit", "edgeLimit", "tokenBudget", "cursor", "direction", "kind"],
     },
     test: {
       required: ["id"],

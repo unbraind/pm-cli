@@ -888,6 +888,73 @@ describe("bounded relationship context", () => {
       tokenBudget: 220,
     });
     expect(result.meta.usedTokens).toBeLessThanOrEqual(220);
+    expect(result.summary).toMatchObject({
+      rootId: "build",
+      rootStatus: "open",
+      directEdges: {
+        prerequisite: 1,
+        dependent: 1,
+        ancestor: 0,
+        descendant: 0,
+        provenance: 1,
+        related: 0,
+      },
+      directTotal: 3,
+      evidenceCount: 2,
+    });
+    expect(result.summary.returnedNodes).toBe(result.nodes.length);
+    expect(result.summary.returnedEdges).toBe(result.edges.length);
+    expect(result.summary.hasMore).toBe("nextCursor" in result.meta);
+  });
+
+  it("ranks multi-family nodes by deterministic role priority and reports completeness", () => {
+    const multi = new RelationshipGraph(
+      ["root", "peer"],
+      [
+        { source: "root", target: "peer", kind: "blocked_by" },
+        { source: "root", target: "peer", kind: "related" },
+      ],
+    );
+    const complete = buildRelationshipContext(multi, "root", []);
+    expect(complete.nodes).toEqual([
+      expect.objectContaining({
+        id: "peer",
+        role: "prerequisite",
+        via: "root",
+        reasons: ["prerequisite", "related"],
+      }),
+    ]);
+    expect(complete.meta.completeness).toBe("complete");
+    expect(complete.summary).toMatchObject({
+      directEdges: expect.objectContaining({ prerequisite: 1, related: 1 }),
+      directTotal: 2,
+      discoveredNodes: 1,
+      hasMore: false,
+    });
+    const filtered = buildRelationshipContext(multi, "root", [], {
+      kinds: ["blocked_by"],
+    });
+    expect(filtered.edges).toEqual([
+      { source: "root", target: "peer", kind: "blocked_by" },
+    ]);
+    expect(filtered.summary).toMatchObject({
+      returnedEdges: 1,
+      omittedEdges: 0,
+    });
+    expect(
+      buildRelationshipContext(multi, "root", [], {
+        kinds: ["blocks"],
+      }).edges,
+    ).toEqual([{ source: "root", target: "peer", kind: "blocked_by" }]);
+    const truncated = buildRelationshipContext(graph, "build", details, {
+      direction: "both",
+      maxDepth: 3,
+      nodeLimit: 1,
+      tokenBudget: 500,
+    });
+    expect(truncated.meta.completeness).toBe("truncated");
+    expect(truncated.summary.hasMore).toBe(true);
+    expect(truncated.summary.omittedNodes).toBeGreaterThan(0);
   });
 
   it("stops inspecting boundary nodes after depth truncation is established", () => {
@@ -900,7 +967,7 @@ describe("bounded relationship context", () => {
         { source: "b", target: "deep-b", kind: "blocks" },
       ],
     );
-    const adjacency = vi.spyOn(boundary, "adjacency");
+    const neighborEdges = vi.spyOn(boundary, "neighborEdges");
     const result = buildRelationshipContext(boundary, "root", [], {
       direction: "outgoing",
       maxDepth: 1,
@@ -910,11 +977,14 @@ describe("bounded relationship context", () => {
     });
     expect(result.meta).toMatchObject({
       truncated: true,
+      completeness: "truncated",
       visitedNodes: 3,
       inspectedEdges: 3,
     });
-    expect(adjacency).toHaveBeenCalledTimes(2);
-    adjacency.mockRestore();
+    // One traversal call for the root plus one boundary probe: after the first
+    // depth-limit node establishes truncation, remaining boundary nodes skip.
+    expect(neighborEdges.mock.calls.filter(([id]) => id !== "root").length).toBe(1);
+    neighborEdges.mockRestore();
   });
 
   it("continues deterministically and rejects a cursor from another query", () => {
@@ -1025,7 +1095,9 @@ describe("bounded relationship context", () => {
         expect.objectContaining({ id: "peer", reasons: ["related"] }),
         expect.objectContaining({
           id: "deep",
-          reasons: ["reachable at depth 2"],
+          role: "related",
+          via: "peer",
+          reasons: ["related via peer (depth 2)"],
         }),
       ]),
     );

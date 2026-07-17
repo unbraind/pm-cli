@@ -1919,6 +1919,8 @@ async function runDepsAction(
       edgeLimit: readOptionString(options, "edgeLimit"),
       tokenBudget: readOptionString(options, "tokenBudget"),
       cursor: readOptionString(options, "cursor"),
+      direction: readOptionString(options, "direction"),
+      ...(Array.isArray(options.kind) ? { kind: options.kind as string[] } : {}),
     },
     globalOptions,
   );
@@ -3215,9 +3217,21 @@ export function registerMutationCommands(program: Command): void {
     .option("--collapse <value>", "Collapse mode (none or repeated)", "none")
     .option("--summary", "Return counts only without full tree/graph payload")
     .option("--node-limit <value>", "Maximum nodes in context output")
-    .option("--edge-limit <value>", "Maximum edges in context output")
+    .option(
+      "--edge-limit <value>",
+      "Maximum edges and missing-reference rows in context output",
+    )
     .option("--token-budget <value>", "Maximum estimated tokens in context output")
     .option("--cursor <value>", "Continue an equivalent context query")
+    .option(
+      "--direction <value>",
+      "Context traversal direction (outgoing, incoming, or both)",
+    )
+    .option(
+      "--kind <value>",
+      "Restrict context traversal to registered relationship kinds (repeatable or comma-separated)",
+      collect,
+    )
     .description("Show dependency relationships for an item.")
     .action(runDepsAction);
 }
