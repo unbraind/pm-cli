@@ -12,7 +12,7 @@ import {
   collectBlockedByIds,
   computeActionabilityReport,
   type ActionableEntry,
-} from "../../core/item/actionability.js";
+} from "../../sdk/actionability.js";
 import {
   resolveRuntimeStatusRegistry,
   type RuntimeStatusRegistry,

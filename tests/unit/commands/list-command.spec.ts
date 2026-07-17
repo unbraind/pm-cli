@@ -91,6 +91,64 @@ function createItem(
 }
 
 describe("runList", () => {
+  it("selects lifecycle and dependency-edge blocked rows through one public filter", async () => {
+    await withTempPmPath(async (context) => {
+      const blockerId = createItem(context, {
+        title: "Open blocker",
+        status: "open",
+        priority: "1",
+        tags: "blocked-parity",
+        deadline: "+1d",
+      });
+      const edgeBlockedId = createItem(context, {
+        title: "Edge blocked",
+        status: "open",
+        priority: "1",
+        tags: "blocked-parity",
+        deadline: "+1d",
+      });
+      const statusBlockedId = createItem(context, {
+        title: "Status blocked",
+        status: "blocked",
+        priority: "1",
+        tags: "blocked-parity",
+        deadline: "+1d",
+      });
+      const updated = context.runCli([
+        "update",
+        edgeBlockedId,
+        "--dep",
+        `id=${blockerId},kind=blocked_by,author=test-author,created_at=now`,
+        "--author",
+        "test-author",
+        "--message",
+        "Add blocker edge",
+        "--json",
+      ]);
+      expect(updated.code).toBe(0);
+
+      const result = await runList(
+        undefined,
+        { dependencyBlocked: true, brief: true },
+        { path: context.pmPath },
+      );
+      expect(result.items.map((entry) => entry.id).sort()).toEqual(
+        [edgeBlockedId, statusBlockedId].sort(),
+      );
+      expect(result.filters).toMatchObject({
+        blocked_semantics: "status_or_dependency",
+      });
+      const compact = await runList(
+        undefined,
+        { dependencyBlocked: true, compact: true },
+        { path: context.pmPath },
+      );
+      expect(compact.filters).toMatchObject({
+        blocked_semantics: "status_or_dependency",
+      });
+    });
+  });
+
   it("covers list helper branches for projection, filters, sorting, and tree metadata", () => {
     const statusRegistry = resolveRuntimeStatusRegistry(
       SETTINGS_DEFAULTS.schema,

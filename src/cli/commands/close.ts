@@ -4,7 +4,7 @@
  * Implements the pm close command surface and its agent-facing runtime behavior.
  */
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { collectBlockedByIds } from "../../core/item/actionability.js";
+import { collectBlockedByIds } from "../../sdk/actionability.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { isTerminalStatus } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";

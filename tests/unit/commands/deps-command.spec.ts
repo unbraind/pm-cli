@@ -1,10 +1,8 @@
 import { writeFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { runDeps } from "../../../src/cli/commands/deps.js";
-import {
-  buildDepsRelationshipContext,
-  collectDanglingDependencyReferences,
-} from "../../../src/sdk/dependencies.js";
+import { buildDepsRelationshipContext } from "../../../src/sdk/dependencies.js";
+import { collectDanglingDependencyReferences } from "../../../src/sdk/graph/assembly.js";
 import type { ItemMetadata } from "../../../src/types/index.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";

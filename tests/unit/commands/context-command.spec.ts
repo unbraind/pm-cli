@@ -309,7 +309,13 @@ describe("context command module", () => {
     expect(missingSubtree.found).toBe(false);
     expect(missingSubtree.ids.size).toBe(0);
 
-    const progress = contextInternals.buildProgress(allItems, activeItems, statusRegistry, 5);
+    const progress = contextInternals.buildProgress(
+      allItems,
+      activeItems,
+      new Set(["pm-blocked"]),
+      statusRegistry,
+      5,
+    );
     expect(progress[0]).toMatchObject({
       id: "pm-epic",
       total: 4,
@@ -319,7 +325,7 @@ describe("context command module", () => {
       blocked: 1,
       completion_pct: 25,
     });
-    expect(contextInternals.buildBlockers([blockedTask] as never, new Map([["pm-open", openTask]]), 5)).toEqual([
+    expect(contextInternals.buildBlockers([blockedTask] as never, [openTask] as never, statusRegistry, 5)).toEqual([
       {
         id: "pm-blocked",
         title: "Blocked task",
@@ -330,6 +336,38 @@ describe("context command module", () => {
         unblock_note: "ship dependency",
       },
     ]);
+    expect(
+      contextInternals.buildBlockers(
+        [
+          {
+            ...blockedTask,
+            blocked_by: "pm-closed",
+            dependencies: [
+              { id: "pm-open", kind: "blocked_by" },
+              { id: "pm-closed", kind: "blocked_by" },
+            ],
+          },
+        ] as never,
+        [openTask, closedTask] as never,
+        statusRegistry,
+        5,
+      )[0],
+    ).toMatchObject({
+      blocked_by: "pm-open",
+      blocked_by_title: "Open task",
+      blocked_by_status: "open",
+    });
+    expect(
+      contextInternals.buildBlockers(
+        [
+          { ...blockedTask, blocked_by: "no-active-blocker", dependencies: [] },
+          { ...blockedTask, blocked_by: 7 as never, dependencies: [] },
+        ] as never,
+        [],
+        statusRegistry,
+        5,
+      ).map((entry) => entry.blocked_by),
+    ).toEqual([null, null]);
     expect(contextInternals.buildHotFiles(activeItems, 5)).toEqual([
       { path: "src/a.ts", references: 1, items: ["pm-open"] },
       { path: "src/b.ts", references: 1, items: ["pm-blocked"] },
@@ -377,7 +415,7 @@ describe("context command module", () => {
     expect(contextInternals.completionPct(0, 0)).toBe(0);
     expect(contextInternals.sortableTimestamp("not-a-date")).toBe("");
     expect(contextInternals.dateTokenForTimestamp("20260613T0915Z")).toBe("2026-06-13");
-    expect(contextInternals.buildBlockers([{ id: "pm-x", title: "No blocker", status: "blocked" }] as never, new Map(), 1)).toEqual([
+    expect(contextInternals.buildBlockers([{ id: "pm-x", title: "No blocker", status: "blocked" }] as never, [] as never, sparseRegistry, 1)).toEqual([
       {
         id: "pm-x",
         title: "No blocker",
@@ -566,7 +604,13 @@ describe("context command module", () => {
     };
     const hierarchy = contextInternals.buildHierarchy([parent, blockedChild] as never, [parent] as never, statusRegistry, 5);
     expect(hierarchy[0]?.children_blocked).toBe(1);
-    const progress = contextInternals.buildProgress([parent, blockedChild] as never, [parent] as never, statusRegistry, 5);
+    const progress = contextInternals.buildProgress(
+      [parent, blockedChild] as never,
+      [parent] as never,
+      new Set(["pm-blocked-child"]),
+      statusRegistry,
+      5,
+    );
     expect(progress[0]?.blocked).toBe(1);
     const recurringMarkdown = renderContextMarkdown({
       now: "2026-05-01T00:00:00.000Z",

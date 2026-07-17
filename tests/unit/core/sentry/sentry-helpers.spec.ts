@@ -440,6 +440,45 @@ describe("ensureSentryInit", () => {
         message: "[starter-extension] activating",
       }),
     ).toBeNull();
+    expect(
+      options.beforeSend({
+        logger: "console",
+        level: "error",
+        tags: { source: "node" },
+        exception: {
+          values: [
+            {
+              value:
+                "(node:163) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 error listeners added to [Socket]. MaxListeners is 10.",
+            },
+          ],
+        },
+      }),
+    ).toMatchObject({
+      level: "warning",
+      tags: {
+        source: "node",
+        "pm.diagnostic_class": "node_runtime_warning",
+      },
+    });
+    expect(
+      options.beforeSend({
+        logger: "console",
+        level: "error",
+        message:
+          "(node:9) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 data listeners added to [Socket].",
+      }),
+    ).toMatchObject({
+      level: "warning",
+      tags: { "pm.diagnostic_class": "node_runtime_warning" },
+    });
+    expect(
+      options.beforeSend({
+        logger: "console",
+        level: "error",
+        message: "Database write failed",
+      }),
+    ).toMatchObject({ level: "error" });
 
     const event = options.beforeSend({
       message: `token=secret ${TEST_LOCAL_PATH}/src/index.ts`,

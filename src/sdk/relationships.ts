@@ -569,6 +569,16 @@ export class RelationshipGraph {
     return this.#nodeSnapshot;
   }
 
+  /** Report whether an identifier names an indexed node. */
+  public hasNode(id: string): boolean {
+    return this.#nodes.has(id);
+  }
+
+  /** Return the registry that interprets this graph's relationship kinds. */
+  public registry(): RelationshipKindRegistry {
+    return this.#registry;
+  }
+
   #assertNode(id: string): void {
     if (!this.#nodes.has(id))
       throw new TypeError(`Relationship node not found: ${id}`);
