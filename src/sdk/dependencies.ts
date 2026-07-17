@@ -850,17 +850,22 @@ function buildContextDepsResult(params: {
   const missingReferences = [
     ...assembly.dangling.active,
     ...assembly.dangling.legacy_terminal,
-  ].filter(
-    (row) =>
-      !row.no_active_blocker_sentinel &&
-      missingReachableSet.has(row.target_id.trim().toLowerCase()) &&
-      packetIds.has(row.holder_id) &&
-      (filteredKinds === undefined ||
-        filteredKinds.has(row.kind) ||
-        filteredKinds.has(
-          relationshipRegistry.resolve(row.kind)?.inverse ?? row.kind,
-        )),
-  );
+  ].filter((row) => {
+    if (
+      row.no_active_blocker_sentinel ||
+      !missingReachableSet.has(row.target_id.trim().toLowerCase()) ||
+      !packetIds.has(row.holder_id)
+    )
+      return false;
+    if (filteredKinds === undefined) return true;
+    const definition = relationshipRegistry.resolve(row.kind);
+    return (
+      definition !== undefined &&
+      (filteredKinds.has(definition.kind) ||
+        (definition.inverse !== undefined &&
+          filteredKinds.has(definition.inverse)))
+    );
+  });
   const referenceLimit = contextOptions.edgeLimit ?? 40;
   return {
     id: canonicalId,

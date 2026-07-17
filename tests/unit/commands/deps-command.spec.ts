@@ -735,15 +735,23 @@ describe("runDeps", () => {
       const relatedRow = raw
         .split("\n")
         .find((line) => line.includes("pm-ctxmiss-shared,related,"));
+      const blockedRow = raw
+        .split("\n")
+        .find((line) => line.includes("pm-ctxmiss-shared,blocked_by,"));
       expect(relatedRow).toBeDefined();
-      if (!relatedRow) return;
+      expect(blockedRow).toBeDefined();
+      if (!relatedRow || !blockedRow) return;
       await writeFile(
         located.itemPath,
         raw
-          .replace("dependencies[2]", "dependencies[3]")
+          .replace("dependencies[2]", "dependencies[4]")
           .replace(
             relatedRow,
             `${relatedRow}\n${relatedRow.replace(",related,", ",custom_unknown,")}`,
+          )
+          .replace(
+            blockedRow,
+            `${blockedRow}\n${blockedRow.replace(",blocked_by,", ",depends_on,")}`,
           ),
         "utf8",
       );
@@ -755,12 +763,16 @@ describe("runDeps", () => {
       );
       expect(result).toMatchObject({
         missing_count: 1,
-        missing_reference_count: 1,
+        missing_reference_count: 2,
       });
       expect(result.missing_references).toEqual([
         expect.objectContaining({
           target_id: "pm-ctxmiss-shared",
           kind: "blocked_by",
+        }),
+        expect.objectContaining({
+          target_id: "pm-ctxmiss-shared",
+          kind: "depends_on",
         }),
       ]);
       const inverse = await runDeps(
