@@ -1,8 +1,11 @@
 import { writeFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { runDeps } from "../../../src/cli/commands/deps.js";
+import { runGraph } from "../../../src/cli/commands/graph.js";
 import { buildDepsRelationshipContext } from "../../../src/sdk/dependencies.js";
 import { collectDanglingDependencyReferences } from "../../../src/sdk/graph/assembly.js";
+import { resetWorkspaceGraphCache } from "../../../src/sdk/graph/cache.js";
+import type { GraphAuditResult } from "../../../src/sdk/graph/run.js";
 import type { ItemMetadata } from "../../../src/types/index.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
@@ -482,6 +485,29 @@ describe("runDeps", () => {
       expect(dangling.context?.nodes).toEqual([
         expect.objectContaining({ id: "pm-missing-prerequisite", status: "missing", reasons: ["prerequisite"] }),
       ]);
+    });
+  });
+
+  it("shares the fingerprint-keyed workspace assembly with pm graph", async () => {
+    await withTempPmPath(async (context) => {
+      const rootId = createTask(context, "cache-shared-root");
+      resetWorkspaceGraphCache();
+      const packet = await runDeps(
+        rootId,
+        { format: "context" },
+        { path: context.pmPath },
+      );
+      expect(packet.format).toBe("context");
+      // The deps context call populated the shared graph cache, so a graph
+      // query over the unchanged workspace reuses the same assembly.
+      const audit = (await runGraph(
+        "audit",
+        undefined,
+        undefined,
+        {},
+        { path: context.pmPath },
+      )) as GraphAuditResult;
+      expect(audit.cache).toMatchObject({ assembly: "hit", result: "miss" });
     });
   });
 

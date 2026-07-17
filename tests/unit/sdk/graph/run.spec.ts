@@ -11,6 +11,7 @@ import type {
   GraphDominatorsResult,
   GraphImpactResult,
   GraphPathsResult,
+  GraphPlanResult,
   GraphRedundancyResult,
   GraphTraversalResult,
 } from "../../../../src/sdk/graph/run.js";
@@ -566,6 +567,120 @@ describe("runGraph", () => {
       )) as GraphCommunitiesResult;
       expect(communities.community_count).toBe(0);
       expect(communities.largest_community_size).toBe(0);
+    });
+  });
+
+  it("derives bounded dry-run remediation plans from the audit", async () => {
+    await withTempPmPath(async (context) => {
+      await seedWorkspace(context);
+      const plan = (await runGraph(
+        "plan",
+        undefined,
+        undefined,
+        { sample: 5, limit: 2 },
+        { path: context.pmPath },
+      )) as GraphPlanResult;
+      expect(plan.subcommand).toBe("plan");
+      expect(plan.step_count).toBeGreaterThan(2);
+      expect(plan.finding_count).toBeGreaterThan(0);
+      expect(plan.steps).toHaveLength(2);
+      expect(plan.truncated).toBe(true);
+      const opTotal = Object.values(plan.steps_by_op).reduce(
+        (sum, value) => sum + value,
+        0,
+      );
+      const codeTotal = Object.values(plan.steps_by_code).reduce(
+        (sum, value) => sum + value,
+        0,
+      );
+      expect(opTotal).toBe(plan.step_count);
+      expect(codeTotal).toBe(plan.step_count);
+      expect(plan.steps_by_code.missing_reference_active).toBeGreaterThan(0);
+      for (const step of plan.steps!) {
+        expect(step.subject.length).toBeGreaterThan(0);
+        expect(step.evidence.length).toBeGreaterThan(0);
+        expect(["high", "medium", "low"]).toContain(step.confidence);
+      }
+
+      const summary = (await runGraph(
+        "plan",
+        undefined,
+        undefined,
+        { summary: true },
+        { path: context.pmPath },
+      )) as GraphPlanResult;
+      expect(summary.steps).toBeUndefined();
+      expect(summary.step_count).toBe(plan.step_count);
+
+      // Exemptions flow through to the underlying audit before planning.
+      const isolate = createItem(context, "Plan isolate");
+      const exempted = (await runGraph(
+        "plan",
+        undefined,
+        undefined,
+        { exemptIsolate: isolate, summary: true },
+        { path: context.pmPath },
+      )) as GraphPlanResult;
+      expect(exempted.steps_by_code.isolated_active_node ?? 0).toBe(0);
+    });
+  });
+
+  it("answers repeated identical queries from the fingerprint-keyed cache", async () => {
+    await withTempPmPath(async (context) => {
+      await seedWorkspace(context);
+      const first = (await runGraph(
+        "audit",
+        undefined,
+        undefined,
+        { sample: 5 },
+        { path: context.pmPath },
+      )) as GraphAuditResult;
+      // A fresh workspace key always misses both tiers.
+      expect(first.cache).toMatchObject({ assembly: "miss", result: "miss" });
+      expect(first.cache!.fingerprint).toMatch(/^[0-9a-f]{12}$/);
+
+      const repeat = (await runGraph(
+        "audit",
+        undefined,
+        undefined,
+        { sample: 5 },
+        { path: context.pmPath },
+      )) as GraphAuditResult;
+      expect(repeat.cache).toMatchObject({ assembly: "hit", result: "hit" });
+      const { cache: firstCache, ...firstRest } = first;
+      const { cache: repeatCache, ...repeatRest } = repeat;
+      expect(repeatRest).toEqual(firstRest);
+      expect(repeatCache!.fingerprint).toBe(firstCache!.fingerprint);
+
+      // A different bound is a different query under the same snapshot.
+      const rebounded = (await runGraph(
+        "audit",
+        undefined,
+        undefined,
+        { sample: 4 },
+        { path: context.pmPath },
+      )) as GraphAuditResult;
+      expect(rebounded.cache).toMatchObject({
+        assembly: "hit",
+        result: "miss",
+      });
+
+      // Any relationship-relevant mutation invalidates the snapshot.
+      createItem(context, "Cache invalidator");
+      const invalidated = (await runGraph(
+        "audit",
+        undefined,
+        undefined,
+        { sample: 5 },
+        { path: context.pmPath },
+      )) as GraphAuditResult;
+      expect(invalidated.cache).toMatchObject({
+        assembly: "miss",
+        result: "miss",
+      });
+      expect(invalidated.cache!.fingerprint).not.toBe(
+        firstCache!.fingerprint,
+      );
     });
   });
 

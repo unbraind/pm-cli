@@ -1539,7 +1539,7 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
   graph: {
     subcommand: {
       description:
-        "Graph query selector: ancestors|descendants|predecessors|successors|paths|impact|analyze|audit|communities|redundancy|dominators. Traversals, paths, impact, and dominators require id; paths also requires target.",
+        "Graph query selector: ancestors|descendants|predecessors|successors|paths|impact|analyze|audit|communities|redundancy|dominators|plan. Traversals, paths, impact, and dominators require id; paths also requires target; plan derives dry-run remediation proposals from the governance audit.",
       examples: ["successors", "audit"],
     },
     id: {

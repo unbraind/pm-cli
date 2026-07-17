@@ -4,11 +4,20 @@
  * Policy-aware relationship-graph quality audit shared by validation, health,
  * and package governance surfaces. The audit inspects one assembled workspace
  * graph and reports machine-readable findings — integrity gaps, ordering
- * cycles, stale lifecycle blocks, and coverage outliers — without inventing
- * edges or assuming that sparse connectivity is defective. Every finding names
- * the violated policy, carries a deterministic bounded sample, and proposes a
- * safe next action so agents can plan remediation without re-deriving context.
+ * cycles, duplicated edge spellings, stale lifecycle blocks, and coverage
+ * outliers — without inventing edges or assuming that sparse connectivity is
+ * defective. Findings gate severity on lifecycle: contradictions confined to
+ * terminal items downgrade to informational `legacy_*` codes because repairing
+ * them would mutate closed history. Every finding names the violated policy,
+ * carries a deterministic bounded sample, and proposes a safe next action so
+ * agents can plan remediation without re-deriving context.
  */
+import type { RelationshipEdge } from "../relationships.js";
+import {
+  isTransitiveKind,
+  orientTransitiveEdge,
+  transitiveFamilyKey,
+} from "./analytics.js";
 import type { WorkspaceRelationshipAssembly } from "./assembly.js";
 
 /** Severity ladder shared by every relationship audit finding. */
@@ -20,6 +29,9 @@ export type RelationshipAuditFindingCode =
   | "missing_reference_terminal"
   | "legacy_no_blocker_sentinel"
   | "ordering_cycle"
+  | "legacy_ordering_cycle"
+  | "duplicate_edge"
+  | "legacy_duplicate_edge"
   | "stale_lifecycle_block"
   | "isolated_active_node"
   | "sparse_active_node";
@@ -360,6 +372,19 @@ function collectIntegrityFindings(
   return findings;
 }
 
+/** Decide whether one audited node still participates in active scheduling. */
+function isActiveAuditMember(
+  member: string,
+  nodeStates: Map<string, AuditNodeState>,
+): boolean {
+  const state = nodeStates.get(member);
+  // A trimmed or custom assembly may omit a member's details. Treat that
+  // unknown lifecycle conservatively as active so contradictions are never
+  // silently downgraded to legacy history debt.
+  if (!state) return true;
+  return !state.terminal;
+}
+
 /** Collect ordering-cycle and lifecycle-block governance findings. */
 function collectOrderingFindings(
   assembly: WorkspaceRelationshipAssembly,
@@ -369,18 +394,35 @@ function collectOrderingFindings(
 ): RelationshipAuditFinding[] {
   const findings: RelationshipAuditFinding[] = [];
   const orderingAdjacency = buildOrderingAdjacency(assembly);
-  for (const cycle of collectOrderingCycles(orderingAdjacency))
-    findings.push(
-      buildFinding(
-        "ordering_cycle",
-        "error",
-        "Order-bearing relationship kinds must stay acyclic; a cycle makes every member unschedulable.",
-        (count) => `execution-order cycle across ${count} item(s)`,
-        cycle,
-        maxSampleSize,
-        "Remove or retype one ordering edge inside the cycle, or split the work so precedence is linear.",
-      ),
+  for (const cycle of collectOrderingCycles(orderingAdjacency)) {
+    // A cycle whose members are all terminal is a historical contradiction:
+    // it cannot make live work unschedulable, and "repairing" it would touch
+    // closed items (changelog drag), so it downgrades to informational debt.
+    const active = cycle.some((member) =>
+      isActiveAuditMember(member, nodeStates),
     );
+    findings.push(
+      active
+        ? buildFinding(
+            "ordering_cycle",
+            "error",
+            "Order-bearing relationship kinds must stay acyclic; a cycle makes every member unschedulable.",
+            (count) => `execution-order cycle across ${count} item(s)`,
+            cycle,
+            maxSampleSize,
+            "Remove or retype one ordering edge inside the cycle, or split the work so precedence is linear.",
+          )
+        : buildFinding(
+            "legacy_ordering_cycle",
+            "info",
+            "Ordering cycles between exclusively terminal items are historical contradictions with no scheduling effect.",
+            (count) => `terminal-only execution-order cycle across ${count} item(s)`,
+            cycle,
+            maxSampleSize,
+            "Leave as history debt, or clean up in a dedicated changelog-safe closed-item batch; never repair closed items ad hoc.",
+          ),
+    );
+  }
   const predecessorsByNode = new Map<string, string[]>();
   for (const [predecessor, adjacent] of orderingAdjacency)
     for (const successor of adjacent) {
@@ -412,6 +454,85 @@ function collectOrderingFindings(
     "A blocked lifecycle status must be backed by at least one open ordering predecessor.",
     (count) => `${count} status-blocked item(s) with no open blocker edge`,
     "Re-open the missing prerequisite as an edge, or move the item back to an active status.",
+  );
+  return findings;
+}
+
+/** One duplicate-edge group in semantic orientation with its stored spellings. */
+interface DuplicateEdgeGroup {
+  /** Semantic tail node shared by every stored spelling. */
+  from: string;
+  /** Semantic head node shared by every stored spelling. */
+  to: string;
+  /** Stored parallel edges, including reciprocal inverse spellings. */
+  edges: RelationshipEdge[];
+}
+
+/** Format one duplicate-edge group as a compact deterministic evidence string. */
+function formatDuplicateEdgeGroup(group: DuplicateEdgeGroup): string {
+  const kinds = group.edges
+    .map((edge) => edge.kind)
+    .sort((left, right) => left.localeCompare(right));
+  return `${group.from} -> ${group.to} (${kinds.join(" + ")})`;
+}
+
+/**
+ * Collect duplicate stored-edge findings over the directed ordering and
+ * hierarchy families. Each family joins a kind with its inverse spelling in
+ * semantic orientation, so a reciprocal pair such as `A blocked_by B` plus
+ * `B blocks A` collapses onto one oriented endpoint pair and is reported as a
+ * duplicate. Transitive-reduction redundancy analysis deliberately skips the
+ * direct edge under test, so these exact parallels are invisible there and
+ * this is the only surface that reports them.
+ */
+function collectDuplicateEdgeFindings(
+  assembly: WorkspaceRelationshipAssembly,
+  nodeStates: Map<string, AuditNodeState>,
+  maxSampleSize: number,
+): RelationshipAuditFinding[] {
+  const registry = assembly.graph.registry();
+  const groups = new Map<string, DuplicateEdgeGroup>();
+  for (const edge of assembly.graph.edges()) {
+    const definition = registry.require(edge.kind);
+    if (!isTransitiveKind(definition)) continue;
+    const oriented = orientTransitiveEdge(edge, definition);
+    if (oriented.from === oriented.to) continue;
+    const key = `${transitiveFamilyKey(definition)}::${oriented.from}::${oriented.to}`;
+    const group = groups.get(key);
+    if (group) group.edges.push(edge);
+    else groups.set(key, { ...oriented, edges: [edge] });
+  }
+  const active: string[] = [];
+  const legacy: string[] = [];
+  for (const group of groups.values()) {
+    if (group.edges.length < 2) continue;
+    const subjects =
+      isActiveAuditMember(group.from, nodeStates) ||
+      isActiveAuditMember(group.to, nodeStates)
+        ? active
+        : legacy;
+    subjects.push(formatDuplicateEdgeGroup(group));
+  }
+  const findings: RelationshipAuditFinding[] = [];
+  appendFinding(
+    findings,
+    active,
+    maxSampleSize,
+    "duplicate_edge",
+    "info",
+    "One semantic relationship should be stored once; parallel same-family spellings (reciprocal inverse pairs included) add no information and skew degree metrics.",
+    (count) => `${count} duplicated relationship(s) between active endpoints`,
+    "Remove all but one stored spelling of the relationship; keep the canonical direction the holder declared first.",
+  );
+  appendFinding(
+    findings,
+    legacy,
+    maxSampleSize,
+    "legacy_duplicate_edge",
+    "info",
+    "Duplicated spellings between exclusively terminal items are historical noise with no scheduling effect.",
+    (count) => `${count} duplicated relationship(s) between terminal endpoints`,
+    "Leave as history debt or clean up in a dedicated changelog-safe closed-item batch.",
   );
   return findings;
 }
@@ -540,6 +661,10 @@ export function auditWorkspaceRelationshipGraph(
   options.signal?.throwIfAborted();
   findings.push(
     ...collectOrderingFindings(assembly, nodeStates, isBlocked, maxSampleSize),
+  );
+  options.signal?.throwIfAborted();
+  findings.push(
+    ...collectDuplicateEdgeFindings(assembly, nodeStates, maxSampleSize),
   );
   options.signal?.throwIfAborted();
   const coverage = collectCoverageReport(

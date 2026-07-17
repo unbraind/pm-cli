@@ -2,11 +2,13 @@
  * @module sdk/graph/run
  *
  * Workspace-facing `pm graph` runner: one thin orchestrator that loads the
- * tracker once, assembles the relationship graph once, and dispatches bounded
- * traversal, path, impact, analytics, and governance-audit queries through the
+ * tracker once, resolves the fingerprint-keyed workspace assembly through the
+ * shared graph cache, and dispatches bounded traversal, path, impact,
+ * analytics, governance-audit, and remediation-planning queries through the
  * public graph toolkit. Every projection is counts-first, deterministic, and
- * carries explicit cost and truncation metadata so agents can budget follow-up
- * reads without re-scanning the workspace.
+ * carries explicit cost, truncation, and cache metadata so agents can budget
+ * follow-up reads without re-scanning the workspace; identical repeated
+ * queries in long-lived hosts are answered from the memoized snapshot.
  */
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
@@ -41,9 +43,18 @@ import {
   type WorkspaceRelationshipAssembly,
 } from "./assembly.js";
 import {
+  computeWorkspaceGraphFingerprint,
+  workspaceGraphCache,
+  type GraphCacheMetadata,
+} from "./cache.js";
+import {
   auditWorkspaceRelationshipGraph,
   type RelationshipAuditReport,
 } from "./governance.js";
+import {
+  planRelationshipRemediation,
+  type RelationshipRemediationStep,
+} from "./remediation.js";
 import {
   enumerateRelationshipPaths,
   hierarchyAncestors,
@@ -119,6 +130,8 @@ export interface GraphTraversalResult {
   cost: GraphQueryCost;
   /** Emitted node ids in deterministic breadth-first order; absent with summary. */
   ids?: string[];
+  /** Cache observability for this invocation. */
+  cache?: GraphCacheMetadata;
 }
 
 /** One enumerated path projected with relationship kinds instead of raw edges. */
@@ -149,6 +162,8 @@ export interface GraphPathsResult {
   cost: GraphQueryCost;
   /** Enumerated paths, shortest first; absent with summary. */
   paths?: GraphPathRow[];
+  /** Cache observability for this invocation. */
+  cache?: GraphCacheMetadata;
 }
 
 /** One affected item row in an impact projection. */
@@ -177,6 +192,8 @@ export interface GraphImpactResult {
   cost: GraphQueryCost;
   /** Affected item rows ordered by discovery; absent with summary. */
   affected?: GraphImpactRow[];
+  /** Cache observability for this invocation. */
+  cache?: GraphCacheMetadata;
 }
 
 /** Bounded execution-graph projection inside an analyze result. */
@@ -229,6 +246,8 @@ export interface GraphAnalyzeResult {
   execution: GraphExecutionSummary;
   /** Structural analytics over every stored edge. */
   knowledge: GraphKnowledgeSummary;
+  /** Cache observability for this invocation. */
+  cache?: GraphCacheMetadata;
 }
 
 /** Result envelope for the audit subcommand. */
@@ -245,6 +264,8 @@ export interface GraphAuditResult {
   profile: RelationshipAuditReport["profile"];
   /** Ordered findings with bounded evidence samples; absent with summary. */
   findings?: RelationshipAuditReport["findings"];
+  /** Cache observability for this invocation. */
+  cache?: GraphCacheMetadata;
 }
 
 /** One bounded community row projected by the communities subcommand. */
@@ -275,6 +296,8 @@ export interface GraphCommunitiesResult {
   cost: GraphQueryCost;
   /** Bounded community rows, largest first; absent with summary. */
   communities?: GraphCommunityRow[];
+  /** Cache observability for this invocation. */
+  cache?: GraphCacheMetadata;
 }
 
 /** One redundant stored edge projected with its witness path. */
@@ -301,6 +324,8 @@ export interface GraphRedundancyResult {
   cost: GraphQueryCost;
   /** Redundant edge rows in deterministic scan order; absent with summary. */
   redundant?: GraphRedundancyRow[];
+  /** Cache observability for this invocation. */
+  cache?: GraphCacheMetadata;
 }
 
 /** One structural bottleneck row projected by the dominators subcommand. */
@@ -331,6 +356,30 @@ export interface GraphDominatorsResult {
   cost: GraphQueryCost;
   /** Bounded bottleneck rows, most-gating first; absent with summary. */
   bottlenecks?: GraphDominatorRow[];
+  /** Cache observability for this invocation. */
+  cache?: GraphCacheMetadata;
+}
+
+/** Result envelope for the dry-run remediation planning subcommand. */
+export interface GraphPlanResult {
+  /** Executed graph subcommand. */
+  subcommand: "plan";
+  /** Total derived remediation proposals before row bounding. */
+  step_count: number;
+  /** Proposal counts keyed by operation family. */
+  steps_by_op: Record<string, number>;
+  /** Proposal counts keyed by policy code. */
+  steps_by_code: Record<string, number>;
+  /** Total governance-audit findings the plan was derived from. */
+  finding_count: number;
+  /** Whether sample, scan, or row bounds omitted derivable proposals. */
+  truncated: boolean;
+  /** Query cost metadata. */
+  cost: GraphQueryCost;
+  /** Bounded proposal rows in audit severity order; absent with summary. */
+  steps?: RelationshipRemediationStep[];
+  /** Cache observability for this invocation. */
+  cache?: GraphCacheMetadata;
 }
 
 /** Union of every graph subcommand result envelope. */
@@ -342,7 +391,8 @@ export type GraphResult =
   | GraphAuditResult
   | GraphCommunitiesResult
   | GraphRedundancyResult
-  | GraphDominatorsResult;
+  | GraphDominatorsResult
+  | GraphPlanResult;
 
 /** Fully parsed graph invocation shared by the subcommand executors. */
 interface GraphInvocation {
@@ -733,6 +783,85 @@ function runGraphDominators(
   };
 }
 
+/** Execute the dry-run remediation planning subcommand. */
+function runGraphPlan(
+  invocation: GraphInvocation,
+  isTerminal: (status: string) => boolean,
+): GraphPlanResult {
+  const limit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
+  const plan = planRelationshipRemediation(invocation.assembly, {
+    isTerminal,
+    ...(invocation.sample === undefined
+      ? {}
+      : { maxSampleSize: invocation.sample }),
+    ...(invocation.exemptIsolates.length === 0
+      ? {}
+      : { exemptIsolates: invocation.exemptIsolates }),
+  });
+  const byOp: Record<string, number> = {};
+  const byCode: Record<string, number> = {};
+  for (const step of plan.steps) {
+    byOp[step.op] = (byOp[step.op] ?? 0) + 1;
+    byCode[step.code] = (byCode[step.code] ?? 0) + 1;
+  }
+  return {
+    subcommand: "plan",
+    step_count: plan.steps.length,
+    steps_by_op: byOp,
+    steps_by_code: byCode,
+    finding_count: plan.report.findings.length,
+    truncated: plan.truncated || plan.steps.length > limit,
+    cost: {
+      visited_nodes: plan.cost.visitedNodes,
+      inspected_edges: plan.cost.inspectedEdges,
+    },
+    ...(invocation.summary ? {} : { steps: plan.steps.slice(0, limit) }),
+  };
+}
+
+/** Build the deterministic memoization key covering every query-shaping input. */
+function buildGraphQueryKey(
+  subcommand: GraphSubcommand,
+  root: string | undefined,
+  pathsTarget: string | undefined,
+  invocation: GraphInvocation,
+): string {
+  return JSON.stringify({
+    subcommand,
+    root: root ?? null,
+    target: pathsTarget ?? null,
+    kinds: invocation.kinds ?? null,
+    maxDepth: invocation.maxDepth ?? null,
+    limit: invocation.limit ?? null,
+    after: invocation.after ?? null,
+    direction: invocation.direction,
+    maxPaths: invocation.maxPaths ?? null,
+    sample: invocation.sample ?? null,
+    exemptIsolates: invocation.exemptIsolates,
+    summary: invocation.summary,
+  });
+}
+
+/** Dispatch one parsed graph subcommand to its executor. */
+function executeGraphSubcommand(
+  subcommand: GraphSubcommand,
+  root: string | undefined,
+  pathsTarget: string | undefined,
+  invocation: GraphInvocation,
+  isTerminal: (status: string) => boolean,
+): GraphResult {
+  if (subcommand === "analyze") return runGraphAnalyze(invocation);
+  if (subcommand === "audit") return runGraphAudit(invocation, isTerminal);
+  if (subcommand === "plan") return runGraphPlan(invocation, isTerminal);
+  if (subcommand === "communities") return runGraphCommunities(invocation);
+  if (subcommand === "redundancy") return runGraphRedundancy(invocation);
+  if (subcommand === "dominators") return runGraphDominators(root!, invocation);
+  if (subcommand === "paths")
+    return runGraphPaths(root!, pathsTarget!, invocation);
+  if (subcommand === "impact") return runGraphImpact(root!, invocation);
+  return runGraphTraversal(subcommand, root!, invocation);
+}
+
 /** Implements run graph for the public runtime surface of this module. */
 export async function runGraph(
   subcommandRaw: string,
@@ -765,8 +894,13 @@ export async function runGraph(
   const isTerminal = (status: string): boolean =>
     isTerminalStatus(status, statusRegistry);
   const kinds = parseKinds(options.kind);
+  const lookup = workspaceGraphCache().lookup(
+    pmRoot,
+    computeWorkspaceGraphFingerprint(items, isTerminal),
+    () => assembleWorkspaceRelationshipGraph(items, isTerminal),
+  );
   const invocation: GraphInvocation = {
-    assembly: assembleWorkspaceRelationshipGraph(items, isTerminal),
+    assembly: lookup.assembly,
     ...(kinds === undefined ? {} : { kinds }),
     maxDepth: parseMaxDepth(options.maxDepth),
     limit: parsePositiveInteger(options.limit, "limit"),
@@ -777,19 +911,24 @@ export async function runGraph(
     exemptIsolates: normalizeIdList(options.exemptIsolate),
     summary: options.summary === true,
   };
-  if (subcommand === "analyze") return runGraphAnalyze(invocation);
-  if (subcommand === "audit") return runGraphAudit(invocation, isTerminal);
-  if (subcommand === "communities") return runGraphCommunities(invocation);
-  if (subcommand === "redundancy") return runGraphRedundancy(invocation);
-  const root = canonicalizeGraphId(invocation.assembly, id!);
-  if (subcommand === "dominators") return runGraphDominators(root, invocation);
-  if (subcommand === "paths") {
-    return runGraphPaths(
-      root,
-      canonicalizeGraphId(invocation.assembly, target!),
-      invocation,
-    );
-  }
-  if (subcommand === "impact") return runGraphImpact(root, invocation);
-  return runGraphTraversal(subcommand, root, invocation);
+  const root = ROOTED_SUBCOMMANDS.has(subcommand)
+    ? canonicalizeGraphId(invocation.assembly, id!)
+    : undefined;
+  const pathsTarget =
+    subcommand === "paths"
+      ? canonicalizeGraphId(invocation.assembly, target!)
+      : undefined;
+  const memo = lookup.memoize(
+    buildGraphQueryKey(subcommand, root, pathsTarget, invocation),
+    () =>
+    executeGraphSubcommand(subcommand, root, pathsTarget, invocation, isTerminal),
+  );
+  return {
+    ...memo.value,
+    cache: {
+      fingerprint: lookup.fingerprint.slice(0, 12),
+      assembly: lookup.assemblyReused ? "hit" : "miss",
+      result: memo.reused ? "hit" : "miss",
+    },
+  };
 }

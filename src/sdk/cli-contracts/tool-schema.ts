@@ -1068,21 +1068,44 @@ function buildActionScopedAllOf(
   return allOf;
 }
 
+/**
+ * Return the complete allowed parameter-key set for one pm action — the fixed
+ * `action` selector, global transport parameters, mutation projection keys,
+ * and the action contract's required and optional keys — or `undefined` for
+ * an action the contract tables do not describe (extension- and package-owned
+ * actions accept arbitrary passthrough keys by design). This is the single
+ * source of truth shared by the strict action-scoped schema builder and the
+ * MCP server's unknown-option detection.
+ */
+export function pmToolActionParameterKeys(
+  action: string,
+): string[] | undefined {
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      PM_TOOL_ACTION_SCHEMA_CONTRACTS,
+      action,
+    )
+  ) {
+    return undefined;
+  }
+  const contract = PM_TOOL_ACTION_SCHEMA_CONTRACTS[action as PmToolAction];
+  const mutationParameterKeys =
+    PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS[action as PmToolAction] ?? [];
+  return toSchemaKeyList([
+    "action",
+    ...PM_TOOL_GLOBAL_PARAMETER_KEYS,
+    ...mutationParameterKeys,
+    ...(contract.required ?? []),
+    ...(contract.optional ?? []),
+  ]);
+}
+
 function buildActionScopedToolSchema(
   action: PmToolAction,
 ): Record<string, unknown> {
   const contract = PM_TOOL_ACTION_SCHEMA_CONTRACTS[action];
   const required = toSchemaKeyList(contract.required ?? []);
-  const optional = toSchemaKeyList(contract.optional ?? []);
-  const mutationParameterKeys =
-    PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS[action] ?? [];
-  const allowedKeys = toSchemaKeyList([
-    "action",
-    ...PM_TOOL_GLOBAL_PARAMETER_KEYS,
-    ...mutationParameterKeys,
-    ...required,
-    ...optional,
-  ]);
+  const allowedKeys = pmToolActionParameterKeys(action)!;
   const schema: Record<string, unknown> = {
     type: "object",
     additionalProperties: false,

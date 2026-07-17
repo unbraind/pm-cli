@@ -13,6 +13,7 @@ import { decodeHtmlEntitiesInOptions } from "../core/shared/html-entity-decode.j
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import { asRecordClone } from "../core/shared/primitives.js";
 import { createSerialQueue } from "../core/shared/serial-queue.js";
+import { pmToolActionParameterKeys } from "../sdk/cli-contracts/tool-schema.js";
 import {
   readRequiredString,
   runAction,
@@ -125,37 +126,99 @@ function detectUnexpectedTopLevelKeys(
   return warnings;
 }
 
+// Fixed pm action behind each narrow tool. Also consulted by nested-option
+// validation (pm-upi0) to resolve the invoked action's contract keys.
+const NARROW_TOOL_ACTIONS: Record<string, string> = {
+  pm_context: "context",
+  pm_next: "next",
+  pm_search: "search",
+  pm_list: "list",
+  pm_get: "get",
+  pm_create: "create",
+  pm_copy: "copy",
+  pm_focus: "focus",
+  pm_update: "update",
+  pm_append: "append",
+  pm_claim: "claim",
+  pm_release: "release",
+  pm_close: "close",
+  pm_comments: "comments",
+  pm_files: "files",
+  pm_docs: "docs",
+  pm_notes: "notes",
+  pm_learnings: "learnings",
+  pm_deps: "deps",
+  pm_graph: "graph",
+  pm_test: "test",
+  pm_validate: "validate",
+  pm_health: "health",
+  pm_contracts: "contracts",
+  pm_schema: "schema",
+  pm_profile: "profile",
+  pm_config: "config",
+  pm_plan: "plan",
+};
+
 const HANDLERS: Record<string, ToolHandler> = {
   pm_run: (args) => runAction(args as PmActionInput),
-  pm_context: (args) => runAction({ ...args, action: "context" }),
-  pm_next: (args) => runAction({ ...args, action: "next" }),
-  pm_search: (args) => runAction({ ...args, action: "search" }),
-  pm_list: (args) => runAction({ ...args, action: "list" }),
-  pm_get: (args) => runAction({ ...args, action: "get" }),
-  pm_create: (args) => runAction({ ...args, action: "create" }),
-  pm_copy: (args) => runAction({ ...args, action: "copy" }),
-  pm_focus: (args) => runAction({ ...args, action: "focus" }),
-  pm_update: (args) => runAction({ ...args, action: "update" }),
-  pm_append: (args) => runAction({ ...args, action: "append" }),
-  pm_claim: (args) => runAction({ ...args, action: "claim" }),
-  pm_release: (args) => runAction({ ...args, action: "release" }),
-  pm_close: (args) => runAction({ ...args, action: "close" }),
-  pm_comments: (args) => runAction({ ...args, action: "comments" }),
-  pm_files: (args) => runAction({ ...args, action: "files" }),
-  pm_docs: (args) => runAction({ ...args, action: "docs" }),
-  pm_notes: (args) => runAction({ ...args, action: "notes" }),
-  pm_learnings: (args) => runAction({ ...args, action: "learnings" }),
-  pm_deps: (args) => runAction({ ...args, action: "deps" }),
-  pm_graph: (args) => runAction({ ...args, action: "graph" }),
-  pm_test: (args) => runAction({ ...args, action: "test" }),
-  pm_validate: (args) => runAction({ ...args, action: "validate" }),
-  pm_health: (args) => runAction({ ...args, action: "health" }),
-  pm_contracts: (args) => runAction({ ...args, action: "contracts" }),
-  pm_schema: (args) => runAction({ ...args, action: "schema" }),
-  pm_profile: (args) => runAction({ ...args, action: "profile" }),
-  pm_config: (args) => runAction({ ...args, action: "config" }),
-  pm_plan: (args) => runAction({ ...args, action: "plan" }),
+  ...Object.fromEntries(
+    Object.entries(NARROW_TOOL_ACTIONS).map(([tool, action]) => [
+      tool,
+      (args: Record<string, unknown>) => runAction({ ...args, action }),
+    ]),
+  ),
 };
+
+/** Resolve the pm action a tools/call invocation will dispatch, when knowable. */
+function resolveInvokedAction(
+  toolName: string,
+  args: Record<string, unknown>,
+): string | undefined {
+  if (toolName === "pm_run") {
+    return typeof args.action === "string" ? args.action : undefined;
+  }
+  return NARROW_TOOL_ACTIONS[toolName];
+}
+
+// pm-upi0: the pm-qxwu top-level detection cannot see inside the `options`
+// object, so a mutation-shaped key on a read tool (pm_deps options.dep) is
+// silently dropped before dispatch and the agent builds on state it never
+// created. Warn (without rejecting) on every options key absent from the
+// invoked action's contract; extension- and package-owned actions have no
+// contract table and keep arbitrary passthrough options.
+function detectUnexpectedOptionKeys(
+  toolName: string,
+  action: string | undefined,
+  args: Record<string, unknown>,
+): string[] {
+  const options = args.options;
+  if (
+    action === undefined ||
+    typeof options !== "object" ||
+    options === null ||
+    Array.isArray(options)
+  ) {
+    return [];
+  }
+  const declared = pmToolActionParameterKeys(action);
+  if (declared === undefined) {
+    return [];
+  }
+  const declaredSet = new Set(declared);
+  const warnings: string[] = [];
+  for (const key of Object.keys(options)) {
+    if (declaredSet.has(key)) {
+      continue;
+    }
+    const suggestion = nearestDeclaredKey(key, declared);
+    warnings.push(
+      suggestion !== undefined
+        ? `Unknown option "${key}" for ${toolName} action "${action}" (did you mean "${suggestion}"?). The ${action} contract does not read it, so it has no effect; declared keys are: ${declared.join(", ")}.`
+        : `Unknown option "${key}" for ${toolName} action "${action}". The ${action} contract does not read it, so it has no effect; declared keys are: ${declared.join(", ")}.`,
+    );
+  }
+  return warnings;
+}
 
 function resultContent(
   result: unknown,
@@ -243,7 +306,11 @@ export async function handleRequest(
     const args = decodeHtmlEntitiesInOptions(asRecordClone(params.arguments));
     // pm-qxwu: non-breaking detection of typo'd / unexpected top-level keys.
     // additionalProperties stays true so passthrough still works; we only warn.
-    const warnings = detectUnexpectedTopLevelKeys(name, args);
+    // pm-upi0 extends the same mechanism into the nested options object.
+    const warnings = [
+      ...detectUnexpectedTopLevelKeys(name, args),
+      ...detectUnexpectedOptionKeys(name, resolveInvokedAction(name, args), args),
+    ];
     for (const warning of warnings) {
       console.error(`[pm-mcp] ${warning}`);
     }
@@ -382,6 +449,7 @@ export const _testOnly = {
   get closeManyOptionsFromFlat() {
     return readRuntimeTestHook("closeManyOptionsFromFlat");
   },
+  detectUnexpectedOptionKeys,
   detectUnexpectedTopLevelKeys,
   errorContent,
   get extensionOptionsFromArgs() {
