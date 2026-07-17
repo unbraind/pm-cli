@@ -1,0 +1,21 @@
+id: pm-do5b
+title: "TypeScript 7 (native) migration: port static-quality gate off the classic compiler JS API and adopt TS7 once typescript-eslint supports it"
+description: "Dependabot PR#539 (typescript 6.0.3 -> 7.0.2) verified 2026-07-17 on a rebased branch: tsgo compiles/builds the repo fine, but adoption is hard-blocked twice. (1) typescript-eslint 8.64.0 (latest) declares peer typescript >=4.8.4 <6.1.0 and typescript-estree crashes at load under 7.x — the entire strict-ESLint static gate. (2) TS7's npm package ships NO stable JS compiler API: root exports only version/versionMajorMinor plus unstable/* subpaths (ast, ast/scanner, ast/visitor, async, fs, proto, sync); scripts/release/static-quality-gate.mts is built on ts.createSourceFile/ScriptTarget/node-kind visitors (docstring coverage, boilerplate/trivial docstring checks, function complexity, CodeFactor parity, SDK import-boundary ratchet) — all 34 static-quality-gate.spec failures reduce to ts.ScriptTarget undefined. PR#539 closed via '@dependabot ignore this major version' (2026-07-17); lift the ignore or bump manually at migration time. Upside at adoption: native compiler is roughly 10x faster builds/typechecks. Migration shape: (a) wait for typescript-eslint TS7 support (or its tsslint successor), (b) port static-quality-gate.mts to typescript/unstable/ast + scanner (or pin a typescript-6 devDependency solely for gate parsing as a bridge), (c) re-validate the boundary ratchet + docstring/complexity parity on identical baselines before/after the port."
+type: Chore
+status: open
+priority: 3
+tags[2]: "area:toolchain",upstream-gated
+created_at: "2026-07-17T04:42:09.880Z"
+updated_at: "2026-07-17T04:42:09.880Z"
+author: maintainer-agent
+estimated_minutes: 480
+acceptance_criteria: "typescript 7.x is the sole compiler in devDependencies; strict ESLint gate runs (typescript-eslint TS7-compatible or successor adopted); static-quality-gate.mts produces identical violation baselines under the new parser (docstrings, complexity, boundary ratchet all byte-identical or intentionally re-baselined with evidence); dependabot major-version ignore for typescript lifted; CI fully green on all legs"
+parent: pm-92if
+risk: medium
+confidence: medium
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-9rxu,related,"2026-07-17T04:42:09.880Z",null,null
+  pm-9x6e,related,"2026-07-17T04:42:09.880Z",null,null
+  pm-onpb,related,"2026-07-17T04:42:09.880Z",null,null
+  pm-tll8,related,"2026-07-17T04:42:09.880Z",null,null
+body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:cli",defect-class,re-entrancy,sdk-first
 created_at: "2026-07-12T12:25:25.346Z"
-updated_at: "2026-07-16T22:10:04.293Z"
+updated_at: "2026-07-17T04:40:21.092Z"
 closed_at: "2026-07-16T21:18:40.311Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,9 +14,9 @@ acceptance_criteria: "runPmCli invocations are fully re-entrant in one process: 
 parent: pm-usfg
 risk: medium
 confidence: medium
-resolution: Replaced module-level mutable Commander state with an invocation-owned program and lifecycle hooks.
-expected_result: Sequential in-process CLI invocations do not retain extension commands or flags from earlier workspaces.
-actual_result: Persistent-worker regression passes across extension and clean workspaces without worker disposal; all-source coverage is exact 100 percent.
+resolution: "Shipped via PR#575: runPmCli now constructs the Commander program per invocation, so dynamically registered extension commands/flags and runtime schema field flags no longer persist across in-process embedded runs; regression specs assert zero cross-invocation leakage."
+expected_result: "Embedded/in-process CLI invocations are fully isolated: no extension command, flag, or schema-field registration leaks from one runPmCli call into the next."
+actual_result: PR#575 merged 2026-07-16 with per-invocation program construction and leakage regression specs; full 100/100/100/100 coverage and all gates green.
 dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-8fxc,related,"2026-07-12T12:25:25.346Z",null,null
   pm-yh8r,related,"2026-07-12T12:25:25.346Z",null,null

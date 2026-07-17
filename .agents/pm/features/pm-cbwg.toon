@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:sdk",docs,exemplar
 created_at: "2026-07-05T04:54:31.164Z"
-updated_at: "2026-07-16T22:23:22.801Z"
+updated_at: "2026-07-17T04:40:35.791Z"
 closed_at: "2026-07-16T21:18:42.251Z"
 author: maintainer-agent
 estimated_minutes: 300
@@ -14,9 +14,9 @@ acceptance_criteria: "Exemplar package builds+tests using only public SDK import
 parent: pm-usfg
 risk: low
 confidence: medium
-resolution: Delivered a package-shaped SDK-only universal project tool exemplar and public guide.
-expected_result: "A copyable consumer uses only the public SDK for customization, lifecycle, queries, context, annotations, relationships, and governance."
-actual_result: Linked acceptance tests and an installed-tarball temporary consumer pass every required primitive with no CLI or private-core import.
+resolution: "Shipped via PR#575: docs/examples/sdk-custom-tool — a package-shaped, SDK-only custom project tool exercising customization (types/statuses), lifecycle transitions, graph relationships, context, evidence, and governance using only @unbrained/pm-cli/sdk; installed-tarball proof ran Deliverable/reviewing/closed lifecycle with clean health/history."
+expected_result: "A minimal custom PM tool package builds and runs against only public SDK exports, proving the universal-tool story end-to-end without private-core imports."
+actual_result: "PR#575 merged 2026-07-16; exemplar verified from an installed tarball (lifecycle, graph edge, health/history drift clean); boundary ratchet tightened to 48 sources / 407 edges."
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-6abs,related,"2026-07-07T08:57:39.012Z",null,null
   pm-9x6e,related,"2026-07-16T20:38:57.611Z",null,null

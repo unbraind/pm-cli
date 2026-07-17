@@ -1,0 +1,22 @@
+id: pm-h90s
+title: "Author attribution enforcement: opt-in strict unknown-author rejection, SDK test-all author parity, and audited disposition for stranded actionable events"
+description: "Production evidence 2026-07-16: the PR#575 lane (codex-wide-sdk-20260716) authored 211 history events correctly but its 'pm test --run' invocations wrote 5 test_run_track events with author 'unknown' (pm-qfdd/pm-cbwg/pm-w89s/pm-9x6e x2, 21:05-21:13Z). Because pm-demq's legacy/actionable split anchors on a fixed baseline timestamp, these post-baseline events are permanently 'actionable' — pm health is now ok:false with history_unknown_author_events:5 and NO remediation path (history is immutable by design; never rewrite). Three gaps, one item: (1) PREVENTION — pm-cpja deliberately shipped attribution as advisory; add opt-in strict enforcement (settings key, e.g. require_attributed_author) that fail-fasts any mutation whose author resolves to 'unknown', so lanes cannot leak unattributed events into permanent history. (2) SDK PARITY — buildTestAllItemRunContext (src/sdk/test/batch.ts:631) hardcodes resolveAuthor(undefined, author_default): TestAllCommandOptions carries no author field, so programmatic SDK runTestAll callers cannot attribute tracking events except via process-global PM_AUTHOR (execution.ts single-run path DOES accept options.author — asymmetric). (3) DISPOSITION — an audited acknowledgment mechanism for stranded actionable unknown-author events (attribute-by-annotation recorded as a NEW history event with evidence, e.g. 'events X..Y attributed to codex-wide-sdk-20260716 by maintainer review', consumed by the health scanner), so health can return to ok truthfully without moving the baseline or editing history."
+type: Issue
+status: open
+priority: 1
+tags[3]: agent-ux,"area:governance",history-integrity
+created_at: "2026-07-17T04:42:36.823Z"
+updated_at: "2026-07-17T04:42:36.823Z"
+author: maintainer-agent
+estimated_minutes: 360
+acceptance_criteria: "strict mode (opt-in settings key) rejects mutations resolving to author 'unknown' with a typed usage error naming --author/PM_AUTHOR; TestAllCommandOptions accepts author and threads it to appendTrackedTestRunSummary (parity with single-run path); an audited acknowledgment flow dispositions the five 2026-07-16 events and pm health returns ok:true without baseline moves or history rewrites; validate/health docs cover all three; regression specs for each"
+parent: pm-33cw
+risk: medium
+confidence: high
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-3z0k,related,"2026-07-17T04:42:36.823Z",null,null
+  pm-cpja,related,"2026-07-17T04:42:36.823Z",null,null
+  pm-demq,related,"2026-07-17T04:42:36.823Z",null,null
+  pm-u14c,related,"2026-07-17T04:42:36.823Z",null,null
+  pm-wenq,related,"2026-07-17T04:42:36.823Z",null,null
+body: ""

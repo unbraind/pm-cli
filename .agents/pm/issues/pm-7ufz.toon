@@ -1,0 +1,21 @@
+id: pm-7ufz
+title: "GH-574: flattened extension alias subcommands still drop option contracts after GH-503/GH-550 fixes (empty --help, valid options rejected as positionals)"
+description: "pm 2026.7.16 with published pm-csv@2026.7.13: the nested path (pm csv export) carries the full option contract, but the flattened alias path (pm csv-export export) renders zero option lines in --help and rejects valid options as excess positionals ('Too many arguments … : pipe'). GH-503/pm-s9iu restored contracts on flattened aliases and GH-550/pm-evav fixed the real-CLI boundary erasure, but the fix did not reach the flattened alias's SUBCOMMAND registration path — the alias group is declared as a bare passthrough instead of being generated from the same command definition object as the nested tree. Fix direction per the issue: derive both surfaces from one definition so --help output and option acceptance are identical; add a real-CLI parity spec (nested vs flattened) so the class cannot regress a third time."
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,"area:extensions",defect-class
+created_at: "2026-07-17T04:41:14.292Z"
+updated_at: "2026-07-17T04:41:14.292Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: pm csv-export export --help renders the identical option contract as pm csv export --help on a real CLI boundary; valid options are accepted (no 'too many arguments'); a parity regression spec covers nested-vs-flattened contract equality for extension command groups; GH-574 closed with evidence
+parent: pm-ugqx
+risk: medium
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-albl,related,"2026-07-17T04:41:14.292Z",null,null
+  pm-as4a,related,"2026-07-17T04:41:14.292Z",null,null
+  pm-evav,related,"2026-07-17T04:41:14.292Z",null,null
+  pm-s9iu,related,"2026-07-17T04:41:14.292Z",null,null
+body: ""

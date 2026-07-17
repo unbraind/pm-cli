@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-story,"area:sdk",changelog-exclude
 created_at: "2026-07-05T04:52:38.434Z"
-updated_at: "2026-07-16T22:10:29.542Z"
+updated_at: "2026-07-17T04:40:36.514Z"
 closed_at: "2026-07-16T21:18:44.175Z"
 author: maintainer-agent
 estimated_minutes: 30
@@ -14,9 +14,9 @@ acceptance_criteria: "Exemplar package builds a minimal custom PM CLI importing 
 parent: pm-usfg
 risk: low
 confidence: high
-resolution: Completed the SDK-only integrator story with a real universal-tool exemplar and packed-consumer proof.
-expected_result: An integrator can build a complete custom project-management tool using only public pm SDK primitives.
-actual_result: "The exemplar covers every acceptance primitive without spawning pm or importing src/core, with linked and packed acceptance tests green."
+resolution: "Fulfilled via PR#575's SDK-only exemplar (docs/examples/sdk-custom-tool): an integrator can build a complete custom PM tool — custom types/statuses, lifecycle, graph, context, search, validation, health — from only the public pm SDK."
+expected_result: Integrator story satisfiable end-to-end with only public @unbrained/pm-cli/sdk exports.
+actual_result: Exemplar shipped and verified from installed tarball in PR#575 (merged 2026-07-16); all six SDK promotion slices public; no private-core imports required.
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-6abs,related,"2026-07-07T08:57:50.864Z",null,null
   pm-cbwg,related,"2026-07-16T22:10:29.493Z",null,null
