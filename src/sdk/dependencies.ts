@@ -858,7 +858,7 @@ function buildContextDepsResult(params: {
       (filteredKinds === undefined ||
         filteredKinds.has(row.kind) ||
         filteredKinds.has(
-          relationshipRegistry.require(row.kind).inverse ?? row.kind,
+          relationshipRegistry.resolve(row.kind)?.inverse ?? row.kind,
         )),
   );
   const referenceLimit = contextOptions.edgeLimit ?? 40;

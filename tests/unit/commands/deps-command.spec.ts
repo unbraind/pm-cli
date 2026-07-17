@@ -728,6 +728,25 @@ describe("runDeps", () => {
         "id=pm-ctxmiss-shared,kind=blocked_by,author=test-author,created_at=now",
         "id=pm-ctxmiss-shared,kind=related,author=test-author,created_at=now",
       ]);
+      const located = await locateItem(context.pmPath, rootId);
+      expect(located).not.toBeNull();
+      if (!located) return;
+      const { raw } = await readLocatedItem(located);
+      const relatedRow = raw
+        .split("\n")
+        .find((line) => line.includes("pm-ctxmiss-shared,related,"));
+      expect(relatedRow).toBeDefined();
+      if (!relatedRow) return;
+      await writeFile(
+        located.itemPath,
+        raw
+          .replace("dependencies[2]", "dependencies[3]")
+          .replace(
+            relatedRow,
+            `${relatedRow}\n${relatedRow.replace(",related,", ",custom_unknown,")}`,
+          ),
+        "utf8",
+      );
 
       const result = await runDeps(
         rootId,
