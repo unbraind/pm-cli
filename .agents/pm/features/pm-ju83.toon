@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: api,"area:graph","area:sdk",performance,relationships,sdk-first
 created_at: "2026-07-13T21:58:11.171Z"
-updated_at: "2026-07-17T17:00:03.418Z"
+updated_at: "2026-07-17T17:45:17.754Z"
 author: codex-root
 estimated_minutes: 720
 acceptance_criteria: "The registry defines built-in and extension-provided kinds with direction, inverse, order-bearing and hierarchy flags, cardinality, payload schema, lifecycle, aliases, and compatibility version; Mutation APIs validate endpoints and invariants then append attributable immutable events without direct state rewrites; Read APIs cover adjacency, predecessors, successors, ancestors, descendants, shortest and constrained paths, transitive closure, reverse impact, and induced bounded subgraphs; Every query supports deterministic ordering, typed filters, field projection, cursor or streaming continuation, cancellation, snapshot selection, and explicit cost or truncation metadata; Indexes are rebuildable from history, incrementally maintained, crash safe, observable, and optional for small projects; Thin CLI and MCP adapters call public SDK APIs without hidden core imports; shell-safe JSON, JSONL, TOON, and counts-first outputs preserve pipeline composability; Contract, property, replay, concurrency, migration, and scale tests cover legacy kinds, custom kinds, cycles, snapshots, and one million items"
@@ -66,7 +66,7 @@ notes[2]{created_at,author,text}:
 learnings[2]{created_at,author,text}:
   "2026-07-14T07:46:27.146Z",codex-gpt5-root,"A storage-independent relationship registry is the semantic boundary: algorithms must consume ordering/hierarchy flags rather than infer meaning from labels, while durable event/index implementations can remain interchangeable."
   "2026-07-14T10:02:20.502Z",codex-gpt5,Optimistic append sequences plus cursor fingerprints bind every page and snapshot to a coherent immutable relationship history; durable adapters can persist the same event contract without coupling graph semantics to storage.
-files[15]{path,scope,note}:
+files[16]{path,scope,note}:
   scripts/release/sdk-import-boundary-baseline.json,project,CLI to SDK boundary ratchet
   src/cli/register-mutation.ts,project,thin deps CLI options
   src/mcp/tool-definitions.ts,project,MCP graph-context description
@@ -82,6 +82,7 @@ files[15]{path,scope,note}:
   src/sdk/index.ts,project,public SDK barrel export
   src/sdk/relationship-history.ts,project,"append-only relationship event ledger,snapshots,optimistic concurrency,and cursor pages"
   src/sdk/relationships.ts,project,public relationship ontology and bounded graph query kernel
+  tests/unit/sdk/graph/traversal.spec.ts,project,PR#579 traversal bounds + semantics spec (orphan-link reconciliation pass #97)
 tests[4]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/graph/assembly-governance.spec.ts tests/unit/sdk/graph/traversal.spec.ts tests/unit/commands/deps-command.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/sdk/relationship-history-analytics.spec.ts tests/unit/commands/deps-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,300

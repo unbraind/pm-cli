@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: architecture,"area:cli","area:mcp","area:sdk",ci
 created_at: "2026-07-06T13:13:21.203Z"
-updated_at: "2026-07-16T21:18:46.823Z"
+updated_at: "2026-07-17T17:51:09.675Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: sdk-import-boundary-baseline.json reaches zero entries and is deleted; static-quality-gate hard-denies any private src/core import from src/cli/** and src/mcp/** with no baseline escape hatch; src/mcp handlers consume only src/sdk primitives; full test suite + 100% coverage gate green with zero CLI/MCP behavior change
@@ -64,9 +64,10 @@ comments[41]{created_at,author,text}:
   "2026-07-16T20:25:25.023Z",codex-wide-sdk-20260716,"Implementation start 2026-07-16: continue the terminal boundary burn-down alongside the re-entrant embedded CLI and SDK-only exemplar. This item will close only if the enforced baseline reaches zero; otherwise it will return to open with exact remaining source/edge evidence."
   "2026-07-16T20:38:35.315Z",codex-wide-sdk-20260716,"Boundary checkpoint: SDK ownership of bootstrap normalization, semantic-refresh worker execution, and telemetry flushing reduces the enforced baseline from 51 sources / 412 edges to 48 sources / 407 edges. Static quality reports zero new/stale/dynamic violations; capstone remains active until final closeout returns it open or reaches zero."
   "2026-07-16T21:18:36.039Z",codex-wide-sdk-20260716,"Boundary closeout for this bundle: bootstrap normalization, semantic-refresh worker execution, and telemetry flushing now live under SDK ownership. The enforced ratchet improves from 51 sources / 412 edges to 48 sources / 407 edges with zero new, stale, or dynamic violations. Exact 100/100/100/100 coverage and static boundary gates pass, but the zero-baseline acceptance criterion is not yet met, so this capstone returns to open. The linked release gate's only failure was sandbox-stripped Sentry auth; the same gate query with the authenticated read token passed critical=0/high=0, telemetry error rate 0.33%, and zero missing error codes."
-notes[2]{created_at,author,text}:
+notes[3]{created_at,author,text}:
   "2026-07-15T06:21:39.876Z",maintainer-agent,"PR#565 progress (2026-07-15): 54 obsolete CLI-to-core import-boundary allowances removed; pm-3mna slice shipped (SDK owns config/profile/init/agent-guidance/templates/extension + createPmCliProgram + renderPmCommand). Baseline scripts/release/sdk-import-boundary-baseline.json still holds ~60 source files (commands/*, main.ts, register-*, mcp/server.ts) — the zero target remains. With 3mna/4a7m/hib1/zwpp shipped, remaining prerequisite slices are pm-oxrw (governance/health) then pm-oslr (execution/diagnostics)."
   "2026-07-16T18:03:52.929Z",maintainer-agent,"Remainder after PR#573 (2026-07-16): 51 source files / 412 edges in scripts/release/sdk-import-boundary-baseline.json (was 62/538 pre-#573, 82/761 pre-#568). All six domain slices shipped — every remaining edge is now mechanical flip territory (commands/*, main.ts, register-*, mcp/server.ts) with no missing SDK primitive blocking it."
+  "2026-07-17T17:51:09.675Z",maintainer-agent,"Ratchet refresh pass #97 (2026-07-17): baseline now 48 files / 405 edges (51/412 post-#573 -> 48/407 post-#575 -> 48/405 post-#579). PR#579 flipped 2 more edges by consuming shared SDK actionability/graph assembly from next/context/list-blocked adapters. Remainder is unchanged in character: mechanical flip territory (commands/*, main.ts, register-*, mcp/server.ts)."
 learnings[5]{created_at,author,text}:
   "2026-07-14T20:19:49.944Z",codex-root,Boundary burn-down is strongest when the implementation itself moves to an SDK-owned module; deleting a baseline block without changing ownership would only hide the dependency direction.
   "2026-07-14T23:31:18.238Z",codex-root,Compatibility shims must remain locally referenced or be deleted after SDK promotion; the orphan-module gate correctly prevents dead presentation paths from surviving solely for tests.
