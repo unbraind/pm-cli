@@ -1,12 +1,12 @@
 id: pm-uxkf
-title: "GH-578: pm context summary.blocked and pm list-blocked count status-only, disagreeing with edge-aware pm next"
+title: "GH-578: align pm context and pm list-blocked with edge-aware pm next semantics"
 description: "GH-489/pm-l0bu made pm next edge-aware (items with open blocked_by deps count as blocked), but the two other read surfaces agents use still count ONLY status:\"blocked\": pm context (ctx) summary.blocked reports 0 at every depth, and pm list-blocked reports count:0, while pm next's blocked companion lists the same items with open_blocker_count. Since auto-unblock (GH-267) makes status=blocked rare, these counters are effectively dead fields — an orchestrator reading blocked:0 concludes everything is dispatchable while pm next disagrees. Fix = adopt ONE shared blocked-semantics helper (the pm next edge-aware definition) across context summary + list-blocked, or report both dimensions explicitly (blocked_status + blocked_by_dependencies) so the surfaces can never silently disagree. Fix in the shared status-derivation layer, not per-surface — pm-pfqi (list-* consolidation) and pm-kcs4 (context-noun consolidation) will inherit whichever semantics ship here, so land the shared helper first or with them."
 type: Issue
 status: closed
 priority: 1
 tags[2]: agent-ux,consistency
 created_at: "2026-07-17T10:06:57.292Z"
-updated_at: "2026-07-17T15:21:08.522Z"
+updated_at: "2026-07-17T16:40:42.150Z"
 closed_at: "2026-07-17T13:49:17.721Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -24,12 +24,13 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-pfqi,related,"2026-07-17T10:06:57.292Z",null,null
   pm-6x7o,related,"2026-07-17T13:10:29.809Z",null,null
   pm-ju83,related,"2026-07-17T13:10:29.809Z",null,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-17T13:10:36.612Z",codex-root,"Implementation progress: context summary/progress/blocker rows and list-blocked now share the same dependency-edge-aware blocked definition as next. The public sdk/actionability surface is the single consumer boundary; close and next CLI adapters were migrated off their private actionability import as part of the SDK ratchet."
   "2026-07-17T13:31:47.168Z",codex-root,"GitHub reconciliation: GH-578 remains the canonical external issue for this item and there are no open PRs or dependency/secret alerts. The implementation bundle directly resolves its shared-semantics requirement; final closure will follow parity tests, package acceptance, and PR review evidence."
   "2026-07-17T13:47:21.330Z",codex-root,"Final implementation evidence: context, next, and list-blocked consume one public SDK actionability definition; 76 linked parity tests pass. Fresh installed tarball returned demo-lifecycle and status-open demo-deploy from list-blocked with blocked_semantics=status_or_dependency, while context summary.blocked=2. Full suite passes 5,798 tests and exact 100/100/100/100 coverage; lint/static/package/security gates pass."
   "2026-07-17T14:12:22.689Z",codex-root,"Pre-push Greptile review 5843a507-bc02-480c-b73f-b95c37e34b46: fixed live-blocker display precedence so an open edge blocker wins over a resolved legacy scalar, and retired no-active-blocker sentinels are excluded from shared actionability in scalar and edge forms. Focused parity tests pass 78/78; full repository passes 5,800 tests at exact 100/100/100/100; typecheck, ESLint, zero clones, static quality, docstrings, package boundary, and token budget pass."
   "2026-07-17T15:21:08.521Z",codex-root,"PR #579 review round 1: fixed Gemini and CodeRabbit sentinel/malformed legacy blocker findings by deriving context display solely from shared resolved blocker rows; retired sentinels and non-string scalar values now render null, while open blockers retain priority. The already-resolved unfiltered-corpus thread was reverified against exact head."
+  "2026-07-17T16:40:42.150Z",codex-sdk-graph,"PR #579 final changelog evidence: updated the canonical closed-item title to describe the shipped edge-aware parity across context, list-blocked, and next; resolution, close reason, actual result, status, and history remain intact."
 notes[1]{created_at,author,text}:
   "2026-07-17T10:10:38.866Z",maintainer-agent,"Code evidence (2026-07-17 pass #95): context summary blocked counter at src/cli/commands/context.ts:1126-1132 increments only via isBlockedStatus(desc.status, statusRegistry) — status-only, no dependency-edge awareness; agenda ranking helpers at :675-682/:717 are likewise status-registry-driven. list-blocked is a status-filter list variant registered at src/cli/register-list-query.ts:656 (one of the 8 variants pm-pfqi consolidates). pm next's edge-aware definition (open_blocker_count from blocked_by deps, shipped for GH-489/pm-l0bu in PR#502) is the semantics to adopt. pm stats reports generic by-status buckets (honest labeling, NOT in scope). Fix belongs in a shared blocked-semantics helper consumed by next + context + list-blocked so pm-pfqi/pm-kcs4 consolidations inherit it."
 files[7]{path,scope,note}:
