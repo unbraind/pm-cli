@@ -1042,6 +1042,34 @@ describe("bounded relationship context", () => {
     ).toMatchObject({ id: "review", reasons: ["dependent"] });
   });
 
+  it("traverses custom graph kinds when semantic registry details are omitted", () => {
+    const registry = createRelationshipKindRegistry().register({
+      kind: "precedes",
+      direction: "directed",
+      ordering: true,
+      outgoing: "many",
+      incoming: "many",
+      lifecycle: "persistent",
+      compatibilityVersion: 1,
+      allowSelf: false,
+    });
+    const custom = new RelationshipGraph(
+      ["root", "middle", "deep"],
+      [
+        { source: "root", target: "middle", kind: "related" },
+        { source: "middle", target: "deep", kind: "precedes" },
+      ],
+      registry,
+    );
+
+    const context = buildRelationshipContext(custom, "root", []);
+    expect(context.nodes).toEqual([
+      expect.objectContaining({ id: "middle", role: "related" }),
+      expect.objectContaining({ id: "deep", role: "related" }),
+    ]);
+    expect(context.edges).toHaveLength(2);
+  });
+
   it("explains custom hierarchy direction independently from kind labels", () => {
     const registry = createRelationshipKindRegistry().register({
       kind: "owns",

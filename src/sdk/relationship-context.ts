@@ -184,8 +184,8 @@ function explainDirectEdge(
   node: string,
   registry: RelationshipKindRegistry,
 ): RelationshipContextRole {
-  const definition = registry.require(edge.kind);
-  if (definition.ordering) {
+  const definition = registry.resolve(edge.kind);
+  if (definition?.ordering) {
     // Legacy and JSON-parsed definitions may predate explicit precedence.
     const sourceFirst =
       (definition.precedence ?? "source_before_target") ===
@@ -193,7 +193,7 @@ function explainDirectEdge(
     const before = sourceFirst ? edge.source : edge.target;
     return node === before ? "prerequisite" : "dependent";
   }
-  if (definition.hierarchy) {
+  if (definition?.hierarchy) {
     // Legacy and JSON-parsed definitions may predate explicit hierarchy direction.
     const sourceIsParent =
       (definition.hierarchyDirection ?? "source_parent") === "source_parent";
@@ -393,14 +393,14 @@ function selectContextEdges(params: {
     .edges()
     .filter(
       (edge) => {
-        const definition = params.registry.require(edge.kind);
-        return (
-          params.included.has(edge.source) &&
-          params.included.has(edge.target) &&
-          (kinds === undefined ||
-            kinds.has(edge.kind) ||
-            (definition.inverse !== undefined && kinds.has(definition.inverse)))
-        );
+        if (
+          !params.included.has(edge.source) ||
+          !params.included.has(edge.target)
+        )
+          return false;
+        if (kinds === undefined || kinds.has(edge.kind)) return true;
+        const inverse = params.registry.resolve(edge.kind)?.inverse;
+        return inverse !== undefined && kinds.has(inverse);
       },
     );
   const edges: RelationshipEdge[] = [];
