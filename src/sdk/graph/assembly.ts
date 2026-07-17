@@ -10,7 +10,10 @@
  * instead of silently dropping it.
  */
 import type { Dependency, ItemStatus } from "../../types/index.js";
-import { RelationshipGraph } from "../relationships.js";
+import {
+  RelationshipGraph,
+  type RelationshipKindRegistry,
+} from "../relationships.js";
 
 /** Minimal item shape inspected by dependency-reference governance. */
 export interface DependencyReferenceHolder {
@@ -58,17 +61,25 @@ export interface DanglingDependencyReferenceSummary {
 }
 
 /** Normalize a decoded reference target and reject empty legacy placeholders. */
-function normalizeDependencyReferenceTarget(target: unknown): string | undefined {
+function normalizeDependencyReferenceTarget(
+  target: unknown,
+): string | undefined {
   if (typeof target !== "string") return undefined;
   const normalized = target.trim();
-  if (!normalized || ["none", "null", "n/a", "na"].includes(normalized.toLowerCase())) return undefined;
+  if (
+    !normalized ||
+    ["none", "null", "n/a", "na"].includes(normalized.toLowerCase())
+  )
+    return undefined;
   return normalized;
 }
 
 /** Normalize a graph target while removing the historical no-blocker marker. */
 function normalizeDependencyGraphTarget(target: unknown): string | undefined {
   const normalized = normalizeDependencyReferenceTarget(target);
-  return normalized?.toLowerCase() === "no-active-blocker" ? undefined : normalized;
+  return normalized?.toLowerCase() === "no-active-blocker"
+    ? undefined
+    : normalized;
 }
 
 /**
@@ -83,7 +94,12 @@ export function collectDanglingDependencyReferences(
   isTerminal: (status: ItemStatus) => boolean = (status) =>
     status === "closed" || status === "canceled",
 ): DanglingDependencyReferenceSummary {
-  const knownIds = new Set(items.map((item) => item.id.trim().toLowerCase()));
+  const safeItems = items.filter(
+    (item) => typeof item?.id === "string" && item.id.trim().length > 0,
+  );
+  const knownIds = new Set(
+    safeItems.map((item) => item.id.trim().toLowerCase()),
+  );
   const rows = new Map<string, DanglingDependencyReference>();
   const addReference = (
     item: DependencyReferenceHolder,
@@ -110,7 +126,7 @@ export function collectDanglingDependencyReferences(
       row,
     );
   };
-  for (const item of items) {
+  for (const item of safeItems) {
     addReference(item, item.parent, "parent", "parent");
     addReference(item, item.blocked_by, "blocked_by", "blocked_by");
     for (const dependency of item.dependencies ?? []) {
@@ -199,42 +215,60 @@ export interface WorkspaceRelationshipAssembly {
 export function assembleWorkspaceRelationshipGraph(
   items: readonly WorkspaceRelationshipItem[],
   isTerminal?: (status: ItemStatus) => boolean,
+  registry?: RelationshipKindRegistry,
 ): WorkspaceRelationshipAssembly {
-  const canonicalIds = new Map(items.map((item) => [item.id.trim().toLowerCase(), item.id.trim()]));
-  const dangling = collectDanglingDependencyReferences(items, isTerminal);
+  const safeItems = items.filter(
+    (item) => typeof item?.id === "string" && item.id.trim().length > 0,
+  );
+  const canonicalIds = new Map(
+    safeItems.map((item) => [item.id.trim().toLowerCase(), item.id.trim()]),
+  );
+  const dangling = collectDanglingDependencyReferences(safeItems, isTerminal);
   const missingIds = collectMissingDependencyTargetIds(dangling);
-  const graphItems = items.map((item) => {
+  const graphItems = safeItems.map((item) => {
     const parent = normalizeDependencyGraphTarget(item.parent);
     const blocker = normalizeDependencyGraphTarget(item.blocked_by);
     const dependencies = (item.dependencies ?? []).flatMap((rawDependency) => {
-      if (typeof rawDependency !== "object" || rawDependency === null) return [];
+      if (typeof rawDependency !== "object" || rawDependency === null)
+        return [];
       const dependency = rawDependency as Partial<Dependency>;
       const target = normalizeDependencyGraphTarget(dependency.id);
       if (!target) return [];
-      return [{
-        id: canonicalIds.get(target.toLowerCase()) ?? target,
-        kind: typeof dependency.kind === "string" ? dependency.kind : "related",
-      }];
+      return [
+        {
+          id: canonicalIds.get(target.toLowerCase()) ?? target,
+          kind:
+            typeof dependency.kind === "string" ? dependency.kind : "related",
+        },
+      ];
     });
     return {
       id: item.id.trim(),
-      ...(parent ? { parent: canonicalIds.get(parent.toLowerCase()) ?? parent } : {}),
-      ...(blocker ? { blocked_by: canonicalIds.get(blocker.toLowerCase()) ?? blocker } : {}),
+      ...(parent
+        ? { parent: canonicalIds.get(parent.toLowerCase()) ?? parent }
+        : {}),
+      ...(blocker
+        ? { blocked_by: canonicalIds.get(blocker.toLowerCase()) ?? blocker }
+        : {}),
       dependencies,
     };
   });
   return {
-    graph: RelationshipGraph.fromItems([
-      ...graphItems,
-      ...missingIds.map((id) => ({ id })),
-    ]),
+    graph: RelationshipGraph.fromItems(
+      [...graphItems, ...missingIds.map((id) => ({ id }))],
+      registry,
+    ),
     details: [
-      ...items.map((item) => ({
+      ...safeItems.map((item) => ({
         id: item.id.trim(),
         title: item.title,
         status: item.status,
       })),
-      ...missingIds.map((id) => ({ id, title: `[missing] ${id}`, status: "missing" })),
+      ...missingIds.map((id) => ({
+        id,
+        title: `[missing] ${id}`,
+        status: "missing",
+      })),
     ],
     missingIdSet: new Set(missingIds.map((id) => id.toLowerCase())),
     dangling,

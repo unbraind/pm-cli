@@ -130,7 +130,10 @@ Unknown kinds and cursors fail fast instead of silently degrading context.
 dependency-shaped workspaces. It folds parent links, the legacy scalar
 `blocked_by`, and structured dependency edges into one graph, materializes
 missing endpoints as explainable placeholder nodes, and returns active versus
-terminal dangling-reference partitions. `auditWorkspaceRelationshipGraph`
+terminal dangling-reference partitions. Domain adapters pass their
+`RelationshipKindRegistry` as the optional third argument so custom VCS,
+company, or package-defined edges survive assembly with their registered
+semantics. `auditWorkspaceRelationshipGraph`
 consumes that assembly and emits counts-first findings for active/terminal
 missing references, retired sentinels, ordering cycles, stale lifecycle blocks,
 and sparse or isolated active nodes. Findings include stable codes, severity,

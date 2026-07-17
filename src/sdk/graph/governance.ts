@@ -213,6 +213,7 @@ function visitNextTarjanNeighbor(
 function completeTarjanFrame(
   frame: TarjanFrame,
   frames: TarjanFrame[],
+  successors: Map<string, string[]>,
   state: TarjanState,
 ): void {
   frames.pop();
@@ -220,7 +221,10 @@ function completeTarjanFrame(
   if (parent)
     state.lowLinks.set(
       parent.node,
-      Math.min(state.lowLinks.get(parent.node)!, state.lowLinks.get(frame.node)!),
+      Math.min(
+        state.lowLinks.get(parent.node)!,
+        state.lowLinks.get(frame.node)!,
+      ),
     );
   if (state.lowLinks.get(frame.node) !== state.indexes.get(frame.node)) return;
   const component: string[] = [];
@@ -230,7 +234,11 @@ function completeTarjanFrame(
     component.push(member);
     if (member === frame.node) break;
   }
-  if (component.length > 1)
+  if (
+    component.length > 1 ||
+    (component.length === 1 &&
+      successors.get(component[0]!)?.includes(component[0]!))
+  )
     state.components.push(
       component.sort((left, right) => left.localeCompare(right)),
     );
@@ -242,9 +250,7 @@ function completeTarjanFrame(
  * kinds participate: associative kinds such as `related` cannot create
  * execution-order contradictions and stay out of cycle analysis by policy.
  */
-function collectOrderingCycles(
-  successors: Map<string, string[]>,
-): string[][] {
+function collectOrderingCycles(successors: Map<string, string[]>): string[][] {
   const state: TarjanState = {
     indexes: new Map(),
     lowLinks: new Map(),
@@ -264,7 +270,7 @@ function collectOrderingCycles(
     while (frames.length > 0) {
       const frame = frames.at(-1)!;
       if (visitNextTarjanNeighbor(frame, frames, successors, state)) continue;
-      completeTarjanFrame(frame, frames, state);
+      completeTarjanFrame(frame, frames, successors, state);
     }
   }
   return state.components.sort((left, right) =>
@@ -498,12 +504,17 @@ export function auditWorkspaceRelationshipGraph(
   const isTerminal =
     options.isTerminal ??
     ((status: string) => status === "closed" || status === "canceled");
-  const isBlocked = options.isBlocked ?? ((status: string) => status === "blocked");
+  const isBlocked =
+    options.isBlocked ?? ((status: string) => status === "blocked");
   const maxSampleSize = options.maxSampleSize ?? DEFAULT_MAX_SAMPLE_SIZE;
   if (!Number.isInteger(maxSampleSize) || maxSampleSize < 1)
-    throw new TypeError(`Invalid audit sample bound: ${String(options.maxSampleSize)}`);
+    throw new TypeError(
+      `Invalid audit sample bound: ${String(options.maxSampleSize)}`,
+    );
   const exemptIsolates = new Set(
-    (options.exemptIsolates ?? []).map((id) => id.trim().toLowerCase()),
+    (options.exemptIsolates ?? [])
+      .filter((id): id is string => typeof id === "string")
+      .map((id) => id.trim().toLowerCase()),
   );
   const nodeStates = new Map<string, AuditNodeState>(
     assembly.details.map((detail) => [
@@ -528,12 +539,7 @@ export function auditWorkspaceRelationshipGraph(
   );
   options.signal?.throwIfAborted();
   findings.push(
-    ...collectOrderingFindings(
-      assembly,
-      nodeStates,
-      isBlocked,
-      maxSampleSize,
-    ),
+    ...collectOrderingFindings(assembly, nodeStates, isBlocked, maxSampleSize),
   );
   options.signal?.throwIfAborted();
   const coverage = collectCoverageReport(
