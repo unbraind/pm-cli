@@ -722,6 +722,37 @@ describe("runDeps", () => {
     });
   });
 
+  it("filters duplicate missing-reference rows by the active relationship kind", async () => {
+    await withTempPmPath(async (context) => {
+      const rootId = createTask(context, "ctxmiss-filtered-root", [
+        "id=pm-ctxmiss-shared,kind=blocked_by,author=test-author,created_at=now",
+        "id=pm-ctxmiss-shared,kind=related,author=test-author,created_at=now",
+      ]);
+
+      const result = await runDeps(
+        rootId,
+        { format: "context", kind: "blocked_by" },
+        { path: context.pmPath },
+      );
+      expect(result).toMatchObject({
+        missing_count: 1,
+        missing_reference_count: 1,
+      });
+      expect(result.missing_references).toEqual([
+        expect.objectContaining({
+          target_id: "pm-ctxmiss-shared",
+          kind: "blocked_by",
+        }),
+      ]);
+      const inverse = await runDeps(
+        rootId,
+        { format: "context", kind: "blocks" },
+        { path: context.pmPath },
+      );
+      expect(inverse.missing_references).toEqual(result.missing_references);
+    });
+  });
+
   it("classifies missing references on terminal holders as legacy and skips sentinels", async () => {
     await withTempPmPath(async (context) => {
       const holderId = createTask(context, "ctxlegacy-holder", [

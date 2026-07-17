@@ -448,6 +448,22 @@ describe("neighborEdges", () => {
     });
   });
 
+  it("merges incident edges regardless of which direction sorts first", () => {
+    const incidentIds = (incomingSource: string) =>
+      new RelationshipGraph(
+        ["root", "alpha", incomingSource],
+        [
+          { source: "root", target: "alpha", kind: "blocked_by" },
+          { source: incomingSource, target: "root", kind: "parent" },
+        ],
+      )
+        .incidentEdges("root")
+        .map(({ source, target }) => `${source}:${target}`);
+
+    expect(incidentIds("beta")).toEqual(["beta:root", "root:alpha"]);
+    expect(incidentIds("zeta")).toEqual(["root:alpha", "zeta:root"]);
+  });
+
   it("honors direction, kind filters, limits, and node validation", () => {
     expect(graph.neighborEdges("beta").value.map(({ id }) => id)).toEqual([
       "root",

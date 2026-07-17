@@ -934,6 +934,7 @@ describe("bounded relationship context", () => {
     const filtered = buildRelationshipContext(multi, "root", [], {
       kinds: ["blocked_by"],
     });
+    expect(filtered.nodes[0]?.reasons).toEqual(["prerequisite"]);
     expect(filtered.edges).toEqual([
       { source: "root", target: "peer", kind: "blocked_by" },
     ]);

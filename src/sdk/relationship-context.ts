@@ -181,7 +181,6 @@ function estimateTokens(value: unknown): number {
 
 function explainDirectEdge(
   edge: RelationshipEdge,
-  counterpart: string,
   node: string,
   registry: RelationshipKindRegistry,
 ): RelationshipContextRole {
@@ -218,7 +217,7 @@ function directReasons(
         (edge.source === root && edge.target === node) ||
         (edge.target === root && edge.source === node),
     )
-    .map((edge) => explainDirectEdge(edge, root, node, registry));
+    .map((edge) => explainDirectEdge(edge, node, registry));
   return [...new Set(reasons)].sort();
 }
 
@@ -276,7 +275,7 @@ function discoverNodes(
         id,
         distance: current.distance + 1,
         via: current.id,
-        role: explainDirectEdge(edge, current.id, id, registry),
+        role: explainDirectEdge(edge, id, registry),
       };
       rows.push(row);
       queue.push(row);
@@ -300,7 +299,11 @@ function summarizeDirectEdges(
   root: string,
   registry: RelationshipKindRegistry,
   options: RelationshipContextOptions,
-): { directEdges: Record<RelationshipContextRole, number>; directTotal: number } {
+): {
+  directEdges: Record<RelationshipContextRole, number>;
+  directTotal: number;
+  rootEdges: RelationshipEdge[];
+} {
   const directEdges: Record<RelationshipContextRole, number> = {
     prerequisite: 0,
     dependent: 0,
@@ -315,14 +318,18 @@ function summarizeDirectEdges(
     signal: options.signal,
   }).value;
   for (const { id, edge } of rows)
-    directEdges[explainDirectEdge(edge, root, id, registry)] += 1;
-  return { directEdges, directTotal: rows.length };
+    directEdges[explainDirectEdge(edge, id, registry)] += 1;
+  return {
+    directEdges,
+    directTotal: rows.length,
+    rootEdges: rows.map(({ edge }) => edge),
+  };
 }
 
 function selectContextNodes(params: {
   candidates: readonly DiscoveredNode[];
   details: ReadonlyMap<string, RelationshipContextNodeDetails>;
-  graph: RelationshipGraph;
+  rootEdges: readonly RelationshipEdge[];
   rootId: string;
   registry: RelationshipKindRegistry;
   nodeLimit: number;
@@ -331,12 +338,16 @@ function selectContextNodes(params: {
 }): { nodes: RelationshipContextNode[]; usedTokens: number } {
   const nodes: RelationshipContextNode[] = [];
   let usedTokens = params.initialTokens;
-  const rootEdges = params.graph.incidentEdges(params.rootId);
   for (const candidate of params.candidates) {
     if (nodes.length >= params.nodeLimit) break;
     const direct =
       candidate.distance === 1
-        ? directReasons(rootEdges, params.rootId, candidate.id, params.registry)
+        ? directReasons(
+            params.rootEdges,
+            params.rootId,
+            candidate.id,
+            params.registry,
+          )
         : [];
     const node: RelationshipContextNode = {
       ...(params.details.get(candidate.id) ?? { id: candidate.id }),
@@ -424,6 +435,12 @@ export function buildRelationshipContext(
   const { evidence: rootEvidence = [], ...root } = rootDetails;
   const evidence = [...rootEvidence];
   const discovery = discoverNodes(graph, rootId, registry, options);
+  const { rootEdges, ...directSummary } = summarizeDirectEdges(
+    graph,
+    rootId,
+    registry,
+    options,
+  );
   const fingerprint = createQueryFingerprint("relationship-context", {
     rootId,
     direction: options.direction ?? "both",
@@ -445,7 +462,7 @@ export function buildRelationshipContext(
   const nodeSelection = selectContextNodes({
     candidates,
     details: byId,
-    graph,
+    rootEdges,
     rootId,
     registry,
     nodeLimit,
@@ -475,7 +492,7 @@ export function buildRelationshipContext(
   const summary: RelationshipContextSummary = {
     rootId,
     ...(root.status === undefined ? {} : { rootStatus: root.status }),
-    ...summarizeDirectEdges(graph, rootId, registry, options),
+    ...directSummary,
     discoveredNodes: discovery.rows.length,
     returnedNodes: nodes.length,
     returnedEdges: edges.length,

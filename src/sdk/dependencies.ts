@@ -838,6 +838,14 @@ function buildContextDepsResult(params: {
   const missingReachableSet = new Set(
     missingReachable.map((nodeId) => nodeId.toLowerCase()),
   );
+  const relationshipRegistry = createRelationshipKindRegistry();
+  const filteredKinds = contextOptions.kinds
+    ? new Set(
+        contextOptions.kinds.map(
+          (kind) => relationshipRegistry.require(kind).kind,
+        ),
+      )
+    : undefined;
   const packetIds = new Set([canonicalId, ...reachable.value]);
   const missingReferences = [
     ...assembly.dangling.active,
@@ -846,7 +854,12 @@ function buildContextDepsResult(params: {
     (row) =>
       !row.no_active_blocker_sentinel &&
       missingReachableSet.has(row.target_id.trim().toLowerCase()) &&
-      packetIds.has(row.holder_id),
+      packetIds.has(row.holder_id) &&
+      (filteredKinds === undefined ||
+        filteredKinds.has(row.kind) ||
+        filteredKinds.has(
+          relationshipRegistry.require(row.kind).inverse ?? row.kind,
+        )),
   );
   const referenceLimit = contextOptions.edgeLimit ?? 40;
   return {
