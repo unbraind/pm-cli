@@ -13898,7 +13898,7 @@
             "description": "Tool action to execute."
           },
           "after": {
-            "description": "Resume a graph traversal after this previously returned node id.",
+            "description": "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
             "examples": [
               "pm-x1y2"
             ],
@@ -14376,7 +14376,7 @@
             "description": "Tool action to execute."
           },
           "after": {
-            "description": "Resume a graph traversal after this previously returned node id.",
+            "description": "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
             "examples": [
               "pm-x1y2"
             ],
@@ -14854,7 +14854,7 @@
             "description": "Tool action to execute."
           },
           "after": {
-            "description": "Resume a graph traversal after this previously returned node id.",
+            "description": "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
             "examples": [
               "pm-x1y2"
             ],
@@ -15332,7 +15332,7 @@
             "description": "Tool action to execute."
           },
           "after": {
-            "description": "Resume a graph traversal after this previously returned node id.",
+            "description": "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
             "examples": [
               "pm-x1y2"
             ],
@@ -15810,7 +15810,7 @@
             "description": "Tool action to execute."
           },
           "after": {
-            "description": "Resume a graph traversal after this previously returned node id.",
+            "description": "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
             "examples": [
               "pm-x1y2"
             ],
@@ -16288,7 +16288,7 @@
             "description": "Tool action to execute."
           },
           "after": {
-            "description": "Resume a graph traversal after this previously returned node id.",
+            "description": "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
             "examples": [
               "pm-x1y2"
             ],
@@ -16766,7 +16766,7 @@
             "description": "Tool action to execute."
           },
           "after": {
-            "description": "Resume a graph traversal after this previously returned node id.",
+            "description": "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
             "examples": [
               "pm-x1y2"
             ],
@@ -17244,7 +17244,7 @@
             "description": "Tool action to execute."
           },
           "after": {
-            "description": "Resume a graph traversal after this previously returned node id.",
+            "description": "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
             "examples": [
               "pm-x1y2"
             ],
@@ -17831,7 +17831,7 @@
             ]
           },
           "after": {
-            "description": "Resume a graph traversal after this previously returned node id.",
+            "description": "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
             "examples": [
               "pm-x1y2"
             ],
@@ -18067,7 +18067,7 @@
             ]
           },
           "after": {
-            "description": "Resume a graph traversal after this previously returned node id.",
+            "description": "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
             "examples": [
               "pm-x1y2"
             ],
@@ -18417,7 +18417,7 @@
             "description": "Tool action to execute."
           },
           "after": {
-            "description": "Resume a graph traversal after this previously returned node id.",
+            "description": "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
             "examples": [
               "pm-x1y2"
             ],
@@ -23254,7 +23254,7 @@
             "description": "Tool action to execute."
           },
           "after": {
-            "description": "Resume a graph traversal after this previously returned node id.",
+            "description": "Resume a hierarchy/ordering graph traversal after this previously returned node id.",
             "examples": [
               "pm-x1y2"
             ],
