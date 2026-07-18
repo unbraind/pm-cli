@@ -710,7 +710,9 @@ function runGraphCommunities(
 }
 
 /** Execute the transitive-redundancy scan subcommand. */
-function runGraphRedundancy(invocation: GraphInvocation): GraphRedundancyResult {
+function runGraphRedundancy(
+  invocation: GraphInvocation,
+): GraphRedundancyResult {
   let result;
   try {
     result = findRedundantRelationshipEdges(invocation.assembly.graph, {
@@ -757,9 +759,7 @@ function runGraphDominators(
         : { maxDepth: invocation.maxDepth }),
     },
   );
-  const bottlenecks = result.value.rows.filter(
-    (row) => row.dominatedCount > 0,
-  );
+  const bottlenecks = result.value.rows.filter((row) => row.dominatedCount > 0);
   return {
     subcommand: "dominators",
     root,
@@ -791,6 +791,7 @@ function runGraphPlan(
   const limit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
   const plan = planRelationshipRemediation(invocation.assembly, {
     isTerminal,
+    redundancyLimit: limit,
     ...(invocation.sample === undefined
       ? {}
       : { maxSampleSize: invocation.sample }),
@@ -925,7 +926,13 @@ export async function runGraph(
   const memo = lookup.memoize(
     buildGraphQueryKey(subcommand, root, pathsTarget, invocation),
     () =>
-    executeGraphSubcommand(subcommand, root, pathsTarget, invocation, isTerminal),
+      executeGraphSubcommand(
+        subcommand,
+        root,
+        pathsTarget,
+        invocation,
+        isTerminal,
+      ),
   );
   return {
     ...memo.value,

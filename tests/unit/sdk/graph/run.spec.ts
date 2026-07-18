@@ -17,7 +17,10 @@ import type {
 } from "../../../../src/sdk/graph/run.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
-import { withTempPmPath, type TempPmContext } from "../../../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../../helpers/withTempPmPath.js";
 
 function createItem(
   context: TempPmContext,
@@ -79,12 +82,16 @@ async function seedWorkspace(context: TempPmContext): Promise<{
 describe("parseGraphSubcommand", () => {
   it("accepts every published subcommand case-insensitively", () => {
     for (const subcommand of GRAPH_SUBCOMMAND_VALUES) {
-      expect(parseGraphSubcommand(subcommand.toUpperCase(), "pm-1", "pm-2")).toBe(subcommand);
+      expect(
+        parseGraphSubcommand(subcommand.toUpperCase(), "pm-1", "pm-2"),
+      ).toBe(subcommand);
     }
   });
 
   it("rejects unknown subcommands with a usage error listing the choices", () => {
-    expect(() => parseGraphSubcommand("neighbours", "pm-1", undefined)).toThrowError(
+    expect(() =>
+      parseGraphSubcommand("neighbours", "pm-1", undefined),
+    ).toThrowError(
       expect.objectContaining({
         exitCode: EXIT_CODE.USAGE,
         message: expect.stringContaining("ancestors, descendants"),
@@ -93,7 +100,9 @@ describe("parseGraphSubcommand", () => {
   });
 
   it("requires a root id for rooted subcommands and a target for paths", () => {
-    expect(() => parseGraphSubcommand("ancestors", undefined, undefined)).toThrowError(
+    expect(() =>
+      parseGraphSubcommand("ancestors", undefined, undefined),
+    ).toThrowError(
       expect.objectContaining({ exitCode: EXIT_CODE.USAGE }) as never,
     );
     expect(() => parseGraphSubcommand("impact", "  ", undefined)).toThrowError(
@@ -105,33 +114,65 @@ describe("parseGraphSubcommand", () => {
         message: expect.stringContaining("source and a target"),
       }) as never,
     );
-    expect(() => parseGraphSubcommand("dominators", undefined, undefined)).toThrowError(
+    expect(() =>
+      parseGraphSubcommand("dominators", undefined, undefined),
+    ).toThrowError(
       expect.objectContaining({ exitCode: EXIT_CODE.USAGE }) as never,
     );
-    expect(parseGraphSubcommand("analyze", undefined, undefined)).toBe("analyze");
-    expect(parseGraphSubcommand("communities", undefined, undefined)).toBe("communities");
-    expect(parseGraphSubcommand("redundancy", undefined, undefined)).toBe("redundancy");
+    expect(parseGraphSubcommand("analyze", undefined, undefined)).toBe(
+      "analyze",
+    );
+    expect(parseGraphSubcommand("communities", undefined, undefined)).toBe(
+      "communities",
+    );
+    expect(parseGraphSubcommand("redundancy", undefined, undefined)).toBe(
+      "redundancy",
+    );
   });
 });
 
 describe("runGraph", () => {
   it("fails fast when the tracker is not initialized", async () => {
     await expect(
-      runGraph("analyze", undefined, undefined, {}, { path: "/tmp/pm-graph-uninitialized-root" }),
-    ).rejects.toMatchObject<Partial<PmCliError>>({ exitCode: EXIT_CODE.NOT_FOUND });
+      runGraph(
+        "analyze",
+        undefined,
+        undefined,
+        {},
+        { path: "/tmp/pm-graph-uninitialized-root" },
+      ),
+    ).rejects.toMatchObject<Partial<PmCliError>>({
+      exitCode: EXIT_CODE.NOT_FOUND,
+    });
   });
 
   it("rejects unknown roots and missing-endpoint placeholder ids", async () => {
     await withTempPmPath(async (context) => {
       await seedWorkspace(context);
       await expect(
-        runGraph("ancestors", "pm-nope", undefined, {}, { path: context.pmPath }),
-      ).rejects.toMatchObject<Partial<PmCliError>>({ exitCode: EXIT_CODE.NOT_FOUND });
+        runGraph(
+          "ancestors",
+          "pm-nope",
+          undefined,
+          {},
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
       // pm-ghost exists only as a materialized missing placeholder; it is not
       // addressable as a query root.
       await expect(
-        runGraph("successors", "pm-ghost", undefined, {}, { path: context.pmPath }),
-      ).rejects.toMatchObject<Partial<PmCliError>>({ exitCode: EXIT_CODE.NOT_FOUND });
+        runGraph(
+          "successors",
+          "pm-ghost",
+          undefined,
+          {},
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
     });
   });
 
@@ -247,11 +288,27 @@ describe("runGraph", () => {
       // the traversal kernel reports semantic misuse as a TypeError which the
       // runner surfaces as a usage failure.
       await expect(
-        runGraph("ancestors", task, undefined, { kind: "related" }, { path: context.pmPath }),
-      ).rejects.toMatchObject<Partial<PmCliError>>({ exitCode: EXIT_CODE.USAGE });
+        runGraph(
+          "ancestors",
+          task,
+          undefined,
+          { kind: "related" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.USAGE,
+      });
       await expect(
-        runGraph("ancestors", task, undefined, { after: "pm-unknown-cursor" }, { path: context.pmPath }),
-      ).rejects.toMatchObject<Partial<PmCliError>>({ exitCode: EXIT_CODE.USAGE });
+        runGraph(
+          "ancestors",
+          task,
+          undefined,
+          { after: "pm-unknown-cursor" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 
@@ -263,19 +320,59 @@ describe("runGraph", () => {
           exitCode: EXIT_CODE.USAGE,
         });
       await usage(
-        runGraph("ancestors", task, undefined, { kind: "owns" }, { path: context.pmPath }),
+        runGraph(
+          "ancestors",
+          task,
+          undefined,
+          { kind: "owns" },
+          { path: context.pmPath },
+        ),
       );
       await usage(
-        runGraph("ancestors", task, undefined, { maxDepth: "-1" }, { path: context.pmPath }),
+        runGraph(
+          "ancestors",
+          task,
+          undefined,
+          { maxDepth: "-1" },
+          { path: context.pmPath },
+        ),
       );
-      await usage(runGraph("ancestors", task, undefined, { limit: "0" }, { path: context.pmPath }));
       await usage(
-        runGraph("impact", task, undefined, { direction: "sideways" }, { path: context.pmPath }),
+        runGraph(
+          "ancestors",
+          task,
+          undefined,
+          { limit: "0" },
+          { path: context.pmPath },
+        ),
       );
       await usage(
-        runGraph("paths", task, task, { maxPaths: "0" }, { path: context.pmPath }),
+        runGraph(
+          "impact",
+          task,
+          undefined,
+          { direction: "sideways" },
+          { path: context.pmPath },
+        ),
       );
-      await usage(runGraph("audit", undefined, undefined, { sample: "0" }, { path: context.pmPath }));
+      await usage(
+        runGraph(
+          "paths",
+          task,
+          task,
+          { maxPaths: "0" },
+          { path: context.pmPath },
+        ),
+      );
+      await usage(
+        runGraph(
+          "audit",
+          undefined,
+          undefined,
+          { sample: "0" },
+          { path: context.pmPath },
+        ),
+      );
     });
   });
 
@@ -506,7 +603,9 @@ describe("runGraph", () => {
           { kind: "related" },
           { path: context.pmPath },
         ),
-      ).rejects.toMatchObject<Partial<PmCliError>>({ exitCode: EXIT_CODE.USAGE });
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 
@@ -634,6 +733,42 @@ describe("runGraph", () => {
     });
   });
 
+  it("honors a raised plan limit during redundant-edge discovery", async () => {
+    await withTempPmPath(async (context) => {
+      const ids = Array.from(
+        { length: 28 },
+        (_, index) => `pm-plan-limit-${String(index).padStart(2, "0")}`,
+      );
+      for (const [index, id] of ids.entries()) {
+        const dependencies =
+          index === 0
+            ? ids.slice(1)
+            : index === ids.length - 1
+              ? []
+              : [ids[index + 1]!];
+        createItem(context, `Plan limit ${index}`, [
+          "--id",
+          id,
+          ...dependencies.flatMap((dependency) => [
+            "--dep",
+            `id=${dependency},kind=blocked_by`,
+          ]),
+        ]);
+      }
+
+      const plan = (await runGraph(
+        "plan",
+        undefined,
+        undefined,
+        { sample: 100, limit: 100 },
+        { path: context.pmPath },
+      )) as GraphPlanResult;
+      expect(plan.steps_by_code.redundant_edge).toBe(26);
+      expect(plan.steps).toHaveLength(plan.step_count);
+      expect(plan.truncated).toBe(false);
+    });
+  });
+
   it("answers repeated identical queries from the fingerprint-keyed cache", async () => {
     await withTempPmPath(async (context) => {
       await seedWorkspace(context);
@@ -705,9 +840,7 @@ describe("runGraph", () => {
         assembly: "miss",
         result: "miss",
       });
-      expect(invalidated.cache!.fingerprint).not.toBe(
-        firstCache!.fingerprint,
-      );
+      expect(invalidated.cache!.fingerprint).not.toBe(firstCache!.fingerprint);
     });
   });
 
@@ -732,7 +865,9 @@ describe("runGraph", () => {
         0,
       );
       expect(severityTotal).toBe(audit.finding_count);
-      expect(audit.findings_by_code.missing_reference_active).toBeGreaterThan(0);
+      expect(audit.findings_by_code.missing_reference_active).toBeGreaterThan(
+        0,
+      );
       expect(audit.profile).toBeDefined();
 
       // Exempting the isolate (single comma-separated string spelling, with
@@ -762,9 +897,7 @@ describe("runGraph", () => {
         { exemptIsolate: [` ${isolate} ,`, ""], summary: true },
         { path: context.pmPath },
       )) as GraphAuditResult;
-      expect(exemptedArray.findings_by_code).toEqual(
-        exempted.findings_by_code,
-      );
+      expect(exemptedArray.findings_by_code).toEqual(exempted.findings_by_code);
     });
   });
 });
