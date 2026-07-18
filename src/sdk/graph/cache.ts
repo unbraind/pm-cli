@@ -51,7 +51,7 @@ function fingerprintLine(
         typeof dependency.id === "string" ? dependency.id : ""
       }`;
     })
-    .sort((left, right) => left.localeCompare(right))
+    .sort()
     .join(",");
   return [
     item.id,
@@ -79,7 +79,7 @@ export function computeWorkspaceGraphFingerprint(
   const lines = items
     .filter((item) => typeof item?.id === "string" && item.id.trim().length > 0)
     .map((item) => fingerprintLine(item, isTerminal))
-    .sort((left, right) => left.localeCompare(right));
+    .sort();
   // Separate fields and records with control characters no stored field can
   // contain unescaped, so adjacent free-text fields can never collide.
   return createHash("sha256").update(lines.join("\u0001")).digest("hex");
