@@ -1,0 +1,35 @@
+id: pm-szdc
+title: Hide runtime completion helper entrypoints from the default agent-facing command surface
+description: "The live 2026-07-18 root command census exposes completion-statuses, completion-tags, and completion-types as ordinary top-level commands even though they are runtime plumbing used by generated shell completion scripts. Preserve every completion capability and explicit internal invocation path, but hide these helpers from default help, compact contracts, docs, MCP discovery, and the canonical grammar budget."
+type: Task
+status: open
+priority: 2
+tags[7]: agent-ux,"area:cli","area:contracts",completion,internal-command,simplification,token-efficiency
+created_at: "2026-07-18T14:04:52.766Z"
+updated_at: "2026-07-18T14:17:49.925Z"
+author: codex-ecosystem-planner
+estimated_minutes: 120
+acceptance_criteria: "Default pm --help and compact contracts do not list completion-statuses, completion-tags, or completion-types; generated bash/zsh/fish completion still resolves runtime statuses, tags, and types; an explicit internal or completion-plumbing discovery path remains testable; byte-for-byte completion behavior and exit semantics are preserved; snapshots, contracts, docs, and token-budget baselines prove zero feature loss and reduced default surface."
+parent: pm-n7rr
+risk: low
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-e2bq,related,"2026-07-18T14:04:52.766Z",codex-ecosystem-planner,null
+  pm-lp4j,related,"2026-07-18T14:04:52.766Z",codex-ecosystem-planner,null
+  pm-mu8m,related,"2026-07-18T14:04:52.766Z",codex-ecosystem-planner,null
+comments[3]{created_at,author,text}:
+  "2026-07-18T14:08:35.452Z",codex-ecosystem-planner,"Creation evidence 2026-07-18: pm --help --json exposes completion-statuses, completion-tags, and completion-types as ordinary root commands with runtime-filter descriptions. All-status exact-title searches for all three returned zero items; the focused all-term search returned only closed general help/completion work. Canonical related owners are pm-e2bq, pm-mu8m, and pm-lp4j. This task removes only discovery-surface noise and explicitly preserves every completion capability."
+  "2026-07-18T14:12:45.306Z",codex-ecosystem-planner,"Planning verification: focused linked suite passed 3 files / 125 tests in an isolated tracker context. Post-mutation all-status validation is ok with zero history drift; graph remains zero-actionable with no active isolates; exact/fuzzy duplicate result remains limited to the already-canceled accidental probe cluster and parent-scope duplicates remain zero. This item intentionally stays open for future implementation."
+  "2026-07-18T14:17:49.925Z",codex-ecosystem-planner,"Publication: tracker planning and governance changes are proposed in GitHub PR #594 (https://github.com/unbraind/pm-cli/pull/594) from branch agent/command-surface-context-roadmap-governance. Review the item definition, linked evidence, and canonical roadmap notes together."
+learnings[1]{created_at,author,text}:
+  "2026-07-18T14:12:45.990Z",codex-ecosystem-planner,"Command-surface audits must classify visibility as well as capability: a runtime helper can be correct, tested, and required by shell completion while still being harmful in default agent discovery. Contracts need an explicit public, compatibility-alias, extension-owned, or internal-plumbing visibility class so generated help cannot re-promote helpers accidentally."
+files[2]{path,scope,note}:
+  src/cli/commands/completion.ts,project,Runtime helper registration and generated shell-script invocation surface
+  src/cli/commands/contracts.ts,project,Default contracts discovery and package-owned command mapping
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts tests/unit/packages/guide-shell-runtime.spec.ts tests/unit/extensions/builtin-extension-entrypoints.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrqg36v5-oo4quu,test,passed,"2026-07-18T14:10:59.860Z","2026-07-18T14:11:16.481Z","2026-07-18T14:11:16.481Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Public completion surface and migration documentation
+body: "## Problem\nThe default root help currently advertises three runtime data providers as if agents should invoke them directly: completion-statuses, completion-tags, and completion-types. This adds three nouns to the discovery surface without adding user capability.\n\n## Desired design\nTreat these entrypoints as internal completion plumbing. The public pm completion noun remains discoverable; generated shell scripts keep a stable way to request live schema values; internal helpers are hidden from ordinary help, contracts, docs, and MCP enumeration and may be routed beneath completion verbs or an explicit internal registry.\n\n## Verification\nMeasure root-help and compact-contract token deltas; snapshot generated bash, zsh, and fish scripts; execute each completion path against built-in plus custom types, statuses, and tags; prove old helper spellings remain compatibility aliases or internal entrypoints until the grammar migration policy permits removal.\n\n## Duplicate check\nAll-status exact-title searches for each helper returned zero items. Focused all-term search for runtime resolved shell completion helper hiding found only closed general help/completion work and no focused open owner. Related scopes are pm-e2bq for tiered help, pm-mu8m for generated completion/contracts surfaces, and pm-lp4j for internal worker hiding."
