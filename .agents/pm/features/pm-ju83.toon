@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: api,"area:graph","area:sdk",performance,relationships,sdk-first
 created_at: "2026-07-13T21:58:11.171Z"
-updated_at: "2026-07-18T10:03:07.474Z"
+updated_at: "2026-07-18T16:49:54.409Z"
 author: codex-root
 estimated_minutes: 720
 acceptance_criteria: "The registry defines built-in and extension-provided kinds with direction, inverse, order-bearing and hierarchy flags, cardinality, payload schema, lifecycle, aliases, and compatibility version; Mutation APIs validate endpoints and invariants then append attributable immutable events without direct state rewrites; Read APIs cover adjacency, predecessors, successors, ancestors, descendants, shortest and constrained paths, transitive closure, reverse impact, and induced bounded subgraphs; Every query supports deterministic ordering, typed filters, field projection, cursor or streaming continuation, cancellation, snapshot selection, and explicit cost or truncation metadata; Indexes are rebuildable from history, incrementally maintained, crash safe, observable, and optional for small projects; Thin CLI and MCP adapters call public SDK APIs without hidden core imports; shell-safe JSON, JSONL, TOON, and counts-first outputs preserve pipeline composability; Contract, property, replay, concurrency, migration, and scale tests cover legacy kinds, custom kinds, cycles, snapshots, and one million items"
@@ -27,7 +27,7 @@ dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-zwpp,blocked_by,"2026-07-13T21:58:11.171Z",null,null
   pm-7n5a,related,"2026-07-17T21:46:55.824Z",null,null
   pm-xtrd,related,"2026-07-18T05:54:10.629Z",null,null
-comments[45]{created_at,author,text}:
+comments[48]{created_at,author,text}:
   "2026-07-13T21:58:11.171Z",codex-root,"Duplicate check 2026-07-13: SDK-first inventory contains generic query and lifecycle promotion slices but no stable typed relationship registry plus bounded graph algorithm API; this is a new promotion slice under pm-96h7 and relates to pm-usfg."
   "2026-07-14T07:46:26.495Z",codex-gpt5-root,"Evidence: delivered the first broad public graph foundation: versioned built-in/custom relationship registry, alias compatibility, immutable in-memory index construction from item metadata, deterministic adjacency/closure/reverse-impact/shortest-path/subgraph queries with cancellation and explicit cost/truncation metadata, SDK barrel/docs, and validate integration. Packed tarball consumer proved a custom company owns graph plus real CLI lifecycle. Full repository run passed 286 files/5664 tests; focused all-source coverage for relationships.ts is 100/100/100/100. Remaining event mutation, durable incremental index, snapshot/streaming, MCP projection, and million-item scale acceptance stay on this feature, so it will return to open rather than be falsely closed."
   "2026-07-14T08:15:26.847Z",codex-root,"PR #554 review evidence: addressed all ten first-round findings across construction complexity/performance, bounded closure/path truncation, malformed/custom lifecycle dependencies, immutable payload schemas, canonical dependency conversion, inverse-kind filters, generated changelog accuracy, and duplicate-edge documentation. Focused relationship coverage is exact 100/100/100/100; full repository run passed 286 files and 5664 tests before the final single branch regression was added. The broader durable event/index acceptance remains open."
@@ -73,6 +73,9 @@ comments[45]{created_at,author,text}:
   "2026-07-18T07:48:27.856Z",codex-sdk-vcs-20260718,"Correction to the preceding Greptile note: the completed pre-push review run id is ffc25364-c837-48d8-8fd1-ce6f2540180e (commit 20b88f98, 5 comments, confidence 3/5). The placeholder-looking token in the prior append-only comment is not an identifier."
   "2026-07-18T08:08:43.500Z",codex-sdk-vcs-20260718,"Pre-push Greptile re-review against committed head d37d6be9 completed at confidence 5/5 with zero comments: all five findings from run ffc25364-c837-48d8-8fd1-ce6f2540180e are verified fixed, and no new correctness, security, concurrency, public-API, extensibility, or test-quality regressions were found across the complete broad diff."
   "2026-07-18T09:25:39.141Z",codex-sdk-vcs-20260718,"Hosted review round 1 evidence: legacy extension activation payloads now safely treat absent relationship_kinds registrations as empty in activation summaries and capability usage; compatibility comments document this boundary in summary, usage, graph assembly, and loader surfaces. The public registry remains intentionally strict for required ordering, hierarchy, and allowSelf semantics, with new missing-field acceptance tests. Full sandbox coverage passed: 308 files, 5,896 tests, exact 100/100/100/100."
+  "2026-07-18T14:35:43.752Z",codex-root,"Implementation start 2026-07-18: active only for the relationship-event transaction recovery/visibility tranche required by pm-4e12; durable incremental indexes, migration/backfill, and million-item acceptance remain outside this PR."
+  "2026-07-18T15:19:21.805Z",codex-root,"Active tranche evidence: relationship-event mutations can now participate in the public crash-recoverable workspace transaction coordinator without rewriting immutable history. The VCS exemplar proves add/remove/add compensation and replay, conflicting-event reconciliation, concurrent removal safety, and committed-result validation. Exact full coverage and packed VCS acceptance passed. Broader relationship-platform scope remains on this feature after this tranche."
+  "2026-07-18T16:49:49.198Z",codex-root,"PR #605 transaction tranche review evidence: relationship-event compensation now removes only the exact transaction-owned commits_to winner, preserves newer unrelated ledger state, journals recovered event identity, and validates both item and relationship state after commit. Exact full coverage and packed VCS acceptance pass. The broader registry/index/graph feature remains open for later slices."
 notes[7]{created_at,author,text}:
   "2026-07-14T10:19:35.648Z",codex-gpt5,"Remaining canonical scope after this PR: durable storage adapters, native CLI/MCP graph query integration, migration/backfill, and million-item storage validation; keep feature open."
   "2026-07-17T10:22:56.686Z",maintainer-agent,"Implementation constraints recorded 2026-07-17 (review pass #96), two hard facts for whoever claims this slice. (1) src/sdk/runtime.ts gate headroom is 2 lines (census on pm-yh8r) — this slice's registry/graph-query exports CANNOT go through runtime.ts; ship the runtime partition first/with it, or route the new primitives through a dedicated subpath module (precedent: PR#571-lane sdk/test + sdk/diagnostics folders; sdk/query/ is the natural home). (2) Perf shape to fix while building the query primitives: pm deps --format context today assembles the FULL workspace RelationshipGraph + dangling-reference collection on every call (assembleDepsRelationshipGraph in src/sdk/dependencies.ts calls collectDanglingDependencyReferences + RelationshipGraph.fromItems over ALL items before bounding) — bounded output but unbounded assembly cost, O(all items) per invocation. The adjacency/bounded-subgraph primitives owned here are the natural place to make assembly incremental/indexed so bounded queries stop paying full-workspace cost; pm-m2il's scale matrix (query-budget axis) will measure it, pm-9rxu bl8x cache contract (CACHE_VERSION) is the substrate if an index is persisted."
@@ -85,7 +88,8 @@ learnings[3]{created_at,author,text}:
   "2026-07-14T07:46:27.146Z",codex-gpt5-root,"A storage-independent relationship registry is the semantic boundary: algorithms must consume ordering/hierarchy flags rather than infer meaning from labels, while durable event/index implementations can remain interchangeable."
   "2026-07-14T10:02:20.502Z",codex-gpt5,Optimistic append sequences plus cursor fingerprints bind every page and snapshot to a coherent immutable relationship history; durable adapters can persist the same event contract without coupling graph semantics to storage.
   "2026-07-18T07:17:33.888Z",codex-sdk-vcs-20260718,Extension commands must not recursively load extensions through their injected PmClient. The outer host already owns the active schema/registry context; use PmClient.forActiveExtensionHost so nested native lifecycle actions bypass activation queue reacquisition while retaining active registrations.
-files[50]{path,scope,note}:
+files[54]{path,scope,note}:
+  packages/pm-vcs/extensions/vcs/index.ts,project,Relationship event compensation and replay
   scripts/release/sdk-import-boundary-baseline.json,project,CLI to SDK boundary ratchet
   src/cli/commands/graph.ts,project,thin CLI re-export of the SDK graph runner
   src/cli/main.ts,project,CLI extension command SDK injection
@@ -129,6 +133,8 @@ files[50]{path,scope,note}:
   src/sdk/relationships.ts,project,public relationship ontology and bounded graph query kernel
   src/sdk/runtime-input.ts,project,runtime input-normalization partition incl. graphOptionsFromFlat
   src/sdk/runtime.ts,project,PmClient.graph + MCP graph action dispatch; input helpers moved to runtime-input
+  src/sdk/workspace-transaction.ts,project,Crash-recoverable relationship mutation coordination
+  tests/unit/packages/vcs-extension.spec.ts,project,Relationship event compensation acceptance
   tests/unit/sdk/extension-relationship-kinds.spec.ts,project,Graph registration stream projection and validation coverage
   tests/unit/sdk/graph/run.spec.ts,project,"pm graph runner spec: subcommand parsing,bounds,cursors,envelopes"
   tests/unit/sdk/graph/traversal.spec.ts,project,PR#579 traversal bounds + semantics spec (orphan-link reconciliation pass #97)
@@ -136,7 +142,8 @@ files[50]{path,scope,note}:
   tests/unit/sdk/relationship-history-projection.spec.ts,project,Graph registration stream projection and validation coverage
   tests/unit/sdk/relationships.spec.ts,project,Graph registration stream projection and validation coverage
   tests/unit/sdk/runtime-input-graph.spec.ts,project,flat MCP graph option normalization spec
-tests[7]:
+  tests/unit/sdk/workspace-transaction.spec.ts,project,Relationship transaction recovery coverage
+tests[8]:
   - command: node scripts/run-tests.mjs coverage
     scope: project
     timeout_seconds: 900
@@ -154,6 +161,9 @@ tests[7]:
     scope: project
     timeout_seconds: 180
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/relationships.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-transaction.spec.ts tests/unit/packages/vcs-extension.spec.ts
     scope: project
     timeout_seconds: 240
   - command: "pnpm quality:static"

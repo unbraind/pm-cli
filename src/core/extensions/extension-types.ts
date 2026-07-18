@@ -24,6 +24,10 @@ import type {
 import type {
   RelationshipEventStore,
 } from "../../sdk/relationship-history.js";
+import type {
+  CommitWorkspaceTransactionOptions,
+  WorkspaceTransactionCommitResult,
+} from "../../sdk/workspace-transaction.js";
 
 /** Public contract for known extension capabilities, shared by SDK and presentation-layer consumers. */
 export const KNOWN_EXTENSION_CAPABILITIES = [
@@ -566,6 +570,10 @@ export interface ExtensionCommandSdk {
     definitions: readonly RelationshipKindDefinition[];
     relativePath?: string;
   }): Promise<RelationshipEventStore>;
+  /** Commit idempotent item and relationship mutations under one durable journal. */
+  commitWorkspaceTransaction(
+    options: Omit<CommitWorkspaceTransactionOptions, "pmRoot">,
+  ): Promise<WorkspaceTransactionCommitResult>;
 }
 
 /** Documents the parser override context payload exchanged by command, SDK, and package integrations. */

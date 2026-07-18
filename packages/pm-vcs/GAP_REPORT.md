@@ -18,7 +18,7 @@ core into Git.
 | Streaming derived state | `RelationshipEventLog.stream/project` and durable equivalents | Complete in this change: bounded batches feed deterministic application projections. |
 | Custom graph semantics | `registerRelationshipKinds` and `RelationshipKindRegistry` | Complete: `commits_to` is validated at activation and carries direction, inverse, ordering, cardinality, lifecycle, aliases, and version. |
 | Extension-wide custom graph registration | active extension registry plus workspace graph assembly | Complete in this change: CLI, MCP, and SDK graph assembly merge active package definitions into the native ontology. |
-| Atomic multi-item + relationship commit | no single public transaction boundary | Explicitly waived for this bounded exemplar. The command writes the relationship event before terminal item state and remains retry-safe through stable relationship identity; production distributed transaction semantics belong to a separately justified, dedupe-checked future item. |
+| Atomic multi-item + relationship commit | `commitWorkspaceTransaction` | Complete: merge uses the host-bound public SDK journal, deterministic step inspection, a workspace writer lock, and append-only item/relationship compensations with crash-resumable replay. |
 | Content-addressed objects, tree diff, network transport | out of scope | Product-specific VCS storage is intentionally not a universal pm primitive. |
 
 ## Conclusion
@@ -26,6 +26,6 @@ core into Git.
 The SDK can express the bounded VCS domain without private imports. Custom
 relationship semantics now cross the full public boundary from extension
 activation into native workspace graph assembly, while the package-owned event
-store supplies durable replay and projections. The exemplar therefore adds no
-duplicate tracker item; larger storage-index and scale work remains on the
-canonical `pm-ju83` lineage.
+store supplies durable replay and projections. The last explicit SDK waiver is
+closed by the public transaction coordinator; larger storage-index and scale
+work remains on the canonical `pm-ju83` lineage.

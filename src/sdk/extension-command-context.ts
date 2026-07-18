@@ -11,6 +11,7 @@ import { getItemAt } from "./history-read.js";
 import { RelationshipEventStore } from "./relationship-history.js";
 import { createRelationshipKindRegistry } from "./relationships.js";
 import type { PmClient } from "./runtime.js";
+import { commitWorkspaceTransaction } from "./workspace-transaction.js";
 
 /** Bind public SDK services to one tracker and one caller-owned client. */
 export function createExtensionCommandSdk(
@@ -34,5 +35,7 @@ export function createExtensionCommandSdk(
           : { relativePath: options.relativePath }),
       });
     },
+    commitWorkspaceTransaction: (options) =>
+      commitWorkspaceTransaction({ ...options, pmRoot }),
   };
 }

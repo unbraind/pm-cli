@@ -1,0 +1,643 @@
+/**
+ * @module sdk/workspace-transaction
+ *
+ * Coordinates crash-recoverable, compensating transactions across public SDK
+ * mutation primitives without rewriting immutable item or relationship history.
+ */
+import { mkdir, readFile } from "node:fs/promises";
+import path from "node:path";
+import { acquireLock } from "../core/lock/lock.js";
+import { writeFileAtomic } from "../core/fs/fs-utils.js";
+import { nowIso } from "../core/shared/time.js";
+
+/** Durable state reported by a transaction step inspection. */
+export type WorkspaceTransactionStepState =
+  | "pending"
+  | "applied"
+  | "compensated";
+
+/** JSON-compatible values retained in the durable transaction journal. */
+export type WorkspaceTransactionJsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | WorkspaceTransactionJsonValue[]
+  | { [key: string]: WorkspaceTransactionJsonValue };
+
+/** Result returned by a step inspection during replay or recovery. */
+export interface WorkspaceTransactionStepInspection {
+  /** Current durable state of the step's domain mutation. */
+  state: WorkspaceTransactionStepState;
+  /** Reconstructed result when the mutation is already applied. */
+  result?: WorkspaceTransactionJsonValue;
+}
+
+/** One idempotent forward mutation with an append-only compensation. */
+export interface WorkspaceTransactionStep {
+  /** Stable identifier unique within the transaction plan. */
+  id: string;
+  /** Inspect durable domain state without mutating it. */
+  inspect(): Promise<WorkspaceTransactionStepInspection>;
+  /** Capture journal-safe pre-mutation data required by compensation. */
+  prepareCompensation?(): Promise<WorkspaceTransactionJsonValue | undefined>;
+  /** Apply the forward mutation and return a journal-safe result, or store nothing. */
+  apply(): Promise<WorkspaceTransactionJsonValue | undefined>;
+  /** Idempotently reconcile only this step's exact forward mutation when present. */
+  compensate(data?: WorkspaceTransactionJsonValue): Promise<void>;
+}
+
+/** Observable transition points available to diagnostics and failure injection. */
+export type WorkspaceTransactionTransition =
+  | "prepared"
+  | "step_applied"
+  | "step_recorded"
+  | "committing"
+  | "committed"
+  | "compensating"
+  | "step_compensating"
+  | "step_compensated"
+  | "compensated";
+
+/** Context emitted at each transaction transition. */
+export interface WorkspaceTransactionTransitionContext {
+  /** Stable transaction identifier. */
+  transactionId: string;
+  /** Current durable transaction attempt. */
+  attempt: number;
+  /** Transition reached; `step_applied` follows mutation and precedes journal recording. */
+  transition: WorkspaceTransactionTransition;
+  /** Step associated with a step-level transition. */
+  stepId?: string;
+}
+
+/** Options accepted by the public workspace transaction coordinator. */
+export interface CommitWorkspaceTransactionOptions {
+  /** Tracker root that owns the journal and workspace-wide writer lock. */
+  pmRoot: string;
+  /** Stable idempotency key reused to recover an interrupted transaction. */
+  transactionId: string;
+  /** Attributable actor recorded in the durable journal. */
+  author: string;
+  /** Ordered idempotent mutations; compensations run in reverse order. */
+  steps: readonly WorkspaceTransactionStep[];
+  /** Lock lifetime in seconds; size this above the longest expected attempt. */
+  lockTtlSeconds?: number;
+  /** Maximum time to wait for the workspace writer lock. */
+  lockWaitMs?: number;
+  /** Optional transition observer used by telemetry and deterministic crash tests. */
+  onTransition?(
+    context: WorkspaceTransactionTransitionContext,
+  ): void | Promise<void>;
+}
+
+/** Successful durable transaction result. */
+export interface WorkspaceTransactionCommitResult {
+  /** Stable transaction identifier. */
+  transactionId: string;
+  /** Final durable state. */
+  status: "committed";
+  /** Whether an interrupted journal was resumed. */
+  recovered: boolean;
+  /** One result per ordered transaction step. */
+  results: Record<string, WorkspaceTransactionJsonValue>;
+}
+
+/**
+ * Deliberate process-boundary interruption used by deterministic crash tests.
+ * Throwing this from `onTransition` leaves the journal resumable and skips the
+ * normal in-process compensation path.
+ */
+export class WorkspaceTransactionInterruptedError extends Error {
+  /** Create one explicit crash-boundary interruption. */
+  public constructor(message = "Workspace transaction interrupted") {
+    super(message);
+    this.name = "WorkspaceTransactionInterruptedError";
+  }
+}
+
+type WorkspaceTransactionJournalStatus =
+  | "applying"
+  | "compensating"
+  | "compensated"
+  | "committed";
+
+interface WorkspaceTransactionJournal {
+  schemaVersion: 1;
+  transactionId: string;
+  author: string;
+  status: WorkspaceTransactionJournalStatus;
+  attempt: number;
+  createdAt: string;
+  updatedAt: string;
+  stepIds: string[];
+  startedStepIds: string[];
+  completedStepIds: string[];
+  results: Record<string, WorkspaceTransactionJsonValue>;
+  compensationData: Record<string, WorkspaceTransactionJsonValue>;
+}
+
+const WORKSPACE_TRANSACTION_LOCK_ID = "sdk-workspace-transaction";
+const TRANSACTION_ID_PATTERN = /^[a-zA-Z0-9._-]+$/;
+const DEFAULT_LOCK_TTL_SECONDS = 30;
+const DEFAULT_LOCK_WAIT_MS = 3_000;
+
+function requiredIdentifier(value: unknown, label: string): string {
+  if (typeof value !== "string")
+    throw new TypeError(`${label} must be a string`);
+  const normalized = value.trim();
+  if (!normalized || !TRANSACTION_ID_PATTERN.test(normalized))
+    throw new TypeError(`${label} must match [a-zA-Z0-9._-]+`);
+  return normalized;
+}
+
+function requiredText(value: unknown, label: string): string {
+  if (typeof value !== "string")
+    throw new TypeError(`${label} must be a string`);
+  const normalized = value.trim();
+  if (!normalized) throw new TypeError(`${label} must be non-empty`);
+  return normalized;
+}
+
+function positiveInteger(
+  value: number | undefined,
+  fallback: number,
+  label: string,
+) {
+  const resolved = value ?? fallback;
+  if (!Number.isInteger(resolved) || resolved <= 0)
+    throw new TypeError(`${label} must be a positive integer`);
+  return resolved;
+}
+
+function journalPath(pmRoot: string, transactionId: string): string {
+  return path.join(pmRoot, "transactions", "sdk", `${transactionId}.json`);
+}
+
+async function writeJournal(
+  pmRoot: string,
+  journal: WorkspaceTransactionJournal,
+): Promise<void> {
+  journal.updatedAt = nowIso();
+  const target = journalPath(pmRoot, journal.transactionId);
+  await mkdir(path.dirname(target), { recursive: true });
+  await writeFileAtomic(target, `${JSON.stringify(journal, null, 2)}\n`);
+}
+
+function hasValidJournalMetadata(
+  journal: Partial<WorkspaceTransactionJournal>,
+): boolean {
+  return (
+    Number.isInteger(journal.attempt) &&
+    typeof journal.author === "string" &&
+    typeof journal.createdAt === "string" &&
+    typeof journal.updatedAt === "string"
+  );
+}
+
+function createResultMap(
+  source?: Record<string, WorkspaceTransactionJsonValue>,
+): Record<string, WorkspaceTransactionJsonValue> {
+  return Object.assign(
+    Object.create(null) as Record<string, WorkspaceTransactionJsonValue>,
+    source,
+  );
+}
+
+function cloneJournalValue(
+  value: unknown,
+  label: string,
+): WorkspaceTransactionJsonValue {
+  try {
+    const serialized = JSON.stringify(value, (_key, nestedValue: unknown) => {
+      if (typeof nestedValue === "number" && !Number.isFinite(nestedValue))
+        throw new TypeError(`${label} contains a non-finite number`);
+      if (
+        nestedValue === undefined ||
+        typeof nestedValue === "function" ||
+        typeof nestedValue === "symbol"
+      )
+        throw new TypeError(`${label} contains a non-JSON value`);
+      return nestedValue;
+    }) as string;
+    return JSON.parse(serialized) as WorkspaceTransactionJsonValue;
+  } catch (error) {
+    throw new TypeError(`${label} must be JSON serializable`, { cause: error });
+  }
+}
+
+function cloneOptionalJournalValue(
+  value: unknown,
+  label: string,
+): WorkspaceTransactionJsonValue | undefined {
+  return value === undefined ? undefined : cloneJournalValue(value, label);
+}
+
+function setJournalEntry(
+  target: Record<string, WorkspaceTransactionJsonValue>,
+  stepId: string,
+  value: unknown,
+  label: string,
+): void {
+  const cloned = cloneOptionalJournalValue(value, label);
+  if (cloned === undefined) delete target[stepId];
+  else target[stepId] = cloned;
+}
+
+function isJournalMap(
+  value: unknown,
+): value is Record<string, WorkspaceTransactionJsonValue> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function hasUniqueKnownStepIds(
+  value: unknown,
+  stepIds: readonly string[],
+): value is string[] {
+  return (
+    Array.isArray(value) &&
+    new Set(value).size === value.length &&
+    value.every(
+      (stepId) => typeof stepId === "string" && stepIds.includes(stepId),
+    )
+  );
+}
+
+function hasValidJournalLifecycle(
+  journal: Partial<WorkspaceTransactionJournal>,
+  stepIds: readonly string[],
+): boolean {
+  if (
+    !hasUniqueKnownStepIds(journal.startedStepIds, stepIds) ||
+    !hasUniqueKnownStepIds(journal.completedStepIds, stepIds) ||
+    !isJournalMap(journal.results) ||
+    !isJournalMap(journal.compensationData)
+  )
+    return false;
+  const startedStepIds = journal.startedStepIds;
+  const started = new Set(startedStepIds);
+  const completedStepIds = journal.completedStepIds;
+  const completed = new Set(completedStepIds);
+  if (
+    Object.keys(journal.compensationData).some(
+      (stepId) => !started.has(stepId),
+    ) ||
+    Object.keys(journal.results).some((stepId) => !completed.has(stepId))
+  )
+    return false;
+  if (journal.status === "committed")
+    return stepIds.every((stepId) => completed.has(stepId));
+  return (
+    journal.status !== "compensated" ||
+    (completed.size === 0 && started.size === 0)
+  );
+}
+
+function parseJournal(
+  raw: string,
+  transactionId: string,
+  stepIds: readonly string[],
+): WorkspaceTransactionJournal {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as unknown;
+  } catch {
+    throw new TypeError(
+      `Workspace transaction ${transactionId} journal is invalid JSON`,
+    );
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+    throw new TypeError(
+      `Workspace transaction ${transactionId} journal is invalid`,
+    );
+  const journal = parsed as Partial<WorkspaceTransactionJournal>;
+  const identityMatches =
+    journal.schemaVersion === 1 && journal.transactionId === transactionId;
+  const stepsMatch =
+    Array.isArray(journal.stepIds) &&
+    journal.stepIds.length === stepIds.length &&
+    journal.stepIds.every((stepId, index) => stepId === stepIds[index]);
+  const lifecycleMatches = hasValidJournalLifecycle(journal, stepIds);
+  const metadataMatches = hasValidJournalMetadata(journal);
+  const statusMatches = [
+    "applying",
+    "compensating",
+    "compensated",
+    "committed",
+  ].includes(String(journal.status));
+  if (
+    !identityMatches ||
+    !stepsMatch ||
+    !lifecycleMatches ||
+    !metadataMatches ||
+    !statusMatches
+  )
+    throw new TypeError(
+      `Workspace transaction ${transactionId} journal does not match the supplied plan`,
+    );
+  return {
+    ...(journal as WorkspaceTransactionJournal),
+    results: createResultMap(journal.results),
+    compensationData: createResultMap(journal.compensationData),
+  };
+}
+
+async function prepareJournalForApply(
+  options: CommitWorkspaceTransactionOptions,
+  transactionId: string,
+  author: string,
+  stepIds: string[],
+  existing: WorkspaceTransactionJournal | undefined,
+): Promise<{
+  journal: WorkspaceTransactionJournal;
+  recovered: boolean;
+}> {
+  let journal = existing;
+  const recovered = journal !== undefined;
+  if (journal?.status === "compensating")
+    await compensateAppliedSteps(options, journal);
+  if (journal === undefined || journal.status === "compensated") {
+    const timestamp = nowIso();
+    journal = {
+      schemaVersion: 1,
+      transactionId,
+      author,
+      status: "applying",
+      attempt: (journal?.attempt ?? 0) + 1,
+      createdAt: journal?.createdAt ?? timestamp,
+      updatedAt: timestamp,
+      stepIds,
+      startedStepIds: [],
+      completedStepIds: [],
+      results: createResultMap(),
+      compensationData: createResultMap(),
+    };
+    await writeJournal(options.pmRoot, journal);
+    await emitTransition(options, journal, "prepared");
+  }
+  return { journal, recovered };
+}
+
+async function applyPreparedTransaction(
+  options: CommitWorkspaceTransactionOptions,
+  journal: WorkspaceTransactionJournal,
+  recovered: boolean,
+): Promise<WorkspaceTransactionCommitResult> {
+  try {
+    await discoverAppliedSteps(journal, options.steps);
+    await writeJournal(options.pmRoot, journal);
+    const completed = new Set(journal.completedStepIds);
+    const started = new Set(journal.startedStepIds);
+    for (const step of options.steps) {
+      if (completed.has(step.id)) continue;
+      const inspection = await step.inspect();
+      let result = cloneOptionalJournalValue(
+        inspection.result,
+        `Step ${step.id} result`,
+      );
+      if (inspection.state !== "applied") {
+        const compensationData = await step.prepareCompensation?.();
+        setJournalEntry(
+          journal.compensationData,
+          step.id,
+          compensationData,
+          `Step ${step.id} compensation data`,
+        );
+        started.add(step.id);
+        journal.startedStepIds = options.steps
+          .map((candidate) => candidate.id)
+          .filter((stepId) => started.has(stepId));
+        await writeJournal(options.pmRoot, journal);
+        const appliedResult = await step.apply();
+        result = cloneOptionalJournalValue(
+          appliedResult,
+          `Step ${step.id} result`,
+        );
+      }
+      await emitTransition(options, journal, "step_applied", step.id);
+      completed.add(step.id);
+      journal.completedStepIds = options.steps
+        .map((candidate) => candidate.id)
+        .filter((stepId) => completed.has(stepId));
+      setJournalEntry(
+        journal.results,
+        step.id,
+        result,
+        `Step ${step.id} result`,
+      );
+      await writeJournal(options.pmRoot, journal);
+      await emitTransition(options, journal, "step_recorded", step.id);
+    }
+    await emitTransition(options, journal, "committing");
+    journal.status = "committed";
+    await writeJournal(options.pmRoot, journal);
+    await emitTransition(options, journal, "committed");
+    return {
+      transactionId: journal.transactionId,
+      status: "committed",
+      recovered,
+      results: createResultMap(journal.results),
+    };
+  } catch (error) {
+    if (
+      error instanceof WorkspaceTransactionInterruptedError ||
+      journal.status === "committed"
+    )
+      throw error;
+    try {
+      await compensateAppliedSteps(options, journal);
+    } catch (compensationError) {
+      throw new AggregateError(
+        [error, compensationError],
+        `Workspace transaction failed and compensation failed: ${String(compensationError)}`,
+        { cause: compensationError },
+      );
+    }
+    throw error;
+  }
+}
+
+async function loadJournal(
+  pmRoot: string,
+  transactionId: string,
+  stepIds: readonly string[],
+): Promise<WorkspaceTransactionJournal | undefined> {
+  try {
+    return parseJournal(
+      await readFile(journalPath(pmRoot, transactionId), "utf8"),
+      transactionId,
+      stepIds,
+    );
+  } catch (error) {
+    if (
+      error !== null &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "ENOENT"
+    )
+      return undefined;
+    throw error;
+  }
+}
+
+async function emitTransition(
+  options: CommitWorkspaceTransactionOptions,
+  journal: WorkspaceTransactionJournal,
+  transition: WorkspaceTransactionTransition,
+  stepId?: string,
+): Promise<void> {
+  await options.onTransition?.({
+    transactionId: journal.transactionId,
+    attempt: journal.attempt,
+    transition,
+    ...(stepId === undefined ? {} : { stepId }),
+  });
+}
+
+async function discoverAppliedSteps(
+  journal: WorkspaceTransactionJournal,
+  steps: readonly WorkspaceTransactionStep[],
+): Promise<void> {
+  const completed = new Set<string>();
+  const results = createResultMap();
+  for (const step of steps) {
+    const inspection = await step.inspect();
+    if (inspection.state === "applied") {
+      completed.add(step.id);
+      setJournalEntry(
+        results,
+        step.id,
+        inspection.result,
+        `Step ${step.id} result`,
+      );
+    }
+  }
+  journal.results = results;
+  journal.completedStepIds = steps
+    .map((step) => step.id)
+    .filter((stepId) => completed.has(stepId));
+}
+
+async function compensateAppliedSteps(
+  options: CommitWorkspaceTransactionOptions,
+  journal: WorkspaceTransactionJournal,
+): Promise<void> {
+  journal.status = "compensating";
+  await writeJournal(options.pmRoot, journal);
+  await emitTransition(options, journal, "compensating");
+  const completed = new Set(journal.completedStepIds);
+  const started = new Set(journal.startedStepIds);
+  for (const step of [...options.steps].reverse()) {
+    if (!started.has(step.id) && !completed.has(step.id)) continue;
+    let shouldCompensate: boolean;
+    try {
+      shouldCompensate =
+        started.has(step.id) && (await step.inspect()).state === "applied";
+    } catch {
+      shouldCompensate = started.has(step.id);
+    }
+    if (shouldCompensate) {
+      await emitTransition(options, journal, "step_compensating", step.id);
+      await step.compensate(journal.compensationData[step.id]);
+    }
+    completed.delete(step.id);
+    started.delete(step.id);
+    journal.completedStepIds = options.steps
+      .map((candidate) => candidate.id)
+      .filter((stepId) => completed.has(stepId));
+    journal.startedStepIds = options.steps
+      .map((candidate) => candidate.id)
+      .filter((stepId) => started.has(stepId));
+    delete journal.results[step.id];
+    delete journal.compensationData[step.id];
+    await writeJournal(options.pmRoot, journal);
+    await emitTransition(options, journal, "step_compensated", step.id);
+  }
+  journal.status = "compensated";
+  await writeJournal(options.pmRoot, journal);
+  await emitTransition(options, journal, "compensated");
+}
+
+/**
+ * Commit an ordered set of idempotent SDK mutations under one workspace writer
+ * lock. The durable journal resumes interrupted forward work, while ordinary
+ * failures append reverse-order compensations. This provides atomic logical
+ * replay without deleting or rewriting immutable domain histories.
+ */
+export async function commitWorkspaceTransaction(
+  options: CommitWorkspaceTransactionOptions,
+): Promise<WorkspaceTransactionCommitResult> {
+  const pmRoot = requiredText(options.pmRoot, "Transaction pmRoot");
+  const transactionId = requiredIdentifier(
+    options.transactionId,
+    "Transaction id",
+  );
+  const author = requiredText(options.author, "Transaction author");
+  const lockTtlSeconds = positiveInteger(
+    options.lockTtlSeconds,
+    DEFAULT_LOCK_TTL_SECONDS,
+    "Transaction lock TTL",
+  );
+  const lockWaitMs = positiveInteger(
+    options.lockWaitMs,
+    DEFAULT_LOCK_WAIT_MS,
+    "Transaction lock wait",
+  );
+  const steps = [...options.steps];
+  if (steps.length === 0)
+    throw new TypeError("Workspace transaction requires at least one step");
+  const stepIds = steps.map((step) => {
+    const stepId = requiredIdentifier(step.id, "Transaction step id");
+    if (stepId !== step.id)
+      throw new TypeError(
+        "Transaction step id must not contain surrounding whitespace",
+      );
+    return stepId;
+  });
+  if (new Set(stepIds).size !== stepIds.length)
+    throw new TypeError("Workspace transaction step ids must be unique");
+  const stableOptions: CommitWorkspaceTransactionOptions = {
+    ...options,
+    pmRoot,
+    transactionId,
+    author,
+    steps,
+    lockTtlSeconds,
+    lockWaitMs,
+  };
+
+  const release = await acquireLock(
+    pmRoot,
+    WORKSPACE_TRANSACTION_LOCK_ID,
+    lockTtlSeconds,
+    author,
+    false,
+    false,
+    lockWaitMs,
+  );
+  try {
+    const existing = await loadJournal(pmRoot, transactionId, stepIds);
+    const recovered = existing !== undefined;
+    if (existing?.status === "committed")
+      return {
+        transactionId,
+        status: "committed",
+        recovered: true,
+        results: createResultMap(existing.results),
+      };
+    const prepared = await prepareJournalForApply(
+      stableOptions,
+      transactionId,
+      author,
+      stepIds,
+      existing,
+    );
+    return await applyPreparedTransaction(
+      stableOptions,
+      prepared.journal,
+      recovered || prepared.recovered,
+    );
+  } finally {
+    await release();
+  }
+}
