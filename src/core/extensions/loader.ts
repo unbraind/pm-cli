@@ -2803,11 +2803,12 @@ class ExtensionApiRegistrar implements ExtensionApi {
     ) {
       return;
     }
-    const normalized = normalizeRegistrationRecordList(
-      "registerRelationshipKinds definitions",
-      definitions,
-    ) as unknown as RelationshipKindDefinition[];
-    if (normalized.length === 0) {
+    if (!Array.isArray(definitions)) {
+      throw new TypeError(
+        "registerRelationshipKinds definitions requires an array of object definitions",
+      );
+    }
+    if (definitions.length === 0) {
       throw new TypeError(
         "registerRelationshipKinds requires at least one definition",
       );
@@ -2818,7 +2819,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
         registry.register(definition);
       }
     }
-    const validated = normalized.map((definition) => {
+    const validated = definitions.map((definition) => {
       registry.register(definition);
       return registry.require(definition.kind);
     });

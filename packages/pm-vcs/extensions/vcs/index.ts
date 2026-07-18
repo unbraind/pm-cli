@@ -296,10 +296,9 @@ async function runChangesetMerge(
   if (changeset.item.status !== "proposed")
     throw new TypeError(`vcs merge requires proposed changeset ${id}`);
   const store = await openVcsRelationshipStore(context, client);
-  const expectedVersion = await store.currentVersion();
   const timestamp = new Date().toISOString();
   const relationship = await store.append({
-    eventId: `merge-${id}-${expectedVersion + 1}`,
+    eventId: `merge-${id}`,
     relationshipId: `changeset-${id}`,
     action: "add",
     edge: { source: id, target: refId, kind: "commits_to" },
@@ -308,7 +307,6 @@ async function runChangesetMerge(
         ? context.global.author.trim()
         : "pm-vcs",
     timestamp,
-    expectedVersion,
     reason: "Reviewed VCS changeset merge",
   });
   await client.update(id, {

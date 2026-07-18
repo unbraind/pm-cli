@@ -2486,8 +2486,8 @@ async function dispatchActiveExtensionAction(
       PmClient.forActiveExtensionHost({
         pmRoot: active.pmRoot,
         author:
-          typeof options.author === "string" && options.author.trim()
-            ? options.author.trim()
+          typeof global.author === "string" && global.author.trim()
+            ? global.author.trim()
             : "pm-extension",
       }),
     ),

@@ -24,6 +24,10 @@ const customKind: RelationshipKindDefinition = {
   incoming: "many",
   lifecycle: "supersedable",
   aliases: ["merged_into"],
+  payloadSchema: {
+    type: "object",
+    properties: { review: { type: "string" } },
+  },
   compatibilityVersion: 1,
   allowSelf: false,
 };
@@ -31,6 +35,19 @@ const customKind: RelationshipKindDefinition = {
 afterEach(() => resetActiveExtensionRuntimeState());
 
 describe("extension relationship-kind registration", () => {
+  it("rejects a non-array registration container", async () => {
+    const activation = await activateExtensionForTest(
+      {
+        activate(api) {
+          api.registerRelationshipKinds({} as never);
+        },
+      },
+      { name: "invalid-container-domain-graph", capabilities: ["schema"] },
+    );
+    expect(activation.failed).toHaveLength(1);
+    expect(activation.registrations.relationship_kinds).toEqual([]);
+  });
+
   it("rejects null relationship definitions at the public registry boundary", () => {
     expect(() => new RelationshipKindRegistry([]).register(null as never)).toThrow(
       /requires an object/,
@@ -66,6 +83,12 @@ describe("extension relationship-kind registration", () => {
     expect(assembly.graph.registry().require("merged_into").kind).toBe(
       "commits_to",
     );
+    expect(
+      assembly.graph.registry().require("commits_to").payloadSchema,
+    ).toEqual({
+      type: "object",
+      properties: { review: { type: "string" } },
+    });
     expect(assembly.graph.edges()).toEqual([
       { source: "change-1", target: "main", kind: "commits_to" },
     ]);

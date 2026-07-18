@@ -303,6 +303,8 @@ export class RelationshipEventLog {
   /**
    * Iterate a stable event prefix in immutable, bounded batches. Consumers can
    * build streaming projections without copying or exposing the mutable ledger.
+   * `fromVersion === toVersion + 1` is the intentional empty checkpoint range;
+   * larger watermarks are rejected as invalid for the selected prefix.
    */
   public *stream(
     options: RelationshipEventStreamOptions = {},

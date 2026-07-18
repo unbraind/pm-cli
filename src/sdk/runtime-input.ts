@@ -98,6 +98,7 @@ export function actionGlobalOptions(
   return {
     json: true,
     quiet: true,
+    author: readRuntimeString(args, "author"),
     path: readRuntimeString(args, "path"),
     noExtensions: args.noExtensions === true || args.no_extensions === true,
     noPager: true,

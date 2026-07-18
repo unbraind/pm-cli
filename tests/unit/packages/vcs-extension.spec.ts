@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -219,6 +220,28 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         details: { version: 1, processed: 1 },
       });
 
+      const sdkClient = new PmClient({
+        pmRoot: context.pmPath,
+        author: "packed-sdk-author",
+      });
+      const sdkChange = (await sdkClient.run("vcs create", {
+        args: ["SDK attributed change"],
+        options: { ref: refId, treeHash: "sha256:sdk" },
+      })) as { id: string };
+      await sdkClient.run("vcs propose", { args: [sdkChange.id] });
+      await sdkClient.run("vcs merge", {
+        args: [sdkChange.id],
+        options: { ref: refId, reviewed: true },
+      });
+      const durableEvents = (await readFile(
+        path.join(context.pmPath, "relationships", "vcs-events.jsonl"),
+        "utf8",
+      ))
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line) as { author: string });
+      expect(durableEvents.at(-1)?.author).toBe("packed-sdk-author");
+
       const abandonedCandidate = await context.runCliInProcess([
         "vcs",
         "create",
@@ -311,13 +334,15 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
       await expect(invoke("vcs show", [ref.id], { at: "1" })).rejects.toThrow(
         /Changeset/,
       );
-      await invoke("vcs merge", [change.id], { ref: ref.id });
       const fallbackChange = (await invoke("vcs create", ["Fallback author"], {
         ref: ref.id,
         treeHash: "sha256:fallback",
       })) as { id: string };
       await invoke("vcs propose", [fallbackChange.id]);
-      await invoke("vcs merge", [fallbackChange.id], { ref: ref.id }, "");
+      await Promise.all([
+        invoke("vcs merge", [change.id], { ref: ref.id }),
+        invoke("vcs merge", [fallbackChange.id], { ref: ref.id }, ""),
+      ]);
       expect(await invoke("vcs log")).toMatchObject({
         details: {
           processed: 2,
