@@ -3,7 +3,7 @@
  *
  * Reads and writes tracker storage with format-aware helpers for Paths.
  */
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
@@ -27,6 +27,13 @@ const ITEM_FORMAT_BY_EXTENSION = {
   ".md": "json_markdown",
   ".toon": "toon",
 } as const satisfies Record<string, ItemFormat>;
+
+const NEARBY_TRACKER_SCAN_IGNORED_DIRECTORIES = new Set([
+  ".git",
+  "coverage",
+  "dist",
+  "node_modules",
+]);
 
 /** Public contract for item file extensions, shared by SDK and presentation-layer consumers. */
 export const ITEM_FILE_EXTENSIONS: Array<
@@ -87,6 +94,29 @@ function discoverPmRootFromAncestors(cwd: string): string | undefined {
       return undefined;
     }
     current = parent;
+  }
+}
+
+/** Find a directly nested custom tracker root so recovery guidance can preserve existing data instead of recommending a second initialization. */
+export function discoverNearbyPmRoot(
+  cwd: string,
+  excludedRoot?: string,
+): string | undefined {
+  const normalizedExcluded = excludedRoot ? path.resolve(excludedRoot) : undefined;
+  try {
+    return readdirSync(path.resolve(cwd), { withFileTypes: true })
+      .filter(
+        (entry) =>
+          entry.isDirectory() &&
+          !NEARBY_TRACKER_SCAN_IGNORED_DIRECTORIES.has(entry.name),
+      )
+      .map((entry) => path.join(path.resolve(cwd), entry.name))
+      .filter((candidate) => candidate !== normalizedExcluded)
+      .filter((candidate) => pathExists(getSettingsPath(candidate)))
+      .filter((candidate) => isPmSettingsFile(getSettingsPath(candidate)))
+      .sort((left, right) => left.localeCompare(right))[0];
+  } catch {
+    return undefined;
   }
 }
 

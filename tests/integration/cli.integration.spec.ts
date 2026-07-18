@@ -6122,7 +6122,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         code: "already_claimed_by",
         exit_code: 4,
       });
-      expect(conflictEnvelope.detail).toContain("already claimed by owner-a");
+      expect(conflictEnvelope.detail).toContain("already assigned to owner-a");
 
       const takeover = context.runCli(["claim", id, "--json", "--author", "owner-b", "--force"], { expectJson: true });
       expect(takeover.code).toBe(0);

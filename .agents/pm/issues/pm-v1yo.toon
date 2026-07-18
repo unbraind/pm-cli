@@ -2,20 +2,45 @@ id: pm-v1yo
 title: "GH-585: extension alias collision diagnostics for core command groups"
 description: "GitHub issue #585 reports that an exporter alias can silently graft package subcommands onto an existing core command group, demonstrated by the published pm-graph extension colliding with the new core pm graph group."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: agent-ux,extensions,github
 created_at: "2026-07-18T07:14:14.667Z"
-updated_at: "2026-07-18T10:02:41.281Z"
+updated_at: "2026-07-18T12:14:42.460Z"
+closed_at: "2026-07-18T12:14:06.245Z"
 author: codex-sdk-vcs-20260718
 estimated_minutes: 240
 acceptance_criteria: "Extension activation detects command-group and flattened-alias collisions before dispatch, emits an actionable diagnostic naming both owners, and preserves non-colliding extension commands with contract and installed-package regression coverage."
 parent: pm-usfg
 risk: medium
 confidence: high
+resolution: fixed
+expected_result: Extension aliases and nested command grafts that collide with core-owned paths are rejected with actionable owner diagnostics while canonical core actions remain intact.
+actual_result: "Collision paths are filtered before registration, ownership-rich warnings identify both owners, direct canonical metadata augmentation remains intentional, and non-colliding extension commands continue to dispatch."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-iqq0,related,"2026-07-18T07:14:14.667Z",null,null
   pm-ju83,related,"2026-07-18T07:14:14.667Z",null,null
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-18T07:14:14.667Z",codex-sdk-vcs-20260718,"Duplicate check 2026-07-18: exact all-status title search returned zero; AND search across extension command collision/alias/exporter terms found only unrelated closed lineage. Created from https://github.com/unbraind/pm-cli/issues/585 under universal SDK epic pm-usfg with graph and declarative-extension relations; left open and unclaimed because this PR does not implement it."
+  "2026-07-18T10:52:12.291Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
+  "2026-07-18T11:33:23.914Z",maintainer-agent,"Verification evidence: extension startup tests cover package-owner/name/unknown collision diagnostics while canonical core handlers remain active."
+  "2026-07-18T11:37:29.807Z",maintainer-agent,"Gate evidence: pnpm test:coverage passed 310 files/5906 tests at 100% statements (38887), branches (27366), functions (7917), and lines (37864). pnpm lint, typecheck, contracts:check, docs link gate, secret scan, git diff --check, and the item-linked sandbox test all passed."
+  "2026-07-18T11:56:31.781Z",maintainer-agent,"Greptile pre-push review 72dcf827-ee73-4f4f-834d-fae8ae8243f6: moved extension-owned command tracking before first use and documented why direct canonical paths may augment help metadata while aliases/nested grafts are rejected and core actions remain preserved."
+  "2026-07-18T11:56:33.837Z",maintainer-agent,"Post-review gate evidence: full coverage rerun passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866); focused tests, ESLint, static/docstring, package-boundary, token-budget, typecheck, and diff checks remain green."
+  "2026-07-18T12:14:01.791Z",maintainer-agent,"Final verification: exact local head passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866). Greptile final review 3fd40225-4f7c-47b3-9c65-d5c4e82132d8 returned 5/5 confidence, no correctness regressions, no files requiring attention, and no review comments."
+learnings[1]{created_at,author,text}:
+  "2026-07-18T11:37:36.849Z",maintainer-agent,"Extension command collision safety needs canonical alias awareness: preserve legitimate core handler registration while rejecting aliases and nested grafts that shadow core ownership."
+files[4]{path,scope,note}:
+  src/cli/extension-command-help.ts,project,Detect extension command paths that collide with core-owned prefixes
+  src/cli/main.ts,project,Preserve core dispatch and emit actionable collision ownership warnings
+  tests/unit/cli/extension-command-help.spec.ts,project,Core-prefix and extension-owned path regression coverage
+  tests/unit/commands/agent-ux-feedback-wave.spec.ts,project,Cross-command installed CLI regression bundle
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/sdk/graph/mutation-advisory.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/cli/extension-command-help.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrqaiyml-508pkl,test,passed,"2026-07-18T11:35:24.507Z","2026-07-18T11:35:34.605Z","2026-07-18T11:35:34.605Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/AGENT_UX_CONTRACTS.md,project,Public agent UX and SDK contract documentation
+  docs/README.md,project,Documentation index entry
+close_reason: Implemented collision ownership diagnostics that reject core-shadowing aliases and nested grafts while preserving canonical core actions and intentional extension help augmentation; documented and covered by installed/unit review evidence.
 body: ""

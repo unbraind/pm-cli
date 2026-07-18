@@ -258,8 +258,12 @@ export interface GraphAuditResult {
   finding_count: number;
   /** Finding counts keyed by severity. */
   findings_by_severity: Record<string, number>;
-  /** Affected-subject counts keyed by finding code. */
+  /** Finding-row counts keyed by finding code. Before 2026.7.19 this field incorrectly accumulated affected subjects; consumers of that unit must migrate to affected_subjects_by_code. */
   findings_by_code: Record<string, number>;
+  /** Affected-subject counts keyed by severity. */
+  affected_subjects_by_severity: Record<string, number>;
+  /** Affected-subject counts keyed by finding code. */
+  affected_subjects_by_code: Record<string, number>;
   /** Structural coverage metrics computed during the audit. */
   profile: RelationshipAuditReport["profile"];
   /** Ordered findings with bounded evidence samples; absent with summary. */
@@ -661,15 +665,23 @@ function runGraphAudit(
   });
   const bySeverity: Record<string, number> = {};
   const byCode: Record<string, number> = {};
+  const affectedBySeverity: Record<string, number> = {};
+  const affectedByCode: Record<string, number> = {};
   for (const finding of report.findings) {
     bySeverity[finding.severity] = (bySeverity[finding.severity] ?? 0) + 1;
-    byCode[finding.code] = (byCode[finding.code] ?? 0) + finding.count;
+    byCode[finding.code] = (byCode[finding.code] ?? 0) + 1;
+    affectedBySeverity[finding.severity] =
+      (affectedBySeverity[finding.severity] ?? 0) + finding.count;
+    affectedByCode[finding.code] =
+      (affectedByCode[finding.code] ?? 0) + finding.count;
   }
   return {
     subcommand: "audit",
     finding_count: report.findings.length,
     findings_by_severity: bySeverity,
     findings_by_code: byCode,
+    affected_subjects_by_severity: affectedBySeverity,
+    affected_subjects_by_code: affectedByCode,
     profile: report.profile,
     ...(invocation.summary ? {} : { findings: report.findings }),
   };

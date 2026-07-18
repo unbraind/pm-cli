@@ -162,6 +162,16 @@ export interface ContextFocusItem {
   completion_pct?: number;
 }
 
+/** Compact agenda reference used when the corresponding item is already present in a focus section. */
+export type ContextAgendaEvent =
+  | CalendarRow
+  | (Pick<CalendarRow, "at" | "date" | "kind" | "item_id"> & {
+      reference_only: true;
+      reminder_text?: string | null;
+      event_title?: string | null;
+      event_recurring?: boolean | null;
+    });
+
 // ---------------------------------------------------------------------------
 // Section data types
 // ---------------------------------------------------------------------------
@@ -377,7 +387,7 @@ export interface ContextResult {
   /** Value that configures or reports agenda for this contract. */
   agenda: {
     summary: ContextAgendaSummary;
-    events: CalendarRow[];
+    events: ContextAgendaEvent[];
   };
   /** Value that configures or reports hierarchy for this contract. */
   hierarchy?: HierarchyNode[];
@@ -1219,6 +1229,7 @@ export const _testOnly = {
   completionPct,
   dateTokenForTimestamp,
   filterTerminalCalendarEvents,
+  formatAgendaLine,
   isBlockedStatus,
   isClosedStatus,
   isInProgressStatus,
@@ -1529,7 +1540,16 @@ function formatProjectedFocusLine(
     .join(" ");
 }
 
-function formatAgendaLine(event: CalendarRow): string {
+function formatAgendaLine(event: ContextAgendaEvent): string {
+  if ("reference_only" in event) {
+    const suffix =
+      event.kind === "reminder"
+        ? ` — ${event.reminder_text ?? "reminder"}`
+        : event.kind === "event"
+          ? ` — ${event.event_title ?? "event"}${event.event_recurring ? " (recurring)" : ""}`
+          : "";
+    return `${formatClock(event.at)} [${event.kind}] ${event.item_id} (see focus item)${suffix}`;
+  }
   const base = `${formatClock(event.at)} [${event.kind}] ${event.item_id} p${event.item_priority} ${event.item_status} ${event.item_title}`;
   if (event.kind === "reminder") {
     return `${base} — ${event.reminder_text}`;
@@ -2159,9 +2179,10 @@ async function buildContextAgenda(
   global: GlobalOptions,
   runtime: ContextRuntime,
   subtreeIds: Set<string> | undefined,
+  listedFocusIds: ReadonlySet<string>,
 ): Promise<{
   agenda: Awaited<ReturnType<typeof runCalendar>>;
-  agendaEvents: CalendarRow[];
+  agendaEvents: ContextAgendaEvent[];
   agendaSummary: ContextAgendaSummary;
 }> {
   const calendarOptions: CalendarOptions = {
@@ -2178,11 +2199,36 @@ async function buildContextAgenda(
       : agenda.events.filter((event) =>
           subtreeIds.has(event.item_id.trim().toLowerCase()),
         );
-  const agendaEvents = filterTerminalCalendarEvents(
+  const fullAgendaEvents = filterTerminalCalendarEvents(
     scopedAgenda,
     runtime.statusRegistry,
   ).slice(0, runtime.limit);
-  return { agenda, agendaEvents, agendaSummary: summarizeAgenda(agendaEvents) };
+  const agendaEvents: ContextAgendaEvent[] = fullAgendaEvents.map((event) => {
+    if (!listedFocusIds.has(event.item_id)) {
+      return event;
+    }
+    return {
+      at: event.at,
+      date: event.date,
+      kind: event.kind,
+      item_id: event.item_id,
+      reference_only: true,
+      ...(event.kind === "reminder"
+        ? { reminder_text: event.reminder_text }
+        : {}),
+      ...(event.kind === "event"
+        ? {
+            event_title: event.event_title,
+            event_recurring: event.event_recurring,
+          }
+        : {}),
+    };
+  });
+  return {
+    agenda,
+    agendaEvents,
+    agendaSummary: summarizeAgenda(fullAgendaEvents),
+  };
 }
 
 function countContextStatus(
@@ -2435,6 +2481,13 @@ export async function runContext(
     global,
     runtime,
     corpus.subtreeIds,
+    new Set(
+      [
+        ...focusGroups.highLevel,
+        ...focusGroups.lowLevel,
+        ...focusGroups.blockedFallback,
+      ].map((item) => item.id),
+    ),
   );
   const warnings = mergeSortedWarnings(
     corpus.listed.warnings,

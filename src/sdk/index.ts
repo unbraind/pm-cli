@@ -71,6 +71,8 @@ export {
 } from "./governance/validate.js";
 export { runExtension } from "./extension.js";
 export { applyInvocationAuthorOverride } from "./invocation-author.js";
+export { describeItemOwnershipConflict } from "./ownership-source.js";
+export { discoverNearbyPmRoot } from "./tracker-root-discovery.js";
 export {
   _testOnly as _testOnlyTemplates,
   type TemplateSource,

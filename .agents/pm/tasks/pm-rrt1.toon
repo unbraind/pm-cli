@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: best-practices,governance,scorecard,security
 created_at: "2026-07-14T22:41:01.099Z"
-updated_at: "2026-07-15T19:59:17.446Z"
+updated_at: "2026-07-18T12:39:32.159Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "Project registered at bestpractices.dev (free), questionnaire completed to PASSING level (agent drafts all answers as a note here; maintainer submits), badge added to README; Scorecard CII-Best-Practices scores ≥5 (passing=5, silver=7, gold=10)"
@@ -15,4 +15,6 @@ risk: low
 confidence: medium
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-2d7k,related,"2026-07-15T06:29:48.526Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-18T12:39:32.158Z",codex-gpt5,"GitHub report evidence 2026-07-18: open Scorecard CIIBestPracticesID alert #22 is low severity on refs/heads/main with no file-specific location. Canonical remediation remains this item; no duplicate created."
 body: ""

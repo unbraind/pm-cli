@@ -71,6 +71,7 @@ export {
   type RelationshipRemediationPlanOptions,
   type RelationshipRemediationStep,
 } from "./remediation.js";
+export { collectNewOrderingCycleWarnings } from "./mutation-advisory.js";
 export {
   GRAPH_SUBCOMMAND_VALUES,
   parseGraphSubcommand,

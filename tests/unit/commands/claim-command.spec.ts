@@ -6,6 +6,7 @@ import { claimNextFromRecommendations, isAlreadyClaimedError, parseClaimNextAtte
 import type { GlobalOptions } from "../../../src/core/shared/command-types.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { getHistoryPath } from "../../../src/core/store/paths.js";
 import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
@@ -320,7 +321,7 @@ describe("runClaim/runRelease", () => {
       });
       await expect(runClaim(foreign, false, { path: context.pmPath })).rejects.toMatchObject<Partial<PmCliError>>({
         exitCode: EXIT_CODE.CONFLICT,
-        message: expect.stringContaining("already claimed by other-author") as unknown as string,
+        message: expect.stringContaining("already assigned to other-author") as unknown as string,
         context: expect.objectContaining({ code: "already_claimed_by" }) as unknown as PmCliError["context"],
       });
 
@@ -329,6 +330,33 @@ describe("runClaim/runRelease", () => {
       expect(takeover.forced).toBe(true);
       expect(takeover.item.assignee).toBe("test-author");
       expect(takeover.warnings).toEqual(expect.arrayContaining(["claim_takeover:other-author->test-author"]));
+
+      const claimed = createTask(context, {
+        title: "claim-explicitly-claimed",
+        status: "open",
+      });
+      await runClaim(claimed, false, { path: context.pmPath }, { author: "other-author" });
+      await expect(runClaim(claimed, false, { path: context.pmPath })).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.CONFLICT,
+        message: expect.stringContaining("already claimed by other-author") as unknown as string,
+      });
+    });
+  });
+
+  it("falls back to assignment wording when ownership history is corrupt", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "claim-corrupt-history",
+        status: "open",
+        assignee: "other-author",
+      });
+      await writeFile(getHistoryPath(context.pmPath, id), "{invalid-json\n", "utf8");
+
+      await expect(runClaim(id, false, { path: context.pmPath })).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.CONFLICT,
+        message: expect.stringContaining("already assigned to other-author") as unknown as string,
+        context: expect.objectContaining({ code: "already_claimed_by" }) as unknown as PmCliError["context"],
+      });
     });
   });
 

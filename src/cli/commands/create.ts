@@ -81,7 +81,11 @@ import {
   applyRegisteredItemFieldDefaultsAndValidation,
   parseRegisteredItemFieldAssignments,
 } from "../../core/extensions/item-fields.js";
-import { locateItem } from "../../core/store/item-store.js";
+import {
+  listAllItemMetadataLight,
+  locateItem,
+} from "../../core/store/item-store.js";
+import { collectNewOrderingCycleWarnings } from "../../sdk/graph/mutation-advisory.js";
 import {
   getHistoryPath,
   getItemPath,
@@ -2391,6 +2395,17 @@ async function writeCreatedItem(params: {
   );
   let hookWarnings: string[] = [];
   try {
+    const graphBeforeCreate =
+      afterDocument.metadata.dependencies &&
+      afterDocument.metadata.dependencies.length > 0
+        ? await listAllItemMetadataLight(
+            pmRoot,
+            settings.item_format,
+            typeRegistry.type_to_folder,
+            undefined,
+            settings.schema,
+          )
+        : undefined;
     const existing = await locateItem(
       pmRoot,
       id,
@@ -2424,6 +2439,13 @@ async function writeCreatedItem(params: {
       throw error;
     }
     hookWarnings = [
+      ...(graphBeforeCreate
+        ? collectNewOrderingCycleWarnings(
+            graphBeforeCreate,
+            [...graphBeforeCreate, afterDocument.metadata],
+            id,
+          )
+        : []),
       ...(await runActiveOnWriteHooks({
         path: itemPath,
         scope: "project",
@@ -3001,7 +3023,10 @@ export async function runCreate(
   return {
     item: outputItem,
     changed_fields: changedFields,
-    warnings: [...validationWarnings, ...hookWarnings],
+    warnings: [
+      ...validationWarnings,
+      ...hookWarnings,
+    ],
     ...(parentSource !== undefined ? { parent_source: parentSource } : {}),
     ...(nextTransition !== undefined
       ? { next_transition: nextTransition }

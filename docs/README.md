@@ -39,6 +39,7 @@ pm guide release --json
 - [Testing](TESTING.md) - sandbox-safe local tests and linked-test orchestration.
 - [Architecture](ARCHITECTURE.md) - contributor internals: storage, mutation flow, search, extensions, and command contracts.
 - [SDK Primitive Inventory](SDK_PRIMITIVE_INVENTORY.md) - SDK-first migration map and private-import ratchet for CLI/MCP layering.
+- [Agent UX Contracts](AGENT_UX_CONTRACTS.md) - ordering-cycle advisories, graph count units, collision safety, compact context, ownership wording, and recovery behavior.
 - [Packages and Extensions](EXTENSIONS.md) - package install workflows, runtime extension lifecycle, and API reference.
 - [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md) - the stability guarantees and contract surface package authors build against.
 - [SDK](SDK.md) - public import surfaces and typed authoring examples.

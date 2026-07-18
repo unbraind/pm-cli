@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: github-actions,least-privilege,scorecard,security
 created_at: "2026-07-14T22:40:26.943Z"
-updated_at: "2026-07-15T19:59:01.893Z"
+updated_at: "2026-07-18T12:39:30.335Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Every workflow under .github/workflows declares an explicit top-level permissions block (least privilege, job-level elevation only where required, matching the scorecard.yml/security.yml pattern); actionlint + Trivy misconfig green; next Scorecard run reports Token-Permissions 10"
@@ -15,4 +15,6 @@ risk: low
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-5zca,related,"2026-07-15T06:29:47.248Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-18T12:39:30.335Z",codex-gpt5,"GitHub report evidence 2026-07-18: open Scorecard TokenPermissionsID alerts #17 (auto-release.yml:34), #18 (codeql.yml:17), and #19 (release.yml:15), all high severity on refs/heads/main. These are canonicalized here; no duplicate item created."
 body: ""

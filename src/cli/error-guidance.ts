@@ -8,6 +8,7 @@ import type {
   PmCliErrorRecoveryPayload,
 } from "../core/shared/errors.js";
 import { renderPmCommand } from "./argv-utils.js";
+import { discoverNearbyPmRoot } from "../sdk/tracker-root-discovery.js";
 
 interface GuidanceMessage {
   code: string;
@@ -633,13 +634,35 @@ function buildTrackerNotInitializedGuidance(
   if (!trackerNotInitialized) {
     return null;
   }
+  const attemptedRoot = trackerNotInitialized[1];
+  const nearbyRoot = discoverNearbyPmRoot(process.cwd(), attemptedRoot);
+  if (nearbyRoot) {
+    return applyPmCliErrorContext(
+      makeGuidanceMessage({
+        code: "tracker_not_initialized",
+        title: "Tracker exists at a custom path",
+        happened: `pm did not find initialized metadata at ${attemptedRoot}, but found a tracker at ${nearbyRoot}.`,
+        required: "Select the existing tracker root explicitly.",
+        why: "Implicit discovery checks the default .agents/pm layout and ancestor root-layout trackers, while custom nested roots require an explicit path.",
+        examples: [
+          `pm --pm-path ${nearbyRoot} <command>`,
+          `PM_PATH=${nearbyRoot} pm <command>`,
+        ],
+        nextSteps: [
+          `Re-run with "--pm-path ${nearbyRoot}" or export PM_PATH=${nearbyRoot}.`,
+        ],
+      }),
+      rawMessage,
+      context,
+    );
+  }
   return applyPmCliErrorContext(
     makeGuidanceMessage({
       code: "tracker_not_initialized",
       title: "Tracker is not initialized",
       happened: `pm data path does not contain initialized tracker metadata (${trackerNotInitialized[1]}).`,
-      required: "Initialize tracker storage before running this command.",
-      why: "Most commands require settings and tracker directories created by pm init.",
+      required: "Select an existing tracker with --pm-path/PM_PATH, or initialize the default .agents/pm storage.",
+      why: "Most commands require settings in an explicitly selected root, an ancestor root-layout tracker, or the default .agents/pm directory.",
       examples: ["pm init", "pm init acme"],
       nextSteps: ['Run "pm init", then rerun your original command.'],
     }),

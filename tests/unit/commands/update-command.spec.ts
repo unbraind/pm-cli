@@ -9,10 +9,13 @@ import { runGet } from "../../../src/cli/commands/get.js";
 import { runDeps } from "../../../src/cli/commands/deps.js";
 import { setActiveExtensionRegistrations } from "../../../src/core/extensions/index.js";
 import { createEmptyExtensionRegistrationRegistry } from "../../../src/core/extensions/loader.js";
+import { serializeItemDocument } from "../../../src/core/item/item-format.js";
+import { acquireLock } from "../../../src/core/lock/lock.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { readSettings } from "../../../src/core/store/settings.js";
+import { locateItem, readLocatedItem } from "../../../src/core/store/item-store.js";
+import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
 import type { ItemDocument } from "../../../src/types.js";
 import { writeItemTypeDefinitions } from "../../helpers/pmWorkspace.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
@@ -568,6 +571,78 @@ describe("runUpdate", () => {
       expect(result.warnings).toContain("noop_no_update_fields");
       const item = result.item as { id: string };
       expect(item.id).toBe(id);
+    });
+  });
+
+  it("uses the locked target snapshot for dependency-cycle advisories", async () => {
+    await withTempPmPath(async (context) => {
+      const first = createTask(context, "locked-cycle-first");
+      const second = createTask(context, "locked-cycle-second");
+      const unrelated = createTask(context, "locked-cycle-unrelated");
+      await runUpdate(
+        second,
+        { dep: [`id=${first},kind=blocked_by`] },
+        { path: context.pmPath },
+      );
+      const settings = await readSettings(context.pmPath);
+      await writeSettings(context.pmPath, {
+        ...settings,
+        locks: { ...settings.locks, wait_ms: 5_000 },
+      });
+      const releaseLock = await acquireLock(
+        context.pmPath,
+        first,
+        settings.locks.ttl_seconds,
+        "race-holder",
+        false,
+        settings.governance.force_required_for_stale_lock,
+      );
+      let lockHeld = true;
+      try {
+        const updatePromise = runUpdate(
+          first,
+          { dep: [`id=${unrelated},kind=related`] },
+          { path: context.pmPath },
+        );
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        const located = await locateItem(
+          context.pmPath,
+          first,
+          settings.id_prefix,
+          settings.item_format,
+        );
+        expect(located).not.toBeNull();
+        if (!located) throw new Error("Expected the race target to exist");
+        const lockedItem = await readLocatedItem(located, {
+          schema: settings.schema,
+        });
+        lockedItem.document.metadata.dependencies = [
+          {
+            id: second,
+            kind: "blocked_by",
+            created_at: new Date().toISOString(),
+            author: "race-holder",
+          },
+        ];
+        await writeFile(
+          located.itemPath,
+          serializeItemDocument(lockedItem.document, {
+            format: located.item_format,
+            schema: settings.schema,
+          }),
+          "utf8",
+        );
+        await releaseLock();
+        lockHeld = false;
+        const result = await updatePromise;
+        expect(result.warnings).not.toEqual(
+          expect.arrayContaining([
+            expect.stringMatching(/^ordering_cycle_created:/),
+          ]),
+        );
+      } finally {
+        if (lockHeld) await releaseLock();
+      }
     });
   });
 
