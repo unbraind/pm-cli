@@ -19,6 +19,7 @@ import type {
   RelationshipKindDefinition,
   SchemaFieldDefinition,
   SchemaItemTypeDefinition,
+  WorkspaceTransactionStep,
 } from "@unbrained/pm-cli/sdk";
 
 /** Declarative package manifest consumed by the extension loader. */
@@ -88,7 +89,8 @@ export const vcsProfile: ProjectProfileDefinition = {
       id: "proposed",
       roles: ["active"],
       aliases: ["review"],
-      description: "Changeset is immutable for review and ready for a merge decision.",
+      description:
+        "Changeset is immutable for review and ready for a merge decision.",
     },
     {
       id: "merged",
@@ -147,10 +149,7 @@ export interface VcsCommandResult {
 }
 
 /** Return one required non-empty string option with a domain-focused error. */
-function requiredOption(
-  options: Record<string, unknown>,
-  key: string,
-): string {
+function requiredOption(options: Record<string, unknown>, key: string): string {
   const value =
     options[key] ??
     options[
@@ -164,17 +163,27 @@ function requiredOption(
 }
 
 /** Resolve the first non-empty positional argument. */
-function requiredArgument(context: CommandHandlerContext, label: string): string {
+function requiredArgument(
+  context: CommandHandlerContext,
+  label: string,
+): string {
   const value = context.args.find((argument) => !argument.startsWith("-"));
   if (!value?.trim()) throw new TypeError(`vcs requires ${label}`);
   return value.trim();
 }
 
-/** Construct a tracker-bound SDK client for one extension command invocation. */
-function clientFor(context: CommandHandlerContext): PmClient {
+/** Require the host-bound public SDK services for one command invocation. */
+function sdkFor(
+  context: CommandHandlerContext,
+): NonNullable<CommandHandlerContext["sdk"]> {
   if (!context.sdk)
     throw new TypeError("vcs requires the extension command SDK runtime");
-  return context.sdk.client;
+  return context.sdk;
+}
+
+/** Construct a tracker-bound SDK client for one extension command invocation. */
+function clientFor(context: CommandHandlerContext): PmClient {
+  return sdkFor(context).client;
 }
 
 /** Read and validate one VCS-domain item. */
@@ -212,7 +221,7 @@ async function openVcsRelationshipStore(
   context: CommandHandlerContext,
   client: PmClient,
 ): Promise<RelationshipEventStore> {
-  return context.sdk!.openRelationshipEventStore({
+  return sdkFor(context).openRelationshipEventStore({
     nodes: await listVcsNodes(client),
     definitions: [VCS_RELATIONSHIP_KIND],
     relativePath: "relationships/vcs-events.jsonl",
@@ -257,7 +266,11 @@ async function runRefCreate(
     field: [`vcs_ref=${name}`],
     body: `# ${name}\n\nVCS exemplar ref.`,
   });
-  return { action: "vcs-ref-create", id: result.item.id, status: result.item.status };
+  return {
+    action: "vcs-ref-create",
+    id: result.item.id,
+    status: result.item.status,
+  };
 }
 
 /** Create one draft changeset through the public lifecycle SDK. */
@@ -284,7 +297,11 @@ async function runChangesetCreate(
     ],
     body: `# Changeset\n\n${title}`,
   });
-  return { action: "vcs-create", id: result.item.id, status: result.item.status };
+  return {
+    action: "vcs-create",
+    id: result.item.id,
+    status: result.item.status,
+  };
 }
 
 /** Find one deterministic event in the durable merge ledger. */
@@ -297,6 +314,20 @@ async function findMergeEvent(
     if (event !== undefined) return event;
   }
   return undefined;
+}
+
+/** Return the latest durable event for one logical merge relationship. */
+async function findLatestMergeRelationshipEvent(
+  store: RelationshipEventStore,
+  relationshipId: string,
+): Promise<RelationshipEvent | undefined> {
+  let latest: RelationshipEvent | undefined;
+  for await (const batch of store.stream()) {
+    for (const event of batch) {
+      if (event.relationshipId === relationshipId) latest = event;
+    }
+  }
+  return latest;
 }
 
 /** Confirm that one deterministic event represents the requested VCS merge. */
@@ -324,12 +355,6 @@ async function ensureMergeEvent(
 ): Promise<RelationshipEvent> {
   const eventId = `merge-${id}`;
   const relationshipId = `changeset-${id}`;
-  const existing = await findMergeEvent(store, eventId);
-  if (existing !== undefined) {
-    if (!matchesRequestedMerge(existing, relationshipId, id, refId))
-      throw new TypeError(`vcs merge event conflicts with changeset ${id}`);
-    return existing;
-  }
   try {
     return await store.append({
       eventId,
@@ -370,27 +395,118 @@ async function runChangesetMerge(
   const resolution = `Merged into ${refId}`;
   if (
     changeset.item.status !== "proposed" &&
-    (changeset.item.status !== "merged" || changeset.item.resolution !== resolution)
+    (changeset.item.status !== "merged" ||
+      changeset.item.resolution !== resolution)
   )
     throw new TypeError(`vcs merge requires proposed changeset ${id}`);
   const store = await openVcsRelationshipStore(context, client);
-  const relationship = await ensureMergeEvent(
-    store,
-    id,
-    refId,
+  const author =
     typeof context.global.author === "string" && context.global.author.trim()
       ? context.global.author.trim()
-      : "pm-vcs",
-  );
-  const reconciledChangeset =
-    changeset.item.status === "proposed"
-      ? await client.update(id, {
+      : "pm-vcs";
+  const eventId = `merge-${id}`;
+  const relationshipId = `changeset-${id}`;
+  const steps: WorkspaceTransactionStep[] = [
+    {
+      id: "merge-item",
+      inspect: async () => {
+        const current = await getVcsItem(client, id, "Changeset");
+        return current.item.status === "merged" &&
+          current.item.resolution === resolution
+          ? {
+              state: "applied",
+              result: { id, status: "merged", resolution },
+            }
+          : { state: "pending" };
+      },
+      apply: async () => {
+        await client.update(id, {
           status: "merged",
           resolution,
           message: `VCS merge into ${refId}`,
           field: [`vcs_ref=${refId}`],
-        })
-      : changeset;
+        });
+        return { id, status: "merged", resolution };
+      },
+      compensate: async () => {
+        await client.update(id, {
+          status: "proposed",
+          unset: ["resolution", "close-reason"],
+          message: `Compensate interrupted VCS merge into ${refId}`,
+        });
+      },
+    },
+    {
+      id: "merge-relationship",
+      inspect: async () => {
+        const event = await findLatestMergeRelationshipEvent(
+          store,
+          relationshipId,
+        );
+        if (event === undefined) return { state: "pending" };
+        if (event.action === "remove") return { state: "compensated" };
+        if (!matchesRequestedMerge(event, relationshipId, id, refId))
+          throw new TypeError(`vcs merge event conflicts with changeset ${id}`);
+        return {
+          state: "applied",
+          result: { eventId, relationshipId, sequence: event.sequence },
+        };
+      },
+      apply: async () => {
+        const latest = await findLatestMergeRelationshipEvent(
+          store,
+          relationshipId,
+        );
+        const event =
+          latest?.action === "remove"
+            ? await store.append({
+                eventId: `retry-${eventId}-${latest.sequence}`,
+                relationshipId,
+                action: "add",
+                edge: { source: id, target: refId, kind: "commits_to" },
+                author,
+                timestamp: new Date().toISOString(),
+                reason: "Retry compensated VCS changeset merge",
+              })
+            : await ensureMergeEvent(store, id, refId, author);
+        return {
+          eventId: event.eventId,
+          relationshipId,
+          sequence: event.sequence,
+        };
+      },
+      compensate: async () => {
+        const latest = await findLatestMergeRelationshipEvent(
+          store,
+          relationshipId,
+        );
+        if (latest === undefined || latest.action === "remove") return;
+        await store.append({
+          eventId: `rollback-${eventId}-${latest.sequence}`,
+          relationshipId,
+          action: "remove",
+          author,
+          timestamp: new Date().toISOString(),
+          reason: `Compensate interrupted VCS merge into ${refId}`,
+        });
+      },
+    },
+  ];
+  await sdkFor(context).commitWorkspaceTransaction({
+    transactionId: `vcs-merge-${id}-${refId}`,
+    author,
+    steps,
+  });
+  const reconciledChangeset = await getVcsItem(client, id, "Changeset");
+  const relationship = await findLatestMergeRelationshipEvent(
+    store,
+    relationshipId,
+  );
+  if (
+    relationship === undefined ||
+    !matchesRequestedMerge(relationship, relationshipId, id, refId)
+  )
+    throw new TypeError(`vcs merge transaction did not commit changeset ${id}`);
   return {
     action: "vcs-merge",
     id,
@@ -417,9 +533,7 @@ async function runChangesetShow(
       details: { item: result.item, reconstructed: false },
     };
   }
-  if (!context.sdk)
-    throw new TypeError("vcs requires the extension command SDK runtime");
-  const replay = await context.sdk.getItemAt(id, target);
+  const replay = await sdkFor(context).getItemAt(id, target);
   if (replay.document.metadata.type !== "Changeset")
     throw new TypeError(`vcs expected Changeset ${id}`);
   return {
@@ -431,21 +545,25 @@ async function runChangesetShow(
 }
 
 /** Project the immutable merge ledger into a compact ref-to-changeset log. */
-async function runVcsLog(context: CommandHandlerContext): Promise<VcsCommandResult> {
+async function runVcsLog(
+  context: CommandHandlerContext,
+): Promise<VcsCommandResult> {
   const client = clientFor(context);
   const store = await openVcsRelationshipStore(context, client);
-  const projection: RelationshipEventProjection<VcsLogState> = await store.project(
-    { relationships: [] as string[] },
-    (state, event) => ({
+  const projection: RelationshipEventProjection<VcsLogState> =
+    await store.project({ relationships: [] as string[] }, (state, event) => ({
       relationships:
         event.action === "remove" || event.edge === undefined
-          ? state.relationships.filter((entry) => !entry.startsWith(`${event.relationshipId}:`))
+          ? state.relationships.filter(
+              (entry) => !entry.startsWith(`${event.relationshipId}:`),
+            )
           : [
-              ...state.relationships.filter((entry) => !entry.startsWith(`${event.relationshipId}:`)),
+              ...state.relationships.filter(
+                (entry) => !entry.startsWith(`${event.relationshipId}:`),
+              ),
               `${event.relationshipId}:${event.edge.source}->${event.edge.target}`,
             ].sort(),
-    }),
-  );
+    }));
   return {
     action: "vcs-log",
     details: {
@@ -474,10 +592,22 @@ export function buildVcsCommands(): CommandDefinition[] {
       name: "vcs create",
       action: "vcs-create",
       description: "Create a draft changeset.",
-      arguments: [{ name: "title", required: true, description: "Changeset title." }],
+      arguments: [
+        { name: "title", required: true, description: "Changeset title." },
+      ],
       flags: [
-        { long: "--ref", value_name: "id", value_type: "string", required: true },
-        { long: "--tree-hash", value_name: "hash", value_type: "string", required: true },
+        {
+          long: "--ref",
+          value_name: "id",
+          value_type: "string",
+          required: true,
+        },
+        {
+          long: "--tree-hash",
+          value_name: "hash",
+          value_type: "string",
+          required: true,
+        },
         { long: "--parent", value_name: "id", value_type: "string" },
       ],
       run: runChangesetCreate,
@@ -495,7 +625,12 @@ export function buildVcsCommands(): CommandDefinition[] {
       description: "Merge a reviewed changeset into a ref.",
       arguments: ID_ARGUMENT,
       flags: [
-        { long: "--ref", value_name: "id", value_type: "string", required: true },
+        {
+          long: "--ref",
+          value_name: "id",
+          value_type: "string",
+          required: true,
+        },
         {
           long: "--reviewed",
           value_type: "boolean",
@@ -517,7 +652,9 @@ export function buildVcsCommands(): CommandDefinition[] {
       action: "vcs-show",
       description: "Read current or point-in-time changeset state.",
       arguments: ID_ARGUMENT,
-      flags: [{ long: "--at", value_name: "version-or-time", value_type: "string" }],
+      flags: [
+        { long: "--at", value_name: "version-or-time", value_type: "string" },
+      ],
       run: runChangesetShow,
     },
     {

@@ -1,6 +1,6 @@
 # @unbrained/pm-vcs
 
-> Tracker: [pm-xtrd](../../.agents/pm/features/pm-xtrd.toon), acceptance story [pm-8ngt](../../.agents/pm/stories/pm-8ngt.toon), graph SDK [pm-ju83](../../.agents/pm/features/pm-ju83.toon).
+> Tracker: [pm-xtrd](../../.agents/pm/features/pm-xtrd.toon), acceptance story [pm-8ngt](../../.agents/pm/stories/pm-8ngt.toon), atomic SDK transactions [pm-4e12](../../.agents/pm/features/pm-4e12.toon), graph SDK [pm-ju83](../../.agents/pm/features/pm-ju83.toon).
 
 `pm-vcs` is the first deliberately non-project-management package in the
 first-party ecosystem. It proves that public pm SDK and extension contracts can
@@ -16,7 +16,9 @@ The exemplar provides:
 - a `beforeCommand` hook enforcing explicit reviewed-merge affirmation;
 - point-in-time changeset reconstruction through `getItemAt`;
 - a durable, optimistic, append-only `commits_to` relationship stream projected
-  through `RelationshipEventStore.project`.
+  through `RelationshipEventStore.project`;
+- a crash-resumable `commitWorkspaceTransaction` merge that coordinates item
+  lifecycle and relationship events with append-only compensation.
 
 ## Install and stage the domain
 
@@ -45,6 +47,9 @@ pm vcs log
 `vcs show --at` reconstructs immutable item history. `vcs log` independently
 projects the package-owned relationship JSONL stream, proving that current item
 state and graph event state are both rebuildable from public SDK contracts.
+`vcs merge` publishes success only after its SDK transaction journal commits;
+ordinary failures compensate in reverse order, and retrying the same merge id
+resumes any interrupted forward or compensation phase.
 
 ## Package boundary
 

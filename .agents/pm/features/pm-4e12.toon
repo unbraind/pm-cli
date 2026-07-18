@@ -2,20 +2,45 @@ id: pm-4e12
 title: "Public SDK transaction boundary: atomic multi-item + relationship-event commit primitive"
 description: "The pm-vcs exemplar (PR#587) exposed the one waived SDK gap in packages/pm-vcs/GAP_REPORT.md: there is no public transaction boundary committing a multi-item mutation together with relationship events. The exemplar compensates with a bespoke crash-consistency protocol (event-first write order, deterministic merge event identity, idempotent duplicate-append recovery, fail-closed conflicts) that every foreign-domain package would otherwise have to reinvent. Ship a first-class SDK commit primitive: all-or-nothing observable state across item store + relationship event stream, crash-safe at every partial-write point, preserving immutable-history append-only semantics (no rollback rewrites — compensation/reconciliation on replay). Migrate pm-vcs merge onto it as the acceptance vehicle, or record precisely why the bespoke protocol must remain."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[4]: concurrency,extensibility,sdk,universal-tool
 created_at: "2026-07-18T10:03:42.541Z"
-updated_at: "2026-07-18T10:03:42.541Z"
+updated_at: "2026-07-18T15:46:30.350Z"
+closed_at: "2026-07-18T15:45:52.655Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: Public SDK primitive commits multi-item mutations + relationship events with all-or-nothing observable state; failure-injection coverage for every partial-write direction and crash point; pm-vcs merge migrated onto the primitive (or a recorded justified waiver); contract docs + SDK.md published; no history-stream rewrite semantics introduced
 parent: pm-usfg
 risk: medium
 confidence: medium
+resolution: "Public commitWorkspaceTransaction now coordinates ordered item and relationship mutations with durable replay, reverse append-only compensation, configurable writer locking, extension-host binding, and pm-vcs acceptance."
+expected_result: SDK consumers can commit multi-item and relationship-event plans through one public crash-recoverable primitive without private core imports or history rewrites.
+actual_result: "Packed SDK and pm-vcs consumers commit, recover, compensate, and replay atomically at the journal boundary; 5,914 tests pass at exact 100% coverage and Greptile re-review is 5/5 clean."
 dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-8ngt,related,"2026-07-18T10:03:42.541Z",null,null
   pm-dj98,related,"2026-07-18T10:03:42.541Z",null,null
   pm-ju83,related,"2026-07-18T10:03:42.541Z",null,null
   pm-klo8,related,"2026-07-18T10:03:42.541Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-07-18T14:35:43.038Z",codex-root,"Implementation start 2026-07-18: all-status duplicate review found this canonical transaction gap and no competing atomic multi-item plus relationship-event item. Scope is a public SDK transaction journal, failure injection, recovery, immutable compensation semantics, and VCS acceptance migration."
+  "2026-07-18T15:19:21.122Z",codex-root,"Implementation evidence 2026-07-18: added public commitWorkspaceTransaction with a durable per-workspace journal, one writer lock, ordered idempotent inspection/application, deterministic replay, reverse append-style compensation, explicit crash interruption semantics, extension-host binding, and public SDK export. pm-vcs merge is the non-PM consumer and binds transaction identity to changeset+ref. Verification: 5,914 tests across 311 files at exact 100/100/100/100 (39,043 statements; 27,456 branches; 7,949 functions; 38,008 lines); lint/zero-clone/static/docstring/package-boundary/token/audit gates clean. Packed temp consumer committed+replayed the SDK transaction and completed VCS ref/create/propose/merge/log plus deep doctor at /tmp/pm-sdk-transaction-proof-P5Bp3l. Release gates passed through packed smoke and 88-command dogfood; only the expected pre-commit Greptile stage remained."
+  "2026-07-18T15:36:41.210Z",codex-root,"Pre-push Greptile review b4db10ed-d5b4-4ff0-84b3-ba2ee8f3209a (confidence 3/5, five findings) was fully accepted: result-free apply now has an honest undefined return contract; callers can configure positive lock TTL/wait bounds; the journal is read once per attempt; VCS SDK host access is guarded with a descriptive error; and the compensation race test uses a new semantic step_compensating transition instead of storage-call ordinals. Post-fix full verification: 311 files / 5,914 tests, exact 100/100/100/100 (39,051 statements; 27,460 branches; 7,951 functions; 38,017 lines), typecheck, ESLint, zero clones, static/docstrings, package boundary, and token budget all pass."
+  "2026-07-18T15:45:51.663Z",codex-root,"Pre-push Greptile re-review 3f2f3c62-2f59-431f-8c53-252a24c151d0 completed at confidence 5/5 with no comments and explicitly verified all five first-round findings resolved. Exact full coverage, strict lint/static gates, and packed SDK+VCS acceptance remain clean on the corrected code."
+files[7]{path,scope,note}:
+  packages/pm-vcs/extensions/vcs/index.ts,project,Non-PM atomic merge consumer
+  src/core/extensions/extension-types.ts,project,Typed extension transaction contract
+  src/sdk/extension-command-context.ts,project,Extension-host transaction binding
+  src/sdk/index.ts,project,Public SDK export
+  src/sdk/workspace-transaction.ts,project,Public durable multi-step transaction coordinator
+  tests/unit/packages/vcs-extension.spec.ts,project,Atomic VCS acceptance and compensation races
+  tests/unit/sdk/workspace-transaction.spec.ts,project,Transaction recovery and exact coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,360
+  node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-transaction.spec.ts tests/unit/packages/vcs-extension.spec.ts,project,240
+docs[3]{path,scope,note}:
+  docs/SDK.md,project,Transaction API and recovery semantics
+  packages/pm-vcs/GAP_REPORT.md,project,Closed VCS transaction waiver
+  packages/pm-vcs/README.md,project,Consumer behavior documentation
+close_reason: "Delivered the public crash-recoverable workspace transaction boundary, extension host integration, atomic pm-vcs consumer, complete recovery/compensation tests, exact 100% repository coverage, packed consumer proof, and clean 5/5 pre-push Greptile re-review."
 body: ""

@@ -159,6 +159,7 @@ Command/action contract exports:
 - Actionability primitives: `collectBlockedByIds`, `resolveItemBlockers`, `collectDependencyBlockedIds`, and `computeActionabilityReport` expose the same edge-aware blocked/ready definition used by `pm next`, `pm context`, and `pm list-blocked`. Embedded schedulers can therefore classify custom lifecycle schemas without importing CLI or core modules.
 - Dependency-governance primitives: `collectDanglingDependencyReferences`, `collectMissingDependencyTargetIds`, and `assembleWorkspaceRelationshipGraph` normalize hierarchy, scalar blockers, and structured dependencies into one graph while partitioning missing targets into actionable active holders, informational terminal-history holders, and the legacy `no-active-blocker` sentinel without mutating stored history.
 - Relationship graph primitives: `RelationshipKindRegistry`, `createRelationshipKindRegistry`, `RelationshipGraph`, `RelationshipEventLog`, `RelationshipEventStore`, `buildRelationshipContext`, `buildDepsRelationshipContext`, `hierarchyAncestors`, `hierarchyDescendants`, `orderingPredecessors`, `orderingSuccessors`, `enumerateRelationshipPaths`, `auditWorkspaceRelationshipGraph`, `isOrderingRelationshipKind`, and `dependencyToRelationship` provide application-defined edge semantics, durable replay, bounded semantic traversal, policy-aware governance, and explainable context queries. `RelationshipEventLog.stream/project` and their durable-store equivalents page immutable prefixes and fold them into deterministic application state with exact version, processed-count, and as-of metadata. See [Relationship graph semantics](RELATIONSHIP_GRAPH.md).
+- Atomic application transactions: `commitWorkspaceTransaction` coordinates ordered, idempotent item and relationship mutations under one workspace writer lock and a durable replay journal. Interrupted work resumes from step inspection; ordinary failures append reverse-order compensations without rewriting immutable histories.
 - Typed customization primitives on `PmClient`: `init`, `config`, `schema`, `schemaList`, `schemaShow`, `schemaAddType`, `schemaRemoveType`, `schemaAddStatus`, `schemaRemoveStatus`, `schemaAddField`, `schemaRemoveField`, `schemaListFields`, `schemaShowField`, `schemaApplyPreset`, `schemaInferTypes`, `schemaShowStatus`, `profile`, `profileList`, `profileShow`, `profileApply`, and `profileLint`
 - Workspace-scaffold primitives: `ensurePmGitignore` and `getPmGitignoreBlock` let custom tools apply the same idempotent runtime/search cache policy as `pm init` without importing CLI internals.
 - Customization primitive option/result contracts: `InitCommandOptions` / `InitResult`, `ConfigCommandOptions` / `ConfigResult`, `SchemaSubcommand` / `SchemaResult` / `SchemaInspectResult`, `SchemaListResult`, `SchemaShowResult`, `SchemaAddTypeResult`, `SchemaRemoveTypeResult`, `SchemaAddStatusResult`, `SchemaRemoveStatusResult`, `SchemaAddFieldResult`, `SchemaRemoveFieldResult`, `SchemaListFieldsResult`, `SchemaShowFieldResult`, `SchemaApplyPresetResult`, `SchemaAddTypeInferResult`, `SchemaShowStatusResult`, `ProfileSubcommand` / `ProfileResult`, `ProfileListResult`, `ProfileShowResult`, `ProfileApplyResult`, `ProfileLintResult`
@@ -780,6 +781,88 @@ Lifecycle convenience methods and the matching top-level functions (`create`,
 `focus`, `startTask`, `pauseTask`, and `closeTask`) use the same mutation paths
 as the CLI and MCP dispatcher. They are the baseline primitives for custom PM
 tools that need to own item state without spawning `pm`.
+
+### Atomic workspace transactions
+
+Tracked by [pm-4e12](../.agents/pm/features/pm-4e12.toon), with the VCS
+acceptance story [pm-8ngt](../.agents/pm/stories/pm-8ngt.toon).
+
+`commitWorkspaceTransaction` is the public unit-of-work primitive for domain
+commands that must coordinate several SDK mutations. A plan supplies a stable
+transaction id plus ordered steps. Each step can inspect its durable state,
+apply an idempotent forward mutation, and append an idempotent compensation.
+The coordinator serializes transaction writers with one workspace lock and
+persists `.agents/pm/transactions/sdk/<transaction-id>.json` after every step.
+`lockTtlSeconds` (default `30`) and `lockWaitMs` (default `3000`) let callers
+size the writer lease above their longest expected attempt and choose their
+contention budget; both must be positive integers.
+
+If a process stops between the domain write and the journal update, rerunning
+the same plan discovers the already-applied step and continues. An ordinary
+error switches the journal to compensation mode and runs applied steps in
+reverse order. Compensations are new item-history or relationship events: the
+coordinator never deletes or rewrites immutable history. A crash during
+compensation resumes compensation before a new attempt begins.
+
+```ts
+import {
+  PmClient,
+  commitWorkspaceTransaction,
+  type WorkspaceTransactionStep,
+} from "@unbrained/pm-cli/sdk";
+
+const pmRoot = "/workspace/.agents/pm";
+const pm = new PmClient({ pmRoot, author: "billing-agent" });
+const steps: WorkspaceTransactionStep[] = [
+  {
+    id: "approve-invoice",
+    async inspect() {
+      const invoice = await pm.get("invoice-42", { depth: "deep" });
+      return invoice.item.status === "approved"
+        ? { state: "applied", result: { status: "approved" } }
+        : { state: "pending" };
+    },
+    async apply() {
+      await pm.update("invoice-42", { status: "approved" });
+      return { status: "approved" };
+    },
+    async compensate() {
+      await pm.update("invoice-42", {
+        status: "open",
+        message: "Compensate interrupted invoice approval",
+      });
+    },
+  },
+];
+
+await commitWorkspaceTransaction({
+  pmRoot,
+  transactionId: "approve-invoice-42",
+  author: "billing-agent",
+  steps,
+});
+```
+
+Logical atomicity is defined at the journal/replay boundary: callers publish a
+successful domain result only after the journal reaches `committed`, while
+failed attempts converge to compensated domain state. The filesystem adapter is
+not a database MVCC layer, so raw readers that bypass the coordinator are not
+snapshot-isolated during the short forward/compensation window. Use stable step
+ids, deterministic event ids, state-based inspection, and append-only inverse
+events. A step may return `undefined` when it has no journal result to retain.
+The optional transition observer exposes `step_compensating` immediately before
+each inverse mutation, which supports telemetry and semantic failure injection
+without coupling tests to storage call counts.
+`WorkspaceTransactionInterruptedError` is reserved for deterministic
+crash-boundary tests and leaves the journal resumable instead of triggering the
+normal in-process compensation path.
+
+Extension commands receive the same coordinator as
+`context.sdk.commitWorkspaceTransaction(...)`, already bound to the invoking
+tracker root. The bundled `pm-vcs` merge command is the reference implementation:
+it commits the changeset lifecycle transition and `commits_to` relationship
+together, compensates both streams on failure, and resumes a crash or a
+previously compensated retry without package-private file access.
 
 Package and extension lifecycle convenience methods are the SDK primitive layer
 for custom PM tools that need to manage their own package surface without

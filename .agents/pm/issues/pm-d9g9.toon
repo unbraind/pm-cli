@@ -1,0 +1,20 @@
+id: pm-d9g9
+title: "GH-597: reject empty append text without false updated_at freshness"
+description: "append accepts empty or whitespace-only text as a successful no-op yet advances updated_at, polluting activity, recency ordering, and agent ranking."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"area:cli",data-integrity,gh-issue,validation
+created_at: "2026-07-18T15:09:39.819Z"
+updated_at: "2026-07-18T15:09:39.819Z"
+author: codex-root
+estimated_minutes: 75
+acceptance_criteria: append rejects empty and whitespace-only text with structured usage recovery; no-op mutations never advance updated_at; positional and --body forms have parity; integration tests protect activity and recency behavior; GH-597 is resolved
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-45mb,related,"2026-07-18T15:09:39.819Z",null,null
+  pm-7je0,related,"2026-07-18T15:09:39.819Z",null,null
+  pm-zwpp,related,"2026-07-18T15:09:39.819Z",null,null
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/597\n\nThe 2026.7.18 CLI returns changed_fields: [] for an empty append but still rewrites updated_at. Align append with the nonblank annotation/title contracts and protect false-freshness semantics. Duplicate check searched all statuses for append, empty/whitespace text, no-op, and updated_at freshness. Closed pm-7je0, pm-45mb, and pm-zwpp are related validation/mutation lineages but do not cover append freshness."
