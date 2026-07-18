@@ -287,6 +287,77 @@ async function runChangesetCreate(
   return { action: "vcs-create", id: result.item.id, status: result.item.status };
 }
 
+/** Find one deterministic event in the durable merge ledger. */
+async function findMergeEvent(
+  store: RelationshipEventStore,
+  eventId: string,
+): Promise<RelationshipEvent | undefined> {
+  for await (const batch of store.stream()) {
+    const event = batch.find((candidate) => candidate.eventId === eventId);
+    if (event !== undefined) return event;
+  }
+  return undefined;
+}
+
+/** Confirm that one deterministic event represents the requested VCS merge. */
+function matchesRequestedMerge(
+  event: RelationshipEvent,
+  relationshipId: string,
+  source: string,
+  target: string,
+): boolean {
+  return (
+    event.action === "add" &&
+    event.relationshipId === relationshipId &&
+    event.edge?.source === source &&
+    event.edge.target === target &&
+    event.edge.kind === "commits_to"
+  );
+}
+
+/** Append or reconcile one concurrently won deterministic merge event. */
+async function ensureMergeEvent(
+  store: RelationshipEventStore,
+  id: string,
+  refId: string,
+  author: string,
+): Promise<RelationshipEvent> {
+  const eventId = `merge-${id}`;
+  const relationshipId = `changeset-${id}`;
+  const existing = await findMergeEvent(store, eventId);
+  if (existing !== undefined) {
+    if (!matchesRequestedMerge(existing, relationshipId, id, refId))
+      throw new TypeError(`vcs merge event conflicts with changeset ${id}`);
+    return existing;
+  }
+  try {
+    return await store.append({
+      eventId,
+      relationshipId,
+      action: "add",
+      edge: { source: id, target: refId, kind: "commits_to" },
+      author,
+      timestamp: new Date().toISOString(),
+      reason: "Reviewed VCS changeset merge",
+    });
+  } catch (error) {
+    if (
+      !(error instanceof TypeError) ||
+      !error.message.includes(`event already exists: ${eventId}`)
+    )
+      throw error;
+    const winner = await findMergeEvent(store, eventId);
+    if (
+      winner === undefined ||
+      !matchesRequestedMerge(winner, relationshipId, id, refId)
+    )
+      throw new TypeError(`vcs merge event conflicts with changeset ${id}`, {
+        cause: error,
+      });
+    return winner;
+  }
+}
+
 /** Merge one proposed changeset and append its attributable ref relationship. */
 async function runChangesetMerge(
   context: CommandHandlerContext,
@@ -303,36 +374,14 @@ async function runChangesetMerge(
   )
     throw new TypeError(`vcs merge requires proposed changeset ${id}`);
   const store = await openVcsRelationshipStore(context, client);
-  let relationship: RelationshipEvent | undefined;
-  for await (const batch of store.stream()) {
-    relationship ??= batch.find((event) => event.eventId === `merge-${id}`);
-  }
-  if (
-    relationship !== undefined &&
-    JSON.stringify({
-      action: relationship.action,
-      relationshipId: relationship.relationshipId,
-      edge: relationship.edge,
-    }) !==
-      JSON.stringify({
-        action: "add",
-        relationshipId: `changeset-${id}`,
-        edge: { source: id, target: refId, kind: "commits_to" },
-      })
-  )
-    throw new TypeError(`vcs merge event conflicts with changeset ${id}`);
-  relationship ??= await store.append({
-    eventId: `merge-${id}`,
-    relationshipId: `changeset-${id}`,
-    action: "add",
-    edge: { source: id, target: refId, kind: "commits_to" },
-    author:
-      typeof context.global.author === "string" && context.global.author.trim()
-        ? context.global.author.trim()
-        : "pm-vcs",
-    timestamp: new Date().toISOString(),
-    reason: "Reviewed VCS changeset merge",
-  });
+  const relationship = await ensureMergeEvent(
+    store,
+    id,
+    refId,
+    typeof context.global.author === "string" && context.global.author.trim()
+      ? context.global.author.trim()
+      : "pm-vcs",
+  );
   const reconciledChangeset =
     changeset.item.status === "proposed"
       ? await client.update(id, {

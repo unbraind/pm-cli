@@ -7,6 +7,7 @@ import {
 } from "../../../src/sdk/testing.js";
 import {
   PmClient,
+  RelationshipEventStore,
   planProfileApplication,
   type ProfileCurrentState,
 } from "../../../src/sdk/index.js";
@@ -444,16 +445,41 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         treeHash: "sha256:conflict",
       })) as { id: string };
       await invoke("vcs propose", [conflicting.id]);
+      const racing = (await invoke("vcs create", ["Concurrent retry"], {
+        ref: ref.id,
+        treeHash: "sha256:race",
+      })) as { id: string };
+      await invoke("vcs propose", [racing.id]);
+      const storageFailure = (await invoke("vcs create", ["Storage failure"], {
+        ref: ref.id,
+        treeHash: "sha256:storage-failure",
+      })) as { id: string };
+      await invoke("vcs propose", [storageFailure.id]);
+      const missingWinner = (await invoke("vcs create", ["Missing winner"], {
+        ref: ref.id,
+        treeHash: "sha256:missing-winner",
+      })) as { id: string };
+      await invoke("vcs propose", [missingWinner.id]);
+      const conflictingWinner = (await invoke("vcs create", ["Conflicting winner"], {
+        ref: ref.id,
+        treeHash: "sha256:conflicting-winner",
+      })) as { id: string };
+      await invoke("vcs propose", [conflictingWinner.id]);
+      const reconciliationNodes = [
+        change.id,
+        draft.id,
+        fallbackChange.id,
+        ledgerFirst.id,
+        itemFirst.id,
+        conflicting.id,
+        racing.id,
+        storageFailure.id,
+        missingWinner.id,
+        conflictingWinner.id,
+        ref.id,
+      ];
       const reconciliationStore = await sdk.openRelationshipEventStore({
-        nodes: [
-          change.id,
-          draft.id,
-          fallbackChange.id,
-          ledgerFirst.id,
-          itemFirst.id,
-          conflicting.id,
-          ref.id,
-        ],
+        nodes: reconciliationNodes,
         definitions: [VCS_RELATIONSHIP_KIND],
         relativePath: "relationships/vcs-events.jsonl",
       });
@@ -489,6 +515,63 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         details: { event: { eventId: `merge-${itemFirst.id}` } },
         status: "merged",
       });
+      const append = RelationshipEventStore.prototype.append;
+      const appendRace = vi
+        .spyOn(RelationshipEventStore.prototype, "append")
+        .mockImplementationOnce(async function (input) {
+          const competitor = await sdk.openRelationshipEventStore({
+            nodes: reconciliationNodes,
+            definitions: [VCS_RELATIONSHIP_KIND],
+            relativePath: "relationships/vcs-events.jsonl",
+          });
+          await append.call(competitor, input);
+          return append.call(this, input);
+        });
+      onTestFinished(() => appendRace.mockRestore());
+      expect(await invoke("vcs merge", [racing.id], { ref: ref.id })).toMatchObject({
+        details: { event: { eventId: `merge-${racing.id}` } },
+        status: "merged",
+      });
+      appendRace.mockRestore();
+      const storageFailureRace = vi
+        .spyOn(RelationshipEventStore.prototype, "append")
+        .mockRejectedValueOnce(new Error("injected relationship storage failure"));
+      onTestFinished(() => storageFailureRace.mockRestore());
+      await expect(
+        invoke("vcs merge", [storageFailure.id], { ref: ref.id }),
+      ).rejects.toThrow(/injected relationship storage failure/);
+      storageFailureRace.mockRestore();
+      const missingWinnerRace = vi
+        .spyOn(RelationshipEventStore.prototype, "append")
+        .mockRejectedValueOnce(
+          new TypeError(
+            `Relationship event already exists: merge-${missingWinner.id}`,
+          ),
+        );
+      onTestFinished(() => missingWinnerRace.mockRestore());
+      await expect(
+        invoke("vcs merge", [missingWinner.id], { ref: ref.id }),
+      ).rejects.toThrow(/event conflicts/);
+      missingWinnerRace.mockRestore();
+      const conflictingWinnerRace = vi
+        .spyOn(RelationshipEventStore.prototype, "append")
+        .mockImplementationOnce(async function (input) {
+          const competitor = await sdk.openRelationshipEventStore({
+            nodes: reconciliationNodes,
+            definitions: [VCS_RELATIONSHIP_KIND],
+            relativePath: "relationships/vcs-events.jsonl",
+          });
+          await append.call(competitor, {
+            ...input,
+            relationshipId: `conflict-${conflictingWinner.id}`,
+          });
+          return append.call(this, input);
+        });
+      onTestFinished(() => conflictingWinnerRace.mockRestore());
+      await expect(
+        invoke("vcs merge", [conflictingWinner.id], { ref: ref.id }),
+      ).rejects.toThrow(/event conflicts/);
+      conflictingWinnerRace.mockRestore();
       await reconciliationStore.append({
         eventId: `merge-${conflicting.id}`,
         relationshipId: `conflict-${conflicting.id}`,

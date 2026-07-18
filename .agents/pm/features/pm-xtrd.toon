@@ -6,7 +6,7 @@ status: closed
 priority: 4
 tags[5]: exemplar,extensibility,sdk,spike,universal-tool
 created_at: "2026-07-06T22:18:00.517Z"
-updated_at: "2026-07-18T09:25:20.389Z"
+updated_at: "2026-07-18T09:51:27.471Z"
 closed_at: "2026-07-18T07:17:39.286Z"
 author: maintainer-agent
 estimated_minutes: 600
@@ -14,7 +14,7 @@ acceptance_criteria: Spike package activates cleanly importing only the public S
 parent: pm-8ngt
 risk: medium
 confidence: medium
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-18T05:54:11.258Z",codex-sdk-vcs-20260718,"Implementation start 2026-07-18: dependencies pm-3mna and pm-cbwg are live-verified closed. This wide lane will build the package against public SDK exports only, exercise custom schema/statuses, commands/hooks, attributable history replay, and produce a structured gap report plus packed temp-workspace proof."
   "2026-07-18T07:17:34.514Z",codex-sdk-vcs-20260718,"Acceptance evidence 2026-07-18: @unbrained/pm-vcs ships 2 domain types, 4 fields, a custom commits_to ontology, VCS profile/workflow, 7 domain commands, reviewed-merge hook, point-in-time history reconstruction, and durable merge-ledger projection using public SDK contracts only. Linked tests pass 2/2. Packed manual proof installed the tarball into an isolated project, installed vcs, applied its profile, created/proposed/merged a changeset, reconstructed version 1, replayed version=1/processed=1 identically across fresh processes, passed isolated package doctor and tracker validation, and preserved normal core create/get."
   "2026-07-18T07:48:06.147Z",codex-sdk-vcs-20260718,"Pre-push Greptile corrections: VCS merge events now use stable merge-<changeset> identities and append without a stale read-then-write expectedVersion window, so concurrent independent merges serialize under the durable store lock. Installed SDK-dispatch acceptance proves packed-sdk-author reaches the immutable ledger; direct-source acceptance runs two independent merges concurrently."
@@ -22,6 +22,7 @@ comments[7]{created_at,author,text}:
   "2026-07-18T08:31:15.850Z",codex-sdk-vcs-20260718,"Release-gate Greptile run cc0177cd-e16c-4bf8-9a4e-8fa900447367 found one P1 two-store partial-write risk in vcs merge. The correction implements a deterministic reconciliation protocol rather than a line-order swap: an existing matching ledger event finalizes a proposed item, a matching merged item can restore a missing ledger event, and conflicting deterministic events fail closed. Failure-injection acceptance covers ledger-first, item-first, and conflict states. Full repository coverage passes 308 files / 5,893 tests at exact 100/100/100/100; focused typecheck and ESLint pass."
   "2026-07-18T08:40:48.922Z",codex-sdk-vcs-20260718,"Targeted post-fix Greptile re-review against b8b40b51 completed at confidence 5/5 with zero comments. It confirms both partial-write directions recover correctly, deterministic conflicts fail closed, concurrent independent merges remain serialized, author attribution remains intact, and the failure-injection tests meaningfully exercise the durable protocol."
   "2026-07-18T09:25:20.389Z",codex-root,"Hosted review round 1 evidence: implemented all valid Gemini and CodeRabbit findings across legacy activation compatibility, graph/loader compatibility documentation, VCS ref validation, event-first crash reconciliation, package report routing, global runtime cleanup, and temporary-ledger cleanup. Added explicit strict-contract rejection coverage for missing ordering and allowSelf because these fields are required by the public RelationshipKindDefinition contract; defaulting them would conceal malformed JavaScript or JSON extension input. Full sandbox coverage passed: 308 files, 5,896 tests, exact 100/100/100/100 (38,758 statements; 27,272 branches; 7,884 functions; 37,746 lines)."
+  "2026-07-18T09:51:27.471Z",codex-sdk-vcs-20260718,"Hosted review round 2 P1 evidence: Greptile exact-head run 14945408 identified a cross-process duplicate append race between the merge pre-read and locked durable append. The accepted correction factors deterministic merge lookup/validation into nontrivial reusable helpers, catches only the exact duplicate-event TypeError, refreshes the durable ledger, accepts a structurally matching winner, rejects missing or conflicting winners with the original error as cause, and propagates unrelated storage failures unchanged. Failure injection covers all four outcomes. Full coverage passes 308 files / 5,896 tests at exact 100/100/100/100 (38,775 statements; 27,287 branches; 7,887 functions; 37,762 lines)."
 notes[1]{created_at,author,text}:
   "2026-07-18T07:17:35.726Z",codex-sdk-vcs-20260718,"Gap disposition: production content-addressed object storage, tree diffing, and network transport are VCS-product concerns, not universal SDK gaps. Cross-item plus relationship atomic commit remains an explicit bounded-exemplar waiver; larger durable indexing and scale work stays on canonical pm-ju83/pm-m2il lineage."
 learnings[2]{created_at,author,text}:
