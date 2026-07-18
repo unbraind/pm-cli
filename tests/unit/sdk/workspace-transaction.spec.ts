@@ -250,13 +250,14 @@ describe("workspace SDK transactions", () => {
         id: "relationship",
         inspect: async () => {
           conflictInspections += 1;
-          if (conflict && conflictInspections > 1)
+          if (conflict && conflictInspections > 2)
             throw new TypeError("conflicting relationship winner");
           return { state: relationshipApplied ? "applied" : "pending" };
         },
         apply: async () => {
           relationshipApplied = true;
           events.push("apply:relationship");
+          if (conflict) throw new TypeError("conflicting relationship winner");
           return { relationship: "committed" };
         },
         compensate: async () => {
@@ -296,10 +297,99 @@ describe("workspace SDK transactions", () => {
       });
       expect(events).toEqual([
         "apply:item",
+        "apply:relationship",
         "reconcile:relationship",
         "compensate:item",
         "apply:item",
         "apply:relationship",
+      ]);
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps journal discovery atomic when a later inspection fails", async () => {
+    const pmRoot = await mkdtemp(path.join(tmpdir(), "pm-sdk-transaction-"));
+    try {
+      const events: string[] = [];
+      const first = {
+        state: "pending" as WorkspaceTransactionStepState,
+        value: 0,
+      };
+      let conflict = true;
+      let secondInspections = 0;
+      let secondApplied = false;
+      const steps: WorkspaceTransactionStep[] = [
+        createTestStep("first", first, events),
+        {
+          id: "second",
+          inspect: async () => {
+            secondInspections += 1;
+            if (conflict && secondInspections > 1)
+              throw new TypeError("discovery conflict");
+            return { state: secondApplied ? "applied" : "pending" };
+          },
+          apply: async () => {
+            secondApplied = true;
+            events.push("apply:second");
+            return { applied: true };
+          },
+          compensate: async () => {
+            secondApplied = false;
+            events.push("compensate:second");
+          },
+        },
+      ];
+      await expect(
+        commitWorkspaceTransaction({
+          pmRoot,
+          transactionId: "atomic-discovery",
+          author: "agent",
+          steps,
+          onTransition: ({ transition, stepId }) => {
+            if (transition === "step_recorded" && stepId === "first")
+              throw new WorkspaceTransactionInterruptedError(
+                "stop before second",
+              );
+          },
+        }),
+      ).rejects.toThrow("stop before second");
+      await expect(
+        commitWorkspaceTransaction({
+          pmRoot,
+          transactionId: "atomic-discovery",
+          author: "agent",
+          steps,
+        }),
+      ).rejects.toThrow("discovery conflict");
+      expect(
+        JSON.parse(
+          await readFile(
+            path.join(pmRoot, "transactions", "sdk", "atomic-discovery.json"),
+            "utf8",
+          ),
+        ),
+      ).toMatchObject({
+        status: "compensated",
+        startedStepIds: [],
+        completedStepIds: [],
+        results: {},
+        compensationData: {},
+      });
+      conflict = false;
+      await expect(
+        commitWorkspaceTransaction({
+          pmRoot,
+          transactionId: "atomic-discovery",
+          author: "agent",
+          steps,
+        }),
+      ).resolves.toMatchObject({ status: "committed", recovered: true });
+      expect(events).toEqual([
+        "apply:first",
+        "compensate:first",
+        "apply:first",
+        "apply:second",
       ]);
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
@@ -449,12 +539,18 @@ describe("workspace SDK transactions", () => {
         createdAt: "2026-07-18T00:00:00.000Z",
         updatedAt: "2026-07-18T00:00:00.000Z",
         stepIds: ["step"],
+        startedStepIds: [] as string[],
         completedStepIds: [] as string[],
         results: {},
+        compensationData: {},
       };
       const malformed = [
         [],
         { ...base, results: [] },
+        { ...base, compensationData: [] },
+        { ...base, compensationData: { step: { before: true } } },
+        { ...base, startedStepIds: ["unknown"] },
+        { ...base, startedStepIds: ["step", "step"] },
         { ...base, completedStepIds: ["unknown"] },
         { ...base, completedStepIds: ["step", "step"] },
         { ...base, results: { step: { value: 1 } } },

@@ -39,10 +39,12 @@ export interface WorkspaceTransactionStep {
   id: string;
   /** Inspect durable domain state without mutating it. */
   inspect(): Promise<WorkspaceTransactionStepInspection>;
+  /** Capture journal-safe pre-mutation data required by compensation. */
+  prepareCompensation?(): Promise<WorkspaceTransactionJsonValue | undefined>;
   /** Apply the forward mutation and return a journal-safe result, or store nothing. */
   apply(): Promise<WorkspaceTransactionJsonValue | undefined>;
   /** Idempotently reconcile only this step's exact forward mutation when present. */
-  compensate(): Promise<void>;
+  compensate(data?: WorkspaceTransactionJsonValue): Promise<void>;
 }
 
 /** Observable transition points available to diagnostics and failure injection. */
@@ -129,8 +131,10 @@ interface WorkspaceTransactionJournal {
   createdAt: string;
   updatedAt: string;
   stepIds: string[];
+  startedStepIds: string[];
   completedStepIds: string[];
   results: Record<string, WorkspaceTransactionJsonValue>;
+  compensationData: Record<string, WorkspaceTransactionJsonValue>;
 }
 
 const WORKSPACE_TRANSACTION_LOCK_ID = "sdk-workspace-transaction";
@@ -200,30 +204,53 @@ function createResultMap(
   );
 }
 
+function isJournalMap(
+  value: unknown,
+): value is Record<string, WorkspaceTransactionJsonValue> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function hasUniqueKnownStepIds(
+  value: unknown,
+  stepIds: readonly string[],
+): value is string[] {
+  return (
+    Array.isArray(value) &&
+    new Set(value).size === value.length &&
+    value.every(
+      (stepId) => typeof stepId === "string" && stepIds.includes(stepId),
+    )
+  );
+}
+
 function hasValidJournalLifecycle(
   journal: Partial<WorkspaceTransactionJournal>,
   stepIds: readonly string[],
 ): boolean {
   if (
-    !Array.isArray(journal.completedStepIds) ||
-    journal.results === null ||
-    typeof journal.results !== "object" ||
-    Array.isArray(journal.results)
+    !hasUniqueKnownStepIds(journal.startedStepIds, stepIds) ||
+    !hasUniqueKnownStepIds(journal.completedStepIds, stepIds) ||
+    !isJournalMap(journal.results) ||
+    !isJournalMap(journal.compensationData)
   )
     return false;
+  const startedStepIds = journal.startedStepIds;
+  const started = new Set(startedStepIds);
   const completedStepIds = journal.completedStepIds;
   const completed = new Set(completedStepIds);
   if (
-    completed.size !== completedStepIds.length ||
-    completedStepIds.some(
-      (stepId) => typeof stepId !== "string" || !stepIds.includes(stepId),
+    Object.keys(journal.compensationData).some(
+      (stepId) => !started.has(stepId),
     ) ||
     Object.keys(journal.results).some((stepId) => !completed.has(stepId))
   )
     return false;
   if (journal.status === "committed")
     return stepIds.every((stepId) => completed.has(stepId));
-  return journal.status !== "compensated" || completed.size === 0;
+  return (
+    journal.status !== "compensated" ||
+    (completed.size === 0 && started.size === 0)
+  );
 }
 
 function parseJournal(
@@ -271,6 +298,7 @@ function parseJournal(
   return {
     ...(journal as WorkspaceTransactionJournal),
     results: createResultMap(journal.results),
+    compensationData: createResultMap(journal.compensationData),
   };
 }
 
@@ -299,8 +327,10 @@ async function prepareJournalForApply(
       createdAt: journal?.createdAt ?? timestamp,
       updatedAt: timestamp,
       stepIds,
+      startedStepIds: [],
       completedStepIds: [],
       results: createResultMap(),
+      compensationData: createResultMap(),
     };
     await writeJournal(options.pmRoot, journal);
     await emitTransition(options, journal, "prepared");
@@ -317,11 +347,23 @@ async function applyPreparedTransaction(
     await discoverAppliedSteps(journal, options.steps);
     await writeJournal(options.pmRoot, journal);
     const completed = new Set(journal.completedStepIds);
+    const started = new Set(journal.startedStepIds);
     for (const step of options.steps) {
       if (completed.has(step.id)) continue;
       const inspection = await step.inspect();
-      const result =
-        inspection.state === "applied" ? inspection.result : await step.apply();
+      let result = inspection.result;
+      if (inspection.state !== "applied") {
+        const compensationData = await step.prepareCompensation?.();
+        if (compensationData === undefined)
+          delete journal.compensationData[step.id];
+        else journal.compensationData[step.id] = compensationData;
+        started.add(step.id);
+        journal.startedStepIds = options.steps
+          .map((candidate) => candidate.id)
+          .filter((stepId) => started.has(stepId));
+        await writeJournal(options.pmRoot, journal);
+        result = await step.apply();
+      }
       await emitTransition(options, journal, "step_applied", step.id);
       completed.add(step.id);
       journal.completedStepIds = options.steps
@@ -365,7 +407,13 @@ async function loadJournal(
       stepIds,
     );
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+    if (
+      error !== null &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "ENOENT"
+    )
+      return undefined;
     throw error;
   }
 }
@@ -389,14 +437,15 @@ async function discoverAppliedSteps(
   steps: readonly WorkspaceTransactionStep[],
 ): Promise<void> {
   const completed = new Set<string>();
+  const results = createResultMap();
   for (const step of steps) {
     const inspection = await step.inspect();
     if (inspection.state === "applied") {
       completed.add(step.id);
-      if (inspection.result === undefined) delete journal.results[step.id];
-      else journal.results[step.id] = inspection.result;
-    } else delete journal.results[step.id];
+      if (inspection.result !== undefined) results[step.id] = inspection.result;
+    }
   }
+  journal.results = results;
   journal.completedStepIds = steps
     .map((step) => step.id)
     .filter((stepId) => completed.has(stepId));
@@ -410,22 +459,29 @@ async function compensateAppliedSteps(
   await writeJournal(options.pmRoot, journal);
   await emitTransition(options, journal, "compensating");
   const completed = new Set(journal.completedStepIds);
+  const started = new Set(journal.startedStepIds);
   for (const step of [...options.steps].reverse()) {
     let shouldCompensate: boolean;
     try {
-      shouldCompensate = (await step.inspect()).state === "applied";
+      shouldCompensate =
+        started.has(step.id) && (await step.inspect()).state === "applied";
     } catch {
-      shouldCompensate = true;
+      shouldCompensate = started.has(step.id);
     }
     if (shouldCompensate) {
       await emitTransition(options, journal, "step_compensating", step.id);
-      await step.compensate();
+      await step.compensate(journal.compensationData[step.id]);
     }
     completed.delete(step.id);
+    started.delete(step.id);
     journal.completedStepIds = options.steps
       .map((candidate) => candidate.id)
       .filter((stepId) => completed.has(stepId));
+    journal.startedStepIds = options.steps
+      .map((candidate) => candidate.id)
+      .filter((stepId) => started.has(stepId));
     delete journal.results[step.id];
+    delete journal.compensationData[step.id];
     await writeJournal(options.pmRoot, journal);
     await emitTransition(options, journal, "step_compensated", step.id);
   }

@@ -20,6 +20,7 @@ import type {
   SchemaFieldDefinition,
   SchemaItemTypeDefinition,
   WorkspaceTransactionStep,
+  WorkspaceTransactionJsonValue,
 } from "@unbrained/pm-cli/sdk";
 
 /** Declarative package manifest consumed by the extension loader. */
@@ -368,17 +369,22 @@ async function compensateChangesetMerge(
   id: string,
   refId: string,
   resolution: string,
-  originalRef: string,
-  appliedByAttempt: boolean,
+  data: WorkspaceTransactionJsonValue | undefined,
 ): Promise<void> {
-  if (!appliedByAttempt) return;
+  if (
+    data === null ||
+    typeof data !== "object" ||
+    Array.isArray(data) ||
+    !isNonEmptyString(data.originalRef)
+  )
+    throw new TypeError(`vcs merge compensation data is invalid for ${id}`);
   const current = await getVcsItem(client, id, "Changeset");
   if (!matchesCommittedChangeset(current.item, refId, resolution)) return;
   await client.update(id, {
     status: "proposed",
     unset: ["resolution", "close-reason"],
     message: `Compensate interrupted VCS merge into ${refId}`,
-    field: [`vcs_ref=${originalRef}`],
+    field: [`vcs_ref=${data.originalRef.trim()}`],
   });
 }
 
@@ -444,7 +450,6 @@ async function runChangesetMerge(
     : "pm-vcs";
   const eventId = `merge-${id}`;
   const relationshipId = `changeset-${id}`;
-  let itemAppliedByAttempt = false;
   const steps: WorkspaceTransactionStep[] = [
     {
       id: "merge-item",
@@ -457,6 +462,7 @@ async function runChangesetMerge(
             }
           : { state: "pending" };
       },
+      prepareCompensation: async () => ({ originalRef }),
       apply: async () => {
         await client.update(id, {
           status: "merged",
@@ -464,18 +470,10 @@ async function runChangesetMerge(
           message: `VCS merge into ${refId}`,
           field: [`vcs_ref=${refId}`],
         });
-        itemAppliedByAttempt = true;
         return { id, status: "merged", resolution };
       },
-      compensate: () =>
-        compensateChangesetMerge(
-          client,
-          id,
-          refId,
-          resolution,
-          originalRef,
-          itemAppliedByAttempt,
-        ),
+      compensate: (data) =>
+        compensateChangesetMerge(client, id, refId, resolution, data),
     },
     {
       id: "merge-relationship",

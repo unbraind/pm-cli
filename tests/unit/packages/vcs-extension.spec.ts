@@ -8,6 +8,7 @@ import {
 import {
   PmClient,
   RelationshipEventStore,
+  WorkspaceTransactionInterruptedError,
   planProfileApplication,
   type ProfileCurrentState,
 } from "../../../src/sdk/index.js";
@@ -505,6 +506,12 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         treeHash: "sha256:latest-conflict",
       })) as { id: string };
       await invoke("vcs propose", [latestConflict.id]);
+      const crashConflict = (await invoke(
+        "vcs create",
+        ["Crash ownership conflict"],
+        { ref: sourceRef.id, treeHash: "sha256:crash-ownership-conflict" },
+      )) as { id: string };
+      await invoke("vcs propose", [crashConflict.id]);
       const missingCommit = (await invoke("vcs create", ["Missing commit"], {
         ref: ref.id,
         treeHash: "sha256:missing-commit",
@@ -543,6 +550,7 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         missingWinner.id,
         conflictingWinner.id,
         latestConflict.id,
+        crashConflict.id,
         missingCommit.id,
         compensatedRace.id,
         missingVcsRef.id,
@@ -620,6 +628,71 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
       });
       appendRace.mockRestore();
       const commitTransaction = sdk.commitWorkspaceTransaction;
+      const crashAfterItem = vi
+        .spyOn(sdk, "commitWorkspaceTransaction")
+        .mockImplementationOnce((options) =>
+          commitTransaction({
+            ...options,
+            onTransition: ({ transition, stepId }) => {
+              if (transition === "step_applied" && stepId === "merge-item")
+                throw new WorkspaceTransactionInterruptedError(
+                  "crash after item mutation",
+                );
+            },
+          }),
+        );
+      onTestFinished(() => crashAfterItem.mockRestore());
+      await expect(
+        invoke("vcs merge", [crashConflict.id], { ref: ref.id }),
+      ).rejects.toThrow(/crash after item mutation/);
+      crashAfterItem.mockRestore();
+      await reconciliationStore.append({
+        eventId: `wrong-target-${crashConflict.id}`,
+        relationshipId: `changeset-${crashConflict.id}`,
+        action: "add",
+        edge: {
+          source: crashConflict.id,
+          target: change.id,
+          kind: "commits_to",
+        },
+        author: "failure-injection",
+        timestamp: new Date().toISOString(),
+      });
+      const crashJournalPath = path.join(
+        context.pmPath,
+        "transactions",
+        "sdk",
+        `vcs-merge-${crashConflict.id}-${ref.id}.json`,
+      );
+      const invalidCompensationJournal = JSON.parse(
+        await readFile(crashJournalPath, "utf8"),
+      ) as { compensationData: Record<string, unknown> };
+      invalidCompensationJournal.compensationData["merge-item"] = null;
+      await writeFile(
+        crashJournalPath,
+        `${JSON.stringify(invalidCompensationJournal, null, 2)}\n`,
+        "utf8",
+      );
+      await expect(
+        invoke("vcs merge", [crashConflict.id], { ref: ref.id }),
+      ).rejects.toThrow(/compensation data is invalid/);
+      const recoverableCompensationJournal = JSON.parse(
+        await readFile(crashJournalPath, "utf8"),
+      ) as { compensationData: Record<string, unknown> };
+      recoverableCompensationJournal.compensationData["merge-item"] = {
+        originalRef: sourceRef.id,
+      };
+      await writeFile(
+        crashJournalPath,
+        `${JSON.stringify(recoverableCompensationJournal, null, 2)}\n`,
+        "utf8",
+      );
+      await expect(
+        invoke("vcs merge", [crashConflict.id], { ref: ref.id }),
+      ).rejects.toThrow(/event conflicts/);
+      expect(
+        (await client.get(crashConflict.id, { depth: "deep" })).item,
+      ).toMatchObject({ status: "proposed", vcs_ref: sourceRef.id });
       const commitFailure = vi
         .spyOn(sdk, "commitWorkspaceTransaction")
         .mockImplementationOnce((options) =>

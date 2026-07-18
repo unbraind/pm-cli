@@ -793,6 +793,12 @@ transaction id plus ordered steps. Each step can inspect its durable state,
 apply an idempotent forward mutation, and append an idempotent compensation.
 The coordinator serializes transaction writers with one workspace lock and
 persists `.agents/pm/transactions/sdk/<transaction-id>.json` after every step.
+Before invoking a pending step, it also persists that step's durable ownership
+marker. Recovery and compensation therefore distinguish mutations begun by
+this transaction from matching domain state that existed before the attempt.
+Steps that must restore prior values implement `prepareCompensation()`; its
+JSON-safe result is stored atomically with that ownership marker before
+`apply()` begins and is passed back to `compensate(data)` after a restart.
 `lockTtlSeconds` (default `30`) and `lockWaitMs` (default `3000`) let callers
 size the writer lease above their longest expected attempt and choose their
 contention budget; both must be positive integers.
@@ -800,7 +806,8 @@ contention budget; both must be positive integers.
 If a process stops between the domain write and the journal update, rerunning
 the same plan discovers the already-applied step and continues. An ordinary
 error switches the journal to compensation mode and runs applied steps in
-reverse order. Compensations are new item-history or relationship events: the
+reverse order, limited to steps whose forward attempt was durably recorded.
+Compensations are new item-history or relationship events: the
 coordinator never deletes or rewrites immutable history. A crash during
 compensation resumes compensation before a new attempt begins.
 
