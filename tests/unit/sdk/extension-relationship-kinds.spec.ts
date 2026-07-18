@@ -94,17 +94,37 @@ describe("extension relationship-kind registration", () => {
     ]);
   });
 
+  it("summarizes activation payloads produced before relationship kinds existed", async () => {
+    const activation = await activateExtensionForTest(
+      { activate() {} },
+      { name: "legacy-domain-graph", capabilities: ["schema"] },
+    );
+    const legacyActivation = {
+      ...activation,
+      registrations: {
+        ...activation.registrations,
+        relationship_kinds: undefined,
+      },
+    } as never;
+
+    const summary = describeExtensionActivation(legacyActivation);
+    expect(summary.capabilities).toEqual([]);
+    expect(summary).not.toHaveProperty("relationship_kinds");
+  });
+
   it.each([
     ["definition", null],
     ["kind type", { kind: 7 }],
     ["kind syntax", { kind: "1bad" }],
     ["compatibility version", { compatibilityVersion: 0 }],
     ["direction", { direction: "sideways" }],
+    ["missing ordering", { ordering: undefined }],
     ["ordering", { ordering: "yes" }],
     ["hierarchy", { hierarchy: "no" }],
     ["outgoing cardinality", { outgoing: "several" }],
     ["incoming cardinality", { incoming: "several" }],
     ["lifecycle", { lifecycle: "mutable" }],
+    ["missing self edge", { allowSelf: undefined }],
     ["self edge", { allowSelf: "no" }],
     ["payload schema", { payloadSchema: [] }],
     ["alias container", { aliases: "alias" }],

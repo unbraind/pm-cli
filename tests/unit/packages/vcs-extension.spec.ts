@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 import {
   assertExtensionDeactivated,
   createExtensionTestHarness,
@@ -285,6 +285,10 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         capabilities: ["commands", "schema", "hooks"],
       });
       setActiveExtensionRegistrations(harness.activation.registrations);
+      onTestFinished(async () => {
+        resetActiveExtensionRuntimeState();
+        assertExtensionDeactivated(await harness.deactivate());
+      });
       const client = PmClient.forActiveExtensionHost({
         pmRoot: context.pmPath,
         author: "vcs-source-test",
@@ -312,6 +316,18 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         ["Source covered"],
         { ref: ref.id, treeHash: "sha256:source", parent: "base" },
       )) as { id: string };
+      await expect(
+        invoke("vcs create", ["Missing ref"], {
+          ref: "missing-ref",
+          treeHash: "sha256:missing-ref",
+        }),
+      ).rejects.toThrow();
+      await expect(
+        invoke("vcs create", ["Wrong ref type"], {
+          ref: change.id,
+          treeHash: "sha256:wrong-ref-type",
+        }),
+      ).rejects.toThrow(/VcsRef/);
       const draft = (await invoke("vcs create", ["Abandon me"], {
         ref: ref.id,
         tree_hash: "sha256:draft",
@@ -452,6 +468,15 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
       expect(
         await invoke("vcs merge", [ledgerFirst.id], { ref: ref.id }),
       ).toMatchObject({ details: { event: ledgerEvent }, status: "merged" });
+      expect((await client.get(ledgerFirst.id, { depth: "deep" })).item.status).toBe(
+        "merged",
+      );
+      const retryUpdate = vi.spyOn(client, "update");
+      expect(
+        await invoke("vcs merge", [ledgerFirst.id], { ref: ref.id }),
+      ).toMatchObject({ details: { event: ledgerEvent }, status: "merged" });
+      expect(retryUpdate).not.toHaveBeenCalled();
+      retryUpdate.mockRestore();
       await client.update(itemFirst.id, {
         status: "merged",
         resolution: `Merged into ${ref.id}`,
@@ -478,8 +503,6 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
       await expect(
         invoke("vcs merge", [itemFirst.id], { ref: change.id }),
       ).rejects.toThrow(/VcsRef/);
-      resetActiveExtensionRuntimeState();
-      assertExtensionDeactivated(await harness.deactivate());
     });
   });
 });

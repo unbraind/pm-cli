@@ -152,7 +152,8 @@ function attributeCapabilityUsage(
   record(registrations.flags, "schema");
   record(registrations.item_fields, "schema");
   record(registrations.item_types, "schema");
-  record(registrations.relationship_kinds, "schema");
+  // Preserve compatibility with activation payloads produced before this registry existed.
+  record(registrations.relationship_kinds ?? [], "schema");
   record(registrations.migrations, "schema");
   record(registrations.profiles, "schema");
   record(registrations.importers, "importers");

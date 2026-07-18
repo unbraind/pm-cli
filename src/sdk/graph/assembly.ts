@@ -221,6 +221,7 @@ export function assembleWorkspaceRelationshipGraph(
 ): WorkspaceRelationshipAssembly {
   const relationshipRegistry = registry ?? createRelationshipKindRegistry();
   if (registry === undefined) {
+    // Preserve compatibility with activation payloads produced before this registry existed.
     for (const registration of
       getActiveExtensionRegistrations()?.relationship_kinds ?? []) {
       for (const definition of registration.definitions) {

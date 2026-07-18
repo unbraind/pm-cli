@@ -3302,6 +3302,7 @@ function getRegistrationCounts(
     (total, entry) => total + entry.types.length,
     0,
   );
+  // Preserve compatibility with activation payloads produced before this registry existed.
   const relationshipKindCount = (registrations.relationship_kinds ?? []).reduce(
     (total, entry) => total + entry.definitions.length,
     0,

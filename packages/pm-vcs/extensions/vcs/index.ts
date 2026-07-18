@@ -271,7 +271,9 @@ async function runChangesetCreate(
     typeof context.options.parent === "string" && context.options.parent.trim()
       ? context.options.parent.trim()
       : undefined;
-  const result = await clientFor(context).create({
+  const client = clientFor(context);
+  await getVcsItem(client, ref, "VcsRef");
+  const result = await client.create({
     title,
     type: "Changeset",
     status: "draft",
@@ -319,13 +321,6 @@ async function runChangesetMerge(
       })
   )
     throw new TypeError(`vcs merge event conflicts with changeset ${id}`);
-  if (changeset.item.status === "proposed")
-    await client.update(id, {
-      status: "merged",
-      resolution,
-      message: `VCS merge into ${refId}`,
-      field: [`vcs_ref=${refId}`],
-    });
   relationship ??= await store.append({
     eventId: `merge-${id}`,
     relationshipId: `changeset-${id}`,
@@ -338,10 +333,19 @@ async function runChangesetMerge(
     timestamp: new Date().toISOString(),
     reason: "Reviewed VCS changeset merge",
   });
+  const reconciledChangeset =
+    changeset.item.status === "proposed"
+      ? await client.update(id, {
+          status: "merged",
+          resolution,
+          message: `VCS merge into ${refId}`,
+          field: [`vcs_ref=${refId}`],
+        })
+      : changeset;
   return {
     action: "vcs-merge",
     id,
-    status: "merged",
+    status: String(reconciledChangeset.item.status),
     details: { ref: refId, event: relationship },
   };
 }

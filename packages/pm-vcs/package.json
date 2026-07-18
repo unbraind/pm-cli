@@ -31,7 +31,7 @@
       "links": {
         "docs": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-vcs#readme",
         "repository": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-vcs",
-        "report": "https://github.com/unbraind/pm-cli/issues"
+        "report": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-vcs/GAP_REPORT.md"
       }
     },
     "docs": ["README.md", "GAP_REPORT.md"],

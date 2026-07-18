@@ -1,7 +1,7 @@
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished } from "vitest";
 import {
   RelationshipEventLog,
   RelationshipEventStore,
@@ -93,6 +93,7 @@ describe("relationship event streaming and projection", () => {
 
   it("streams and projects one coherent durable snapshot", async () => {
     const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-relationship-projection-"));
+    onTestFinished(() => rm(workspace, { recursive: true, force: true }));
     const pmRoot = path.join(workspace, ".agents", "pm");
     const store = await RelationshipEventStore.open({
       pmRoot,

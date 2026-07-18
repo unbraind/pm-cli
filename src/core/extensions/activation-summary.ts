@@ -171,8 +171,9 @@ export function describeExtensionActivation(
     renderers,
     hooks,
   } = activation;
+  // Preserve compatibility with activation payloads produced before this registry existed.
   const relationshipKinds = collectFlat(
-    registrations.relationship_kinds,
+    registrations.relationship_kinds ?? [],
     (entry) => entry.definitions.map((definition) => definition.kind),
   );
   return {
