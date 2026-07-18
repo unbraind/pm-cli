@@ -28,6 +28,13 @@ const ITEM_FORMAT_BY_EXTENSION = {
   ".toon": "toon",
 } as const satisfies Record<string, ItemFormat>;
 
+const NEARBY_TRACKER_SCAN_IGNORED_DIRECTORIES = new Set([
+  ".git",
+  "coverage",
+  "dist",
+  "node_modules",
+]);
+
 /** Public contract for item file extensions, shared by SDK and presentation-layer consumers. */
 export const ITEM_FILE_EXTENSIONS: Array<
   keyof typeof ITEM_FORMAT_BY_EXTENSION
@@ -98,9 +105,14 @@ export function discoverNearbyPmRoot(
   const normalizedExcluded = excludedRoot ? path.resolve(excludedRoot) : undefined;
   try {
     return readdirSync(path.resolve(cwd), { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
+      .filter(
+        (entry) =>
+          entry.isDirectory() &&
+          !NEARBY_TRACKER_SCAN_IGNORED_DIRECTORIES.has(entry.name),
+      )
       .map((entry) => path.join(path.resolve(cwd), entry.name))
       .filter((candidate) => candidate !== normalizedExcluded)
+      .filter((candidate) => pathExists(getSettingsPath(candidate)))
       .filter((candidate) => isPmSettingsFile(getSettingsPath(candidate)))
       .sort((left, right) => left.localeCompare(right))[0];
   } catch {

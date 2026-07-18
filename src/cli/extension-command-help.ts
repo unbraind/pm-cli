@@ -809,6 +809,8 @@ export function findCommandByPath(
   return current;
 }
 
+const extensionCreatedCommands = new WeakSet<Command>();
+
 /** Implements ensure command path for the public runtime surface of this module. */
 export function ensureCommandPath(
   root: Command,
@@ -848,8 +850,6 @@ export function ensureCommandPath(
   return current;
 }
 
-const extensionCreatedCommands = new WeakSet<Command>();
-
 /** Describe the first core-owned command prefix that an extension path would shadow or graft beneath. */
 export function findExtensionCommandPathCollision(
   root: Command,
@@ -883,6 +883,10 @@ export function buildExtensionCommandCollisionWarning(
 ): string | null {
   const pathParts = commandPath.split(" ").filter((part) => part.length > 0);
   const collision = findExtensionCommandPathCollision(root, pathParts);
+  // Direct canonical paths intentionally augment core help with extension flags
+  // and metadata while registerCommandPath preserves the core action handler.
+  // Canonical aliases and nested grafts cannot make that ownership distinction,
+  // so those paths are rejected instead.
   if (
     !collision ||
     (collision.core_path === commandPath && !aliases.has(commandPath))

@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: agent-ux,cli,silent-failure
 created_at: "2026-07-18T10:08:09.956Z"
-updated_at: "2026-07-18T11:37:39.666Z"
+updated_at: "2026-07-18T11:56:39.338Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
@@ -17,11 +17,12 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-45mb,related,"2026-07-18T10:08:09.956Z",null,null
   pm-gdi7,related,"2026-07-18T10:08:09.956Z",null,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-18T10:52:33.104Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
   "2026-07-18T10:53:15.089Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
   "2026-07-18T11:33:20.755Z",maintainer-agent,"Verification evidence: isolated packed-package pm comments <id> --message <label> exited non-zero with explicit missing --add/--stdin/--file recovery guidance."
   "2026-07-18T11:37:34.779Z",maintainer-agent,"Gate evidence: pnpm test:coverage passed 310 files/5906 tests at 100% statements (38887), branches (27366), functions (7917), and lines (37864). pnpm lint, typecheck, contracts:check, docs link gate, secret scan, git diff --check, and the item-linked sandbox test all passed."
+  "2026-07-18T11:56:39.336Z",maintainer-agent,"Post-review gate evidence: full coverage rerun passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866); focused tests, ESLint, static/docstring, package-boundary, token-budget, typecheck, and diff checks remain green."
 learnings[1]{created_at,author,text}:
   "2026-07-18T11:37:39.665Z",maintainer-agent,Mutation-label options must never silently turn an otherwise empty annotation command into a successful list operation; fail with concrete text-input recovery.
 files[2]{path,scope,note}:

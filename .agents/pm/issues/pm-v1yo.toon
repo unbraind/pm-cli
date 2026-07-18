@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[3]: agent-ux,extensions,github
 created_at: "2026-07-18T07:14:14.667Z"
-updated_at: "2026-07-18T11:37:36.849Z"
+updated_at: "2026-07-18T11:56:33.837Z"
 assignee: maintainer-agent
 author: codex-sdk-vcs-20260718
 estimated_minutes: 240
@@ -17,11 +17,13 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-iqq0,related,"2026-07-18T07:14:14.667Z",null,null
   pm-ju83,related,"2026-07-18T07:14:14.667Z",null,null
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-18T07:14:14.667Z",codex-sdk-vcs-20260718,"Duplicate check 2026-07-18: exact all-status title search returned zero; AND search across extension command collision/alias/exporter terms found only unrelated closed lineage. Created from https://github.com/unbraind/pm-cli/issues/585 under universal SDK epic pm-usfg with graph and declarative-extension relations; left open and unclaimed because this PR does not implement it."
   "2026-07-18T10:52:12.291Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
   "2026-07-18T11:33:23.914Z",maintainer-agent,"Verification evidence: extension startup tests cover package-owner/name/unknown collision diagnostics while canonical core handlers remain active."
   "2026-07-18T11:37:29.807Z",maintainer-agent,"Gate evidence: pnpm test:coverage passed 310 files/5906 tests at 100% statements (38887), branches (27366), functions (7917), and lines (37864). pnpm lint, typecheck, contracts:check, docs link gate, secret scan, git diff --check, and the item-linked sandbox test all passed."
+  "2026-07-18T11:56:31.781Z",maintainer-agent,"Greptile pre-push review 72dcf827-ee73-4f4f-834d-fae8ae8243f6: moved extension-owned command tracking before first use and documented why direct canonical paths may augment help metadata while aliases/nested grafts are rejected and core actions remain preserved."
+  "2026-07-18T11:56:33.837Z",maintainer-agent,"Post-review gate evidence: full coverage rerun passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866); focused tests, ESLint, static/docstring, package-boundary, token-budget, typecheck, and diff checks remain green."
 learnings[1]{created_at,author,text}:
   "2026-07-18T11:37:36.849Z",maintainer-agent,"Extension command collision safety needs canonical alias awareness: preserve legitimate core handler registration while rejecting aliases and nested grafts that shadow core ownership."
 files[4]{path,scope,note}:

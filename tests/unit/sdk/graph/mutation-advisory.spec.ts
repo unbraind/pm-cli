@@ -143,5 +143,13 @@ describe("ordering-cycle mutation advisories", () => {
         "pm-missing",
       ),
     ).toEqual(["pm-missing", "pm-missing"]);
+    expect(
+      mutationAdvisoryTestOnly.findPathBackToStart(
+        new Map(),
+        new Set(["pm-a", "pm-missing"]),
+        "pm-a",
+        "pm-missing",
+      ),
+    ).toBeUndefined();
   });
 });

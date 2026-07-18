@@ -61,7 +61,7 @@ function findPathBackToStart(
   while (queue.length > 0) {
     const path = queue.shift()!;
     const tail = path.at(-1)!;
-    for (const next of adjacency.get(tail)!) {
+    for (const next of adjacency.get(tail) ?? []) {
       if (next === start) return [start, ...path, start];
       if (!members.has(next) || visited.has(next)) continue;
       visited.add(next);
@@ -102,4 +102,5 @@ export function collectNewOrderingCycleWarnings(
 export const mutationAdvisoryTestOnly = {
   buildOrderingAdjacency,
   findCyclePath,
+  findPathBackToStart,
 };

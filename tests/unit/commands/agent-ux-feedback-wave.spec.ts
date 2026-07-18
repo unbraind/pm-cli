@@ -214,9 +214,13 @@ describe("agent UX feedback wave", () => {
       try {
         const customRoot = path.join(workspace, ".pm");
         const secondCustomRoot = path.join(workspace, ".pm-two");
+        const ignoredDependencyRoot = path.join(workspace, "node_modules");
+        const unrelatedDirectory = path.join(workspace, "scratch");
         await mkdir(customRoot, { recursive: true });
+        await mkdir(unrelatedDirectory, { recursive: true });
         await cp(context.pmPath, customRoot, { recursive: true });
         await cp(context.pmPath, secondCustomRoot, { recursive: true });
+        await cp(context.pmPath, ignoredDependencyRoot, { recursive: true });
         expect(discoverNearbyPmRoot(workspace)).toBe(customRoot);
         expect(discoverNearbyPmRoot(workspace, customRoot)).toBe(secondCustomRoot);
         expect(discoverNearbyPmRoot(path.join(workspace, "missing"))).toBeUndefined();

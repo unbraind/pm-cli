@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: agent-ux,init,recovery-hints
 created_at: "2026-07-18T10:08:48.018Z"
-updated_at: "2026-07-18T11:37:38.223Z"
+updated_at: "2026-07-18T11:56:35.766Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 150
@@ -18,10 +18,12 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-kvev,related,"2026-07-18T10:08:48.018Z",null,null
   pm-qljv,related,"2026-07-18T10:08:48.018Z",null,null
   pm-surv,related,"2026-07-18T10:08:48.018Z",null,null
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-18T10:52:21.856Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
   "2026-07-18T11:33:22.322Z",maintainer-agent,"Verification evidence: packed-package public tracker discovery entrypoint imported through @unbrained/pm-cli/sdk; focused CLI tests cover exact custom-root recovery suggestions."
   "2026-07-18T11:37:32.324Z",maintainer-agent,"Gate evidence: pnpm test:coverage passed 310 files/5906 tests at 100% statements (38887), branches (27366), functions (7917), and lines (37864). pnpm lint, typecheck, contracts:check, docs link gate, secret scan, git diff --check, and the item-linked sandbox test all passed."
+  "2026-07-18T11:56:32.420Z",maintainer-agent,"Greptile pre-push review 72dcf827-ee73-4f4f-834d-fae8ae8243f6: reduced recovery-path synchronous work by excluding dependency/build/VCS directories and checking settings existence before parsing; regression coverage includes ignored and unrelated directories."
+  "2026-07-18T11:56:35.766Z",maintainer-agent,"Post-review gate evidence: full coverage rerun passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866); focused tests, ESLint, static/docstring, package-boundary, token-budget, typecheck, and diff checks remain green."
 learnings[1]{created_at,author,text}:
   "2026-07-18T11:37:38.222Z",maintainer-agent,"Recovery guidance should discover nearby initialized custom roots before recommending initialization, preventing accidental split trackers."
 files[5]{path,scope,note}:
