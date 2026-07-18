@@ -724,6 +724,12 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
       await expect(
         invoke("vcs merge", [conflicting.id], { ref: ref.id }),
       ).rejects.toThrow(/event conflicts/);
+      await client.update(latestConflict.id, {
+        status: "merged",
+        resolution: `Merged into ${ref.id}`,
+        message: "Inject committed item before relationship conflict",
+        field: [`vcs_ref=${ref.id}`],
+      });
       await reconciliationStore.append({
         eventId: `wrong-target-${latestConflict.id}`,
         relationshipId: `changeset-${latestConflict.id}`,
@@ -739,6 +745,13 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
       await expect(
         invoke("vcs merge", [latestConflict.id], { ref: ref.id }),
       ).rejects.toThrow(/event conflicts/);
+      expect(
+        (await client.get(latestConflict.id, { depth: "deep" })).item,
+      ).toMatchObject({
+        status: "merged",
+        resolution: `Merged into ${ref.id}`,
+        vcs_ref: ref.id,
+      });
 
       await reconciliationStore.append({
         eventId: `merge-${missingCommit.id}`,

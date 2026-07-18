@@ -351,7 +351,7 @@ function isNonEmptyString(value: unknown): value is string {
 }
 
 function matchesCommittedChangeset(
-  item: ItemMetadata,
+  item: Partial<ItemMetadata>,
   refId: string,
   resolution: string,
 ): boolean {
@@ -360,6 +360,26 @@ function matchesCommittedChangeset(
     item.resolution === resolution &&
     item.vcs_ref === refId
   );
+}
+
+/** Restore a changeset only when this merge attempt still owns its exact item mutation. */
+async function compensateChangesetMerge(
+  client: PmClient,
+  id: string,
+  refId: string,
+  resolution: string,
+  originalRef: string,
+  appliedByAttempt: boolean,
+): Promise<void> {
+  if (!appliedByAttempt) return;
+  const current = await getVcsItem(client, id, "Changeset");
+  if (!matchesCommittedChangeset(current.item, refId, resolution)) return;
+  await client.update(id, {
+    status: "proposed",
+    unset: ["resolution", "close-reason"],
+    message: `Compensate interrupted VCS merge into ${refId}`,
+    field: [`vcs_ref=${originalRef}`],
+  });
 }
 
 /** Append or reconcile one concurrently won deterministic merge event. */
@@ -424,6 +444,7 @@ async function runChangesetMerge(
     : "pm-vcs";
   const eventId = `merge-${id}`;
   const relationshipId = `changeset-${id}`;
+  let itemAppliedByAttempt = false;
   const steps: WorkspaceTransactionStep[] = [
     {
       id: "merge-item",
@@ -443,18 +464,18 @@ async function runChangesetMerge(
           message: `VCS merge into ${refId}`,
           field: [`vcs_ref=${refId}`],
         });
+        itemAppliedByAttempt = true;
         return { id, status: "merged", resolution };
       },
-      compensate: async () => {
-        const current = await getVcsItem(client, id, "Changeset");
-        if (!matchesCommittedChangeset(current.item, refId, resolution)) return;
-        await client.update(id, {
-          status: "proposed",
-          unset: ["resolution", "close-reason"],
-          message: `Compensate interrupted VCS merge into ${refId}`,
-          field: [`vcs_ref=${originalRef}`],
-        });
-      },
+      compensate: () =>
+        compensateChangesetMerge(
+          client,
+          id,
+          refId,
+          resolution,
+          originalRef,
+          itemAppliedByAttempt,
+        ),
     },
     {
       id: "merge-relationship",
