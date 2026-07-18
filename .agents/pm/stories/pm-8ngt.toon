@@ -6,7 +6,7 @@ status: open
 priority: 4
 tags[5]: extensibility,horizon-5,long-term,sdk,universal-tool
 created_at: "2026-07-06T22:17:47.761Z"
-updated_at: "2026-07-13T22:02:04.077Z"
+updated_at: "2026-07-18T07:17:41.318Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: Primitive-gap inventory exists for at least one non-PM domain; every gap is filed as an individual dedupe-checked SDK item under pm-usfg or explicitly waived; exemplar spike child demonstrates the story end-to-end
@@ -16,6 +16,22 @@ confidence: medium
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-xc68,related,"2026-07-13T22:02:04.058Z",null,null
   pm-xtrd,blocked_by,"2026-07-13T22:02:04.058Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-18T05:54:11.865Z",codex-sdk-vcs-20260718,"Implementation start 2026-07-18: canonical child pm-xtrd is now active as the acceptance vehicle; pm-ju83 is active only for the durable graph/event primitives the exemplar concretely exercises. No speculative or duplicate SDK item was created."
+  "2026-07-18T07:17:36.324Z",codex-sdk-vcs-20260718,"Story tranche evidence 2026-07-18: the VCS acceptance vehicle proves a non-PM domain using only public SDK primitives and includes an itemized GAP_REPORT.md. Every observed primitive need is either complete, explicitly waived as product-specific/bounded, or retained on canonical existing graph/scale lineage; no speculative duplicate SDK items were created. Linked acceptance test passes. The separate temporal digital-twin child pm-kr3t remains open, so this broader story returns to open rather than closing over an active future exemplar."
 notes[1]{created_at,author,text}:
   "2026-07-11T10:49:01.607Z",maintainer-agent,"Maintainer re-affirmed 2026-07-11: this story is an explicit product goal (build a git-like VCS or an entire company's business logic on pm SDK primitives alone). Plan of record lives in the SDK-DX map note on epic pm-usfg (2026-07-11) — primitive checklist with owners, and the sequencing rule: the pm-xtrd changeset-exemplar spike runs AFTER the six promotion slices land and is the honest detector of missing primitives; no speculative SDK features ahead of it. Acceptance sketch for this story: the spike's package imports only public SDK entry points (boundary gate pm-8778 proves it), defines its own item types/statuses via the schema primitives, and replays its full event history through the immutable history stream."
+learnings[1]{created_at,author,text}:
+  "2026-07-18T07:17:37.026Z",codex-sdk-vcs-20260718,"Project management = context management generalizes cleanly: custom entities, lifecycle, business rules, point-in-time state, graph semantics, and derived event projections can be composed as package-owned domain context while core supplies governed storage and execution primitives."
+files[3]{path,scope,note}:
+  packages/pm-vcs/GAP_REPORT.md,project,Non-PM domain primitive inventory and explicit waiver record
+  packages/pm-vcs/README.md,project,Runnable beyond-PM acceptance workflow
+  tests/unit/packages/vcs-extension.spec.ts,project,End-to-end universal SDK story proof
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/vcs-extension.spec.ts,project,240,Non-PM domain acceptance story
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrq1a3j2-ljkczf,test,passed,"2026-07-18T07:16:28.981Z","2026-07-18T07:16:44.510Z","2026-07-18T07:16:44.510Z",1,0,0
+docs[2]{path,scope,note}:
+  packages/pm-vcs/GAP_REPORT.md,project,Foreign-domain gap inventory
+  packages/pm-vcs/README.md,project,Beyond-PM SDK exemplar guide
 body: "# Story — Beyond-PM domains on pm SDK primitives\n\nAs a **platform developer**, I can model a **non-PM domain system** — for example a git-like version-control workflow (changesets, refs, merges) or a company's business processes (approvals, invoicing, HR flows) — using **only public pm SDK primitives**, so the SDK proves itself as a universal, event-sourced application platform rather than a PM-only toolkit.\n\n## Why\nThe product vision (ADR pm-oxq5) states the SDK should be extensible enough to build \"an entire SCV like Git or entire companies and their business logic\". Today every SDK story/exemplar (pm-w89s, pm-cbwg) stays inside the PM domain. Nothing exercises — or even inventories — the primitive set a foreign domain needs: fully custom item types and status graphs, domain verbs via extension commands, transactional multi-item mutations, event-sourced history replay as domain state, and hooks as business rules.\n\n## Scope (exploration story, horizon 5)\n- Inventory the primitive gaps: which SDK capabilities does a non-PM domain need that the promoted primitive set (pm-rjqr/pm-98cz/pm-3mna/pm-4a7m et al.) does not yet expose?\n- Feed each gap back as a concrete SDK item under pm-usfg (create-only, dedupe-checked).\n- Acceptance is demonstrated by the exemplar spike child, not by shipping a production VCS.\n\n## Out of scope\nBuilding a real VCS or ERP; performance parity with git; any core storage change (scale work belongs to pm-9rxu).\n\n## Sequencing\nAfter the PM-domain exemplar pm-cbwg proves the custom-PM-tool story, and after the schema/config SDK promotion pm-3mna. Parked at P4 with pm-is1a (federation) in horizon 5."

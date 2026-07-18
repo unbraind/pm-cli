@@ -2,18 +2,43 @@ id: pm-xtrd
 title: "Beyond-PM SDK exemplar spike: minimal VCS-style changeset workflow as a pm package (custom schema + event-sourced history + hooks)"
 description: "Acceptance vehicle for story pm-8ngt: an SDK-only exemplar package modeling a Changeset domain (draft→proposed→merged/abandoned, domain verbs as extension commands, merge rules as hooks, state via history replay). Produces an itemized SDK gap report. Mirrors the pm-cbwg/pm-kanban archetype pattern."
 type: Feature
-status: open
+status: closed
 priority: 4
 tags[5]: exemplar,extensibility,sdk,spike,universal-tool
 created_at: "2026-07-06T22:18:00.517Z"
-updated_at: "2026-07-13T22:02:03.605Z"
+updated_at: "2026-07-18T07:17:40.658Z"
+closed_at: "2026-07-18T07:17:39.286Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: Spike package activates cleanly importing only the public SDK (zero private core imports); create→propose→merge→history-replay round-trip passes a sandbox smoke; gap report exists with each gap filed as a pm item or explicitly waived
 parent: pm-8ngt
 risk: medium
 confidence: medium
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-3mna,blocked_by,"2026-07-13T22:02:03.590Z",null,null
-  pm-cbwg,blocked_by,"2026-07-13T22:02:03.590Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-18T05:54:11.258Z",codex-sdk-vcs-20260718,"Implementation start 2026-07-18: dependencies pm-3mna and pm-cbwg are live-verified closed. This wide lane will build the package against public SDK exports only, exercise custom schema/statuses, commands/hooks, attributable history replay, and produce a structured gap report plus packed temp-workspace proof."
+  "2026-07-18T07:17:34.514Z",codex-sdk-vcs-20260718,"Acceptance evidence 2026-07-18: @unbrained/pm-vcs ships 2 domain types, 4 fields, a custom commits_to ontology, VCS profile/workflow, 7 domain commands, reviewed-merge hook, point-in-time history reconstruction, and durable merge-ledger projection using public SDK contracts only. Linked tests pass 2/2. Packed manual proof installed the tarball into an isolated project, installed vcs, applied its profile, created/proposed/merged a changeset, reconstructed version 1, replayed version=1/processed=1 identically across fresh processes, passed isolated package doctor and tracker validation, and preserved normal core create/get."
+notes[1]{created_at,author,text}:
+  "2026-07-18T07:17:35.726Z",codex-sdk-vcs-20260718,"Gap disposition: production content-addressed object storage, tree diffing, and network transport are VCS-product concerns, not universal SDK gaps. Cross-item plus relationship atomic commit remains an explicit bounded-exemplar waiver; larger durable indexing and scale work stays on canonical pm-ju83/pm-m2il lineage."
+learnings[1]{created_at,author,text}:
+  "2026-07-18T07:17:35.117Z",codex-sdk-vcs-20260718,"A foreign-domain package can remain core-independent when the host injects lifecycle, history, and relationship services. Runtime package imports stay type-only; values come from context.sdk, allowing bundled installed copies to execute without private paths or nested CLI resolution."
+files[10]{path,scope,note}:
+  packages/pm-vcs/extensions/vcs/index.ts,project,Complete public-SDK VCS exemplar package and gap report
+  packages/pm-vcs/extensions/vcs/manifest.json,project,Complete public-SDK VCS exemplar package and gap report
+  packages/pm-vcs/extensions/vcs/package.json,project,Complete public-SDK VCS exemplar package and gap report
+  packages/pm-vcs/GAP_REPORT.md,project,Complete public-SDK VCS exemplar package and gap report
+  packages/pm-vcs/package.json,project,Complete public-SDK VCS exemplar package and gap report
+  packages/pm-vcs/README.md,project,Complete public-SDK VCS exemplar package and gap report
+  tests/fixtures/contracts/full.json,project,Relationship policy contract snapshot
+  tests/integration/cli.integration.spec.ts,project,First-party install-all package count acceptance
+  tests/integration/init-path-guard.integration.spec.ts,project,Init install-all package count acceptance
+  tests/unit/packages/vcs-extension.spec.ts,project,Installed and direct-source domain acceptance coverage
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/vcs-extension.spec.ts,project,240,VCS lifecycle history projection and failure-boundary acceptance
+  node scripts/smoke-npx-from-pack.mjs,project,300,Packed CLI and all 13 first-party packages smoke
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrq19r46-zrfl4s,test,passed,"2026-07-18T07:15:22.559Z","2026-07-18T07:16:28.422Z","2026-07-18T07:16:28.422Z",2,0,0
+docs[2]{path,scope,note}:
+  packages/pm-vcs/GAP_REPORT.md,project,Primitive-by-primitive foreign-domain assessment
+  packages/pm-vcs/README.md,project,Install lifecycle and package boundary guide
+close_reason: "Delivered and verified the public-SDK-only VCS changeset exemplar, gap report, durable replay, installed package lifecycle, and packed temp-workspace acceptance at exact full repository coverage."
 body: "# Spike — minimal VCS-style changeset workflow as a pm package\n\nBuild a small, throwaway-quality but end-to-end **exemplar package** that models a version-control-like domain purely on public pm SDK primitives: a `Changeset` custom type with a domain status graph (draft → proposed → merged/abandoned), `ref`/`branch` modeled as custom fields or link relations, domain verbs (`propose`, `merge`, `abandon`) as extension-registered commands, merge rules enforced by hooks, and domain state derived by replaying the audited history stream.\n\n## Why\nThis is the acceptance vehicle for the beyond-PM platform story (parent epic pm-usfg): the vision claims one could build \"a VCS like Git or a company's business logic\" on the SDK. A spike either demonstrates that with today's primitives or produces a precise, itemized gap list.\n\n## Deliverables\n- Exemplar package (sandbox or packages/ exemplar, mirroring the pm-cbwg / pm-kanban archetype pattern) importing ONLY the public SDK (`src/sdk`), zero private core imports (boundary ratchet pm-8778 applies).\n- A written gap report: every place the spike needed a workaround, filed as individual dedupe-checked SDK items under pm-usfg.\n- Smoke test in a temp workspace proving create → propose → merge → history-replay round-trip.\n\n## Acceptance criteria\nSpike package activates cleanly; the changeset workflow round-trip passes in a sandbox smoke; gap report exists with each gap either filed as a pm item or explicitly waived; no private core imports.\n\n## Sequencing\nDepends on pm-cbwg (PM-domain exemplar first) and pm-3mna (schema/config primitives in the SDK)."

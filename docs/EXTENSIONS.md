@@ -225,6 +225,7 @@ First-party package exemplars:
 - [`pm-search-advanced`](../packages/pm-search-advanced/README.md): deterministic local search provider registration.
 - [`pm-templates`](../packages/pm-templates/README.md): reusable create-template package.
 - [`pm-todos`](../packages/pm-todos/README.md): todo import/export package with generated command contracts.
+- [`pm-vcs`](../packages/pm-vcs/README.md): deliberately non-PM VCS exemplar using custom schema, lifecycle commands, point-in-time reads, and durable relationship projections entirely through public SDK contracts.
 
 ## Governance Policy
 
@@ -296,17 +297,16 @@ Common APIs:
 - `api.registerFlags(command, flags)` adds runtime command flags. A flag may declare `value_type` (canonical; the legacy `type` alias is honored only when `value_type` is absent), `list: true` to accumulate repeated/comma-joined values like core `--tags`, and a `default` applied when the flag is omitted.
 - `api.registerItemFields(fields)` adds custom metadata fields. Agents can set declared fields with repeatable `pm create --field name=value` and `pm update <id> --field name=value`; undeclared names are rejected. Each field `type` is validated against `string | number | boolean | array | object` at activation, with a did-you-mean hint on typos.
 - `api.registerItemTypes(types)` adds custom item types.
+- `api.registerRelationshipKinds(definitions)` adds validated graph semantics. Definitions declare direction, inverse spelling, ordering/precedence, hierarchy, cardinality, lifecycle, aliases, payload schema, compatibility version, and self-edge policy. Active definitions are merged into native CLI, MCP, and SDK workspace graph assembly. Requires the `schema` capability and is governed by the `schema.relationshipkinds` policy surface.
 - `api.registerMigration(definition)` adds schema migrations.
 - `api.registerProfile(profile)` contributes a project profile — a declarative archetype bundling item types, statuses, fields, per-type workflows, config, templates, and package recommendations. Once active it resolves by name through `pm profile list/show/apply` alongside the core `agile`/`ops`/`research` archetypes (built-in names are reserved; a colliding registration is ignored with a warning). Requires the `schema` capability.
 - `api.registerService("output_format", handler)` customizes output formatting through the service override API. Return `context.payload`, `null`, or `undefined` for commands the extension does not own.
 - `api.registerRenderer("toon" | "json", renderer)` adds format-specific renderers. Return `null` for unrelated payloads so pm falls back to native rendering.
-- `suppressHostOutput(result?)` from `@unbrained/pm-cli/sdk` returns a structural
-  result marker for commands that already wrote their output. The CLI emits no
-  second payload; the optional `result` remains available to hooks, telemetry,
-  and embedded hosts.
+- `suppressHostOutput(result?)` from `@unbrained/pm-cli/sdk` marks commands that already wrote output, preventing a second CLI payload while retaining the optional result for hooks, telemetry, and embedded hosts.
 - `api.hooks.beforeCommand(handler)`, `api.hooks.afterCommand(handler)`, `api.hooks.onWrite(handler)`, `api.hooks.onRead(handler)`, and `api.hooks.onIndex(handler)` add lifecycle hooks.
   `afterCommand` receives command outcome fields plus optional compact `affected` item entries for mutations, including `previous_status`, `status`, `changed_fields`, and partial `previous`/`current` item metadata snapshots.
   `onWrite` always includes `path`, `scope`, and `op`; item mutations also add optional `item_id`, `item_type`, `before`, `after`, and `changed_fields`.
+- Registered command handlers receive `context.sdk`, a host-bound service bundle containing a native-action `PmClient`, `getItemAt`, and `openRelationshipEventStore`. The client reuses the already-active extension schema context without recursively loading extensions, so package commands can compose core lifecycle operations safely in CLI and SDK hosts.
 - An optional module-level `deactivate()` export (VS Code-style) is invoked by the host on shutdown/reload — including by the long-running MCP server between native-action requests — to close connections, clear timers, and release resources opened during `activate`. Teardown is best-effort and timeout-bounded by default so it does not block other extensions, except when a host explicitly disables waiting limits with `deactivate_timeout_ms: 0` or `Infinity`, which can wait indefinitely for a hanging `deactivate()` hook.
 
 The bundled `pm-lifecycle-hooks` package is the hook exemplar: it declares only

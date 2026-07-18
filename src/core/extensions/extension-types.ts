@@ -16,6 +16,14 @@ import type {
   ProjectProfileDefinition,
   ProjectProfileRegistrationInput,
 } from "../profile/profile-presets.js";
+import type { RelationshipKindDefinition } from "../../sdk/relationships.js";
+import type { PmClient } from "../../sdk/runtime.js";
+import type {
+  GetItemAtResult,
+} from "../../sdk/history-read.js";
+import type {
+  RelationshipEventStore,
+} from "../../sdk/relationship-history.js";
 
 /** Public contract for known extension capabilities, shared by SDK and presentation-layer consumers. */
 export const KNOWN_EXTENSION_CAPABILITIES = [
@@ -94,6 +102,7 @@ export const KNOWN_EXTENSION_POLICY_SURFACES = [
   "schema.flags",
   "schema.itemfields",
   "schema.itemtypes",
+  "schema.relationshipkinds",
   "schema.migrations",
   "schema.profiles",
   "parser.override",
@@ -541,6 +550,22 @@ export interface CommandHandlerContext {
   global: GlobalOptions;
   /** Value that configures or reports pm root for this contract. */
   pm_root: string;
+  /** Host-bound SDK runtime that avoids package-resolution and private-import coupling. */
+  sdk?: ExtensionCommandSdk;
+}
+
+/** Runtime SDK services injected into every extension command invocation. */
+export interface ExtensionCommandSdk {
+  /** Tracker-bound client using the invocation author and workspace. */
+  client: PmClient;
+  /** Reconstruct one item at a history version or timestamp. */
+  getItemAt(id: string, target: string): Promise<GetItemAtResult>;
+  /** Open a durable event store with package-contributed relationship semantics. */
+  openRelationshipEventStore(options: {
+    nodes: Iterable<string>;
+    definitions: readonly RelationshipKindDefinition[];
+    relativePath?: string;
+  }): Promise<RelationshipEventStore>;
 }
 
 /** Documents the parser override context payload exchanged by command, SDK, and package integrations. */
@@ -1201,6 +1226,16 @@ export interface RegisteredExtensionSchemaItemTypeDefinitions {
   types: SchemaItemTypeDefinition[];
 }
 
+/** Relationship ontology definitions contributed by one active extension. */
+export interface RegisteredExtensionRelationshipKindDefinitions {
+  /** Extension layer that owns these definitions. */
+  layer: ExtensionLayer;
+  /** Extension name that owns these definitions. */
+  name: string;
+  /** Validated immutable relationship-kind definitions. */
+  definitions: RelationshipKindDefinition[];
+}
+
 /** Documents the registered extension schema migration definition payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredExtensionSchemaMigrationDefinition {
   /** Value that configures or reports layer for this contract. */
@@ -1287,6 +1322,8 @@ export interface ExtensionRegistrationRegistry {
   item_fields: RegisteredExtensionSchemaFieldDefinitions[];
   /** Value that configures or reports item types for this contract. */
   item_types: RegisteredExtensionSchemaItemTypeDefinitions[];
+  /** Value that configures application-defined relationship semantics. */
+  relationship_kinds: RegisteredExtensionRelationshipKindDefinitions[];
   /** Value that configures or reports migrations for this contract. */
   migrations: RegisteredExtensionSchemaMigrationDefinition[];
   /** Value that configures or reports profiles for this contract. */
@@ -1311,6 +1348,8 @@ export interface ExtensionRegistrationCounts {
   item_fields: number;
   /** Value that configures or reports item types for this contract. */
   item_types: number;
+  /** Number of application-defined relationship kinds. */
+  relationship_kinds?: number;
   /** Value that configures or reports migrations for this contract. */
   migrations: number;
   /** Value that configures or reports profiles for this contract. */
@@ -1366,6 +1405,8 @@ export interface ExtensionApi {
   registerItemFields(fields: SchemaFieldDefinition[]): void;
   /** Value that configures or reports register item types for this contract. */
   registerItemTypes(types: SchemaItemTypeDefinition[]): void;
+  /** Register versioned relationship semantics consumed by every graph surface. */
+  registerRelationshipKinds(definitions: RelationshipKindDefinition[]): void;
   /** Value that configures or reports register migration for this contract. */
   registerMigration(definition: SchemaMigrationDefinition): void;
   /** Value that configures or reports register profile for this contract. */

@@ -3420,7 +3420,7 @@ describe("extension command runtime", () => {
       const beforeInstall = await runExtension(undefined, { catalog: true, project: true, vocabulary: "package" }, { path: context.pmPath });
       expect(beforeInstall.action).toBe("catalog");
       expect(beforeInstall.details).toMatchObject({
-        total: 12,
+        total: 13,
         scope: "project",
         installable_resource_kinds: ["extensions"],
         metadata_only_resource_kinds: ["docs", "examples", "assets", "prompts"],
@@ -3550,6 +3550,16 @@ describe("extension command runtime", () => {
             catalog: {
               display_name: "Todos Import/Export",
               category: "migration",
+            },
+          },
+          {
+            alias: "vcs",
+            available: true,
+            installed: false,
+            package_name: "@unbrained/pm-vcs",
+            catalog: {
+              display_name: "VCS SDK Exemplar",
+              category: "sdk",
             },
           },
         ],
@@ -3783,7 +3793,7 @@ describe("extension command runtime", () => {
       const wildcardInstall = await runExtension("*", { install: true, project: true }, { path: context.pmPath });
       expect(wildcardInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 12,
+        installed_count: 13,
         packages: [
           {
             alias: "audit",
@@ -3855,13 +3865,18 @@ describe("extension command runtime", () => {
             extension: { name: "builtin-todos-import-export" },
             activated: true,
           },
+          {
+            alias: "vcs",
+            extension: { name: "builtin-vcs-exemplar" },
+            activated: true,
+          },
         ],
       });
 
       const allInstall = await runExtension("all", { install: true, project: true }, { path: context.pmPath });
       expect(allInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 12,
+        installed_count: 13,
       });
     });
   });

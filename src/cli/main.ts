@@ -94,6 +94,8 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { PmSettings } from "../types/index.js";
 import { resolveSubcommandFlagContractsForCommand } from "../sdk/cli-contracts.js";
 import { recordContextUsageTouches } from "../sdk/context-usage.js";
+import { createExtensionCommandSdk } from "../sdk/extension-command-context.js";
+import { PmClient } from "../sdk/runtime.js";
 import {
   coerceLooseCommandOptionsWithFlagDefinitions,
   collectLooseCommandOptionKeysForDefinitions,
@@ -2025,6 +2027,18 @@ async function executeRegisteredRuntimeMigrations(
 }
 
 /* c8 ignore start */
+/** Build one host-bound extension SDK using the command's resolved author. */
+function buildExtensionCommandSdk(pmRoot: string, global: GlobalOptions) {
+  const author =
+    typeof global.author === "string" && global.author.trim()
+      ? global.author.trim()
+      : "pm-extension";
+  return createExtensionCommandSdk(
+    pmRoot,
+    PmClient.forActiveExtensionHost({ pmRoot, author }),
+  );
+}
+
 async function runRequiredExtensionCommand(
   command: Command,
   options: Record<string, unknown>,
@@ -2076,6 +2090,7 @@ async function runRequiredExtensionCommand(
     options: commandOptions,
     global: resolvedGlobalOptions,
     pm_root: pmRoot,
+    sdk: buildExtensionCommandSdk(pmRoot, resolvedGlobalOptions),
   });
   if (
     resolvedGlobalOptions.profile &&
@@ -2260,6 +2275,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
           options: commandOptions,
           global: globalOptions,
           pm_root: pmRoot,
+          sdk: buildExtensionCommandSdk(pmRoot, globalOptions),
         });
         maybePrintExtensionProfileWarnings(
           globalOptions.profile,

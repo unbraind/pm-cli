@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Beyond-PM SDK exemplar spike: minimal VCS-style changeset workflow as a pm package (custom schema + event-sourced history + hooks) ([pm-xtrd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-xtrd.toon))
+
 ## 2026.7.18 - 2026-07-18
 
 ### Fixed

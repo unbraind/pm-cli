@@ -50,6 +50,7 @@ import {
   clearWorkspaceContractsCache,
   memoizeWorkspaceExtensionRegistrations,
 } from "./workspace-contracts-cache.js";
+import { createExtensionCommandSdk } from "./extension-command-context.js";
 export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
 import {
   type AggregateOptions,
@@ -694,11 +695,14 @@ export interface PmClientOptions {
   noExtensions?: boolean;
 }
 
+const ACTIVE_EXTENSION_HOST_CONTEXT = Symbol("pm.active-extension-host-context");
+
 interface PmClientDefaults {
   path?: string;
   cwd?: string;
   author?: string;
   noExtensions?: boolean;
+  [ACTIVE_EXTENSION_HOST_CONTEXT]?: true;
 }
 
 function splitFullClientMutationOptions(
@@ -731,6 +735,13 @@ export class PmClient {
         ? {}
         : { noExtensions: options.noExtensions }),
     };
+  }
+
+  /** Create a native-action client that reuses an extension host's active schema context. */
+  public static forActiveExtensionHost(options: PmClientOptions): PmClient {
+    const client = new PmClient({ ...options, noExtensions: true });
+    client.defaults[ACTIVE_EXTENSION_HOST_CONTEXT] = true;
+    return client;
   }
 
   /** Run any native or extension-contributed action through the SDK dispatcher. */
@@ -2470,6 +2481,16 @@ async function dispatchActiveExtensionAction(
     options: extensionOptionsFromArgs(args, options),
     global,
     pm_root: active.pmRoot,
+    sdk: createExtensionCommandSdk(
+      active.pmRoot,
+      PmClient.forActiveExtensionHost({
+        pmRoot: active.pmRoot,
+        author:
+          typeof options.author === "string" && options.author.trim()
+            ? options.author.trim()
+            : "pm-extension",
+      }),
+    ),
   });
   if (!handlerResult.handled) {
     const suffix =
@@ -2675,6 +2696,13 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
   const explicitCwd = readString(resolved.args, "cwd");
   const resolutionCwd = explicitCwd ?? process.cwd();
   try {
+    if (
+      (args as PmActionInput & { [ACTIVE_EXTENSION_HOST_CONTEXT]?: true })[
+        ACTIVE_EXTENSION_HOST_CONTEXT
+      ] === true
+    ) {
+      return await dispatchAction(resolved.action, resolved.args, global, null);
+    }
     return await withActiveExtensions(
       global,
       explicitCwd,

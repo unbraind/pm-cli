@@ -67,6 +67,7 @@ export function createEmptyExtensionRegistrationRegistry(): ExtensionRegistratio
     flags: [],
     item_fields: [],
     item_types: [],
+    relationship_kinds: [],
     migrations: [],
     profiles: [],
     importers: [],

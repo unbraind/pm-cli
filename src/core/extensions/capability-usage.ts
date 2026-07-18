@@ -42,6 +42,7 @@ export const EXTENSION_CAPABILITY_REGISTRATION_SURFACES = {
     "registerFlags",
     "registerItemFields",
     "registerItemTypes",
+    "registerRelationshipKinds",
     "registerMigration",
     "registerProfile",
   ],
@@ -151,6 +152,7 @@ function attributeCapabilityUsage(
   record(registrations.flags, "schema");
   record(registrations.item_fields, "schema");
   record(registrations.item_types, "schema");
+  record(registrations.relationship_kinds, "schema");
   record(registrations.migrations, "schema");
   record(registrations.profiles, "schema");
   record(registrations.importers, "importers");

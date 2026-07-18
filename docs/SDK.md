@@ -158,7 +158,7 @@ Command/action contract exports:
 - Linked-resource kernel primitives: `runFiles`, `runFilesDiscover`, `runDocs`, `runDeps`, `runLinkedArtifacts`, parsing/normalization/path-validation helpers, and their typed contracts. The CLI files/docs/deps modules are presentation-only re-exports of these SDK implementations.
 - Actionability primitives: `collectBlockedByIds`, `resolveItemBlockers`, `collectDependencyBlockedIds`, and `computeActionabilityReport` expose the same edge-aware blocked/ready definition used by `pm next`, `pm context`, and `pm list-blocked`. Embedded schedulers can therefore classify custom lifecycle schemas without importing CLI or core modules.
 - Dependency-governance primitives: `collectDanglingDependencyReferences`, `collectMissingDependencyTargetIds`, and `assembleWorkspaceRelationshipGraph` normalize hierarchy, scalar blockers, and structured dependencies into one graph while partitioning missing targets into actionable active holders, informational terminal-history holders, and the legacy `no-active-blocker` sentinel without mutating stored history.
-- Relationship graph primitives: `RelationshipKindRegistry`, `createRelationshipKindRegistry`, `RelationshipGraph`, `RelationshipEventLog`, `RelationshipEventStore`, `buildRelationshipContext`, `buildDepsRelationshipContext`, `hierarchyAncestors`, `hierarchyDescendants`, `orderingPredecessors`, `orderingSuccessors`, `enumerateRelationshipPaths`, `auditWorkspaceRelationshipGraph`, `isOrderingRelationshipKind`, and `dependencyToRelationship` provide application-defined edge semantics, durable replay, bounded semantic traversal, policy-aware governance, and explainable context queries. See [Relationship graph semantics](RELATIONSHIP_GRAPH.md).
+- Relationship graph primitives: `RelationshipKindRegistry`, `createRelationshipKindRegistry`, `RelationshipGraph`, `RelationshipEventLog`, `RelationshipEventStore`, `buildRelationshipContext`, `buildDepsRelationshipContext`, `hierarchyAncestors`, `hierarchyDescendants`, `orderingPredecessors`, `orderingSuccessors`, `enumerateRelationshipPaths`, `auditWorkspaceRelationshipGraph`, `isOrderingRelationshipKind`, and `dependencyToRelationship` provide application-defined edge semantics, durable replay, bounded semantic traversal, policy-aware governance, and explainable context queries. `RelationshipEventLog.stream/project` and their durable-store equivalents page immutable prefixes and fold them into deterministic application state with exact version, processed-count, and as-of metadata. See [Relationship graph semantics](RELATIONSHIP_GRAPH.md).
 - Typed customization primitives on `PmClient`: `init`, `config`, `schema`, `schemaList`, `schemaShow`, `schemaAddType`, `schemaRemoveType`, `schemaAddStatus`, `schemaRemoveStatus`, `schemaAddField`, `schemaRemoveField`, `schemaListFields`, `schemaShowField`, `schemaApplyPreset`, `schemaInferTypes`, `schemaShowStatus`, `profile`, `profileList`, `profileShow`, `profileApply`, and `profileLint`
 - Workspace-scaffold primitives: `ensurePmGitignore` and `getPmGitignoreBlock` let custom tools apply the same idempotent runtime/search cache policy as `pm init` without importing CLI internals.
 - Customization primitive option/result contracts: `InitCommandOptions` / `InitResult`, `ConfigCommandOptions` / `ConfigResult`, `SchemaSubcommand` / `SchemaResult` / `SchemaInspectResult`, `SchemaListResult`, `SchemaShowResult`, `SchemaAddTypeResult`, `SchemaRemoveTypeResult`, `SchemaAddStatusResult`, `SchemaRemoveStatusResult`, `SchemaAddFieldResult`, `SchemaRemoveFieldResult`, `SchemaListFieldsResult`, `SchemaShowFieldResult`, `SchemaApplyPresetResult`, `SchemaAddTypeInferResult`, `SchemaShowStatusResult`, `ProfileSubcommand` / `ProfileResult`, `ProfileListResult`, `ProfileShowResult`, `ProfileApplyResult`, `ProfileLintResult`
@@ -464,6 +464,12 @@ failure can be asserted, while one that throws an error carrying a numeric
 error listing the available handler command paths. Because
 `registerImporter`/`registerExporter` register handlers under `"<name> import"` /
 `"<name> export"`, the same helper exercises importer and exporter handlers too.
+
+Production command contexts also expose `sdk`: a host-bound native-action
+`PmClient`, point-in-time `getItemAt`, and durable relationship-store factory.
+The host client deliberately reuses the current extension activation instead of
+recursively loading packages, preserving registered schema while avoiding
+activation-queue re-entry.
 
 The remaining runtime surfaces an extension can register have matching invoke
 helpers, so the "invoke" verb covers the whole command pipeline — not just
@@ -1529,6 +1535,9 @@ deriveExtensionCapabilities(blueprint); // ["commands", "parser", "schema"]
 The blueprint's record-keyed fields (`commandOverrides`, `flags`, `parsers`,
 `renderers`, `services`) map a routing key to its handler, mirroring the
 two-argument `api.register*` overloads; `hooks` groups the five lifecycle kinds.
+The array-valued `relationshipKinds` field registers application-defined graph
+semantics and contributes the `schema` capability just like `itemTypes`,
+`itemFields`, and `profiles`.
 `composeExtension` is a pure assembler: it does not validate definitions —
 per-surface contract enforcement stays in `api.register*` and the loader, so a
 malformed definition surfaces the same activation diagnostic as a hand-written

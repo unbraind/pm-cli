@@ -35,6 +35,10 @@ import type {
   ProjectProfileDefinition,
   ProjectProfileRegistrationInput,
 } from "../profile/profile-presets.js";
+import {
+  createRelationshipKindRegistry,
+  type RelationshipKindDefinition,
+} from "../../sdk/relationships.js";
 // Cohesive helper groups now live in sibling modules. They are imported for the
 // discovery/activation code that stays here and re-exported below so existing
 // import sites (sdk/index.ts, commands/extension.ts, health.ts, tests, …) keep
@@ -2281,6 +2285,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
     this.registerFlags = this.registerFlags.bind(this);
     this.registerItemFields = this.registerItemFields.bind(this);
     this.registerItemTypes = this.registerItemTypes.bind(this);
+    this.registerRelationshipKinds = this.registerRelationshipKinds.bind(this);
     this.registerMigration = this.registerMigration.bind(this);
     this.registerProfile = this.registerProfile.bind(this);
     this.registerRenderer = this.registerRenderer.bind(this);
@@ -2781,6 +2786,49 @@ class ExtensionApiRegistrar implements ExtensionApi {
     });
   }
 
+  public registerRelationshipKinds(
+    definitions: RelationshipKindDefinition[],
+  ): void {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "schema",
+      "registerRelationshipKinds",
+    );
+    if (
+      !this.allowRegistration(
+        "schema.relationshipkinds",
+        "registerRelationshipKinds",
+        "schema",
+      )
+    ) {
+      return;
+    }
+    const normalized = normalizeRegistrationRecordList(
+      "registerRelationshipKinds definitions",
+      definitions,
+    ) as unknown as RelationshipKindDefinition[];
+    if (normalized.length === 0) {
+      throw new TypeError(
+        "registerRelationshipKinds requires at least one definition",
+      );
+    }
+    const registry = createRelationshipKindRegistry();
+    for (const registration of this.#registrationRegistry.relationship_kinds) {
+      for (const definition of registration.definitions) {
+        registry.register(definition);
+      }
+    }
+    const validated = normalized.map((definition) => {
+      registry.register(definition);
+      return registry.require(definition.kind);
+    });
+    this.#registrationRegistry.relationship_kinds.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
+      definitions: validated,
+    });
+  }
+
   public registerMigration(definition: SchemaMigrationDefinition): void {
     assertExtensionCapability(
       this.#loadedExtension,
@@ -3253,11 +3301,18 @@ function getRegistrationCounts(
     (total, entry) => total + entry.types.length,
     0,
   );
+  const relationshipKindCount = (registrations.relationship_kinds ?? []).reduce(
+    (total, entry) => total + entry.definitions.length,
+    0,
+  );
   return {
     commands: commandCount,
     flags: flagCount,
     item_fields: itemFieldCount,
     item_types: itemTypeCount,
+    ...(relationshipKindCount > 0
+      ? { relationship_kinds: relationshipKindCount }
+      : {}),
     migrations: registrations.migrations.length,
     profiles: registrations.profiles.length,
     importers: registrations.importers.length,
