@@ -526,6 +526,12 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         },
       )) as { id: string };
       await invoke("vcs propose", [compensatedRace.id]);
+      const prelockStateRace = (await invoke(
+        "vcs create",
+        ["Pre-lock state race"],
+        { ref: ref.id, treeHash: "sha256:prelock-state-race" },
+      )) as { id: string };
+      await invoke("vcs propose", [prelockStateRace.id]);
       const missingVcsRef = (await invoke("vcs create", ["Missing VCS ref"], {
         ref: ref.id,
         treeHash: "sha256:missing-vcs-ref",
@@ -553,6 +559,7 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         crashConflict.id,
         missingCommit.id,
         compensatedRace.id,
+        prelockStateRace.id,
         missingVcsRef.id,
         vanishingRelationship.id,
         ref.id,
@@ -564,6 +571,22 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         relativePath: "relationships/vcs-events.jsonl",
       });
       const get = client.get.bind(client);
+      const commitTransaction = sdk.commitWorkspaceTransaction;
+      const prelockMutation = vi
+        .spyOn(sdk, "commitWorkspaceTransaction")
+        .mockImplementationOnce(async (options) => {
+          await client.update(prelockStateRace.id, {
+            status: "abandoned",
+            resolution: "Concurrent state transition",
+            message: "Inject a state change after merge preflight",
+          });
+          return commitTransaction(options);
+        });
+      onTestFinished(() => prelockMutation.mockRestore());
+      await expect(
+        invoke("vcs merge", [prelockStateRace.id], { ref: ref.id }),
+      ).rejects.toThrow(/requires proposed changeset/);
+      prelockMutation.mockRestore();
       const missingVcsRefGet = vi
         .spyOn(client, "get")
         .mockImplementationOnce(async (...args) => {
@@ -627,7 +650,6 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         status: "merged",
       });
       appendRace.mockRestore();
-      const commitTransaction = sdk.commitWorkspaceTransaction;
       const crashAfterItem = vi
         .spyOn(sdk, "commitWorkspaceTransaction")
         .mockImplementationOnce((options) =>

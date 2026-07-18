@@ -351,6 +351,12 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && Boolean(value.trim());
 }
 
+function requiredChangesetRef(item: Partial<ItemMetadata>, id: string): string {
+  if (!isNonEmptyString(item.vcs_ref))
+    throw new TypeError(`vcs Changeset ${id} is missing vcs_ref`);
+  return item.vcs_ref.trim();
+}
+
 function matchesCommittedChangeset(
   item: Partial<ItemMetadata>,
   refId: string,
@@ -434,10 +440,7 @@ async function runChangesetMerge(
   const client = clientFor(context);
   const changeset = await getVcsItem(client, id, "Changeset");
   await getVcsItem(client, refId, "VcsRef");
-  const originalRefValue = changeset.item.vcs_ref;
-  if (!isNonEmptyString(originalRefValue))
-    throw new TypeError(`vcs Changeset ${id} is missing vcs_ref`);
-  const originalRef = originalRefValue.trim();
+  requiredChangesetRef(changeset.item, id);
   const resolution = `Merged into ${refId}`;
   if (
     changeset.item.status !== "proposed" &&
@@ -462,7 +465,12 @@ async function runChangesetMerge(
             }
           : { state: "pending" };
       },
-      prepareCompensation: async () => ({ originalRef }),
+      prepareCompensation: async () => {
+        const current = await getVcsItem(client, id, "Changeset");
+        if (current.item.status !== "proposed")
+          throw new TypeError(`vcs merge requires proposed changeset ${id}`);
+        return { originalRef: requiredChangesetRef(current.item, id) };
+      },
       apply: async () => {
         await client.update(id, {
           status: "merged",

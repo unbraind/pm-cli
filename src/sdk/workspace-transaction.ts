@@ -65,7 +65,7 @@ export interface WorkspaceTransactionTransitionContext {
   transactionId: string;
   /** Current durable transaction attempt. */
   attempt: number;
-  /** Transition that has just become durable, or is about to run for `step_applied`. */
+  /** Transition reached; `step_applied` follows mutation and precedes journal recording. */
   transition: WorkspaceTransactionTransition;
   /** Step associated with a step-level transition. */
   stepId?: string;
@@ -212,10 +212,14 @@ function cloneJournalValue(
     const serialized = JSON.stringify(value, (_key, nestedValue: unknown) => {
       if (typeof nestedValue === "number" && !Number.isFinite(nestedValue))
         throw new TypeError(`${label} contains a non-finite number`);
+      if (
+        nestedValue === undefined ||
+        typeof nestedValue === "function" ||
+        typeof nestedValue === "symbol"
+      )
+        throw new TypeError(`${label} contains a non-JSON value`);
       return nestedValue;
-    });
-    if (serialized === undefined)
-      throw new TypeError(`${label} cannot be represented as JSON`);
+    }) as string;
     return JSON.parse(serialized) as WorkspaceTransactionJsonValue;
   } catch (error) {
     throw new TypeError(`${label} must be JSON serializable`, { cause: error });
@@ -440,7 +444,15 @@ async function applyPreparedTransaction(
       journal.status === "committed"
     )
       throw error;
-    await compensateAppliedSteps(options, journal);
+    try {
+      await compensateAppliedSteps(options, journal);
+    } catch (compensationError) {
+      throw new AggregateError(
+        [error, compensationError],
+        `Workspace transaction failed and compensation failed: ${String(compensationError)}`,
+        { cause: compensationError },
+      );
+    }
     throw error;
   }
 }
@@ -555,6 +567,7 @@ async function compensateAppliedSteps(
 export async function commitWorkspaceTransaction(
   options: CommitWorkspaceTransactionOptions,
 ): Promise<WorkspaceTransactionCommitResult> {
+  const pmRoot = requiredText(options.pmRoot, "Transaction pmRoot");
   const transactionId = requiredIdentifier(
     options.transactionId,
     "Transaction id",
@@ -570,9 +583,10 @@ export async function commitWorkspaceTransaction(
     DEFAULT_LOCK_WAIT_MS,
     "Transaction lock wait",
   );
-  if (options.steps.length === 0)
+  const steps = [...options.steps];
+  if (steps.length === 0)
     throw new TypeError("Workspace transaction requires at least one step");
-  const stepIds = options.steps.map((step) => {
+  const stepIds = steps.map((step) => {
     const stepId = requiredIdentifier(step.id, "Transaction step id");
     if (stepId !== step.id)
       throw new TypeError(
@@ -582,9 +596,18 @@ export async function commitWorkspaceTransaction(
   });
   if (new Set(stepIds).size !== stepIds.length)
     throw new TypeError("Workspace transaction step ids must be unique");
+  const stableOptions: CommitWorkspaceTransactionOptions = {
+    ...options,
+    pmRoot,
+    transactionId,
+    author,
+    steps,
+    lockTtlSeconds,
+    lockWaitMs,
+  };
 
   const release = await acquireLock(
-    options.pmRoot,
+    pmRoot,
     WORKSPACE_TRANSACTION_LOCK_ID,
     lockTtlSeconds,
     author,
@@ -593,7 +616,7 @@ export async function commitWorkspaceTransaction(
     lockWaitMs,
   );
   try {
-    const existing = await loadJournal(options.pmRoot, transactionId, stepIds);
+    const existing = await loadJournal(pmRoot, transactionId, stepIds);
     const recovered = existing !== undefined;
     if (existing?.status === "committed")
       return {
@@ -603,14 +626,14 @@ export async function commitWorkspaceTransaction(
         results: createResultMap(existing.results),
       };
     const prepared = await prepareJournalForApply(
-      options,
+      stableOptions,
       transactionId,
       author,
       stepIds,
       existing,
     );
     return await applyPreparedTransaction(
-      options,
+      stableOptions,
       prepared.journal,
       recovered || prepared.recovered,
     );

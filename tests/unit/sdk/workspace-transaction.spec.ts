@@ -120,6 +120,41 @@ describe("workspace SDK transactions", () => {
         { state: "compensated", value: 10 },
         { state: "compensated", value: 20 },
       ]);
+
+      let applied = false;
+      let aggregate: unknown;
+      try {
+        await commitWorkspaceTransaction({
+          pmRoot,
+          transactionId: "dual-failure",
+          author: "transaction-agent",
+          steps: [
+            {
+              id: "step",
+              inspect: async () => ({
+                state: applied ? "applied" : "pending",
+              }),
+              apply: async () => {
+                applied = true;
+                return { applied };
+              },
+              compensate: async () => {
+                throw new Error("compensation failed");
+              },
+            },
+          ],
+          onTransition: ({ transition }) => {
+            if (transition === "committing") throw new Error("forward failed");
+          },
+        });
+      } catch (error) {
+        aggregate = error;
+      }
+      expect(aggregate).toBeInstanceOf(AggregateError);
+      expect((aggregate as AggregateError).errors).toEqual([
+        expect.objectContaining({ message: "forward failed" }),
+        expect.objectContaining({ message: "compensation failed" }),
+      ]);
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
     }
@@ -129,7 +164,12 @@ describe("workspace SDK transactions", () => {
     const pmRoot = await mkdtemp(path.join(tmpdir(), "pm-sdk-transaction-"));
     try {
       let applied = false;
-      let resultKind: "bigint" | "nonfinite" | "valid" = "bigint";
+      let resultKind:
+        | "bigint"
+        | "nonfinite"
+        | "undefined"
+        | "symbol"
+        | "valid" = "bigint";
       const step: WorkspaceTransactionStep = {
         id: "runtime-json",
         inspect: async () => ({
@@ -144,6 +184,10 @@ describe("workspace SDK transactions", () => {
           if (resultKind === "bigint")
             return 1n as unknown as WorkspaceTransactionJsonValue;
           if (resultKind === "nonfinite") return { sequence: Number.NaN };
+          if (resultKind === "undefined")
+            return { dropped: undefined } as unknown as WorkspaceTransactionJsonValue;
+          if (resultKind === "symbol")
+            return { dropped: Symbol("value") } as unknown as WorkspaceTransactionJsonValue;
           return { safe: true };
         },
         compensate: async () => {
@@ -171,6 +215,16 @@ describe("workspace SDK transactions", () => {
       ).toMatchObject({ status: "compensated", results: {} });
 
       resultKind = "nonfinite";
+      await expect(commitWorkspaceTransaction(options)).rejects.toThrow(
+        "Step runtime-json result must be JSON serializable",
+      );
+      expect(applied).toBe(false);
+
+      resultKind = "undefined";
+      await expect(commitWorkspaceTransaction(options)).rejects.toThrow(
+        "Step runtime-json result must be JSON serializable",
+      );
+      resultKind = "symbol";
       await expect(commitWorkspaceTransaction(options)).rejects.toThrow(
         "Step runtime-json result must be JSON serializable",
       );
@@ -213,6 +267,14 @@ describe("workspace SDK transactions", () => {
         createTestStep("first", first, events),
         createTestStep("second", second, events),
       ];
+      await expect(
+        commitWorkspaceTransaction({
+          pmRoot: " ",
+          transactionId: "bad-root",
+          author: "agent",
+          steps: [],
+        }),
+      ).rejects.toThrow("Transaction pmRoot must be non-empty");
       await expect(
         commitWorkspaceTransaction({
           pmRoot,
@@ -559,6 +621,21 @@ describe("workspace SDK transactions", () => {
           steps: [{ ...duplicate, id: " same " }],
         }),
       ).rejects.toThrow("must not contain surrounding whitespace");
+
+      const mutableSteps = [duplicate];
+      await expect(
+        commitWorkspaceTransaction({
+          pmRoot,
+          transactionId: "stable-plan",
+          author: "agent",
+          steps: mutableSteps,
+          onTransition: ({ transition }) => {
+            if (transition === "prepared")
+              mutableSteps.push(createTestStep("late", state, []));
+          },
+        }),
+      ).resolves.toMatchObject({ results: { same: { value: 1 } } });
+      expect(mutableSteps).toHaveLength(2);
       const journalDir = path.join(pmRoot, "transactions", "sdk");
       await mkdir(journalDir, { recursive: true });
       await writeFile(
