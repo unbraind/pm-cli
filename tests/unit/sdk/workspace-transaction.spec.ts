@@ -262,6 +262,22 @@ describe("workspace SDK transactions", () => {
           steps: [],
         }),
       ).rejects.toThrow("author");
+      await expect(
+        commitWorkspaceTransaction({
+          pmRoot,
+          transactionId: null as unknown as string,
+          author: "agent",
+          steps: [],
+        }),
+      ).rejects.toThrow("Transaction id must be a string");
+      await expect(
+        commitWorkspaceTransaction({
+          pmRoot,
+          transactionId: "wrong-author-type",
+          author: 42 as unknown as string,
+          steps: [],
+        }),
+      ).rejects.toThrow("Transaction author must be a string");
       const state = {
         state: "pending" as WorkspaceTransactionStepState,
         value: 0,
@@ -293,6 +309,14 @@ describe("workspace SDK transactions", () => {
           steps: [duplicate, duplicate],
         }),
       ).rejects.toThrow("must be unique");
+      await expect(
+        commitWorkspaceTransaction({
+          pmRoot,
+          transactionId: "wrong-step-type",
+          author: "agent",
+          steps: [{ ...duplicate, id: false as unknown as string }],
+        }),
+      ).rejects.toThrow("Transaction step id must be a string");
       const journalDir = path.join(pmRoot, "transactions", "sdk");
       await mkdir(journalDir, { recursive: true });
       await writeFile(
@@ -330,6 +354,110 @@ describe("workspace SDK transactions", () => {
           steps: [createTestStep("step", state, [])],
         }),
       ).rejects.toThrow("journal is invalid");
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects forged journal lifecycle state before replay", async () => {
+    const pmRoot = await mkdtemp(path.join(tmpdir(), "pm-sdk-transaction-"));
+    try {
+      const journalDir = path.join(pmRoot, "transactions", "sdk");
+      await mkdir(journalDir, { recursive: true });
+      const state = {
+        state: "pending" as WorkspaceTransactionStepState,
+        value: 0,
+      };
+      const steps = [createTestStep("step", state, [])];
+      const base = {
+        schemaVersion: 1,
+        transactionId: "forged",
+        author: "agent",
+        status: "applying",
+        attempt: 1,
+        createdAt: "2026-07-18T00:00:00.000Z",
+        updatedAt: "2026-07-18T00:00:00.000Z",
+        stepIds: ["step"],
+        completedStepIds: [] as string[],
+        results: {},
+      };
+      const malformed = [
+        [],
+        { ...base, results: [] },
+        { ...base, completedStepIds: ["unknown"] },
+        { ...base, completedStepIds: ["step", "step"] },
+        { ...base, results: { step: { value: 1 } } },
+        { ...base, status: "committed" },
+        { ...base, status: "compensated", completedStepIds: ["step"] },
+      ];
+      for (const journal of malformed) {
+        await writeFile(
+          path.join(journalDir, "forged.json"),
+          `${JSON.stringify(journal)}\n`,
+          "utf8",
+        );
+        await expect(
+          commitWorkspaceTransaction({
+            pmRoot,
+            transactionId: "forged",
+            author: "agent",
+            steps,
+          }),
+        ).rejects.toThrow(/journal (?:is invalid|does not match)/);
+      }
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps adversarial step ids safe and rebuilds stale recovery state", async () => {
+    const pmRoot = await mkdtemp(path.join(tmpdir(), "pm-sdk-transaction-"));
+    try {
+      const events: string[] = [];
+      const adversarial = {
+        state: "pending" as WorkspaceTransactionStepState,
+        value: 0,
+      };
+      const result = await commitWorkspaceTransaction({
+        pmRoot,
+        transactionId: "prototype-safe",
+        author: "agent",
+        steps: [createTestStep("__proto__", adversarial, events)],
+      });
+      expect(Object.getPrototypeOf(result.results)).toBeNull();
+      expect(Object.hasOwn(result.results, "__proto__")).toBe(true);
+      expect(result.results.__proto__).toEqual({ value: 1 });
+
+      const stale = {
+        state: "pending" as WorkspaceTransactionStepState,
+        value: 0,
+      };
+      const staleStep = createTestStep("stale", stale, events);
+      await expect(
+        commitWorkspaceTransaction({
+          pmRoot,
+          transactionId: "stale-recovery",
+          author: "agent",
+          steps: [staleStep],
+          onTransition: ({ transition }) => {
+            if (transition === "step_recorded")
+              throw new WorkspaceTransactionInterruptedError("crash");
+          },
+        }),
+      ).rejects.toThrow("crash");
+      stale.state = "pending";
+      await expect(
+        commitWorkspaceTransaction({
+          pmRoot,
+          transactionId: "stale-recovery",
+          author: "agent",
+          steps: [staleStep],
+        }),
+      ).resolves.toMatchObject({
+        status: "committed",
+        results: { stale: { value: 2 } },
+      });
+      expect(events).toEqual(["apply:__proto__", "apply:stale", "apply:stale"]);
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
     }
@@ -395,6 +523,33 @@ describe("workspace SDK transactions", () => {
           },
         }),
       ).rejects.toThrow("abort");
+
+      let raceInspection = 0;
+      await expect(
+        commitWorkspaceTransaction({
+          pmRoot,
+          transactionId: "compensation-race",
+          author: "agent",
+          steps: [
+            {
+              id: "step",
+              inspect: async () => ({
+                state:
+                  ++raceInspection === 1 || raceInspection > 3
+                    ? "compensated"
+                    : ("applied" as WorkspaceTransactionStepState),
+              }),
+              apply: async () => undefined,
+              compensate: async () => {
+                throw new Error("concurrently compensated step must not run");
+              },
+            },
+          ],
+          onTransition: ({ transition }) => {
+            if (transition === "committing") throw new Error("race abort");
+          },
+        }),
+      ).rejects.toThrow("race abort");
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
     }

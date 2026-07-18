@@ -6,8 +6,8 @@ status: closed
 priority: 3
 tags[4]: concurrency,extensibility,sdk,universal-tool
 created_at: "2026-07-18T10:03:42.541Z"
-updated_at: "2026-07-18T15:46:30.350Z"
-closed_at: "2026-07-18T15:45:52.655Z"
+updated_at: "2026-07-18T16:49:53.592Z"
+closed_at: "2026-07-18T16:49:51.009Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: Public SDK primitive commits multi-item mutations + relationship events with all-or-nothing observable state; failure-injection coverage for every partial-write direction and crash point; pm-vcs merge migrated onto the primitive (or a recorded justified waiver); contract docs + SDK.md published; no history-stream rewrite semantics introduced
@@ -22,11 +22,14 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-dj98,related,"2026-07-18T10:03:42.541Z",null,null
   pm-ju83,related,"2026-07-18T10:03:42.541Z",null,null
   pm-klo8,related,"2026-07-18T10:03:42.541Z",null,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-18T14:35:43.038Z",codex-root,"Implementation start 2026-07-18: all-status duplicate review found this canonical transaction gap and no competing atomic multi-item plus relationship-event item. Scope is a public SDK transaction journal, failure injection, recovery, immutable compensation semantics, and VCS acceptance migration."
   "2026-07-18T15:19:21.122Z",codex-root,"Implementation evidence 2026-07-18: added public commitWorkspaceTransaction with a durable per-workspace journal, one writer lock, ordered idempotent inspection/application, deterministic replay, reverse append-style compensation, explicit crash interruption semantics, extension-host binding, and public SDK export. pm-vcs merge is the non-PM consumer and binds transaction identity to changeset+ref. Verification: 5,914 tests across 311 files at exact 100/100/100/100 (39,043 statements; 27,456 branches; 7,949 functions; 38,008 lines); lint/zero-clone/static/docstring/package-boundary/token/audit gates clean. Packed temp consumer committed+replayed the SDK transaction and completed VCS ref/create/propose/merge/log plus deep doctor at /tmp/pm-sdk-transaction-proof-P5Bp3l. Release gates passed through packed smoke and 88-command dogfood; only the expected pre-commit Greptile stage remained."
   "2026-07-18T15:36:41.210Z",codex-root,"Pre-push Greptile review b4db10ed-d5b4-4ff0-84b3-ba2ee8f3209a (confidence 3/5, five findings) was fully accepted: result-free apply now has an honest undefined return contract; callers can configure positive lock TTL/wait bounds; the journal is read once per attempt; VCS SDK host access is guarded with a descriptive error; and the compensation race test uses a new semantic step_compensating transition instead of storage-call ordinals. Post-fix full verification: 311 files / 5,914 tests, exact 100/100/100/100 (39,051 statements; 27,460 branches; 7,951 functions; 38,017 lines), typecheck, ESLint, zero clones, static/docstrings, package boundary, and token budget all pass."
   "2026-07-18T15:45:51.663Z",codex-root,"Pre-push Greptile re-review 3f2f3c62-2f59-431f-8c53-252a24c151d0 completed at confidence 5/5 with no comments and explicitly verified all five first-round findings resolved. Exact full coverage, strict lint/static gates, and packed SDK+VCS acceptance remain clean on the corrected code."
+  "2026-07-18T16:49:47.732Z",codex-root,"Hosted PR #605 review round 1 evidence: accepted eight valid recovery/compensation findings and declined one pm-docs false positive with live metadata proof. Hardened runtime input types, journal lifecycle invariants, null-prototype result maps, inspection-authoritative recovery, VCS original-ref restoration, transaction-owned compensation, retry event identity, and item+relationship post-commit validation. All nine inline threads were reacted to, answered contextually, and resolved; Gemini, Greptile, CodeRabbit, Codecov, CodSpeed, and Sourcery artifacts were individually reacted to and acknowledged. Verification: linked pm tests passed; 311 files / 5,916 tests at exact 100/100/100/100 (39,078 statements, 27,482 branches, 7,957 functions, 38,043 lines); lint, zero clones, static complexity, 100% docstrings, package boundary, token budget, secrets, audit, and packed VCS+SDK replay at /tmp/pm-sdk-transaction-review-proof-bM6GcR all pass."
+learnings[1]{created_at,author,text}:
+  "2026-07-18T16:49:48.441Z",codex-root,"A transaction journal is a recovery hint, never stronger than current domain inspection: validate lifecycle invariants at load, rebuild completion from inspections, and make every compensation conditional on still owning the exact state it intends to reverse."
 files[7]{path,scope,note}:
   packages/pm-vcs/extensions/vcs/index.ts,project,Non-PM atomic merge consumer
   src/core/extensions/extension-types.ts,project,Typed extension transaction contract
@@ -38,9 +41,11 @@ files[7]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs coverage,project,360
   node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-transaction.spec.ts tests/unit/packages/vcs-extension.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrqlqi36-u8d8ao,test,passed,"2026-07-18T16:46:00.824Z","2026-07-18T16:49:22.194Z","2026-07-18T16:49:22.194Z",2,0,0
 docs[3]{path,scope,note}:
   docs/SDK.md,project,Transaction API and recovery semantics
   packages/pm-vcs/GAP_REPORT.md,project,Closed VCS transaction waiver
   packages/pm-vcs/README.md,project,Consumer behavior documentation
-close_reason: "Delivered the public crash-recoverable workspace transaction boundary, extension host integration, atomic pm-vcs consumer, complete recovery/compensation tests, exact 100% repository coverage, packed consumer proof, and clean 5/5 pre-push Greptile re-review."
+close_reason: "PR #605 review-hardened public transaction primitive complete: crash recovery validates journals and current state, compensation is transaction-owned, VCS acceptance is atomic, all hosted findings are handled, linked tests and exact 100% coverage pass, and packed SDK/VCS proof succeeds."
 body: ""

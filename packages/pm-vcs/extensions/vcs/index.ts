@@ -346,6 +346,22 @@ function matchesRequestedMerge(
   );
 }
 
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && Boolean(value.trim());
+}
+
+function matchesCommittedChangeset(
+  item: ItemMetadata,
+  refId: string,
+  resolution: string,
+): boolean {
+  return (
+    item.status === "merged" &&
+    item.resolution === resolution &&
+    item.vcs_ref === refId
+  );
+}
+
 /** Append or reconcile one concurrently won deterministic merge event. */
 async function ensureMergeEvent(
   store: RelationshipEventStore,
@@ -392,18 +408,20 @@ async function runChangesetMerge(
   const client = clientFor(context);
   const changeset = await getVcsItem(client, id, "Changeset");
   await getVcsItem(client, refId, "VcsRef");
+  const originalRefValue = changeset.item.vcs_ref;
+  if (!isNonEmptyString(originalRefValue))
+    throw new TypeError(`vcs Changeset ${id} is missing vcs_ref`);
+  const originalRef = originalRefValue.trim();
   const resolution = `Merged into ${refId}`;
   if (
     changeset.item.status !== "proposed" &&
-    (changeset.item.status !== "merged" ||
-      changeset.item.resolution !== resolution)
+    !matchesCommittedChangeset(changeset.item, refId, resolution)
   )
     throw new TypeError(`vcs merge requires proposed changeset ${id}`);
   const store = await openVcsRelationshipStore(context, client);
-  const author =
-    typeof context.global.author === "string" && context.global.author.trim()
-      ? context.global.author.trim()
-      : "pm-vcs";
+  const author = isNonEmptyString(context.global.author)
+    ? context.global.author.trim()
+    : "pm-vcs";
   const eventId = `merge-${id}`;
   const relationshipId = `changeset-${id}`;
   const steps: WorkspaceTransactionStep[] = [
@@ -411,8 +429,7 @@ async function runChangesetMerge(
       id: "merge-item",
       inspect: async () => {
         const current = await getVcsItem(client, id, "Changeset");
-        return current.item.status === "merged" &&
-          current.item.resolution === resolution
+        return matchesCommittedChangeset(current.item, refId, resolution)
           ? {
               state: "applied",
               result: { id, status: "merged", resolution },
@@ -429,10 +446,13 @@ async function runChangesetMerge(
         return { id, status: "merged", resolution };
       },
       compensate: async () => {
+        const current = await getVcsItem(client, id, "Changeset");
+        if (!matchesCommittedChangeset(current.item, refId, resolution)) return;
         await client.update(id, {
           status: "proposed",
           unset: ["resolution", "close-reason"],
           message: `Compensate interrupted VCS merge into ${refId}`,
+          field: [`vcs_ref=${originalRef}`],
         });
       },
     },
@@ -449,7 +469,11 @@ async function runChangesetMerge(
           throw new TypeError(`vcs merge event conflicts with changeset ${id}`);
         return {
           state: "applied",
-          result: { eventId, relationshipId, sequence: event.sequence },
+          result: {
+            eventId: event.eventId,
+            relationshipId,
+            sequence: event.sequence,
+          },
         };
       },
       apply: async () => {
@@ -480,7 +504,11 @@ async function runChangesetMerge(
           store,
           relationshipId,
         );
-        if (latest === undefined || latest.action === "remove") return;
+        if (
+          latest === undefined ||
+          !matchesRequestedMerge(latest, relationshipId, id, refId)
+        )
+          return;
         await store.append({
           eventId: `rollback-${eventId}-${latest.sequence}`,
           relationshipId,
@@ -503,6 +531,7 @@ async function runChangesetMerge(
     relationshipId,
   );
   if (
+    !matchesCommittedChangeset(reconciledChangeset.item, refId, resolution) ||
     relationship === undefined ||
     !matchesRequestedMerge(relationship, relationshipId, id, refId)
   )

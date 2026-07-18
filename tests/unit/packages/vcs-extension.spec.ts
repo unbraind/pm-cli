@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, onTestFinished, vi } from "vitest";
 import {
@@ -327,6 +327,9 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         });
 
       const ref = (await invoke("vcs ref-create", ["main"])) as { id: string };
+      const sourceRef = (await invoke("vcs ref-create", ["source"])) as {
+        id: string;
+      };
       const change = (await invoke("vcs create", ["Source covered"], {
         ref: ref.id,
         treeHash: "sha256:source",
@@ -478,7 +481,7 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         "vcs create",
         ["Compensated retry"],
         {
-          ref: ref.id,
+          ref: sourceRef.id,
           treeHash: "sha256:compensated-retry",
         },
       )) as { id: string };
@@ -516,6 +519,17 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         },
       )) as { id: string };
       await invoke("vcs propose", [compensatedRace.id]);
+      const missingVcsRef = (await invoke("vcs create", ["Missing VCS ref"], {
+        ref: ref.id,
+        treeHash: "sha256:missing-vcs-ref",
+      })) as { id: string };
+      await invoke("vcs propose", [missingVcsRef.id]);
+      const vanishingRelationship = (await invoke(
+        "vcs create",
+        ["Vanishing relationship"],
+        { ref: ref.id, treeHash: "sha256:vanishing-relationship" },
+      )) as { id: string };
+      await invoke("vcs propose", [vanishingRelationship.id]);
       const reconciliationNodes = [
         change.id,
         draft.id,
@@ -531,13 +545,28 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         latestConflict.id,
         missingCommit.id,
         compensatedRace.id,
+        missingVcsRef.id,
+        vanishingRelationship.id,
         ref.id,
+        sourceRef.id,
       ];
       const reconciliationStore = await sdk.openRelationshipEventStore({
         nodes: reconciliationNodes,
         definitions: [VCS_RELATIONSHIP_KIND],
         relativePath: "relationships/vcs-events.jsonl",
       });
+      const get = client.get.bind(client);
+      const missingVcsRefGet = vi
+        .spyOn(client, "get")
+        .mockImplementationOnce(async (...args) => {
+          const result = await get(...args);
+          return { ...result, item: { ...result.item, vcs_ref: " " } };
+        });
+      onTestFinished(() => missingVcsRefGet.mockRestore());
+      await expect(
+        invoke("vcs merge", [missingVcsRef.id], { ref: ref.id }),
+      ).rejects.toThrow(/missing vcs_ref/);
+      missingVcsRefGet.mockRestore();
       const ledgerEvent = await reconciliationStore.append({
         eventId: `merge-${ledgerFirst.id}`,
         relationshipId: `changeset-${ledgerFirst.id}`,
@@ -607,8 +636,8 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         invoke("vcs merge", [compensatedRetry.id], { ref: ref.id }),
       ).rejects.toThrow(/injected transaction commit failure/);
       expect(
-        (await client.get(compensatedRetry.id, { depth: "deep" })).item.status,
-      ).toBe("proposed");
+        (await client.get(compensatedRetry.id, { depth: "deep" })).item,
+      ).toMatchObject({ status: "proposed", vcs_ref: sourceRef.id });
       commitFailure.mockRestore();
       expect(
         await invoke("vcs merge", [compensatedRetry.id], { ref: ref.id }),
@@ -624,6 +653,25 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
           )
         ).state.map((event) => event.action),
       ).toEqual(["add", "remove", "add"]);
+      expect(
+        JSON.parse(
+          await readFile(
+            path.join(
+              context.pmPath,
+              "transactions",
+              "sdk",
+              `vcs-merge-${compensatedRetry.id}-${ref.id}.json`,
+            ),
+            "utf8",
+          ),
+        ),
+      ).toMatchObject({
+        results: {
+          "merge-relationship": {
+            eventId: expect.stringMatching(/^retry-merge-/),
+          },
+        },
+      });
       const storageFailureRace = vi
         .spyOn(RelationshipEventStore.prototype, "append")
         .mockRejectedValueOnce(
@@ -692,6 +740,14 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         invoke("vcs merge", [latestConflict.id], { ref: ref.id }),
       ).rejects.toThrow(/event conflicts/);
 
+      await reconciliationStore.append({
+        eventId: `merge-${missingCommit.id}`,
+        relationshipId: `changeset-${missingCommit.id}`,
+        action: "add",
+        edge: { source: missingCommit.id, target: ref.id, kind: "commits_to" },
+        author: "failure-injection",
+        timestamp: new Date().toISOString(),
+      });
       const missingCommitSpy = vi
         .spyOn(sdk, "commitWorkspaceTransaction")
         .mockResolvedValueOnce({
@@ -723,6 +779,29 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
                   author: "failure-injection",
                   timestamp: new Date().toISOString(),
                 });
+              if (transition === "step_compensating" && stepId === "merge-item")
+                await client.update(compensatedRace.id, {
+                  status: "merged",
+                  resolution: "Superseded by concurrent merge",
+                  field: [`vcs_ref=${sourceRef.id}`],
+                  message: "Inject newer item-side merge state",
+                });
+              if (
+                transition === "step_compensating" &&
+                stepId === "merge-relationship"
+              )
+                await append.call(reconciliationStore, {
+                  eventId: `racing-add-${compensatedRace.id}`,
+                  relationshipId: `changeset-${compensatedRace.id}`,
+                  action: "add",
+                  edge: {
+                    source: compensatedRace.id,
+                    target: change.id,
+                    kind: "commits_to",
+                  },
+                  author: "failure-injection",
+                  timestamp: new Date().toISOString(),
+                });
               if (transition === "committing")
                 throw new Error("abort racing merge");
             },
@@ -742,8 +821,45 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
                 : events,
           )
         ).state.map((event) => event.action),
-      ).toEqual(["add", "remove"]);
+      ).toEqual(["add", "remove", "add"]);
+      expect(
+        (await client.get(compensatedRace.id, { depth: "deep" })).item,
+      ).toMatchObject({
+        status: "merged",
+        resolution: "Superseded by concurrent merge",
+        vcs_ref: sourceRef.id,
+      });
       transactionFailure.mockRestore();
+
+      const disappearingLedger = vi
+        .spyOn(sdk, "commitWorkspaceTransaction")
+        .mockImplementationOnce((options) =>
+          commitTransaction({
+            ...options,
+            onTransition: async ({ transition, stepId }) => {
+              if (
+                transition === "step_compensating" &&
+                stepId === "merge-relationship"
+              )
+                await writeFile(
+                  path.join(
+                    context.pmPath,
+                    "relationships",
+                    "vcs-events.jsonl",
+                  ),
+                  "",
+                  "utf8",
+                );
+              if (transition === "committing")
+                throw new Error("abort disappearing ledger merge");
+            },
+          }),
+        );
+      onTestFinished(() => disappearingLedger.mockRestore());
+      await expect(
+        invoke("vcs merge", [vanishingRelationship.id], { ref: ref.id }),
+      ).rejects.toThrow(/abort disappearing ledger merge/);
+      disappearingLedger.mockRestore();
       await expect(
         invoke("vcs merge", [itemFirst.id], { ref: change.id }),
       ).rejects.toThrow(/VcsRef/);

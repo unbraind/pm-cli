@@ -138,14 +138,18 @@ const TRANSACTION_ID_PATTERN = /^[a-zA-Z0-9._-]+$/;
 const DEFAULT_LOCK_TTL_SECONDS = 30;
 const DEFAULT_LOCK_WAIT_MS = 3_000;
 
-function requiredIdentifier(value: string, label: string): string {
+function requiredIdentifier(value: unknown, label: string): string {
+  if (typeof value !== "string")
+    throw new TypeError(`${label} must be a string`);
   const normalized = value.trim();
   if (!normalized || !TRANSACTION_ID_PATTERN.test(normalized))
     throw new TypeError(`${label} must match [a-zA-Z0-9._-]+`);
   return normalized;
 }
 
-function requiredText(value: string, label: string): string {
+function requiredText(value: unknown, label: string): string {
+  if (typeof value !== "string")
+    throw new TypeError(`${label} must be a string`);
   const normalized = value.trim();
   if (!normalized) throw new TypeError(`${label} must be non-empty`);
   return normalized;
@@ -187,6 +191,41 @@ function hasValidJournalMetadata(
   );
 }
 
+function createResultMap(
+  source?: Record<string, WorkspaceTransactionJsonValue>,
+): Record<string, WorkspaceTransactionJsonValue> {
+  return Object.assign(
+    Object.create(null) as Record<string, WorkspaceTransactionJsonValue>,
+    source,
+  );
+}
+
+function hasValidJournalLifecycle(
+  journal: Partial<WorkspaceTransactionJournal>,
+  stepIds: readonly string[],
+): boolean {
+  if (
+    !Array.isArray(journal.completedStepIds) ||
+    journal.results === null ||
+    typeof journal.results !== "object" ||
+    Array.isArray(journal.results)
+  )
+    return false;
+  const completedStepIds = journal.completedStepIds;
+  const completed = new Set(completedStepIds);
+  if (
+    completed.size !== completedStepIds.length ||
+    completedStepIds.some(
+      (stepId) => typeof stepId !== "string" || !stepIds.includes(stepId),
+    ) ||
+    Object.keys(journal.results).some((stepId) => !completed.has(stepId))
+  )
+    return false;
+  if (journal.status === "committed")
+    return stepIds.every((stepId) => completed.has(stepId));
+  return journal.status !== "compensated" || completed.size === 0;
+}
+
 function parseJournal(
   raw: string,
   transactionId: string,
@@ -200,7 +239,7 @@ function parseJournal(
       `Workspace transaction ${transactionId} journal is invalid JSON`,
     );
   }
-  if (!parsed || typeof parsed !== "object")
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
     throw new TypeError(
       `Workspace transaction ${transactionId} journal is invalid`,
     );
@@ -211,10 +250,7 @@ function parseJournal(
     Array.isArray(journal.stepIds) &&
     journal.stepIds.length === stepIds.length &&
     journal.stepIds.every((stepId, index) => stepId === stepIds[index]);
-  const collectionsMatch =
-    Array.isArray(journal.completedStepIds) &&
-    journal.results !== null &&
-    typeof journal.results === "object";
+  const lifecycleMatches = hasValidJournalLifecycle(journal, stepIds);
   const metadataMatches = hasValidJournalMetadata(journal);
   const statusMatches = [
     "applying",
@@ -225,14 +261,17 @@ function parseJournal(
   if (
     !identityMatches ||
     !stepsMatch ||
-    !collectionsMatch ||
+    !lifecycleMatches ||
     !metadataMatches ||
     !statusMatches
   )
     throw new TypeError(
       `Workspace transaction ${transactionId} journal does not match the supplied plan`,
     );
-  return journal as WorkspaceTransactionJournal;
+  return {
+    ...(journal as WorkspaceTransactionJournal),
+    results: createResultMap(journal.results),
+  };
 }
 
 async function prepareJournalForApply(
@@ -261,7 +300,7 @@ async function prepareJournalForApply(
       updatedAt: timestamp,
       stepIds,
       completedStepIds: [],
-      results: {},
+      results: createResultMap(),
     };
     await writeJournal(options.pmRoot, journal);
     await emitTransition(options, journal, "prepared");
@@ -288,7 +327,8 @@ async function applyPreparedTransaction(
       journal.completedStepIds = options.steps
         .map((candidate) => candidate.id)
         .filter((stepId) => completed.has(stepId));
-      if (result !== undefined) journal.results[step.id] = result;
+      if (result === undefined) delete journal.results[step.id];
+      else journal.results[step.id] = result;
       await writeJournal(options.pmRoot, journal);
       await emitTransition(options, journal, "step_recorded", step.id);
     }
@@ -300,7 +340,7 @@ async function applyPreparedTransaction(
       transactionId: journal.transactionId,
       status: "committed",
       recovered,
-      results: { ...journal.results },
+      results: createResultMap(journal.results),
     };
   } catch (error) {
     if (
@@ -348,13 +388,14 @@ async function discoverAppliedSteps(
   journal: WorkspaceTransactionJournal,
   steps: readonly WorkspaceTransactionStep[],
 ): Promise<void> {
-  const completed = new Set(journal.completedStepIds);
+  const completed = new Set<string>();
   for (const step of steps) {
     const inspection = await step.inspect();
-    if (inspection.state !== "applied") continue;
-    completed.add(step.id);
-    if (inspection.result !== undefined)
-      journal.results[step.id] = inspection.result;
+    if (inspection.state === "applied") {
+      completed.add(step.id);
+      if (inspection.result === undefined) delete journal.results[step.id];
+      else journal.results[step.id] = inspection.result;
+    } else delete journal.results[step.id];
   }
   journal.completedStepIds = steps
     .map((step) => step.id)
@@ -439,7 +480,7 @@ export async function commitWorkspaceTransaction(
         transactionId,
         status: "committed",
         recovered: true,
-        results: { ...existing.results },
+        results: createResultMap(existing.results),
       };
     const prepared = await prepareJournalForApply(
       options,
