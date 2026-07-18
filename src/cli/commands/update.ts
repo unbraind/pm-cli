@@ -2823,7 +2823,7 @@ export async function runUpdate(
   }
   assertMatchingOrderRank(options);
 
-  const graphBeforeUpdate =
+  let graphBeforeUpdate =
     fieldFlags.dep || fieldFlags.depRemove || fieldFlags.blockedBy
       ? await listAllItemMetadataLight(
           pmRoot,
@@ -2851,6 +2851,11 @@ export async function runUpdate(
     extensionFieldNames,
     skipNoop: true,
     mutate(document) {
+      graphBeforeUpdate = graphBeforeUpdate?.map((item) =>
+        item.id === document.metadata.id
+          ? structuredClone(document.metadata)
+          : item,
+      );
       return mutateUpdateDocument(document, {
         options,
         settings,

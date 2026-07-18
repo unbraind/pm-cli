@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,data-integrity,graph
 created_at: "2026-07-18T10:08:29.551Z"
-updated_at: "2026-07-18T12:15:00.972Z"
+updated_at: "2026-07-18T13:14:16.500Z"
 closed_at: "2026-07-18T12:14:07.856Z"
 author: maintainer-agent
 estimated_minutes: 180
@@ -22,7 +22,7 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-6x7o,related,"2026-07-18T10:08:29.551Z",null,null
   pm-ju83,related,"2026-07-18T10:08:29.551Z",null,null
   pm-um4g,related,"2026-07-18T10:08:29.551Z",null,null
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-18T10:52:15.306Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
   "2026-07-18T11:33:19.344Z",maintainer-agent,"Verification evidence: isolated packed-package smoke created a blocked_by cycle and received ordering_cycle_created with the concrete path; public collectNewOrderingCycleWarnings imported successfully from @unbrained/pm-cli/sdk."
   "2026-07-18T11:37:30.484Z",maintainer-agent,"Gate evidence: pnpm test:coverage passed 310 files/5906 tests at 100% statements (38887), branches (27366), functions (7917), and lines (37864). pnpm lint, typecheck, contracts:check, docs link gate, secret scan, git diff --check, and the item-linked sandbox test all passed."
@@ -30,19 +30,28 @@ comments[7]{created_at,author,text}:
   "2026-07-18T11:56:34.438Z",maintainer-agent,"Post-review gate evidence: full coverage rerun passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866); focused tests, ESLint, static/docstring, package-boundary, token-budget, typecheck, and diff checks remain green."
   "2026-07-18T12:05:02.857Z",maintainer-agent,"Greptile follow-up review 3c15f0c1-29ac-43d9-a91f-f3f4a5447c7a found the remaining adjacency construction assertion. Replaced it with optional insertion, added a structurally malformed graph regression, and passed focused tests plus lint/static/docstring/package-boundary/token/type gates."
   "2026-07-18T12:14:02.414Z",maintainer-agent,"Final verification: exact local head passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866). Greptile final review 3fd40225-4f7c-47b3-9c65-d5c4e82132d8 returned 5/5 confidence, no correctness regressions, no files requiring attention, and no review comments."
+  "2026-07-18T13:13:53.348Z",codex-gpt5,"CodeRabbit review evidence: accepted the exact-head concurrency finding on PR #593. Single-item update cycle advisories now refresh the target row from the locked pre-mutation document before applying dependency changes, preventing racing target updates from causing false or suppressed cycle warnings. A real lock-contention test mutates the target while runUpdate waits, then proves the pre-existing cycle is not misreported as new. Focused 103-test update suite, lint/zero-duplication, TypeScript, static/docstring/package/token gates, and full 310-file/5,908-test coverage at 100/100/100/100 pass."
 learnings[1]{created_at,author,text}:
   "2026-07-18T11:37:35.441Z",maintainer-agent,Mutation advisories should compare immutable before/after graph snapshots so new execution-order debt is actionable without re-reporting legacy cycles.
-files[6]{path,scope,note}:
+files[7]{path,scope,note}:
   src/cli/commands/create.ts,project,Warn when create introduces an ordering cycle
   src/cli/commands/update.ts,project,Warn when update or update-many introduces an ordering cycle
   src/sdk/graph/index.ts,project,Export ordering-cycle advisory through the public SDK
   src/sdk/graph/mutation-advisory.ts,project,Public immutable-snapshot primitive for new ordering-cycle advisories
   tests/unit/commands/agent-ux-feedback-wave.spec.ts,project,Cross-command installed CLI regression bundle
+  tests/unit/commands/update-command.spec.ts,project,Real lock-contention regression for target graph snapshots
   tests/unit/sdk/graph/mutation-advisory.spec.ts,project,New-cycle and legacy-cycle regression coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/sdk/graph/mutation-advisory.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/cli/extension-command-help.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/sdk/graph/mutation-advisory.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/cli/extension-command-help.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: Cycle advisory and locked target snapshot regression
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrqaj6qm-ojgfac,test,passed,"2026-07-18T11:35:35.191Z","2026-07-18T11:35:45.118Z","2026-07-18T11:35:45.118Z",1,0,0
+  test-local-mrqe1vzh-j2ajtk,test,passed,"2026-07-18T13:13:53.909Z","2026-07-18T13:14:16.493Z","2026-07-18T13:14:16.493Z",2,0,0
 docs[2]{path,scope,note}:
   docs/AGENT_UX_CONTRACTS.md,project,Public agent UX and SDK contract documentation
   docs/README.md,project,Documentation index entry

@@ -258,7 +258,7 @@ export interface GraphAuditResult {
   finding_count: number;
   /** Finding counts keyed by severity. */
   findings_by_severity: Record<string, number>;
-  /** Finding counts keyed by finding code. */
+  /** Finding-row counts keyed by finding code. Before 2026.7.19 this field incorrectly accumulated affected subjects; consumers of that unit must migrate to affected_subjects_by_code. */
   findings_by_code: Record<string, number>;
   /** Affected-subject counts keyed by severity. */
   affected_subjects_by_severity: Record<string, number>;

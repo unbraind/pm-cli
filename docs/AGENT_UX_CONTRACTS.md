@@ -15,6 +15,8 @@ The public SDK exports `collectNewOrderingCycleWarnings(beforeItems, afterItems,
 - `finding_count`, `findings_by_severity`, and `findings_by_code` count finding rows.
 - `affected_subjects_by_severity` and `affected_subjects_by_code` count the items or edges represented by those findings.
 
+Compatibility note: before the 2026.7.19 release, `findings_by_code` incorrectly accumulated affected-subject counts while `findings_by_severity` counted finding rows. SDK and JSON consumers that depended on that old unit must migrate to `affected_subjects_by_code`; consumers comparing code and severity finding counts should keep using `findings_by_code`.
+
 ## Extension command ownership
 
 Extension handler aliases may create their own command groups, but they may not replace a core command or graft a handler beneath a core-owned command prefix. Collisions preserve the core command and emit `extension_command_collision:` with the core and extension owners. Package authors should rename or namespace the alias.

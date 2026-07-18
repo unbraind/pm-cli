@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,github,graph
 created_at: "2026-07-18T07:14:14.088Z"
-updated_at: "2026-07-18T12:15:01.601Z"
+updated_at: "2026-07-18T13:22:56.034Z"
 closed_at: "2026-07-18T12:14:09.578Z"
 author: codex-sdk-vcs-20260718
 estimated_minutes: 90
@@ -19,13 +19,14 @@ expected_result: Every graph audit aggregate field uses an explicit homogeneous 
 actual_result: "findings_by_severity and findings_by_code count finding rows; affected_subjects_by_severity and affected_subjects_by_code count represented items or edges, with finding_count retained."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-ju83,related,"2026-07-18T07:14:14.088Z",null,null
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-18T07:14:14.088Z",codex-sdk-vcs-20260718,"Duplicate check 2026-07-18: exact all-status title search returned zero; AND search across graph audit severity/count terms found no canonical issue. Created from https://github.com/unbraind/pm-cli/issues/586 and linked to active graph primitives pm-ju83 plus governance parent pm-6x7o; left open and unclaimed because this PR does not implement it."
   "2026-07-18T10:52:19.107Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
   "2026-07-18T11:33:20.112Z",maintainer-agent,"Verification evidence: isolated packed-package graph audit reported finding_count=1 and affected_subjects_by_severity.error=2 for a two-item ordering cycle, preserving homogeneous aggregation units."
   "2026-07-18T11:37:31.459Z",maintainer-agent,"Gate evidence: pnpm test:coverage passed 310 files/5906 tests at 100% statements (38887), branches (27366), functions (7917), and lines (37864). pnpm lint, typecheck, contracts:check, docs link gate, secret scan, git diff --check, and the item-linked sandbox test all passed."
   "2026-07-18T11:56:35.184Z",maintainer-agent,"Post-review gate evidence: full coverage rerun passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866); focused tests, ESLint, static/docstring, package-boundary, token-budget, typecheck, and diff checks remain green."
   "2026-07-18T12:14:03.097Z",maintainer-agent,"Final verification: exact local head passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866). Greptile final review 3fd40225-4f7c-47b3-9c65-d5c4e82132d8 returned 5/5 confidence, no correctness regressions, no files requiring attention, and no review comments."
+  "2026-07-18T13:22:56.033Z",codex-gpt5,Greptile pre-push review afdfffa8-30ff-49a7-9bff-45280180f491 found no code comments and rated the implementation safe apart from requesting a stronger versioning signal for the intentional findings_by_code unit correction. Public GraphAuditResult JSDoc and docs/AGENT_UX_CONTRACTS.md now explicitly identify the pre-2026.7.19 behavior and direct affected-subject consumers to affected_subjects_by_code.
 learnings[1]{created_at,author,text}:
   "2026-07-18T11:37:36.056Z",maintainer-agent,"Graph summary keys must use homogeneous units: findings_by_* counts finding rows, while affected_subjects_by_* counts represented graph subjects."
 files[2]{path,scope,note}:
