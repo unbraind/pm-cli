@@ -1,0 +1,20 @@
+id: pm-6m1i
+title: "GH-591: pm context agenda events re-embed full item payloads already listed in the same response (~35% of brief output)"
+description: "GitHub issue #591: every agenda.events[] entry embeds item_title/type/status/priority/assignee/deadline/tags for items already fully present in high_level/low_level of the same envelope — measured 2032 of 5794 bytes (~35%) of a 28-item brief context, all duplicates except at/date/kind. Fix = reference-only agenda rows (item_id + at/date/kind) when the item appears elsewhere in the same response, full embed only for items not otherwise included; token-efficiency directive core."
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,context,token-efficiency
+created_at: "2026-07-18T10:08:38.673Z"
+updated_at: "2026-07-18T10:08:38.673Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: Agenda events for items already listed in the same context response carry references only (no duplicated title/type/status/priority/assignee/tags); items not otherwise present keep enough inline fields to act on; byte-measurement recorded before/after; TOON + JSON parity; regression coverage
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-6vfg,related,"2026-07-18T10:08:38.673Z",null,null
+  pm-gdi7,related,"2026-07-18T10:08:38.673Z",null,null
+  pm-nilh,related,"2026-07-18T10:08:38.673Z",null,null
+body: ""

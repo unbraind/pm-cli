@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags[3]: agent-ux,extensions,github
 created_at: "2026-07-18T07:14:14.667Z"
-updated_at: "2026-07-18T07:14:14.667Z"
+updated_at: "2026-07-18T10:02:41.281Z"
 author: codex-sdk-vcs-20260718
+estimated_minutes: 240
 acceptance_criteria: "Extension activation detects command-group and flattened-alias collisions before dispatch, emits an actionable diagnostic naming both owners, and preserves non-colliding extension commands with contract and installed-package regression coverage."
 parent: pm-usfg
 risk: medium

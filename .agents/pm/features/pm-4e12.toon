@@ -1,0 +1,21 @@
+id: pm-4e12
+title: "Public SDK transaction boundary: atomic multi-item + relationship-event commit primitive"
+description: "The pm-vcs exemplar (PR#587) exposed the one waived SDK gap in packages/pm-vcs/GAP_REPORT.md: there is no public transaction boundary committing a multi-item mutation together with relationship events. The exemplar compensates with a bespoke crash-consistency protocol (event-first write order, deterministic merge event identity, idempotent duplicate-append recovery, fail-closed conflicts) that every foreign-domain package would otherwise have to reinvent. Ship a first-class SDK commit primitive: all-or-nothing observable state across item store + relationship event stream, crash-safe at every partial-write point, preserving immutable-history append-only semantics (no rollback rewrites — compensation/reconciliation on replay). Migrate pm-vcs merge onto it as the acceptance vehicle, or record precisely why the bespoke protocol must remain."
+type: Feature
+status: open
+priority: 3
+tags[4]: concurrency,extensibility,sdk,universal-tool
+created_at: "2026-07-18T10:03:42.541Z"
+updated_at: "2026-07-18T10:03:42.541Z"
+author: maintainer-agent
+estimated_minutes: 480
+acceptance_criteria: Public SDK primitive commits multi-item mutations + relationship events with all-or-nothing observable state; failure-injection coverage for every partial-write direction and crash point; pm-vcs merge migrated onto the primitive (or a recorded justified waiver); contract docs + SDK.md published; no history-stream rewrite semantics introduced
+parent: pm-usfg
+risk: medium
+confidence: medium
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-8ngt,related,"2026-07-18T10:03:42.541Z",null,null
+  pm-dj98,related,"2026-07-18T10:03:42.541Z",null,null
+  pm-ju83,related,"2026-07-18T10:03:42.541Z",null,null
+  pm-klo8,related,"2026-07-18T10:03:42.541Z",null,null
+body: ""

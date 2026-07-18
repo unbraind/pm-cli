@@ -6,8 +6,9 @@ status: open
 priority: 2
 tags[3]: agent-ux,github,graph
 created_at: "2026-07-18T07:14:14.088Z"
-updated_at: "2026-07-18T07:14:14.088Z"
+updated_at: "2026-07-18T10:02:40.735Z"
 author: codex-sdk-vcs-20260718
+estimated_minutes: 90
 acceptance_criteria: Audit summary fields use explicitly named consistent units or expose both finding_count and affected_item_count with contract docs and regression coverage.
 parent: pm-6x7o
 risk: low

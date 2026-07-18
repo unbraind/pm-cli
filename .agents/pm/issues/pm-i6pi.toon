@@ -1,0 +1,21 @@
+id: pm-i6pi
+title: "GH-590: cycle-creating blocked_by mutations succeed silently — items deadlock out of pm next with no inline feedback"
+description: "GitHub issue #590: a dependency mutation that closes a blocked_by cycle exits 0 with no warning; both items permanently leave pm next ready/recommended and only pm graph audit (ordering_cycle) or pm deps (cycle:true) explain why — nothing points there. Parent-cycle mutations already fail fast (precedent); ordering-kind dep mutations must warn inline naming the cycle path (or reject with an override flag), consistent with that precedent."
+type: Issue
+status: open
+priority: 1
+tags[3]: agent-ux,data-integrity,graph
+created_at: "2026-07-18T10:08:29.551Z"
+updated_at: "2026-07-18T10:08:29.551Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: "Mutation that would create an ordering-kind dependency cycle warns inline with the cycle path and pm graph audit pointer, or rejects with an explicit override flag; parent-cycle fail-fast precedent cited in contract docs; existing stored legacy cycles unaffected; regression coverage for update/update-many/create --dep paths"
+parent: pm-96h7
+risk: medium
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-6irg,related,"2026-07-18T10:08:29.551Z",null,null
+  pm-6x7o,related,"2026-07-18T10:08:29.551Z",null,null
+  pm-ju83,related,"2026-07-18T10:08:29.551Z",null,null
+  pm-um4g,related,"2026-07-18T10:08:29.551Z",null,null
+body: ""

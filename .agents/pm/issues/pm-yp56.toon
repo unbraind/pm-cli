@@ -1,0 +1,19 @@
+id: pm-yp56
+title: "GH-588: pm comment --message exits 0 recording nothing — comment invocation without any comment text must fail fast"
+description: "GitHub issue #588: --message on the comments command is the history-message flag, not comment text; an invocation carrying no comment source (no positional text, no --add, no stdin/file) exits 0 with count:0 and records nothing. Fix = fail fast with actionable guidance (use --add/positional/stdin) or at minimum warn that only a history message was recorded."
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,cli,silent-failure
+created_at: "2026-07-18T10:08:09.956Z"
+updated_at: "2026-07-18T10:08:09.956Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: Comment invocation with no comment text errors (or warns) with guidance naming --add/positional/stdin; exit code non-zero on the error path; contract + regression coverage; --message continues to set the history message when comment text is present
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-45mb,related,"2026-07-18T10:08:09.956Z",null,null
+  pm-gdi7,related,"2026-07-18T10:08:09.956Z",null,null
+body: ""
