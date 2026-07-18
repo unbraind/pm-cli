@@ -828,6 +828,7 @@ export function ensureCommandPath(
     }
 
     const created = current.command(part);
+    extensionCreatedCommands.add(created);
     if (index < pathParts.length - 1) {
       created.description("Extension-provided command group.");
       // Without a handler, commander routes bare-group help through the error
@@ -845,4 +846,93 @@ export function ensureCommandPath(
   }
 
   return current;
+}
+
+const extensionCreatedCommands = new WeakSet<Command>();
+
+/** Describe the first core-owned command prefix that an extension path would shadow or graft beneath. */
+export function findExtensionCommandPathCollision(
+  root: Command,
+  pathParts: string[],
+): { core_path: string; extension_path: string } | null {
+  let current = root;
+  const traversed: string[] = [];
+  for (const part of pathParts) {
+    const existing = findDirectChildCommand(current, part);
+    if (!existing) {
+      return null;
+    }
+    traversed.push(part);
+    if (!extensionCreatedCommands.has(existing)) {
+      return {
+        core_path: traversed.join(" "),
+        extension_path: pathParts.join(" "),
+      };
+    }
+    current = existing;
+  }
+  return null;
+}
+
+/** Build an ownership-rich warning when an extension alias would shadow or graft beneath a core command. */
+export function buildExtensionCommandCollisionWarning(
+  root: Command,
+  commandPath: string,
+  aliases: ReadonlyMap<string, string>,
+  descriptor: ExtensionCommandHelpDescriptor | undefined,
+): string | null {
+  const pathParts = commandPath.split(" ").filter((part) => part.length > 0);
+  const collision = findExtensionCommandPathCollision(root, pathParts);
+  if (
+    !collision ||
+    (collision.core_path === commandPath && !aliases.has(commandPath))
+  ) {
+    return null;
+  }
+  const extensionOwner =
+    descriptor?.source?.package ??
+    descriptor?.source?.name ??
+    "unknown-extension";
+  return (
+    `extension_command_collision:${collision.extension_path}:` +
+    `core_owner=pm-cli:${collision.core_path}:extension_owner=${extensionOwner}`
+  );
+}
+
+/** Collect deterministic extension command paths while reporting and excluding aliases that collide with core ownership. */
+export function collectSafeExtensionCommandPaths(
+  root: Command,
+  commandHandlers: readonly string[],
+  descriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+  aliases: ReadonlyMap<string, string>,
+  onCollision: (warning: string) => void,
+): string[] {
+  return [
+    ...new Set([...commandHandlers, ...descriptors.keys()]),
+  ]
+    .filter((commandPath) => commandPath.trim().length > 0)
+    .sort((left, right) => left.localeCompare(right))
+    .filter((commandPath) => {
+      const warning = buildExtensionCommandCollisionWarning(
+        root,
+        commandPath,
+        aliases,
+        descriptors.get(commandPath),
+      );
+      if (!warning) return true;
+      onCollision(warning);
+      return false;
+    });
+}
+
+/** Record and surface one extension collision with stable recovery guidance. */
+export function reportExtensionCommandCollision(
+  activationWarnings: string[],
+  report: (message: string) => void,
+  warning: string,
+): void {
+  activationWarnings.push(warning);
+  report(
+    `[pm] warning: ${warning}; core command preserved. Rename or namespace the extension command alias.`,
+  );
 }

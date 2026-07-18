@@ -2,11 +2,12 @@ id: pm-tmhs
 title: "GH-592: tracker_not_initialized recovery re-suggests pm init even when a --pm-path tracker exists — following it silently splits workspace state"
 description: "GitHub issue #592 (GH-501 residue): a workspace initialized with --pm-path <custom> still fails bare commands with tracker_not_initialized, and the recovery bundle re-suggests pm init — creating a second tracker at <cwd>/.agents/pm and silently splitting workspace state. Fix = recovery bundle documents that discovery probes .agents/pm only and names --pm-path/PM_PATH; ideally detects an existing non-default tracker nearby (e.g. <cwd>/.pm or one level down) and suggests the exact --pm-path invocation instead of init. Capability-aware hint-rendering family (pm-qljv class)."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[3]: agent-ux,init,recovery-hints
 created_at: "2026-07-18T10:08:48.018Z"
-updated_at: "2026-07-18T10:08:48.018Z"
+updated_at: "2026-07-18T11:37:38.223Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 150
 acceptance_criteria: tracker_not_initialized recovery names --pm-path/PM_PATH and the .agents/pm-only discovery rule; nearby non-default tracker detection suggests the concrete --pm-path command instead of pm init; no false-positive suggestions from unrelated settings.json files; regression coverage including the GH-501 positional-init fixed path
@@ -17,4 +18,23 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-kvev,related,"2026-07-18T10:08:48.018Z",null,null
   pm-qljv,related,"2026-07-18T10:08:48.018Z",null,null
   pm-surv,related,"2026-07-18T10:08:48.018Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-18T10:52:21.856Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
+  "2026-07-18T11:33:22.322Z",maintainer-agent,"Verification evidence: packed-package public tracker discovery entrypoint imported through @unbrained/pm-cli/sdk; focused CLI tests cover exact custom-root recovery suggestions."
+  "2026-07-18T11:37:32.324Z",maintainer-agent,"Gate evidence: pnpm test:coverage passed 310 files/5906 tests at 100% statements (38887), branches (27366), functions (7917), and lines (37864). pnpm lint, typecheck, contracts:check, docs link gate, secret scan, git diff --check, and the item-linked sandbox test all passed."
+learnings[1]{created_at,author,text}:
+  "2026-07-18T11:37:38.222Z",maintainer-agent,"Recovery guidance should discover nearby initialized custom roots before recommending initialization, preventing accidental split trackers."
+files[5]{path,scope,note}:
+  src/cli/error-guidance.ts,project,Recommend exact --pm-path and PM_PATH recovery before initialization
+  src/core/store/paths.ts,project,Discover directly nested custom tracker roots for recovery
+  src/sdk/index.ts,project,Exports nearby tracker discovery from public SDK
+  src/sdk/tracker-root-discovery.ts,project,Public SDK entrypoint exposes nearby custom tracker discovery
+  tests/unit/commands/agent-ux-feedback-wave.spec.ts,project,Cross-command installed CLI regression bundle
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/sdk/graph/mutation-advisory.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/cli/extension-command-help.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrqajmqa-4acxz1,test,passed,"2026-07-18T11:35:56.023Z","2026-07-18T11:36:05.842Z","2026-07-18T11:36:05.842Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/AGENT_UX_CONTRACTS.md,project,Public agent UX and SDK contract documentation
+  docs/README.md,project,Documentation index entry
 body: ""

@@ -2,11 +2,12 @@ id: pm-i6pi
 title: "GH-590: cycle-creating blocked_by mutations succeed silently — items deadlock out of pm next with no inline feedback"
 description: "GitHub issue #590: a dependency mutation that closes a blocked_by cycle exits 0 with no warning; both items permanently leave pm next ready/recommended and only pm graph audit (ordering_cycle) or pm deps (cycle:true) explain why — nothing points there. Parent-cycle mutations already fail fast (precedent); ordering-kind dep mutations must warn inline naming the cycle path (or reject with an override flag), consistent with that precedent."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[3]: agent-ux,data-integrity,graph
 created_at: "2026-07-18T10:08:29.551Z"
-updated_at: "2026-07-18T10:08:29.551Z"
+updated_at: "2026-07-18T11:37:35.441Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "Mutation that would create an ordering-kind dependency cycle warns inline with the cycle path and pm graph audit pointer, or rejects with an explicit override flag; parent-cycle fail-fast precedent cited in contract docs; existing stored legacy cycles unaffected; regression coverage for update/update-many/create --dep paths"
@@ -18,4 +19,24 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-6x7o,related,"2026-07-18T10:08:29.551Z",null,null
   pm-ju83,related,"2026-07-18T10:08:29.551Z",null,null
   pm-um4g,related,"2026-07-18T10:08:29.551Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-18T10:52:15.306Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
+  "2026-07-18T11:33:19.344Z",maintainer-agent,"Verification evidence: isolated packed-package smoke created a blocked_by cycle and received ordering_cycle_created with the concrete path; public collectNewOrderingCycleWarnings imported successfully from @unbrained/pm-cli/sdk."
+  "2026-07-18T11:37:30.484Z",maintainer-agent,"Gate evidence: pnpm test:coverage passed 310 files/5906 tests at 100% statements (38887), branches (27366), functions (7917), and lines (37864). pnpm lint, typecheck, contracts:check, docs link gate, secret scan, git diff --check, and the item-linked sandbox test all passed."
+learnings[1]{created_at,author,text}:
+  "2026-07-18T11:37:35.441Z",maintainer-agent,Mutation advisories should compare immutable before/after graph snapshots so new execution-order debt is actionable without re-reporting legacy cycles.
+files[6]{path,scope,note}:
+  src/cli/commands/create.ts,project,Warn when create introduces an ordering cycle
+  src/cli/commands/update.ts,project,Warn when update or update-many introduces an ordering cycle
+  src/sdk/graph/index.ts,project,Export ordering-cycle advisory through the public SDK
+  src/sdk/graph/mutation-advisory.ts,project,Public immutable-snapshot primitive for new ordering-cycle advisories
+  tests/unit/commands/agent-ux-feedback-wave.spec.ts,project,Cross-command installed CLI regression bundle
+  tests/unit/sdk/graph/mutation-advisory.spec.ts,project,New-cycle and legacy-cycle regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/sdk/graph/mutation-advisory.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/cli/extension-command-help.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrqaj6qm-ojgfac,test,passed,"2026-07-18T11:35:35.191Z","2026-07-18T11:35:45.118Z","2026-07-18T11:35:45.118Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/AGENT_UX_CONTRACTS.md,project,Public agent UX and SDK contract documentation
+  docs/README.md,project,Documentation index entry
 body: ""

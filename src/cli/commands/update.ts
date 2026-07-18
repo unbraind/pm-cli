@@ -63,6 +63,7 @@ import {
 } from "../../core/extensions/item-fields.js";
 import {
   buildItemNotFoundError,
+  listAllItemMetadataLight,
   locateItem,
   mutateItem,
   readLocatedItem,
@@ -90,6 +91,7 @@ import {
   parseTypeOptionEntries,
 } from "./repeatable-metadata-parsers.js";
 import { assertValidBareDependencyFlagValue } from "../../sdk/dependency-flag-validation.js";
+import { collectNewOrderingCycleWarnings } from "../../sdk/graph/mutation-advisory.js";
 import type {
   Comment,
   Dependency,
@@ -2821,6 +2823,17 @@ export async function runUpdate(
   }
   assertMatchingOrderRank(options);
 
+  const graphBeforeUpdate =
+    fieldFlags.dep || fieldFlags.depRemove || fieldFlags.blockedBy
+      ? await listAllItemMetadataLight(
+          pmRoot,
+          settings.item_format,
+          typeRegistry.type_to_folder,
+          undefined,
+          settings.schema,
+        )
+      : undefined;
+
   const result = await mutateItem({
     pmRoot,
     settings,
@@ -2865,6 +2878,15 @@ export async function runUpdate(
       });
     },
   });
+  const orderingCycleWarnings = graphBeforeUpdate
+    ? collectNewOrderingCycleWarnings(
+        graphBeforeUpdate,
+        graphBeforeUpdate.map((item) =>
+          item.id === result.item.id ? result.item : item,
+        ),
+        result.item.id,
+      )
+    : [];
 
   return {
     item: toItemRecord(result.item),
@@ -2872,6 +2894,7 @@ export async function runUpdate(
     warnings: [
       ...workflowTransitionWarnings,
       ...parentReferenceWarnings,
+      ...orderingCycleWarnings,
       ...result.warnings,
     ],
   };

@@ -628,6 +628,22 @@ async function rankReadyEntriesWithRelevance(
   };
 }
 
+/** Resolve the ranking perspective from an explicit caller, delegated assignee, environment author, or project default. */
+function resolveNextCallerAuthor(
+  options: NextOptions,
+  settingsAuthor: string,
+): string {
+  const requestedAssignee = options.assignee?.trim();
+  return (
+    options.callerAuthor ??
+    (requestedAssignee && requestedAssignee.length > 0
+      ? requestedAssignee
+      : undefined) ??
+    process.env.PM_AUTHOR ??
+    settingsAuthor
+  );
+}
+
 /** Implements `pm next`: computes the ranked ready/blocked actionable queues and a single recommended next item with rationale for the public runtime surface. */
 export async function runNext(
   options: NextOptions,
@@ -635,8 +651,10 @@ export async function runNext(
 ): Promise<NextResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
-  const callerAuthor =
-    options.callerAuthor ?? process.env.PM_AUTHOR ?? settings.author_default;
+  const callerAuthor = resolveNextCallerAuthor(
+    options,
+    settings.author_default,
+  );
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const now = nowIso();
   const limit = parseNextLimit(options.limit, "--limit", DEFAULT_NEXT_LIMIT);

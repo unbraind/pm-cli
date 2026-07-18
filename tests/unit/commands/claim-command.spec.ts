@@ -320,7 +320,7 @@ describe("runClaim/runRelease", () => {
       });
       await expect(runClaim(foreign, false, { path: context.pmPath })).rejects.toMatchObject<Partial<PmCliError>>({
         exitCode: EXIT_CODE.CONFLICT,
-        message: expect.stringContaining("already claimed by other-author") as unknown as string,
+        message: expect.stringContaining("already assigned to other-author") as unknown as string,
         context: expect.objectContaining({ code: "already_claimed_by" }) as unknown as PmCliError["context"],
       });
 
@@ -329,6 +329,16 @@ describe("runClaim/runRelease", () => {
       expect(takeover.forced).toBe(true);
       expect(takeover.item.assignee).toBe("test-author");
       expect(takeover.warnings).toEqual(expect.arrayContaining(["claim_takeover:other-author->test-author"]));
+
+      const claimed = createTask(context, {
+        title: "claim-explicitly-claimed",
+        status: "open",
+      });
+      await runClaim(claimed, false, { path: context.pmPath }, { author: "other-author" });
+      await expect(runClaim(claimed, false, { path: context.pmPath })).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.CONFLICT,
+        message: expect.stringContaining("already claimed by other-author") as unknown as string,
+      });
     });
   });
 

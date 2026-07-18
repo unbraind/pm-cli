@@ -17,6 +17,7 @@ import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { resolveAuthor } from "../../core/shared/author.js";
 import { wrapOwnershipConflict } from "../../sdk/annotations.js";
+import { describeItemOwnershipConflict } from "../../sdk/ownership-source.js";
 import { runNext, type NextRecommendation, type NextOptions } from "./next.js";
 
 /** Stable warning/error code for an exhausted atomic next-work walk. */
@@ -146,7 +147,7 @@ export async function runClaim(
     message: options.message,
     force,
     skipNoop: true,
-    mutate(document) {
+    async mutate(document) {
       const currentAssignee = document.metadata.assignee;
       const currentAssigneeText =
         typeof currentAssignee === "string" ? currentAssignee : "";
@@ -169,8 +170,13 @@ export async function runClaim(
         return { changedFields: [] };
       }
       if (heldByOther && !force) {
+        const ownershipPhrase = await describeItemOwnershipConflict(
+          pmRoot,
+          document.metadata.id,
+          currentAssigneeText,
+        );
         throw new PmCliError(
-          `Item ${document.metadata.id} is already claimed by ${previousAssignee}. Use --force to take over, or --if-available to skip without failing.`,
+          `Item ${document.metadata.id} is already ${ownershipPhrase}. Use --force to take over, or --if-available to skip without failing.`,
           EXIT_CODE.CONFLICT,
           {
             code: "already_claimed_by",

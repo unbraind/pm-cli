@@ -499,10 +499,11 @@ export async function mutateItem(params: {
   skipNoop?: boolean;
   extensionFieldNames?: readonly string[];
   typeToFolder?: Record<string, string>;
-  mutate: (document: ItemDocument) => {
-    changedFields: string[];
-    warnings?: string[];
-  };
+  mutate: (
+    document: ItemDocument,
+  ) =>
+    | { changedFields: string[]; warnings?: string[] }
+    | Promise<{ changedFields: string[]; warnings?: string[] }>;
 }): Promise<{
   item: ItemMetadata;
   body: string;
@@ -538,7 +539,7 @@ export async function mutateItem(params: {
       schema: params.settings.schema,
       extensionFieldNames: params.extensionFieldNames,
     });
-    const mutation = params.mutate(mutableDocument);
+    const mutation = await params.mutate(mutableDocument);
     if (params.skipNoop === true && mutation.changedFields.length === 0) {
       return {
         item: beforeDocument.metadata,

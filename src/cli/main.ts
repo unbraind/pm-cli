@@ -144,6 +144,8 @@ import {
   applyDynamicExtensionArguments,
   buildDynamicExtensionCommandMetadataHelp,
   findCommandByPath,
+  collectSafeExtensionCommandPaths,
+  reportExtensionCommandCollision,
   ensureCommandPath,
   buildCanonicalExtensionAliases,
   extensionFlagTakesValueForInvocation,
@@ -248,6 +250,7 @@ interface RuntimeExtensionSnapshot {
   commandHandlers: string[];
   commandFlagHelp: Map<string, string>;
   commandDescriptors: Map<string, ExtensionCommandHelpDescriptor>;
+  commandAliases: Map<string, string>;
   loadWarnings: string[];
   activationWarnings: string[];
   loadedCount: number;
@@ -1882,6 +1885,7 @@ async function loadRuntimeExtensionSnapshot(
       commandHandlers,
       commandFlagHelp,
       commandDescriptors,
+      commandAliases: canonicalAliases,
       loadWarnings: [...loadResult.warnings],
       activationWarnings: [...activationResult.warnings],
       loadedCount: loadResult.loaded.length,
@@ -2409,9 +2413,7 @@ async function registerDynamicExtensionCommandPaths(
   // Ensure usage/help/error formatting overrides are available even when parse
   // errors occur before preAction hooks initialize full runtime extension state.
   setActiveExtensionServices(snapshot.services);
-  activeRuntimeExtensionCommandDescriptors = new Map(
-    snapshot.commandDescriptors,
-  );
+  activeRuntimeExtensionCommandDescriptors = new Map(snapshot.commandDescriptors);
   await maybeAttachCreateUpdatePolicyHelpText(
     rootProgram,
     pmRoot,
@@ -2420,14 +2422,13 @@ async function registerDynamicExtensionCommandPaths(
     snapshot.settings,
   );
 
-  const commandPaths = [
-    ...new Set([
-      ...snapshot.commandHandlers,
-      ...snapshot.commandDescriptors.keys(),
-    ]),
-  ]
-    .filter((commandPath) => commandPath.trim().length > 0)
-    .sort((left, right) => left.localeCompare(right));
+  const commandPaths = collectSafeExtensionCommandPaths(
+    rootProgram,
+    snapshot.commandHandlers,
+    snapshot.commandDescriptors,
+    snapshot.commandAliases,
+    (warning) => reportExtensionCommandCollision(snapshot.activationWarnings, printError, warning),
+  );
   const registerCommandPath = (commandPath: string): void => {
     const pathParts = commandPath.split(" ").filter((part) => part.length > 0);
     const descriptor = snapshot.commandDescriptors.get(commandPath);
