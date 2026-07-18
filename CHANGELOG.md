@@ -6,6 +6,16 @@
 
 - Beyond-PM SDK exemplar spike: minimal VCS-style changeset workflow as a pm package (custom schema + event-sourced history + hooks) ([pm-xtrd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-xtrd.toon))
 
+### Fixed
+
+- GH-588: pm comment --message exits 0 recording nothing — comment invocation without any comment text must fail fast ([pm-yp56](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yp56.toon))
+- GH-589: pm next --assignee X answers from anonymous-caller perspective and pm claim conflates assignment with claim ([pm-cj9v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cj9v.toon))
+- GH-591: pm context agenda events re-embed full item payloads already listed in the same response (~35% of brief output) ([pm-6m1i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6m1i.toon))
+- GH-592: tracker_not_initialized recovery re-suggests pm init even when a --pm-path tracker exists — following it silently splits workspace state ([pm-tmhs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tmhs.toon))
+- GH-586: graph audit severity and code summaries mix finding and affected-item units ([pm-um4g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-um4g.toon))
+- GH-590: cycle-creating blocked_by mutations succeed silently — items deadlock out of pm next with no inline feedback ([pm-i6pi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-i6pi.toon))
+- GH-585: extension alias collision diagnostics for core command groups ([pm-v1yo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v1yo.toon))
+
 ## 2026.7.18 - 2026-07-18
 
 ### Fixed

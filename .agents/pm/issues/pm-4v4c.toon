@@ -1,0 +1,21 @@
+id: pm-4v4c
+title: Post-install activation verification can load stale overwritten extension modules
+description: "Reinstalling an already loaded extension overwrites its files and immediately re-activates it in the same Node process. ESM module caching can retain the prior dependency module namespace, so a newly installed entrypoint importing a newly added named export reports a false activation failure even though the published and installed files are correct; a fresh pm process activates successfully. Reproduced with pm-changelog 2026.7.18: install reported MissingTagHistoryError absent, while tarball/installed release-context.js exported it and package doctor in a fresh process showed activation_status ok."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,cache,extensions,install
+created_at: "2026-07-18T12:18:13.064Z"
+updated_at: "2026-07-18T12:18:13.064Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: Reinstall/upgrade activation verification loads the just-installed module graph rather than stale ESM cache entries; an extension adding a named dependency export upgrades successfully in one process; unchanged extension install and fresh-process doctor behavior remain covered; diagnostics distinguish package defects from verifier cache state.
+parent: pm-doxj
+risk: medium
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-8fxc,related,"2026-07-18T12:18:13.064Z",null,null
+  pm-x6jf,related,"2026-07-18T12:18:13.064Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-18T12:18:13.064Z",maintainer-agent,"Duplicate check 2026-07-18: all-status AND searches for post-install activation module cache and reinstall overwrite activation stale export found no canonical item. Related closed cache-reset lineage pm-8fxc covers invocation snapshot state, not ESM dependency cache during same-process overwrite; package lifecycle primitive lineage is pm-x6jf. Finding came from required latest pm-changelog generation and was proven not to be a pm-changelog package defect by published tarball hashes/exports plus fresh-process doctor activation."
+body: ""

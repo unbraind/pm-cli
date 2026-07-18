@@ -2,30 +2,34 @@ id: pm-i6pi
 title: "GH-590: cycle-creating blocked_by mutations succeed silently — items deadlock out of pm next with no inline feedback"
 description: "GitHub issue #590: a dependency mutation that closes a blocked_by cycle exits 0 with no warning; both items permanently leave pm next ready/recommended and only pm graph audit (ordering_cycle) or pm deps (cycle:true) explain why — nothing points there. Parent-cycle mutations already fail fast (precedent); ordering-kind dep mutations must warn inline naming the cycle path (or reject with an override flag), consistent with that precedent."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[3]: agent-ux,data-integrity,graph
 created_at: "2026-07-18T10:08:29.551Z"
-updated_at: "2026-07-18T12:05:02.857Z"
-assignee: maintainer-agent
+updated_at: "2026-07-18T12:15:00.972Z"
+closed_at: "2026-07-18T12:14:07.856Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "Mutation that would create an ordering-kind dependency cycle warns inline with the cycle path and pm graph audit pointer, or rejects with an explicit override flag; parent-cycle fail-fast precedent cited in contract docs; existing stored legacy cycles unaffected; regression coverage for update/update-many/create --dep paths"
 parent: pm-96h7
 risk: medium
 confidence: high
+resolution: fixed
+expected_result: Creating or updating an ordering dependency cycle warns inline with a concrete cycle path and graph-audit recovery while existing legacy cycles are not re-reported.
+actual_result: "Create, update, and update-many compare immutable graph snapshots through the public SDK primitive and emit ordering_cycle_created only for newly introduced cycles containing the changed item."
 dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-6irg,related,"2026-07-18T10:08:29.551Z",null,null
   pm-6x7o,related,"2026-07-18T10:08:29.551Z",null,null
   pm-ju83,related,"2026-07-18T10:08:29.551Z",null,null
   pm-um4g,related,"2026-07-18T10:08:29.551Z",null,null
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-18T10:52:15.306Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
   "2026-07-18T11:33:19.344Z",maintainer-agent,"Verification evidence: isolated packed-package smoke created a blocked_by cycle and received ordering_cycle_created with the concrete path; public collectNewOrderingCycleWarnings imported successfully from @unbrained/pm-cli/sdk."
   "2026-07-18T11:37:30.484Z",maintainer-agent,"Gate evidence: pnpm test:coverage passed 310 files/5906 tests at 100% statements (38887), branches (27366), functions (7917), and lines (37864). pnpm lint, typecheck, contracts:check, docs link gate, secret scan, git diff --check, and the item-linked sandbox test all passed."
   "2026-07-18T11:56:33.146Z",maintainer-agent,"Greptile pre-push review 72dcf827-ee73-4f4f-834d-fae8ae8243f6: replaced the adjacency invariant assertion with a defensive empty-neighbor fallback and covered the malformed-adjacency path."
   "2026-07-18T11:56:34.438Z",maintainer-agent,"Post-review gate evidence: full coverage rerun passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866); focused tests, ESLint, static/docstring, package-boundary, token-budget, typecheck, and diff checks remain green."
   "2026-07-18T12:05:02.857Z",maintainer-agent,"Greptile follow-up review 3c15f0c1-29ac-43d9-a91f-f3f4a5447c7a found the remaining adjacency construction assertion. Replaced it with optional insertion, added a structurally malformed graph regression, and passed focused tests plus lint/static/docstring/package-boundary/token/type gates."
+  "2026-07-18T12:14:02.414Z",maintainer-agent,"Final verification: exact local head passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866). Greptile final review 3fd40225-4f7c-47b3-9c65-d5c4e82132d8 returned 5/5 confidence, no correctness regressions, no files requiring attention, and no review comments."
 learnings[1]{created_at,author,text}:
   "2026-07-18T11:37:35.441Z",maintainer-agent,Mutation advisories should compare immutable before/after graph snapshots so new execution-order debt is actionable without re-reporting legacy cycles.
 files[6]{path,scope,note}:
@@ -42,4 +46,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   docs/AGENT_UX_CONTRACTS.md,project,Public agent UX and SDK contract documentation
   docs/README.md,project,Documentation index entry
+close_reason: "Implemented public immutable before/after graph advisory primitives with concrete new-cycle paths across create/update/update-many, legacy-cycle suppression, defensive traversal, installed smoke proof, and 100% coverage."
 body: ""

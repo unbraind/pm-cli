@@ -2,27 +2,31 @@ id: pm-cj9v
 title: "GH-589: pm next --assignee X answers from anonymous-caller perspective and pm claim conflates assignment with claim"
 description: "GitHub issue #589, two conflations breaking multi-agent coordinator queries: (a) pm next --assignee X without --author X relegates X's own claimable work to held_by_others (empty ready/recommended) — asking about X should adopt X's perspective or the envelope should say why rows were held out; (b) pm claim on an assigned-but-never-claimed item errors 'already claimed by <assignee>' though no claim ever happened — assignment and claim are distinct lifecycle facts and the recovery hint should name assignment takeover explicitly."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[3]: agent-ux,cli,multi-agent
 created_at: "2026-07-18T10:08:19.334Z"
-updated_at: "2026-07-18T11:56:38.224Z"
-assignee: maintainer-agent
+updated_at: "2026-07-18T12:15:03.642Z"
+closed_at: "2026-07-18T12:14:14.629Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: pm next --assignee X surfaces X's claimable work as ready/recommended (or discloses the perspective rule in the envelope); claim on assigned-unclaimed items distinguishes assignment from claim in error text and recovery hints; contract docs define assignee-vs-author-vs-claim semantics; regression coverage for both conflations
 parent: pm-mpbb
 risk: medium
 confidence: high
+resolution: fixed
+expected_result: "pm next --assignee X ranks from X perspective unless a distinct caller is explicit, and claim conflicts distinguish stored assignment from explicit claim history."
+actual_result: "Assignee becomes the fallback caller perspective, ownership wording is resolved from append-only history inside the item lock, and explicit caller identity remains authoritative."
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-8t5x,related,"2026-07-18T10:08:19.334Z",null,null
   pm-h90s,related,"2026-07-18T10:08:19.334Z",null,null
   pm-w8q4,related,"2026-07-18T10:08:19.334Z",null,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-18T10:52:28.862Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
   "2026-07-18T11:33:21.488Z",maintainer-agent,"Verification evidence: isolated packed-package assignee-scoped pm next included the bob-assigned candidate while ownership output preserved assignment-specific semantics."
   "2026-07-18T11:37:34.165Z",maintainer-agent,"Gate evidence: pnpm test:coverage passed 310 files/5906 tests at 100% statements (38887), branches (27366), functions (7917), and lines (37864). pnpm lint, typecheck, contracts:check, docs link gate, secret scan, git diff --check, and the item-linked sandbox test all passed."
   "2026-07-18T11:56:38.220Z",maintainer-agent,"Post-review gate evidence: full coverage rerun passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866); focused tests, ESLint, static/docstring, package-boundary, token-budget, typecheck, and diff checks remain green."
+  "2026-07-18T12:14:04.815Z",maintainer-agent,"Final verification: exact local head passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866). Greptile final review 3fd40225-4f7c-47b3-9c65-d5c4e82132d8 returned 5/5 confidence, no correctness regressions, no files requiring attention, and no review comments."
 learnings[1]{created_at,author,text}:
   "2026-07-18T11:37:37.555Z",maintainer-agent,"Ownership wording is history-derived: an assignee update is an assignment, while an explicit claim operation is a claim; ranking perspective should follow an explicit assignee unless caller identity is separately provided."
 files[8]{path,scope,note}:
@@ -41,4 +45,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   docs/AGENT_UX_CONTRACTS.md,project,Public agent UX and SDK contract documentation
   docs/README.md,project,Documentation index entry
+close_reason: Implemented assignee-perspective next ranking and history-derived assignment-versus-claim ownership semantics through public SDK primitives and async lock-safe mutation coverage.
 body: ""

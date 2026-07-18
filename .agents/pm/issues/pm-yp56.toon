@@ -2,27 +2,31 @@ id: pm-yp56
 title: "GH-588: pm comment --message exits 0 recording nothing — comment invocation without any comment text must fail fast"
 description: "GitHub issue #588: --message on the comments command is the history-message flag, not comment text; an invocation carrying no comment source (no positional text, no --add, no stdin/file) exits 0 with count:0 and records nothing. Fix = fail fast with actionable guidance (use --add/positional/stdin) or at minimum warn that only a history message was recorded."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[3]: agent-ux,cli,silent-failure
 created_at: "2026-07-18T10:08:09.956Z"
-updated_at: "2026-07-18T11:56:39.338Z"
-assignee: maintainer-agent
+updated_at: "2026-07-18T12:15:04.363Z"
+closed_at: "2026-07-18T12:14:16.630Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Comment invocation with no comment text errors (or warns) with guidance naming --add/positional/stdin; exit code non-zero on the error path; contract + regression coverage; --message continues to set the history message when comment text is present
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: fixed
+expected_result: A comment command with --message but no real comment text exits non-zero and names valid text sources; --message remains a history label when content exists.
+actual_result: "List-mode comment resolution now rejects --message with usage guidance for positional text, --add, --stdin, or --file while valid mutations remain unchanged."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-45mb,related,"2026-07-18T10:08:09.956Z",null,null
   pm-gdi7,related,"2026-07-18T10:08:09.956Z",null,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-18T10:52:33.104Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
   "2026-07-18T10:53:15.089Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
   "2026-07-18T11:33:20.755Z",maintainer-agent,"Verification evidence: isolated packed-package pm comments <id> --message <label> exited non-zero with explicit missing --add/--stdin/--file recovery guidance."
   "2026-07-18T11:37:34.779Z",maintainer-agent,"Gate evidence: pnpm test:coverage passed 310 files/5906 tests at 100% statements (38887), branches (27366), functions (7917), and lines (37864). pnpm lint, typecheck, contracts:check, docs link gate, secret scan, git diff --check, and the item-linked sandbox test all passed."
   "2026-07-18T11:56:39.336Z",maintainer-agent,"Post-review gate evidence: full coverage rerun passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866); focused tests, ESLint, static/docstring, package-boundary, token-budget, typecheck, and diff checks remain green."
+  "2026-07-18T12:14:05.421Z",maintainer-agent,"Final verification: exact local head passed 310 files/5906 tests at 100% statements (38889), branches (27370), functions (7918), and lines (37866). Greptile final review 3fd40225-4f7c-47b3-9c65-d5c4e82132d8 returned 5/5 confidence, no correctness regressions, no files requiring attention, and no review comments."
 learnings[1]{created_at,author,text}:
   "2026-07-18T11:37:39.665Z",maintainer-agent,Mutation-label options must never silently turn an otherwise empty annotation command into a successful list operation; fail with concrete text-input recovery.
 files[2]{path,scope,note}:
@@ -35,4 +39,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   docs/AGENT_UX_CONTRACTS.md,project,Public agent UX and SDK contract documentation
   docs/README.md,project,Documentation index entry
+close_reason: "Implemented non-zero actionable failure for --message without comment content while preserving valid mutation labels, with installed CLI and focused regression proof."
 body: ""
