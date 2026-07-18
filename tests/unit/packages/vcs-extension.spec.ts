@@ -412,6 +412,72 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
           pm_root: context.pmPath,
         }),
       ).rejects.toThrow(/SDK runtime/);
+
+      const ledgerFirst = (await invoke("vcs create", ["Ledger-first retry"], {
+        ref: ref.id,
+        treeHash: "sha256:ledger-first",
+      })) as { id: string };
+      await invoke("vcs propose", [ledgerFirst.id]);
+      const itemFirst = (await invoke("vcs create", ["Item-first retry"], {
+        ref: ref.id,
+        treeHash: "sha256:item-first",
+      })) as { id: string };
+      await invoke("vcs propose", [itemFirst.id]);
+      const conflicting = (await invoke("vcs create", ["Conflicting retry"], {
+        ref: ref.id,
+        treeHash: "sha256:conflict",
+      })) as { id: string };
+      await invoke("vcs propose", [conflicting.id]);
+      const reconciliationStore = await sdk.openRelationshipEventStore({
+        nodes: [
+          change.id,
+          draft.id,
+          fallbackChange.id,
+          ledgerFirst.id,
+          itemFirst.id,
+          conflicting.id,
+          ref.id,
+        ],
+        definitions: [VCS_RELATIONSHIP_KIND],
+        relativePath: "relationships/vcs-events.jsonl",
+      });
+      const ledgerEvent = await reconciliationStore.append({
+        eventId: `merge-${ledgerFirst.id}`,
+        relationshipId: `changeset-${ledgerFirst.id}`,
+        action: "add",
+        edge: { source: ledgerFirst.id, target: ref.id, kind: "commits_to" },
+        author: "failure-injection",
+        timestamp: new Date().toISOString(),
+      });
+      expect(
+        await invoke("vcs merge", [ledgerFirst.id], { ref: ref.id }),
+      ).toMatchObject({ details: { event: ledgerEvent }, status: "merged" });
+      await client.update(itemFirst.id, {
+        status: "merged",
+        resolution: `Merged into ${ref.id}`,
+        message: "Injected item-first partial merge",
+        field: [`vcs_ref=${ref.id}`],
+      });
+      expect(
+        await invoke("vcs merge", [itemFirst.id], { ref: ref.id }),
+      ).toMatchObject({
+        details: { event: { eventId: `merge-${itemFirst.id}` } },
+        status: "merged",
+      });
+      await reconciliationStore.append({
+        eventId: `merge-${conflicting.id}`,
+        relationshipId: `conflict-${conflicting.id}`,
+        action: "add",
+        edge: { source: conflicting.id, target: ref.id, kind: "commits_to" },
+        author: "failure-injection",
+        timestamp: new Date().toISOString(),
+      });
+      await expect(
+        invoke("vcs merge", [conflicting.id], { ref: ref.id }),
+      ).rejects.toThrow(/event conflicts/);
+      await expect(
+        invoke("vcs merge", [itemFirst.id], { ref: change.id }),
+      ).rejects.toThrow(/VcsRef/);
       resetActiveExtensionRuntimeState();
       assertExtensionDeactivated(await harness.deactivate());
     });

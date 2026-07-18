@@ -14,6 +14,7 @@ import type {
   GetResult,
   ItemMetadata,
   ProjectProfileDefinition,
+  RelationshipEvent,
   RelationshipEventProjection,
   RelationshipKindDefinition,
   SchemaFieldDefinition,
@@ -293,11 +294,39 @@ async function runChangesetMerge(
   const client = clientFor(context);
   const changeset = await getVcsItem(client, id, "Changeset");
   await getVcsItem(client, refId, "VcsRef");
-  if (changeset.item.status !== "proposed")
+  const resolution = `Merged into ${refId}`;
+  if (
+    changeset.item.status !== "proposed" &&
+    (changeset.item.status !== "merged" || changeset.item.resolution !== resolution)
+  )
     throw new TypeError(`vcs merge requires proposed changeset ${id}`);
   const store = await openVcsRelationshipStore(context, client);
-  const timestamp = new Date().toISOString();
-  const relationship = await store.append({
+  let relationship: RelationshipEvent | undefined;
+  for await (const batch of store.stream()) {
+    relationship ??= batch.find((event) => event.eventId === `merge-${id}`);
+  }
+  if (
+    relationship !== undefined &&
+    JSON.stringify({
+      action: relationship.action,
+      relationshipId: relationship.relationshipId,
+      edge: relationship.edge,
+    }) !==
+      JSON.stringify({
+        action: "add",
+        relationshipId: `changeset-${id}`,
+        edge: { source: id, target: refId, kind: "commits_to" },
+      })
+  )
+    throw new TypeError(`vcs merge event conflicts with changeset ${id}`);
+  if (changeset.item.status === "proposed")
+    await client.update(id, {
+      status: "merged",
+      resolution,
+      message: `VCS merge into ${refId}`,
+      field: [`vcs_ref=${refId}`],
+    });
+  relationship ??= await store.append({
     eventId: `merge-${id}`,
     relationshipId: `changeset-${id}`,
     action: "add",
@@ -306,14 +335,8 @@ async function runChangesetMerge(
       typeof context.global.author === "string" && context.global.author.trim()
         ? context.global.author.trim()
         : "pm-vcs",
-    timestamp,
+    timestamp: new Date().toISOString(),
     reason: "Reviewed VCS changeset merge",
-  });
-  await client.update(id, {
-    status: "merged",
-    resolution: `Merged into ${refId}`,
-    message: `VCS merge into ${refId}`,
-    field: [`vcs_ref=${refId}`],
   });
   return {
     action: "vcs-merge",
