@@ -123,6 +123,37 @@ describe("mcp nested option-key validation (pm-upi0)", () => {
     expect(detect("pm_run", undefined, { options: { anything: 1 } })).toEqual(
       [],
     );
+    // Runtime-consumed nested compatibility grammar is action-scoped: bulk
+    // wrappers/aliases and managed lifecycle scope aliases are valid, but the
+    // same key on an unrelated read action remains an explicit no-op warning.
+    expect(
+      detect("pm_run", "update-many", {
+        options: {
+          list: { tag: "sdk" },
+          update: { priority: "1" },
+          checkpoint: false,
+          dry_run: true,
+        },
+      }),
+    ).toEqual([]);
+    expect(
+      detect("pm_run", "close-many", {
+        options: {
+          list: { tag: "sdk" },
+          expected_result: "closed",
+          validate_close: "warn",
+          no_checkpoint: true,
+        },
+      }),
+    ).toEqual([]);
+    expect(
+      detect("pm_run", "extension-reload", {
+        options: { project: true },
+      }),
+    ).toEqual([]);
+    expect(detect("pm_deps", "deps", { options: { list: {} } })).toHaveLength(
+      1,
+    );
     // Extension- and package-owned actions have no contract table entry and
     // keep arbitrary passthrough options.
     expect(

@@ -6,29 +6,34 @@ status: closed
 priority: 3
 tags[4]: agent-ux,"area:sdk",contracts,mcp
 created_at: "2026-07-17T20:00:29.397Z"
-updated_at: "2026-07-17T23:53:20.471Z"
-closed_at: "2026-07-17T23:53:19.762Z"
+updated_at: "2026-07-18T00:44:09.005Z"
+closed_at: "2026-07-18T00:44:08.166Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: tools/call surfaces a warning (matching the pm-qxwu top-level mechanism) for every options key absent from the invoked action's contract; contract tables stay the single source of truth; regression test covers a mutation-shaped key on a read tool
 parent: pm-96h7
 risk: low
 confidence: high
-resolution: "Contract-driven nested-option validation in mcp/server.ts: detectUnexpectedOptionKeys warns (warn-only, pm-qxwu style) for every options key absent from the invoked action's contract, single-sourced from pmToolActionParameterKeys"
-expected_result: pm_deps options.dep (and any unknown nested option key on a contract-described action) surfaces an explicit warning instead of silently no-opping
-actual_result: Warning emitted on stderr and in structuredContent.warnings with did-you-mean suggestion and declared-key list; call still succeeds; extension/package actions unaffected; verified live in an MCP session and by regression spec
+resolution: "Nested-option validation now composes canonical action-schema keys with an explicit action-scoped runtime compatibility contract, so ignored keys still warn while list/update/checkpoint/project wrapper options consumed by MCP dispatch remain valid."
+expected_result: Unknown or ignored nested option keys warn without rejection; runtime-consumed compatibility keys remain warning-free.
+actual_result: "pm_deps options.dep and other ignored keys warn on stderr and structuredContent; update-many/close-many wrapper grammar and extension/package project selectors do not false-positive; targeted MCP tests, static gates, and all 5,863 tests pass at 100/100/100/100 coverage."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-qxwu,related,"2026-07-17T20:00:29.397Z",null,null
   pm-xwah,related,"2026-07-17T20:00:29.397Z",null,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-17T23:53:18.340Z",maintainer-agent,"Implementation evidence (2026-07-18): tools/call now warns on every nested options key absent from the invoked action's contract, using the exact pm-qxwu mechanism (stderr + additive structuredContent.warnings, never rejecting). Contract tables stay the single source of truth via the new exported pmToolActionParameterKeys(action) accessor in sdk/cli-contracts/tool-schema.ts — the same composition the strict action-scoped schema builder uses (action + global transport params + mutation projection keys + required/optional). Narrow tools resolve their fixed action from the new NARROW_TOOL_ACTIONS map (HANDLERS now derived from it, no duplication); pm_run resolves options validation from its action argument; extension/package actions have no contract entry and keep arbitrary passthrough. Regression spec covers the exact original repro class (pm_deps options.dep mutation-shaped key on a read tool), near-miss suggestions (options.formt -> format), pm_run action resolution, and all skip paths. Live MCP-session proof: pm_deps options.dep warning surfaced verbatim in structuredContent.warnings."
+  "2026-07-18T00:37:00.161Z",codex-root,"Review finding: contract-only nested option validation conflates canonical action-schema keys with runtime-compatible nested wrapper grammar. Full coverage remained 100/100/100/100, but integration traces proved valid list/update/checkpoint/project options were incorrectly labeled as no-ops. Fixing on the existing canonical item before merge; no duplicate item created."
+  "2026-07-18T00:44:06.703Z",codex-root,"Completion evidence: review found and fixed false-positive warnings for update-many/close-many wrapper grammar and extension/package project selectors. Added an exported composed nested-option contract used by MCP validation while preserving canonical action schemas. Verification: pnpm build; 24 targeted unit/integration tests; pnpm quality:static (including 100% docstrings and package boundaries); full coverage 305 files/5,863 tests with statements 38,560/38,560, branches 27,105/27,105, functions 7,837/7,837, lines 37,556/37,556; git diff --check clean."
 notes[1]{created_at,author,text}:
   "2026-07-17T21:31:25.688Z",maintainer-agent,"Origin context preserved: discovered during PR #580 when a test assumed pm_deps options.dep mutates. The pm-qxwu top-level warning mechanism (TOOL_DECLARED_KEYS at tools/call) is the intended pattern to extend one level into options objects using the per-action optional lists in tool-schema.ts as the contract source."
+learnings[1]{created_at,author,text}:
+  "2026-07-18T00:44:07.284Z",codex-root,"Nested MCP option validity has two sources of runtime truth: canonical action parameters and action-scoped wrapper compatibility grammar. Warning logic must compose both explicitly; using strict action schemas alone creates false no-op warnings for values consumed before command dispatch."
 files[3]{path,scope,note}:
   src/mcp/server.ts,project,"detectUnexpectedOptionKeys: contract-driven nested-options warnings via resolveInvokedAction"
   src/sdk/cli-contracts/tool-schema.ts,project,pmToolActionParameterKeys single-source accessor shared by schema builder and MCP warning path
   tests/unit/mcp/mcp-server-nested-options.spec.ts,project,warn-only nested-option validation spec incl. pm_run action resolution
-tests[1]{command,scope,timeout_seconds}:
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/mcp/mcp-server-nested-options.spec.ts,project,300
-close_reason: "Fixed in the graph-platform continuation PR: MCP nested options keys are now validated against the invoked action's contract (pmToolActionParameterKeys single source), extending the pm-qxwu top-level warning mechanism into options objects; regression spec covers the pm_deps options.dep repro, suggestions, and passthrough exemptions"
+close_reason: "Fixed nested MCP option warnings to preserve runtime-compatible wrapper keys while still surfacing genuinely ignored options; targeted integration, static quality, and full 100/100/100/100 coverage pass."
 body: ""

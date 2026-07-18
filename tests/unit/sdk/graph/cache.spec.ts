@@ -30,6 +30,33 @@ describe("computeWorkspaceGraphFingerprint", () => {
     expect(computeWorkspaceGraphFingerprint(base)).toBe(
       computeWorkspaceGraphFingerprint(reordered),
     );
+    expect(
+      computeWorkspaceGraphFingerprint([
+        item("pm-a", {
+          parent: "pm-b",
+          blocked_by: "pm-c",
+          dependencies: [
+            { id: "pm-c", kind: "blocked_by" },
+            { id: "pm-b", kind: "related" },
+          ],
+        }),
+        item("pm-b"),
+        item("pm-c"),
+      ] as never),
+    ).toBe(
+      computeWorkspaceGraphFingerprint([
+        item("pm-a", {
+          parent: "pm-b",
+          blocked_by: "pm-c",
+          dependencies: [
+            { id: "pm-b", kind: "related" },
+            { id: "pm-c", kind: "blocked_by" },
+          ],
+        }),
+        item("pm-b"),
+        item("pm-c"),
+      ] as never),
+    );
     const variants = [
       [item("pm-a", { title: "Renamed" }), item("pm-b"), item("pm-c")],
       [item("pm-a", { status: "closed" }), item("pm-b"), item("pm-c")],
@@ -93,9 +120,7 @@ describe("WorkspaceGraphCache", () => {
     const items = [item("pm-a"), item("pm-b")] as never;
     const fingerprint = computeWorkspaceGraphFingerprint(items);
     let builds = 0;
-    const build = (): ReturnType<
-      typeof assembleWorkspaceRelationshipGraph
-    > => {
+    const build = (): ReturnType<typeof assembleWorkspaceRelationshipGraph> => {
       builds += 1;
       return assembleWorkspaceRelationshipGraph(items);
     };
@@ -171,9 +196,9 @@ describe("WorkspaceGraphCache", () => {
   });
 
   it("rejects invalid result bounds and clears through the shared instance", () => {
-    expect(() => new WorkspaceGraphCache({ maxResultsPerWorkspace: 0 })).toThrow(
-      /Invalid maxResultsPerWorkspace bound/,
-    );
+    expect(
+      () => new WorkspaceGraphCache({ maxResultsPerWorkspace: 0 }),
+    ).toThrow(/Invalid maxResultsPerWorkspace bound/);
     expect(() => new WorkspaceGraphCache({ maxWorkspaces: 1.5 })).toThrow(
       /Invalid maxWorkspaces bound/,
     );

@@ -51,6 +51,7 @@ function fingerprintLine(
         typeof dependency.id === "string" ? dependency.id : ""
       }`;
     })
+    .sort((left, right) => left.localeCompare(right))
     .join(",");
   return [
     item.id,
@@ -76,9 +77,7 @@ export function computeWorkspaceGraphFingerprint(
     status === "closed" || status === "canceled",
 ): string {
   const lines = items
-    .filter(
-      (item) => typeof item?.id === "string" && item.id.trim().length > 0,
-    )
+    .filter((item) => typeof item?.id === "string" && item.id.trim().length > 0)
     .map((item) => fingerprintLine(item, isTerminal))
     .sort((left, right) => left.localeCompare(right));
   // Separate fields and records with control characters no stored field can
@@ -169,7 +168,10 @@ export class WorkspaceGraphCache {
     if (entry === undefined || entry.fingerprint !== fingerprint) {
       entry = { fingerprint, assembly: build(), results: new Map() };
       assemblyReused = false;
-      if (!this.#entries.has(key) && this.#entries.size >= this.#maxWorkspaces) {
+      if (
+        !this.#entries.has(key) &&
+        this.#entries.size >= this.#maxWorkspaces
+      ) {
         // Evict the least recently used workspace; every lookup refreshes
         // recency below, so insertion order tracks use order.
         this.#entries.delete(this.#entries.keys().next().value!);

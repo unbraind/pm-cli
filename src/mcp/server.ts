@@ -13,7 +13,7 @@ import { decodeHtmlEntitiesInOptions } from "../core/shared/html-entity-decode.j
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import { asRecordClone } from "../core/shared/primitives.js";
 import { createSerialQueue } from "../core/shared/serial-queue.js";
-import { pmToolActionParameterKeys } from "../sdk/cli-contracts/tool-schema.js";
+import { pmToolActionNestedOptionKeys } from "../sdk/cli-contracts/tool-schema.js";
 import {
   readRequiredString,
   runAction,
@@ -200,7 +200,7 @@ function detectUnexpectedOptionKeys(
   ) {
     return [];
   }
-  const declared = pmToolActionParameterKeys(action);
+  const declared = pmToolActionNestedOptionKeys(action);
   if (declared === undefined) {
     return [];
   }
@@ -309,7 +309,11 @@ export async function handleRequest(
     // pm-upi0 extends the same mechanism into the nested options object.
     const warnings = [
       ...detectUnexpectedTopLevelKeys(name, args),
-      ...detectUnexpectedOptionKeys(name, resolveInvokedAction(name, args), args),
+      ...detectUnexpectedOptionKeys(
+        name,
+        resolveInvokedAction(name, args),
+        args,
+      ),
     ];
     for (const warning of warnings) {
       console.error(`[pm-mcp] ${warning}`);
