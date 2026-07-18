@@ -478,6 +478,14 @@ describe("workspace SDK transactions", () => {
           steps: [{ ...duplicate, id: false as unknown as string }],
         }),
       ).rejects.toThrow("Transaction step id must be a string");
+      await expect(
+        commitWorkspaceTransaction({
+          pmRoot,
+          transactionId: "padded-step-id",
+          author: "agent",
+          steps: [{ ...duplicate, id: " same " }],
+        }),
+      ).rejects.toThrow("must not contain surrounding whitespace");
       const journalDir = path.join(pmRoot, "transactions", "sdk");
       await mkdir(journalDir, { recursive: true });
       await writeFile(

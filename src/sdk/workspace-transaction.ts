@@ -516,9 +516,14 @@ export async function commitWorkspaceTransaction(
   );
   if (options.steps.length === 0)
     throw new TypeError("Workspace transaction requires at least one step");
-  const stepIds = options.steps.map((step) =>
-    requiredIdentifier(step.id, "Transaction step id"),
-  );
+  const stepIds = options.steps.map((step) => {
+    const stepId = requiredIdentifier(step.id, "Transaction step id");
+    if (stepId !== step.id)
+      throw new TypeError(
+        "Transaction step id must not contain surrounding whitespace",
+      );
+    return stepId;
+  });
   if (new Set(stepIds).size !== stepIds.length)
     throw new TypeError("Workspace transaction step ids must be unique");
 

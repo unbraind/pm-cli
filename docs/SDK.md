@@ -825,9 +825,11 @@ const steps: WorkspaceTransactionStep[] = [
     id: "approve-invoice",
     async inspect() {
       const invoice = await pm.get("invoice-42", { depth: "deep" });
-      return invoice.item.status === "approved"
-        ? { state: "applied", result: { status: "approved" } }
-        : { state: "pending" };
+      if (invoice.item.status === "approved")
+        return { state: "applied", result: { status: "approved" } };
+      if (invoice.item.status !== "open")
+        throw new TypeError("Invoice must be open before approval");
+      return { state: "pending" };
     },
     async apply() {
       await pm.update("invoice-42", { status: "approved" });
