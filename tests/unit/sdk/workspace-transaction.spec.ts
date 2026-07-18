@@ -235,6 +235,77 @@ describe("workspace SDK transactions", () => {
     }
   });
 
+  it("durably compensates when inspection itself reports a conflict", async () => {
+    const pmRoot = await mkdtemp(path.join(tmpdir(), "pm-sdk-transaction-"));
+    try {
+      const events: string[] = [];
+      const item = {
+        state: "pending" as WorkspaceTransactionStepState,
+        value: 0,
+      };
+      let conflict = true;
+      let conflictInspections = 0;
+      let relationshipApplied = false;
+      const relationship: WorkspaceTransactionStep = {
+        id: "relationship",
+        inspect: async () => {
+          conflictInspections += 1;
+          if (conflict && conflictInspections > 1)
+            throw new TypeError("conflicting relationship winner");
+          return { state: relationshipApplied ? "applied" : "pending" };
+        },
+        apply: async () => {
+          relationshipApplied = true;
+          events.push("apply:relationship");
+          return { relationship: "committed" };
+        },
+        compensate: async () => {
+          if (relationshipApplied) relationshipApplied = false;
+          events.push("reconcile:relationship");
+        },
+      };
+      const options = {
+        pmRoot,
+        transactionId: "inspection-conflict",
+        author: "agent",
+        steps: [createTestStep("item", item, events), relationship],
+      };
+      await expect(commitWorkspaceTransaction(options)).rejects.toThrow(
+        "conflicting relationship winner",
+      );
+      expect(
+        JSON.parse(
+          await readFile(
+            path.join(
+              pmRoot,
+              "transactions",
+              "sdk",
+              "inspection-conflict.json",
+            ),
+            "utf8",
+          ),
+        ),
+      ).toMatchObject({ status: "compensated", completedStepIds: [] });
+      expect(item.state).toBe("compensated");
+
+      conflict = false;
+      await expect(commitWorkspaceTransaction(options)).resolves.toMatchObject({
+        status: "committed",
+        recovered: true,
+        results: { relationship: { relationship: "committed" } },
+      });
+      expect(events).toEqual([
+        "apply:item",
+        "reconcile:relationship",
+        "compensate:item",
+        "apply:item",
+        "apply:relationship",
+      ]);
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
+
   it("rejects malformed plans and journal drift", async () => {
     const pmRoot = await mkdtemp(path.join(tmpdir(), "pm-sdk-transaction-"));
     try {
@@ -535,9 +606,9 @@ describe("workspace SDK transactions", () => {
               id: "step",
               inspect: async () => ({
                 state:
-                  ++raceInspection === 1 || raceInspection > 3
-                    ? "compensated"
-                    : ("applied" as WorkspaceTransactionStepState),
+                  ++raceInspection === 2
+                    ? "applied"
+                    : ("compensated" as WorkspaceTransactionStepState),
               }),
               apply: async () => undefined,
               compensate: async () => {

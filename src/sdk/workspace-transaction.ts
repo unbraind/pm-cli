@@ -41,7 +41,7 @@ export interface WorkspaceTransactionStep {
   inspect(): Promise<WorkspaceTransactionStepInspection>;
   /** Apply the forward mutation and return a journal-safe result, or store nothing. */
   apply(): Promise<WorkspaceTransactionJsonValue | undefined>;
-  /** Append the inverse or reconciliation mutation. */
+  /** Idempotently reconcile only this step's exact forward mutation when present. */
   compensate(): Promise<void>;
 }
 
@@ -406,15 +406,18 @@ async function compensateAppliedSteps(
   options: CommitWorkspaceTransactionOptions,
   journal: WorkspaceTransactionJournal,
 ): Promise<void> {
-  await discoverAppliedSteps(journal, options.steps);
   journal.status = "compensating";
   await writeJournal(options.pmRoot, journal);
   await emitTransition(options, journal, "compensating");
   const completed = new Set(journal.completedStepIds);
   for (const step of [...options.steps].reverse()) {
-    if (!completed.has(step.id)) continue;
-    const inspection = await step.inspect();
-    if (inspection.state === "applied") {
+    let shouldCompensate: boolean;
+    try {
+      shouldCompensate = (await step.inspect()).state === "applied";
+    } catch {
+      shouldCompensate = true;
+    }
+    if (shouldCompensate) {
       await emitTransition(options, journal, "step_compensating", step.id);
       await step.compensate();
     }
