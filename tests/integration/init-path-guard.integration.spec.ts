@@ -203,7 +203,7 @@ describe("init tracker-path guardrails", () => {
       expect(callerExtensionsAfter).toEqual(callerExtensionsBefore);
       expect(targetInit.json.installed_packages).toMatchObject({
         installed_all: true,
-        installed_count: 12,
+        installed_count: 13,
       });
       expect(targetSettings.id_prefix).toBe("pm-");
       expect(targetSettings.author_default).toBe("sandbox-agent");

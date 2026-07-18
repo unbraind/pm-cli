@@ -10,8 +10,10 @@
  * instead of silently dropping it.
  */
 import type { Dependency, ItemStatus } from "../../types/index.js";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import {
   RelationshipGraph,
+  createRelationshipKindRegistry,
   type RelationshipKindRegistry,
 } from "../relationships.js";
 
@@ -217,6 +219,16 @@ export function assembleWorkspaceRelationshipGraph(
   isTerminal?: (status: ItemStatus) => boolean,
   registry?: RelationshipKindRegistry,
 ): WorkspaceRelationshipAssembly {
+  const relationshipRegistry = registry ?? createRelationshipKindRegistry();
+  if (registry === undefined) {
+    // Preserve compatibility with activation payloads produced before this registry existed.
+    for (const registration of
+      getActiveExtensionRegistrations()?.relationship_kinds ?? []) {
+      for (const definition of registration.definitions) {
+        relationshipRegistry.register(definition);
+      }
+    }
+  }
   const safeItems = items.filter(
     (item) => typeof item?.id === "string" && item.id.trim().length > 0,
   );
@@ -255,7 +267,7 @@ export function assembleWorkspaceRelationshipGraph(
   return {
     graph: RelationshipGraph.fromItems(
       [...graphItems, ...missingIds.map((id) => ({ id }))],
-      registry,
+      relationshipRegistry,
     ),
     details: [
       ...safeItems.map((item) => ({

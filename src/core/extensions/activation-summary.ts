@@ -86,6 +86,8 @@ export interface ExtensionActivationSummary {
   item_types: string[];
   /** Custom item-metadata field names registered via `registerItemFields`. */
   item_fields: string[];
+  /** Custom relationship-kind names registered via `registerRelationshipKinds`. */
+  relationship_kinds?: string[];
   /** Schema migration ids registered via `registerMigration` (id-less migrations are omitted — they carry no identifier). */
   migrations: string[];
   /** Project profile names registered via `registerProfile`. */
@@ -169,6 +171,11 @@ export function describeExtensionActivation(
     renderers,
     hooks,
   } = activation;
+  // Preserve compatibility with activation payloads produced before this registry existed.
+  const relationshipKinds = collectFlat(
+    registrations.relationship_kinds ?? [],
+    (entry) => entry.definitions.map((definition) => definition.kind),
+  );
   return {
     capabilities: collectUsedExtensionCapabilities(activation, options),
     commands: collect(registrations.commands, (entry) => entry.command),
@@ -187,6 +194,9 @@ export function describeExtensionActivation(
     item_fields: collectFlat(registrations.item_fields, (entry) =>
       entry.fields.map((field) => field.name),
     ),
+    ...(relationshipKinds.length > 0
+      ? { relationship_kinds: relationshipKinds }
+      : {}),
     migrations: collectFlat(registrations.migrations, (entry) =>
       typeof entry.definition.id === "string" ? [entry.definition.id] : [],
     ),

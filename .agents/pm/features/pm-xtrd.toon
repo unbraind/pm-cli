@@ -2,18 +2,50 @@ id: pm-xtrd
 title: "Beyond-PM SDK exemplar spike: minimal VCS-style changeset workflow as a pm package (custom schema + event-sourced history + hooks)"
 description: "Acceptance vehicle for story pm-8ngt: an SDK-only exemplar package modeling a Changeset domain (draft→proposed→merged/abandoned, domain verbs as extension commands, merge rules as hooks, state via history replay). Produces an itemized SDK gap report. Mirrors the pm-cbwg/pm-kanban archetype pattern."
 type: Feature
-status: open
+status: closed
 priority: 4
 tags[5]: exemplar,extensibility,sdk,spike,universal-tool
 created_at: "2026-07-06T22:18:00.517Z"
-updated_at: "2026-07-13T22:02:03.605Z"
+updated_at: "2026-07-18T09:51:27.471Z"
+closed_at: "2026-07-18T07:17:39.286Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: Spike package activates cleanly importing only the public SDK (zero private core imports); create→propose→merge→history-replay round-trip passes a sandbox smoke; gap report exists with each gap filed as a pm item or explicitly waived
 parent: pm-8ngt
 risk: medium
 confidence: medium
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-3mna,blocked_by,"2026-07-13T22:02:03.590Z",null,null
-  pm-cbwg,blocked_by,"2026-07-13T22:02:03.590Z",null,null
+comments[8]{created_at,author,text}:
+  "2026-07-18T05:54:11.258Z",codex-sdk-vcs-20260718,"Implementation start 2026-07-18: dependencies pm-3mna and pm-cbwg are live-verified closed. This wide lane will build the package against public SDK exports only, exercise custom schema/statuses, commands/hooks, attributable history replay, and produce a structured gap report plus packed temp-workspace proof."
+  "2026-07-18T07:17:34.514Z",codex-sdk-vcs-20260718,"Acceptance evidence 2026-07-18: @unbrained/pm-vcs ships 2 domain types, 4 fields, a custom commits_to ontology, VCS profile/workflow, 7 domain commands, reviewed-merge hook, point-in-time history reconstruction, and durable merge-ledger projection using public SDK contracts only. Linked tests pass 2/2. Packed manual proof installed the tarball into an isolated project, installed vcs, applied its profile, created/proposed/merged a changeset, reconstructed version 1, replayed version=1/processed=1 identically across fresh processes, passed isolated package doctor and tracker validation, and preserved normal core create/get."
+  "2026-07-18T07:48:06.147Z",codex-sdk-vcs-20260718,"Pre-push Greptile corrections: VCS merge events now use stable merge-<changeset> identities and append without a stale read-then-write expectedVersion window, so concurrent independent merges serialize under the durable store lock. Installed SDK-dispatch acceptance proves packed-sdk-author reaches the immutable ledger; direct-source acceptance runs two independent merges concurrently."
+  "2026-07-18T08:08:44.185Z",codex-sdk-vcs-20260718,"Pre-push Greptile re-review against committed head d37d6be9 completed clean at confidence 5/5 with zero comments. It explicitly verified end-to-end SDK author attribution, writer-lock serialization of concurrent independent VCS merges, strict relationship-kind registration validation with nested schema preservation, and the documented empty stream checkpoint boundary."
+  "2026-07-18T08:31:15.850Z",codex-sdk-vcs-20260718,"Release-gate Greptile run cc0177cd-e16c-4bf8-9a4e-8fa900447367 found one P1 two-store partial-write risk in vcs merge. The correction implements a deterministic reconciliation protocol rather than a line-order swap: an existing matching ledger event finalizes a proposed item, a matching merged item can restore a missing ledger event, and conflicting deterministic events fail closed. Failure-injection acceptance covers ledger-first, item-first, and conflict states. Full repository coverage passes 308 files / 5,893 tests at exact 100/100/100/100; focused typecheck and ESLint pass."
+  "2026-07-18T08:40:48.922Z",codex-sdk-vcs-20260718,"Targeted post-fix Greptile re-review against b8b40b51 completed at confidence 5/5 with zero comments. It confirms both partial-write directions recover correctly, deterministic conflicts fail closed, concurrent independent merges remain serialized, author attribution remains intact, and the failure-injection tests meaningfully exercise the durable protocol."
+  "2026-07-18T09:25:20.389Z",codex-root,"Hosted review round 1 evidence: implemented all valid Gemini and CodeRabbit findings across legacy activation compatibility, graph/loader compatibility documentation, VCS ref validation, event-first crash reconciliation, package report routing, global runtime cleanup, and temporary-ledger cleanup. Added explicit strict-contract rejection coverage for missing ordering and allowSelf because these fields are required by the public RelationshipKindDefinition contract; defaulting them would conceal malformed JavaScript or JSON extension input. Full sandbox coverage passed: 308 files, 5,896 tests, exact 100/100/100/100 (38,758 statements; 27,272 branches; 7,884 functions; 37,746 lines)."
+  "2026-07-18T09:51:27.471Z",codex-sdk-vcs-20260718,"Hosted review round 2 P1 evidence: Greptile exact-head run 14945408 identified a cross-process duplicate append race between the merge pre-read and locked durable append. The accepted correction factors deterministic merge lookup/validation into nontrivial reusable helpers, catches only the exact duplicate-event TypeError, refreshes the durable ledger, accepts a structurally matching winner, rejects missing or conflicting winners with the original error as cause, and propagates unrelated storage failures unchanged. Failure injection covers all four outcomes. Full coverage passes 308 files / 5,896 tests at exact 100/100/100/100 (38,775 statements; 27,287 branches; 7,887 functions; 37,762 lines)."
+notes[1]{created_at,author,text}:
+  "2026-07-18T07:17:35.726Z",codex-sdk-vcs-20260718,"Gap disposition: production content-addressed object storage, tree diffing, and network transport are VCS-product concerns, not universal SDK gaps. Cross-item plus relationship atomic commit remains an explicit bounded-exemplar waiver; larger durable indexing and scale work stays on canonical pm-ju83/pm-m2il lineage."
+learnings[2]{created_at,author,text}:
+  "2026-07-18T07:17:35.117Z",codex-sdk-vcs-20260718,"A foreign-domain package can remain core-independent when the host injects lifecycle, history, and relationship services. Runtime package imports stay type-only; values come from context.sdk, allowing bundled installed copies to execute without private paths or nested CLI resolution."
+  "2026-07-18T07:48:06.788Z",codex-sdk-vcs-20260718,"For durable domain commands, do not read currentVersion and then reacquire the append lock merely to supply that version: the gap creates avoidable conflicts across independent mutations. Omit the optional OCC precondition when the store lock itself defines serialization, and use a stable domain event id for duplicate detection."
+files[10]{path,scope,note}:
+  packages/pm-vcs/extensions/vcs/index.ts,project,Complete public-SDK VCS exemplar package and gap report
+  packages/pm-vcs/extensions/vcs/manifest.json,project,Complete public-SDK VCS exemplar package and gap report
+  packages/pm-vcs/extensions/vcs/package.json,project,Complete public-SDK VCS exemplar package and gap report
+  packages/pm-vcs/GAP_REPORT.md,project,Complete public-SDK VCS exemplar package and gap report
+  packages/pm-vcs/package.json,project,Complete public-SDK VCS exemplar package and gap report
+  packages/pm-vcs/README.md,project,Complete public-SDK VCS exemplar package and gap report
+  tests/fixtures/contracts/full.json,project,Relationship policy contract snapshot
+  tests/integration/cli.integration.spec.ts,project,First-party install-all package count acceptance
+  tests/integration/init-path-guard.integration.spec.ts,project,Init install-all package count acceptance
+  tests/unit/packages/vcs-extension.spec.ts,project,Installed and direct-source domain acceptance coverage
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/vcs-extension.spec.ts,project,240,VCS lifecycle history projection and failure-boundary acceptance
+  node scripts/smoke-npx-from-pack.mjs,project,300,Packed CLI and all 13 first-party packages smoke
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrq19r46-zrfl4s,test,passed,"2026-07-18T07:15:22.559Z","2026-07-18T07:16:28.422Z","2026-07-18T07:16:28.422Z",2,0,0
+docs[2]{path,scope,note}:
+  packages/pm-vcs/GAP_REPORT.md,project,Primitive-by-primitive foreign-domain assessment
+  packages/pm-vcs/README.md,project,Install lifecycle and package boundary guide
+close_reason: "Delivered and verified the public-SDK-only VCS changeset exemplar, gap report, durable replay, installed package lifecycle, and packed temp-workspace acceptance at exact full repository coverage."
 body: "# Spike — minimal VCS-style changeset workflow as a pm package\n\nBuild a small, throwaway-quality but end-to-end **exemplar package** that models a version-control-like domain purely on public pm SDK primitives: a `Changeset` custom type with a domain status graph (draft → proposed → merged/abandoned), `ref`/`branch` modeled as custom fields or link relations, domain verbs (`propose`, `merge`, `abandon`) as extension-registered commands, merge rules enforced by hooks, and domain state derived by replaying the audited history stream.\n\n## Why\nThis is the acceptance vehicle for the beyond-PM platform story (parent epic pm-usfg): the vision claims one could build \"a VCS like Git or a company's business logic\" on the SDK. A spike either demonstrates that with today's primitives or produces a precise, itemized gap list.\n\n## Deliverables\n- Exemplar package (sandbox or packages/ exemplar, mirroring the pm-cbwg / pm-kanban archetype pattern) importing ONLY the public SDK (`src/sdk`), zero private core imports (boundary ratchet pm-8778 applies).\n- A written gap report: every place the spike needed a workaround, filed as individual dedupe-checked SDK items under pm-usfg.\n- Smoke test in a temp workspace proving create → propose → merge → history-replay round-trip.\n\n## Acceptance criteria\nSpike package activates cleanly; the changeset workflow round-trip passes in a sandbox smoke; gap report exists with each gap either filed as a pm item or explicitly waived; no private core imports.\n\n## Sequencing\nDepends on pm-cbwg (PM-domain exemplar first) and pm-3mna (schema/config primitives in the SDK)."

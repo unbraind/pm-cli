@@ -55,6 +55,7 @@ import type {
 import type { ExtensionActivationSummary } from "../core/extensions/activation-summary.js";
 import type { ProjectProfileRegistrationInput } from "../core/profile/profile-presets.js";
 import type { PmMaxVersionExceededMode } from "../core/extensions/extension-types.js";
+import type { RelationshipKindDefinition } from "./relationships.js";
 import {
   normalizeKnownExtensionCapability,
   resolveLegacyExtensionCapabilityAlias,
@@ -186,6 +187,8 @@ export interface ExtensionBlueprint {
   itemTypes?: SchemaItemTypeDefinition[];
   /** Custom item-metadata fields registered in a single `api.registerItemFields(fields)` call. */
   itemFields?: SchemaFieldDefinition[];
+  /** Versioned relationship semantics registered in one atomic batch. */
+  relationshipKinds?: RelationshipKindDefinition[];
   /** Schema migrations registered one at a time via `api.registerMigration(definition)`. */
   migrations?: SchemaMigrationDefinition[];
   /** Project profiles registered one at a time via `api.registerProfile(profile)`. */
@@ -279,6 +282,10 @@ function registerBlueprintSchemaSurfaces(
   const itemFields = blueprint.itemFields ?? [];
   if (itemFields.length > 0) {
     api.registerItemFields(itemFields);
+  }
+  const relationshipKinds = blueprint.relationshipKinds ?? [];
+  if (relationshipKinds.length > 0) {
+    api.registerRelationshipKinds(relationshipKinds);
   }
   for (const migration of blueprint.migrations ?? []) {
     api.registerMigration(migration);
@@ -560,6 +567,12 @@ export function mergeExtensionBlueprints(
     mergeArraySurface(blueprints.map((blueprint) => blueprint.itemFields)),
   );
   assign(
+    "relationshipKinds",
+    mergeArraySurface(
+      blueprints.map((blueprint) => blueprint.relationshipKinds),
+    ),
+  );
+  assign(
     "migrations",
     mergeArraySurface(blueprints.map((blueprint) => blueprint.migrations)),
   );
@@ -664,6 +677,7 @@ const BLUEPRINT_FIELD_CAPABILITIES: ReadonlyArray<
   ["flags", "schema"],
   ["itemTypes", "schema"],
   ["itemFields", "schema"],
+  ["relationshipKinds", "schema"],
   ["migrations", "schema"],
   ["profiles", "schema"],
   ["parsers", "parser"],
@@ -686,6 +700,7 @@ type BlueprintRegistrationField =
   | "preflights"
   | "itemTypes"
   | "itemFields"
+  | "relationshipKinds"
   | "migrations"
   | "profiles"
   | "searchProviders"
@@ -869,6 +884,7 @@ function collectBlueprintSurfaceSummary(
   ExtensionActivationSummary,
   | "item_types"
   | "item_fields"
+  | "relationship_kinds"
   | "migrations"
   | "profiles"
   | "importers"
@@ -887,6 +903,13 @@ function collectBlueprintSurfaceSummary(
     item_fields: sortUnique(
       (blueprint.itemFields ?? []).map((field) => field.name),
     ),
+    ...((blueprint.relationshipKinds?.length ?? 0) > 0
+      ? {
+          relationship_kinds: sortUnique(
+            blueprint.relationshipKinds!.map((definition) => definition.kind),
+          ),
+        }
+      : {}),
     // id-less migrations register but carry no identifier, so they are omitted —
     // exactly as describeExtensionActivation drops them from its `migrations` list.
     migrations: sortUnique(
@@ -1019,6 +1042,7 @@ const BLUEPRINT_LINTABLE_SURFACE_FIELDS = [
   "preflights",
   "itemTypes",
   "itemFields",
+  "relationshipKinds",
   "migrations",
   "profiles",
   "searchProviders",

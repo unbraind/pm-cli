@@ -279,6 +279,70 @@ function assertRelationshipHierarchyDirection(
     );
 }
 
+/** Validate and normalize the stable identifier and compatibility version. */
+function normalizeRelationshipKindIdentifier(
+  definition: RelationshipKindDefinition,
+): string {
+  if (typeof definition !== "object" || definition === null)
+    throw new TypeError("Relationship kind definition requires an object");
+  if (typeof definition.kind !== "string")
+    throw new TypeError("Relationship kind requires a string identifier");
+  const kind = normalizeKind(definition.kind);
+  if (!/^[a-z][a-z0-9_]*$/.test(kind))
+    throw new TypeError(`Invalid relationship kind: ${definition.kind}`);
+  if (
+    !Number.isInteger(definition.compatibilityVersion) ||
+    definition.compatibilityVersion < 1
+  )
+    throw new TypeError(`Invalid compatibility version for ${kind}`);
+  return kind;
+}
+
+/** Validate traversal, ordering, hierarchy, cardinality, and lifecycle semantics. */
+function assertRelationshipKindSemantics(
+  definition: RelationshipKindDefinition,
+  kind: string,
+): void {
+  if (!["directed", "undirected"].includes(definition.direction))
+    throw new TypeError(`Invalid relationship direction for ${kind}`);
+  if (typeof definition.ordering !== "boolean")
+    throw new TypeError(`Invalid relationship ordering flag for ${kind}`);
+  if (![undefined, true, false].includes(definition.hierarchy))
+    throw new TypeError(`Invalid relationship hierarchy flag for ${kind}`);
+  if (!["one", "many"].includes(definition.outgoing))
+    throw new TypeError(`Invalid outgoing relationship cardinality for ${kind}`);
+  if (!["one", "many"].includes(definition.incoming))
+    throw new TypeError(`Invalid incoming relationship cardinality for ${kind}`);
+  if (
+    !["persistent", "supersedable", "ephemeral"].includes(
+      definition.lifecycle,
+    )
+  )
+    throw new TypeError(`Invalid relationship lifecycle for ${kind}`);
+  if (typeof definition.allowSelf !== "boolean")
+    throw new TypeError(`Invalid relationship self-edge flag for ${kind}`);
+}
+
+/** Validate application payload-schema and compatibility-alias containers. */
+function assertRelationshipKindPayload(
+  definition: RelationshipKindDefinition,
+  kind: string,
+): void {
+  if (
+    definition.payloadSchema !== undefined &&
+    (typeof definition.payloadSchema !== "object" ||
+      definition.payloadSchema === null ||
+      Array.isArray(definition.payloadSchema))
+  )
+    throw new TypeError(`Invalid relationship payload schema for ${kind}`);
+  if (
+    definition.aliases !== undefined &&
+    (!Array.isArray(definition.aliases) ||
+      definition.aliases.some((alias) => typeof alias !== "string"))
+  )
+    throw new TypeError(`Invalid relationship aliases for ${kind}`);
+}
+
 /** Mutable registry with immutable snapshots and collision-safe extension registration. */
 export class RelationshipKindRegistry {
   readonly #definitions = new Map<string, RelationshipKindDefinition>();
@@ -293,14 +357,9 @@ export class RelationshipKindRegistry {
 
   /** Register one definition after validating its identifier, version, and aliases. */
   public register(definition: RelationshipKindDefinition): this {
-    const kind = normalizeKind(definition.kind);
-    if (!/^[a-z][a-z0-9_]*$/.test(kind))
-      throw new TypeError(`Invalid relationship kind: ${definition.kind}`);
-    if (
-      !Number.isInteger(definition.compatibilityVersion) ||
-      definition.compatibilityVersion < 1
-    )
-      throw new TypeError(`Invalid compatibility version for ${kind}`);
+    const kind = normalizeRelationshipKindIdentifier(definition);
+    assertRelationshipKindSemantics(definition, kind);
+    assertRelationshipKindPayload(definition, kind);
     assertRelationshipPrecedence(definition, kind);
     assertRelationshipHierarchyDirection(definition, kind);
     if (this.#definitions.has(kind) || this.#aliases.has(kind))
@@ -322,6 +381,7 @@ export class RelationshipKindRegistry {
     const normalized = Object.freeze({
       ...definition,
       kind,
+      hierarchy: definition.hierarchy ?? false,
       inverse,
       aliases: Object.freeze(aliases),
       payloadSchema: definition.payloadSchema

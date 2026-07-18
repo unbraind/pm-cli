@@ -650,7 +650,7 @@ function buildContextDepsResult(params: {
   const missingReachableSet = new Set(
     missingReachable.map((nodeId) => nodeId.toLowerCase()),
   );
-  const relationshipRegistry = createRelationshipKindRegistry();
+  const relationshipRegistry = assembly.graph.registry();
   const filteredKinds = contextOptions.kinds
     ? new Set(
         contextOptions.kinds.map(

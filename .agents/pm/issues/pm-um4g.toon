@@ -1,0 +1,19 @@
+id: pm-um4g
+title: "GH-586: graph audit severity and code summaries mix finding and affected-item units"
+description: "GitHub issue #586 reports that pm graph audit findings_by_severity counts findings while findings_by_code sums affected items, making one response envelope internally ambiguous for agents and analytics."
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,github,graph
+created_at: "2026-07-18T07:14:14.088Z"
+updated_at: "2026-07-18T07:14:14.088Z"
+author: codex-sdk-vcs-20260718
+acceptance_criteria: Audit summary fields use explicitly named consistent units or expose both finding_count and affected_item_count with contract docs and regression coverage.
+parent: pm-6x7o
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ju83,related,"2026-07-18T07:14:14.088Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-18T07:14:14.088Z",codex-sdk-vcs-20260718,"Duplicate check 2026-07-18: exact all-status title search returned zero; AND search across graph audit severity/count terms found no canonical issue. Created from https://github.com/unbraind/pm-cli/issues/586 and linked to active graph primitives pm-ju83 plus governance parent pm-6x7o; left open and unclaimed because this PR does not implement it."
+body: ""

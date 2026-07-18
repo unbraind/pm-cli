@@ -1,0 +1,20 @@
+id: pm-v1yo
+title: "GH-585: extension alias collision diagnostics for core command groups"
+description: "GitHub issue #585 reports that an exporter alias can silently graft package subcommands onto an existing core command group, demonstrated by the published pm-graph extension colliding with the new core pm graph group."
+type: Issue
+status: open
+priority: 1
+tags[3]: agent-ux,extensions,github
+created_at: "2026-07-18T07:14:14.667Z"
+updated_at: "2026-07-18T07:14:14.667Z"
+author: codex-sdk-vcs-20260718
+acceptance_criteria: "Extension activation detects command-group and flattened-alias collisions before dispatch, emits an actionable diagnostic naming both owners, and preserves non-colliding extension commands with contract and installed-package regression coverage."
+parent: pm-usfg
+risk: medium
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-iqq0,related,"2026-07-18T07:14:14.667Z",null,null
+  pm-ju83,related,"2026-07-18T07:14:14.667Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-18T07:14:14.667Z",codex-sdk-vcs-20260718,"Duplicate check 2026-07-18: exact all-status title search returned zero; AND search across extension command collision/alias/exporter terms found only unrelated closed lineage. Created from https://github.com/unbraind/pm-cli/issues/585 under universal SDK epic pm-usfg with graph and declarative-extension relations; left open and unclaimed because this PR does not implement it."
+body: ""

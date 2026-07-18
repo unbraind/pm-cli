@@ -8306,6 +8306,7 @@
       "schema.flags",
       "schema.itemfields",
       "schema.itemtypes",
+      "schema.relationshipkinds",
       "schema.migrations",
       "schema.profiles",
       "parser.override",

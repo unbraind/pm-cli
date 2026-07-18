@@ -157,6 +157,7 @@ export async function runCommandHandler(
       options: cloneContextSnapshot(context.options),
       global: cloneContextSnapshot(context.global),
       pm_root: context.pm_root,
+      ...(context.sdk === undefined ? {} : { sdk: context.sdk }),
     });
     return {
       handled: true,

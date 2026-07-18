@@ -76,6 +76,34 @@ export interface RelationshipEventPage {
   nextCursor?: string;
 }
 
+/** Bounded controls for deterministic relationship-event batch iteration. */
+export interface RelationshipEventStreamOptions {
+  /** One-based first event version to include. */
+  fromVersion?: number;
+  /** One-based final event version to include. */
+  toVersion?: number;
+  /** Maximum number of events yielded in each immutable batch. */
+  batchSize?: number;
+}
+
+/** Result of folding an immutable relationship-event prefix into domain state. */
+export interface RelationshipEventProjection<State> {
+  /** Final projected state returned by the caller-owned reducer. */
+  state: State;
+  /** Final event sequence included in the projection. */
+  version: number;
+  /** Number of events processed by this projection. */
+  processed: number;
+  /** Timestamp of the final included event, when one exists. */
+  asOf?: string;
+}
+
+/** Pure reducer used to derive application state from relationship events. */
+export type RelationshipEventReducer<State> = (
+  state: State,
+  event: RelationshipEvent,
+) => State;
+
 /** Construction controls for the in-memory reference ledger. */
 export interface RelationshipEventLogOptions {
   /** Registry defining edge semantics and cardinality. */
@@ -270,6 +298,71 @@ export class RelationshipEventLog {
   /** Return an immutable copy of the full event stream. */
   public events(): readonly RelationshipEvent[] {
     return Object.freeze([...this.#events]);
+  }
+
+  /**
+   * Iterate a stable event prefix in immutable, bounded batches. Consumers can
+   * build streaming projections without copying or exposing the mutable ledger.
+   * `fromVersion === toVersion + 1` is the intentional empty checkpoint range;
+   * larger watermarks are rejected as invalid for the selected prefix.
+   */
+  public *stream(
+    options: RelationshipEventStreamOptions = {},
+  ): Generator<readonly RelationshipEvent[]> {
+    const fromVersion = options.fromVersion ?? 1;
+    const toVersion = options.toVersion ?? this.version;
+    const batchSize = options.batchSize ?? 100;
+    if (!Number.isInteger(fromVersion) || fromVersion < 1)
+      throw new TypeError(
+        "Relationship event stream fromVersion must be positive",
+      );
+    if (
+      !Number.isInteger(toVersion) ||
+      toVersion < 0 ||
+      toVersion > this.version
+    )
+      throw new TypeError(
+        `Relationship event stream toVersion out of range: ${toVersion}`,
+      );
+    if (!Number.isInteger(batchSize) || batchSize < 1)
+      throw new TypeError(
+        "Relationship event stream batchSize must be positive",
+      );
+    if (fromVersion > toVersion + 1)
+      throw new TypeError(
+        "Relationship event stream fromVersion exceeds the selected prefix",
+      );
+    for (let offset = fromVersion - 1; offset < toVersion; offset += batchSize) {
+      yield Object.freeze(
+        this.#events.slice(offset, Math.min(offset + batchSize, toVersion)),
+      );
+    }
+  }
+
+  /** Fold a selected immutable event prefix into caller-owned domain state. */
+  public project<State>(
+    initialState: State,
+    reducer: RelationshipEventReducer<State>,
+    options: Omit<RelationshipEventStreamOptions, "batchSize"> = {},
+  ): RelationshipEventProjection<State> {
+    if (typeof reducer !== "function")
+      throw new TypeError("Relationship event projection requires a reducer");
+    let state = initialState;
+    let processed = 0;
+    let finalEvent: RelationshipEvent | undefined;
+    for (const batch of this.stream({ ...options, batchSize: 256 })) {
+      for (const event of batch) {
+        state = reducer(state, event);
+        processed += 1;
+        finalEvent = event;
+      }
+    }
+    return Object.freeze({
+      state,
+      version: finalEvent?.sequence ?? Math.max(0, (options.fromVersion ?? 1) - 1),
+      processed,
+      ...(finalEvent === undefined ? {} : { asOf: finalEvent.timestamp }),
+    });
   }
 
   /** Add one active relationship to constant-time validation indexes. */
@@ -640,6 +733,27 @@ export class RelationshipEventStore {
   ): Promise<RelationshipEventPage> {
     this.#log = await this.#refreshFromDurableHistory();
     return this.#log.page(options);
+  }
+
+  /**
+   * Refresh once under the shared store lock, then stream a coherent immutable
+   * prefix without holding the writer lock while the consumer processes batches.
+   */
+  public async *stream(
+    options: RelationshipEventStreamOptions = {},
+  ): AsyncGenerator<readonly RelationshipEvent[]> {
+    this.#log = await this.#refreshFromDurableHistory();
+    yield* this.#log.stream(options);
+  }
+
+  /** Refresh once and fold a coherent durable prefix into application state. */
+  public async project<State>(
+    initialState: State,
+    reducer: RelationshipEventReducer<State>,
+    options: Omit<RelationshipEventStreamOptions, "batchSize"> = {},
+  ): Promise<RelationshipEventProjection<State>> {
+    this.#log = await this.#refreshFromDurableHistory();
+    return this.#log.project(initialState, reducer, options);
   }
 
   /** Serialize a durable refresh with writers so readers never observe a torn JSONL tail. */
