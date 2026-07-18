@@ -419,6 +419,173 @@ describe("relationship graph governance", () => {
     expect(report.profile.edges_by_kind).toEqual({ proceeds: 3 });
   });
 
+  it("downgrades terminal-only ordering cycles to informational legacy findings", () => {
+    const report = auditWorkspaceRelationshipGraph(
+      assembleWorkspaceRelationshipGraph([
+        {
+          id: "pm-old-a",
+          title: "Old A",
+          status: "closed",
+          dependencies: [{ id: "pm-old-b", kind: "blocked_by" }],
+        },
+        {
+          id: "pm-old-b",
+          title: "Old B",
+          status: "canceled",
+          dependencies: [{ id: "pm-old-a", kind: "blocked_by" }],
+        },
+        {
+          id: "pm-live-a",
+          title: "Live A",
+          status: "open",
+          dependencies: [{ id: "pm-live-b", kind: "blocked_by" }],
+        },
+        {
+          id: "pm-live-b",
+          title: "Live B",
+          status: "closed",
+          dependencies: [{ id: "pm-live-a", kind: "blocked_by" }],
+        },
+      ] as never),
+    );
+    // pm-live-a/pm-live-b touch one active member and stay an error; the
+    // pm-old pair is exclusively terminal and downgrades to legacy info.
+    expect(
+      report.findings.find((finding) => finding.code === "ordering_cycle"),
+    ).toMatchObject({ severity: "error", sample: ["pm-live-a", "pm-live-b"] });
+    expect(
+      report.findings.find(
+        (finding) => finding.code === "legacy_ordering_cycle",
+      ),
+    ).toMatchObject({
+      severity: "info",
+      count: 2,
+      sample: ["pm-old-a", "pm-old-b"],
+    });
+  });
+
+  it("reports duplicated same-family spellings split by endpoint lifecycle", () => {
+    const report = auditWorkspaceRelationshipGraph(
+      assembleWorkspaceRelationshipGraph([
+        {
+          id: "pm-dup-a",
+          title: "Dup A",
+          status: "open",
+          dependencies: [{ id: "pm-dup-b", kind: "blocked_by" }],
+        },
+        {
+          id: "pm-dup-b",
+          title: "Dup B",
+          status: "closed",
+          dependencies: [
+            { id: "pm-dup-a", kind: "blocks" },
+            { id: "pm-dup-c", kind: "blocks" },
+          ],
+        },
+        {
+          id: "pm-dup-c",
+          title: "Dup C",
+          status: "open",
+          dependencies: [{ id: "pm-dup-b", kind: "blocked_by" }],
+        },
+        {
+          id: "pm-legacy-a",
+          title: "Legacy A",
+          status: "closed",
+          dependencies: [{ id: "pm-legacy-b", kind: "blocked_by" }],
+        },
+        {
+          id: "pm-legacy-b",
+          title: "Legacy B",
+          status: "canceled",
+          dependencies: [{ id: "pm-legacy-a", kind: "blocks" }],
+        },
+      ] as never),
+    );
+    // Both spellings state "pm-dup-b before pm-dup-a"; the reciprocal pair is
+    // NOT an ordering cycle precisely because it collapses onto one oriented
+    // relation, and only the duplicate detector can report it.
+    expect(
+      report.findings.some((finding) =>
+        ["ordering_cycle", "legacy_ordering_cycle"].includes(finding.code),
+      ),
+    ).toBe(false);
+    // Two groups share the semantic tail pm-dup-b, exercising deterministic
+    // ordering across groups with equal tails.
+    expect(
+      report.findings.find((finding) => finding.code === "duplicate_edge"),
+    ).toMatchObject({
+      severity: "info",
+      count: 2,
+      sample: [
+        "pm-dup-b -> pm-dup-a (blocked_by + blocks)",
+        "pm-dup-b -> pm-dup-c (blocked_by + blocks)",
+      ],
+    });
+    expect(
+      report.findings.find(
+        (finding) => finding.code === "legacy_duplicate_edge",
+      ),
+    ).toMatchObject({
+      severity: "info",
+      count: 1,
+      sample: ["pm-legacy-b -> pm-legacy-a (blocked_by + blocks)"],
+    });
+  });
+
+  it("treats members missing from trimmed assembly details as conservatively active", () => {
+    const base = assembleWorkspaceRelationshipGraph([
+      {
+        id: "pm-trim-a",
+        title: "Trim A",
+        status: "closed",
+        dependencies: [{ id: "pm-trim-b", kind: "blocked_by" }],
+      },
+      {
+        id: "pm-trim-b",
+        title: "Trim B",
+        status: "closed",
+        dependencies: [{ id: "pm-trim-a", kind: "blocks" }],
+      },
+    ] as never);
+    const trimmed = {
+      ...base,
+      details: base.details.filter((detail) => detail.id !== "pm-trim-b"),
+    };
+    // Both stored holders are terminal, but the trimmed endpoint's lifecycle
+    // is unknown, so the duplicate must stay in the actionable finding.
+    expect(
+      auditWorkspaceRelationshipGraph(trimmed).findings.find(
+        (finding) => finding.code === "duplicate_edge",
+      )?.sample,
+    ).toEqual(["pm-trim-b -> pm-trim-a (blocked_by + blocks)"]);
+  });
+
+  it("keeps duplicates with an active semantic head in the active finding", () => {
+    const report = auditWorkspaceRelationshipGraph(
+      assembleWorkspaceRelationshipGraph([
+        {
+          id: "pm-head-open",
+          title: "Head open",
+          status: "open",
+          dependencies: [{ id: "pm-tail-closed", kind: "blocks" }],
+        },
+        {
+          id: "pm-tail-closed",
+          title: "Tail closed",
+          status: "closed",
+          dependencies: [{ id: "pm-head-open", kind: "blocked_by" }],
+        },
+      ] as never),
+    );
+    // The oriented tail (pm-head-open) is active even though the stored
+    // holder of one spelling is terminal, so the pair stays actionable.
+    expect(
+      report.findings.find((finding) => finding.code === "duplicate_edge")
+        ?.sample,
+    ).toEqual(["pm-head-open -> pm-tail-closed (blocked_by + blocks)"]);
+  });
+
   it("reports self-cycles and ignores malformed isolate exemptions", () => {
     const registry = new RelationshipKindRegistry();
     registry.register({

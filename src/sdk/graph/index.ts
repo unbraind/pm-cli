@@ -34,6 +34,9 @@ export {
 } from "./assembly.js";
 export {
   auditWorkspaceRelationshipGraph,
+  collectDuplicateRelationshipEdgeGroups,
+  formatDuplicateEdgeGroup,
+  type DuplicateRelationshipEdgeGroup,
   type RelationshipAuditFinding,
   type RelationshipAuditFindingCode,
   type RelationshipAuditOptions,
@@ -52,6 +55,23 @@ export {
   type RelationshipPath,
 } from "./traversal.js";
 export {
+  computeWorkspaceGraphFingerprint,
+  resetWorkspaceGraphCache,
+  workspaceGraphCache,
+  WorkspaceGraphCache,
+  type GraphCacheMetadata,
+  type WorkspaceGraphCacheLookup,
+} from "./cache.js";
+export {
+  planRelationshipRemediation,
+  type RelationshipRemediationCode,
+  type RelationshipRemediationConfidence,
+  type RelationshipRemediationOperation,
+  type RelationshipRemediationPlan,
+  type RelationshipRemediationPlanOptions,
+  type RelationshipRemediationStep,
+} from "./remediation.js";
+export {
   GRAPH_SUBCOMMAND_VALUES,
   parseGraphSubcommand,
   runGraph,
@@ -68,6 +88,7 @@ export {
   type GraphKnowledgeSummary,
   type GraphPathRow,
   type GraphPathsResult,
+  type GraphPlanResult,
   type GraphQueryCost,
   type GraphRedundancyResult,
   type GraphRedundancyRow,

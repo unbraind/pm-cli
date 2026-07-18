@@ -141,6 +141,7 @@ export const GRAPH_SUBCOMMAND_VALUES = [
   "communities",
   "redundancy",
   "dominators",
+  "plan",
 ] as const;
 
 /** Restricts graph subcommand values accepted by command, SDK, and MCP contracts. */

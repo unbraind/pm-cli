@@ -181,10 +181,22 @@ tie-breaking), `redundancy` exposes `findRedundantRelationshipEdges`
 orientation, each finding carrying a bounded witness path), and `dominators`
 exposes `computeRelationshipDominators` (Cooper–Harvey–Kennedy immediate
 dominators over the root's reachable subgraph, ranking structural
-bottlenecks by gated work). All subcommands assemble the graph once per invocation via
-`assembleWorkspaceRelationshipGraph`, resolve ids case-insensitively, and
-report explicit `truncated` plus `cost` metadata so agents can budget
-follow-up reads; `--summary` returns envelopes without row collections.
+bottlenecks by gated work), and `plan` exposes `planRelationshipRemediation`
+(dry-run remediation proposals derived from audit findings and witnessed
+redundancy rows, each carrying an exact operation, policy code, evidence,
+rationale, and confidence — never auto-applied). The audit gates finding
+severity on lifecycle: contradictions confined to terminal items report as
+informational `legacy_ordering_cycle`/`legacy_duplicate_edge` history debt,
+while `ordering_cycle` errors and `duplicate_edge` findings require at least
+one active subject; `duplicate_edge` covers parallel same-family spellings,
+reciprocal inverse pairs included, which transitive-reduction redundancy
+deliberately skips. All subcommands resolve the workspace assembly through
+the shared fingerprint-keyed graph cache (`WorkspaceGraphCache`): the
+fingerprint digests every relationship-relevant item field, so unchanged
+workspaces in long-lived hosts reuse the assembled graph and memoized query
+results, and every envelope reports `cache` hit/miss observability next to
+its explicit `truncated` and `cost` metadata. Ids resolve
+case-insensitively; `--summary` returns envelopes without row collections.
 
 ## Compatibility and migration
 

@@ -56,6 +56,40 @@ const PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS: Partial<
   "close-many": ["fullChangedFields"],
 };
 
+/** Runtime-consumed nested compatibility keys that intentionally sit outside the canonical strict schema. */
+const PM_TOOL_ACTION_NESTED_OPTION_COMPATIBILITY_KEYS = Object.freeze({
+  "close-many": [
+    "list",
+    "expected_result",
+    "expected",
+    "actual_result",
+    "actual",
+    "validate_close",
+    "dry_run",
+    "checkpoint",
+    "no_checkpoint",
+    "filterAssignee_filter",
+  ],
+  "update-many": [
+    "list",
+    "update",
+    "dry_run",
+    "checkpoint",
+    "no_checkpoint",
+    "filterAssignee_filter",
+  ],
+  ...Object.fromEntries(
+    PM_TOOL_ACTIONS.filter(
+      (action) =>
+        action === "install" ||
+        action === "extension" ||
+        action === "package" ||
+        action.startsWith("extension-") ||
+        action.startsWith("package-"),
+    ).map((action) => [action, ["project", "local", "global"]]),
+  ),
+}) as Readonly<Record<string, readonly string[]>>;
+
 /** Declarative description of one pm action's MCP parameter constraints — required/optional keys plus JSON-Schema-style cross-field rules (anyOf, oneOf, conditional, dependent, and mutually-exclusive groups) — from which the strict action-scoped tool schema is built. */
 export interface PmActionSchemaContract {
   /** Value that configures or reports required for this contract. */
@@ -111,7 +145,6 @@ const UPDATE_MANY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "rollback",
   "noCheckpoint",
 ]);
-
 
 const CLOSE_MANY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
@@ -668,7 +701,18 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     },
     deps: {
       required: ["id"],
-      optional: ["format", "maxDepth", "collapse", "summary", "nodeLimit", "edgeLimit", "tokenBudget", "cursor", "direction", "kind"],
+      optional: [
+        "format",
+        "maxDepth",
+        "collapse",
+        "summary",
+        "nodeLimit",
+        "edgeLimit",
+        "tokenBudget",
+        "cursor",
+        "direction",
+        "kind",
+      ],
     },
     graph: {
       required: ["subcommand"],
@@ -1068,21 +1112,64 @@ function buildActionScopedAllOf(
   return allOf;
 }
 
+/**
+ * Return the complete allowed parameter-key set for one pm action — the fixed
+ * `action` selector, global transport parameters, mutation projection keys,
+ * and the action contract's required and optional keys — or `undefined` for
+ * an action the contract tables do not describe (extension- and package-owned
+ * actions accept arbitrary passthrough keys by design). This is the single
+ * source of truth shared by the strict action-scoped schema builder and the
+ * MCP server's unknown-option detection.
+ */
+export function pmToolActionParameterKeys(
+  action: string,
+): string[] | undefined {
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      PM_TOOL_ACTION_SCHEMA_CONTRACTS,
+      action,
+    )
+  ) {
+    return undefined;
+  }
+  const contract = PM_TOOL_ACTION_SCHEMA_CONTRACTS[action as PmToolAction];
+  const mutationParameterKeys =
+    PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS[action as PmToolAction] ?? [];
+  return toSchemaKeyList([
+    "action",
+    ...PM_TOOL_GLOBAL_PARAMETER_KEYS,
+    ...mutationParameterKeys,
+    ...(contract.required ?? []),
+    ...(contract.optional ?? []),
+  ]);
+}
+
+/**
+ * Return every key the runtime consumes from a nested MCP `options` object.
+ * Canonical action parameters remain the baseline; this adds only the
+ * action-scoped compatibility grammar that is intentionally normalized before
+ * dispatch (bulk list/update wrappers, legacy bulk aliases, and managed
+ * extension/package scope aliases). Keeping these keys beside the strict
+ * contracts prevents typo warnings from describing valid compatibility input
+ * as a no-op without weakening detection on unrelated actions.
+ */
+export function pmToolActionNestedOptionKeys(
+  action: string,
+): string[] | undefined {
+  const parameterKeys = pmToolActionParameterKeys(action);
+  if (parameterKeys === undefined) return undefined;
+  return toSchemaKeyList([
+    ...parameterKeys,
+    ...(PM_TOOL_ACTION_NESTED_OPTION_COMPATIBILITY_KEYS[action] ?? []),
+  ]);
+}
+
 function buildActionScopedToolSchema(
   action: PmToolAction,
 ): Record<string, unknown> {
   const contract = PM_TOOL_ACTION_SCHEMA_CONTRACTS[action];
   const required = toSchemaKeyList(contract.required ?? []);
-  const optional = toSchemaKeyList(contract.optional ?? []);
-  const mutationParameterKeys =
-    PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS[action] ?? [];
-  const allowedKeys = toSchemaKeyList([
-    "action",
-    ...PM_TOOL_GLOBAL_PARAMETER_KEYS,
-    ...mutationParameterKeys,
-    ...required,
-    ...optional,
-  ]);
+  const allowedKeys = pmToolActionParameterKeys(action)!;
   const schema: Record<string, unknown> = {
     type: "object",
     additionalProperties: false,

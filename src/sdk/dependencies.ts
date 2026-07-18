@@ -31,6 +31,10 @@ import {
   type WorkspaceRelationshipAssembly,
 } from "./graph/assembly.js";
 import {
+  computeWorkspaceGraphFingerprint,
+  workspaceGraphCache,
+} from "./graph/cache.js";
+import {
   buildRelationshipContext,
   type RelationshipContextOptions,
   type RelationshipContextResult,
@@ -757,11 +761,17 @@ export async function runDeps(
           settings,
           typeRegistry.type_to_folder,
         );
-    const assembly = assembleWorkspaceRelationshipGraph(items, (status) =>
-      isTerminalStatus(status, statusRegistry),
+    const isTerminal = (status: ItemStatus): boolean =>
+      isTerminalStatus(status, statusRegistry);
+    // Reuse the fingerprint-keyed shared cache so bounded context packets in
+    // long-lived hosts stop paying full-workspace assembly on every call.
+    const lookup = workspaceGraphCache().lookup(
+      pmRoot,
+      computeWorkspaceGraphFingerprint(items, isTerminal),
+      () => assembleWorkspaceRelationshipGraph(items, isTerminal),
     );
     return buildContextDepsResult({
-      assembly,
+      assembly: lookup.assembly,
       canonicalId,
       options,
       rootEvidence,

@@ -255,8 +255,8 @@ export function detectRelationshipCommunities(
   };
 }
 
-/** Decide whether a kind carries transitive semantics eligible for redundancy analysis. */
-function isTransitiveKind(definition: RelationshipKindDefinition): boolean {
+/** Decide whether a kind carries transitive semantics eligible for redundancy and duplicate analysis. */
+export function isTransitiveKind(definition: RelationshipKindDefinition): boolean {
   return (
     definition.direction === "directed" &&
     (definition.ordering || definition.hierarchy)
@@ -264,7 +264,7 @@ function isTransitiveKind(definition: RelationshipKindDefinition): boolean {
 }
 
 /** Family grouping key joining a directed kind with its inverse spelling. */
-function transitiveFamilyKey(definition: RelationshipKindDefinition): string {
+export function transitiveFamilyKey(definition: RelationshipKindDefinition): string {
   return definition.inverse !== undefined &&
     definition.inverse < definition.kind
     ? definition.inverse
@@ -272,7 +272,7 @@ function transitiveFamilyKey(definition: RelationshipKindDefinition): string {
 }
 
 /** Orient one transitive edge into its semantic forward direction. */
-function orientTransitiveEdge(
+export function orientTransitiveEdge(
   edge: RelationshipEdge,
   definition: RelationshipKindDefinition,
 ): { from: string; to: string } {
