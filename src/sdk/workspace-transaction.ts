@@ -204,6 +204,38 @@ function createResultMap(
   );
 }
 
+function cloneJournalValue(
+  value: unknown,
+  label: string,
+): WorkspaceTransactionJsonValue {
+  try {
+    const serialized = JSON.stringify(value);
+    if (serialized === undefined)
+      throw new TypeError(`${label} cannot be represented as JSON`);
+    return JSON.parse(serialized) as WorkspaceTransactionJsonValue;
+  } catch (error) {
+    throw new TypeError(`${label} must be JSON serializable`, { cause: error });
+  }
+}
+
+function cloneOptionalJournalValue(
+  value: unknown,
+  label: string,
+): WorkspaceTransactionJsonValue | undefined {
+  return value === undefined ? undefined : cloneJournalValue(value, label);
+}
+
+function setJournalEntry(
+  target: Record<string, WorkspaceTransactionJsonValue>,
+  stepId: string,
+  value: unknown,
+  label: string,
+): void {
+  const cloned = cloneOptionalJournalValue(value, label);
+  if (cloned === undefined) delete target[stepId];
+  else target[stepId] = cloned;
+}
+
 function isJournalMap(
   value: unknown,
 ): value is Record<string, WorkspaceTransactionJsonValue> {
@@ -351,26 +383,40 @@ async function applyPreparedTransaction(
     for (const step of options.steps) {
       if (completed.has(step.id)) continue;
       const inspection = await step.inspect();
-      let result = inspection.result;
+      let result = cloneOptionalJournalValue(
+        inspection.result,
+        `Step ${step.id} result`,
+      );
       if (inspection.state !== "applied") {
         const compensationData = await step.prepareCompensation?.();
-        if (compensationData === undefined)
-          delete journal.compensationData[step.id];
-        else journal.compensationData[step.id] = compensationData;
+        setJournalEntry(
+          journal.compensationData,
+          step.id,
+          compensationData,
+          `Step ${step.id} compensation data`,
+        );
         started.add(step.id);
         journal.startedStepIds = options.steps
           .map((candidate) => candidate.id)
           .filter((stepId) => started.has(stepId));
         await writeJournal(options.pmRoot, journal);
-        result = await step.apply();
+        const appliedResult = await step.apply();
+        result = cloneOptionalJournalValue(
+          appliedResult,
+          `Step ${step.id} result`,
+        );
       }
       await emitTransition(options, journal, "step_applied", step.id);
       completed.add(step.id);
       journal.completedStepIds = options.steps
         .map((candidate) => candidate.id)
         .filter((stepId) => completed.has(stepId));
-      if (result === undefined) delete journal.results[step.id];
-      else journal.results[step.id] = result;
+      setJournalEntry(
+        journal.results,
+        step.id,
+        result,
+        `Step ${step.id} result`,
+      );
       await writeJournal(options.pmRoot, journal);
       await emitTransition(options, journal, "step_recorded", step.id);
     }
@@ -442,7 +488,12 @@ async function discoverAppliedSteps(
     const inspection = await step.inspect();
     if (inspection.state === "applied") {
       completed.add(step.id);
-      if (inspection.result !== undefined) results[step.id] = inspection.result;
+      setJournalEntry(
+        results,
+        step.id,
+        inspection.result,
+        `Step ${step.id} result`,
+      );
     }
   }
   journal.results = results;

@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   WorkspaceTransactionInterruptedError,
   commitWorkspaceTransaction,
+  type WorkspaceTransactionJsonValue,
   type WorkspaceTransactionStep,
   type WorkspaceTransactionStepState,
 } from "../../../src/sdk/workspace-transaction.js";
@@ -119,6 +120,69 @@ describe("workspace SDK transactions", () => {
         { state: "compensated", value: 10 },
         { state: "compensated", value: 20 },
       ]);
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects non-JSON durable values without stranding applied mutations", async () => {
+    const pmRoot = await mkdtemp(path.join(tmpdir(), "pm-sdk-transaction-"));
+    try {
+      let applied = false;
+      let returnInvalidResult = true;
+      const step: WorkspaceTransactionStep = {
+        id: "runtime-json",
+        inspect: async () => ({
+          state: applied ? "applied" : "pending",
+          ...(applied && !returnInvalidResult ? { result: { safe: true } } : {}),
+        }),
+        prepareCompensation: async () => ({ before: applied }),
+        apply: async () => {
+          applied = true;
+          return returnInvalidResult
+            ? (1n as unknown as WorkspaceTransactionJsonValue)
+            : { safe: true };
+        },
+        compensate: async () => {
+          applied = false;
+        },
+      };
+      const options = {
+        pmRoot,
+        transactionId: "runtime-json",
+        author: "agent",
+        steps: [step],
+      };
+
+      await expect(commitWorkspaceTransaction(options)).rejects.toThrow(
+        "Step runtime-json result must be JSON serializable",
+      );
+      expect(applied).toBe(false);
+      expect(
+        JSON.parse(
+          await readFile(
+            path.join(pmRoot, "transactions", "sdk", "runtime-json.json"),
+            "utf8",
+          ),
+        ),
+      ).toMatchObject({ status: "compensated", results: {} });
+
+      returnInvalidResult = false;
+      await expect(commitWorkspaceTransaction(options)).resolves.toMatchObject({
+        recovered: true,
+        results: { "runtime-json": { safe: true } },
+      });
+
+      step.prepareCompensation = async () =>
+        (() => undefined) as unknown as WorkspaceTransactionJsonValue;
+      applied = false;
+      await expect(
+        commitWorkspaceTransaction({
+          ...options,
+          transactionId: "runtime-json-undefined",
+        }),
+      ).rejects.toThrow("compensation data must be JSON serializable");
+      expect(applied).toBe(false);
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
     }
