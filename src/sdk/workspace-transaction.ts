@@ -209,7 +209,11 @@ function cloneJournalValue(
   label: string,
 ): WorkspaceTransactionJsonValue {
   try {
-    const serialized = JSON.stringify(value);
+    const serialized = JSON.stringify(value, (_key, nestedValue: unknown) => {
+      if (typeof nestedValue === "number" && !Number.isFinite(nestedValue))
+        throw new TypeError(`${label} contains a non-finite number`);
+      return nestedValue;
+    });
     if (serialized === undefined)
       throw new TypeError(`${label} cannot be represented as JSON`);
     return JSON.parse(serialized) as WorkspaceTransactionJsonValue;
@@ -512,6 +516,7 @@ async function compensateAppliedSteps(
   const completed = new Set(journal.completedStepIds);
   const started = new Set(journal.startedStepIds);
   for (const step of [...options.steps].reverse()) {
+    if (!started.has(step.id) && !completed.has(step.id)) continue;
     let shouldCompensate: boolean;
     try {
       shouldCompensate =

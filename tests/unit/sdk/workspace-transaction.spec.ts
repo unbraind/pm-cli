@@ -129,19 +129,22 @@ describe("workspace SDK transactions", () => {
     const pmRoot = await mkdtemp(path.join(tmpdir(), "pm-sdk-transaction-"));
     try {
       let applied = false;
-      let returnInvalidResult = true;
+      let resultKind: "bigint" | "nonfinite" | "valid" = "bigint";
       const step: WorkspaceTransactionStep = {
         id: "runtime-json",
         inspect: async () => ({
           state: applied ? "applied" : "pending",
-          ...(applied && !returnInvalidResult ? { result: { safe: true } } : {}),
+          ...(applied && resultKind === "valid"
+            ? { result: { safe: true } }
+            : {}),
         }),
         prepareCompensation: async () => ({ before: applied }),
         apply: async () => {
           applied = true;
-          return returnInvalidResult
-            ? (1n as unknown as WorkspaceTransactionJsonValue)
-            : { safe: true };
+          if (resultKind === "bigint")
+            return 1n as unknown as WorkspaceTransactionJsonValue;
+          if (resultKind === "nonfinite") return { sequence: Number.NaN };
+          return { safe: true };
         },
         compensate: async () => {
           applied = false;
@@ -167,7 +170,13 @@ describe("workspace SDK transactions", () => {
         ),
       ).toMatchObject({ status: "compensated", results: {} });
 
-      returnInvalidResult = false;
+      resultKind = "nonfinite";
+      await expect(commitWorkspaceTransaction(options)).rejects.toThrow(
+        "Step runtime-json result must be JSON serializable",
+      );
+      expect(applied).toBe(false);
+
+      resultKind = "valid";
       await expect(commitWorkspaceTransaction(options)).resolves.toMatchObject({
         recovered: true,
         results: { "runtime-json": { safe: true } },
