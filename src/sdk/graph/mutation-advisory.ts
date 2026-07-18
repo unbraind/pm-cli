@@ -24,8 +24,8 @@ function buildOrderingAdjacency(graph: RelationshipGraph): Map<string, string[]>
       (definition.precedence ?? "source_before_target") ===
       "source_before_target";
     adjacency
-      .get(sourceFirst ? edge.source : edge.target)!
-      .push(sourceFirst ? edge.target : edge.source);
+      .get(sourceFirst ? edge.source : edge.target)
+      ?.push(sourceFirst ? edge.target : edge.source);
   }
   for (const neighbors of adjacency.values()) {
     neighbors.sort((left, right) => left.localeCompare(right));

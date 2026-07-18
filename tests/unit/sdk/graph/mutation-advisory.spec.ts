@@ -151,5 +151,15 @@ describe("ordering-cycle mutation advisories", () => {
         "pm-missing",
       ),
     ).toBeUndefined();
+    const danglingGraph = {
+      nodes: () => ["pm-a"],
+      edges: () => [
+        { source: "pm-missing", target: "pm-a", kind: "sequence" },
+      ],
+      registry: () => registry,
+    } as unknown as RelationshipGraph;
+    expect(
+      mutationAdvisoryTestOnly.buildOrderingAdjacency(danglingGraph).get("pm-a"),
+    ).toEqual([]);
   });
 });
