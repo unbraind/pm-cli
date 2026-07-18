@@ -34,6 +34,9 @@ export {
 } from "./assembly.js";
 export {
   auditWorkspaceRelationshipGraph,
+  collectDuplicateRelationshipEdgeGroups,
+  formatDuplicateEdgeGroup,
+  type DuplicateRelationshipEdgeGroup,
   type RelationshipAuditFinding,
   type RelationshipAuditFindingCode,
   type RelationshipAuditOptions,

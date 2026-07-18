@@ -477,7 +477,16 @@ describe("relationship graph governance", () => {
           id: "pm-dup-b",
           title: "Dup B",
           status: "closed",
-          dependencies: [{ id: "pm-dup-a", kind: "blocks" }],
+          dependencies: [
+            { id: "pm-dup-a", kind: "blocks" },
+            { id: "pm-dup-c", kind: "blocks" },
+          ],
+        },
+        {
+          id: "pm-dup-c",
+          title: "Dup C",
+          status: "open",
+          dependencies: [{ id: "pm-dup-b", kind: "blocked_by" }],
         },
         {
           id: "pm-legacy-a",
@@ -501,12 +510,17 @@ describe("relationship graph governance", () => {
         ["ordering_cycle", "legacy_ordering_cycle"].includes(finding.code),
       ),
     ).toBe(false);
+    // Two groups share the semantic tail pm-dup-b, exercising deterministic
+    // ordering across groups with equal tails.
     expect(
       report.findings.find((finding) => finding.code === "duplicate_edge"),
     ).toMatchObject({
       severity: "info",
-      count: 1,
-      sample: ["pm-dup-b -> pm-dup-a (blocked_by + blocks)"],
+      count: 2,
+      sample: [
+        "pm-dup-b -> pm-dup-a (blocked_by + blocks)",
+        "pm-dup-b -> pm-dup-c (blocked_by + blocks)",
+      ],
     });
     expect(
       report.findings.find(

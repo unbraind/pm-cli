@@ -459,17 +459,19 @@ function collectOrderingFindings(
 }
 
 /** One duplicate-edge group in semantic orientation with its stored spellings. */
-interface DuplicateEdgeGroup {
+export interface DuplicateRelationshipEdgeGroup {
   /** Semantic tail node shared by every stored spelling. */
   from: string;
   /** Semantic head node shared by every stored spelling. */
   to: string;
-  /** Stored parallel edges, including reciprocal inverse spellings. */
+  /** Stored parallel edges sorted by kind. */
   edges: RelationshipEdge[];
 }
 
 /** Format one duplicate-edge group as a compact deterministic evidence string. */
-function formatDuplicateEdgeGroup(group: DuplicateEdgeGroup): string {
+export function formatDuplicateEdgeGroup(
+  group: DuplicateRelationshipEdgeGroup,
+): string {
   const kinds = group.edges
     .map((edge) => edge.kind)
     .sort((left, right) => left.localeCompare(right));
@@ -477,21 +479,19 @@ function formatDuplicateEdgeGroup(group: DuplicateEdgeGroup): string {
 }
 
 /**
- * Collect duplicate stored-edge findings over the directed ordering and
- * hierarchy families. Each family joins a kind with its inverse spelling in
- * semantic orientation, so a reciprocal pair such as `A blocked_by B` plus
- * `B blocks A` collapses onto one oriented endpoint pair and is reported as a
- * duplicate. Transitive-reduction redundancy analysis deliberately skips the
- * direct edge under test, so these exact parallels are invisible there and
- * this is the only surface that reports them.
+ * Collect the groups of parallel same-family stored edges over the directed
+ * ordering and hierarchy families. Each family joins a kind with its inverse
+ * spelling in semantic orientation, so a reciprocal pair such as
+ * `A blocked_by B` plus `B blocks A` collapses onto one oriented endpoint
+ * pair. Only groups holding at least two stored spellings are returned, in
+ * deterministic orientation order with per-group edges sorted by kind, source,
+ * then target — the exact stored identities remediation planning targets.
  */
-function collectDuplicateEdgeFindings(
+export function collectDuplicateRelationshipEdgeGroups(
   assembly: WorkspaceRelationshipAssembly,
-  nodeStates: Map<string, AuditNodeState>,
-  maxSampleSize: number,
-): RelationshipAuditFinding[] {
+): DuplicateRelationshipEdgeGroup[] {
   const registry = assembly.graph.registry();
-  const groups = new Map<string, DuplicateEdgeGroup>();
+  const groups = new Map<string, DuplicateRelationshipEdgeGroup>();
   for (const edge of assembly.graph.edges()) {
     const definition = registry.require(edge.kind);
     if (!isTransitiveKind(definition)) continue;
@@ -502,10 +502,34 @@ function collectDuplicateEdgeFindings(
     if (group) group.edges.push(edge);
     else groups.set(key, { ...oriented, edges: [edge] });
   }
+  const duplicated = [...groups.values()].filter(
+    (group) => group.edges.length >= 2,
+  );
+  // Within one oriented group every stored spelling has a distinct kind: a
+  // same-kind restatement of the same oriented pair would carry identical
+  // endpoints and is deduplicated by edge identity during graph construction.
+  for (const group of duplicated)
+    group.edges.sort((left, right) => left.kind.localeCompare(right.kind));
+  return duplicated.sort(
+    (left, right) =>
+      left.from.localeCompare(right.from) || left.to.localeCompare(right.to),
+  );
+}
+
+/**
+ * Collect duplicate stored-edge findings from the oriented duplicate groups.
+ * Transitive-reduction redundancy analysis deliberately skips the direct edge
+ * under test, so these exact parallels are invisible there and this is the
+ * only surface that reports them.
+ */
+function collectDuplicateEdgeFindings(
+  assembly: WorkspaceRelationshipAssembly,
+  nodeStates: Map<string, AuditNodeState>,
+  maxSampleSize: number,
+): RelationshipAuditFinding[] {
   const active: string[] = [];
   const legacy: string[] = [];
-  for (const group of groups.values()) {
-    if (group.edges.length < 2) continue;
+  for (const group of collectDuplicateRelationshipEdgeGroups(assembly)) {
     const subjects =
       isActiveAuditMember(group.from, nodeStates) ||
       isActiveAuditMember(group.to, nodeStates)

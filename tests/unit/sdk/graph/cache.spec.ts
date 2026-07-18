@@ -128,8 +128,8 @@ describe("WorkspaceGraphCache", () => {
     expect(builds).toBe(2);
   });
 
-  it("evicts the oldest memoized result at the per-workspace bound", () => {
-    const cache = new WorkspaceGraphCache({ maxResultsPerWorkspace: 1 });
+  it("evicts the least recently used memoized result at the per-workspace bound", () => {
+    const cache = new WorkspaceGraphCache({ maxResultsPerWorkspace: 2 });
     const items = [item("pm-a")] as never;
     const lookup = cache.lookup(
       "/repo",
@@ -138,15 +138,44 @@ describe("WorkspaceGraphCache", () => {
     );
     expect(lookup.memoize("first", () => 1).reused).toBe(false);
     expect(lookup.memoize("second", () => 2).reused).toBe(false);
-    expect(lookup.memoize("first", () => 3)).toEqual({
-      value: 3,
+    // Touching "first" refreshes its recency, so inserting a third result
+    // evicts "second" — genuine LRU, not first-inserted.
+    expect(lookup.memoize("first", () => 0).reused).toBe(true);
+    expect(lookup.memoize("third", () => 3).reused).toBe(false);
+    expect(lookup.memoize("first", () => 0).reused).toBe(true);
+    expect(lookup.memoize("second", () => 9)).toEqual({
+      value: 9,
       reused: false,
     });
+  });
+
+  it("bounds retained workspaces with least-recently-used eviction", () => {
+    const cache = new WorkspaceGraphCache({ maxWorkspaces: 2 });
+    const items = [item("pm-a")] as never;
+    const fingerprint = computeWorkspaceGraphFingerprint(items);
+    const builds: string[] = [];
+    const lookupFor = (key: string): boolean =>
+      cache.lookup(key, fingerprint, () => {
+        builds.push(key);
+        return assembleWorkspaceRelationshipGraph(items);
+      }).assemblyReused;
+    expect(lookupFor("/alpha")).toBe(false);
+    expect(lookupFor("/beta")).toBe(false);
+    // Touching /alpha refreshes its recency, so a third workspace evicts
+    // /beta while /alpha survives.
+    expect(lookupFor("/alpha")).toBe(true);
+    expect(lookupFor("/gamma")).toBe(false);
+    expect(lookupFor("/alpha")).toBe(true);
+    expect(lookupFor("/beta")).toBe(false);
+    expect(builds).toEqual(["/alpha", "/beta", "/gamma", "/beta"]);
   });
 
   it("rejects invalid result bounds and clears through the shared instance", () => {
     expect(() => new WorkspaceGraphCache({ maxResultsPerWorkspace: 0 })).toThrow(
       /Invalid maxResultsPerWorkspace bound/,
+    );
+    expect(() => new WorkspaceGraphCache({ maxWorkspaces: 1.5 })).toThrow(
+      /Invalid maxWorkspaces bound/,
     );
     const items = [item("pm-a")] as never;
     const fingerprint = computeWorkspaceGraphFingerprint(items);

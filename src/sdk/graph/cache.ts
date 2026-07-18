@@ -21,6 +21,8 @@ import type {
 
 /** Default memoized query results retained per workspace entry. */
 const DEFAULT_MAX_RESULTS_PER_WORKSPACE = 64;
+/** Default workspace entries retained by one cache instance. */
+const DEFAULT_MAX_WORKSPACES = 8;
 
 /** Cache observability attached to graph result envelopes. */
 export interface GraphCacheMetadata {
@@ -112,6 +114,18 @@ export interface WorkspaceGraphCacheLookup {
   memoize<T>(queryKey: string, compute: () => T): { value: T; reused: boolean };
 }
 
+/** Validate one optional positive-integer cache bound, applying its default. */
+function requirePositiveCacheBound(
+  name: string,
+  value: number | undefined,
+  fallback: number,
+): number {
+  const bound = value ?? fallback;
+  if (!Number.isInteger(bound) || bound < 1)
+    throw new TypeError(`Invalid ${name} bound: ${String(value)}`);
+  return bound;
+}
+
 /**
  * Fingerprint-keyed cache of workspace relationship assemblies and memoized
  * deterministic query results. One entry is retained per workspace key; a
@@ -122,16 +136,22 @@ export interface WorkspaceGraphCacheLookup {
 export class WorkspaceGraphCache {
   readonly #entries = new Map<string, WorkspaceGraphCacheEntry>();
   readonly #maxResultsPerWorkspace: number;
+  readonly #maxWorkspaces: number;
 
-  /** Create a cache, optionally bounding memoized results per workspace. */
-  public constructor(options: { maxResultsPerWorkspace?: number } = {}) {
-    const bound =
-      options.maxResultsPerWorkspace ?? DEFAULT_MAX_RESULTS_PER_WORKSPACE;
-    if (!Number.isInteger(bound) || bound < 1)
-      throw new TypeError(
-        `Invalid maxResultsPerWorkspace bound: ${String(options.maxResultsPerWorkspace)}`,
-      );
-    this.#maxResultsPerWorkspace = bound;
+  /** Create a cache, optionally bounding workspaces and memoized results. */
+  public constructor(
+    options: { maxResultsPerWorkspace?: number; maxWorkspaces?: number } = {},
+  ) {
+    this.#maxResultsPerWorkspace = requirePositiveCacheBound(
+      "maxResultsPerWorkspace",
+      options.maxResultsPerWorkspace,
+      DEFAULT_MAX_RESULTS_PER_WORKSPACE,
+    );
+    this.#maxWorkspaces = requirePositiveCacheBound(
+      "maxWorkspaces",
+      options.maxWorkspaces,
+      DEFAULT_MAX_WORKSPACES,
+    );
   }
 
   /**
@@ -148,9 +168,17 @@ export class WorkspaceGraphCache {
     let assemblyReused = true;
     if (entry === undefined || entry.fingerprint !== fingerprint) {
       entry = { fingerprint, assembly: build(), results: new Map() };
-      this.#entries.set(key, entry);
       assemblyReused = false;
+      if (!this.#entries.has(key) && this.#entries.size >= this.#maxWorkspaces) {
+        // Evict the least recently used workspace; every lookup refreshes
+        // recency below, so insertion order tracks use order.
+        this.#entries.delete(this.#entries.keys().next().value!);
+      }
     }
+    // Delete-and-reinsert keeps Map insertion order equal to recency order,
+    // making workspace eviction genuinely least-recently-used.
+    this.#entries.delete(key);
+    this.#entries.set(key, entry);
     const resolved = entry;
     const maxResults = this.#maxResultsPerWorkspace;
     return {
@@ -161,11 +189,13 @@ export class WorkspaceGraphCache {
         queryKey: string,
         compute: () => T,
       ): { value: T; reused: boolean } {
-        if (resolved.results.has(queryKey)) {
-          return {
-            value: structuredClone(resolved.results.get(queryKey)) as T,
-            reused: true,
-          };
+        const cached = resolved.results.get(queryKey);
+        if (cached !== undefined || resolved.results.has(queryKey)) {
+          // Refresh recency so eviction below is least-recently-used rather
+          // than first-inserted.
+          resolved.results.delete(queryKey);
+          resolved.results.set(queryKey, cached);
+          return { value: structuredClone(cached) as T, reused: true };
         }
         const value = compute();
         if (resolved.results.size >= maxResults) {

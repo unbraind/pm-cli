@@ -10,10 +10,14 @@
  * witnessed shortcuts) get actionable operations, while judgment calls stay
  * explicit `investigate` steps for a human or agent to resolve.
  */
+import type { RelationshipEdge } from "../relationships.js";
 import { findRedundantRelationshipEdges } from "./analytics.js";
 import type { WorkspaceRelationshipAssembly } from "./assembly.js";
 import {
   auditWorkspaceRelationshipGraph,
+  collectDuplicateRelationshipEdgeGroups,
+  formatDuplicateEdgeGroup,
+  type DuplicateRelationshipEdgeGroup,
   type RelationshipAuditFinding,
   type RelationshipAuditFindingCode,
   type RelationshipAuditOptions,
@@ -111,6 +115,9 @@ const FINDING_STEP_TEMPLATES: Record<
     rationale:
       "Terminal-only ordering cycles have no scheduling effect; repairing them would mutate closed history (changelog drag).",
   },
+  // duplicate_edge findings are expanded into per-stored-edge remove steps by
+  // the planner itself (see stepsFromDuplicateGroup); this template documents
+  // the family for exhaustiveness and backs any future sample-only fallback.
   duplicate_edge: {
     op: "remove",
     confidence: "high",
@@ -143,10 +150,48 @@ const FINDING_STEP_TEMPLATES: Record<
   },
 };
 
+/** Format one stored edge as a concrete removable identity. */
+function formatStoredEdge(edge: RelationshipEdge): string {
+  return `${edge.source} -${edge.kind}-> ${edge.target}`;
+}
+
+/**
+ * Expand one active duplicate group into concrete per-stored-edge removals.
+ * The deterministic keeper is the group's first sorted edge; every other
+ * stored spelling gets its own remove proposal naming the exact edge to drop,
+ * so the plan stays machine-executable instead of pointing at a display
+ * string that spans several stored rows.
+ */
+function stepsFromDuplicateGroup(
+  group: DuplicateRelationshipEdgeGroup,
+): RelationshipRemediationStep[] {
+  const [keeper, ...extras] = group.edges;
+  return extras.map((edge) => ({
+    op: "remove" as const,
+    code: "duplicate_edge" as const,
+    subject: formatStoredEdge(edge),
+    rationale:
+      "This stored spelling restates the kept canonical edge of the same semantic family; removing it leaves the relationship stated exactly once.",
+    evidence: [
+      `keep: ${formatStoredEdge(keeper!)}`,
+      `group: ${formatDuplicateEdgeGroup(group)}`,
+    ],
+    confidence: "high" as const,
+  }));
+}
+
 /** Derive one proposal per bounded sample subject of an audit finding. */
 function stepsFromFinding(
   finding: RelationshipAuditFinding,
+  duplicateGroups: Map<string, DuplicateRelationshipEdgeGroup>,
 ): RelationshipRemediationStep[] {
+  if (finding.code === "duplicate_edge") {
+    // Sample subjects are the deterministic group format strings, so each one
+    // resolves to its concrete stored-edge group for exact removal targeting.
+    return finding.sample.flatMap((subject) =>
+      stepsFromDuplicateGroup(duplicateGroups.get(subject)!),
+    );
+  }
   const template = FINDING_STEP_TEMPLATES[finding.code];
   return finding.sample.map((subject) => ({
     op: template.op,
@@ -173,7 +218,15 @@ export function planRelationshipRemediation(
 ): RelationshipRemediationPlan {
   const { redundancyLimit, ...auditOptions } = options;
   const report = auditWorkspaceRelationshipGraph(assembly, auditOptions);
-  const steps = report.findings.flatMap((finding) => stepsFromFinding(finding));
+  const duplicateGroups = new Map(
+    collectDuplicateRelationshipEdgeGroups(assembly).map((group) => [
+      formatDuplicateEdgeGroup(group),
+      group,
+    ]),
+  );
+  const steps = report.findings.flatMap((finding) =>
+    stepsFromFinding(finding, duplicateGroups),
+  );
   let truncated = report.findings.some((finding) => finding.sample_truncated);
   options.signal?.throwIfAborted();
   const redundancy = findRedundantRelationshipEdges(assembly.graph, {

@@ -113,12 +113,17 @@ describe("planRelationshipRemediation", () => {
     expect(opsByCode.get("sparse_active_node")).toBe("investigate");
     expect(opsByCode.get("redundant_edge")).toBe("remove");
 
+    // Duplicate proposals target the exact stored spelling to drop and name
+    // the deterministic keeper, so applying the plan is unambiguous.
     const duplicate = plan.steps.find(
       (step) => step.code === "duplicate_edge",
     )!;
-    expect(duplicate.subject).toBe("pm-dup-b -> pm-dup-a (blocked_by + blocks)");
+    expect(duplicate.subject).toBe("pm-dup-b -blocks-> pm-dup-a");
     expect(duplicate.confidence).toBe("high");
-    expect(duplicate.evidence[0]).toContain("stored once");
+    expect(duplicate.evidence).toEqual([
+      "keep: pm-dup-a -blocked_by-> pm-dup-b",
+      "group: pm-dup-b -> pm-dup-a (blocked_by + blocks)",
+    ]);
 
     const shortcut = plan.steps.find(
       (step) => step.code === "redundant_edge",
