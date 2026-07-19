@@ -205,13 +205,14 @@ jobs:
 
       # Merge-safety gates for the tracked .agents/pm workspace (pm-iwsj):
       # storage integrity catches corrupted/unmergeable tracker artifacts that
-      # slipped past the merge drivers; the strict history verify proves a
-      # representative hash chain still replays after any branch merges.
+      # slipped past the merge drivers; strict history verification selects the
+      # newest tracked item dynamically and fails when no representative exists.
       - name: Run tracker merge-safety gates
         if: matrix.gate == 'static'
         run: |
           node dist/cli.js validate --check-storage-integrity --json
-          node dist/cli.js history pm-doxj --verify --strict-exit --json > /dev/null
+          representative_id="$(node dist/cli.js list --status all --limit 1 --sort created_at --order desc --json | jq -er '.items[0].id')"
+          node dist/cli.js history "${representative_id}" --verify --strict-exit --json > /dev/null
 
       - name: Run compatibility migration gate
         if: matrix.gate == 'compat'

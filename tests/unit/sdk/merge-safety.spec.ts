@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { setActiveExtensionServices } from "../../../src/core/extensions/index.js";
 import { createHistoryEntry } from "../../../src/core/history/history.js";
 import {
   historyEntriesToRaw,
@@ -46,6 +47,7 @@ function item(title: string, updatedAt: string): ItemDocument {
 
 describe("public merge-safety SDK primitives", () => {
   afterEach(async () => {
+    setActiveExtensionServices(null);
     await Promise.all(
       workspaces
         .splice(0)
@@ -895,6 +897,30 @@ describe("public merge-safety SDK primitives", () => {
         .map((line) => (JSON.parse(line) as { eventId: string }).eventId),
     ).toEqual(["e1", "no-ts-b", "no-ts-a"]);
 
+    const mixedTimestampPresence = mergeRelationshipEventStreams(
+      base,
+      `${base}${JSON.stringify({ eventId: "no-ts", sequence: 2 })}\n`,
+      `${base}${event("has-ts", 2, "2026-07-19T00:06:00.000Z")}\n`,
+    );
+    expect(
+      mixedTimestampPresence.merged
+        .trim()
+        .split("\n")
+        .map((line) => (JSON.parse(line) as { eventId: string }).eventId),
+    ).toEqual(["e1", "has-ts", "no-ts"]);
+
+    const inverseTimestampPresence = mergeRelationshipEventStreams(
+      base,
+      `${base}${event("has-ts", 2, "2026-07-19T00:06:00.000Z")}\n`,
+      `${base}${JSON.stringify({ eventId: "no-ts", sequence: 2 })}\n`,
+    );
+    expect(
+      inverseTimestampPresence.merged
+        .trim()
+        .split("\n")
+        .map((line) => (JSON.parse(line) as { eventId: string }).eventId),
+    ).toEqual(["e1", "has-ts", "no-ts"]);
+
     expect(() =>
       mergeRelationshipEventStreams(base, "<<<<<<< ours\n", ""),
     ).toThrow(/unresolved conflict markers/);
@@ -984,6 +1010,49 @@ describe("public merge-safety SDK primitives", () => {
           (await refreshMergeAttributeFenceIfInstalled(context.pmPath)).status,
         ).toBe("unchanged");
 
+        const lockOwners: string[] = [];
+        setActiveExtensionServices({
+          overrides: [
+            {
+              layer: "project",
+              name: "merge-fence-lock-capture",
+              service: "lock_acquire",
+              run: (serviceContext) => {
+                const payload = serviceContext.payload as {
+                  id?: unknown;
+                  owner?: unknown;
+                };
+                if (payload.id === "merge-fence") {
+                  lockOwners.push(String(payload.owner));
+                  return async () => undefined;
+                }
+                return undefined;
+              },
+            },
+          ],
+        });
+        const priorAuthor = process.env.PM_AUTHOR;
+        try {
+          delete process.env.PM_AUTHOR;
+          expect(
+            (await refreshMergeAttributeFenceIfInstalled(context.pmPath))
+              .status,
+          ).toBe("unchanged");
+          process.env.PM_AUTHOR = "   ";
+          expect(
+            (await refreshMergeAttributeFenceIfInstalled(context.pmPath))
+              .status,
+          ).toBe("unchanged");
+          expect(lockOwners).toEqual(["test-author", "unknown"]);
+        } finally {
+          if (priorAuthor === undefined) {
+            delete process.env.PM_AUTHOR;
+          } else {
+            process.env.PM_AUTHOR = priorAuthor;
+          }
+          setActiveExtensionServices(null);
+        }
+
         // Absolute tracker roots refresh their owning repository even when an
         // embedded caller happens to run from a different git checkout.
         const unrelatedRepository = await mkdtemp(
@@ -1058,10 +1127,18 @@ describe("public merge-safety SDK primitives", () => {
         expect(ghostAudit.status).toBe("drift");
         expect(ghostAudit.stale_patterns.join("\n")).toContain("ghosts");
 
-        // The refresh rewrites the fence back to the coverage contract.
+        // Concurrent refreshes serialize: exactly one rewrites the stale fence
+        // and the follower observes the reconciled contract.
         expect(
-          (await refreshMergeAttributeFenceIfInstalled(context.pmPath)).status,
-        ).toBe("refreshed");
+          (
+            await Promise.all([
+              refreshMergeAttributeFenceIfInstalled(context.pmPath),
+              refreshMergeAttributeFenceIfInstalled(context.pmPath),
+            ])
+          )
+            .map((outcome) => outcome.status)
+            .sort(),
+        ).toEqual(["refreshed", "unchanged"]);
       } finally {
         process.chdir(priorCwd);
       }

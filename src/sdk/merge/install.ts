@@ -14,12 +14,16 @@ import { promisify } from "node:util";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import { acquireLock } from "../../core/lock/lock.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
+import {
+  readSettings,
+  resolveGovernanceKnobs,
+} from "../../core/store/settings.js";
 import { isPathOutsideRoot } from "../workspace.js";
 
 const execFileAsync = promisify(execFile);
@@ -28,6 +32,8 @@ const execFileAsync = promisify(execFile);
 export const PM_GITATTRIBUTES_START = "# pm-cli:merge-drivers:start";
 /** Closing marker for the pm-owned merge-driver `.gitattributes` block. */
 export const PM_GITATTRIBUTES_END = "# pm-cli:merge-drivers:end";
+
+const MERGE_FENCE_LOCK_ID = "merge-fence";
 
 const MERGE_DRIVER_DEFINITIONS = [
   {
@@ -305,33 +311,57 @@ export async function refreshMergeAttributeFenceIfInstalled(
     workspaceRoot,
     path.resolve(pmRoot),
   );
-  const gitattributesPath = path.join(workspaceRoot, ".gitattributes");
-  let current: string;
-  try {
-    current = await readFile(gitattributesPath, "utf8");
-  } catch {
-    return { status: "not_installed", path: gitattributesPath };
-  }
-  if (!current.includes(PM_GITATTRIBUTES_START)) {
-    return { status: "not_installed", path: gitattributesPath };
-  }
-  const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(
-    settings,
-    getActiveExtensionRegistrations(),
-  );
-  const typeFolders = [
-    ...new Set(Object.values(typeRegistry.type_to_folder)),
-  ].sort((left, right) => left.localeCompare(right));
-  const outcome = await reconcileGitattributesBlock(
-    workspaceRoot,
-    buildMergeAttributePatterns(trackerRelativeRoot, typeFolders),
+  const lockSettings = await readSettings(pmRoot);
+  const owner = (process.env.PM_AUTHOR ?? lockSettings.author_default).trim();
+  const releaseLock = await acquireLock(
+    pmRoot,
+    MERGE_FENCE_LOCK_ID,
+    lockSettings.locks.ttl_seconds,
+    owner.length > 0 ? owner : "unknown",
     false,
+    resolveGovernanceKnobs(lockSettings).force_required_for_stale_lock,
+    lockSettings.locks.wait_ms,
   );
-  return {
-    status: outcome.changed ? "refreshed" : "unchanged",
-    path: outcome.path,
-  };
+  try {
+    const gitattributesPath = path.join(workspaceRoot, ".gitattributes");
+    let current: string;
+    try {
+      current = await readFile(gitattributesPath, "utf8");
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
+        return { status: "not_installed", path: gitattributesPath };
+      }
+      throw error;
+    }
+    if (!current.includes(PM_GITATTRIBUTES_START)) {
+      return { status: "not_installed", path: gitattributesPath };
+    }
+    // Re-read after acquiring the dedicated fence lock so every concurrent
+    // refresher computes from the latest committed type registry.
+    const settings = await readSettings(pmRoot);
+    const typeRegistry = resolveItemTypeRegistry(
+      settings,
+      getActiveExtensionRegistrations(),
+    );
+    const typeFolders = [
+      ...new Set(Object.values(typeRegistry.type_to_folder)),
+    ].sort((left, right) => left.localeCompare(right));
+    const outcome = await reconcileGitattributesBlock(
+      workspaceRoot,
+      buildMergeAttributePatterns(trackerRelativeRoot, typeFolders),
+      false,
+    );
+    return {
+      status: outcome.changed ? "refreshed" : "unchanged",
+      path: outcome.path,
+    };
+  } finally {
+    await releaseLock();
+  }
 }
 
 /**

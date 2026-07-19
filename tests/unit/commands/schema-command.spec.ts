@@ -1,5 +1,12 @@
 import { execFileSync } from "node:child_process";
-import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  access,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { runMergeInstall } from "../../../src/sdk/merge/install.js";
@@ -127,6 +134,20 @@ describe("schema add-type command", () => {
         expect(
           await readFile(path.join(context.tempRoot, ".gitattributes"), "utf8"),
         ).not.toContain("experiments");
+
+        // Fence maintenance is advisory after the schema commit: an I/O
+        // failure reports remediation without falsely failing the mutation.
+        await rm(path.join(context.tempRoot, ".gitattributes"));
+        await mkdir(path.join(context.tempRoot, ".gitattributes"));
+        const fenceFailure = await runSchemaAddType(
+          "FenceFailure",
+          {},
+          { path: context.pmPath },
+        );
+        expect(fenceFailure.registered).toBe(true);
+        expect(fenceFailure.warnings).toContain(
+          'merge_fence_refresh_failed:run "pm merge install" to reconcile',
+        );
       } finally {
         process.chdir(priorCwd);
       }

@@ -318,7 +318,12 @@ export async function scanStorageIntegrity(
   const idsOnDisk = new Set(itemFiles.map((file) => file.id));
   const pathsById = new Map<string, string[]>();
   for (const file of itemFiles) {
-    pathsById.set(file.id, [...(pathsById.get(file.id) ?? []), file.relativePath]);
+    const paths = pathsById.get(file.id);
+    if (paths === undefined) {
+      pathsById.set(file.id, [file.relativePath]);
+    } else {
+      paths.push(file.relativePath);
+    }
   }
   const duplicateItemIds: DuplicateItemIdRow[] = [...pathsById.entries()]
     .filter(([, paths]) => paths.length > 1)

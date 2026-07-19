@@ -722,12 +722,18 @@ async function appendMergeFenceWarnings(
   pmRoot: string,
   warnings: string[],
 ): Promise<void> {
-  const fence = await refreshMergeAttributeFenceIfInstalled(pmRoot);
-  if (fence.status === "refreshed") {
-    warnings.push("merge_fence_refreshed");
-  } else if (fence.status === "not_installed") {
+  try {
+    const fence = await refreshMergeAttributeFenceIfInstalled(pmRoot);
+    if (fence.status === "refreshed") {
+      warnings.push("merge_fence_refreshed");
+    } else if (fence.status === "not_installed") {
+      warnings.push(
+        'merge_fence_not_installed:type folders lack git merge drivers; run "pm merge install"',
+      );
+    }
+  } catch {
     warnings.push(
-      'merge_fence_not_installed:type folders lack git merge drivers; run "pm merge install"',
+      'merge_fence_refresh_failed:run "pm merge install" to reconcile',
     );
   }
 }

@@ -345,12 +345,15 @@ export function mergeRelationshipEventStreams(
     .slice(shared)
     .filter((event) => !oursEventIds.has(event.eventId));
   const mergedSuffix = [...oursSuffix, ...theirsSuffix].sort((left, right) => {
-    const byTs = compareTimestampStrings(
-      String(left.timestamp ?? ""),
-      String(right.timestamp ?? ""),
-    );
-    if (byTs !== 0) {
-      return byTs;
+    if (left.timestamp !== undefined && right.timestamp !== undefined) {
+      const byTs = compareTimestampStrings(left.timestamp, right.timestamp);
+      if (byTs !== 0) {
+        return byTs;
+      }
+    } else if (left.timestamp === undefined && right.timestamp !== undefined) {
+      return 1;
+    } else if (left.timestamp !== undefined) {
+      return -1;
     }
     const leftFromOurs = oursEventIds.has(left.eventId);
     const rightFromOurs = oursEventIds.has(right.eventId);
