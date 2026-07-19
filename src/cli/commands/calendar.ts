@@ -131,7 +131,7 @@ export interface CalendarRow {
   item_title: string;
   /** Schema type that determines the shape and validation rules for this value. */
   item_type: ItemType;
-  /** Lifecycle state reported for itemthe record. */
+  /** Lifecycle status of the item this calendar row references. */
   item_status: ItemStatus;
   /** Value that configures or reports item priority for this contract. */
   item_priority: number;

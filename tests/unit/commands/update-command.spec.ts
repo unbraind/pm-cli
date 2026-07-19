@@ -2731,6 +2731,163 @@ describe("runUpdate", () => {
     });
   });
 
+  it("edits individual acceptance criteria additively with --add-ac/--remove-ac (GH-612)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "additive-ac", {
+        acceptanceCriteria: "first criterion; second criterion",
+      });
+
+      const added = await runUpdate(
+        id,
+        { addAc: ["third criterion"], message: "append criterion" },
+        { path: context.pmPath },
+      );
+      expect(added.changed_fields).toContain("acceptance_criteria");
+      expect(added.item.acceptance_criteria).toBe(
+        "first criterion; second criterion; third criterion",
+      );
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const historyAfterAddition = await readFile(historyPath, "utf8");
+
+      const duplicate = await runUpdate(
+        id,
+        { addAc: ["third criterion"], message: "duplicate criterion" },
+        { path: context.pmPath },
+      );
+      expect(duplicate.changed_fields).not.toContain("acceptance_criteria");
+      expect(duplicate.item.acceptance_criteria).toBe(
+        "first criterion; second criterion; third criterion",
+      );
+      expect(duplicate.item.updated_at).toBe(added.item.updated_at);
+      expect(await readFile(historyPath, "utf8")).toBe(historyAfterAddition);
+
+      const unmatchedOnly = await runUpdate(
+        id,
+        { removeAc: ["never existed"], message: "unmatched criterion" },
+        { path: context.pmPath },
+      );
+      expect(unmatchedOnly.changed_fields).not.toContain(
+        "acceptance_criteria",
+      );
+      expect(unmatchedOnly.warnings).toContain(
+        "remove_ac_unmatched:never existed",
+      );
+      expect(unmatchedOnly.item.updated_at).toBe(added.item.updated_at);
+      expect(await readFile(historyPath, "utf8")).toBe(historyAfterAddition);
+
+      await expect(
+        runUpdate(
+          id,
+          { addAc: ["invalid; criterion"], message: "reject delimiter" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: { code: "acceptance_criteria_semicolon_forbidden" },
+      });
+
+      const removed = await runUpdate(
+        id,
+        {
+          removeAc: ["second criterion", "never existed"],
+          message: "prune criterion",
+        },
+        { path: context.pmPath },
+      );
+      expect(removed.item.acceptance_criteria).toBe(
+        "first criterion; third criterion",
+      );
+      expect(removed.warnings).toContain("remove_ac_unmatched:never existed");
+
+      const composed = await runUpdate(
+        id,
+        {
+          acceptanceCriteria: "replaced base",
+          addAc: ["composed addition"],
+          message: "replace then append",
+        },
+        { path: context.pmPath },
+      );
+      expect(composed.item.acceptance_criteria).toBe(
+        "replaced base; composed addition",
+      );
+      expect(
+        composed.changed_fields.filter(
+          (field) => field === "acceptance_criteria",
+        ),
+      ).toHaveLength(1);
+
+      const cliUpdate = context.runCli(
+        [
+          "update",
+          id,
+          "--add-ac",
+          "cli criterion",
+          "--remove-ac",
+          "replaced base",
+          "--json",
+          "--author",
+          "owner-a",
+        ],
+        { expectJson: true },
+      );
+      expect(cliUpdate.code).toBe(0);
+      expect(
+        (cliUpdate.json as { item: { acceptance_criteria: string } }).item
+          .acceptance_criteria,
+      ).toBe("composed addition; cli criterion");
+    });
+  });
+
+  it("rejects additive acceptance-criteria mutations in unset and bypass scopes (GH-612)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "additive-ac-guards", {
+        assignee: "foreign-assignee",
+      });
+      await expect(
+        runUpdate(
+          id,
+          { unset: ["ac"], addAc: ["x"], message: "conflict" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining(
+          "Cannot combine --unset acceptance-criteria with --add-ac",
+        ),
+      });
+      await expect(
+        runUpdate(
+          id,
+          { unset: ["ac"], removeAc: ["x"], message: "conflict" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining(
+          "Cannot combine --unset acceptance-criteria with --remove-ac",
+        ),
+      });
+      for (const acOption of [{ addAc: ["sneaky"] }, { removeAc: ["x"] }]) {
+        await expect(
+          runUpdate(
+            id,
+            {
+              ownershipDependencyBypass: true,
+              dep: ["id=dep-audit,kind=related"],
+              message: "attempt ac mutation in dep-audit mode",
+              ...acOption,
+            },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.USAGE,
+          message: expect.stringMatching(/--add-ac|--remove-ac/),
+        });
+      }
+    });
+  });
+
   it("lists allowed dependency kinds when dependency kind is invalid", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-invalid-dependency-kind");

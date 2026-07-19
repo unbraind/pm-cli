@@ -79,6 +79,62 @@ function normalizeBaseTags(baseTags: readonly string[]): string[] {
     .filter(Boolean);
 }
 
+/** Split a stored `acceptance_criteria` value into its individual criteria. Criteria are stored as one string joined with `"; "` (repeated `--ac` values accumulate that way), so the semicolon is the criterion boundary and cannot appear inside one criterion; entries are trimmed and blanks dropped. Non-string/absent values yield an empty list. */
+export function splitAcceptanceCriteria(value: unknown): string[] {
+  if (typeof value !== "string") {
+    return [];
+  }
+  return value
+    .split(";")
+    .map((criterion) => criterion.trim())
+    .filter(Boolean);
+}
+
+/** Apply additive/subtractive acceptance-criteria mutations to a base criteria list. Used by `pm update --add-ac/--remove-ac` so individual semicolon-free criteria can be edited without replacing the whole `acceptance_criteria` value (tag-API parity; disjoint additions merge cleanly across branches). Additions append in argv order and dedupe on exact trimmed text; removals match exact trimmed text and report unmatched selectors so a typo never becomes a silent no-op. */
+export function applyAcceptanceCriteriaMutations(
+  baseCriteria: readonly string[],
+  add: readonly string[] | undefined,
+  remove: readonly string[] | undefined,
+): { criteria: string[]; unmatchedRemovals: string[] } {
+  const criteria = baseCriteria
+    .map((criterion) => criterion.trim())
+    .filter(Boolean);
+  for (const raw of add ?? []) {
+    const criterion = raw.trim();
+    if (criterion.includes(";")) {
+      throw new PmCliError(
+        'Acceptance criteria added with --add-ac cannot contain ";" because semicolons delimit stored criteria',
+        EXIT_CODE.USAGE,
+        {
+          code: "acceptance_criteria_semicolon_forbidden",
+          required: "Pass one semicolon-free criterion per --add-ac value",
+          why: "A semicolon inside one criterion would be re-read as multiple criteria",
+          nextSteps: [
+            "Split the text into repeated --add-ac values, or replace the semicolon with punctuation that is not the storage delimiter",
+          ],
+        },
+      );
+    }
+    if (criterion.length > 0 && !criteria.includes(criterion)) {
+      criteria.push(criterion);
+    }
+  }
+  const unmatchedRemovals: string[] = [];
+  let remaining = criteria;
+  for (const raw of remove ?? []) {
+    const criterion = raw.trim();
+    if (criterion.length === 0) {
+      continue;
+    }
+    if (!remaining.includes(criterion)) {
+      unmatchedRemovals.push(criterion);
+      continue;
+    }
+    remaining = remaining.filter((entry) => entry !== criterion);
+  }
+  return { criteria: remaining, unmatchedRemovals };
+}
+
 /** Apply an additive tag mutation to a base tag list. Used by `pm create` and `pm update` so `--add-tags` extends `--tags` (or the existing tags) without replacing them. Output is sorted + deduped lowercase, matching `parseTags`. */
 export function mergeAdditiveTags(
   baseTags: readonly string[],

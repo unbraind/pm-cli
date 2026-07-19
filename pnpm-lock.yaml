@@ -22,6 +22,9 @@ importers:
       '@toon-format/toon':
         specifier: ^2.3.0
         version: 2.3.0
+      '@types/node':
+        specifier: '>=22'
+        version: 26.1.1
       commander:
         specifier: ^15.0.0
         version: 15.0.0
@@ -44,9 +47,6 @@ importers:
       '@sentry/cli':
         specifier: ^3.6.0
         version: 3.6.0
-      '@types/node':
-        specifier: ^26.1.1
-        version: 26.1.1
       '@vitest/coverage-v8':
         specifier: ^4.1.9
         version: 4.1.10(vitest@4.1.10)

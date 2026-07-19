@@ -401,7 +401,7 @@ export interface AfterCommandAffectedItem {
   op?: string;
   /** Schema type that determines the shape and validation rules for this value. */
   item_type?: string;
-  /** Lifecycle state reported for previousthe record. */
+  /** Status id the item held before this mutation. */
   previous_status?: ItemStatus;
   /** Lifecycle state reported for status. */
   status?: ItemStatus;

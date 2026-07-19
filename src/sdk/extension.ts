@@ -273,7 +273,7 @@ export interface ManagedExtensionSummary {
   enabled: boolean;
   /** Value that configures or reports runtime active for this contract. */
   runtime_active: boolean | null;
-  /** Lifecycle state reported for activationthe record. */
+  /** Activation outcome reported for this extension. */
   activation_status: ExtensionActivationStatus;
   /** Value that configures or reports command paths for this contract. */
   command_paths?: string[];
@@ -291,7 +291,7 @@ export interface ManagedExtensionSummary {
   last_update_remote_commit?: string;
   /** Value that configures or reports update error for this contract. */
   update_error?: string;
-  /** Lifecycle state reported for update checkthe record. */
+  /** Outcome of the registry update check for this extension. */
   update_check_status: ExtensionUpdateCheckStatus;
   /** Value that configures or reports update check reason for this contract. */
   update_check_reason: string;

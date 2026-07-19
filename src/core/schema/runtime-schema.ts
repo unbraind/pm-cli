@@ -120,11 +120,11 @@ export interface RuntimeStatusRegistry {
   blocked_statuses: Set<string>;
   /** Value that configures or reports draft statuses for this contract. */
   draft_statuses: Set<string>;
-  /** Lifecycle state reported for openthe record. */
+  /** Configured status id representing the open lifecycle state. */
   open_status: string;
-  /** Lifecycle state reported for closethe record. */
+  /** Configured status id representing the closed lifecycle state. */
   close_status: string;
-  /** Lifecycle state reported for canceledthe record. */
+  /** Configured status id representing the canceled lifecycle state. */
   canceled_status: string;
 }
 

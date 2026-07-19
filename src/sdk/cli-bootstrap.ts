@@ -881,7 +881,7 @@ function applyListFlagSplices(
  * a value-less occurrence is preserved untouched, and a `--` terminator stops
  * coalescing (remainder is passed through verbatim).
  *
- * `valueConsumingFlags` lists option flags (e.g. global `--path`) whose value
+ * `valueConsumingFlags` lists option flags (e.g. global `--pm-path`) whose value
  * may itself begin with `--`. Their value token is emitted verbatim so a
  * list-flag-looking value (`--path --tags`) is never reinterpreted as a flag
  * nor allowed to swallow the following command/positional token.

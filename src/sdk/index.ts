@@ -338,6 +338,7 @@ export * from "./relationship-context.js";
 export * from "./relationship-history.js";
 export * from "./workspace-transaction.js";
 export * from "./workspace-transaction-gc.js";
+export * from "./item-transaction.js";
 export * from "./relationships.js";
 export * from "./actionability.js";
 export type {

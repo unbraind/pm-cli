@@ -117,7 +117,7 @@ export interface PlanCommandOptions {
   stepBody?: string;
   /** Value that configures or reports step owner for this contract. */
   stepOwner?: string;
-  /** Lifecycle state reported for stepthe record. */
+  /** Lifecycle status of the referenced plan step. */
   stepStatus?: string;
   /** Value that configures or reports step evidence for this contract. */
   stepEvidence?: string;

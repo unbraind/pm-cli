@@ -1,0 +1,45 @@
+id: pm-y9hq
+title: "GH-613: public SDK bulk item-mutation helper on commitWorkspaceTransaction — atomic create/update/close batches without hand-rolled step+compensation wiring"
+description: ""
+type: Feature
+status: closed
+priority: 2
+tags: []
+created_at: "2026-07-19T11:28:34.508Z"
+updated_at: "2026-07-19T14:06:03.926Z"
+closed_at: "2026-07-19T14:06:03.088Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: "public SDK exposes a bulk item-mutation transaction helper (create/update/close batch) built on commitWorkspaceTransaction with default inspect (exists-by-id/provenance key) and idempotent compensation (create→close, update→restore captured fields); stable transactionId makes batches resumable; failure-injection tests cover partial batches; SDK docs show the wrapper replacing a hand-rolled step array; GH-613 is resolved"
+parent: pm-usfg
+risk: medium
+confidence: high
+resolution: Expose commitItemMutations as the public atomic item-batch SDK primitive over durable workspace transactions.
+expected_result: Package authors can commit resumable create/update/close batches without hand-writing transaction steps and compensations.
+actual_result: "Public SDK supports stable replay, crash resume, reverse compensation, close/delete create policies, authoritative authors, and defensive runtime validation."
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-4e12,related,"2026-07-19T11:28:34.508Z",null,null
+  pm-dj98,related,"2026-07-19T11:28:34.508Z",null,null
+  pm-klo8,related,"2026-07-19T11:28:34.508Z",null,null
+  pm-x29o,related,"2026-07-19T11:28:34.508Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-07-19T12:41:32.844Z",maintainer-agent,"Evidence: public commitItemMutations covers ordered create/update/close, durable replay, reverse compensation, crash resume, delete compensation, pre-closed adoption, malformed compensation data, and authoritative transaction authors. Linked 8-test gate, built SDK temp-workspace acceptance, packed consumer smoke, and full 100/100/100/100 coverage pass."
+  "2026-07-19T12:50:19.982Z",maintainer-agent,"Release-gate evidence: pnpm release:gates completed build, typecheck, docs/skills, static quality, package boundary, token budget, 5,963 tests with exact 100/100/100/100 coverage, version/sync, secret scan, packed-package smoke, and package-first dogfood successfully. The aggregate command stopped only at its intentional Greptile stage because Greptile requires a committed diff against main; the local commit will be reviewed before push."
+  "2026-07-19T13:48:06.031Z",maintainer-agent,"PR #616 round-one review follow-up: public commitItemMutations now rejects null, array, and primitive mutation rows with deterministic TypeError before journal/lock work; malformed-batch coverage expanded."
+  "2026-07-19T14:05:45.473Z",maintainer-agent,"Final PR evidence: PR #616 exact head bafb9b53 is green; public SDK batch transactions, replay, compensation, malformed runtime inputs, packed consumption, and acceptance workflow all pass."
+notes[1]{created_at,author,text}:
+  "2026-07-19T12:00:04.589Z",maintainer-agent,"Implemented: public commitItemMutations in NEW src/sdk/item-transaction.ts (exported via sdk barrel), wrapping commitWorkspaceTransaction with correct-by-construction wiring per op: create = explicit stable id AS idempotency key (exists-by-id inspect; compensation close-with-reason by default or delete via createCompensation:\"delete\", both guarded idempotent); update = durable history-marker applied-detection (\"bulk-item-transaction <txid> <stepId> apply/compensate\" messages — field comparison is a moving target and an always-pending inspect would make compensateAppliedSteps SKIP the restore, found via failing test) + version-restore compensation from captured pre-mutation updated_at; close = already-terminal target adopted as applied (never re-closes), version-restore compensation. Results keyed by derived step id {index}-{op}-{target}. 6 specs: atomic commit+replay, full reverse compensation (create closed/update restored/close reopened), delete-compensation, crash-interrupt + resume without duplication (WorkspaceTransactionInterruptedError), pre-closed adoption, input validation. SDK.md example added showing the wrapper replacing a hand-rolled step array. Manual temp-dir verify via dist: committed batch + rollback semantics correct."
+learnings[1]{created_at,author,text}:
+  "2026-07-19T12:00:34.158Z",maintainer-agent,"Transaction-step design learning: commitWorkspaceTransaction's compensateAppliedSteps gates each rollback on inspect() reporting \"applied\" (started && applied). A step whose inspect always returns \"pending\" (tempting for naturally-idempotent updates) silently SKIPS its own compensation — the batch reports rolled-back while the update persists. Any step type whose applied-ness is not derivable from domain state needs a durable discriminator; item history messages are the right substrate (immutable, replay-safe, author-attributed). Marker pairs (apply/compensate, scan from newest) also make post-compensation retries re-apply correctly where a single marker would wedge the step as permanently \"applied\"."
+files[3]{path,scope,note}:
+  src/sdk/index.ts,project,public SDK export
+  src/sdk/item-transaction.ts,project,bulk item-mutation transaction helper
+  tests/unit/sdk/item-transaction.spec.ts,project,failure-injection + resume coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/item-transaction.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrrsapm3-sc4qlq,test,passed,"2026-07-19T12:40:37.133Z","2026-07-19T12:40:48.939Z","2026-07-19T12:40:48.939Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,bulk transaction API contract and example
+close_reason: "Implemented and verified in PR #616 at exact head bafb9b53; local and GitHub gates green, all review feedback addressed."
+body: ""

@@ -247,6 +247,8 @@ export const TOOL_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
     flag: "--acceptance-criteria",
     allowEmpty: true,
   },
+  { param: "addAc", flag: "--add-ac", repeatable: true },
+  { param: "removeAc", flag: "--remove-ac", repeatable: true },
   { param: "author", flag: "--author" },
   { param: "message", flag: "--message", allowEmpty: true },
   { param: "assignee", flag: "--assignee" },

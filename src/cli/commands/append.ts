@@ -58,6 +58,21 @@ export async function runAppend(
   // options.body is guaranteed defined by the guard above, so resolveValue returns a defined string.
   const bodyInput = await stdinResolver.resolveValue(options.body, "--body");
   const appended = (bodyInput as string).trim();
+  if (appended.length === 0) {
+    throw new PmCliError(
+      "--body text cannot be empty; append requires non-blank content and empty appends would only rewrite updated_at.",
+      EXIT_CODE.USAGE,
+      {
+        code: "append_empty_body",
+        required:
+          "Provide non-empty body text positionally, via --body, or with - for stdin.",
+        examples: [
+          'pm append pm-a1b2 --body "Progress note"',
+          "pm append pm-a1b2 --body -",
+        ],
+      },
+    );
+  }
 
   const result = await mutateItem({
     pmRoot,
@@ -68,9 +83,6 @@ export async function runAppend(
     message: options.message,
     force: options.force,
     mutate(document) {
-      if (appended.length === 0) {
-        return { changedFields: [] };
-      }
       const spacer = document.body.trim().length > 0 ? "\n\n" : "";
       document.body = `${document.body.replace(/\s+$/, "")}${spacer}${appended}\n`;
       return { changedFields: ["body"] };
@@ -79,7 +91,7 @@ export async function runAppend(
 
   return {
     item: toItemRecord(result.item),
-    appended: appended.length > 0 ? appended : "",
+    appended,
     changed_fields: result.changedFields,
   };
 }

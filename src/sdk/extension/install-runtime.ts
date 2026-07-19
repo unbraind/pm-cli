@@ -137,7 +137,9 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
     return;
   }
 
-  const systemTempDirectory = path.resolve(temporaryDirectory);
+  const systemTempDirectory = await fs
+    .realpath(path.resolve(temporaryDirectory))
+    .catch(() => resolveCanonicalExtensionInstallDestination(temporaryDirectory));
   const stagingBase = isPathWithinDirectory(
     canonicalSource,
     systemTempDirectory,

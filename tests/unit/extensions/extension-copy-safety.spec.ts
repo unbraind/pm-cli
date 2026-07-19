@@ -128,6 +128,60 @@ describe("extension install copy containment", () => {
     ).toBe("manifest\n");
   });
 
+  it("moves staging outside a source whose temp directory is configured through a symlink alias", async () => {
+    const root = await mkdtemp(
+      path.join(os.tmpdir(), "pm-extension-copy-temp-alias-"),
+    );
+    tempRoots.push(root);
+    const source = path.join(root, "source");
+    const sourceAlias = path.join(root, "source-alias");
+    const destination = path.join(source, "installed", "demo");
+    await mkdir(path.join(source, "runtime", "tmp"), { recursive: true });
+    await writeFile(path.join(source, "manifest.json"), "manifest\n", "utf8");
+    await symlink(
+      source,
+      sourceAlias,
+      process.platform === "win32" ? "junction" : "dir",
+    );
+
+    await _testOnly.copyExtensionDirectoryWithoutSelfNesting(
+      source,
+      destination,
+      cp,
+      path.join(sourceAlias, "runtime", "tmp"),
+    );
+    expect(
+      await readFile(path.join(destination, "manifest.json"), "utf8"),
+    ).toBe("manifest\n");
+  });
+
+  it("canonicalizes a missing temp directory through its deepest existing ancestor", async () => {
+    const root = await mkdtemp(
+      path.join(os.tmpdir(), "pm-extension-copy-temp-missing-"),
+    );
+    tempRoots.push(root);
+    const source = path.join(root, "source");
+    const sourceAlias = path.join(root, "source-alias");
+    const destination = path.join(source, "installed", "demo");
+    await mkdir(source, { recursive: true });
+    await writeFile(path.join(source, "manifest.json"), "manifest\n", "utf8");
+    await symlink(
+      source,
+      sourceAlias,
+      process.platform === "win32" ? "junction" : "dir",
+    );
+
+    await _testOnly.copyExtensionDirectoryWithoutSelfNesting(
+      source,
+      destination,
+      cp,
+      path.join(sourceAlias, "missing-tmp", "nested"),
+    );
+    expect(
+      await readFile(path.join(destination, "manifest.json"), "utf8"),
+    ).toBe("manifest\n");
+  });
+
   it("rejects a filesystem-root source when no external staging base exists", async () => {
     const filesystemRoot = path.parse(process.cwd()).root;
     await expect(

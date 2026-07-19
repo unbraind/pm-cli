@@ -13,10 +13,12 @@ import {
 } from "../../core/checkpoint/mutation-checkpoint.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import {
+  applyAcceptanceCriteriaMutations,
   applyTagRemovals,
   mergeAdditiveTags,
   parseOptionalNonNegativeInteger,
   parseTags,
+  splitAcceptanceCriteria,
 } from "../../core/item/parse.js";
 import { resolvePriority } from "../../core/item/priority.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
@@ -292,6 +294,7 @@ interface PlannedChange {
 interface PlannedItemDiff {
   id: string;
   changes: PlannedChange[];
+  warnings?: string[];
 }
 
 interface UpdateManyApplyResultRow {
@@ -345,6 +348,10 @@ export interface UpdateManyResult {
   rows?: UpdateManyApplyResultRow[] | UpdateManyRollbackResultRow[];
   /** Value that configures or reports ids for this contract. */
   ids: string[];
+  /** Explicitly requested --ids values that matched no tracked item. */
+  unmatched_ids?: string[];
+  /** Number of explicitly requested --ids values that matched no tracked item. */
+  unmatched_count?: number;
 }
 
 /** Removes execution-only options from the mutation summary persisted in checkpoints. */
@@ -575,6 +582,37 @@ const buildTagMutationPlan = (
   return { field: "tags", before: existing, after };
 };
 
+// Acceptance criteria support replace (--ac) plus additive --add-ac/--remove-ac
+// (GH-612). Replicate runUpdate's resolution order so dry-run previews and
+// apply-mode actionable detection account for additive criterion mutations (an
+// --add-ac-only bulk update must NOT be treated as a no-op skip).
+const buildAcceptanceCriteriaMutationPlan = (
+  row: Record<string, unknown>,
+  update: UpdateCommandOptions,
+): { change?: PlannedChange; warnings: string[] } => {
+  const before = row.acceptance_criteria;
+  const base =
+    update.acceptanceCriteria === undefined
+      ? before
+      : String(update.acceptanceCriteria).trim();
+  const mutation = applyAcceptanceCriteriaMutations(
+    splitAcceptanceCriteria(base),
+    update.addAc,
+    update.removeAc,
+  );
+  const warnings = mutation.unmatchedRemovals.map(
+    (criterion) => `remove_ac_unmatched:${criterion}`,
+  );
+  const after = mutation.criteria.join("; ");
+  if (areValuesEqual(before, after) || (before === undefined && after === "")) {
+    return { warnings };
+  }
+  return {
+    change: { field: "acceptance_criteria", before, after },
+    warnings,
+  };
+};
+
 /** Adds changed scalar options to a planned item diff. */
 const appendScalarMutationPlans = (
   changes: PlannedChange[],
@@ -639,11 +677,26 @@ const buildPlannedItemDiff = (
 ): PlannedItemDiff => {
   const row = toItemRecord(item);
   const changes: PlannedChange[] = [];
+  const warnings: string[] = [];
   const tagPlan = buildTagMutationPlan(row, update);
   if (tagPlan) {
     changes.push(tagPlan);
   }
   appendScalarMutationPlans(changes, row, update);
+  if (
+    updateArrayValueCount(update.addAc) > 0 ||
+    updateArrayValueCount(update.removeAc) > 0
+  ) {
+    const composed = buildAcceptanceCriteriaMutationPlan(row, update);
+    const withoutAc = changes.filter(
+      (change) => change.field !== "acceptance_criteria",
+    );
+    changes.splice(0, changes.length, ...withoutAc);
+    if (composed.change !== undefined) {
+      changes.push(composed.change);
+    }
+    warnings.push(...composed.warnings);
+  }
   changes.push(...buildCollectionMutationPlans(row, update));
   appendRuntimeFieldMutationPlans(changes, row, update, runtimeFieldRegistry);
   appendUnsetMutationPlans(changes, row, update.unset);
@@ -651,6 +704,7 @@ const buildPlannedItemDiff = (
   return {
     id: item.id,
     changes,
+    ...(warnings.length > 0 ? { warnings } : {}),
   };
 };
 
@@ -866,7 +920,43 @@ interface UpdateManyPlan {
   actionable: PlannedItemDiff[];
   updateSummary: Record<string, unknown>;
   statusFilter: ItemStatus | undefined;
+  unmatchedIds: string[] | undefined;
 }
+
+// GH-596: an explicit --ids request naming IDs that do not exist must stay
+// machine-detectable without client-side set differencing. The requested list
+// is re-derived here (same CSV split as the list filter) and compared against
+// the unfiltered storage corpus so pagination and additional query filters do
+// not misclassify existing items as nonexistent.
+const collectUnmatchedRequestedIds = (
+  rawIds: unknown,
+  existingItems: ReadonlyArray<{ id: string }>,
+): string[] | undefined => {
+  if (rawIds == null) {
+    return undefined;
+  }
+  const requested = [
+    ...new Set(
+      String(rawIds)
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  ];
+  const existing = new Set(existingItems.map((item) => item.id));
+  return requested.filter((id) => !existing.has(id));
+};
+
+/** Builds the shared unmatched-id envelope fields for one prepared plan. */
+const buildUnmatchedIdFields = (
+  plan: UpdateManyPlan,
+): Pick<UpdateManyResult, "unmatched_ids" | "unmatched_count"> =>
+  plan.unmatchedIds === undefined
+    ? {}
+    : {
+        unmatched_ids: plan.unmatchedIds,
+        unmatched_count: plan.unmatchedIds.length,
+      };
 
 /** Loads tracker settings and runtime registries for update-many execution. */
 const loadUpdateManyRuntimeContext = async (
@@ -952,12 +1042,30 @@ const buildUpdateManyPlan = async (params: {
       params.options.update,
     ),
   );
+  const existenceItems =
+    params.options.list?.ids == null
+      ? []
+      : (
+          await runList(
+            undefined,
+            {
+              ids: params.options.list.ids,
+              noTruncate: true,
+              full: true,
+            },
+            params.global,
+          )
+        ).items;
   return {
     listed,
     planned,
     actionable: planned.filter((row) => row.changes.length > 0),
     updateSummary: params.updateSummary,
     statusFilter,
+    unmatchedIds: collectUnmatchedRequestedIds(
+      params.options.list?.ids,
+      existenceItems,
+    ),
   };
 };
 
@@ -972,6 +1080,7 @@ const buildUpdateManyDryRunResult = (
   planned_update_options: plan.updateSummary,
   item_plans: plan.planned,
   ids: [],
+  ...buildUnmatchedIdFields(plan),
 });
 
 /** Builds the apply response for a plan whose rows are all already current. */
@@ -987,14 +1096,16 @@ const buildUpdateManyNoopResult = (plan: UpdateManyPlan): UpdateManyResult => ({
   rows: plan.planned.map((row) => ({
     id: row.id,
     status: "skipped" as const,
+    ...(row.warnings ? { warnings: row.warnings } : {}),
   })),
   ids: [],
+  ...buildUnmatchedIdFields(plan),
 });
 
 /** Applies planned item updates independently while preserving per-row failures. */
 const applyUpdateManyRows = async (params: {
   items: ListedItem[];
-  actionable: PlannedItemDiff[];
+  plans: PlannedItemDiff[];
   options: UpdateManyCommandOptions;
   global: GlobalOptions;
   checkpointId: string;
@@ -1003,10 +1114,18 @@ const applyUpdateManyRows = async (params: {
   const updatedIds: string[] = [];
   const updateMessage =
     params.options.update.message ?? `update-many apply ${params.checkpointId}`;
-  const actionableById = new Set(params.actionable.map((row) => row.id));
+  const plannedById = new Map(params.plans.map((row) => [row.id, row]));
+  const actionableById = new Set(
+    params.plans.filter((row) => row.changes.length > 0).map((row) => row.id),
+  );
   for (const item of params.items) {
     if (!actionableById.has(item.id)) {
-      rows.push({ id: item.id, status: "skipped" });
+      const warnings = plannedById.get(item.id)?.warnings;
+      rows.push({
+        id: item.id,
+        status: "skipped",
+        ...(warnings ? { warnings } : {}),
+      });
       continue;
     }
     try {
@@ -1071,7 +1190,7 @@ const applyUpdateManyPlan = async (params: {
         });
   const applied = await applyUpdateManyRows({
     items: params.plan.listed.items,
-    actionable: params.plan.actionable,
+    plans: params.plan.planned,
     options: params.options,
     global: params.global,
     checkpointId,
@@ -1091,6 +1210,7 @@ const applyUpdateManyPlan = async (params: {
     failed_count: countStatus("failed"),
     rows: applied.rows,
     ids: applied.updatedIds,
+    ...buildUnmatchedIdFields(params.plan),
   };
 };
 

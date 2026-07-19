@@ -107,7 +107,7 @@ const SCHEMA_FIELDS_LOCK_ID = "schema-fields";
 export interface SchemaAddTypeCommandOptions {
   /** Value that configures or reports description for this contract. */
   description?: string;
-  /** Lifecycle state reported for defaultthe record. */
+  /** Default status id newly created items of this type receive. */
   defaultStatus?: string;
   /** Value that configures or reports folder for this contract. */
   folder?: string;
@@ -437,7 +437,7 @@ export interface SchemaTypeSummary {
   folder: string;
   /** Value that configures or reports aliases for this contract. */
   aliases: string[];
-  /** Lifecycle state reported for defaultthe record. */
+  /** Default status id newly created items of this type receive. */
   default_status?: string;
   /** Value that configures or reports description for this contract. */
   description?: string;

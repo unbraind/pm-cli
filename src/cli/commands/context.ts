@@ -248,7 +248,7 @@ export interface BlockerEntry {
   blocked_by: string | null;
   /** Value that configures or reports blocked by title for this contract. */
   blocked_by_title: string | null;
-  /** Lifecycle state reported for blocked bythe record. */
+  /** Lifecycle status of the blocking item, or null when unresolved. */
   blocked_by_status: ItemStatus | null;
   /** Value that configures or reports blocked reason for this contract. */
   blocked_reason: string | null;

@@ -28,7 +28,7 @@ import { resolveHistorySubject } from "./history-redact.js";
 
 /** Workspace resolution controls accepted by {@link getItemAt}. */
 export interface GetItemAtOptions {
-  /** Explicit tracker root, equivalent to the CLI global `--path`. */
+  /** Explicit tracker root, equivalent to the CLI global `--pm-path`. */
   pmRoot?: string;
   /** Working directory used when discovering the nearest tracker. */
   cwd?: string;

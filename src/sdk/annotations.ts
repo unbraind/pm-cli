@@ -337,6 +337,35 @@ function assertAnnotationAddValueIsNotFlagLike(
   );
 }
 
+/**
+ * Reject list-mode invocations that pass `--message` without any content
+ * source. `--message` only labels a mutation's history entry, so accepting it
+ * alone would exit 0 while recording nothing — the GH-588/GH-615 silent
+ * data-loss trap. Shared here so comments, notes, and learnings all fail fast
+ * with the same structured recovery bundle.
+ */
+function assertAnnotationMessageHasTextSource(
+  config: AnnotationCommandConfig<string>,
+  options: AnnotationCommandOptions,
+): void {
+  if (config.input.mode !== "list" || options.message === undefined) {
+    return;
+  }
+  const noun = config.collectionKey.replace(/s$/, "");
+  throw new PmCliError(
+    `--message labels a ${noun} mutation but does not provide ${noun} text. Pass text positionally or with --add, --stdin, or --file.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "annotation_message_without_text",
+      required: `Provide ${noun} text through a content source; --message only annotates the history entry of a mutation.`,
+      examples: [
+        `pm ${config.collectionKey} <id> --add "text" --message "why"`,
+        `pm ${config.collectionKey} <id> ${annotationStdinHint(config.collectionKey)}`,
+      ],
+    },
+  );
+}
+
 /** Implements run annotation command for the public runtime surface of this module. */
 export async function runAnnotationCommand<
   TKey extends string,
@@ -347,6 +376,7 @@ export async function runAnnotationCommand<
   global: GlobalOptions,
   config: AnnotationCommandConfig<TKey>,
 ): Promise<AnnotationCommandResult<TKey, TEntry>> {
+  assertAnnotationMessageHasTextSource(config, options);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(

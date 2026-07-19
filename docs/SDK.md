@@ -14,6 +14,17 @@ The SDK ships inside the CLI package. There is no separate
 `@unbrained/pm-sdk` package; package authors should depend on
 `@unbrained/pm-cli` and import the public subpaths below.
 
+The package installs `@types/node` as a runtime dependency (`>=22` matches the
+runtime floor) because the shipped `.d.ts` reference Node globals and `node:*`
+modules. A plain package install therefore gives strict TypeScript consumers
+the declarations needed to compile the SDK without a hidden peer setup step.
+Use `"moduleResolution": "node16"`, `"nodenext"`, or `"bundler"` so the
+`exports`-mapped `./sdk` types resolve.
+
+```bash
+npm install --save-dev typescript
+```
+
 ## Import Surfaces
 
 ```ts
@@ -875,6 +886,47 @@ tracker root. The bundled `pm-vcs` merge command is the reference implementation
 it commits the changeset lifecycle transition and `commits_to` relationship
 together, compensates both streams on failure, and resumes a crash or a
 previously compensated retry without package-private file access.
+
+For the ubiquitous "commit N item mutations atomically" case (bulk import,
+bulk sync), `commitItemMutations` wraps the coordinator so callers describe
+the mutations instead of hand-writing a step array. The helper wires the
+crash-consistency contract for you: creates use their explicit stable `id` as
+the idempotency key (exists-by-id inspection) and are compensated by closing
+the item (or deleting it with `createCompensation: "delete"`); updates stamp a
+durable history marker for applied-detection and are compensated by restoring
+the captured pre-mutation version; closes treat an already-terminal target as
+applied and are likewise compensated by version restore. A stable
+`transactionId` makes interrupted batches resumable across processes and
+agents.
+
+```ts
+import { commitItemMutations } from "@unbrained/pm-cli/sdk";
+
+const result = await commitItemMutations({
+  pmRoot,
+  transactionId: "sync-jira-batch-2026-07-19",
+  author: "jira-sync",
+  mutations: [
+    {
+      op: "create",
+      id: "jira-1042",
+      options: { title: "Imported: fix login flow", type: "Issue" },
+    },
+    { op: "update", id: "pm-a1b2", options: { priority: "1" } },
+    { op: "close", id: "pm-c3d4", reason: "Resolved upstream in Jira" },
+  ],
+});
+// result.results is keyed by derived step id: { "1-create-jira-1042": { id, op }, ... }
+```
+
+`commitWorkspaceTransaction` remains the escape hatch for arbitrary domains
+(relationship events, foreign stores, mixed-step plans); `commitItemMutations`
+covers the item-mutation 90% case with correct-by-construction wiring.
+Update mutation options use the same acceptance-criteria representation as the
+CLI: criteria are stored in one string with semicolons as boundaries. Therefore
+each `addAc`/`removeAc` entry must be semicolon-free; unmatched removals are
+reported as `remove_ac_unmatched:<text>` warnings rather than disappearing as
+silent no-ops.
 
 Package and extension lifecycle convenience methods are the SDK primitive layer
 for custom PM tools that need to manage their own package surface without

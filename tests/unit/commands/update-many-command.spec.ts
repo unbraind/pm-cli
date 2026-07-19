@@ -3,7 +3,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runUpdate } from "../../../src/cli/commands/update.js";
-import { _testOnlyUpdateManyCommand, runUpdateMany } from "../../../src/cli/commands/update-many.js";
+import {
+  _testOnlyUpdateManyCommand,
+  runUpdateMany,
+} from "../../../src/cli/commands/update-many.js";
 import {
   checkpointFilePath,
   createCheckpointId,
@@ -15,8 +18,14 @@ import {
 import { matchesRuntimeFilters } from "../../../src/core/schema/runtime-field-filters.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
-import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
+import {
+  readSettings,
+  writeSettings,
+} from "../../../src/core/store/settings.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../helpers/withTempPmPath.js";
 
 interface CreateTaskOptions {
   tags?: string;
@@ -24,7 +33,11 @@ interface CreateTaskOptions {
   description?: string;
 }
 
-function createTask(context: TempPmContext, title: string, options: CreateTaskOptions = {}): string {
+function createTask(
+  context: TempPmContext,
+  title: string,
+  options: CreateTaskOptions = {},
+): string {
   const args = [
     "create",
     "--json",
@@ -66,7 +79,9 @@ function createTask(context: TempPmContext, title: string, options: CreateTaskOp
 function getItemDescription(context: TempPmContext, id: string): string {
   const result = context.runCli(["get", id, "--json"], { expectJson: true });
   expect(result.code).toBe(0);
-  return String((result.json as { item: { description: string } }).item.description);
+  return String(
+    (result.json as { item: { description: string } }).item.description,
+  );
 }
 
 function getItemPriority(context: TempPmContext, id: string): number {
@@ -75,15 +90,28 @@ function getItemPriority(context: TempPmContext, id: string): number {
   return Number((result.json as { item: { priority: number } }).item.priority);
 }
 
-function getItemTests(context: TempPmContext, id: string): Array<{ command?: string }> {
-  const result = context.runCli(["get", id, "--full", "--json"], { expectJson: true });
+function getItemTests(
+  context: TempPmContext,
+  id: string,
+): Array<{ command?: string }> {
+  const result = context.runCli(["get", id, "--full", "--json"], {
+    expectJson: true,
+  });
   expect(result.code).toBe(0);
-  const item = (result.json as { item: { tests?: Array<{ command?: string }> } }).item;
+  const item = (
+    result.json as { item: { tests?: Array<{ command?: string }> } }
+  ).item;
   return Array.isArray(item.tests) ? item.tests : [];
 }
 
-function getItemMetadataValue(context: TempPmContext, id: string, key: string): unknown {
-  const result = context.runCli(["get", id, "--full", "--json"], { expectJson: true });
+function getItemMetadataValue(
+  context: TempPmContext,
+  id: string,
+  key: string,
+): unknown {
+  const result = context.runCli(["get", id, "--full", "--json"], {
+    expectJson: true,
+  });
   expect(result.code).toBe(0);
   return (result.json as { item: Record<string, unknown> }).item[key];
 }
@@ -101,48 +129,158 @@ describe("update-many command helper coverage", () => {
         body: undefined,
       }),
     ).toEqual({ priority: "2", title: "Title" });
-    expect(_testOnlyUpdateManyCommand.hasAnyUpdateMutationInput({ author: "agent", force: true })).toBe(false);
-    expect(_testOnlyUpdateManyCommand.hasAnyUpdateMutationInput({ status: "closed" })).toBe(true);
-    expect(_testOnlyUpdateManyCommand.hasListFilters(undefined, undefined)).toBe(false);
-    expect(_testOnlyUpdateManyCommand.hasListFilters({ ids: " , " }, undefined)).toBe(false);
-    expect(_testOnlyUpdateManyCommand.hasListFilters({ ids: "pm-a" }, undefined)).toBe(true);
-    expect(_testOnlyUpdateManyCommand.hasListFilters({ limit: "10" }, undefined)).toBe(true);
+    expect(
+      _testOnlyUpdateManyCommand.hasAnyUpdateMutationInput({
+        author: "agent",
+        force: true,
+      }),
+    ).toBe(false);
+    expect(
+      _testOnlyUpdateManyCommand.hasAnyUpdateMutationInput({
+        status: "closed",
+      }),
+    ).toBe(true);
+    expect(
+      _testOnlyUpdateManyCommand.hasListFilters(undefined, undefined),
+    ).toBe(false);
+    expect(
+      _testOnlyUpdateManyCommand.hasListFilters({ ids: " , " }, undefined),
+    ).toBe(false);
+    expect(
+      _testOnlyUpdateManyCommand.hasListFilters({ ids: "pm-a" }, undefined),
+    ).toBe(true);
+    expect(
+      _testOnlyUpdateManyCommand.hasListFilters({ limit: "10" }, undefined),
+    ).toBe(true);
 
-    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("priority", " 3 ")).toBe(3);
-    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("priority", "high")).toBe("high");
-    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("estimatedMinutes", " 4.5 ")).toBe(4.5);
-    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("estimatedMinutes", "not-a-number")).toBe("not-a-number");
-    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("regression", "1")).toBe(true);
-    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("regression", "false")).toBe(false);
-    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("regression", "maybe")).toBe("maybe");
-    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("field" as never, { raw: true })).toEqual({ raw: true });
-    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("title", "  trimmed  ")).toBe("trimmed");
-    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("title", undefined)).toBeUndefined();
+    expect(
+      _testOnlyUpdateManyCommand.toComparablePreviewValue("priority", " 3 "),
+    ).toBe(3);
+    expect(
+      _testOnlyUpdateManyCommand.toComparablePreviewValue("priority", "high"),
+    ).toBe("high");
+    expect(
+      _testOnlyUpdateManyCommand.toComparablePreviewValue(
+        "estimatedMinutes",
+        " 4.5 ",
+      ),
+    ).toBe(4.5);
+    expect(
+      _testOnlyUpdateManyCommand.toComparablePreviewValue(
+        "estimatedMinutes",
+        "not-a-number",
+      ),
+    ).toBe("not-a-number");
+    expect(
+      _testOnlyUpdateManyCommand.toComparablePreviewValue("regression", "1"),
+    ).toBe(true);
+    expect(
+      _testOnlyUpdateManyCommand.toComparablePreviewValue(
+        "regression",
+        "false",
+      ),
+    ).toBe(false);
+    expect(
+      _testOnlyUpdateManyCommand.toComparablePreviewValue(
+        "regression",
+        "maybe",
+      ),
+    ).toBe("maybe");
+    expect(
+      _testOnlyUpdateManyCommand.toComparablePreviewValue("field" as never, {
+        raw: true,
+      }),
+    ).toEqual({ raw: true });
+    expect(
+      _testOnlyUpdateManyCommand.toComparablePreviewValue(
+        "title",
+        "  trimmed  ",
+      ),
+    ).toBe("trimmed");
+    expect(
+      _testOnlyUpdateManyCommand.toComparablePreviewValue("title", undefined),
+    ).toBeUndefined();
 
-    expect(_testOnlyUpdateManyCommand.normalizeUnsetField("acceptance-criteria")).toBe("acceptance_criteria");
-    expect(_testOnlyUpdateManyCommand.normalizeUnsetField("custom-field")).toBe("custom_field");
-    expect(_testOnlyUpdateManyCommand.normalizeCollectionBeforeValue("type_options", undefined)).toEqual({});
-    expect(_testOnlyUpdateManyCommand.normalizeCollectionBeforeValue("comments", undefined)).toEqual([]);
-    expect(_testOnlyUpdateManyCommand.collectionValueCount("type_options", { a: 1, b: 2 })).toBe(2);
-    expect(_testOnlyUpdateManyCommand.collectionValueCount("comments", ["a", "b"])).toBe(2);
-    expect(_testOnlyUpdateManyCommand.collectionValueCount("comments", "none")).toBe(0);
-    expect(_testOnlyUpdateManyCommand.normalizeExistingTags(["alpha", 1, "beta"])).toEqual(["alpha", "beta"]);
-    expect(_testOnlyUpdateManyCommand.normalizeExistingTags("alpha")).toEqual([]);
+    expect(
+      _testOnlyUpdateManyCommand.normalizeUnsetField("acceptance-criteria"),
+    ).toBe("acceptance_criteria");
+    expect(_testOnlyUpdateManyCommand.normalizeUnsetField("custom-field")).toBe(
+      "custom_field",
+    );
+    expect(
+      _testOnlyUpdateManyCommand.normalizeCollectionBeforeValue(
+        "type_options",
+        undefined,
+      ),
+    ).toEqual({});
+    expect(
+      _testOnlyUpdateManyCommand.normalizeCollectionBeforeValue(
+        "comments",
+        undefined,
+      ),
+    ).toEqual([]);
+    expect(
+      _testOnlyUpdateManyCommand.collectionValueCount("type_options", {
+        a: 1,
+        b: 2,
+      }),
+    ).toBe(2);
+    expect(
+      _testOnlyUpdateManyCommand.collectionValueCount("comments", ["a", "b"]),
+    ).toBe(2);
+    expect(
+      _testOnlyUpdateManyCommand.collectionValueCount("comments", "none"),
+    ).toBe(0);
+    expect(
+      _testOnlyUpdateManyCommand.normalizeExistingTags(["alpha", 1, "beta"]),
+    ).toEqual(["alpha", "beta"]);
+    expect(_testOnlyUpdateManyCommand.normalizeExistingTags("alpha")).toEqual(
+      [],
+    );
     const statusRegistry = {
       definitions: [{ id: "open", role: "active" }],
       alias_to_id: new Map([["open", "open"]]),
     };
-    expect(_testOnlyUpdateManyCommand.normalizeStatusFilter(undefined, statusRegistry)).toBeUndefined();
-    expect(_testOnlyUpdateManyCommand.normalizeStatusFilter("open", statusRegistry)).toBe("open");
+    expect(
+      _testOnlyUpdateManyCommand.normalizeStatusFilter(
+        undefined,
+        statusRegistry,
+      ),
+    ).toBeUndefined();
+    expect(
+      _testOnlyUpdateManyCommand.normalizeStatusFilter("open", statusRegistry),
+    ).toBe("open");
     expect(() =>
-      _testOnlyUpdateManyCommand.normalizeStatusFilter("missing", statusRegistry),
+      _testOnlyUpdateManyCommand.normalizeStatusFilter(
+        "missing",
+        statusRegistry,
+      ),
     ).toThrow(/Invalid --filter-status/);
-    expect(() => _testOnlyUpdateManyCommand.rejectBlankIdsFilter({ ids: "   " })).toThrow(/--ids requires/);
+    expect(() =>
+      _testOnlyUpdateManyCommand.rejectBlankIdsFilter({ ids: "   " }),
+    ).toThrow(/--ids requires/);
 
-    expect(_testOnlyUpdateManyCommand.buildTagMutationPlan({ tags: ["alpha"] }, {})).toBeUndefined();
-    expect(_testOnlyUpdateManyCommand.buildTagMutationPlan({ tags: ["alpha"] }, { addTags: ["alpha"] })).toBeUndefined();
-    expect(_testOnlyUpdateManyCommand.buildTagMutationPlan({ tags: [] }, { tags: "" })).toBeUndefined();
-    expect(_testOnlyUpdateManyCommand.buildTagMutationPlan({ tags: ["beta"] }, { tags: "alpha", addTags: ["gamma"], removeTags: ["beta"] })).toEqual({
+    expect(
+      _testOnlyUpdateManyCommand.buildTagMutationPlan({ tags: ["alpha"] }, {}),
+    ).toBeUndefined();
+    expect(
+      _testOnlyUpdateManyCommand.buildTagMutationPlan(
+        { tags: ["alpha"] },
+        { addTags: ["alpha"] },
+      ),
+    ).toBeUndefined();
+    expect(
+      _testOnlyUpdateManyCommand.buildTagMutationPlan(
+        { tags: [] },
+        { tags: "" },
+      ),
+    ).toBeUndefined();
+    expect(
+      _testOnlyUpdateManyCommand.buildTagMutationPlan(
+        { tags: ["beta"] },
+        { tags: "alpha", addTags: ["gamma"], removeTags: ["beta"] },
+      ),
+    ).toEqual({
       field: "tags",
       before: ["beta"],
       after: ["alpha", "gamma"],
@@ -163,20 +301,35 @@ describe("update-many command helper coverage", () => {
       expect.arrayContaining([
         expect.objectContaining({
           field: "comments",
-          after: expect.objectContaining({ operation: "append", add_count: 1, before_count: 1 }),
+          after: expect.objectContaining({
+            operation: "append",
+            add_count: 1,
+            before_count: 1,
+          }),
         }),
         expect.objectContaining({
           field: "dependencies",
-          after: expect.objectContaining({ operation: "merge_remove", remove_count: 1 }),
+          after: expect.objectContaining({
+            operation: "merge_remove",
+            remove_count: 1,
+          }),
         }),
         expect.objectContaining({
           field: "type_options",
           before: { risk: "low" },
-          after: expect.objectContaining({ operation: "clear_or_reset", clear: true, before_count: 1 }),
+          after: expect.objectContaining({
+            operation: "clear_or_reset",
+            clear: true,
+            before_count: 1,
+          }),
         }),
         expect.objectContaining({
           field: "tests",
-          after: expect.objectContaining({ operation: "replace", replace: true, add_count: 1 }),
+          after: expect.objectContaining({
+            operation: "replace",
+            replace: true,
+            add_count: 1,
+          }),
         }),
       ]),
     );
@@ -213,7 +366,9 @@ describe("update-many command helper coverage", () => {
 
 describe("runUpdateMany", () => {
   it("rejects update-many before tracker initialization", async () => {
-    const root = await mkdtemp(path.join(tmpdir(), "pm-update-many-uninitialized-"));
+    const root = await mkdtemp(
+      path.join(tmpdir(), "pm-update-many-uninitialized-"),
+    );
     try {
       await expect(
         runUpdateMany(
@@ -244,7 +399,9 @@ describe("runUpdateMany", () => {
 
   it("applies updates with the default synthesized message when --message is omitted", async () => {
     await withTempPmPath(async (context) => {
-      const id = createTask(context, "update-many-default-message", { tags: "default-message" });
+      const id = createTask(context, "update-many-default-message", {
+        tags: "default-message",
+      });
       const result = await runUpdateMany(
         {
           list: { ids: id },
@@ -272,8 +429,17 @@ describe("runUpdateMany", () => {
       ];
       await writeSettings(context.pmPath, settings);
 
-      const id = createTask(context, "update-many-runtime-preview", { tags: "runtime-preview" });
-      await runUpdate(id, { reviewUrl: "https://example.test/old", message: "seed runtime field" }, { path: context.pmPath });
+      const id = createTask(context, "update-many-runtime-preview", {
+        tags: "runtime-preview",
+      });
+      await runUpdate(
+        id,
+        {
+          reviewUrl: "https://example.test/old",
+          message: "seed runtime field",
+        },
+        { path: context.pmPath },
+      );
 
       const noChange = await runUpdateMany(
         {
@@ -311,7 +477,9 @@ describe("runUpdateMany", () => {
 
   it("produces dry-run plans without mutating matched items", async () => {
     await withTempPmPath(async (context) => {
-      const firstId = createTask(context, "bulk-dry-run-a", { tags: "bulk-dry-run" });
+      const firstId = createTask(context, "bulk-dry-run-a", {
+        tags: "bulk-dry-run",
+      });
       createTask(context, "bulk-dry-run-b", { tags: "bulk-dry-run" });
 
       const beforeDescription = getItemDescription(context, firstId);
@@ -334,14 +502,18 @@ describe("runUpdateMany", () => {
       expect(result.dry_run).toBe(true);
       expect(result.matched_count).toBe(2);
       expect(result.ids).toEqual([]);
-      expect(result.item_plans?.every((row) => row.changes.length > 0)).toBe(true);
+      expect(result.item_plans?.every((row) => row.changes.length > 0)).toBe(
+        true,
+      );
       expect(getItemDescription(context, firstId)).toBe(beforeDescription);
     });
   });
 
   it("normalizes scalar preview values and rejects invalid status filters", async () => {
     await withTempPmPath(async (context) => {
-      createTask(context, "bulk-scalar-preview", { tags: "bulk-scalar-preview" });
+      createTask(context, "bulk-scalar-preview", {
+        tags: "bulk-scalar-preview",
+      });
 
       await expect(
         runUpdateMany(
@@ -420,9 +592,13 @@ describe("runUpdateMany", () => {
     for (const testCase of invalidCases) {
       it(`rejects ${testCase.name} in dry-run and apply with the same error`, async () => {
         await withTempPmPath(async (context) => {
-          const id = createTask(context, `gh256-${testCase.name.replace(/\s+/g, "-")}`, {
-            tags: "gh256-reject",
-          });
+          const id = createTask(
+            context,
+            `gh256-${testCase.name.replace(/\s+/g, "-")}`,
+            {
+              tags: "gh256-reject",
+            },
+          );
           const beforePriority = getItemPriority(context, id);
 
           for (const dryRun of [true, false]) {
@@ -443,8 +619,14 @@ describe("runUpdateMany", () => {
 
           // No checkpoint file is created when the apply-mode gate throws before
           // any mutation/checkpoint write.
-          const checkpointDir = path.join(context.pmPath, "checkpoints", "update-many");
-          await expect(readdir(checkpointDir)).rejects.toMatchObject({ code: "ENOENT" });
+          const checkpointDir = path.join(
+            context.pmPath,
+            "checkpoints",
+            "update-many",
+          );
+          await expect(readdir(checkpointDir)).rejects.toMatchObject({
+            code: "ENOENT",
+          });
           // The matched item is untouched.
           expect(getItemPriority(context, id)).toBe(beforePriority);
         });
@@ -475,7 +657,10 @@ describe("runUpdateMany", () => {
             expect.objectContaining({ field: "priority", after: 3 }),
             expect.objectContaining({ field: "type", after: "Feature" }),
             expect.objectContaining({ field: "status", after: "in_progress" }),
-            expect.objectContaining({ field: "deadline", after: "2027-01-15T00:00:00.000Z" }),
+            expect.objectContaining({
+              field: "deadline",
+              after: "2027-01-15T00:00:00.000Z",
+            }),
           ]),
         );
 
@@ -498,7 +683,9 @@ describe("runUpdateMany", () => {
         expect(getItemPriority(context, id)).toBe(3);
         expect(getItemMetadataValue(context, id, "type")).toBe("Feature");
         expect(getItemMetadataValue(context, id, "status")).toBe("in_progress");
-        expect(getItemMetadataValue(context, id, "deadline")).toBe("2027-01-15T00:00:00.000Z");
+        expect(getItemMetadataValue(context, id, "deadline")).toBe(
+          "2027-01-15T00:00:00.000Z",
+        );
       });
     });
   });
@@ -535,8 +722,12 @@ describe("runUpdateMany", () => {
       expect(apply.failed_count).toBe(0);
       expect(apply.checkpoint?.id).toBeTruthy();
       expect(apply.ids).toEqual(expect.arrayContaining([firstId, secondId]));
-      expect(getItemDescription(context, firstId)).toBe("bulk applied description");
-      expect(getItemDescription(context, secondId)).toBe("bulk applied description");
+      expect(getItemDescription(context, firstId)).toBe(
+        "bulk applied description",
+      );
+      expect(getItemDescription(context, secondId)).toBe(
+        "bulk applied description",
+      );
 
       const checkpointId = apply.checkpoint?.id;
       expect(checkpointId).toBeTruthy();
@@ -580,7 +771,9 @@ describe("runUpdateMany", () => {
       expect(result.mode).toBe("apply");
       expect(result.updated_count).toBe(1);
       expect(result.failed_count).toBe(0);
-      expect(getItemDescription(context, id)).toBe("after default message apply");
+      expect(getItemDescription(context, id)).toBe(
+        "after default message apply",
+      );
     });
   });
 
@@ -655,7 +848,9 @@ describe("runUpdateMany", () => {
       );
 
       expect(rollback.restored_count).toBe(1);
-      expect(getItemDescription(context, firstId)).toBe("bulk null rollback original");
+      expect(getItemDescription(context, firstId)).toBe(
+        "bulk null rollback original",
+      );
     });
   });
 
@@ -731,7 +926,9 @@ describe("runUpdateMany", () => {
 
   it("does not treat filter-only CLI options as update-many mutations", async () => {
     await withTempPmPath(async (context) => {
-      const firstId = createTask(context, "bulk-filter-only-a", { tags: "bulk-filter-only" });
+      const firstId = createTask(context, "bulk-filter-only-a", {
+        tags: "bulk-filter-only",
+      });
       const result = context.runCli([
         "update-many",
         "--ids",
@@ -744,13 +941,17 @@ describe("runUpdateMany", () => {
       ]);
 
       expect(result.code).not.toBe(0);
-      expect(`${result.stderr}${result.stdout}`).toContain("No update-many mutation flags provided");
+      expect(`${result.stderr}${result.stdout}`).toContain(
+        "No update-many mutation flags provided",
+      );
     });
   });
 
   it("rejects explicit blank ids before bulk mutation", async () => {
     await withTempPmPath(async (context) => {
-      const controlId = createTask(context, "bulk-blank-ids-control", { tags: "bulk-blank-ids" });
+      const controlId = createTask(context, "bulk-blank-ids-control", {
+        tags: "bulk-blank-ids",
+      });
 
       const result = context.runCli([
         "update-many",
@@ -762,8 +963,252 @@ describe("runUpdateMany", () => {
       ]);
 
       expect(result.code).not.toBe(0);
-      expect(`${result.stderr}${result.stdout}`).toContain("--ids requires at least one non-empty item ID");
-      expect(getItemDescription(context, controlId)).toBe("bulk-blank-ids-control description");
+      expect(`${result.stderr}${result.stdout}`).toContain(
+        "--ids requires at least one non-empty item ID",
+      );
+      expect(getItemDescription(context, controlId)).toBe(
+        "bulk-blank-ids-control description",
+      );
+    });
+  });
+
+  it("reports unmatched explicit ids in dry-run, apply, and no-op envelopes (GH-596)", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTask(context, "bulk-unmatched-first", {
+        tags: "bulk-unmatched",
+      });
+      const secondId = createTask(context, "bulk-unmatched-second", {
+        tags: "bulk-unmatched",
+      });
+      const requested = `${firstId},pm-zzz1,${secondId},pm-zzz2,pm-zzz1`;
+
+      const dryRun = await runUpdateMany(
+        {
+          list: { ids: requested },
+          update: { description: "bulk unmatched preview" },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(dryRun.matched_count).toBe(2);
+      expect(dryRun.unmatched_ids).toEqual(["pm-zzz1", "pm-zzz2"]);
+      expect(dryRun.unmatched_count).toBe(2);
+
+      const apply = await runUpdateMany(
+        {
+          list: { ids: requested },
+          update: {
+            description: "bulk unmatched applied",
+            author: "bulk-author",
+          },
+        },
+        { path: context.pmPath },
+      );
+      expect(apply.updated_count).toBe(2);
+      expect(apply.unmatched_ids).toEqual(["pm-zzz1", "pm-zzz2"]);
+      expect(apply.unmatched_count).toBe(2);
+      expect(getItemDescription(context, firstId)).toBe(
+        "bulk unmatched applied",
+      );
+
+      const noop = await runUpdateMany(
+        {
+          list: { ids: requested },
+          update: {
+            description: "bulk unmatched applied",
+            author: "bulk-author",
+          },
+        },
+        { path: context.pmPath },
+      );
+      expect(noop.updated_count).toBe(0);
+      expect(noop.skipped_count).toBe(2);
+      expect(noop.unmatched_ids).toEqual(["pm-zzz1", "pm-zzz2"]);
+      expect(noop.unmatched_count).toBe(2);
+
+      const filterRun = await runUpdateMany(
+        {
+          list: { tag: "bulk-unmatched" },
+          update: {
+            description: "bulk unmatched applied",
+            author: "bulk-author",
+          },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(filterRun.unmatched_ids).toBeUndefined();
+      expect(filterRun.unmatched_count).toBeUndefined();
+
+      const fullyMatched = await runUpdateMany(
+        {
+          list: { ids: `${firstId},${secondId}` },
+          update: {
+            description: "bulk unmatched preview",
+            author: "bulk-author",
+          },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(fullyMatched.unmatched_ids).toEqual([]);
+      expect(fullyMatched.unmatched_count).toBe(0);
+
+      const paged = await runUpdateMany(
+        {
+          list: { ids: `${firstId},${secondId}`, limit: "1" },
+          update: { description: "bulk paged preview" },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(paged.matched_count).toBe(1);
+      expect(paged.unmatched_ids).toEqual([]);
+
+      const filteredExistingId = createTask(
+        context,
+        "bulk-unmatched-filtered-existing",
+        { tags: "different-tag" },
+      );
+      const filtered = await runUpdateMany(
+        {
+          list: {
+            ids: `${firstId},${filteredExistingId}`,
+            tag: "bulk-unmatched",
+          },
+          update: { description: "bulk filtered preview" },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(filtered.matched_count).toBe(1);
+      expect(filtered.unmatched_ids).toEqual([]);
+    });
+  });
+
+  it("treats --add-ac/--remove-ac as actionable and previews the composed criteria (GH-612)", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTask(context, "bulk-ac-first", { tags: "bulk-ac" });
+      const secondId = createTask(context, "bulk-ac-second", {
+        tags: "bulk-ac",
+      });
+
+      const dryRun = await runUpdateMany(
+        {
+          list: { ids: `${firstId},${secondId}` },
+          update: { addAc: ["shared bulk criterion"] },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(dryRun.item_plans).toHaveLength(2);
+      const firstPlan = dryRun.item_plans?.find((plan) => plan.id === firstId);
+      expect(firstPlan?.changes).toEqual([
+        {
+          field: "acceptance_criteria",
+          before: "bulk-ac-first acceptance",
+          after: "bulk-ac-first acceptance; shared bulk criterion",
+        },
+      ]);
+
+      const apply = await runUpdateMany(
+        {
+          list: { ids: `${firstId},${secondId}` },
+          update: { addAc: ["shared bulk criterion"], author: "bulk-author" },
+        },
+        { path: context.pmPath },
+      );
+      expect(apply.updated_count).toBe(2);
+
+      const repeat = await runUpdateMany(
+        {
+          list: { ids: `${firstId},${secondId}` },
+          update: { addAc: ["shared bulk criterion"], author: "bulk-author" },
+        },
+        { path: context.pmPath },
+      );
+      expect(repeat.updated_count).toBe(0);
+      expect(repeat.skipped_count).toBe(2);
+
+      const removal = await runUpdateMany(
+        {
+          list: { ids: firstId },
+          update: {
+            acceptanceCriteria: "replaced",
+            removeAc: ["replaced"],
+            author: "bulk-author",
+          },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(removal.item_plans?.[0]?.changes).toEqual([
+        {
+          field: "acceptance_criteria",
+          before: "bulk-ac-first acceptance; shared bulk criterion",
+          after: "",
+        },
+      ]);
+
+      await runUpdate(
+        secondId,
+        {
+          unset: ["acceptance-criteria"],
+          author: "bulk-author",
+          message: "remove criteria field",
+        },
+        { path: context.pmPath },
+      );
+      const absentRemoval = await runUpdateMany(
+        {
+          list: { ids: secondId },
+          update: { removeAc: ["missing criterion"] },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(absentRemoval.item_plans?.[0]?.changes).toEqual([]);
+      expect(absentRemoval.item_plans?.[0]?.warnings).toEqual([
+        "remove_ac_unmatched:missing criterion",
+      ]);
+
+      const absentRemovalApply = await runUpdateMany(
+        {
+          list: { ids: secondId },
+          update: { removeAc: ["missing criterion"], author: "bulk-author" },
+        },
+        { path: context.pmPath },
+      );
+      expect(absentRemovalApply.updated_count).toBe(0);
+      expect(absentRemovalApply.rows).toEqual([
+        {
+          id: secondId,
+          status: "skipped",
+          warnings: ["remove_ac_unmatched:missing criterion"],
+        },
+      ]);
+
+      const mixedRemoval = await runUpdateMany(
+        {
+          list: { ids: `${firstId},${secondId}` },
+          update: {
+            removeAc: ["shared bulk criterion"],
+            author: "bulk-author",
+          },
+        },
+        { path: context.pmPath },
+      );
+      expect(mixedRemoval.updated_count).toBe(1);
+      expect(mixedRemoval.skipped_count).toBe(1);
+      const mixedRows = new Map(mixedRemoval.rows?.map((row) => [row.id, row]));
+      expect(mixedRows.get(firstId)).toEqual(
+        expect.objectContaining({ id: firstId, status: "updated" }),
+      );
+      expect(mixedRows.get(secondId)).toEqual({
+        id: secondId,
+        status: "skipped",
+        warnings: ["remove_ac_unmatched:shared bulk criterion"],
+      });
     });
   });
 
@@ -780,21 +1225,44 @@ describe("runUpdateMany", () => {
         },
       ];
       await writeSettings(context.pmPath, settings, "settings:write");
-      const id = createTask(context, "bulk-runtime-field", { tags: "bulk-runtime-field" });
+      const id = createTask(context, "bulk-runtime-field", {
+        tags: "bulk-runtime-field",
+      });
 
       const dryRun = context.runCli(
-        ["update-many", "--filter-tag", "bulk-runtime-field", "--review-stage", "ready", "--dry-run", "--json"],
+        [
+          "update-many",
+          "--filter-tag",
+          "bulk-runtime-field",
+          "--review-stage",
+          "ready",
+          "--dry-run",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(dryRun.code).toBe(0);
-      const plans = (dryRun.json as { item_plans: Array<{ changes: Array<{ field: string; after: unknown }> }> }).item_plans;
+      const plans = (
+        dryRun.json as {
+          item_plans: Array<{
+            changes: Array<{ field: string; after: unknown }>;
+          }>;
+        }
+      ).item_plans;
       expect(plans[0]?.changes).toEqual([
         expect.objectContaining({ field: "review_stage", after: "ready" }),
       ]);
       expect(getItemMetadataValue(context, id, "review_stage")).toBeUndefined();
 
       const apply = context.runCli(
-        ["update-many", "--filter-tag", "bulk-runtime-field", "--review-stage", "ready", "--json"],
+        [
+          "update-many",
+          "--filter-tag",
+          "bulk-runtime-field",
+          "--review-stage",
+          "ready",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(apply.code).toBe(0);
@@ -816,9 +1284,13 @@ describe("runUpdateMany", () => {
         },
       ];
       await writeSettings(context.pmPath, settings, "settings:write");
-      const id = createTask(context, "single-update-runtime-field-scope", { tags: "runtime-field-scope" });
+      const id = createTask(context, "single-update-runtime-field-scope", {
+        tags: "runtime-field-scope",
+      });
 
-      const result = await runUpdate(id, { reviewStage: "ready" } as never, { path: context.pmPath });
+      const result = await runUpdate(id, { reviewStage: "ready" } as never, {
+        path: context.pmPath,
+      });
 
       expect(result.changed_fields).toEqual([]);
       expect(result.warnings).toContain("noop_no_update_fields");
@@ -839,7 +1311,9 @@ describe("runUpdateMany", () => {
         },
       ];
       await writeSettings(context.pmPath, settings, "settings:write");
-      const id = createTask(context, "bulk-update-runtime-field-scope", { tags: "bulk-runtime-field-scope" });
+      const id = createTask(context, "bulk-update-runtime-field-scope", {
+        tags: "bulk-runtime-field-scope",
+      });
 
       const result = await runUpdateMany(
         {
@@ -852,7 +1326,9 @@ describe("runUpdateMany", () => {
       expect(result.rows).toEqual([
         expect.objectContaining({ id, status: "skipped" }),
       ]);
-      expect(getItemMetadataValue(context, id, "single_review_stage")).toBeUndefined();
+      expect(
+        getItemMetadataValue(context, id, "single_review_stage"),
+      ).toBeUndefined();
     });
   });
 
@@ -881,7 +1357,9 @@ describe("runUpdateMany", () => {
         { expectJson: true },
       );
       expect(applyResult.code).toBe(0);
-      const checkpointId = (applyResult.json as { checkpoint?: { id?: string } }).checkpoint?.id;
+      const checkpointId = (
+        applyResult.json as { checkpoint?: { id?: string } }
+      ).checkpoint?.id;
       expect(typeof checkpointId).toBe("string");
 
       const rollbackResult = context.runCli(
@@ -913,8 +1391,12 @@ describe("runUpdateMany", () => {
 
   it("supports --add-tags and --remove-tags from CLI wiring (pm-1lws)", async () => {
     await withTempPmPath(async (context) => {
-      const firstId = createTask(context, "bulk-tags-a", { tags: "bulk-tags,legacy" });
-      const secondId = createTask(context, "bulk-tags-b", { tags: "bulk-tags,legacy" });
+      const firstId = createTask(context, "bulk-tags-a", {
+        tags: "bulk-tags,legacy",
+      });
+      const secondId = createTask(context, "bulk-tags-b", {
+        tags: "bulk-tags,legacy",
+      });
 
       const updateResult = context.runCli(
         [
@@ -932,14 +1414,29 @@ describe("runUpdateMany", () => {
         { expectJson: true },
       );
       expect(updateResult.code).toBe(0);
-      const updateJson = updateResult.json as { updated_count?: number; failed_count?: number };
+      const updateJson = updateResult.json as {
+        updated_count?: number;
+        failed_count?: number;
+      };
       expect(updateJson.updated_count).toBe(2);
       expect(updateJson.failed_count).toBe(0);
 
-      const first = context.runCli(["get", firstId, "--json"], { expectJson: true });
-      const second = context.runCli(["get", secondId, "--json"], { expectJson: true });
-      expect((first.json as { item: { tags?: string[] } }).item.tags).toEqual(["bulk-tags", "fix", "security"]);
-      expect((second.json as { item: { tags?: string[] } }).item.tags).toEqual(["bulk-tags", "fix", "security"]);
+      const first = context.runCli(["get", firstId, "--json"], {
+        expectJson: true,
+      });
+      const second = context.runCli(["get", secondId, "--json"], {
+        expectJson: true,
+      });
+      expect((first.json as { item: { tags?: string[] } }).item.tags).toEqual([
+        "bulk-tags",
+        "fix",
+        "security",
+      ]);
+      expect((second.json as { item: { tags?: string[] } }).item.tags).toEqual([
+        "bulk-tags",
+        "fix",
+        "security",
+      ]);
     });
   });
 
@@ -1029,20 +1526,54 @@ describe("runUpdateMany", () => {
       createTask(context, "addonly-b", { tags: "addonly" });
 
       const dryRun = context.runCli(
-        ["update-many", "--json", "--filter-tag", "addonly", "--add-tags", "batch", "--dry-run"],
+        [
+          "update-many",
+          "--json",
+          "--filter-tag",
+          "addonly",
+          "--add-tags",
+          "batch",
+          "--dry-run",
+        ],
         { expectJson: true },
       );
       expect(dryRun.code).toBe(0);
-      const plans = (dryRun.json as { item_plans: Array<{ changes: Array<{ field: string; after: unknown }> }> }).item_plans;
-      const tagChange = plans[0]?.changes.find((change) => change.field === "tags");
+      const plans = (
+        dryRun.json as {
+          item_plans: Array<{
+            changes: Array<{ field: string; after: unknown }>;
+          }>;
+        }
+      ).item_plans;
+      const tagChange = plans[0]?.changes.find(
+        (change) => change.field === "tags",
+      );
       expect(tagChange?.after).toEqual(["addonly", "batch"]);
 
-      const apply = context.runCli(["update-many", "--json", "--filter-tag", "addonly", "--add-tags", "batch"], {
+      const apply = context.runCli(
+        [
+          "update-many",
+          "--json",
+          "--filter-tag",
+          "addonly",
+          "--add-tags",
+          "batch",
+        ],
+        {
+          expectJson: true,
+        },
+      );
+      expect(
+        (apply.json as { updated_count: number; skipped_count: number })
+          .updated_count,
+      ).toBe(2);
+      const first = context.runCli(["get", firstId, "--json"], {
         expectJson: true,
       });
-      expect((apply.json as { updated_count: number; skipped_count: number }).updated_count).toBe(2);
-      const first = context.runCli(["get", firstId, "--json"], { expectJson: true });
-      expect((first.json as { item: { tags?: string[] } }).item.tags).toEqual(["addonly", "batch"]);
+      expect((first.json as { item: { tags?: string[] } }).item.tags).toEqual([
+        "addonly",
+        "batch",
+      ]);
     });
   });
 
@@ -1050,22 +1581,40 @@ describe("runUpdateMany", () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "replace-add", { tags: "old" });
       const apply = context.runCli(
-        ["update-many", "--json", "--filter-tag", "old", "--tags", "fresh", "--add-tags", "extra"],
+        [
+          "update-many",
+          "--json",
+          "--filter-tag",
+          "old",
+          "--tags",
+          "fresh",
+          "--add-tags",
+          "extra",
+        ],
         { expectJson: true },
       );
       expect((apply.json as { updated_count: number }).updated_count).toBe(1);
       const got = context.runCli(["get", id, "--json"], { expectJson: true });
-      expect((got.json as { item: { tags?: string[] } }).item.tags).toEqual(["extra", "fresh"]);
+      expect((got.json as { item: { tags?: string[] } }).item.tags).toEqual([
+        "extra",
+        "fresh",
+      ]);
     });
   });
 
   it("skips items when an additive tag mutation is a no-op (tag already present)", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "noop-tag", { tags: "keep" });
-      const apply = context.runCli(["update-many", "--json", "--filter-tag", "keep", "--add-tags", "keep"], {
-        expectJson: true,
-      });
-      const json = apply.json as { updated_count: number; skipped_count: number };
+      const apply = context.runCli(
+        ["update-many", "--json", "--filter-tag", "keep", "--add-tags", "keep"],
+        {
+          expectJson: true,
+        },
+      );
+      const json = apply.json as {
+        updated_count: number;
+        skipped_count: number;
+      };
       expect(json.updated_count).toBe(0);
       expect(json.skipped_count).toBe(1);
     });
@@ -1073,8 +1622,12 @@ describe("runUpdateMany", () => {
 
   it("supports status mutations from CLI --status options", async () => {
     await withTempPmPath(async (context) => {
-      const firstId = createTask(context, "bulk-status-a", { tags: "bulk-status" });
-      const secondId = createTask(context, "bulk-status-b", { tags: "bulk-status" });
+      const firstId = createTask(context, "bulk-status-a", {
+        tags: "bulk-status",
+      });
+      const secondId = createTask(context, "bulk-status-b", {
+        tags: "bulk-status",
+      });
 
       const updateResult = context.runCli(
         [
@@ -1097,19 +1650,31 @@ describe("runUpdateMany", () => {
       expect(updateJson.updated_count).toBe(2);
       expect(updateJson.failed_count).toBe(0);
 
-      const first = context.runCli(["get", firstId, "--json"], { expectJson: true });
-      const second = context.runCli(["get", secondId, "--json"], { expectJson: true });
+      const first = context.runCli(["get", firstId, "--json"], {
+        expectJson: true,
+      });
+      const second = context.runCli(["get", secondId, "--json"], {
+        expectJson: true,
+      });
       expect(first.code).toBe(0);
       expect(second.code).toBe(0);
-      expect((first.json as { item: { status: string } }).item.status).toBe("in_progress");
-      expect((second.json as { item: { status: string } }).item.status).toBe("in_progress");
+      expect((first.json as { item: { status: string } }).item.status).toBe(
+        "in_progress",
+      );
+      expect((second.json as { item: { status: string } }).item.status).toBe(
+        "in_progress",
+      );
     });
   });
 
   it("accepts shared update metadata flags from CLI wiring", async () => {
     await withTempPmPath(async (context) => {
-      const firstId = createTask(context, "bulk-shared-flags-a", { tags: "bulk-shared-flags" });
-      const secondId = createTask(context, "bulk-shared-flags-b", { tags: "bulk-shared-flags" });
+      const firstId = createTask(context, "bulk-shared-flags-a", {
+        tags: "bulk-shared-flags",
+      });
+      const secondId = createTask(context, "bulk-shared-flags-b", {
+        tags: "bulk-shared-flags",
+      });
 
       const parentCreate = context.runCli(
         [
@@ -1164,18 +1729,26 @@ describe("runUpdateMany", () => {
       expect(updateJson.updated_count).toBe(2);
       expect(updateJson.failed_count).toBe(0);
 
-      const first = context.runCli(["get", firstId, "--json"], { expectJson: true });
-      const second = context.runCli(["get", secondId, "--json"], { expectJson: true });
+      const first = context.runCli(["get", firstId, "--json"], {
+        expectJson: true,
+      });
+      const second = context.runCli(["get", secondId, "--json"], {
+        expectJson: true,
+      });
       expect(first.code).toBe(0);
       expect(second.code).toBe(0);
-      expect((first.json as { item: Record<string, unknown> }).item).toMatchObject({
+      expect(
+        (first.json as { item: Record<string, unknown> }).item,
+      ).toMatchObject({
         assignee: "bulk-owner",
         parent: parentId,
         blocked_by: "pm-dependency",
         blocked_reason: "blocked in shared-flag test",
         unblock_note: "resume once dependency closes",
       });
-      expect((second.json as { item: Record<string, unknown> }).item).toMatchObject({
+      expect(
+        (second.json as { item: Record<string, unknown> }).item,
+      ).toMatchObject({
         assignee: "bulk-owner",
         parent: parentId,
         blocked_by: "pm-dependency",
@@ -1187,20 +1760,33 @@ describe("runUpdateMany", () => {
 
   it("treats linked-array mutation flags as actionable in dry-run and apply modes", async () => {
     await withTempPmPath(async (context) => {
-      const firstId = createTask(context, "bulk-linked-tests-a", { tags: "bulk-linked-tests" });
-      const secondId = createTask(context, "bulk-linked-tests-b", { tags: "bulk-linked-tests" });
-      const originalTestCommand = "command=node scripts/run-tests.mjs test -- tests/seed-a.spec.ts,scope=project,timeout_seconds=240";
+      const firstId = createTask(context, "bulk-linked-tests-a", {
+        tags: "bulk-linked-tests",
+      });
+      const secondId = createTask(context, "bulk-linked-tests-b", {
+        tags: "bulk-linked-tests",
+      });
+      const originalTestCommand =
+        "command=node scripts/run-tests.mjs test -- tests/seed-a.spec.ts,scope=project,timeout_seconds=240";
       const replacementTestCommand =
         "command=node scripts/run-tests.mjs test -- tests/replaced.spec.ts,scope=project,timeout_seconds=240";
 
       const seed = context.runCli(
-        ["update", firstId, "--json", "--test", originalTestCommand, "--message", "seed linked test"],
+        [
+          "update",
+          firstId,
+          "--json",
+          "--test",
+          originalTestCommand,
+          "--message",
+          "seed linked test",
+        ],
         { expectJson: true },
       );
       expect(seed.code).toBe(0);
-      expect(getItemTests(context, firstId).map((entry) => entry.command)).toEqual([
-        "node scripts/run-tests.mjs test -- tests/seed-a.spec.ts",
-      ]);
+      expect(
+        getItemTests(context, firstId).map((entry) => entry.command),
+      ).toEqual(["node scripts/run-tests.mjs test -- tests/seed-a.spec.ts"]);
       expect(getItemTests(context, secondId)).toEqual([]);
 
       const dryRun = await runUpdateMany(
@@ -1221,10 +1807,14 @@ describe("runUpdateMany", () => {
 
       expect(dryRun.mode).toBe("dry_run");
       expect(dryRun.matched_count).toBe(2);
-      expect(dryRun.item_plans?.every((row) => row.changes.some((change) => change.field === "tests"))).toBe(true);
-      expect(getItemTests(context, firstId).map((entry) => entry.command)).toEqual([
-        "node scripts/run-tests.mjs test -- tests/seed-a.spec.ts",
-      ]);
+      expect(
+        dryRun.item_plans?.every((row) =>
+          row.changes.some((change) => change.field === "tests"),
+        ),
+      ).toBe(true);
+      expect(
+        getItemTests(context, firstId).map((entry) => entry.command),
+      ).toEqual(["node scripts/run-tests.mjs test -- tests/seed-a.spec.ts"]);
       expect(getItemTests(context, secondId)).toEqual([]);
 
       const apply = await runUpdateMany(
@@ -1247,18 +1837,20 @@ describe("runUpdateMany", () => {
       expect(apply.updated_count).toBe(2);
       expect(apply.skipped_count).toBe(0);
       expect(apply.failed_count).toBe(0);
-      expect(getItemTests(context, firstId).map((entry) => entry.command)).toEqual([
-        "node scripts/run-tests.mjs test -- tests/replaced.spec.ts",
-      ]);
-      expect(getItemTests(context, secondId).map((entry) => entry.command)).toEqual([
-        "node scripts/run-tests.mjs test -- tests/replaced.spec.ts",
-      ]);
+      expect(
+        getItemTests(context, firstId).map((entry) => entry.command),
+      ).toEqual(["node scripts/run-tests.mjs test -- tests/replaced.spec.ts"]);
+      expect(
+        getItemTests(context, secondId).map((entry) => entry.command),
+      ).toEqual(["node scripts/run-tests.mjs test -- tests/replaced.spec.ts"]);
     });
   });
 
   it("previews unset aliases and collection mutation operations", async () => {
     await withTempPmPath(async (context) => {
-      const id = createTask(context, "bulk-unset-collections", { tags: "bulk-unset-collections,legacy" });
+      const id = createTask(context, "bulk-unset-collections", {
+        tags: "bulk-unset-collections,legacy",
+      });
       const seed = context.runCli(
         [
           "update",
@@ -1279,7 +1871,12 @@ describe("runUpdateMany", () => {
         {
           list: { tag: "bulk-unset-collections", includeBody: true },
           update: {
-            unset: ["deadline", "estimate", "acceptance-criteria", "missing-field"],
+            unset: [
+              "deadline",
+              "estimate",
+              "acceptance-criteria",
+              "missing-field",
+            ],
             removeTags: ["legacy"],
             comment: ["author=seed-author,text=new comment"],
             clearDocs: true,
@@ -1295,19 +1892,35 @@ describe("runUpdateMany", () => {
         expect.arrayContaining([
           expect.objectContaining({ field: "deadline", after: null }),
           expect.objectContaining({ field: "estimated_minutes", after: null }),
-          expect.objectContaining({ field: "acceptance_criteria", after: null }),
-          expect.objectContaining({ field: "tags", after: ["bulk-unset-collections"] }),
+          expect.objectContaining({
+            field: "acceptance_criteria",
+            after: null,
+          }),
+          expect.objectContaining({
+            field: "tags",
+            after: ["bulk-unset-collections"],
+          }),
           expect.objectContaining({
             field: "comments",
-            after: expect.objectContaining({ operation: "append", add_count: 1, before_count: 1 }),
+            after: expect.objectContaining({
+              operation: "append",
+              add_count: 1,
+              before_count: 1,
+            }),
           }),
           expect.objectContaining({
             field: "docs",
-            after: expect.objectContaining({ operation: "clear_or_reset", clear: true, before_count: 1 }),
+            after: expect.objectContaining({
+              operation: "clear_or_reset",
+              clear: true,
+              before_count: 1,
+            }),
           }),
         ]),
       );
-      expect(changes.some((change) => change.field === "missing-field")).toBe(false);
+      expect(changes.some((change) => change.field === "missing-field")).toBe(
+        false,
+      );
     });
   });
 
@@ -1343,7 +1956,11 @@ describe("runUpdateMany", () => {
 
         const apply = await runUpdateMany(
           {
-            list: { ids: `${a},${b},pm-doesnotexist`, tag: "keep", includeBody: true },
+            list: {
+              ids: `${a},${b},pm-doesnotexist`,
+              tag: "keep",
+              includeBody: true,
+            },
             update: { priority: "0", message: "ids intersect tag" },
           },
           { path: context.pmPath },
@@ -1382,7 +1999,9 @@ describe("mutation-checkpoint shared module", () => {
   }
 
   it("normalizeCheckpointId trims valid ids and rejects empty/invalid ids", () => {
-    expect(normalizeCheckpointId("  close-many-123_x.y-z  ")).toBe("close-many-123_x.y-z");
+    expect(normalizeCheckpointId("  close-many-123_x.y-z  ")).toBe(
+      "close-many-123_x.y-z",
+    );
     expect(() => normalizeCheckpointId("   ")).toThrowError(PmCliError);
     let usage: unknown;
     try {
@@ -1410,14 +2029,26 @@ describe("mutation-checkpoint shared module", () => {
         reason: "bulk close",
         items: [{ id: "pm-a", target_updated_at: "2026-06-03T00:00:00.000Z" }],
       };
-      const writtenPath = await writeMutationCheckpoint(root, "close-many", id, payload);
+      const writtenPath = await writeMutationCheckpoint(
+        root,
+        "close-many",
+        id,
+        payload,
+      );
       expect(writtenPath).toBe(checkpointFilePath(root, "close-many", id));
 
-      const loaded = await loadMutationCheckpoint(root, "close-many", id, SCHEMA_VERSION);
+      const loaded = await loadMutationCheckpoint(
+        root,
+        "close-many",
+        id,
+        SCHEMA_VERSION,
+      );
       expect(loaded.id).toBe(id);
       expect(loaded.author).toBe("tester");
       expect(loaded.created_at).toBe("2026-06-04T00:00:00.000Z");
-      expect(loaded.items).toEqual([{ id: "pm-a", target_updated_at: "2026-06-03T00:00:00.000Z" }]);
+      expect(loaded.items).toEqual([
+        { id: "pm-a", target_updated_at: "2026-06-03T00:00:00.000Z" },
+      ]);
       expect(loaded.record.reason).toBe("bulk close");
     } finally {
       await rm(root, { recursive: true, force: true });
@@ -1432,7 +2063,12 @@ describe("mutation-checkpoint shared module", () => {
         schema_version: SCHEMA_VERSION,
         items: [{ id: "pm-x", target_updated_at: "2026-06-03T00:00:00.000Z" }],
       });
-      const loaded = await loadMutationCheckpoint(root, "close-many", id, SCHEMA_VERSION);
+      const loaded = await loadMutationCheckpoint(
+        root,
+        "close-many",
+        id,
+        SCHEMA_VERSION,
+      );
       expect(loaded.id).toBe(id);
       expect(loaded.author).toBe("unknown");
       expect(typeof loaded.created_at).toBe("string");
@@ -1441,7 +2077,11 @@ describe("mutation-checkpoint shared module", () => {
     }
   });
 
-  async function expectLoadFailure(contents: string, expected: string, code: number): Promise<void> {
+  async function expectLoadFailure(
+    contents: string,
+    expected: string,
+    code: number,
+  ): Promise<void> {
     const dir = await makeRoot();
     try {
       const id = "close-many-bad";
@@ -1467,7 +2107,12 @@ describe("mutation-checkpoint shared module", () => {
     try {
       let caught: unknown;
       try {
-        await loadMutationCheckpoint(dir, "close-many", "missing-id", SCHEMA_VERSION);
+        await loadMutationCheckpoint(
+          dir,
+          "close-many",
+          "missing-id",
+          SCHEMA_VERSION,
+        );
       } catch (error) {
         caught = error;
       }
@@ -1478,22 +2123,40 @@ describe("mutation-checkpoint shared module", () => {
   });
 
   it("rejects malformed checkpoint payloads with descriptive errors", async () => {
-    await expectLoadFailure("{not-json", "contains invalid JSON", EXIT_CODE.GENERIC_FAILURE);
+    await expectLoadFailure(
+      "{not-json",
+      "contains invalid JSON",
+      EXIT_CODE.GENERIC_FAILURE,
+    );
     await expectLoadFailure("null", "is invalid", EXIT_CODE.GENERIC_FAILURE);
-    await expectLoadFailure(JSON.stringify({ schema_version: 99, items: [] }), "unsupported schema version", EXIT_CODE.GENERIC_FAILURE);
-    await expectLoadFailure(JSON.stringify({ schema_version: SCHEMA_VERSION }), "is missing items", EXIT_CODE.GENERIC_FAILURE);
+    await expectLoadFailure(
+      JSON.stringify({ schema_version: 99, items: [] }),
+      "unsupported schema version",
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+    await expectLoadFailure(
+      JSON.stringify({ schema_version: SCHEMA_VERSION }),
+      "is missing items",
+      EXIT_CODE.GENERIC_FAILURE,
+    );
     await expectLoadFailure(
       JSON.stringify({ schema_version: SCHEMA_VERSION, items: [42] }),
       "invalid item entry",
       EXIT_CODE.GENERIC_FAILURE,
     );
     await expectLoadFailure(
-      JSON.stringify({ schema_version: SCHEMA_VERSION, items: [{ target_updated_at: "x" }] }),
+      JSON.stringify({
+        schema_version: SCHEMA_VERSION,
+        items: [{ target_updated_at: "x" }],
+      }),
       "without ID",
       EXIT_CODE.GENERIC_FAILURE,
     );
     await expectLoadFailure(
-      JSON.stringify({ schema_version: SCHEMA_VERSION, items: [{ id: "pm-a" }] }),
+      JSON.stringify({
+        schema_version: SCHEMA_VERSION,
+        items: [{ id: "pm-a" }],
+      }),
       "without target_updated_at",
       EXIT_CODE.GENERIC_FAILURE,
     );
@@ -1515,7 +2178,12 @@ describe("mutation-checkpoint shared module", () => {
     expect(result.restored_ids).toEqual(["pm-ok"]);
     expect(result.failed_count).toBe(1);
     expect(result.rows).toEqual([
-      { id: "pm-ok", status: "restored", changed_fields: ["status"], warnings: [] },
+      {
+        id: "pm-ok",
+        status: "restored",
+        changed_fields: ["status"],
+        warnings: [],
+      },
       { id: "pm-fail", status: "failed", error: "restore blew up" },
     ]);
   });

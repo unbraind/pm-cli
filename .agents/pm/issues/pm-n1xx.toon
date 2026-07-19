@@ -2,19 +2,58 @@ id: pm-n1xx
 title: "GH-602: SDK .d.ts require @types/node but package does not declare it — tsc errors inside node_modules for consumers; plus shipped JSDoc defects"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: dx,packaging,sdk
 created_at: "2026-07-19T03:42:10.160Z"
-updated_at: "2026-07-19T03:43:34.648Z"
+updated_at: "2026-07-19T14:06:00.277Z"
+closed_at: "2026-07-19T14:05:59.426Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "@types/node declared (peerDependency with peerDependenciesMeta optional, or dependency) so a strict TS consumer compiles after plain install; shipped JSDoc typo/legacy-flag defects fixed; packed-tarball TS consumer smoke covers the case"
 parent: pm-usfg
 risk: low
 confidence: high
+resolution: "Ship @types/node as a package dependency, verify consumer-owned types in packed smoke, and correct public JSDoc defects."
+expected_result: Strict external TypeScript consumers compile shipped declarations without undeclared ambient dependencies.
+actual_result: Clean packed install resolves its own Node types and compiles with the repository compiler; docstring gate remains 100%.
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-o8um,related,"2026-07-19T03:42:10.160Z",null,null
   pm-quzx,related,"2026-07-19T03:42:10.160Z",null,null
   pm-x29o,related,"2026-07-19T03:42:28.393Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-19T12:41:31.526Z",maintainer-agent,"Evidence: packed tarball smoke passed from an isolated consumer and now proves the plain install owns @types/node; shipped JSDoc and legacy flag references are corrected; static docstring coverage is 100%; full test coverage is 100/100/100/100."
+  "2026-07-19T12:50:18.310Z",maintainer-agent,"Release-gate evidence: pnpm release:gates completed build, typecheck, docs/skills, static quality, package boundary, token budget, 5,963 tests with exact 100/100/100/100 coverage, version/sync, secret scan, packed-package smoke, and package-first dogfood successfully. The aggregate command stopped only at its intentional Greptile stage because Greptile requires a committed diff against main; the local commit will be reviewed before push."
+  "2026-07-19T14:05:43.412Z",maintainer-agent,"Final PR evidence: PR #616 exact head bafb9b53 is green; clean packed-consumer TypeScript smoke proves installed Node types and shipped declaration compatibility."
+notes[2]{created_at,author,text}:
+  "2026-07-19T12:00:00.044Z",maintainer-agent,"Implemented: @types/node declared as optional peerDependency (>=22, matching the engines floor) with peerDependenciesMeta; SDK.md Install section documents the TS-consumer requirement + moduleResolution guidance. Shipped JSDoc defect CLASS fixed at source: all 26 glued-template docstrings (\"closethe/openthe/blockedthe/defaultthe/... record\") replaced with accurate per-field docs across types.ts, sdk/runtime.ts, runtime-schema.ts, item-types-file.ts, type-workflows.ts, extension surfaces, calendar/plan/context/stats; the three legacy `--path` JSDoc references now cite --pm-path. Packed-tarball TS consumer smoke added to scripts/smoke-npx-from-pack.mjs: real npm-pack tarball installed into a fresh consumer project, strict nodenext tsc -p typecheck of an @unbrained/pm-cli/sdk import using repo-local typescript+@types/node (registry-independent); covering mocked spec extended incl. tsc-failure path."
+  "2026-07-19T12:41:30.865Z",maintainer-agent,"Follow-up correction from packed-consumer proof: optional peerDependencies do not install @types/node for a plain npm consumer. The final implementation declares @types/node >=22 as a runtime dependency and the smoke resolves types only from the consumer node_modules; the masking repository typeRoots path was removed."
+files[20]{path,scope,note}:
+  package.json,project,consumer typing or shipped JSDoc correction
+  pnpm-lock.yaml,project,consumer typing or shipped JSDoc correction
+  scripts/smoke-npx-from-pack.mjs,project,consumer typing or shipped JSDoc correction
+  src/cli/commands/calendar.ts,project,consumer typing or shipped JSDoc correction
+  src/cli/commands/context.ts,project,consumer typing or shipped JSDoc correction
+  src/cli/commands/plan.ts,project,consumer typing or shipped JSDoc correction
+  src/cli/registration-helpers.ts,project,consumer typing or shipped JSDoc correction
+  src/core/extensions/extension-types.ts,project,consumer typing or shipped JSDoc correction
+  src/core/schema/item-types-file.ts,project,consumer typing or shipped JSDoc correction
+  src/core/schema/runtime-schema.ts,project,consumer typing or shipped JSDoc correction
+  src/core/schema/type-workflows.ts,project,consumer typing or shipped JSDoc correction
+  src/sdk/cli-bootstrap.ts,project,consumer typing or shipped JSDoc correction
+  src/sdk/extension.ts,project,consumer typing or shipped JSDoc correction
+  src/sdk/extension/describe.ts,project,consumer typing or shipped JSDoc correction
+  src/sdk/history-read.ts,project,consumer typing or shipped JSDoc correction
+  src/sdk/runtime.ts,project,consumer typing or shipped JSDoc correction
+  src/sdk/schema.ts,project,consumer typing or shipped JSDoc correction
+  src/sdk/stats.ts,project,consumer typing or shipped JSDoc correction
+  src/types.ts,project,consumer typing or shipped JSDoc correction
+  tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,consumer typing or shipped JSDoc correction
+tests[1]{command,scope,timeout_seconds}:
+  "pnpm smoke:npx",project,600
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrrsa7w9-d46o6t,test,passed,"2026-07-19T12:39:17.534Z","2026-07-19T12:40:25.977Z","2026-07-19T12:40:25.977Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,plain-install TypeScript consumer guidance
+close_reason: "Implemented and verified in PR #616 at exact head bafb9b53; local and GitHub gates green, all review feedback addressed."
 body: "GH-602. Shipped .d.ts reference Node globals/modules that only resolve with @types/node, but package declares only typebox in peerDependencies — strict TS consumers get tsc errors from inside node_modules with no guidance. Fix: declare @types/node (peer + peerDependenciesMeta.optional or dep), fix the shipped JSDoc typo/legacy-flag defects, extend packed-tarball TS consumer smoke."

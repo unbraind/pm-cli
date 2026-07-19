@@ -817,27 +817,50 @@ describe("runGet and runAppend", () => {
     });
   });
 
-  it("returns empty append output when incoming body is blank", async () => {
+  it("rejects blank append text without advancing updated_at or history", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, {
         title: "append-blank",
         body: "seed body",
       });
-      const appendResult = await runAppend(
-        id,
-        {
-          body: "   ",
-          author: "append-author",
-          message: "Blank append should be ignored",
-        },
-        { path: context.pmPath },
-      );
+      const before = await runGet(id, { path: context.pmPath });
+      const historyBefore = context.runCli(["history", id, "--json", "--full"], {
+        expectJson: true,
+      });
+      const historyCountBefore = (
+        historyBefore.json as { history: unknown[] }
+      ).history.length;
 
-      expect(appendResult.appended).toBe("");
-      expect(appendResult.changed_fields).toEqual([]);
+      for (const blank of ["   ", ""]) {
+        await expect(
+          runAppend(
+            id,
+            {
+              body: blank,
+              author: "append-author",
+              message: "Blank append must fail fast",
+            },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.USAGE,
+          context: { code: "append_empty_body" },
+        });
+      }
 
-      const getResult = await runGet(id, { path: context.pmPath });
-      expect(getResult.item.body).toBe("seed body");
+      const positionalBlank = context.runCli(["append", id, "   ", "--author", "owner-a"]);
+      expect(positionalBlank.code).toBe(EXIT_CODE.USAGE);
+      expect(positionalBlank.stderr).toContain("cannot be empty");
+
+      const after = await runGet(id, { path: context.pmPath });
+      expect(after.item.body).toBe("seed body");
+      expect(after.item.updated_at).toBe(before.item.updated_at);
+      const historyAfter = context.runCli(["history", id, "--json", "--full"], {
+        expectJson: true,
+      });
+      expect(
+        (historyAfter.json as { history: unknown[] }).history.length,
+      ).toBe(historyCountBefore);
     });
   });
 
