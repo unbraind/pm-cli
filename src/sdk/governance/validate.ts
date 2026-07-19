@@ -11,6 +11,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { buildRemediationCommands } from "../../core/diagnostics/remediation.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { scanHistoryDrift } from "../../core/history/drift-scan.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
@@ -3115,11 +3116,18 @@ async function buildStorageIntegrityCheck(
   pmRoot: string,
   items: ItemWithBody[],
   typeToFolder: Record<string, string>,
+  settings: LoadedValidateSettings,
 ): Promise<{ check: ValidateCheck; warnings: string[] }> {
   const scan = await scanStorageIntegrity(
     pmRoot,
     new Set(items.map((item) => item.id)),
     typeToFolder,
+    {
+      schema: settings.schema,
+      extensionFieldNames: collectRegisteredItemFieldNames(
+        getActiveExtensionRegistrations(),
+      ),
+    },
   );
   const warnings: string[] = [];
   if (scan.unreadable_item_files.length > 0) {
@@ -3303,6 +3311,7 @@ async function executeRequestedValidateChecks(params: {
           params.settings,
           getActiveExtensionRegistrations(),
         ).type_to_folder,
+        params.settings,
       ),
       fixHintsEnabled,
     );

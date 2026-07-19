@@ -24,11 +24,11 @@ pm merge install --dry-run --json
 
 ## Artifact semantics
 
-| Artifact | Driver | Merge behavior |
-| --- | --- | --- |
-| Item `.toon` / `.md` | `pm-item` | Three-way field merge; append-like collections use set union, `updated_at` uses latest timestamp, canonical serialization recomputes TOON counts. |
-| `history/*.jsonl` | `pm-history` | Preserves the common prefix and both divergent suffixes, orders deterministically, then re-anchors the resulting hash chain. |
-| `settings.json`, `schema/*.json` | `pm-json` | Recursively merges objects per key; disjoint settings changes compose without a whole-file conflict. |
+| Artifact                         | Driver                              | Merge behavior                                                                                                                                                                                                                               |
+| -------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Item `.toon` / `.md`             | `pm-item-toon` / `pm-item-markdown` | Three-way field merge; format-specific drivers avoid passing the repository path through Git's shell command, append-like collections use set union, `updated_at` uses latest timestamp, and canonical serialization recomputes TOON counts. |
+| `history/*.jsonl`                | `pm-history`                        | Preserves the common prefix and both divergent suffixes, orders deterministically, then re-anchors the resulting hash chain.                                                                                                                 |
+| `settings.json`, `schema/*.json` | `pm-json`                           | Recursively merges objects per key; disjoint settings changes compose without a whole-file conflict.                                                                                                                                         |
 
 When both sides change the same scalar or JSON leaf differently, the driver writes a parseable preferred-side result but exits nonzero. Git keeps the path conflicted so a human or coordinating agent must review the losing value and explicitly `git add` the resolution. Use `--prefer theirs` only when that is the intended resolution policy.
 

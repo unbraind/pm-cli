@@ -13,7 +13,9 @@ describe("ensurePmGitignore", () => {
     try {
       const first = await ensurePmGitignore(root);
       expect(first.changed).toBe(true);
-      expect(await readFile(first.path, "utf8")).toBe(`${getPmGitignoreBlock()}\n`);
+      expect(await readFile(first.path, "utf8")).toBe(
+        `${getPmGitignoreBlock()}\n`,
+      );
       expect(getPmGitignoreBlock()).toContain(".agents/pm/locks/");
 
       await writeFile(
@@ -25,7 +27,16 @@ describe("ensurePmGitignore", () => {
       const repaired = await readFile(first.path, "utf8");
       expect(repaired).toBe(`node_modules/\n\n${getPmGitignoreBlock()}\n`);
       expect((await ensurePmGitignore(root)).changed).toBe(false);
-      expect((await ensurePmGitignore(root, { pmRoot: root })).changed).toBe(false);
+      expect((await ensurePmGitignore(root, { pmRoot: root })).changed).toBe(
+        false,
+      );
+
+      const dotDotNamedRoot = path.join(root, "..pm");
+      await mkdir(dotDotNamedRoot);
+      expect(
+        (await ensurePmGitignore(root, { pmRoot: dotDotNamedRoot })).changed,
+      ).toBe(true);
+      expect(await readFile(first.path, "utf8")).toContain("..pm/runtime/");
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -44,14 +55,20 @@ describe("ensurePmGitignore", () => {
   });
 
   it("does not write ignore rules for a tracker outside the workspace", async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-external-"));
-    const external = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-tracker-"));
+    const root = await mkdtemp(
+      path.join(os.tmpdir(), "pm-gitignore-external-"),
+    );
+    const external = await mkdtemp(
+      path.join(os.tmpdir(), "pm-gitignore-tracker-"),
+    );
     try {
       expect(await ensurePmGitignore(root, { pmRoot: external })).toEqual({
         path: path.join(root, ".gitignore"),
         changed: false,
       });
-      await expect(readFile(path.join(root, ".gitignore"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(
+        readFile(path.join(root, ".gitignore"), "utf8"),
+      ).rejects.toMatchObject({ code: "ENOENT" });
     } finally {
       await Promise.all([
         rm(root, { recursive: true, force: true }),

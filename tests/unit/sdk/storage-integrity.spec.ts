@@ -2,9 +2,13 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { normalizeRuntimeSchemaSettings } from "../../../src/core/schema/runtime-schema.js";
 import { scanStorageIntegrity } from "../../../src/sdk/governance/storage-integrity.js";
 
-function itemDocument(id: string): string {
+function itemDocument(
+  id: string,
+  extraFields: Record<string, unknown> = {},
+): string {
   return `${JSON.stringify({
     id,
     title: "Storage integrity fixture",
@@ -15,6 +19,7 @@ function itemDocument(id: string): string {
     tags: [],
     created_at: "2026-07-19T00:00:00.000Z",
     updated_at: "2026-07-19T00:00:00.000Z",
+    ...extraFields,
   })}\n`;
 }
 
@@ -71,6 +76,26 @@ describe("post-merge storage integrity", () => {
           "utf8",
         ),
         writeFile(
+          path.join(pmRoot, "tasks", "pm-schema-duplicate.md"),
+          itemDocument("pm-schema-duplicate"),
+          "utf8",
+        ),
+        writeFile(
+          path.join(pmRoot, "features", "pm-schema-duplicate.md"),
+          itemDocument("pm-schema-duplicate", { undeclared_field: true }),
+          "utf8",
+        ),
+        writeFile(
+          path.join(pmRoot, "tasks", "pm-extension-duplicate.md"),
+          itemDocument("pm-extension-duplicate"),
+          "utf8",
+        ),
+        writeFile(
+          path.join(pmRoot, "features", "pm-extension-duplicate.md"),
+          itemDocument("pm-extension-duplicate", { extension_owned: true }),
+          "utf8",
+        ),
+        writeFile(
           path.join(pmRoot, "history", "pm-conflict.jsonl"),
           "<<<<<<< ours\n{}\n=======\n{}\n>>>>>>> theirs\n",
           "utf8",
@@ -90,11 +115,16 @@ describe("post-merge storage integrity", () => {
 
       const result = await scanStorageIntegrity(
         pmRoot,
-        new Set(["pm-deleted", "pm-duplicate"]),
+        new Set([
+          "pm-deleted",
+          "pm-duplicate",
+          "pm-schema-duplicate",
+          "pm-extension-duplicate",
+        ]),
         { Feature: "features", Task: "tasks" },
       );
 
-      expect(result.item_files_on_disk).toBe(4);
+      expect(result.item_files_on_disk).toBe(8);
       expect(result.unreadable_item_files).toEqual([
         { id: "pm-duplicate", path: "features/pm-duplicate.toon" },
         { id: "pm-broken", path: "tasks/pm-broken.toon" },
@@ -113,6 +143,32 @@ describe("post-merge storage integrity", () => {
         "settings.json",
         "schema/types.json",
       ]);
+
+      const schemaAware = await scanStorageIntegrity(
+        pmRoot,
+        new Set([
+          "pm-deleted",
+          "pm-duplicate",
+          "pm-schema-duplicate",
+          "pm-extension-duplicate",
+        ]),
+        { Feature: "features", Task: "tasks" },
+        {
+          schema: normalizeRuntimeSchemaSettings({
+            unknown_field_policy: "reject",
+            fields: [],
+          }),
+          extensionFieldNames: ["extension_owned"],
+        },
+      );
+      expect(schemaAware.unreadable_item_files).toContainEqual({
+        id: "pm-schema-duplicate",
+        path: "features/pm-schema-duplicate.md",
+      });
+      expect(schemaAware.unreadable_item_files).not.toContainEqual({
+        id: "pm-extension-duplicate",
+        path: "features/pm-extension-duplicate.md",
+      });
 
       await Promise.all([
         writeFile(path.join(pmRoot, "history", "pm-empty.jsonl"), "\n", "utf8"),
@@ -157,7 +213,12 @@ describe("post-merge storage integrity", () => {
       ]);
       const expanded = await scanStorageIntegrity(
         pmRoot,
-        new Set(["pm-deleted", "pm-duplicate"]),
+        new Set([
+          "pm-deleted",
+          "pm-duplicate",
+          "pm-schema-duplicate",
+          "pm-extension-duplicate",
+        ]),
         { Feature: "features", Task: "tasks" },
       );
       expect(expanded.history_unparseable_streams).toEqual([

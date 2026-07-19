@@ -46,6 +46,16 @@ function normalizeTrackerRelativeRoot(trackerRelativeRoot: string): string {
     .replace(/\/+$/, "");
 }
 
+/** Return whether a relative path escapes its owning root, without rejecting valid names such as `..pm`. */
+export function isPathOutsideRoot(relativePath: string): boolean {
+  const normalized = relativePath.replaceAll("\\", "/");
+  return (
+    path.isAbsolute(relativePath) ||
+    normalized === ".." ||
+    normalized.startsWith("../")
+  );
+}
+
 /** Return the canonical pm ignore block rendered for the given workspace-relative tracker root (defaults to `.agents/pm`), primarily for documentation and tests. */
 export function getPmGitignoreBlock(
   trackerRelativeRoot: string = PM_GITIGNORE_DEFAULT_TRACKER_ROOT,
@@ -81,7 +91,7 @@ export async function ensurePmGitignore(
     const relative = normalizeTrackerRelativeRoot(
       path.relative(path.resolve(workspaceRoot), path.resolve(options.pmRoot)),
     );
-    if (relative.startsWith("..") || path.isAbsolute(relative)) {
+    if (isPathOutsideRoot(relative)) {
       return { path: gitignorePath, changed: false };
     }
     if (relative.length > 0) {
@@ -92,7 +102,9 @@ export async function ensurePmGitignore(
   try {
     current = await readFile(gitignorePath, "utf8");
   } catch (error: unknown) {
-    if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) {
+    if (
+      !(error instanceof Error && "code" in error && error.code === "ENOENT")
+    ) {
       throw error;
     }
   }

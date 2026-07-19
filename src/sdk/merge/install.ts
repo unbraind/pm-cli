@@ -20,6 +20,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { isPathOutsideRoot } from "../workspace.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -30,19 +31,28 @@ export const PM_GITATTRIBUTES_END = "# pm-cli:merge-drivers:end";
 
 const MERGE_DRIVER_DEFINITIONS = [
   {
-    key: "pm-item",
-    name: "pm field-aware item document merge",
+    key: "pm-item-toon",
+    name: "pm field-aware TOON item document merge",
     artifact: "item",
+    itemPath: "item.toon",
+  },
+  {
+    key: "pm-item-markdown",
+    name: "pm field-aware JSON-markdown item document merge",
+    artifact: "item",
+    itemPath: "item.md",
   },
   {
     key: "pm-history",
     name: "pm append-only history stream merge",
     artifact: "history",
+    itemPath: undefined,
   },
   {
     key: "pm-json",
     name: "pm key-level JSON config merge",
     artifact: "json",
+    itemPath: undefined,
   },
 ] as const;
 
@@ -103,15 +113,26 @@ function buildMergeAttributePatterns(
   trackerRelativeRoot: string,
   typeFolders: string[],
 ): string[] {
-  const prefix = trackerRelativeRoot.length > 0 ? `${trackerRelativeRoot}/` : "";
+  const prefix =
+    trackerRelativeRoot.length > 0 ? `${trackerRelativeRoot}/` : "";
   const patterns: string[] = [];
   for (const folder of typeFolders) {
-    patterns.push(`${quoteGitAttributePattern(`${prefix}${folder}/*.toon`)} merge=pm-item`);
-    patterns.push(`${quoteGitAttributePattern(`${prefix}${folder}/*.md`)} merge=pm-item`);
+    patterns.push(
+      `${quoteGitAttributePattern(`${prefix}${folder}/*.toon`)} merge=pm-item-toon`,
+    );
+    patterns.push(
+      `${quoteGitAttributePattern(`${prefix}${folder}/*.md`)} merge=pm-item-markdown`,
+    );
   }
-  patterns.push(`${quoteGitAttributePattern(`${prefix}history/*.jsonl`)} merge=pm-history`);
-  patterns.push(`${quoteGitAttributePattern(`${prefix}settings.json`)} merge=pm-json`);
-  patterns.push(`${quoteGitAttributePattern(`${prefix}schema/*.json`)} merge=pm-json`);
+  patterns.push(
+    `${quoteGitAttributePattern(`${prefix}history/*.jsonl`)} merge=pm-history`,
+  );
+  patterns.push(
+    `${quoteGitAttributePattern(`${prefix}settings.json`)} merge=pm-json`,
+  );
+  patterns.push(
+    `${quoteGitAttributePattern(`${prefix}schema/*.json`)} merge=pm-json`,
+  );
   return patterns;
 }
 
@@ -125,7 +146,9 @@ async function reconcileGitattributesBlock(
   try {
     current = await readFile(gitattributesPath, "utf8");
   } catch (error: unknown) {
-    if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) {
+    if (
+      !(error instanceof Error && "code" in error && error.code === "ENOENT")
+    ) {
       throw error;
     }
   }
@@ -173,8 +196,11 @@ export async function runMergeInstall(
   }
   const dryRun = options.dryRun === true;
   const workspaceRoot = await resolveGitWorkspaceRoot(process.cwd());
-  const trackerRelativeRoot = toPosixRelative(workspaceRoot, path.resolve(pmRoot));
-  if (trackerRelativeRoot.startsWith("..")) {
+  const trackerRelativeRoot = toPosixRelative(
+    workspaceRoot,
+    path.resolve(pmRoot),
+  );
+  if (isPathOutsideRoot(trackerRelativeRoot)) {
     throw new PmCliError(
       `Tracker root ${pmRoot} is outside the git repository ${workspaceRoot}; there is nothing to configure for this repository.`,
       EXIT_CODE.USAGE,
@@ -189,7 +215,10 @@ export async function runMergeInstall(
   const typeFolders = [
     ...new Set(Object.values(typeRegistry.type_to_folder)),
   ].sort((left, right) => left.localeCompare(right));
-  const patterns = buildMergeAttributePatterns(trackerRelativeRoot, typeFolders);
+  const patterns = buildMergeAttributePatterns(
+    trackerRelativeRoot,
+    typeFolders,
+  );
   const gitattributes = await reconcileGitattributesBlock(
     workspaceRoot,
     patterns,
@@ -204,7 +233,7 @@ export async function runMergeInstall(
     });
     gitConfigEntries.push({
       key: `merge.${definition.key}.driver`,
-      value: `pm merge driver ${definition.artifact} "%O" "%A" "%B" --item-path "%P"`,
+      value: `pm merge driver ${definition.artifact} "%O" "%A" "%B"${definition.itemPath === undefined ? "" : ` --item-path ${definition.itemPath}`}`,
     });
   }
   if (!dryRun) {
@@ -230,7 +259,7 @@ export async function runMergeInstall(
     git_config: gitConfigEntries,
     guidance: [
       "Commit .gitattributes so every branch and collaborator shares the merge mapping.",
-      "git config is per-clone: each collaborator (and each fresh worktree/clone) runs \"pm merge install\" once.",
+      'git config is per-clone: each collaborator (and each fresh worktree/clone) runs "pm merge install" once.',
       'After merging branches, run "pm validate" and, if history drift is reported, "pm history-repair --all" to reconcile item state with merged history.',
       "Rerun pm merge install after registering custom item types so new type folders are covered.",
     ],

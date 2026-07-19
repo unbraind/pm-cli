@@ -9,6 +9,7 @@
 ### Fixed
 
 - GH-607: validate reports ok:true / checked_items:0 on structurally-unparseable item .toon — silently skips what pm get hard-errors on ([pm-cxyv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cxyv.toon))
+- GH-598: pm init .gitignore block hardcodes .agents/pm/ prefix — custom-root workspaces commit runtime cache and conflict on every merge ([pm-4uqm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4uqm.toon))
 
 ## 2026.7.19 - 2026-07-19
 
@@ -20,7 +21,6 @@
 ### Fixed
 
 - Workspace-transaction journals: .agents/pm/transactions/ outside the init gitignore block with no retention or GC ([pm-8xod](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8xod.toon))
-- GH-598: pm init .gitignore block hardcodes .agents/pm/ prefix — custom-root workspaces commit runtime cache and conflict on every merge ([pm-4uqm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4uqm.toon))
 - GH-609: settings.json/schema/\*.json have no merge driver; validate reports ok:true by silently falling back to defaults on unparseable config ([pm-xdn6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xdn6.toon))
 - GH-611: delete/modify merge silently resurrects deleted items and leaves conflict markers in history/\*.jsonl while validate stays green ([pm-wwfd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wwfd.toon))
 - GH-604: pm history <id\> --verify exits 0 when verification.ok is false; no --strict-exit — unusable as a merge-safety gate ([pm-ol3p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ol3p.toon))

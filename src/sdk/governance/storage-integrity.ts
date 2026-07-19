@@ -13,7 +13,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { readFileIfExists } from "../../core/fs/fs-utils.js";
-import { parseItemDocument } from "../../core/item/item-format.js";
+import {
+  parseItemDocument,
+  type ItemDocumentFormatOptions,
+} from "../../core/item/item-format.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
 import {
   getSettingsPath,
@@ -83,6 +86,14 @@ export interface StorageIntegrityScanResult {
   config_files_scanned: number;
   /** Configuration/schema files that cannot be parsed (silent-defaults fallback risk). */
   unparseable_config_files: UnparseableConfigRow[];
+}
+
+/** Runtime schema context used to parse every physical item file exactly as the ordinary read path does. */
+export interface StorageIntegrityItemParseOptions {
+  /** Active runtime schema, including unknown-field policy and custom field definitions. */
+  schema?: ItemDocumentFormatOptions["schema"];
+  /** Item fields contributed by active extensions and therefore valid under a rejecting schema. */
+  extensionFieldNames?: readonly string[];
 }
 
 async function listItemFilesOnDisk(
@@ -291,6 +302,7 @@ export async function scanStorageIntegrity(
   pmRoot: string,
   parsedItemIds: ReadonlySet<string>,
   typeToFolder: Record<string, string>,
+  itemParseOptions: StorageIntegrityItemParseOptions = {},
 ): Promise<StorageIntegrityScanResult> {
   const itemFiles = await listItemFilesOnDisk(pmRoot, typeToFolder);
   const idsOnDisk = new Set(itemFiles.map((file) => file.id));
@@ -306,6 +318,8 @@ export async function scanStorageIntegrity(
             format: absolutePath.toLowerCase().endsWith(".md")
               ? "json_markdown"
               : "toon",
+            schema: itemParseOptions.schema,
+            extensionFieldNames: itemParseOptions.extensionFieldNames,
           });
           return null;
         } catch {
