@@ -154,7 +154,11 @@ function scanHistoryStreamContent(
   }
   let latestEntry: HistoryEntry;
   try {
-    latestEntry = JSON.parse(latestLine) as HistoryEntry;
+    const parsed = JSON.parse(latestLine) as unknown;
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      throw new TypeError("history entry must be an object");
+    }
+    latestEntry = parsed as HistoryEntry;
   } catch {
     out.unparseable.push({
       id,

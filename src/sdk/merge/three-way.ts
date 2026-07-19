@@ -72,7 +72,11 @@ function parseHistoryJsonl(raw: string, label: string): HistoryEntry[] {
       continue;
     }
     try {
-      entries.push(JSON.parse(line) as HistoryEntry);
+      const parsed = JSON.parse(line) as unknown;
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        throw new TypeError("history entry must be an object");
+      }
+      entries.push(parsed as HistoryEntry);
     } catch {
       throw new PmCliError(
         `History merge input (${label}) contains invalid JSON at line ${index + 1}.`,
@@ -249,16 +253,17 @@ function unionCollection(
   const baseIds = new Set(toEntries(base).map((entry) => stableStringify(entry)));
   const oursEntries = toEntries(ours);
   const oursIds = new Set(oursEntries.map((entry) => stableStringify(entry)));
+  const theirsEntries = toEntries(theirs);
+  const theirsIds = new Set(
+    theirsEntries.map((entry) => stableStringify(entry)),
+  );
   const merged = oursEntries.filter((entry) => {
     const identity = stableStringify(entry);
     // An element kept by ours survives unless theirs deleted it (present in
     // base, absent from theirs).
-    return (
-      !baseIds.has(identity) ||
-      toEntries(theirs).some((candidate) => stableStringify(candidate) === identity)
-    );
+    return !baseIds.has(identity) || theirsIds.has(identity);
   });
-  for (const entry of toEntries(theirs)) {
+  for (const entry of theirsEntries) {
     const identity = stableStringify(entry);
     if (!oursIds.has(identity) && !baseIds.has(identity)) {
       merged.push(entry);
@@ -425,7 +430,7 @@ export function mergeItemDocuments(
     mergeItemMetadataRecords(baseRecord, oursRecord, theirsRecord, preferred);
 
   const bodyOutcome = mergeScalarThreeWay(
-    hasBase ? base.body : ours.body,
+    hasBase ? base.body : "",
     ours.body,
     theirs.body,
     preferred,
@@ -611,12 +616,10 @@ export function mergeJsonDocuments(
   const theirs = parseJsonSide(theirsRaw, "theirs");
   const conflictPaths: string[] = [];
   const pathsFromTheirs: string[] = [];
-  const resolvedOurs = ours === undefined ? theirs : ours;
-  const resolvedTheirs = theirs === undefined ? ours : theirs;
   const merged = mergeJsonValue(
     base,
-    resolvedOurs,
-    resolvedTheirs,
+    ours,
+    theirs,
     preferred,
     "",
     conflictPaths,

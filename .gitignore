@@ -43,5 +43,4 @@ scripts/prod/telemetry/**
 .agents/pm/search/
 .agents/pm/locks/
 .agents/pm/transactions/
-.agents/pm/checkpoints/
 # pm-cli:runtime-cache:end

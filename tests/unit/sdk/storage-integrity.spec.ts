@@ -65,6 +65,7 @@ describe("post-merge storage integrity", () => {
       await Promise.all([
         writeFile(path.join(pmRoot, "history", "pm-empty.jsonl"), "\n", "utf8"),
         writeFile(path.join(pmRoot, "history", "pm-invalid.jsonl"), "not-json\n", "utf8"),
+        writeFile(path.join(pmRoot, "history", "pm-primitive.jsonl"), "null\n", "utf8"),
         writeFile(path.join(pmRoot, "history", "pm-repair.jsonl"), `${JSON.stringify({ ts: "2026-07-19T01:00:00.000Z", author: "repair", op: "history_repair", patch: [{ op: "replace", path: "/title", value: "fixed" }] })}\n`, "utf8"),
         writeFile(path.join(pmRoot, "history", "pm-missing-author.jsonl"), `${JSON.stringify({ op: "delete", patch: [] })}\n`, "utf8"),
         writeFile(path.join(pmRoot, "tasks", "pm-missing-author.toon"), "id: pm-missing-author\n", "utf8"),
@@ -76,6 +77,7 @@ describe("post-merge storage integrity", () => {
       const expanded = await scanStorageIntegrity(pmRoot, new Set(["pm-deleted"]), { Task: "tasks" });
       expect(expanded.history_unparseable_streams).toEqual([
         { id: "pm-invalid", path: "history/pm-invalid.jsonl", detail: "newest history line is not valid JSON" },
+        { id: "pm-primitive", path: "history/pm-primitive.jsonl", detail: "newest history line is not valid JSON" },
       ]);
       expect(expanded.history_repair_reconciliations).toBe(1);
       expect(expanded.resurrected_items).toContainEqual({ id: "pm-missing-author", deleted_at: "", deleted_by: "" });

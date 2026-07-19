@@ -6,6 +6,10 @@
 
 - GH-599: git merge driver + documented workflow for append-only history/\*.jsonl (concurrent appends fork the hash chain) ([pm-wc1r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-wc1r.toon))
 
+### Fixed
+
+- GH-607: validate reports ok:true / checked_items:0 on structurally-unparseable item .toon — silently skips what pm get hard-errors on ([pm-cxyv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cxyv.toon))
+
 ## 2026.7.19 - 2026-07-19
 
 ### Added
@@ -22,7 +26,6 @@
 - GH-604: pm history <id\> --verify exits 0 when verification.ok is false; no --strict-exit — unusable as a merge-safety gate ([pm-ol3p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ol3p.toon))
 - GH-608: concurrent edits to different fields always conflict on the shared updated_at scalar (no field-level .toon merge) ([pm-m3nl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m3nl.toon))
 - GH-603: history-repair cements cross-author data loss after a lossy merge — reverting patch discards the other author's mutation, validate fully green ([pm-gpo7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gpo7.toon))
-- GH-607: validate reports ok:true / checked_items:0 on structurally-unparseable item .toon — silently skips what pm get hard-errors on ([pm-cxyv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cxyv.toon))
 - GH-606: concurrent note/tag appends hard-conflict the .toon item file; stale count headers corrupt the item beyond parsing ([pm-9q2t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9q2t.toon))
 - GH-588: pm comment --message exits 0 recording nothing — comment invocation without any comment text must fail fast ([pm-yp56](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yp56.toon))
 - GH-589: pm next --assignee X answers from anonymous-caller perspective and pm claim conflates assignment with claim ([pm-cj9v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cj9v.toon))

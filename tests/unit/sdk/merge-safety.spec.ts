@@ -70,6 +70,31 @@ describe("public merge-safety SDK primitives", () => {
     expect(merged.merged).toContain("notes[1]");
   });
 
+  it("reports add/add body divergence and honors the preferred side", () => {
+    const ours = item("ours", "2026-07-19T00:01:00.000Z");
+    ours.body = "ours body";
+    const theirs = item("theirs", "2026-07-19T00:02:00.000Z");
+    theirs.body = "theirs body";
+    const merged = mergeItemDocuments(
+      "",
+      serializeItemDocument(ours, { format: "toon" }),
+      serializeItemDocument(theirs, { format: "toon" }),
+      { format: "toon", preferred: "ours" },
+    );
+
+    expect(merged.conflict_fields).toContain("body");
+    expect(parseItemDocument(merged.merged, { format: "toon" }).body).toBe("ours body");
+
+    ours.body = "";
+    const oneSidedBody = mergeItemDocuments(
+      "",
+      serializeItemDocument(ours, { format: "toon" }),
+      serializeItemDocument(theirs, { format: "toon" }),
+      { format: "toon" },
+    );
+    expect(oneSidedBody.fields_from_theirs).toContain("body");
+  });
+
   it("preserves both divergent history suffixes and emits a valid chain", () => {
     const empty: ItemDocument = { metadata: {} as ItemDocument["metadata"], body: "" };
     const baseDocument = item("base", "2026-07-19T00:00:00.000Z");
@@ -239,6 +264,8 @@ describe("public merge-safety SDK primitives", () => {
     expect(mergeJsonDocuments("", "", "").merged).toBe("null\n");
     expect(JSON.parse(mergeJsonDocuments('[]', '{"left":1}', '{"right":2}').merged)).toEqual({ left: 1, right: 2 });
     expect(mergeJsonDocuments('null', 'null', 'null').merged).toBe("null\n");
+    expect(mergeJsonDocuments('{"schema":1}', '', '{"schema":1}').merged).toBe("null\n");
+    expect(mergeJsonDocuments('{"schema":1}', '', '{"schema":2}').conflict_paths).toEqual([""]);
   });
 
   it("executes the file-level driver protocol and leaves parseable output", async () => {
@@ -342,6 +369,12 @@ describe("public merge-safety SDK primitives", () => {
     await expect(runMergeDriver({ artifact: "unknown", basePath, oursPath, theirsPath }, {})).rejects.toThrow(/Unknown merge artifact/);
     await expect(runMergeDriver({ artifact: "json", basePath, oursPath, theirsPath, prefer: "middle" }, {})).rejects.toThrow(/Unknown --prefer/);
     await expect(runMergeDriver({ artifact: "json", basePath: path.join(workspace, "missing"), oursPath, theirsPath }, {})).rejects.toThrow(/Cannot read merge base/);
+    await Promise.all([
+      writeFile(basePath, "null\n", "utf8"),
+      writeFile(oursPath, "null\n", "utf8"),
+      writeFile(theirsPath, "null\n", "utf8"),
+    ]);
+    expect(() => mergeHistoryStreams("null\n", "null\n", "null\n")).toThrow(/invalid JSON at line 1/);
   });
 
   it("installs idempotent git attributes/config and exercises the CLI adapter", async () => {
