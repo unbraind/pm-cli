@@ -1,6 +1,6 @@
 {
   "name": "@unbrained/pm-vcs",
-  "version": "2026.7.18",
+  "version": "2026.7.19",
   "private": true,
   "type": "module",
   "description": "Beyond-PM exemplar: a VCS-style changeset workflow built entirely on public pm SDK and extension primitives.",
@@ -21,20 +21,35 @@
     "exemplar"
   ],
   "pm": {
-    "aliases": ["vcs"],
-    "extensions": ["extensions/vcs"],
+    "aliases": [
+      "vcs"
+    ],
+    "extensions": [
+      "extensions/vcs"
+    ],
     "catalog": {
       "display_name": "VCS SDK Exemplar",
       "category": "sdk",
       "summary": "Non-PM changeset/ref workflow proving custom schema, domain commands, hooks, history replay, and typed relationship events through public SDK contracts.",
-      "tags": ["sdk", "vcs", "event-sourcing", "graph", "exemplar"],
+      "tags": [
+        "sdk",
+        "vcs",
+        "event-sourcing",
+        "graph",
+        "exemplar"
+      ],
       "links": {
         "docs": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-vcs#readme",
         "repository": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-vcs",
         "report": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-vcs/GAP_REPORT.md"
       }
     },
-    "docs": ["README.md", "GAP_REPORT.md"],
-    "examples": ["README.md"]
+    "docs": [
+      "README.md",
+      "GAP_REPORT.md"
+    ],
+    "examples": [
+      "README.md"
+    ]
   }
 }
