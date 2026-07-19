@@ -142,9 +142,8 @@ export const TOOL_SEARCH_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "after", flag: "--after" },
 ];
 
-/** Public contract for tool shared create update option contracts, shared by SDK and presentation-layer consumers. */
-export const TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[] =
-  [
+/** Literal contract source for the shared create/update option table; const-asserted so typed per-action SDK inputs derive from the same single source (pm-x29o). */
+export const TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACT_SOURCE = [
     { param: "parent", flag: "--parent" },
     { param: "reviewer", flag: "--reviewer" },
     { param: "risk", flag: "--risk" },
@@ -178,10 +177,15 @@ export const TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[
     { param: "impact", flag: "--impact" },
     { param: "outcome", flag: "--outcome" },
     { param: "whyNow", flag: "--why-now" },
-  ];
+  ] as const satisfies readonly ToolOptionFlagContract[];
 
-/** Public contract for tool create option contracts, shared by SDK and presentation-layer consumers. */
-export const TOOL_CREATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+/** Public contract for tool shared create update option contracts, shared by SDK and presentation-layer consumers. */
+export const TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[] =
+  cloneOptionContracts(TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACT_SOURCE);
+
+/** Literal contract source for the create option table; const-asserted so typed per-action SDK inputs derive from the same single source (pm-x29o). */
+export const TOOL_CREATE_OPTION_CONTRACT_SOURCE = [
+  { param: "id", flag: "--id" },
   { param: "title", flag: "--title" },
   { param: "description", flag: "--description", allowEmpty: true },
   { param: "type", flag: "--type" },
@@ -226,10 +230,14 @@ export const TOOL_CREATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "clearReminders", flag: "--clear-reminders" },
   { param: "clearEvents", flag: "--clear-events" },
   { param: "clearTypeOptions", flag: "--clear-type-options" },
-];
+] as const satisfies readonly ToolOptionFlagContract[];
 
-/** Public contract for tool update option contracts, shared by SDK and presentation-layer consumers. */
-export const TOOL_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+/** Public contract for tool create option contracts, shared by SDK and presentation-layer consumers. */
+export const TOOL_CREATE_OPTION_CONTRACTS: ToolOptionFlagContract[] =
+  cloneOptionContracts(TOOL_CREATE_OPTION_CONTRACT_SOURCE);
+
+/** Literal contract source for the update option table; const-asserted so typed per-action SDK inputs derive from the same single source (pm-x29o). */
+export const TOOL_UPDATE_OPTION_CONTRACT_SOURCE = [
   { param: "title", flag: "--title" },
   { param: "description", flag: "--description", allowEmpty: true },
   { param: "body", flag: "--body", allowEmpty: true },
@@ -277,10 +285,14 @@ export const TOOL_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "clearReminders", flag: "--clear-reminders" },
   { param: "clearEvents", flag: "--clear-events" },
   { param: "clearTypeOptions", flag: "--clear-type-options" },
-];
+] as const satisfies readonly ToolOptionFlagContract[];
 
-const TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] =
-  [
+/** Public contract for tool update option contracts, shared by SDK and presentation-layer consumers. */
+export const TOOL_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[] =
+  cloneOptionContracts(TOOL_UPDATE_OPTION_CONTRACT_SOURCE);
+
+/** Literal contract source for the bulk-mutation filter table; const-asserted so typed per-action SDK inputs derive from the same single source (pm-x29o). */
+export const TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE = [
     { param: "filterStatus", flag: "--filter-status" },
     { param: "filterType", flag: "--filter-type" },
     { param: "filterTag", flag: "--filter-tag" },
@@ -322,16 +334,15 @@ const TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagC
     { param: "ids", flag: "--ids" },
     { param: "limit", flag: "--limit" },
     { param: "offset", flag: "--offset" },
-  ];
+  ] as const satisfies readonly ToolOptionFlagContract[];
 
 /** Public contract for tool update many filter option contracts, shared by SDK and presentation-layer consumers. */
 export const TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] =
-  [...cloneOptionContracts(TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS)];
-
+  cloneOptionContracts(TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE);
 
 /** Public contract for tool close many filter option contracts, shared by SDK and presentation-layer consumers. */
 export const TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] =
-  [...cloneOptionContracts(TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS)];
+  cloneOptionContracts(TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE);
 
 /** Public contract for tool calendar option contracts, shared by SDK and presentation-layer consumers. */
 export const TOOL_CALENDAR_OPTION_CONTRACTS: ToolOptionFlagContract[] = [

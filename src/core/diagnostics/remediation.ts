@@ -163,6 +163,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
       "An on-disk item file cannot be parsed (for example a botched merge resolution with stale TOON count headers); repair or restore the file at the reported path — list commands silently skip it while pm get hard-errors.",
   },
   {
+    code: "validate_storage_duplicate_item_ids",
+    command: "pm validate --check-storage-integrity --verbose-diagnostics",
+    summary:
+      "One item id is claimed by multiple item documents — usually two branches minting the same id for different items before merging (GH-600). Keep one document, recreate the other item under a fresh id (pm copy, then delete the colliding file), and consider raising ids.token_length for concurrent multi-agent work.",
+  },
+  {
     code: "validate_storage_history_conflict_markers",
     command: "pm merge driver history <base> <ours> <theirs>",
     summary:
@@ -185,6 +191,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     command: "pm merge driver json <base> <ours> <theirs>",
     summary:
       "settings.json or a schema file cannot be parsed, so pm silently falls back to defaults; re-merge it with the pm JSON merge driver or fix the file by hand, then rerun pm validate.",
+  },
+  {
+    code: "validate_merge_fence_drift",
+    command: "pm merge install",
+    summary:
+      "The committed .gitattributes merge fence no longer matches the active schema's type folders or tracker JSONL stores; rerun pm merge install (and commit .gitattributes) so every tracker artifact keeps its field-aware merge driver.",
   },
   // --- pm health (integrity) + pm validate (format_version): item format version ---
   {

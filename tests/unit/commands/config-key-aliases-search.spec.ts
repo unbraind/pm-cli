@@ -52,6 +52,7 @@ const EXPECTED_ALIASES: Record<string, string> = {
 // governance) exposed via the same nested-setting descriptor table.
 const EXPECTED_GENERAL_ALIASES: Record<string, string> = {
   id_prefix: "id_prefix",
+  ids_token_length: "ids.token_length",
   author_default: "author_default",
   output_default_format: "output.default_format",
   locks_ttl_seconds: "locks.ttl_seconds",
@@ -271,7 +272,7 @@ describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
       expect(descriptor, `missing nested-setting alias: ${alias}`).toBeDefined();
       expect(descriptor!.path).toBe(expectedPath);
     }
-    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(10);
+    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(11);
   });
 
   it("resolves both kebab-case and snake_case forms of each general alias", () => {

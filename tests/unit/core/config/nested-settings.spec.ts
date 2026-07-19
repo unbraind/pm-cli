@@ -118,6 +118,21 @@ describe("nested-settings helpers (pm-7ilo)", () => {
       if (positive.ok) expect(positive.parsed.value).toBe(32);
     });
 
+    it("bounds ids_token_length to its 4..12 range (pm-pibw)", () => {
+      const descriptor = NESTED_SETTING_DESCRIPTORS.find(
+        (entry) => entry.key === "ids_token_length",
+      )!;
+      expect(descriptor.path).toBe("ids.token_length");
+      const accepted = parseNestedSettingValue(descriptor, "6");
+      expect(accepted.ok).toBe(true);
+      if (accepted.ok) expect(accepted.parsed.value).toBe(6);
+      const tooShort = parseNestedSettingValue(descriptor, "3");
+      expect(tooShort.ok).toBe(false);
+      const tooLong = parseNestedSettingValue(descriptor, "13");
+      expect(tooLong.ok).toBe(false);
+      if (!tooLong.ok) expect(tooLong.error.message).toContain("<= 12");
+    });
+
     it("accepts any finite number for number kind (including negatives)", () => {
       const negative = parseNestedSettingValue(NUMBER_DESCRIPTOR, "-0.25");
       expect(negative.ok).toBe(true);

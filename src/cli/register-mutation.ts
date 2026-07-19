@@ -16,7 +16,11 @@ import {
   type CommanderOptionRegistrationContract,
 } from "../sdk/cli-contracts.js";
 import { BUILTIN_ITEM_TYPE_VALUES } from "../types/index.js";
-import { runMergeDriver, runMergeInstall } from "./commands/merge.js";
+import {
+  MERGE_DRIVER_ARTIFACT_VALUES,
+  runMergeDriver,
+  runMergeInstall,
+} from "./commands/merge.js";
 
 // Lowercase set of built-in type names ("epic", "feature", ...) used by the
 // `pm create` positional guard (pm-edge #1, 2026-05-28): if the single
@@ -2971,7 +2975,7 @@ export function registerMutationCommands(program: Command): void {
     .argument("<subcommand>", "Merge subcommand: install, driver")
     .argument(
       "[artifact]",
-      "driver only: artifact class to merge (item, history, json)",
+      `driver only: artifact class to merge (${MERGE_DRIVER_ARTIFACT_VALUES.join(", ")})`,
     )
     .argument("[base]", "driver only: common-ancestor file path (git %O)")
     .argument("[ours]", "driver only: current-branch file path (git %A)")

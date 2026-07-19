@@ -12746,6 +12746,13 @@
             "description": "Goal.",
             "type": "string"
           },
+          "id": {
+            "description": "Item identifier for read or mutation actions.",
+            "examples": [
+              "pm-a1b2"
+            ],
+            "type": "string"
+          },
           "idOnly": {
             "description": "Id Only.",
             "type": "boolean"

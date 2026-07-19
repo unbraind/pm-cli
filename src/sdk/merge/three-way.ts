@@ -198,6 +198,187 @@ export function mergeHistoryStreams(
   };
 }
 
+/** Documents the relationship event stream merge result payload exchanged by command, SDK, and package integrations. */
+export interface RelationshipStreamMergeResult {
+  /** Merged JSONL content with consecutively renumbered `sequence` values, ready to be written as the resolved event store. */
+  merged: string;
+  /** Strategy the merge used: identical inputs, one-sided fast-forward, or a deterministic union with renumbered sequences. */
+  strategy: HistoryMergeStrategy;
+  /** Number of events shared by both sides before their streams diverged. */
+  common_entries: number;
+  /** Number of divergent events contributed by the ours side. */
+  entries_from_ours: number;
+  /** Number of divergent events contributed by the theirs side. */
+  entries_from_theirs: number;
+  /** Total events in the merged stream. */
+  entries_total: number;
+  /** Whether merged events required sequence renumbering (true for every union merge). */
+  reanchored: boolean;
+}
+
+interface RelationshipStreamEvent {
+  /** Globally unique event identity used for prefix detection and suffix deduplication. */
+  eventId: string;
+  /** One-based append sequence; rewritten consecutively in the merged stream. */
+  sequence: number;
+  /** ISO timestamp used to order divergent suffixes deterministically. */
+  timestamp?: string;
+  /** Remaining event payload fields, preserved verbatim. */
+  [key: string]: unknown;
+}
+
+function parseRelationshipJsonl(
+  raw: string,
+  label: string,
+): RelationshipStreamEvent[] {
+  const conflictMarker = findFirstMergeConflictMarker(raw);
+  if (conflictMarker) {
+    throw new PmCliError(
+      `Relationship merge input (${label}) contains unresolved conflict markers at line ${conflictMarker.line}. Merge drivers must receive clean per-side versions.`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+  }
+  const events: RelationshipStreamEvent[] = [];
+  for (const [index, rawLine] of raw.split(/\r?\n/).entries()) {
+    const line = rawLine.trim();
+    if (!line) {
+      continue;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(line) as unknown;
+    } catch {
+      throw new PmCliError(
+        `Relationship merge input (${label}) contains invalid JSON at line ${index + 1}.`,
+        EXIT_CODE.GENERIC_FAILURE,
+      );
+    }
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed) ||
+      typeof (parsed as { eventId?: unknown }).eventId !== "string" ||
+      typeof (parsed as { sequence?: unknown }).sequence !== "number"
+    ) {
+      throw new PmCliError(
+        `Relationship merge input (${label}) line ${index + 1} is not a relationship event (eventId + sequence required).`,
+        EXIT_CODE.GENERIC_FAILURE,
+      );
+    }
+    events.push(parsed as RelationshipStreamEvent);
+  }
+  return events;
+}
+
+function relationshipEventsToRaw(events: RelationshipStreamEvent[]): string {
+  return events.length === 0
+    ? ""
+    : `${events.map((event) => JSON.stringify(event)).join("\n")}\n`;
+}
+
+function renumberRelationshipEvents(
+  events: RelationshipStreamEvent[],
+): RelationshipStreamEvent[] {
+  return events.map((event, index) => ({ ...event, sequence: index + 1 }));
+}
+
+/**
+ * Deterministically merge two diverged versions of one append-only
+ * relationship event JSONL store. The store's loader enforces strictly
+ * consecutive one-based `sequence` values, so a plain text union of two
+ * diverged streams is always unreadable; this merge keeps the shared prefix,
+ * unions both divergent suffixes by `eventId` (ordered by event timestamp,
+ * ours-first on ties), and renumbers every merged sequence consecutively so
+ * the resulting stream loads again. No side's events are ever discarded.
+ */
+export function mergeRelationshipEventStreams(
+  baseRaw: string,
+  oursRaw: string,
+  theirsRaw: string,
+): RelationshipStreamMergeResult {
+  parseRelationshipJsonl(baseRaw, "base");
+  const ours = parseRelationshipJsonl(oursRaw, "ours");
+  const theirs = parseRelationshipJsonl(theirsRaw, "theirs");
+  const limit = Math.min(ours.length, theirs.length);
+  let shared = 0;
+  while (shared < limit && ours[shared].eventId === theirs[shared].eventId) {
+    shared += 1;
+  }
+
+  if (shared === ours.length && shared === theirs.length) {
+    return {
+      merged: relationshipEventsToRaw(ours),
+      strategy: "identical",
+      common_entries: shared,
+      entries_from_ours: 0,
+      entries_from_theirs: 0,
+      entries_total: ours.length,
+      reanchored: false,
+    };
+  }
+  if (shared === theirs.length) {
+    return {
+      merged: relationshipEventsToRaw(ours),
+      strategy: "fast_forward_ours",
+      common_entries: shared,
+      entries_from_ours: ours.length - shared,
+      entries_from_theirs: 0,
+      entries_total: ours.length,
+      reanchored: false,
+    };
+  }
+  if (shared === ours.length) {
+    return {
+      merged: relationshipEventsToRaw(theirs),
+      strategy: "fast_forward_theirs",
+      common_entries: shared,
+      entries_from_ours: 0,
+      entries_from_theirs: theirs.length - shared,
+      entries_total: theirs.length,
+      reanchored: false,
+    };
+  }
+
+  const oursSuffix = ours.slice(shared);
+  const oursEventIds = new Set(oursSuffix.map((event) => event.eventId));
+  const theirsSuffix = theirs
+    .slice(shared)
+    .filter((event) => !oursEventIds.has(event.eventId));
+  const mergedSuffix = [...oursSuffix, ...theirsSuffix].sort((left, right) => {
+    if (left.timestamp !== undefined && right.timestamp !== undefined) {
+      const byTs = compareTimestampStrings(left.timestamp, right.timestamp);
+      if (byTs !== 0) {
+        return byTs;
+      }
+    } else if (left.timestamp === undefined && right.timestamp !== undefined) {
+      return 1;
+    } else if (left.timestamp !== undefined) {
+      return -1;
+    }
+    const leftFromOurs = oursEventIds.has(left.eventId);
+    const rightFromOurs = oursEventIds.has(right.eventId);
+    if (leftFromOurs !== rightFromOurs) {
+      return Number(rightFromOurs) - Number(leftFromOurs);
+    }
+    // Array.prototype.sort is stable: returning zero preserves each side's
+    // original append order when its events share a timestamp.
+    return 0;
+  });
+  const merged = renumberRelationshipEvents([
+    ...ours.slice(0, shared),
+    ...mergedSuffix,
+  ]);
+  return {
+    merged: relationshipEventsToRaw(merged),
+    strategy: "union_reanchor",
+    common_entries: shared,
+    entries_from_ours: oursSuffix.length,
+    entries_from_theirs: theirsSuffix.length,
+    entries_total: merged.length,
+    reanchored: true,
+  };
+}
+
 /**
  * Item metadata collections merged by element-identity set semantics instead
  * of whole-field three-way comparison: concurrent commutative appends from two

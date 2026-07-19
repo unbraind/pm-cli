@@ -2560,7 +2560,7 @@ describe("release readiness runtime coverage", () => {
       "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/bundle-cli.mjs && node scripts/finalize-build.mjs",
     );
     expect(packageJson.scripts?.typecheck).toBe(
-      "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.packages.json && tsc -p tsconfig.examples.json",
+      "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.typetests.json && tsc -p tsconfig.packages.json && tsc -p tsconfig.examples.json",
     );
     expect(packageJson.scripts?.["version:check"]).toBe(
       "node scripts/release-version.mjs check && node scripts/sync-versions.mjs check",

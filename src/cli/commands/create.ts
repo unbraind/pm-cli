@@ -173,6 +173,8 @@ export interface CreateCommandOptions
     SharedLinkedResourceClearOptions {
   /** Value that configures or reports title for this contract. */
   title?: string;
+  /** Explicit item id, normalized with the workspace prefix instead of randomly generated. */
+  id?: string;
   /** Value that configures or reports description for this contract. */
   description?: string;
   /** Schema type that determines the shape and validation rules for this value. */
@@ -180,7 +182,7 @@ export interface CreateCommandOptions
   /** Lifecycle state reported for status. */
   status?: string;
   /** Value that configures or reports priority for this contract. */
-  priority?: string;
+  priority?: string | number;
   /** Value that configures or reports tags for this contract. */
   tags?: string;
   /** Value that configures or reports add tags for this contract. */
@@ -1642,7 +1644,9 @@ async function resolveCreateItemId(params: {
   explicitId: unknown;
 }): Promise<string> {
   if (params.explicitId === undefined) {
-    return generateItemId(params.pmRoot, params.settings.id_prefix);
+    return generateItemId(params.pmRoot, params.settings.id_prefix, {
+      tokenLength: params.settings.ids.token_length,
+    });
   }
   if (typeof params.explicitId !== "string") {
     throw new PmCliError("--id must be a string", EXIT_CODE.USAGE);

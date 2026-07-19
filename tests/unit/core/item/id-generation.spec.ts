@@ -2,7 +2,14 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { writeFile } from "node:fs/promises";
 import { describe, expect, it, vi } from "vitest";
-import { generateItemId, normalizeItemId, normalizePrefix } from "../../../../src/core/item/id.js";
+import {
+  clampIdTokenLength,
+  generateItemId,
+  ID_TOKEN_LENGTH_MAX,
+  ID_TOKEN_LENGTH_MIN,
+  normalizeItemId,
+  normalizePrefix,
+} from "../../../../src/core/item/id.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("id generation and normalization", () => {
@@ -27,6 +34,35 @@ describe("id generation and normalization", () => {
         const id = await generateItemId(context.pmPath, "PM");
         expect(id).toBe("pm-0123");
         expect(id).toMatch(/^pm-[a-z0-9]{4}$/);
+      });
+    } finally {
+      randomIntSpy.mockRestore();
+    }
+  });
+
+  it("clamps configured token lengths into the supported bounds", () => {
+    expect(clampIdTokenLength(undefined)).toBe(ID_TOKEN_LENGTH_MIN);
+    expect(clampIdTokenLength(Number.NaN)).toBe(ID_TOKEN_LENGTH_MIN);
+    expect(clampIdTokenLength(Number.POSITIVE_INFINITY)).toBe(
+      ID_TOKEN_LENGTH_MIN,
+    );
+    expect(clampIdTokenLength(2)).toBe(ID_TOKEN_LENGTH_MIN);
+    expect(clampIdTokenLength(6.9)).toBe(6);
+    expect(clampIdTokenLength(99)).toBe(ID_TOKEN_LENGTH_MAX);
+  });
+
+  it("mints longer tokens when ids.token_length is configured (pm-pibw)", async () => {
+    const randomIntSpy = vi
+      .spyOn(crypto, "randomInt")
+      .mockImplementation(() => 7);
+
+    try {
+      await withTempPmPath(async (context) => {
+        const id = await generateItemId(context.pmPath, "pm-", {
+          tokenLength: 6,
+        });
+        expect(id).toBe("pm-777777");
+        expect(id).toMatch(/^pm-[a-z0-9]{6}$/);
       });
     } finally {
       randomIntSpy.mockRestore();
@@ -65,6 +101,31 @@ describe("id generation and normalization", () => {
         await expect(generateItemId(context.pmPath, "pm-")).rejects.toThrow(
           "Unable to generate unique id after 224 attempts",
         );
+      });
+    } finally {
+      randomIntSpy.mockRestore();
+    }
+  });
+
+  it("never escalates beyond the configured maximum token length", async () => {
+    const randomIntSpy = vi
+      .spyOn(crypto, "randomInt")
+      .mockImplementation(() => 0);
+
+    try {
+      await withTempPmPath(async (context) => {
+        const candidate = `pm-${"0".repeat(ID_TOKEN_LENGTH_MAX)}`;
+        await writeFile(
+          path.join(context.pmPath, "tasks", `${candidate}.md`),
+          "{}\n\n",
+          "utf8",
+        );
+
+        await expect(
+          generateItemId(context.pmPath, "pm-", {
+            tokenLength: ID_TOKEN_LENGTH_MAX,
+          }),
+        ).rejects.toThrow("Unable to generate unique id after 32 attempts");
       });
     } finally {
       randomIntSpy.mockRestore();

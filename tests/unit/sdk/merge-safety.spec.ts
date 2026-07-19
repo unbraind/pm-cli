@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { setActiveExtensionServices } from "../../../src/core/extensions/index.js";
 import { createHistoryEntry } from "../../../src/core/history/history.js";
 import {
   historyEntriesToRaw,
@@ -13,9 +14,12 @@ import {
   serializeItemDocument,
 } from "../../../src/core/item/item-format.js";
 import {
+  auditMergeAttributeFence,
   mergeHistoryStreams,
   mergeItemDocuments,
   mergeJsonDocuments,
+  mergeRelationshipEventStreams,
+  refreshMergeAttributeFenceIfInstalled,
   runMergeDriver,
   runMergeInstall,
 } from "../../../src/sdk/index.js";
@@ -43,6 +47,7 @@ function item(title: string, updatedAt: string): ItemDocument {
 
 describe("public merge-safety SDK primitives", () => {
   afterEach(async () => {
+    setActiveExtensionServices(null);
     await Promise.all(
       workspaces
         .splice(0)
@@ -626,7 +631,15 @@ describe("public merge-safety SDK primitives", () => {
       );
 
       const installed = await runMergeInstall({}, { path: context.pmPath });
-      expect(installed.git_config).toHaveLength(8);
+      expect(installed.git_config).toHaveLength(10);
+      expect(
+        installed.git_config.find(
+          (entry) => entry.key === "merge.pm-relationship.driver",
+        )?.value,
+      ).toBe('pm merge driver relationship "%O" "%A" "%B"');
+      expect(installed.gitattributes.patterns).toContain(
+        '".agents/pm/**/*.jsonl" merge=pm-relationship',
+      );
       expect(
         installed.git_config.find(
           (entry) => entry.key === "merge.pm-item-toon.driver",
@@ -795,6 +808,337 @@ describe("public merge-safety SDK primitives", () => {
         await expect(
           runMergeInstall({}, { path: context.pmPath }),
         ).rejects.toThrow(/outside the git repository/);
+      } finally {
+        process.chdir(priorCwd);
+      }
+    });
+  });
+
+  it("merges relationship event streams with sequence renumbering (pm-i4fx)", () => {
+    const event = (
+      eventId: string,
+      sequence: number,
+      timestamp: string,
+    ): string =>
+      JSON.stringify({
+        eventId,
+        relationshipId: "rel-1",
+        action: "append",
+        author: "spec",
+        timestamp,
+        sequence,
+      });
+    const base = `${event("e1", 1, "2026-07-19T00:00:00.000Z")}\n`;
+    const ours = `${base}${event("e2", 2, "2026-07-19T00:01:00.000Z")}\n`;
+    const theirs = `${base}${event("e3", 2, "2026-07-19T00:00:30.000Z")}\n${event("e4", 3, "2026-07-19T00:02:00.000Z")}\n`;
+
+    const union = mergeRelationshipEventStreams(base, ours, theirs);
+    expect(union.strategy).toBe("union_reanchor");
+    expect(union.reanchored).toBe(true);
+    expect(union.common_entries).toBe(1);
+    expect(union.entries_from_ours).toBe(1);
+    expect(union.entries_from_theirs).toBe(2);
+    const mergedEvents = union.merged
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line) as { eventId: string; sequence: number });
+    // Suffixes order by timestamp (e3 before e2), and every sequence is
+    // renumbered consecutively so the strict store loader accepts the stream.
+    expect(mergedEvents.map((entry) => entry.eventId)).toEqual([
+      "e1",
+      "e3",
+      "e2",
+      "e4",
+    ]);
+    expect(mergedEvents.map((entry) => entry.sequence)).toEqual([1, 2, 3, 4]);
+
+    expect(mergeRelationshipEventStreams(base, ours, ours).strategy).toBe(
+      "identical",
+    );
+    expect(mergeRelationshipEventStreams(base, ours, base).strategy).toBe(
+      "fast_forward_ours",
+    );
+    const ffTheirs = mergeRelationshipEventStreams(base, base, theirs);
+    expect(ffTheirs.strategy).toBe("fast_forward_theirs");
+    expect(ffTheirs.entries_from_theirs).toBe(2);
+    expect(mergeRelationshipEventStreams("", "", "").merged).toBe("");
+
+    // Duplicate eventId on both suffixes deduplicates instead of double-appending.
+    const duplicated = mergeRelationshipEventStreams(
+      base,
+      `${base}${event("dup", 2, "2026-07-19T00:03:00.000Z")}\n`,
+      `${base}${event("dup", 2, "2026-07-19T00:03:00.000Z")}\n${event("e9", 3, "2026-07-19T00:04:00.000Z")}\n`,
+    );
+    expect(duplicated.entries_total).toBe(3);
+
+    // Timestamp ties keep the ours side first while preserving each side's
+    // original append order.
+    const tieOurs = `${base}${event("tie-c", 2, "2026-07-19T00:05:00.000Z")}\n${event("tie-b", 3, "2026-07-19T00:05:00.000Z")}\n`;
+    const tieTheirs = `${base}${event("tie-a", 2, "2026-07-19T00:05:00.000Z")}\n`;
+    const tied = mergeRelationshipEventStreams(base, tieOurs, tieTheirs);
+    expect(
+      tied.merged
+        .trim()
+        .split("\n")
+        .map((line) => (JSON.parse(line) as { eventId: string }).eventId),
+    ).toEqual(["e1", "tie-c", "tie-b", "tie-a"]);
+
+    // Legacy/custom relationship events may omit the optional timestamp. They
+    // still merge deterministically through the eventId fallback.
+    const withoutTimestamp = mergeRelationshipEventStreams(
+      base,
+      `${base}${JSON.stringify({ eventId: "no-ts-b", sequence: 2 })}\n`,
+      `${base}${JSON.stringify({ eventId: "no-ts-a", sequence: 2 })}\n`,
+    );
+    expect(
+      withoutTimestamp.merged
+        .trim()
+        .split("\n")
+        .map((line) => (JSON.parse(line) as { eventId: string }).eventId),
+    ).toEqual(["e1", "no-ts-b", "no-ts-a"]);
+
+    const mixedTimestampPresence = mergeRelationshipEventStreams(
+      base,
+      `${base}${JSON.stringify({ eventId: "no-ts", sequence: 2 })}\n`,
+      `${base}${event("has-ts", 2, "2026-07-19T00:06:00.000Z")}\n`,
+    );
+    expect(
+      mixedTimestampPresence.merged
+        .trim()
+        .split("\n")
+        .map((line) => (JSON.parse(line) as { eventId: string }).eventId),
+    ).toEqual(["e1", "has-ts", "no-ts"]);
+
+    const inverseTimestampPresence = mergeRelationshipEventStreams(
+      base,
+      `${base}${event("has-ts", 2, "2026-07-19T00:06:00.000Z")}\n`,
+      `${base}${JSON.stringify({ eventId: "no-ts", sequence: 2 })}\n`,
+    );
+    expect(
+      inverseTimestampPresence.merged
+        .trim()
+        .split("\n")
+        .map((line) => (JSON.parse(line) as { eventId: string }).eventId),
+    ).toEqual(["e1", "has-ts", "no-ts"]);
+
+    expect(() =>
+      mergeRelationshipEventStreams(base, "<<<<<<< ours\n", ""),
+    ).toThrow(/unresolved conflict markers/);
+    expect(() =>
+      mergeRelationshipEventStreams(base, "not json\n", ""),
+    ).toThrow(/invalid JSON/);
+    expect(() =>
+      mergeRelationshipEventStreams(base, '{"sequence":2}\n', ""),
+    ).toThrow(/not a relationship event/);
+  });
+
+  it("runs the relationship merge driver artifact end to end", async () => {
+    await withTempPmPath(async (context) => {
+      const event = (eventId: string, sequence: number, ts: string): string =>
+        JSON.stringify({
+          eventId,
+          relationshipId: "rel-1",
+          action: "append",
+          author: "spec",
+          timestamp: ts,
+          sequence,
+        });
+      const basePath = path.join(context.tempRoot, "rel-base.jsonl");
+      const oursPath = path.join(context.tempRoot, "rel-ours.jsonl");
+      const theirsPath = path.join(context.tempRoot, "rel-theirs.jsonl");
+      const base = `${event("e1", 1, "2026-07-19T00:00:00.000Z")}\n`;
+      await Promise.all([
+        writeFile(basePath, base, "utf8"),
+        writeFile(
+          oursPath,
+          `${base}${event("e2", 2, "2026-07-19T00:01:00.000Z")}\n`,
+          "utf8",
+        ),
+        writeFile(
+          theirsPath,
+          `${base}${event("e3", 2, "2026-07-19T00:02:00.000Z")}\n`,
+          "utf8",
+        ),
+      ]);
+      const result = await runMergeDriver(
+        { artifact: "relationship", basePath, oursPath, theirsPath },
+        { path: context.pmPath },
+      );
+      expect(result.ok).toBe(true);
+      expect(result.relationship?.strategy).toBe("union_reanchor");
+      expect(result.relationship?.entries_total).toBe(3);
+      const merged = (await readFile(oursPath, "utf8"))
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line) as { sequence: number });
+      expect(merged.map((entry) => entry.sequence)).toEqual([1, 2, 3]);
+    });
+  });
+
+  it("refreshes and audits the merge fence after schema/type changes (pm-i4fx)", async () => {
+    await withTempPmPath(async (context) => {
+      const priorCwd = process.cwd();
+      try {
+        process.chdir(context.tempRoot);
+        // No git repository yet: refresh is a no-op, audit sees no fence.
+        expect(
+          (await refreshMergeAttributeFenceIfInstalled(context.pmPath)).status,
+        ).toBe("no_git");
+        execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
+        expect(
+          (await refreshMergeAttributeFenceIfInstalled(context.pmPath)).status,
+        ).toBe("not_installed");
+        expect((await auditMergeAttributeFence(context.pmPath, ["tasks"])).status).toBe(
+          "not_installed",
+        );
+
+        // A .gitattributes without the fence marker still counts as not installed.
+        await writeFile(
+          path.join(context.tempRoot, ".gitattributes"),
+          "*.bin binary\n",
+          "utf8",
+        );
+        expect(
+          (await auditMergeAttributeFence(context.pmPath, ["tasks"])).status,
+        ).toBe("not_installed");
+        expect(
+          (await refreshMergeAttributeFenceIfInstalled(context.pmPath)).status,
+        ).toBe("not_installed");
+
+        const installed = await runMergeInstall({}, { path: context.pmPath });
+        expect(
+          (await refreshMergeAttributeFenceIfInstalled(context.pmPath)).status,
+        ).toBe("unchanged");
+
+        const lockOwners: string[] = [];
+        setActiveExtensionServices({
+          overrides: [
+            {
+              layer: "project",
+              name: "merge-fence-lock-capture",
+              service: "lock_acquire",
+              run: (serviceContext) => {
+                const payload = serviceContext.payload as {
+                  id?: unknown;
+                  owner?: unknown;
+                };
+                if (payload.id === "merge-fence") {
+                  lockOwners.push(String(payload.owner));
+                  return async () => undefined;
+                }
+                return undefined;
+              },
+            },
+          ],
+        });
+        const priorAuthor = process.env.PM_AUTHOR;
+        try {
+          delete process.env.PM_AUTHOR;
+          expect(
+            (await refreshMergeAttributeFenceIfInstalled(context.pmPath))
+              .status,
+          ).toBe("unchanged");
+          process.env.PM_AUTHOR = "   ";
+          expect(
+            (await refreshMergeAttributeFenceIfInstalled(context.pmPath))
+              .status,
+          ).toBe("unchanged");
+          expect(lockOwners).toEqual(["test-author", "unknown"]);
+        } finally {
+          if (priorAuthor === undefined) {
+            delete process.env.PM_AUTHOR;
+          } else {
+            process.env.PM_AUTHOR = priorAuthor;
+          }
+          setActiveExtensionServices(null);
+        }
+
+        // Absolute tracker roots refresh their owning repository even when an
+        // embedded caller happens to run from a different git checkout.
+        const unrelatedRepository = await mkdtemp(
+          path.join(os.tmpdir(), "pm-merge-unrelated-git-"),
+        );
+        workspaces.push(unrelatedRepository);
+        execFileSync("git", ["init", "-q"], { cwd: unrelatedRepository });
+        process.chdir(unrelatedRepository);
+        expect(
+          (await refreshMergeAttributeFenceIfInstalled(context.pmPath)).status,
+        ).toBe("unchanged");
+        process.chdir(context.tempRoot);
+        expect(
+          (
+            await auditMergeAttributeFence(
+              context.pmPath,
+              installed.gitattributes.patterns
+                .filter((pattern) => pattern.endsWith("merge=pm-item-toon"))
+                .map((pattern) => pattern.match(/pm\/(.+?)\/\*\.toon/)?.[1])
+                .filter((folder): folder is string => folder !== undefined),
+            )
+          ).status,
+        ).toBe("ok");
+
+        // A truncated managed block is drift, not a silently accepted fence.
+        const installedAttributesPath = path.join(
+          context.tempRoot,
+          ".gitattributes",
+        );
+        const installedAttributes = await readFile(
+          installedAttributesPath,
+          "utf8",
+        );
+        await writeFile(
+          installedAttributesPath,
+          installedAttributes.replace("# pm-cli:merge-drivers:end", ""),
+          "utf8",
+        );
+        const truncatedAudit = await auditMergeAttributeFence(
+          context.pmPath,
+          ["tasks"],
+        );
+        expect(truncatedAudit.status).toBe("drift");
+        expect(truncatedAudit.missing_patterns.length).toBeGreaterThan(0);
+        await runMergeInstall({}, { path: context.pmPath });
+
+        // Simulate a schema-added type folder: the committed fence is now stale.
+        const staleAudit = await auditMergeAttributeFence(context.pmPath, [
+          "tasks",
+          "spikes",
+        ]);
+        expect(staleAudit.status).toBe("drift");
+        expect(staleAudit.missing_patterns.join("\n")).toContain("spikes");
+        expect(staleAudit.path).toBe(
+          path.join(context.tempRoot, ".gitattributes"),
+        );
+
+        // Hand-editing the fence produces stale lines the audit reports too.
+        const attributesPath = path.join(context.tempRoot, ".gitattributes");
+        const current = await readFile(attributesPath, "utf8");
+        await writeFile(
+          attributesPath,
+          current.replace(
+            "# pm-cli:merge-drivers:start",
+            '# pm-cli:merge-drivers:start\n".agents/pm/ghosts/*.toon" merge=pm-item-toon',
+          ),
+          "utf8",
+        );
+        const ghostAudit = await auditMergeAttributeFence(context.pmPath, [
+          "tasks",
+        ]);
+        expect(ghostAudit.status).toBe("drift");
+        expect(ghostAudit.stale_patterns.join("\n")).toContain("ghosts");
+
+        // Concurrent refreshes serialize: exactly one rewrites the stale fence
+        // and the follower observes the reconciled contract.
+        expect(
+          (
+            await Promise.all([
+              refreshMergeAttributeFenceIfInstalled(context.pmPath),
+              refreshMergeAttributeFenceIfInstalled(context.pmPath),
+            ])
+          )
+            .map((outcome) => outcome.status)
+            .sort(),
+        ).toEqual(["refreshed", "unchanged"]);
       } finally {
         process.chdir(priorCwd);
       }

@@ -258,6 +258,18 @@ const NEXT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 ]);
 
 const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
+
+/** Close-action option keys shared by the strict tool schema and the typed SDK close input (pm-x29o); the author/message/force triple is appended separately by the schema contract. */
+export const CLOSE_ACTION_OPTION_KEYS = [
+  "text",
+  "reason",
+  "closeReason",
+  "duplicateOf",
+  "validateClose",
+  "resolution",
+  "expectedResult",
+  "actualResult",
+] as const;
 const LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = [
   "author",
   "assignee",
@@ -604,14 +616,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     close: {
       required: ["id"],
       optional: [
-        "text",
-        "reason",
-        "closeReason",
-        "duplicateOf",
-        "validateClose",
-        "resolution",
-        "expectedResult",
-        "actualResult",
+        ...CLOSE_ACTION_OPTION_KEYS,
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
     },

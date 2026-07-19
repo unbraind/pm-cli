@@ -1142,6 +1142,10 @@ export interface PmSettings {
   version: number;
   /** Value that configures or reports id prefix for this contract. */
   id_prefix: string;
+  /** Item id allocation policy: `token_length` is the number of random base36 characters appended to `id_prefix` when minting ids (4–12). Longer tokens shrink cross-branch collision odds for concurrent multi-agent workflows: 4 chars ≈ 1.68M ids (~1% birthday-collision at ~184 items), 6 chars ≈ 2.18B (~1% at ~6.6k items), 8 chars ≈ 2.8T (~1% at ~238k items). */
+  ids: {
+    token_length: number;
+  };
   /** Value that configures or reports author default for this contract. */
   author_default: string;
   /** Value that configures or reports item format for this contract. */

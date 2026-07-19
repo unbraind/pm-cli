@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { TOOLS } from "../../src/mcp/tool-definitions.js";
 import { resolveWorkspaceRoot } from "../../src/core/store/paths.js";
+import { PM_TOOL_ACTION_PARAMETER_CONTRACTS } from "../../src/sdk/cli-contracts.js";
 import { anchorLinkedPath } from "../../src/sdk/linked-artifacts.js";
 import { runAction } from "../../src/sdk/runtime.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
@@ -166,6 +167,28 @@ describe("SDK and CLI contract integrity", () => {
     expect(Object.keys(schemaProperties("pm_copy"))).toEqual(
       expect.arrayContaining(["id", "title", "author", "message", "fullChangedFields", "idOnly", "options"]),
     );
+  });
+
+  it("exposes and executes explicit create identity through the tool contract", async () => {
+    expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.create.optional).toContain("id");
+
+    await withTempPmPath(async (context) => {
+      const created = (await runAction({
+        action: "create",
+        path: context.pmPath,
+        options: {
+          id: "pm-tool-explicit-id",
+          title: "Tool explicit identity",
+          description: "Tool contract forwards the explicit create id.",
+          type: "Task",
+          status: "open",
+          priority: "2",
+          message: "tool contract identity parity",
+        },
+      })) as { item: { id: string } };
+
+      expect(created.item.id).toBe("pm-tool-explicit-id");
+    });
   });
 
   it("forwards declared top-level copy options through the native MCP action bridge", async () => {

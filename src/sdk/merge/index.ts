@@ -12,11 +12,13 @@ export {
   mergeHistoryStreams,
   mergeItemDocuments,
   mergeJsonDocuments,
+  mergeRelationshipEventStreams,
   type HistoryMergeResult,
   type HistoryMergeStrategy,
   type ItemDocumentMergeResult,
   type JsonDocumentMergeResult,
   type MergePreferredSide,
+  type RelationshipStreamMergeResult,
 } from "./three-way.js";
 export {
   MERGE_DRIVER_ARTIFACT_VALUES,
@@ -26,9 +28,14 @@ export {
   type MergeDriverResult,
 } from "./driver.js";
 export {
+  auditMergeAttributeFence,
+  buildMergeAttributePatterns,
   PM_GITATTRIBUTES_END,
   PM_GITATTRIBUTES_START,
+  refreshMergeAttributeFenceIfInstalled,
   runMergeInstall,
+  type MergeFenceAuditResult,
+  type MergeFenceRefreshOutcome,
   type MergeInstallOptions,
   type MergeInstallResult,
 } from "./install.js";

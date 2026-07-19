@@ -10,3 +10,34 @@
 # Linux and macOS. The repo is authored on POSIX and currently has zero CRLF
 # files, so this introduces no renormalization churn.
 * text=auto eol=lf
+
+# pm-cli:merge-drivers:start
+".agents/pm/chores/*.toon" merge=pm-item-toon
+".agents/pm/chores/*.md" merge=pm-item-markdown
+".agents/pm/decisions/*.toon" merge=pm-item-toon
+".agents/pm/decisions/*.md" merge=pm-item-markdown
+".agents/pm/epics/*.toon" merge=pm-item-toon
+".agents/pm/epics/*.md" merge=pm-item-markdown
+".agents/pm/events/*.toon" merge=pm-item-toon
+".agents/pm/events/*.md" merge=pm-item-markdown
+".agents/pm/features/*.toon" merge=pm-item-toon
+".agents/pm/features/*.md" merge=pm-item-markdown
+".agents/pm/issues/*.toon" merge=pm-item-toon
+".agents/pm/issues/*.md" merge=pm-item-markdown
+".agents/pm/meetings/*.toon" merge=pm-item-toon
+".agents/pm/meetings/*.md" merge=pm-item-markdown
+".agents/pm/milestones/*.toon" merge=pm-item-toon
+".agents/pm/milestones/*.md" merge=pm-item-markdown
+".agents/pm/plans/*.toon" merge=pm-item-toon
+".agents/pm/plans/*.md" merge=pm-item-markdown
+".agents/pm/reminders/*.toon" merge=pm-item-toon
+".agents/pm/reminders/*.md" merge=pm-item-markdown
+".agents/pm/stories/*.toon" merge=pm-item-toon
+".agents/pm/stories/*.md" merge=pm-item-markdown
+".agents/pm/tasks/*.toon" merge=pm-item-toon
+".agents/pm/tasks/*.md" merge=pm-item-markdown
+".agents/pm/**/*.jsonl" merge=pm-relationship
+".agents/pm/history/*.jsonl" merge=pm-history
+".agents/pm/settings.json" merge=pm-json
+".agents/pm/schema/*.json" merge=pm-json
+# pm-cli:merge-drivers:end

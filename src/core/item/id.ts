@@ -55,15 +55,45 @@ async function idExists(pmRoot: string, id: string): Promise<boolean> {
   return false;
 }
 
-/** Implements generate item id for the public runtime surface of this module. */
+/** Bounds accepted for the configurable random id token length (`ids.token_length`). */
+export const ID_TOKEN_LENGTH_MIN = 4;
+/** Upper bound for `ids.token_length`; longer tokens stop improving ergonomics without meaningfully improving uniqueness. */
+export const ID_TOKEN_LENGTH_MAX = 12;
+
+/** Clamp a configured id token length into the supported bounds, falling back to the 4-character default for non-finite input. */
+export function clampIdTokenLength(value: number | undefined): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return ID_TOKEN_LENGTH_MIN;
+  }
+  return Math.min(
+    ID_TOKEN_LENGTH_MAX,
+    Math.max(ID_TOKEN_LENGTH_MIN, Math.trunc(value)),
+  );
+}
+
+/**
+ * Mint a new item id as `<prefix><random base36 token>`. The starting token
+ * length comes from the workspace `ids.token_length` setting (default 4) and
+ * escalates automatically when the local uniqueness probe keeps colliding.
+ * Uniqueness is only verifiable against the local working tree: concurrent
+ * branches can still mint the same id independently, which is why longer
+ * configured tokens matter for multi-agent workflows and why
+ * `pm validate --check-storage-integrity` detects post-merge duplicate-id
+ * collisions (GH-600).
+ */
 export async function generateItemId(
   pmRoot: string,
   prefix: string,
+  options: { tokenLength?: number } = {},
 ): Promise<string> {
-  let tokenLength = 4;
+  let tokenLength = clampIdTokenLength(options.tokenLength);
+  const maxTokenLength = Math.min(
+    tokenLength + 6,
+    ID_TOKEN_LENGTH_MAX,
+  );
   let attempts = 0;
 
-  while (tokenLength <= 10) {
+  while (tokenLength <= maxTokenLength) {
     for (let i = 0; i < 32; i += 1) {
       const id = `${normalizePrefix(prefix)}${randomToken(tokenLength)}`;
       if (!(await idExists(pmRoot, id))) {
