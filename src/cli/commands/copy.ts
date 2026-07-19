@@ -144,7 +144,9 @@ export async function runCopy(
   const sourceMetadata = sourceLoaded.document.metadata;
   const copiedAt = nowIso();
   const author = selectAuthor(options.author, settings.author_default);
-  const newId = await generateItemId(pmRoot, settings.id_prefix);
+  const newId = await generateItemId(pmRoot, settings.id_prefix, {
+    tokenLength: settings.ids.token_length,
+  });
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const titleOverride = options.title?.trim();
   if (titleOverride !== undefined && titleOverride.length === 0) {

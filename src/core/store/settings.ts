@@ -1088,6 +1088,7 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
     ...settings,
     item_format: normalizeSettingsItemFormat(settings, defaults),
     locks: { ...defaults.locks, ...settings.locks },
+    ids: { ...defaults.ids, ...settings.ids },
     checkpoints: { ...defaults.checkpoints, ...settings.checkpoints },
     output: { ...defaults.output, ...settings.output },
     history: {
@@ -1141,6 +1142,9 @@ function orderSerializedSettingsSections(
   ordered.locks = orderObject(ordered.locks as Record<string, unknown>, [
     "ttl_seconds",
     "wait_ms",
+  ]);
+  ordered.ids = orderObject(ordered.ids as Record<string, unknown>, [
+    "token_length",
   ]);
   ordered.checkpoints = orderObject(
     ordered.checkpoints as Record<string, unknown>,
@@ -1367,6 +1371,7 @@ function buildSerializeBaseSettings(settings: PmSettings): PmSettings {
   return {
     ...settings,
     locks: valueOrDefault(settings.locks, SETTINGS_DEFAULTS.locks),
+    ids: valueOrDefault(settings.ids, SETTINGS_DEFAULTS.ids),
     checkpoints: valueOrDefault(
       settings.checkpoints,
       SETTINGS_DEFAULTS.checkpoints,
@@ -1569,6 +1574,7 @@ export function serializeSettings(
     [
       "version",
       "id_prefix",
+      "ids",
       "author_default",
       "item_format",
       "locks",

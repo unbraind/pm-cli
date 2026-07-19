@@ -39,6 +39,7 @@ vi.mock("../../../src/cli/commands/health.js", () => ({ runHealth: vi.fn() }));
 vi.mock("../../../src/cli/commands/validate.js", () => ({ runValidate: vi.fn() }));
 vi.mock("../../../src/cli/commands/gc.js", () => ({ runGc: vi.fn() }));
 vi.mock("../../../src/cli/commands/merge.js", () => ({
+  MERGE_DRIVER_ARTIFACT_VALUES: ["item", "history", "relationship", "json"],
   runMergeDriver: vi.fn(),
   runMergeInstall: vi.fn(),
 }));

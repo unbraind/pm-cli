@@ -122,6 +122,25 @@ describe("core/store/settings", () => {
     });
   });
 
+  it("round-trips ids.token_length and rejects out-of-range values (pm-pibw)", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      await writeLegacySettings(pmRoot, { ids: { token_length: 6 } });
+      expect((await readSettings(pmRoot)).ids.token_length).toBe(6);
+      clearSettingsReadCache();
+
+      await writeLegacySettings(pmRoot, { ids: { token_length: 13 } });
+      const tooLong = await readSettingsWithMetadata(pmRoot);
+      expect(tooLong.settings.ids.token_length).toBe(4);
+      expect(tooLong.warnings).toEqual(["settings_read_invalid_schema"]);
+      clearSettingsReadCache();
+
+      await writeLegacySettings(pmRoot, { ids: { token_length: 3 } });
+      const tooShort = await readSettingsWithMetadata(pmRoot);
+      expect(tooShort.settings.ids.token_length).toBe(4);
+      expect(tooShort.warnings).toEqual(["settings_read_invalid_schema"]);
+    });
+  });
+
   it("merges defaults when legacy settings omit workflow block", async () => {
     await withTempPmRoot(async (pmRoot) => {
       // Base fixture omits the workflow block; defaults should be merged in.
@@ -137,6 +156,7 @@ describe("core/store/settings", () => {
     await withTempPmRoot(async (pmRoot) => {
       const custom = structuredClone(SETTINGS_DEFAULTS);
       custom.id_prefix = "zz-";
+      custom.ids.token_length = 6;
       custom.author_default = "settings-author";
       custom.validation.parent_reference = "strict_error";
       custom.search.max_results = 12;
@@ -155,6 +175,7 @@ describe("core/store/settings", () => {
       expectOrderedObjectKeys(parsed, [
         "version",
         "id_prefix",
+        "ids",
         "author_default",
         "item_format",
         "locks",
@@ -176,6 +197,7 @@ describe("core/store/settings", () => {
         "vector_store",
       ]);
       expectOrderedObjectKeys(parsed.locks, ["ttl_seconds", "wait_ms"]);
+      expectOrderedObjectKeys(parsed.ids, ["token_length"]);
       expectOrderedObjectKeys(parsed.checkpoints, ["retention_days"]);
       expectOrderedObjectKeys(parsed.output, ["default_format"]);
       expectOrderedObjectKeys(parsed.history, ["missing_stream", "compact_policy"]);

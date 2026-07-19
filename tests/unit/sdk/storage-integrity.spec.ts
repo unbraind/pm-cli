@@ -129,6 +129,26 @@ describe("post-merge storage integrity", () => {
         { id: "pm-duplicate", path: "features/pm-duplicate.toon" },
         { id: "pm-broken", path: "tasks/pm-broken.toon" },
       ]);
+      expect(result.duplicate_item_ids).toEqual([
+        {
+          id: "pm-duplicate",
+          paths: ["features/pm-duplicate.toon", "tasks/pm-duplicate.md"],
+        },
+        {
+          id: "pm-extension-duplicate",
+          paths: [
+            "features/pm-extension-duplicate.md",
+            "tasks/pm-extension-duplicate.md",
+          ],
+        },
+        {
+          id: "pm-schema-duplicate",
+          paths: [
+            "features/pm-schema-duplicate.md",
+            "tasks/pm-schema-duplicate.md",
+          ],
+        },
+      ]);
       expect(result.history_conflict_marker_streams).toMatchObject([
         { id: "pm-conflict", line: 1 },
       ]);

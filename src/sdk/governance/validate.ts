@@ -78,6 +78,7 @@ import type {
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
 import { collectDanglingDependencyReferences } from "../graph/assembly.js";
+import { auditMergeAttributeFence } from "../merge/install.js";
 import { scanStorageIntegrity } from "./storage-integrity.js";
 import { scanHistoryAuthorAttribution } from "../author-attribution.js";
 import {
@@ -3135,6 +3136,11 @@ async function buildStorageIntegrityCheck(
       `validate_storage_unreadable_items:${scan.unreadable_item_files.length}`,
     );
   }
+  if (scan.duplicate_item_ids.length > 0) {
+    warnings.push(
+      `validate_storage_duplicate_item_ids:${scan.duplicate_item_ids.length}`,
+    );
+  }
   if (scan.history_conflict_marker_streams.length > 0) {
     warnings.push(
       `validate_storage_history_conflict_markers:${scan.history_conflict_marker_streams.length}`,
@@ -3155,11 +3161,24 @@ async function buildStorageIntegrityCheck(
       `validate_storage_unparseable_config:${scan.unparseable_config_files.length}`,
     );
   }
+  const errorCount = warnings.length;
+  const fenceAudit = await auditMergeAttributeFence(pmRoot, [
+    ...new Set(Object.values(typeToFolder)),
+  ]);
+  if (fenceAudit.status === "drift") {
+    warnings.push(
+      `validate_merge_fence_drift:${fenceAudit.missing_patterns.length + fenceAudit.stale_patterns.length}`,
+    );
+  }
   return {
     check: {
       name: "storage_integrity",
-      status: warnings.length === 0 ? "ok" : "error",
-      details: { ...scan },
+      // Corruption findings fail the check; fence drift alone is a warning —
+      // the workspace data is intact, but future merges of uncovered paths
+      // would fall back to git's default text driver.
+      status:
+        errorCount > 0 ? "error" : warnings.length > 0 ? "warn" : "ok",
+      details: { ...scan, merge_fence: fenceAudit },
     },
     warnings,
   };

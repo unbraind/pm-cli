@@ -76,7 +76,23 @@ export {
   TOOL_CONTEXT_OPTION_CONTRACTS,
   TOOL_DEPS_OPTION_CONTRACTS,
   TOOL_GRAPH_OPTION_CONTRACTS,
+  TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE,
+  TOOL_CREATE_OPTION_CONTRACT_SOURCE,
+  TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACT_SOURCE,
+  TOOL_UPDATE_OPTION_CONTRACT_SOURCE,
 } from "./cli-contracts/tool-option-contracts.js";
+export type {
+  OptionsFromContracts,
+  PmBulkMutationControlOptions,
+  PmBulkMutationFilterOptions,
+  PmCloseActionOptions,
+  PmCloseManyActionOptions,
+  PmCreateActionOptions,
+  PmMutationAttributionOptions,
+  PmOptionScalar,
+  PmUpdateActionOptions,
+  PmUpdateManyActionOptions,
+} from "./cli-contracts/typed-action-inputs.js";
 export type {
   CliFlagContract,
   ToolOptionFlagContract,
@@ -166,6 +182,7 @@ export {
 } from "./cli-contracts/flag-contracts.js";
 export type { PmActionSchemaContract } from "./cli-contracts/tool-schema.js";
 export {
+  CLOSE_ACTION_OPTION_KEYS,
   PM_TOOL_ACTION_PARAMETER_CONTRACTS,
   PM_TOOL_PARAMETERS_SCHEMA_VERSION,
   PM_TOOL_PARAMETERS_SCHEMA_MAJOR,

@@ -11,6 +11,7 @@ import {
   writeFileAtomic,
 } from "../core/fs/fs-utils.js";
 import { acquireLock } from "../core/lock/lock.js";
+import { refreshMergeAttributeFenceIfInstalled } from "./merge/install.js";
 import {
   assertAliasesAvailable,
   assertTypeFolderAvailable,
@@ -684,6 +685,7 @@ export async function runSchemaAddType(
   } finally {
     await releaseLock();
   }
+  await appendMergeFenceWarnings(pmRoot, warnings);
 
   return {
     action: "add-type",
@@ -704,6 +706,28 @@ async function ensureInitialized(pmRoot: string): Promise<void> {
     throw new PmCliError(
       `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
       EXIT_CODE.NOT_FOUND,
+    );
+  }
+}
+
+/**
+ * Reconcile the committed merge-driver fence with the type folders that exist
+ * after a schema type mutation. When `pm merge install` already ran the fence
+ * is rewritten in place (`merge_fence_refreshed`); when the repository has a
+ * tracker inside git but never installed the fence, an actionable hint warning
+ * is emitted instead — new type folders would otherwise merge under git's
+ * default text driver and reintroduce whole-file item conflicts (pm-i4fx).
+ */
+async function appendMergeFenceWarnings(
+  pmRoot: string,
+  warnings: string[],
+): Promise<void> {
+  const fence = await refreshMergeAttributeFenceIfInstalled(pmRoot);
+  if (fence.status === "refreshed") {
+    warnings.push("merge_fence_refreshed");
+  } else if (fence.status === "not_installed") {
+    warnings.push(
+      'merge_fence_not_installed:type folders lack git merge drivers; run "pm merge install"',
     );
   }
 }
@@ -905,6 +929,9 @@ export async function runSchemaRemoveType(
     }
   } finally {
     await releaseLock();
+  }
+  if (removal.removed) {
+    await appendMergeFenceWarnings(pmRoot, warnings);
   }
 
   return {

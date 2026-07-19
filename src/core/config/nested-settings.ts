@@ -47,6 +47,8 @@ export interface NestedSettingDescriptor {
   non_empty?: boolean;
   /** Optional minimum value for `integer` / `number` kinds. When set, `parseNestedSettingValue` rejects values strictly below `min`. Useful for settings where 0 would be silently ignored by the runtime (batch sizes, timeouts, max-results limits). */
   min?: number;
+  /** Optional maximum value for `integer` / `number` kinds. When set, `parseNestedSettingValue` rejects values strictly above `max` (bounded knobs like `ids.token_length`). */
+  max?: number;
 }
 
 /** Search/provider/vector-store leaves. Order is the display order in `pm config list` and in error hints. */
@@ -268,6 +270,15 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
       "Bounded jittered wait in milliseconds before a contended item mutation fails with lock_conflict; 0 fails fast. PM_LOCK_WAIT_MS overrides per invocation.",
   },
   {
+    key: "ids_token_length",
+    path: "ids.token_length",
+    kind: "integer",
+    min: 4,
+    max: 12,
+    summary:
+      "Random base36 token length for newly minted item ids (4-12, default 4). Raise it to shrink cross-branch id collision odds in concurrent multi-agent workflows (pm-pibw).",
+  },
+  {
     key: "checkpoints_retention_days",
     path: "checkpoints.retention_days",
     kind: "integer",
@@ -447,6 +458,14 @@ function parseNestedIntegerValue(
       ok: false,
       error: {
         message: `Config set ${descriptor.key} requires an integer >= ${descriptor.min}, got "${rawValue}" (the runtime silently ignores 0 here and falls back to the default)`,
+      },
+    };
+  }
+  if (descriptor.max !== undefined && value > descriptor.max) {
+    return {
+      ok: false,
+      error: {
+        message: `Config set ${descriptor.key} requires an integer <= ${descriptor.max}, got "${rawValue}"`,
       },
     };
   }

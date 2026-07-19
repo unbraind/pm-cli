@@ -54,6 +54,14 @@ export interface ResurrectedItemRow {
   deleted_by: string;
 }
 
+/** Documents one duplicate-item-id finding: one id claimed by multiple item documents (cross-branch add/add collision or duplicated format variant). */
+export interface DuplicateItemIdRow {
+  /** Item id claimed by more than one on-disk document. */
+  id: string;
+  /** Tracker-relative paths of every document claiming the id, sorted for determinism. */
+  paths: string[];
+}
+
 /** Documents one unparseable configuration/schema file finding. */
 export interface UnparseableConfigRow {
   /** Tracker-relative path of the configuration file. */
@@ -72,6 +80,8 @@ export interface StorageIntegrityScanResult {
   parsed_items: number;
   /** Item files whose ids the standard read path could not parse (silently skipped elsewhere). */
   unreadable_item_files: UnreadableItemFileRow[];
+  /** Ids claimed by more than one item document (post-merge add/add id collisions across type folders or format variants; GH-600). */
+  duplicate_item_ids: DuplicateItemIdRow[];
   /** Number of history streams scanned. */
   history_streams_scanned: number;
   /** History streams containing unresolved merge-conflict markers. */
@@ -306,6 +316,17 @@ export async function scanStorageIntegrity(
 ): Promise<StorageIntegrityScanResult> {
   const itemFiles = await listItemFilesOnDisk(pmRoot, typeToFolder);
   const idsOnDisk = new Set(itemFiles.map((file) => file.id));
+  const pathsById = new Map<string, string[]>();
+  for (const file of itemFiles) {
+    pathsById.set(file.id, [...(pathsById.get(file.id) ?? []), file.relativePath]);
+  }
+  const duplicateItemIds: DuplicateItemIdRow[] = [...pathsById.entries()]
+    .filter(([, paths]) => paths.length > 1)
+    .map(([id, paths]) => ({
+      id,
+      paths: [...paths].sort((left, right) => left.localeCompare(right)),
+    }))
+    .sort((left, right) => left.id.localeCompare(right.id));
   const unreadableItemFiles = (
     await Promise.all(
       itemFiles.map(async (file): Promise<UnreadableItemFileRow | null> => {
@@ -338,6 +359,7 @@ export async function scanStorageIntegrity(
     item_ids_on_disk: idsOnDisk.size,
     parsed_items: parsedItemIds.size,
     unreadable_item_files: unreadableItemFiles,
+    duplicate_item_ids: duplicateItemIds,
     history_streams_scanned: historyScan.scanned,
     history_conflict_marker_streams: historyScan.conflictMarkers,
     history_unparseable_streams: historyScan.unparseable,

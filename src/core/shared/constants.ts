@@ -264,6 +264,9 @@ function cloneOptionalArray<T>(
 export const SETTINGS_DEFAULTS: PmSettings = {
   version: 1,
   id_prefix: "pm-",
+  ids: {
+    token_length: 4,
+  },
   author_default: "",
   item_format: "toon",
   locks: {

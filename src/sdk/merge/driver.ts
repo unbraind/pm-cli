@@ -24,6 +24,7 @@ import {
   mergeHistoryStreams,
   mergeItemDocuments,
   mergeJsonDocuments,
+  mergeRelationshipEventStreams,
   type MergePreferredSide,
 } from "./three-way.js";
 
@@ -31,6 +32,7 @@ import {
 export const MERGE_DRIVER_ARTIFACT_VALUES = [
   "item",
   "history",
+  "relationship",
   "json",
 ] as const;
 /** Restricts merge driver artifact values accepted by command, SDK, and storage contracts. */
@@ -38,7 +40,7 @@ export type MergeDriverArtifact = (typeof MERGE_DRIVER_ARTIFACT_VALUES)[number];
 
 /** Documents the merge driver options payload exchanged by command, SDK, and package integrations. */
 export interface MergeDriverOptions {
-  /** Artifact class being merged: item document, history JSONL stream, or key-level JSON config. */
+  /** Artifact class being merged: item document, history JSONL stream, relationship event JSONL store, or key-level JSON config. */
   artifact: string;
   /** Path to the common-ancestor version (git %O). */
   basePath: string;
@@ -68,6 +70,15 @@ export interface MergeDriverResult {
   conflicts: string[];
   /** History-merge strategy and entry accounting; present only for the history artifact. */
   history?: {
+    strategy: string;
+    common_entries: number;
+    entries_from_ours: number;
+    entries_from_theirs: number;
+    entries_total: number;
+    reanchored: boolean;
+  };
+  /** Relationship-event-merge strategy and accounting; present only for the relationship artifact. */
+  relationship?: {
     strategy: string;
     common_entries: number;
     entries_from_ours: number;
@@ -190,6 +201,21 @@ export async function runMergeDriver(
       entries_from_theirs: historyMerge.entries_from_theirs,
       entries_total: historyMerge.entries_total,
       reanchored: historyMerge.reanchored,
+    };
+  } else if (artifact === "relationship") {
+    const relationshipMerge = mergeRelationshipEventStreams(
+      baseRaw,
+      oursRaw,
+      theirsRaw,
+    );
+    merged = relationshipMerge.merged;
+    result.relationship = {
+      strategy: relationshipMerge.strategy,
+      common_entries: relationshipMerge.common_entries,
+      entries_from_ours: relationshipMerge.entries_from_ours,
+      entries_from_theirs: relationshipMerge.entries_from_theirs,
+      entries_total: relationshipMerge.entries_total,
+      reanchored: relationshipMerge.reanchored,
     };
   } else if (artifact === "item") {
     const settings = await loadOptionalSettings(global);

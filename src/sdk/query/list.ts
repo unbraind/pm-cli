@@ -273,8 +273,26 @@ export interface ListTreeMetadata {
 /** Full metadata enriched with tree-only fields. */
 export type ListTreeItem = ListedItem & ListTreeMetadata;
 
-/** A compact or explicitly selected field projection. */
-export type ListProjectedItem = Record<string, unknown>;
+/** Stable typed core of a projected list row (GH-601 / pm-x29o): the fields of the compact default projection, each optional because `--fields` can deselect any of them, but typed so `row.id` and friends are never `unknown`. */
+export interface ListProjectedItemCore {
+  /** Item id (always present in the compact default projection). */
+  id?: string;
+  /** Item title. */
+  title?: string;
+  /** Item lifecycle status (workspace schemas may define custom statuses). */
+  status?: string;
+  /** Item type name (workspace schemas may define custom types). */
+  type?: string;
+  /** Item priority (0 highest through 4 lowest). */
+  priority?: number;
+  /** Parent item id, or null for root items. */
+  parent?: string | null;
+  /** ISO timestamp of the last mutation. */
+  updated_at?: string;
+}
+
+/** A compact or explicitly selected field projection: typed core fields plus whatever else `--fields` selected. */
+export type ListProjectedItem = ListProjectedItemCore & Record<string, unknown>;
 
 /** Honest union of item shapes returned by the list engine. */
 export type ListResultItem = ListedItem | ListTreeItem | ListProjectedItem;
@@ -1347,9 +1365,16 @@ function projectListItems(
     return items;
   }
   return items.map((item) => {
-    const projected: Record<string, unknown> = {};
+    const projected: ListProjectedItem = {};
     for (const field of projection.fields) {
-      projected[field] = readListFieldValue(item, field, treeMode);
+      // Field values are read straight off the parsed item metadata, so the
+      // typed core keys (id/title/status/...) hold their declared runtime
+      // shapes; the cast only widens the write, not the read surface.
+      (projected as Record<string, unknown>)[field] = readListFieldValue(
+        item,
+        field,
+        treeMode,
+      );
     }
     return projected;
   });

@@ -203,6 +203,16 @@ jobs:
           pnpm lint
           npm pack --dry-run
 
+      # Merge-safety gates for the tracked .agents/pm workspace (pm-iwsj):
+      # storage integrity catches corrupted/unmergeable tracker artifacts that
+      # slipped past the merge drivers; the strict history verify proves a
+      # representative hash chain still replays after any branch merges.
+      - name: Run tracker merge-safety gates
+        if: matrix.gate == 'static'
+        run: |
+          node dist/cli.js validate --check-storage-integrity --json
+          node dist/cli.js history pm-doxj --verify --strict-exit --json > /dev/null
+
       - name: Run compatibility migration gate
         if: matrix.gate == 'compat'
         timeout-minutes: 6

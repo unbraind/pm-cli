@@ -55,6 +55,8 @@ export PM_AUTHOR=<stable-agent-id>
 
 Use `PM_CMD=pm` only after `pm` clearly resolves to this checkout's current build. Otherwise run `node dist/cli.js` from the repository root.
 
+On a fresh clone or worktree, also run `pm merge install` once: the committed `.gitattributes` merge fence needs the clone-local `git config` driver definitions before branch merges of `.agents/pm` data are field-aware (see [Merge Safety](docs/MERGE_SAFETY.md)).
+
 For real repository tracking, do not override `PM_PATH`. If a script must target a tracker explicitly, prefer `--pm-path <repo>/.agents/pm`; `--path` is only a backward-compatible tracker-root alias, not a workspace/cwd flag. For tests and dogfood runs, use sandboxed `PM_PATH` and `PM_GLOBAL_PATH`; prefer `node scripts/run-tests.mjs ...` because it sets them automatically.
 
 <!-- pm-cli:agent-guidance:start:v1 -->

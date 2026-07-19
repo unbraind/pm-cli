@@ -150,7 +150,7 @@ export interface UpdateCommandOptions
   /** Value that configures or reports close reason for this contract. */
   closeReason?: string;
   /** Value that configures or reports priority for this contract. */
-  priority?: string;
+  priority?: string | number;
   /** Schema type that determines the shape and validation rules for this value. */
   type?: string;
   /** Value that configures or reports tags for this contract. */

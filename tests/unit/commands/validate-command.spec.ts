@@ -49,6 +49,45 @@ it("selects storage integrity explicitly", async () => {
   });
 });
 
+it("flags duplicate item ids and merge-fence drift in storage integrity (pm-pibw/pm-i4fx)", async () => {
+  await withTempPmPath(async (context) => {
+    const id = createTestItemId(context, {
+      title: "validate-duplicate-id-fixture",
+      estimate: "15",
+    });
+    // Fence drift alone downgrades to a warning; seed a drifted fence first.
+    await writeFile(
+      path.join(context.tempRoot, ".gitattributes"),
+      '# pm-cli:merge-drivers:start\n".agents/pm/ghosts/*.toon" merge=pm-item-toon\n# pm-cli:merge-drivers:end\n',
+      "utf8",
+    );
+    const drifted = await runValidate({ checkStorageIntegrity: true }, { path: context.pmPath });
+    const driftCheck = checkByName(drifted, "storage_integrity");
+    expect(driftCheck.status).toBe("warn");
+    expect(drifted.warnings.some((warning) => warning.startsWith("validate_merge_fence_drift:"))).toBe(true);
+    const fence = driftCheck.details as { merge_fence: { status: string; stale_patterns: string[] } };
+    expect(fence.merge_fence.status).toBe("drift");
+    expect(fence.merge_fence.stale_patterns.join("\n")).toContain("ghosts");
+
+    // A cross-folder add/add id collision is a hard storage error.
+    const sourcePath = path.join(context.pmPath, "tasks", `${id}.toon`);
+    await mkdir(path.join(context.pmPath, "features"), { recursive: true });
+    await writeFile(
+      path.join(context.pmPath, "features", `${id}.toon`),
+      await readFile(sourcePath, "utf8"),
+      "utf8",
+    );
+    const collided = await runValidate({ checkStorageIntegrity: true }, { path: context.pmPath });
+    const collidedCheck = checkByName(collided, "storage_integrity");
+    expect(collidedCheck.status).toBe("error");
+    expect(collided.warnings).toContain("validate_storage_duplicate_item_ids:1");
+    const details = collidedCheck.details as { duplicate_item_ids: Array<{ id: string; paths: string[] }> };
+    expect(details.duplicate_item_ids).toEqual([
+      { id, paths: [`features/${id}.toon`, `tasks/${id}.toon`] },
+    ]);
+  });
+});
+
 function seedDependencyCycle(context: TempPmContext): [string, string, string] {
   const first = createTask(context, "validate-lifecycle-dependency-cycle-a");
   const second = createTask(context, "validate-lifecycle-dependency-cycle-b");

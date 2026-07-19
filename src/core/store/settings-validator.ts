@@ -33,6 +33,8 @@ export interface ParsedSettings {
   version: number;
   /** Value that configures or reports id prefix for this contract. */
   id_prefix: string;
+  /** Item id allocation policy (random base36 token length appended to the prefix). */
+  ids?: { token_length?: number };
   /** Value that configures or reports author default for this contract. */
   author_default: string;
   /** Value that configures or reports item format for this contract. */
@@ -170,7 +172,12 @@ const vBoolean: Check<boolean> = (input) =>
   typeof input === "boolean" ? { ok: true, value: input } : FAIL;
 
 function vNumber(
-  options: { int?: boolean; positive?: boolean; min?: number } = {},
+  options: {
+    int?: boolean;
+    positive?: boolean;
+    min?: number;
+    max?: number;
+  } = {},
 ): Check<number> {
   return (input) => {
     // `Number.isFinite` rejects non-numbers, NaN, and ±Infinity in one check.
@@ -187,6 +194,9 @@ function vNumber(
       return FAIL;
     }
     if (typeof options.min === "number" && input < options.min) {
+      return FAIL;
+    }
+    if (typeof options.max === "number" && input > options.max) {
       return FAIL;
     }
     return { ok: true, value: input };
@@ -436,6 +446,11 @@ const extensionPolicy = vOptional(
 const settingsCheck = vObject({
   version: vNumber({ int: true }),
   id_prefix: vString,
+  ids: vOptional(
+    vObject({
+      token_length: vOptional(vNumber({ int: true, min: 4, max: 12 })),
+    }),
+  ),
   author_default: vString,
   item_format: vOptional(vLiteral("toon", "json_markdown")),
   locks: vObject({

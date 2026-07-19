@@ -44,7 +44,7 @@ describe("release automation contract", () => {
       "pnpm quality:static",
     );
     expect(packageJson.scripts?.typecheck).toBe(
-      "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.packages.json && tsc -p tsconfig.examples.json",
+      "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.typetests.json && tsc -p tsconfig.packages.json && tsc -p tsconfig.examples.json",
     );
     expect(packageJson.scripts?.["quality:docs-skills"]).toBe(
       "node scripts/release/docs-skills-gate.mjs",

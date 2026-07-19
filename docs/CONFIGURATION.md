@@ -57,6 +57,7 @@ When `settings.json` cannot be loaded, `pm` falls back to built-in defaults and 
 | Setting | Purpose |
 |---------|---------|
 | `id_prefix` | generated item ID prefix, default `pm-` |
+| `ids.token_length` | random base36 token length for newly minted item ids (4-12, default `4`); raise it to shrink cross-branch id collision odds in concurrent multi-agent workflows (see [Merge Safety](MERGE_SAFETY.md)) |
 | `author_default` | fallback mutation author |
 | `item_format` | item storage format (`toon` writes; legacy markdown is read/migrate only) |
 | `output.default_format` | default renderer, usually `toon` |
@@ -81,6 +82,7 @@ Each scalar setting above is settable via `pm config set <key> <value>` (no hand
 
 ```bash
 pm config project set id_prefix task                       # (id_prefix) IDs become task-xxxx
+pm config project set ids_token_length 6                   # (ids.token_length) integer 4..12; longer ids for multi-agent collision safety
 pm config project set author_default release-bot           # (author_default) default mutation author
 pm config project set output_default_format json           # (output.default_format) toon | json
 pm config project set locks_ttl_seconds 60                 # (locks.ttl_seconds) integer >= 1

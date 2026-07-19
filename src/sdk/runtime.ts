@@ -153,6 +153,11 @@ import {
 } from "./runtime-input.js";
 import { runDeps } from "./dependencies.js";
 import { runDocs } from "./docs.js";
+import type {
+  PmCloseActionOptions,
+  PmCreateActionOptions,
+  PmUpdateActionOptions,
+} from "./cli-contracts/typed-action-inputs.js";
 import {
   runGraph,
   type GraphCommandOptions,
@@ -425,6 +430,7 @@ export {
   type ListedItem,
   type ListOptions,
   type ListProjectedItem,
+  type ListProjectedItemCore,
   type ListResult,
   type ListResultItem,
   type ListSortField,
@@ -660,6 +666,12 @@ export type PmClientRunArgs = Omit<PmActionInput, "action"> & {
   idOnly?: boolean;
   action?: never;
 };
+
+/** Typed close-option bag accepted by {@link PmClient.close}: the contract-derived close options minus the positional `reason` parameter and its MCP `text` alias. */
+export type PmClientCloseActionOptions = Omit<
+  PmCloseActionOptions,
+  "reason" | "text"
+>;
 
 /** Command options accepted by PmClient mutation convenience methods. */
 export type PmClientMutationOptions = PmActionOptions & {
@@ -1244,15 +1256,15 @@ export class PmClient {
     return this.plan("materialize", id, options);
   }
 
-  /** Create an item using the same mutation path as `pm create`. */
-  create(options: PmClientFullMutationOptions = {}): Promise<CreateResult> {
+  /** Create an item using the same mutation path as `pm create`. Options are contract-typed (pm-x29o): unknown keys and non-scalar values fail `tsc`; runtime-schema custom fields go through the repeatable `field` option, and {@link PmClient.run} stays the wide escape hatch. */
+  create(options: PmCreateActionOptions = {}): Promise<CreateResult> {
     return this.runTyped("create", splitFullClientMutationOptions(options));
   }
 
-  /** Update an item using the same mutation path as `pm update`. */
+  /** Update an item using the same mutation path as `pm update`. Options are contract-typed (pm-x29o): unknown keys and non-scalar values fail `tsc`; runtime-schema custom fields go through the repeatable `field` option, and {@link PmClient.run} stays the wide escape hatch. */
   update(
     id: string,
-    options: PmClientFullMutationOptions = {},
+    options: PmUpdateActionOptions = {},
   ): Promise<UpdateResult> {
     return this.runTyped("update", {
       id,
@@ -1260,11 +1272,11 @@ export class PmClient {
     });
   }
 
-  /** Close an item using the same mutation path as `pm close`. */
+  /** Close an item using the same mutation path as `pm close`. Options are contract-typed (pm-x29o); the close reason is the positional parameter, so the option bag omits `reason`/`text`. */
   close(
     id: string,
     reason: string,
-    options: PmClientFullMutationOptions = {},
+    options: PmClientCloseActionOptions = {},
   ): Promise<CloseResult> {
     return this.runTyped("close", {
       id,
@@ -1919,7 +1931,7 @@ export function historyCompactBulk(
 
 /** Create an item without constructing a reusable client. */
 export function create(
-  options: PmClientFullMutationOptions = {},
+  options: PmCreateActionOptions = {},
   clientOptions: PmClientOptions = {},
 ): Promise<CreateResult> {
   return new PmClient(clientOptions).create(options);
@@ -1928,7 +1940,7 @@ export function create(
 /** Update an item without constructing a reusable client. */
 export function update(
   id: string,
-  options: PmClientFullMutationOptions = {},
+  options: PmUpdateActionOptions = {},
   clientOptions: PmClientOptions = {},
 ): Promise<UpdateResult> {
   return new PmClient(clientOptions).update(id, options);
@@ -1938,7 +1950,7 @@ export function update(
 export function close(
   id: string,
   reason: string,
-  options: PmClientFullMutationOptions = {},
+  options: PmClientCloseActionOptions = {},
   clientOptions: PmClientOptions = {},
 ): Promise<CloseResult> {
   return new PmClient(clientOptions).close(id, reason, options);

@@ -1,6 +1,9 @@
+import { execFileSync } from "node:child_process";
 import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { runMergeInstall } from "../../../src/sdk/merge/install.js";
+import { runSchemaAddType, runSchemaRemoveType } from "../../../src/sdk/schema.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { _testOnlySchemaCommand, runSchemaShow } from "../../../src/cli/commands/schema.js";
 import * as statusDefsFileModule from "../../../src/core/schema/status-defs-file.js";
@@ -80,6 +83,56 @@ describe("schema command helper coverage", () => {
 });
 
 describe("schema add-type command", () => {
+  it("refreshes or hints the merge fence after type mutations (pm-i4fx)", async () => {
+    await withTempPmPath(async (context) => {
+      execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
+      const priorCwd = process.cwd();
+      try {
+        process.chdir(context.tempRoot);
+        // Without an installed fence, mutations emit the actionable hint.
+        const hinted = await runSchemaAddType(
+          "Spike",
+          {},
+          { path: context.pmPath },
+        );
+        expect(
+          hinted.warnings.some((warning) =>
+            warning.startsWith("merge_fence_not_installed:"),
+          ),
+        ).toBe(true);
+
+        await runMergeInstall({}, { path: context.pmPath });
+        // With the fence installed, a new type folder refreshes it in place.
+        const refreshed = await runSchemaAddType(
+          "Experiment",
+          {},
+          { path: context.pmPath },
+        );
+        expect(refreshed.warnings).toContain("merge_fence_refreshed");
+        const attributes = await readFile(
+          path.join(context.tempRoot, ".gitattributes"),
+          "utf8",
+        );
+        expect(attributes).toContain(
+          '".agents/pm/experiments/*.toon" merge=pm-item-toon',
+        );
+
+        // Removing the type refreshes the fence back out of the contract.
+        const removed = await runSchemaRemoveType(
+          "Experiment",
+          {},
+          { path: context.pmPath },
+        );
+        expect(removed.warnings).toContain("merge_fence_refreshed");
+        expect(
+          await readFile(path.join(context.tempRoot, ".gitattributes"), "utf8"),
+        ).not.toContain("experiments");
+      } finally {
+        process.chdir(priorCwd);
+      }
+    });
+  });
+
   it("lists built-in and custom types in compact groups", async () => {
     await withTempPmPath(async (context) => {
       const add = context.runCli(["schema", "add-type", "Spike", "--alias", "spike"]);
