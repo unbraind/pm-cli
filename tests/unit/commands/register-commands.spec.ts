@@ -38,6 +38,10 @@ vi.mock("../../../src/cli/commands/stats.js", () => ({ runStats: vi.fn() }));
 vi.mock("../../../src/cli/commands/health.js", () => ({ runHealth: vi.fn() }));
 vi.mock("../../../src/cli/commands/validate.js", () => ({ runValidate: vi.fn() }));
 vi.mock("../../../src/cli/commands/gc.js", () => ({ runGc: vi.fn() }));
+vi.mock("../../../src/cli/commands/merge.js", () => ({
+  runMergeDriver: vi.fn(),
+  runMergeInstall: vi.fn(),
+}));
 vi.mock("../../../src/cli/commands/contracts.js", () => ({ runContracts: vi.fn() }));
 vi.mock("../../../src/cli/commands/claim.js", () => ({
   runClaim: vi.fn(),
@@ -169,6 +173,7 @@ import { runStats } from "../../../src/cli/commands/stats.js";
 import { runHealth } from "../../../src/cli/commands/health.js";
 import { runValidate } from "../../../src/cli/commands/validate.js";
 import { runGc } from "../../../src/cli/commands/gc.js";
+import { runMergeDriver, runMergeInstall } from "../../../src/cli/commands/merge.js";
 import { runContracts } from "../../../src/cli/commands/contracts.js";
 import { runClaim, runClaimNext, runRelease } from "../../../src/cli/commands/claim.js";
 import { runCreate } from "../../../src/cli/commands/create.js";
@@ -316,6 +321,8 @@ beforeEach(() => {
   vi.mocked(runHealth).mockResolvedValue({ ok: true, warnings: [] } as never);
   vi.mocked(runValidate).mockResolvedValue({ ok: true, has_warnings: false } as never);
   vi.mocked(runGc).mockResolvedValue({ removed: [] } as never);
+  vi.mocked(runMergeInstall).mockResolvedValue({ dry_run: false } as never);
+  vi.mocked(runMergeDriver).mockResolvedValue({ ok: true } as never);
   vi.mocked(runContracts).mockResolvedValue({ contracts: {} } as never);
   vi.mocked(runClaim).mockResolvedValue({ id: "pm-1", claimed: true } as never);
   vi.mocked(runRelease).mockResolvedValue({ id: "pm-1", released: true } as never);
@@ -903,6 +910,72 @@ describe("operation command actions", () => {
     expect(contractsOptions.command).toBe("create");
     expect(contractsOptions.flagsOnly).toBe(true);
     expect(contractsOptions.runtimeOnly).toBe(true);
+  });
+
+  it("maps merge installer and driver actions including conflicts and usage errors", async () => {
+    await runCli("merge", "install", "--dry-run");
+    expect(vi.mocked(runMergeInstall)).toHaveBeenCalledWith(
+      { dryRun: true },
+      expect.anything(),
+    );
+
+    vi.mocked(runMergeDriver).mockResolvedValueOnce({ ok: false } as never);
+    const priorExitCode = process.exitCode;
+    try {
+      await runCli(
+        "merge",
+        "driver",
+        "json",
+        "base.json",
+        "ours.json",
+        "theirs.json",
+        "--output",
+        "merged.json",
+        "--item-path",
+        ".agents/pm/settings.json",
+        "--prefer",
+        "theirs",
+      );
+      expect(vi.mocked(runMergeDriver)).toHaveBeenCalledWith(
+        {
+          artifact: "json",
+          basePath: "base.json",
+          oursPath: "ours.json",
+          theirsPath: "theirs.json",
+          outputPath: "merged.json",
+          itemPath: ".agents/pm/settings.json",
+          prefer: "theirs",
+        },
+        expect.anything(),
+      );
+      expect(process.exitCode).toBe(1);
+    } finally {
+      process.exitCode = priorExitCode;
+    }
+
+    vi.mocked(runMergeDriver).mockResolvedValueOnce({ ok: true } as never);
+    await runCliRaw(
+      "merge",
+      "driver",
+      "history",
+      "base.jsonl",
+      "ours.jsonl",
+      "theirs.jsonl",
+    );
+    expect(vi.mocked(runMergeDriver)).toHaveBeenLastCalledWith(
+      expect.objectContaining({ outputPath: undefined, itemPath: undefined, prefer: undefined }),
+      expect.anything(),
+    );
+
+    await expect(runCli("merge", "install", "extra")).rejects.toThrow(
+      /takes no positional arguments/,
+    );
+    await expect(runCli("merge", "driver", "json")).rejects.toThrow(
+      /requires <artifact> <base> <ours> <theirs>/,
+    );
+    await expect(runCli("merge", "unknown")).rejects.toThrow(
+      /Unknown merge subcommand/,
+    );
   });
 
   it("maps expanded operation option booleans and string payloads", async () => {

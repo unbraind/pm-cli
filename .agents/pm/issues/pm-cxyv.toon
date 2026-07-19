@@ -2,19 +2,39 @@ id: pm-cxyv
 title: "GH-607: validate reports ok:true / checked_items:0 on structurally-unparseable item .toon — silently skips what pm get hard-errors on"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: merge,toon,validate
 created_at: "2026-07-19T03:41:34.814Z"
-updated_at: "2026-07-19T03:43:10.112Z"
+updated_at: "2026-07-19T08:52:39.340Z"
+closed_at: "2026-07-19T08:52:38.142Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "validate fails (ok:false) with an item-parse-integrity check naming each unparseable item file instead of skipping it; checked_items mismatch vs on-disk item files is itself a failure; repro from GH-607 (count-header corruption) becomes a regression test"
 parent: pm-33cw
 risk: high
 confidence: high
-dependencies[3]{id,kind,created_at,author,source_kind}:
+resolution: Fixed by the broad SDK/CLI merge-safety delivery with automated regression and packed Git acceptance proof.
+expected_result: Concurrent branches preserve project context in parseable tracker artifacts and expose deterministic validation/recovery gates.
+actual_result: Field-aware drivers preserve item/history/config changes; validation detects corruption or drift; documented repair restores strict verification; all repository gates pass.
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-9q2t,related,"2026-07-19T03:41:34.814Z",null,null
   pm-a9mc,related,"2026-07-19T03:41:34.814Z",null,null
   pm-g5sx,related,"2026-07-19T03:41:34.814Z",null,null
+  pm-ol3p,related,"2026-07-19T05:38:23.941Z",null,null
+comments[6]{created_at,author,text}:
+  "2026-07-19T05:38:27.653Z",maintainer-agent,"Evidence: validate storage_integrity scans on-disk item/config/history artifacts, reports unreadable TOON, conflict markers, invalid JSON, and resurrection candidates; clean and corrupt fixtures pass."
+  "2026-07-19T05:39:02.327Z",maintainer-agent,"Final local gates: 315 test files / 5,944 tests passed with 100% statements, branches, functions, and lines; typecheck, ESLint, jscpd zero clones, static complexity/docstring/package-boundary checks, token budgets, docs/skills links, contracts snapshot, and secret scan passed."
+  "2026-07-19T07:07:52.166Z",maintainer-agent,"PR review fix: storage-integrity now rejects null, arrays, and primitive JSON history lines before property access; the same guard protects history merge inputs. Added malformed-history regressions and acknowledged the Gemini thread inline."
+  "2026-07-19T08:12:58.551Z",maintainer-agent,"Greptile P1 review evidence: storage integrity now parses every non-empty entry in every history JSONL stream with exact line reporting, and validates every physical item file by path/format so duplicate IDs cannot mask a corrupt sibling. Both focused validate/storage-integrity suites pass (91 tests); ESLint, typecheck, and formatting pass."
+  "2026-07-19T08:19:34.993Z",maintainer-agent,"Coverage-gate correction: removed the impossible unknown-extension fallback because the file census admits only .md/.toon; both real format paths remain exercised. Focused suite 91/91, typecheck, ESLint, and formatting pass."
+  "2026-07-19T08:52:36.829Z",maintainer-agent,"Exact-head Greptile P1 evidence: physical item reparsing now uses active runtime schema and extension-owned field names. Reject-policy regressions distinguish an undeclared duplicate from a valid extension-field duplicate; focused validate/integrity suites pass."
+files[2]{path,scope,note}:
+  src/sdk/governance/storage-integrity.ts,project,on-disk item census and unreadable item detection
+  src/sdk/governance/validate.ts,project,default hard-failing storage-integrity check
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/storage-integrity.spec.ts tests/unit/commands/validate-command.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,post-merge integrity gate
+close_reason: Closed after aligning per-file integrity parsing with the schema-aware ordinary read path.
 body: "GH-607. A structurally-unparseable item .toon (e.g. count header disagreeing with data lines — exactly what a botched concurrent-append merge produces, pm-9q2t) is silently skipped by pm validate: ok:true, checked_items:0, while pm get on the same item exits 1 \"TOON item document is not valid TOON\". The workspace-integrity command must fail on provably unreadable items; checked_items vs on-disk file-count mismatch is itself a failure. Related counts-only precedent pm-a9mc."

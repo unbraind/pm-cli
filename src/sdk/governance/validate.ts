@@ -11,6 +11,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { buildRemediationCommands } from "../../core/diagnostics/remediation.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { scanHistoryDrift } from "../../core/history/drift-scan.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
@@ -77,6 +78,7 @@ import type {
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
 import { collectDanglingDependencyReferences } from "../graph/assembly.js";
+import { scanStorageIntegrity } from "./storage-integrity.js";
 import { scanHistoryAuthorAttribution } from "../author-attribution.js";
 import {
   createRelationshipKindRegistry,
@@ -94,7 +96,8 @@ type ValidateCheckName =
   | "files"
   | "command_references"
   | "history_drift"
-  | "format_version";
+  | "format_version"
+  | "storage_integrity";
 type ValidateStatus = "ok" | "warn" | "error";
 type ValidateDependencyCycleSeverity = "off" | "warn" | "error";
 type ValidateFileScanMode = "default" | "tracked-all" | "tracked-all-strict";
@@ -281,6 +284,8 @@ export interface ValidateCommandOptions {
   allAffectedIds?: boolean;
   /** Value that configures or reports check history drift for this contract. */
   checkHistoryDrift?: boolean;
+  /** Run the post-merge storage-integrity check (unreadable items, history conflict markers, resurrected items, unparseable config). */
+  checkStorageIntegrity?: boolean;
   /** Value that configures or reports check command references for this contract. */
   checkCommandReferences?: boolean;
   /** Strategy used to control scan behavior. */
@@ -1068,6 +1073,9 @@ function resolveRequestedChecks(
   if (options.checkCommandReferences) {
     requested.add("command_references");
   }
+  if (options.checkStorageIntegrity) {
+    requested.add("storage_integrity");
+  }
   if (requested.size === 0) {
     // Remediation flags without explicit --check-* flags scope the run to the
     // checks that can produce fixes: --auto-fix plans metadata/resolution
@@ -1089,6 +1097,7 @@ function resolveRequestedChecks(
       requested.add("command_references");
       requested.add("history_drift");
       requested.add("format_version");
+      requested.add("storage_integrity");
     }
     return requested;
   }
@@ -3102,6 +3111,60 @@ export const _testOnlyValidateCommand = {
 
 type LoadedValidateSettings = Awaited<ReturnType<typeof readSettings>>;
 
+/** Build the post-merge storage-integrity check (GH-603/GH-607/GH-609/GH-611): provably corrupted storage — unreadable item documents, on-disk-vs-parsed census mismatches, history conflict markers, resurrected deletes, and unparseable config/schema files — fails validate as an error instead of hiding behind ok:true. The `history_repair_reconciliations` count is informational: it surfaces post-repair divergence without permanently failing repaired workspaces. */
+async function buildStorageIntegrityCheck(
+  pmRoot: string,
+  items: ItemWithBody[],
+  typeToFolder: Record<string, string>,
+  settings: LoadedValidateSettings,
+): Promise<{ check: ValidateCheck; warnings: string[] }> {
+  const scan = await scanStorageIntegrity(
+    pmRoot,
+    new Set(items.map((item) => item.id)),
+    typeToFolder,
+    {
+      schema: settings.schema,
+      extensionFieldNames: collectRegisteredItemFieldNames(
+        getActiveExtensionRegistrations(),
+      ),
+    },
+  );
+  const warnings: string[] = [];
+  if (scan.unreadable_item_files.length > 0) {
+    warnings.push(
+      `validate_storage_unreadable_items:${scan.unreadable_item_files.length}`,
+    );
+  }
+  if (scan.history_conflict_marker_streams.length > 0) {
+    warnings.push(
+      `validate_storage_history_conflict_markers:${scan.history_conflict_marker_streams.length}`,
+    );
+  }
+  if (scan.history_unparseable_streams.length > 0) {
+    warnings.push(
+      `validate_storage_unparseable_history:${scan.history_unparseable_streams.length}`,
+    );
+  }
+  if (scan.resurrected_items.length > 0) {
+    warnings.push(
+      `validate_storage_resurrected_items:${scan.resurrected_items.length}`,
+    );
+  }
+  if (scan.unparseable_config_files.length > 0) {
+    warnings.push(
+      `validate_storage_unparseable_config:${scan.unparseable_config_files.length}`,
+    );
+  }
+  return {
+    check: {
+      name: "storage_integrity",
+      status: warnings.length === 0 ? "ok" : "error",
+      details: { ...scan },
+    },
+    warnings,
+  };
+}
+
 interface ValidateCheckExecutionState {
   checks: ValidateCheck[];
   warnings: string[];
@@ -3235,6 +3298,21 @@ async function executeRequestedValidateChecks(params: {
     recordValidateCheck(
       state,
       buildFormatVersionCheck(params.items, fullDiagnostics),
+      fixHintsEnabled,
+    );
+  }
+  if (params.requestedChecks.has("storage_integrity")) {
+    recordValidateCheck(
+      state,
+      await buildStorageIntegrityCheck(
+        params.pmRoot,
+        params.items,
+        resolveItemTypeRegistry(
+          params.settings,
+          getActiveExtensionRegistrations(),
+        ).type_to_folder,
+        params.settings,
+      ),
       fixHintsEnabled,
     );
   }

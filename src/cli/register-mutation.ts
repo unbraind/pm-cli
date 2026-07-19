@@ -16,6 +16,7 @@ import {
   type CommanderOptionRegistrationContract,
 } from "../sdk/cli-contracts.js";
 import { BUILTIN_ITEM_TYPE_VALUES } from "../types/index.js";
+import { runMergeDriver, runMergeInstall } from "./commands/merge.js";
 
 // Lowercase set of built-in type names ("epic", "feature", ...) used by the
 // `pm create` positional guard (pm-edge #1, 2026-05-28): if the single
@@ -1116,6 +1117,74 @@ function parseNonNegativeIntFlag(
     );
   }
   return Number.parseInt(raw, 10);
+}
+
+async function runMergeAction(
+  subcommand: string,
+  artifact: string | undefined,
+  base: string | undefined,
+  ours: string | undefined,
+  theirs: string | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const normalized = subcommand.trim().toLowerCase();
+  if (normalized === "install") {
+    if (artifact !== undefined) {
+      throw new PmCliError(
+        "merge install takes no positional arguments.",
+        EXIT_CODE.USAGE,
+      );
+    }
+    const result = await runMergeInstall(
+      { dryRun: options.dryRun === true },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+  } else if (normalized === "driver") {
+    if (
+      artifact === undefined ||
+      base === undefined ||
+      ours === undefined ||
+      theirs === undefined
+    ) {
+      throw new PmCliError(
+        "merge driver requires <artifact> <base> <ours> <theirs> (git supplies %O %A %B). Example: pm merge driver history %O %A %B",
+        EXIT_CODE.USAGE,
+      );
+    }
+    const result = await runMergeDriver(
+      {
+        artifact,
+        basePath: base,
+        oursPath: ours,
+        theirsPath: theirs,
+        outputPath:
+          typeof options.output === "string" ? options.output : undefined,
+        itemPath:
+          typeof options.itemPath === "string" ? options.itemPath : undefined,
+        prefer:
+          typeof options.prefer === "string" ? options.prefer : undefined,
+      },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+    if (!result.ok) {
+      // Nonzero exit tells git the path is still conflicted; the merged file
+      // stays parseable with the preferred side's values.
+      process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+    }
+  } else {
+    throw new PmCliError(
+      `Unknown merge subcommand "${subcommand}". Supported subcommands: install, driver.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (globalOptions.profile) {
+    printError(`profile:command=merge took_ms=${Date.now() - startedAt}`);
+  }
 }
 
 async function runHistoryCompactAction(
@@ -2884,6 +2953,37 @@ export function registerMutationCommands(program: Command): void {
       "Compact item history streams into a synthetic baseline plus retained tail entries. Pass an item id for one stream, or a bulk selector (--ids/--all-over/--closed/--all-streams) to compact many.",
     )
     .action(runHistoryCompactAction);
+
+  program
+    .command("merge")
+    .argument("<subcommand>", "Merge subcommand: install, driver")
+    .argument(
+      "[artifact]",
+      "driver only: artifact class to merge (item, history, json)",
+    )
+    .argument("[base]", "driver only: common-ancestor file path (git %O)")
+    .argument("[ours]", "driver only: current-branch file path (git %A)")
+    .argument("[theirs]", "driver only: other-branch file path (git %B)")
+    .option(
+      "--dry-run",
+      "install only: preview .gitattributes and git config changes without writing",
+    )
+    .option(
+      "--output <path>",
+      "driver only: write the merged content to this path instead of the ours path",
+    )
+    .option(
+      "--item-path <path>",
+      "driver only: original repository-relative path supplied by git as %P",
+    )
+    .option(
+      "--prefer <side>",
+      "driver only: side that wins unresolvable conflicts (ours|theirs; default ours)",
+    )
+    .description(
+      "Install or run field-aware Git merge drivers for tracker data.",
+    )
+    .action(runMergeAction);
 
   const schemaCommand = program
     .command("schema")

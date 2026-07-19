@@ -42,6 +42,13 @@ function createTask(context: TempPmContext, title: string): string {
   });
 }
 
+it("selects storage integrity explicitly", async () => {
+  await withTempPmPath(async (context) => {
+    const result = await runValidate({ checkStorageIntegrity: true }, { path: context.pmPath });
+    expect(result.checks.map((check) => check.name)).toEqual(["storage_integrity"]);
+  });
+});
+
 function seedDependencyCycle(context: TempPmContext): [string, string, string] {
   const first = createTask(context, "validate-lifecycle-dependency-cycle-a");
   const second = createTask(context, "validate-lifecycle-dependency-cycle-b");
@@ -123,6 +130,7 @@ describe("runValidate", () => {
         "command_references",
         "history_drift",
         "format_version",
+        "storage_integrity",
       ]);
     });
   });

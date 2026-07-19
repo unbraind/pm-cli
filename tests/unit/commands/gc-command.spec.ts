@@ -36,7 +36,7 @@ describe("runGc", () => {
       const gc = await runGc({ path: context.pmPath });
       expect(gc.ok).toBe(true);
       expect(gc.dry_run).toBe(false);
-      expect(gc.scope).toEqual(["index", "embeddings", "runtime", "locks", "checkpoints"]);
+      expect(gc.scope).toEqual(["index", "embeddings", "runtime", "locks", "checkpoints", "transactions"]);
       expect(gc.removed).toEqual([
         "index/manifest.json",
         "search/embeddings.jsonl",
@@ -51,6 +51,7 @@ describe("runGc", () => {
       ]);
       expect(gc.warnings).toEqual([]);
       expect(gc.checkpoints).toEqual({ scanned: 0, removed: 0, retained: 0, retention_days: 14 });
+      expect(gc.transactions).toEqual({ scanned: 0, removed: 0, retained: 0, retention_days: 14 });
       expect(gc.guidance).toEqual([
         'Search artifacts were removed; the semantic index (including any queued background refresh) is invalidated. Run "pm install search-advanced --project" if reindex is unavailable, then "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
       ]);
@@ -126,7 +127,7 @@ describe("runGc", () => {
       );
       expect(gc.ok).toBe(true);
       expect(gc.dry_run).toBe(true);
-      expect(gc.scope).toEqual(["index", "embeddings", "runtime", "locks", "checkpoints"]);
+      expect(gc.scope).toEqual(["index", "embeddings", "runtime", "locks", "checkpoints", "transactions"]);
       expect(gc.removed).toEqual([
         "index/manifest.json",
         "search/embeddings.jsonl",
@@ -320,6 +321,38 @@ describe("runGc", () => {
       const gc = await runGc({ path: context.pmPath }, { scope: ["checkpoints"] });
       expect(gc.checkpoints).toEqual({ scanned: 1, removed: 1, retained: 0, retention_days: 3 });
       expect(gc.removed).toEqual(["checkpoints/update-many/c.json"]);
+    });
+  });
+
+  it("removes aged terminal transaction receipts and dispatches extension hooks", async () => {
+    await withTempPmPath(async (context) => {
+      const journalDir = path.join(context.pmPath, "transactions", "sdk");
+      await mkdir(journalDir, { recursive: true });
+      await writeFile(
+        path.join(journalDir, "old.json"),
+        JSON.stringify({ status: "committed", updatedAt: "2026-01-01T00:00:00.000Z" }),
+        "utf8",
+      );
+      const events: string[] = [];
+      setActiveExtensionHooks({
+        beforeCommand: [],
+        afterCommand: [],
+        onRead: [{ layer: "project", name: "transaction-read", run: ({ path: file }) => { events.push(`read:${path.basename(file)}`); } }],
+        onWrite: [{ layer: "project", name: "transaction-write", run: ({ path: file, op }) => { events.push(`write:${op}:${path.basename(file)}`); } }],
+        onIndex: [],
+      });
+
+      const gc = await runGc({ path: context.pmPath }, { scope: ["transactions"] });
+      expect(gc.removed).toEqual(["transactions/sdk/old.json"]);
+      expect(gc.transactions).toEqual({ scanned: 1, removed: 1, retained: 0, retention_days: 14 });
+      expect(gc.guidance).toEqual([
+        "Aged terminal workspace-transaction journals were removed; replaying those transactionIds re-executes their idempotent steps instead of short-circuiting.",
+      ]);
+      expect(events).toEqual([
+        "read:settings.json",
+        "read:old.json",
+        "write:gc:transaction_journal_remove:old.json",
+      ]);
     });
   });
 

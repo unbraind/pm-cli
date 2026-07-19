@@ -1152,7 +1152,7 @@ export interface PmSettings {
     /** Bounded wait budget (milliseconds) for acquiring a contended item lock before surfacing lock_conflict. 0 disables waiting (fail-fast). Overridable per invocation via PM_LOCK_WAIT_MS. */
     wait_ms: number;
   };
-  /** Retention policy for bulk-mutation rollback checkpoints written by `update-many`/`close-many`. `pm gc --scope checkpoints` prunes checkpoint files older than `retention_days`; checkpoints with an unparseable `created_at` are retained (safety-first, mirroring the stale-lock sweep). */
+  /** Retention policy for local crash-recovery receipts: bulk-mutation rollback checkpoints written by `update-many`/`close-many` AND terminal SDK workspace-transaction journals under `transactions/sdk/`. `pm gc --scope checkpoints` prunes checkpoint files older than `retention_days`; `pm gc --scope transactions` prunes committed/compensated journals older than the same window. Unparseable receipts and in-flight journals are always retained (safety-first, mirroring the stale-lock sweep). */
   checkpoints: {
     retention_days: number;
   };

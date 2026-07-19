@@ -1470,7 +1470,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
         gc)
           _arguments \\
             '--dry-run[Preview cleanup targets without deleting files]' \\
-            '--scope[Limit cleanup to one or more scopes: index, embeddings, runtime, locks, checkpoints]:scope' \\
+            '--scope[Limit cleanup to one or more scopes: index, embeddings, runtime, locks, checkpoints, transactions]:scope' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;

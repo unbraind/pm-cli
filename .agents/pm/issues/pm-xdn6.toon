@@ -2,19 +2,35 @@ id: pm-xdn6
 title: "GH-609: settings.json/schema/*.json have no merge driver; validate reports ok:true by silently falling back to defaults on unparseable config"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: config,merge,multi-agent
 created_at: "2026-07-19T03:41:16.841Z"
-updated_at: "2026-07-19T03:43:08.238Z"
+updated_at: "2026-07-19T05:39:54.679Z"
+closed_at: "2026-07-19T05:39:16.001Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: Unparseable settings.json/schema files (e.g. containing conflict markers) fail validate with an explicit config-integrity check instead of silent default fallback; key-level JSON merge guidance or driver documented for config/schema; repro from GH-609 becomes a regression test
 parent: pm-g5sx
 risk: medium
 confidence: high
-dependencies[3]{id,kind,created_at,author,source_kind}:
+resolution: Fixed by the broad SDK/CLI merge-safety delivery with automated regression and packed Git acceptance proof.
+expected_result: Concurrent branches preserve project context in parseable tracker artifacts and expose deterministic validation/recovery gates.
+actual_result: Field-aware drivers preserve item/history/config changes; validation detects corruption or drift; documented repair restores strict verification; all repository gates pass.
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-bgcu,related,"2026-07-19T03:41:16.841Z",null,null
   pm-dijg,related,"2026-07-19T03:41:16.841Z",null,null
   pm-cxyv,related,"2026-07-19T03:42:32.012Z",null,null
+  pm-wc1r,related,"2026-07-19T05:38:20.801Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-19T05:38:31.114Z",maintainer-agent,"Evidence: nested JSON three-way merge preserves disjoint keys, honors add/delete changes, reports leaf conflicts, and always writes parseable canonical JSON; core contracts now expose merge flags correctly."
+  "2026-07-19T05:39:15.136Z",maintainer-agent,"Final local gates: 315 test files / 5,944 tests passed with 100% statements, branches, functions, and lines; typecheck, ESLint, jscpd zero clones, static complexity/docstring/package-boundary checks, token budgets, docs/skills links, contracts snapshot, and secret scan passed."
+files[2]{path,scope,note}:
+  src/sdk/governance/storage-integrity.ts,project,settings and schema parse-integrity detection
+  src/sdk/merge/three-way.ts,project,key-level JSON merge primitive
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/storage-integrity.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,configuration merge and integrity policy
+close_reason: Implemented and verified in the broad tracker merge-safety SDK/CLI delivery; linked files/tests/docs and packed Git acceptance evidence recorded.
 body: "GH-609. settings.json + schema/{types,statuses,fields,workflows}.json are single git-tracked JSON files with no merge driver; conflicting edits leave conflict markers → invalid JSON → pm silently falls back to defaults and validate reports ok:true, so governance settings/custom schema are silently lost behind a green gate. Same masking class as pm-cxyv at the config layer. Fix direction: config-integrity validate check (parse failure = hard fail) + key-level JSON merge guidance/driver."

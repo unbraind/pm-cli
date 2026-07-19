@@ -155,6 +155,37 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     summary:
       "A history stream contains Git conflict markers; resolve the markers, then re-anchor the chain.",
   },
+  // --- pm validate: storage_integrity (post-merge corruption detection) ---
+  {
+    code: "validate_storage_unreadable_items",
+    command: "pm validate --check-storage-integrity --verbose-diagnostics",
+    summary:
+      "An on-disk item file cannot be parsed (for example a botched merge resolution with stale TOON count headers); repair or restore the file at the reported path — list commands silently skip it while pm get hard-errors.",
+  },
+  {
+    code: "validate_storage_history_conflict_markers",
+    command: "pm merge driver history <base> <ours> <theirs>",
+    summary:
+      "A history stream contains unresolved Git conflict markers; re-merge it with the pm history merge driver (or resolve the markers by hand), then run pm history-repair for the item.",
+  },
+  {
+    code: "validate_storage_unparseable_history",
+    command: "pm history-repair <id>",
+    summary:
+      "A history stream's newest line is not valid JSONL; repair or restore the stream before further mutations.",
+  },
+  {
+    code: "validate_storage_resurrected_items",
+    command: "pm delete <id>",
+    summary:
+      "A live item's newest history operation is a delete: a delete/modify merge silently resurrected it. Decide the winner — re-delete the item, or keep it and append a mutation documenting the revival.",
+  },
+  {
+    code: "validate_storage_unparseable_config",
+    command: "pm merge driver json <base> <ours> <theirs>",
+    summary:
+      "settings.json or a schema file cannot be parsed, so pm silently falls back to defaults; re-merge it with the pm JSON merge driver or fix the file by hand, then rerun pm validate.",
+  },
   // --- pm health (integrity) + pm validate (format_version): item format version ---
   {
     code: "integrity_item_outdated_format_version",

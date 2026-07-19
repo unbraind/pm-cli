@@ -2,17 +2,32 @@ id: pm-9q2t
 title: "GH-606: concurrent note/tag appends hard-conflict the .toon item file; stale count headers corrupt the item beyond parsing"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: merge,multi-agent,toon
 created_at: "2026-07-19T03:40:51.042Z"
-updated_at: "2026-07-19T03:42:50.641Z"
+updated_at: "2026-07-19T05:39:50.302Z"
+closed_at: "2026-07-19T05:39:00.900Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Commutative appends (notes/tags/tests) to the same item on two branches merge cleanly via a .toon-aware merge driver or count-header-free serialization; a naive hand-resolution with wrong count headers is detected by validate as a hard failure, not silently skipped; repro from GH-606 becomes a regression test"
 parent: pm-g5sx
 risk: high
 confidence: high
+resolution: Fixed by the broad SDK/CLI merge-safety delivery with automated regression and packed Git acceptance proof.
+expected_result: Concurrent branches preserve project context in parseable tracker artifacts and expose deterministic validation/recovery gates.
+actual_result: Field-aware drivers preserve item/history/config changes; validation detects corruption or drift; documented repair restores strict verification; all repository gates pass.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-wc1r,related,"2026-07-19T03:40:59.824Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-19T04:44:37.415Z",maintainer-agent,"Progress evidence: concurrent collection appends merge through typed set-union semantics and canonical serialization recomputes count headers; regression coverage passes."
+  "2026-07-19T05:38:26.923Z",maintainer-agent,"Evidence: canonical item serialization recomputes TOON collection counts after union merges; add/add and concurrent collection fixtures cover required empty tags, notes, deletions, and disjoint appends."
+  "2026-07-19T05:38:59.968Z",maintainer-agent,"Final local gates: 315 test files / 5,944 tests passed with 100% statements, branches, functions, and lines; typecheck, ESLint, jscpd zero clones, static complexity/docstring/package-boundary checks, token budgets, docs/skills links, contracts snapshot, and secret scan passed."
+files[1]{path,scope,note}:
+  src/sdk/merge/three-way.ts,project,collection-union item merge with canonical TOON serialization
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,TOON merge semantics
+close_reason: Implemented and verified in the broad tracker merge-safety SDK/CLI delivery; linked files/tests/docs and packed Git acceptance evidence recorded.
 body: "GH-606. .toon item files use count-prefixed array headers (notes[N]{...}, tags[N], tests[N]); concurrent commutative appends hard-conflict, and hand-resolution with a stale count makes the item unreadable by pm get while validate skips it silently (pm-cxyv). Authoritative-state twin of pm-wc1r (history layer). Fix direction: .toon-aware merge driver or count-header-free serialization; at minimum validate must hard-fail on header/data disagreement."

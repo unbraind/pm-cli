@@ -570,6 +570,14 @@ async function runHistoryAction(
     );
   }
   const field = typeof options.field === "string" ? options.field : undefined;
+  const strictExit =
+    Boolean(options.strictExit) || Boolean(options.failOnWarn);
+  if (strictExit && !options.verify) {
+    throw new PmCliError(
+      "--strict-exit requires --verify (it gates on the verification result).",
+      EXIT_CODE.USAGE,
+    );
+  }
   const result = await runHistory(
     id,
     {
@@ -585,6 +593,12 @@ async function runHistoryAction(
     result,
     resolveReadCommandOutputFormat("History", options.format, globalOptions),
   );
+  // GH-604: without --strict-exit a broken chain still exits 0 (read-only
+  // inspection default); with it, verification.ok:false becomes a nonzero exit
+  // so CI and merge hooks can gate on `pm history <id> --verify --strict-exit`.
+  if (strictExit && result.verification && !result.verification.ok) {
+    process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+  }
   if (globalOptions.profile) {
     printError(`profile:command=history took_ms=${Date.now() - startedAt}`);
   }
@@ -1101,6 +1115,11 @@ export function registerListQueryCommands(
         "--verify",
         "Verify hash chain and replay integrity for the full history stream",
       )
+      .option(
+        "--strict-exit",
+        "With --verify, exit nonzero when verification fails (merge-safety gate parity with pm validate)",
+      )
+      .option("--fail-on-warn", "Alias for --strict-exit")
       .option("--format <value>", "History output format override: json|toon")
       .description("Show item history entries.")
       .action(runHistoryAction);

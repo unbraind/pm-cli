@@ -640,6 +640,46 @@ describe("history-repair --all (bulk drift repair)", () => {
     });
   });
 
+  it("retains per-stream reconciliation reports and warnings in bulk mode", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Bulk reconciliation report");
+      expect(context.runCli(["update", id, "--status", "in_progress"]).code).toBe(0);
+      await tamperChain(historyPath(context, id));
+      const originalReadLocatedItem = itemStoreModule.readLocatedItem;
+      const readLocatedSpy = vi.spyOn(itemStoreModule, "readLocatedItem").mockImplementation(async (...args) => {
+        const loaded = await originalReadLocatedItem(...(args as Parameters<typeof itemStoreModule.readLocatedItem>));
+        return {
+          ...loaded,
+          document: {
+            ...loaded.document,
+            metadata: {
+              ...loaded.document.metadata,
+              title: `${loaded.document.metadata.title} (disk wins)`,
+            },
+          },
+        };
+      });
+
+      try {
+        const result = await runHistoryRepairAll({ dryRun: true }, { path: context.pmPath });
+        expect(result.streams[0]).toMatchObject({
+          id,
+          reconciliation: {
+            reverted_fields: ["title"],
+          },
+        });
+        expect(result.streams[0].warnings).toEqual(
+          expect.arrayContaining([expect.stringMatching(/^history_repair_discarded_authors:/)]),
+        );
+        expect(result.warnings).toEqual(
+          expect.arrayContaining([expect.stringMatching(new RegExp(`^${id}:history_repair_reconcile_discards_events:`))]),
+        );
+      } finally {
+        readLocatedSpy.mockRestore();
+      }
+    });
+  });
+
   it("reports skipped-clean and string-failure rows in bulk repair output", async () => {
     await withTempPmPath(async (context) => {
       const skippedId = createItem(context, "Bulk skipped clean");

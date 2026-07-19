@@ -433,6 +433,7 @@ async function runValidateAction(
       verboseDiagnostics: Boolean(options.verboseDiagnostics),
       allAffectedIds: Boolean(options.allAffectedIds),
       checkHistoryDrift: Boolean(options.checkHistoryDrift),
+      checkStorageIntegrity: Boolean(options.checkStorageIntegrity),
       fixHints: Boolean(options.fixHints),
       autoFix: Boolean(options.autoFix),
       dryRun: Boolean(options.dryRun),
@@ -980,6 +981,10 @@ export function registerOperationCommands(program: Command): void {
       "Remove stale linked-file/doc LINKS whose paths classified as deleted (never touches real files)",
     )
     .option("--check-history-drift", "Run item/history hash drift checks")
+    .option(
+      "--check-storage-integrity",
+      "Run the post-merge storage-integrity check (unreadable items, history conflict markers, resurrected deletes, unparseable config/schema)",
+    )
     .action(runValidateAction);
 
   program
@@ -990,7 +995,7 @@ export function registerOperationCommands(program: Command): void {
     )
     .option(
       "--scope <value>",
-      "Limit cleanup to one or more scopes (comma-separated or repeatable): index, embeddings, runtime, locks, checkpoints",
+      "Limit cleanup to one or more scopes (comma-separated or repeatable): index, embeddings, runtime, locks, checkpoints, transactions",
       collect,
     )
     .description(

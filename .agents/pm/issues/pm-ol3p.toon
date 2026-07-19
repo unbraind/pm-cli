@@ -2,18 +2,33 @@ id: pm-ol3p
 title: "GH-604: pm history <id> --verify exits 0 when verification.ok is false; no --strict-exit — unusable as a merge-safety gate"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: exit-codes,history,merge
 created_at: "2026-07-19T03:41:33.654Z"
-updated_at: "2026-07-19T03:43:09.441Z"
+updated_at: "2026-07-19T05:39:53.241Z"
+closed_at: "2026-07-19T05:39:11.354Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "pm history --verify gains --strict-exit (parity with pm validate) making verification.ok:false exit nonzero; default behavior documented; contracts/completions/docs updated per new-flag checklist; repro from GH-604 becomes a regression test"
 parent: pm-g5sx
 risk: low
 confidence: high
+resolution: Fixed by the broad SDK/CLI merge-safety delivery with automated regression and packed Git acceptance proof.
+expected_result: Concurrent branches preserve project context in parseable tracker artifacts and expose deterministic validation/recovery gates.
+actual_result: Field-aware drivers preserve item/history/config changes; validation detects corruption or drift; documented repair restores strict verification; all repository gates pass.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-9yfo,related,"2026-07-19T03:41:33.654Z",null,null
   pm-wc1r,related,"2026-07-19T03:41:33.654Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-19T05:38:29.789Z",maintainer-agent,"Evidence: history --verify --strict-exit and --fail-on-warn aliases are in CLI/runtime contracts; source adapter tests prove usage rejection and nonzero broken-chain gating; packed acceptance proved detection before repair and success after repair."
+  "2026-07-19T05:39:10.301Z",maintainer-agent,"Final local gates: 315 test files / 5,944 tests passed with 100% statements, branches, functions, and lines; typecheck, ESLint, jscpd zero clones, static complexity/docstring/package-boundary checks, token budgets, docs/skills links, contracts snapshot, and secret scan passed."
+files[2]{path,scope,note}:
+  src/cli/register-list-query.ts,project,history verify strict exit gate
+  src/sdk/cli-contracts/flag-contracts.ts,project,strict-exit runtime flag contract
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/register-list-query.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,strict history verification gate
+close_reason: Implemented and verified in the broad tracker merge-safety SDK/CLI delivery; linked files/tests/docs and packed Git acceptance evidence recorded.
 body: "GH-604. pm history <id> --verify prints verification.ok:false on a forked/broken chain but still exits 0, and there is no --strict-exit (validate has --strict-exit/--fail-on-warn). CI/merge hooks cannot gate on the obvious command. Fix: add --strict-exit via the full new-flag checklist; document default vs strict behavior."
