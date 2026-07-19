@@ -1,0 +1,20 @@
+id: pm-pibw
+title: "GH-600: item id generation not collision-safe across branches/concurrent agents (4 base36 chars, local-disk-only uniqueness)"
+description: ""
+type: Issue
+status: open
+priority: 2
+tags[3]: id-allocation,merge,multi-agent
+created_at: "2026-07-19T03:41:50.955Z"
+updated_at: "2026-07-19T03:43:29.954Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: "Cross-branch/concurrent id collision risk addressed: longer or content-derived id entropy option, and/or post-merge add/add collision detection in validate with remediation; collision probability documented for the default prefix; design coordinated with pm-khdq same-disk TOCTOU; repro/analysis from GH-600 recorded as tests"
+parent: pm-dj98
+risk: medium
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-g5sx,related,"2026-07-19T03:41:50.955Z",null,null
+  pm-khdq,related,"2026-07-19T03:41:50.955Z",null,null
+  pm-kl19,related,"2026-07-19T03:41:50.955Z",null,null
+body: "GH-600. Ids are prefix + 4 random base36 chars (~1.68M space); uniqueness enforced only via local on-disk idExists — blind to other branches and concurrent processes. Two agents branching from the same point can mint the same id for different items → silent identity collision surfacing as add/add merge conflict or ambiguous item. Same-disk sibling: pm-khdq (TOCTOU). Fix direction: entropy/length option or content-derived component + post-merge add/add collision detection in validate; document collision math per prefix length."

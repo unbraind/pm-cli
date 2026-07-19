@@ -1,0 +1,20 @@
+id: pm-wwfd
+title: "GH-611: delete/modify merge silently resurrects deleted items and leaves conflict markers in history/*.jsonl while validate stays green"
+description: ""
+type: Issue
+status: open
+priority: 1
+tags[3]: history,merge,multi-agent
+created_at: "2026-07-19T03:41:15.424Z"
+updated_at: "2026-07-19T03:42:53.329Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: "Post-merge validate detects a live .toon whose history contains a delete op (resurrection candidate) and history files containing git conflict markers, failing with remediation hints; documented delete-vs-edit merge policy states which side wins and how to honor the losing side; repro from GH-611 becomes a regression test"
+parent: pm-g5sx
+risk: high
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-9q2t,related,"2026-07-19T03:41:15.424Z",null,null
+  pm-wc1r,related,"2026-07-19T03:41:15.424Z",null,null
+  pm-klo8,related,"2026-07-19T03:42:33.587Z",null,null
+body: "GH-611. pm delete removes .toon but appends a delete op to history/<id>.jsonl (file kept). Delete-on-A vs edit-on-B merge: git delete/modify resolution keeps B's .toon → deleted item silently resurrects; history left with conflict markers; validate ok:true. Fix direction: validate flags live .toon whose history ends in delete op (resurrection candidate) + conflict-marker scan in history files; document delete-vs-edit merge policy."

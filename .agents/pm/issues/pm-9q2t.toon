@@ -1,0 +1,18 @@
+id: pm-9q2t
+title: "GH-606: concurrent note/tag appends hard-conflict the .toon item file; stale count headers corrupt the item beyond parsing"
+description: ""
+type: Issue
+status: open
+priority: 1
+tags[3]: merge,multi-agent,toon
+created_at: "2026-07-19T03:40:51.042Z"
+updated_at: "2026-07-19T03:42:50.641Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "Commutative appends (notes/tags/tests) to the same item on two branches merge cleanly via a .toon-aware merge driver or count-header-free serialization; a naive hand-resolution with wrong count headers is detected by validate as a hard failure, not silently skipped; repro from GH-606 becomes a regression test"
+parent: pm-g5sx
+risk: high
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-wc1r,related,"2026-07-19T03:40:59.824Z",null,null
+body: "GH-606. .toon item files use count-prefixed array headers (notes[N]{...}, tags[N], tests[N]); concurrent commutative appends hard-conflict, and hand-resolution with a stale count makes the item unreadable by pm get while validate skips it silently (pm-cxyv). Authoritative-state twin of pm-wc1r (history layer). Fix direction: .toon-aware merge driver or count-header-free serialization; at minimum validate must hard-fail on header/data disagreement."

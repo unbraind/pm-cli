@@ -1,0 +1,19 @@
+id: pm-ol3p
+title: "GH-604: pm history <id> --verify exits 0 when verification.ok is false; no --strict-exit — unusable as a merge-safety gate"
+description: ""
+type: Issue
+status: open
+priority: 2
+tags[3]: exit-codes,history,merge
+created_at: "2026-07-19T03:41:33.654Z"
+updated_at: "2026-07-19T03:43:09.441Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: "pm history --verify gains --strict-exit (parity with pm validate) making verification.ok:false exit nonzero; default behavior documented; contracts/completions/docs updated per new-flag checklist; repro from GH-604 becomes a regression test"
+parent: pm-g5sx
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-9yfo,related,"2026-07-19T03:41:33.654Z",null,null
+  pm-wc1r,related,"2026-07-19T03:41:33.654Z",null,null
+body: "GH-604. pm history <id> --verify prints verification.ok:false on a forked/broken chain but still exits 0, and there is no --strict-exit (validate has --strict-exit/--fail-on-warn). CI/merge hooks cannot gate on the obvious command. Fix: add --strict-exit via the full new-flag checklist; document default vs strict behavior."

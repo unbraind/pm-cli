@@ -1,0 +1,21 @@
+id: pm-gpo7
+title: "GH-603: history-repair cements cross-author data loss after a lossy merge — reverting patch discards the other author's mutation, validate fully green"
+description: ""
+type: Issue
+status: open
+priority: 1
+tags[3]: history,merge,multi-agent
+created_at: "2026-07-19T03:41:32.506Z"
+updated_at: "2026-07-19T03:43:08.808Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: history-repair surfaces an explicit revert/data-loss warning naming the discarded authors' events when re-anchoring discards effective-state mutations; validate or health exposes a post-repair divergence signal instead of full green; documented recovery path to re-apply discarded mutations; repro from GH-603 becomes a regression test
+parent: pm-g5sx
+risk: high
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-h90s,related,"2026-07-19T03:41:32.506Z",null,null
+  pm-u14c,related,"2026-07-19T03:41:32.506Z",null,null
+  pm-wc1r,related,"2026-07-19T03:41:32.506Z",null,null
+  pm-ol3p,related,"2026-07-19T03:42:30.249Z",null,null
+body: "GH-603. After a lossy merge resolution (.toon taken from one side, history union-merged), pm history-repair re-anchors by appending a reverting patch that discards the other author's mutation from effective state; validate then reports drift 0 / ok:true. A teammate agent's change is reverted invisibly — data loss is cemented. Fix direction: repair must emit an explicit revert warning naming discarded events/authors, expose a post-repair divergence signal in validate/health, and document a re-application recovery path. Detection half = pm-ol3p strict verify gate."

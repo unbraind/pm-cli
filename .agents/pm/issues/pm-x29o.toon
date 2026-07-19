@@ -1,0 +1,20 @@
+id: pm-x29o
+title: "GH-601: SDK mutation option bags and projected list items are Record<string,unknown> — typos and wrong types compile clean under strict"
+description: ""
+type: Issue
+status: open
+priority: 2
+tags[3]: dx,sdk,type-safety
+created_at: "2026-07-19T03:42:08.975Z"
+updated_at: "2026-07-19T03:43:33.684Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "Public SDK mutation inputs are typed per-action (derived from flag/schema contracts, not hand-written) so field typos and wrong value types fail tsc under strict; projected list rows expose typed id/core fields; no runtime behavior change; typed surface covered by a type-level test (tsd or equivalent)"
+parent: pm-usfg
+risk: medium
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-9x6e,related,"2026-07-19T03:42:08.975Z",null,null
+  pm-ju83,related,"2026-07-19T03:42:08.975Z",null,null
+  pm-muhw,related,"2026-07-19T03:42:08.975Z",null,null
+body: "GH-601. dist/sdk/runtime.d.ts: PmActionOptions = Record<string, unknown> for mutation inputs; projected list rows equally untyped — field typos/wrong value types compile clean under strict and fail at runtime; listed-item id access not type-safe. Fix direction: derive per-action input types from the existing flag/schema contracts (single source, no hand-written duplicates) + typed projection rows; add type-level tests. Serves SDK-first (pm-usfg) consumer contract quality."

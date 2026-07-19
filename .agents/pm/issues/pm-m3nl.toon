@@ -1,0 +1,19 @@
+id: pm-m3nl
+title: "GH-608: concurrent edits to different fields always conflict on the shared updated_at scalar (no field-level .toon merge)"
+description: ""
+type: Issue
+status: open
+priority: 2
+tags[3]: merge,multi-agent,toon
+created_at: "2026-07-19T03:41:13.881Z"
+updated_at: "2026-07-19T03:42:52.037Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: "Two branches editing disjoint fields of one item merge cleanly (updated_at resolved deterministically, e.g. max-wins merge driver or line-splitting serialization); repro from GH-608 becomes a regression test; documented in merge-semantics docs"
+parent: pm-g5sx
+risk: medium
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-9q2t,related,"2026-07-19T03:41:13.881Z",null,null
+  pm-wc1r,related,"2026-07-19T03:41:13.881Z",null,null
+body: "GH-608. Disjoint-field concurrent edits (A: title, B: body) always conflict solely on the shared updated_at scalar every pm update rewrites. Most common cooperative case, fails 100%. Distinct from pm-9q2t (count headers) and pm-wc1r (history chain). Fix direction: deterministic updated_at resolution (max-wins merge driver) or serialization that isolates volatile scalars from semantic fields."

@@ -1,0 +1,20 @@
+id: pm-n1xx
+title: "GH-602: SDK .d.ts require @types/node but package does not declare it — tsc errors inside node_modules for consumers; plus shipped JSDoc defects"
+description: ""
+type: Issue
+status: open
+priority: 2
+tags[3]: dx,packaging,sdk
+created_at: "2026-07-19T03:42:10.160Z"
+updated_at: "2026-07-19T03:43:34.648Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: "@types/node declared (peerDependency with peerDependenciesMeta optional, or dependency) so a strict TS consumer compiles after plain install; shipped JSDoc typo/legacy-flag defects fixed; packed-tarball TS consumer smoke covers the case"
+parent: pm-usfg
+risk: low
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-o8um,related,"2026-07-19T03:42:10.160Z",null,null
+  pm-quzx,related,"2026-07-19T03:42:10.160Z",null,null
+  pm-x29o,related,"2026-07-19T03:42:28.393Z",null,null
+body: "GH-602. Shipped .d.ts reference Node globals/modules that only resolve with @types/node, but package declares only typebox in peerDependencies — strict TS consumers get tsc errors from inside node_modules with no guidance. Fix: declare @types/node (peer + peerDependenciesMeta.optional or dep), fix the shipped JSDoc typo/legacy-flag defects, extend packed-tarball TS consumer smoke."

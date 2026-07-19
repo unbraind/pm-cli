@@ -1,0 +1,21 @@
+id: pm-wrss
+title: "GH-595: pm list --json envelope — pagination keys vanish when results fit one page and filters emits ~22 null keys (~44% bloat)"
+description: ""
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,json-envelope,token-efficiency
+created_at: "2026-07-19T03:41:53.393Z"
+updated_at: "2026-07-19T03:43:32.617Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: Pagination keys (total/has_more/truncated/next_cursor) are stably present on every list --json envelope regardless of truncation; filters object omits null/unset keys (or lean mode does); measured token reduction recorded; contracts and cursor-fingerprint semantics stay consistent with pm-fgih
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-cfed,related,"2026-07-19T03:41:53.393Z",null,null
+  pm-fgih,related,"2026-07-19T03:41:53.393Z",null,null
+  pm-gdi7,related,"2026-07-19T03:41:53.393Z",null,null
+  pm-nilh,related,"2026-07-19T03:41:53.393Z",null,null
+body: "GH-595. pm list --json: (A) total/has_more/truncated/next_cursor present only when truncated — absent exactly when an agent wants total without paginating; (B) filters object emits all ~24 keys with ~22 null (~44% envelope bloat). Fix: stable pagination key-set on every envelope + null-omission (lean semantics live in pm-cfed; cursor fingerprint semantics pm-fgih). PR#605 named this reconciled; item makes it canonical."

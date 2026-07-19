@@ -1,0 +1,20 @@
+id: pm-xdn6
+title: "GH-609: settings.json/schema/*.json have no merge driver; validate reports ok:true by silently falling back to defaults on unparseable config"
+description: ""
+type: Issue
+status: open
+priority: 2
+tags[3]: config,merge,multi-agent
+created_at: "2026-07-19T03:41:16.841Z"
+updated_at: "2026-07-19T03:43:08.238Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: Unparseable settings.json/schema files (e.g. containing conflict markers) fail validate with an explicit config-integrity check instead of silent default fallback; key-level JSON merge guidance or driver documented for config/schema; repro from GH-609 becomes a regression test
+parent: pm-g5sx
+risk: medium
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-bgcu,related,"2026-07-19T03:41:16.841Z",null,null
+  pm-dijg,related,"2026-07-19T03:41:16.841Z",null,null
+  pm-cxyv,related,"2026-07-19T03:42:32.012Z",null,null
+body: "GH-609. settings.json + schema/{types,statuses,fields,workflows}.json are single git-tracked JSON files with no merge driver; conflicting edits leave conflict markers → invalid JSON → pm silently falls back to defaults and validate reports ok:true, so governance settings/custom schema are silently lost behind a green gate. Same masking class as pm-cxyv at the config layer. Fix direction: config-integrity validate check (parse failure = hard fail) + key-level JSON merge guidance/driver."
