@@ -94,6 +94,11 @@ function toPosixRelative(fromPath: string, toPath: string): string {
   return path.relative(fromPath, toPath).replaceAll("\\", "/");
 }
 
+/** Encode one Git attributes pattern with C-style quoting so whitespace, backslashes, and quotation marks remain part of the repository path instead of being parsed as attribute separators. */
+function quoteGitAttributePattern(value: string): string {
+  return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
+}
+
 function buildMergeAttributePatterns(
   trackerRelativeRoot: string,
   typeFolders: string[],
@@ -101,12 +106,12 @@ function buildMergeAttributePatterns(
   const prefix = trackerRelativeRoot.length > 0 ? `${trackerRelativeRoot}/` : "";
   const patterns: string[] = [];
   for (const folder of typeFolders) {
-    patterns.push(`${prefix}${folder}/*.toon merge=pm-item`);
-    patterns.push(`${prefix}${folder}/*.md merge=pm-item`);
+    patterns.push(`${quoteGitAttributePattern(`${prefix}${folder}/*.toon`)} merge=pm-item`);
+    patterns.push(`${quoteGitAttributePattern(`${prefix}${folder}/*.md`)} merge=pm-item`);
   }
-  patterns.push(`${prefix}history/*.jsonl merge=pm-history`);
-  patterns.push(`${prefix}settings.json merge=pm-json`);
-  patterns.push(`${prefix}schema/*.json merge=pm-json`);
+  patterns.push(`${quoteGitAttributePattern(`${prefix}history/*.jsonl`)} merge=pm-history`);
+  patterns.push(`${quoteGitAttributePattern(`${prefix}settings.json`)} merge=pm-json`);
+  patterns.push(`${quoteGitAttributePattern(`${prefix}schema/*.json`)} merge=pm-json`);
   return patterns;
 }
 

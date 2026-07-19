@@ -385,7 +385,7 @@ describe("public merge-safety SDK primitives", () => {
       const preview = await runMergeInstall({ dryRun: true }, { path: context.pmPath });
       expect(preview.dry_run).toBe(true);
       expect(preview.gitattributes.changed).toBe(true);
-      expect(preview.gitattributes.patterns).toContain(".agents/pm/tasks/*.toon merge=pm-item");
+      expect(preview.gitattributes.patterns).toContain('".agents/pm/tasks/*.toon" merge=pm-item');
 
       const installed = await runMergeInstall({}, { path: context.pmPath });
       expect(installed.git_config).toHaveLength(6);
@@ -413,8 +413,26 @@ describe("public merge-safety SDK primitives", () => {
       );
       await writeFile(path.join(context.tempRoot, ".gitattributes"), "*.bin binary\n", "utf8");
       expect((await runMergeInstall({ dryRun: true }, { path: context.tempRoot })).gitattributes.patterns).toContain(
-        "tasks/*.toon merge=pm-item",
+        '"tasks/*.toon" merge=pm-item',
       );
+      const spacedRoot = path.join(context.tempRoot, "Project Docs", "pm");
+      await mkdir(spacedRoot, { recursive: true });
+      await writeFile(
+        path.join(spacedRoot, "settings.json"),
+        await readFile(path.join(context.pmPath, "settings.json"), "utf8"),
+        "utf8",
+      );
+      expect(
+        (await runMergeInstall({ dryRun: true }, { path: spacedRoot })).gitattributes.patterns,
+      ).toContain('"Project Docs/pm/tasks/*.toon" merge=pm-item');
+      await runMergeInstall({}, { path: spacedRoot });
+      expect(
+        execFileSync(
+          "git",
+          ["check-attr", "merge", "--", "Project Docs/pm/tasks/pm-space.toon"],
+          { cwd: context.tempRoot, encoding: "utf8" },
+        ),
+      ).toContain("merge: pm-item");
       process.chdir(priorCwd);
 
       const cliPreview = await context.runCliInProcess(
