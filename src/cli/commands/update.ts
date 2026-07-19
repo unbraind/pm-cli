@@ -2379,6 +2379,9 @@ function applyAcceptanceCriteriaAdditiveMutation(
     warnings.push(`remove_ac_unmatched:${unmatched}`);
   }
   const nextValue = mutation.criteria.join("; ");
+  if (document.metadata.acceptance_criteria === nextValue) {
+    return;
+  }
   if (
     nextValue === "" &&
     document.metadata.acceptance_criteria === undefined
@@ -2386,7 +2389,9 @@ function applyAcceptanceCriteriaAdditiveMutation(
     return;
   }
   document.metadata.acceptance_criteria = nextValue;
-  scalarMutationContext.changedFields.push("acceptance_criteria");
+  if (!scalarMutationContext.changedFields.includes("acceptance_criteria")) {
+    scalarMutationContext.changedFields.push("acceptance_criteria");
+  }
 }
 
 function applyOrderMutation(

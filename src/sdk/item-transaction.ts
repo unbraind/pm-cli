@@ -405,6 +405,13 @@ function assertValidBulkMutation(
   mutation: BulkItemMutation,
   index: number,
 ): void {
+  if (
+    mutation === null ||
+    typeof mutation !== "object" ||
+    Array.isArray(mutation)
+  ) {
+    throw new TypeError(`Bulk mutation ${index + 1} must be an object`);
+  }
   if (!["create", "update", "close"].includes(mutation.op)) {
     throw new TypeError(
       `Bulk mutation ${index + 1} op must be create, update, or close`,

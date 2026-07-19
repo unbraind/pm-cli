@@ -2746,6 +2746,8 @@ describe("runUpdate", () => {
       expect(added.item.acceptance_criteria).toBe(
         "first criterion; second criterion; third criterion",
       );
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const historyAfterAddition = await readFile(historyPath, "utf8");
 
       const duplicate = await runUpdate(
         id,
@@ -2756,6 +2758,33 @@ describe("runUpdate", () => {
       expect(duplicate.item.acceptance_criteria).toBe(
         "first criterion; second criterion; third criterion",
       );
+      expect(duplicate.item.updated_at).toBe(added.item.updated_at);
+      expect(await readFile(historyPath, "utf8")).toBe(historyAfterAddition);
+
+      const unmatchedOnly = await runUpdate(
+        id,
+        { removeAc: ["never existed"], message: "unmatched criterion" },
+        { path: context.pmPath },
+      );
+      expect(unmatchedOnly.changed_fields).not.toContain(
+        "acceptance_criteria",
+      );
+      expect(unmatchedOnly.warnings).toContain(
+        "remove_ac_unmatched:never existed",
+      );
+      expect(unmatchedOnly.item.updated_at).toBe(added.item.updated_at);
+      expect(await readFile(historyPath, "utf8")).toBe(historyAfterAddition);
+
+      await expect(
+        runUpdate(
+          id,
+          { addAc: ["invalid; criterion"], message: "reject delimiter" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: { code: "acceptance_criteria_semicolon_forbidden" },
+      });
 
       const removed = await runUpdate(
         id,
@@ -2782,6 +2811,11 @@ describe("runUpdate", () => {
       expect(composed.item.acceptance_criteria).toBe(
         "replaced base; composed addition",
       );
+      expect(
+        composed.changed_fields.filter(
+          (field) => field === "acceptance_criteria",
+        ),
+      ).toHaveLength(1);
 
       const cliUpdate = context.runCli(
         [

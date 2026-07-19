@@ -623,6 +623,11 @@ describe("core/item/parse", () => {
       expect(
         applyAcceptanceCriteriaMutations([], undefined, undefined).criteria,
       ).toEqual([]);
+      expect(() =>
+        applyAcceptanceCriteriaMutations([], ["first; second"], undefined),
+      ).toThrow(
+        'Acceptance criteria added with --add-ac cannot contain ";"',
+      );
     });
   });
 });

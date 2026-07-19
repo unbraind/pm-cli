@@ -1053,6 +1053,36 @@ describe("runUpdateMany", () => {
       );
       expect(fullyMatched.unmatched_ids).toEqual([]);
       expect(fullyMatched.unmatched_count).toBe(0);
+
+      const paged = await runUpdateMany(
+        {
+          list: { ids: `${firstId},${secondId}`, limit: "1" },
+          update: { description: "bulk paged preview" },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(paged.matched_count).toBe(1);
+      expect(paged.unmatched_ids).toEqual([]);
+
+      const filteredExistingId = createTask(
+        context,
+        "bulk-unmatched-filtered-existing",
+        { tags: "different-tag" },
+      );
+      const filtered = await runUpdateMany(
+        {
+          list: {
+            ids: `${firstId},${filteredExistingId}`,
+            tag: "bulk-unmatched",
+          },
+          update: { description: "bulk filtered preview" },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(filtered.matched_count).toBe(1);
+      expect(filtered.unmatched_ids).toEqual([]);
     });
   });
 

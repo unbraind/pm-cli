@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[5]: agent-ux,"area:cli",bulk-ops,data-integrity,gh-issue
 created_at: "2026-07-18T15:09:38.855Z"
-updated_at: "2026-07-19T12:50:17.698Z"
+updated_at: "2026-07-19T13:48:05.382Z"
 assignee: maintainer-agent
 author: codex-root
 estimated_minutes: 90
@@ -17,9 +17,10 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-1h99,related,"2026-07-18T15:09:38.855Z",null,null
   pm-j2ig,related,"2026-07-18T15:09:38.855Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-19T12:41:30.048Z",maintainer-agent,"Evidence: explicit --ids now reports unmatched_ids/unmatched_count consistently in dry-run/apply/no-op envelopes; linked 47-test gate and manual built-CLI partial-success acceptance pass; full coverage is 100/100/100/100."
   "2026-07-19T12:50:17.697Z",maintainer-agent,"Release-gate evidence: pnpm release:gates completed build, typecheck, docs/skills, static quality, package boundary, token budget, 5,963 tests with exact 100/100/100/100 coverage, version/sync, secret scan, packed-package smoke, and package-first dogfood successfully. The aggregate command stopped only at its intentional Greptile stage because Greptile requires a committed diff against main; the local commit will be reviewed before push."
+  "2026-07-19T13:48:05.381Z",maintainer-agent,"PR #616 round-one review follow-up: unmatched_ids now compares requested IDs against a separate unfiltered, unpaged all-status existence query, so limit/offset and additional filters cannot misclassify existing items. Added paged and filtered-existing regression cases."
 notes[1]{created_at,author,text}:
   "2026-07-19T11:59:30.408Z",maintainer-agent,"Implemented: update-many now derives unmatched requested ids (same CSV split as the list ids filter, dedupe, request order) and reports unmatched_ids + unmatched_count on ALL THREE envelopes — dry_run, apply, and the all-skipped no-op result; fields present (possibly empty) whenever --ids was given, absent for filter-based runs. Partial-success apply behavior unchanged. Spec covers mixed valid/missing ids across dry-run/apply/noop, duplicate requested ids, filter-run absence, fully-matched empty array. Manual verify: {\"updated_count\":2,\"unmatched_ids\":[\"pm-zzzz\"],\"unmatched_count\":1}."
 files[2]{path,scope,note}:

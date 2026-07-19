@@ -408,6 +408,24 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
       await expect(
         commitItemMutations({
           ...base,
+          mutations: [null as unknown as BulkItemMutation],
+        }),
+      ).rejects.toThrow("must be an object");
+      await expect(
+        commitItemMutations({
+          ...base,
+          mutations: [[] as unknown as BulkItemMutation],
+        }),
+      ).rejects.toThrow("must be an object");
+      await expect(
+        commitItemMutations({
+          ...base,
+          mutations: ["update" as unknown as BulkItemMutation],
+        }),
+      ).rejects.toThrow("must be an object");
+      await expect(
+        commitItemMutations({
+          ...base,
           mutations: [
             { op: "destroy", id: "pm-x" } as unknown as BulkItemMutation,
           ],

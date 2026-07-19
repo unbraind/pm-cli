@@ -926,10 +926,11 @@ interface UpdateManyPlan {
 // GH-596: an explicit --ids request naming IDs that do not exist must stay
 // machine-detectable without client-side set differencing. The requested list
 // is re-derived here (same CSV split as the list filter) and compared against
-// the matched rows; partial-success apply behavior is preserved.
+// the unfiltered storage corpus so pagination and additional query filters do
+// not misclassify existing items as nonexistent.
 const collectUnmatchedRequestedIds = (
   rawIds: unknown,
-  matchedItems: ListedItem[],
+  existingItems: ReadonlyArray<{ id: string }>,
 ): string[] | undefined => {
   if (rawIds == null) {
     return undefined;
@@ -942,8 +943,8 @@ const collectUnmatchedRequestedIds = (
         .filter((entry) => entry.length > 0),
     ),
   ];
-  const matched = new Set(matchedItems.map((item) => item.id));
-  return requested.filter((id) => !matched.has(id));
+  const existing = new Set(existingItems.map((item) => item.id));
+  return requested.filter((id) => !existing.has(id));
 };
 
 /** Builds the shared unmatched-id envelope fields for one prepared plan. */
@@ -1041,6 +1042,20 @@ const buildUpdateManyPlan = async (params: {
       params.options.update,
     ),
   );
+  const existenceItems =
+    params.options.list?.ids == null
+      ? []
+      : (
+          await runList(
+            undefined,
+            {
+              ids: params.options.list.ids,
+              noTruncate: true,
+              full: true,
+            },
+            params.global,
+          )
+        ).items;
   return {
     listed,
     planned,
@@ -1049,7 +1064,7 @@ const buildUpdateManyPlan = async (params: {
     statusFilter,
     unmatchedIds: collectUnmatchedRequestedIds(
       params.options.list?.ids,
-      listed.items,
+      existenceItems,
     ),
   };
 };

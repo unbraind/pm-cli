@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-07-19T11:28:34.508Z"
-updated_at: "2026-07-19T12:50:19.982Z"
+updated_at: "2026-07-19T13:48:06.031Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 180
@@ -19,9 +19,10 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-dj98,related,"2026-07-19T11:28:34.508Z",null,null
   pm-klo8,related,"2026-07-19T11:28:34.508Z",null,null
   pm-x29o,related,"2026-07-19T11:28:34.508Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-19T12:41:32.844Z",maintainer-agent,"Evidence: public commitItemMutations covers ordered create/update/close, durable replay, reverse compensation, crash resume, delete compensation, pre-closed adoption, malformed compensation data, and authoritative transaction authors. Linked 8-test gate, built SDK temp-workspace acceptance, packed consumer smoke, and full 100/100/100/100 coverage pass."
   "2026-07-19T12:50:19.982Z",maintainer-agent,"Release-gate evidence: pnpm release:gates completed build, typecheck, docs/skills, static quality, package boundary, token budget, 5,963 tests with exact 100/100/100/100 coverage, version/sync, secret scan, packed-package smoke, and package-first dogfood successfully. The aggregate command stopped only at its intentional Greptile stage because Greptile requires a committed diff against main; the local commit will be reviewed before push."
+  "2026-07-19T13:48:06.031Z",maintainer-agent,"PR #616 round-one review follow-up: public commitItemMutations now rejects null, array, and primitive mutation rows with deterministic TypeError before journal/lock work; malformed-batch coverage expanded."
 notes[1]{created_at,author,text}:
   "2026-07-19T12:00:04.589Z",maintainer-agent,"Implemented: public commitItemMutations in NEW src/sdk/item-transaction.ts (exported via sdk barrel), wrapping commitWorkspaceTransaction with correct-by-construction wiring per op: create = explicit stable id AS idempotency key (exists-by-id inspect; compensation close-with-reason by default or delete via createCompensation:\"delete\", both guarded idempotent); update = durable history-marker applied-detection (\"bulk-item-transaction <txid> <stepId> apply/compensate\" messages — field comparison is a moving target and an always-pending inspect would make compensateAppliedSteps SKIP the restore, found via failing test) + version-restore compensation from captured pre-mutation updated_at; close = already-terminal target adopted as applied (never re-closes), version-restore compensation. Results keyed by derived step id {index}-{op}-{target}. 6 specs: atomic commit+replay, full reverse compensation (create closed/update restored/close reopened), delete-compensation, crash-interrupt + resume without duplication (WorkspaceTransactionInterruptedError), pre-closed adoption, input validation. SDK.md example added showing the wrapper replacing a hand-rolled step array. Manual temp-dir verify via dist: committed batch + rollback semantics correct."
 learnings[1]{created_at,author,text}:

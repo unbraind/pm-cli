@@ -101,6 +101,20 @@ export function applyAcceptanceCriteriaMutations(
     .filter(Boolean);
   for (const raw of add ?? []) {
     const criterion = raw.trim();
+    if (criterion.includes(";")) {
+      throw new PmCliError(
+        'Acceptance criteria added with --add-ac cannot contain ";" because semicolons delimit stored criteria',
+        EXIT_CODE.USAGE,
+        {
+          code: "acceptance_criteria_semicolon_forbidden",
+          required: "Pass one semicolon-free criterion per --add-ac value",
+          why: "A semicolon inside one criterion would be re-read as multiple criteria",
+          nextSteps: [
+            "Split the text into repeated --add-ac values, or replace the semicolon with punctuation that is not the storage delimiter",
+          ],
+        },
+      );
+    }
     if (criterion.length > 0 && !criteria.includes(criterion)) {
       criteria.push(criterion);
     }
