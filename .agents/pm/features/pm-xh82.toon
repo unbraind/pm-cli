@@ -2,28 +2,32 @@ id: pm-xh82
 title: "GH-612: additive --add-ac/--remove-ac forms for acceptance criteria — replace-only --ac clobbers concurrent branch edits"
 description: ""
 type: Feature
-status: in_progress
+status: closed
 priority: 2
 tags[3]: agent-ux,multi-agent,mutations
 created_at: "2026-07-19T03:42:11.195Z"
-updated_at: "2026-07-19T13:48:04.763Z"
-assignee: maintainer-agent
+updated_at: "2026-07-19T14:05:54.475Z"
+closed_at: "2026-07-19T14:05:53.627Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "pm update gains --add-ac and --remove-ac operating on individual criteria (tag-API parity) while --ac keeps replace semantics; additive form merges cleanly across branches for disjoint additions; full new-flag checklist (contracts, MCP, completions, docs) done; regression test covers cross-call additivity"
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: "Add repeatable additive/removal acceptance-criteria mutations across CLI, bulk planning, contracts, MCP, completions, SDK docs, warnings, and no-op integrity."
+expected_result: Agents can edit individual criteria without clobbering concurrent changes.
+actual_result: "Direct and bulk mutations merge disjoint edits, report misses, reject delimiter corruption, and preserve freshness on no-ops."
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-b84u,related,"2026-07-19T03:42:11.195Z",null,null
   pm-g5sx,related,"2026-07-19T03:42:11.195Z",null,null
   pm-m3nl,related,"2026-07-19T03:42:11.195Z",null,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-19T12:41:28.445Z",maintainer-agent,"Evidence: --add-ac/--remove-ac are wired through update/update-many, contracts, MCP, completions, docs, previews, conflict guards, and exact-match warnings. Linked 204-test gate passes; full coverage is 100/100/100/100; manual built-CLI acceptance produced base criterion; cli criterion."
   "2026-07-19T12:50:16.361Z",maintainer-agent,"Release-gate evidence: pnpm release:gates completed build, typecheck, docs/skills, static quality, package boundary, token budget, 5,963 tests with exact 100/100/100/100 coverage, version/sync, secret scan, packed-package smoke, and package-first dogfood successfully. The aggregate command stopped only at its intentional Greptile stage because Greptile requires a committed diff against main; the local commit will be reviewed before push."
   "2026-07-19T13:09:32.397Z",maintainer-agent,"Greptile pre-push review 078e4d2f-271c-42de-9de5-665f5d4ad9c7 found two actionable gaps. Fixed bulk unmatched --remove-ac reporting across dry-run, all-no-op apply, and mixed updated/skipped rows; documented the semicolon criterion-boundary constraint in public JSDoc, CLI help, command/agent docs, and SDK docs. Focused 99 tests, static quality, contracts, and full 5,963-test 100/100/100/100 coverage pass after the fix."
   "2026-07-19T13:16:27.198Z",maintainer-agent,"Greptile amended-head review 40307c95-e203-49c2-9a2c-5ad83062bcd0 returned confidence 5/5, confirmed both prior findings resolved, and produced no review comments. Applied its remaining non-blocking consistency nit so register-mutation help also labels additive acceptance criteria semicolon-free."
   "2026-07-19T13:48:04.762Z",maintainer-agent,"PR #616 round-one review follow-up: fixed direct update duplicate/unmatched additive-AC false mutations so warnings no longer bump updated_at/history, enforced semicolon-free additions with structured recovery, and corrected separator Markdown. Regression tests prove unchanged history/freshness, one changed-field entry for composed replace+add, and invalid delimiter rejection."
+  "2026-07-19T14:05:41.490Z",maintainer-agent,"Final PR evidence: PR #616 exact head bafb9b53 is green; additive AC direct/bulk behavior, no-op freshness, delimiter enforcement, contracts, and warnings passed local and GitHub gates."
 notes[1]{created_at,author,text}:
   "2026-07-19T11:59:56.829Z",maintainer-agent,"Implemented with full new-flag checklist: --add-ac/--remove-ac on pm update AND pm update-many. Core helpers splitAcceptanceCriteria/applyAcceptanceCriteriaMutations in core/item/parse.ts (criteria = \"; \"-separated segments; adds append in argv order + dedupe exact trimmed text; removals exact trimmed match; unmatched removals surface remove_ac_unmatched:<text> warnings — never a silent no-op). Additive mutation runs AFTER the scalar --ac replace so composition uses the replaced base. Guards: --unset ac × --add-ac/--remove-ac rejected; ownership-dependency-bypass scope rejects both; command_option_policy marks acceptanceCriteria for additive forms. update-many gets a composed preview plan (an --add-ac-only bulk run is actionable, not a skip; scalar+additive plans deduped into one acceptance_criteria change). Wiring: UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS (+snake aliases), registration-helpers, update-many hand-registered options + hidden aliases, UPDATE/UPDATE_MANY flag contracts, MCP tool-option-contracts (addAc/removeAc repeatable) + parameter tables + descriptions, zsh/fish completions for update+update-many, docs COMMANDS.md + AGENT_GUIDE.md, contracts snapshot regenerated after build. Manual verify: add/dedupe/remove/unmatched-warning all correct."
 files[14]{path,scope,note}:
@@ -48,4 +52,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,multi-agent safe acceptance-criteria guidance
   docs/COMMANDS.md,project,additive acceptance-criteria command guidance
+close_reason: "Implemented and verified in PR #616 at exact head bafb9b53; local and GitHub gates green, all review feedback addressed."
 body: "GH-612. --acceptance-criteria/--ac replaces the whole value; repeatable only within one invocation (joins with '; ' per pm-b84u). Across calls/branches, two agents each adding a criterion clobber the base and conflict on the single acceptance_criteria line. Fix: --add-ac/--remove-ac individual-criterion operations (tag-API parity), replace semantics unchanged for --ac; disjoint additions merge cleanly across branches (pm-m3nl scalar-line caveat applies)."

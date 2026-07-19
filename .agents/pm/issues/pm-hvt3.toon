@@ -2,25 +2,29 @@ id: pm-hvt3
 title: "Nightly macOS+Windows red post-PR#568: staging-base selection compares realpath'd source against non-canonical temp dir — staging lands inside source, fs.cp EINVAL self-copy"
 description: "Fix the residual cross-platform extension-copy staging regression left after PR #568: canonicalize the configured temporary directory before containment checks so macOS and Windows nightly installs cannot stage inside their own source."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: extensions,macos,nightly,windows
 created_at: "2026-07-15T18:59:41.157Z"
-updated_at: "2026-07-19T12:50:15.702Z"
-assignee: maintainer-agent
+updated_at: "2026-07-19T14:05:52.632Z"
+closed_at: "2026-07-19T14:05:51.758Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "copyExtensionDirectoryWithoutSelfNesting canonicalizes temporaryDirectory (realpath with root-to-leaf fallback, same helper as destination) before the staging-base containment check; extension-copy-safety.spec.ts 'moves staging outside a source that contains the configured temp directory' passes on macOS/Node24 and windows/Node24 nightly legs; no spec-side-only masking"
 parent: pm-ugqx
 risk: medium
 confidence: high
+resolution: Canonicalize both source and temp staging roots before containment checks so macOS and Windows never stage inside the source tree.
+expected_result: Nightly extension copy safety passes on macOS and Windows.
+actual_result: Cross-platform regression tests and PR #616 macOS/Windows jobs pass.
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-0fhw,related,"2026-07-15T18:59:41.157Z",null,null
   pm-8myl,related,"2026-07-15T18:59:41.157Z",null,null
   pm-b24b,related,"2026-07-15T18:59:41.157Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-19T12:41:27.631Z",maintainer-agent,"Evidence: canonical temp-directory staging fix passes the linked 7-test cross-platform safety suite; repo static/docs/contracts/lint gates pass; full coverage is 100/100/100/100 (5,963 tests); manual temp-workspace acceptance passed."
   "2026-07-19T12:50:15.701Z",maintainer-agent,"Release-gate evidence: pnpm release:gates completed build, typecheck, docs/skills, static quality, package boundary, token budget, 5,963 tests with exact 100/100/100/100 coverage, version/sync, secret scan, packed-package smoke, and package-first dogfood successfully. The aggregate command stopped only at its intentional Greptile stage because Greptile requires a committed diff against main; the local commit will be reviewed before push."
+  "2026-07-19T14:05:40.874Z",maintainer-agent,"Final PR evidence: PR #616 exact head bafb9b53 is green, including Windows regression and macOS runtime smoke; all review threads are resolved and every bot surface is reacted to."
 notes[1]{created_at,author,text}:
   "2026-07-19T11:31:35.066Z",maintainer-agent,"Fix implemented (branch mutation-integrity-and-sdk-batch-wave): copyExtensionDirectoryWithoutSelfNesting now canonicalizes temporaryDirectory via fs.realpath(path.resolve(...)) with resolveCanonicalExtensionInstallDestination as root-to-leaf fallback for missing temp dirs — same canonicalization family as source/destination, closing the third pm-0fhw-class asymmetry site. Two Linux-reproducible regression specs added to extension-copy-safety.spec.ts using symlink-aliased temp paths (junction on win32): both fail pre-fix with the exact nightly EINVAL signature, pass post-fix. No spec-side masking; PR CI now protects the macOS/Windows nightly failure mode without a platform matrix."
 files[2]{path,scope,note}:
@@ -30,4 +34,5 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-copy-safety.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrrs7wkk-6yf3ec,test,passed,"2026-07-19T12:38:30.124Z","2026-07-19T12:38:37.989Z","2026-07-19T12:38:37.989Z",1,0,0
+close_reason: "Implemented and verified in PR #616 at exact head bafb9b53; local and GitHub gates green, all review feedback addressed."
 body: "Nightly run 29442174590 (2026-07-15, dispatched post-PR#568 to verify the pm-0fhw/pm-b24b/pm-u5zr fixes): the previous seven failures are FIXED, but macos-latest/Node24 and windows-latest/Node24 both still fail on exactly ONE spec — tests/unit/extensions/extension-copy-safety.spec.ts > \"moves staging outside a source that contains the configured temp directory\" with SystemError EINVAL \"cannot copy <source> to a subdirectory of self <source>/runtime/tmp/pm-extension-copy-*/extension\" at copyExtensionDirectoryWithoutSelfNesting (src/sdk/extension/install-runtime.ts:159).\n\nRoot cause (third site of the pm-0fhw canonicalization-asymmetry class, exposed by PR#568's extraction into install-runtime.ts): in copyExtensionDirectoryWithoutSelfNesting, `canonicalSource` is realpath'd but `systemTempDirectory = path.resolve(temporaryDirectory)` is NOT canonicalized. On macOS the tmpdir is symlinked (/var/folders -> /private/var/folders), so when the configured temp directory lives INSIDE the source, `isPathWithinDirectory(canonicalSource, systemTempDirectory)` compares /private/var/... against /var/... and reports NOT-contained -> stagingBase stays the in-source temp dir -> mkdtemp creates the staging root inside the source -> fs.cp copies source into a subdirectory of itself -> EINVAL. Windows hits the same via 8.3 short-name/alternate path namespaces. Linux passes because /tmp is not a symlink, which is why PR CI stayed green.\n\nFix direction: canonicalize temporaryDirectory with the same realpath root-to-leaf fallback used by resolveCanonicalExtensionInstallDestination before the containment check (and keep the staging-base derivation on canonical paths). PRODUCT defect — never fix spec-side-only (gf6f/dprb/0fhw precedent); never file per-platform point patches, extend this item.\n\nLeg status: with this fixed, both macOS/Node24 and windows/Node24 nightly legs should go fully green (b24b/u5zr/0fhw fixes verified passing in run 29442174590)."
