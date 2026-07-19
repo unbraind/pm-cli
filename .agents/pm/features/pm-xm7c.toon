@@ -1,0 +1,22 @@
+id: pm-xm7c
+title: "CLI+MCP surface for atomic bulk item mutations: JSON mutation batch on stdin over commitItemMutations"
+description: ""
+type: Feature
+status: open
+priority: 2
+tags[3]: cli,multi-agent,sdk-first
+created_at: "2026-07-19T14:43:37.560Z"
+updated_at: "2026-07-19T14:43:37.560Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "CLI command consumes a JSON array of {op:create|update|close} mutations on stdin and applies them atomically via the public SDK commitItemMutations only (no private-core imports); partial failure compensates per the SDK policy and reports per-mutation outcomes; --dry-run previews the batch; unknown ops/keys fail fast with contract-derived hints; idempotent resume via a stable --transaction-id; MCP parity tool + contracts/completions/docs/vitest wiring per the new-command checklist; command naming decided under the pm-pbyu noun-verb composition input before implementation"
+parent: pm-usfg
+risk: medium
+confidence: 75
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-g5sx,related,"2026-07-19T14:43:37.560Z",null,null
+  pm-khdq,related,"2026-07-19T14:43:37.560Z",null,null
+  pm-kipd,related,"2026-07-19T14:43:37.560Z",null,null
+  pm-pibw,related,"2026-07-19T14:43:37.560Z",null,null
+  pm-y9hq,discovered_from,"2026-07-19T14:43:37.560Z",null,null
+body: ""
