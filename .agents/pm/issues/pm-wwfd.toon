@@ -2,19 +2,33 @@ id: pm-wwfd
 title: "GH-611: delete/modify merge silently resurrects deleted items and leaves conflict markers in history/*.jsonl while validate stays green"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: history,merge,multi-agent
 created_at: "2026-07-19T03:41:15.424Z"
-updated_at: "2026-07-19T03:42:53.329Z"
+updated_at: "2026-07-19T05:39:53.957Z"
+closed_at: "2026-07-19T05:39:13.711Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "Post-merge validate detects a live .toon whose history contains a delete op (resurrection candidate) and history files containing git conflict markers, failing with remediation hints; documented delete-vs-edit merge policy states which side wins and how to honor the losing side; repro from GH-611 becomes a regression test"
 parent: pm-g5sx
 risk: high
 confidence: high
+resolution: Fixed by the broad SDK/CLI merge-safety delivery with automated regression and packed Git acceptance proof.
+expected_result: Concurrent branches preserve project context in parseable tracker artifacts and expose deterministic validation/recovery gates.
+actual_result: Field-aware drivers preserve item/history/config changes; validation detects corruption or drift; documented repair restores strict verification; all repository gates pass.
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-9q2t,related,"2026-07-19T03:41:15.424Z",null,null
   pm-wc1r,related,"2026-07-19T03:41:15.424Z",null,null
   pm-klo8,related,"2026-07-19T03:42:33.587Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-19T05:38:30.437Z",maintainer-agent,"Evidence: item merge handles add/add and delete/modify collection semantics without emitting raw conflict markers; validation detects live items whose newest history operation is delete."
+  "2026-07-19T05:39:12.769Z",maintainer-agent,"Final local gates: 315 test files / 5,944 tests passed with 100% statements, branches, functions, and lines; typecheck, ESLint, jscpd zero clones, static complexity/docstring/package-boundary checks, token budgets, docs/skills links, contracts snapshot, and secret scan passed."
+files[1]{path,scope,note}:
+  src/sdk/governance/storage-integrity.ts,project,history conflict-marker and resurrection detection
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/storage-integrity.spec.ts tests/unit/commands/validate-command.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,delete versus modify policy
+close_reason: Implemented and verified in the broad tracker merge-safety SDK/CLI delivery; linked files/tests/docs and packed Git acceptance evidence recorded.
 body: "GH-611. pm delete removes .toon but appends a delete op to history/<id>.jsonl (file kept). Delete-on-A vs edit-on-B merge: git delete/modify resolution keeps B's .toon → deleted item silently resurrects; history left with conflict markers; validate ok:true. Fix direction: validate flags live .toon whose history ends in delete op (resurrection candidate) + conflict-marker scan in history files; document delete-vs-edit merge policy."

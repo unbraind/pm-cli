@@ -2,20 +2,35 @@ id: pm-gpo7
 title: "GH-603: history-repair cements cross-author data loss after a lossy merge — reverting patch discards the other author's mutation, validate fully green"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: history,merge,multi-agent
 created_at: "2026-07-19T03:41:32.506Z"
-updated_at: "2026-07-19T03:43:08.808Z"
+updated_at: "2026-07-19T05:39:51.898Z"
+closed_at: "2026-07-19T05:39:06.155Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: history-repair surfaces an explicit revert/data-loss warning naming the discarded authors' events when re-anchoring discards effective-state mutations; validate or health exposes a post-repair divergence signal instead of full green; documented recovery path to re-apply discarded mutations; repro from GH-603 becomes a regression test
 parent: pm-g5sx
 risk: high
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
+resolution: Fixed by the broad SDK/CLI merge-safety delivery with automated regression and packed Git acceptance proof.
+expected_result: Concurrent branches preserve project context in parseable tracker artifacts and expose deterministic validation/recovery gates.
+actual_result: Field-aware drivers preserve item/history/config changes; validation detects corruption or drift; documented repair restores strict verification; all repository gates pass.
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-h90s,related,"2026-07-19T03:41:32.506Z",null,null
   pm-u14c,related,"2026-07-19T03:41:32.506Z",null,null
   pm-wc1r,related,"2026-07-19T03:41:32.506Z",null,null
   pm-ol3p,related,"2026-07-19T03:42:30.249Z",null,null
+  pm-cxyv,related,"2026-07-19T05:38:25.005Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-19T05:38:28.376Z",maintainer-agent,"Evidence: history-repair now attributes discarded divergent state and appends reconciliation audit history; packed acceptance proved the repair path closes post-union current-item hash drift."
+  "2026-07-19T05:39:05.040Z",maintainer-agent,"Final local gates: 315 test files / 5,944 tests passed with 100% statements, branches, functions, and lines; typecheck, ESLint, jscpd zero clones, static complexity/docstring/package-boundary checks, token budgets, docs/skills links, contracts snapshot, and secret scan passed."
+files[1]{path,scope,note}:
+  src/sdk/history-repair.ts,project,reconciliation divergence and discarded-event author warnings
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/history-repair-command.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,audited re-application recovery path
+close_reason: Implemented and verified in the broad tracker merge-safety SDK/CLI delivery; linked files/tests/docs and packed Git acceptance evidence recorded.
 body: "GH-603. After a lossy merge resolution (.toon taken from one side, history union-merged), pm history-repair re-anchors by appending a reverting patch that discards the other author's mutation from effective state; validate then reports drift 0 / ok:true. A teammate agent's change is reverted invisibly — data loss is cemented. Fix direction: repair must emit an explicit revert warning naming discarded events/authors, expose a post-repair divergence signal in validate/health, and document a re-application recovery path. Detection half = pm-ol3p strict verify gate."

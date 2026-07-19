@@ -325,7 +325,16 @@ export const HISTORY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--diff" },
   { flag: "--field" },
   { flag: "--verify" },
+  { flag: "--strict-exit" },
+  { flag: "--fail-on-warn" },
   { flag: "--format" },
+];
+
+/** Public contract for merge flag contracts, shared by SDK and presentation-layer consumers. */
+export const MERGE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--dry-run" },
+  { flag: "--output" },
+  { flag: "--prefer" },
 ];
 
 /** Public contract for history redact flag contracts, shared by SDK and presentation-layer consumers. */
@@ -937,6 +946,7 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--prune-missing" },
   { flag: "--check-history-drift" },
   { flag: "--check-command-references" },
+  { flag: "--check-storage-integrity" },
 ];
 
 /** Creates flag contracts using the validated operation inputs. */
@@ -1535,6 +1545,7 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["history-redact", HISTORY_REDACT_FLAG_CONTRACTS],
     ["history-repair", HISTORY_REPAIR_FLAG_CONTRACTS],
     ["history-compact", HISTORY_COMPACT_FLAG_CONTRACTS],
+    ["merge", MERGE_FLAG_CONTRACTS],
     ["schema", SCHEMA_FLAG_CONTRACTS],
     ["profile", PROFILE_FLAG_CONTRACTS],
     ["plan", PLAN_FLAG_CONTRACTS],

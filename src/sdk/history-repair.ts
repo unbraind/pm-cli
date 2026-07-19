@@ -4,6 +4,7 @@
  * Implements the pm history repair command surface and its agent-facing runtime behavior.
  */
 import jsonPatch from "fast-json-patch";
+import { patchPathToChangedField } from "../core/history/history-diff.js";
 import { pathExists, readFileIfExists } from "../core/fs/fs-utils.js";
 import {
   executeHistoryRewrite,
@@ -11,6 +12,7 @@ import {
 } from "../core/history/history-rewrite.js";
 import {
   historyEntriesToRaw,
+  normalizeReplayPatchOps,
   reanchorHistoryEntries,
   replayHash,
   toReplayDocument,
@@ -81,10 +83,98 @@ export interface HistoryRepairResult {
     path: string | null;
     matched_chain_before: boolean | null;
   };
+  /** Present when reconciling the chain with the on-disk item discards the replayed effect of earlier history events (GH-603): names the reverted fields and the authors whose mutations the reconciliation overwrites, so cross-author data loss after a lossy merge is loud instead of silent. */
+  reconciliation?: HistoryRepairReconciliationReport;
   /** Value that configures or reports warnings for this contract. */
   warnings: string[];
   /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
+}
+
+/** Documents one history event whose replayed effect a repair reconciliation overwrites. */
+export interface HistoryRepairDiscardedEvent {
+  /** 1-based index of the event in the (re-anchored) history stream. */
+  index: number;
+  /** Timestamp of the discarded event. */
+  ts: string;
+  /** Author whose mutation the reconciliation overwrites. */
+  author: string;
+  /** Operation label of the discarded event. */
+  op: string;
+  /** Reverted fields this event last wrote. */
+  fields: string[];
+}
+
+/** Documents the repair reconciliation data-loss report exchanged by command, SDK, and package integrations. */
+export interface HistoryRepairReconciliationReport {
+  /** Number of fields the reconciliation patch reverts relative to the replayed chain. */
+  reverted_field_count: number;
+  /** Fields whose replayed values the reconciliation overwrites with the on-disk item's values. */
+  reverted_fields: string[];
+  /** Newest history events that last wrote each reverted field — the mutations being discarded. */
+  discarded_events: HistoryRepairDiscardedEvent[];
+  /** Distinct authors whose mutations the reconciliation discards. */
+  discarded_authors: string[];
+  /** How to recover a discarded mutation instead of accepting the revert. */
+  recovery_hint: string;
+}
+
+/** Compute which fields a chain-vs-item reconciliation reverts and which history events (and authors) last wrote them. The reconciliation patch rewrites the replayed final state into the on-disk item state, so any field it touches is a replayed mutation being overwritten — after a lossy merge resolution this is exactly the other branch's discarded work (GH-603). */
+export function analyzeReconciliationDiscard(
+  entries: HistoryEntry[],
+  finalReplay: ReplayDocument,
+  currentItemReplay: ReplayDocument,
+): HistoryRepairReconciliationReport | undefined {
+  const reconcilePatch = jsonPatch.compare(
+    finalReplay,
+    currentItemReplay,
+  ) as HistoryPatchOp[];
+  if (reconcilePatch.length === 0) {
+    return undefined;
+  }
+  const revertedFields = new Set<string>();
+  for (const op of reconcilePatch) {
+    revertedFields.add(patchPathToChangedField(op.path));
+  }
+  const remaining = new Set(revertedFields);
+  const discardedEvents: HistoryRepairDiscardedEvent[] = [];
+  for (let index = entries.length - 1; index >= 0 && remaining.size > 0; index -= 1) {
+    const entry = entries[index];
+    const entryFields = new Set<string>();
+    for (const op of normalizeReplayPatchOps(entry.patch)) {
+      entryFields.add(patchPathToChangedField(op.path));
+      if (op.from) {
+        entryFields.add(patchPathToChangedField(op.from));
+      }
+    }
+    const overlap = [...remaining].filter((field) => entryFields.has(field));
+    if (overlap.length === 0) {
+      continue;
+    }
+    for (const field of overlap) {
+      remaining.delete(field);
+    }
+    discardedEvents.push({
+      index: index + 1,
+      ts: entry.ts,
+      author: entry.author,
+      op: entry.op,
+      fields: overlap.sort((left, right) => left.localeCompare(right)),
+    });
+  }
+  discardedEvents.reverse();
+  return {
+    reverted_field_count: revertedFields.size,
+    reverted_fields: [...revertedFields].sort((left, right) =>
+      left.localeCompare(right),
+    ),
+    discarded_events: discardedEvents,
+    discarded_authors: [
+      ...new Set(discardedEvents.map((event) => event.author)),
+    ].sort((left, right) => left.localeCompare(right)),
+    recovery_hint:
+      "Reconciliation keeps the on-disk item and overwrites these replayed mutations. To recover one, inspect it with pm history <id> --diff --field <field>, then re-apply the lost value with pm update.",
+  };
 }
 
 interface HistoryRepairItemReplayContext {
@@ -298,6 +388,17 @@ export async function runHistoryRepair(
   const reconcileNeeded =
     itemReplayContext.currentItemReplay !== null &&
     replayHash(finalReplay) !== replayHash(itemReplayContext.currentItemReplay);
+  // GH-603: reconciling toward the on-disk item can silently overwrite the
+  // replayed effect of other authors' events (classic after a lossy merge).
+  // Surface exactly what is being discarded before any write happens.
+  const reconciliation =
+    reconcileNeeded && itemReplayContext.currentItemReplay
+      ? analyzeReconciliationDiscard(
+          reanchor.entries,
+          finalReplay,
+          itemReplayContext.currentItemReplay,
+        )
+      : undefined;
 
   const changed =
     reanchor.entriesRehashed > 0 ||
@@ -331,6 +432,14 @@ export async function runHistoryRepair(
   }
 
   const warnings = collectHistoryRepairWarnings(changed, reanchor.skippedOps);
+  if (reconciliation) {
+    warnings.push(
+      `history_repair_reconcile_discards_events:${reconciliation.discarded_events.length}`,
+    );
+    warnings.push(
+      `history_repair_discarded_authors:${reconciliation.discarded_authors.join(",")}`,
+    );
+  }
 
   if (changed && !dryRun) {
     warnings.push(
@@ -372,6 +481,7 @@ export async function runHistoryRepair(
       path: itemReplayContext.currentItemPath,
       matched_chain_before: itemReplayContext.matchedChainBefore,
     },
+    ...(reconciliation ? { reconciliation } : {}),
     warnings: [...new Set(warnings)].sort((left, right) =>
       left.localeCompare(right),
     ),

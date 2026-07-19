@@ -1210,7 +1210,7 @@ export async function runInit(
 
   await ensureInitTypeDirectories({ pmRoot, settings, createdDirs, warnings });
   if (workspaceRoot) {
-    const gitignore = await ensurePmGitignore(workspaceRoot);
+    const gitignore = await ensurePmGitignore(workspaceRoot, { pmRoot });
     if (gitignore.changed) {
       warnings.push(`updated:gitignore:${gitignore.path}`);
     }

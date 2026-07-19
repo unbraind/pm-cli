@@ -218,6 +218,26 @@ describe("register-list-query get options", () => {
 });
 
 describe("register-list-query history options", () => {
+  it("requires verification for strict history exits", async () => {
+    await expect(runRaw("history", "pm-1", "--strict-exit")).rejects.toThrow(
+      /--strict-exit requires --verify/,
+    );
+  });
+
+  it("sets a failing exit code when strict verification reports a broken chain", async () => {
+    vi.mocked(runHistory).mockResolvedValueOnce({
+      entries: [],
+      verification: { ok: false, errors: ["broken"] },
+    } as never);
+    const priorExitCode = process.exitCode;
+    try {
+      await runRaw("history", "pm-1", "--verify", "--strict-exit");
+      expect(process.exitCode).toBe(1);
+    } finally {
+      process.exitCode = priorExitCode;
+    }
+  });
+
   it("treats --field as implying --diff and scopes to that field", async () => {
     await runProfiled("history", "pm-1", "--field", "status");
     const options = lastCall<Record<string, unknown>>(vi.mocked(runHistory) as never, 1);

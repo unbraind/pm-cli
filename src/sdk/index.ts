@@ -288,6 +288,7 @@ export * from "./history-redact.js";
 export * from "./history-repair.js";
 export * from "./item-children.js";
 export * from "./item-schedule.js";
+export * from "./merge/index.js";
 export {
   runDeps,
   type DepsCollapseMode,
@@ -336,6 +337,7 @@ export * from "./relationship-analytics.js";
 export * from "./relationship-context.js";
 export * from "./relationship-history.js";
 export * from "./workspace-transaction.js";
+export * from "./workspace-transaction-gc.js";
 export * from "./relationships.js";
 export * from "./actionability.js";
 export type {

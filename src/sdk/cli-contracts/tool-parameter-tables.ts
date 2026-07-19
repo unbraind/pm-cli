@@ -1063,7 +1063,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   gcScope: {
     description:
-      "Repeatable gc scope selector values (index, embeddings, runtime, locks, checkpoints).",
+      "Repeatable gc scope selector values (index, embeddings, runtime, locks, checkpoints, transactions).",
     examples: [
       ["index", "embeddings"],
       ["runtime"],

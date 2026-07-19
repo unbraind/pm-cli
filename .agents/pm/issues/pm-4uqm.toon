@@ -2,18 +2,34 @@ id: pm-4uqm
 title: "GH-598: pm init .gitignore block hardcodes .agents/pm/ prefix — custom-root workspaces commit runtime cache and conflict on every merge"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: gitignore,init,multi-agent
 created_at: "2026-07-19T03:41:52.014Z"
-updated_at: "2026-07-19T03:43:31.428Z"
+updated_at: "2026-07-19T05:39:55.390Z"
+closed_at: "2026-07-19T05:39:18.323Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: ensurePmGitignore renders the resolved tracker root (from --pm-path/PM_PATH/custom root) instead of the hardcoded .agents/pm/ prefix; custom-root init leaves runtime caches untracked; GH-514 fenced-block idempotency preserved; regression test covers custom-root init
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[2]{id,kind,created_at,author,source_kind}:
+resolution: Fixed by the broad SDK/CLI merge-safety delivery with automated regression and packed Git acceptance proof.
+expected_result: Concurrent branches preserve project context in parseable tracker artifacts and expose deterministic validation/recovery gates.
+actual_result: Field-aware drivers preserve item/history/config changes; validation detects corruption or drift; documented repair restores strict verification; all repository gates pass.
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-g5sx,related,"2026-07-19T03:41:52.014Z",null,null
   pm-hous,related,"2026-07-19T03:41:52.014Z",null,null
+  pm-wc1r,related,"2026-07-19T05:38:21.843Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-19T05:38:31.943Z",maintainer-agent,"Evidence: ensurePmGitignore renders tracker-relative runtime paths for custom roots and refuses roots outside the workspace; unit fixtures cover default, custom, external, repair, and read-failure paths."
+  "2026-07-19T05:39:17.413Z",maintainer-agent,"Final local gates: 315 test files / 5,944 tests passed with 100% statements, branches, functions, and lines; typecheck, ESLint, jscpd zero clones, static complexity/docstring/package-boundary checks, token budgets, docs/skills links, contracts snapshot, and secret scan passed."
+files[2]{path,scope,note}:
+  src/sdk/init.ts,project,resolved tracker root propagation
+  src/sdk/workspace.ts,project,custom-root managed gitignore rendering
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,custom tracker root runtime ignore policy
+close_reason: Implemented and verified in the broad tracker merge-safety SDK/CLI delivery; linked files/tests/docs and packed Git acceptance evidence recorded.
 body: "GH-598. ensurePmGitignore (GH-514/pm-hous lineage) writes the managed runtime/cache ignore block with the tracker root hardcoded to .agents/pm/ instead of the resolved root. Workspaces using --pm-path/PM_PATH/custom roots commit runtime caches → guaranteed index churn and merge conflicts for multi-agent branches. Fix: render the resolved root into the fenced block, keep idempotency; regression test for custom-root init."

@@ -2604,6 +2604,12 @@
           "flag": "--verify"
         },
         {
+          "flag": "--strict-exit"
+        },
+        {
+          "flag": "--fail-on-warn"
+        },
+        {
           "flag": "--format"
         }
       ],
@@ -4471,6 +4477,21 @@
       "command": "meet",
       "flags": [],
       "provider": "extension"
+    },
+    {
+      "command": "merge",
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--output"
+        },
+        {
+          "flag": "--prefer"
+        }
+      ],
+      "provider": "core"
     },
     {
       "command": "next",
@@ -6840,6 +6861,9 @@
         },
         {
           "flag": "--check-command-references"
+        },
+        {
+          "flag": "--check-storage-integrity"
         }
       ],
       "provider": "core"
@@ -8218,6 +8242,7 @@
     "list-in-progress",
     "list-open",
     "meet",
+    "merge",
     "next",
     "notes",
     "package",
@@ -24327,7 +24352,7 @@
             "type": "boolean"
           },
           "gcScope": {
-            "description": "Repeatable gc scope selector values (index, embeddings, runtime, locks, checkpoints).",
+            "description": "Repeatable gc scope selector values (index, embeddings, runtime, locks, checkpoints, transactions).",
             "examples": [
               [
                 "index",

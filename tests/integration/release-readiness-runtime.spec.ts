@@ -2157,6 +2157,7 @@ describe("release readiness runtime coverage", () => {
         "warnings",
         "locks",
         "checkpoints",
+        "transactions",
         "guidance",
         "generated_at",
       ]);

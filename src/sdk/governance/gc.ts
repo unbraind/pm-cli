@@ -6,6 +6,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runCheckpointGc } from "../../core/checkpoint/checkpoint-gc.js";
+import { runWorkspaceTransactionGc } from "../workspace-transaction-gc.js";
 import {
   runActiveOnIndexHooks,
   runActiveOnReadHooks,
@@ -26,6 +27,7 @@ const GC_SCOPE_VALUES = [
   "runtime",
   "locks",
   "checkpoints",
+  "transactions",
 ] as const;
 type GcScope = (typeof GC_SCOPE_VALUES)[number];
 
@@ -113,6 +115,18 @@ export interface GcCheckpointsSummary {
   retention_days: number;
 }
 
+/** Documents the gc transactions summary payload exchanged by command, SDK, and package integrations. */
+export interface GcTransactionsSummary {
+  /** Value that configures or reports scanned for this contract. */
+  scanned: number;
+  /** Value that configures or reports removed for this contract. */
+  removed: number;
+  /** Value that configures or reports retained for this contract. */
+  retained: number;
+  /** Value that configures or reports retention days for this contract. */
+  retention_days: number;
+}
+
 /** Documents the gc result payload exchanged by command, SDK, and package integrations. */
 export interface GcResult {
   /** Whether the operation completed without a blocking failure. */
@@ -133,6 +147,8 @@ export interface GcResult {
   locks?: GcLocksSummary;
   /** Present only when the checkpoints scope was selected. Summarizes the rollback-checkpoint sweep. */
   checkpoints?: GcCheckpointsSummary;
+  /** Present only when the transactions scope was selected. Summarizes the workspace-transaction journal sweep. */
+  transactions?: GcTransactionsSummary;
   /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
 }
@@ -267,6 +283,14 @@ function buildGcGuidance(params: {
       'Aged rollback checkpoints were removed; their "pm update-many"/"pm close-many --rollback" windows are no longer recoverable.',
     );
   }
+  if (
+    !params.dryRun &&
+    params.removed.some((entry) => entry.startsWith("transactions/"))
+  ) {
+    guidance.push(
+      "Aged terminal workspace-transaction journals were removed; replaying those transactionIds re-executes their idempotent steps instead of short-circuiting.",
+    );
+  }
   return guidance;
 }
 
@@ -336,6 +360,38 @@ export async function runGc(
   // checkpoints/ and removes only rollback checkpoints older than the configured
   // checkpoints.retention_days, retaining active and unparseable files. See
   // core/checkpoint/checkpoint-gc.ts.
+  // The transactions scope sweeps transactions/sdk/ and removes only terminal
+  // (committed/compensated) workspace-transaction journals older than the
+  // shared recovery-receipt retention, retaining in-flight and unparseable
+  // journals. See sdk/workspace-transaction-gc.ts.
+  let transactionsSummary: GcTransactionsSummary | undefined;
+  if (scopes.includes("transactions")) {
+    const retentionDays = settings.checkpoints.retention_days;
+    const transactionResult = await runWorkspaceTransactionGc(pmRoot, {
+      dryRun,
+      retentionDays,
+      hooks: {
+        onRead: (journalPath) =>
+          runActiveOnReadHooks({ path: journalPath, scope: "project" }),
+        onWrite: (journalPath) =>
+          runActiveOnWriteHooks({
+            path: journalPath,
+            scope: "project",
+            op: "gc:transaction_journal_remove",
+          }),
+      },
+    });
+    removed.push(...transactionResult.removed);
+    retained.push(...transactionResult.retained);
+    warnings.push(...transactionResult.warnings);
+    transactionsSummary = {
+      scanned: transactionResult.scanned,
+      removed: transactionResult.removed.length,
+      retained: transactionResult.retained.length,
+      retention_days: retentionDays,
+    };
+  }
+
   let checkpointsSummary: GcCheckpointsSummary | undefined;
   if (scopes.includes("checkpoints")) {
     const retentionDays = settings.checkpoints.retention_days;
@@ -385,6 +441,7 @@ export async function runGc(
     warnings,
     ...(locksSummary ? { locks: locksSummary } : {}),
     ...(checkpointsSummary ? { checkpoints: checkpointsSummary } : {}),
+    ...(transactionsSummary ? { transactions: transactionsSummary } : {}),
     guidance,
     generated_at: nowIso(),
   };
