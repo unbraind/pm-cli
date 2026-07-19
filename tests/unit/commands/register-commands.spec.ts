@@ -931,6 +931,8 @@ describe("operation command actions", () => {
         "theirs.json",
         "--output",
         "merged.json",
+        "--item-path",
+        ".agents/pm/settings.json",
         "--prefer",
         "theirs",
       );
@@ -941,6 +943,7 @@ describe("operation command actions", () => {
           oursPath: "ours.json",
           theirsPath: "theirs.json",
           outputPath: "merged.json",
+          itemPath: ".agents/pm/settings.json",
           prefer: "theirs",
         },
         expect.anything(),
@@ -960,7 +963,7 @@ describe("operation command actions", () => {
       "theirs.jsonl",
     );
     expect(vi.mocked(runMergeDriver)).toHaveBeenLastCalledWith(
-      expect.objectContaining({ outputPath: undefined, prefer: undefined }),
+      expect.objectContaining({ outputPath: undefined, itemPath: undefined, prefer: undefined }),
       expect.anything(),
     );
 

@@ -1163,6 +1163,8 @@ async function runMergeAction(
         theirsPath: theirs,
         outputPath:
           typeof options.output === "string" ? options.output : undefined,
+        itemPath:
+          typeof options.itemPath === "string" ? options.itemPath : undefined,
         prefer:
           typeof options.prefer === "string" ? options.prefer : undefined,
       },
@@ -2969,6 +2971,10 @@ export function registerMutationCommands(program: Command): void {
     .option(
       "--output <path>",
       "driver only: write the merged content to this path instead of the ours path",
+    )
+    .option(
+      "--item-path <path>",
+      "driver only: original repository-relative path supplied by git as %P",
     )
     .option(
       "--prefer <side>",

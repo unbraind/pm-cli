@@ -236,6 +236,7 @@ describe("public merge-safety SDK primitives", () => {
     expect(mergeJsonDocuments('{"value":1}', '{}', '{"value":1}').merged).toBe("{}\n");
     expect(mergeJsonDocuments('{}', '{}', '{"value":2}').paths_from_theirs).toEqual(["value"]);
     expect(JSON.parse(mergeJsonDocuments('', '{"onlyOurs":1}', '').merged)).toEqual({ onlyOurs: 1 });
+    expect(mergeJsonDocuments("", "", "").merged).toBe("null\n");
     expect(JSON.parse(mergeJsonDocuments('[]', '{"left":1}', '{"right":2}').merged)).toEqual({ left: 1, right: 2 });
     expect(mergeJsonDocuments('null', 'null', 'null').merged).toBe("null\n");
   });
@@ -283,6 +284,22 @@ describe("public merge-safety SDK primitives", () => {
       process.chdir(workspace);
       expect((await runMergeDriver(
         { artifact: "item", basePath: base, oursPath: ours, theirsPath: theirs },
+        { path: path.join(workspace, "missing-pm") },
+      )).ok).toBe(true);
+
+      await Promise.all([
+        writeFile(base, serializeItemDocument(itemBase, { format: "json_markdown" }), "utf8"),
+        writeFile(ours, serializeItemDocument(item("ours", "2026-07-19T00:01:00.000Z"), { format: "json_markdown" }), "utf8"),
+        writeFile(theirs, serializeItemDocument(itemBase, { format: "json_markdown" }), "utf8"),
+      ]);
+      expect((await runMergeDriver(
+        {
+          artifact: "item",
+          basePath: base,
+          oursPath: ours,
+          theirsPath: theirs,
+          itemPath: ".agents/pm/tasks/pm-merge.md",
+        },
         { path: path.join(workspace, "missing-pm") },
       )).ok).toBe(true);
     } finally {
@@ -343,6 +360,15 @@ describe("public merge-safety SDK primitives", () => {
         "# pm-cli:merge-drivers:start",
       );
       expect((await runMergeInstall({}, { path: context.pmPath })).gitattributes.changed).toBe(false);
+      await writeFile(
+        path.join(context.tempRoot, ".gitattributes"),
+        "*.bin binary\n# pm-cli:merge-drivers:start\n.agents/pm/tasks/*.toon merge=pm-item\n",
+        "utf8",
+      );
+      await runMergeInstall({}, { path: context.pmPath });
+      const repairedAttributes = await readFile(path.join(context.tempRoot, ".gitattributes"), "utf8");
+      expect(repairedAttributes.match(/# pm-cli:merge-drivers:start/g)).toHaveLength(1);
+      expect(repairedAttributes).toContain("*.bin binary");
 
       await writeFile(
         path.join(context.tempRoot, "settings.json"),

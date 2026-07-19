@@ -48,6 +48,8 @@ export interface MergeDriverOptions {
   theirsPath: string;
   /** Optional explicit output path overriding the git default of writing to the ours path. */
   outputPath?: string;
+  /** Original repository-relative item path supplied by Git as `%P`, used to detect item format when temporary side paths lack extensions. */
+  itemPath?: string;
   /** Side that wins unresolvable conflicts (default "ours"). */
   prefer?: string;
 }
@@ -192,7 +194,7 @@ export async function runMergeDriver(
   } else if (artifact === "item") {
     const settings = await loadOptionalSettings(global);
     const itemMerge = mergeItemDocuments(baseRaw, oursRaw, theirsRaw, {
-      format: itemFormatForPath(outputPath, settings),
+      format: itemFormatForPath(options.itemPath ?? outputPath, settings),
       schema: settings?.schema,
       extensionFieldNames: collectRegisteredItemFieldNames(
         getActiveExtensionRegistrations(),

@@ -4488,6 +4488,9 @@
           "flag": "--output"
         },
         {
+          "flag": "--item-path"
+        },
+        {
           "flag": "--prefer"
         }
       ],

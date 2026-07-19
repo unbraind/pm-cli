@@ -132,9 +132,11 @@ async function reconcileGitattributesBlock(
   const start = current.indexOf(PM_GITATTRIBUTES_START);
   const end = current.indexOf(PM_GITATTRIBUTES_END);
   const withoutManagedBlock =
-    start >= 0 && end >= start
+    start >= 0 && end > start
       ? `${current.slice(0, start)}${current.slice(end + PM_GITATTRIBUTES_END.length)}`
-      : current;
+      : current
+          .replace(PM_GITATTRIBUTES_START, "")
+          .replace(PM_GITATTRIBUTES_END, "");
   const prefix = withoutManagedBlock.trimEnd();
   const next = `${prefix.length > 0 ? `${prefix}\n\n` : ""}${block}\n`;
   if (next === current) {
@@ -197,7 +199,7 @@ export async function runMergeInstall(
     });
     gitConfigEntries.push({
       key: `merge.${definition.key}.driver`,
-      value: `pm merge driver ${definition.artifact} %O %A %B`,
+      value: `pm merge driver ${definition.artifact} %O %A %B --item-path %P`,
     });
   }
   if (!dryRun) {

@@ -501,6 +501,10 @@ export interface HistoryRepairAllStreamResult {
   entries_patch_repaired?: number;
   /** Value that configures or reports reconciled with item for this contract. */
   reconciled_with_item?: boolean;
+  /** Cross-author data-loss detail when reconciliation overwrites replayed mutations. */
+  reconciliation?: HistoryRepairReconciliationReport;
+  /** Stream-specific repair warnings retained by the bulk workflow. */
+  warnings?: string[];
   /** Value that configures or reports error for this contract. */
   error?: string;
 }
@@ -576,6 +580,7 @@ export async function runHistoryRepairAll(
   );
 
   const streams: HistoryRepairAllStreamResult[] = [];
+  const repairWarnings: string[] = [];
   const totals = { repaired: 0, skipped_clean: 0, failed: 0 };
   for (const driftedId of drift.driftedItems) {
     try {
@@ -583,12 +588,19 @@ export async function runHistoryRepairAll(
       /* c8 ignore next -- mixed repaired/clean outcomes depend on live drift composition. */
       const outcome = result.changed ? "repaired" : "skipped_clean";
       totals[outcome] += 1;
+      repairWarnings.push(
+        ...result.warnings.map((warning) => `${driftedId}:${warning}`),
+      );
       streams.push({
         id: driftedId,
         outcome,
         entries_rehashed: result.history.entries_rehashed,
         entries_patch_repaired: result.history.entries_patch_repaired,
         reconciled_with_item: result.history.reconciled_with_item,
+        ...(result.reconciliation
+          ? { reconciliation: result.reconciliation }
+          : {}),
+        warnings: result.warnings,
       });
     } catch (error) {
       totals.failed += 1;
@@ -608,7 +620,7 @@ export async function runHistoryRepairAll(
     drifted_streams: drift.driftedItems.length,
     streams,
     totals,
-    warnings: [...new Set(itemReadWarnings)].sort((left, right) =>
+    warnings: [...new Set([...itemReadWarnings, ...repairWarnings])].sort((left, right) =>
       left.localeCompare(right),
     ),
     generated_at: nowIso(),

@@ -334,6 +334,7 @@ export const HISTORY_FLAG_CONTRACTS: CliFlagContract[] = [
 export const MERGE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--dry-run" },
   { flag: "--output" },
+  { flag: "--item-path" },
   { flag: "--prefer" },
 ];
 

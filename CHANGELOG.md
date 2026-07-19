@@ -5,6 +5,11 @@
 ### Added
 
 - GH-599: git merge driver + documented workflow for append-only history/\*.jsonl (concurrent appends fork the hash chain) ([pm-wc1r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-wc1r.toon))
+
+## 2026.7.19 - 2026-07-19
+
+### Added
+
 - Public SDK transaction boundary: atomic multi-item + relationship-event commit primitive ([pm-4e12](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4e12.toon))
 - Beyond-PM SDK exemplar spike: minimal VCS-style changeset workflow as a pm package (custom schema + event-sourced history + hooks) ([pm-xtrd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-xtrd.toon))
 

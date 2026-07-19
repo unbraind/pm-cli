@@ -6,8 +6,8 @@ status: closed
 priority: 1
 tags[3]: history,merge,multi-agent
 created_at: "2026-07-19T03:40:49.668Z"
-updated_at: "2026-07-19T05:39:49.651Z"
-closed_at: "2026-07-19T05:38:58.342Z"
+updated_at: "2026-07-19T06:08:03.365Z"
+closed_at: "2026-07-19T06:08:02.484Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: Union-style git merge driver (or documented gitattributes strategy) ships for history/*.jsonl preserving hash-chain repairability; concurrent same-item appends on two branches merge without manual conflict resolution; post-merge chain state is either valid or flagged by validate/health with a history-repair hint; workflow documented
@@ -20,17 +20,21 @@ actual_result: Field-aware drivers preserve item/history/config changes; validat
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-3z0k,related,"2026-07-19T03:40:49.668Z",null,null
   pm-klo8,related,"2026-07-19T03:40:49.668Z",null,null
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-19T04:44:33.808Z",maintainer-agent,"Progress evidence: public SDK history/item/JSON merge primitives, file driver, installer, regression tests, and operator workflow are implemented; focused suite is green."
   "2026-07-19T05:38:26.056Z",maintainer-agent,"Evidence: shipped public SDK three-way item/history/JSON primitives, file-level Git driver protocol, repository-local installer, core CLI/contract registration, and detailed merge-safety docs. Packed-package acceptance at /tmp/pm-merge-acceptance.Ys29Cm/project performed a real two-branch Git merge: both branch comments survived; strict history verification detected expected union drift; history-repair reconciled it; strict verify and storage-integrity validation then passed."
   "2026-07-19T05:38:57.339Z",maintainer-agent,"Final local gates: 315 test files / 5,944 tests passed with 100% statements, branches, functions, and lines; typecheck, ESLint, jscpd zero clones, static complexity/docstring/package-boundary checks, token budgets, docs/skills links, contracts snapshot, and secret scan passed."
+  "2026-07-19T06:04:22.258Z",maintainer-agent,"Greptile pre-push review accepted: addressing bulk repair warning propagation, valid empty JSON output, malformed gitattributes fence recovery, and real-path format detection. Only pm-wc1r is reactivated for these changes."
+  "2026-07-19T06:08:01.653Z",maintainer-agent,"Greptile findings resolved with regression coverage: bulk repair now preserves per-stream reconciliation reports and prefixed warnings; empty JSON sides emit valid null; malformed managed fences are normalized without duplicate markers; Git passes %P so Markdown format detection does not depend on temp-file extensions. Focused 119 tests, typecheck, and contract checks pass."
 notes[1]{created_at,author,text}:
   "2026-07-19T05:38:33.995Z",maintainer-agent,"Design rationale: merge drivers keep every output parseable and preserve commutative context. They report semantic conflicts instead of writing raw markers, and defer non-commutative current-item/history reconciliation to explicit validate plus history-repair governance."
 learnings[1]{created_at,author,text}:
   "2026-07-19T05:38:33.306Z",maintainer-agent,A deterministic union of divergent history can be hash-chain valid while intentionally diverging from the independently merged current item. Treat strict verification as the post-merge detector and history-repair as the explicit reconciliation step; prove both in real Git acceptance tests.
-files[7]{path,scope,note}:
+files[9]{path,scope,note}:
   src/cli/commands/contracts.ts,project,Core merge command contract provider and flag surface
+  src/cli/register-mutation.ts,project,Original Git item-path adapter
   src/sdk/cli-contracts.ts,project,Public MERGE_FLAG_CONTRACTS barrel export
+  src/sdk/history-repair.ts,project,Bulk cross-author reconciliation warnings
   src/sdk/index.ts,project,public SDK exports
   src/sdk/merge/driver.ts,project,git merge-driver protocol
   src/sdk/merge/install.ts,project,idempotent gitattributes and local git config installer
@@ -46,5 +50,5 @@ tests[2]:
     timeout_seconds: 240
 docs[1]{path,scope,note}:
   docs/MERGE_SAFETY.md,project,multi-branch installation and recovery workflow
-close_reason: Implemented and verified in the broad tracker merge-safety SDK/CLI delivery; linked files/tests/docs and packed Git acceptance evidence recorded.
+close_reason: Resolved all pre-push Greptile findings with focused regression tests; final aggregate release gate follows on the committed head.
 body: "GH-599. history/<id>.jsonl is append-only + hash-chained — ideal for conflict-free merging — but no merge driver/gitattributes ships, so concurrent same-item appends on two branches produce a content conflict; naive union leaves a forked hash chain needing manual history-repair. Fix direction: ship a union merge driver that re-anchors the chain deterministically (or documents gitattributes union + mandatory post-merge history-repair), plus post-merge detection wiring per pm-g5sx AC. Coordinate with pm-gpo7 (repair must not silently discard) and pm-ol3p (verify gate)."

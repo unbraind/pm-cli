@@ -623,7 +623,7 @@ export function mergeJsonDocuments(
     pathsFromTheirs,
   );
   return {
-    merged: `${JSON.stringify(merged, null, 2)}\n`,
+    merged: `${JSON.stringify(merged ?? null, null, 2)}\n`,
     conflict_paths: conflictPaths,
     paths_from_theirs: pathsFromTheirs,
     preferred,
