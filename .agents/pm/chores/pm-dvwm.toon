@@ -1,0 +1,19 @@
+id: pm-dvwm
+title: "Replace template filler docstrings (about 4,100 occurrences) with informative docs and lint against the filler phrases"
+description: ""
+type: Chore
+status: open
+priority: 3
+tags: []
+created_at: "2026-07-19T04:07:16.881Z"
+updated_at: "2026-07-19T04:07:16.881Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "Census script or lint rule flags the known filler templates (Implements X for the public runtime surface of this module; Value that configures or reports X for this contract; Provides CLI runtime support for X; payload exchanged by command, SDK, and package integrations) and the count is ratcheted down, not up; Touched-file burn-down policy documented so gate-mandated docstrings added going forward must carry real information (what the value means, units, invariants) or use @inheritDoc/type-level docs; Static-gate docstring coverage stays at 100 percent throughout - the fix is content quality, never coverage relaxation"
+parent: pm-n7rr
+risk: low
+confidence: 70
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-92if,related,"2026-07-19T04:07:16.881Z",null,null
+  pm-fb3i,related,"2026-07-19T04:07:16.881Z",null,null
+body: "The 100 percent docstring gates (source/exported/member) incentivized mass template docstrings that satisfy coverage while carrying zero information: grep counts 622 'Implements X for the public runtime surface of this module', 2,945 'Value that configures or reports X for this contract' across 135 files, plus 543 'Provides CLI runtime support for X'/'payload exchanged by command, SDK, and package integrations' variants - about 4,100 filler lines. Cost: inflated file length (the 3400-LOC gate deliberately excludes comment lines, but agents reading files still pay the tokens), noise for agent context assembly, and docs that answer nothing (example: ExtensionCommandArgumentHelpDescriptor.name documented as 'Value that configures or reports name for this contract'). This is content-quality simplification under pm-n7rr; distinct from pm-fb3i (coverage floors) and pm-gvnj (DeepSource docs category)."
