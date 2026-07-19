@@ -4,12 +4,15 @@
 
 ### Added
 
+- Merge-driver fence completeness: relationships/\*.jsonl event stores uncovered and schema-added custom type folders silently drop driver coverage ([pm-i4fx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-i4fx.toon))
 - GH-613: public SDK bulk item-mutation helper on commitWorkspaceTransaction — atomic create/update/close batches without hand-rolled step+compensation wiring ([pm-y9hq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-y9hq.toon))
 - GH-612: additive --add-ac/--remove-ac forms for acceptance criteria — replace-only --ac clobbers concurrent branch edits ([pm-xh82](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-xh82.toon))
 - GH-599: git merge driver + documented workflow for append-only history/\*.jsonl (concurrent appends fork the hash chain) ([pm-wc1r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-wc1r.toon))
 
 ### Fixed
 
+- GH-601: SDK mutation option bags and projected list items are Record<string,unknown\> — typos and wrong types compile clean under strict ([pm-x29o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x29o.toon))
+- GH-600: item id generation not collision-safe across branches/concurrent agents (4 base36 chars, local-disk-only uniqueness) ([pm-pibw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pibw.toon))
 - GH-615: pm notes --message without content is a silent no-op — apply the GH-588 empty-comment guard to the notes twin ([pm-iedg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-iedg.toon))
 - GH-602: SDK .d.ts require @types/node but package does not declare it — tsc errors inside node_modules for consumers; plus shipped JSDoc defects ([pm-n1xx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-n1xx.toon))
 - GH-596: update-many --ids must report nonexistent requested IDs ([pm-ukml](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ukml.toon))
@@ -18,6 +21,10 @@
 - fix: nightly windows/Node24 red — vcs-extension spec asserts POSIX 'relationships/events.jsonl' against native default store path ([pm-34yf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-34yf.toon))
 - GH-607: validate reports ok:true / checked_items:0 on structurally-unparseable item .toon — silently skips what pm get hard-errors on ([pm-cxyv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cxyv.toon))
 - GH-598: pm init .gitignore block hardcodes .agents/pm/ prefix — custom-root workspaces commit runtime cache and conflict on every merge ([pm-4uqm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4uqm.toon))
+
+### Other
+
+- Adopt PR\#614 merge safety in the pm-cli repository itself: pm merge install, committed .gitattributes fence, CI storage-integrity + strict history-verify gates, transactions GC schedule ([pm-iwsj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-iwsj.toon))
 
 ## 2026.7.19 - 2026-07-19
 

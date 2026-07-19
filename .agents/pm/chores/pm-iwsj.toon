@@ -2,27 +2,31 @@ id: pm-iwsj
 title: "Adopt PR#614 merge safety in the pm-cli repository itself: pm merge install, committed .gitattributes fence, CI storage-integrity + strict history-verify gates, transactions GC schedule"
 description: ""
 type: Chore
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-19T11:17:29.313Z"
-updated_at: "2026-07-19T16:15:17.436Z"
-assignee: maintainer-agent
+updated_at: "2026-07-19T16:46:22.947Z"
+closed_at: "2026-07-19T16:46:21.942Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: pm merge install run and the fenced .gitattributes committed on main; CI Gates run pm validate --check-storage-integrity on the tracked workspace and fail on findings; a representative pm history --verify --strict-exit gate wired; pm gc --scope transactions scheduled (or documented as manual) with retention from settings; AGENTS/docs mention the clone-side pm merge install step; contributing/agent docs updated so lane agents adopt the drivers
 parent: pm-g5sx
 risk: medium
 confidence: high
+resolution: "Adopted the merge-safety contract repository-wide through committed attributes, CI storage/history gates, clone bootstrap guidance, schema refresh diagnostics, documentation, and linked validation."
+expected_result: "Every clone can install field-aware drivers, CI detects fence/storage/history breakage, and maintainers have a documented multi-branch recovery workflow."
+actual_result: "Repository fence audits clean, linked tracker-context validation passes over 1,892 items, isolated packed-package merge behavior passes, GitHub/security/dependency findings are mapped, and all quality gates pass."
 dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-cxyv,related,"2026-07-19T11:17:29.313Z",null,null
   pm-ol3p,related,"2026-07-19T11:17:29.313Z",null,null
   pm-pibw,related,"2026-07-19T11:17:29.313Z",null,null
   pm-wc1r,related,"2026-07-19T11:17:29.313Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-19T15:37:48.554Z",maintainer-agent,"Evidence: pm merge install run in pm-cli itself; fenced .gitattributes committed (incl. relationships coverage); CI Gates static leg now runs node dist/cli.js validate --check-storage-integrity --json + pm history pm-doxj --verify --strict-exit as merge-safety gates (both verified green locally on the tracked workspace); AGENTS.md documents the once-per-clone pm merge install bootstrap; transactions GC retention already documented in MERGE_SAFETY.md (checkpoints.retention_days; pm gc --scope transactions manual cadence — no scheduled CI mutation by design, workspace mutations stay out of CI)."
   "2026-07-19T16:09:08.865Z",codex-wide-sdk-20260719,"Repository adoption evidence: committed .gitattributes fence, clone-local merge-driver bootstrap guidance in AGENTS.md, CI fence audit, schema-triggered refresh diagnostics, merge docs, and SDK/CLI tests are implemented together. Fresh packed-package acceptance proved custom JSONL paths select pm-relationship, history paths select pm-history, and a divergent relationship stream merges into consecutive sequences 1,2,3. Full suite: 317 files, 5,975 tests, 100/100/100/100 coverage."
   "2026-07-19T16:15:17.435Z",codex-wide-sdk-20260719,"GitHub/repository health snapshot 2026-07-19: no pre-existing PR for this branch; GitHub Dependabot alerts=0 and secret-scanning alerts=0; pnpm audit=0 vulnerabilities. Seven open code-scanning alerts are existing OpenSSF Scorecard signals already mapped under canonical pm-gnzh children, so no duplicate items were created. The first linked tracker-read validation correctly failed its empty-schema context preflight; the test link now declares pm_context_mode=tracker and passed against a seeded 1,892-item copy with no mismatch. Direct repository validation reports merge_fence.status=ok, no duplicates, and no history drift."
+  "2026-07-19T16:46:10.225Z",codex-wide-sdk-20260719,Pre-push Greptile re-review 8a981548-1998-4d29-92d0-eddacc0baa5b completed at confidence 5/5 with no review comments and explicitly verified all four prior findings as fixed.
 files[3]{path,scope,note}:
   .gitattributes,project,committed pm merge fence (incl. relationships coverage)
   .github/workflows/ci.yml,project,storage-integrity + strict history-verify merge-safety gates
@@ -34,4 +38,5 @@ test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-mrrzsf8s-weyhsh,test,passed,"2026-07-19T16:10:25.928Z","2026-07-19T16:10:32.621Z","2026-07-19T16:10:32.621Z",1,0,0
 docs[1]{path,scope,note}:
   docs/MERGE_SAFETY.md,project,repo adoption + retention/GC policy references
+close_reason: "Adopted merge safety in repository attributes, CI, agent guidance, docs, and linked validation; security/dependency context recorded and all release-grade local gates passed."
 body: ""

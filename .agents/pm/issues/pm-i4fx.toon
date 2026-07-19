@@ -2,18 +2,21 @@ id: pm-i4fx
 title: "Merge-driver fence completeness: relationships/*.jsonl event stores uncovered and schema-added custom type folders silently drop driver coverage"
 description: ""
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-07-19T11:21:29.939Z"
-updated_at: "2026-07-19T16:38:23.135Z"
-assignee: maintainer-agent
+updated_at: "2026-07-19T16:46:18.678Z"
+closed_at: "2026-07-19T16:46:17.488Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "buildMergeAttributePatterns covers relationship event store JSONL paths (default relationships/events.jsonl and custom relativePath stores) with an append-union driver; adding a custom item type via pm schema refreshes or flags the fence (auto-refresh where merge install already ran, otherwise actionable hint); validate (or the storage-integrity check) warns when committed .gitattributes fence coverage drifts from the active schema type folders + known JSONL stores; MERGE_SAFETY.md documents the coverage contract"
 parent: pm-g5sx
 risk: medium
 confidence: high
+resolution: "Implemented complete JSONL merge fencing, relationship-event three-way union/renumbering, schema-triggered fence refresh, and drift auditing anchored to the tracker repository."
+expected_result: Every current or custom tracker relationship stream receives field-aware merge protection and schema changes cannot silently leave the committed fence stale.
+actual_result: "All tracker JSONL selects pm-relationship with history-specific override; divergent streams preserve both sides, stable append ordering, and consecutive sequences; pmRoot-based refresh and drift tests pass."
 dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-dijg,related,"2026-07-19T11:21:29.939Z",null,null
   pm-iwsj,related,"2026-07-19T11:21:29.939Z",null,null
@@ -40,4 +43,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-mrrzrfgm-8viw75,test,passed,"2026-07-19T16:09:29.074Z","2026-07-19T16:09:46.246Z","2026-07-19T16:09:46.246Z",1,0,0
 docs[1]{path,scope,note}:
   docs/MERGE_SAFETY.md,project,fence coverage contract + relationship driver semantics
+close_reason: "Implemented and verified universal tracker JSONL fencing, relationship stream reconciliation, and tracker-root-anchored automatic refresh; Greptile clean and full coverage passed."
 body: "Two coverage gaps in the PR#614 merge-driver fence (src/sdk/merge/install.ts buildMergeAttributePatterns):\n\n1. Relationship event stores are never covered. The fence enumerates per-type item folders (*.toon/*.md), history/*.jsonl, settings.json, schema/*.json — but PR#587's RelationshipEventStore writes append-only JSONL at relationships/events.jsonl (default) or a caller-chosen relativePath. These files are tracked by default (not in the PM_GITIGNORE_BLOCK) and carry the same concurrent-append conflict class the pm-wc1r history driver fixed. Latent today (this workspace has no relationships/ dir yet) but any two branches appending relationship events will hard-conflict or, worse, resolve by default text merge and corrupt event ordering.\n\n2. Type-folder enumeration is install-time-frozen. `pm schema` custom item types added AFTER `pm merge install` write items into folders with no merge attribute — silent fallback to git default merge, reintroducing exactly the pm-9q2t count-header corruption for those items. MERGE_SAFETY.md's \"re-run pm merge install after adding custom types\" is manual-only mitigation with no drift detection.\n\nFix directions (one class fix, not per-artifact patches): extend the pattern builder; refresh the fence from schema mutations where an install marker exists; teach validate/storage-integrity to diff committed fence coverage against active schema folders + known JSONL stores."
