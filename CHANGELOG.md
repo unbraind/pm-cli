@@ -11,8 +11,8 @@
 
 ### Fixed
 
-- GH-600: item id generation not collision-safe across branches/concurrent agents (4 base36 chars, local-disk-only uniqueness) ([pm-pibw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pibw.toon))
 - GH-601: SDK mutation option bags and projected list items are Record<string,unknown\> — typos and wrong types compile clean under strict ([pm-x29o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x29o.toon))
+- GH-600: item id generation not collision-safe across branches/concurrent agents (4 base36 chars, local-disk-only uniqueness) ([pm-pibw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pibw.toon))
 - GH-615: pm notes --message without content is a silent no-op — apply the GH-588 empty-comment guard to the notes twin ([pm-iedg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-iedg.toon))
 - GH-602: SDK .d.ts require @types/node but package does not declare it — tsc errors inside node_modules for consumers; plus shipped JSDoc defects ([pm-n1xx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-n1xx.toon))
 - GH-596: update-many --ids must report nonexistent requested IDs ([pm-ukml](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ukml.toon))

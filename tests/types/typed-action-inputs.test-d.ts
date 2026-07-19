@@ -19,6 +19,7 @@ import type {
 
 // --- create: contract-declared keys and value shapes compile ---
 const createOptions: PmCreateActionOptions = {
+  id: "pm-typed-create",
   title: "Typed create",
   description: "contract-derived",
   type: "Task",

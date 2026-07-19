@@ -6,8 +6,8 @@ status: closed
 priority: 2
 tags[3]: dx,sdk,type-safety
 created_at: "2026-07-19T03:42:08.975Z"
-updated_at: "2026-07-19T16:46:20.996Z"
-closed_at: "2026-07-19T16:46:19.967Z"
+updated_at: "2026-07-19T17:31:25.994Z"
+closed_at: "2026-07-19T17:31:25.061Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Public SDK mutation inputs are typed per-action (derived from flag/schema contracts, not hand-written) so field typos and wrong value types fail tsc under strict; projected list rows expose typed id/core fields; no runtime behavior change; typed surface covered by a type-level test (tsd or equivalent)"
@@ -16,20 +16,22 @@ risk: medium
 confidence: high
 resolution: Replaced broad primary SDK mutation bags with strict types derived from executable command interfaces and added typed list projection cores and compile-time contract tests.
 expected_result: SDK create/update/close consumers get accurate keys and scalar kinds with typo rejection while dynamic/custom workflows retain intentional escape hatches.
-actual_result: "PmClient and top-level create/update/close reject wrong keys, MCP-only aliases, shapes, and scalars at compile time; real command keys compile; list core fields are typed; runtime and type gates pass."
+actual_result: "PmClient and top-level create/update/close inputs are strict and executable-contract-derived; projected list cores are typed; explicit create id now appears in the canonical tool action schema and executes through the native tool bridge; compile-time, focused, and full 100/100/100/100 gates pass."
 dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-9x6e,related,"2026-07-19T03:42:08.975Z",null,null
   pm-ju83,related,"2026-07-19T03:42:08.975Z",null,null
   pm-muhw,related,"2026-07-19T03:42:08.975Z",null,null
   pm-xm7c,related,"2026-07-19T15:38:25.812Z",null,null
   pm-wrss,related,"2026-07-19T15:38:29.111Z",null,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-19T15:37:46.603Z",maintainer-agent,"Evidence: PmClient.create/update/close now take contract-derived typed option bags (PmCreateActionOptions/PmUpdateActionOptions/PmClientCloseActionOptions) built by OptionsFromContracts over const-asserted *_SOURCE tuples in tool-option-contracts.ts — same objects that build the runtime tables, pinned by a parity spec; CLOSE_ACTION_OPTION_KEYS single-sources the close schema + close type. Typo/wrong-shape rejection enforced by tests/types/typed-action-inputs.test-d.ts via tsconfig.typetests.json wired into pnpm typecheck (CI gate). ListProjectedItem gains typed ListProjectedItemCore (row.id string|undefined, never unknown). No runtime behavior change; PmClient.run stays the wide escape hatch; custom schema fields keep the repeatable field option. Remainder honestly out of scope here: claim/release/copy/delete/restore convenience bags are still Record-based."
   "2026-07-19T16:09:04.938Z",codex-wide-sdk-20260719,"Final implementation correction: PmCreateActionOptions, PmUpdateActionOptions, and PmCloseActionOptions now derive from the executable CLI command option interfaces after stripping index signatures and internal runtime/policy keys, rather than deriving client options from MCP tool aliases. PmClient methods and the top-level create/update/close SDK helpers all consume these strict types. Compile-time tests reject typos, wrong scalar kinds such as priority=true, MCP-only aliases such as estimate, object/array values, and unsupported keys while accepting real client keys such as estimatedMinutes and file. pnpm typecheck and the full coverage suite pass."
+  "2026-07-19T17:23:51.278Z",codex-wide-sdk-20260719,"Hosted review follow-up: accepting Greptile thread 3611013349. Add the explicit id option to the executable tool create contract and prove schema/runtime/type parity so CLI, MCP, and SDK callers expose the same create identity primitive."
+  "2026-07-19T17:30:55.969Z",codex-wide-sdk-20260719,"PR #617 Greptile P1 fix: TOOL_CREATE_OPTION_CONTRACT_SOURCE now includes id/--id, which feeds CREATE_CONTRACT_PARAMETER_KEYS and the canonical action schema used for nested MCP option validation. Regression evidence proves create.optional contains id and runAction creates exactly pm-tool-explicit-id; strict type tests also accept id. Full suite: 317 files, 5,977 tests, 100/100/100/100."
 learnings[2]{created_at,author,text}:
   "2026-07-19T15:38:36.272Z",maintainer-agent,"Deriving compile-time types from runtime contract tables requires const-asserted sources; widened annotations (X[] = [...]) erase literals permanently. Pattern: const SOURCE = [...] as const satisfies readonly T[]; export runtime clones + typeof SOURCE types, and pin them together with a runtime parity spec. Interfaces in composed option bags break implicit index-signature assignability to Record-based dispatch layers — use object type literals."
   "2026-07-19T16:09:05.803Z",codex-wide-sdk-20260719,"Public SDK client option types must derive from the executable command option interfaces, not transport-specific MCP aliases; otherwise accepted keys drift from runtime behavior even when a schema-derived type looks strict. Strip index signatures before projecting public mutation inputs so excess-property checks remain effective."
-files[12]{path,scope,note}:
+files[13]{path,scope,note}:
   package.json,project,typecheck script runs the type-test project
   src/cli/commands/create.ts,project,Executable create option interface now exposes the explicit id and scalar kinds consumed by strict SDK mutation types
   src/cli/commands/update.ts,project,Executable update option interface now provides the exact priority scalar contract consumed by strict SDK mutation types
@@ -40,9 +42,14 @@ files[12]{path,scope,note}:
   src/sdk/index.ts,project,public barrel exports for typed inputs
   src/sdk/query/list.ts,project,ListProjectedItemCore typed projection rows
   src/sdk/runtime.ts,project,typed create/update/close PmClient signatures
+  tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,Tool create-id contract exposure and execution regression
   tests/types/typed-action-inputs.test-d.ts,project,type-level assertions incl. ts-expect-error typo rejection
   tsconfig.typetests.json,project,enforced compile-time test project
-tests[2]:
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/sdk-cli-contract-integrity.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: Tool contract explicit-id transport regression
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/typed-action-inputs.spec.ts
     scope: project
     timeout_seconds: 180
@@ -50,9 +57,10 @@ tests[2]:
     scope: project
     timeout_seconds: 300
     note: "type-level test: compile IS the test"
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrrzruvc-nza8jt,test,passed,"2026-07-19T16:09:46.885Z","2026-07-19T16:10:06.216Z","2026-07-19T16:10:06.216Z",2,0,0
+  test-local-mrs2oepu-f9lbmx,test,passed,"2026-07-19T17:30:56.584Z","2026-07-19T17:31:24.162Z","2026-07-19T17:31:24.162Z",3,0,0
 docs[1]{path,scope,note}:
   docs/SDK.md,project,typed mutation inputs + typed projection rows reference
-close_reason: "Implemented executable-contract-derived strict SDK mutations and typed projections with compile-time rejection tests; typecheck, runtime tests, and full coverage passed."
+close_reason: "Completed strict SDK mutation/list typing plus explicit create-id parity across CLI, tool schema, MCP/native action execution, and compile-time contracts; all linked and full gates pass."
 body: "GH-601. dist/sdk/runtime.d.ts: PmActionOptions = Record<string, unknown> for mutation inputs; projected list rows equally untyped — field typos/wrong value types compile clean under strict and fail at runtime; listed-item id access not type-safe. Fix direction: derive per-action input types from the existing flag/schema contracts (single source, no hand-written duplicates) + typed projection rows; add type-level tests. Serves SDK-first (pm-usfg) consumer contract quality."
