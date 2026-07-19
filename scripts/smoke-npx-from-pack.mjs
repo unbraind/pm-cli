@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { cleanupTempRoot } from "./smoke-cleanup.mjs";
+
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function resolveCommand(base) {
   return process.platform === "win32" ? `${base}.cmd` : base;
@@ -146,6 +148,54 @@ function assertPackedCalendarWorkflow(runPackedPm, commandOptions) {
   }
 }
 
+// GH-602: the shipped .d.ts reference Node globals (NodeJS.Platform, Buffer,
+// node:* modules), so a strict TypeScript consumer must compile the packed
+// tarball's /sdk entrypoint out of the box. The compiler executable comes from
+// this checkout, but Node declarations must resolve from the consumer's own
+// plain tarball install so the smoke cannot mask a missing published dependency.
+function assertPackedTypescriptConsumer(npm, tarballPath, tempRoot) {
+  const consumerRoot = path.join(tempRoot, "ts-consumer");
+  mkdirSync(consumerRoot, { recursive: true });
+  writeFileSync(
+    path.join(consumerRoot, "package.json"),
+    `${JSON.stringify({ name: "pm-sdk-pack-consumer", private: true, type: "module" }, null, 2)}\n`,
+  );
+  writeFileSync(
+    path.join(consumerRoot, "consumer.ts"),
+    [
+      'import { quoteCommandArg } from "@unbrained/pm-cli/sdk";',
+      'export const quoted: string = quoteCommandArg("pack-smoke", "linux");',
+      "",
+    ].join("\n"),
+  );
+  writeFileSync(
+    path.join(consumerRoot, "tsconfig.json"),
+    `${JSON.stringify(
+      {
+        compilerOptions: {
+          strict: true,
+          noEmit: true,
+          module: "nodenext",
+          moduleResolution: "nodenext",
+          types: ["node"],
+          typeRoots: [path.join(consumerRoot, "node_modules", "@types")],
+        },
+        include: ["consumer.ts"],
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  runSmokeCommand(npm, ["install", "--no-audit", "--no-fund", tarballPath], {
+    cwd: consumerRoot,
+  });
+  runSmokeCommand(
+    process.execPath,
+    [path.join(REPO_ROOT, "node_modules", "typescript", "bin", "tsc"), "-p", consumerRoot],
+    { cwd: consumerRoot },
+  );
+}
+
 function run() {
   const npm = resolveCommand("npm");
   const npx = resolveCommand("npx");
@@ -165,6 +215,7 @@ function run() {
     if (upgrade?.summary?.requested_packages !== true || !Array.isArray(upgrade?.packages)) {
       throw new Error(`Packed package upgrade smoke returned unexpected payload: ${JSON.stringify(upgrade)}`);
     }
+    assertPackedTypescriptConsumer(npm, tarballPath, tempRoot);
 
     console.log(`npx packed package smoke passed (${version}, packages=${packages.length}).`);
   } finally {

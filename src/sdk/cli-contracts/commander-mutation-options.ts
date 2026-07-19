@@ -653,6 +653,28 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       ],
     },
     {
+      target: "addAc",
+      keys: ["addAc", "add_ac"],
+      option: "--add-ac <value>",
+      description:
+        "Add one semicolon-free acceptance criterion without replacing the existing list (repeatable)",
+      repeatable: true,
+      aliasOptions: [
+        { option: "--add_ac <value>", description: "Alias for --add-ac" },
+      ],
+    },
+    {
+      target: "removeAc",
+      keys: ["removeAc", "remove_ac"],
+      option: "--remove-ac <value>",
+      description:
+        "Remove one semicolon-free acceptance criterion by exact text match (repeatable)",
+      repeatable: true,
+      aliasOptions: [
+        { option: "--remove_ac <value>", description: "Alias for --remove-ac" },
+      ],
+    },
+    {
       target: "definitionOfReady",
       keys: ["definitionOfReady", "definition_of_ready"],
       option: "--definition-of-ready <value>",

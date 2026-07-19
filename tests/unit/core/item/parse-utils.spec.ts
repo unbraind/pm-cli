@@ -2,6 +2,7 @@ import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   _testOnly as parseTestOnly,
+  applyAcceptanceCriteriaMutations,
   applyTagRemovals,
   assertNoUnknownCsvKeys,
   collectTagFlagValues,
@@ -12,6 +13,7 @@ import {
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
+  splitAcceptanceCriteria,
 } from "../../../../src/core/item/parse.js";
 import { resolveEventEndAt } from "../../../../src/cli/commands/event-validation-messages.js";
 import {
@@ -600,6 +602,28 @@ describe("core/item/parse", () => {
     await expect(resolver.resolveValue("-", "--body")).rejects.toThrow(
       "Ctrl+D",
     );
+  });
+
+  describe("acceptance-criteria helpers (GH-612)", () => {
+    it("splits stored criteria and normalizes non-string values to empty", () => {
+      expect(splitAcceptanceCriteria("a; b ;; c")).toEqual(["a", "b", "c"]);
+      expect(splitAcceptanceCriteria(undefined)).toEqual([]);
+      expect(splitAcceptanceCriteria(42)).toEqual([]);
+      expect(splitAcceptanceCriteria("")).toEqual([]);
+    });
+
+    it("applies additive and subtractive criterion mutations with unmatched reporting", () => {
+      const mutated = applyAcceptanceCriteriaMutations(
+        ["first", " second ", ""],
+        ["second", "third", "  ", "third"],
+        ["first", "ghost", "   "],
+      );
+      expect(mutated.criteria).toEqual(["second", "third"]);
+      expect(mutated.unmatchedRemovals).toEqual(["ghost"]);
+      expect(
+        applyAcceptanceCriteriaMutations([], undefined, undefined).criteria,
+      ).toEqual([]);
+    });
   });
 });
 

@@ -182,13 +182,6 @@ export async function runComments(
 ): Promise<CommentsResult> {
   const stdinResolver = createStdinTokenResolver();
   const commentInput = await resolveCommentInput(options, stdinResolver);
-  if (commentInput.mode === "list" && options.message !== undefined) {
-    throw new PmCliError(
-      "--message labels a comment mutation but does not provide comment text. Pass text positionally or with --add, --stdin, or --file.",
-      EXIT_CODE.USAGE,
-    );
-  }
-
   const shouldParseText =
     commentInput.mode === "add" || commentInput.mode === "edit";
   const rawValue = commentInput.value ?? "";

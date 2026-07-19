@@ -142,6 +142,7 @@ function mockFs() {
   vi.doMock("node:fs", () => ({
     mkdirSync: vi.fn(),
     mkdtempSync: vi.fn(() => "/tmp/pm-pack-smoke"),
+    writeFileSync: vi.fn(),
   }));
 }
 
@@ -429,6 +430,32 @@ describe("smoke-npx-from-pack", () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
     process.argv = ["node", SCRIPT_ABS];
     await expect(harness.importModule(SCRIPT)).rejects.toThrow(/Packed calendar smoke returned unexpected payload/);
+  });
+
+  it("fails when the packed TypeScript consumer typecheck rejects (GH-602)", async () => {
+    vi.doMock("../../../scripts/smoke-cleanup.mjs", () => ({ cleanupTempRoot: vi.fn() }));
+    mockFs();
+    const seenCommands: Array<[string, string[]]> = [];
+    const passthrough = buildExecFileSync({});
+    vi.doMock("node:child_process", () => ({
+      execFileSync: vi.fn((command: string, args: string[]) => {
+        seenCommands.push([command, args]);
+        if (baseCommand(command) !== "npm" && baseCommand(command) !== "npx" && args.some((arg) => arg.endsWith("tsc"))) {
+          const error = new Error("tsc failed") as Error & { stdout?: string };
+          error.stdout = "consumer.ts(1,1): error TS2307: Cannot find module";
+          throw error;
+        }
+        return passthrough(command, args);
+      }),
+    }));
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    process.argv = ["node", SCRIPT_ABS];
+    await expect(harness.importModule(SCRIPT)).rejects.toThrow("tsc failed");
+    expect(
+      seenCommands.some(
+        ([command, args]) => baseCommand(command) === "npm" && args[0] === "install" && args.some((arg) => arg.endsWith(".tgz")),
+      ),
+    ).toBe(true);
   });
 
   it("does not auto-run when argv[1] is not the script path", async () => {

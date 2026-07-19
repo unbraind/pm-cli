@@ -48,7 +48,7 @@ export interface ExtensionSurfaceDescription {
   layer: ExtensionLayer;
   /** Value that configures or reports version for this contract. */
   version: string;
-  /** Lifecycle state reported for activationthe record. */
+  /** Activation outcome reported for this extension. */
   activation_status: ExtensionDescribeActivationStatus;
   /** Value that configures or reports surfaces for this contract. */
   surfaces: ExtensionActivationSummary;

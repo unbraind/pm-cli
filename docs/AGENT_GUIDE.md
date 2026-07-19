@@ -50,6 +50,8 @@ Repeated singular/plural list flags accumulate, so `--tag a --tag b` is equivale
 
 `--tags` REPLACES the whole tag list. To edit tags without restating the full set, prefer `--add-tags <value>` (adds without replacing) and `--remove-tags <value>` (prunes) on `create`/`update`/`update-many` (both repeatable; CSV or JSON-array). `--remove-tags` is `update`/`update-many` only. Also note `--expected`/`--actual` are short aliases for `--expected-result`/`--actual-result` on these commands, matching `pm close`.
 
+`--acceptance-criteria`/`--ac` likewise REPLACES the whole criteria value. Prefer `--add-ac <text>` (appends one criterion; deduped on exact text) and `--remove-ac <text>` (removes one criterion by exact text; unmatched selectors surface a `remove_ac_unmatched` warning) on `update`/`update-many` so concurrent branch edits with disjoint additions merge instead of clobbering. Acceptance criteria use semicolons as storage boundaries, so one criterion cannot itself contain a semicolon.
+
 ```bash
 pm update <item-id> --add-tags urgent,backend   # keep existing tags, add two
 pm update <item-id> --remove-tags stale          # drop one, keep the rest
@@ -100,53 +102,53 @@ pm release <item-id>
 
 ## Token-Minimal Retrieval
 
-| Need | Command |
-|------|---------|
-| The single next action + why | `pm next` (concrete ready leaves first; completed-container closeout rows surface only when no leaf work is ready; `--ready-only` for the tightest output) |
-| Next ready work in one epic | `pm next --parent <id>` |
-| Next work and agenda | `pm context --limit 10` |
-| Comprehensive whole-tracker snapshot | `pm context --depth full` (every section, no per-section row cap) |
-| Status of one epic/subtree | `pm context --parent <id> --depth deep` |
-| Relevant items | `pm search "<keywords>" --limit 10` (keyword hits are score-ranked; keyword mode defaults to 50 results, `result.total` reports the full pre-limit count) |
-| Require every query token | `pm search "<keywords>" --match-mode and` (hard-filter; `exact` = contiguous phrase; default `or` adds an all-terms ranking bonus) |
-| Just the match count | `pm search "<keywords>" --count` (no hit rows; `count`/`total` carry the matched total) |
-| Per-query score threshold | `pm search "<keywords>" --min-score 5` (overrides settings `search.score_threshold` for this query) |
-| Every matched row (no cap) | `pm list-all --no-truncate --brief` (alias `--all`; `result.total` reports the full count when a `--limit`/`--offset` truncates) |
-| Item bodies in bulk (one call) | `pm list-open --json --include-body` (avoids one `pm get` per item) |
-| Open work only | `pm search "<keywords>" --status open` (drops closed-history noise; did-you-mean on typos) |
-| Scope search like list | `pm search "<keywords>" --type Task --assignee <name> --parent <id>` (full `pm list` filter parity) |
-| Items changed since last window | `pm list-all --updated-after <prev-run-ISO> --brief` (relative `-2h`/`-7d` also work) |
-| Open items changed today | `pm list-open --today --brief` (local-midnight shorthand; mutually exclusive with `--updated-after`) |
-| Items changed recently | `pm list-all --recent --brief` (last seven days; mutually exclusive with `--updated-after`) |
-| Single item | `pm get <id>` |
-| Full machine payload | `pm get <id> --full --json` |
-| Command flags | `pm <command> --help --json` |
-| Command intent map | `pm contracts --summary --json` (one command plus terse intent per row; use before command-scoped contracts) |
-| Low-noise machine contracts | `pm contracts --command <command> --flags-only --json` |
-| Semantic index refresh | `pm reindex --mode semantic --progress` (stale-first by default; add `--full` to force full rebuild; requires the `search-advanced` package) |
-| Timeline | `pm activity --id <id> --limit 20` |
-| Audited history redaction | `pm history-redact <id> --literal "<secret>" --replacement "[redacted]" --dry-run` |
-| Audited history re-anchor | `pm history-repair <id> --dry-run` (clears drift flagged by `pm health`/`pm validate`) |
-| Register custom item type | `pm schema add-type <Name> --description "<text>" --default-status open` (then `pm create <Name> "..."`) |
-| Remove custom item type | `pm schema remove-type <Name>` (warns if items still use it; built-ins refused) |
-| Register custom status | `pm schema add-status <id> --role <active\|terminal\|...> --alias <name> --order <n>` |
-| Remove custom status | `pm schema remove-status <id>` (warns if items use it; built-in statuses refused) |
-| Agent plan create | `pm plan create --title "<scope>" --harness claude-code --scope "<short>" --claim` |
-| Agent plan create with steps | `pm plan create --title "<scope>" --step "<step 1>" --step "<step 2>" --step "<step 3>"` (repeated `--step` seeds ordered steps) |
-| Agent plan step update | `pm plan update-step <plan-id> plan-step-001 --step-status in_progress --step-evidence "<short>"` |
-| Agent plan read | `pm plan show <plan-id> --depth brief` (or `--fields id,title,steps_summary`) |
-| Materialize plan steps | `pm plan materialize <plan-id> --steps plan-step-002 --materialize-type Task` |
-| Dependencies | `pm deps <id> --format tree` |
-| Graph queries | `pm graph successors <id> --limit 20` (also `ancestors`, `paths`, `impact`, `analyze`, `audit`, `communities`, `redundancy`, `dominators`, `plan`) |
-| Bulk update by id allowlist | `pm update-many --ids pm-a,pm-b --priority 1 --dry-run` (preview, then drop `--dry-run`) |
-| Audited bulk close (sprint closeout) | `pm close-many --filter-sprint <s> --reason "<text>" --dry-run` (full `pm close` semantics per item; `--rollback <id>` to undo) |
-| Local docs routing | `pm install guide-shell --project`, then `pm guide <topic>` |
-| Compact mutation echo | `pm --no-changed-fields create "..."` (drops the redundant `changed_fields` array, keeps `changed_field_count`) |
-| Minimal mutation echo | `pm --id-only create "..."` (prints only id and status for single-item mutations) |
-| Duplicate close | `pm close <duplicate> --duplicate-of <canonical>` (or `-d <canonical>`) |
-| Long body from a file | `pm create <Type> "<title>" --body-file ./spec.md` (also on `pm update`; mutually exclusive with `--body`) |
-| Close with short flags | `pm close <id> -r "<reason>"` / `-m "<history msg>"` / `-d <canonical>` |
-| Close via resolution only | `pm close <id> --resolution "<summary>"` (used as the close reason when one is required) |
+| Need                                 | Command                                                                                                                                                    |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The single next action + why         | `pm next` (concrete ready leaves first; completed-container closeout rows surface only when no leaf work is ready; `--ready-only` for the tightest output) |
+| Next ready work in one epic          | `pm next --parent <id>`                                                                                                                                    |
+| Next work and agenda                 | `pm context --limit 10`                                                                                                                                    |
+| Comprehensive whole-tracker snapshot | `pm context --depth full` (every section, no per-section row cap)                                                                                          |
+| Status of one epic/subtree           | `pm context --parent <id> --depth deep`                                                                                                                    |
+| Relevant items                       | `pm search "<keywords>" --limit 10` (keyword hits are score-ranked; keyword mode defaults to 50 results, `result.total` reports the full pre-limit count)  |
+| Require every query token            | `pm search "<keywords>" --match-mode and` (hard-filter; `exact` = contiguous phrase; default `or` adds an all-terms ranking bonus)                         |
+| Just the match count                 | `pm search "<keywords>" --count` (no hit rows; `count`/`total` carry the matched total)                                                                    |
+| Per-query score threshold            | `pm search "<keywords>" --min-score 5` (overrides settings `search.score_threshold` for this query)                                                        |
+| Every matched row (no cap)           | `pm list-all --no-truncate --brief` (alias `--all`; `result.total` reports the full count when a `--limit`/`--offset` truncates)                           |
+| Item bodies in bulk (one call)       | `pm list-open --json --include-body` (avoids one `pm get` per item)                                                                                        |
+| Open work only                       | `pm search "<keywords>" --status open` (drops closed-history noise; did-you-mean on typos)                                                                 |
+| Scope search like list               | `pm search "<keywords>" --type Task --assignee <name> --parent <id>` (full `pm list` filter parity)                                                        |
+| Items changed since last window      | `pm list-all --updated-after <prev-run-ISO> --brief` (relative `-2h`/`-7d` also work)                                                                      |
+| Open items changed today             | `pm list-open --today --brief` (local-midnight shorthand; mutually exclusive with `--updated-after`)                                                       |
+| Items changed recently               | `pm list-all --recent --brief` (last seven days; mutually exclusive with `--updated-after`)                                                                |
+| Single item                          | `pm get <id>`                                                                                                                                              |
+| Full machine payload                 | `pm get <id> --full --json`                                                                                                                                |
+| Command flags                        | `pm <command> --help --json`                                                                                                                               |
+| Command intent map                   | `pm contracts --summary --json` (one command plus terse intent per row; use before command-scoped contracts)                                               |
+| Low-noise machine contracts          | `pm contracts --command <command> --flags-only --json`                                                                                                     |
+| Semantic index refresh               | `pm reindex --mode semantic --progress` (stale-first by default; add `--full` to force full rebuild; requires the `search-advanced` package)               |
+| Timeline                             | `pm activity --id <id> --limit 20`                                                                                                                         |
+| Audited history redaction            | `pm history-redact <id> --literal "<secret>" --replacement "[redacted]" --dry-run`                                                                         |
+| Audited history re-anchor            | `pm history-repair <id> --dry-run` (clears drift flagged by `pm health`/`pm validate`)                                                                     |
+| Register custom item type            | `pm schema add-type <Name> --description "<text>" --default-status open` (then `pm create <Name> "..."`)                                                   |
+| Remove custom item type              | `pm schema remove-type <Name>` (warns if items still use it; built-ins refused)                                                                            |
+| Register custom status               | `pm schema add-status <id> --role <active\|terminal\|...> --alias <name> --order <n>`                                                                      |
+| Remove custom status                 | `pm schema remove-status <id>` (warns if items use it; built-in statuses refused)                                                                          |
+| Agent plan create                    | `pm plan create --title "<scope>" --harness claude-code --scope "<short>" --claim`                                                                         |
+| Agent plan create with steps         | `pm plan create --title "<scope>" --step "<step 1>" --step "<step 2>" --step "<step 3>"` (repeated `--step` seeds ordered steps)                           |
+| Agent plan step update               | `pm plan update-step <plan-id> plan-step-001 --step-status in_progress --step-evidence "<short>"`                                                          |
+| Agent plan read                      | `pm plan show <plan-id> --depth brief` (or `--fields id,title,steps_summary`)                                                                              |
+| Materialize plan steps               | `pm plan materialize <plan-id> --steps plan-step-002 --materialize-type Task`                                                                              |
+| Dependencies                         | `pm deps <id> --format tree`                                                                                                                               |
+| Graph queries                        | `pm graph successors <id> --limit 20` (also `ancestors`, `paths`, `impact`, `analyze`, `audit`, `communities`, `redundancy`, `dominators`, `plan`)         |
+| Bulk update by id allowlist          | `pm update-many --ids pm-a,pm-b --priority 1 --dry-run` (preview, then drop `--dry-run`)                                                                   |
+| Audited bulk close (sprint closeout) | `pm close-many --filter-sprint <s> --reason "<text>" --dry-run` (full `pm close` semantics per item; `--rollback <id>` to undo)                            |
+| Local docs routing                   | `pm install guide-shell --project`, then `pm guide <topic>`                                                                                                |
+| Compact mutation echo                | `pm --no-changed-fields create "..."` (drops the redundant `changed_fields` array, keeps `changed_field_count`)                                            |
+| Minimal mutation echo                | `pm --id-only create "..."` (prints only id and status for single-item mutations)                                                                          |
+| Duplicate close                      | `pm close <duplicate> --duplicate-of <canonical>` (or `-d <canonical>`)                                                                                    |
+| Long body from a file                | `pm create <Type> "<title>" --body-file ./spec.md` (also on `pm update`; mutually exclusive with `--body`)                                                 |
+| Close with short flags               | `pm close <id> -r "<reason>"` / `-m "<history msg>"` / `-d <canonical>`                                                                                    |
+| Close via resolution only            | `pm close <id> --resolution "<summary>"` (used as the close reason when one is required)                                                                   |
 
 Default TOON output is preferred for model-readable loops. Use `--json` only when strict parsing is needed.
 

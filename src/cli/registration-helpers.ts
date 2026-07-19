@@ -546,6 +546,8 @@ export function normalizeUpdateOptions(
         "acceptanceCriteria",
       ),
     ),
+    addAc: readUpdateList("addAc"),
+    removeAc: readUpdateList("removeAc"),
     definitionOfReady: readUpdateString("definitionOfReady"),
     order: readUpdateString("order"),
     rank: readUpdateString("rank"),

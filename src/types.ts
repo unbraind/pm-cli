@@ -645,17 +645,17 @@ export interface RuntimeFieldDefinition {
 
 /** Documents the runtime workflow definition payload exchanged by command, SDK, and package integrations. */
 export interface RuntimeWorkflowDefinition {
-  /** Lifecycle state reported for draftthe record. */
+  /** Configured status id representing the draft lifecycle state. */
   draft_status?: string;
-  /** Lifecycle state reported for openthe record. */
+  /** Configured status id representing the open lifecycle state. */
   open_status?: string;
-  /** Lifecycle state reported for in progressthe record. */
+  /** Configured status id representing the in-progress lifecycle state. */
   in_progress_status?: string;
-  /** Lifecycle state reported for blockedthe record. */
+  /** Configured status id representing the blocked lifecycle state. */
   blocked_status?: string;
-  /** Lifecycle state reported for closethe record. */
+  /** Configured status id representing the closed lifecycle state. */
   close_status?: string;
-  /** Lifecycle state reported for canceledthe record. */
+  /** Configured status id representing the canceled lifecycle state. */
   canceled_status?: string;
 }
 

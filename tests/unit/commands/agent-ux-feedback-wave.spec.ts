@@ -61,7 +61,28 @@ describe("agent UX feedback wave", () => {
       expect(comment.stderr).toContain("does not provide comment text");
       await expect(
         runComments(itemId, { message: "lost text" }, { path: context.pmPath }),
-      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        context: { code: "annotation_message_without_text" },
+      });
+
+      for (const twin of ["notes", "learnings"] as const) {
+        const twinResult = context.runCli([
+          twin,
+          itemId,
+          "--message",
+          "lost text",
+          "--json",
+        ]);
+        expect(twinResult.code).toBe(EXIT_CODE.USAGE);
+        expect(twinResult.stderr).toContain(
+          `does not provide ${twin.replace(/s$/, "")} text`,
+        );
+        const listAfter = context.runCli([twin, itemId, "--json"], {
+          expectJson: true,
+        });
+        expect((listAfter.json as { count: number }).count).toBe(0);
+      }
 
       const next = context.runCli(
         ["next", "--assignee", "bob", "--json"],

@@ -6128,6 +6128,18 @@
           "flag": "--ac"
         },
         {
+          "aliases": [
+            "--add_ac"
+          ],
+          "flag": "--add-ac"
+        },
+        {
+          "aliases": [
+            "--remove_ac"
+          ],
+          "flag": "--remove-ac"
+        },
+        {
           "flag": "--assignee"
         },
         {
@@ -6564,6 +6576,18 @@
         },
         {
           "flag": "--ac"
+        },
+        {
+          "aliases": [
+            "--add_ac"
+          ],
+          "flag": "--add-ac"
+        },
+        {
+          "aliases": [
+            "--remove_ac"
+          ],
+          "flag": "--remove-ac"
         },
         {
           "aliases": [
@@ -7829,6 +7853,20 @@
           "ac"
         ],
         "target": "acceptanceCriteria"
+      },
+      {
+        "keys": [
+          "addAc",
+          "add_ac"
+        ],
+        "target": "addAc"
+      },
+      {
+        "keys": [
+          "removeAc",
+          "remove_ac"
+        ],
+        "target": "removeAc"
       },
       {
         "keys": [
@@ -20162,6 +20200,18 @@
             "description": "Actual Result.",
             "type": "string"
           },
+          "addAc": {
+            "description": "Acceptance criteria appended individually without replacing the existing list (one criterion per entry).",
+            "examples": [
+              [
+                "error path covered by a regression test"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "addTags": {
             "description": "Tags to add to the existing list without replacing it. Each entry may be CSV or a JSON array.",
             "examples": [
@@ -20537,6 +20587,18 @@
             },
             "type": "array"
           },
+          "removeAc": {
+            "description": "Acceptance criteria removed individually by exact text match (one criterion per entry).",
+            "examples": [
+              [
+                "superseded manual QA step"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "removeTags": {
             "description": "Tags to remove from the existing list. Each entry may be CSV or a JSON array.",
             "examples": [
@@ -20680,6 +20742,18 @@
           "actualResult": {
             "description": "Actual Result.",
             "type": "string"
+          },
+          "addAc": {
+            "description": "Acceptance criteria appended individually without replacing the existing list (one criterion per entry).",
+            "examples": [
+              [
+                "error path covered by a regression test"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "addTags": {
             "description": "Tags to add to the existing list without replacing it. Each entry may be CSV or a JSON array.",
@@ -21240,6 +21314,18 @@
             "examples": [
               [
                 "at=+2d,text=Review PR"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "removeAc": {
+            "description": "Acceptance criteria removed individually by exact text match (one criterion per entry).",
+            "examples": [
+              [
+                "superseded manual QA step"
               ]
             ],
             "items": {

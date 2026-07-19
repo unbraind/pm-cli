@@ -2,11 +2,12 @@ id: pm-d9g9
 title: "GH-597: reject empty append text without false updated_at freshness"
 description: "append accepts empty or whitespace-only text as a successful no-op yet advances updated_at, polluting activity, recency ordering, and agent ranking."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[5]: agent-ux,"area:cli",data-integrity,gh-issue,validation
 created_at: "2026-07-18T15:09:39.819Z"
-updated_at: "2026-07-18T15:09:39.819Z"
+updated_at: "2026-07-19T12:50:17.076Z"
+assignee: maintainer-agent
 author: codex-root
 estimated_minutes: 75
 acceptance_criteria: append rejects empty and whitespace-only text with structured usage recovery; no-op mutations never advance updated_at; positional and --body forms have parity; integration tests protect activity and recency behavior; GH-597 is resolved
@@ -17,4 +18,16 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-45mb,related,"2026-07-18T15:09:39.819Z",null,null
   pm-7je0,related,"2026-07-18T15:09:39.819Z",null,null
   pm-zwpp,related,"2026-07-18T15:09:39.819Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-19T12:41:29.311Z",maintainer-agent,"Evidence: blank/whitespace append now fails before mutation with append_empty_body; linked 20-test gate proves body, history, and updated_at remain unchanged; manual built-CLI acceptance exited 2 with stable updated_at; full coverage is 100/100/100/100."
+  "2026-07-19T12:50:17.075Z",maintainer-agent,"Release-gate evidence: pnpm release:gates completed build, typecheck, docs/skills, static quality, package boundary, token budget, 5,963 tests with exact 100/100/100/100 coverage, version/sync, secret scan, packed-package smoke, and package-first dogfood successfully. The aggregate command stopped only at its intentional Greptile stage because Greptile requires a committed diff against main; the local commit will be reviewed before push."
+notes[1]{created_at,author,text}:
+  "2026-07-19T11:59:23.088Z",maintainer-agent,"Implemented (mutation-integrity-and-sdk-batch-wave): runAppend now rejects empty/whitespace-only resolved body text fail-fast with structured recovery (code append_empty_body) BEFORE mutateItem — no updated_at bump, no history event, positional/--body/--text parity automatic (guard sits on the resolved value). Regression spec rewritten: asserts USAGE rejection for \"\" and \"   \" via SDK + positional CLI form, and that body/updated_at/history length are all unchanged. Manual temp-dir verify: exit 2, updated_at stable."
+files[2]{path,scope,note}:
+  src/cli/commands/append.ts,project,blank append fail-fast guard
+  tests/unit/commands/get-append-command.spec.ts,project,false-freshness regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/get-append-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrrs8gvb-msxcfp,test,passed,"2026-07-19T12:38:53.671Z","2026-07-19T12:39:04.295Z","2026-07-19T12:39:04.295Z",1,0,0
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/597\n\nThe 2026.7.18 CLI returns changed_fields: [] for an empty append but still rewrites updated_at. Align append with the nonblank annotation/title contracts and protect false-freshness semantics. Duplicate check searched all statuses for append, empty/whitespace text, no-op, and updated_at freshness. Closed pm-7je0, pm-45mb, and pm-zwpp are related validation/mutation lineages but do not cover append freshness."

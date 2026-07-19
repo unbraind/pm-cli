@@ -27,7 +27,7 @@ export interface NormalizedAddTypeInput {
   name: string;
   /** Value that configures or reports description for this contract. */
   description?: string;
-  /** Lifecycle state reported for defaultthe record. */
+  /** Default status id newly created items of this type receive. */
   defaultStatus?: string;
   /** Value that configures or reports folder for this contract. */
   folder?: string;
@@ -41,7 +41,7 @@ export interface RawAddTypeInput {
   name: string | undefined;
   /** Value that configures or reports description for this contract. */
   description?: string;
-  /** Lifecycle state reported for defaultthe record. */
+  /** Default status id newly created items of this type receive. */
   defaultStatus?: string;
   /** Value that configures or reports folder for this contract. */
   folder?: string;

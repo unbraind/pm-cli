@@ -95,6 +95,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   tags: { type: "string" },
   addTags: { type: "array", items: { type: "string" } },
   removeTags: { type: "array", items: { type: "string" } },
+  addAc: { type: "array", items: { type: "string" } },
+  removeAc: { type: "array", items: { type: "string" } },
   body: { type: "string" },
   deadline: { type: "string" },
   estimate: { anyOf: [{ type: "string" }, { type: "number" }] },
@@ -850,6 +852,16 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "Tags to add to the existing list without replacing it. Each entry may be CSV or a JSON array.",
     examples: [["agent-ux"], ["fix", "security"]],
+  },
+  addAc: {
+    description:
+      "Acceptance criteria appended individually without replacing the existing list (one criterion per entry).",
+    examples: [["error path covered by a regression test"]],
+  },
+  removeAc: {
+    description:
+      "Acceptance criteria removed individually by exact text match (one criterion per entry).",
+    examples: [["superseded manual QA step"]],
   },
   removeTags: {
     description:

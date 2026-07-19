@@ -569,11 +569,11 @@ export interface WorkspaceContracts {
   types: string[];
   /** Value that configures or reports statuses for this contract. */
   statuses: string[];
-  /** Lifecycle state reported for openthe record. */
+  /** Configured status id representing the open lifecycle state. */
   openStatus: string;
-  /** Lifecycle state reported for closethe record. */
+  /** Configured status id representing the closed lifecycle state. */
   closeStatus: string;
-  /** Lifecycle state reported for canceledthe record. */
+  /** Configured status id representing the canceled lifecycle state. */
   canceledStatus: string;
 }
 
@@ -685,7 +685,7 @@ export interface ClaimNextOptions extends PmClientFullMutationOptions {
  * Stable defaults applied by {@link PmClient} to every action it runs.
  */
 export interface PmClientOptions {
-  /** Tracker root to pass as the SDK equivalent of `--path`. */
+  /** Tracker root to pass as the SDK equivalent of `--pm-path`. */
   pmRoot?: string;
   /** Working directory used for workspace and extension resolution. */
   cwd?: string;

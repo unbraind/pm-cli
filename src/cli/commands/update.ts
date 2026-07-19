@@ -24,6 +24,7 @@ import {
 } from "../../core/item/parent-reference-policy.js";
 import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-format.js";
 import {
+  applyAcceptanceCriteriaMutations,
   applyTagRemovals,
   assertNoUnknownCsvKeys,
   createStdinTokenResolver,
@@ -33,6 +34,7 @@ import {
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
+  splitAcceptanceCriteria,
 } from "../../core/item/parse.js";
 import { resolvePriority } from "../../core/item/priority.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
@@ -157,6 +159,10 @@ export interface UpdateCommandOptions
   addTags?: string[];
   /** Value that configures or reports remove tags for this contract. */
   removeTags?: string[];
+  /** Acceptance criteria appended individually without replacing the existing list. */
+  addAc?: string[];
+  /** Acceptance criteria removed individually by exact text match. */
+  removeAc?: string[];
   /** Value that configures or reports force for this contract. */
   force?: boolean;
   /** Value that configures or reports dep remove for this contract. */
@@ -442,6 +448,16 @@ function enforceOwnershipBypassScope(
     pushIf(
       options.acceptanceCriteria !== undefined,
       "--acceptance-criteria",
+      disallowedFlags,
+    );
+    pushIf(
+      Array.isArray(options.addAc) && options.addAc.length > 0,
+      "--add-ac",
+      disallowedFlags,
+    );
+    pushIf(
+      Array.isArray(options.removeAc) && options.removeAc.length > 0,
+      "--remove-ac",
       disallowedFlags,
     );
     pushIf(
@@ -1056,7 +1072,14 @@ function collectProvidedUpdatePolicyOptions(
   );
   mark("deadline", options.deadline !== undefined);
   mark("estimatedMinutes", options.estimatedMinutes !== undefined);
-  mark("acceptanceCriteria", options.acceptanceCriteria !== undefined);
+  // `--add-ac` / `--remove-ac` mutate the same `acceptance_criteria` field as
+  // `--acceptance-criteria`, so they count toward its command_option_policy.
+  mark(
+    "acceptanceCriteria",
+    options.acceptanceCriteria !== undefined ||
+      (Array.isArray(options.addAc) && options.addAc.length > 0) ||
+      (Array.isArray(options.removeAc) && options.removeAc.length > 0),
+  );
   mark("definitionOfReady", options.definitionOfReady !== undefined);
   mark("order", options.order !== undefined || options.rank !== undefined);
   mark("goal", options.goal !== undefined);
@@ -1576,6 +1599,20 @@ function rejectUnsetScalarConflicts(
       EXIT_CODE.USAGE,
     );
   }
+  if (unsetTargets.metadataKeys.has("acceptance_criteria")) {
+    if (Array.isArray(options.addAc) && options.addAc.length > 0) {
+      throw new PmCliError(
+        "Cannot combine --unset acceptance-criteria with --add-ac",
+        EXIT_CODE.USAGE,
+      );
+    }
+    if (Array.isArray(options.removeAc) && options.removeAc.length > 0) {
+      throw new PmCliError(
+        "Cannot combine --unset acceptance-criteria with --remove-ac",
+        EXIT_CODE.USAGE,
+      );
+    }
+  }
   if (!unsetTargets.metadataKeys.has("tags")) {
     return;
   }
@@ -1636,6 +1673,9 @@ function buildUpdateFieldFlags(
   flags.addTags = Array.isArray(options.addTags) && options.addTags.length > 0;
   flags.removeTags =
     Array.isArray(options.removeTags) && options.removeTags.length > 0;
+  flags.addAc = Array.isArray(options.addAc) && options.addAc.length > 0;
+  flags.removeAc =
+    Array.isArray(options.removeAc) && options.removeAc.length > 0;
   flags.order = options.order !== undefined;
   flags.rank = options.rank !== undefined;
   flags.replaceDeps = options.replaceDeps === true;
@@ -2312,6 +2352,43 @@ function applyTagsAndPlanningMutations(
   applyOrderMutation(document, context, scalarMutationContext.changedFields);
 }
 
+// GH-612: `--add-ac` / `--remove-ac` edit individual "; "-separated criteria so
+// concurrent branch edits with disjoint additions merge instead of clobbering
+// the whole acceptance_criteria value (tag-API parity). Runs after the scalar
+// mutations so composition with a `--ac` replace uses the replaced base.
+function applyAcceptanceCriteriaAdditiveMutation(
+  document: ItemDocument,
+  context: UpdateMutationContext,
+  scalarMutationContext: UpdateScalarMutationContext,
+  warnings: string[],
+): void {
+  const addValues = context.options.addAc;
+  const removeValues = context.options.removeAc;
+  if (
+    !(Array.isArray(addValues) && addValues.length > 0) &&
+    !(Array.isArray(removeValues) && removeValues.length > 0)
+  ) {
+    return;
+  }
+  const mutation = applyAcceptanceCriteriaMutations(
+    splitAcceptanceCriteria(document.metadata.acceptance_criteria),
+    addValues,
+    removeValues,
+  );
+  for (const unmatched of mutation.unmatchedRemovals) {
+    warnings.push(`remove_ac_unmatched:${unmatched}`);
+  }
+  const nextValue = mutation.criteria.join("; ");
+  if (
+    nextValue === "" &&
+    document.metadata.acceptance_criteria === undefined
+  ) {
+    return;
+  }
+  document.metadata.acceptance_criteria = nextValue;
+  scalarMutationContext.changedFields.push("acceptance_criteria");
+}
+
 function applyOrderMutation(
   document: ItemDocument,
   context: UpdateMutationContext,
@@ -2628,6 +2705,12 @@ function mutateUpdateDocument(
   applyLogCollectionMutations(document, context, changedFields);
   applyEvidenceCollectionMutations(document, context, changedFields);
   applyTagsAndPlanningMutations(document, context, scalarMutationContext);
+  applyAcceptanceCriteriaAdditiveMutation(
+    document,
+    context,
+    scalarMutationContext,
+    warnings,
+  );
   applyOwnershipAndIssueMutations(
     document,
     context,

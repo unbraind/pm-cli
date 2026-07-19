@@ -40,9 +40,9 @@ export interface StatusTokenResolver {
 export interface EvaluateTransitionInput {
   /** Value that configures or reports type name for this contract. */
   typeName: string;
-  /** Lifecycle state reported for fromthe record. */
+  /** Status id the workflow transition starts from. */
   fromStatus: string;
-  /** Lifecycle state reported for tothe record. */
+  /** Status id the workflow transition moves to. */
   toStatus: string;
   /** Value that configures or reports type workflows for this contract. */
   typeWorkflows: NormalizedTypeWorkflow[];

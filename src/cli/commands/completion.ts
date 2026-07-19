@@ -1123,6 +1123,8 @@ ${renderZshScheduleItemSpecs("reminder")}
             '--tags[Comma-separated tags]:tags' \\
             '--add-tags[Add tags additively without replacing existing]:tags' \\
             '--remove-tags[Remove tags from the existing list]:tags' \\
+            '--add-ac[Add one acceptance criterion without replacing existing]:criteria' \\
+            '--remove-ac[Remove one acceptance criterion by exact text]:criteria' \\
             '--expected[Short alias for --expected-result]:expected_result' \\
             '--actual[Short alias for --actual-result]:actual_result' \\
 ${zshMutationCollectionFlags}
@@ -1157,6 +1159,8 @@ ${zshBulkPresenceFilterFlags}
             '--deadline[Deadline (ISO/date string or relative +6h/+1d/+2w/+6m)]:deadline' \\
             '--estimate[Estimated minutes]:minutes' \\
             '--acceptance-criteria[Acceptance criteria]:criteria' \\
+            '--add-ac[Add one acceptance criterion without replacing existing]:criteria' \\
+            '--remove-ac[Remove one acceptance criterion by exact text]:criteria' \\
             '--definition-of-ready[Definition of ready]:definition_of_ready' \\
             '--order[Planning order/rank]:order' \\
             '--goal[Goal identifier]:goal' \\
@@ -2095,6 +2099,8 @@ complete -c pm -n '__fish_seen_subcommand_from update' -s p -l priority         
 complete -c pm -n '__fish_seen_subcommand_from update' -l type                    -d 'Item type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from update' -l add-tags                -d 'Add tags additively without replacing existing' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l remove-tags             -d 'Remove tags from the existing list' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l add-ac                  -d 'Add one acceptance criterion without replacing existing' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l remove-ac               -d 'Remove one acceptance criterion by exact text' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l expected                -d 'Short alias for --expected-result' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l actual                  -d 'Short alias for --actual-result' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l comment                 -d 'Comment seed author=<value>,created_at=<iso|now>,text=<value>' -r
@@ -2184,6 +2190,8 @@ complete -c pm -n '__fish_seen_subcommand_from update-many' -l remove-tags      
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l deadline                -d 'Deadline (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l estimate                -d 'Estimated minutes' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l acceptance-criteria     -d 'Acceptance criteria' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l add-ac                  -d 'Add one acceptance criterion without replacing existing' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l remove-ac               -d 'Remove one acceptance criterion by exact text' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l definition-of-ready     -d 'Definition of ready' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l order                   -d 'Planning order/rank' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l goal                    -d 'Goal identifier' -r

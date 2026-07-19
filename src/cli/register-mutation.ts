@@ -2203,6 +2203,16 @@ export function registerMutationCommands(program: Command): void {
     .option("--estimate, --estimated-minutes <value>", "Set estimated minutes")
     .option("--acceptance-criteria <value>", "Set acceptance criteria")
     .option("--ac <value>", "Alias for --acceptance-criteria")
+    .option(
+      "--add-ac <value>",
+      "Add one semicolon-free acceptance criterion without replacing the existing list (repeatable)",
+      collect,
+    )
+    .option(
+      "--remove-ac <value>",
+      "Remove one semicolon-free acceptance criterion by exact text match (repeatable)",
+      collect,
+    )
     .option("--definition-of-ready <value>", "Set definition of ready")
     .option("--order <value>", "Set planning order/rank integer")
     .option("--rank <value>", "Alias for --order")
@@ -2350,6 +2360,8 @@ export function registerMutationCommands(program: Command): void {
       ["--type_option <value>", "Alias for --type-option"],
       ["--add_tags <value>", "Alias for --add-tags"],
       ["--remove_tags <value>", "Alias for --remove-tags"],
+      ["--add_ac <value>", "Alias for --add-ac"],
+      ["--remove_ac <value>", "Alias for --remove-ac"],
     ],
     true,
   );

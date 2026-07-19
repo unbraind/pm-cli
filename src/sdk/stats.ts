@@ -68,7 +68,7 @@ export interface StatsResult {
   };
   /** Schema type that determines the shape and validation rules for this value. */
   by_type: Record<ItemType, number>;
-  /** Lifecycle state reported for bythe record. */
+  /** Item counts grouped by lifecycle status. */
   by_status: Record<ItemStatus, number>;
   /** Present only with --metadata-coverage: per-field coverage overall and by type. */
   metadata_coverage?: MetadataCoverageReport;
