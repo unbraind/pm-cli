@@ -13,8 +13,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { readFileIfExists } from "../../core/fs/fs-utils.js";
+import { parseItemDocument } from "../../core/item/item-format.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
-import { getSettingsPath, ITEM_FILE_EXTENSIONS } from "../../core/store/paths.js";
+import {
+  getSettingsPath,
+  ITEM_FILE_EXTENSIONS,
+} from "../../core/store/paths.js";
 import type { HistoryEntry } from "../../types/index.js";
 
 /** Documents one unreadable item-file finding surfaced by the storage-integrity check. */
@@ -69,11 +73,11 @@ export interface StorageIntegrityScanResult {
   history_streams_scanned: number;
   /** History streams containing unresolved merge-conflict markers. */
   history_conflict_marker_streams: HistoryStreamIntegrityRow[];
-  /** History streams whose newest entry is not parseable JSONL. */
+  /** History streams containing an entry that is not a JSON object. */
   history_unparseable_streams: HistoryStreamIntegrityRow[];
   /** Live items whose newest history operation is a delete (delete/modify merge resurrection candidates). */
   resurrected_items: ResurrectedItemRow[];
-  /** Streams whose newest entry is a non-empty history_repair reconciliation patch — the post-repair divergence signal (informational, not a failure). */
+  /** Streams whose final entry is a non-empty history_repair reconciliation patch — the post-repair divergence signal (informational, not a failure). */
   history_repair_reconciliations: number;
   /** Number of configuration/schema files scanned. */
   config_files_scanned: number;
@@ -113,17 +117,6 @@ async function listItemFilesOnDisk(
   );
 }
 
-function lastNonEmptyLine(raw: string): string | null {
-  const lines = raw.split(/\r?\n/);
-  for (let index = lines.length - 1; index >= 0; index -= 1) {
-    const line = lines[index].trim();
-    if (line.length > 0) {
-      return line;
-    }
-  }
-  return null;
-}
-
 interface HistoryStreamScanAccumulator {
   conflictMarkers: HistoryStreamIntegrityRow[];
   unparseable: HistoryStreamIntegrityRow[];
@@ -148,23 +141,33 @@ function scanHistoryStreamContent(
     });
     return;
   }
-  const latestLine = lastNonEmptyLine(raw);
-  if (latestLine === null) {
-    return;
-  }
-  let latestEntry: HistoryEntry;
-  try {
-    const parsed = JSON.parse(latestLine) as unknown;
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-      throw new TypeError("history entry must be an object");
+  let latestEntry: HistoryEntry | null = null;
+  const lines = raw
+    .split(/\r?\n/)
+    .map((line, index) => ({ content: line.trim(), number: index + 1 }))
+    .filter((line) => line.content.length > 0);
+  for (const line of lines) {
+    try {
+      const parsed = JSON.parse(line.content) as unknown;
+      if (
+        typeof parsed !== "object" ||
+        parsed === null ||
+        Array.isArray(parsed)
+      ) {
+        throw new TypeError("history entry must be an object");
+      }
+      latestEntry = parsed as HistoryEntry;
+    } catch {
+      out.unparseable.push({
+        id,
+        path: relativePath,
+        line: line.number,
+        detail: "history line is not a valid JSON object",
+      });
+      return;
     }
-    latestEntry = parsed as HistoryEntry;
-  } catch {
-    out.unparseable.push({
-      id,
-      path: relativePath,
-      detail: "newest history line is not valid JSON",
-    });
+  }
+  if (latestEntry === null) {
     return;
   }
   if (latestEntry.op === "delete" && liveItemIds.has(id)) {
@@ -208,7 +211,9 @@ async function scanHistoryStreams(
   } catch {
     return out;
   }
-  for (const entry of entries.sort((left, right) => left.localeCompare(right))) {
+  for (const entry of entries.sort((left, right) =>
+    left.localeCompare(right),
+  )) {
     if (!entry.endsWith(".jsonl")) {
       continue;
     }
@@ -289,9 +294,26 @@ export async function scanStorageIntegrity(
 ): Promise<StorageIntegrityScanResult> {
   const itemFiles = await listItemFilesOnDisk(pmRoot, typeToFolder);
   const idsOnDisk = new Set(itemFiles.map((file) => file.id));
-  const unreadableItemFiles = itemFiles
-    .filter((file) => !parsedItemIds.has(file.id))
-    .map((file) => ({ path: file.relativePath, id: file.id }));
+  const unreadableItemFiles = (
+    await Promise.all(
+      itemFiles.map(async (file): Promise<UnreadableItemFileRow | null> => {
+        if (!parsedItemIds.has(file.id)) {
+          return { path: file.relativePath, id: file.id };
+        }
+        try {
+          const absolutePath = path.join(pmRoot, file.relativePath);
+          parseItemDocument(await fs.readFile(absolutePath, "utf8"), {
+            format: absolutePath.toLowerCase().endsWith(".md")
+              ? "json_markdown"
+              : "toon",
+          });
+          return null;
+        } catch {
+          return { path: file.relativePath, id: file.id };
+        }
+      }),
+    )
+  ).filter((row): row is UnreadableItemFileRow => row !== null);
   // "Live" for resurrection detection means an item file exists on disk —
   // deleted items keep their history stream but lose the document, so a
   // delete-terminated stream is only suspicious when the document is back.
