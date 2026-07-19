@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- fix: nightly windows/Node24 red — vcs-extension spec asserts POSIX 'relationships/events.jsonl' against native default store path ([pm-34yf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-34yf.toon))
 - GH-607: validate reports ok:true / checked_items:0 on structurally-unparseable item .toon — silently skips what pm get hard-errors on ([pm-cxyv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cxyv.toon))
 - GH-598: pm init .gitignore block hardcodes .agents/pm/ prefix — custom-root workspaces commit runtime cache and conflict on every merge ([pm-4uqm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4uqm.toon))
 

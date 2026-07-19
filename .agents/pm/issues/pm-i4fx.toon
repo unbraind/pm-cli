@@ -1,0 +1,21 @@
+id: pm-i4fx
+title: "Merge-driver fence completeness: relationships/*.jsonl event stores uncovered and schema-added custom type folders silently drop driver coverage"
+description: ""
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-07-19T11:21:29.939Z"
+updated_at: "2026-07-19T11:21:41.553Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: "buildMergeAttributePatterns covers relationship event store JSONL paths (default relationships/events.jsonl and custom relativePath stores) with an append-union driver; adding a custom item type via pm schema refreshes or flags the fence (auto-refresh where merge install already ran, otherwise actionable hint); validate (or the storage-integrity check) warns when committed .gitattributes fence coverage drifts from the active schema type folders + known JSONL stores; MERGE_SAFETY.md documents the coverage contract"
+parent: pm-g5sx
+risk: medium
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-dijg,related,"2026-07-19T11:21:29.939Z",null,null
+  pm-iwsj,related,"2026-07-19T11:21:29.939Z",null,null
+  pm-wc1r,related,"2026-07-19T11:21:29.939Z",null,null
+  pm-xdn6,related,"2026-07-19T11:21:29.939Z",null,null
+body: "Two coverage gaps in the PR#614 merge-driver fence (src/sdk/merge/install.ts buildMergeAttributePatterns):\n\n1. Relationship event stores are never covered. The fence enumerates per-type item folders (*.toon/*.md), history/*.jsonl, settings.json, schema/*.json — but PR#587's RelationshipEventStore writes append-only JSONL at relationships/events.jsonl (default) or a caller-chosen relativePath. These files are tracked by default (not in the PM_GITIGNORE_BLOCK) and carry the same concurrent-append conflict class the pm-wc1r history driver fixed. Latent today (this workspace has no relationships/ dir yet) but any two branches appending relationship events will hard-conflict or, worse, resolve by default text merge and corrupt event ordering.\n\n2. Type-folder enumeration is install-time-frozen. `pm schema` custom item types added AFTER `pm merge install` write items into folders with no merge attribute — silent fallback to git default merge, reintroducing exactly the pm-9q2t count-header corruption for those items. MERGE_SAFETY.md's \"re-run pm merge install after adding custom types\" is manual-only mitigation with no drift detection.\n\nFix directions (one class fix, not per-artifact patches): extend the pattern builder; refresh the fence from schema mutations where an install marker exists; teach validate/storage-integrity to diff committed fence coverage against active schema folders + known JSONL stores."

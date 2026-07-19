@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: history,merge,multi-agent
 created_at: "2026-07-19T03:41:32.506Z"
-updated_at: "2026-07-19T05:39:51.898Z"
+updated_at: "2026-07-19T11:18:45.821Z"
 closed_at: "2026-07-19T05:39:06.155Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -26,8 +26,9 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
 comments[2]{created_at,author,text}:
   "2026-07-19T05:38:28.376Z",maintainer-agent,"Evidence: history-repair now attributes discarded divergent state and appends reconciliation audit history; packed acceptance proved the repair path closes post-union current-item hash drift."
   "2026-07-19T05:39:05.040Z",maintainer-agent,"Final local gates: 315 test files / 5,944 tests passed with 100% statements, branches, functions, and lines; typecheck, ESLint, jscpd zero clones, static complexity/docstring/package-boundary checks, token budgets, docs/skills links, contracts snapshot, and secret scan passed."
-files[1]{path,scope,note}:
+files[2]{path,scope,note}:
   src/sdk/history-repair.ts,project,reconciliation divergence and discarded-event author warnings
+  tests/unit/sdk/history-repair-reconciliation.spec.ts,project,cross-author reconciliation report coverage (PR#614)
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/history-repair-command.spec.ts,project,240
 docs[1]{path,scope,note}:

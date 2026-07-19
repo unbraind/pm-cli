@@ -1,0 +1,26 @@
+id: pm-34yf
+title: "fix: nightly windows/Node24 red — vcs-extension spec asserts POSIX 'relationships/events.jsonl' against native default store path"
+description: ""
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-07-19T11:15:28.776Z"
+updated_at: "2026-07-19T11:16:20.828Z"
+closed_at: "2026-07-19T11:16:20.827Z"
+author: maintainer-agent
+estimated_minutes: 15
+acceptance_criteria: "vcs-extension.spec.ts:402 asserts via path.join so windows leg passes; nightly windows/Node24 red reduces to the pm-hvt3 spec only"
+parent: pm-92if
+risk: low
+confidence: high
+resolution: "Fixed vcs-extension.spec.ts:402 to assert path.join('relationships','events.jsonl') instead of a POSIX literal."
+expected_result: windows/Node24 nightly leg failure surface reduces to the pm-hvt3 extension-copy-safety spec only.
+actual_result: Spec passes locally (5/5); linux suite unaffected; windows verification via next nightly run.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-hvt3,related,"2026-07-19T11:15:28.776Z",null,null
+  pm-u5zr,related,"2026-07-19T11:15:28.776Z",null,null
+files[1]{path,scope,note}:
+  tests/unit/packages/vcs-extension.spec.ts,project,line 402 POSIX assertion fixed to path.join
+close_reason: "Spec-side portability fix shipped on main: assertion now uses path.join, matching native separators on Windows."
+body: "Nightly run 29676618564 (2026-07-19): windows/Node24 leg red on TWO specs — the known pm-hvt3 extension-copy-safety spec plus a NEW failure in tests/unit/packages/vcs-extension.spec.ts (\"executes every source command and guarded failure boundary through the host SDK context\"). macOS leg carries only the hvt3 spec.\n\nRoot cause: line 402 (introduced by PR#605, workspace-transactions lane) asserts `defaultPathStore.path` contains the POSIX literal \"relationships/events.jsonl\"; on Windows the relationship event store default path renders with backslashes, so `toContain` fails. Product behavior is correct (native separators); this is a spec-side portability defect — same class as closed pm-u5zr (POSIX endsWith), pm-lt6n, pm-s5pe, pm-i84i.\n\nFix: assert via `path.join(\"relationships\", \"events.jsonl\")` (spec already imports node:path). Windows leg goes fully green only together with pm-hvt3."

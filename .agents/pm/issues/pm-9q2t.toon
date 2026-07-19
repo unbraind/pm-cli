@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: merge,multi-agent,toon
 created_at: "2026-07-19T03:40:51.042Z"
-updated_at: "2026-07-19T05:39:50.302Z"
+updated_at: "2026-07-19T11:18:44.919Z"
 closed_at: "2026-07-19T05:39:00.900Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -23,8 +23,9 @@ comments[3]{created_at,author,text}:
   "2026-07-19T04:44:37.415Z",maintainer-agent,"Progress evidence: concurrent collection appends merge through typed set-union semantics and canonical serialization recomputes count headers; regression coverage passes."
   "2026-07-19T05:38:26.923Z",maintainer-agent,"Evidence: canonical item serialization recomputes TOON collection counts after union merges; add/add and concurrent collection fixtures cover required empty tags, notes, deletions, and disjoint appends."
   "2026-07-19T05:38:59.968Z",maintainer-agent,"Final local gates: 315 test files / 5,944 tests passed with 100% statements, branches, functions, and lines; typecheck, ESLint, jscpd zero clones, static complexity/docstring/package-boundary checks, token budgets, docs/skills links, contracts snapshot, and secret scan passed."
-files[1]{path,scope,note}:
+files[2]{path,scope,note}:
   src/sdk/merge/three-way.ts,project,collection-union item merge with canonical TOON serialization
+  tests/unit/sdk/merge-safety.spec.ts,project,field-aware item + JSONL merge driver coverage (PR#614)
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts,project,240
 docs[1]{path,scope,note}:

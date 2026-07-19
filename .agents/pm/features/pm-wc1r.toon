@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: history,merge,multi-agent
 created_at: "2026-07-19T03:40:49.668Z"
-updated_at: "2026-07-19T08:52:31.131Z"
+updated_at: "2026-07-19T11:18:43.969Z"
 closed_at: "2026-07-19T08:52:30.042Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -35,13 +35,15 @@ notes[1]{created_at,author,text}:
   "2026-07-19T05:38:33.995Z",maintainer-agent,"Design rationale: merge drivers keep every output parseable and preserve commutative context. They report semantic conflicts instead of writing raw markers, and defer non-commutative current-item/history reconciliation to explicit validate plus history-repair governance."
 learnings[1]{created_at,author,text}:
   "2026-07-19T05:38:33.306Z",maintainer-agent,A deterministic union of divergent history can be hash-chain valid while intentionally diverging from the independently merged current item. Treat strict verification as the post-merge detector and history-repair as the explicit reconciliation step; prove both in real Git acceptance tests.
-files[9]{path,scope,note}:
+files[11]{path,scope,note}:
   src/cli/commands/contracts.ts,project,Core merge command contract provider and flag surface
+  src/cli/commands/merge.ts,project,pm merge install CLI entry (PR#614)
   src/cli/register-mutation.ts,project,Original Git item-path adapter
   src/sdk/cli-contracts.ts,project,Public MERGE_FLAG_CONTRACTS barrel export
   src/sdk/history-repair.ts,project,Bulk cross-author reconciliation warnings
   src/sdk/index.ts,project,public SDK exports
   src/sdk/merge/driver.ts,project,git merge-driver protocol
+  src/sdk/merge/index.ts,project,public SDK merge primitives barrel (PR#614)
   src/sdk/merge/install.ts,project,idempotent gitattributes and local git config installer
   src/sdk/merge/three-way.ts,project,deterministic history union and re-anchoring primitive
   tests/fixtures/contracts/full.json,project,Generated core merge and strict validation contracts

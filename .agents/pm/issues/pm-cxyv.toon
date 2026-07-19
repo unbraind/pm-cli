@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: merge,toon,validate
 created_at: "2026-07-19T03:41:34.814Z"
-updated_at: "2026-07-19T08:52:39.340Z"
+updated_at: "2026-07-19T11:18:46.976Z"
 closed_at: "2026-07-19T08:52:38.142Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -29,9 +29,10 @@ comments[6]{created_at,author,text}:
   "2026-07-19T08:12:58.551Z",maintainer-agent,"Greptile P1 review evidence: storage integrity now parses every non-empty entry in every history JSONL stream with exact line reporting, and validates every physical item file by path/format so duplicate IDs cannot mask a corrupt sibling. Both focused validate/storage-integrity suites pass (91 tests); ESLint, typecheck, and formatting pass."
   "2026-07-19T08:19:34.993Z",maintainer-agent,"Coverage-gate correction: removed the impossible unknown-extension fallback because the file census admits only .md/.toon; both real format paths remain exercised. Focused suite 91/91, typecheck, ESLint, and formatting pass."
   "2026-07-19T08:52:36.829Z",maintainer-agent,"Exact-head Greptile P1 evidence: physical item reparsing now uses active runtime schema and extension-owned field names. Reject-policy regressions distinguish an undeclared duplicate from a valid extension-field duplicate; focused validate/integrity suites pass."
-files[2]{path,scope,note}:
+files[3]{path,scope,note}:
   src/sdk/governance/storage-integrity.ts,project,on-disk item census and unreadable item detection
   src/sdk/governance/validate.ts,project,default hard-failing storage-integrity check
+  tests/unit/sdk/storage-integrity.spec.ts,project,validate --check-storage-integrity coverage (PR#614)
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/storage-integrity.spec.ts tests/unit/commands/validate-command.spec.ts,project,240
 docs[1]{path,scope,note}:

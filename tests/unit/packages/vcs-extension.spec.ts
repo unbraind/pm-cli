@@ -399,7 +399,7 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
         nodes: [change.id, draft.id, fallbackChange.id, ref.id],
         definitions: [VCS_RELATIONSHIP_KIND],
       });
-      expect(defaultPathStore.path).toContain("relationships/events.jsonl");
+      expect(defaultPathStore.path).toContain(path.join("relationships", "events.jsonl"));
       await store.append({
         eventId: "second-source-merge",
         relationshipId: `changeset-${draft.id}`,

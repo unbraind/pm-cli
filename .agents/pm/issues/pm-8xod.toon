@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-19T04:06:51.126Z"
-updated_at: "2026-07-19T05:39:56.125Z"
+updated_at: "2026-07-19T11:18:47.782Z"
 closed_at: "2026-07-19T05:39:20.851Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -26,10 +26,11 @@ comments[3]{created_at,author,text}:
   "2026-07-19T04:45:09.154Z",maintainer-agent,"Progress evidence: runtime journals/checkpoints are ignored under resolved tracker roots; transaction GC prunes only aged terminal receipts and retains active/unparseable recovery state; focused tests pass."
   "2026-07-19T05:38:32.627Z",maintainer-agent,"Evidence: transactions/sdk is ignored as runtime state and pm gc transactions removes only aged terminal journals, retains active/fresh/unparseable recovery state, invokes extension read/write hooks, and reports replay guidance."
   "2026-07-19T05:39:19.831Z",maintainer-agent,"Final local gates: 315 test files / 5,944 tests passed with 100% statements, branches, functions, and lines; typecheck, ESLint, jscpd zero clones, static complexity/docstring/package-boundary checks, token budgets, docs/skills links, contracts snapshot, and secret scan passed."
-files[3]{path,scope,note}:
+files[4]{path,scope,note}:
   src/sdk/governance/gc.ts,project,transactions GC scope integration
   src/sdk/workspace-transaction-gc.ts,project,safety-first terminal transaction journal GC
   src/sdk/workspace.ts,project,transaction and checkpoint receipt ignore policy
+  tests/unit/sdk/workspace-transaction-gc.spec.ts,project,gc --scope transactions retention coverage (PR#614)
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-transaction-gc.spec.ts tests/unit/commands/gc-command.spec.ts,project,240
 docs[1]{path,scope,note}:

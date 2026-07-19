@@ -1,0 +1,21 @@
+id: pm-iwsj
+title: "Adopt PR#614 merge safety in the pm-cli repository itself: pm merge install, committed .gitattributes fence, CI storage-integrity + strict history-verify gates, transactions GC schedule"
+description: ""
+type: Chore
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-19T11:17:29.313Z"
+updated_at: "2026-07-19T11:17:29.313Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: pm merge install run and the fenced .gitattributes committed on main; CI Gates run pm validate --check-storage-integrity on the tracked workspace and fail on findings; a representative pm history --verify --strict-exit gate wired; pm gc --scope transactions scheduled (or documented as manual) with retention from settings; AGENTS/docs mention the clone-side pm merge install step; contributing/agent docs updated so lane agents adopt the drivers
+parent: pm-g5sx
+risk: medium
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-cxyv,related,"2026-07-19T11:17:29.313Z",null,null
+  pm-ol3p,related,"2026-07-19T11:17:29.313Z",null,null
+  pm-pibw,related,"2026-07-19T11:17:29.313Z",null,null
+  pm-wc1r,related,"2026-07-19T11:17:29.313Z",null,null
+body: ""
