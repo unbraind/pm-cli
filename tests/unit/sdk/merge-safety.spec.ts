@@ -389,6 +389,9 @@ describe("public merge-safety SDK primitives", () => {
 
       const installed = await runMergeInstall({}, { path: context.pmPath });
       expect(installed.git_config).toHaveLength(6);
+      expect(
+        installed.git_config.find((entry) => entry.key === "merge.pm-item.driver")?.value,
+      ).toBe('pm merge driver item "%O" "%A" "%B" --item-path "%P"');
       expect(await readFile(path.join(context.tempRoot, ".gitattributes"), "utf8")).toContain(
         "# pm-cli:merge-drivers:start",
       );

@@ -199,7 +199,7 @@ export async function runMergeInstall(
     });
     gitConfigEntries.push({
       key: `merge.${definition.key}.driver`,
-      value: `pm merge driver ${definition.artifact} %O %A %B --item-path %P`,
+      value: `pm merge driver ${definition.artifact} "%O" "%A" "%B" --item-path "%P"`,
     });
   }
   if (!dryRun) {
