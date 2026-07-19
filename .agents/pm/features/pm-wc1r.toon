@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: history,merge,multi-agent
 created_at: "2026-07-19T03:40:49.668Z"
-updated_at: "2026-07-19T06:08:03.365Z"
+updated_at: "2026-07-19T06:40:34.474Z"
 closed_at: "2026-07-19T06:08:02.484Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -20,12 +20,13 @@ actual_result: Field-aware drivers preserve item/history/config changes; validat
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-3z0k,related,"2026-07-19T03:40:49.668Z",null,null
   pm-klo8,related,"2026-07-19T03:40:49.668Z",null,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-19T04:44:33.808Z",maintainer-agent,"Progress evidence: public SDK history/item/JSON merge primitives, file driver, installer, regression tests, and operator workflow are implemented; focused suite is green."
   "2026-07-19T05:38:26.056Z",maintainer-agent,"Evidence: shipped public SDK three-way item/history/JSON primitives, file-level Git driver protocol, repository-local installer, core CLI/contract registration, and detailed merge-safety docs. Packed-package acceptance at /tmp/pm-merge-acceptance.Ys29Cm/project performed a real two-branch Git merge: both branch comments survived; strict history verification detected expected union drift; history-repair reconciled it; strict verify and storage-integrity validation then passed."
   "2026-07-19T05:38:57.339Z",maintainer-agent,"Final local gates: 315 test files / 5,944 tests passed with 100% statements, branches, functions, and lines; typecheck, ESLint, jscpd zero clones, static complexity/docstring/package-boundary checks, token budgets, docs/skills links, contracts snapshot, and secret scan passed."
   "2026-07-19T06:04:22.258Z",maintainer-agent,"Greptile pre-push review accepted: addressing bulk repair warning propagation, valid empty JSON output, malformed gitattributes fence recovery, and real-path format detection. Only pm-wc1r is reactivated for these changes."
   "2026-07-19T06:08:01.653Z",maintainer-agent,"Greptile findings resolved with regression coverage: bulk repair now preserves per-stream reconciliation reports and prefixed warnings; empty JSON sides emit valid null; malformed managed fences are normalized without duplicate markers; Git passes %P so Markdown format detection does not depend on temp-file extensions. Focused 119 tests, typecheck, and contract checks pass."
+  "2026-07-19T06:40:34.474Z",maintainer-agent,"CI integration finding: main advanced to tagged v2026.7.19 after the pre-push gate. The branch incorporated the release commit and regenerated the package-owned changelog so the merge-safety family remains Unreleased instead of being incorrectly grouped under the already-cut release."
 notes[1]{created_at,author,text}:
   "2026-07-19T05:38:33.995Z",maintainer-agent,"Design rationale: merge drivers keep every output parseable and preserve commutative context. They report semantic conflicts instead of writing raw markers, and defer non-commutative current-item/history reconciliation to explicit validate plus history-repair governance."
 learnings[1]{created_at,author,text}:
