@@ -61,6 +61,7 @@ describe("computeWorkspaceGraphFingerprint", () => {
     const variants = [
       [item("pm-a", { title: "Renamed" }), item("pm-b"), item("pm-c")],
       [item("pm-a", { status: "closed" }), item("pm-b"), item("pm-c")],
+      [item("pm-a", { type: "Task" }), item("pm-b"), item("pm-c")],
       [item("pm-a", { parent: "pm-c" }), item("pm-b"), item("pm-c")],
       [item("pm-a", { blocked_by: "pm-b" }), item("pm-b"), item("pm-c")],
       [
@@ -74,6 +75,15 @@ describe("computeWorkspaceGraphFingerprint", () => {
     );
     fingerprints.add(computeWorkspaceGraphFingerprint(base));
     expect(fingerprints.size).toBe(variants.length + 1);
+    expect(
+      computeWorkspaceGraphFingerprint([
+        item("pm-a", { type: " Task " }),
+      ] as never),
+    ).toBe(
+      computeWorkspaceGraphFingerprint([
+        item("pm-a", { type: "Task" }),
+      ] as never),
+    );
   });
 
   it("folds terminal classification in and ignores malformed rows and payloads", () => {

@@ -67,7 +67,7 @@ function fingerprintLine(
     isTerminal(item.status) ? "1" : "0",
     // Per-type coverage profiles make the item type a projection input, so a
     // retype must invalidate cached assemblies and memoized audit results.
-    typeof item.type === "string" ? item.type : "",
+    typeof item.type === "string" ? item.type.trim() : "",
     item.parent ?? "",
     item.blocked_by ?? "",
     dependencies,

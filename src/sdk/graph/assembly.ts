@@ -386,7 +386,7 @@ export function assembleWorkspaceRelationshipGraph(
         title: item.title,
         status: item.status,
         ...(typeof item.type === "string" && item.type.trim().length > 0
-          ? { type: item.type }
+          ? { type: item.type.trim() }
           : {}),
       })),
       ...missingIds.map((id) => ({

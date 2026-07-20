@@ -836,7 +836,7 @@ describe("per-type coverage profiles", () => {
       id: "pm-task",
       title: "Task",
       status: "open",
-      type: "Task",
+      type: " Task ",
       parent: "pm-epic",
     },
     { id: "pm-note", title: "Note", status: "open" },

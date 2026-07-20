@@ -278,10 +278,17 @@ function decodeBaseline(
         profile.degree_leq_one_active_nodes,
       ].every((value) => Number.isInteger(value) && value >= 0) ||
       !isNonnegativeCountRecord(profile.edges_by_kind) ||
-      !isNonnegativeCoverageByTypeRecord(profile.coverage_by_type)
+      (profile.coverage_by_type !== undefined &&
+        !isNonnegativeCoverageByTypeRecord(profile.coverage_by_type))
     )
       return undefined;
-    return snapshot as RelationshipAuditSnapshot;
+    return {
+      ...snapshot,
+      profile: {
+        ...profile,
+        coverage_by_type: profile.coverage_by_type ?? {},
+      },
+    } as RelationshipAuditSnapshot;
   } catch {
     return undefined;
   }

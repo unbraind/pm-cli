@@ -294,6 +294,18 @@ describe("durable graph cache primitives", () => {
         );
         expect(await loadGraphAuditBaseline(context.pmPath)).toBeUndefined();
       }
+
+      const { coverage_by_type: _legacyCoverage, ...legacyProfile } =
+        snapshot.profile;
+      await writeFile(
+        graphAuditBaselinePath(context.pmPath),
+        JSON.stringify({ ...snapshot, profile: legacyProfile }),
+        "utf8",
+      );
+      expect(await loadGraphAuditBaseline(context.pmPath)).toEqual({
+        ...snapshot,
+        profile: { ...legacyProfile, coverage_by_type: {} },
+      });
     });
   });
 });
