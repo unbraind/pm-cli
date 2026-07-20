@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import * as fsUtils from "../../../../src/core/fs/fs-utils.js";
 import { runGraph } from "../../../../src/cli/commands/graph.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
@@ -114,15 +115,40 @@ describe("durable graph cache primitives", () => {
       expect(Object.keys(view.results)).toHaveLength(64);
       expect(view.results["query-69"]).toEqual({ index: 69 });
       expect(view.results["query-5"]).toBeUndefined();
-
-      const stale = await openDurableGraphCache(context.pmPath, "fp-2");
-      expect(stale).toEqual({ exists: true, fresh: false, results: {} });
       const status = await durableGraphCacheStatus(context.pmPath, "fp-1");
       expect(status.fresh).toBe(true);
       expect(status.entry_count).toBe(64);
       expect(status.fingerprint).toBe("fp-1".slice(0, 12));
       expect(status.bytes).toBeGreaterThan(0);
       expect(typeof status.saved_at).toBe("string");
+
+      await clearDurableGraphCache(context.pmPath);
+      const firstView = await openDurableGraphCache(context.pmPath, "fp-1");
+      const secondView = await openDurableGraphCache(context.pmPath, "fp-1");
+      await Promise.all([
+        persistDurableGraphResult(
+          context.pmPath,
+          "fp-1",
+          firstView,
+          "concurrent-a",
+          { result: "a" },
+        ),
+        persistDurableGraphResult(
+          context.pmPath,
+          "fp-1",
+          secondView,
+          "concurrent-b",
+          { result: "b" },
+        ),
+      ]);
+      view = await openDurableGraphCache(context.pmPath, "fp-1");
+      expect(view.results).toMatchObject({
+        "concurrent-a": { result: "a" },
+        "concurrent-b": { result: "b" },
+      });
+
+      const stale = await openDurableGraphCache(context.pmPath, "fp-2");
+      expect(stale).toEqual({ exists: true, fresh: false, results: {} });
 
       await clearDurableGraphCache(context.pmPath);
       expect(await openDurableGraphCache(context.pmPath, "fp-1")).toEqual({
@@ -264,6 +290,35 @@ describe("durable graph cache primitives", () => {
 });
 
 describe("pm graph index and durable envelopes", () => {
+  it("keeps query execution successful when best-effort persistence fails", async () => {
+    await withTempPmPath(async (context) => {
+      const root = createItem(context, "Persistence failure root");
+      await runGraph(
+        "index",
+        undefined,
+        undefined,
+        { rebuild: true },
+        { path: context.pmPath },
+      );
+      resetWorkspaceGraphCache();
+      const write = vi
+        .spyOn(fsUtils, "writeFileAtomic")
+        .mockRejectedValueOnce(new Error("cache is read-only"));
+      try {
+        const result = await runGraph(
+          "descendants",
+          root,
+          undefined,
+          {},
+          { path: context.pmPath },
+        );
+        expect(result).toMatchObject({ subcommand: "descendants", count: 0 });
+      } finally {
+        write.mockRestore();
+      }
+    });
+  });
+
   it("reports absent status and keeps small workspaces off the durable path", async () => {
     await withTempPmPath(async (context) => {
       createItem(context, "Solo item");

@@ -20,6 +20,7 @@ import {
   removeFileIfExists,
   writeFileAtomic,
 } from "../../core/fs/fs-utils.js";
+import { acquireLock } from "../../core/lock/lock.js";
 import type { RelationshipAuditSnapshot } from "./governance.js";
 
 /** Envelope format version; any change invalidates persisted entries. */
@@ -30,6 +31,22 @@ export const GRAPH_DURABLE_CACHE_MIN_ITEMS = 500;
 
 /** Maximum memoized query results retained in one persisted envelope. */
 const MAX_DURABLE_RESULTS = 64;
+const DURABLE_GRAPH_CACHE_LOCK_ID = "graph-durable-cache";
+
+/** Serialize cache read-merge-write and clear operations across processes. */
+function acquireDurableGraphCacheLock(
+  pmRoot: string,
+): Promise<() => Promise<void>> {
+  return acquireLock(
+    pmRoot,
+    DURABLE_GRAPH_CACHE_LOCK_ID,
+    30,
+    `graph-cache:${process.pid}`,
+    false,
+    false,
+    3_000,
+  );
+}
 
 /** Persisted durable graph cache envelope keyed by one workspace fingerprint. */
 export interface DurableGraphCacheEnvelope {
@@ -126,8 +143,8 @@ export async function openDurableGraphCache(
 /**
  * Persist one query result into the durable envelope, replacing any envelope
  * recorded for a different fingerprint and trimming the oldest entries beyond
- * the retention bound. The write is atomic; concurrent writers last-write-win
- * on a whole consistent envelope, never a torn one.
+ * the retention bound. A cross-process lock protects the read-merge-write, and
+ * the final write is atomic, so concurrent queries retain each other's entries.
  */
 export async function persistDurableGraphResult(
   pmRoot: string,
@@ -136,28 +153,44 @@ export async function persistDurableGraphResult(
   queryKey: string,
   result: unknown,
 ): Promise<void> {
-  delete view.results[queryKey];
-  view.results[queryKey] = result;
-  const keys = Object.keys(view.results);
-  for (const stale of keys.slice(
-    0,
-    Math.max(0, keys.length - MAX_DURABLE_RESULTS),
-  ))
-    delete view.results[stale];
-  await writeFileAtomic(
-    durableGraphCachePath(pmRoot),
-    JSON.stringify({
-      version: GRAPH_DURABLE_CACHE_VERSION,
-      fingerprint,
-      saved_at: new Date().toISOString(),
-      results: view.results,
-    }),
-  );
+  const release = await acquireDurableGraphCacheLock(pmRoot);
+  try {
+    const envelope = decodeEnvelope(
+      await readFileIfExists(durableGraphCachePath(pmRoot)),
+    );
+    const results =
+      envelope?.fingerprint === fingerprint ? envelope.results : {};
+    delete results[queryKey];
+    results[queryKey] = result;
+    const keys = Object.keys(results);
+    for (const stale of keys.slice(
+      0,
+      Math.max(0, keys.length - MAX_DURABLE_RESULTS),
+    ))
+      delete results[stale];
+    await writeFileAtomic(
+      durableGraphCachePath(pmRoot),
+      JSON.stringify({
+        version: GRAPH_DURABLE_CACHE_VERSION,
+        fingerprint,
+        saved_at: new Date().toISOString(),
+        results,
+      }),
+    );
+    view.results = results;
+  } finally {
+    await release();
+  }
 }
 
 /** Delete the persisted durable graph cache envelope when present. */
 export async function clearDurableGraphCache(pmRoot: string): Promise<void> {
-  await removeFileIfExists(durableGraphCachePath(pmRoot));
+  const release = await acquireDurableGraphCacheLock(pmRoot);
+  try {
+    await removeFileIfExists(durableGraphCachePath(pmRoot));
+  } finally {
+    await release();
+  }
 }
 
 /** Report the durable index status against the current workspace fingerprint. */

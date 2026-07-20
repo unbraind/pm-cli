@@ -57,6 +57,7 @@ import {
   saveGraphAuditBaseline,
   shouldPersistDurableGraphCache,
   GRAPH_DURABLE_CACHE_MIN_ITEMS,
+  type DurableGraphCacheView,
 } from "./durable-cache.js";
 import {
   auditWorkspaceRelationshipGraph,
@@ -1058,6 +1059,27 @@ async function applyAuditBaseline(
     : { ...audit, baseline: diffRelationshipAuditSnapshots(stored, current) };
 }
 
+/** Persist a rebuildable query result without allowing storage failure to reject the query. */
+async function persistDurableGraphResultBestEffort(
+  pmRoot: string,
+  fingerprint: string,
+  view: DurableGraphCacheView,
+  queryKey: string,
+  result: GraphResult,
+): Promise<void> {
+  try {
+    await persistDurableGraphResult(
+      pmRoot,
+      fingerprint,
+      view,
+      queryKey,
+      result,
+    );
+  } catch {
+    // The in-memory result remains authoritative; the next invocation can rebuild the cache.
+  }
+}
+
 /** Implements run graph for the public runtime surface of this module. */
 export async function runGraph(
   subcommandRaw: string,
@@ -1157,7 +1179,7 @@ export async function runGraph(
     durableView.exists,
   );
   if (!memo.reused && durableValue === undefined && persistEnabled) {
-    await persistDurableGraphResult(
+    await persistDurableGraphResultBestEffort(
       pmRoot,
       lookup.fingerprint,
       durableView,
