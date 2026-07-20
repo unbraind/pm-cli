@@ -172,12 +172,14 @@ export function collectDuplicateDependencyRows(
       });
     }
   }
-  return rows.sort((left, right) =>
-    JSON.stringify([left.holder_id, left.target_id, left.kind]) <
-    JSON.stringify([right.holder_id, right.target_id, right.kind])
-      ? -1
-      : 1,
-  );
+  return rows.sort((left, right) => {
+    if (left.holder_id !== right.holder_id)
+      return left.holder_id < right.holder_id ? -1 : 1;
+    if (left.target_id !== right.target_id)
+      return left.target_id < right.target_id ? -1 : 1;
+    if (left.kind !== right.kind) return left.kind < right.kind ? -1 : 1;
+    return 0;
+  });
 }
 
 /**

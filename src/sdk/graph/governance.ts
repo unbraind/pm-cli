@@ -750,7 +750,9 @@ function collectCoverageReport(
       isolated_active_nodes: tallies.isolated,
       degree_leq_one_active_nodes: tallies.degreeLeqOne,
       coverage_by_type: Object.fromEntries(
-        [...tallies.byType.entries()].sort(),
+        [...tallies.byType.entries()].sort(([left], [right]) =>
+          left < right ? -1 : 1,
+        ),
       ),
     },
   };

@@ -700,6 +700,57 @@ describe("duplicate dependency row integrity", () => {
       expect.objectContaining({ target_id: "pm-a", kind: "related" }),
       expect.objectContaining({ target_id: "pm-z", kind: "related" }),
     ]);
+
+    expect(
+      collectDuplicateDependencyRows(
+        ["first", "second"].map(() => ({
+          id: "pm-same",
+          status: "open",
+          dependencies: [
+            { id: "pm-target", kind: "related" },
+            { id: "pm-target", kind: "related" },
+          ],
+        })) as never,
+      ),
+    ).toHaveLength(2);
+
+    expect(
+      collectDuplicateDependencyRows([
+        {
+          id: "pm-z-holder",
+          status: "open",
+          dependencies: [
+            { id: "pm-target", kind: "related" },
+            { id: "pm-target", kind: "related" },
+          ],
+        },
+        {
+          id: "pm-a-holder",
+          status: "open",
+          dependencies: [
+            { id: "pm-target", kind: "blocked_by" },
+            { id: "pm-target", kind: "blocked_by" },
+          ],
+        },
+      ] as never).map(({ holder_id }) => holder_id),
+    ).toEqual(["pm-a-holder", "pm-z-holder"]);
+
+    expect(
+      collectDuplicateDependencyRows([
+        {
+          id: "pm-holder",
+          status: "open",
+          dependencies: [
+            { id: "pm-a", kind: "blocked_by" },
+            { id: "pm-a", kind: "blocked_by" },
+            { id: "pm-a", kind: "related" },
+            { id: "pm-a", kind: "related" },
+            { id: "pm-z", kind: "related" },
+            { id: "pm-z", kind: "related" },
+          ],
+        },
+      ] as never).map(({ target_id, kind }) => `${target_id}:${kind}`),
+    ).toEqual(["pm-a:blocked_by", "pm-a:related", "pm-z:related"]);
   });
 
   it("reports the active and legacy duplicate-row audit families with remediation plans", () => {

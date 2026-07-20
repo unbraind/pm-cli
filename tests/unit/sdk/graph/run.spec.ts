@@ -18,6 +18,12 @@ import type {
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import {
+  resetActiveExtensionRuntimeState,
+  setActiveExtensionRegistrations,
+} from "../../../../src/core/extensions/index.js";
+import { resetWorkspaceGraphCache } from "../../../../src/sdk/graph/cache.js";
+import { activateExtensionForTest } from "../../../../src/sdk/testing.js";
+import {
   withTempPmPath,
   type TempPmContext,
 } from "../../../helpers/withTempPmPath.js";
@@ -132,6 +138,54 @@ describe("parseGraphSubcommand", () => {
 });
 
 describe("runGraph", () => {
+  it("filters extension-contributed relationship kinds", async () => {
+    const activation = await activateExtensionForTest(
+      {
+        activate(api) {
+          api.registerRelationshipKinds([
+            {
+              kind: "commits_to",
+              direction: "directed",
+              inverse: "contains_commit",
+              ordering: true,
+              precedence: "source_before_target",
+              hierarchy: false,
+              outgoing: "one",
+              incoming: "many",
+              lifecycle: "supersedable",
+              aliases: ["merged_into"],
+              payloadSchema: {
+                type: "object",
+                properties: { review: { type: "string" } },
+              },
+              compatibilityVersion: 1,
+              allowSelf: false,
+            },
+          ]);
+        },
+      },
+      { name: "graph-filter-kind", capabilities: ["schema"] },
+    );
+    expect(activation.failed).toEqual([]);
+    try {
+      await withTempPmPath(async (context) => {
+        setActiveExtensionRegistrations(activation.registrations);
+        const source = createItem(context, "Extension source");
+        const result = (await runGraph(
+          "successors",
+          source,
+          undefined,
+          { kind: "commits_to" },
+          { path: context.pmPath },
+        )) as GraphTraversalResult;
+        expect(result.ids).toEqual([]);
+      });
+    } finally {
+      resetActiveExtensionRuntimeState();
+      resetWorkspaceGraphCache();
+    }
+  });
+
   it("fails fast when the tracker is not initialized", async () => {
     await expect(
       runGraph(

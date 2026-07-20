@@ -1089,8 +1089,8 @@ export async function runGraph(
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const isTerminal = (status: string): boolean =>
     isTerminalStatus(status, statusRegistry);
-  const kinds = parseKinds(options.kind);
   const relationshipRegistry = resolveWorkspaceRelationshipKindRegistry();
+  const kinds = parseKinds(options.kind, relationshipRegistry);
   const lookup = workspaceGraphCache().lookup(
     pmRoot,
     computeWorkspaceGraphFingerprint(items, isTerminal, relationshipRegistry),
