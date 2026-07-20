@@ -70,6 +70,10 @@ export {
   type ValidateMutationServices,
 } from "./governance/validate.js";
 export { runExtension } from "./extension.js";
+export {
+  runWithActiveExtensions,
+  type ActiveExtensionScopeOptions,
+} from "./runtime.js";
 export { applyInvocationAuthorOverride } from "./invocation-author.js";
 export { describeItemOwnershipConflict } from "./ownership-source.js";
 export { discoverNearbyPmRoot } from "./tracker-root-discovery.js";

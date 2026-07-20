@@ -909,6 +909,24 @@ applied and are likewise compensated by version restore. A stable
 `transactionId` makes interrupted batches resumable across processes and
 agents.
 
+When a direct SDK operation must observe extension-owned item types, fields,
+hooks, parsers, or services, wrap it with `runWithActiveExtensions`. The scope
+loads and tears down the workspace extensions once, serializes the global
+registries across concurrent requests, and is reentrant: SDK primitives called
+inside the callback reuse the active scope instead of attempting a nested
+activation cycle.
+
+```ts
+import {
+  commitItemMutations,
+  runWithActiveExtensions,
+} from "@unbrained/pm-cli/sdk";
+
+await runWithActiveExtensions({ cwd: projectRoot }, () =>
+  commitItemMutations({ pmRoot, transactionId, author, mutations }),
+);
+```
+
 ```ts
 import { commitItemMutations } from "@unbrained/pm-cli/sdk";
 

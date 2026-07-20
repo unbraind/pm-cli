@@ -92,16 +92,21 @@ export interface BootstrapGlobalOptions {
   authorMissingValue?: true;
 }
 
+const BOOTSTRAP_BOOLEAN_FLAGS = new Set([
+  "--no-extensions",
+  "--no-pager",
+  "--json",
+  "--quiet",
+  "--lean",
+]);
+
 /** Implements parse bootstrap global options for the public runtime surface of this module. */
 export function parseBootstrapGlobalOptions(
   argv: string[],
 ): BootstrapGlobalOptions {
   let legacyPathValue: string | undefined;
   let pmPathValue: string | undefined;
-  let noExtensions = false;
-  let noPager = false;
-  let json = false;
-  let quiet = false;
+  const booleanFlags = new Set<string>();
   let author: string | undefined;
   let index = 0;
   while (index < argv.length) {
@@ -109,23 +114,8 @@ export function parseBootstrapGlobalOptions(
     if (token === "--") {
       break;
     }
-    if (token === "--no-extensions") {
-      noExtensions = true;
-      index += 1;
-      continue;
-    }
-    if (token === "--no-pager") {
-      noPager = true;
-      index += 1;
-      continue;
-    }
-    if (token === "--json") {
-      json = true;
-      index += 1;
-      continue;
-    }
-    if (token === "--quiet") {
-      quiet = true;
+    if (BOOTSTRAP_BOOLEAN_FLAGS.has(token)) {
+      booleanFlags.add(token);
       index += 1;
       continue;
     }
@@ -160,11 +150,11 @@ export function parseBootstrapGlobalOptions(
   }
   return {
     path: pmPathValue ?? legacyPathValue,
-    noExtensions,
-    noPager,
-    json,
-    quiet,
-    lean: argv.includes("--lean"),
+    noExtensions: booleanFlags.has("--no-extensions"),
+    noPager: booleanFlags.has("--no-pager"),
+    json: booleanFlags.has("--json"),
+    quiet: booleanFlags.has("--quiet"),
+    lean: booleanFlags.has("--lean"),
     ...(author === ""
       ? { authorMissingValue: true }
       : author !== undefined

@@ -69,6 +69,13 @@ describe("projectMutationResult", () => {
     });
   });
 
+  it("does not create a compact envelope without a string item id", () => {
+    const result = { item: { id: 42 }, changed_fields: ["id"] };
+    expect(projectMutationResult(result, { compactEnvelope: true })).toBe(
+      result,
+    );
+  });
+
   it("compacts mutation envelope and update-many row changed_fields only", () => {
     const result = {
       mode: "apply",

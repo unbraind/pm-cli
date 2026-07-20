@@ -415,7 +415,7 @@ pm update pm-abc1 --remove-tags stale            # drops "stale", keeps the rest
 pm create "New backend task" --add-tags backend,p1
 ```
 
-Acceptance criteria get the same additive treatment on `update`/`update-many`: `--acceptance-criteria`/`--ac` REPLACES the whole value, while `--add-ac <text>` appends one criterion (repeatable; deduped on exact text) and `--remove-ac <text>` removes one criterion by exact text match (repeatable; a non-matching selector adds a `remove_ac_unmatched:<text>` warning instead of silently no-oping). Criteria are stored joined by `; `, so one criterion cannot contain a semicolon. Disjoint `--add-ac` edits from concurrent agents/branches merge cleanly instead of clobbering each other.
+Acceptance criteria get the same additive treatment on `update`/`update-many`: `--acceptance-criteria`/`--ac` REPLACES the whole value, while `--add-ac <text>` appends one criterion (repeatable; deduped on exact text) and `--remove-ac <text>` removes one criterion by exact text match (repeatable; a non-matching selector adds a `remove_ac_unmatched:<text>` warning instead of silently no-oping). Criteria are stored with semicolon-space separators, so one criterion cannot contain a semicolon. Disjoint `--add-ac` edits from concurrent agents/branches merge cleanly instead of clobbering each other.
 
 ```bash
 pm update pm-abc1 --add-ac "error path covered by a regression test"

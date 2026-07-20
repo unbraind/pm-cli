@@ -112,6 +112,7 @@ function projectIdOnlyResult(result: unknown): unknown | null {
 
 function projectCompactMutationEnvelope(result: unknown): unknown | null {
   if (!isPlainObject(result) || !isPlainObject(result.item)) return null;
+  if (typeof result.item.id !== "string") return null;
   const changedFields = result[CHANGED_FIELDS_KEY];
   if (!Array.isArray(changedFields)) return null;
   const compact: Record<string, unknown> = {

@@ -233,8 +233,16 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
         },
       });
       expect(committed?.structuredContent).toMatchObject({
-        result: { status: "committed", mutation_count: 1 },
+        result: {
+          status: "committed",
+          transaction_id: "mcp-batch",
+          mutation_count: 1,
+        },
       });
+      expect(
+        (committed?.structuredContent as { result: Record<string, unknown> })
+          .result,
+      ).not.toHaveProperty("transactionId");
 
       const cwdCommitted = await handleRequest({
         jsonrpc: "2.0",
@@ -274,7 +282,7 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
             },
           },
         }),
-      ).rejects.toThrow("lockTtlSeconds must be a finite number");
+      ).rejects.toThrow("lockTtlSeconds must be a positive safe integer");
       await expect(
         handleRequest({
           jsonrpc: "2.0",
@@ -290,7 +298,7 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
             },
           },
         }),
-      ).rejects.toThrow("lockWaitMs must be a finite number");
+      ).rejects.toThrow("lockWaitMs must be a positive safe integer");
     });
   });
 });

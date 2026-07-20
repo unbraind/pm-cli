@@ -770,6 +770,37 @@ function assertCreatePositionalTypeHasTitle(
   );
 }
 
+const STRUCTURED_STDIN_CONFLICT_KEYS = [
+  "body",
+  "dep",
+  "depRemove",
+  "comment",
+  "note",
+  "learning",
+  "file",
+  "test",
+  "doc",
+  "reminder",
+  "event",
+  "typeOption",
+  "field",
+] as const;
+
+function assertExclusiveStructuredStdin(
+  options: Record<string, unknown>,
+): void {
+  const conflictingFlags = STRUCTURED_STDIN_CONFLICT_KEYS.filter((key) => {
+    const value = options[key];
+    return value === "-" || (Array.isArray(value) && value.includes("-"));
+  }).map((key) => `--${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`);
+  if (conflictingFlags.length > 0) {
+    throw new PmCliError(
+      `--stdin-json cannot be combined with other stdin consumers: ${conflictingFlags.join(", ")}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+}
+
 async function runCreateAction(
   typeOrTitle: string | undefined,
   secondTitle: string | undefined,
@@ -779,6 +810,7 @@ async function runCreateAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   if (options.stdinJson === true) {
+    assertExclusiveStructuredStdin(options);
     const input = await createStdinTokenResolver().resolveValue(
       "-",
       "--stdin-json",
@@ -1530,6 +1562,7 @@ async function runUpdateAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   if (options.stdinJson === true) {
+    assertExclusiveStructuredStdin(options);
     const input = await createStdinTokenResolver().resolveValue(
       "-",
       "--stdin-json",

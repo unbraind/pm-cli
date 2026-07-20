@@ -135,11 +135,15 @@ export function parseAtomicMutationControls(
     const raw = value[key];
     if (raw === undefined) continue;
     const parsed =
-      typeof raw === "number" || typeof raw === "string"
+      typeof raw === "number" ||
+      (typeof raw === "string" && raw.trim().length > 0)
         ? Number(raw)
         : Number.NaN;
-    if (!Number.isFinite(parsed)) {
-      throw new PmCliError(`${key} must be a finite number.`, EXIT_CODE.USAGE);
+    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+      throw new PmCliError(
+        `${key} must be a positive safe integer.`,
+        EXIT_CODE.USAGE,
+      );
     }
     controls[key] = parsed;
   }

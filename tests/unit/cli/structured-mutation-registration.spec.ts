@@ -115,6 +115,37 @@ describe("structured mutation command registration", () => {
     ).rejects.toThrow("must be valid JSON");
   });
 
+  it("rejects mixing whole-item JSON with other stdin consumers", async () => {
+    const createProgram = programWithGlobals();
+    registerMutationCommands(createProgram);
+    await expect(
+      createProgram.parseAsync(["create", "--stdin-json", "--body", "-"], {
+        from: "user",
+      }),
+    ).rejects.toThrow(
+      "--stdin-json cannot be combined with other stdin consumers: --body",
+    );
+
+    const updateProgram = programWithGlobals();
+    registerMutationCommands(updateProgram);
+    await expect(
+      updateProgram.parseAsync(
+        [
+          "update",
+          "pm-a",
+          "--stdin-json",
+          "--dep",
+          "-",
+          "--field",
+          "-",
+          "--type-option",
+          "-",
+        ],
+        { from: "user" },
+      ),
+    ).rejects.toThrow("other stdin consumers: --dep, --type-option, --field");
+  });
+
   it("previews and commits validated batches with every transaction control", async () => {
     const mutations = [
       {
@@ -177,7 +208,7 @@ describe("structured mutation command registration", () => {
         ],
         { from: "user" },
       ),
-    ).rejects.toThrow("lockTtlSeconds must be a finite number");
+    ).rejects.toThrow("lockTtlSeconds must be a positive safe integer");
 
     await expect(
       structuredMutationTestOnly.runItemMutateAction(

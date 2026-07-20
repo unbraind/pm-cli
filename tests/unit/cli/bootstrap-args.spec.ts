@@ -58,17 +58,25 @@ describe("parseBootstrapGlobalOptions", () => {
       "--no-pager",
       "--json",
       "--quiet",
+      "--lean",
     ]);
     expect(result.noExtensions).toBe(true);
     expect(result.noPager).toBe(true);
     expect(result.json).toBe(true);
     expect(result.quiet).toBe(true);
+    expect(result.lean).toBe(true);
   });
 
   it("stops parsing at -- sentinel", () => {
-    const result = parseBootstrapGlobalOptions(["--json", "--", "--quiet"]);
+    const result = parseBootstrapGlobalOptions([
+      "--json",
+      "--",
+      "--quiet",
+      "--lean",
+    ]);
     expect(result.json).toBe(true);
     expect(result.quiet).toBe(false);
+    expect(result.lean).toBe(false);
   });
 
   it("handles mixed flags and command tokens", () => {

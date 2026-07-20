@@ -17,6 +17,7 @@ import { pmToolActionNestedOptionKeys } from "../sdk/cli-contracts/tool-schema.j
 import {
   readRequiredString,
   runAction,
+  runWithActiveExtensions,
   type PmActionInput,
 } from "../sdk/runtime.js";
 import { TOOLS } from "./tool-definitions.js";
@@ -184,17 +185,30 @@ const HANDLERS: Record<string, ToolHandler> = {
       cwd,
       typeof args.path === "string" ? args.path : undefined,
     );
-    const result = await commitItemMutations({
-      pmRoot,
-      transactionId,
-      author: resolveAuthor(
-        typeof args.author === "string" ? args.author : undefined,
-        "unknown",
-      ),
-      mutations,
-      ...controls,
-    });
-    return { ...result, mutation_count: mutations.length };
+    const result = await runWithActiveExtensions(
+      {
+        cwd: typeof args.cwd === "string" ? args.cwd : undefined,
+        path: typeof args.path === "string" ? args.path : undefined,
+        noExtensions: args.noExtensions === true,
+      },
+      () =>
+        commitItemMutations({
+          pmRoot,
+          transactionId,
+          author: resolveAuthor(
+            typeof args.author === "string" ? args.author : undefined,
+            "unknown",
+          ),
+          mutations,
+          ...controls,
+        }),
+    );
+    const { transactionId: committedTransactionId, ...commitResult } = result;
+    return {
+      ...commitResult,
+      transaction_id: committedTransactionId,
+      mutation_count: mutations.length,
+    };
   },
   ...Object.fromEntries(
     Object.entries(NARROW_TOOL_ACTIONS).map(([tool, action]) => [

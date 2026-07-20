@@ -25,10 +25,15 @@ describe("structured mutation input", () => {
     ).toThrow("must be close or delete");
     expect(() =>
       parseAtomicMutationControls({ lockTtlSeconds: "not-a-number" }),
-    ).toThrow("lockTtlSeconds must be a finite number");
+    ).toThrow("lockTtlSeconds must be a positive safe integer");
     expect(() => parseAtomicMutationControls({ lockWaitMs: false })).toThrow(
-      "lockWaitMs must be a finite number",
+      "lockWaitMs must be a positive safe integer",
     );
+    for (const invalid of [" ", 0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(() =>
+        parseAtomicMutationControls({ lockTtlSeconds: invalid }),
+      ).toThrow("lockTtlSeconds must be a positive safe integer");
+    }
   });
 
   it("parses array and envelope batches without weakening operation types", () => {
