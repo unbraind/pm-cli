@@ -730,6 +730,15 @@ describe("runGraph", () => {
         { path: context.pmPath },
       )) as GraphPlanResult;
       expect(exempted.steps_by_code.isolated_active_node ?? 0).toBe(0);
+
+      const typeExempted = (await runGraph(
+        "plan",
+        undefined,
+        undefined,
+        { exemptIsolateType: "task", summary: true },
+        { path: context.pmPath },
+      )) as GraphPlanResult;
+      expect(typeExempted.steps_by_code.isolated_active_node ?? 0).toBe(0);
     });
   });
 

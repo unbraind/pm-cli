@@ -13,7 +13,12 @@
  * reports hit/miss observability so envelopes can explain their freshness.
  */
 import { createHash } from "node:crypto";
+import { stableStringify } from "../../core/shared/serialization.js";
 import type { Dependency, ItemStatus } from "../../types/index.js";
+import {
+  createRelationshipKindRegistry,
+  type RelationshipKindRegistry,
+} from "../relationships.js";
 import type {
   WorkspaceRelationshipAssembly,
   WorkspaceRelationshipItem,
@@ -80,14 +85,23 @@ export function computeWorkspaceGraphFingerprint(
   items: readonly WorkspaceRelationshipItem[],
   isTerminal: (status: ItemStatus) => boolean = (status) =>
     status === "closed" || status === "canceled",
+  registry: RelationshipKindRegistry = createRelationshipKindRegistry(),
 ): string {
   const lines = items
     .filter((item) => typeof item?.id === "string" && item.id.trim().length > 0)
     .map((item) => fingerprintLine(item, isTerminal))
     .sort();
+  const relationshipSemantics = registry
+    .list()
+    .map((definition) => stableStringify(definition))
+    .sort();
   // Separate fields and records with control characters no stored field can
   // contain unescaped, so adjacent free-text fields can never collide.
-  return createHash("sha256").update(lines.join("\u0001")).digest("hex");
+  return createHash("sha256")
+    .update(lines.join("\u0001"))
+    .update("\u0002")
+    .update(relationshipSemantics.join("\u0001"))
+    .digest("hex");
 }
 
 /** One cached workspace snapshot: its assembly plus memoized query results. */

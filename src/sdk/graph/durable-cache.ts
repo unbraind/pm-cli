@@ -70,7 +70,9 @@ export function graphAuditBaselinePath(pmRoot: string): string {
 }
 
 /** Decode one persisted JSON envelope, returning undefined on any defect. */
-function decodeEnvelope(raw: string | null): DurableGraphCacheEnvelope | undefined {
+function decodeEnvelope(
+  raw: string | null,
+): DurableGraphCacheEnvelope | undefined {
   if (raw === null) return undefined;
   try {
     const parsed: unknown = JSON.parse(raw);
@@ -190,24 +192,47 @@ export function shouldPersistDurableGraphCache(
   return envelopeExists || itemCount >= GRAPH_DURABLE_CACHE_MIN_ITEMS;
 }
 
+/** Return whether a decoded value is a string-keyed non-negative integer count map. */
+function isNonnegativeCountRecord(
+  value: unknown,
+): value is Record<string, number> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    Object.values(value).every((count) => Number.isInteger(count) && count >= 0)
+  );
+}
+
 /** Decode one persisted audit census baseline, undefined on any defect. */
-function decodeBaseline(raw: string | null): RelationshipAuditSnapshot | undefined {
+function decodeBaseline(
+  raw: string | null,
+): RelationshipAuditSnapshot | undefined {
   if (raw === null) return undefined;
   try {
     const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) return undefined;
+    const snapshot = parsed as Partial<RelationshipAuditSnapshot>;
+    const profile = snapshot.profile;
     if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      typeof (parsed as RelationshipAuditSnapshot).saved_at !== "string" ||
-      typeof (parsed as RelationshipAuditSnapshot).fingerprint !== "string" ||
-      typeof (parsed as RelationshipAuditSnapshot).affected_subjects_by_code !==
-        "object" ||
-      (parsed as RelationshipAuditSnapshot).affected_subjects_by_code === null ||
-      typeof (parsed as RelationshipAuditSnapshot).profile !== "object" ||
-      (parsed as RelationshipAuditSnapshot).profile === null
+      typeof snapshot.saved_at !== "string" ||
+      typeof snapshot.fingerprint !== "string" ||
+      !isNonnegativeCountRecord(snapshot.affected_subjects_by_code) ||
+      typeof profile !== "object" ||
+      profile === null ||
+      ![
+        profile.nodes,
+        profile.edges,
+        profile.active_nodes,
+        profile.missing_nodes,
+        profile.isolated_active_nodes,
+        profile.degree_leq_one_active_nodes,
+      ].every((value) => Number.isInteger(value) && value >= 0) ||
+      !isNonnegativeCountRecord(profile.edges_by_kind) ||
+      typeof profile.coverage_by_type !== "object" ||
+      profile.coverage_by_type === null
     )
       return undefined;
-    return parsed as RelationshipAuditSnapshot;
+    return snapshot as RelationshipAuditSnapshot;
   } catch {
     return undefined;
   }

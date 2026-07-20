@@ -6,6 +6,7 @@ import {
   resetWorkspaceGraphCache,
   workspaceGraphCache,
 } from "../../../../src/sdk/graph/cache.js";
+import { createRelationshipKindRegistry } from "../../../../src/sdk/relationships.js";
 
 /** Minimal open item row accepted by fingerprinting and assembly. */
 function item(
@@ -107,6 +108,34 @@ describe("computeWorkspaceGraphFingerprint", () => {
         }),
       ] as never),
     );
+  });
+
+  it("invalidates fingerprints when relationship-kind semantics change", () => {
+    const items = [
+      item("commit-a", {
+        dependencies: [{ id: "commit-b", kind: "commits_to" }],
+      }),
+      item("commit-b"),
+    ] as never;
+    const sourceFirst = createRelationshipKindRegistry().register({
+      kind: "commits_to",
+      direction: "directed",
+      ordering: true,
+      precedence: "source_before_target",
+      hierarchy: false,
+      outgoing: "many",
+      incoming: "many",
+      lifecycle: "persistent",
+      compatibilityVersion: 1,
+      allowSelf: false,
+    });
+    const targetFirst = createRelationshipKindRegistry().register({
+      ...sourceFirst.require("commits_to"),
+      precedence: "target_before_source",
+    });
+    expect(
+      computeWorkspaceGraphFingerprint(items, undefined, sourceFirst),
+    ).not.toBe(computeWorkspaceGraphFingerprint(items, undefined, targetFirst));
   });
 });
 

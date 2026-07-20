@@ -40,6 +40,7 @@ import {
 } from "./analytics.js";
 import {
   assembleWorkspaceRelationshipGraph,
+  resolveWorkspaceRelationshipKindRegistry,
   type WorkspaceRelationshipAssembly,
 } from "./assembly.js";
 import {
@@ -867,6 +868,9 @@ function runGraphPlan(
     ...(invocation.exemptIsolates.length === 0
       ? {}
       : { exemptIsolates: invocation.exemptIsolates }),
+    ...(invocation.exemptIsolateTypes.length === 0
+      ? {}
+      : { isolateExemptTypes: invocation.exemptIsolateTypes }),
   });
   const byOp: Record<string, number> = {};
   const byCode: Record<string, number> = {};
@@ -913,7 +917,9 @@ function buildGraphQueryKey(
       ...new Set(invocation.exemptIsolates.map((id) => id.toLowerCase())),
     ].sort(),
     exemptIsolateTypes: [
-      ...new Set(invocation.exemptIsolateTypes.map((type) => type.toLowerCase())),
+      ...new Set(
+        invocation.exemptIsolateTypes.map((type) => type.toLowerCase()),
+      ),
     ].sort(),
     summary: invocation.summary,
   });
@@ -944,7 +950,10 @@ function assertGraphFlagScope(
   subcommand: GraphSubcommand,
   options: GraphCommandOptions,
 ): void {
-  if (subcommand !== "index" && (options.rebuild === true || options.clear === true))
+  if (
+    subcommand !== "index" &&
+    (options.rebuild === true || options.clear === true)
+  )
     throw new PmCliError(
       "--rebuild and --clear apply only to graph index.",
       EXIT_CODE.USAGE,
@@ -984,14 +993,27 @@ async function runGraphIndex(
   if (options.rebuild === true) {
     await clearDurableGraphCache(pmRoot);
     const view = await openDurableGraphCache(pmRoot, fingerprint);
-    const warmInvocation: GraphInvocation = { ...invocation, summary: true };
+    const warmInvocation: GraphInvocation = {
+      assembly: invocation.assembly,
+      direction: "both",
+      exemptIsolates: [],
+      exemptIsolateTypes: [],
+      saveBaseline: false,
+      summary: true,
+    };
     for (const warm of ["analyze", "audit"] as const) {
       await persistDurableGraphResult(
         pmRoot,
         fingerprint,
         view,
         buildGraphQueryKey(warm, undefined, undefined, warmInvocation),
-        executeGraphSubcommand(warm, undefined, undefined, warmInvocation, isTerminal),
+        executeGraphSubcommand(
+          warm,
+          undefined,
+          undefined,
+          warmInvocation,
+          isTerminal,
+        ),
       );
     }
     action = "rebuilt";
@@ -1068,10 +1090,16 @@ export async function runGraph(
   const isTerminal = (status: string): boolean =>
     isTerminalStatus(status, statusRegistry);
   const kinds = parseKinds(options.kind);
+  const relationshipRegistry = resolveWorkspaceRelationshipKindRegistry();
   const lookup = workspaceGraphCache().lookup(
     pmRoot,
-    computeWorkspaceGraphFingerprint(items, isTerminal),
-    () => assembleWorkspaceRelationshipGraph(items, isTerminal),
+    computeWorkspaceGraphFingerprint(items, isTerminal, relationshipRegistry),
+    () =>
+      assembleWorkspaceRelationshipGraph(
+        items,
+        isTerminal,
+        relationshipRegistry,
+      ),
   );
   assertGraphFlagScope(subcommand, options);
   const invocation: GraphInvocation = {
@@ -1105,13 +1133,24 @@ export async function runGraph(
     subcommand === "paths"
       ? canonicalizeGraphId(invocation.assembly, target!)
       : undefined;
-  const queryKey = buildGraphQueryKey(subcommand, root, pathsTarget, invocation);
+  const queryKey = buildGraphQueryKey(
+    subcommand,
+    root,
+    pathsTarget,
+    invocation,
+  );
   const durableView = await openDurableGraphCache(pmRoot, lookup.fingerprint);
   const durableValue = durableView.results[queryKey];
   const memo = lookup.memoize(queryKey, () =>
     durableValue !== undefined
       ? (structuredClone(durableValue) as GraphResult)
-      : executeGraphSubcommand(subcommand, root, pathsTarget, invocation, isTerminal),
+      : executeGraphSubcommand(
+          subcommand,
+          root,
+          pathsTarget,
+          invocation,
+          isTerminal,
+        ),
   );
   const persistEnabled = shouldPersistDurableGraphCache(
     items.length,

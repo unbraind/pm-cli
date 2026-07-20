@@ -28,9 +28,7 @@ interface OrderingDigraph {
 }
 
 function cycleKey(component: readonly string[]): string {
-  return [...component]
-    .sort((left, right) => left.localeCompare(right))
-    .join("\u0000");
+  return [...component].sort().join("\u0000");
 }
 
 /** Append one oriented ordering edge to both adjacency orientations. */
@@ -116,8 +114,7 @@ function buildOrderingDigraph(
     }
   }
   for (const adjacency of [digraph.successors, digraph.predecessors])
-    for (const neighbors of adjacency.values())
-      neighbors.sort((left, right) => left.localeCompare(right));
+    for (const neighbors of adjacency.values()) neighbors.sort();
   return digraph;
 }
 
@@ -167,7 +164,11 @@ function collectScopedCycles(
   items: readonly ItemMetadata[],
   registry: RelationshipKindRegistry,
   changedItemId: string,
-): { cycles: string[][]; successors: Map<string, string[]>; canonical: string } {
+): {
+  cycles: string[][];
+  successors: Map<string, string[]>;
+  canonical: string;
+} {
   const digraph = buildOrderingDigraph(items, registry);
   const canonical = digraph.canonicalIds.get(
     changedItemId.trim().toLowerCase(),

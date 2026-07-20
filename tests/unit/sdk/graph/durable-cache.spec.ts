@@ -67,7 +67,12 @@ describe("durable graph cache primitives", () => {
       await mkdir(path.dirname(cachePath), { recursive: true });
       for (const corrupt of [
         "{not json",
-        JSON.stringify({ version: 999, fingerprint: "fp", saved_at: "x", results: {} }),
+        JSON.stringify({
+          version: 999,
+          fingerprint: "fp",
+          saved_at: "x",
+          results: {},
+        }),
         JSON.stringify({
           version: GRAPH_DURABLE_CACHE_VERSION,
           fingerprint: 7,
@@ -120,9 +125,11 @@ describe("durable graph cache primitives", () => {
       expect(typeof status.saved_at).toBe("string");
 
       await clearDurableGraphCache(context.pmPath);
-      expect(
-        await openDurableGraphCache(context.pmPath, "fp-1"),
-      ).toEqual({ exists: false, fresh: false, results: {} });
+      expect(await openDurableGraphCache(context.pmPath, "fp-1")).toEqual({
+        exists: false,
+        fresh: false,
+        results: {},
+      });
       // Clearing an absent envelope stays a no-op.
       await clearDurableGraphCache(context.pmPath);
     });
@@ -171,9 +178,52 @@ describe("durable graph cache primitives", () => {
           affected_subjects_by_code: {},
           profile: null,
         }),
+        JSON.stringify({
+          ...snapshot,
+          affected_subjects_by_code: 7,
+        }),
+        JSON.stringify({
+          ...snapshot,
+          affected_subjects_by_code: { ordering_cycle: "invalid" },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          affected_subjects_by_code: { ordering_cycle: -1 },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: { ...snapshot.profile, nodes: "invalid" },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: { ...snapshot.profile, nodes: -1 },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: { ...snapshot.profile, edges_by_kind: null },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            edges_by_kind: { related: "invalid" },
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: { ...snapshot.profile, edges_by_kind: { related: -1 } },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: { ...snapshot.profile, coverage_by_type: null },
+        }),
         JSON.stringify(null),
       ]) {
-        await writeFile(graphAuditBaselinePath(context.pmPath), corrupt, "utf8");
+        await writeFile(
+          graphAuditBaselinePath(context.pmPath),
+          corrupt,
+          "utf8",
+        );
         expect(await loadGraphAuditBaseline(context.pmPath)).toBeUndefined();
       }
     });
@@ -223,7 +273,14 @@ describe("pm graph index and durable envelopes", () => {
         "index",
         undefined,
         undefined,
-        { rebuild: true },
+        {
+          rebuild: true,
+          direction: "outgoing",
+          maxDepth: 1,
+          sample: 1,
+          exemptIsolate: "ignored",
+          exemptIsolateType: "task",
+        },
         { path: context.pmPath },
       )) as GraphIndexResult;
       expect(rebuilt).toMatchObject({
@@ -295,10 +352,7 @@ describe("pm graph index and durable envelopes", () => {
   it("rejects maintenance and baseline flags outside their subcommand", async () => {
     await withTempPmPath(async (context) => {
       createItem(context, "Scope item");
-      for (const options of [
-        { rebuild: true },
-        { clear: true },
-      ]) {
+      for (const options of [{ rebuild: true }, { clear: true }]) {
         await expect(
           runGraph("analyze", undefined, undefined, options, {
             path: context.pmPath,
@@ -308,9 +362,15 @@ describe("pm graph index and durable envelopes", () => {
         });
       }
       await expect(
-        runGraph("index", undefined, undefined, { saveBaseline: true }, {
-          path: context.pmPath,
-        }),
+        runGraph(
+          "index",
+          undefined,
+          undefined,
+          { saveBaseline: true },
+          {
+            path: context.pmPath,
+          },
+        ),
       ).rejects.toMatchObject<Partial<PmCliError>>({
         exitCode: EXIT_CODE.USAGE,
       });

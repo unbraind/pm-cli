@@ -95,8 +95,8 @@ export function normalizeDependencyGraphTarget(
  */
 export function resolveWorkspaceRelationshipKindRegistry(): RelationshipKindRegistry {
   const registry = createRelationshipKindRegistry();
-  for (const registration of
-    getActiveExtensionRegistrations()?.relationship_kinds ?? []) {
+  for (const registration of getActiveExtensionRegistrations()
+    ?.relationship_kinds ?? []) {
     for (const definition of registration.definitions) {
       registry.register(definition);
     }
@@ -172,11 +172,11 @@ export function collectDuplicateDependencyRows(
       });
     }
   }
-  return rows.sort(
-    (left, right) =>
-      left.holder_id.localeCompare(right.holder_id) ||
-      left.target_id.localeCompare(right.target_id) ||
-      left.kind.localeCompare(right.kind),
+  return rows.sort((left, right) =>
+    JSON.stringify([left.holder_id, left.target_id, left.kind]) <
+    JSON.stringify([right.holder_id, right.target_id, right.kind])
+      ? -1
+      : 1,
   );
 }
 

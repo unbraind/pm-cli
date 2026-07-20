@@ -27,6 +27,7 @@ import type {
 import {
   assembleWorkspaceRelationshipGraph,
   collectDanglingDependencyReferences,
+  resolveWorkspaceRelationshipKindRegistry,
   type DanglingDependencyReference,
   type WorkspaceRelationshipAssembly,
 } from "./graph/assembly.js";
@@ -763,12 +764,18 @@ export async function runDeps(
         );
     const isTerminal = (status: ItemStatus): boolean =>
       isTerminalStatus(status, statusRegistry);
+    const relationshipRegistry = resolveWorkspaceRelationshipKindRegistry();
     // Reuse the fingerprint-keyed shared cache so bounded context packets in
     // long-lived hosts stop paying full-workspace assembly on every call.
     const lookup = workspaceGraphCache().lookup(
       pmRoot,
-      computeWorkspaceGraphFingerprint(items, isTerminal),
-      () => assembleWorkspaceRelationshipGraph(items, isTerminal),
+      computeWorkspaceGraphFingerprint(items, isTerminal, relationshipRegistry),
+      () =>
+        assembleWorkspaceRelationshipGraph(
+          items,
+          isTerminal,
+          relationshipRegistry,
+        ),
     );
     return buildContextDepsResult({
       assembly: lookup.assembly,

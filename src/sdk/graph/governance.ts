@@ -438,7 +438,8 @@ function collectOrderingFindings(
             "legacy_ordering_cycle",
             "info",
             "Ordering cycles between exclusively terminal items are historical contradictions with no scheduling effect.",
-            (count) => `terminal-only execution-order cycle across ${count} item(s)`,
+            (count) =>
+              `terminal-only execution-order cycle across ${count} item(s)`,
             cycle,
             maxSampleSize,
             "Leave as history debt, or clean up in a dedicated changelog-safe closed-item batch; never repair closed items ad hoc.",
@@ -609,7 +610,8 @@ function collectDuplicateRowFindings(
     "duplicate_dependency_row",
     "warning",
     "One dependency row must be stored once per holder; identical repeated rows are a storage-layer defect invisible to the assembled graph.",
-    (count) => `${count} exactly duplicated stored dependency row(s) on active holder(s)`,
+    (count) =>
+      `${count} exactly duplicated stored dependency row(s) on active holder(s)`,
     "Remove the repeated rows so the dependency is stored exactly once; graph semantics are unchanged.",
   );
   appendFinding(
@@ -619,7 +621,8 @@ function collectDuplicateRowFindings(
     "legacy_duplicate_dependency_row",
     "info",
     "Identical repeated dependency rows on terminal holders are historical storage noise with no scheduling effect.",
-    (count) => `${count} exactly duplicated stored dependency row(s) on terminal holder(s)`,
+    (count) =>
+      `${count} exactly duplicated stored dependency row(s) on terminal holder(s)`,
     "Leave as history debt or clean up in a dedicated changelog-safe closed-item batch.",
   );
   return findings;
@@ -747,9 +750,7 @@ function collectCoverageReport(
       isolated_active_nodes: tallies.isolated,
       degree_leq_one_active_nodes: tallies.degreeLeqOne,
       coverage_by_type: Object.fromEntries(
-        [...tallies.byType.entries()].sort(([left], [right]) =>
-          left.localeCompare(right),
-        ),
+        [...tallies.byType.entries()].sort(),
       ),
     },
   };
@@ -889,7 +890,7 @@ function diffCountRecords(
 ): Record<string, number> {
   const keys = [
     ...new Set([...Object.keys(baseline), ...Object.keys(current)]),
-  ].sort((left, right) => left.localeCompare(right));
+  ].sort();
   const deltas: Record<string, number> = {};
   for (const key of keys) {
     const delta = (current[key] ?? 0) - (baseline[key] ?? 0);
@@ -918,7 +919,8 @@ export function diffRelationshipAuditSnapshots(
     profile: {
       nodes: current.profile.nodes - baseline.profile.nodes,
       edges: current.profile.edges - baseline.profile.edges,
-      active_nodes: current.profile.active_nodes - baseline.profile.active_nodes,
+      active_nodes:
+        current.profile.active_nodes - baseline.profile.active_nodes,
       missing_nodes:
         current.profile.missing_nodes - baseline.profile.missing_nodes,
       isolated_active_nodes:

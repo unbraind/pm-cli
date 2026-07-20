@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[7]: algorithms,"area:context","area:graph",context-management,performance,planning,scale
 created_at: "2026-07-13T21:58:35.029Z"
-updated_at: "2026-07-20T04:17:12.267Z"
+updated_at: "2026-07-20T04:53:49.812Z"
 assignee: maintainer-agent
 author: codex-root
 estimated_minutes: 900
@@ -27,7 +27,7 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-atfm,related,"2026-07-13T21:58:35.029Z",null,null
   pm-g2zz,related,"2026-07-13T21:58:35.029Z",null,null
   pm-ju83,blocked_by,"2026-07-13T21:58:35.029Z",null,null
-comments[16]{created_at,author,text}:
+comments[17]{created_at,author,text}:
   "2026-07-13T21:58:35.029Z",codex-root,"Duplicate check 2026-07-13: context-engine items define relevance assembly and evaluation but no dedicated typed-graph analytics portfolio covering project planning,impact,community,and incremental temporal algorithms; this item supplies those graph primitives without duplicating ranking policy."
   "2026-07-14T09:43:36.815Z",codex-gpt5,"Implementation start 2026-07-14: deliver the first exact deterministic analytics tranche over registered relationship semantics, including execution-order and impact/knowledge signals with provenance rather than opaque scores."
   "2026-07-14T10:19:33.632Z",codex-gpt5,"Implementation evidence: added exact deterministic ordering analytics with Kahn layers, frontier, depth, topological order, critical path, and SCC cycle reporting; bounded impact with shortest explanation paths; weak/strong knowledge components, orphans, hubs; and temporal snapshot comparison. Associative relationships are excluded from execution blockers through registry precedence rather than hard-coded kind names."
@@ -44,6 +44,7 @@ comments[16]{created_at,author,text}:
   "2026-07-20T03:30:16.419Z",maintainer-agent,"Continuation scope 2026-07-20: finish incremental ordering-cycle mutation advisories plus durable analytics result reuse and baseline drift reporting. Only this active analytics tranche is in progress; temporal what-if variants and the million-item evaluation matrix remain future work."
   "2026-07-20T04:04:18.967Z",maintainer-agent,"Review evidence: exact-head Greptile review 84ef563e-f412-44be-80e5-462936a5134d completed at confidence 5/5 with no actionable findings. It confirmed weak-component mutation scoping, legacy-cycle suppression, self-loop behavior, and incremental ordering-cycle advisory coverage."
   "2026-07-20T04:17:12.266Z",maintainer-agent,"Final branch evidence before PR: all 4 linked mutation/cache/history tests passed. The complete repository gate passed 318 files / 5,993 tests at exact 100/100/100/100. Temp installed-package proof exercised cross-process cache reuse and invalidation after a real mutation; component-scoped ordering-cycle warnings are covered for self-loops, legacy-cycle suppression, and cross-component isolation."
+  "2026-07-20T04:53:49.812Z",maintainer-agent,"PR #622 review round 1: accepted Gemini's locale-independent advisory ordering. Cycle keys and adjacency use default UTF-16 ordering; focused mutation tests and exact repository branch coverage pass. The extension registry now also participates in workspace fingerprints, preventing stale precedence semantics in long-lived mutation/query hosts."
 notes[5]{created_at,author,text}:
   "2026-07-14T10:19:36.348Z",codex-gpt5,"Remaining canonical scope after this PR: dominators, community algorithms beyond exact components, redundancy detection, incremental cached analytics, and CLI/MCP projections; keep feature open."
   "2026-07-17T20:01:05.109Z",maintainer-agent,"Implementation progress (graph-query-surface lane, 2026-07-17): three of this feature's recorded remaining-scope analytics shipped as public SDK primitives in new src/sdk/graph/analytics.ts — detectRelationshipCommunities (deterministic asynchronous label propagation, sorted sweeps, lexicographic tie-break, maxIterations/minSize bounds, convergence reporting), findRedundantRelationshipEdges (transitive-reduction scan joining each directed ordering/hierarchy kind with its inverse spelling in semantic orientation, per-edge bounded BFS witness paths), computeRelationshipDominators (Cooper-Harvey-Kennedy immediate dominators over the root's reachable subgraph with per-node gating weights). Exposed as pm graph communities/redundancy/dominators + pm_graph MCP + PmClient.graph with counts-first envelopes, sample bounds, and cost metadata. Remaining canonical scope: incremental cached analytics only (dominators/communities/redundancy now shipped)."
