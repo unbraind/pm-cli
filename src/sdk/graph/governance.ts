@@ -904,6 +904,13 @@ function diffCountRecords(
   return deltas;
 }
 
+/** Read per-type coverage defensively from current or legacy runtime snapshots. */
+function readSnapshotCoverageByType(
+  snapshot: RelationshipAuditSnapshot,
+): Record<string, RelationshipCoverageTypeProfile> {
+  return snapshot.profile.coverage_by_type ?? {};
+}
+
 /**
  * Compare two point-in-time audit snapshots and return the signed change in
  * findings and structural coverage. This is the temporal primitive behind
@@ -915,15 +922,20 @@ export function diffRelationshipAuditSnapshots(
   current: RelationshipAuditSnapshot,
 ): RelationshipAuditDelta {
   const coverageByType: Record<string, RelationshipCoverageTypeProfile> = {};
+  // Public SDK callers may compare legacy or JSON-decoded snapshots created
+  // before per-type coverage was added, even though current typed snapshots
+  // always carry this field.
+  const baselineCoverageByType = readSnapshotCoverageByType(baseline);
+  const currentCoverageByType = readSnapshotCoverageByType(current);
   const typeKeys = [
     ...new Set([
-      ...Object.keys(baseline.profile.coverage_by_type),
-      ...Object.keys(current.profile.coverage_by_type),
+      ...Object.keys(baselineCoverageByType),
+      ...Object.keys(currentCoverageByType),
     ]),
   ].sort();
   for (const type of typeKeys) {
-    const before = baseline.profile.coverage_by_type[type];
-    const after = current.profile.coverage_by_type[type];
+    const before = baselineCoverageByType[type];
+    const after = currentCoverageByType[type];
     const delta = {
       active: (after?.active ?? 0) - (before?.active ?? 0),
       isolated: (after?.isolated ?? 0) - (before?.isolated ?? 0),

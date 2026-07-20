@@ -948,5 +948,23 @@ describe("diffRelationshipAuditSnapshots", () => {
         saved_at: "2026-07-21T00:00:00.000Z",
       }).same_snapshot,
     ).toBe(true);
+    expect(
+      diffRelationshipAuditSnapshots(
+        {
+          ...baseline,
+          profile: { ...baseline.profile, coverage_by_type: undefined },
+        } as never,
+        current,
+      ).profile.coverage_by_type,
+    ).toEqual(current.profile.coverage_by_type);
+    expect(
+      diffRelationshipAuditSnapshots(baseline, {
+        ...current,
+        profile: { ...current.profile, coverage_by_type: undefined },
+      } as never).profile.coverage_by_type,
+    ).toEqual({
+      Epic: { active: -2, isolated: -1, degree_leq_one: -1 },
+      Task: { active: -3, isolated: -1, degree_leq_one: -2 },
+    });
   });
 });
