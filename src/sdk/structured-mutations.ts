@@ -320,7 +320,7 @@ function serializePairs(
     .filter((key) => value[key] !== undefined && value[key] !== null)
     .map((key) => {
       const rendered = String(value[key]);
-      return `${key}=${/[",\n\r]/u.test(rendered) ? `"${rendered.replaceAll('"', '""')}"` : rendered}`;
+      return `${key}=${/[",\n\r\\]/u.test(rendered) ? JSON.stringify(rendered) : rendered}`;
     })
     .join(",");
 }

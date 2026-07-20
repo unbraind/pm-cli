@@ -255,6 +255,12 @@ function splitCsvSegments(raw: string): string[] {
 function unquoteValue(value: string): string {
   const trimmed = value.trim();
   if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      if (typeof parsed === "string") return parsed;
+    } catch {
+      // Preserve the legacy permissive quoted-value parser for non-JSON input.
+    }
     return trimmed.slice(1, -1).replace(/\\"/g, '"');
   }
   return value;

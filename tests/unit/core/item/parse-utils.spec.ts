@@ -147,6 +147,18 @@ describe("core/item/parse", () => {
       scope: "project",
       note: 'alpha, "beta"',
     });
+    expect(parseCsvKv(String.raw`note="legacy \q"`, "--file")).toEqual({
+      note: String.raw`legacy \q`,
+    });
+    expect(
+      parseCsvKv(
+        String.raw`text="first line\nsecond \"quoted\" line",author=agent`,
+        "--comment",
+      ),
+    ).toEqual({
+      text: 'first line\nsecond "quoted" line',
+      author: "agent",
+    });
   });
 
   it("assertNoUnknownCsvKeys accepts known keys and is case-insensitive (GH-258)", () => {
