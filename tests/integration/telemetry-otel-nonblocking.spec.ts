@@ -21,7 +21,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
  * dist/cli.js is current.
  */
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+);
 const distCli = path.join(repoRoot, "dist", "cli.js");
 // RFC 5737 TEST-NET-1 documentation address: not routed, so connections hang
 // then time out rather than refusing immediately, which is the worst case the
@@ -77,21 +81,38 @@ describe("telemetry OTLP export is non-blocking at the process level (GH-209)", 
   let context: SandboxContext;
 
   beforeAll(async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-cli-otel-nonblocking-"));
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-cli-otel-nonblocking-"),
+    );
     const pmPath = path.join(tempRoot, "proj", ".agents", "pm");
     const globalPath = path.join(tempRoot, "global");
-    const bootstrap: SandboxContext = { tempRoot, pmPath, globalPath, itemId: "" };
+    const bootstrap: SandboxContext = {
+      tempRoot,
+      pmPath,
+      globalPath,
+      itemId: "",
+    };
 
     const init = runCli(bootstrap, ["init", "--json"]);
     expect(init.code, `init failed: ${init.stderr}`).toBe(0);
 
-    const enable = runCli(bootstrap, ["config", "set", "telemetry-tracking", "on"]);
+    const enable = runCli(bootstrap, [
+      "config",
+      "set",
+      "telemetry-tracking",
+      "on",
+    ]);
     expect(enable.code, `config set failed: ${enable.stderr}`).toBe(0);
 
-    const create = runCli(bootstrap, ["create", "task", "otel non-blocking regression item", "--json"]);
+    const create = runCli(bootstrap, [
+      "create",
+      "task",
+      "otel non-blocking regression item",
+      "--json",
+    ]);
     expect(create.code, `create failed: ${create.stderr}`).toBe(0);
-    const created = JSON.parse(create.stdout) as { item?: { id?: string } };
-    const itemId = created.item?.id;
+    const created = JSON.parse(create.stdout) as { id?: string };
+    const itemId = created.id;
     expect(typeof itemId, "expected created item id").toBe("string");
 
     context = { tempRoot, pmPath, globalPath, itemId: itemId as string };
@@ -106,9 +127,12 @@ describe("telemetry OTLP export is non-blocking at the process level (GH-209)", 
           return;
         } catch (error) {
           if (attempt === cleanupAttempts - 1) {
-            throw new Error(`Failed to clean telemetry OTLP temp root after ${cleanupAttempts} attempts`, {
-              cause: error,
-            });
+            throw new Error(
+              `Failed to clean telemetry OTLP temp root after ${cleanupAttempts} attempts`,
+              {
+                cause: error,
+              },
+            );
           }
           await delay(100 * (attempt + 1));
         }
@@ -129,9 +153,13 @@ describe("telemetry OTLP export is non-blocking at the process level (GH-209)", 
   });
 
   it("returns from a mutation (update) quickly even when the OTLP traces endpoint is a blackhole", () => {
-    const result = runCli(context, ["update", context.itemId, "--priority", "1", "--json"], {
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: BLACKHOLE_TRACES_ENDPOINT,
-    });
+    const result = runCli(
+      context,
+      ["update", context.itemId, "--priority", "1", "--json"],
+      {
+        OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: BLACKHOLE_TRACES_ENDPOINT,
+      },
+    );
     expect(result.code, `update stderr: ${result.stderr}`).toBe(0);
     expect(result.stderr).not.toContain("unsettled top-level await");
     expect(

@@ -20,6 +20,12 @@ import {
   type PmActionInput,
 } from "../sdk/runtime.js";
 import { TOOLS } from "./tool-definitions.js";
+import { commitItemMutations } from "../sdk/item-transaction.js";
+import {
+  parseAtomicMutationControls,
+  validateItemMutationRows,
+} from "../sdk/structured-mutations.js";
+import { resolveAuthor, resolvePmRoot } from "../sdk/runtime-primitives.js";
 
 interface JsonRpcRequest {
   jsonrpc?: string;
@@ -161,6 +167,35 @@ const NARROW_TOOL_ACTIONS: Record<string, string> = {
 
 const HANDLERS: Record<string, ToolHandler> = {
   pm_run: (args) => runAction(args as PmActionInput),
+  pm_mutate: async (args) => {
+    const transactionId = readRequiredString(args, "transactionId");
+    const mutations = validateItemMutationRows(args.mutations);
+    const controls = parseAtomicMutationControls(args);
+    if (args.dryRun === true) {
+      return {
+        transaction_id: transactionId,
+        dry_run: true,
+        mutation_count: mutations.length,
+        mutations,
+      };
+    }
+    const cwd = typeof args.cwd === "string" ? args.cwd : process.cwd();
+    const pmRoot = resolvePmRoot(
+      cwd,
+      typeof args.path === "string" ? args.path : undefined,
+    );
+    const result = await commitItemMutations({
+      pmRoot,
+      transactionId,
+      author: resolveAuthor(
+        typeof args.author === "string" ? args.author : undefined,
+        "unknown",
+      ),
+      mutations,
+      ...controls,
+    });
+    return { ...result, mutation_count: mutations.length };
+  },
   ...Object.fromEntries(
     Object.entries(NARROW_TOOL_ACTIONS).map(([tool, action]) => [
       tool,
@@ -276,7 +311,7 @@ export async function handleRequest(
       instructions:
         "You have access to native pm CLI tools for git-based project management. " +
         "Use pm_next to pick the next actionable item, or pm_context or pm_search before creating new work. " +
-        "Prefer narrow tools (pm_next, pm_context, pm_list, pm_get, pm_search, pm_create, pm_copy, pm_focus, pm_update, pm_append, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_graph, pm_test, pm_validate, pm_health, pm_contracts, pm_schema, pm_profile, pm_config, pm_plan) over pm_run when they cover the operation. " +
+        "Prefer narrow tools (pm_next, pm_context, pm_list, pm_get, pm_search, pm_create, pm_mutate, pm_copy, pm_focus, pm_update, pm_append, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_graph, pm_test, pm_validate, pm_health, pm_contracts, pm_schema, pm_profile, pm_config, pm_plan) over pm_run when they cover the operation. " +
         "Use pm_plan for agent harness Plan workflows: it provides Codex/Claude/Cursor-style planning with durable steps, dependencies, decisions, discoveries, validation, and materialization. " +
         "Use pm_schema and pm_config for workspace configuration: pm_schema manages custom item types/statuses and pm_config reads or writes settings keys. " +
         "Use pm_run with an explicit action for active package-owned operations, plus activity, aggregate, history, stats, test-all, and gc. " +

@@ -39,6 +39,14 @@ function runCliJson(cliPath, args, options) {
   }
 }
 
+export function mutationId(result, label) {
+  const id = result?.id ?? result?.item?.id;
+  if (typeof id !== "string" || id.length === 0) {
+    fail(`Token budget fixture ${label} mutation did not return an item id`);
+  }
+  return id;
+}
+
 function seedFixture(cliPath, options) {
   runCli(cliPath, ["init", "--defaults", "--json"], options);
   const parent = runCliJson(
@@ -59,7 +67,7 @@ function seedFixture(cliPath, options) {
     ],
     options,
   );
-  const parentId = parent.item.id;
+  const parentId = mutationId(parent, "parent");
   const blocker = runCliJson(
     cliPath,
     [
@@ -91,7 +99,7 @@ function seedFixture(cliPath, options) {
       "--parent",
       parentId,
       "--blocked-by",
-      blocker.item.id,
+      mutationId(blocker, "blocker"),
       "--tags",
       "agent",
       "--json",
@@ -102,7 +110,7 @@ function seedFixture(cliPath, options) {
     cliPath,
     [
       "comments",
-      child.item.id,
+      mutationId(child, "child"),
       "Evidence fixture comment for token budget output",
       "--json",
     ],
@@ -110,8 +118,8 @@ function seedFixture(cliPath, options) {
   );
   return {
     parentId,
-    blockerId: blocker.item.id,
-    childId: child.item.id,
+    blockerId: mutationId(blocker, "blocker"),
+    childId: mutationId(child, "child"),
   };
 }
 

@@ -1560,6 +1560,9 @@
       "command": "create",
       "flags": [
         {
+          "flag": "--stdin-json"
+        },
+        {
           "flag": "--title",
           "short": "-t"
         },
@@ -2778,6 +2781,43 @@
         },
         {
           "flag": "--ref"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "item",
+      "flags": [],
+      "provider": "extension"
+    },
+    {
+      "command": "item mutate",
+      "flags": [
+        {
+          "flag": "--transaction-id",
+          "value_name": "value"
+        },
+        {
+          "flag": "--stdin-json"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--create-compensation",
+          "value_name": "mode"
+        },
+        {
+          "flag": "--lock-ttl-seconds",
+          "value_name": "n"
+        },
+        {
+          "flag": "--lock-wait-ms",
+          "value_name": "n"
+        },
+        {
+          "flag": "--author",
+          "value_name": "value"
         }
       ],
       "provider": "core"
@@ -6069,6 +6109,9 @@
       "command": "update",
       "flags": [
         {
+          "flag": "--stdin-json"
+        },
+        {
           "flag": "--title",
           "short": "-t"
         },
@@ -8286,6 +8329,8 @@
     "history-repair",
     "init",
     "install",
+    "item",
+    "item mutate",
     "learnings",
     "list",
     "list-all",
@@ -9145,6 +9190,91 @@
       },
       "name": "pm_list",
       "required": []
+    },
+    {
+      "description": "Apply an ordered create/update/close batch atomically through the public pm SDK. Use a stable transactionId to resume interrupted work; set dryRun=true to validate and preview without writes.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "createCompensation": {
+            "description": "How a failed batch compensates created items; defaults to close.",
+            "enum": [
+              "close",
+              "delete"
+            ],
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "dryRun": {
+            "description": "Validate and preview without writing.",
+            "type": "boolean"
+          },
+          "lockTtlSeconds": {
+            "type": "number"
+          },
+          "lockWaitMs": {
+            "type": "number"
+          },
+          "mutations": {
+            "description": "Ordered rows shaped as {op:create|update|close,id,options?,reason?}.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "description": "pm item id, for example pm-abc1.",
+                  "type": "string"
+                },
+                "op": {
+                  "enum": [
+                    "create",
+                    "update",
+                    "close"
+                  ],
+                  "type": "string"
+                },
+                "options": {
+                  "type": "object"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "op",
+                "id"
+              ],
+              "type": "object"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          },
+          "transactionId": {
+            "description": "Stable idempotency key for this atomic mutation batch.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transactionId",
+          "mutations"
+        ],
+        "type": "object"
+      },
+      "name": "pm_mutate",
+      "required": [
+        "mutations",
+        "transactionId"
+      ]
     },
     {
       "description": "Recommend the next actionable work item: the single highest-priority READY item (active status, no open blockers, no open children; completed containers surface only when no concrete leaf work is ready) plus the ranked ready and blocked queues. The recommended item carries a rationale and each blocked item lists the open blockers gating it. Pass options.parent='<id>' to scope to one subtree, options.limit=N to cap ready rows, options.readyOnly=true to omit the blocked list, or filters (options.type/tag/priority/assignee/sprint/release). The most token-efficient 'what should I do now?' read for agents.",

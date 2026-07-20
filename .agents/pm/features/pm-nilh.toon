@@ -2,15 +2,40 @@ id: pm-nilh
 title: "GH-437: make lean mutation output the CLI default (parity with MCP compact envelope)"
 description: "Dogfood GH-437: CLI mutations echo the full item (12.7x vs --id-only) while MCP is compact by default; align CLI default with MCP. Duplicate check: compact mutation output PR (2026-05-26) shipped suppressor flags only; no open item flips the default."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",gh-issue,token-efficiency
 created_at: "2026-07-06T08:03:03.701Z"
-updated_at: "2026-07-06T08:03:03.701Z"
+updated_at: "2026-07-20T10:27:10.448Z"
+closed_at: "2026-07-20T10:01:06.896Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: CLI mutations default (or config-default) to id/status/changed_field_count; --full opt-ins restore old echo; MCP-parity spec green; measured reduction recorded
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: Single-item mutations default to compact id/status/change-count envelopes with explicit full and id-only compatibility controls.
+expected_result: Agent mutation responses are token-efficient by default while callers can request legacy full deltas or id-only output.
+actual_result: "Compact defaults ship across CLI and MCP with 87.82% packed output reduction, full/id-only precedence, updated token budgets, contracts, docs, and tests."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-cfed,related,"2026-07-20T08:49:49.562Z",null,null
+  pm-g9xk,related,"2026-07-20T08:49:49.562Z",null,null
+  pm-xm7c,related,"2026-07-20T08:49:49.562Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-20T09:59:55.002Z",codex-20260720,"Evidence: mutation commands now default to id/status/changed_field_count, --no-changed-fields preserves the compact legacy item envelope, --full-changed-fields restores the full delta, and --id-only retains precedence. Isolated packed creates measured 71-byte compact vs 583-byte full output (87.82% reduction). Token-budget consumer and manifest were updated intentionally."
+files[6]{path,scope,note}:
+  scripts/release/token-budget-gate.mjs,project,Compact mutation consumer compatibility
+  scripts/release/token-budgets.json,project,Intentional agent output budget update
+  src/core/output/mutation-projection.ts,project,Compact default mutation envelope
+  src/sdk/cli-contracts/flag-contracts.ts,project,full changed fields contract
+  src/sdk/cli-program.ts,project,explicit full changed fields opt-in
+  tests/unit/core/output/mutation-projection.spec.ts,project,Compact envelope projection coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts,project,180
+  node scripts/run-tests.mjs test -- tests/unit/core/output/mutation-projection.spec.ts tests/unit/core/output/output.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrt1wq5g-6g4ut7,test,passed,"2026-07-20T09:57:26.862Z","2026-07-20T09:57:38.788Z","2026-07-20T09:57:38.788Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,explicit compact and full mutation controls
+close_reason: "Implemented compact mutation output by default with explicit full/id-only compatibility controls, 87.82% packed output reduction, MCP parity, token budgets, docs, and tests."
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/437\n\n## Problem\nEvery CLI mutation echoes the full updated item + full `changed_fields` by default (368 B for a trivial create vs 29 B `--id-only` — 12.7x). MCP is already compact by default (`changed_field_count`, `idOnly`/`fullChangedFields` opt-ins), so the CLI is the more verbose surface and inconsistent with MCP.\n\n## Proposed fix\nMake CLI mutation default lean: `{ id, status, changed_field_count }` (+ `close_reason` on close). Full echo behind `--full` / `--full-changed-fields`; existing `--id-only`/`--quiet` stay. Config knob (e.g. `output_lean_mutations`) so the default is project-tunable; respect back-compat for scripts via config.\n\n## Definition of done\nLean default (or config-flipped default) with parity spec vs MCP compact output; docs/AGENTS.md updated; contracts:update run; measured token reduction recorded on this item."

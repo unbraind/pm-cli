@@ -2,19 +2,46 @@ id: pm-cfed
 title: "GH-435: lean JSON output mode omitting null/empty fields (~50% token cut for --json)"
 description: "Dogfood GH-435: --json is ~50% larger than TOON because it serializes all-null filters echoes and empty containers; add a lean JSON mode. Duplicate check: searched lean json/omit null/compact output — only MCP compact defaults (closed 2026-05-20) and mutation compactness (GH-437 item) matched; no open overlap."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",gh-issue,token-efficiency
 created_at: "2026-07-06T08:03:03.161Z"
-updated_at: "2026-07-18T15:09:38.214Z"
+updated_at: "2026-07-20T10:27:08.701Z"
+closed_at: "2026-07-20T10:26:25.482Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: Lean JSON mode ships on list/get/context/search; null/empty omission rules pinned by spec; >=40% measured size cut on list+context in this workspace; docs+contracts updated
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+resolution: Lean JSON recursively removes null and empty containers while preserving meaningful root semantics and stable pagination fields.
+expected_result: Lean list and context JSON reduce combined bytes by at least 40% without erasing actionable information.
+actual_result: "Packed list plus context output dropped 41.06%, list dropped 52.57%, context dropped 35.42%, and fully empty lean roots emit null."
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-nilh,related,"2026-07-06T08:03:45.495Z",null,null
-comments[1]{created_at,author,text}:
+  pm-ds3b,related,"2026-07-20T08:49:47.189Z",null,null
+  pm-g9xk,related,"2026-07-20T08:49:47.189Z",null,null
+  pm-xm7c,related,"2026-07-20T08:49:47.189Z",null,null
+comments[4]{created_at,author,text}:
   "2026-07-18T15:09:38.214Z",codex-root,"GitHub intake 2026-07-18: GH-595 (https://github.com/unbraind/pm-cli/issues/595) independently confirms the canonical lean-JSON scope: pm list --json spends about 44% of its envelope on null filter echoes. The report also adds a related pagination-envelope stability requirement (always-present total/has_more and removal of redundant has_more/truncated semantics). All-status duplicate search maps the null-bloat portion here; retain one canonical implementation lineage and account for the pagination addition when this item is claimed."
+  "2026-07-20T09:59:53.909Z",codex-20260720,"Evidence: --lean recursively omits null and empty containers in structured output while preserving actionable fields. Isolated packed list JSON shrank from 1069 to 507 bytes (52.57% reduction); lean known and Commander error contracts are covered."
+  "2026-07-20T10:01:00.123Z",codex-20260720,"Acceptance measurement detail: isolated packed list+context combined output shrank from 3254 to 1918 bytes (41.06%); list alone shrank 52.57% and context alone 35.42%. This satisfies the combined >=40% list+context target."
+  "2026-07-20T10:26:23.435Z",codex-20260720,"Greptile finding disposition: fixed the fully-compacted lean JSON root to emit null rather than an ambiguous success object; focused output/structured suites pass and full coverage is 6013/6013 at 100/100/100/100."
+files[7]{path,scope,note}:
+  src/cli/error-guidance.ts,project,Lean error envelope projection
+  src/cli/registration-helpers.ts,project,lean option propagation
+  src/core/output/output.ts,project,recursive lean JSON projection
+  src/core/shared/command-types.ts,project,lean global output contract
+  src/sdk/cli-bootstrap.ts,project,bootstrap lean parsing
+  src/sdk/cli-program.ts,project,public global lean flag
+  tests/integration/structured-mutation-io.integration.spec.ts,project,Lean JSON byte and omission acceptance
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,600
+  node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts,project,180
+  node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/unit/core/output/output.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrt1w8es-6vdqzi,test,passed,"2026-07-20T09:57:04.555Z","2026-07-20T09:57:15.796Z","2026-07-20T09:57:15.796Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,lean JSON omission semantics
+close_reason: "Implemented lean structured output with measured 41.06% combined reduction, preserved null root semantics, contracts, docs, packed proof, Greptile follow-up, and exact 100% coverage."
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/435\n\n## Problem\n`--json` output serializes every field including nulls and empty containers: `pm list --json` always emits a 23-key all-null `filters` echo (+ empty `runtime_filters`); `pm context --json` echoes `order/deadline/assignee/parent: null` per item. Measured: list 2552 B (TOON) vs 3773 B JSON (+48%); context 4582 vs 7034 (+53%). AGENTS.md already warns agents off `--json` for loops — the structured format is too expensive for the agents that need it.\n\n## Proposed fix\nLean JSON mode (`--json --lean`, `PM_JSON_LEAN=1`, or config key) that omits null values, empty arrays/objects, and collapses `filters` to only keys actually set (TOON parity). Verbose form stays as explicit opt-in.\n\n## Definition of done\nLean mode on list/get/context/search JSON paths; measured >=40% size cut on list+context in a tag-heavy tracker; contracts + docs updated; spec pins the null-omission rules."

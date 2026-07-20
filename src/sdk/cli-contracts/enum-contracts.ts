@@ -70,6 +70,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "install",
   "upgrade",
   "create",
+  "item",
   "copy",
   "focus",
   "list",

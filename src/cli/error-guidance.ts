@@ -46,6 +46,19 @@ export interface JsonErrorEnvelope {
   recovery?: PmCliErrorRecoveryPayload;
 }
 
+/** Compact an error envelope to fields that change the caller's next action. */
+export function projectLeanErrorEnvelope(
+  envelope: JsonErrorEnvelope,
+): Omit<JsonErrorEnvelope, "required" | "why" | "title"> {
+  const {
+    required: _required,
+    why: _why,
+    title: _title,
+    ...actionable
+  } = envelope;
+  return actionable;
+}
+
 /** Documents the error classification payload exchanged by command, SDK, and package integrations. */
 export interface ErrorClassification {
   /** Schema type that determines the shape and validation rules for this value. */
@@ -661,7 +674,8 @@ function buildTrackerNotInitializedGuidance(
       code: "tracker_not_initialized",
       title: "Tracker is not initialized",
       happened: `pm data path does not contain initialized tracker metadata (${trackerNotInitialized[1]}).`,
-      required: "Select an existing tracker with --pm-path/PM_PATH, or initialize the default .agents/pm storage.",
+      required:
+        "Select an existing tracker with --pm-path/PM_PATH, or initialize the default .agents/pm storage.",
       why: "Most commands require settings in an explicitly selected root, an ancestor root-layout tracker, or the default .agents/pm directory.",
       examples: ["pm init", "pm init acme"],
       nextSteps: ['Run "pm init", then rerun your original command.'],

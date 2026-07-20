@@ -23,6 +23,7 @@ describe("parseBootstrapGlobalOptions", () => {
       noPager: false,
       json: false,
       quiet: false,
+      lean: false,
     });
   });
 
@@ -52,7 +53,12 @@ describe("parseBootstrapGlobalOptions", () => {
   });
 
   it("parses all boolean flags", () => {
-    const result = parseBootstrapGlobalOptions(["--no-extensions", "--no-pager", "--json", "--quiet"]);
+    const result = parseBootstrapGlobalOptions([
+      "--no-extensions",
+      "--no-pager",
+      "--json",
+      "--quiet",
+    ]);
     expect(result.noExtensions).toBe(true);
     expect(result.noPager).toBe(true);
     expect(result.json).toBe(true);
@@ -66,13 +72,20 @@ describe("parseBootstrapGlobalOptions", () => {
   });
 
   it("handles mixed flags and command tokens", () => {
-    const result = parseBootstrapGlobalOptions(["list", "--json", "--path", "/foo"]);
+    const result = parseBootstrapGlobalOptions([
+      "list",
+      "--json",
+      "--path",
+      "/foo",
+    ]);
     expect(result.json).toBe(true);
     expect(result.path).toBe("/foo");
   });
 
   it("reports author overrides that omit their required value", () => {
-    expect(parseBootstrapGlobalOptions(["--author", "--json", "list"])).toMatchObject({
+    expect(
+      parseBootstrapGlobalOptions(["--author", "--json", "list"]),
+    ).toMatchObject({
       authorMissingValue: true,
       json: true,
     });
@@ -82,14 +95,30 @@ describe("parseBootstrapGlobalOptions", () => {
     expect(parseBootstrapGlobalOptions(["--author=", "list"])).toMatchObject({
       authorMissingValue: true,
     });
-    expect(parseBootstrapGlobalOptions(["--author=agent", "list"])).toMatchObject({
+    expect(
+      parseBootstrapGlobalOptions(["--author=agent", "list"]),
+    ).toMatchObject({
       author: "agent",
     });
   });
 
   it("prefers --pm-path over legacy --path regardless of argument order", () => {
-    expect(parseBootstrapGlobalOptions(["--pm-path", "/preferred", "--path", "/legacy"]).path).toBe("/preferred");
-    expect(parseBootstrapGlobalOptions(["--path", "/legacy", "--pm-path", "/preferred"]).path).toBe("/preferred");
+    expect(
+      parseBootstrapGlobalOptions([
+        "--pm-path",
+        "/preferred",
+        "--path",
+        "/legacy",
+      ]).path,
+    ).toBe("/preferred");
+    expect(
+      parseBootstrapGlobalOptions([
+        "--path",
+        "/legacy",
+        "--pm-path",
+        "/preferred",
+      ]).path,
+    ).toBe("/preferred");
   });
 });
 
@@ -112,17 +141,32 @@ describe("stripGlobalBootstrapTokens", () => {
   });
 
   it("strips --path= inline syntax", () => {
-    const result = stripGlobalBootstrapTokens(["create", "--path=/foo", "--title", "hello"]);
+    const result = stripGlobalBootstrapTokens([
+      "create",
+      "--path=/foo",
+      "--title",
+      "hello",
+    ]);
     expect(result).toEqual(["create", "--title", "hello"]);
   });
 
   it("strips --pm-path= inline syntax", () => {
-    const result = stripGlobalBootstrapTokens(["create", "--pm-path=/foo", "--title", "hello"]);
+    const result = stripGlobalBootstrapTokens([
+      "create",
+      "--pm-path=/foo",
+      "--title",
+      "hello",
+    ]);
     expect(result).toEqual(["create", "--title", "hello"]);
   });
 
   it("preserves non-global tokens", () => {
-    const result = stripGlobalBootstrapTokens(["search", "query text", "--limit", "5"]);
+    const result = stripGlobalBootstrapTokens([
+      "search",
+      "query text",
+      "--limit",
+      "5",
+    ]);
     expect(result).toEqual(["search", "query text", "--limit", "5"]);
   });
 
@@ -172,8 +216,12 @@ describe("parseBootstrapHelpRequest", () => {
 describe("parseBootstrapCommandName", () => {
   it("extracts command name skipping global flags", () => {
     expect(parseBootstrapCommandName(["--json", "list"])).toBe("list");
-    expect(parseBootstrapCommandName(["--path", "/foo", "search"])).toBe("search");
-    expect(parseBootstrapCommandName(["--pm-path", "/foo", "search"])).toBe("search");
+    expect(parseBootstrapCommandName(["--path", "/foo", "search"])).toBe(
+      "search",
+    );
+    expect(parseBootstrapCommandName(["--pm-path", "/foo", "search"])).toBe(
+      "search",
+    );
     expect(parseBootstrapCommandName(["create"])).toBe("create");
   });
 
@@ -193,7 +241,11 @@ describe("parseBootstrapCommandName", () => {
 
 describe("normalizeLegacyExtensionActionSyntax", () => {
   it("converts 'extension install' to 'extension --install'", () => {
-    const result = normalizeLegacyExtensionActionSyntax(["extension", "install", "my-ext"]);
+    const result = normalizeLegacyExtensionActionSyntax([
+      "extension",
+      "install",
+      "my-ext",
+    ]);
     expect(result).toEqual(["extension", "--install", "my-ext"]);
   });
 
@@ -204,27 +256,45 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
   });
 
   it("does not reinterpret extension when it is a positional argument", () => {
-    expect(normalizeLegacyExtensionActionSyntax(["search", "extension", "install"])).toEqual([
-      "search",
-      "extension",
-      "install",
-    ]);
+    expect(
+      normalizeLegacyExtensionActionSyntax(["search", "extension", "install"]),
+    ).toEqual(["search", "extension", "install"]);
   });
 
   it("does not transform when --help is present", () => {
-    const result = normalizeLegacyExtensionActionSyntax(["extension", "install", "--help"]);
+    const result = normalizeLegacyExtensionActionSyntax([
+      "extension",
+      "install",
+      "--help",
+    ]);
     expect(result).toEqual(["extension", "install", "--help"]);
   });
 
   it("does not transform unknown action tokens", () => {
-    const result = normalizeLegacyExtensionActionSyntax(["extension", "unknown-action"]);
+    const result = normalizeLegacyExtensionActionSyntax([
+      "extension",
+      "unknown-action",
+    ]);
     expect(result).toEqual(["extension", "unknown-action"]);
   });
 
   it("handles all known extension actions", () => {
-    const actions = ["install", "uninstall", "explore", "manage", "doctor", "adopt", "adopt-all", "activate", "deactivate"];
+    const actions = [
+      "install",
+      "uninstall",
+      "explore",
+      "manage",
+      "doctor",
+      "adopt",
+      "adopt-all",
+      "activate",
+      "deactivate",
+    ];
     for (const action of actions) {
-      const result = normalizeLegacyExtensionActionSyntax(["extension", action]);
+      const result = normalizeLegacyExtensionActionSyntax([
+        "extension",
+        action,
+      ]);
       expect(result).toEqual(["extension", `--${action}`]);
     }
   });
@@ -232,7 +302,11 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
 
 describe("normalizeBootstrapInvocation", () => {
   it("normalizes legacy extension action syntax before parse", () => {
-    const normalized = normalizeBootstrapInvocation(["extension", "install", "my-ext"]);
+    const normalized = normalizeBootstrapInvocation([
+      "extension",
+      "install",
+      "my-ext",
+    ]);
     expect(normalized.argv).toEqual(["extension", "--install", "my-ext"]);
     expect(normalized.trace).toEqual(
       expect.arrayContaining([
@@ -245,31 +319,52 @@ describe("normalizeBootstrapInvocation", () => {
   });
 
   it("rewrites an executable command alias (show -> get) before parse", () => {
-    const normalized = normalizeBootstrapInvocation(["show", "pm-a1b2", "--fields", "id,title"]);
+    const normalized = normalizeBootstrapInvocation([
+      "show",
+      "pm-a1b2",
+      "--fields",
+      "id,title",
+    ]);
     expect(normalized.argv).toEqual(["get", "pm-a1b2", "--fields", "id,title"]);
     expect(normalized.commandName).toBe("get");
     expect(normalized.trace).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ reason: "command_alias", from: "show", to: ["get"], confidence: "high" }),
+        expect.objectContaining({
+          reason: "command_alias",
+          from: "show",
+          to: ["get"],
+          confidence: "high",
+        }),
       ]),
     );
   });
 
   it("rewrites comment -> comments and flag-aliases --comment to --add together", () => {
-    const normalized = normalizeBootstrapInvocation(["comment", "pm-a1b2", "--comment", "hello"]);
+    const normalized = normalizeBootstrapInvocation([
+      "comment",
+      "pm-a1b2",
+      "--comment",
+      "hello",
+    ]);
     expect(normalized.argv).toEqual(["comments", "pm-a1b2", "--add", "hello"]);
     expect(normalized.commandName).toBe("comments");
   });
 
   it("rewrites a command alias even after global flags", () => {
-    const normalized = normalizeBootstrapInvocation(["--json", "view", "pm-a1b2"]);
+    const normalized = normalizeBootstrapInvocation([
+      "--json",
+      "view",
+      "pm-a1b2",
+    ]);
     expect(normalized.argv).toEqual(["--json", "get", "pm-a1b2"]);
   });
 
   it("does not rewrite an alias token that appears as an argument, not the command", () => {
     const normalized = normalizeBootstrapInvocation(["create", "Task", "show"]);
     expect(normalized.argv).toEqual(["create", "Task", "show"]);
-    expect(normalized.trace.some((entry) => entry.reason === "command_alias")).toBe(false);
+    expect(
+      normalized.trace.some((entry) => entry.reason === "command_alias"),
+    ).toBe(false);
   });
 
   it("normalizes long-option aliases and camel/underscore variants", () => {
@@ -291,25 +386,44 @@ describe("normalizeBootstrapInvocation", () => {
       "--customer-impact",
       "high",
     ]);
-    expect(normalized.trace.some((entry) => entry.reason === "flag_alias")).toBe(true);
+    expect(
+      normalized.trace.some((entry) => entry.reason === "flag_alias"),
+    ).toBe(true);
   });
 
   it("preserves path values beginning with long-option syntax", () => {
-    expect(normalizeBootstrapInvocation(["--path", "--estimated_minutes", "list"]).argv).toEqual([
-      "--pm-path",
-      "--estimated_minutes",
-      "list",
-    ]);
-    expect(normalizeBootstrapInvocation(["--pm-path", "--acceptanceCriteria", "list"]).argv).toEqual([
-      "--pm-path",
-      "--acceptanceCriteria",
-      "list",
-    ]);
+    expect(
+      normalizeBootstrapInvocation(["--path", "--estimated_minutes", "list"])
+        .argv,
+    ).toEqual(["--pm-path", "--estimated_minutes", "list"]);
+    expect(
+      normalizeBootstrapInvocation([
+        "--pm-path",
+        "--acceptanceCriteria",
+        "list",
+      ]).argv,
+    ).toEqual(["--pm-path", "--acceptanceCriteria", "list"]);
   });
 
   it("normalizes minor long-option typos when unambiguous", () => {
-    const normalized = normalizeBootstrapInvocation(["create", "--descriptin", "B", "--title", "A", "--type", "Task"]);
-    expect(normalized.argv).toEqual(["create", "--description", "B", "--title", "A", "--type", "Task"]);
+    const normalized = normalizeBootstrapInvocation([
+      "create",
+      "--descriptin",
+      "B",
+      "--title",
+      "A",
+      "--type",
+      "Task",
+    ]);
+    expect(normalized.argv).toEqual([
+      "create",
+      "--description",
+      "B",
+      "--title",
+      "A",
+      "--type",
+      "Task",
+    ]);
     expect(normalized.trace).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -322,7 +436,11 @@ describe("normalizeBootstrapInvocation", () => {
   });
 
   it("normalizes the list --status typo now that it is in the filter contract (pm-fu5d U2)", () => {
-    const normalized = normalizeBootstrapInvocation(["list", "--statuss", "open"]);
+    const normalized = normalizeBootstrapInvocation([
+      "list",
+      "--statuss",
+      "open",
+    ]);
     expect(normalized.argv).toEqual(["list", "--status", "open"]);
     expect(normalized.trace).toEqual(
       expect.arrayContaining([
@@ -336,7 +454,11 @@ describe("normalizeBootstrapInvocation", () => {
   });
 
   it("treats list/search --tags as a declared alias for --tag (pm-6l17)", () => {
-    const listNormalized = normalizeBootstrapInvocation(["list", "--tags", "agent-ux"]);
+    const listNormalized = normalizeBootstrapInvocation([
+      "list",
+      "--tags",
+      "agent-ux",
+    ]);
     expect(listNormalized.argv).toEqual(["list", "--tag", "agent-ux"]);
     expect(listNormalized.trace).toEqual(
       expect.arrayContaining([
@@ -348,8 +470,18 @@ describe("normalizeBootstrapInvocation", () => {
       ]),
     );
 
-    const searchNormalized = normalizeBootstrapInvocation(["search", "agent", "--tags", "agent-ux"]);
-    expect(searchNormalized.argv).toEqual(["search", "agent", "--tag", "agent-ux"]);
+    const searchNormalized = normalizeBootstrapInvocation([
+      "search",
+      "agent",
+      "--tags",
+      "agent-ux",
+    ]);
+    expect(searchNormalized.argv).toEqual([
+      "search",
+      "agent",
+      "--tag",
+      "agent-ux",
+    ]);
     expect(searchNormalized.trace).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -362,20 +494,58 @@ describe("normalizeBootstrapInvocation", () => {
   });
 
   it("preserves search inline filter tokens for the search parser (GH-485)", () => {
-    const normalized = normalizeBootstrapInvocation(["search", "status:all", "scene", "grounding", "--limit", "5"]);
-    expect(normalized.argv).toEqual(["search", "status:all", "scene", "grounding", "--limit", "5"]);
-    expect(normalized.trace.filter((entry) => entry.reason === "bare_key_value")).toHaveLength(0);
+    const normalized = normalizeBootstrapInvocation([
+      "search",
+      "status:all",
+      "scene",
+      "grounding",
+      "--limit",
+      "5",
+    ]);
+    expect(normalized.argv).toEqual([
+      "search",
+      "status:all",
+      "scene",
+      "grounding",
+      "--limit",
+      "5",
+    ]);
+    expect(
+      normalized.trace.filter((entry) => entry.reason === "bare_key_value"),
+    ).toHaveLength(0);
   });
 
   it("preserves quoted search inline filters with residual keywords (GH-485)", () => {
-    const normalized = normalizeBootstrapInvocation(["search", "status:all scene grounding", "--limit", "5"]);
-    expect(normalized.argv).toEqual(["search", "status:all scene grounding", "--limit", "5"]);
-    expect(normalized.trace.filter((entry) => entry.reason === "bare_key_value")).toHaveLength(0);
+    const normalized = normalizeBootstrapInvocation([
+      "search",
+      "status:all scene grounding",
+      "--limit",
+      "5",
+    ]);
+    expect(normalized.argv).toEqual([
+      "search",
+      "status:all scene grounding",
+      "--limit",
+      "5",
+    ]);
+    expect(
+      normalized.trace.filter((entry) => entry.reason === "bare_key_value"),
+    ).toHaveLength(0);
   });
 
   it("keeps truncated plural list flags in the typo path instead of aliasing them", () => {
-    const normalized = normalizeBootstrapInvocation(["update", "pm-a1b2", "--statu", "closed"]);
-    expect(normalized.argv).toEqual(["update", "pm-a1b2", "--status", "closed"]);
+    const normalized = normalizeBootstrapInvocation([
+      "update",
+      "pm-a1b2",
+      "--statu",
+      "closed",
+    ]);
+    expect(normalized.argv).toEqual([
+      "update",
+      "pm-a1b2",
+      "--status",
+      "closed",
+    ]);
     expect(normalized.trace).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -388,19 +558,54 @@ describe("normalizeBootstrapInvocation", () => {
   });
 
   it("promotes bare key=value and key:value tokens to canonical flags", () => {
-    const normalized = normalizeBootstrapInvocation(["create", "title=Hello", "description:World", "type=Task"]);
-    expect(normalized.argv).toEqual(["create", "--title", "Hello", "--description", "World", "--type", "Task"]);
-    expect(normalized.trace.filter((entry) => entry.reason === "bare_key_value")).toHaveLength(3);
+    const normalized = normalizeBootstrapInvocation([
+      "create",
+      "title=Hello",
+      "description:World",
+      "type=Task",
+    ]);
+    expect(normalized.argv).toEqual([
+      "create",
+      "--title",
+      "Hello",
+      "--description",
+      "World",
+      "--type",
+      "Task",
+    ]);
+    expect(
+      normalized.trace.filter((entry) => entry.reason === "bare_key_value"),
+    ).toHaveLength(3);
   });
 
   it("does not reinterpret key=value tokens when they are values for an explicit option", () => {
-    const normalized = normalizeBootstrapInvocation(["comments", "pm-a1b2", "--add", "text=should stay literal"]);
-    expect(normalized.argv).toEqual(["comments", "pm-a1b2", "--add", "text=should stay literal"]);
+    const normalized = normalizeBootstrapInvocation([
+      "comments",
+      "pm-a1b2",
+      "--add",
+      "text=should stay literal",
+    ]);
+    expect(normalized.argv).toEqual([
+      "comments",
+      "pm-a1b2",
+      "--add",
+      "text=should stay literal",
+    ]);
     expect(normalized.trace).toHaveLength(0);
   });
 
   it("accumulates repeated singular --tag alias occurrences into one --tags token (pm-cf1u)", () => {
-    const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tag", "a", "--tag", "b", "--tag", "c"]);
+    const normalized = normalizeBootstrapInvocation([
+      "create",
+      "issue",
+      "X",
+      "--tag",
+      "a",
+      "--tag",
+      "b",
+      "--tag",
+      "c",
+    ]);
     expect(normalized.argv).toEqual(["create", "issue", "X", "--tags=a,b,c"]);
     expect(normalized.trace).toEqual(
       expect.arrayContaining([
@@ -415,47 +620,107 @@ describe("normalizeBootstrapInvocation", () => {
   });
 
   it("accumulates repeated canonical plural --tags occurrences (pm-cf1u)", () => {
-    const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tags", "a", "--tags", "b"]);
+    const normalized = normalizeBootstrapInvocation([
+      "create",
+      "issue",
+      "X",
+      "--tags",
+      "a",
+      "--tags",
+      "b",
+    ]);
     expect(normalized.argv).toEqual(["create", "issue", "X", "--tags=a,b"]);
     expect(normalized.trace).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ from: "--tags (x2)", to: ["--tags=a,b"], reason: "list_merge" }),
+        expect.objectContaining({
+          from: "--tags (x2)",
+          to: ["--tags=a,b"],
+          reason: "list_merge",
+        }),
       ]),
     );
   });
 
   it("accumulates repeated list-filter --status occurrences (pm-cf1u)", () => {
-    const normalized = normalizeBootstrapInvocation(["list", "--status", "open", "--status", "closed"]);
+    const normalized = normalizeBootstrapInvocation([
+      "list",
+      "--status",
+      "open",
+      "--status",
+      "closed",
+    ]);
     expect(normalized.argv).toEqual(["list", "--status=open,closed"]);
-    expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(true);
+    expect(
+      normalized.trace.some((entry) => entry.reason === "list_merge"),
+    ).toBe(true);
   });
 
   it("accumulates repeated list-filter --ids occurrences", () => {
-    const normalized = normalizeBootstrapInvocation(["list-open", "--ids", "pm-a", "--ids=pm-b,pm-c"]);
+    const normalized = normalizeBootstrapInvocation([
+      "list-open",
+      "--ids",
+      "pm-a",
+      "--ids=pm-b,pm-c",
+    ]);
     expect(normalized.argv).toEqual(["list-open", "--ids=pm-a,pm-b,pm-c"]);
     expect(normalized.trace).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ from: "--ids (x2)", to: ["--ids=pm-a,pm-b,pm-c"], reason: "list_merge" }),
+        expect.objectContaining({
+          from: "--ids (x2)",
+          to: ["--ids=pm-a,pm-b,pm-c"],
+          reason: "list_merge",
+        }),
       ]),
     );
   });
 
   it("accumulates repeated --fields occurrences for get (pm-cf1u)", () => {
-    const normalized = normalizeBootstrapInvocation(["get", "pm-1", "--fields", "id", "--fields", "title"]);
+    const normalized = normalizeBootstrapInvocation([
+      "get",
+      "pm-1",
+      "--fields",
+      "id",
+      "--fields",
+      "title",
+    ]);
     expect(normalized.argv).toEqual(["get", "pm-1", "--fields=id,title"]);
-    expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(true);
+    expect(
+      normalized.trace.some((entry) => entry.reason === "list_merge"),
+    ).toBe(true);
   });
 
   it("accumulates repeated --fields occurrences for package catalog subcommands", () => {
-    const normalized = normalizeBootstrapInvocation(["package", "catalog", "--fields", "alias", "--fields", "installed"]);
-    expect(normalized.argv).toEqual(["package", "catalog", "--fields=alias,installed"]);
-    expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(true);
+    const normalized = normalizeBootstrapInvocation([
+      "package",
+      "catalog",
+      "--fields",
+      "alias",
+      "--fields",
+      "installed",
+    ]);
+    expect(normalized.argv).toEqual([
+      "package",
+      "catalog",
+      "--fields=alias,installed",
+    ]);
+    expect(
+      normalized.trace.some((entry) => entry.reason === "list_merge"),
+    ).toBe(true);
   });
 
   it("merges mixed space and inline list flag forms into one token (pm-cf1u)", () => {
-    const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tags", "x", "--tags=y,z"]);
+    const normalized = normalizeBootstrapInvocation([
+      "create",
+      "issue",
+      "X",
+      "--tags",
+      "x",
+      "--tags=y,z",
+    ]);
     expect(normalized.argv).toEqual(["create", "issue", "X", "--tags=x,y,z"]);
-    expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(true);
+    expect(
+      normalized.trace.some((entry) => entry.reason === "list_merge"),
+    ).toBe(true);
   });
 
   it("accepts one create --tags occurrence with several adjacent values (GH-294)", () => {
@@ -484,21 +749,51 @@ describe("normalizeBootstrapInvocation", () => {
     ]);
     expect(normalized.trace).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ from: "--tags (x1)", to: ["--tags=alpha,beta,gamma"], reason: "list_merge" }),
+        expect.objectContaining({
+          from: "--tags (x1)",
+          to: ["--tags=alpha,beta,gamma"],
+          reason: "list_merge",
+        }),
       ]),
     );
   });
 
   it("leaves a single list flag occurrence unchanged with no list_merge event (pm-cf1u)", () => {
-    const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tags", "only"]);
+    const normalized = normalizeBootstrapInvocation([
+      "create",
+      "issue",
+      "X",
+      "--tags",
+      "only",
+    ]);
     expect(normalized.argv).toEqual(["create", "issue", "X", "--tags", "only"]);
-    expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(false);
+    expect(
+      normalized.trace.some((entry) => entry.reason === "list_merge"),
+    ).toBe(false);
   });
 
   it("does not merge repeated non-list scalar flags such as --title (pm-cf1u)", () => {
-    const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--title", "A", "--title", "B"]);
-    expect(normalized.argv).toEqual(["create", "issue", "X", "--title", "A", "--title", "B"]);
-    expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(false);
+    const normalized = normalizeBootstrapInvocation([
+      "create",
+      "issue",
+      "X",
+      "--title",
+      "A",
+      "--title",
+      "B",
+    ]);
+    expect(normalized.argv).toEqual([
+      "create",
+      "issue",
+      "X",
+      "--title",
+      "A",
+      "--title",
+      "B",
+    ]);
+    expect(
+      normalized.trace.some((entry) => entry.reason === "list_merge"),
+    ).toBe(false);
   });
 
   it("does not reinterpret a --path value beginning with -- as a list flag (pm-cf1u, codex P2)", () => {
@@ -516,7 +811,14 @@ describe("normalizeBootstrapInvocation", () => {
       "--tags",
       "b",
     ]);
-    expect(normalized.argv).toEqual(["--pm-path", "--tags", "create", "issue", "X", "--tags=a,b"]);
+    expect(normalized.argv).toEqual([
+      "--pm-path",
+      "--tags",
+      "create",
+      "issue",
+      "X",
+      "--tags=a,b",
+    ]);
     expect(normalized.commandName).toBe("create");
   });
 
@@ -532,27 +834,60 @@ describe("normalizeBootstrapInvocation", () => {
       "--tags",
       "b",
     ]);
-    expect(normalized.argv).toEqual(["--pm-path", "--tags", "create", "issue", "X", "--tags=a,b"]);
+    expect(normalized.argv).toEqual([
+      "--pm-path",
+      "--tags",
+      "create",
+      "issue",
+      "X",
+      "--tags=a,b",
+    ]);
     expect(normalized.commandName).toBe("create");
   });
 
   it("stops coalescing at a -- terminator (pm-cf1u)", () => {
-    const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tags", "a", "--", "--tags", "b"]);
-    expect(normalized.argv).toEqual(["create", "issue", "X", "--tags", "a", "--", "--tags", "b"]);
-    expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(false);
+    const normalized = normalizeBootstrapInvocation([
+      "create",
+      "issue",
+      "X",
+      "--tags",
+      "a",
+      "--",
+      "--tags",
+      "b",
+    ]);
+    expect(normalized.argv).toEqual([
+      "create",
+      "issue",
+      "X",
+      "--tags",
+      "a",
+      "--",
+      "--tags",
+      "b",
+    ]);
+    expect(
+      normalized.trace.some((entry) => entry.reason === "list_merge"),
+    ).toBe(false);
   });
 });
 
 describe("listAliasPluralKeys", () => {
   it("covers simple s and y-to-ies list alias candidates", () => {
     expect(listAliasPluralKeys("tag")).toEqual(["tags"]);
-    expect(listAliasPluralKeys("category")).toEqual(["categorys", "categories"]);
+    expect(listAliasPluralKeys("category")).toEqual([
+      "categorys",
+      "categories",
+    ]);
   });
 });
 
 describe("coalesceRepeatedListFlags", () => {
   it("returns argv unchanged when no list flags are configured", () => {
-    const result = coalesceRepeatedListFlags(["--tags", "a", "--tags", "b"], new Set());
+    const result = coalesceRepeatedListFlags(
+      ["--tags", "a", "--tags", "b"],
+      new Set(),
+    );
     expect(result.argv).toEqual(["--tags", "a", "--tags", "b"]);
     expect(result.events).toHaveLength(0);
   });
@@ -564,7 +899,9 @@ describe("coalesceRepeatedListFlags", () => {
     );
     expect(result.argv).toEqual(["--tags=a,b", "--status=open,closed"]);
     expect(result.events).toHaveLength(2);
-    expect(result.events.every((entry) => entry.reason === "list_merge")).toBe(true);
+    expect(result.events.every((entry) => entry.reason === "list_merge")).toBe(
+      true,
+    );
   });
 
   it("greedily merges configured multi-value list flags only", () => {
@@ -574,12 +911,24 @@ describe("coalesceRepeatedListFlags", () => {
       new Set(),
       new Set(["--tags"]),
     );
-    expect(greedy.argv).toEqual(["--tags=alpha,beta,gamma", "--author", "agent"]);
+    expect(greedy.argv).toEqual([
+      "--tags=alpha,beta,gamma",
+      "--author",
+      "agent",
+    ]);
     expect(greedy.events).toEqual([
-      { from: "--tags (x1)", to: ["--tags=alpha,beta,gamma"], reason: "list_merge", confidence: "high" },
+      {
+        from: "--tags (x1)",
+        to: ["--tags=alpha,beta,gamma"],
+        reason: "list_merge",
+        confidence: "high",
+      },
     ]);
 
-    const normal = coalesceRepeatedListFlags(["--tags", "alpha", "beta"], new Set(["--tags"]));
+    const normal = coalesceRepeatedListFlags(
+      ["--tags", "alpha", "beta"],
+      new Set(["--tags"]),
+    );
     expect(normal.argv).toEqual(["--tags", "alpha", "beta"]);
     expect(normal.events).toEqual([]);
   });
@@ -593,26 +942,36 @@ describe("coalesceRepeatedListFlags", () => {
   });
 
   it("leaves a value-less trailing list flag untouched", () => {
-    const result = coalesceRepeatedListFlags(["--tags", "a", "--tags"], new Set(["--tags"]));
+    const result = coalesceRepeatedListFlags(
+      ["--tags", "a", "--tags"],
+      new Set(["--tags"]),
+    );
     expect(result.argv).toEqual(["--tags", "a", "--tags"]);
     expect(result.events).toHaveLength(0);
   });
 
   it("does not treat a following flag as a value", () => {
-    const result = coalesceRepeatedListFlags(["--tags", "--full"], new Set(["--tags"]));
+    const result = coalesceRepeatedListFlags(
+      ["--tags", "--full"],
+      new Set(["--tags"]),
+    );
     expect(result.argv).toEqual(["--tags", "--full"]);
     expect(result.events).toHaveLength(0);
   });
 
   it("passes the remainder verbatim after a -- terminator", () => {
-    const result = coalesceRepeatedListFlags(["--tags", "a", "--", "--tags", "b"], new Set(["--tags"]));
+    const result = coalesceRepeatedListFlags(
+      ["--tags", "a", "--", "--tags", "b"],
+      new Set(["--tags"]),
+    );
     expect(result.argv).toEqual(["--tags", "a", "--", "--tags", "b"]);
     expect(result.events).toHaveLength(0);
   });
 });
 
 describe("mergeLinkedTestTwoTokenEntries (GH-191 two-token linked-test form)", () => {
-  const trace = () => [] as Parameters<typeof mergeLinkedTestTwoTokenEntries>[2];
+  const trace = () =>
+    [] as Parameters<typeof mergeLinkedTestTwoTokenEntries>[2];
 
   it("merges the quoted two-token --add command form into command=<value>", () => {
     const events = trace();
@@ -621,7 +980,12 @@ describe("mergeLinkedTestTwoTokenEntries (GH-191 two-token linked-test form)", (
       "test",
       events,
     );
-    expect(merged).toEqual(["test", "pm-a1b2", "--add", "command=npm test -- parser"]);
+    expect(merged).toEqual([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "command=npm test -- parser",
+    ]);
     expect(events).toEqual([
       {
         from: "--add command npm test -- parser",
@@ -634,35 +998,38 @@ describe("mergeLinkedTestTwoTokenEntries (GH-191 two-token linked-test form)", (
 
   it("merges the cmd alias and path keys for --add", () => {
     const events = trace();
-    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--add", "cmd", "echo q -- z"], "test", events)).toEqual([
-      "test",
-      "pm-a1b2",
-      "--add",
-      "cmd=echo q -- z",
-    ]);
-    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--add", "path", "tests/foo.spec.ts"], "test", events)).toEqual([
-      "test",
-      "pm-a1b2",
-      "--add",
-      "path=tests/foo.spec.ts",
-    ]);
+    expect(
+      mergeLinkedTestTwoTokenEntries(
+        ["test", "pm-a1b2", "--add", "cmd", "echo q -- z"],
+        "test",
+        events,
+      ),
+    ).toEqual(["test", "pm-a1b2", "--add", "cmd=echo q -- z"]);
+    expect(
+      mergeLinkedTestTwoTokenEntries(
+        ["test", "pm-a1b2", "--add", "path", "tests/foo.spec.ts"],
+        "test",
+        events,
+      ),
+    ).toEqual(["test", "pm-a1b2", "--add", "path=tests/foo.spec.ts"]);
   });
 
   it("merges the two-token --remove command form but not the cmd alias", () => {
     const events = trace();
-    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--remove", "command", "echo a -- b"], "test", events)).toEqual([
-      "test",
-      "pm-a1b2",
-      "--remove",
-      "command=echo a -- b",
-    ]);
-    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--remove", "cmd", "echo a -- b"], "test", events)).toEqual([
-      "test",
-      "pm-a1b2",
-      "--remove",
-      "cmd",
-      "echo a -- b",
-    ]);
+    expect(
+      mergeLinkedTestTwoTokenEntries(
+        ["test", "pm-a1b2", "--remove", "command", "echo a -- b"],
+        "test",
+        events,
+      ),
+    ).toEqual(["test", "pm-a1b2", "--remove", "command=echo a -- b"]);
+    expect(
+      mergeLinkedTestTwoTokenEntries(
+        ["test", "pm-a1b2", "--remove", "cmd", "echo a -- b"],
+        "test",
+        events,
+      ),
+    ).toEqual(["test", "pm-a1b2", "--remove", "cmd", "echo a -- b"]);
   });
 
   it("merges when a flag follows the single quoted value", () => {
@@ -671,57 +1038,78 @@ describe("mergeLinkedTestTwoTokenEntries (GH-191 two-token linked-test form)", (
       "test",
       trace(),
     );
-    expect(merged).toEqual(["test", "pm-a1b2", "--add", "command=echo a -- b", "--run"]);
+    expect(merged).toEqual([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "command=echo a -- b",
+      "--run",
+    ]);
   });
 
   it("does not merge for commands other than test", () => {
     const argv = ["comments", "pm-a1b2", "--add", "command", "value"];
-    expect(mergeLinkedTestTwoTokenEntries(argv, "comments", trace())).toBe(argv);
+    expect(mergeLinkedTestTwoTokenEntries(argv, "comments", trace())).toBe(
+      argv,
+    );
     expect(mergeLinkedTestTwoTokenEntries(argv, undefined, trace())).toBe(argv);
   });
 
   it("does not merge an unquoted multi-token value (ambiguous; routed to guidance)", () => {
     const events = trace();
-    const argv = ["test", "pm-a1b2", "--add", "command", "npm", "test", "--", "parser"];
+    const argv = [
+      "test",
+      "pm-a1b2",
+      "--add",
+      "command",
+      "npm",
+      "test",
+      "--",
+      "parser",
+    ];
     expect(mergeLinkedTestTwoTokenEntries(argv, "test", events)).toEqual(argv);
     expect(events).toHaveLength(0);
   });
 
   it("does not merge when the bare key has no value or a flag follows it", () => {
-    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--add", "command"], "test", trace())).toEqual([
-      "test",
-      "pm-a1b2",
-      "--add",
-      "command",
-    ]);
-    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--add", "command", "--run"], "test", trace())).toEqual([
-      "test",
-      "pm-a1b2",
-      "--add",
-      "command",
-      "--run",
-    ]);
-    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--add"], "test", trace())).toEqual([
-      "test",
-      "pm-a1b2",
-      "--add",
-    ]);
+    expect(
+      mergeLinkedTestTwoTokenEntries(
+        ["test", "pm-a1b2", "--add", "command"],
+        "test",
+        trace(),
+      ),
+    ).toEqual(["test", "pm-a1b2", "--add", "command"]);
+    expect(
+      mergeLinkedTestTwoTokenEntries(
+        ["test", "pm-a1b2", "--add", "command", "--run"],
+        "test",
+        trace(),
+      ),
+    ).toEqual(["test", "pm-a1b2", "--add", "command", "--run"]);
+    expect(
+      mergeLinkedTestTwoTokenEntries(
+        ["test", "pm-a1b2", "--add"],
+        "test",
+        trace(),
+      ),
+    ).toEqual(["test", "pm-a1b2", "--add"]);
   });
 
   it("does not merge unknown keys or inline key=value tokens", () => {
-    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--add", "scope", "project"], "test", trace())).toEqual([
-      "test",
-      "pm-a1b2",
-      "--add",
-      "scope",
-      "project",
-    ]);
-    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--add", "command=echo x"], "test", trace())).toEqual([
-      "test",
-      "pm-a1b2",
-      "--add",
-      "command=echo x",
-    ]);
+    expect(
+      mergeLinkedTestTwoTokenEntries(
+        ["test", "pm-a1b2", "--add", "scope", "project"],
+        "test",
+        trace(),
+      ),
+    ).toEqual(["test", "pm-a1b2", "--add", "scope", "project"]);
+    expect(
+      mergeLinkedTestTwoTokenEntries(
+        ["test", "pm-a1b2", "--add", "command=echo x"],
+        "test",
+        trace(),
+      ),
+    ).toEqual(["test", "pm-a1b2", "--add", "command=echo x"]);
   });
 
   it("passes the remainder verbatim after a -- terminator", () => {
@@ -731,41 +1119,117 @@ describe("mergeLinkedTestTwoTokenEntries (GH-191 two-token linked-test form)", (
 
   it("merges repeated two-token pairs independently", () => {
     const merged = mergeLinkedTestTwoTokenEntries(
-      ["test", "pm-a1b2", "--add", "command", "echo a -- b", "--add", "command=echo c"],
+      [
+        "test",
+        "pm-a1b2",
+        "--add",
+        "command",
+        "echo a -- b",
+        "--add",
+        "command=echo c",
+      ],
       "test",
       trace(),
     );
-    expect(merged).toEqual(["test", "pm-a1b2", "--add", "command=echo a -- b", "--add", "command=echo c"]);
+    expect(merged).toEqual([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "command=echo a -- b",
+      "--add",
+      "command=echo c",
+    ]);
   });
 });
 
 describe("normalizeBootstrapInvocation linked-test two-token form (GH-191)", () => {
-  it("normalizes pm test <id> --add command \"... -- ...\" end to end", () => {
-    const normalized = normalizeBootstrapInvocation(["test", "pm-a1b2", "--add", "command", "npm test -- parser"]);
-    expect(normalized.argv).toEqual(["test", "pm-a1b2", "--add", "command=npm test -- parser"]);
+  it('normalizes pm test <id> --add command "... -- ..." end to end', () => {
+    const normalized = normalizeBootstrapInvocation([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "command",
+      "npm test -- parser",
+    ]);
+    expect(normalized.argv).toEqual([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "command=npm test -- parser",
+    ]);
     expect(normalized.commandName).toBe("test");
     expect(normalized.trace).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ reason: "bare_key_value", to: ["--add", "command=npm test -- parser"], confidence: "high" }),
+        expect.objectContaining({
+          reason: "bare_key_value",
+          to: ["--add", "command=npm test -- parser"],
+          confidence: "high",
+        }),
       ]),
     );
   });
 
   it("leaves the unquoted multi-token form untouched for guidance", () => {
-    const normalized = normalizeBootstrapInvocation(["test", "pm-a1b2", "--add", "command", "npm", "test", "--", "parser"]);
-    expect(normalized.argv).toEqual(["test", "pm-a1b2", "--add", "command", "npm", "test", "--", "parser"]);
+    const normalized = normalizeBootstrapInvocation([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "command",
+      "npm",
+      "test",
+      "--",
+      "parser",
+    ]);
+    expect(normalized.argv).toEqual([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "command",
+      "npm",
+      "test",
+      "--",
+      "parser",
+    ]);
   });
 
   it("preserves sandbox-safe values starting with env assignments instead of promoting PM_PATH= to --pm-path", () => {
-    const value = "PM_PATH=/tmp/pm-x PM_GLOBAL_PATH=/tmp/pm-x-g vitest run -- parser";
-    const normalized = normalizeBootstrapInvocation(["test", "pm-a1b2", "--add", "command", value]);
-    expect(normalized.argv).toEqual(["test", "pm-a1b2", "--add", `command=${value}`]);
-    expect(normalized.trace.some((entry) => entry.to.includes("--pm-path"))).toBe(false);
+    const value =
+      "PM_PATH=/tmp/pm-x PM_GLOBAL_PATH=/tmp/pm-x-g vitest run -- parser";
+    const normalized = normalizeBootstrapInvocation([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "command",
+      value,
+    ]);
+    expect(normalized.argv).toEqual([
+      "test",
+      "pm-a1b2",
+      "--add",
+      `command=${value}`,
+    ]);
+    expect(
+      normalized.trace.some((entry) => entry.to.includes("--pm-path")),
+    ).toBe(false);
   });
 
   it("still promotes bare key=value tokens on pm test outside the two-token value position", () => {
-    const normalized = normalizeBootstrapInvocation(["test", "pm-a1b2", "--add", "command", "echo ok", "match=parser"]);
-    expect(normalized.argv).toEqual(["test", "pm-a1b2", "--add", "command=echo ok", "--match", "parser"]);
+    const normalized = normalizeBootstrapInvocation([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "command",
+      "echo ok",
+      "match=parser",
+    ]);
+    expect(normalized.argv).toEqual([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "command=echo ok",
+      "--match",
+      "parser",
+    ]);
   });
 });
 
@@ -788,7 +1252,9 @@ describe("parseBootstrapTypeValue", () => {
   });
 
   it("does not read type options after the argument terminator", () => {
-    expect(parseBootstrapTypeValue(["create", "--", "--type", "Issue"])).toBeUndefined();
+    expect(
+      parseBootstrapTypeValue(["create", "--", "--type", "Issue"]),
+    ).toBeUndefined();
   });
 });
 
@@ -798,16 +1264,27 @@ describe("applyBootstrapPagerPolicy", () => {
     const previousManpager = process.env.MANPAGER;
     const previousGitPager = process.env.GIT_PAGER;
     const previousLess = process.env.LESS;
-    const stdoutDescriptor = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
+    const stdoutDescriptor = Object.getOwnPropertyDescriptor(
+      process.stdout,
+      "isTTY",
+    );
     try {
-      Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: false });
+      Object.defineProperty(process.stdout, "isTTY", {
+        configurable: true,
+        value: false,
+      });
       process.env.PAGER = "less";
       delete process.env.MANPAGER;
       process.env.GIT_PAGER = "more";
       delete process.env.LESS;
 
       const restore = applyBootstrapPagerPolicy(["list", "--help"]);
-      expect(process.env).toMatchObject({ PAGER: "cat", MANPAGER: "cat", GIT_PAGER: "cat", LESS: "FRX" });
+      expect(process.env).toMatchObject({
+        PAGER: "cat",
+        MANPAGER: "cat",
+        GIT_PAGER: "cat",
+        LESS: "FRX",
+      });
       restore();
 
       expect(process.env.PAGER).toBe("less");
@@ -815,7 +1292,8 @@ describe("applyBootstrapPagerPolicy", () => {
       expect(process.env.GIT_PAGER).toBe("more");
       expect(process.env.LESS).toBeUndefined();
     } finally {
-      if (stdoutDescriptor) Object.defineProperty(process.stdout, "isTTY", stdoutDescriptor);
+      if (stdoutDescriptor)
+        Object.defineProperty(process.stdout, "isTTY", stdoutDescriptor);
       if (previousPager === undefined) delete process.env.PAGER;
       else process.env.PAGER = previousPager;
       if (previousManpager === undefined) delete process.env.MANPAGER;
@@ -862,10 +1340,14 @@ describe("bootstrap-args helper edge branches", () => {
     const mediumLookup = {
       canonicalByNormalized: new Map<string, string | null>(),
       canonicalByCompact: new Map<string, string | null>(),
-      canonicalComparables: [{ canonicalFlag: "--abcdefghij", comparable: "abcdefghij" }],
+      canonicalComparables: [
+        { canonicalFlag: "--abcdefghij", comparable: "abcdefghij" },
+      ],
       listCanonicalFlags: new Set<string>(),
     };
-    expect(_testOnly.resolveCanonicalFlag("--abcdzzghij", mediumLookup)).toMatchObject({
+    expect(
+      _testOnly.resolveCanonicalFlag("--abcdzzghij", mediumLookup),
+    ).toMatchObject({
       flag: "--abcdefghij",
       reason: "flag_typo",
       confidence: "medium",
@@ -874,10 +1356,14 @@ describe("bootstrap-args helper edge branches", () => {
     const directTypoLookup = {
       canonicalByNormalized: new Map<string, string | null>(),
       canonicalByCompact: new Map<string, string | null>(),
-      canonicalComparables: [{ canonicalFlag: "--status", comparable: "status" }],
+      canonicalComparables: [
+        { canonicalFlag: "--status", comparable: "status" },
+      ],
       listCanonicalFlags: new Set<string>(),
     };
-    expect(_testOnly.resolveCanonicalFlag("--statuz", directTypoLookup)).toMatchObject({
+    expect(
+      _testOnly.resolveCanonicalFlag("--statuz", directTypoLookup),
+    ).toMatchObject({
       flag: "--status",
       reason: "flag_typo",
       confidence: "high",
@@ -892,7 +1378,9 @@ describe("bootstrap-args helper edge branches", () => {
       ],
       listCanonicalFlags: new Set<string>(),
     };
-    expect(_testOnly.resolveCanonicalFlag("--tital", sameCanonicalTieLookup)).toMatchObject({
+    expect(
+      _testOnly.resolveCanonicalFlag("--tital", sameCanonicalTieLookup),
+    ).toMatchObject({
       flag: "--title",
       reason: "flag_typo",
       confidence: "high",
@@ -901,14 +1389,32 @@ describe("bootstrap-args helper edge branches", () => {
 
   it("keeps non-option tokens and trailing value-consuming globals unchanged", () => {
     const lookup = _testOnly.buildFlagLookup(undefined, []);
-    expect(_testOnly.normalizeLongOptionToken("plain-token", lookup)).toEqual({ tokens: ["plain-token"] });
+    expect(_testOnly.normalizeLongOptionToken("plain-token", lookup)).toEqual({
+      tokens: ["plain-token"],
+    });
 
-    const coalesced = coalesceRepeatedListFlags(["--pm-path"], new Set(["--tags"]), new Set(["--pm-path"]));
+    const coalesced = coalesceRepeatedListFlags(
+      ["--pm-path"],
+      new Set(["--tags"]),
+      new Set(["--pm-path"]),
+    );
     expect(coalesced).toEqual({ argv: ["--pm-path"], events: [] });
   });
 
   it("tracks only structurally consumed path values for literal normalization", () => {
-    expect([..._testOnly.collectBootstrapPathValueIndices(["--path", "--path", "--estimated_minutes"])]).toEqual([1]);
-    expect([..._testOnly.collectBootstrapPathValueIndices(["list", "--pm-path", "--acceptanceCriteria"])]).toEqual([2]);
+    expect([
+      ..._testOnly.collectBootstrapPathValueIndices([
+        "--path",
+        "--path",
+        "--estimated_minutes",
+      ]),
+    ]).toEqual([1]);
+    expect([
+      ..._testOnly.collectBootstrapPathValueIndices([
+        "list",
+        "--pm-path",
+        "--acceptanceCriteria",
+      ]),
+    ]).toEqual([2]);
   });
 });

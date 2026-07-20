@@ -84,6 +84,8 @@ export interface BootstrapGlobalOptions {
   json: boolean;
   /** Value that configures or reports quiet for this contract. */
   quiet: boolean;
+  /** Whether compact JSON projection is requested. */
+  lean: boolean;
   /** Invocation-wide mutation author override. */
   author?: string;
   /** Whether `--author` was present without its required value. */
@@ -162,6 +164,7 @@ export function parseBootstrapGlobalOptions(
     noPager,
     json,
     quiet,
+    lean: argv.includes("--lean"),
     ...(author === ""
       ? { authorMissingValue: true }
       : author !== undefined
@@ -182,10 +185,12 @@ export function stripGlobalBootstrapTokens(argv: string[]): string[] {
     if (
       token === "--json" ||
       token === "--quiet" ||
+      token === "--lean" ||
       token === "--no-extensions" ||
       token === "--no-pager" ||
       token === "--profile" ||
       token === "--id-only" ||
+      token === "--full-changed-fields" ||
       token === "--explain"
     ) {
       index += 1;
@@ -286,6 +291,7 @@ function findCommandTokenIndex(argv: string[]): number | undefined {
       isInlineGlobalValueToken(token) ||
       token === "--json" ||
       token === "--quiet" ||
+      token === "--lean" ||
       token === "--no-extensions" ||
       token === "--no-pager" ||
       token === "--profile" ||

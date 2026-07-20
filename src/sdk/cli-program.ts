@@ -24,10 +24,15 @@ export function createPmCliProgram(version: string): Command {
       writeErr: () => {},
     })
     .option("--json", "Output JSON instead of TOON")
+    .option("--lean", "Omit null and empty containers from JSON output")
     .option("--quiet", "Suppress stdout output")
     .option(
       "--no-changed-fields",
       "Omit the changed_fields array from mutation output (keeps changed_field_count)",
+    )
+    .option(
+      "--full-changed-fields",
+      "Restore the legacy full mutation envelope and changed_fields array",
     )
     .option(
       "--id-only",

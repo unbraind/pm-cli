@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { runInit } from "../../src/cli/commands/init.js";
+import { parseBootstrapCommandName } from "../../src/sdk/cli-bootstrap.js";
 import {
   runDirectDistCli,
   runInProcessDistCli,
@@ -18,15 +19,42 @@ export interface TempPmContext {
   env: NodeJS.ProcessEnv;
   runCli: (
     args: string[],
-    options?: { expectJson?: boolean; cwd?: string; input?: string },
+    options?: {
+      expectJson?: boolean;
+      cwd?: string;
+      input?: string;
+      preserveDefaultMutationOutput?: boolean;
+    },
   ) => CliRunResult;
   runCliInProcess: (
     args: string[],
-    options?: { expectJson?: boolean; cwd?: string },
+    options?: {
+      expectJson?: boolean;
+      cwd?: string;
+      preserveDefaultMutationOutput?: boolean;
+    },
   ) => Promise<CliRunResult>;
 }
 
 const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
+const LEGACY_FULL_RESULT_COMMANDS = new Set([
+  "append",
+  "claim",
+  "close",
+  "comments",
+  "copy",
+  "create",
+  "delete",
+  "docs",
+  "files",
+  "focus",
+  "learnings",
+  "notes",
+  "release",
+  "restore",
+  "test",
+  "update",
+]);
 
 const CREATE_VALUE_FLAG_TO_UNSET_FIELD: Readonly<
   Record<string, string | undefined>
@@ -257,12 +285,41 @@ function normalizeLegacyCreateArgsForTests(args: string[]): string[] {
   return state.normalized;
 }
 
+function normalizeMutationOutputForTests(
+  args: string[],
+  preserveDefaultMutationOutput: boolean | undefined,
+): string[] {
+  if (
+    preserveDefaultMutationOutput === true ||
+    !LEGACY_FULL_RESULT_COMMANDS.has(parseBootstrapCommandName(args) ?? "") ||
+    args.some((token) =>
+      ["--full-changed-fields", "--no-changed-fields", "--id-only"].includes(
+        token,
+      ),
+    )
+  ) {
+    return args;
+  }
+  // Most historical integration tests inspect the legacy full mutation result
+  // to seed a later command. Keep that fixture contract explicit while focused
+  // acceptance tests opt into and verify the real compact production default.
+  return ["--full-changed-fields", ...args];
+}
+
 function runNodeCli(
   env: NodeJS.ProcessEnv,
   args: string[],
-  options?: { expectJson?: boolean; cwd?: string; input?: string },
+  options?: {
+    expectJson?: boolean;
+    cwd?: string;
+    input?: string;
+    preserveDefaultMutationOutput?: boolean;
+  },
 ): CliRunResult {
-  const normalizedArgs = normalizeLegacyCreateArgsForTests(args);
+  const normalizedArgs = normalizeMutationOutputForTests(
+    normalizeLegacyCreateArgsForTests(args),
+    options?.preserveDefaultMutationOutput,
+  );
   // Default to the synchronous worker bridge (single dist import per vitest
   // fork) — it removes the per-call `spawnSync` Node-boot tax that dominated
   // the suite runtime. Calls that need real process semantics (stdin input,
@@ -289,9 +346,16 @@ function runNodeCli(
 async function runNodeCliInProcess(
   env: NodeJS.ProcessEnv,
   args: string[],
-  options?: { expectJson?: boolean; cwd?: string },
+  options?: {
+    expectJson?: boolean;
+    cwd?: string;
+    preserveDefaultMutationOutput?: boolean;
+  },
 ): Promise<CliRunResult> {
-  const normalizedArgs = normalizeLegacyCreateArgsForTests(args);
+  const normalizedArgs = normalizeMutationOutputForTests(
+    normalizeLegacyCreateArgsForTests(args),
+    options?.preserveDefaultMutationOutput,
+  );
   return runInProcessDistCli(normalizedArgs, {
     cwd: options?.cwd,
     env,
@@ -375,11 +439,20 @@ export async function withTempPmPath<T>(
 
   const runCli = (
     args: string[],
-    options?: { expectJson?: boolean; cwd?: string; input?: string },
+    options?: {
+      expectJson?: boolean;
+      cwd?: string;
+      input?: string;
+      preserveDefaultMutationOutput?: boolean;
+    },
   ): CliRunResult => runNodeCli(env, args, options);
   const runCliInProcess = (
     args: string[],
-    options?: { expectJson?: boolean; cwd?: string },
+    options?: {
+      expectJson?: boolean;
+      cwd?: string;
+      preserveDefaultMutationOutput?: boolean;
+    },
   ): Promise<CliRunResult> => runNodeCliInProcess(env, args, options);
 
   const previousEnv = snapshotTempPmEnv();

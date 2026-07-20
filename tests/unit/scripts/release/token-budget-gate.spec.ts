@@ -33,6 +33,7 @@ type TokenBudgetGateModule = {
   ) => TokenBudgetManifest["budgets"][number];
   buildManifest: (measurements: TokenBudgetMeasurement[], multiplier: number) => TokenBudgetManifest;
   compareBudgets: (measurements: TokenBudgetMeasurement[], manifest: TokenBudgetManifest) => string[];
+  mutationId: (result: unknown, label: string) => string;
   main: () => void;
 };
 
@@ -75,7 +76,7 @@ function manifestForBudget(maxBytes: number): string {
 function commandStdout(args: string[]): string {
   const joined = args.join(" ");
   if (joined.includes("Alpha planning context")) {
-    return JSON.stringify({ item: { id: "pm-parent" } });
+    return JSON.stringify({ id: "pm-parent" });
   }
   if (joined.includes("Beta blocker")) {
     return JSON.stringify({ item: { id: "pm-blocker" } });
@@ -173,6 +174,20 @@ describe("scripts/release/token-budget-gate", () => {
       max_bytes: 112,
       max_estimated_tokens: 29,
     });
+  });
+
+  it("reads compact and legacy mutation ids and rejects missing ids", async () => {
+    mockRuntime();
+    const mod = await loadModule();
+
+    expect(mod.mutationId({ id: "pm-compact" }, "compact")).toBe("pm-compact");
+    expect(mod.mutationId({ item: { id: "pm-legacy" } }, "legacy")).toBe("pm-legacy");
+    expect(() => mod.mutationId({}, "missing")).toThrow(
+      "Token budget fixture missing mutation did not return an item id",
+    );
+    expect(() => mod.mutationId({ id: "" }, "empty")).toThrow(
+      "Token budget fixture empty mutation did not return an item id",
+    );
   });
 
   it("emits a versioned manifest from measured surfaces", async () => {

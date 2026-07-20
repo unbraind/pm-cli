@@ -2,21 +2,60 @@ id: pm-xm7c
 title: "CLI+MCP surface for atomic bulk item mutations: JSON mutation batch on stdin over commitItemMutations"
 description: ""
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[3]: cli,multi-agent,sdk-first
 created_at: "2026-07-19T14:43:37.560Z"
-updated_at: "2026-07-19T14:43:37.560Z"
+updated_at: "2026-07-20T10:41:23.938Z"
+closed_at: "2026-07-20T10:41:23.020Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "CLI command consumes a JSON array of {op:create|update|close} mutations on stdin and applies them atomically via the public SDK commitItemMutations only (no private-core imports); partial failure compensates per the SDK policy and reports per-mutation outcomes; --dry-run previews the batch; unknown ops/keys fail fast with contract-derived hints; idempotent resume via a stable --transaction-id; MCP parity tool + contracts/completions/docs/vitest wiring per the new-command checklist; command naming decided under the pm-pbyu noun-verb composition input before implementation"
 parent: pm-usfg
 risk: medium
 confidence: 75
-dependencies[5]{id,kind,created_at,author,source_kind}:
+resolution: SDK-backed atomic batch mutations are available through pm item mutate and pm_mutate with strict validation and recovery controls.
+expected_result: CLI and MCP accept typed atomic create/update/close batches through the public SDK without private-core coupling or partial writes.
+actual_result: "CLI and MCP share strict structured parsing, public SDK commitItemMutations dispatch, dry-run, idempotent resume, compensation, finite lock validation, contracts, docs, and 100% coverage."
+dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-g5sx,related,"2026-07-19T14:43:37.560Z",null,null
   pm-khdq,related,"2026-07-19T14:43:37.560Z",null,null
   pm-kipd,related,"2026-07-19T14:43:37.560Z",null,null
   pm-pibw,related,"2026-07-19T14:43:37.560Z",null,null
   pm-y9hq,discovered_from,"2026-07-19T14:43:37.560Z",null,null
+  pm-cfed,related,"2026-07-20T08:49:45.087Z",null,null
+  pm-ds3b,related,"2026-07-20T08:49:45.087Z",null,null
+  pm-g9xk,related,"2026-07-20T08:49:45.087Z",null,null
+  pm-nilh,related,"2026-07-20T08:49:45.087Z",null,null
+  pm-pbyu,related,"2026-07-20T08:49:45.087Z",null,null
+comments[5]{created_at,author,text}:
+  "2026-07-20T07:55:26.190Z",codex-20260720,"Implementation start 2026-07-20: coherent broad bundle pm-xm7c + pm-kipd + pm-nilh + pm-cfed + pm-g9xk + pm-ds3b. All-status duplicate checks confirmed pm-y9hq is the closed SDK prerequisite rather than duplicate work; GH-435/437/438/443 and GH-595 map to the existing canonical items. GitHub intake: open Dependabot PRs #618-#621; #619 and #620 currently have one failed coverage shard each; open Dependabot alerts=0, secret-scanning alerts=0; Scorecard code-scanning alerts #17-#23 remain represented by pm-gnzh/pm-qwoy and are outside this implementation bundle."
+  "2026-07-20T09:12:28.393Z",codex-20260720,"GitHub intake refresh 2026-07-20: Dependabot and secret-scanning open alerts remain zero; Scorecard code-scanning alerts #17-#23 remain represented by the existing security lineage. Dependency PRs #618 and #621 are green; #619 and #620 each have one failed coverage shard. New GitHub issue #623 had no all-status duplicate and is now documented as open pm-mfkv92, related to the closed merge/history lineage but outside this active structured-I/O bundle."
+  "2026-07-20T09:59:52.215Z",codex-20260720,"Evidence: delivered SDK-backed atomic mutation batches across CLI (pm item mutate) and MCP (pm_mutate), strict typed parsing, dry-run, replay/resume, compensation controls, contract snapshots, and CLI/MCP parity tests. Linked structured suite passed after making author resolution environment-explicit; full repository coverage passed 6012/6012 at 100/100/100/100. Packed temp proof committed two mutations atomically with status=committed, recovered=false, mutation_count=2."
+  "2026-07-20T10:26:24.049Z",codex-20260720,"Greptile finding disposition: MCP atomic mutations now reject non-finite or non-numeric lock TTL/wait values with a usage error before SDK dispatch; number, numeric-string, and invalid-type branches are covered. Full coverage is 100/100/100/100."
+  "2026-07-20T10:41:22.047Z",codex-20260720,"Second Greptile P1 disposition: replaced transport-specific coercion with shared public SDK parseAtomicMutationControls used by both CLI and MCP; finite lock values and close/delete compensation are validated before dry-run or commit. Focused suites pass and full coverage is 6014/6014 at exact 100/100/100/100."
+notes[1]{created_at,author,text}:
+  "2026-07-20T07:55:27.225Z",codex-20260720,"Design boundary: one agent-native structured IO platform—contract-derived JSON parsing, SDK-only atomic execution, compact projections, CLI/MCP parity, and deterministic errors—rather than independent flag handlers."
+learnings[2]{created_at,author,text}:
+  "2026-07-20T07:55:28.316Z",codex-20260720,All-status lineage shows structured input and compact output share contract/schema/projection infrastructure; shipping them together reduces duplicated validation and gives review bots one coherent end-to-end surface.
+  "2026-07-20T09:59:52.787Z",codex-20260720,Linked tests must establish PM_AUTHOR explicitly when asserting author fallback because pm test intentionally propagates the invoking agent identity into its sandbox.
+files[8]{path,scope,note}:
+  src/cli/commands/contracts.ts,project,command contract registration
+  src/cli/register-structured-mutation.ts,project,CLI atomic batch adapter
+  src/mcp/server.ts,project,MCP SDK transaction handler
+  src/mcp/tool-definitions.ts,project,MCP transaction contract
+  src/sdk/cli-contracts/flag-contracts.ts,project,flags and completion contracts
+  src/sdk/structured-mutations.ts,project,strict structured mutation parser
+  tests/integration/structured-mutation-io.integration.spec.ts,project,CLI SDK MCP parity and round-trip acceptance
+  tests/unit/sdk/structured-mutations.spec.ts,project,Structured mutation parser coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,600
+  node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,project,180
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrt1vjq6-ahvgkp,test,failed,"2026-07-20T09:56:33.760Z","2026-07-20T09:56:43.806Z","2026-07-20T09:56:43.806Z",0,1,0
+  test-local-mrt1y35i-gitntw,test,passed,"2026-07-20T09:58:32.108Z","2026-07-20T09:58:42.294Z","2026-07-20T09:58:42.294Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,CLI atomic batch workflow
+  docs/SDK.md,project,public atomic structured mutation reference
+close_reason: "Implemented typed SDK-only atomic JSON mutation batches across CLI and MCP with shared finite lock/compensation validation, dry-run, compensation, idempotent resume, contracts, docs, two Greptile follow-ups, packed proof, and exact 100% coverage."
 body: ""

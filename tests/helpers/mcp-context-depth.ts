@@ -54,14 +54,21 @@ export async function assertPmContextDepthProjection(
       status: "open",
     }),
   ]);
-  expect(brief.structuredContent?.result?.low_level?.[0]).not.toHaveProperty("description");
-  expect(brief.structuredContent?.result?.low_level?.[0]).not.toHaveProperty("body");
+  expect(brief.structuredContent?.result?.low_level?.[0]).not.toHaveProperty(
+    "description",
+  );
+  expect(brief.structuredContent?.result?.low_level?.[0]).not.toHaveProperty(
+    "body",
+  );
 
   const deep = (await handleRequest({
     jsonrpc: "2.0",
     id: 69,
     method: "tools/call",
-    params: { name: "pm_context", arguments: { path: context.pmPath, options: { depth: "deep" } } },
+    params: {
+      name: "pm_context",
+      arguments: { path: context.pmPath, options: { depth: "deep" } },
+    },
   })) as {
     structuredContent?: {
       result?: {

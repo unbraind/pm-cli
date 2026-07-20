@@ -21,8 +21,12 @@ export interface OutputOptions {
   quiet?: boolean;
   /** When true, mutation results drop the verbose changed_fields array (keeps changed_field_count). */
   noChangedFields?: boolean;
+  /** When true, preserve the legacy full mutation envelope and changed-fields array. */
+  fullChangedFields?: boolean;
   /** When true, single-item mutation results print only id and status. */
   idOnly?: boolean;
+  /** When true, JSON output omits null, undefined, and empty containers recursively. */
+  lean?: boolean;
   /** Fallback output format used when callers do not provide an override. */
   defaultOutputFormat?: "toon" | "json";
   /** Value that configures or reports command for this contract. */
@@ -262,20 +266,20 @@ function renderDefaultMarkdownResult(value: unknown): string | null {
   return `${lines.join("\n")}\n`;
 }
 
+function resolveOutputFormat(options: OutputOptions): "json" | "toon" {
+  return options.json === true ||
+    (options.json === undefined && options.defaultOutputFormat === "json")
+    ? "json"
+    : "toon";
+}
+
 /** Formats a command result after command-level output ownership is resolved. */
 function formatEffectiveOutput(
   effectiveResult: unknown,
   nativeOutput: boolean,
   options: OutputOptions,
 ): string {
-  const format =
-    options.json === true
-      ? "json"
-      : options.json === false
-        ? "toon"
-        : options.defaultOutputFormat === "json"
-          ? "json"
-          : "toon";
+  const format = resolveOutputFormat(options);
   const serviceOverride = nativeOutput
     ? { handled: false, result: effectiveResult }
     : runActiveServiceOverrideSync("output_format", {
@@ -311,7 +315,11 @@ function formatEffectiveOutput(
       : `${rendererOverride.rendered}\n`;
   }
   if (format === "json") {
-    return `${JSON.stringify(outputResult, null, 2)}\n`;
+    const jsonResult =
+      options.lean === true
+        ? (compactToonValue(outputResult) ?? null)
+        : outputResult;
+    return `${JSON.stringify(jsonResult, null, 2)}\n`;
   }
   const compactedToon = compactToonValue(outputResult);
   if (compactedToon === undefined) {
@@ -340,9 +348,11 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
 export function printResult(result: unknown, options: OutputOptions): void {
   const projected = options.idOnly
     ? projectMutationResult(result, { idOnly: true })
-    : options.noChangedFields
-      ? projectMutationResult(result, { changedFields: "compact" })
-      : result;
+    : options.fullChangedFields
+      ? result
+      : options.noChangedFields
+        ? projectMutationResult(result, { changedFields: "compact" })
+        : projectMutationResult(result, { compactEnvelope: true });
   const rendered = formatOutput(projected, options);
   if (options.quiet) {
     return;
