@@ -13,6 +13,10 @@ describe("graphOptionsFromFlat", () => {
         maxPaths: "4",
         sample: 2,
         exemptIsolate: "pm-root",
+        exemptIsolateType: ["Reminder", "Event"],
+        saveBaseline: true,
+        rebuild: true,
+        clear: true,
         summary: true,
       }),
     ).toEqual({
@@ -24,6 +28,10 @@ describe("graphOptionsFromFlat", () => {
       maxPaths: "4",
       sample: 2,
       exemptIsolate: "pm-root",
+      exemptIsolateType: ["Reminder", "Event"],
+      saveBaseline: true,
+      rebuild: true,
+      clear: true,
       summary: true,
     });
   });
@@ -38,6 +46,10 @@ describe("graphOptionsFromFlat", () => {
       maxPaths: "",
       sample: Number.POSITIVE_INFINITY,
       exemptIsolate: { not: "a list" },
+      exemptIsolateType: { not: "a list" },
+      saveBaseline: "yes",
+      rebuild: 1,
+      clear: "true",
       summary: "yes",
     });
     expect(options).toEqual({
@@ -47,10 +59,14 @@ describe("graphOptionsFromFlat", () => {
       direction: undefined,
       maxPaths: undefined,
       sample: undefined,
+      saveBaseline: false,
+      rebuild: false,
+      clear: false,
       summary: false,
     });
     expect("kind" in options).toBe(false);
     expect("exemptIsolate" in options).toBe(false);
+    expect("exemptIsolateType" in options).toBe(false);
   });
 
   it("normalizes array id lists to non-empty strings", () => {

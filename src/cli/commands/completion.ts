@@ -802,7 +802,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(DEPS_FLAGS)})`,
     "      ;;",
     "    graph)",
-    `      COMPREPLY=(${compgen(`ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators plan ${GRAPH_FLAGS}`)})`,
+    `      COMPREPLY=(${compgen(`ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators plan index ${GRAPH_FLAGS}`)})`,
     "      ;;",
     "    test)",
     `      COMPREPLY=(${compgen("--add --add-json --remove --list --run --match --only-index --only-last --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1549,7 +1549,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         graph)
           _arguments \\
-            '1:subcommand:(ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators plan)' \\
+            '1:subcommand:(ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators plan index)' \\
             '--kind[Restrict traversal to registered relationship kinds]:kind' \\
             '--max-depth[Maximum traversal depth]:depth' \\
             '--limit[Maximum returned rows per bounded collection]:number' \\
@@ -1558,6 +1558,10 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--max-paths[Maximum enumerated paths]:number' \\
             '--sample[Maximum evidence sample entries per audit finding]:number' \\
             '--exempt-isolate[Item ids treated as explicitly valid isolates]:id' \\
+            '--exempt-isolate-type[Item types whose active isolates are policy-valid]:type' \\
+            '--save-baseline[Persist the audit census as the comparison baseline]' \\
+            '--rebuild[Rebuild and warm the durable graph index]' \\
+            '--clear[Delete the durable graph index]' \\
             '--summary[Return counts-first envelopes without row collections]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -2470,7 +2474,7 @@ complete -c pm -n '__fish_seen_subcommand_from deps' -l token-budget -d 'Maximum
 complete -c pm -n '__fish_seen_subcommand_from deps' -l cursor -d 'Continue an equivalent context query' -r
 complete -c pm -n '__fish_seen_subcommand_from deps' -l direction -d 'Context traversal direction' -r -a 'outgoing incoming both'
 complete -c pm -n '__fish_seen_subcommand_from deps' -l kind -d 'Restrict context traversal to relationship kinds' -r
-complete -c pm -n '__fish_seen_subcommand_from graph' -a 'ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators plan' -d 'Graph query'
+complete -c pm -n '__fish_seen_subcommand_from graph' -a 'ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators plan index' -d 'Graph query'
 complete -c pm -n '__fish_seen_subcommand_from graph' -l kind -d 'Restrict traversal to registered relationship kinds' -r
 complete -c pm -n '__fish_seen_subcommand_from graph' -l max-depth -d 'Maximum traversal depth' -r
 complete -c pm -n '__fish_seen_subcommand_from graph' -l limit -d 'Maximum returned rows per bounded collection' -r
@@ -2479,6 +2483,10 @@ complete -c pm -n '__fish_seen_subcommand_from graph' -l direction -d 'Edge orie
 complete -c pm -n '__fish_seen_subcommand_from graph' -l max-paths -d 'Maximum enumerated paths' -r
 complete -c pm -n '__fish_seen_subcommand_from graph' -l sample -d 'Maximum evidence sample entries per audit finding' -r
 complete -c pm -n '__fish_seen_subcommand_from graph' -l exempt-isolate -d 'Item ids treated as explicitly valid isolates' -r
+complete -c pm -n '__fish_seen_subcommand_from graph' -l exempt-isolate-type -d 'Item types whose active isolates are policy-valid' -r
+complete -c pm -n '__fish_seen_subcommand_from graph' -l save-baseline -d 'Persist the audit census as the comparison baseline'
+complete -c pm -n '__fish_seen_subcommand_from graph' -l rebuild -d 'Rebuild and warm the durable graph index'
+complete -c pm -n '__fish_seen_subcommand_from graph' -l clear -d 'Delete the durable graph index'
 complete -c pm -n '__fish_seen_subcommand_from graph' -l summary -d 'Return counts-first envelopes without row collections'
 
 # comments / notes / learnings flags

@@ -190,13 +190,41 @@ informational `legacy_ordering_cycle`/`legacy_duplicate_edge` history debt,
 while `ordering_cycle` errors and `duplicate_edge` findings require at least
 one active subject; `duplicate_edge` covers parallel same-family spellings,
 reciprocal inverse pairs included, which transitive-reduction redundancy
-deliberately skips. All subcommands resolve the workspace assembly through
-the shared fingerprint-keyed graph cache (`WorkspaceGraphCache`): the
-fingerprint digests every relationship-relevant item field, so unchanged
-workspaces in long-lived hosts reuse the assembled graph and memoized query
-results, and every envelope reports `cache` hit/miss observability next to
-its explicit `truncated` and `cost` metadata. Ids resolve
+deliberately skips. The storage-integrity family `duplicate_dependency_row`
+(warning on active holders, informational `legacy_duplicate_dependency_row`
+on terminal ones) reports raw dependency rows whose exact identity is stored
+more than once on one holder — invisible to every assembled-graph projection
+because graph construction deduplicates edges by identity, so
+`collectDuplicateDependencyRows` scans the pre-assembly item rows carried on
+the assembly. Coverage policy is type-aware: the audit profile's
+`coverage_by_type` breaks active/isolated/degree≤1 counts down per item type
+(untyped items under `(untyped)`), and `isolateExemptTypes`
+(`--exempt-isolate-type`) suppresses isolate/sparse findings for types whose
+disconnection is policy-valid without changing profile counts.
+`--save-baseline` persists the audit census through
+`saveGraphAuditBaseline`, and later audits attach the signed
+`diffRelationshipAuditSnapshots` drift (`baseline` block) — the temporal
+comparison primitive for census tracking. All subcommands resolve the
+workspace assembly through the shared fingerprint-keyed graph cache
+(`WorkspaceGraphCache`): the fingerprint digests every
+relationship-relevant item field (item type included, powering the per-type
+coverage), so unchanged workspaces in long-lived hosts reuse the assembled
+graph and memoized query results, and every envelope reports `cache`
+hit/miss observability next to its explicit `truncated` and `cost` metadata.
+One-shot processes additionally reuse the durable fingerprint-keyed index at
+`runtime/graph-cache.json` (`pm graph index` status/`--rebuild`/`--clear`;
+automatic persistence at ≥500 items, opt-in below via rebuild): atomic
+last-write-wins envelopes, corrupt-tolerant decode, never authoritative —
+every entry rebuilds from item storage on fingerprint mismatch, and
+envelopes report the `cache.durable` disposition. Ids resolve
 case-insensitively; `--summary` returns envelopes without row collections.
+
+Mutation advisories reuse the same cycle semantics incrementally:
+`collectNewOrderingCycleWarnings` builds a lightweight ordering digraph
+directly from the before/after item snapshots (no full workspace assembly)
+and scopes `collectOrderingCycles` to the changed item's weakly connected
+ordering component — exact for any cycle containing the changed item, and no
+longer paying two whole-graph SCC analyses per dependency-bearing mutation.
 
 ## Compatibility and migration
 

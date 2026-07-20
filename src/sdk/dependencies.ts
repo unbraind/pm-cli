@@ -27,6 +27,7 @@ import type {
 import {
   assembleWorkspaceRelationshipGraph,
   collectDanglingDependencyReferences,
+  resolveWorkspaceRelationshipKindRegistry,
   type DanglingDependencyReference,
   type WorkspaceRelationshipAssembly,
 } from "./graph/assembly.js";
@@ -39,7 +40,10 @@ import {
   type RelationshipContextOptions,
   type RelationshipContextResult,
 } from "./relationship-context.js";
-import { createRelationshipKindRegistry } from "./relationships.js";
+import {
+  createRelationshipKindRegistry,
+  type RelationshipKindRegistry,
+} from "./relationships.js";
 
 /** Supported values accepted by the deps format contract. */
 export const DEPS_FORMAT_VALUES = ["tree", "graph", "context"] as const;
@@ -244,13 +248,15 @@ export function parseDirection(raw: string | undefined): DepsDirection {
 }
 
 /**
- * Normalize repeatable and comma-separated --kind values against the built-in
+ * Normalize repeatable and comma-separated --kind values against one
  * relationship ontology, failing fast on unknown kinds instead of silently
  * matching nothing (the multi-value filter-grammar trap tracked by pm-gknu).
  */
-export function parseKinds(raw: string | string[] | undefined): string[] | undefined {
+export function parseKinds(
+  raw: string | string[] | undefined,
+  registry: RelationshipKindRegistry = createRelationshipKindRegistry(),
+): string[] | undefined {
   if (raw === undefined) return undefined;
-  const registry = createRelationshipKindRegistry();
   const values = (Array.isArray(raw) ? raw : [raw])
     .flatMap((value) => value.split(","))
     .map((value) => value.trim())
@@ -504,12 +510,13 @@ type DepsContextOptions = Pick<
 /** Parse CLI-compatible deps context options once for packet and closure parity. */
 function parseDepsContextOptions(
   options: DepsContextOptions,
+  registry: RelationshipKindRegistry = createRelationshipKindRegistry(),
 ): RelationshipContextOptions {
   const maxDepth = parseMaxDepth(options.maxDepth);
   const nodeLimit = parsePositiveInteger(options.nodeLimit, "node-limit");
   const edgeLimit = parsePositiveInteger(options.edgeLimit, "edge-limit");
   const tokenBudget = parsePositiveInteger(options.tokenBudget, "token-budget");
-  const kinds = parseKinds(options.kind);
+  const kinds = parseKinds(options.kind, registry);
   return {
     direction: parseDirection(options.direction),
     ...(kinds === undefined ? {} : { kinds }),
@@ -547,10 +554,11 @@ export function buildDepsRelationshipContext(
   options: DepsContextOptions,
   rootEvidence: readonly string[] = [],
 ): RelationshipContextResult {
+  const assembly = assembleWorkspaceRelationshipGraph(items);
   return buildContextFromAssembly(
-    assembleWorkspaceRelationshipGraph(items),
+    assembly,
     rootId,
-    parseDepsContextOptions(options),
+    parseDepsContextOptions(options, assembly.graph.registry()),
     rootEvidence,
   );
 }
@@ -630,7 +638,10 @@ function buildContextDepsResult(params: {
   summaryOnly: boolean;
 }): DepsResult {
   const { assembly, canonicalId, options, rootEvidence, summaryOnly } = params;
-  const contextOptions = parseDepsContextOptions(options);
+  const contextOptions = parseDepsContextOptions(
+    options,
+    assembly.graph.registry(),
+  );
   const context = buildContextFromAssembly(
     assembly,
     canonicalId,
@@ -763,12 +774,18 @@ export async function runDeps(
         );
     const isTerminal = (status: ItemStatus): boolean =>
       isTerminalStatus(status, statusRegistry);
+    const relationshipRegistry = resolveWorkspaceRelationshipKindRegistry();
     // Reuse the fingerprint-keyed shared cache so bounded context packets in
     // long-lived hosts stop paying full-workspace assembly on every call.
     const lookup = workspaceGraphCache().lookup(
       pmRoot,
-      computeWorkspaceGraphFingerprint(items, isTerminal),
-      () => assembleWorkspaceRelationshipGraph(items, isTerminal),
+      computeWorkspaceGraphFingerprint(items, isTerminal, relationshipRegistry),
+      () =>
+        assembleWorkspaceRelationshipGraph(
+          items,
+          isTerminal,
+          relationshipRegistry,
+        ),
     );
     return buildContextDepsResult({
       assembly: lookup.assembly,

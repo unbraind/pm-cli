@@ -40,6 +40,7 @@ import {
 } from "./analytics.js";
 import {
   assembleWorkspaceRelationshipGraph,
+  resolveWorkspaceRelationshipKindRegistry,
   type WorkspaceRelationshipAssembly,
 } from "./assembly.js";
 import {
@@ -48,8 +49,22 @@ import {
   type GraphCacheMetadata,
 } from "./cache.js";
 import {
+  clearDurableGraphCache,
+  durableGraphCacheStatus,
+  loadGraphAuditBaseline,
+  openDurableGraphCache,
+  persistDurableGraphResult,
+  saveGraphAuditBaseline,
+  shouldPersistDurableGraphCache,
+  GRAPH_DURABLE_CACHE_MIN_ITEMS,
+  type DurableGraphCacheView,
+} from "./durable-cache.js";
+import {
   auditWorkspaceRelationshipGraph,
+  diffRelationshipAuditSnapshots,
+  type RelationshipAuditDelta,
   type RelationshipAuditReport,
+  type RelationshipAuditSnapshot,
 } from "./governance.js";
 import {
   planRelationshipRemediation,
@@ -102,6 +117,14 @@ export interface GraphCommandOptions {
   sample?: string | number;
   /** Item ids treated as explicitly valid isolates by the audit. */
   exemptIsolate?: string | string[];
+  /** Item types whose active nodes are policy-valid isolates for the audit (repeatable or comma-separated). */
+  exemptIsolateType?: string | string[];
+  /** Persist the audit census as the change-since-baseline comparison point (audit only). */
+  saveBaseline?: boolean;
+  /** Rebuild and warm the durable graph index (index only). */
+  rebuild?: boolean;
+  /** Delete the durable graph index (index only). */
+  clear?: boolean;
   /** Return counts-first envelopes without row collections. */
   summary?: boolean;
 }
@@ -268,7 +291,35 @@ export interface GraphAuditResult {
   profile: RelationshipAuditReport["profile"];
   /** Ordered findings with bounded evidence samples; absent with summary. */
   findings?: RelationshipAuditReport["findings"];
+  /** Signed change since the persisted census baseline; absent when no baseline exists. */
+  baseline?: RelationshipAuditDelta;
   /** Cache observability for this invocation. */
+  cache?: GraphCacheMetadata;
+}
+
+/** Result envelope for the durable-index maintenance subcommand. */
+export interface GraphIndexResult {
+  /** Executed graph subcommand. */
+  subcommand: "index";
+  /** Maintenance action performed by this invocation. */
+  action: "status" | "rebuilt" | "cleared";
+  /** Durable index disposition against the current workspace snapshot. */
+  state: "fresh" | "stale" | "absent";
+  /** Persisted deterministic query results in the envelope. */
+  entry_count: number;
+  /** Items in the current workspace snapshot. */
+  item_count: number;
+  /** Item threshold above which implicit persistence activates. */
+  min_items_threshold: number;
+  /** Whether queries on this workspace will persist results right now. */
+  persist_enabled: boolean;
+  /** Truncated fingerprint of the current workspace snapshot. */
+  current_fingerprint: string;
+  /** ISO timestamp of the last persisted write, absent without an envelope. */
+  saved_at?: string;
+  /** Envelope size in bytes, absent without an envelope. */
+  bytes?: number;
+  /** Cache observability; maintenance invocations never populate it. */
   cache?: GraphCacheMetadata;
 }
 
@@ -396,7 +447,8 @@ export type GraphResult =
   | GraphCommunitiesResult
   | GraphRedundancyResult
   | GraphDominatorsResult
-  | GraphPlanResult;
+  | GraphPlanResult
+  | GraphIndexResult;
 
 /** Fully parsed graph invocation shared by the subcommand executors. */
 interface GraphInvocation {
@@ -418,6 +470,10 @@ interface GraphInvocation {
   sample?: number;
   /** Normalized audit isolate exemptions. */
   exemptIsolates: string[];
+  /** Normalized audit isolate-exempt item types. */
+  exemptIsolateTypes: string[];
+  /** Whether the audit census is persisted as the comparison baseline. */
+  saveBaseline: boolean;
   /** Whether row collections are suppressed. */
   summary: boolean;
 }
@@ -662,6 +718,9 @@ function runGraphAudit(
     ...(invocation.exemptIsolates.length === 0
       ? {}
       : { exemptIsolates: invocation.exemptIsolates }),
+    ...(invocation.exemptIsolateTypes.length === 0
+      ? {}
+      : { isolateExemptTypes: invocation.exemptIsolateTypes }),
   });
   const bySeverity: Record<string, number> = {};
   const byCode: Record<string, number> = {};
@@ -810,6 +869,9 @@ function runGraphPlan(
     ...(invocation.exemptIsolates.length === 0
       ? {}
       : { exemptIsolates: invocation.exemptIsolates }),
+    ...(invocation.exemptIsolateTypes.length === 0
+      ? {}
+      : { isolateExemptTypes: invocation.exemptIsolateTypes }),
   });
   const byOp: Record<string, number> = {};
   const byCode: Record<string, number> = {};
@@ -855,13 +917,18 @@ function buildGraphQueryKey(
     exemptIsolates: [
       ...new Set(invocation.exemptIsolates.map((id) => id.toLowerCase())),
     ].sort(),
+    exemptIsolateTypes: [
+      ...new Set(
+        invocation.exemptIsolateTypes.map((type) => type.toLowerCase()),
+      ),
+    ].sort(),
     summary: invocation.summary,
   });
 }
 
 /** Dispatch one parsed graph subcommand to its executor. */
 function executeGraphSubcommand(
-  subcommand: GraphSubcommand,
+  subcommand: Exclude<GraphSubcommand, "index">,
   root: string | undefined,
   pathsTarget: string | undefined,
   invocation: GraphInvocation,
@@ -877,6 +944,140 @@ function executeGraphSubcommand(
     return runGraphPaths(root!, pathsTarget!, invocation);
   if (subcommand === "impact") return runGraphImpact(root!, invocation);
   return runGraphTraversal(subcommand, root!, invocation);
+}
+
+/** Reject maintenance or baseline flags outside their owning subcommand. */
+function assertGraphFlagScope(
+  subcommand: GraphSubcommand,
+  options: GraphCommandOptions,
+): void {
+  if (
+    subcommand !== "index" &&
+    (options.rebuild === true || options.clear === true)
+  )
+    throw new PmCliError(
+      "--rebuild and --clear apply only to graph index.",
+      EXIT_CODE.USAGE,
+    );
+  if (subcommand !== "audit" && options.saveBaseline === true)
+    throw new PmCliError(
+      "--save-baseline applies only to graph audit.",
+      EXIT_CODE.USAGE,
+    );
+  if (options.rebuild === true && options.clear === true)
+    throw new PmCliError(
+      "graph index accepts either --rebuild or --clear, not both.",
+      EXIT_CODE.USAGE,
+    );
+}
+
+/**
+ * Execute the durable-index maintenance subcommand: report status, delete the
+ * envelope, or rebuild it and warm the counts-first analyze and audit census
+ * queries so follow-up summary invocations answer from the persisted index.
+ * A rebuild is also the explicit opt-in that enables persistence on
+ * workspaces below the implicit item threshold.
+ */
+async function runGraphIndex(
+  pmRoot: string,
+  fingerprint: string,
+  invocation: GraphInvocation,
+  itemCount: number,
+  isTerminal: (status: string) => boolean,
+  options: GraphCommandOptions,
+): Promise<GraphIndexResult> {
+  let action: GraphIndexResult["action"] = "status";
+  if (options.clear === true) {
+    await clearDurableGraphCache(pmRoot);
+    action = "cleared";
+  }
+  if (options.rebuild === true) {
+    await clearDurableGraphCache(pmRoot);
+    const view = await openDurableGraphCache(pmRoot, fingerprint);
+    const warmInvocation: GraphInvocation = {
+      assembly: invocation.assembly,
+      direction: "both",
+      exemptIsolates: [],
+      exemptIsolateTypes: [],
+      saveBaseline: false,
+      summary: true,
+    };
+    for (const warm of ["analyze", "audit"] as const) {
+      await persistDurableGraphResult(
+        pmRoot,
+        fingerprint,
+        view,
+        buildGraphQueryKey(warm, undefined, undefined, warmInvocation),
+        executeGraphSubcommand(
+          warm,
+          undefined,
+          undefined,
+          warmInvocation,
+          isTerminal,
+        ),
+      );
+    }
+    action = "rebuilt";
+  }
+  const status = await durableGraphCacheStatus(pmRoot, fingerprint);
+  return {
+    subcommand: "index",
+    action,
+    state: status.exists ? (status.fresh ? "fresh" : "stale") : "absent",
+    entry_count: status.entry_count,
+    item_count: itemCount,
+    min_items_threshold: GRAPH_DURABLE_CACHE_MIN_ITEMS,
+    persist_enabled: shouldPersistDurableGraphCache(itemCount, status.exists),
+    current_fingerprint: fingerprint.slice(0, 12),
+    ...(status.saved_at === undefined ? {} : { saved_at: status.saved_at }),
+    ...(status.bytes === undefined ? {} : { bytes: status.bytes }),
+  };
+}
+
+/**
+ * Attach the change-since-baseline census delta to one audit envelope and
+ * persist the current census when the caller requested a new baseline. The
+ * delta always compares against the baseline as it existed before this
+ * invocation, so `--save-baseline` reports drift once and then resets it.
+ */
+async function applyAuditBaseline(
+  pmRoot: string,
+  fingerprint: string,
+  audit: GraphAuditResult,
+  saveBaseline: boolean,
+): Promise<GraphAuditResult> {
+  const current: RelationshipAuditSnapshot = {
+    saved_at: new Date().toISOString(),
+    fingerprint,
+    affected_subjects_by_code: audit.affected_subjects_by_code,
+    profile: audit.profile,
+  };
+  const stored = await loadGraphAuditBaseline(pmRoot);
+  if (saveBaseline) await saveGraphAuditBaseline(pmRoot, current);
+  return stored === undefined
+    ? audit
+    : { ...audit, baseline: diffRelationshipAuditSnapshots(stored, current) };
+}
+
+/** Persist a rebuildable query result without allowing storage failure to reject the query. */
+async function persistDurableGraphResultBestEffort(
+  pmRoot: string,
+  fingerprint: string,
+  view: DurableGraphCacheView,
+  queryKey: string,
+  result: GraphResult,
+): Promise<void> {
+  try {
+    await persistDurableGraphResult(
+      pmRoot,
+      fingerprint,
+      view,
+      queryKey,
+      result,
+    );
+  } catch {
+    // The in-memory result remains authoritative; the next invocation can rebuild the cache.
+  }
 }
 
 /** Implements run graph for the public runtime surface of this module. */
@@ -910,11 +1111,18 @@ export async function runGraph(
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const isTerminal = (status: string): boolean =>
     isTerminalStatus(status, statusRegistry);
-  const kinds = parseKinds(options.kind);
+  assertGraphFlagScope(subcommand, options);
+  const relationshipRegistry = resolveWorkspaceRelationshipKindRegistry();
+  const kinds = parseKinds(options.kind, relationshipRegistry);
   const lookup = workspaceGraphCache().lookup(
     pmRoot,
-    computeWorkspaceGraphFingerprint(items, isTerminal),
-    () => assembleWorkspaceRelationshipGraph(items, isTerminal),
+    computeWorkspaceGraphFingerprint(items, isTerminal, relationshipRegistry),
+    () =>
+      assembleWorkspaceRelationshipGraph(
+        items,
+        isTerminal,
+        relationshipRegistry,
+      ),
   );
   const invocation: GraphInvocation = {
     assembly: lookup.assembly,
@@ -926,8 +1134,20 @@ export async function runGraph(
     maxPaths: parsePositiveInteger(options.maxPaths, "max-paths"),
     sample: parsePositiveInteger(options.sample, "sample"),
     exemptIsolates: normalizeIdList(options.exemptIsolate),
+    exemptIsolateTypes: normalizeIdList(options.exemptIsolateType),
+    saveBaseline: options.saveBaseline === true,
     summary: options.summary === true,
   };
+  if (subcommand === "index") {
+    return runGraphIndex(
+      pmRoot,
+      lookup.fingerprint,
+      invocation,
+      items.length,
+      isTerminal,
+      options,
+    );
+  }
   const root = ROOTED_SUBCOMMANDS.has(subcommand)
     ? canonicalizeGraphId(invocation.assembly, id!)
     : undefined;
@@ -935,23 +1155,55 @@ export async function runGraph(
     subcommand === "paths"
       ? canonicalizeGraphId(invocation.assembly, target!)
       : undefined;
-  const memo = lookup.memoize(
-    buildGraphQueryKey(subcommand, root, pathsTarget, invocation),
-    () =>
-      executeGraphSubcommand(
-        subcommand,
-        root,
-        pathsTarget,
-        invocation,
-        isTerminal,
-      ),
+  const queryKey = buildGraphQueryKey(
+    subcommand,
+    root,
+    pathsTarget,
+    invocation,
   );
+  const durableView = await openDurableGraphCache(pmRoot, lookup.fingerprint);
+  const durableValue = durableView.results[queryKey];
+  const memo = lookup.memoize(queryKey, () =>
+    durableValue !== undefined
+      ? (structuredClone(durableValue) as GraphResult)
+      : executeGraphSubcommand(
+          subcommand,
+          root,
+          pathsTarget,
+          invocation,
+          isTerminal,
+        ),
+  );
+  const persistEnabled = shouldPersistDurableGraphCache(
+    items.length,
+    durableView.exists,
+  );
+  if (!memo.reused && durableValue === undefined && persistEnabled) {
+    await persistDurableGraphResultBestEffort(
+      pmRoot,
+      lookup.fingerprint,
+      durableView,
+      queryKey,
+      memo.value,
+    );
+  }
+  const value =
+    memo.value.subcommand === "audit"
+      ? await applyAuditBaseline(
+          pmRoot,
+          lookup.fingerprint,
+          memo.value,
+          invocation.saveBaseline,
+        )
+      : memo.value;
   return {
-    ...memo.value,
+    ...value,
     cache: {
       fingerprint: lookup.fingerprint.slice(0, 12),
       assembly: lookup.assemblyReused ? "hit" : "miss",
       result: memo.reused ? "hit" : "miss",
+      durable:
+        durableValue !== undefined ? "hit" : persistEnabled ? "miss" : "off",
     },
   };
 }

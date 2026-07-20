@@ -445,6 +445,9 @@ describe("register-list-query graph action", () => {
       "2",
       "--exempt-isolate",
       "pm-x,pm-y",
+      "--exempt-isolate-type",
+      "Reminder",
+      "--save-baseline",
     );
     expect(vi.mocked(runGraph)).toHaveBeenCalledWith(
       "paths",
@@ -454,6 +457,8 @@ describe("register-list-query graph action", () => {
         maxPaths: "4",
         sample: "2",
         exemptIsolate: ["pm-x,pm-y"],
+        exemptIsolateType: ["Reminder"],
+        saveBaseline: true,
         summary: false,
       }),
       expect.anything(),

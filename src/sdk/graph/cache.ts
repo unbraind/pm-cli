@@ -13,7 +13,12 @@
  * reports hit/miss observability so envelopes can explain their freshness.
  */
 import { createHash } from "node:crypto";
+import { stableStringify } from "../../core/shared/serialization.js";
 import type { Dependency, ItemStatus } from "../../types/index.js";
+import {
+  createRelationshipKindRegistry,
+  type RelationshipKindRegistry,
+} from "../relationships.js";
 import type {
   WorkspaceRelationshipAssembly,
   WorkspaceRelationshipItem,
@@ -32,6 +37,8 @@ export interface GraphCacheMetadata {
   assembly: "hit" | "miss";
   /** Whether the full query result was reused from cache. */
   result: "hit" | "miss";
+  /** Durable cross-process index disposition: answered from it, missed it, or persistence disabled for this workspace. Absent on surfaces that never consult the durable index. */
+  durable?: "hit" | "miss" | "off";
 }
 
 /** Digest one item's relationship-relevant fields into a deterministic line. */
@@ -58,6 +65,9 @@ function fingerprintLine(
     item.title,
     item.status,
     isTerminal(item.status) ? "1" : "0",
+    // Per-type coverage profiles make the item type a projection input, so a
+    // retype must invalidate cached assemblies and memoized audit results.
+    typeof item.type === "string" ? item.type.trim() : "",
     item.parent ?? "",
     item.blocked_by ?? "",
     dependencies,
@@ -75,14 +85,23 @@ export function computeWorkspaceGraphFingerprint(
   items: readonly WorkspaceRelationshipItem[],
   isTerminal: (status: ItemStatus) => boolean = (status) =>
     status === "closed" || status === "canceled",
+  registry: RelationshipKindRegistry = createRelationshipKindRegistry(),
 ): string {
   const lines = items
     .filter((item) => typeof item?.id === "string" && item.id.trim().length > 0)
     .map((item) => fingerprintLine(item, isTerminal))
     .sort();
+  const relationshipSemantics = registry
+    .list()
+    .map((definition) => stableStringify(definition))
+    .sort();
   // Separate fields and records with control characters no stored field can
   // contain unescaped, so adjacent free-text fields can never collide.
-  return createHash("sha256").update(lines.join("\u0001")).digest("hex");
+  return createHash("sha256")
+    .update(lines.join("\u0001"))
+    .update("\u0002")
+    .update(relationshipSemantics.join("\u0001"))
+    .digest("hex");
 }
 
 /** One cached workspace snapshot: its assembly plus memoized query results. */

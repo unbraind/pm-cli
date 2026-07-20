@@ -1387,6 +1387,10 @@ export const GRAPH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--max-paths" },
   { flag: "--sample" },
   { flag: "--exempt-isolate", list: true },
+  { flag: "--exempt-isolate-type", list: true },
+  { flag: "--save-baseline" },
+  { flag: "--rebuild" },
+  { flag: "--clear" },
   { flag: "--summary" },
 ];
 

@@ -660,6 +660,12 @@ async function runGraphAction(
       ...(Array.isArray(options.exemptIsolate)
         ? { exemptIsolate: options.exemptIsolate as string[] }
         : {}),
+      ...(Array.isArray(options.exemptIsolateType)
+        ? { exemptIsolateType: options.exemptIsolateType as string[] }
+        : {}),
+      saveBaseline: options.saveBaseline === true,
+      rebuild: options.rebuild === true,
+      clear: options.clear === true,
       summary: options.summary === true,
     },
     globalOptions,
@@ -1158,7 +1164,7 @@ export function registerListQueryCommands(
       .command("graph")
       .argument(
         "<subcommand>",
-        "Graph query (ancestors, descendants, predecessors, successors, paths, impact, analyze, audit, communities, redundancy, dominators, plan)",
+        "Graph query (ancestors, descendants, predecessors, successors, paths, impact, analyze, audit, communities, redundancy, dominators, plan, index)",
       )
       .argument("[id]", "Root item id (traversals, paths, impact, and dominators)")
       .argument("[target]", "Target item id (paths only)")
@@ -1190,6 +1196,20 @@ export function registerListQueryCommands(
         "Item ids treated as explicitly valid isolates by the audit (repeatable or comma-separated)",
         collect,
       )
+      .option(
+        "--exempt-isolate-type <value>",
+        "Item types whose active isolates are policy-valid for the audit (repeatable or comma-separated)",
+        collect,
+      )
+      .option(
+        "--save-baseline",
+        "Persist the audit census as the change-since-baseline comparison point (audit only)",
+      )
+      .option(
+        "--rebuild",
+        "Rebuild and warm the durable graph index (index only)",
+      )
+      .option("--clear", "Delete the durable graph index (index only)")
       .option("--summary", "Return counts-first envelopes without row collections")
       .description(
         "Bounded workspace relationship-graph queries, analytics, and governance audit.",

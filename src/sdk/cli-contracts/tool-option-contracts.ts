@@ -426,5 +426,13 @@ export const TOOL_GRAPH_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "maxPaths", flag: "--max-paths" },
   { param: "sample", flag: "--sample" },
   { param: "exemptIsolate", flag: "--exempt-isolate", repeatable: true },
+  {
+    param: "exemptIsolateType",
+    flag: "--exempt-isolate-type",
+    repeatable: true,
+  },
+  { param: "saveBaseline", flag: "--save-baseline" },
+  { param: "rebuild", flag: "--rebuild" },
+  { param: "clear", flag: "--clear" },
   { param: "summary", flag: "--summary" },
 ];

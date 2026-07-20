@@ -1446,6 +1446,19 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
       "Item ids the graph audit treats as explicitly valid isolates (string, comma-separated, or array).",
     examples: ["pm-x1y2", ["pm-x1y2", "pm-a3b4"]],
   },
+  exemptIsolateType: {
+    description:
+      "Item types whose active isolates the graph audit treats as policy-valid (string, comma-separated, or array).",
+    examples: ["Reminder", ["Reminder", "Event"]],
+  },
+  saveBaseline: {
+    description:
+      "When true, persist the graph audit census as the change-since-baseline comparison point (audit only).",
+  },
+  rebuild: {
+    description:
+      "When true, rebuild and warm the durable graph index (graph index only).",
+  },
   collapse: {
     description:
       'Dependency tree collapse mode for deps action ("none" or "repeated").',
@@ -1551,8 +1564,12 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
   graph: {
     subcommand: {
       description:
-        "Graph query selector: ancestors|descendants|predecessors|successors|paths|impact|analyze|audit|communities|redundancy|dominators|plan. Traversals, paths, impact, and dominators require id; paths also requires target; plan derives dry-run remediation proposals from the governance audit.",
+        "Graph query selector: ancestors|descendants|predecessors|successors|paths|impact|analyze|audit|communities|redundancy|dominators|plan|index. Traversals, paths, impact, and dominators require id; paths also requires target; plan derives dry-run remediation proposals from the governance audit; index reports, rebuilds, or clears the durable cross-process graph index.",
       examples: ["successors", "audit"],
+    },
+    clear: {
+      description:
+        "When true, delete the durable graph index (graph index only).",
     },
     id: {
       description:
