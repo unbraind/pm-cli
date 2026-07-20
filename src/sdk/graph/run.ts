@@ -1111,6 +1111,7 @@ export async function runGraph(
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const isTerminal = (status: string): boolean =>
     isTerminalStatus(status, statusRegistry);
+  assertGraphFlagScope(subcommand, options);
   const relationshipRegistry = resolveWorkspaceRelationshipKindRegistry();
   const kinds = parseKinds(options.kind, relationshipRegistry);
   const lookup = workspaceGraphCache().lookup(
@@ -1123,7 +1124,6 @@ export async function runGraph(
         relationshipRegistry,
       ),
   );
-  assertGraphFlagScope(subcommand, options);
   const invocation: GraphInvocation = {
     assembly: lookup.assembly,
     ...(kinds === undefined ? {} : { kinds }),

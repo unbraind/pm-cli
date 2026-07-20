@@ -101,7 +101,8 @@ function decodeEnvelope(
       typeof (parsed as DurableGraphCacheEnvelope).fingerprint !== "string" ||
       typeof (parsed as DurableGraphCacheEnvelope).saved_at !== "string" ||
       typeof (parsed as DurableGraphCacheEnvelope).results !== "object" ||
-      (parsed as DurableGraphCacheEnvelope).results === null
+      (parsed as DurableGraphCacheEnvelope).results === null ||
+      Array.isArray((parsed as DurableGraphCacheEnvelope).results)
     )
       return undefined;
     return parsed as DurableGraphCacheEnvelope;

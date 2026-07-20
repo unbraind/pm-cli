@@ -5,7 +5,10 @@ import * as fsUtils from "../../../../src/core/fs/fs-utils.js";
 import { runGraph } from "../../../../src/cli/commands/graph.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
-import { resetWorkspaceGraphCache } from "../../../../src/sdk/graph/cache.js";
+import {
+  resetWorkspaceGraphCache,
+  workspaceGraphCache,
+} from "../../../../src/sdk/graph/cache.js";
 import {
   clearDurableGraphCache,
   durableGraphCachePath,
@@ -85,6 +88,12 @@ describe("durable graph cache primitives", () => {
           fingerprint: "fp",
           saved_at: "x",
           results: null,
+        }),
+        JSON.stringify({
+          version: GRAPH_DURABLE_CACHE_VERSION,
+          fingerprint: "fp",
+          saved_at: "x",
+          results: [],
         }),
         JSON.stringify(null),
       ]) {
@@ -440,39 +449,45 @@ describe("pm graph index and durable envelopes", () => {
   it("rejects maintenance and baseline flags outside their subcommand", async () => {
     await withTempPmPath(async (context) => {
       createItem(context, "Scope item");
-      for (const options of [{ rebuild: true }, { clear: true }]) {
+      const lookup = vi.spyOn(workspaceGraphCache(), "lookup");
+      try {
+        for (const options of [{ rebuild: true }, { clear: true }]) {
+          await expect(
+            runGraph("analyze", undefined, undefined, options, {
+              path: context.pmPath,
+            }),
+          ).rejects.toMatchObject<Partial<PmCliError>>({
+            exitCode: EXIT_CODE.USAGE,
+          });
+        }
         await expect(
-          runGraph("analyze", undefined, undefined, options, {
-            path: context.pmPath,
-          }),
+          runGraph(
+            "index",
+            undefined,
+            undefined,
+            { saveBaseline: true },
+            {
+              path: context.pmPath,
+            },
+          ),
         ).rejects.toMatchObject<Partial<PmCliError>>({
           exitCode: EXIT_CODE.USAGE,
         });
+        await expect(
+          runGraph(
+            "index",
+            undefined,
+            undefined,
+            { rebuild: true, clear: true },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject<Partial<PmCliError>>({
+          exitCode: EXIT_CODE.USAGE,
+        });
+        expect(lookup).not.toHaveBeenCalled();
+      } finally {
+        lookup.mockRestore();
       }
-      await expect(
-        runGraph(
-          "index",
-          undefined,
-          undefined,
-          { saveBaseline: true },
-          {
-            path: context.pmPath,
-          },
-        ),
-      ).rejects.toMatchObject<Partial<PmCliError>>({
-        exitCode: EXIT_CODE.USAGE,
-      });
-      await expect(
-        runGraph(
-          "index",
-          undefined,
-          undefined,
-          { rebuild: true, clear: true },
-          { path: context.pmPath },
-        ),
-      ).rejects.toMatchObject<Partial<PmCliError>>({
-        exitCode: EXIT_CODE.USAGE,
-      });
     });
   });
 
