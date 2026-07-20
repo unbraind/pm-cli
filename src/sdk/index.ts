@@ -70,6 +70,10 @@ export {
   type ValidateMutationServices,
 } from "./governance/validate.js";
 export { runExtension } from "./extension.js";
+export {
+  runWithActiveExtensions,
+  type ActiveExtensionScopeOptions,
+} from "./runtime.js";
 export { applyInvocationAuthorOverride } from "./invocation-author.js";
 export { describeItemOwnershipConflict } from "./ownership-source.js";
 export { discoverNearbyPmRoot } from "./tracker-root-discovery.js";
@@ -349,6 +353,9 @@ export * from "./relationship-history.js";
 export * from "./workspace-transaction.js";
 export * from "./workspace-transaction-gc.js";
 export * from "./item-transaction.js";
+export * from "./structured-mutations.js";
+export * from "./runtime-primitives.js";
+export * from "./error-runtime.js";
 export * from "./relationships.js";
 export * from "./actionability.js";
 export type {

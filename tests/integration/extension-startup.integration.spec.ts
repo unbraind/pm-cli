@@ -4,7 +4,10 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { writeTestExtension } from "../helpers/extensions.js";
-import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../helpers/withTempPmPath.js";
 
 interface SourceCliResult {
   code: number | null;
@@ -13,13 +16,27 @@ interface SourceCliResult {
   json?: unknown;
 }
 
-function runSourceCli(context: TempPmContext, args: string[], options: { expectJson?: boolean } = {}): SourceCliResult {
-  const tsxCliPath = path.resolve(process.cwd(), "node_modules", "tsx", "dist", "cli.mjs");
-  const completed = spawnSync(process.execPath, [tsxCliPath, path.resolve(process.cwd(), "src", "cli.ts"), ...args], {
-    cwd: process.cwd(),
-    env: context.env,
-    encoding: "utf8",
-  });
+function runSourceCli(
+  context: TempPmContext,
+  args: string[],
+  options: { expectJson?: boolean } = {},
+): SourceCliResult {
+  const tsxCliPath = path.resolve(
+    process.cwd(),
+    "node_modules",
+    "tsx",
+    "dist",
+    "cli.mjs",
+  );
+  const completed = spawnSync(
+    process.execPath,
+    [tsxCliPath, path.resolve(process.cwd(), "src", "cli.ts"), ...args],
+    {
+      cwd: process.cwd(),
+      env: context.env,
+      encoding: "utf8",
+    },
+  );
   const result: SourceCliResult = {
     code: completed.status,
     stdout: completed.stdout ?? "",
@@ -35,7 +52,12 @@ async function readOptionalFile(filePath: string): Promise<string> {
   try {
     return await readFile(filePath, "utf8");
   } catch (error: unknown) {
-    if (typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT") {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
       return "";
     }
     throw error;
@@ -75,11 +97,15 @@ describe("extension startup activation", () => {
         ].join("\n"),
       });
 
-      const list = runSourceCli(context, ["list-open", "--json"], { expectJson: true });
+      const list = runSourceCli(context, ["list-open", "--json"], {
+        expectJson: true,
+      });
       expect(list.code).toBe(0);
       expect(await readOptionalFile(logPath)).toBe("");
 
-      const dynamic = runSourceCli(context, ["slow", "command", "--json"], { expectJson: true });
+      const dynamic = runSourceCli(context, ["slow", "command", "--json"], {
+        expectJson: true,
+      });
       expect(dynamic.code).toBe(0);
       expect(dynamic.json).toMatchObject({
         ok: true,
@@ -156,13 +182,29 @@ describe("extension startup activation", () => {
         ].join("\n"),
       });
 
-      const declared = runSourceCli(context, ["kanban", "board", "ping", "--json"], { expectJson: true });
+      const declared = runSourceCli(
+        context,
+        ["kanban", "board", "ping", "--json"],
+        { expectJson: true },
+      );
       expect(declared.code).toBe(0);
-      expect(declared.json).toMatchObject({ ok: true, source: "kanban-board", command: "kanban board ping" });
+      expect(declared.json).toMatchObject({
+        ok: true,
+        source: "kanban-board",
+        command: "kanban board ping",
+      });
 
-      const heuristic = runSourceCli(context, ["atlas", "grid", "ping", "--json"], { expectJson: true });
+      const heuristic = runSourceCli(
+        context,
+        ["atlas", "grid", "ping", "--json"],
+        { expectJson: true },
+      );
       expect(heuristic.code).toBe(0);
-      expect(heuristic.json).toMatchObject({ ok: true, source: "atlas-grid", command: "atlas grid ping" });
+      expect(heuristic.json).toMatchObject({
+        ok: true,
+        source: "atlas-grid",
+        command: "atlas grid ping",
+      });
     });
   });
 
@@ -219,13 +261,17 @@ describe("extension startup activation", () => {
         ].join("\n"),
       });
 
-      const rendered = runSourceCli(context, ["list-open", "--json"], { expectJson: true });
+      const rendered = runSourceCli(context, ["list-open", "--json"], {
+        expectJson: true,
+      });
       expect(rendered.code).toBe(0);
       expect(rendered.json).toEqual({
         rendered_by: "renderer-ext",
         command: "list-open",
       });
-      expect(await readOptionalFile(hookLogPath)).toBe("activate\nbefore\nafter:true\n");
+      expect(await readOptionalFile(hookLogPath)).toBe(
+        "activate\nbefore\nafter:true\n",
+      );
     });
   });
 
@@ -253,7 +299,9 @@ describe("extension startup activation", () => {
         ].join("\n"),
       });
 
-      const result = runSourceCli(context, ["list-open", "--json"], { expectJson: true });
+      const result = runSourceCli(context, ["list-open", "--json"], {
+        expectJson: true,
+      });
       expect(result.code).toBe(0);
       expect(result.json).toMatchObject({
         legacy_override: true,
@@ -301,7 +349,9 @@ describe("extension startup activation", () => {
         ].join("\n"),
       });
 
-      const list = runSourceCli(context, ["list-open", "--json"], { expectJson: true });
+      const list = runSourceCli(context, ["list-open", "--json"], {
+        expectJson: true,
+      });
       expect(list.code).toBe(0);
       expect(await readOptionalFile(logPath)).toBe("");
 
@@ -321,6 +371,16 @@ describe("extension startup activation", () => {
       );
       expect(created.code).toBe(0);
       expect(created.json).toMatchObject({
+        id: expect.any(String),
+        status: "open",
+        changed_field_count: expect.any(Number),
+      });
+      const createdItem = runSourceCli(
+        context,
+        ["get", (created.json as { id: string }).id, "--json", "--full"],
+        { expectJson: true },
+      );
+      expect(createdItem.json).toMatchObject({
         item: {
           title: "Templated startup item",
           type: "Task",
@@ -375,7 +435,10 @@ describe("extension startup activation", () => {
       );
       expect(created.code).toBe(0);
 
-      const logPath = path.join(context.tempRoot, "scoped-search-extension.log");
+      const logPath = path.join(
+        context.tempRoot,
+        "scoped-search-extension.log",
+      );
       await writeTestExtension({
         root: path.join(context.pmPath, "extensions"),
         directory: "scoped-search-ext",
@@ -400,7 +463,7 @@ describe("extension startup activation", () => {
           "  });",
           "  api.registerCommand({",
           '    name: "provider doctor",',
-          '    run: async () => ({ ok: true }),',
+          "    run: async () => ({ ok: true }),",
           "  });",
           "}",
           "export default { activate };",
@@ -410,14 +473,23 @@ describe("extension startup activation", () => {
 
       const settings = await readSettings(context.pmPath);
       settings.search.provider = "scoped-provider";
-      settings.vector_store.lancedb.path = path.join(context.tempRoot, "scoped-search-vectors");
+      settings.vector_store.lancedb.path = path.join(
+        context.tempRoot,
+        "scoped-search-vectors",
+      );
       await writeSettings(context.pmPath, settings);
 
-      const list = runSourceCli(context, ["list-open", "--json"], { expectJson: true });
+      const list = runSourceCli(context, ["list-open", "--json"], {
+        expectJson: true,
+      });
       expect(list.code).toBe(0);
       expect(await readOptionalFile(logPath)).toBe("");
 
-      const search = runSourceCli(context, ["search", "Scoped", "--mode", "semantic", "--json"], { expectJson: true });
+      const search = runSourceCli(
+        context,
+        ["search", "Scoped", "--mode", "semantic", "--json"],
+        { expectJson: true },
+      );
       expect(search.code).toBe(0);
       expect(search.json).toMatchObject({
         query: "Scoped",

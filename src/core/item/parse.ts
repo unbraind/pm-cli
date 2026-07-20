@@ -36,9 +36,8 @@ export function parseTags(raw: string): string[] {
   if (trimmed === "") {
     return [];
   }
-  const source = coerceJsonTagArray(trimmed) ?? trimmed;
+  const source = coerceJsonTagArray(trimmed) ?? trimmed.split(",");
   const tags = source
-    .split(",")
     .map((tag) => tag.trim())
     .filter(Boolean)
     .map((tag) => tag.toLowerCase());
@@ -175,7 +174,7 @@ export function applyTagRemovals(
 // `--tags '["a","b"]'`). The MCP server normalizes that upstream, but direct
 // CLI invocations used to write the raw bracket string into item metadata,
 // silently corrupting tags. Accept JSON arrays of primitives transparently.
-function coerceJsonTagArray(trimmed: string): string | null {
+function coerceJsonTagArray(trimmed: string): string[] | null {
   if (!trimmed.startsWith("[")) {
     return null;
   }
@@ -191,11 +190,10 @@ function coerceJsonTagArray(trimmed: string): string | null {
       typeof entry === "string" ||
       typeof entry === "number" ||
       typeof entry === "boolean"
-        ? String(entry).replace(/,/g, " ")
+        ? String(entry)
         : "",
     )
-    .filter((entry) => entry.length > 0)
-    .join(",");
+    .filter((entry) => entry.length > 0);
 }
 
 function normalizeLineEndings(value: string): string {
@@ -255,6 +253,12 @@ function splitCsvSegments(raw: string): string[] {
 function unquoteValue(value: string): string {
   const trimmed = value.trim();
   if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      if (typeof parsed === "string") return parsed;
+    } catch {
+      // Preserve the legacy permissive quoted-value parser for non-JSON input.
+    }
     return trimmed.slice(1, -1).replace(/\\"/g, '"');
   }
   return value;

@@ -1,11 +1,12 @@
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
+import type * as claudePluginSmokeModule from "../../../scripts/smoke-claude-plugin.mjs";
 import { createScriptHarness } from "../../helpers/scriptModule";
 
 const harness = createScriptHarness(["../../../scripts/plugin-mcp-smoke-harness.mjs"]);
 
 const SCRIPT = "scripts/smoke-claude-plugin.mjs";
-type ClaudeModule = typeof import("../../../scripts/smoke-claude-plugin.mjs");
+type ClaudeModule = typeof claudePluginSmokeModule;
 
 const REQUIRED_TOOLS = [
   "pm_run",
@@ -15,6 +16,7 @@ const REQUIRED_TOOLS = [
   "pm_list",
   "pm_get",
   "pm_create",
+  "pm_mutate",
   "pm_copy",
   "pm_focus",
   "pm_update",

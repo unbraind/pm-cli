@@ -171,7 +171,9 @@ export function getGlobalOptions(command: Command): GlobalOptions {
     json: opts.json === true ? true : undefined,
     quiet: Boolean(opts.quiet),
     noChangedFields: opts.changedFields === false,
+    ...(opts.fullChangedFields === true ? { fullChangedFields: true } : {}),
     idOnly: opts.idOnly === true,
+    ...(opts.lean === true ? { lean: true } : {}),
     path:
       typeof opts.pmPath === "string"
         ? opts.pmPath
@@ -181,7 +183,7 @@ export function getGlobalOptions(command: Command): GlobalOptions {
     noExtensions: opts.extensions === false,
     noPager: Boolean(opts.noPager),
     profile: Boolean(opts.profile),
-    author: typeof opts.author === "string" ? opts.author : undefined,
+    ...(typeof opts.author === "string" ? { author: opts.author } : {}),
   };
 }
 

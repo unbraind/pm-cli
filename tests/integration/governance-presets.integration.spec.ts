@@ -21,10 +21,15 @@ function createCliEnv(tempRoot: string): NodeJS.ProcessEnv {
 
 describe("governance presets", () => {
   it("initializes with --preset minimal in non-interactive mode", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-governance-init-minimal-"));
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-governance-init-minimal-"),
+    );
     try {
       const env = createCliEnv(tempRoot);
-      const init = runDirectDistCli(["init", "--json", "--preset", "minimal"], { env, expectJson: true });
+      const init = runDirectDistCli(["init", "--json", "--preset", "minimal"], {
+        env,
+        expectJson: true,
+      });
       expect(init.code).toBe(0);
       const payload = init.json as {
         governance_preset: string;
@@ -54,10 +59,15 @@ describe("governance presets", () => {
   });
 
   it("initializes with --preset strict in non-interactive mode", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-governance-init-strict-"));
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-governance-init-strict-"),
+    );
     try {
       const env = createCliEnv(tempRoot);
-      const init = runDirectDistCli(["init", "--json", "--preset", "strict"], { env, expectJson: true });
+      const init = runDirectDistCli(["init", "--json", "--preset", "strict"], {
+        env,
+        expectJson: true,
+      });
       expect(init.code).toBe(0);
       const payload = init.json as {
         governance_preset: string;
@@ -108,7 +118,15 @@ describe("governance presets", () => {
       expect(minimalDefaultCreate.code).toBe(0);
 
       const setStrictPreset = context.runCli(
-        ["config", "project", "set", "governance-preset", "--policy", "strict", "--json"],
+        [
+          "config",
+          "project",
+          "set",
+          "governance-preset",
+          "--policy",
+          "strict",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(setStrictPreset.code).toBe(0);
@@ -140,20 +158,27 @@ describe("governance presets", () => {
       expect(envelope.recovery?.attempted_command).toBeUndefined();
       expect(envelope.recovery?.normalized_args).toBeUndefined();
       expect(envelope.recovery?.missing).toBeUndefined();
-      expect(envelope.recovery?.missing_required_fields).toEqual(expect.arrayContaining(["--message"]));
-      expect(envelope.recovery?.suggested_flags).toEqual(expect.arrayContaining(["--create-mode progressive", "--message"]));
+      expect(envelope.recovery?.missing_required_fields).toEqual(
+        expect.arrayContaining(["--message"]),
+      );
+      expect(envelope.recovery?.suggested_flags).toEqual(
+        expect.arrayContaining(["--create-mode progressive", "--message"]),
+      );
 
-      const strictDefaultCreateExplain = context.runCli([
-        "create",
-        "--json",
-        "--explain",
-        "--title",
-        "governance-create-default-strict",
-        "--description",
-        "Strict preset should require strict create fields",
-        "--type",
-        "Task",
-      ]);
+      const strictDefaultCreateExplain = context.runCli(
+        [
+          "create",
+          "--json",
+          "--explain",
+          "--title",
+          "governance-create-default-strict",
+          "--description",
+          "Strict preset should require strict create fields",
+          "--type",
+          "Task",
+        ],
+        { preserveDefaultMutationOutput: true },
+      );
       expect(strictDefaultCreateExplain.code).toBe(2);
       const explainEnvelope = JSON.parse(strictDefaultCreateExplain.stderr) as {
         recovery?: {
@@ -162,9 +187,15 @@ describe("governance presets", () => {
           missing_required_fields?: string[];
         };
       };
-      expect(explainEnvelope.recovery?.attempted_command).toContain("pm create");
-      expect(explainEnvelope.recovery?.normalized_args).toEqual(expect.arrayContaining(["--explain"]));
-      expect(explainEnvelope.recovery?.missing_required_fields).toEqual(expect.arrayContaining(["--message"]));
+      expect(explainEnvelope.recovery?.attempted_command).toContain(
+        "pm create",
+      );
+      expect(explainEnvelope.recovery?.normalized_args).toEqual(
+        expect.arrayContaining(["--explain"]),
+      );
+      expect(explainEnvelope.recovery?.missing_required_fields).toEqual(
+        expect.arrayContaining(["--message"]),
+      );
     });
   });
 
@@ -187,35 +218,88 @@ describe("governance presets", () => {
       const id = (createSeed.json as { item?: { id?: string } }).item?.id ?? "";
       expect(id.length).toBeGreaterThan(0);
 
-      const claimOwnerA = context.runCli(["claim", id, "--json", "--author", "owner-a", "--message", "Claim seed item"], {
-        expectJson: true,
-      });
+      const claimOwnerA = context.runCli(
+        [
+          "claim",
+          id,
+          "--json",
+          "--author",
+          "owner-a",
+          "--message",
+          "Claim seed item",
+        ],
+        {
+          expectJson: true,
+        },
+      );
       expect(claimOwnerA.code).toBe(0);
 
       const minimalUpdate = context.runCli(
-        ["update", id, "--json", "--author", "owner-b", "--status", "blocked", "--message", "minimal preset update"],
+        [
+          "update",
+          id,
+          "--json",
+          "--author",
+          "owner-b",
+          "--status",
+          "blocked",
+          "--message",
+          "minimal preset update",
+        ],
         { expectJson: true },
       );
       expect(minimalUpdate.code).toBe(0);
-      expect((minimalUpdate.json as { warnings?: string[] }).warnings ?? []).toEqual([]);
+      expect(
+        (minimalUpdate.json as { warnings?: string[] }).warnings ?? [],
+      ).toEqual([]);
 
       const setDefaultPreset = context.runCli(
-        ["config", "project", "set", "governance-preset", "--policy", "default", "--json"],
+        [
+          "config",
+          "project",
+          "set",
+          "governance-preset",
+          "--policy",
+          "default",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(setDefaultPreset.code).toBe(0);
 
       const defaultUpdate = context.runCli(
-        ["update", id, "--json", "--author", "owner-b", "--status", "open", "--message", "default preset update"],
+        [
+          "update",
+          id,
+          "--json",
+          "--author",
+          "owner-b",
+          "--status",
+          "open",
+          "--message",
+          "default preset update",
+        ],
         { expectJson: true },
       );
       expect(defaultUpdate.code).toBe(0);
-      expect((defaultUpdate.json as { warnings?: string[] }).warnings ?? []).toEqual(
-        expect.arrayContaining([expect.stringContaining("ownership_warning:assignee_conflict")]),
+      expect(
+        (defaultUpdate.json as { warnings?: string[] }).warnings ?? [],
+      ).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining("ownership_warning:assignee_conflict"),
+        ]),
       );
 
       const setStrictPreset = context.runCli(
-        ["config", "project", "set", "governance-preset", "--policy", "strict", "--json"],
+        [
+          "config",
+          "project",
+          "set",
+          "governance-preset",
+          "--policy",
+          "strict",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(setStrictPreset.code).toBe(0);

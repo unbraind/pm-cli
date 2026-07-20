@@ -88,12 +88,18 @@ const SEARCH_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> = {
   },
 };
 
-const COPY_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> = Object.fromEntries(
-  COPY_FLAG_CONTRACTS.filter(({ flag }) => flag !== "--author").map(({ flag }) => [
-    flag.slice(2),
-    { type: "string", description: `Alias for options.${flag.slice(2).replaceAll("-", "_")}.` },
-  ]),
-);
+const COPY_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> =
+  Object.fromEntries(
+    COPY_FLAG_CONTRACTS.filter(({ flag }) => flag !== "--author").map(
+      ({ flag }) => [
+        flag.slice(2),
+        {
+          type: "string",
+          description: `Alias for options.${flag.slice(2).replaceAll("-", "_")}.`,
+        },
+      ],
+    ),
+  );
 
 function objectSchema(
   properties: Record<string, unknown>,
@@ -257,6 +263,50 @@ export const TOOLS: ToolDefinition[] = [
     ),
   },
   {
+    name: "pm_mutate",
+    description:
+      "Apply an ordered create/update/close batch atomically through the public pm SDK. " +
+      "Use a stable transactionId to resume interrupted work; set dryRun=true to validate and preview without writes.",
+    inputSchema: objectSchema(
+      {
+        transactionId: {
+          type: "string",
+          description: "Stable idempotency key for this atomic mutation batch.",
+        },
+        mutations: {
+          type: "array",
+          minItems: 1,
+          description:
+            "Ordered rows shaped as {op:create|update|close,id,options?,reason?}.",
+          items: {
+            type: "object",
+            properties: {
+              op: { type: "string", enum: ["create", "update", "close"] },
+              id: idSchema,
+              reason: { type: "string" },
+              options: { type: "object" },
+            },
+            required: ["op", "id"],
+            additionalProperties: false,
+          },
+        },
+        dryRun: {
+          type: "boolean",
+          description: "Validate and preview without writing.",
+        },
+        createCompensation: {
+          type: "string",
+          enum: ["close", "delete"],
+          description:
+            "How a failed batch compensates created items; defaults to close.",
+        },
+        lockTtlSeconds: { type: "number" },
+        lockWaitMs: { type: "number" },
+      },
+      ["transactionId", "mutations"],
+    ),
+  },
+  {
     name: "pm_copy",
     description:
       "Copy an existing pm item into a new id while resetting lifecycle fields. " +
@@ -404,8 +454,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "pm_files",
-    description:
-      "List, add, remove, or validate linked files for a pm item.",
+    description: "List, add, remove, or validate linked files for a pm item.",
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
       "id",
     ]),

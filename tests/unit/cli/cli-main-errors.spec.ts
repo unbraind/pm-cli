@@ -1041,7 +1041,10 @@ describe("CLI bootstrap entrypoints", () => {
 
   it("refuses bootstrap flag typo corrections until the user retries explicitly", async () => {
     await withTempPmPath(async (context) => {
-      const result = await context.runCliInProcess(["create", "--titel", "Needs explicit retry"]);
+      const result = await context.runCliInProcess(
+        ["create", "--titel", "Needs explicit retry"],
+        { preserveDefaultMutationOutput: true },
+      );
       expect(result.code).toBe(EXIT_CODE.USAGE);
       expect(result.stderr).toContain("Refusing to auto-correct mutating option --titel to --title");
       expect(result.stderr).toContain("pm create --title");
@@ -3616,6 +3619,7 @@ describe("CLI bootstrap argument helpers", () => {
       noPager: true,
       json: true,
       quiet: true,
+      lean: false,
     });
 
     expect(parseBootstrapHelpRequest(["--json", "help", "extension", "doctor", "--explain"])).toEqual({
@@ -3640,6 +3644,7 @@ describe("CLI bootstrap argument helpers", () => {
       noPager: false,
       json: false,
       quiet: false,
+      lean: false,
     });
     expect(stripGlobalBootstrapTokens(["--json", "--pm-path", "tracker", "--profile", "list", "--", "--quiet"])).toEqual([
       "list",

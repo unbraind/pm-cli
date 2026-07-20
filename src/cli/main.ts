@@ -59,9 +59,7 @@ import {
   type PmCliErrorContext,
   type PmCliErrorRecoveryPayload,
 } from "../core/shared/errors.js";
-import {
-  asRecordOrNull,
-} from "../core/shared/primitives.js";
+import { asRecordOrNull } from "../core/shared/primitives.js";
 import { printError, printResult } from "../core/output/output.js";
 import { maybeRunFirstUseTelemetryPrompt } from "../core/telemetry/consent.js";
 import {
@@ -117,7 +115,15 @@ import {
   formatPmCliErrorForDisplay,
   formatPmCliErrorForJson,
   formatUnknownErrorForJson,
+  projectLeanErrorEnvelope,
 } from "./error-guidance.js";
+import {
+  describeUnknownError,
+  isCommanderError,
+  normalizeThrownExitCode,
+  readThrownExitCode,
+  wrapThrownErrorForSentry,
+} from "../sdk/error-runtime.js";
 import {
   applyDefaultOutputFormat,
   clearResolvedGlobalOptions,
@@ -321,57 +327,7 @@ const loadOperationRegistrationModule =
     () => import("./register-operations.js"),
   );
 
-function describeUnknownError(error: unknown): string {
-  if (error instanceof PmCliError) {
-    return error.message;
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return "Unknown failure";
-}
-
-function readThrownExitCode(error: unknown): number | undefined {
-  if (typeof error !== "object" || error === null || !("exitCode" in error)) {
-    return undefined;
-  }
-  const exitCode = (error as { exitCode?: unknown }).exitCode;
-  return typeof exitCode === "number" && Number.isFinite(exitCode)
-    ? exitCode
-    : undefined;
-}
-
-function normalizeThrownExitCode(exitCode: number): number {
-  const normalized = Math.trunc(exitCode);
-  return normalized > EXIT_CODE.SUCCESS
-    ? normalized
-    : EXIT_CODE.GENERIC_FAILURE;
-}
-
-function isCommanderError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    typeof (error as { code?: unknown }).code === "string" &&
-    (error as { code: string }).code.startsWith("commander.")
-  );
-}
-
 /* c8 ignore start */
-function wrapThrownErrorForSentry(error: unknown, message: string): Error {
-  if (error instanceof Error) {
-    return error;
-  }
-  const wrapped = new Error(message) as Error & { exitCode?: number };
-  const exitCode = readThrownExitCode(error);
-  /* c8 ignore next */
-  if (exitCode !== undefined) {
-    wrapped.exitCode = normalizeThrownExitCode(exitCode);
-  }
-  return wrapped;
-}
-
 function renderAttemptedCommand(argv: string[]): string {
   return renderPmCommand(argv);
 }
@@ -974,7 +930,9 @@ function extractCommandScopedOptions(
   delete scoped.pager;
   // Global output controls must not leak into per-command mutation fields.
   delete scoped.changedFields;
+  delete scoped.fullChangedFields;
   delete scoped.idOnly;
+  delete scoped.lean;
 
   const looseOptions = parseLooseCommandOptions(commandArgs);
   for (const [key, value] of Object.entries(looseOptions)) {
@@ -2413,7 +2371,9 @@ async function registerDynamicExtensionCommandPaths(
   // Ensure usage/help/error formatting overrides are available even when parse
   // errors occur before preAction hooks initialize full runtime extension state.
   setActiveExtensionServices(snapshot.services);
-  activeRuntimeExtensionCommandDescriptors = new Map(snapshot.commandDescriptors);
+  activeRuntimeExtensionCommandDescriptors = new Map(
+    snapshot.commandDescriptors,
+  );
   await maybeAttachCreateUpdatePolicyHelpText(
     rootProgram,
     pmRoot,
@@ -2427,7 +2387,12 @@ async function registerDynamicExtensionCommandPaths(
     snapshot.commandHandlers,
     snapshot.commandDescriptors,
     snapshot.commandAliases,
-    (warning) => reportExtensionCommandCollision(snapshot.activationWarnings, printError, warning),
+    (warning) =>
+      reportExtensionCommandCollision(
+        snapshot.activationWarnings,
+        printError,
+        warning,
+      ),
   );
   const registerCommandPath = (commandPath: string): void => {
     const pathParts = commandPath.split(" ").filter((part) => part.length > 0);
@@ -2535,7 +2500,10 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
     const bootstrapGlobalOptions = getGlobalOptions(actionCommand);
     const commandPath = getCommandPath(actionCommand);
     let commandArgs = actionCommand.args.map(String);
-    let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs);
+    let commandOptions = extractCommandScopedOptions(
+      actionCommand,
+      commandArgs,
+    );
     let globalOptions = { ...bootstrapGlobalOptions };
     await maybeRunFirstUseTelemetryPrompt(commandPath, globalOptions);
     const fallbackPmRoot = resolvePmRoot(
@@ -2582,11 +2550,12 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
     setActiveExtensionRenderers(runtimeExtensions.renderers);
     setActiveExtensionRegistrations(runtimeExtensions.registrations);
 
-    const extensionFlagDefinitions = collectExtensionFlagDefinitionsForInvocation(
-      runtimeExtensions.registrations,
-      commandPath,
-      commandArgs,
-    );
+    const extensionFlagDefinitions =
+      collectExtensionFlagDefinitionsForInvocation(
+        runtimeExtensions.registrations,
+        commandPath,
+        commandArgs,
+      );
     commandOptions = extractCommandScopedOptions(
       actionCommand,
       commandArgs,
@@ -2680,7 +2649,8 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
     });
     sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
       source_context: activeTelemetryCommandContext?.source_context,
-      source_context_source: activeTelemetryCommandContext?.source_context_source,
+      source_context_source:
+        activeTelemetryCommandContext?.source_context_source,
     });
     sentryStartCommandSpan(commandPath);
 
@@ -3227,7 +3197,11 @@ async function handleRunPmCliKnownError(
   const classification = classifyPmCliError(errorMessage, enrichedContext);
   const renderedError = context.jsonErrors
     ? JSON.stringify(
-        formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext),
+        context.bootstrapGlobal.lean
+          ? projectLeanErrorEnvelope(
+              formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext),
+            )
+          : formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext),
         null,
         2,
       )
@@ -3337,6 +3311,7 @@ async function handleUnknownHelpCommandError(
         { message: unknownMessage },
         program,
         recoveryCommandDescriptors,
+        context.bootstrapGlobal.lean === true,
       )
     : await formatCommanderUsageMessage(
         { message: unknownMessage },
@@ -3432,6 +3407,7 @@ async function handleRunPmCliCommanderUsageError(
         context.error,
         program,
         activeRuntimeExtensionCommandDescriptors,
+        context.bootstrapGlobal.lean === true,
       )
     : await formatCommanderUsageMessage(
         context.error,
@@ -3558,10 +3534,14 @@ export async function runPmCli(
   try {
     const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
     if (bootstrapGlobal.authorMissingValue) {
-      throw new PmCliError("--author requires a non-empty value.", EXIT_CODE.USAGE, {
-        code: "missing_required_argument",
-        nextSteps: ["Pass an explicit author identifier with --author <id>."],
-      });
+      throw new PmCliError(
+        "--author requires a non-empty value.",
+        EXIT_CODE.USAGE,
+        {
+          code: "missing_required_argument",
+          nextSteps: ["Pass an explicit author identifier with --author <id>."],
+        },
+      );
     }
     restorePmAuthor = applyInvocationAuthorOverride(bootstrapGlobal.author);
     enforceExplicitRetryForFlagTypos(bootstrapInvocation);

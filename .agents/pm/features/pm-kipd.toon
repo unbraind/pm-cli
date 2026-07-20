@@ -2,18 +2,46 @@ id: pm-kipd
 title: "GH-438: accept a full item JSON document on stdin for pm create / pm update"
 description: "Dogfood GH-438: no single-document create/update; agents translate items into 10-20 flags. Duplicate check: searched stdin json/document create — only per-field stdin support (--dep -, --note -) exists; no open overlap."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",gh-issue
 created_at: "2026-07-06T08:03:04.192Z"
-updated_at: "2026-07-14T17:05:05.785Z"
+updated_at: "2026-07-20T10:27:07.952Z"
+closed_at: "2026-07-20T10:26:28.799Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: create/update accept --stdin-json full-item documents incl. facets; get->modify->update round-trip spec green; unknown keys rejected with did-you-mean; docs+contracts updated
 parent: pm-mpbb
 risk: medium
 confidence: high
-dependencies[2]{id,kind,created_at,author,source_kind}:
+resolution: Create and update accept full item JSON documents on stdin with deterministic precedence and safe round trips.
+expected_result: "Agents can pipe complete item documents into create/update, preserve facets, reject likely typos, and override document values with explicit flags."
+actual_result: "Direct and get-envelope documents normalize into typed mutation options; explicit flags win, persisted annotations are deduplicated, custom fields remain extensible, and packed round trips are no-ops unless changed."
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-srns,related,"2026-07-14T17:05:05.070Z",null,null
   pm-xwah,related,"2026-07-14T17:05:05.766Z",null,null
+  pm-cfed,related,"2026-07-20T08:49:46.009Z",null,null
+  pm-ds3b,related,"2026-07-20T08:49:46.009Z",null,null
+  pm-g9xk,related,"2026-07-20T08:49:46.009Z",null,null
+  pm-xm7c,related,"2026-07-20T08:49:46.009Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-20T09:59:53.386Z",codex-20260720,"Evidence: create/update now accept complete get --full JSON envelopes through --stdin-json, explicit flags win, persisted annotations are not duplicated, and empty persisted facet arrays do not clear data. Temp packed get-to-update round trip returned changed_field_count=0; linked focused suites passed in the pm sandbox."
+  "2026-07-20T10:26:24.646Z",codex-20260720,"Greptile finding disposition: flat update documents now filter persisted comments/notes/learnings exactly like get envelopes while retaining new annotations. Arbitrary non-near-match keys remain intentional custom fields for universal schemas; near-match typos still fail with hints. Full coverage is 100/100/100/100."
+files[5]{path,scope,note}:
+  src/cli/register-mutation.ts,project,create and update stdin adapters
+  src/sdk/cli-contracts/flag-contracts.ts,project,stdin JSON flag contracts
+  src/sdk/structured-mutations.ts,project,full item normalization
+  tests/integration/structured-mutation-io.integration.spec.ts,project,Full get update round-trip acceptance
+  tests/unit/cli/structured-mutation-registration.spec.ts,project,Whole-item stdin precedence and empty input coverage
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,600
+  node scripts/run-tests.mjs test -- tests/unit/cli/structured-mutation-registration.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,project,180
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrt1vzav-c9t8nc,test,failed,"2026-07-20T09:56:44.415Z","2026-07-20T09:57:03.991Z","2026-07-20T09:57:03.991Z",1,1,0
+  test-local-mrt1yie2-rcpq2x,test,passed,"2026-07-20T09:58:42.756Z","2026-07-20T09:59:02.042Z","2026-07-20T09:59:02.042Z",2,0,0
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,get modify update round-trip guide
+  docs/SDK.md,project,structured item adapter reference
+close_reason: "Implemented full-item JSON stdin create/update with flag precedence, persisted annotation deduplication for envelope and flat documents, facet-safe round trips, contracts, docs, Greptile follow-up, linked tests, and packed proof."
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/438\n\n## Problem\nNo way to create/update an item from one JSON document: `pm create -` treats `-` as the title; `--stdin` is unknown. Structured agents must translate an item into 10-20 flags; strict-mode errors suggest a 19-flag retry.\n\n## Proposed fix\n`pm create --stdin-json` and `pm update <id> --stdin-json` accepting the same item shape `pm get --json` emits (round-trip: get | modify | update). Flags win over document keys when both given. Reject unknown keys with did-you-mean.\n\n## Definition of done\nCreate+update accept full item documents on stdin incl. deps/comments/files facets; round-trip spec (get -> update) green; SDK/MCP parity noted (MCP already takes structured params); docs + contracts updated."

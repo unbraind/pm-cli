@@ -3,8 +3,16 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
 import { describe, expect, it, vi } from "vitest";
-import { _testOnly as mcpServerTestOnly, handleRequest, processRpcLine, startMcpServer } from "../../src/mcp/server.js";
-import { TOOLS, buildMcpToolContracts } from "../../src/mcp/tool-definitions.js";
+import {
+  _testOnly as mcpServerTestOnly,
+  handleRequest,
+  processRpcLine,
+  startMcpServer,
+} from "../../src/mcp/server.js";
+import {
+  TOOLS,
+  buildMcpToolContracts,
+} from "../../src/mcp/tool-definitions.js";
 import * as extensionLoader from "../../src/core/extensions/loader.js";
 import * as extensionRuntime from "../../src/core/extensions/index.js";
 import {
@@ -38,6 +46,7 @@ const EXPECTED_TOOL_NAMES = [
   "pm_list",
   "pm_get",
   "pm_create",
+  "pm_mutate",
   "pm_copy",
   "pm_focus",
   "pm_update",
@@ -111,15 +120,21 @@ describe("MCP protocol handshake", () => {
     expect(result.capabilities).toMatchObject({ tools: {} });
   });
 
-  it("tools/list returns exactly the 29 expected tools including the new narrow tools", async () => {
+  it("tools/list returns exactly the 30 expected tools including the new narrow tools", async () => {
     const result = (await handleRequest({
       jsonrpc: "2.0",
       id: 2,
       method: "tools/list",
-    })) as { tools?: Array<{ name?: string; description?: string; inputSchema?: unknown }> };
+    })) as {
+      tools?: Array<{
+        name?: string;
+        description?: string;
+        inputSchema?: unknown;
+      }>;
+    };
 
     const tools = result.tools ?? [];
-    expect(tools).toHaveLength(29);
+    expect(tools).toHaveLength(30);
 
     const names = tools.map((tool) => tool.name);
     expect(new Set(names)).toEqual(new Set(EXPECTED_TOOL_NAMES));
@@ -136,9 +151,15 @@ describe("MCP protocol handshake", () => {
 
   it("builds stable sorted MCP tool contracts with required fields", () => {
     const contracts = buildMcpToolContracts();
-    expect(contracts.map((contract) => contract.name)).toEqual([...EXPECTED_TOOL_NAMES].sort());
-    expect(contracts.every((contract) => contract.input_schema.type === "object")).toBe(true);
-    expect(contracts.find((contract) => contract.name === "pm_run")).toMatchObject({
+    expect(contracts.map((contract) => contract.name)).toEqual(
+      [...EXPECTED_TOOL_NAMES].sort(),
+    );
+    expect(
+      contracts.every((contract) => contract.input_schema.type === "object"),
+    ).toBe(true);
+    expect(
+      contracts.find((contract) => contract.name === "pm_run"),
+    ).toMatchObject({
       required: ["action"],
       input_schema: {
         properties: expect.objectContaining({
@@ -149,8 +170,15 @@ describe("MCP protocol handshake", () => {
         }),
       },
     });
-    expect(contracts.find((contract) => contract.name === "pm_create")?.required).toEqual(["options"]);
-    expect(contracts.find((contract) => contract.name === "pm_health")?.required).toEqual([]);
+    expect(
+      contracts.find((contract) => contract.name === "pm_create")?.required,
+    ).toEqual(["options"]);
+    expect(
+      contracts.find((contract) => contract.name === "pm_mutate")?.required,
+    ).toEqual(["mutations", "transactionId"]);
+    expect(
+      contracts.find((contract) => contract.name === "pm_health")?.required,
+    ).toEqual([]);
   });
 
   it("keeps the pm_graph subcommand enum in lockstep with the shared contract", () => {
@@ -174,92 +202,249 @@ describe("MCP protocol handshake", () => {
     try {
       schema.required = "not-an-array";
       const contracts = buildMcpToolContracts();
-      expect(contracts.find((contract) => contract.name === "pm_health")?.required).toEqual([]);
+      expect(
+        contracts.find((contract) => contract.name === "pm_health")?.required,
+      ).toEqual([]);
     } finally {
       schema.required = originalRequired;
     }
   });
 
   it("covers MCP option normalization and typo warning helpers", () => {
-    expect(mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_create", [] as never)).toEqual([]);
-    expect(mcpServerTestOnly.normalizeMcpOptionsArrays({ tags: ["a", "b"], fields: ["id", "title"] })).toEqual({
+    expect(
+      mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_create", [] as never),
+    ).toEqual([]);
+    expect(
+      mcpServerTestOnly.normalizeMcpOptionsArrays({
+        tags: ["a", "b"],
+        fields: ["id", "title"],
+      }),
+    ).toEqual({
       tags: "a,b",
       fields: "id,title",
     });
-    expect(mcpServerTestOnly.normalizeMcpOptionsArrays({ tag: ["a", "b"], role: "active", add: "file" }, "files")).toEqual({
+    expect(
+      mcpServerTestOnly.normalizeMcpOptionsArrays(
+        { tag: ["a", "b"], role: "active", add: "file" },
+        "files",
+      ),
+    ).toEqual({
       tag: ["a", "b"],
       role: "active",
       add: ["file"],
     });
-    expect(mcpServerTestOnly.normalizeMcpOptionsArrays({ remove: "src/old.ts" }, "docs")).toEqual({ remove: ["src/old.ts"] });
-    expect(mcpServerTestOnly.normalizeMcpOptionsArrays({ add: "plain" })).toEqual({ add: "plain" });
-    expect(mcpServerTestOnly.normalizeMcpOptionsArrays({ add: "comment" }, "comments")).toEqual({ add: "comment" });
-    expect(mcpServerTestOnly.withAddNoteOption({ note: "already-set" })).toEqual({ note: "already-set" });
-    expect(mcpServerTestOnly.withAddNoteOption({ addNote: 123, other: true })).toEqual({ other: true });
-    expect(mcpServerTestOnly.withAddNoteOption({ addNote: "linked note" })).toEqual({ note: "linked note" });
-    expect(mcpServerTestOnly.withAddNoteOption({ addNote: "ignored", note: "explicit" })).toEqual({ note: "explicit" });
     expect(
-      mcpServerTestOnly.withFilesDiscoveryOptions({ discover: true, discoveryNote: "found", other: "kept" }),
+      mcpServerTestOnly.normalizeMcpOptionsArrays(
+        { remove: "src/old.ts" },
+        "docs",
+      ),
+    ).toEqual({ remove: ["src/old.ts"] });
+    expect(
+      mcpServerTestOnly.normalizeMcpOptionsArrays({ add: "plain" }),
+    ).toEqual({ add: "plain" });
+    expect(
+      mcpServerTestOnly.normalizeMcpOptionsArrays(
+        { add: "comment" },
+        "comments",
+      ),
+    ).toEqual({ add: "comment" });
+    expect(
+      mcpServerTestOnly.withAddNoteOption({ note: "already-set" }),
+    ).toEqual({ note: "already-set" });
+    expect(
+      mcpServerTestOnly.withAddNoteOption({ addNote: 123, other: true }),
+    ).toEqual({ other: true });
+    expect(
+      mcpServerTestOnly.withAddNoteOption({ addNote: "linked note" }),
+    ).toEqual({ note: "linked note" });
+    expect(
+      mcpServerTestOnly.withAddNoteOption({
+        addNote: "ignored",
+        note: "explicit",
+      }),
+    ).toEqual({ note: "explicit" });
+    expect(
+      mcpServerTestOnly.withFilesDiscoveryOptions({
+        discover: true,
+        discoveryNote: "found",
+        other: "kept",
+      }),
     ).toEqual({ note: "found", other: "kept" });
-    expect(mcpServerTestOnly.withFilesDiscoveryOptions({ discoveryNote: "ignored", note: "explicit" })).toEqual({ note: "explicit" });
-    expect(mcpServerTestOnly.nearestDeclaredKey("optons", ["options", "author"])).toBe("options");
-    expect(mcpServerTestOnly.nearestDeclaredKey("zzzzzz", ["options", "author"])).toBeUndefined();
-    expect(mcpServerTestOnly.readScalarString({ value: 42 }, "value")).toBe("42");
-    expect(mcpServerTestOnly.readScalarString({ value: Number.POSITIVE_INFINITY }, "value")).toBeUndefined();
-    expect(mcpServerTestOnly.readScalarString({ value: false }, "value")).toBeUndefined();
-    expect(mcpServerTestOnly.readScalarString({ value: "" }, "value")).toBeUndefined();
-    expect(mcpServerTestOnly.readScalarStringAllowBlank({ value: 7 }, "value")).toBe("7");
-    expect(mcpServerTestOnly.readScalarStringAllowBlank({ value: Number.NaN }, "value")).toBeUndefined();
-    expect(mcpServerTestOnly.readScalarStringAllowBlank({ value: "" }, "value")).toBe("");
-    expect(() => mcpServerTestOnly.readRequiredString({}, "action")).toThrow(/Missing required argument: action/);
-    expect(mcpServerTestOnly.readRequiredString({ action: "run" }, "action")).toBe("run");
+    expect(
+      mcpServerTestOnly.withFilesDiscoveryOptions({
+        discoveryNote: "ignored",
+        note: "explicit",
+      }),
+    ).toEqual({ note: "explicit" });
+    expect(
+      mcpServerTestOnly.nearestDeclaredKey("optons", ["options", "author"]),
+    ).toBe("options");
+    expect(
+      mcpServerTestOnly.nearestDeclaredKey("zzzzzz", ["options", "author"]),
+    ).toBeUndefined();
+    expect(mcpServerTestOnly.readScalarString({ value: 42 }, "value")).toBe(
+      "42",
+    );
+    expect(
+      mcpServerTestOnly.readScalarString(
+        { value: Number.POSITIVE_INFINITY },
+        "value",
+      ),
+    ).toBeUndefined();
+    expect(
+      mcpServerTestOnly.readScalarString({ value: false }, "value"),
+    ).toBeUndefined();
+    expect(
+      mcpServerTestOnly.readScalarString({ value: "" }, "value"),
+    ).toBeUndefined();
+    expect(
+      mcpServerTestOnly.readScalarStringAllowBlank({ value: 7 }, "value"),
+    ).toBe("7");
+    expect(
+      mcpServerTestOnly.readScalarStringAllowBlank(
+        { value: Number.NaN },
+        "value",
+      ),
+    ).toBeUndefined();
+    expect(
+      mcpServerTestOnly.readScalarStringAllowBlank({ value: "" }, "value"),
+    ).toBe("");
+    expect(() => mcpServerTestOnly.readRequiredString({}, "action")).toThrow(
+      /Missing required argument: action/,
+    );
+    expect(
+      mcpServerTestOnly.readRequiredString({ action: "run" }, "action"),
+    ).toBe("run");
     expect(mcpServerTestOnly.readStringArray("not-array")).toEqual([]);
-    expect(mcpServerTestOnly.readStringArray(["one", 2, ""])).toEqual(["one", "2"]);
-    expect(mcpServerTestOnly.normalizeActionName("  History Repair! ")).toBe("history-repair");
-    expect(mcpServerTestOnly.normalizeCommandPath("  Foo   Bar ")).toBe("foo bar");
-    expect(mcpServerTestOnly.normalizeCommandPath(" /Foo.Bar_baz/ ")).toBe("/foo.bar_baz/");
-    expect(mcpServerTestOnly.globalOptions({ path: "/tmp/pm-mcp", noExtensions: true })).toMatchObject({
+    expect(mcpServerTestOnly.readStringArray(["one", 2, ""])).toEqual([
+      "one",
+      "2",
+    ]);
+    expect(mcpServerTestOnly.normalizeActionName("  History Repair! ")).toBe(
+      "history-repair",
+    );
+    expect(mcpServerTestOnly.normalizeCommandPath("  Foo   Bar ")).toBe(
+      "foo bar",
+    );
+    expect(mcpServerTestOnly.normalizeCommandPath(" /Foo.Bar_baz/ ")).toBe(
+      "/foo.bar_baz/",
+    );
+    expect(
+      mcpServerTestOnly.globalOptions({
+        path: "/tmp/pm-mcp",
+        noExtensions: true,
+      }),
+    ).toMatchObject({
       json: true,
       quiet: true,
       noPager: true,
       path: "/tmp/pm-mcp",
     });
-    expect(mcpServerTestOnly.extensionOptionsFromArgs({ action: "x", custom: "arg", args: ["kept"] }, { custom: "option" })).toEqual({
+    expect(
+      mcpServerTestOnly.extensionOptionsFromArgs(
+        { action: "x", custom: "arg", args: ["kept"] },
+        { custom: "option" },
+      ),
+    ).toEqual({
       custom: "option",
     });
-    expect(mcpServerTestOnly.optionsWithAuthor({ action: "files", options: { add: "src/a.ts" }, author: "agent" }, "files")).toEqual({
+    expect(
+      mcpServerTestOnly.optionsWithAuthor(
+        { action: "files", options: { add: "src/a.ts" }, author: "agent" },
+        "files",
+      ),
+    ).toEqual({
       add: ["src/a.ts"],
       author: "agent",
     });
-    expect(mcpServerTestOnly.optionsWithAuthor({ status: "open", limit: 5, options: { status: "closed" } }, "list")).toEqual({
+    expect(
+      mcpServerTestOnly.optionsWithAuthor(
+        { status: "open", limit: 5, options: { status: "closed" } },
+        "list",
+      ),
+    ).toEqual({
       status: "closed",
       limit: 5,
     });
-    expect(mcpServerTestOnly.optionsWithAuthor({ query: "sdk", mode: "hybrid", options: {} }, "search")).toEqual({
+    expect(
+      mcpServerTestOnly.optionsWithAuthor(
+        { query: "sdk", mode: "hybrid", options: {} },
+        "search",
+      ),
+    ).toEqual({
       mode: "hybrid",
     });
-    expect(mcpServerTestOnly.optionsWithAuthor({ allowMissingParent: true, options: {} }, "create")).toEqual({
+    expect(
+      mcpServerTestOnly.optionsWithAuthor(
+        { allowMissingParent: true, options: {} },
+        "create",
+      ),
+    ).toEqual({
       allowMissingParent: true,
     });
-    expect(mcpServerTestOnly.optionsWithAuthor({ duplicateOf: "pm-old", options: {} }, "close")).toEqual({
+    expect(
+      mcpServerTestOnly.optionsWithAuthor(
+        { duplicateOf: "pm-old", options: {} },
+        "close",
+      ),
+    ).toEqual({
       duplicateOf: "pm-old",
     });
-    expect(mcpServerTestOnly.optionsWithAuthor({ body: "append body", options: {} }, "append")).toEqual({ body: "append body" });
-    expect(mcpServerTestOnly.optionsWithAuthor({ author: "agent", options: { author: "explicit" } }, "create")).toEqual({
+    expect(
+      mcpServerTestOnly.optionsWithAuthor(
+        { body: "append body", options: {} },
+        "append",
+      ),
+    ).toEqual({ body: "append body" });
+    expect(
+      mcpServerTestOnly.optionsWithAuthor(
+        { author: "agent", options: { author: "explicit" } },
+        "create",
+      ),
+    ).toEqual({
       author: "explicit",
     });
-    expect(mcpServerTestOnly.optionsWithAuthor({ options: { add: "src/a.ts" } }, "docs")).toEqual({ add: ["src/a.ts"] });
-    expect(mcpServerTestOnly.optionsWithAuthor({ options: { add: "keep-scalar" } }, "notes")).toEqual({ add: "keep-scalar" });
-    expect(mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_run", { typo: true })).toEqual([]);
-    expect(mcpServerTestOnly.detectUnexpectedTopLevelKeys("unknown_tool", { typo: true })).toEqual([]);
-    expect(mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_create", { options: {} })).toEqual([]);
-    expect(mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_create", { optons: {} })[0]).toContain('did you mean "options"');
-    expect(mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_create", { totallyDifferent: true })[0]).toContain(
-      "Unexpected top-level argument",
-    );
-    expect(mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_update", { authar: "agent", author: "kept" })[0]).toContain(
-      'did you mean "author"',
-    );
+    expect(
+      mcpServerTestOnly.optionsWithAuthor(
+        { options: { add: "src/a.ts" } },
+        "docs",
+      ),
+    ).toEqual({ add: ["src/a.ts"] });
+    expect(
+      mcpServerTestOnly.optionsWithAuthor(
+        { options: { add: "keep-scalar" } },
+        "notes",
+      ),
+    ).toEqual({ add: "keep-scalar" });
+    expect(
+      mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_run", { typo: true }),
+    ).toEqual([]);
+    expect(
+      mcpServerTestOnly.detectUnexpectedTopLevelKeys("unknown_tool", {
+        typo: true,
+      }),
+    ).toEqual([]);
+    expect(
+      mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_create", {
+        options: {},
+      }),
+    ).toEqual([]);
+    expect(
+      mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_create", {
+        optons: {},
+      })[0],
+    ).toContain('did you mean "options"');
+    expect(
+      mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_create", {
+        totallyDifferent: true,
+      })[0],
+    ).toContain("Unexpected top-level argument");
+    expect(
+      mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_update", {
+        authar: "agent",
+        author: "kept",
+      })[0],
+    ).toContain('did you mean "author"');
   });
 
   it("covers MCP mutation option builders for flat package actions", () => {
@@ -379,7 +564,12 @@ describe("MCP protocol handshake", () => {
       dryRun: true,
       checkpoint: false,
     });
-    expect(mcpServerTestOnly.withMutationCompaction({ fullChangedFields: true, idOnly: true }, { title: "x" })).toEqual({
+    expect(
+      mcpServerTestOnly.withMutationCompaction(
+        { fullChangedFields: true, idOnly: true },
+        { title: "x" },
+      ),
+    ).toEqual({
       changedFields: "full",
       idOnly: true,
       runnerOptions: { title: "x" },
@@ -396,10 +586,16 @@ describe("MCP protocol handshake", () => {
       jsonrpc: "2.0",
       id: 3,
       method: "tools/list",
-    })) as { tools?: Array<{ name?: string; inputSchema?: { properties?: Record<string, { description?: string }> } }> };
+    })) as {
+      tools?: Array<{
+        name?: string;
+        inputSchema?: { properties?: Record<string, { description?: string }> };
+      }>;
+    };
 
     const pmRun = (result.tools ?? []).find((tool) => tool.name === "pm_run");
-    const actionDescription = pmRun?.inputSchema?.properties?.action?.description ?? "";
+    const actionDescription =
+      pmRun?.inputSchema?.properties?.action?.description ?? "";
     // Every canonical action must appear in the generated enumeration; the
     // string can never drift from PM_TOOL_ACTIONS since it is joined from it.
     for (const action of PM_TOOL_ACTIONS) {
@@ -421,21 +617,58 @@ describe("MCP protocol handshake", () => {
   });
 
   it("pm_context defaults to a brief compact snapshot and honors depth overrides", async () => {
-    await withTempPmPath((context) => assertPmContextDepthProjection(context, "MCP context projection target"));
+    await withTempPmPath((context) =>
+      assertPmContextDepthProjection(context, "MCP context projection target"),
+    );
   });
 
   it("pm_next recommends the next ready item and lists blocked work with their blockers", async () => {
     await withTempPmPath(async (context) => {
-      const ready = (context.runCli(
-        ["create", "--json", "--title", "Ready leaf", "--type", "Task", "--priority", "0", "--body", ""],
-        { expectJson: true },
-      ).json as { item: { id: string } }).item.id;
-      const blocker = (context.runCli(
-        ["create", "--json", "--title", "Gate", "--type", "Task", "--body", ""],
-        { expectJson: true },
-      ).json as { item: { id: string } }).item.id;
+      const ready = (
+        context.runCli(
+          [
+            "create",
+            "--json",
+            "--title",
+            "Ready leaf",
+            "--type",
+            "Task",
+            "--priority",
+            "0",
+            "--body",
+            "",
+          ],
+          { expectJson: true },
+        ).json as { item: { id: string } }
+      ).item.id;
+      const blocker = (
+        context.runCli(
+          [
+            "create",
+            "--json",
+            "--title",
+            "Gate",
+            "--type",
+            "Task",
+            "--body",
+            "",
+          ],
+          { expectJson: true },
+        ).json as { item: { id: string } }
+      ).item.id;
       context.runCli(
-        ["create", "--json", "--title", "Waiting", "--type", "Task", "--dep", `id=${blocker},kind=blocked_by`, "--body", ""],
+        [
+          "create",
+          "--json",
+          "--title",
+          "Waiting",
+          "--type",
+          "Task",
+          "--dep",
+          `id=${blocker},kind=blocked_by`,
+          "--body",
+          "",
+        ],
         { expectJson: true },
       );
 
@@ -469,25 +702,37 @@ describe("MCP protocol handshake", () => {
           jsonrpc: "2.0",
           id: 70,
           method: "tools/call",
-          params: { name: "pm_health", arguments: { path: context.pmPath, options } },
+          params: {
+            name: "pm_health",
+            arguments: { path: context.pmPath, options },
+          },
         }) as Promise<{
           structuredContent?: {
-            result?: { projection?: { mode?: string }; checks?: Array<{ details?: Record<string, unknown> }> };
+            result?: {
+              projection?: { mode?: string };
+              checks?: Array<{ details?: Record<string, unknown> }>;
+            };
           };
         }>;
 
       // No projection flag -> summary by default (ok + per-check status only).
       const summary = await callHealth({});
-      expect(summary.structuredContent?.result?.projection?.mode).toBe("summary");
+      expect(summary.structuredContent?.result?.projection?.mode).toBe(
+        "summary",
+      );
       for (const check of summary.structuredContent?.result?.checks ?? []) {
         expect(Object.keys(check.details ?? {})).toHaveLength(0);
       }
 
       // full=true opts back into the deep payload with populated check details.
       const full = await callHealth({ full: true });
-      expect(full.structuredContent?.result?.projection?.mode).not.toBe("summary");
+      expect(full.structuredContent?.result?.projection?.mode).not.toBe(
+        "summary",
+      );
       const fullChecks = full.structuredContent?.result?.checks ?? [];
-      expect(fullChecks.some((check) => Object.keys(check.details ?? {}).length > 0)).toBe(true);
+      expect(
+        fullChecks.some((check) => Object.keys(check.details ?? {}).length > 0),
+      ).toBe(true);
     });
   });
 
@@ -495,7 +740,11 @@ describe("MCP protocol handshake", () => {
     await withTempPmPath(async (context) => {
       const projectRoot = path.join(context.tempRoot, "workspace");
       await mkdir(path.join(projectRoot, "src"), { recursive: true });
-      await writeFile(path.join(projectRoot, "src", "mcp-discovered.ts"), "export const mcpDiscovered = true;\n", "utf8");
+      await writeFile(
+        path.join(projectRoot, "src", "mcp-discovered.ts"),
+        "export const mcpDiscovered = true;\n",
+        "utf8",
+      );
 
       const create = context.runCli(
         [
@@ -582,24 +831,36 @@ describe("MCP protocol handshake", () => {
   it("error envelope keeps structuredContent.result present (null) for uniform parsing (pm-l40h)", async () => {
     await withTempPmPath(async (context) => {
       const writes: string[] = [];
-      const write = vi.spyOn(process.stdout, "write").mockImplementation((chunk: unknown) => {
-        writes.push(String(chunk));
-        return true;
-      });
+      const write = vi
+        .spyOn(process.stdout, "write")
+        .mockImplementation((chunk: unknown) => {
+          writes.push(String(chunk));
+          return true;
+        });
       try {
         await processRpcLine(
           JSON.stringify({
             jsonrpc: "2.0",
             id: 71,
             method: "tools/call",
-            params: { name: "pm_get", arguments: { path: context.pmPath, id: "pm-does-not-exist" } },
+            params: {
+              name: "pm_get",
+              arguments: { path: context.pmPath, id: "pm-does-not-exist" },
+            },
           }),
         );
       } finally {
         write.mockRestore();
       }
       const response = JSON.parse(writes.join("")) as {
-        result?: { isError?: boolean; structuredContent?: { result?: unknown; error?: unknown; code?: unknown } };
+        result?: {
+          isError?: boolean;
+          structuredContent?: {
+            result?: unknown;
+            error?: unknown;
+            code?: unknown;
+          };
+        };
       };
       expect(response.result?.isError).toBe(true);
       // `result` must always be present so a consumer can read structuredContent.result uniformly.
@@ -633,7 +894,9 @@ describe("MCP protocol handshake", () => {
 
       // Clean call: all top-level keys are declared -> no warnings, no stderr.
       const cleanErr = vi.spyOn(console, "error").mockImplementation(() => {});
-      let cleanResult: { structuredContent?: { warnings?: unknown; result?: unknown } } | undefined;
+      let cleanResult:
+        | { structuredContent?: { warnings?: unknown; result?: unknown } }
+        | undefined;
       try {
         cleanResult = (await handleRequest({
           jsonrpc: "2.0",
@@ -651,7 +914,9 @@ describe("MCP protocol handshake", () => {
           },
         })) as { structuredContent?: { warnings?: unknown; result?: unknown } };
         // No pm-mcp unexpected-key warning should be emitted for a clean call.
-        const cleanStderr = cleanErr.mock.calls.map((call) => String(call[0])).join("\n");
+        const cleanStderr = cleanErr.mock.calls
+          .map((call) => String(call[0]))
+          .join("\n");
         expect(cleanStderr).not.toContain("[pm-mcp]");
       } finally {
         cleanErr.mockRestore();
@@ -661,7 +926,9 @@ describe("MCP protocol handshake", () => {
 
       // Typo'd call: `fullChangedField` is a near-miss of `fullChangedFields`.
       const typoErr = vi.spyOn(console, "error").mockImplementation(() => {});
-      let typoResult: { structuredContent?: { warnings?: string[]; result?: unknown } } | undefined;
+      let typoResult:
+        | { structuredContent?: { warnings?: string[]; result?: unknown } }
+        | undefined;
       try {
         typoResult = (await handleRequest({
           jsonrpc: "2.0",
@@ -677,10 +944,14 @@ describe("MCP protocol handshake", () => {
               options: { priority: "2", message: "typo update" },
             },
           },
-        })) as { structuredContent?: { warnings?: string[]; result?: unknown } };
+        })) as {
+          structuredContent?: { warnings?: string[]; result?: unknown };
+        };
         // Warning surfaced to stderr.
         expect(typoErr).toHaveBeenCalled();
-        const stderrText = typoErr.mock.calls.map((call) => String(call[0])).join("\n");
+        const stderrText = typoErr.mock.calls
+          .map((call) => String(call[0]))
+          .join("\n");
         expect(stderrText).toContain("fullChangedField");
         expect(stderrText).toContain("fullChangedFields");
       } finally {
@@ -690,7 +961,12 @@ describe("MCP protocol handshake", () => {
       // Warning surfaced additively in structuredContent, result still present.
       const warnings = typoResult?.structuredContent?.warnings;
       expect(Array.isArray(warnings)).toBe(true);
-      expect(warnings?.some((w) => w.includes("fullChangedField") && w.includes("fullChangedFields"))).toBe(true);
+      expect(
+        warnings?.some(
+          (w) =>
+            w.includes("fullChangedField") && w.includes("fullChangedFields"),
+        ),
+      ).toBe(true);
       expect(typoResult?.structuredContent?.result).toBeDefined();
     });
   });
@@ -756,13 +1032,15 @@ describe("MCP protocol handshake", () => {
         },
       });
       expect(topLevelList?.isError).not.toBe(true);
-      const topLevelListContent = topLevelList?.structuredContent as {
-        warnings?: string[];
-        result?: {
-          count?: number;
-          items?: Array<{ id?: string; type?: string }>;
-        };
-      } | undefined;
+      const topLevelListContent = topLevelList?.structuredContent as
+        | {
+            warnings?: string[];
+            result?: {
+              count?: number;
+              items?: Array<{ id?: string; type?: string }>;
+            };
+          }
+        | undefined;
       expect(topLevelListContent?.warnings).toBeUndefined();
       expect(topLevelListContent?.result?.count).toBe(1);
       expect(topLevelListContent?.result?.items).toEqual([
@@ -788,13 +1066,15 @@ describe("MCP protocol handshake", () => {
         },
       });
       expect(optionsOverrideList?.isError).not.toBe(true);
-      const optionsOverrideContent = optionsOverrideList?.structuredContent as {
-        warnings?: string[];
-        result?: {
-          count?: number;
-          items?: Array<{ id?: string; type?: string }>;
-        };
-      } | undefined;
+      const optionsOverrideContent = optionsOverrideList?.structuredContent as
+        | {
+            warnings?: string[];
+            result?: {
+              count?: number;
+              items?: Array<{ id?: string; type?: string }>;
+            };
+          }
+        | undefined;
       expect(optionsOverrideContent?.warnings).toBeUndefined();
       expect(optionsOverrideContent?.result?.count).toBe(1);
       expect(optionsOverrideContent?.result?.items).toEqual([
@@ -817,17 +1097,22 @@ describe("MCP protocol handshake", () => {
         },
       });
       expect(topLevelSearch?.isError).not.toBe(true);
-      const topLevelSearchContent = topLevelSearch?.structuredContent as {
-        warnings?: string[];
-        result?: {
-          count?: number;
-          items?: Array<{ id?: string; title?: string }>;
-        };
-      } | undefined;
+      const topLevelSearchContent = topLevelSearch?.structuredContent as
+        | {
+            warnings?: string[];
+            result?: {
+              count?: number;
+              items?: Array<{ id?: string; title?: string }>;
+            };
+          }
+        | undefined;
       expect(topLevelSearchContent?.warnings).toBeUndefined();
       expect(topLevelSearchContent?.result?.count).toBe(1);
       expect(topLevelSearchContent?.result?.items).toEqual([
-        expect.objectContaining({ id: targetId, title: "Top-level filter marker target task" }),
+        expect.objectContaining({
+          id: targetId,
+          title: "Top-level filter marker target task",
+        }),
       ]);
     });
   });
@@ -860,23 +1145,43 @@ describe("MCP protocol handshake", () => {
         method: "tools/call",
         params: {
           name: "pm_append",
-          arguments: { path: context.pmPath, id, author: "mcp-test", body: "Evidence: append narrow tool works." },
+          arguments: {
+            path: context.pmPath,
+            id,
+            author: "mcp-test",
+            body: "Evidence: append narrow tool works.",
+          },
         },
-      })) as { isError?: boolean; structuredContent?: { warnings?: unknown; result?: Record<string, unknown> } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: {
+          warnings?: unknown;
+          result?: Record<string, unknown>;
+        };
+      };
       expect(appendResult?.isError).not.toBe(true);
       // Declared top-level body must not trip the unexpected-key warning.
       expect(appendResult?.structuredContent?.warnings).toBeUndefined();
       // Compact-by-default mutation projection: count instead of changed_fields.
-      expect(appendResult?.structuredContent?.result?.changed_field_count).toBe(1);
-      expect(appendResult?.structuredContent?.result?.changed_fields).toBeUndefined();
+      expect(appendResult?.structuredContent?.result?.changed_field_count).toBe(
+        1,
+      );
+      expect(
+        appendResult?.structuredContent?.result?.changed_fields,
+      ).toBeUndefined();
 
       const got = (await handleRequest({
         jsonrpc: "2.0",
         id: 41,
         method: "tools/call",
-        params: { name: "pm_get", arguments: { path: context.pmPath, id, options: { depth: "full" } } },
+        params: {
+          name: "pm_get",
+          arguments: { path: context.pmPath, id, options: { depth: "full" } },
+        },
       })) as { structuredContent?: { result?: { item?: { body?: string } } } };
-      expect(got.structuredContent?.result?.item?.body).toContain("Evidence: append narrow tool works.");
+      expect(got.structuredContent?.result?.item?.body).toContain(
+        "Evidence: append narrow tool works.",
+      );
     });
   });
 
@@ -886,11 +1191,22 @@ describe("MCP protocol handshake", () => {
         jsonrpc: "2.0",
         id: 50,
         method: "tools/call",
-        params: { name: "pm_schema", arguments: { path: context.pmPath, subcommand: "list" } },
-      })) as { isError?: boolean; structuredContent?: { warnings?: unknown; result?: { builtin?: unknown[] } } };
+        params: {
+          name: "pm_schema",
+          arguments: { path: context.pmPath, subcommand: "list" },
+        },
+      })) as {
+        isError?: boolean;
+        structuredContent?: {
+          warnings?: unknown;
+          result?: { builtin?: unknown[] };
+        };
+      };
       expect(schemaList?.isError).not.toBe(true);
       expect(schemaList?.structuredContent?.warnings).toBeUndefined();
-      expect(Array.isArray(schemaList?.structuredContent?.result?.builtin)).toBe(true);
+      expect(
+        Array.isArray(schemaList?.structuredContent?.result?.builtin),
+      ).toBe(true);
 
       const addType = (await handleRequest({
         jsonrpc: "2.0",
@@ -906,7 +1222,13 @@ describe("MCP protocol handshake", () => {
             author: "mcp-test",
           },
         },
-      })) as { isError?: boolean; structuredContent?: { warnings?: unknown; result?: { registered?: boolean; type?: { name?: string } } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: {
+          warnings?: unknown;
+          result?: { registered?: boolean; type?: { name?: string } };
+        };
+      };
       expect(addType?.isError).not.toBe(true);
       expect(addType?.structuredContent?.warnings).toBeUndefined();
       expect(addType?.structuredContent?.result?.registered).toBe(true);
@@ -929,7 +1251,13 @@ describe("MCP protocol handshake", () => {
             author: "mcp-test",
           },
         },
-      })) as { isError?: boolean; structuredContent?: { warnings?: unknown; result?: { registered?: boolean } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: {
+          warnings?: unknown;
+          result?: { registered?: boolean };
+        };
+      };
       expect(addStatus?.isError).not.toBe(true);
       expect(addStatus?.structuredContent?.warnings).toBeUndefined();
       expect(addStatus?.structuredContent?.result?.registered).toBe(true);
@@ -953,9 +1281,14 @@ describe("MCP protocol handshake", () => {
             },
           },
         },
-      })) as { isError?: boolean; structuredContent?: { result?: { registered?: boolean } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: { result?: { registered?: boolean } };
+      };
       expect(addStatusFromOptions?.isError).not.toBe(true);
-      expect(addStatusFromOptions?.structuredContent?.result?.registered).toBe(true);
+      expect(addStatusFromOptions?.structuredContent?.result?.registered).toBe(
+        true,
+      );
 
       const showStatusFromOptions = (await handleRequest({
         jsonrpc: "2.0",
@@ -971,9 +1304,14 @@ describe("MCP protocol handshake", () => {
             },
           },
         },
-      })) as { isError?: boolean; structuredContent?: { result?: { status?: { id?: string } } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: { result?: { status?: { id?: string } } };
+      };
       expect(showStatusFromOptions?.isError).not.toBe(true);
-      expect(showStatusFromOptions?.structuredContent?.result?.status?.id).toBe("qa_ready");
+      expect(showStatusFromOptions?.structuredContent?.result?.status?.id).toBe(
+        "qa_ready",
+      );
 
       const removeStatus = (await handleRequest({
         jsonrpc: "2.0",
@@ -988,7 +1326,10 @@ describe("MCP protocol handshake", () => {
             author: "mcp-test",
           },
         },
-      })) as { isError?: boolean; structuredContent?: { result?: { removed?: boolean } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: { result?: { removed?: boolean } };
+      };
       expect(removeStatus?.isError).not.toBe(true);
       expect(removeStatus?.structuredContent?.result?.removed).toBe(true);
 
@@ -1005,7 +1346,10 @@ describe("MCP protocol handshake", () => {
             author: "mcp-test",
           },
         },
-      })) as { isError?: boolean; structuredContent?: { result?: { removed?: boolean } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: { result?: { removed?: boolean } };
+      };
       expect(removeType?.isError).not.toBe(true);
       expect(removeType?.structuredContent?.result?.removed).toBe(true);
 
@@ -1031,10 +1375,17 @@ describe("MCP protocol handshake", () => {
             author: "mcp-test",
           },
         },
-      })) as { isError?: boolean; structuredContent?: { result?: { registered?: boolean; field?: { key?: string } } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: {
+          result?: { registered?: boolean; field?: { key?: string } };
+        };
+      };
       expect(addField?.isError).not.toBe(true);
       expect(addField?.structuredContent?.result?.registered).toBe(true);
-      expect(addField?.structuredContent?.result?.field?.key).toBe("severity_level");
+      expect(addField?.structuredContent?.result?.field?.key).toBe(
+        "severity_level",
+      );
 
       // add-field via the nested options bag exercises the options-source arms.
       const addFieldFromOptions = (await handleRequest({
@@ -1059,9 +1410,14 @@ describe("MCP protocol handshake", () => {
             },
           },
         },
-      })) as { isError?: boolean; structuredContent?: { result?: { registered?: boolean } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: { result?: { registered?: boolean } };
+      };
       expect(addFieldFromOptions?.isError).not.toBe(true);
-      expect(addFieldFromOptions?.structuredContent?.result?.registered).toBe(true);
+      expect(addFieldFromOptions?.structuredContent?.result?.registered).toBe(
+        true,
+      );
 
       // add-field with neither commands nor requiredTypes exercises the
       // undefined-source arms (defaults applied downstream).
@@ -1079,7 +1435,10 @@ describe("MCP protocol handshake", () => {
             author: "mcp-test",
           },
         },
-      })) as { isError?: boolean; structuredContent?: { result?: { registered?: boolean } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: { result?: { registered?: boolean } };
+      };
       expect(addFieldMinimal?.isError).not.toBe(true);
       expect(addFieldMinimal?.structuredContent?.result?.registered).toBe(true);
 
@@ -1087,10 +1446,18 @@ describe("MCP protocol handshake", () => {
         jsonrpc: "2.0",
         id: 521,
         method: "tools/call",
-        params: { name: "pm_schema", arguments: { path: context.pmPath, subcommand: "list-fields" } },
-      })) as { isError?: boolean; structuredContent?: { result?: { counts?: { total?: number } } } };
+        params: {
+          name: "pm_schema",
+          arguments: { path: context.pmPath, subcommand: "list-fields" },
+        },
+      })) as {
+        isError?: boolean;
+        structuredContent?: { result?: { counts?: { total?: number } } };
+      };
       expect(listFields?.isError).not.toBe(true);
-      expect(listFields?.structuredContent?.result?.counts?.total).toBeGreaterThanOrEqual(1);
+      expect(
+        listFields?.structuredContent?.result?.counts?.total,
+      ).toBeGreaterThanOrEqual(1);
 
       const showField = (await handleRequest({
         jsonrpc: "2.0",
@@ -1098,11 +1465,19 @@ describe("MCP protocol handshake", () => {
         method: "tools/call",
         params: {
           name: "pm_schema",
-          arguments: { path: context.pmPath, options: { subcommand: "show-field", name: "severity_level" } },
+          arguments: {
+            path: context.pmPath,
+            options: { subcommand: "show-field", name: "severity_level" },
+          },
         },
-      })) as { isError?: boolean; structuredContent?: { result?: { field?: { key?: string } } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: { result?: { field?: { key?: string } } };
+      };
       expect(showField?.isError).not.toBe(true);
-      expect(showField?.structuredContent?.result?.field?.key).toBe("severity_level");
+      expect(showField?.structuredContent?.result?.field?.key).toBe(
+        "severity_level",
+      );
 
       const removeField = (await handleRequest({
         jsonrpc: "2.0",
@@ -1110,9 +1485,17 @@ describe("MCP protocol handshake", () => {
         method: "tools/call",
         params: {
           name: "pm_schema",
-          arguments: { path: context.pmPath, subcommand: "remove-field", name: "severity_level", author: "mcp-test" },
+          arguments: {
+            path: context.pmPath,
+            subcommand: "remove-field",
+            name: "severity_level",
+            author: "mcp-test",
+          },
         },
-      })) as { isError?: boolean; structuredContent?: { result?: { removed?: boolean } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: { result?: { removed?: boolean } };
+      };
       expect(removeField?.isError).not.toBe(true);
       expect(removeField?.structuredContent?.result?.removed).toBe(true);
 
@@ -1125,13 +1508,24 @@ describe("MCP protocol handshake", () => {
           name: "pm_schema",
           arguments: {
             path: context.pmPath,
-            options: { subcommand: "apply-preset", typePreset: "agile", author: "mcp-test" },
+            options: {
+              subcommand: "apply-preset",
+              typePreset: "agile",
+              author: "mcp-test",
+            },
           },
         },
-      })) as { isError?: boolean; structuredContent?: { result?: { preset?: string; registered?: unknown[] } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: {
+          result?: { preset?: string; registered?: unknown[] };
+        };
+      };
       expect(applyPreset?.isError).not.toBe(true);
       expect(applyPreset?.structuredContent?.result?.preset).toBe("agile");
-      expect(Array.isArray(applyPreset?.structuredContent?.result?.registered)).toBe(true);
+      expect(
+        Array.isArray(applyPreset?.structuredContent?.result?.registered),
+      ).toBe(true);
 
       // GH-245: add-type infer (dry-run preview) over MCP (top-level args; minCount number).
       const inferTypes = (await handleRequest({
@@ -1140,9 +1534,18 @@ describe("MCP protocol handshake", () => {
         method: "tools/call",
         params: {
           name: "pm_schema",
-          arguments: { path: context.pmPath, subcommand: "add-type", infer: true, minCount: 1, options: { apply: false } },
+          arguments: {
+            path: context.pmPath,
+            subcommand: "add-type",
+            infer: true,
+            minCount: 1,
+            options: { apply: false },
+          },
         },
-      })) as { isError?: boolean; structuredContent?: { result?: { action?: string; applied?: boolean } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: { result?: { action?: string; applied?: boolean } };
+      };
       expect(inferTypes?.isError).not.toBe(true);
       expect(inferTypes?.structuredContent?.result?.action).toBe("infer-types");
       expect(inferTypes?.structuredContent?.result?.applied).toBe(false);
@@ -1162,7 +1565,10 @@ describe("MCP protocol handshake", () => {
             author: "mcp-test",
           },
         },
-      })) as { isError?: boolean; structuredContent?: { result?: { applied?: boolean } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: { result?: { applied?: boolean } };
+      };
       expect(inferApply?.isError).not.toBe(true);
       expect(inferApply?.structuredContent?.result?.applied).toBe(true);
 
@@ -1173,9 +1579,16 @@ describe("MCP protocol handshake", () => {
         method: "tools/call",
         params: {
           name: "pm_schema",
-          arguments: { path: context.pmPath, subcommand: "add-type", infer: true },
+          arguments: {
+            path: context.pmPath,
+            subcommand: "add-type",
+            infer: true,
+          },
         },
-      })) as { isError?: boolean; structuredContent?: { result?: { min_count?: number } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: { result?: { min_count?: number } };
+      };
       expect(inferDefault?.isError).not.toBe(true);
       expect(inferDefault?.structuredContent?.result?.min_count).toBe(10);
 
@@ -1228,7 +1641,13 @@ describe("MCP protocol handshake", () => {
             author: "mcp-test",
           },
         },
-      })) as { isError?: boolean; structuredContent?: { warnings?: unknown; result?: { policy?: string } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: {
+          warnings?: unknown;
+          result?: { policy?: string };
+        };
+      };
       expect(configSet?.isError).not.toBe(true);
       expect(configSet?.structuredContent?.warnings).toBeUndefined();
       expect(configSet?.structuredContent?.result?.policy).toBe("enabled");
@@ -1239,9 +1658,16 @@ describe("MCP protocol handshake", () => {
         method: "tools/call",
         params: {
           name: "pm_config",
-          arguments: { path: context.pmPath, configAction: "get", key: "governance-require-close-reason" },
+          arguments: {
+            path: context.pmPath,
+            configAction: "get",
+            key: "governance-require-close-reason",
+          },
         },
-      })) as { isError?: boolean; structuredContent?: { result?: { policy?: string } } };
+      })) as {
+        isError?: boolean;
+        structuredContent?: { result?: { policy?: string } };
+      };
       expect(configGet?.isError).not.toBe(true);
       expect(configGet?.structuredContent?.result?.policy).toBe("enabled");
     });
@@ -1274,12 +1700,29 @@ describe("MCP protocol handshake", () => {
         method: "tools/call",
         params: {
           name: "pm_list",
-          arguments: { path: context.pmPath, status: "open", type: "Task", limit: 5 },
+          arguments: {
+            path: context.pmPath,
+            status: "open",
+            type: "Task",
+            limit: 5,
+          },
         },
-      })) as { structuredContent?: { result?: { query_summary?: { filters?: Record<string, unknown>; projection?: string } } } };
+      })) as {
+        structuredContent?: {
+          result?: {
+            query_summary?: {
+              filters?: Record<string, unknown>;
+              projection?: string;
+            };
+          };
+        };
+      };
       const listSummary = list.structuredContent?.result?.query_summary;
       expect(listSummary?.projection).toBe("compact");
-      expect(listSummary?.filters).toMatchObject({ status: "open", type: "Task" });
+      expect(listSummary?.filters).toMatchObject({
+        status: "open",
+        type: "Task",
+      });
 
       const briefList = (await handleRequest({
         jsonrpc: "2.0",
@@ -1289,8 +1732,14 @@ describe("MCP protocol handshake", () => {
           name: "pm_list",
           arguments: { path: context.pmPath, options: { brief: true } },
         },
-      })) as { structuredContent?: { result?: { query_summary?: { projection?: string } } } };
-      expect(briefList.structuredContent?.result?.query_summary?.projection).toBe("brief");
+      })) as {
+        structuredContent?: {
+          result?: { query_summary?: { projection?: string } };
+        };
+      };
+      expect(
+        briefList.structuredContent?.result?.query_summary?.projection,
+      ).toBe("brief");
 
       const search = (await handleRequest({
         jsonrpc: "2.0",
@@ -1298,9 +1747,22 @@ describe("MCP protocol handshake", () => {
         method: "tools/call",
         params: {
           name: "pm_search",
-          arguments: { path: context.pmPath, query: "query summary marker", type: "Task" },
+          arguments: {
+            path: context.pmPath,
+            query: "query summary marker",
+            type: "Task",
+          },
         },
-      })) as { structuredContent?: { result?: { query_summary?: { filters?: Record<string, unknown>; projection?: string } } } };
+      })) as {
+        structuredContent?: {
+          result?: {
+            query_summary?: {
+              filters?: Record<string, unknown>;
+              projection?: string;
+            };
+          };
+        };
+      };
       const searchSummary = search.structuredContent?.result?.query_summary;
       expect(searchSummary?.projection).toBe("compact");
       expect(searchSummary?.filters).toMatchObject({ type: "Task" });
@@ -1354,36 +1816,44 @@ describe("MCP protocol handshake", () => {
     });
 
     await withTempPmPath(async (context) => {
-      const loadSpy = vi.spyOn(extensionLoader, "loadExtensions").mockResolvedValue({
-        loaded: [],
-        failed: [],
-        warnings: [],
-      } as never);
-      const deactivateSpy = vi.spyOn(extensionLoader, "deactivateExtensions").mockRejectedValue(new Error("deactivate failed"));
-      const activateSpy = vi.spyOn(extensionLoader, "activateExtensions").mockResolvedValue({
-        hooks: createEmptyExtensionHookRegistry(),
-        commands: {
-          ...createEmptyExtensionCommandRegistry(),
-          handlers: [
-            {
-              layer: "project",
-              name: "late-handler",
-              command: "dynamic tool",
-              run: async () => ({ ok: true }),
-            },
-          ],
-        },
-        parsers: createEmptyExtensionParserRegistry(),
-        preflight: createEmptyExtensionPreflightRegistry(),
-        services: createEmptyExtensionServiceRegistry(),
-        renderers: createEmptyExtensionRendererRegistry(),
-        registrations: createEmptyExtensionRegistrationRegistry(),
-      } as never);
-      const handlerSpy = vi.spyOn(extensionRuntime, "runActiveCommandHandler").mockResolvedValue({
-        handled: false,
-        result: null,
-        warnings: ["missing-handler"],
-      });
+      const loadSpy = vi
+        .spyOn(extensionLoader, "loadExtensions")
+        .mockResolvedValue({
+          loaded: [],
+          failed: [],
+          warnings: [],
+        } as never);
+      const deactivateSpy = vi
+        .spyOn(extensionLoader, "deactivateExtensions")
+        .mockRejectedValue(new Error("deactivate failed"));
+      const activateSpy = vi
+        .spyOn(extensionLoader, "activateExtensions")
+        .mockResolvedValue({
+          hooks: createEmptyExtensionHookRegistry(),
+          commands: {
+            ...createEmptyExtensionCommandRegistry(),
+            handlers: [
+              {
+                layer: "project",
+                name: "late-handler",
+                command: "dynamic tool",
+                run: async () => ({ ok: true }),
+              },
+            ],
+          },
+          parsers: createEmptyExtensionParserRegistry(),
+          preflight: createEmptyExtensionPreflightRegistry(),
+          services: createEmptyExtensionServiceRegistry(),
+          renderers: createEmptyExtensionRendererRegistry(),
+          registrations: createEmptyExtensionRegistrationRegistry(),
+        } as never);
+      const handlerSpy = vi
+        .spyOn(extensionRuntime, "runActiveCommandHandler")
+        .mockResolvedValue({
+          handled: false,
+          result: null,
+          warnings: ["missing-handler"],
+        });
 
       try {
         await expect(
@@ -1391,7 +1861,9 @@ describe("MCP protocol handshake", () => {
             action: "dynamic-tool",
             path: context.pmPath,
           }),
-        ).rejects.toThrow("Unsupported native pm action: dynamic-tool (missing-handler)");
+        ).rejects.toThrow(
+          "Unsupported native pm action: dynamic-tool (missing-handler)",
+        );
       } finally {
         handlerSpy.mockRestore();
         activateSpy.mockRestore();
@@ -1429,7 +1901,9 @@ describe("MCP protocol handshake", () => {
   });
 
   it("returns an invalid-request error for non-object JSON-RPC lines", async () => {
-    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const write = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
     let responseText = "";
     try {
       await processRpcLine("null");
@@ -1443,7 +1917,9 @@ describe("MCP protocol handshake", () => {
   });
 
   it("returns a JSON-RPC parse error for malformed JSON lines", async () => {
-    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const write = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
     let responseText = "";
     try {
       await processRpcLine("{not-json");
@@ -1457,11 +1933,19 @@ describe("MCP protocol handshake", () => {
   });
 
   it("does not respond to JSON-RPC notifications that omit id", async () => {
-    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const write = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
     try {
-      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }));
-      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", method: "tools/list" }));
-      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", method: "not/supported" }));
+      await processRpcLine(
+        JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }),
+      );
+      await processRpcLine(
+        JSON.stringify({ jsonrpc: "2.0", method: "tools/list" }),
+      );
+      await processRpcLine(
+        JSON.stringify({ jsonrpc: "2.0", method: "not/supported" }),
+      );
       expect(write).not.toHaveBeenCalled();
     } finally {
       write.mockRestore();
@@ -1469,15 +1953,23 @@ describe("MCP protocol handshake", () => {
   });
 
   it("writes success and non-tool error JSON-RPC envelopes", async () => {
-    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const write = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
     let responses: string[] = [];
     try {
       await processRpcLine("");
       expect(write).not.toHaveBeenCalled();
 
-      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", id: 90, method: "ping" }));
-      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", id: 91, method: "not/supported" }));
-      responses = write.mock.calls.map((call) => String(call[0]).trim()).filter(Boolean);
+      await processRpcLine(
+        JSON.stringify({ jsonrpc: "2.0", id: 90, method: "ping" }),
+      );
+      await processRpcLine(
+        JSON.stringify({ jsonrpc: "2.0", id: 91, method: "not/supported" }),
+      );
+      responses = write.mock.calls
+        .map((call) => String(call[0]).trim())
+        .filter(Boolean);
     } finally {
       write.mockRestore();
     }
@@ -1499,17 +1991,29 @@ describe("MCP protocol handshake", () => {
   });
 
   it("returns tool-call error envelopes for missing required request fields", async () => {
-    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const write = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
     let responseText = "";
     try {
-      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", id: 92, method: "tools/call", params: {} }));
+      await processRpcLine(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: 92,
+          method: "tools/call",
+          params: {},
+        }),
+      );
       responseText = write.mock.calls.map((call) => String(call[0])).join("");
     } finally {
       write.mockRestore();
     }
 
     const response = JSON.parse(responseText) as {
-      result?: { isError?: boolean; structuredContent?: { result?: unknown; error?: string; code?: number } };
+      result?: {
+        isError?: boolean;
+        structuredContent?: { result?: unknown; error?: string; code?: number };
+      };
     };
     expect(response.result?.isError).toBe(true);
     expect(response.result?.structuredContent).toMatchObject({
@@ -1533,10 +2037,16 @@ describe("MCP protocol handshake", () => {
           },
         });
 
-        const structured = result?.structuredContent as { warnings?: string[] } | undefined;
-        expect(structured?.warnings?.[0]).toContain('Unexpected top-level argument "limt"');
+        const structured = result?.structuredContent as
+          | { warnings?: string[] }
+          | undefined;
+        expect(structured?.warnings?.[0]).toContain(
+          'Unexpected top-level argument "limt"',
+        );
         expect(structured?.warnings?.[0]).toContain('did you mean "limit"');
-        expect(stderr).toHaveBeenCalledWith(expect.stringContaining("[pm-mcp] Unexpected top-level argument"));
+        expect(stderr).toHaveBeenCalledWith(
+          expect.stringContaining("[pm-mcp] Unexpected top-level argument"),
+        );
       } finally {
         stderr.mockRestore();
       }
@@ -1553,12 +2063,22 @@ describe("MCP protocol handshake", () => {
         return fakeInterface;
       }),
     };
-    const createInterface = vi.spyOn(readline, "createInterface").mockReturnValue(fakeInterface as never);
-    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const createInterface = vi
+      .spyOn(readline, "createInterface")
+      .mockReturnValue(fakeInterface as never);
+    const write = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
     try {
       startMcpServer();
-      expect(createInterface).toHaveBeenCalledWith({ input: process.stdin, crlfDelay: Infinity });
-      expect(fakeInterface.on).toHaveBeenCalledWith("line", expect.any(Function));
+      expect(createInterface).toHaveBeenCalledWith({
+        input: process.stdin,
+        crlfDelay: Infinity,
+      });
+      expect(fakeInterface.on).toHaveBeenCalledWith(
+        "line",
+        expect.any(Function),
+      );
       lineHandler?.(JSON.stringify({ jsonrpc: "2.0", id: 93, method: "ping" }));
       await vi.waitFor(() => expect(write).toHaveBeenCalled());
     } finally {
@@ -1603,13 +2123,22 @@ describe("MCP protocol handshake", () => {
           method: "tools/call",
           params: {
             name: toolName,
-            arguments: { path: context.pmPath, id, author: "mcp-test", options },
+            arguments: {
+              path: context.pmPath,
+              id,
+              author: "mcp-test",
+              options,
+            },
           },
         }) as Promise<{ structuredContent?: { result?: { count?: number } } }>;
 
       const queue = createSerialQueue();
-      const first = queue.enqueue(() => callTool("pm_notes", { add: "serialized note" }));
-      const second = queue.enqueue(() => callTool("pm_learnings", { add: "serialized learning" }));
+      const first = queue.enqueue(() =>
+        callTool("pm_notes", { add: "serialized note" }),
+      );
+      const second = queue.enqueue(() =>
+        callTool("pm_learnings", { add: "serialized learning" }),
+      );
       const [noteResult, learningResult] = await Promise.all([first, second]);
 
       // Neither call threw a lock conflict; both carry a structured result.
@@ -1627,11 +2156,18 @@ describe("MCP protocol handshake", () => {
 
 describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
   it("treats a symlinked argv[1] (npm .bin shim) as the main module", async () => {
-    const { isInvokedAsMcpMainModule } = await import("../../src/mcp/server.js");
-    const { mkdtemp, symlink: makeSymlink, realpath } = await import("node:fs/promises");
+    const { isInvokedAsMcpMainModule } =
+      await import("../../src/mcp/server.js");
+    const {
+      mkdtemp,
+      symlink: makeSymlink,
+      realpath,
+    } = await import("node:fs/promises");
     const { tmpdir } = await import("node:os");
     const { fileURLToPath, pathToFileURL } = await import("node:url");
-    const selfPath = await realpath(fileURLToPath(new URL("../../src/mcp/server.ts", import.meta.url)));
+    const selfPath = await realpath(
+      fileURLToPath(new URL("../../src/mcp/server.ts", import.meta.url)),
+    );
     const moduleUrl = pathToFileURL(selfPath).href;
     const binDir = await mkdtemp(path.join(tmpdir(), "pm-mcp-bin-"));
     const shimPath = path.join(binDir, "pm-mcp");
@@ -1639,8 +2175,12 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
     expect(isInvokedAsMcpMainModule(shimPath, moduleUrl)).toBe(true);
     expect(isInvokedAsMcpMainModule(selfPath, moduleUrl)).toBe(true);
     expect(isInvokedAsMcpMainModule(undefined, moduleUrl)).toBe(false);
-    expect(isInvokedAsMcpMainModule(path.join(binDir, "missing"), moduleUrl)).toBe(false);
-    expect(isInvokedAsMcpMainModule(path.join(binDir, "pm-mcp-other"), moduleUrl)).toBe(false);
+    expect(
+      isInvokedAsMcpMainModule(path.join(binDir, "missing"), moduleUrl),
+    ).toBe(false);
+    expect(
+      isInvokedAsMcpMainModule(path.join(binDir, "pm-mcp-other"), moduleUrl),
+    ).toBe(false);
   });
 
   it("serves an initialize response when launched through a symlinked npm-style bin", async () => {
@@ -1680,7 +2220,9 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
     const exitCode = await new Promise<number | null>((resolve, reject) => {
       const timeout = setTimeout(() => {
         child.kill("SIGTERM");
-        reject(new Error("timed out waiting for symlinked pm-mcp bin response"));
+        reject(
+          new Error("timed out waiting for symlinked pm-mcp bin response"),
+        );
       }, 5_000);
       child.once("error", (error) => {
         clearTimeout(timeout);

@@ -11,8 +11,12 @@ export interface GlobalOptions {
   quiet?: boolean;
   /** Value that configures or reports no changed fields for this contract. */
   noChangedFields?: boolean;
+  /** Preserve the legacy full mutation envelope and changed-fields array. */
+  fullChangedFields?: boolean;
   /** Value that configures or reports id only for this contract. */
   idOnly?: boolean;
+  /** Omit null and empty containers from JSON output. */
+  lean?: boolean;
   /** Filesystem path used for path resolution. */
   path?: string;
   /** Value that configures or reports no extensions for this contract. */

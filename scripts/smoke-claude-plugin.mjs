@@ -6,7 +6,7 @@
  * 1. Plugin file structure (marketplace + plugin manifests, skills, commands, agents, hooks)
  * 2. MCP server launcher resolves the repo build
  * 3. MCP server initializes with instructions
- * 4. All 28 required tools are listed
+ * 4. All 30 required tools are listed
  * 5. pm_run(init), pm_create, pm_claim, pm_update, pm_comments, pm_files, pm_docs, pm_test,
  *    pm_get, pm_context, pm_search, pm_validate, pm_health all succeed
  * 6. Session-start hook script runs without errors
@@ -14,7 +14,8 @@
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { existsSync } from "node:fs";
+import { execSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import { startPluginMcpSmoke } from "./plugin-mcp-smoke-harness.mjs";
 
 const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -84,7 +85,6 @@ for (const relPath of pluginFiles) {
 console.log(`Plugin file structure: ${pluginFiles.length} files verified`);
 
 // Verify marketplace.json name is "pm" and plugin name matches plugin.json.
-const { readFileSync } = await import("node:fs");
 const rootMarketplace = JSON.parse(readFileSync(path.join(repoRoot, ".claude-plugin", "marketplace.json"), "utf-8"));
 if (rootMarketplace.name !== "pm") {
   throw new Error(`Root marketplace.json name must be "pm", got "${rootMarketplace.name}"`);
@@ -129,7 +129,7 @@ try {
   const toolNames = new Set(tools.tools.map((tool) => tool.name));
   const required = [
     "pm_run", "pm_context", "pm_next", "pm_search", "pm_list", "pm_get",
-    "pm_create", "pm_copy", "pm_focus", "pm_update", "pm_append", "pm_claim", "pm_release", "pm_close",
+    "pm_create", "pm_mutate", "pm_copy", "pm_focus", "pm_update", "pm_append", "pm_claim", "pm_release", "pm_close",
     "pm_comments", "pm_files", "pm_docs", "pm_notes", "pm_learnings",
     "pm_deps", "pm_graph", "pm_test",
     "pm_validate", "pm_health", "pm_contracts", "pm_schema", "pm_profile", "pm_config", "pm_plan",
@@ -203,7 +203,6 @@ try {
   console.log("pm_health: ok");
 
   // 4. Test session-start hook in non-pm directory (should exit silently)
-  const { execSync } = await import("node:child_process");
   try {
     execSync(`node "${sessionStartPath}"`, {
       cwd: tmpRoot,

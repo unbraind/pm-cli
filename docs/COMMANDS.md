@@ -27,7 +27,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Bootstrap    | `init`, `config`, `health`, `telemetry`                                                                                        | create and inspect tracker setup                                                                                                                                                                                                                                                                |
 | Lifecycle    | `create`, `copy`, `focus`, `claim`, `update`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state                                                                                                                                                                                                                                                                               |
-| Bulk         | `update-many`, `close-many`                                                                                                    | apply one change across a matched, dry-run-previewed set with a rollback checkpoint                                                                                                                                                                                                             |
+| Bulk         | `item mutate`, `update-many`, `close-many`                                                                                     | atomically commit heterogeneous SDK mutation batches, or apply one change across a matched, dry-run-previewed set with a rollback checkpoint                                                                                                                                                    |
 | Scheduling   | `meet`, `event`, `remind`                                                                                                      | low-friction Meeting/Event/Reminder creation                                                                                                                                                                                                                                                    |
 | Planning     | `plan create`, `plan add-step`, `plan update-step`, `plan complete-step`, `plan link`, `plan approve`, `plan materialize`      | agent-optimized living plans with ordered steps, evidence, decisions, validation, and materialization                                                                                                                                                                                           |
 | Links        | `files`, `docs`, `test`, `deps`                                                                                                | connect items to artifacts, tests, and relationships                                                                                                                                                                                                                                            |
@@ -327,6 +327,13 @@ When a flag is rejected with `Unknown option`, the error guidance now suggests t
 
 ## Create and Update
 
+Tracked structured-input and compact-output work:
+[pm-xm7c](../.agents/pm/features/pm-xm7c.toon),
+[pm-kipd](../.agents/pm/features/pm-kipd.toon),
+[pm-nilh](../.agents/pm/features/pm-nilh.toon),
+[pm-cfed](../.agents/pm/features/pm-cfed.toon), and
+[pm-g9xk](../.agents/pm/features/pm-g9xk.toon).
+
 Shortest agent-friendly create (positional title + defaults to `Task` type):
 
 ```bash
@@ -376,6 +383,25 @@ pm update pm-a1b2 --body-file ./specs/updated-spec.md
 
 `--body-file` is mutually exclusive with `--body` (passing both errors). Use `--body -` to read the body from piped stdin.
 
+For whole-item automation, `--stdin-json` on create/update accepts either a
+direct item object or the envelope emitted by `pm get <id> --json`. Read-only
+fields are ignored, linked facets are normalized through their audited mutation
+inputs, and explicit CLI flags override document values:
+
+```bash
+# Create from a complete document.
+printf '%s' '{"title":"Imported incident","type":"Issue","tags":["imported"]}' \
+  | pm create --stdin-json --json
+
+# Lossless get -> edit -> update round trip.
+pm get pm-a1b2 --json > item.json
+# edit item.json with an ordinary JSON-aware tool
+pm update pm-a1b2 --stdin-json < item.json
+```
+
+Input is strict: a near-miss such as `acceptance_criterai` fails with a
+did-you-mean diagnostic instead of becoming an accidental custom field.
+
 Repeated singular/plural list flags now accumulate, so `--tag a --tag b` is equivalent to `--tags a,b` (the same holds for `--status`, `--ids`, and `--fields` on read commands). Earlier versions silently kept only the last value. `list`/`search` also accept `--tags` as a never-block alias for the canonical read filter `--tag`.
 
 `--tags` REPLACES the whole tag list. To edit tags without restating the full set, use the additive/subtractive flags on `create`/`update`/`update-many`:
@@ -389,7 +415,7 @@ pm update pm-abc1 --remove-tags stale            # drops "stale", keeps the rest
 pm create "New backend task" --add-tags backend,p1
 ```
 
-Acceptance criteria get the same additive treatment on `update`/`update-many`: `--acceptance-criteria`/`--ac` REPLACES the whole value, while `--add-ac <text>` appends one criterion (repeatable; deduped on exact text) and `--remove-ac <text>` removes one criterion by exact text match (repeatable; a non-matching selector adds a `remove_ac_unmatched:<text>` warning instead of silently no-oping). Criteria are stored joined by `` ;  ``, so one criterion cannot contain a semicolon. Disjoint `--add-ac` edits from concurrent agents/branches merge cleanly instead of clobbering each other.
+Acceptance criteria get the same additive treatment on `update`/`update-many`: `--acceptance-criteria`/`--ac` REPLACES the whole value, while `--add-ac <text>` appends one criterion (repeatable; deduped on exact text) and `--remove-ac <text>` removes one criterion by exact text match (repeatable; a non-matching selector adds a `remove_ac_unmatched:<text>` warning instead of silently no-oping). Criteria are stored with semicolon-space separators, so one criterion cannot contain a semicolon. Disjoint `--add-ac` edits from concurrent agents/branches merge cleanly instead of clobbering each other.
 
 ```bash
 pm update pm-abc1 --add-ac "error path covered by a regression test"
@@ -426,11 +452,27 @@ pm update <id> --expected "Retry succeeds after backoff" --actual "Retry threw o
 
 Repeat `--ac`/`--acceptance-criteria` to build multi-part criteria; values are stored in order joined by `; `. Dependency inputs accept either a bare existing item id or the explicit `id=<id>,kind=<kind>` form, and malformed shorthand such as `related:pm-abcd` fails before it can create a dangling graph edge.
 
-Mutation commands (`create`/`update`/`close`/`append`/...) echo a `changed_fields` array. In high-volume agent loops that array is mostly redundant with the item echo above it, so pass the global `--no-changed-fields` flag to replace it with a compact `changed_field_count`:
+Mutation commands (`create`/`update`/`close`/`append`/...) default to an
+agent-efficient `id`/`status`/`changed_field_count` envelope. Use
+`--no-changed-fields` for the full item echo without the redundant delta array,
+or `--full-changed-fields` to restore the legacy complete envelope:
 
 ```bash
-pm --no-changed-fields create "Probe item"   # output keeps changed_field_count, drops the array
+pm create "Probe item"                       # id + status + changed_field_count
+pm --no-changed-fields create "Probe item"   # item echo + changed_field_count
+pm --full-changed-fields create "Probe item" # item echo + changed_fields array
 pm --id-only create "Probe item"             # output is only id + status
+```
+
+For strict JSON consumers, the global `--lean` flag recursively omits null,
+undefined, empty-array, and empty-object noise while preserving meaningful
+false/zero/empty-string values. On usage failures it keeps only actionable
+error fields (`type`, `code`, `detail`, `exit_code`, examples, next steps, and
+recovery), reducing retry context without hiding the deterministic fix:
+
+```bash
+pm --json --lean get pm-a1b2
+pm --json --lean create --unknown-option
 ```
 
 Use `pm create --allow-missing-parent --parent <id>` only for deliberate imports or staged backlog reconstruction. Normal `pm create --parent <id>` fails fast when the parent id cannot be resolved.
@@ -446,6 +488,32 @@ Every transition into a terminal status stamps `closed_at` (ISO timestamp) — `
 When closing a blocker, `pm close` scans reverse `blocked_by` edges and auto-unblocks dependent items only when every resolvable blocker is now terminal. Each unblocked item is updated through the normal audited mutation path, gets an `unblock_note`, and the close result reports compact `auto_unblocked:<id>:resolved_blockers=<ids>` warnings. Items with another active blocker remain blocked.
 
 Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_close`/`pm_run` append/update-many) are compact by default; pass `fullChangedFields=true` to restore the full `changed_fields` delta, or `idOnly=true` for single-item id/status output.
+
+### Atomic heterogeneous mutation batches
+
+`pm item mutate` is the noun-first CLI adapter over the public SDK
+`commitItemMutations` primitive. Pipe a non-empty JSON array (or an object with a
+`mutations` array), provide one stable transaction id, and mix create/update/
+close operations in order:
+
+```bash
+pm item mutate \
+  --transaction-id sync-2026-07-20-001 \
+  --stdin-json <<'JSON'
+[
+  {"op":"create","id":"ext-1042","options":{"title":"Imported issue","type":"Issue"}},
+  {"op":"update","id":"pm-a1b2","options":{"priority":"1","addTags":["synced"]}},
+  {"op":"close","id":"pm-c3d4","reason":"Resolved upstream"}
+]
+JSON
+```
+
+Use `--dry-run` to validate and preview without acquiring a writer lock. Reuse
+the exact transaction id and deterministic batch after interruption: the SDK
+journal resumes pending steps and never duplicates a successfully applied
+step. `--create-compensation close|delete`, `--lock-ttl-seconds`, and
+`--lock-wait-ms` expose the transaction safety controls. The equivalent MCP
+surface is `pm_mutate`.
 
 ## Focus (session default parent)
 

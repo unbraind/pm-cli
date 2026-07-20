@@ -1,0 +1,21 @@
+id: pm-mfkv92
+title: "GH-623: opt-in post-merge history reconciliation hook and one-command verify repair"
+description: GitHub issue #623 reports that a successful git merge can leave history verification red until a separate manual history-repair pass; provide an explicit safe reconciliation workflow without weakening verification.
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"area:history","area:merge",gh-issue,multi-agent
+created_at: "2026-07-20T09:12:15.195Z"
+updated_at: "2026-07-20T09:12:15.195Z"
+author: codex-20260720
+acceptance_criteria: "An opt-in post-merge hook or one-command reconcile path detects merged history drift, previews the affected streams, performs audited field-aware repair, and leaves pm history --verify plus pm validate green; default git hooks remain non-surprising; docs and sandboxed merge acceptance tests cover enable, skip, failure, and recovery paths."
+parent: pm-o2kc
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-4a7m,related,"2026-07-20T09:12:15.195Z",null,null
+  pm-85hm,related,"2026-07-20T09:12:15.195Z",null,null
+  pm-g5sx,discovered_from,"2026-07-20T09:12:15.195Z",null,null
+  pm-iwsj,related,"2026-07-20T09:12:15.195Z",null,null
+  pm-wc1r,related,"2026-07-20T09:12:15.195Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-20T09:12:15.195Z",codex-20260720,"Duplicate check 2026-07-20: pm search across all statuses for GH-623 and merge history verify red/manual history-repair found no live item; closed pm-g5sx and pm-wc1r provide the shipped merge-driver lineage, while this item captures the newly reported opt-in post-merge orchestration gap. Source: https://github.com/unbraind/pm-cli/issues/623"
+body: ""

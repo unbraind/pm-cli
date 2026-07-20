@@ -26,6 +26,8 @@ export type ChangedFieldsMode = "full" | "compact";
 export interface MutationProjectionOptions {
   /** Defaults to "full" (unchanged output). "compact" drops the array, keeping a count. */
   changedFields?: ChangedFieldsMode;
+  /** Return the default agent envelope: id, status, changed-field count, and close reason. */
+  compactEnvelope?: boolean;
   /** Return only id/status for single-item mutation envelopes. */
   idOnly?: boolean;
 }
@@ -108,6 +110,30 @@ function projectIdOnlyResult(result: unknown): unknown | null {
   return status ? { id, status } : { id };
 }
 
+function projectCompactMutationEnvelope(result: unknown): unknown | null {
+  if (!isPlainObject(result) || !isPlainObject(result.item)) return null;
+  if (typeof result.item.id !== "string") return null;
+  const changedFields = result[CHANGED_FIELDS_KEY];
+  if (!Array.isArray(changedFields)) return null;
+  const compact: Record<string, unknown> = {
+    id: result.item.id,
+    ...(typeof result.item.status === "string"
+      ? { status: result.item.status }
+      : {}),
+    changed_field_count: changedFields.length,
+  };
+  const closeReason =
+    typeof result.close_reason === "string"
+      ? result.close_reason
+      : typeof result.item.close_reason === "string"
+        ? result.item.close_reason
+        : undefined;
+  if (closeReason !== undefined) compact.close_reason = closeReason;
+  if (Array.isArray(result.warnings) && result.warnings.length > 0)
+    compact.warnings = result.warnings;
+  return compact;
+}
+
 function compactUpdateManyRows(envelope: Record<string, unknown>): {
   projected: Record<string, unknown>;
   changed: boolean;
@@ -145,6 +171,11 @@ export function projectMutationResult(
     if (idOnly !== null) {
       return idOnly;
     }
+  }
+
+  if (options.compactEnvelope === true) {
+    const compact = projectCompactMutationEnvelope(result);
+    if (compact !== null) return compact;
   }
 
   const mode = options.changedFields ?? "full";

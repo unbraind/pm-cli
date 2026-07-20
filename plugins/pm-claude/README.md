@@ -6,7 +6,7 @@ Native pm CLI integration for Claude Code. Use pm project management tools direc
 
 | Component | What it provides |
 |-----------|----------------|
-| **28 MCP tools** | Full pm surface: next, context, search, list, get, create, copy, focus, update, claim, release, close, comments, files, docs, notes, learnings, deps, test, validate, health, contracts, plan, append, schema, config, profile + `pm_run` for everything else |
+| **30 MCP tools** | Full pm surface: next, context, search, list, get, create, atomic mutate, copy, focus, update, claim, release, close, comments, files, docs, notes, learnings, deps, graph, test, validate, health, contracts, plan, append, schema, config, profile + `pm_run` for everything else |
 | **5 skills** | `pm-workflow`, `pm-developer`, `pm-release`, `pm-audit`, `pm-planner` — auto-loaded as Claude Code skills |
 | **14 slash commands** | Full lifecycle coverage — status, start, close, triage, audit, search, new, list, calendar, developer, planner, release, workflow, init |
 | **4 subagents** | `pm-coordinator` (batch/multi-item), `pm-triage-agent` (duplicate-safe item creation), `pm-verification-agent` (evidence + close readiness), and `pm-delivery-chain` (orchestrated delivery) |
@@ -29,7 +29,7 @@ claude plugin marketplace add /path/to/pm-cli
 # claude plugin marketplace add unbraind/pm-cli
 ```
 
-This installs all 28 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and the session hook in one step. (`pm-claude` is the plugin name; `pm` is the marketplace name from `marketplace.json`.)
+This installs all 30 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and the session hook in one step. (`pm-claude` is the plugin name; `pm` is the marketplace name from `marketplace.json`.)
 
 ### Option B: Global MCP server via Claude Code CLI (MCP tools only)
 
@@ -37,7 +37,7 @@ This installs all 28 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid
 claude mcp add --transport stdio pm-mcp -- npx -y --package=@unbrained/pm-cli@latest pm-mcp
 ```
 
-This gives you the 28 MCP tools but not the skills, slash commands, or session hook.
+This gives you the 30 MCP tools but not the skills, slash commands, or session hook.
 
 ### Option C: Direct `.mcp.json` (project-scoped MCP only)
 
@@ -145,6 +145,7 @@ Spawn pm-triage-agent to set up the pm item for: add OAuth2 login support
 | `pm_list` | Filtered item list |
 | `pm_get` | Single item detail |
 | `pm_create` | Create new item |
+| `pm_mutate` | Atomically create, update, or close an ordered item batch |
 | `pm_copy` | Copy item into a new id |
 | `pm_focus` | Set or clear the focused item |
 | `pm_update` | Update metadata |
@@ -158,6 +159,7 @@ Spawn pm-triage-agent to set up the pm item for: add OAuth2 login support
 | `pm_notes` | List or add notes |
 | `pm_learnings` | List or add learnings |
 | `pm_deps` | List/add/remove dependencies |
+| `pm_graph` | Query bounded relationship graphs and analytics |
 | `pm_test` | Link or run tests |
 | `pm_validate` | Run validation checks |
 | `pm_health` | Run health diagnostics |

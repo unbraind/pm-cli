@@ -21,6 +21,9 @@ import {
   runMergeDriver,
   runMergeInstall,
 } from "./commands/merge.js";
+import { createStdinTokenResolver } from "../sdk/runtime-primitives.js";
+import { itemDocumentToMutationOptions } from "../sdk/structured-mutations.js";
+import { registerStructuredMutationCommands } from "./register-structured-mutation.js";
 
 // Lowercase set of built-in type names ("epic", "feature", ...) used by the
 // `pm create` positional guard (pm-edge #1, 2026-05-28): if the single
@@ -767,6 +770,37 @@ function assertCreatePositionalTypeHasTitle(
   );
 }
 
+const STRUCTURED_STDIN_CONFLICT_KEYS = [
+  "body",
+  "dep",
+  "depRemove",
+  "comment",
+  "note",
+  "learning",
+  "file",
+  "test",
+  "doc",
+  "reminder",
+  "event",
+  "typeOption",
+  "field",
+] as const;
+
+function assertExclusiveStructuredStdin(
+  options: Record<string, unknown>,
+): void {
+  const conflictingFlags = STRUCTURED_STDIN_CONFLICT_KEYS.filter((key) => {
+    const value = options[key];
+    return value === "-" || (Array.isArray(value) && value.includes("-"));
+  }).map((key) => `--${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`);
+  if (conflictingFlags.length > 0) {
+    throw new PmCliError(
+      `--stdin-json cannot be combined with other stdin consumers: ${conflictingFlags.join(", ")}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+}
+
 async function runCreateAction(
   typeOrTitle: string | undefined,
   secondTitle: string | undefined,
@@ -775,6 +809,14 @@ async function runCreateAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
+  if (options.stdinJson === true) {
+    assertExclusiveStructuredStdin(options);
+    const input = await createStdinTokenResolver().resolveValue(
+      "-",
+      "--stdin-json",
+    );
+    options = itemDocumentToMutationOptions(input ?? "", "create", options);
+  }
   const positionals = resolveCreatePositionals(
     typeOrTitle,
     secondTitle,
@@ -1169,8 +1211,7 @@ async function runMergeAction(
           typeof options.output === "string" ? options.output : undefined,
         itemPath:
           typeof options.itemPath === "string" ? options.itemPath : undefined,
-        prefer:
-          typeof options.prefer === "string" ? options.prefer : undefined,
+        prefer: typeof options.prefer === "string" ? options.prefer : undefined,
       },
       globalOptions,
     );
@@ -1447,7 +1488,7 @@ async function runCommentsAction(
   const { runComments } = await import("./commands/comments.js");
   const result = await runComments(
     id,
-    ({
+    {
       add: sources.add,
       stdin: sources.readFromStdin,
       file: sources.readFromFile,
@@ -1458,7 +1499,7 @@ async function runCommentsAction(
       message: readOptionString(options, "message"),
       ownershipAppendBypass: options.ownershipAppendBypass === true,
       force: Boolean(options.force),
-    } as Parameters<typeof runComments>[1]),
+    } as Parameters<typeof runComments>[1],
     globalOptions,
   );
   if (sources.isMutation) {
@@ -1520,6 +1561,14 @@ async function runUpdateAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
+  if (options.stdinJson === true) {
+    assertExclusiveStructuredStdin(options);
+    const input = await createStdinTokenResolver().resolveValue(
+      "-",
+      "--stdin-json",
+    );
+    options = itemDocumentToMutationOptions(input ?? "", "update", options);
+  }
   // GH-214: resolve --body-file into the existing body field before
   // normalization so the rest of update is unchanged. CLI-only input alias.
   if (typeof options.bodyFile === "string") {
@@ -1751,7 +1800,7 @@ async function runNotesAction(
   const { runNotes } = await import("./commands/notes.js");
   const result = await runNotes(
     id,
-    ({
+    {
       add,
       stdin: options.stdin === true,
       file: readOptionString(options, "file"),
@@ -1762,7 +1811,7 @@ async function runNotesAction(
       message: readOptionString(options, "message"),
       ownershipAppendBypass: options.ownershipAppendBypass === true,
       force: Boolean(options.force),
-    } as Parameters<typeof runNotes>[1]),
+    } as Parameters<typeof runNotes>[1],
     globalOptions,
   );
   if (
@@ -1792,7 +1841,7 @@ async function runLearningsAction(
   const { runLearnings } = await import("./commands/learnings.js");
   const result = await runLearnings(
     id,
-    ({
+    {
       add,
       stdin: options.stdin === true,
       file: readOptionString(options, "file"),
@@ -1803,7 +1852,7 @@ async function runLearningsAction(
       message: readOptionString(options, "message"),
       ownershipAppendBypass: options.ownershipAppendBypass === true,
       force: Boolean(options.force),
-    } as Parameters<typeof runLearnings>[1]),
+    } as Parameters<typeof runLearnings>[1],
     globalOptions,
   );
   if (
@@ -1993,7 +2042,9 @@ async function runDepsAction(
       tokenBudget: readOptionString(options, "tokenBudget"),
       cursor: readOptionString(options, "cursor"),
       direction: readOptionString(options, "direction"),
-      ...(Array.isArray(options.kind) ? { kind: options.kind as string[] } : {}),
+      ...(Array.isArray(options.kind)
+        ? { kind: options.kind as string[] }
+        : {}),
     },
     globalOptions,
   );
@@ -2018,6 +2069,10 @@ export function registerMutationCommands(program: Command): void {
     CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
   );
   createCommand
+    .option(
+      "--stdin-json",
+      "Read a full item JSON document from stdin; explicit flags override document values",
+    )
     .option(
       "--body-file <path>",
       "Load the item markdown body from a file (mutually exclusive with --body)",
@@ -2064,6 +2119,10 @@ export function registerMutationCommands(program: Command): void {
   );
   updateCommand
     .option(
+      "--stdin-json",
+      "Read a full item JSON document from stdin; explicit flags override document values",
+    )
+    .option(
       "--body-file <path>",
       "Load the item markdown body from a file (mutually exclusive with --body)",
     )
@@ -2087,6 +2146,8 @@ export function registerMutationCommands(program: Command): void {
     .option("--clear-type-options", "Clear type options")
     .option("--force", "Force ownership override");
   updateCommand.action(runUpdateAction);
+
+  registerStructuredMutationCommands(program);
 
   const updateManyCommand = program
     .command("update-many")
@@ -3325,7 +3386,11 @@ export function registerMutationCommands(program: Command): void {
   program
     .command("deps")
     .argument("<id>", "Item id")
-    .option("--format <value>", "Output format (tree, graph, or context)", "tree")
+    .option(
+      "--format <value>",
+      "Output format (tree, graph, or context)",
+      "tree",
+    )
     .option(
       "--max-depth <value>",
       "Maximum dependency traversal depth (0 keeps only the root)",
@@ -3337,7 +3402,10 @@ export function registerMutationCommands(program: Command): void {
       "--edge-limit <value>",
       "Maximum edges and missing-reference rows in context output",
     )
-    .option("--token-budget <value>", "Maximum estimated tokens in context output")
+    .option(
+      "--token-budget <value>",
+      "Maximum estimated tokens in context output",
+    )
     .option("--cursor <value>", "Continue an equivalent context query")
     .option(
       "--direction <value>",

@@ -2,19 +2,43 @@ id: pm-g9xk
 title: "GH-443: lean error mode — drop constant required/why boilerplate from structured errors"
 description: "Dogfood GH-443: every structured error carries two constant prose fields (required/why) that never vary by error; keep only actionable fields in lean mode. Duplicate check: pm-gdi7 covers unknown-option suggestions, not envelope size; no other overlap."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",gh-issue,token-efficiency
 created_at: "2026-07-06T08:03:05.997Z"
-updated_at: "2026-07-15T19:27:27.234Z"
+updated_at: "2026-07-20T10:27:09.494Z"
+closed_at: "2026-07-20T10:01:05.447Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: JSON errors omit generic constant prose while keeping code/detail/examples/next_steps/recovery; error-envelope spec updated; mode documented for agents
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+resolution: Structured errors expose a compact actionable envelope through shared public SDK normalization primitives.
+expected_result: "Lean errors remove repeated boilerplate while preserving code, detail, exit status, and next action semantics across CLI surfaces."
+actual_result: "Commander and known runtime errors share compact lean projection, public error helpers, strict docstrings, tests, and zero SDK-boundary growth."
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-gdi7,related,"2026-07-06T08:03:05.997Z",null,null
+  pm-cfed,related,"2026-07-20T08:49:48.290Z",null,null
+  pm-ds3b,related,"2026-07-20T08:49:48.290Z",null,null
+  pm-xm7c,related,"2026-07-20T08:49:48.290Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-20T09:59:54.464Z",codex-20260720,"Evidence: lean errors retain code/detail/exit_code/recovery while omitting constant boilerplate; shared normalization moved behind public SDK runtime primitives so CLI/MCP added zero private-core boundary edges. Static gate reports 100% source/export/member docstrings and SDK boundary 405/405 with no violations."
 notes[1]{created_at,author,text}:
   "2026-07-15T19:27:27.232Z",maintainer-agent,"Fresh evidence 2026-07-15 (review pass #89): a one-token command typo (pm lst) returns ~20 lines / ~150 tokens of constant scaffolding (What happened / What is required / Why / Examples / Next steps / Recovery bundle) around the only two load-bearing lines: the error name and \"Did you mean: list?\". Worse, for unknown-OPTION errors the Error: headline and the \"What happened:\" paragraph are the IDENTICAL sentence twice (observed on --statuss). Lean mode should collapse to headline + suggestion + one recovery hint; the full bundle stays behind --verbose or a config key. Duplicate-sentence dedup is worth doing even before lean mode ships."
+files[5]{path,scope,note}:
+  src/cli/commander-usage.ts,project,lean Commander JSON errors
+  src/cli/error-guidance.ts,project,actionable lean error projection
+  src/cli/main.ts,project,lean known error routing
+  src/sdk/error-runtime.ts,project,Shared SDK error normalization primitives
+  tests/unit/cli/error-handler-projection.spec.ts,project,In-process lean error and primitive normalization coverage
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,600
+  node scripts/run-tests.mjs test -- tests/unit/cli/error-handler-projection.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/cli/structured-mutation-registration.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,project,180
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrt1wgl8-rd6y01,test,passed,"2026-07-20T09:57:16.304Z","2026-07-20T09:57:26.396Z","2026-07-20T09:57:26.396Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,agent lean error mode
+close_reason: "Implemented actionable lean JSON errors and public SDK error normalization primitives with zero SDK-boundary growth, docs, and full tests."
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/443\n\n## Problem\nThe structured error envelope carries two constant-prose fields on every error (`required`: \"Use values that match documented command constraints.\"; `why`: \"Validation protects data consistency...\"). They never vary by error and carry no actionable signal — pure token overhead in retry loops.\n\n## Proposed fix\nLean error mode (or simply omit constant `why`/`required` under --json unless error-specific): keep `code`, `detail`, `examples`, `next_steps`, `recovery.suggested_retry`. Verbose prose stays for human/TTY.\n\n## Definition of done\nJSON errors drop generic boilerplate (or --lean-errors/PM_LEAN_ERRORS added); error-envelope spec updated; agent docs note the mode. Related: pm-gdi7 covers unknown-option did-you-mean in the same envelope."

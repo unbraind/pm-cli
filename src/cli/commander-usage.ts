@@ -23,6 +23,7 @@ import {
   type CommanderGuidanceContext,
   formatCommanderErrorForDisplay,
   formatCommanderErrorForJson,
+  projectLeanErrorEnvelope,
 } from "./error-guidance.js";
 import { normalizeHelpCommandPath } from "./help-content.js";
 import { getCommandPath } from "./registration-helpers.js";
@@ -829,6 +830,7 @@ export async function formatCommanderUsageJson(
   error: unknown,
   rootProgram: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+  lean = false,
 ): Promise<string> {
   const usageContext = await resolveCommanderUsageContext(
     error,
@@ -851,7 +853,11 @@ export async function formatCommanderUsageJson(
       suggestedRetryCommand: usageContext.suggestedRetryCommand,
     },
   );
-  return JSON.stringify(envelope, null, 2);
+  return JSON.stringify(
+    lean ? projectLeanErrorEnvelope(envelope) : envelope,
+    null,
+    2,
+  );
 }
 
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */

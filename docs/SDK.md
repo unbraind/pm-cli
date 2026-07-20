@@ -86,6 +86,7 @@ Source of truth:
 - [`src/sdk/cli-bootstrap.ts`](../src/sdk/cli-bootstrap.ts)
 - [`src/sdk/cli-contracts/commander-types.ts`](../src/sdk/cli-contracts/commander-types.ts)
 - [`src/sdk/cli-contracts/commander-mutation-options.ts`](../src/sdk/cli-contracts/commander-mutation-options.ts)
+- [`src/sdk/structured-mutations.ts`](../src/sdk/structured-mutations.ts)
 
 Common authoring exports:
 
@@ -806,7 +807,9 @@ tools that need to own item state without spawning `pm`.
 ### Atomic workspace transactions
 
 Tracked by [pm-4e12](../.agents/pm/features/pm-4e12.toon), with the VCS
-acceptance story [pm-8ngt](../.agents/pm/stories/pm-8ngt.toon).
+acceptance story [pm-8ngt](../.agents/pm/stories/pm-8ngt.toon) and the structured
+SDK adapters tracked by [pm-xm7c](../.agents/pm/features/pm-xm7c.toon) and
+[pm-kipd](../.agents/pm/features/pm-kipd.toon).
 
 `commitWorkspaceTransaction` is the public unit-of-work primitive for domain
 commands that must coordinate several SDK mutations. A plan supplies a stable
@@ -906,6 +909,24 @@ applied and are likewise compensated by version restore. A stable
 `transactionId` makes interrupted batches resumable across processes and
 agents.
 
+When a direct SDK operation must observe extension-owned item types, fields,
+hooks, parsers, or services, wrap it with `runWithActiveExtensions`. The scope
+loads and tears down the workspace extensions once, serializes the global
+registries across concurrent requests, and is reentrant: SDK primitives called
+inside the callback reuse the active scope instead of attempting a nested
+activation cycle.
+
+```ts
+import {
+  commitItemMutations,
+  runWithActiveExtensions,
+} from "@unbrained/pm-cli/sdk";
+
+await runWithActiveExtensions({ cwd: projectRoot }, () =>
+  commitItemMutations({ pmRoot, transactionId, author, mutations }),
+);
+```
+
 ```ts
 import { commitItemMutations } from "@unbrained/pm-cli/sdk";
 
@@ -934,6 +955,53 @@ CLI: criteria are stored in one string with semicolons as boundaries. Therefore
 each `addAc`/`removeAc` entry must be semicolon-free; unmatched removals are
 reported as `remove_ac_unmatched:<text>` warnings rather than disappearing as
 silent no-ops.
+
+`parseItemMutationBatch` is the strict JSON boundary for that primitive. It
+accepts either a non-empty mutation array or `{ "mutations": [...] }`, derives
+allowed option names from the exported create/update/close command contracts,
+and rejects unknown row or option keys with a did-you-mean diagnostic before a
+workspace lock or write is attempted. This lets embedded tools expose the same
+safe batch format without duplicating validation:
+
+```ts
+import {
+  commitItemMutations,
+  parseItemMutationBatch,
+} from "@unbrained/pm-cli/sdk";
+
+const mutations = parseItemMutationBatch(batchJson);
+await commitItemMutations({
+  pmRoot,
+  author: "sync-agent",
+  transactionId: "upstream-sync-2026-07-20-001",
+  mutations,
+});
+```
+
+`itemDocumentToMutationOptions` is the companion full-document adapter. It
+accepts either a direct `ItemDocument` or the envelope returned by
+`pm get <id> --json`, strips read-only metadata, maps canonical snake-case item
+fields to typed mutation options, and serializes linked facets through the same
+repeatable option forms as create/update. Explicit options win over document
+values. Unknown near-miss keys fail; application-defined fields are routed
+through the public `field` escape hatch.
+
+The built-in adapters stay deliberately thin:
+
+- `pm item mutate --transaction-id <stable-id> --stdin-json` validates and
+  commits a batch with `commitItemMutations`; `--dry-run` performs validation
+  only, and reusing the transaction id resumes or replays the durable journal.
+- `pm create --stdin-json` and `pm update <id> --stdin-json` accept a whole item
+  document. This supports the lossless `get → edit → update` agent workflow
+  without translating every field into argv.
+- MCP `pm_mutate` accepts the decoded mutation array plus the same transaction,
+  compensation, dry-run, and lock controls. It calls the same validator and SDK
+  primitive rather than spawning the CLI.
+
+The batch is logically atomic at the durable journal boundary described above,
+not an MVCC snapshot. Use stable transaction and create ids, size the lock TTL
+above the longest mutation attempt, and keep the JSON batch deterministic so a
+different agent or process can safely resume it.
 
 Package and extension lifecycle convenience methods are the SDK primitive layer
 for custom PM tools that need to manage their own package surface without

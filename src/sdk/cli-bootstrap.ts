@@ -84,11 +84,21 @@ export interface BootstrapGlobalOptions {
   json: boolean;
   /** Value that configures or reports quiet for this contract. */
   quiet: boolean;
+  /** Whether compact JSON projection is requested. */
+  lean: boolean;
   /** Invocation-wide mutation author override. */
   author?: string;
   /** Whether `--author` was present without its required value. */
   authorMissingValue?: true;
 }
+
+const BOOTSTRAP_BOOLEAN_FLAGS = new Set([
+  "--no-extensions",
+  "--no-pager",
+  "--json",
+  "--quiet",
+  "--lean",
+]);
 
 /** Implements parse bootstrap global options for the public runtime surface of this module. */
 export function parseBootstrapGlobalOptions(
@@ -96,10 +106,7 @@ export function parseBootstrapGlobalOptions(
 ): BootstrapGlobalOptions {
   let legacyPathValue: string | undefined;
   let pmPathValue: string | undefined;
-  let noExtensions = false;
-  let noPager = false;
-  let json = false;
-  let quiet = false;
+  const booleanFlags = new Set<string>();
   let author: string | undefined;
   let index = 0;
   while (index < argv.length) {
@@ -107,23 +114,8 @@ export function parseBootstrapGlobalOptions(
     if (token === "--") {
       break;
     }
-    if (token === "--no-extensions") {
-      noExtensions = true;
-      index += 1;
-      continue;
-    }
-    if (token === "--no-pager") {
-      noPager = true;
-      index += 1;
-      continue;
-    }
-    if (token === "--json") {
-      json = true;
-      index += 1;
-      continue;
-    }
-    if (token === "--quiet") {
-      quiet = true;
+    if (BOOTSTRAP_BOOLEAN_FLAGS.has(token)) {
+      booleanFlags.add(token);
       index += 1;
       continue;
     }
@@ -158,10 +150,11 @@ export function parseBootstrapGlobalOptions(
   }
   return {
     path: pmPathValue ?? legacyPathValue,
-    noExtensions,
-    noPager,
-    json,
-    quiet,
+    noExtensions: booleanFlags.has("--no-extensions"),
+    noPager: booleanFlags.has("--no-pager"),
+    json: booleanFlags.has("--json"),
+    quiet: booleanFlags.has("--quiet"),
+    lean: booleanFlags.has("--lean"),
     ...(author === ""
       ? { authorMissingValue: true }
       : author !== undefined
@@ -182,10 +175,12 @@ export function stripGlobalBootstrapTokens(argv: string[]): string[] {
     if (
       token === "--json" ||
       token === "--quiet" ||
+      token === "--lean" ||
       token === "--no-extensions" ||
       token === "--no-pager" ||
       token === "--profile" ||
       token === "--id-only" ||
+      token === "--full-changed-fields" ||
       token === "--explain"
     ) {
       index += 1;
@@ -286,6 +281,7 @@ function findCommandTokenIndex(argv: string[]): number | undefined {
       isInlineGlobalValueToken(token) ||
       token === "--json" ||
       token === "--quiet" ||
+      token === "--lean" ||
       token === "--no-extensions" ||
       token === "--no-pager" ||
       token === "--profile" ||

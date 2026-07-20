@@ -292,7 +292,7 @@ describe("generateBashScript", () => {
   it("includes strict health flags in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain(
-      "--strict-directories --strict-exit --fail-on-warn --check-only --check-telemetry --no-refresh --refresh-vectors --verbose-stale-items --brief --summary --skip-vectors --skip-integrity --skip-drift --full --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help",
+      "--strict-directories --strict-exit --fail-on-warn --check-only --check-telemetry --no-refresh --refresh-vectors --verbose-stale-items --brief --summary --skip-vectors --skip-integrity --skip-drift --full --json --lean --quiet --no-changed-fields --full-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help",
     );
   });
 

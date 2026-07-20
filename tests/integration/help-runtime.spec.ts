@@ -1,14 +1,34 @@
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { writeTestExtension } from "../helpers/extensions.js";
-import { expectJsonErrorEnvelope, parseJsonErrorEnvelope } from "../helpers/jsonErrorEnvelope.js";
+import {
+  expectJsonErrorEnvelope,
+  parseJsonErrorEnvelope,
+} from "../helpers/jsonErrorEnvelope.js";
 import { writeItemTypeDefinitions } from "../helpers/pmWorkspace.js";
-import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../helpers/withTempPmPath.js";
 
-function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict"): void {
-  const result = context.runCli(["config", "project", "set", "governance-preset", "--policy", preset, "--json"], {
-    expectJson: true,
-  });
+function setGovernancePreset(
+  context: TempPmContext,
+  preset: "minimal" | "default" | "strict",
+): void {
+  const result = context.runCli(
+    [
+      "config",
+      "project",
+      "set",
+      "governance-preset",
+      "--policy",
+      preset,
+      "--json",
+    ],
+    {
+      expectJson: true,
+    },
+  );
   expect(result.code).toBe(0);
 }
 
@@ -21,13 +41,17 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         "Universal, flexible, extensible, agent-optimized project management CLI for any project or programming language.",
       );
       expect(compactHelp.stdout).toContain("Intent:");
-      expect(compactHelp.stdout).toContain("Need deeper rationale and more examples?");
+      expect(compactHelp.stdout).toContain(
+        "Need deeper rationale and more examples?",
+      );
       expect(compactHelp.stdout).toContain("Re-run with --explain.");
       expect(compactHelp.stdout).toContain("--no-pager");
 
       const explicitNoPagerHelp = context.runCli(["--help", "--no-pager"]);
       expect(explicitNoPagerHelp.code).toBe(0);
-      expect(explicitNoPagerHelp.stdout).toContain("Usage: pm [options] [command]");
+      expect(explicitNoPagerHelp.stdout).toContain(
+        "Usage: pm [options] [command]",
+      );
 
       const detailedHelp = context.runCli(["--help", "--explain"]);
       expect(detailedHelp.code).toBe(0);
@@ -35,7 +59,9 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(detailedHelp.stdout).toContain("Examples:");
       expect(detailedHelp.stdout).toContain("Tips:");
       expect(detailedHelp.stdout).toContain("pm install guide-shell --project");
-      expect(detailedHelp.stdout).toContain("Install guide-shell before using pm guide");
+      expect(detailedHelp.stdout).toContain(
+        "Install guide-shell before using pm guide",
+      );
     });
   });
 
@@ -44,23 +70,49 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       const topLevelHelpSubprocess = context.runCli(["--help"]);
       const topLevelHelpInProcess = await context.runCliInProcess(["--help"]);
       expect(topLevelHelpInProcess.code).toBe(topLevelHelpSubprocess.code);
-      expect(topLevelHelpInProcess.stdout).toContain("Usage: pm [options] [command]");
-      expect(topLevelHelpSubprocess.stdout).toContain("Usage: pm [options] [command]");
+      expect(topLevelHelpInProcess.stdout).toContain(
+        "Usage: pm [options] [command]",
+      );
+      expect(topLevelHelpSubprocess.stdout).toContain(
+        "Usage: pm [options] [command]",
+      );
 
       const createHelpSubprocess = context.runCli(["create", "--help"]);
-      const createHelpInProcess = await context.runCliInProcess(["create", "--help"]);
+      const createHelpInProcess = await context.runCliInProcess([
+        "create",
+        "--help",
+      ]);
       expect(createHelpInProcess.code).toBe(createHelpSubprocess.code);
-      expect(createHelpInProcess.stdout).toContain("Usage: pm create [options]");
-      expect(createHelpSubprocess.stdout).toContain("Usage: pm create [options]");
+      expect(createHelpInProcess.stdout).toContain(
+        "Usage: pm create [options]",
+      );
+      expect(createHelpSubprocess.stdout).toContain(
+        "Usage: pm create [options]",
+      );
 
-      const planHelpSubprocess = context.runCli(["plan", "--help", "--json"], { expectJson: true });
-      const planHelpInProcess = await context.runCliInProcess(["plan", "--help", "--json"], { expectJson: true });
+      const planHelpSubprocess = context.runCli(["plan", "--help", "--json"], {
+        expectJson: true,
+      });
+      const planHelpInProcess = await context.runCliInProcess(
+        ["plan", "--help", "--json"],
+        { expectJson: true },
+      );
       expect(planHelpInProcess.code).toBe(planHelpSubprocess.code);
-      expect((planHelpInProcess.json as { format?: string }).format).toBe("pm_help_v1");
-      expect((planHelpSubprocess.json as { format?: string }).format).toBe("pm_help_v1");
+      expect((planHelpInProcess.json as { format?: string }).format).toBe(
+        "pm_help_v1",
+      );
+      expect((planHelpSubprocess.json as { format?: string }).format).toBe(
+        "pm_help_v1",
+      );
 
-      const usageErrorSubprocess = context.runCli(["list-open", "--bogus-flag"]);
-      const usageErrorInProcess = await context.runCliInProcess(["list-open", "--bogus-flag"]);
+      const usageErrorSubprocess = context.runCli([
+        "list-open",
+        "--bogus-flag",
+      ]);
+      const usageErrorInProcess = await context.runCliInProcess([
+        "list-open",
+        "--bogus-flag",
+      ]);
       expect(usageErrorInProcess.code).toBe(usageErrorSubprocess.code);
       expect(usageErrorInProcess.stderr).toContain("--bogus-flag");
       expect(usageErrorSubprocess.stderr).toContain("--bogus-flag");
@@ -101,13 +153,19 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       const compactHelp = context.runCli(["gc", "--help"]);
       expect(compactHelp.code).toBe(0);
       const compactHelpText = compactHelp.stdout.replaceAll(/\s+/g, " ");
-      expect(compactHelp.stdout).toContain("Delete optional cache artifacts by default");
+      expect(compactHelp.stdout).toContain(
+        "Delete optional cache artifacts by default",
+      );
       expect(compactHelp.stdout).toContain("--dry-run");
-      expect(compactHelpText).toContain("without this flag, pm gc deletes matched artifacts");
+      expect(compactHelpText).toContain(
+        "without this flag, pm gc deletes matched artifacts",
+      );
 
       const detailedHelp = context.runCli(["gc", "--help", "--explain"]);
       expect(detailedHelp.code).toBe(0);
-      expect(detailedHelp.stdout).toContain("use --dry-run to preview targets without deleting files");
+      expect(detailedHelp.stdout).toContain(
+        "use --dry-run to preview targets without deleting files",
+      );
       expect(detailedHelp.stdout).toContain("pm gc --dry-run");
     });
   });
@@ -131,10 +189,20 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(envelope.exit_code).toBe(2);
       expect(envelope.examples).toBeDefined();
       expect(envelope.examples?.[0]).toBe("pm --help");
-      expect(envelope.examples?.some((example) => example.includes("beads"))).toBe(false);
-      expect(envelope.examples?.some((example) => example.includes("todos"))).toBe(false);
-      expect(envelope.recovery?.attempted_command).toBe("pm beads --help --json");
-      expect(envelope.recovery?.normalized_args).toEqual(["beads", "--help", "--json"]);
+      expect(
+        envelope.examples?.some((example) => example.includes("beads")),
+      ).toBe(false);
+      expect(
+        envelope.examples?.some((example) => example.includes("todos")),
+      ).toBe(false);
+      expect(envelope.recovery?.attempted_command).toBe(
+        "pm beads --help --json",
+      );
+      expect(envelope.recovery?.normalized_args).toEqual([
+        "beads",
+        "--help",
+        "--json",
+      ]);
     });
   });
 
@@ -157,7 +225,10 @@ describe("CLI help runtime coverage (sandboxed)", () => {
           "",
         ].join("\n"),
       });
-      const install = context.runCli(["install", sourceDir, "--project", "--json"], { expectJson: true });
+      const install = context.runCli(
+        ["install", sourceDir, "--project", "--json"],
+        { expectJson: true },
+      );
       expect(install.code).toBe(0);
       expect(install.json).toMatchObject({
         details: {
@@ -188,24 +259,38 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("executes common command aliases from live telemetry mistakes (show/view -> get, comment -> comments)", async () => {
     await withTempPmPath(async (context) => {
-      const created = context.runCli(["create", "--title", "Alias target", "--type", "Task", "--json"], {
-        expectJson: true,
-      });
+      const created = context.runCli(
+        ["create", "--title", "Alias target", "--type", "Task", "--json"],
+        {
+          expectJson: true,
+        },
+      );
       expect(created.code).toBe(0);
-      const itemId = (created.json as { item?: { id?: string } }).item?.id ?? "";
+      const itemId =
+        (created.json as { item?: { id?: string } }).item?.id ?? "";
       expect(itemId).toBeTruthy();
 
       // `pm show <id>` / `pm view <id>` now run instead of merely suggesting `get`.
-      const show = context.runCli(["show", itemId, "--json"], { expectJson: true });
+      const show = context.runCli(["show", itemId, "--json"], {
+        expectJson: true,
+      });
       expect(show.code).toBe(0);
       expect((show.json as { item?: { id?: string } }).item?.id).toBe(itemId);
 
-      const view = context.runCli(["view", itemId, "--json"], { expectJson: true });
+      const view = context.runCli(["view", itemId, "--json"], {
+        expectJson: true,
+      });
       expect(view.code).toBe(0);
       expect((view.json as { item?: { id?: string } }).item?.id).toBe(itemId);
 
       // `pm comment <id> --comment "..."` routes to `comments --add` and succeeds.
-      const comment = context.runCli(["comment", itemId, "--comment", "hello from alias", "--json"]);
+      const comment = context.runCli([
+        "comment",
+        itemId,
+        "--comment",
+        "hello from alias",
+        "--json",
+      ]);
       expect(comment.code).toBe(0);
       expect(comment.stderr).not.toContain("Unknown command");
     });
@@ -213,16 +298,25 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("accepts the hidden --body compatibility alias for comments", async () => {
     await withTempPmPath(async (context) => {
-      const created = context.runCli(["create", "--title", "Comment target", "--type", "Task", "--json"], {
-        expectJson: true,
-      });
+      const created = context.runCli(
+        ["create", "--title", "Comment target", "--type", "Task", "--json"],
+        {
+          expectJson: true,
+        },
+      );
       expect(created.code).toBe(0);
       const itemId = (created.json as { item?: { id?: string } }).item?.id;
       expect(itemId).toBeDefined();
 
-      const result = context.runCli(["comments", itemId ?? "", "--body", "comment body", "--json"], { expectJson: true });
+      const result = context.runCli(
+        ["comments", itemId ?? "", "--body", "comment body", "--json"],
+        { expectJson: true },
+      );
       expect(result.code).toBe(0);
-      expect((result.json as { comments: Array<{ text: string }> }).comments[0]?.text).toBe("comment body");
+      expect(
+        (result.json as { comments: Array<{ text: string }> }).comments[0]
+          ?.text,
+      ).toBe("comment body");
     });
   });
 
@@ -234,7 +328,9 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(envelope.code).toBe("unknown_option");
       expect(envelope.next_steps).toEqual(
         expect.arrayContaining([
-          expect.stringContaining("--type is a valid option on: create, list, list-all"),
+          expect.stringContaining(
+            "--type is a valid option on: create, list, list-all",
+          ),
         ]),
       );
     });
@@ -242,33 +338,60 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("suggests the full flag for an abbreviated unknown option", async () => {
     await withTempPmPath(async (context) => {
-      const result = context.runCli(["create", "--title", "Abbrev probe", "--type", "Task", "--desc", "x", "--json"]);
+      const result = context.runCli([
+        "create",
+        "--title",
+        "Abbrev probe",
+        "--type",
+        "Task",
+        "--desc",
+        "x",
+        "--json",
+      ]);
       expect(result.code).toBe(2);
       const envelope = parseJsonErrorEnvelope(result.stderr);
       expect(envelope.code).toBe("unknown_option");
-      expect(envelope.next_steps).toEqual(expect.arrayContaining(["Nearest supported options: --description"]));
+      expect(envelope.next_steps).toEqual(
+        expect.arrayContaining(["Nearest supported options: --description"]),
+      );
     });
   });
 
   it("requires an explicit retry for mutating flag typos", async () => {
     await withTempPmPath(async (context) => {
-      const result = context.runCli(["create", "--titel", "Damerau transposition probe", "--type", "Task", "--json"]);
+      const result = context.runCli([
+        "create",
+        "--titel",
+        "Damerau transposition probe",
+        "--type",
+        "Task",
+        "--json",
+      ]);
       expect(result.code).toBe(2);
       const envelope = parseJsonErrorEnvelope(result.stderr);
       expect(envelope.code).toBe("mutating_flag_typo_requires_retry");
-      expect(envelope.examples).toEqual(expect.arrayContaining([expect.stringContaining("--title")]));
-      expect(envelope.recovery?.suggested_retry).toEqual(expect.stringContaining("--title"));
-      expect(envelope.recovery?.normalized_args).toEqual(expect.arrayContaining(["--title"]));
+      expect(envelope.examples).toEqual(
+        expect.arrayContaining([expect.stringContaining("--title")]),
+      );
+      expect(envelope.recovery?.suggested_retry).toEqual(
+        expect.stringContaining("--title"),
+      );
+      expect(envelope.recovery?.normalized_args).toEqual(
+        expect.arrayContaining(["--title"]),
+      );
       const list = context.runCli(["list-all", "--json"], { expectJson: true });
-      expect(((list.json as { items?: unknown[] }).items ?? [])).toHaveLength(0);
+      expect((list.json as { items?: unknown[] }).items ?? []).toHaveLength(0);
     });
   });
 
   it("requires an explicit retry for query flag typos", async () => {
     await withTempPmPath(async (context) => {
-      const created = context.runCli(["create", "--title", "Query typo guard", "--type", "Task", "--json"], {
-        expectJson: true,
-      });
+      const created = context.runCli(
+        ["create", "--title", "Query typo guard", "--type", "Task", "--json"],
+        {
+          expectJson: true,
+        },
+      );
       expect(created.code).toBe(0);
 
       const result = context.runCli(["list-open", "--limt", "1", "--json"]);
@@ -302,14 +425,24 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(create.code).toBe(0);
       const id = (create.json as { item: { id: string } }).item.id;
 
-      const listed = context.runCli(["list", "--tags", "alias-read-tags", "--json"], { expectJson: true });
+      const listed = context.runCli(
+        ["list", "--tags", "alias-read-tags", "--json"],
+        { expectJson: true },
+      );
       expect(listed.code).toBe(0);
-      const listJson = listed.json as { count: number; filters: { tag: string | null }; items: Array<{ id: string }> };
+      const listJson = listed.json as {
+        count: number;
+        filters: { tag: string | null };
+        items: Array<{ id: string }>;
+      };
       expect(listJson.count).toBe(1);
       expect(listJson.filters.tag).toBe("alias-read-tags");
       expect(listJson.items).toEqual([expect.objectContaining({ id })]);
 
-      const searched = context.runCli(["search", "alias target", "--tags", "alias-read-tags", "--json"], { expectJson: true });
+      const searched = context.runCli(
+        ["search", "alias target", "--tags", "alias-read-tags", "--json"],
+        { expectJson: true },
+      );
       expect(searched.code).toBe(0);
       const searchJson = searched.json as {
         count: number;
@@ -324,16 +457,27 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("requires an explicit retry for operation-family mutating flag typos", async () => {
     await withTempPmPath(async (context) => {
-      const created = context.runCli(["create", "--title", "Claim typo probe", "--type", "Task", "--json"], {
-        expectJson: true,
-      });
+      const created = context.runCli(
+        ["create", "--title", "Claim typo probe", "--type", "Task", "--json"],
+        {
+          expectJson: true,
+        },
+      );
       const id = (created.json as { item: { id: string } }).item.id;
-      const result = context.runCli(["claim", id, "--autor", "integration-test", "--json"]);
+      const result = context.runCli([
+        "claim",
+        id,
+        "--autor",
+        "integration-test",
+        "--json",
+      ]);
       expect(result.code).toBe(2);
       const envelope = parseJsonErrorEnvelope(result.stderr);
       expect(envelope.code).toBe("mutating_flag_typo_requires_retry");
       expect(envelope.recovery?.suggested_retry).toContain("--author");
-      expect(envelope.recovery?.normalized_args).toEqual(expect.arrayContaining(["--author"]));
+      expect(envelope.recovery?.normalized_args).toEqual(
+        expect.arrayContaining(["--author"]),
+      );
     });
   });
 
@@ -355,9 +499,13 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("still creates a Task when the sole positional is plain text (pm-edge #1 regression guard)", async () => {
     await withTempPmPath(async (context) => {
-      const result = context.runCli(["create", "Regular title with no type collision", "--json"], { expectJson: true });
+      const result = context.runCli(
+        ["create", "Regular title with no type collision", "--json"],
+        { expectJson: true },
+      );
       expect(result.code).toBe(0);
-      const created = (result.json as { item: { title: string; type: string } }).item;
+      const created = (result.json as { item: { title: string; type: string } })
+        .item;
       expect(created.title).toBe("Regular title with no type collision");
       expect(created.type).toBe("Task");
     });
@@ -408,31 +556,58 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("renders machine-readable help payloads for --help --json and help --json", async () => {
     await withTempPmPath(async (context) => {
-      const directJsonHelp = context.runCli(["create", "--help", "--json"], { expectJson: true });
+      const directJsonHelp = context.runCli(["create", "--help", "--json"], {
+        expectJson: true,
+      });
       expect(directJsonHelp.code).toBe(0);
       const directPayload = directJsonHelp.json as {
         format: string;
         detail_mode: string;
         resolved_path: string;
         intent: string;
-        options: Array<{ long: string | null; required: boolean; value_name: string | null }>;
+        options: Array<{
+          long: string | null;
+          required: boolean;
+          value_name: string | null;
+        }>;
       };
       expect(directPayload.format).toBe("pm_help_v1");
       expect(directPayload.detail_mode).toBe("compact");
       expect(directPayload.resolved_path).toBe("create");
       expect(directPayload.intent.length).toBeGreaterThan(0);
-      expect(directPayload.options.some((entry) => entry.long === "--title" && entry.required)).toBe(true);
-      expect(directPayload.options.some((entry) => entry.long === "--title" && entry.value_name === "value")).toBe(true);
+      expect(
+        directPayload.options.some(
+          (entry) => entry.long === "--title" && entry.required,
+        ),
+      ).toBe(true);
+      expect(
+        directPayload.options.some(
+          (entry) => entry.long === "--title" && entry.value_name === "value",
+        ),
+      ).toBe(true);
 
-      const planJsonHelp = context.runCli(["plan", "--help", "--json"], { expectJson: true });
+      const planJsonHelp = context.runCli(["plan", "--help", "--json"], {
+        expectJson: true,
+      });
       expect(planJsonHelp.code).toBe(0);
       const planPayload = planJsonHelp.json as {
-        options: Array<{ long: string | null; aliases?: string[]; alias_for: string | null }>;
+        options: Array<{
+          long: string | null;
+          aliases?: string[];
+          alias_for: string | null;
+        }>;
       };
-      expect(planPayload.options.some((entry) => entry.long === "--blocked_by")).toBe(false);
-      expect(planPayload.options.find((entry) => entry.long === "--blocked-by")?.aliases).toContain("--blocked_by");
+      expect(
+        planPayload.options.some((entry) => entry.long === "--blocked_by"),
+      ).toBe(false);
+      expect(
+        planPayload.options.find((entry) => entry.long === "--blocked-by")
+          ?.aliases,
+      ).toContain("--blocked_by");
 
-      const helpCommandJson = context.runCli(["help", "create", "--json"], { expectJson: true });
+      const helpCommandJson = context.runCli(["help", "create", "--json"], {
+        expectJson: true,
+      });
       expect(helpCommandJson.code).toBe(0);
       const helpCommandPayload = helpCommandJson.json as {
         format: string;
@@ -441,7 +616,10 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(helpCommandPayload.format).toBe("pm_help_v1");
       expect(helpCommandPayload.resolved_path).toBe("create");
 
-      const packageCatalogHelp = context.runCli(["package", "catalog", "--help", "--json"], { expectJson: true });
+      const packageCatalogHelp = context.runCli(
+        ["package", "catalog", "--help", "--json"],
+        { expectJson: true },
+      );
       expect(packageCatalogHelp.code).toBe(0);
       const packageCatalogPayload = packageCatalogHelp.json as {
         resolved_path: string;
@@ -452,9 +630,16 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(packageCatalogPayload.resolved_path).toBe("package catalog");
       expect(packageCatalogPayload.intent).toContain("package catalog");
       expect(packageCatalogPayload.examples[0]).toContain("pm package catalog");
-      expect(packageCatalogPayload.options.some((entry) => entry.long === "--fields")).toBe(true);
+      expect(
+        packageCatalogPayload.options.some(
+          (entry) => entry.long === "--fields",
+        ),
+      ).toBe(true);
 
-      const detailedRootJson = context.runCli(["--help", "--json", "--explain"], { expectJson: true });
+      const detailedRootJson = context.runCli(
+        ["--help", "--json", "--explain"],
+        { expectJson: true },
+      );
       expect(detailedRootJson.code).toBe(0);
       const detailedPayload = detailedRootJson.json as {
         detail_mode: string;
@@ -489,7 +674,9 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(concise.stdout).toContain("id_prefix:");
       expect(concise.stdout).toContain("governance_preset:");
       expect(concise.stdout).toContain("capture_level:");
-      expect(concise.stdout).toContain("Re-run with --verbose for the full settings tree.");
+      expect(concise.stdout).toContain(
+        "Re-run with --verbose for the full settings tree.",
+      );
       // already_exists warnings (init-only information) survive in the summary.
       expect(concise.stdout).toContain("already_exists:");
       // The verbose-only settings internals are absent.
@@ -501,12 +688,17 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(verbose.stdout).toContain("retention_days");
       expect(verbose.stdout).toContain("ownership_enforcement");
       // Verbose tree is substantially larger than the concise default.
-      expect(verbose.stdout.split("\n").length).toBeGreaterThan(concise.stdout.split("\n").length);
+      expect(verbose.stdout.split("\n").length).toBeGreaterThan(
+        concise.stdout.split("\n").length,
+      );
 
       // --json consumers keep the full original InitResult shape.
       const json = context.runCli(["init", "--json"], { expectJson: true });
       expect(json.code).toBe(0);
-      const payload = json.json as { settings?: Record<string, unknown>; created_dirs?: unknown };
+      const payload = json.json as {
+        settings?: Record<string, unknown>;
+        created_dirs?: unknown;
+      };
       expect(payload.settings).toBeDefined();
       expect(payload.settings).toHaveProperty("telemetry");
       expect(payload.settings).toHaveProperty("governance");
@@ -539,11 +731,22 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
       // The hidden alias still parses and sets the same field as the canonical.
       const created = context.runCli(
-        ["create", "task", "Hidden snake alias parse", "--create_mode", "progressive", "--why_now", "now-rationale", "--json"],
+        [
+          "create",
+          "task",
+          "Hidden snake alias parse",
+          "--create_mode",
+          "progressive",
+          "--why_now",
+          "now-rationale",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(created.code).toBe(0);
-      const payload = created.json as { item?: { type?: string; why_now?: string } };
+      const payload = created.json as {
+        item?: { type?: string; why_now?: string };
+      };
       expect(payload.item?.type).toBe("Task");
       expect(payload.item?.why_now).toBe("now-rationale");
     });
@@ -591,8 +794,12 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     await withTempPmPath(async (context) => {
       const help = context.runCli(["search", "--help"]);
       expect(help.code).toBe(0);
-      expect(help.stdout).toContain("Search items with keyword, semantic, or hybrid retrieval.");
-      expect(help.stdout).toMatch(/Search mode: keyword\|semantic\|hybrid \(default:\s+keyword\)/);
+      expect(help.stdout).toContain(
+        "Search items with keyword, semantic, or hybrid retrieval.",
+      );
+      expect(help.stdout).toMatch(
+        /Search mode: keyword\|semantic\|hybrid \(default:\s+keyword\)/,
+      );
       expect(help.stdout).toContain("--include-linked");
     });
   });
@@ -627,22 +834,39 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(created.code).toBe(0);
       const id = (created.json as { item?: { id?: string } }).item?.id ?? "";
 
-      const brief = context.runCli(["get", id, "--depth", "brief", "--json"], { expectJson: true });
+      const brief = context.runCli(["get", id, "--depth", "brief", "--json"], {
+        expectJson: true,
+      });
       expect(brief.code).toBe(0);
-      const payload = brief.json as { item?: { id?: string; body?: string }; linked?: { files?: unknown[] } };
+      const payload = brief.json as {
+        item?: { id?: string; body?: string };
+        linked?: { files?: unknown[] };
+      };
       expect(payload.item?.id).toBe(id);
       expect(payload.item?.body).toBeUndefined();
       expect(payload.linked).toBeUndefined();
 
-      const depthFull = context.runCli(["get", id, "--depth", "full", "--json"], { expectJson: true });
+      const depthFull = context.runCli(
+        ["get", id, "--depth", "full", "--json"],
+        { expectJson: true },
+      );
       expect(depthFull.code).toBe(0);
-      const depthFullPayload = depthFull.json as { item?: { id?: string; body?: string } };
+      const depthFullPayload = depthFull.json as {
+        item?: { id?: string; body?: string };
+      };
       expect(depthFullPayload.item?.id).toBe(id);
       expect(depthFullPayload.item?.body).toBe("");
 
-      const fields = context.runCli(["get", id, "--fields", "id,title,status,parent,type", "--json"], { expectJson: true });
+      const fields = context.runCli(
+        ["get", id, "--fields", "id,title,status,parent,type", "--json"],
+        { expectJson: true },
+      );
       expect(fields.code).toBe(0);
-      const fieldsPayload = fields.json as { item?: Record<string, unknown>; body?: string; linked?: { files?: unknown[] } };
+      const fieldsPayload = fields.json as {
+        item?: Record<string, unknown>;
+        body?: string;
+        linked?: { files?: unknown[] };
+      };
       expect(fieldsPayload.item).toEqual({
         id,
         title: "Get depth runtime",
@@ -657,7 +881,10 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("renders intent and example sections for installed templates plus core commands", async () => {
     await withTempPmPath(async (context) => {
-      const installTemplates = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });
+      const installTemplates = context.runCli(
+        ["install", "templates", "--project", "--json"],
+        { expectJson: true },
+      );
       expect(installTemplates.code).toBe(0);
 
       for (const commandName of ["templates", "deps", "update-many"] as const) {
@@ -733,7 +960,9 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
       const textHelp = context.runCli(["migrate-asset", "--help"]);
       expect(textHelp.code).toBe(0);
-      expect(textHelp.stdout).toContain("Migrate asset descriptors to the active schema.");
+      expect(textHelp.stdout).toContain(
+        "Migrate asset descriptors to the active schema.",
+      );
       expect(textHelp.stdout).toContain("[assetId]");
       expect(textHelp.stdout).toContain("--source <path>");
       expect(textHelp.stdout).toContain("--target <path>");
@@ -742,7 +971,10 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(textHelp.stdout).toContain("Action contract: migrate-asset");
       expect(textHelp.stdout).toContain("Common failure hints:");
 
-      const compactJsonHelp = context.runCli(["migrate-asset", "--help", "--json"], { expectJson: true });
+      const compactJsonHelp = context.runCli(
+        ["migrate-asset", "--help", "--json"],
+        { expectJson: true },
+      );
       expect(compactJsonHelp.code).toBe(0);
       const compactPayload = compactJsonHelp.json as {
         detail_mode: string;
@@ -752,8 +984,12 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         options: Array<{ long: string | null; value_name: string | null }>;
       };
       expect(compactPayload.detail_mode).toBe("compact");
-      expect(compactPayload.intent).toBe("Validate and migrate asset descriptors before writing output.");
-      expect(compactPayload.examples).toEqual(["pm migrate-asset --source assets/source.json --target assets/output.json"]);
+      expect(compactPayload.intent).toBe(
+        "Validate and migrate asset descriptors before writing output.",
+      );
+      expect(compactPayload.examples).toEqual([
+        "pm migrate-asset --source assets/source.json --target assets/output.json",
+      ]);
       expect(compactPayload.arguments).toEqual(
         expect.arrayContaining([expect.objectContaining({ name: "assetId" })]),
       );
@@ -765,30 +1001,38 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         ]),
       );
 
-      const detailedJsonHelp = context.runCli(["migrate-asset", "--help", "--json", "--explain"], { expectJson: true });
+      const detailedJsonHelp = context.runCli(
+        ["migrate-asset", "--help", "--json", "--explain"],
+        { expectJson: true },
+      );
       expect(detailedJsonHelp.code).toBe(0);
       const detailedPayload = detailedJsonHelp.json as {
         detail_mode: string;
         tips: string[];
       };
       expect(detailedPayload.detail_mode).toBe("detailed");
-      expect(detailedPayload.tips).toEqual(["Ensure --source points to a readable descriptor file."]);
+      expect(detailedPayload.tips).toEqual([
+        "Ensure --source points to a readable descriptor file.",
+      ]);
     });
   });
 
   it("renders structured usage guidance for missing required options", async () => {
     await withTempPmPath(async (context) => {
       // create-mode=strict disables the default-Task fallback to keep the strict required-option contract
-      const usage = context.runCli([
-        "create",
-        "--title",
-        "Only title",
-        "--description",
-        "Only description",
-        "--create-mode",
-        "strict",
-        "--json",
-      ]);
+      const usage = context.runCli(
+        [
+          "create",
+          "--title",
+          "Only title",
+          "--description",
+          "Only description",
+          "--create-mode",
+          "strict",
+          "--json",
+        ],
+        { preserveDefaultMutationOutput: true },
+      );
       expect(usage.code).toBe(2);
       const envelope = expectJsonErrorEnvelope(usage.stderr, {
         type: "urn:pm-cli:error:missing_required_option",
@@ -814,27 +1058,52 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         "--json",
       ]);
       expect(envelope.recovery?.provided_fields).toEqual(
-        expect.arrayContaining(["--description", "--json", "--title", "--create-mode"]),
+        expect.arrayContaining([
+          "--description",
+          "--json",
+          "--title",
+          "--create-mode",
+        ]),
       );
-      expect(envelope.recovery?.missing).toEqual(expect.arrayContaining(["--type"]));
+      expect(envelope.recovery?.missing).toEqual(
+        expect.arrayContaining(["--type"]),
+      );
       expect(envelope.recovery?.suggested_retry).toContain("--type");
     });
   });
 
   it("does not mark malformed provided reminder as missing or suggest an identical retry", async () => {
     await withTempPmPath(async (context) => {
-      const created = context.runCli(["create", "--title", "Reminder validation", "--type", "Task", "--json"], {
-        expectJson: true,
-      });
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "Reminder validation",
+          "--type",
+          "Task",
+          "--json",
+        ],
+        {
+          expectJson: true,
+        },
+      );
       expect(created.code).toBe(0);
       const itemId = (created.json as { item?: { id?: string } }).item?.id;
       expect(itemId).toBeDefined();
 
-      const usage = context.runCli(["update", itemId ?? "", "--reminder", "text=missing-at", "--json"]);
+      const usage = context.runCli([
+        "update",
+        itemId ?? "",
+        "--reminder",
+        "text=missing-at",
+        "--json",
+      ]);
       expect(usage.code).toBe(2);
       const envelope = parseJsonErrorEnvelope(usage.stderr);
       expect(envelope.code).toBe("invalid_argument_value");
-      expect(envelope.recovery?.provided_fields).toEqual(expect.arrayContaining(["--json", "--reminder"]));
+      expect(envelope.recovery?.provided_fields).toEqual(
+        expect.arrayContaining(["--json", "--reminder"]),
+      );
       expect(envelope.recovery?.missing ?? []).not.toContain("--reminder");
       expect(envelope.recovery?.suggested_retry).toBeUndefined();
     });
@@ -842,11 +1111,23 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("allows create templates to satisfy missing --type", async () => {
     await withTempPmPath(async (context) => {
-      const installTemplates = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });
+      const installTemplates = context.runCli(
+        ["install", "templates", "--project", "--json"],
+        { expectJson: true },
+      );
       expect(installTemplates.code).toBe(0);
 
       const savedTemplate = context.runCli(
-        ["templates", "save", "typed-task-default", "--type", "Task", "--priority", "1", "--json"],
+        [
+          "templates",
+          "save",
+          "typed-task-default",
+          "--type",
+          "Task",
+          "--priority",
+          "1",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(savedTemplate.code).toBe(0);
@@ -893,7 +1174,16 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         },
       ]);
 
-      const usage = context.runCli(["create", "--title", "Asset title", "--description", "Asset description", "--type", "Asset", "--json"]);
+      const usage = context.runCli([
+        "create",
+        "--title",
+        "Asset title",
+        "--description",
+        "Asset description",
+        "--type",
+        "Asset",
+        "--json",
+      ]);
       expect(usage.code).toBe(2);
       const envelope = expectJsonErrorEnvelope(usage.stderr, {
         type: "urn:pm-cli:error:missing_required_option",
@@ -956,7 +1246,9 @@ describe("CLI help runtime coverage (sandboxed)", () => {
           { expectJson: true },
         );
         expect(created.code).toBe(0);
-        const payload = created.json as { item: { type: string; status: string; priority: number } };
+        const payload = created.json as {
+          item: { type: string; status: string; priority: number };
+        };
         expect(payload.item.type).toBe(type);
         expect(payload.item.status).toBe("open");
         expect(payload.item.priority).toBe(2);
@@ -990,17 +1282,39 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(created.code).toBe(0);
       const id = (created.json as { item: { id: string } }).item.id;
 
-      const blocked = context.runCli(["comments", id, "--add", "audit note", "--author", "owner-b", "--json"]);
+      const blocked = context.runCli([
+        "comments",
+        id,
+        "--add",
+        "audit note",
+        "--author",
+        "owner-b",
+        "--json",
+      ]);
       expect(blocked.code).toBe(4);
       expectJsonErrorEnvelope(blocked.stderr, { code: "ownership_conflict" });
 
       const allowed = context.runCli(
-        ["comments", id, "--add", "audit note", "--author", "owner-b", "--allow-audit-comment", "--json"],
+        [
+          "comments",
+          id,
+          "--add",
+          "audit note",
+          "--author",
+          "owner-b",
+          "--allow-audit-comment",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(allowed.code).toBe(0);
-      const payload = allowed.json as { comments: Array<{ text: string; author: string }> };
-      expect(payload.comments.at(-1)).toMatchObject({ text: "audit note", author: "owner-b" });
+      const payload = allowed.json as {
+        comments: Array<{ text: string; author: string }>;
+      };
+      expect(payload.comments.at(-1)).toMatchObject({
+        text: "audit note",
+        author: "owner-b",
+      });
     });
   });
 
@@ -1031,35 +1345,88 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       const id = (created.json as { item: { id: string } }).item.id;
 
       const allowedNote = context.runCli(
-        ["notes", id, "--add", "audit note", "--author", "owner-b", "--allow-audit-note", "--json"],
+        [
+          "notes",
+          id,
+          "--add",
+          "audit note",
+          "--author",
+          "owner-b",
+          "--allow-audit-note",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(allowedNote.code, allowedNote.stderr).toBe(0);
-      const allowedNotePayload = allowedNote.json as { notes: Array<{ text: string; author: string }> };
-      expect(allowedNotePayload.notes.at(-1)).toMatchObject({ text: "audit note", author: "owner-b" });
+      const allowedNotePayload = allowedNote.json as {
+        notes: Array<{ text: string; author: string }>;
+      };
+      expect(allowedNotePayload.notes.at(-1)).toMatchObject({
+        text: "audit note",
+        author: "owner-b",
+      });
 
       const allowedNoteLegacy = context.runCli(
-        ["notes", id, "--add", "legacy alias note", "--author", "owner-b", "--allow-audit-comment", "--json"],
+        [
+          "notes",
+          id,
+          "--add",
+          "legacy alias note",
+          "--author",
+          "owner-b",
+          "--allow-audit-comment",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(allowedNoteLegacy.code).toBe(0);
-      const allowedNoteLegacyPayload = allowedNoteLegacy.json as { notes: Array<{ text: string; author: string }> };
-      expect(allowedNoteLegacyPayload.notes.at(-1)).toMatchObject({ text: "legacy alias note", author: "owner-b" });
+      const allowedNoteLegacyPayload = allowedNoteLegacy.json as {
+        notes: Array<{ text: string; author: string }>;
+      };
+      expect(allowedNoteLegacyPayload.notes.at(-1)).toMatchObject({
+        text: "legacy alias note",
+        author: "owner-b",
+      });
 
       const allowedLearning = context.runCli(
-        ["learnings", id, "--add", "audit learning", "--author", "owner-b", "--allow-audit-learning", "--json"],
+        [
+          "learnings",
+          id,
+          "--add",
+          "audit learning",
+          "--author",
+          "owner-b",
+          "--allow-audit-learning",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(allowedLearning.code).toBe(0);
-      const allowedLearningPayload = allowedLearning.json as { learnings: Array<{ text: string; author: string }> };
-      expect(allowedLearningPayload.learnings.at(-1)).toMatchObject({ text: "audit learning", author: "owner-b" });
+      const allowedLearningPayload = allowedLearning.json as {
+        learnings: Array<{ text: string; author: string }>;
+      };
+      expect(allowedLearningPayload.learnings.at(-1)).toMatchObject({
+        text: "audit learning",
+        author: "owner-b",
+      });
 
       const allowedLearningLegacy = context.runCli(
-        ["learnings", id, "--add", "legacy alias learning", "--author", "owner-b", "--allow-audit-comment", "--json"],
+        [
+          "learnings",
+          id,
+          "--add",
+          "legacy alias learning",
+          "--author",
+          "owner-b",
+          "--allow-audit-comment",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(allowedLearningLegacy.code).toBe(0);
-      const allowedLearningLegacyPayload = allowedLearningLegacy.json as { learnings: Array<{ text: string; author: string }> };
+      const allowedLearningLegacyPayload = allowedLearningLegacy.json as {
+        learnings: Array<{ text: string; author: string }>;
+      };
       expect(allowedLearningLegacyPayload.learnings.at(-1)).toMatchObject({
         text: "legacy alias learning",
         author: "owner-b",
@@ -1120,7 +1487,15 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(createResult.code).toBe(0);
       const id = (createResult.json as { item: { id: string } }).item.id;
 
-      const jsonConflict = context.runCli(["update", id, "--status", "in_progress", "--author", "owner-b", "--json"]);
+      const jsonConflict = context.runCli([
+        "update",
+        id,
+        "--status",
+        "in_progress",
+        "--author",
+        "owner-b",
+        "--json",
+      ]);
       expect(jsonConflict.code).toBe(4);
       const envelope = expectJsonErrorEnvelope(jsonConflict.stderr, {
         type: "urn:pm-cli:error:ownership_conflict",
@@ -1134,13 +1509,26 @@ describe("CLI help runtime coverage (sandboxed)", () => {
           step.includes("approved systematic metadata updates"),
         ),
       ).toBe(true);
-      expect(envelope.next_steps?.some((step) => step.includes("stale metadata"))).toBe(true);
-      expect(envelope.next_steps?.some((step) => step.includes("pm claim <ID>"))).toBe(true);
+      expect(
+        envelope.next_steps?.some((step) => step.includes("stale metadata")),
+      ).toBe(true);
+      expect(
+        envelope.next_steps?.some((step) => step.includes("pm claim <ID>")),
+      ).toBe(true);
 
-      const textConflict = context.runCli(["update", id, "--status", "in_progress", "--author", "owner-b"]);
+      const textConflict = context.runCli([
+        "update",
+        id,
+        "--status",
+        "in_progress",
+        "--author",
+        "owner-b",
+      ]);
       expect(textConflict.code).toBe(4);
       expect(textConflict.stderr).toContain("Next steps:");
-      expect(textConflict.stderr).toContain("approved systematic metadata updates");
+      expect(textConflict.stderr).toContain(
+        "approved systematic metadata updates",
+      );
     });
   });
 
@@ -1164,18 +1552,34 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         },
       ]);
 
-      const createHelp = context.runCli(["create", "--help", "--type", "Asset"]);
+      const createHelp = context.runCli([
+        "create",
+        "--help",
+        "--type",
+        "Asset",
+      ]);
       expect(createHelp.code).toBe(0);
-      expect(createHelp.stdout).toContain("Type-aware option policies for Asset:");
+      expect(createHelp.stdout).toContain(
+        "Type-aware option policies for Asset:",
+      );
       expect(createHelp.stdout).toContain("type options:");
       expect(createHelp.stdout).toContain("- category (required)");
       expect(createHelp.stdout).toContain("values: feature|maintenance");
       expect(createHelp.stdout).toContain("aliases: cat");
-      expect(createHelp.stdout).toContain("description: Asset category selector");
+      expect(createHelp.stdout).toContain(
+        "description: Asset category selector",
+      );
 
-      const updateHelp = context.runCli(["update", "--help", "--type", "Asset"]);
+      const updateHelp = context.runCli([
+        "update",
+        "--help",
+        "--type",
+        "Asset",
+      ]);
       expect(updateHelp.code).toBe(0);
-      expect(updateHelp.stdout).toContain("Type-aware option policies for Asset:");
+      expect(updateHelp.stdout).toContain(
+        "Type-aware option policies for Asset:",
+      );
       expect(updateHelp.stdout).toContain("type options:");
       expect(updateHelp.stdout).toContain("- category (required)");
     });

@@ -10,6 +10,7 @@ export {
   getPmGitignoreBlock,
   type EnsurePmGitignoreResult,
 } from "./workspace.js";
+import { AsyncLocalStorage } from "node:async_hooks";
 import path from "node:path";
 import {
   createEmptyExtensionCommandRegistry,
@@ -2304,6 +2305,7 @@ export function readRequiredString(
 // request-scoped registry plumbing remains possible later if true intra-server
 // concurrency is ever needed.
 const extensionActivationQueue = createSerialQueue();
+const activeExtensionScope = new AsyncLocalStorage<boolean>();
 
 type ExtensionActivationResult = Awaited<ReturnType<typeof activateExtensions>>;
 
@@ -2364,6 +2366,35 @@ async function withActiveExtensions<T>(
       : await withCwd(explicitCwd, () =>
           withActiveExtensionsExclusively(global, resolutionCwd, run),
         ),
+  );
+}
+
+/** Options for executing direct SDK work inside the workspace extension lifecycle. */
+export interface ActiveExtensionScopeOptions {
+  /** Workspace resolution directory; defaults to the process working directory. */
+  cwd?: string;
+  /** Explicit tracker root override for sandboxed or test execution. */
+  path?: string;
+  /** Disable workspace extension activation for this scope. */
+  noExtensions?: boolean;
+}
+
+/**
+ * Execute direct SDK work while workspace extensions are loaded, serialized, and
+ * published to the active registries. Use this for SDK operations that bypass
+ * {@link runAction} but still create or update extension-owned item shapes.
+ */
+export async function runWithActiveExtensions<T>(
+  options: ActiveExtensionScopeOptions,
+  run: () => Promise<T>,
+): Promise<T> {
+  const explicitCwd = options.cwd;
+  const resolutionCwd = explicitCwd ?? process.cwd();
+  return withActiveExtensions(
+    globalOptions({ path: options.path, noExtensions: options.noExtensions }),
+    explicitCwd,
+    resolutionCwd,
+    () => activeExtensionScope.run(true, run),
   );
 }
 
@@ -2711,7 +2742,8 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
     if (
       (args as PmActionInput & { [ACTIVE_EXTENSION_HOST_CONTEXT]?: true })[
         ACTIVE_EXTENSION_HOST_CONTEXT
-      ] === true
+      ] === true ||
+      activeExtensionScope.getStore() === true
     ) {
       return await dispatchAction(resolved.action, resolved.args, global, null);
     }

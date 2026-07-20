@@ -108,8 +108,10 @@ export function compactFlagAliasContracts(
 /** Public contract for subcommand global flag contracts, shared by SDK and presentation-layer consumers. */
 export const SUBCOMMAND_GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--json" },
+  { flag: "--lean" },
   { flag: "--quiet" },
   { flag: "--no-changed-fields" },
+  { flag: "--full-changed-fields" },
   { flag: "--id-only" },
   { flag: "--pm-path", aliases: ["--path"] },
   { flag: "--no-extensions" },
@@ -952,6 +954,7 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Creates flag contracts using the validated operation inputs. */
 export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--stdin-json" },
   { short: "-t", flag: "--title" },
   { flag: "--id" },
   { short: "-d", flag: "--description" },
@@ -1050,6 +1053,17 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--clear-type-options" },
 ];
 
+/** Atomic item-batch flags shared by contracts, help, and completions. */
+export const ITEM_MUTATE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--transaction-id", value_name: "value" },
+  { flag: "--stdin-json" },
+  { flag: "--dry-run" },
+  { flag: "--create-compensation", value_name: "mode" },
+  { flag: "--lock-ttl-seconds", value_name: "n" },
+  { flag: "--lock-wait-ms", value_name: "n" },
+  { flag: "--author", value_name: "value" },
+];
+
 /** Public contract for copy flag contracts, shared by SDK and presentation-layer consumers. */
 export const COPY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--title" },
@@ -1062,6 +1076,7 @@ export const FOCUS_FLAG_CONTRACTS: CliFlagContract[] = [{ flag: "--clear" }];
 
 /** Public contract for update flag contracts, shared by SDK and presentation-layer consumers. */
 export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--stdin-json" },
   { short: "-t", flag: "--title" },
   { short: "-d", flag: "--description" },
   { short: "-b", flag: "--body" },
@@ -1540,6 +1555,7 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["install", INSTALL_FLAG_CONTRACTS],
     ["upgrade", UPGRADE_FLAG_CONTRACTS],
     ["create", CREATE_FLAG_CONTRACTS],
+    ["item mutate", ITEM_MUTATE_FLAG_CONTRACTS],
     ["copy", COPY_FLAG_CONTRACTS],
     ["focus", FOCUS_FLAG_CONTRACTS],
     ["aggregate", AGGREGATE_FLAG_CONTRACTS],

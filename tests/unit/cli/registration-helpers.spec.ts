@@ -37,7 +37,10 @@ import {
   setResolvedGlobalOptions,
 } from "../../../src/cli/registration-helpers.js";
 import { setActiveExtensionServices } from "../../../src/core/extensions/index.js";
-import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
+import {
+  readSettings,
+  writeSettings,
+} from "../../../src/core/store/settings.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 
@@ -55,7 +58,13 @@ describe("registration helpers", () => {
     });
     try {
       await expect(
-        applyActiveCommandResultService("update", [], {}, {}, { original: true }),
+        applyActiveCommandResultService(
+          "update",
+          [],
+          {},
+          {},
+          { original: true },
+        ),
       ).resolves.toEqual({ decorated: true });
     } finally {
       setActiveExtensionServices(null);
@@ -63,7 +72,9 @@ describe("registration helpers", () => {
   });
 
   it("falls back to opts() for command-like objects without optsWithGlobals", () => {
-    const command = { opts: () => ({ json: true, quiet: true, path: ".pm" }) } as unknown as Command;
+    const command = {
+      opts: () => ({ json: true, quiet: true, path: ".pm" }),
+    } as unknown as Command;
 
     expect(getGlobalOptions(command)).toEqual({
       json: true,
@@ -86,6 +97,7 @@ describe("registration helpers", () => {
         extensions: false,
         noPager: true,
         profile: true,
+        fullChangedFields: true,
       }),
     } as unknown as Command;
     expect(getGlobalOptions(command)).toEqual({
@@ -97,6 +109,7 @@ describe("registration helpers", () => {
       noExtensions: true,
       noPager: true,
       profile: true,
+      fullChangedFields: true,
     });
 
     // A primitive (non-object) command yields an empty options reader so every option resolves to its default.
@@ -153,7 +166,7 @@ describe("registration helpers", () => {
     expect(
       buildBackgroundTestCommandArgs("pm-123", {
         add: ["pnpm test", "", 42],
-        addJson: ["{\"command\":\"pnpm typecheck\"}"],
+        addJson: ['{"command":"pnpm typecheck"}'],
         remove: ["old"],
         match: " unit ",
         onlyIndex: 2,
@@ -183,7 +196,7 @@ describe("registration helpers", () => {
       "--add",
       "pnpm test",
       "--add-json",
-      "{\"command\":\"pnpm typecheck\"}",
+      '{"command":"pnpm typecheck"}',
       "--remove",
       "old",
       "--match",
@@ -269,7 +282,9 @@ describe("registration helpers", () => {
   });
 
   it("normalizes create and update options from camel and underscore aliases", () => {
-    expect(() => normalizeCreateOptions({ title: "Missing type" })).toThrow(PmCliError);
+    expect(() => normalizeCreateOptions({ title: "Missing type" })).toThrow(
+      PmCliError,
+    );
     try {
       normalizeCreateOptions({ title: "Missing type" });
     } catch (error) {
@@ -324,10 +339,17 @@ describe("registration helpers", () => {
       clearEvents: true,
       extra: "kept",
     });
-    expect(normalizeUpdateOptions({ acceptanceCriteria: ["valid", 1] }).acceptanceCriteria).toBeUndefined();
+    expect(
+      normalizeUpdateOptions({ acceptanceCriteria: ["valid", 1] })
+        .acceptanceCriteria,
+    ).toBeUndefined();
     const sharedAliases = ["second", "first"];
-    expect(normalizeUpdateOptions({ acceptanceCriteria: sharedAliases, ac: sharedAliases }).acceptanceCriteria)
-      .toBe("second; first");
+    expect(
+      normalizeUpdateOptions({
+        acceptanceCriteria: sharedAliases,
+        ac: sharedAliases,
+      }).acceptanceCriteria,
+    ).toBe("second; first");
   });
 
   it("skips unsafe prototype keys while preserving unknown extension options", () => {
@@ -345,7 +367,11 @@ describe("registration helpers", () => {
 
     const normalized = normalizeCreateOptions(options, { requireType: false });
 
-    expect(normalized).toMatchObject({ title: "Title", type: "Task", customRuntimeField: "kept" });
+    expect(normalized).toMatchObject({
+      title: "Title",
+      type: "Task",
+      customRuntimeField: "kept",
+    });
     expect(Object.hasOwn(normalized, "__proto__")).toBe(false);
     expect(Object.hasOwn(normalized, "constructor")).toBe(false);
     expect(Object.hasOwn(normalized, "prototype")).toBe(false);
@@ -353,15 +379,25 @@ describe("registration helpers", () => {
 
   it("emits profiled search refresh warnings for mutation invalidation", async () => {
     const cacheModule = await import("../../../src/core/search/cache.js");
-    const backgroundRefreshModule = await import("../../../src/core/search/background-refresh.js");
+    const backgroundRefreshModule =
+      await import("../../../src/core/search/background-refresh.js");
     const refreshSpy = vi
       .spyOn(cacheModule, "refreshSearchArtifactsForMutation")
       .mockResolvedValueOnce({ warnings: ["refresh_warning"] } as never);
-    const foregroundSpy = vi.spyOn(backgroundRefreshModule, "shouldRunSearchRefreshInForeground").mockReturnValueOnce(false);
-    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const foregroundSpy = vi
+      .spyOn(backgroundRefreshModule, "shouldRunSearchRefreshInForeground")
+      .mockReturnValueOnce(false);
+    const stderrSpy = vi
+      .spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
     try {
-      await invalidateSearchCachesForMutation({ profile: true, path: undefined } as never, { id: "pm-123" });
-      expect(stderrSpy.mock.calls.map((call) => String(call[0])).join("")).toContain("profile:search_refresh_warnings=");
+      await invalidateSearchCachesForMutation(
+        { profile: true, path: undefined } as never,
+        { id: "pm-123" },
+      );
+      expect(
+        stderrSpy.mock.calls.map((call) => String(call[0])).join(""),
+      ).toContain("profile:search_refresh_warnings=");
     } finally {
       stderrSpy.mockRestore();
       foregroundSpy.mockRestore();
@@ -371,9 +407,13 @@ describe("registration helpers", () => {
 
   it("skips optional value flags whose trimmed value is empty", () => {
     // A whitespace-only --match value trims to empty, so the flag is dropped.
-    expect(
-      buildBackgroundTestCommandArgs("pm-1", { match: "   " }),
-    ).toEqual(["test", "pm-1", "--run", "--json", "--progress"]);
+    expect(buildBackgroundTestCommandArgs("pm-1", { match: "   " })).toEqual([
+      "test",
+      "pm-1",
+      "--run",
+      "--json",
+      "--progress",
+    ]);
   });
 
   it("leaves create and update clear/boolean flags undefined when absent", () => {
@@ -506,8 +546,14 @@ describe("registration helpers", () => {
       filterMetadataMissing: true,
     });
 
-    const aggregate = normalizeAggregateOptions({ includeUnparented: true, status: "open" });
-    expect(aggregate).toMatchObject({ includeUnparented: true, status: "open" });
+    const aggregate = normalizeAggregateOptions({
+      includeUnparented: true,
+      status: "open",
+    });
+    expect(aggregate).toMatchObject({
+      includeUnparented: true,
+      status: "open",
+    });
   });
 
   it("sets every search boolean filter when its flag is enabled", () => {
@@ -527,8 +573,14 @@ describe("registration helpers", () => {
     });
 
     // String-valued minScore/semanticWeight flow through readSearchStringOrNumber's string branch.
-    const stringScores = normalizeSearchOptions({ minScore: "0.5", semanticWeight: "0.3" });
-    expect(stringScores).toMatchObject({ minScore: "0.5", semanticWeight: "0.3" });
+    const stringScores = normalizeSearchOptions({
+      minScore: "0.5",
+      semanticWeight: "0.3",
+    });
+    expect(stringScores).toMatchObject({
+      minScore: "0.5",
+      semanticWeight: "0.3",
+    });
   });
 
   it("sets every content-field and governance-missing filter when its flag triggers the true branch (list)", () => {
@@ -591,7 +643,12 @@ describe("registration helpers", () => {
   });
 
   it("maps list docs/files missing aliases to the existing absence filters", () => {
-    expect(normalizeListOptions({ filterFilesMissing: true, filterDocsMissing: true })).toMatchObject({
+    expect(
+      normalizeListOptions({
+        filterFilesMissing: true,
+        filterDocsMissing: true,
+      }),
+    ).toMatchObject({
       noFiles: true,
       filterFilesMissing: true,
       noDocs: true,
@@ -690,7 +747,12 @@ describe("registration helpers", () => {
   });
 
   it("maps search docs/files missing aliases to the existing absence filters", () => {
-    expect(normalizeSearchOptions({ filterFilesMissing: true, filterDocsMissing: true })).toMatchObject({
+    expect(
+      normalizeSearchOptions({
+        filterFilesMissing: true,
+        filterDocsMissing: true,
+      }),
+    ).toMatchObject({
       noFiles: true,
       filterFilesMissing: true,
       noDocs: true,
@@ -823,7 +885,10 @@ describe("registration helpers", () => {
         } as never,
         { quiet: false },
       );
-      const listLines = stdoutSpy.mock.calls.map((call) => String(call[0]).trim()).filter(Boolean).map((line) => JSON.parse(line));
+      const listLines = stdoutSpy.mock.calls
+        .map((call) => String(call[0]).trim())
+        .filter(Boolean)
+        .map((line) => JSON.parse(line));
       expect(listLines).toEqual([
         {
           type: "meta",
@@ -846,32 +911,64 @@ describe("registration helpers", () => {
           compact_activity: [{ op: "comment" }],
           activity: [{ op: "raw" }],
         } as never,
-        { id: "pm-a", op: "comment", author: "agent", from: "a", to: "b", limit: "1" },
+        {
+          id: "pm-a",
+          op: "comment",
+          author: "agent",
+          from: "a",
+          to: "b",
+          limit: "1",
+        },
         { quiet: false },
       );
-      const activityLines = stdoutSpy.mock.calls.map((call) => String(call[0]).trim()).filter(Boolean).map((line) => JSON.parse(line));
+      const activityLines = stdoutSpy.mock.calls
+        .map((call) => String(call[0]).trim())
+        .filter(Boolean)
+        .map((line) => JSON.parse(line));
       expect(activityLines).toEqual([
         {
           type: "meta",
           command: "activity",
           count: 1,
-          filters: { id: "pm-a", op: "comment", author: "agent", from: "a", to: "b", limit: "1" },
+          filters: {
+            id: "pm-a",
+            op: "comment",
+            author: "agent",
+            from: "a",
+            to: "b",
+            limit: "1",
+          },
         },
         { type: "entry", command: "activity", entry: { op: "comment" } },
         { type: "end", command: "activity", count: 1 },
       ]);
 
       stdoutSpy.mockClear();
-      printListJsonStream("list", { count: 0, now: "now", filters: {}, items: [] } as never, { quiet: true });
-      printActivityJsonStream({ count: 0, activity: [] } as never, {}, { quiet: true });
+      printListJsonStream(
+        "list",
+        { count: 0, now: "now", filters: {}, items: [] } as never,
+        { quiet: true },
+      );
+      printActivityJsonStream(
+        { count: 0, activity: [] } as never,
+        {},
+        { quiet: true },
+      );
       expect(stdoutSpy).not.toHaveBeenCalled();
 
       stdoutSpy.mockClear();
       stdoutSpy.mockImplementationOnce(() => false);
-      printListJsonStream("list", { count: 1, now: "now", filters: {}, items: [{ id: "pm-a" }] } as never, {
-        quiet: false,
-      });
-      const writeStopLines = stdoutSpy.mock.calls.map((call) => String(call[0]).trim()).filter(Boolean).map((line) => JSON.parse(line));
+      printListJsonStream(
+        "list",
+        { count: 1, now: "now", filters: {}, items: [{ id: "pm-a" }] } as never,
+        {
+          quiet: false,
+        },
+      );
+      const writeStopLines = stdoutSpy.mock.calls
+        .map((call) => String(call[0]).trim())
+        .filter(Boolean)
+        .map((line) => JSON.parse(line));
       expect(writeStopLines).toEqual([
         { type: "meta", command: "list", count: 1, now: "now", filters: {} },
         { type: "item", command: "list", item: { id: "pm-a" } },
@@ -880,7 +977,11 @@ describe("registration helpers", () => {
 
       // result without warnings omits the warnings key entirely.
       stdoutSpy.mockClear();
-      printListJsonStream("list", { count: 0, now: "now", filters: {}, items: [] } as never, { quiet: false });
+      printListJsonStream(
+        "list",
+        { count: 0, now: "now", filters: {}, items: [] } as never,
+        { quiet: false },
+      );
       const noWarnMeta = JSON.parse(String(stdoutSpy.mock.calls[0]![0]));
       expect(noWarnMeta).not.toHaveProperty("warnings");
 
@@ -891,8 +992,15 @@ describe("registration helpers", () => {
         {},
         { quiet: false },
       );
-      const rawActivity = stdoutSpy.mock.calls.map((call) => String(call[0]).trim()).filter(Boolean).map((line) => JSON.parse(line));
-      expect(rawActivity).toContainEqual({ type: "entry", command: "activity", entry: { op: "raw" } });
+      const rawActivity = stdoutSpy.mock.calls
+        .map((call) => String(call[0]).trim())
+        .filter(Boolean)
+        .map((line) => JSON.parse(line));
+      expect(rawActivity).toContainEqual({
+        type: "entry",
+        command: "activity",
+        entry: { op: "raw" },
+      });
     } finally {
       stdoutSpy.mockRestore();
     }
@@ -905,12 +1013,19 @@ describe("registration helpers", () => {
     const stdoutSpy = vi.spyOn(process.stdout, "write");
     try {
       // Meta write succeeds, the first item write throws EPIPE: the stream stops before --end.
-      stdoutSpy.mockImplementationOnce(() => true).mockImplementationOnce(() => {
-        throw epipe;
-      });
+      stdoutSpy
+        .mockImplementationOnce(() => true)
+        .mockImplementationOnce(() => {
+          throw epipe;
+        });
       printListJsonStream(
         "list",
-        { count: 2, now: "now", filters: {}, items: [{ id: "pm-a" }, { id: "pm-b" }] } as never,
+        {
+          count: 2,
+          now: "now",
+          filters: {},
+          items: [{ id: "pm-a" }, { id: "pm-b" }],
+        } as never,
         { quiet: false },
       );
       expect(stdoutSpy).toHaveBeenCalledTimes(2);
@@ -920,16 +1035,22 @@ describe("registration helpers", () => {
       stdoutSpy.mockImplementationOnce(() => {
         throw epipe;
       });
-      printListJsonStream("list", { count: 1, now: "now", filters: {}, items: [{ id: "pm-a" }] } as never, {
-        quiet: false,
-      });
+      printListJsonStream(
+        "list",
+        { count: 1, now: "now", filters: {}, items: [{ id: "pm-a" }] } as never,
+        {
+          quiet: false,
+        },
+      );
       expect(stdoutSpy).toHaveBeenCalledTimes(1);
 
       // Activity meta write succeeds, the entry write throws EPIPE.
       stdoutSpy.mockReset();
-      stdoutSpy.mockImplementationOnce(() => true).mockImplementationOnce(() => {
-        throw epipe;
-      });
+      stdoutSpy
+        .mockImplementationOnce(() => true)
+        .mockImplementationOnce(() => {
+          throw epipe;
+        });
       printActivityJsonStream(
         { count: 2, activity: [{ op: "a" }, { op: "b" }] } as never,
         {},
@@ -942,7 +1063,11 @@ describe("registration helpers", () => {
       stdoutSpy.mockImplementationOnce(() => {
         throw epipe;
       });
-      printActivityJsonStream({ count: 1, activity: [{ op: "a" }] } as never, {}, { quiet: false });
+      printActivityJsonStream(
+        { count: 1, activity: [{ op: "a" }] } as never,
+        {},
+        { quiet: false },
+      );
       expect(stdoutSpy).toHaveBeenCalledTimes(1);
     } finally {
       stdoutSpy.mockRestore();
@@ -989,14 +1114,21 @@ describe("registration helpers", () => {
     expect(withFull).toMatchObject({ full: true, compact: undefined });
 
     // semantic mode wins over hybrid/string mode; a non-finite numeric weight is dropped.
-    const semantic = normalizeSearchOptions({ semantic: true, semanticWeight: Number.NaN });
+    const semantic = normalizeSearchOptions({
+      semantic: true,
+      semanticWeight: Number.NaN,
+    });
     expect(semantic.mode).toBe("semantic");
     expect(semantic.semanticWeight).toBeUndefined();
   });
 
   it("normalizes search keywords and rejects empty search input", () => {
-    expect(normalizeSearchKeywordsInput([" coverage ", "", " main.ts "])).toBe("coverage main.ts");
-    expect(() => normalizeSearchKeywordsInput([" ", "\t"])).toThrow("Search query must not be empty");
+    expect(normalizeSearchKeywordsInput([" coverage ", "", " main.ts "])).toBe(
+      "coverage main.ts",
+    );
+    expect(() => normalizeSearchKeywordsInput([" ", "\t"])).toThrow(
+      "Search query must not be empty",
+    );
   });
 
   it("normalizes activity stream and context option variants", () => {
@@ -1007,9 +1139,13 @@ describe("registration helpers", () => {
     expect(resolveActivityStreamMode("0")).toBe(false);
     expect(resolveActivityStreamMode("off")).toBe(false);
     expect(resolveActivityStreamMode(null)).toBe(false);
-    expect(() => resolveActivityStreamMode("maybe")).toThrow("Activity --stream accepts rows|ndjson|jsonl");
+    expect(() => resolveActivityStreamMode("maybe")).toThrow(
+      "Activity --stream accepts rows|ndjson|jsonl",
+    );
     // A non-string, non-boolean value skips the string-parsing block and reaches the throw.
-    expect(() => resolveActivityStreamMode(42)).toThrow("Activity --stream accepts rows|ndjson|jsonl");
+    expect(() => resolveActivityStreamMode(42)).toThrow(
+      "Activity --stream accepts rows|ndjson|jsonl",
+    );
 
     expect(
       normalizeActivityOptions({
@@ -1048,17 +1184,23 @@ describe("registration helpers", () => {
       extra: "kept",
     });
 
-    expect(normalizeContextOptions({ section: [" agenda ", "", "items"] })).toMatchObject({
+    expect(
+      normalizeContextOptions({ section: [" agenda ", "", "items"] }),
+    ).toMatchObject({
       section: [" agenda ", "items"],
     });
 
     // --parent subtree scope flows through context normalization (pm-ds0m).
-    expect(normalizeContextOptions({ parent: "pm-epic" })).toMatchObject({ parent: "pm-epic" });
+    expect(normalizeContextOptions({ parent: "pm-epic" })).toMatchObject({
+      parent: "pm-epic",
+    });
     expect(normalizeContextOptions({}).parent).toBeUndefined();
   });
 
   it("applies default output format only when settings are available and JSON was not requested", async () => {
-    const settingsRoot = await mkdtemp(path.join(tmpdir(), "pm-output-default-"));
+    const settingsRoot = await mkdtemp(
+      path.join(tmpdir(), "pm-output-default-"),
+    );
     try {
       // Persist settings.json directly into the temp root so resolvePmRoot
       // treats it as an initialized tracker without spawning the CLI.
@@ -1067,13 +1209,21 @@ describe("registration helpers", () => {
       await writeSettings(settingsRoot, settings, "test:output-default");
 
       // --json short-circuits before reading settings, so the input is returned untouched.
-      await expect(applyDefaultOutputFormat({ json: true, quiet: false, path: settingsRoot })).resolves.toEqual({
+      await expect(
+        applyDefaultOutputFormat({
+          json: true,
+          quiet: false,
+          path: settingsRoot,
+        }),
+      ).resolves.toEqual({
         json: true,
         quiet: false,
         path: settingsRoot,
       });
       // Without --json, the persisted default_format flows through onto the resolved options.
-      await expect(applyDefaultOutputFormat({ quiet: false, path: settingsRoot })).resolves.toMatchObject({
+      await expect(
+        applyDefaultOutputFormat({ quiet: false, path: settingsRoot }),
+      ).resolves.toMatchObject({
         defaultOutputFormat: "json",
       });
     } finally {
@@ -1083,7 +1233,9 @@ describe("registration helpers", () => {
     const emptyRoot = await mkdtemp(path.join(tmpdir(), "pm-empty-settings-"));
     try {
       // No settings.json present, so the options are returned without a default format.
-      await expect(applyDefaultOutputFormat({ quiet: false, path: emptyRoot })).resolves.toEqual({
+      await expect(
+        applyDefaultOutputFormat({ quiet: false, path: emptyRoot }),
+      ).resolves.toEqual({
         quiet: false,
         path: emptyRoot,
       });
@@ -1106,28 +1258,55 @@ describe("registration helpers", () => {
 
   it("sorts mandatory migration blockers and enforces write gates with force semantics", async () => {
     expect(resolveMigrationId({}, 4)).toBe("migration-005");
-    expect(resolveNormalizedMigrationStatus({ status: " PENDING " })).toBe("pending");
+    expect(resolveNormalizedMigrationStatus({ status: " PENDING " })).toBe(
+      "pending",
+    );
     expect(
       collectMandatoryMigrationBlockers([
-        { layer: "project", name: "zeta", definition: { mandatory: true, id: "z", status: "pending" } },
+        {
+          layer: "project",
+          name: "zeta",
+          definition: { mandatory: true, id: "z", status: "pending" },
+        },
         { layer: "global", name: "alpha", definition: { mandatory: true } },
-        { layer: "project", name: "done", definition: { mandatory: true, status: "applied" } },
-        { layer: "project", name: "optional", definition: { mandatory: false } },
+        {
+          layer: "project",
+          name: "done",
+          definition: { mandatory: true, status: "applied" },
+        },
+        {
+          layer: "project",
+          name: "optional",
+          definition: { mandatory: false },
+        },
       ]),
     ).toEqual([
-      { layer: "global", name: "alpha", id: "migration-002", status: "pending" },
+      {
+        layer: "global",
+        name: "alpha",
+        id: "migration-002",
+        status: "pending",
+      },
       { layer: "project", name: "zeta", id: "z", status: "pending" },
     ]);
 
-    expect(decideWriteGate("list", {})).toEqual({ isMutation: false, forceCapable: false, forceRequested: false });
+    expect(decideWriteGate("list", {})).toEqual({
+      isMutation: false,
+      forceCapable: false,
+      forceRequested: false,
+    });
     expect(decideWriteGate("comments", { add: "note", force: true })).toEqual({
       isMutation: true,
       forceCapable: true,
       forceRequested: true,
     });
-    expect(decideWriteGate("files", { add: [], remove: ["path=src/a.ts"] })).toMatchObject({ isMutation: true });
+    expect(
+      decideWriteGate("files", { add: [], remove: ["path=src/a.ts"] }),
+    ).toMatchObject({ isMutation: true });
     expect(() =>
-      enforceMandatoryMigrationWriteGate("create", {}, [{ layer: "project", name: "pkg", id: "m1", status: "pending" }]),
+      enforceMandatoryMigrationWriteGate("create", {}, [
+        { layer: "project", name: "pkg", id: "m1", status: "pending" },
+      ]),
     ).toThrow(/does not support --force bypass/);
     expect(() =>
       enforceMandatoryMigrationWriteGate("update", { force: true }, [
@@ -1146,12 +1325,17 @@ describe("registration helpers", () => {
         }),
       ).resolves.toBeUndefined();
       await expect(
-        enforceItemFormatWriteGateAndPreflightMigration("update", {}, emptyRoot, {
-          enforce_item_format_gate: false,
-          run_preflight_item_format_sync: false,
-          enforce_mandatory_migration_gate: true,
-          run_extension_migrations: true,
-        }),
+        enforceItemFormatWriteGateAndPreflightMigration(
+          "update",
+          {},
+          emptyRoot,
+          {
+            enforce_item_format_gate: false,
+            run_preflight_item_format_sync: false,
+            enforce_mandatory_migration_gate: true,
+            run_extension_migrations: true,
+          },
+        ),
       ).resolves.toBeUndefined();
     } finally {
       await rm(emptyRoot, { recursive: true, force: true });
