@@ -32,6 +32,8 @@ export type RelationshipAuditFindingCode =
   | "legacy_ordering_cycle"
   | "duplicate_edge"
   | "legacy_duplicate_edge"
+  | "duplicate_dependency_row"
+  | "legacy_duplicate_dependency_row"
   | "stale_lifecycle_block"
   | "isolated_active_node"
   | "sparse_active_node";
@@ -56,6 +58,16 @@ export interface RelationshipAuditFinding {
   remediation: string;
 }
 
+/** Per-item-type connectivity coverage inside a coverage profile. */
+export interface RelationshipCoverageTypeProfile {
+  /** Active nodes declaring this item type. */
+  active: number;
+  /** Active nodes of this type with no incident edges. */
+  isolated: number;
+  /** Active nodes of this type with at most one incident edge, isolates included. */
+  degree_leq_one: number;
+}
+
 /** Aggregate structural coverage metrics for one assembled workspace graph. */
 export interface RelationshipCoverageProfile {
   /** Total indexed nodes including materialized missing placeholders. */
@@ -72,6 +84,8 @@ export interface RelationshipCoverageProfile {
   isolated_active_nodes: number;
   /** Active nodes with at most one incident edge, isolates included. */
   degree_leq_one_active_nodes: number;
+  /** Deterministic per-type connectivity coverage; untyped nodes bucket under `(untyped)`. */
+  coverage_by_type: Record<string, RelationshipCoverageTypeProfile>;
 }
 
 /** Tuning and policy inputs accepted by the relationship audit. */
@@ -82,6 +96,8 @@ export interface RelationshipAuditOptions {
   isBlocked?: (status: string) => boolean;
   /** Node identifiers that are explicitly valid isolates (roots, archives, scratch work). */
   exemptIsolates?: readonly string[];
+  /** Item types whose active nodes are policy-valid isolates or sparse nodes (case-insensitive); they stay in the coverage profile but raise no coverage finding. */
+  isolateExemptTypes?: readonly string[];
   /** Maximum sample entries retained per finding; defaults to 25. */
   maxSampleSize?: number;
   /** Abort signal checked between finding families. */
@@ -116,6 +132,8 @@ interface AuditNodeState {
   missing: boolean;
   /** Whether the node's lifecycle status is terminal. */
   terminal: boolean;
+  /** Declared item type, when the assembly carried one. */
+  type?: string;
 }
 
 /** Mutable state shared by iterative Tarjan frames. */
@@ -257,12 +275,16 @@ function completeTarjanFrame(
 }
 
 /**
- * Enumerate strongly connected components with more than one member over the
- * ordering-only digraph using an iterative Tarjan traversal. Only order-bearing
- * kinds participate: associative kinds such as `related` cannot create
- * execution-order contradictions and stay out of cycle analysis by policy.
+ * Enumerate strongly connected components with more than one member (or a
+ * self-loop) over an ordering-only successor digraph using an iterative Tarjan
+ * traversal. Only order-bearing kinds should participate: associative kinds
+ * such as `related` cannot create execution-order contradictions and stay out
+ * of cycle analysis by policy. Exported so incremental consumers (mutation
+ * advisories) share one cycle semantics with the workspace audit.
  */
-function collectOrderingCycles(successors: Map<string, string[]>): string[][] {
+export function collectOrderingCycles(
+  successors: Map<string, string[]>,
+): string[][] {
   const state: TarjanState = {
     indexes: new Map(),
     lowLinks: new Map(),
@@ -561,38 +583,134 @@ function collectDuplicateEdgeFindings(
   return findings;
 }
 
+/**
+ * Collect storage-integrity findings for raw dependency rows whose exact
+ * identity is stored more than once on one holder. Graph edge-identity dedup
+ * hides these from every assembled-graph surface (duplicate_edge only covers
+ * cross-spelling parallels), so the audit reports them from the pre-assembly
+ * scan carried on the assembly.
+ */
+function collectDuplicateRowFindings(
+  assembly: WorkspaceRelationshipAssembly,
+  maxSampleSize: number,
+): RelationshipAuditFinding[] {
+  const active: string[] = [];
+  const legacy: string[] = [];
+  for (const row of assembly.duplicateRows) {
+    (row.legacy_terminal ? legacy : active).push(
+      `${row.holder_id} -> ${row.target_id} (${row.kind} x${row.occurrences})`,
+    );
+  }
+  const findings: RelationshipAuditFinding[] = [];
+  appendFinding(
+    findings,
+    active,
+    maxSampleSize,
+    "duplicate_dependency_row",
+    "warning",
+    "One dependency row must be stored once per holder; identical repeated rows are a storage-layer defect invisible to the assembled graph.",
+    (count) => `${count} exactly duplicated stored dependency row(s) on active holder(s)`,
+    "Remove the repeated rows so the dependency is stored exactly once; graph semantics are unchanged.",
+  );
+  appendFinding(
+    findings,
+    legacy,
+    maxSampleSize,
+    "legacy_duplicate_dependency_row",
+    "info",
+    "Identical repeated dependency rows on terminal holders are historical storage noise with no scheduling effect.",
+    (count) => `${count} exactly duplicated stored dependency row(s) on terminal holder(s)`,
+    "Leave as history debt or clean up in a dedicated changelog-safe closed-item batch.",
+  );
+  return findings;
+}
+
 /** Compute structural coverage metrics and coverage-policy findings. */
+/** Mutable coverage tallies accumulated across active graph nodes. */
+interface CoverageTallies {
+  /** Active node count. */
+  active: number;
+  /** Missing placeholder count. */
+  missing: number;
+  /** Isolated active node count. */
+  isolated: number;
+  /** Degree-at-most-one active node count, isolates included. */
+  degreeLeqOne: number;
+  /** Non-exempt isolate finding subjects. */
+  isolates: string[];
+  /** Non-exempt single-edge finding subjects. */
+  sparse: string[];
+  /** Per-type connectivity tallies. */
+  byType: Map<string, RelationshipCoverageTypeProfile>;
+}
+
+/** Fold one active node's degree into the aggregate and per-type coverage tallies. */
+function tallyActiveCoverageNode(
+  tallies: CoverageTallies,
+  state: AuditNodeState,
+  degree: number,
+  exemptIsolates: Set<string>,
+  isolateExemptTypes: Set<string>,
+): void {
+  tallies.active += 1;
+  const typeKey = state.type ?? "(untyped)";
+  let typeProfile = tallies.byType.get(typeKey);
+  if (!typeProfile) {
+    typeProfile = { active: 0, isolated: 0, degree_leq_one: 0 };
+    tallies.byType.set(typeKey, typeProfile);
+  }
+  typeProfile.active += 1;
+  if (degree > 1) return;
+  tallies.degreeLeqOne += 1;
+  typeProfile.degree_leq_one += 1;
+  if (degree === 0) {
+    tallies.isolated += 1;
+    typeProfile.isolated += 1;
+  }
+  if (
+    exemptIsolates.has(state.id.toLowerCase()) ||
+    isolateExemptTypes.has(typeKey.toLowerCase())
+  )
+    return;
+  if (degree === 0) tallies.isolates.push(state.id);
+  else tallies.sparse.push(state.id);
+}
+
 function collectCoverageReport(
   assembly: WorkspaceRelationshipAssembly,
   nodeStates: Map<string, AuditNodeState>,
   exemptIsolates: Set<string>,
+  isolateExemptTypes: Set<string>,
   maxSampleSize: number,
   edgesByKind: Record<string, number>,
 ): RelationshipAuditReport {
-  let activeNodes = 0;
-  let missingNodes = 0;
-  let isolatedActiveNodes = 0;
-  let degreeLeqOneActive = 0;
-  const isolates: string[] = [];
-  const sparse: string[] = [];
+  const tallies: CoverageTallies = {
+    active: 0,
+    missing: 0,
+    isolated: 0,
+    degreeLeqOne: 0,
+    isolates: [],
+    sparse: [],
+    byType: new Map(),
+  };
   for (const id of assembly.graph.nodes()) {
     const state = nodeStates.get(id);
     /* c8 ignore next -- every graph node originates from assembly details by construction */
     if (!state) continue;
     if (state.missing) {
-      missingNodes += 1;
+      tallies.missing += 1;
       continue;
     }
     if (state.terminal) continue;
-    activeNodes += 1;
-    const degree = assembly.graph.incidentEdges(id).length;
-    if (degree > 1) continue;
-    degreeLeqOneActive += 1;
-    if (degree === 0) isolatedActiveNodes += 1;
-    if (exemptIsolates.has(id.toLowerCase())) continue;
-    if (degree === 0) isolates.push(id);
-    else sparse.push(id);
+    tallyActiveCoverageNode(
+      tallies,
+      state,
+      assembly.graph.incidentEdges(id).length,
+      exemptIsolates,
+      isolateExemptTypes,
+    );
   }
+  const { isolates, sparse } = tallies;
   const findings: RelationshipAuditFinding[] = [];
   appendFinding(
     findings,
@@ -624,10 +742,15 @@ function collectCoverageReport(
           left.localeCompare(right),
         ),
       ),
-      active_nodes: activeNodes,
-      missing_nodes: missingNodes,
-      isolated_active_nodes: isolatedActiveNodes,
-      degree_leq_one_active_nodes: degreeLeqOneActive,
+      active_nodes: tallies.active,
+      missing_nodes: tallies.missing,
+      isolated_active_nodes: tallies.isolated,
+      degree_leq_one_active_nodes: tallies.degreeLeqOne,
+      coverage_by_type: Object.fromEntries(
+        [...tallies.byType.entries()].sort(([left], [right]) =>
+          left.localeCompare(right),
+        ),
+      ),
     },
   };
 }
@@ -661,6 +784,11 @@ export function auditWorkspaceRelationshipGraph(
       .filter((id): id is string => typeof id === "string")
       .map((id) => id.trim().toLowerCase()),
   );
+  const isolateExemptTypes = new Set(
+    (options.isolateExemptTypes ?? [])
+      .filter((type): type is string => typeof type === "string")
+      .map((type) => type.trim().toLowerCase()),
+  );
   const nodeStates = new Map<string, AuditNodeState>(
     assembly.details.map((detail) => [
       detail.id,
@@ -669,6 +797,7 @@ export function auditWorkspaceRelationshipGraph(
         status: detail.status,
         missing: assembly.missingIdSet.has(detail.id.toLowerCase()),
         terminal: isTerminal(detail.status),
+        ...(detail.type === undefined ? {} : { type: detail.type }),
       },
     ]),
   );
@@ -689,12 +818,14 @@ export function auditWorkspaceRelationshipGraph(
   options.signal?.throwIfAborted();
   findings.push(
     ...collectDuplicateEdgeFindings(assembly, nodeStates, maxSampleSize),
+    ...collectDuplicateRowFindings(assembly, maxSampleSize),
   );
   options.signal?.throwIfAborted();
   const coverage = collectCoverageReport(
     assembly,
     nodeStates,
     exemptIsolates,
+    isolateExemptTypes,
     maxSampleSize,
     edgesByKind,
   );
@@ -709,5 +840,97 @@ export function auditWorkspaceRelationshipGraph(
   return {
     findings,
     profile: coverage.profile,
+  };
+}
+
+/** One persisted point-in-time audit census used for temporal comparison. */
+export interface RelationshipAuditSnapshot {
+  /** ISO timestamp the snapshot was taken at. */
+  saved_at: string;
+  /** Workspace graph fingerprint of the audited item snapshot. */
+  fingerprint: string;
+  /** Affected-subject counts keyed by finding code at snapshot time. */
+  affected_subjects_by_code: Record<string, number>;
+  /** Structural coverage profile at snapshot time. */
+  profile: RelationshipCoverageProfile;
+}
+
+/** Signed change between two audit snapshots; zero-change keys are dropped. */
+export interface RelationshipAuditDelta {
+  /** ISO timestamp of the baseline snapshot the delta is measured against. */
+  baseline_saved_at: string;
+  /** Whether both snapshots audited the identical workspace fingerprint. */
+  same_snapshot: boolean;
+  /** Signed affected-subject deltas keyed by finding code. */
+  affected_subjects_by_code: Record<string, number>;
+  /** Signed structural profile deltas. */
+  profile: {
+    /** Node-count change including missing placeholders. */
+    nodes: number;
+    /** Deduplicated edge-count change. */
+    edges: number;
+    /** Active-node-count change. */
+    active_nodes: number;
+    /** Missing-placeholder-count change. */
+    missing_nodes: number;
+    /** Isolated-active-node-count change. */
+    isolated_active_nodes: number;
+    /** Degree-at-most-one active-node-count change. */
+    degree_leq_one_active_nodes: number;
+    /** Signed per-kind edge-count deltas; unchanged kinds are dropped. */
+    edges_by_kind: Record<string, number>;
+  };
+}
+
+/** Subtract two count records, keeping only non-zero signed deltas in sorted key order. */
+function diffCountRecords(
+  baseline: Record<string, number>,
+  current: Record<string, number>,
+): Record<string, number> {
+  const keys = [
+    ...new Set([...Object.keys(baseline), ...Object.keys(current)]),
+  ].sort((left, right) => left.localeCompare(right));
+  const deltas: Record<string, number> = {};
+  for (const key of keys) {
+    const delta = (current[key] ?? 0) - (baseline[key] ?? 0);
+    if (delta !== 0) deltas[key] = delta;
+  }
+  return deltas;
+}
+
+/**
+ * Compare two point-in-time audit snapshots and return the signed change in
+ * findings and structural coverage. This is the temporal primitive behind
+ * change-since-baseline audit reporting: agents track census drift across
+ * sessions without re-deriving or storing full finding collections.
+ */
+export function diffRelationshipAuditSnapshots(
+  baseline: RelationshipAuditSnapshot,
+  current: RelationshipAuditSnapshot,
+): RelationshipAuditDelta {
+  return {
+    baseline_saved_at: baseline.saved_at,
+    same_snapshot: baseline.fingerprint === current.fingerprint,
+    affected_subjects_by_code: diffCountRecords(
+      baseline.affected_subjects_by_code,
+      current.affected_subjects_by_code,
+    ),
+    profile: {
+      nodes: current.profile.nodes - baseline.profile.nodes,
+      edges: current.profile.edges - baseline.profile.edges,
+      active_nodes: current.profile.active_nodes - baseline.profile.active_nodes,
+      missing_nodes:
+        current.profile.missing_nodes - baseline.profile.missing_nodes,
+      isolated_active_nodes:
+        current.profile.isolated_active_nodes -
+        baseline.profile.isolated_active_nodes,
+      degree_leq_one_active_nodes:
+        current.profile.degree_leq_one_active_nodes -
+        baseline.profile.degree_leq_one_active_nodes,
+      edges_by_kind: diffCountRecords(
+        baseline.profile.edges_by_kind,
+        current.profile.edges_by_kind,
+      ),
+    },
   };
 }

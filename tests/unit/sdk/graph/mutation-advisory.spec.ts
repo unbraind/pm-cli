@@ -3,10 +3,7 @@ import {
   collectNewOrderingCycleWarnings,
   mutationAdvisoryTestOnly,
 } from "../../../../src/sdk/graph/mutation-advisory.js";
-import {
-  RelationshipGraph,
-  createRelationshipKindRegistry,
-} from "../../../../src/sdk/relationships.js";
+import { createRelationshipKindRegistry } from "../../../../src/sdk/relationships.js";
 import type { Dependency, ItemMetadata } from "../../../../src/types/index.js";
 
 function item(id: string, dependencies?: Dependency[]): ItemMetadata {
@@ -62,13 +59,12 @@ describe("ordering-cycle mutation advisories", () => {
     ).toEqual([]);
   });
 
-  it("handles self cycles and defensive non-cycle components", () => {
+  it("builds the ordering digraph directly from item rows with canonical ids", () => {
     const registry = createRelationshipKindRegistry();
     registry.register({
       kind: "sequence",
       direction: "directed",
       ordering: true,
-      precedence: "source_before_target",
       hierarchy: false,
       outgoing: "many",
       incoming: "many",
@@ -76,69 +72,84 @@ describe("ordering-cycle mutation advisories", () => {
       compatibilityVersion: 1,
       allowSelf: true,
     });
-    registry.register({
-      kind: "sequence-default",
-      direction: "directed",
-      ordering: true,
-      hierarchy: false,
-      outgoing: "many",
-      incoming: "many",
-      lifecycle: "persistent",
-      compatibilityVersion: 1,
-      allowSelf: false,
-    });
-    const selfGraph = new RelationshipGraph(
-      ["pm-a"],
-      [{ source: "pm-a", target: "pm-a", kind: "sequence" }],
+    const items: ItemMetadata[] = [
+      {
+        ...item("pm-A", [
+          blockedBy("PM-B"),
+          { ...blockedBy("pm-ghost") },
+          { ...blockedBy("no-active-blocker") },
+          { id: "pm-b", kind: "unknown-kind" } as unknown as Dependency,
+          null as unknown as Dependency,
+          { id: "pm-b" } as unknown as Dependency,
+          { id: "pm-b", kind: "sequence" } as unknown as Dependency,
+        ]),
+        blocked_by: "pm-b",
+      },
+      item("pm-b"),
+      { ...item("pm-loner"), id: "   " },
+      item("pm-isolated"),
+    ];
+    const digraph = mutationAdvisoryTestOnly.buildOrderingDigraph(
+      items,
       registry,
     );
+    // blocked_by orients target-before-source; dangling, sentinel, unknown-kind,
+    // associative-default, and malformed rows contribute nothing.
+    expect(digraph.successors.get("pm-b")).toEqual(["pm-A", "pm-A"]);
+    expect(digraph.successors.get("pm-A")).toEqual(["pm-b"]);
+    expect(digraph.predecessors.get("pm-A")).toEqual(["pm-b", "pm-b"]);
+    expect(digraph.canonicalIds.get("pm-a")).toBe("pm-A");
+    expect(digraph.successors.has("pm-isolated")).toBe(false);
+
+    const component = mutationAdvisoryTestOnly.collectWeakComponent(
+      digraph,
+      "pm-A",
+    );
+    expect([...component].sort()).toEqual(["pm-A", "pm-b"]);
+    const induced = mutationAdvisoryTestOnly.induceSuccessors(
+      digraph,
+      new Set(["pm-A"]),
+    );
+    expect(induced.size).toBe(0);
+  });
+
+  it("handles self cycles and defensive non-cycle components", () => {
+    const selfAdjacency = new Map([["pm-a", ["pm-a"]]]);
     expect(
-      mutationAdvisoryTestOnly.findCyclePath(selfGraph, ["pm-a"], "pm-a"),
+      mutationAdvisoryTestOnly.findCyclePath(selfAdjacency, ["pm-a"], "pm-a"),
     ).toEqual(["pm-a", "pm-a"]);
 
-    const defensiveGraph = new RelationshipGraph(
-      ["pm-a", "pm-b", "pm-c"],
-      [
-        { source: "pm-a", target: "pm-b", kind: "sequence" },
-        { source: "pm-b", target: "pm-c", kind: "sequence" },
-      ],
-      registry,
-    );
+    const chainAdjacency = new Map([
+      ["pm-a", ["pm-b"]],
+      ["pm-b", ["pm-c"]],
+    ]);
     expect(
       mutationAdvisoryTestOnly.findCyclePath(
-        defensiveGraph,
+        chainAdjacency,
         ["pm-a", "pm-b", "pm-c"],
         "pm-a",
       ),
     ).toEqual(["pm-a", "pm-b", "pm-c", "pm-a"]);
-
-    const branchingGraph = new RelationshipGraph(
-      ["pm-a", "pm-b", "pm-c", "pm-d"],
-      [
-        { source: "pm-a", target: "pm-d", kind: "sequence" },
-        { source: "pm-a", target: "pm-d", kind: "sequence-default" },
-        { source: "pm-c", target: "pm-d", kind: "related" },
-        { source: "pm-a", target: "pm-c", kind: "sequence" },
-        { source: "pm-a", target: "pm-b", kind: "sequence" },
-        { source: "pm-b", target: "pm-b", kind: "sequence" },
-        { source: "pm-b", target: "pm-c", kind: "sequence" },
-        { source: "pm-b", target: "pm-d", kind: "sequence" },
-      ],
-      registry,
-    );
-    expect(
-      mutationAdvisoryTestOnly.buildOrderingAdjacency(branchingGraph).get("pm-a"),
-    ).toEqual(["pm-b", "pm-c", "pm-d", "pm-d"]);
     expect(
       mutationAdvisoryTestOnly.findCyclePath(
-        branchingGraph,
+        new Map([
+          ["pm-a", ["pm-outside", "pm-b"]],
+          ["pm-b", ["pm-a"]],
+        ]),
+        ["pm-a", "pm-b"],
+        "pm-a",
+      ),
+    ).toEqual(["pm-a", "pm-b", "pm-a"]);
+    expect(
+      mutationAdvisoryTestOnly.findCyclePath(
+        chainAdjacency,
         ["pm-a", "pm-b", "pm-c"],
         "pm-outside",
       ),
     ).toEqual(["pm-a", "pm-b", "pm-c", "pm-a"]);
     expect(
       mutationAdvisoryTestOnly.findCyclePath(
-        branchingGraph,
+        chainAdjacency,
         ["pm-missing"],
         "pm-missing",
       ),
@@ -151,15 +162,49 @@ describe("ordering-cycle mutation advisories", () => {
         "pm-missing",
       ),
     ).toBeUndefined();
-    const danglingGraph = {
-      nodes: () => ["pm-a"],
-      edges: () => [
-        { source: "pm-missing", target: "pm-a", kind: "sequence" },
-      ],
-      registry: () => registry,
-    } as unknown as RelationshipGraph;
+    // A neighbor outside the member set is skipped even when adjacent.
+    const escapingAdjacency = new Map([
+      ["pm-a", ["pm-b"]],
+      ["pm-b", ["pm-x"]],
+    ]);
     expect(
-      mutationAdvisoryTestOnly.buildOrderingAdjacency(danglingGraph).get("pm-a"),
+      mutationAdvisoryTestOnly.findPathBackToStart(
+        escapingAdjacency,
+        new Set(["pm-a", "pm-b"]),
+        "pm-a",
+        "pm-b",
+      ),
+    ).toBeUndefined();
+  });
+
+  it("scopes detection to the changed item and tolerates unknown ids", () => {
+    // The changed item is absent from both snapshots: no warnings, no throw.
+    expect(
+      collectNewOrderingCycleWarnings(
+        [item("pm-a")],
+        [item("pm-a")],
+        "pm-nowhere",
+      ),
     ).toEqual([]);
+    // A new cycle in a distant component never warns for the changed item.
+    const before = [
+      item("pm-a", [blockedBy("pm-b")]),
+      item("pm-b"),
+      item("pm-far"),
+      item("pm-away"),
+    ];
+    const after = [
+      before[0]!,
+      before[1]!,
+      item("pm-far", [blockedBy("pm-away")]),
+      item("pm-away", [blockedBy("pm-far")]),
+    ];
+    expect(collectNewOrderingCycleWarnings(before, after, "pm-a")).toEqual([]);
+    // Case-insensitive changed-item resolution warns with canonical spelling.
+    expect(
+      collectNewOrderingCycleWarnings(before, after, "PM-FAR"),
+    ).toEqual([
+      "ordering_cycle_created:pm-far -> pm-away -> pm-far:items_will_not_be_ready:run_pm_graph_audit",
+    ]);
   });
 });

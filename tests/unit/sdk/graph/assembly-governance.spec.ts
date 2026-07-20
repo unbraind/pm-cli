@@ -2,9 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   assembleWorkspaceRelationshipGraph,
   collectDanglingDependencyReferences,
+  collectDuplicateDependencyRows,
   collectMissingDependencyTargetIds,
 } from "../../../../src/sdk/graph/assembly.js";
-import { auditWorkspaceRelationshipGraph } from "../../../../src/sdk/graph/governance.js";
+import {
+  auditWorkspaceRelationshipGraph,
+  diffRelationshipAuditSnapshots,
+} from "../../../../src/sdk/graph/governance.js";
+import { planRelationshipRemediation } from "../../../../src/sdk/graph/remediation.js";
 import {
   RelationshipGraph,
   RelationshipKindRegistry,
@@ -379,6 +384,7 @@ describe("relationship graph governance", () => {
         missing_nodes: 0,
         isolated_active_nodes: 0,
         degree_leq_one_active_nodes: 0,
+        coverage_by_type: {},
       },
     });
   });
@@ -622,5 +628,219 @@ describe("relationship graph governance", () => {
       sample: ["pm-self"],
       sample_truncated: false,
     });
+  });
+});
+
+describe("duplicate dependency row integrity", () => {
+  const duplicated = [
+    {
+      id: "pm-active",
+      title: "Active",
+      status: "open",
+      type: "Task",
+      dependencies: [
+        { id: "PM-Twin", kind: "related" },
+        { id: "pm-twin", kind: "related" },
+        { id: "pm-twin", kind: "blocked_by" },
+        { id: "  ", kind: "related" },
+        null,
+      ],
+    },
+    {
+      id: "pm-done",
+      title: "Done",
+      status: "closed",
+      dependencies: [
+        { id: "pm-twin", kind: "related" },
+        { id: "pm-twin", kind: "related" },
+        { id: "pm-twin", kind: "related" },
+      ],
+    },
+    { id: "pm-twin", title: "Twin", status: "open", type: "Task" },
+    { id: "   ", title: "Blank", status: "open" },
+  ] as never;
+
+  it("collects raw same-identity rows case-insensitively before graph dedup", () => {
+    expect(collectDuplicateDependencyRows(duplicated)).toEqual([
+      {
+        holder_id: "pm-active",
+        target_id: "PM-Twin",
+        kind: "related",
+        occurrences: 2,
+        holder_status: "open",
+        legacy_terminal: false,
+      },
+      {
+        holder_id: "pm-done",
+        target_id: "pm-twin",
+        kind: "related",
+        occurrences: 3,
+        holder_status: "closed",
+        legacy_terminal: true,
+      },
+    ]);
+
+    expect(
+      collectDuplicateDependencyRows([
+        {
+          id: "pm-holder",
+          status: "open",
+          dependencies: [
+            { id: "pm-z", kind: "related" },
+            { id: "pm-z", kind: "related" },
+            { id: "pm-a", kind: "related" },
+            { id: "pm-a", kind: "related" },
+            { id: "pm-a", kind: "blocked_by" },
+            { id: "pm-a", kind: "blocked_by" },
+          ],
+        },
+      ] as never),
+    ).toEqual([
+      expect.objectContaining({ target_id: "pm-a", kind: "blocked_by" }),
+      expect.objectContaining({ target_id: "pm-a", kind: "related" }),
+      expect.objectContaining({ target_id: "pm-z", kind: "related" }),
+    ]);
+  });
+
+  it("reports the active and legacy duplicate-row audit families with remediation plans", () => {
+    const assembly = assembleWorkspaceRelationshipGraph(duplicated);
+    const report = auditWorkspaceRelationshipGraph(assembly);
+    expect(
+      report.findings.find(
+        (finding) => finding.code === "duplicate_dependency_row",
+      ),
+    ).toMatchObject({
+      severity: "warning",
+      count: 1,
+      sample: ["pm-active -> PM-Twin (related x2)"],
+    });
+    expect(
+      report.findings.find(
+        (finding) => finding.code === "legacy_duplicate_dependency_row",
+      ),
+    ).toMatchObject({
+      severity: "info",
+      count: 1,
+      sample: ["pm-done -> pm-twin (related x3)"],
+    });
+    const plan = planRelationshipRemediation(assembly);
+    expect(
+      plan.steps.find((step) => step.code === "duplicate_dependency_row"),
+    ).toMatchObject({ op: "remove", confidence: "high" });
+    expect(
+      plan.steps.find(
+        (step) => step.code === "legacy_duplicate_dependency_row",
+      ),
+    ).toMatchObject({ op: "waive", confidence: "high" });
+  });
+});
+
+describe("per-type coverage profiles", () => {
+  const typedWorkspace = [
+    { id: "pm-epic", title: "Epic", status: "open", type: "Epic" },
+    {
+      id: "pm-task",
+      title: "Task",
+      status: "open",
+      type: "Task",
+      parent: "pm-epic",
+    },
+    { id: "pm-note", title: "Note", status: "open" },
+    { id: "pm-old", title: "Old", status: "closed", type: "Task" },
+  ] as never;
+
+  it("breaks active connectivity down by declared item type", () => {
+    const report = auditWorkspaceRelationshipGraph(
+      assembleWorkspaceRelationshipGraph(typedWorkspace),
+    );
+    expect(report.profile.coverage_by_type).toEqual({
+      "(untyped)": { active: 1, isolated: 1, degree_leq_one: 1 },
+      Epic: { active: 1, isolated: 0, degree_leq_one: 1 },
+      Task: { active: 1, isolated: 0, degree_leq_one: 1 },
+    });
+  });
+
+  it("suppresses coverage findings for isolate-exempt item types", () => {
+    const assembly = assembleWorkspaceRelationshipGraph(typedWorkspace);
+    const strict = auditWorkspaceRelationshipGraph(assembly);
+    expect(
+      strict.findings.find(
+        (finding) => finding.code === "isolated_active_node",
+      )?.sample,
+    ).toEqual(["pm-note"]);
+    const exempted = auditWorkspaceRelationshipGraph(assembly, {
+      isolateExemptTypes: ["(UNTYPED)", "Task", null] as never,
+    });
+    expect(
+      exempted.findings.find(
+        (finding) => finding.code === "isolated_active_node",
+      ),
+    ).toBeUndefined();
+    expect(
+      exempted.findings.find(
+        (finding) => finding.code === "sparse_active_node",
+      )?.sample,
+    ).toEqual(["pm-epic"]);
+    // The profile keeps counting exempted types; only findings are suppressed.
+    expect(exempted.profile.isolated_active_nodes).toBe(1);
+  });
+});
+
+describe("diffRelationshipAuditSnapshots", () => {
+  it("returns signed non-zero deltas across findings and profile", () => {
+    const baseline = {
+      saved_at: "2026-07-19T00:00:00.000Z",
+      fingerprint: "aaa",
+      affected_subjects_by_code: { ordering_cycle: 2, duplicate_edge: 1 },
+      profile: {
+        nodes: 10,
+        edges: 12,
+        edges_by_kind: { related: 8, parent: 4 },
+        active_nodes: 5,
+        missing_nodes: 1,
+        isolated_active_nodes: 2,
+        degree_leq_one_active_nodes: 3,
+        coverage_by_type: {},
+      },
+    };
+    const current = {
+      saved_at: "2026-07-20T00:00:00.000Z",
+      fingerprint: "bbb",
+      affected_subjects_by_code: { ordering_cycle: 1, missing_reference_active: 4 },
+      profile: {
+        nodes: 12,
+        edges: 12,
+        edges_by_kind: { related: 8, blocked_by: 2, parent: 2 },
+        active_nodes: 6,
+        missing_nodes: 1,
+        isolated_active_nodes: 0,
+        degree_leq_one_active_nodes: 3,
+        coverage_by_type: {},
+      },
+    };
+    expect(diffRelationshipAuditSnapshots(baseline, current)).toEqual({
+      baseline_saved_at: "2026-07-19T00:00:00.000Z",
+      same_snapshot: false,
+      affected_subjects_by_code: {
+        duplicate_edge: -1,
+        missing_reference_active: 4,
+        ordering_cycle: -1,
+      },
+      profile: {
+        nodes: 2,
+        edges: 0,
+        active_nodes: 1,
+        missing_nodes: 0,
+        isolated_active_nodes: -2,
+        degree_leq_one_active_nodes: 0,
+        edges_by_kind: { blocked_by: 2, parent: -2 },
+      },
+    });
+    expect(
+      diffRelationshipAuditSnapshots(baseline, {
+        ...baseline,
+        saved_at: "2026-07-21T00:00:00.000Z",
+      }).same_snapshot,
+    ).toBe(true);
   });
 });

@@ -130,6 +130,18 @@ const FINDING_STEP_TEMPLATES: Record<
     rationale:
       "Duplicated spellings between terminal items are historical noise; waive or batch changelog-safe cleanup.",
   },
+  duplicate_dependency_row: {
+    op: "remove",
+    confidence: "high",
+    rationale:
+      "The identical dependency row is stored more than once on the holder; drop the repeats so the row exists exactly once — graph semantics are unchanged.",
+  },
+  legacy_duplicate_dependency_row: {
+    op: "waive",
+    confidence: "high",
+    rationale:
+      "Repeated identical rows on terminal holders are storage noise; waive or clean up only in a changelog-safe closed-item batch.",
+  },
   stale_lifecycle_block: {
     op: "investigate",
     confidence: "medium",

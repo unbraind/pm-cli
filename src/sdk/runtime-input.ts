@@ -427,6 +427,7 @@ export function graphOptionsFromFlat(
 ): GraphCommandOptions {
   const kind = readGraphIdListOption(options.kind);
   const exemptIsolate = readGraphIdListOption(options.exemptIsolate);
+  const exemptIsolateType = readGraphIdListOption(options.exemptIsolateType);
   return {
     ...(kind === undefined ? {} : { kind }),
     maxDepth: readGraphBoundOption(options.maxDepth),
@@ -436,6 +437,10 @@ export function graphOptionsFromFlat(
     maxPaths: readGraphBoundOption(options.maxPaths),
     sample: readGraphBoundOption(options.sample),
     ...(exemptIsolate === undefined ? {} : { exemptIsolate }),
+    ...(exemptIsolateType === undefined ? {} : { exemptIsolateType }),
+    saveBaseline: options.saveBaseline === true,
+    rebuild: options.rebuild === true,
+    clear: options.clear === true,
     summary: options.summary === true,
   };
 }

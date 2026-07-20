@@ -32,6 +32,8 @@ export interface GraphCacheMetadata {
   assembly: "hit" | "miss";
   /** Whether the full query result was reused from cache. */
   result: "hit" | "miss";
+  /** Durable cross-process index disposition: answered from it, missed it, or persistence disabled for this workspace. Absent on surfaces that never consult the durable index. */
+  durable?: "hit" | "miss" | "off";
 }
 
 /** Digest one item's relationship-relevant fields into a deterministic line. */
@@ -58,6 +60,9 @@ function fingerprintLine(
     item.title,
     item.status,
     isTerminal(item.status) ? "1" : "0",
+    // Per-type coverage profiles make the item type a projection input, so a
+    // retype must invalidate cached assemblies and memoized audit results.
+    typeof item.type === "string" ? item.type : "",
     item.parent ?? "",
     item.blocked_by ?? "",
     dependencies,

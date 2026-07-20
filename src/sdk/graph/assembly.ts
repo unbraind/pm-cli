@@ -77,11 +77,107 @@ function normalizeDependencyReferenceTarget(
 }
 
 /** Normalize a graph target while removing the historical no-blocker marker. */
-function normalizeDependencyGraphTarget(target: unknown): string | undefined {
+export function normalizeDependencyGraphTarget(
+  target: unknown,
+): string | undefined {
   const normalized = normalizeDependencyReferenceTarget(target);
   return normalized?.toLowerCase() === "no-active-blocker"
     ? undefined
     : normalized;
+}
+
+/**
+ * Resolve the default workspace relationship-kind registry: the built-in kinds
+ * merged with every active extension-contributed relationship-kind
+ * registration. Assembly, mutation advisories, and standalone graph consumers
+ * share this resolution so custom ordering semantics apply identically on
+ * every surface.
+ */
+export function resolveWorkspaceRelationshipKindRegistry(): RelationshipKindRegistry {
+  const registry = createRelationshipKindRegistry();
+  for (const registration of
+    getActiveExtensionRegistrations()?.relationship_kinds ?? []) {
+    for (const definition of registration.definitions) {
+      registry.register(definition);
+    }
+  }
+  return registry;
+}
+
+/** One raw stored dependency row duplicated verbatim on a single holder. */
+export interface DuplicateDependencyRow {
+  /** Item that stores the duplicated row. */
+  holder_id: string;
+  /** Referenced target id in its first stored spelling. */
+  target_id: string;
+  /** Stored relationship kind shared by every duplicate occurrence. */
+  kind: string;
+  /** Total stored occurrences of the identical row (always >= 2). */
+  occurrences: number;
+  /** Current lifecycle status of the holder. */
+  holder_status: ItemStatus;
+  /** Whether the holder is terminal and the duplication is historical debt. */
+  legacy_terminal: boolean;
+}
+
+/** Count one holder's dependency rows by their case-insensitive kind-plus-target identity. */
+function countDependencyRowIdentities(
+  item: DependencyReferenceHolder,
+): Map<string, { target_id: string; kind: string; count: number }> {
+  const occurrences = new Map<
+    string,
+    { target_id: string; kind: string; count: number }
+  >();
+  for (const dependency of item.dependencies ?? []) {
+    if (typeof dependency !== "object" || dependency === null) continue;
+    const legacyDependency = dependency as Partial<Dependency>;
+    const target = normalizeDependencyReferenceTarget(legacyDependency.id);
+    if (!target) continue;
+    const kind =
+      typeof legacyDependency.kind === "string"
+        ? legacyDependency.kind
+        : "related";
+    const key = `${kind}\u0000${target.toLowerCase()}`;
+    const existing = occurrences.get(key);
+    if (existing) existing.count += 1;
+    else occurrences.set(key, { target_id: target, kind, count: 1 });
+  }
+  return occurrences;
+}
+
+/**
+ * Collect raw stored dependency rows whose exact identity — holder, kind, and
+ * case-insensitive target — appears more than once on one item. Graph
+ * construction deduplicates these by edge identity, so the assembled graph and
+ * every projection built on it cannot see them; this pre-assembly scan is the
+ * only surface that reports the storage-layer defect.
+ */
+export function collectDuplicateDependencyRows(
+  items: readonly DependencyReferenceHolder[],
+  isTerminal: (status: ItemStatus) => boolean = (status) =>
+    status === "closed" || status === "canceled",
+): DuplicateDependencyRow[] {
+  const rows: DuplicateDependencyRow[] = [];
+  for (const item of items) {
+    if (typeof item?.id !== "string" || item.id.trim().length === 0) continue;
+    for (const entry of countDependencyRowIdentities(item).values()) {
+      if (entry.count < 2) continue;
+      rows.push({
+        holder_id: item.id.trim(),
+        target_id: entry.target_id,
+        kind: entry.kind,
+        occurrences: entry.count,
+        holder_status: item.status,
+        legacy_terminal: isTerminal(item.status),
+      });
+    }
+  }
+  return rows.sort(
+    (left, right) =>
+      left.holder_id.localeCompare(right.holder_id) ||
+      left.target_id.localeCompare(right.target_id) ||
+      left.kind.localeCompare(right.kind),
+  );
 }
 
 /**
@@ -183,6 +279,8 @@ export function collectMissingDependencyTargetIds(
 export interface WorkspaceRelationshipItem extends DependencyReferenceHolder {
   /** Human-readable title projected into per-node details. */
   title: string;
+  /** Optional item type powering per-type coverage profiles and policies. */
+  type?: string;
 }
 
 /** Compact node projection paired with the assembled graph. */
@@ -193,6 +291,8 @@ export interface WorkspaceRelationshipNodeDetails {
   title: string;
   /** Lifecycle status, or the `missing` marker status for absent endpoints. */
   status: string;
+  /** Item type when the source item declared one; absent on missing placeholders. */
+  type?: string;
 }
 
 /** Assembled workspace relationship graph with governance side-products. */
@@ -205,6 +305,8 @@ export interface WorkspaceRelationshipAssembly {
   missingIdSet: Set<string>;
   /** Dangling-reference classification computed during assembly. */
   dangling: DanglingDependencyReferenceSummary;
+  /** Raw same-identity duplicated dependency rows found before graph dedup. */
+  duplicateRows: DuplicateDependencyRow[];
 }
 
 /**
@@ -219,16 +321,8 @@ export function assembleWorkspaceRelationshipGraph(
   isTerminal?: (status: ItemStatus) => boolean,
   registry?: RelationshipKindRegistry,
 ): WorkspaceRelationshipAssembly {
-  const relationshipRegistry = registry ?? createRelationshipKindRegistry();
-  if (registry === undefined) {
-    // Preserve compatibility with activation payloads produced before this registry existed.
-    for (const registration of
-      getActiveExtensionRegistrations()?.relationship_kinds ?? []) {
-      for (const definition of registration.definitions) {
-        relationshipRegistry.register(definition);
-      }
-    }
-  }
+  const relationshipRegistry =
+    registry ?? resolveWorkspaceRelationshipKindRegistry();
   const safeItems = items.filter(
     (item) => typeof item?.id === "string" && item.id.trim().length > 0,
   );
@@ -274,6 +368,9 @@ export function assembleWorkspaceRelationshipGraph(
         id: item.id.trim(),
         title: item.title,
         status: item.status,
+        ...(typeof item.type === "string" && item.type.trim().length > 0
+          ? { type: item.type }
+          : {}),
       })),
       ...missingIds.map((id) => ({
         id,
@@ -283,5 +380,6 @@ export function assembleWorkspaceRelationshipGraph(
     ],
     missingIdSet: new Set(missingIds.map((id) => id.toLowerCase())),
     dangling,
+    duplicateRows: collectDuplicateDependencyRows(safeItems, isTerminal),
   };
 }

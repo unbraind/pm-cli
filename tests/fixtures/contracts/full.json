@@ -2524,6 +2524,19 @@
           "list": true
         },
         {
+          "flag": "--exempt-isolate-type",
+          "list": true
+        },
+        {
+          "flag": "--save-baseline"
+        },
+        {
+          "flag": "--rebuild"
+        },
+        {
+          "flag": "--clear"
+        },
+        {
           "flag": "--summary"
         }
       ],
@@ -8958,7 +8971,7 @@
       ]
     },
     {
-      "description": "Run bounded workspace relationship-graph queries: ancestors/descendants (hierarchy), predecessors/successors (ordering), paths, impact (blast radius), analyze (execution + knowledge analytics), audit (governance findings), communities (label-propagation clusters), redundancy (transitively implied edges), dominators (structural bottlenecks), and plan (dry-run remediation proposals derived from the audit). Traversals, paths, impact, and dominators require id; paths also requires target. Options support kind, maxDepth, limit, after, direction, maxPaths, sample, exemptIsolate, and counts-first summary.",
+      "description": "Run bounded workspace relationship-graph queries: ancestors/descendants (hierarchy), predecessors/successors (ordering), paths, impact (blast radius), analyze (execution + knowledge analytics), audit (governance findings with change-since-baseline deltas), communities (label-propagation clusters), redundancy (transitively implied edges), dominators (structural bottlenecks), plan (dry-run remediation proposals derived from the audit), and index (durable cross-process graph index status/rebuild/clear). Traversals, paths, impact, and dominators require id; paths also requires target. Options support kind, maxDepth, limit, after, direction, maxPaths, sample, exemptIsolate, exemptIsolateType, saveBaseline (audit), rebuild/clear (index), and counts-first summary.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
@@ -8994,7 +9007,8 @@
               "communities",
               "redundancy",
               "dominators",
-              "plan"
+              "plan",
+              "index"
             ],
             "type": "string"
           },
@@ -23383,6 +23397,10 @@
             ],
             "type": "string"
           },
+          "clear": {
+            "description": "When true, delete the durable graph index (graph index only).",
+            "type": "boolean"
+          },
           "direction": {
             "description": "Edge orientation for graph paths/impact/dominators queries (\"outgoing\", \"incoming\", or \"both\"; default \"both\").",
             "enum": [
@@ -23539,7 +23557,7 @@
             ]
           },
           "subcommand": {
-            "description": "Graph query selector: ancestors|descendants|predecessors|successors|paths|impact|analyze|audit|communities|redundancy|dominators|plan. Traversals, paths, impact, and dominators require id; paths also requires target; plan derives dry-run remediation proposals from the governance audit.",
+            "description": "Graph query selector: ancestors|descendants|predecessors|successors|paths|impact|analyze|audit|communities|redundancy|dominators|plan|index. Traversals, paths, impact, and dominators require id; paths also requires target; plan derives dry-run remediation proposals from the governance audit; index reports, rebuilds, or clears the durable cross-process graph index.",
             "examples": [
               "successors",
               "audit"

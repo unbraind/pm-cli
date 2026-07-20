@@ -444,7 +444,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "pm_graph",
     description:
-      "Run bounded workspace relationship-graph queries: ancestors/descendants (hierarchy), predecessors/successors (ordering), paths, impact (blast radius), analyze (execution + knowledge analytics), audit (governance findings), communities (label-propagation clusters), redundancy (transitively implied edges), dominators (structural bottlenecks), and plan (dry-run remediation proposals derived from the audit). Traversals, paths, impact, and dominators require id; paths also requires target. Options support kind, maxDepth, limit, after, direction, maxPaths, sample, exemptIsolate, and counts-first summary.",
+      "Run bounded workspace relationship-graph queries: ancestors/descendants (hierarchy), predecessors/successors (ordering), paths, impact (blast radius), analyze (execution + knowledge analytics), audit (governance findings with change-since-baseline deltas), communities (label-propagation clusters), redundancy (transitively implied edges), dominators (structural bottlenecks), plan (dry-run remediation proposals derived from the audit), and index (durable cross-process graph index status/rebuild/clear). Traversals, paths, impact, and dominators require id; paths also requires target. Options support kind, maxDepth, limit, after, direction, maxPaths, sample, exemptIsolate, exemptIsolateType, saveBaseline (audit), rebuild/clear (index), and counts-first summary.",
     inputSchema: objectSchema(
       {
         subcommand: {
