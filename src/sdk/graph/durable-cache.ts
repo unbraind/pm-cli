@@ -15,7 +15,6 @@
  * threshold or after an explicit `pm graph index --rebuild` opt-in.
  */
 import path from "node:path";
-import fs from "node:fs/promises";
 import {
   readFileIfExists,
   removeFileIfExists,
@@ -169,14 +168,13 @@ export async function durableGraphCacheStatus(
   const envelope = decodeEnvelope(raw);
   if (envelope === undefined)
     return { exists: raw !== null, fresh: false, entry_count: 0 };
-  const stats = await fs.stat(cachePath);
   return {
     exists: true,
     fresh: envelope.fingerprint === fingerprint,
     entry_count: Object.keys(envelope.results).length,
     fingerprint: envelope.fingerprint.slice(0, 12),
     saved_at: envelope.saved_at,
-    bytes: stats.size,
+    bytes: Buffer.byteLength(raw!, "utf8"),
   };
 }
 
@@ -204,7 +202,9 @@ function decodeBaseline(raw: string | null): RelationshipAuditSnapshot | undefin
       typeof (parsed as RelationshipAuditSnapshot).fingerprint !== "string" ||
       typeof (parsed as RelationshipAuditSnapshot).affected_subjects_by_code !==
         "object" ||
-      typeof (parsed as RelationshipAuditSnapshot).profile !== "object"
+      (parsed as RelationshipAuditSnapshot).affected_subjects_by_code === null ||
+      typeof (parsed as RelationshipAuditSnapshot).profile !== "object" ||
+      (parsed as RelationshipAuditSnapshot).profile === null
     )
       return undefined;
     return parsed as RelationshipAuditSnapshot;

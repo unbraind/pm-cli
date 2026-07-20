@@ -159,6 +159,18 @@ describe("durable graph cache primitives", () => {
       for (const corrupt of [
         "{oops",
         JSON.stringify({ saved_at: 1 }),
+        JSON.stringify({
+          saved_at: "2026-07-20T00:00:00.000Z",
+          fingerprint: "fp",
+          affected_subjects_by_code: null,
+          profile: {},
+        }),
+        JSON.stringify({
+          saved_at: "2026-07-20T00:00:00.000Z",
+          fingerprint: "fp",
+          affected_subjects_by_code: {},
+          profile: null,
+        }),
         JSON.stringify(null),
       ]) {
         await writeFile(graphAuditBaselinePath(context.pmPath), corrupt, "utf8");
