@@ -57,6 +57,7 @@ describe("core/item/parse", () => {
       "beta",
     ]);
     expect(parseTags('["alpha", 7, true]')).toEqual(["7", "alpha", "true"]);
+    expect(parseTags('["comma,tag","plain"]')).toEqual(["comma,tag", "plain"]);
     expect(parseTags("[]")).toEqual([]);
     expect(parseTestOnly.coerceJsonTagArray('{"not":"array"}')).toBeNull();
     // Malformed JSON falls back to CSV semantics so we never regress legacy paths.
@@ -476,7 +477,7 @@ describe("core/item/parse", () => {
 
   it("exposes pure parser helpers for defensive branch coverage", () => {
     expect(parseTestOnly.coerceJsonTagArray('{"not":"array"}')).toBeNull();
-    expect(parseTestOnly.coerceJsonTagArray("[{}]")).toBe("");
+    expect(parseTestOnly.coerceJsonTagArray("[{}]")).toEqual([]);
     expect(parseTestOnly.stripCodeFenceEnvelope("```")).toBe("```");
     expect(parseTestOnly.stripCodeFenceEnvelope("```kv\npath: README.md")).toBe(
       "```kv\npath: README.md",

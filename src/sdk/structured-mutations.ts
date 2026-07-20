@@ -270,6 +270,7 @@ function validateMutationRow(value: unknown, index: number): BulkItemMutation {
       EXIT_CODE.USAGE,
     );
   }
+  const normalizedId = id.trim();
   if (op === "close") {
     if (typeof reason !== "string" || reason.trim().length === 0) {
       throw new PmCliError(
@@ -279,8 +280,8 @@ function validateMutationRow(value: unknown, index: number): BulkItemMutation {
     }
     return {
       op,
-      id,
-      reason,
+      id: normalizedId,
+      reason: reason.trim(),
       ...(options === undefined
         ? {}
         : { options: options as PmClientFullMutationOptions }),
@@ -292,7 +293,11 @@ function validateMutationRow(value: unknown, index: number): BulkItemMutation {
       EXIT_CODE.USAGE,
     );
   }
-  return { op, id, options: options as PmClientFullMutationOptions };
+  return {
+    op,
+    id: normalizedId,
+    options: options as PmClientFullMutationOptions,
+  };
 }
 
 /** Parse a JSON array, or an object containing `mutations`, into an atomic mutation batch. */
@@ -346,7 +351,7 @@ function scalarItemOption(key: string, value: unknown): unknown {
     Array.isArray(value) &&
     value.every((entry) => typeof entry === "string")
   ) {
-    return value.join(",");
+    return JSON.stringify(value);
   }
   if (typeof value === "number" || typeof value === "boolean") {
     return String(value);

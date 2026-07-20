@@ -6,8 +6,8 @@ status: closed
 priority: 2
 tags[3]: cli,multi-agent,sdk-first
 created_at: "2026-07-19T14:43:37.560Z"
-updated_at: "2026-07-20T11:41:37.544Z"
-closed_at: "2026-07-20T11:41:36.764Z"
+updated_at: "2026-07-20T11:56:55.428Z"
+closed_at: "2026-07-20T11:56:54.647Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "CLI command consumes a JSON array of {op:create|update|close} mutations on stdin and applies them atomically via the public SDK commitItemMutations only (no private-core imports); partial failure compensates per the SDK policy and reports per-mutation outcomes; --dry-run previews the batch; unknown ops/keys fail fast with contract-derived hints; idempotent resume via a stable --transaction-id; MCP parity tool + contracts/completions/docs/vitest wiring per the new-command checklist; command naming decided under the pm-pbyu noun-verb composition input before implementation"
@@ -28,7 +28,7 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-g9xk,related,"2026-07-20T08:49:45.087Z",null,null
   pm-nilh,related,"2026-07-20T08:49:45.087Z",null,null
   pm-pbyu,related,"2026-07-20T08:49:45.087Z",null,null
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-20T07:55:26.190Z",codex-20260720,"Implementation start 2026-07-20: coherent broad bundle pm-xm7c + pm-kipd + pm-nilh + pm-cfed + pm-g9xk + pm-ds3b. All-status duplicate checks confirmed pm-y9hq is the closed SDK prerequisite rather than duplicate work; GH-435/437/438/443 and GH-595 map to the existing canonical items. GitHub intake: open Dependabot PRs #618-#621; #619 and #620 currently have one failed coverage shard each; open Dependabot alerts=0, secret-scanning alerts=0; Scorecard code-scanning alerts #17-#23 remain represented by pm-gnzh/pm-qwoy and are outside this implementation bundle."
   "2026-07-20T09:12:28.393Z",codex-20260720,"GitHub intake refresh 2026-07-20: Dependabot and secret-scanning open alerts remain zero; Scorecard code-scanning alerts #17-#23 remain represented by the existing security lineage. Dependency PRs #618 and #621 are green; #619 and #620 each have one failed coverage shard. New GitHub issue #623 had no all-status duplicate and is now documented as open pm-mfkv92, related to the closed merge/history lineage but outside this active structured-I/O bundle."
   "2026-07-20T09:59:52.215Z",codex-20260720,"Evidence: delivered SDK-backed atomic mutation batches across CLI (pm item mutate) and MCP (pm_mutate), strict typed parsing, dry-run, replay/resume, compensation controls, contract snapshots, and CLI/MCP parity tests. Linked structured suite passed after making author resolution environment-explicit; full repository coverage passed 6012/6012 at 100/100/100/100. Packed temp proof committed two mutations atomically with status=committed, recovered=false, mutation_count=2."
@@ -37,6 +37,7 @@ comments[8]{created_at,author,text}:
   "2026-07-20T11:02:45.898Z",codex-20260720,"CI follow-up evidence: aligned the Claude plugin contract and documentation with the new pm_mutate MCP primitive (30 tools total), removed dynamic imports from the smoke implementation, and verified the real plugin lifecycle. Focused unit tests: 15/15 passed. Real Claude plugin smoke: initialization, tools/list, lifecycle mutations, linked evidence, context/search/validate/health, and session hook all passed. Strict gates passed: docs-skills, ESLint, 100% docstrings, package-boundary audit, and token budgets. Full coverage passed: 322 files, 6014 tests, statements 40398/40398, branches 28462/28462, functions 8196/8196, lines 39322/39322."
   "2026-07-20T11:21:59.221Z",codex-20260720,"Greptile round 4 disposition: confirmed the multiline facet concern against the live parseCsvKv implementation. Structured facet serialization now uses JSON string escaping for commas, quotes, newlines, carriage returns, and backslashes; the shared quoted-value parser decodes valid JSON strings and retains its permissive legacy fallback. Regression tests cover multiline quoted annotations and the fallback. Focused 57/57 passed; full repository coverage passed 6014/6014 at exact 100/100/100/100 (40402 statements, 28464 branches, 8196 functions, 39325 lines)."
   "2026-07-20T11:41:34.025Z",codex-20260720,"CI root cause: the local checkout initially had tags through v2026.7.19, while GitHub Actions fetch-depth=0 observed the concurrently published v2026.7.20 tag. pm-changelog correctly changed its all-release-tags window, so the committed changelog was stale relative to live tag history. Fetched tags and regenerated with pm-changelog 2026.7.18."
+  "2026-07-20T11:56:53.818Z",codex-20260720,"Greptile round 6 disposition: structured item documents now retain tag arrays as JSON through the CLI option boundary; parseTags handles JSON arrays natively so comma-bearing tag identities remain intact while legacy CSV input is unchanged. Atomic batch IDs and close reasons are trimmed after non-empty validation. Focused 57/57 and strict gates passed; full coverage passed 6014/6014 at exact 100/100/100/100 (40403 statements, 28464 branches, 8196 functions, 39326 lines)."
 notes[1]{created_at,author,text}:
   "2026-07-20T07:55:27.225Z",codex-20260720,"Design boundary: one agent-native structured IO platform—contract-derived JSON parsing, SDK-only atomic execution, compact projections, CLI/MCP parity, and deterministic errors—rather than independent flag handlers."
 learnings[2]{created_at,author,text}:
@@ -66,5 +67,5 @@ docs[4]{path,scope,note}:
   docs/SDK.md,project,public atomic structured mutation reference
   plugins/pm-claude/commands/pm-init.md,project,30-tool initialization summary
   plugins/pm-claude/README.md,project,pm_mutate and 30-tool reference
-close_reason: Delivered structured mutation platform and synchronized its generated changelog with the concurrently published v2026.7.20 release window.
+close_reason: "Delivered and review-hardened atomic structured mutations with lossless multiline facets and tag arrays, current release-window changelog, and exact 100% coverage."
 body: ""

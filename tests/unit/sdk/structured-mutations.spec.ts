@@ -51,8 +51,8 @@ describe("structured mutation input", () => {
           mutations: [
             {
               op: "close",
-              id: "pm-done",
-              reason: "Done",
+              id: " pm-done ",
+              reason: " Done ",
               options: { force: true },
             },
           ],
@@ -163,7 +163,7 @@ describe("structured mutation input", () => {
       title: "Flag wins",
       type: "Feature",
       priority: "2",
-      tags: "agent,json",
+      tags: '["agent","json"]',
       dep: ["id=pm-parent,kind=related"],
       file: ["path=src/index.ts,scope=project,note=implementation"],
     });
