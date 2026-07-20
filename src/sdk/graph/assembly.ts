@@ -120,6 +120,16 @@ export interface DuplicateDependencyRow {
   legacy_terminal: boolean;
 }
 
+/** Compare text case-insensitively with an exact-spelling deterministic tie-breaker. */
+function compareCaseFoldedText(left: string, right: string): number {
+  const normalizedLeft = left.toLowerCase();
+  const normalizedRight = right.toLowerCase();
+  if (normalizedLeft !== normalizedRight)
+    return normalizedLeft < normalizedRight ? -1 : 1;
+  if (left !== right) return left < right ? -1 : 1;
+  return 0;
+}
+
 /** Count one holder's dependency rows by their case-insensitive kind-plus-target identity. */
 function countDependencyRowIdentities(
   item: DependencyReferenceHolder,
@@ -173,12 +183,17 @@ export function collectDuplicateDependencyRows(
     }
   }
   return rows.sort((left, right) => {
-    if (left.holder_id !== right.holder_id)
-      return left.holder_id < right.holder_id ? -1 : 1;
-    if (left.target_id !== right.target_id)
-      return left.target_id < right.target_id ? -1 : 1;
-    if (left.kind !== right.kind) return left.kind < right.kind ? -1 : 1;
-    return 0;
+    const holderCompare = compareCaseFoldedText(
+      left.holder_id,
+      right.holder_id,
+    );
+    if (holderCompare !== 0) return holderCompare;
+    const targetCompare = compareCaseFoldedText(
+      left.target_id,
+      right.target_id,
+    );
+    if (targetCompare !== 0) return targetCompare;
+    return compareCaseFoldedText(left.kind, right.kind);
   });
 }
 

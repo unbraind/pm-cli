@@ -683,7 +683,7 @@ describe("duplicate dependency row integrity", () => {
     expect(
       collectDuplicateDependencyRows([
         {
-          id: "pm-holder",
+          id: "PM-holder",
           status: "open",
           dependencies: [
             { id: "pm-z", kind: "related" },
@@ -751,6 +751,38 @@ describe("duplicate dependency row integrity", () => {
         },
       ] as never).map(({ target_id, kind }) => `${target_id}:${kind}`),
     ).toEqual(["pm-a:blocked_by", "pm-a:related", "pm-z:related"]);
+
+    expect(
+      collectDuplicateDependencyRows([
+        {
+          id: "PM-holder",
+          status: "open",
+          dependencies: [
+            { id: "pm-a", kind: "related" },
+            { id: "pm-a", kind: "related" },
+            { id: "pm-a", kind: "RELATED" },
+            { id: "pm-a", kind: "RELATED" },
+            { id: "PM-a", kind: "blocked_by" },
+            { id: "PM-a", kind: "blocked_by" },
+          ],
+        },
+        {
+          id: "pm-holder",
+          status: "open",
+          dependencies: [
+            { id: "pm-target", kind: "related" },
+            { id: "pm-target", kind: "related" },
+          ],
+        },
+      ] as never).map(
+        ({ holder_id, target_id, kind }) => `${holder_id}:${target_id}:${kind}`,
+      ),
+    ).toEqual([
+      "PM-holder:PM-a:blocked_by",
+      "PM-holder:pm-a:RELATED",
+      "PM-holder:pm-a:related",
+      "pm-holder:pm-target:related",
+    ]);
   });
 
   it("reports the active and legacy duplicate-row audit families with remediation plans", () => {
@@ -826,9 +858,8 @@ describe("per-type coverage profiles", () => {
     const assembly = assembleWorkspaceRelationshipGraph(typedWorkspace);
     const strict = auditWorkspaceRelationshipGraph(assembly);
     expect(
-      strict.findings.find(
-        (finding) => finding.code === "isolated_active_node",
-      )?.sample,
+      strict.findings.find((finding) => finding.code === "isolated_active_node")
+        ?.sample,
     ).toEqual(["pm-note"]);
     const exempted = auditWorkspaceRelationshipGraph(assembly, {
       isolateExemptTypes: ["(UNTYPED)", "Task", null] as never,
@@ -839,9 +870,8 @@ describe("per-type coverage profiles", () => {
       ),
     ).toBeUndefined();
     expect(
-      exempted.findings.find(
-        (finding) => finding.code === "sparse_active_node",
-      )?.sample,
+      exempted.findings.find((finding) => finding.code === "sparse_active_node")
+        ?.sample,
     ).toEqual(["pm-epic"]);
     // The profile keeps counting exempted types; only findings are suppressed.
     expect(exempted.profile.isolated_active_nodes).toBe(1);
@@ -871,7 +901,10 @@ describe("diffRelationshipAuditSnapshots", () => {
     const current = {
       saved_at: "2026-07-20T00:00:00.000Z",
       fingerprint: "bbb",
-      affected_subjects_by_code: { ordering_cycle: 1, missing_reference_active: 4 },
+      affected_subjects_by_code: {
+        ordering_cycle: 1,
+        missing_reference_active: 4,
+      },
       profile: {
         nodes: 12,
         edges: 12,

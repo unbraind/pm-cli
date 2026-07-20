@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[7]: algorithms,"area:context","area:graph",context-management,performance,planning,scale
 created_at: "2026-07-13T21:58:35.029Z"
-updated_at: "2026-07-20T06:10:06.314Z"
+updated_at: "2026-07-20T06:30:15.716Z"
 assignee: maintainer-agent
 author: codex-root
 estimated_minutes: 900
@@ -27,7 +27,7 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-atfm,related,"2026-07-13T21:58:35.029Z",null,null
   pm-g2zz,related,"2026-07-13T21:58:35.029Z",null,null
   pm-ju83,blocked_by,"2026-07-13T21:58:35.029Z",null,null
-comments[21]{created_at,author,text}:
+comments[22]{created_at,author,text}:
   "2026-07-13T21:58:35.029Z",codex-root,"Duplicate check 2026-07-13: context-engine items define relevance assembly and evaluation but no dedicated typed-graph analytics portfolio covering project planning,impact,community,and incremental temporal algorithms; this item supplies those graph primitives without duplicating ranking policy."
   "2026-07-14T09:43:36.815Z",codex-gpt5,"Implementation start 2026-07-14: deliver the first exact deterministic analytics tranche over registered relationship semantics, including execution-order and impact/knowledge signals with provenance rather than opaque scores."
   "2026-07-14T10:19:33.632Z",codex-gpt5,"Implementation evidence: added exact deterministic ordering analytics with Kahn layers, frontier, depth, topological order, critical path, and SCC cycle reporting; bounded impact with shortest explanation paths; weak/strong knowledge components, orphans, hubs; and temporal snapshot comparison. Associative relationships are excluded from execution blockers through registry precedence rather than hard-coded kind names."
@@ -49,6 +49,7 @@ comments[21]{created_at,author,text}:
   "2026-07-20T05:41:23.037Z",codex-root,"PR #622 final review round: temporal analytics now retains per-type coverage drift rather than allowing cross-type aggregate cancellation; malformed per-type baseline structures are rejected. Full 5,995-test exact coverage and static gates pass."
   "2026-07-20T05:55:02.099Z",codex-root,"PR #622 durability review: cached analytics persistence is now lock-serialized across processes and query-safe on disk failures. Concurrent views retain both results; exact full coverage passes 5,996 tests."
   "2026-07-20T06:10:06.314Z",codex-gpt5,"Final delayed-review remediation evidence: durable graph envelope decoding now rejects array-shaped results maps, invalid graph maintenance/baseline flag combinations are rejected before relationship-registry resolution, fingerprinting, or graph-cache assembly, and a spy-backed regression proves no workspace cache lookup occurs. Verification: focused durable-cache suite 10/10; pnpm lint passed (ESLint, zero jscpd clones, static quality, package-boundary, token-budget, 100% docstrings); full sandboxed coverage passed 318 files / 5,996 tests at 100% statements (40,184), branches (28,240), functions (8,154), and lines (39,121)."
+  "2026-07-20T06:30:15.716Z",codex-gpt5,"PR #622 latest Gemini follow-up: accepted the case-folded duplicate-row ordering concern while preserving the project's locale-independent determinism rule. Duplicate governance rows now sort holder, target, and kind by lowercase canonical value with exact-spelling tie-breakers; regressions exercise case-only holder/target/kind ties. Focused governance 19/19, ESLint/static quality, zero-clone jscpd, 100% docstrings, package-boundary/token-budget, and full 318-file / 5,996-test coverage all pass at exact 100/100/100/100 (40,191 statements; 28,240 branches; 8,155 functions; 39,126 lines)."
 notes[5]{created_at,author,text}:
   "2026-07-14T10:19:36.348Z",codex-gpt5,"Remaining canonical scope after this PR: dominators, community algorithms beyond exact components, redundancy detection, incremental cached analytics, and CLI/MCP projections; keep feature open."
   "2026-07-17T20:01:05.109Z",maintainer-agent,"Implementation progress (graph-query-surface lane, 2026-07-17): three of this feature's recorded remaining-scope analytics shipped as public SDK primitives in new src/sdk/graph/analytics.ts — detectRelationshipCommunities (deterministic asynchronous label propagation, sorted sweeps, lexicographic tie-break, maxIterations/minSize bounds, convergence reporting), findRedundantRelationshipEdges (transitive-reduction scan joining each directed ordering/hierarchy kind with its inverse spelling in semantic orientation, per-edge bounded BFS witness paths), computeRelationshipDominators (Cooper-Harvey-Kennedy immediate dominators over the root's reachable subgraph with per-node gating weights). Exposed as pm graph communities/redundancy/dominators + pm_graph MCP + PmClient.graph with counts-first envelopes, sample bounds, and cost metadata. Remaining canonical scope: incremental cached analytics only (dominators/communities/redundancy now shipped)."
