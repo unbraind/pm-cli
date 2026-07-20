@@ -9,6 +9,11 @@
 - GH-435: lean JSON output mode omitting null/empty fields (~50% token cut for --json) ([pm-cfed](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cfed.toon))
 - GH-437: make lean mutation output the CLI default (parity with MCP compact envelope) ([pm-nilh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-nilh.toon))
 - GH-443: lean error mode — drop constant required/why boilerplate from structured errors ([pm-g9xk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-g9xk.toon))
+
+## 2026.7.20 - 2026-07-20
+
+### Added
+
 - Tracker merge semantics: field-aware merge guidance, history-chain-safe JSONL merging, and post-merge reconciliation for multi-branch agent workflows ([pm-g5sx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-g5sx.toon))
 - Merge-driver fence completeness: relationships/\*.jsonl event stores uncovered and schema-added custom type folders silently drop driver coverage ([pm-i4fx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-i4fx.toon))
 - GH-613: public SDK bulk item-mutation helper on commitWorkspaceTransaction — atomic create/update/close batches without hand-rolled step+compensation wiring ([pm-y9hq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-y9hq.toon))
