@@ -4,6 +4,7 @@
 
 ### Added
 
+- Tracker merge semantics: field-aware merge guidance, history-chain-safe JSONL merging, and post-merge reconciliation for multi-branch agent workflows ([pm-g5sx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-g5sx.toon))
 - Merge-driver fence completeness: relationships/\*.jsonl event stores uncovered and schema-added custom type folders silently drop driver coverage ([pm-i4fx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-i4fx.toon))
 - GH-613: public SDK bulk item-mutation helper on commitWorkspaceTransaction — atomic create/update/close batches without hand-rolled step+compensation wiring ([pm-y9hq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-y9hq.toon))
 - GH-612: additive --add-ac/--remove-ac forms for acceptance criteria — replace-only --ac clobbers concurrent branch edits ([pm-xh82](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-xh82.toon))
@@ -11,6 +12,7 @@
 
 ### Fixed
 
+- MERGE_SAFETY.md documented an invalid config invocation: 'pm config set project ids.token_length 6' exits 2 (scope must precede the verb) ([pm-46octv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-46octv.toon))
 - GH-601: SDK mutation option bags and projected list items are Record<string,unknown\> — typos and wrong types compile clean under strict ([pm-x29o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x29o.toon))
 - GH-600: item id generation not collision-safe across branches/concurrent agents (4 base36 chars, local-disk-only uniqueness) ([pm-pibw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pibw.toon))
 - GH-615: pm notes --message without content is a silent no-op — apply the GH-588 empty-comment guard to the notes twin ([pm-iedg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-iedg.toon))
@@ -24,6 +26,7 @@
 
 ### Other
 
+- Adopt collision-resistant id entropy in the pm-cli repository (ids.token_length 4 -\> 6) ([pm-88cy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-88cy.toon))
 - Adopt PR\#614 merge safety in the pm-cli repository itself: pm merge install, committed .gitattributes fence, CI storage-integrity + strict history-verify gates, transactions GC schedule ([pm-iwsj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-iwsj.toon))
 
 ## 2026.7.19 - 2026-07-19

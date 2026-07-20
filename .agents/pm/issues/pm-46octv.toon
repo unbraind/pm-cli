@@ -1,0 +1,27 @@
+id: pm-46octv
+title: "MERGE_SAFETY.md documented an invalid config invocation: 'pm config set project ids.token_length 6' exits 2 (scope must precede the verb)"
+description: ""
+type: Issue
+status: closed
+priority: 3
+tags: []
+created_at: "2026-07-20T02:38:46.460Z"
+updated_at: "2026-07-20T02:39:00.154Z"
+closed_at: "2026-07-20T02:39:00.153Z"
+author: maintainer-agent
+estimated_minutes: 10
+acceptance_criteria: MERGE_SAFETY.md and AGENT_GUIDE.md show the canonical 'pm config project set ids_token_length 6' form; no docs site retains the verb-first-scope ordering
+parent: pm-o2kc
+risk: low
+confidence: high
+resolution: Corrected the invalid verb-first-scope config invocation in MERGE_SAFETY.md and AGENT_GUIDE.md to the canonical 'pm config project set ids_token_length 6' form; verified all remaining docs use scope-first ordering via repo-wide grep.
+expected_result: Agents following merge-safety entropy guidance run a valid command on the first attempt.
+actual_result: "Live grammar test: verb-first-scope form exits 2; canonical scope-first and scopeless dotted forms exit 0 and persist ids.token_length=6."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-88cy,discovered_from,"2026-07-20T02:38:46.460Z",null,null
+  pm-pibw,related,"2026-07-20T02:38:46.460Z",null,null
+files[2]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,multi-branch section uses canonical form
+  docs/MERGE_SAFETY.md,project,entropy-budget bullet corrected to scope-first form
+close_reason: Corrected the invalid verb-first-scope config invocation in MERGE_SAFETY.md and AGENT_GUIDE.md to the canonical 'pm config project set ids_token_length 6' form; verified all remaining docs use scope-first ordering via repo-wide grep.
+body: "## Defect\nMERGE_SAFETY.md (PR#617) recommended `pm config set project ids.token_length 6`. The config grammar puts the scope BEFORE the verb (`pm config project set <key> <value>`), so the documented command parses \"project\" as the key and exits 2 with invalid_argument_value — an agent following the merge-safety guidance hits a guaranteed usage error at the exact moment it is adopting collision safety. Canonical form used everywhere else in docs/CONFIGURATION.md: `pm config project set ids_token_length 6` (scope-first; `pm config set <dotted.or.underscore.key>` without scope also works and defaults to project scope).\n\n## Fix\nBoth sites corrected to the canonical scope-first form: docs/MERGE_SAFETY.md entropy-budget bullet + docs/AGENT_GUIDE.md multi-branch section."

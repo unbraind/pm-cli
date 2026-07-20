@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: concurrency,data-loss,robustness
 created_at: "2026-07-03T13:25:30.308Z"
-updated_at: "2026-07-07T14:17:48.489Z"
+updated_at: "2026-07-20T02:36:15.849Z"
 author: claude-code-agent
 estimated_minutes: 150
 acceptance_criteria: ID allocation is collision-safe under parallel create/copy (atomic reservation or retry-on-exists); idExists covers extension type folders; stress test creating items in parallel yields zero overwrites.
@@ -15,4 +15,6 @@ risk: high
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-bgcu,related,"2026-07-04T19:48:22.583Z",maintainer-agent,null
+notes[1]{created_at,author,text}:
+  "2026-07-20T02:36:15.849Z",maintainer-agent,"PR#617 (pm-pibw) shipped two mitigations that bound but do not close this TOCTOU: configurable ids.token_length (4-12, birthday-bound table in MERGE_SAFETY.md) shrinks the collision window probabilistically, and validate --check-storage-integrity now detects duplicate ids across type folders/formats deterministically after the fact. The residual owned here is the local allocation race itself: generateItemId probes existence before writeCreatedItem takes the per-id lock, so a same-process-window duplicate still silently overwrites. Fix direction unchanged: atomic reserve (create the id lock/placeholder at generation time) + idExists covering extension type folders."
 body: "## Context\nFiled by the 2026-07-03 concurrency review. Worst-blast-radius open concurrency gap: a parallel create/copy pair drawing the same generated id silently destroys one item.\n\n## Failure modes\n1. TOCTOU + silent overwrite: generateItemId (src/core/item/id.ts) probes existence long before writeCreatedItem acquires the per-id lock (create.ts does parent/blocked-by resolution I/O in between). writeFileAtomic RENAMES OVER an existing file, so the second create replaces the first — no error, and the surviving file's history stream shows no anomaly. 4-char base36 id space = 1.68M; a 20-create burst has ~1/9000 pair-collision odds, worsening as the workspace fills (1482 items today).\n2. idExists misses extension-registered type folders, so collisions with extension items are even likelier.\n\n## Approach\nAfter acquiring the per-id lock in writeCreatedItem/copy, re-check existence and re-draw the id on collision (bounded retries); make idExists enumerate ALL type folders including extension-registered ones (schema registry knows them). Optionally open the file with wx instead of rename-over as a belt-and-braces guard.\n\n## Definition of done\nParallel create burst (e.g. 50 concurrent) yields 50 distinct surviving items with intact histories; a forced id collision (seeded generator) re-draws instead of overwriting; extension-type folder collision covered by a spec."

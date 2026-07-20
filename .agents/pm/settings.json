@@ -1,6 +1,9 @@
 {
   "version": 1,
   "id_prefix": "pm-",
+  "ids": {
+    "token_length": 6
+  },
   "author_default": "",
   "item_format": "toon",
   "locks": {

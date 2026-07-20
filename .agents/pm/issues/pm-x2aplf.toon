@@ -1,0 +1,20 @@
+id: pm-x2aplf
+title: pm config set on one leaf key rewrites settings.json with every default materialized and silently replaces explicit stored values (validation.parent_reference warn -> strict_error)
+description: ""
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-07-20T02:39:14.788Z"
+updated_at: "2026-07-20T02:39:14.788Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: Setting one config key persists only that key's change (or a documented normalize step); explicit stored enum values survive unrelated writes; a regression spec round-trips a sparse settings.json through config set and asserts no unrelated key changes
+parent: pm-o2kc
+risk: medium
+confidence: medium
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-88cy,discovered_from,"2026-07-20T02:39:14.788Z",null,null
+  pm-bgcu,related,"2026-07-20T02:39:14.788Z",null,null
+  pm-xdn6,related,"2026-07-20T02:39:14.788Z",null,null
+body: "## Observed (2026-07-20, this repository)\n`pm config set ids_token_length 6` against a sparse tracked settings.json produced a 128-insertion diff: every implicit default materialized (locks.wait_ms, checkpoints, history.compact_policy, full extensions.policy block, telemetry block incl. endpoint, context sections, schema block, search rerank/query_expansion, vector_store.collection_name...), and the explicitly stored `validation.parent_reference: \"warn\"` (a VALID enum per settings-validator vLiteral(\"warn\",\"strict_error\")) was replaced with \"strict_error\" in the same write.\n\n## Why it matters\n1. Frozen defaults: materialized values no longer track future default changes (e.g. telemetry endpoint churn never reaches the workspace) — the file silently pins today's defaults.\n2. Multi-agent conflict surface: a fully materialized singleton file maximizes cross-branch overlap exactly where pm-xdn6's config merge driver has no per-key semantics; two branches each touching one unrelated key now conflict across the whole file.\n3. Intent loss: explicit stored values flattened to effective/normalized values (warn -> strict_error, likely via governance layering writing the effective value back) destroy the user's recorded choice even when runtime behavior was already equivalent.\n\n## Direction\nSparse persistence: write only keys that differ from defaults (or at minimum only the mutated key), keep normalization read-side, and add a round-trip regression spec."

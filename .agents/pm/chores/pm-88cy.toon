@@ -1,0 +1,25 @@
+id: pm-88cy
+title: Adopt collision-resistant id entropy in the pm-cli repository (ids.token_length 4 -> 6)
+description: ""
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-07-20T02:36:32.074Z"
+updated_at: "2026-07-20T02:39:44.259Z"
+closed_at: "2026-07-20T02:39:44.258Z"
+author: maintainer-agent
+estimated_minutes: 10
+acceptance_criteria: settings.json carries ids.token_length 6; pm config project get ids_token_length reports 6; guidance rationale recorded on the item
+parent: pm-o2kc
+risk: low
+confidence: high
+resolution: Adopted ids.token_length 6 in the repository settings.json as a minimal 3-line sparse diff (full-default materialization from the config-set round-trip deliberately reverted and filed as pm-x2aplf); rationale and birthday-bound table live in MERGE_SAFETY.md.
+expected_result: "Newly minted item ids carry 6-char base36 tokens (~2.18B id space), bounding cross-branch collision risk for the multi-agent lane workflow; existing 4-char ids remain valid."
+actual_result: pm config project get ids_token_length reports 6; first minted items pm-46octv and pm-x2aplf carry 6-char tokens; validate storage_integrity ok.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-iwsj,related,"2026-07-20T02:36:32.074Z",null,null
+  pm-khdq,related,"2026-07-20T02:36:32.074Z",null,null
+  pm-pibw,discovered_from,"2026-07-20T02:36:32.074Z",null,null
+close_reason: Adopted ids.token_length 6 in the repository settings.json as a minimal 3-line sparse diff (full-default materialization from the config-set round-trip deliberately reverted and filed as pm-x2aplf); rationale and birthday-bound table live in MERGE_SAFETY.md.
+body: "## Context\nPR#617 (pm-pibw) made id entropy configurable and its migration guidance explicitly recommends `ids.token_length 6` for multi-agent/branch repositories. This repository is the flagship multi-agent fan-out workspace (parallel maintainer/codex/pi lanes branching between merges) yet still runs the default token_length 4 (~184 concurrent unsynced creations for a 1% birthday collision). pm-iwsj adopted the merge-safety contract but did not cover entropy.\n\n## Change\n`pm config set project ids.token_length 6` (2.18B id space, ~6.6k concurrent unsynced creations at 1%). Existing 4-char ids stay valid; only newly minted ids grow."

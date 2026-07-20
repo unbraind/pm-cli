@@ -46,7 +46,7 @@ The underlying public SDK exports are `mergeItemDocuments`, `mergeHistoryStreams
 
 Item ids are `<prefix>` plus random base36 characters, and uniqueness is only probed against the local working tree — two agents branching from the same commit can mint the same id for different items (GH-600 / pm-pibw). Two controls bound that risk:
 
-- **Entropy budget** — `ids.token_length` in `settings.json` (default 4, accepted range 4–12) sets the random token length for newly minted ids. Approximate 1%-birthday-collision workloads per length: 4 chars ≈ 1.68M ids (~184 concurrent unsynced creations), 6 chars ≈ 2.18B (~6.6k), 8 chars ≈ 2.8T (~238k). Multi-agent repositories that fan out many branches between merges should raise it, e.g. `pm config set project ids.token_length 6`.
+- **Entropy budget** — `ids.token_length` in `settings.json` (default 4, accepted range 4–12) sets the random token length for newly minted ids. Approximate 1%-birthday-collision workloads per length: 4 chars ≈ 1.68M ids (~184 concurrent unsynced creations), 6 chars ≈ 2.18B (~6.6k), 8 chars ≈ 2.8T (~238k). Multi-agent repositories that fan out many branches between merges should raise it, e.g. `pm config project set ids_token_length 6`.
 - **Post-merge detection** — the `storage_integrity` validate check reports `validate_storage_duplicate_item_ids` whenever one id is claimed by multiple item documents (across type folders or format variants), which is how a same-id/different-item merge materializes. Remediation: keep one document, recreate the other item under a fresh id (`pm copy` then delete the colliding file), and re-point any dependencies.
 
 ## Required post-merge gate

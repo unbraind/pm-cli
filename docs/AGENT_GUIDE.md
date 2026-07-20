@@ -198,6 +198,15 @@ Use these defaults unless the task requires otherwise:
 - `pm health --check-only` when inspecting repository health without refresh side effects.
 - Mistyped command names get a `Did you mean: <command>?` hint, including typos of the executable shortcut aliases — `pm shwo <id>` suggests `get` (the canonical of `show`/`view`), and `pm comemnt` suggests `comments`.
 
+## Multi-Branch and Worktree Workflows
+
+Concurrent agents work on ordinary Git branches/worktrees; tracker artifacts need the semantic merge contract from [Merge Safety](MERGE_SAFETY.md). The short loop:
+
+- After a fresh clone or new worktree, run `pm merge install` once so the field-aware merge drivers back the committed `.gitattributes` fence.
+- After every merge that touches `.agents/pm`, run `pm validate --check-storage-integrity` and `pm history --verify --strict-exit`; follow the remediation output (`pm history-repair` wiring included).
+- Repositories fanning out many branches between merges should raise id entropy: `pm config project set ids_token_length 6`.
+- Use `--add-ac`/`--remove-ac` (not `--ac`) so concurrent acceptance-criteria edits merge instead of clobbering.
+
 ## Self-Repair Remediation
 
 When gating on `pm health` / `pm validate`, read the executable fix command from the output instead of hardcoding a warning-code-to-command mapping:

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: dx,sdk,type-safety
 created_at: "2026-07-19T03:42:08.975Z"
-updated_at: "2026-07-19T17:39:23.390Z"
+updated_at: "2026-07-20T02:31:48.514Z"
 closed_at: "2026-07-19T17:39:22.509Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -35,7 +35,7 @@ comments[8]{created_at,author,text}:
 learnings[2]{created_at,author,text}:
   "2026-07-19T15:38:36.272Z",maintainer-agent,"Deriving compile-time types from runtime contract tables requires const-asserted sources; widened annotations (X[] = [...]) erase literals permanently. Pattern: const SOURCE = [...] as const satisfies readonly T[]; export runtime clones + typeof SOURCE types, and pin them together with a runtime parity spec. Interfaces in composed option bags break implicit index-signature assignability to Record-based dispatch layers — use object type literals."
   "2026-07-19T16:09:05.803Z",codex-wide-sdk-20260719,"Public SDK client option types must derive from the executable command option interfaces, not transport-specific MCP aliases; otherwise accepted keys drift from runtime behavior even when a schema-derived type looks strict. Strip index signatures before projecting public mutation inputs so excess-property checks remain effective."
-files[14]{path,scope,note}:
+files[15]{path,scope,note}:
   package.json,project,typecheck script runs the type-test project
   src/cli/commands/create.ts,project,Executable create option interface now exposes the explicit id and scalar kinds consumed by strict SDK mutation types
   src/cli/commands/update.ts,project,Executable update option interface now provides the exact priority scalar contract consumed by strict SDK mutation types
@@ -49,6 +49,7 @@ files[14]{path,scope,note}:
   tests/fixtures/contracts/full.json,project,Generated additive create.id tool contract snapshot
   tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,Tool create-id contract exposure and execution regression
   tests/types/typed-action-inputs.test-d.ts,project,type-level assertions incl. ts-expect-error typo rejection
+  tests/unit/sdk/typed-action-inputs.spec.ts,project,Runtime spec for typed action inputs (PR#617)
   tsconfig.typetests.json,project,enforced compile-time test project
 tests[4]:
   - command: node scripts/run-tests.mjs test -- tests/integration/sdk-cli-contract-integrity.integration.spec.ts
