@@ -184,6 +184,10 @@ describe("durable graph cache primitives", () => {
         }),
         JSON.stringify({
           ...snapshot,
+          affected_subjects_by_code: [1],
+        }),
+        JSON.stringify({
+          ...snapshot,
           affected_subjects_by_code: { ordering_cycle: "invalid" },
         }),
         JSON.stringify({
@@ -216,6 +220,35 @@ describe("durable graph cache primitives", () => {
         JSON.stringify({
           ...snapshot,
           profile: { ...snapshot.profile, coverage_by_type: null },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: { ...snapshot.profile, coverage_by_type: [1] },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            coverage_by_type: { Task: [1] },
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            coverage_by_type: {
+              Task: { active: 1, isolated: -1, degree_leq_one: 1 },
+            },
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            coverage_by_type: {
+              Task: { active: 1, isolated: 0, degree_leq_one: "invalid" },
+            },
+          },
         }),
         JSON.stringify(null),
       ]) {

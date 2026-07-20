@@ -597,7 +597,8 @@ function collectDuplicateRowFindings(
 ): RelationshipAuditFinding[] {
   const active: string[] = [];
   const legacy: string[] = [];
-  for (const row of assembly.duplicateRows) {
+  // Public/JSON-parsed assemblies produced before duplicate-row governance may omit this field.
+  for (const row of assembly.duplicateRows ?? []) {
     (row.legacy_terminal ? legacy : active).push(
       `${row.holder_id} -> ${row.target_id} (${row.kind} x${row.occurrences})`,
     );
@@ -882,6 +883,8 @@ export interface RelationshipAuditDelta {
     degree_leq_one_active_nodes: number;
     /** Signed per-kind edge-count deltas; unchanged kinds are dropped. */
     edges_by_kind: Record<string, number>;
+    /** Signed per-type coverage deltas; unchanged types are dropped. */
+    coverage_by_type: Record<string, RelationshipCoverageTypeProfile>;
   };
 }
 
@@ -911,6 +914,25 @@ export function diffRelationshipAuditSnapshots(
   baseline: RelationshipAuditSnapshot,
   current: RelationshipAuditSnapshot,
 ): RelationshipAuditDelta {
+  const coverageByType: Record<string, RelationshipCoverageTypeProfile> = {};
+  const typeKeys = [
+    ...new Set([
+      ...Object.keys(baseline.profile.coverage_by_type),
+      ...Object.keys(current.profile.coverage_by_type),
+    ]),
+  ].sort();
+  for (const type of typeKeys) {
+    const before = baseline.profile.coverage_by_type[type];
+    const after = current.profile.coverage_by_type[type];
+    const delta = {
+      active: (after?.active ?? 0) - (before?.active ?? 0),
+      isolated: (after?.isolated ?? 0) - (before?.isolated ?? 0),
+      degree_leq_one:
+        (after?.degree_leq_one ?? 0) - (before?.degree_leq_one ?? 0),
+    };
+    if (Object.values(delta).some((value) => value !== 0))
+      coverageByType[type] = delta;
+  }
   return {
     baseline_saved_at: baseline.saved_at,
     same_snapshot: baseline.fingerprint === current.fingerprint,
@@ -935,6 +957,7 @@ export function diffRelationshipAuditSnapshots(
         baseline.profile.edges_by_kind,
         current.profile.edges_by_kind,
       ),
+      coverage_by_type: coverageByType,
     },
   };
 }

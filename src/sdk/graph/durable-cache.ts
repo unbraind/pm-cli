@@ -199,7 +199,23 @@ function isNonnegativeCountRecord(
   return (
     typeof value === "object" &&
     value !== null &&
+    !Array.isArray(value) &&
     Object.values(value).every((count) => Number.isInteger(count) && count >= 0)
+  );
+}
+
+/** Return whether every decoded item-type coverage entry contains valid counts. */
+function isNonnegativeCoverageByTypeRecord(value: unknown): boolean {
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    return false;
+  return Object.values(value).every(
+    (entry) =>
+      typeof entry === "object" &&
+      entry !== null &&
+      !Array.isArray(entry) &&
+      [entry.active, entry.isolated, entry.degree_leq_one].every(
+        (count) => Number.isInteger(count) && count >= 0,
+      ),
   );
 }
 
@@ -228,8 +244,7 @@ function decodeBaseline(
         profile.degree_leq_one_active_nodes,
       ].every((value) => Number.isInteger(value) && value >= 0) ||
       !isNonnegativeCountRecord(profile.edges_by_kind) ||
-      typeof profile.coverage_by_type !== "object" ||
-      profile.coverage_by_type === null
+      !isNonnegativeCoverageByTypeRecord(profile.coverage_by_type)
     )
       return undefined;
     return snapshot as RelationshipAuditSnapshot;

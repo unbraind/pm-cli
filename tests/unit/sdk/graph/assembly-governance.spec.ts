@@ -783,6 +783,17 @@ describe("duplicate dependency row integrity", () => {
         (step) => step.code === "legacy_duplicate_dependency_row",
       ),
     ).toMatchObject({ op: "waive", confidence: "high" });
+
+    expect(
+      auditWorkspaceRelationshipGraph({
+        ...assembly,
+        duplicateRows: undefined,
+      } as never).findings,
+    ).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "duplicate_dependency_row" }),
+      ]),
+    );
   });
 });
 
@@ -851,7 +862,10 @@ describe("diffRelationshipAuditSnapshots", () => {
         missing_nodes: 1,
         isolated_active_nodes: 2,
         degree_leq_one_active_nodes: 3,
-        coverage_by_type: {},
+        coverage_by_type: {
+          Epic: { active: 2, isolated: 1, degree_leq_one: 1 },
+          Task: { active: 3, isolated: 1, degree_leq_one: 2 },
+        },
       },
     };
     const current = {
@@ -866,7 +880,10 @@ describe("diffRelationshipAuditSnapshots", () => {
         missing_nodes: 1,
         isolated_active_nodes: 0,
         degree_leq_one_active_nodes: 3,
-        coverage_by_type: {},
+        coverage_by_type: {
+          Feature: { active: 1, isolated: 0, degree_leq_one: 1 },
+          Task: { active: 2, isolated: 2, degree_leq_one: 2 },
+        },
       },
     };
     expect(diffRelationshipAuditSnapshots(baseline, current)).toEqual({
@@ -885,6 +902,11 @@ describe("diffRelationshipAuditSnapshots", () => {
         isolated_active_nodes: -2,
         degree_leq_one_active_nodes: 0,
         edges_by_kind: { blocked_by: 2, parent: -2 },
+        coverage_by_type: {
+          Epic: { active: -2, isolated: -1, degree_leq_one: -1 },
+          Feature: { active: 1, isolated: 0, degree_leq_one: 1 },
+          Task: { active: -1, isolated: 1, degree_leq_one: 0 },
+        },
       },
     });
     expect(
