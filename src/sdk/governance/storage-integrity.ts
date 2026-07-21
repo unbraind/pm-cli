@@ -86,7 +86,7 @@ export interface StorageIntegrityScanResult {
   history_streams_scanned: number;
   /** History streams containing unresolved merge-conflict markers. */
   history_conflict_marker_streams: HistoryStreamIntegrityRow[];
-  /** History streams containing an entry that is not a JSON object. */
+  /** History streams that cannot be read or contain an entry that is not a JSON object. */
   history_unparseable_streams: HistoryStreamIntegrityRow[];
   /** Live items whose newest history operation is a delete (delete/modify merge resurrection candidates). */
   resurrected_items: ResurrectedItemRow[];
@@ -151,7 +151,6 @@ function scanHistoryStreamContent(
   raw: string,
 ): void {
   const { id, relativePath, liveItemIds, out } = accumulator;
-  out.scanned += 1;
   const conflictMarker = findFirstMergeConflictMarker(raw);
   if (conflictMarker) {
     out.conflictMarkers.push({
@@ -215,6 +214,18 @@ interface HistoryStreamAccumulatorInput {
   out: HistoryStreamScanAccumulator;
 }
 
+/** Describe a filesystem read failure without exposing the absolute workspace path. */
+function describeFileReadFailure(subject: string, error: unknown): string {
+  const code =
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+      ? error.code
+      : "UNKNOWN";
+  return `${subject} could not be read (error code: ${code})`;
+}
+
 async function scanHistoryStreams(
   pmRoot: string,
   liveItemIds: Set<string>,
@@ -238,7 +249,18 @@ async function scanHistoryStreams(
     if (!entry.endsWith(".jsonl")) {
       continue;
     }
-    const raw = await fs.readFile(path.join(pmRoot, "history", entry), "utf8");
+    out.scanned += 1;
+    let raw: string;
+    try {
+      raw = await fs.readFile(path.join(pmRoot, "history", entry), "utf8");
+    } catch (error) {
+      out.unparseable.push({
+        id: entry.slice(0, -".jsonl".length),
+        path: `history/${entry}`,
+        detail: describeFileReadFailure("history stream", error),
+      });
+      continue;
+    }
     scanHistoryStreamContent(
       {
         id: entry.slice(0, -".jsonl".length),
@@ -271,7 +293,16 @@ async function scanConfigFiles(pmRoot: string): Promise<{
 }> {
   const unparseable: UnparseableConfigRow[] = [];
   let scanned = 0;
-  const settingsRaw = await readFileIfExists(getSettingsPath(pmRoot));
+  let settingsRaw: string | null = null;
+  try {
+    settingsRaw = await readFileIfExists(getSettingsPath(pmRoot));
+  } catch (error) {
+    scanned += 1;
+    unparseable.push({
+      path: "settings.json",
+      detail: describeFileReadFailure("configuration file", error),
+    });
+  }
   if (settingsRaw !== null) {
     scanned += 1;
     const detail = describeUnparseableJson(settingsRaw);
@@ -291,8 +322,17 @@ async function scanConfigFiles(pmRoot: string): Promise<{
     if (!entry.endsWith(".json")) {
       continue;
     }
-    const raw = await fs.readFile(path.join(pmRoot, "schema", entry), "utf8");
     scanned += 1;
+    let raw: string;
+    try {
+      raw = await fs.readFile(path.join(pmRoot, "schema", entry), "utf8");
+    } catch (error) {
+      unparseable.push({
+        path: `schema/${entry}`,
+        detail: describeFileReadFailure("configuration file", error),
+      });
+      continue;
+    }
     const detail = describeUnparseableJson(raw);
     if (detail !== null) {
       unparseable.push({ path: `schema/${entry}`, detail });

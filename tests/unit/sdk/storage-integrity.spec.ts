@@ -1,7 +1,7 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import fs, { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { normalizeRuntimeSchemaSettings } from "../../../src/core/schema/runtime-schema.js";
 import { scanStorageIntegrity } from "../../../src/sdk/governance/storage-integrity.js";
 
@@ -39,6 +39,36 @@ describe("post-merge storage integrity", () => {
         unparseable_config_files: [],
       });
     } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("sanitizes nonstandard thrown values while reporting unreadable streams", async () => {
+    const pmRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-storage-integrity-unknown-error-"),
+    );
+    try {
+      await mkdir(path.join(pmRoot, "history"));
+      await writeFile(
+        path.join(pmRoot, "history", "pm-unreadable.jsonl"),
+        "{}\n",
+        "utf8",
+      );
+      const readFileSpy = vi.spyOn(fs, "readFile");
+      for (const thrownValue of ["failure", null, {}, { code: 5 }]) {
+        readFileSpy.mockRejectedValueOnce(thrownValue);
+        const result = await scanStorageIntegrity(pmRoot, new Set(), {});
+        expect(result.history_unparseable_streams).toEqual([
+          {
+            id: "pm-unreadable",
+            path: "history/pm-unreadable.jsonl",
+            detail: "history stream could not be read (error code: UNKNOWN)",
+          },
+        ]);
+      }
+      readFileSpy.mockRestore();
+    } finally {
+      vi.restoreAllMocks();
       await rm(pmRoot, { recursive: true, force: true });
     }
   });
@@ -191,6 +221,8 @@ describe("post-merge storage integrity", () => {
       });
 
       await Promise.all([
+        mkdir(path.join(pmRoot, "history", "pm-directory.jsonl")),
+        mkdir(path.join(pmRoot, "schema", "directory.json")),
         writeFile(path.join(pmRoot, "history", "pm-empty.jsonl"), "\n", "utf8"),
         writeFile(
           path.join(pmRoot, "history", "pm-invalid.jsonl"),
@@ -231,6 +263,8 @@ describe("post-merge storage integrity", () => {
         writeFile(path.join(pmRoot, "schema", "types.json"), "{}\n", "utf8"),
         writeFile(path.join(pmRoot, "schema", "README.txt"), "ignored", "utf8"),
       ]);
+      await rm(path.join(pmRoot, "settings.json"));
+      await mkdir(path.join(pmRoot, "settings.json"));
       const expanded = await scanStorageIntegrity(
         pmRoot,
         new Set([
@@ -242,6 +276,13 @@ describe("post-merge storage integrity", () => {
         { Feature: "features", Task: "tasks" },
       );
       expect(expanded.history_unparseable_streams).toEqual([
+        {
+          id: "pm-directory",
+          path: "history/pm-directory.jsonl",
+          detail: expect.stringMatching(
+            /^history stream could not be read \(error code: [A-Z0-9_]+\)$/,
+          ),
+        },
         {
           id: "pm-invalid-middle",
           path: "history/pm-invalid-middle.jsonl",
@@ -261,13 +302,28 @@ describe("post-merge storage integrity", () => {
           detail: "history line is not a valid JSON object",
         },
       ]);
+      expect(expanded.history_streams_scanned).toBe(9);
+      expect(expanded.config_files_scanned).toBe(3);
       expect(expanded.history_repair_reconciliations).toBe(1);
       expect(expanded.resurrected_items).toContainEqual({
         id: "pm-missing-author",
         deleted_at: "",
         deleted_by: "",
       });
-      expect(expanded.unparseable_config_files).toEqual([]);
+      expect(expanded.unparseable_config_files).toEqual([
+        {
+          path: "settings.json",
+          detail: expect.stringMatching(
+            /^configuration file could not be read \(error code: [A-Z0-9_]+\)$/,
+          ),
+        },
+        {
+          path: "schema/directory.json",
+          detail: expect.stringMatching(
+            /^configuration file could not be read \(error code: [A-Z0-9_]+\)$/,
+          ),
+        },
+      ]);
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
     }
