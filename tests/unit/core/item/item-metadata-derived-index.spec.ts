@@ -6,6 +6,7 @@ import { serializeItemDocument } from "../../../../src/core/item/item-format.js"
 import {
   acquireItemMetadataDerivedIndexLock,
   clearItemMetadataEnvelopeMemo,
+  DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS,
   listAllDocumentCandidatesCached,
   refreshItemMetadataDerivedIndex,
 } from "../../../../src/core/store/item-metadata-cache.js";
@@ -190,17 +191,20 @@ describe("item metadata derived-index transactions", () => {
       const tasksDir = path.join(pmRoot, "tasks");
       await fs.mkdir(tasksDir, { recursive: true });
       await Promise.all(
-        Array.from({ length: 500 }, async (_, index) => {
-          const id = `pm-lock-${String(index).padStart(3, "0")}`;
-          await fs.writeFile(
-            path.join(tasksDir, `${id}.toon`),
-            serializeItemDocument(
-              { metadata: makeTaskMetadata({ id }), body: "" },
-              { format: "toon" },
-            ),
-            "utf8",
-          );
-        }),
+        Array.from(
+          { length: DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS + 1 },
+          async (_, index) => {
+            const id = `pm-lock-${String(index).padStart(3, "0")}`;
+            await fs.writeFile(
+              path.join(tasksDir, `${id}.toon`),
+              serializeItemDocument(
+                { metadata: makeTaskMetadata({ id }), body: "" },
+                { format: "toon" },
+              ),
+              "utf8",
+            );
+          },
+        ),
       );
       await listAllDocumentCandidatesCached(
         pmRoot,

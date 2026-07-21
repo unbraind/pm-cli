@@ -235,7 +235,7 @@ every entry rebuilds from item storage on fingerprint mismatch, and
 envelopes report the `cache.durable` disposition. Ids resolve
 case-insensitively; `--summary` returns envelopes without row collections.
 
-The graph fingerprint consumes the item-metadata derived index, whose metadata,
+The graph fingerprint consumes the item-metadata-derived index, whose metadata,
 body, and collection tiers plus collapsed mutation delta publish one effective
 source cursor. Supported item mutations serialize authoritative writes with a
 bounded derived-index projection, so a long-lived SDK host or later CLI process

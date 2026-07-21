@@ -25,7 +25,8 @@ import type {
 } from "../../types/index.js";
 
 const CACHE_VERSION = 8;
-const DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS = 500;
+/** Minimum item count at which derived-index mutations use cross-process locking. */
+export const DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS = 500;
 const DERIVED_INDEX_LOCK_ID = "metadata-derived-index";
 const CACHE_FILENAME = "metadata-cache.json";
 const BODY_CACHE_FILENAME = "metadata-cache-bodies.json";
