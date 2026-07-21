@@ -23,11 +23,13 @@ describe("computeRelationshipCentrality", () => {
     expect(result.meta.visitedNodes).toBeGreaterThan(0);
     expect(result.meta.inspectedEdges).toBeGreaterThan(0);
     expect(result.value.rows).toEqual([
+      // pm-b is blocked_by pm-c, so pm-c is the predecessor gating pm-b:
+      // pm-b has fan-in 1, pm-c has fan-out 1 (oriented by precedence).
       {
         id: "pm-b",
         degree: 2,
-        inDegree: 0,
-        outDegree: 1,
+        inDegree: 1,
+        outDegree: 0,
         betweenness: 1,
         closeness: 0.666667,
       },
@@ -42,8 +44,8 @@ describe("computeRelationshipCentrality", () => {
       {
         id: "pm-c",
         degree: 1,
-        inDegree: 1,
-        outDegree: 0,
+        inDegree: 0,
+        outDegree: 1,
         betweenness: 0,
         closeness: 0.444444,
       },
@@ -60,6 +62,36 @@ describe("computeRelationshipCentrality", () => {
     expect(computeRelationshipCentrality(graph).value.rows).toEqual(
       result.value.rows,
     );
+  });
+
+  it("orients fan-in/out by precedence and matches inverse kind spellings", () => {
+    // pm-a blocks pm-b and pm-c: source_before_target, so pm-a gates both,
+    // giving it fan-out 2 (two distinct successors accumulated on one node).
+    const graph = RelationshipGraph.fromItems([
+      {
+        id: "pm-a",
+        dependencies: [dep("pm-b", "blocks"), dep("pm-c", "blocks")],
+      },
+      { id: "pm-b" },
+      { id: "pm-c" },
+    ]);
+    const rows = new Map(
+      computeRelationshipCentrality(graph).value.rows.map((row) => [
+        row.id,
+        row,
+      ]),
+    );
+    expect(rows.get("pm-a")).toMatchObject({ inDegree: 0, outDegree: 2 });
+    expect(rows.get("pm-b")).toMatchObject({ inDegree: 1, outDegree: 0 });
+    expect(rows.get("pm-c")).toMatchObject({ inDegree: 1, outDegree: 0 });
+    // Selecting the inverse spelling still matches the stored blocks edges.
+    const inverse = computeRelationshipCentrality(graph, {
+      kinds: ["blocked_by"],
+    });
+    expect(inverse.value.edgeCount).toBe(2);
+    expect(
+      inverse.value.rows.find((row) => row.id === "pm-a"),
+    ).toMatchObject({ outDegree: 2 });
   });
 
   it("splits betweenness across equal-length shortest paths in a square", () => {

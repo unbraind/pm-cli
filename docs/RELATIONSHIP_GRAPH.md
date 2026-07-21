@@ -192,7 +192,7 @@ unit task durations, reusing the exact execution forward pass and adding the
 backward latest-start pass; genuine cycles are reported separately, never
 scheduled), `centrality` exposes `computeRelationshipCentrality` (exact Brandes
 shortest-path betweenness, Wasserman–Faust closeness, undirected degree, and
-directed fan-in/fan-out per node over the simple undirected graph), and
+precedence-oriented dependency fan-in/fan-out per node over the simple undirected graph), and
 `articulation` exposes `findRelationshipCutStructure` (iterative Tarjan low-link
 search reporting articulation points and bridges — the single points of failure
 whose removal fragments the knowledge graph). All three are deterministic and

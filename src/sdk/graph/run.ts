@@ -466,9 +466,9 @@ export interface GraphCentralityRow {
   id: string;
   /** Undirected unique-neighbor degree. */
   degree: number;
-  /** Distinct directed predecessors (fan-in). */
+  /** Distinct ordering predecessors that gate this node (dependency fan-in). */
   in_degree: number;
-  /** Distinct directed successors (fan-out). */
+  /** Distinct ordering successors this node gates (dependency fan-out). */
   out_degree: number;
   /** Shortest-path betweenness centrality. */
   betweenness: number;

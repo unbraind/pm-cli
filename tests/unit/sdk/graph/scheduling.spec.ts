@@ -137,6 +137,25 @@ describe("analyzeRelationshipSchedule", () => {
     expect(analysis.criticalPathLength).toBe(0);
   });
 
+  it("schedules only the ordering edges when non-ordering edges coexist", () => {
+    // a -> b is the only order-bearing edge; the related and parent edges must
+    // not add c/d to the schedule or perturb a/b's slack.
+    const graph = RelationshipGraph.fromItems([
+      {
+        id: "pm-a",
+        dependencies: [dep("pm-b", "blocks"), dep("pm-c", "related")],
+      },
+      { id: "pm-b" },
+      { id: "pm-c", dependencies: [dep("pm-d", "parent")] },
+      { id: "pm-d" },
+    ]);
+    const analysis = analyzeRelationshipSchedule(graph);
+    expect(analysis.makespan).toBe(2);
+    expect(analysis.scheduledCount).toBe(2);
+    expect(analysis.rows.map((row) => row.id)).toEqual(["pm-a", "pm-b"]);
+    expect(analysis.rows.every((row) => row.critical)).toBe(true);
+  });
+
   it("excludes a genuine ordering cycle from the schedule", () => {
     const graph = RelationshipGraph.fromItems([
       { id: "pm-p", dependencies: [dep("pm-q", "blocks")] },
@@ -172,6 +191,21 @@ describe("analyzeRelationshipSchedule", () => {
         critical: true,
       },
     ]);
+  });
+
+  it("omits a task transitively gated by an upstream cycle", () => {
+    // a <-> b form a cycle; c is gated by b, so its earliest start is
+    // undefined and it is excluded from the schedule (not just the cycle nodes).
+    const graph = RelationshipGraph.fromItems([
+      { id: "pm-a", dependencies: [dep("pm-b", "blocks")] },
+      { id: "pm-b", dependencies: [dep("pm-a", "blocks"), dep("pm-c", "blocks")] },
+      { id: "pm-c" },
+    ]);
+    const analysis = analyzeRelationshipSchedule(graph);
+    expect(analysis.acyclic).toBe(false);
+    expect(analysis.cycles).toEqual([["pm-a", "pm-b"]]);
+    expect(analysis.scheduledCount).toBe(0);
+    expect(analysis.rows.map((row) => row.id)).not.toContain("pm-c");
   });
 
   it("skips self-loop ordering edges and reports the self-cycle", () => {

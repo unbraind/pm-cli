@@ -91,6 +91,24 @@ export function orderingPredecessorEndpoint(
     : edge.source;
 }
 
+/**
+ * Orient one ordering edge into its execution direction — the predecessor that
+ * must finish first and the successor it gates — honoring the kind's declared
+ * precedence so inverse spellings (`blocked_by`/`blocks`) agree. This is the
+ * single ordering-orientation primitive shared by scheduling and degree
+ * analytics.
+ */
+export function orientOrderingEdge(
+  edge: RelationshipEdge,
+  definition: RelationshipKindDefinition,
+): { predecessor: string; successor: string } {
+  const predecessor = orderingPredecessorEndpoint(edge, definition);
+  return {
+    predecessor,
+    successor: predecessor === edge.source ? edge.target : edge.source,
+  };
+}
+
 /** Validate optional kind filters against one semantic edge family. */
 function resolveFamilyKinds(
   graph: RelationshipGraph,

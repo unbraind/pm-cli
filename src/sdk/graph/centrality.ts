@@ -16,6 +16,7 @@ import {
   type RelationshipQueryResult,
 } from "../relationships.js";
 import { forEachMatchedRelationshipEdge } from "./analytics.js";
+import { orientOrderingEdge } from "./traversal.js";
 
 /** One node ranked by structural centrality with directed fan-in/fan-out. */
 export interface RelationshipCentralityRow {
@@ -23,9 +24,9 @@ export interface RelationshipCentralityRow {
   id: string;
   /** Undirected unique-neighbor degree over selected kinds. */
   degree: number;
-  /** Distinct directed predecessors (fan-in) over directed kinds. */
+  /** Distinct ordering predecessors that gate this node (dependency fan-in). */
   inDegree: number;
-  /** Distinct directed successors (fan-out) over directed kinds. */
+  /** Distinct ordering successors this node gates (dependency fan-out). */
   outDegree: number;
   /** Shortest-path betweenness centrality, rounded to six decimals. */
   betweenness: number;
@@ -63,7 +64,7 @@ export interface RelationshipBridge {
 export interface GraphCutStructureOptions {
   /** Registered relationship kinds whose edges define adjacency. */
   kinds?: readonly string[];
-  /** Abort signal checked once per component root. */
+  /** Abort signal checked once per depth-first step. */
   signal?: AbortSignal;
 }
 
@@ -106,17 +107,24 @@ function buildSimpleUndirectedAdjacency(
   return adjacency;
 }
 
-/** Collect distinct directed predecessors and successors per node over directed kinds. */
-function collectDirectedDegrees(
+/**
+ * Collect distinct ordering predecessors and successors per node, oriented by
+ * each kind's declared precedence so fan-in/fan-out match the SDK's
+ * predecessor/successor traversal semantics rather than the stored edge
+ * spelling (a `blocked_by` edge counts its target as the predecessor).
+ */
+function collectOrderingDegrees(
   graph: RelationshipGraph,
   kinds: readonly string[] | undefined,
 ): { incoming: Map<string, Set<string>>; outgoing: Map<string, Set<string>> } {
   const incoming = new Map<string, Set<string>>();
   const outgoing = new Map<string, Set<string>>();
   forEachMatchedRelationshipEdge(graph, kinds, (edge, definition) => {
-    if (definition.direction !== "directed") return;
-    addToSetMap(outgoing, edge.source, edge.target);
-    addToSetMap(incoming, edge.target, edge.source);
+    if (!definition.ordering) return;
+    const { predecessor, successor } = orientOrderingEdge(edge, definition);
+    // The predecessor gates the successor: predecessor -> successor.
+    addToSetMap(outgoing, predecessor, successor);
+    addToSetMap(incoming, successor, predecessor);
   });
   return { incoming, outgoing };
 }
@@ -212,7 +220,7 @@ function wassermanFaustCloseness(sweep: BrandesSweep, nodeCount: number): number
 function centralityRow(
   id: string,
   adjacency: ReadonlyMap<string, readonly string[]>,
-  directed: ReturnType<typeof collectDirectedDegrees>,
+  directed: ReturnType<typeof collectOrderingDegrees>,
   betweenness: Map<string, number>,
   closeness: Map<string, number>,
 ): RelationshipCentralityRow {
@@ -240,7 +248,7 @@ export function computeRelationshipCentrality(
   options: GraphCentralityOptions = {},
 ): RelationshipQueryResult<RelationshipCentralityAnalysis> {
   const adjacency = buildSimpleUndirectedAdjacency(graph, options.kinds);
-  const directed = collectDirectedDegrees(graph, options.kinds);
+  const directed = collectOrderingDegrees(graph, options.kinds);
   const nodes = graph.nodes();
   const betweenness = new Map<string, number>();
   const closeness = new Map<string, number>();

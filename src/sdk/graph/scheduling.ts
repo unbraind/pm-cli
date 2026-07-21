@@ -9,16 +9,17 @@
  * classifies zero-slack tasks as critical. Durations are unit-weighted so the
  * schedule is deterministic and metadata-independent: slack counts how many
  * whole prerequisite hops a task can drift without extending the makespan.
- * Nodes with no order-bearing edge do not participate in the execution DAG and
- * are omitted; genuine ordering cycles are reported separately and never
- * scheduled.
+ * Only tasks with a well-defined earliest start are scheduled: nodes with no
+ * order-bearing edge, genuine ordering cycles, and any task transitively gated
+ * by a cycle (whose earliest start is undefined) are all omitted from `rows`.
+ * Genuine ordering cycles are additionally reported in `cycles`.
  */
 import {
   analyzeRelationshipExecution,
   type RelationshipExecutionAnalysis,
 } from "../relationship-analytics.js";
 import { RelationshipGraph } from "../relationships.js";
-import { orderingPredecessorEndpoint } from "./traversal.js";
+import { orientOrderingEdge } from "./traversal.js";
 
 /** One scheduled task row with its earliest/latest window and total float. */
 export interface RelationshipScheduleRow {
@@ -93,8 +94,7 @@ function collectOrderingParticipation(
   for (const edge of graph.edges()) {
     const definition = registry.require(edge.kind);
     if (!definition.ordering) continue;
-    const predecessor = orderingPredecessorEndpoint(edge, definition);
-    const successor = predecessor === edge.source ? edge.target : edge.source;
+    const { predecessor, successor } = orientOrderingEdge(edge, definition);
     participants.add(predecessor);
     participants.add(successor);
     if (predecessor === successor) continue;
@@ -173,9 +173,10 @@ function computeScheduleRows(
  * subgraph. Earliest-start distances and the critical path come from the exact
  * execution analysis; the backward pass then assigns each task the latest start
  * that preserves the makespan and reports total float as `slack`. Zero-slack
- * tasks are `critical`. Tasks with no order-bearing edge are omitted, and
- * genuine ordering cycles are reported separately in `cycles` rather than
- * scheduled.
+ * tasks are `critical`. Only tasks with a well-defined earliest start are
+ * scheduled: tasks with no order-bearing edge, tasks on a genuine ordering
+ * cycle, and tasks transitively gated by a cycle (excluded from Kahn's partial
+ * order) are all omitted from `rows`; genuine cycles are reported in `cycles`.
  */
 export function analyzeRelationshipSchedule(
   graph: RelationshipGraph,

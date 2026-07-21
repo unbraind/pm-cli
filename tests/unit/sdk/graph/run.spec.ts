@@ -849,6 +849,18 @@ describe("runGraph", () => {
       expect(summary.articulation_points).toBeUndefined();
       expect(summary.bridges).toBeUndefined();
       expect(summary.truncated).toBe(true);
+
+      // Non-summary limit still returns bounded rows and reports truncation.
+      const bounded = (await runGraph(
+        "articulation",
+        undefined,
+        undefined,
+        { limit: "1" },
+        { path: context.pmPath },
+      )) as GraphArticulationResult;
+      expect(bounded.articulation_points).toHaveLength(1);
+      expect(bounded.bridges).toHaveLength(1);
+      expect(bounded.truncated).toBe(true);
     });
   });
 
@@ -873,6 +885,40 @@ describe("runGraph", () => {
       )) as GraphCommunitiesResult;
       expect(communities.community_count).toBe(0);
       expect(communities.largest_community_size).toBe(0);
+
+      const slack = (await runGraph(
+        "slack",
+        undefined,
+        undefined,
+        {},
+        { path: context.pmPath },
+      )) as GraphSlackResult;
+      expect(slack.scheduled_count).toBe(0);
+      expect(slack.makespan).toBe(0);
+      expect(slack.acyclic).toBe(true);
+      expect(slack.truncated).toBe(false);
+
+      const centrality = (await runGraph(
+        "centrality",
+        undefined,
+        undefined,
+        {},
+        { path: context.pmPath },
+      )) as GraphCentralityResult;
+      expect(centrality.node_count).toBe(0);
+      expect(centrality.edge_count).toBe(0);
+      expect(centrality.rows).toEqual([]);
+
+      const articulation = (await runGraph(
+        "articulation",
+        undefined,
+        undefined,
+        {},
+        { path: context.pmPath },
+      )) as GraphArticulationResult;
+      expect(articulation.articulation_count).toBe(0);
+      expect(articulation.bridge_count).toBe(0);
+      expect(articulation.truncated).toBe(false);
     });
   });
 
