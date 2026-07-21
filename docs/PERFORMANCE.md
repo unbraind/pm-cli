@@ -38,6 +38,14 @@ pnpm benchmark:scale --items ci --iterations 3 --transport both --check
 
 The JSON report records fixture generation time plus one excluded warmup observation and measured p50/p95/min/max latency, peak RSS on Linux, output bytes, and estimated tokens for `list`, `get`, `next`, `context`, `search`, `create`, and `claim`. The warmup exposes initial index-build cost while regression percentiles measure the continuously warm derived-index contract across real cold CLI processes and in-process SDK calls. Run the committed local regression check with `pnpm benchmark:scale:check`. GitHub-hosted runners do not execute the scale suite, which keeps expensive performance work off Actions and avoids consuming hosted-runner capacity.
 
+The metadata read cache is rebuildable derived state. Large workspaces use its
+directory-validated fast path to avoid per-item stats; validation and recovery
+can force a canonical source scan. Context-signal snapshots follow the same
+rule: they are versioned and cursor-stamped, never authoritative, and rebuild
+from the metadata index or source-scan fallback when missing, stale, or corrupt.
+SDK hosts can persist that layer with `ContextSignalStore` while retaining
+explicit `fresh`/`rebuilt` and `derived_index`/`scan_fallback` diagnostics.
+
 To refresh a baseline after an intentional, measured improvement:
 
 ```bash

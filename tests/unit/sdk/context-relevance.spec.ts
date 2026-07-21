@@ -73,6 +73,22 @@ describe("context relevance SDK primitives", () => {
     expect(candidates.find(({ id }) => id === "pm-a")?.signals?.recency).toBe(1);
   });
 
+  it("treats whitespace-only actors as missing without matching them", () => {
+    const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const candidates = buildItemContextRelevanceCandidates([
+      {
+        id: "pm-unassigned", title: "Unassigned", description: "Unassigned", type: "Task",
+        status: "open", priority: 2, assignee: " ", created_at: "2026-07-01T00:00:00.000Z",
+        updated_at: "2026-07-01T00:00:00.000Z",
+      },
+    ] as ItemMetadata[], {
+      statusRegistry: registry,
+      now: "2026-07-14T00:00:00.000Z",
+      author: " ",
+    });
+    expect(candidates[0]?.signals?.author_affinity).toBe(0);
+  });
+
   it("preserves compact timestamp recency and rejects non-string runtime values", () => {
     const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
     const items = [

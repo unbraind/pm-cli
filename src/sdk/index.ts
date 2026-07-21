@@ -295,6 +295,7 @@ export type {
 export * from "./compose.js";
 export * from "./compile-cache.js";
 export * from "./context-relevance.js";
+export * from "./context-signal-store.js";
 export * from "./context-packing.js";
 export * from "./context-usage.js";
 export * from "./dependency-provenance.js";

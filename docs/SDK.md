@@ -64,6 +64,7 @@ Source of truth:
 - [`src/sdk/graph/run.ts`](../src/sdk/graph/run.ts)
 - [`src/sdk/relationship-history.ts`](../src/sdk/relationship-history.ts)
 - [`src/sdk/relationship-context.ts`](../src/sdk/relationship-context.ts)
+- [`src/sdk/context-signal-store.ts`](../src/sdk/context-signal-store.ts)
 - [`src/sdk/governance/validate.ts`](../src/sdk/governance/validate.ts)
 - [`src/sdk/governance/health.ts`](../src/sdk/governance/health.ts)
 - [`src/sdk/governance/gc.ts`](../src/sdk/governance/gc.ts)
@@ -161,8 +162,8 @@ Command/action contract exports:
 - `PmClient` / `runAction` (high-level in-process action execution for custom tools, bots, CI, and embedded runtimes)
 - Typed read primitives on `PmClient`: `get` (including `GetOptions.at` point-in-time reads), `list`, `search`, `context`, `next`, `aggregate`, and `stats`; direct `getItemAt` reconstructs a canonical historical document without mutation
 - Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`
-- Context relevance primitives: `buildItemContextRelevanceCandidates`, `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
-- Context relevance contracts: `ContextRelevanceCandidate`, `ContextRelevanceSignals`, `ContextRelevanceScorer`, `ContextRelevanceReport`, `ContextEvaluationReader`, `ContextEvaluationScenario`, `ContextEvaluationScenarioReport`, `ContextEvaluationThresholds`, and `ContextEvaluationCorpusReport`
+- Context relevance primitives: `buildItemContextRelevanceCandidates`, `buildContextSignalSnapshot`, `ContextSignalStore`, `JsonFileContextSignalStoreAdapter`, `parseContextSignalSnapshot`, `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
+- Context relevance contracts: `ContextRelevanceCandidate`, `ContextRelevanceSignals`, `ContextSignalSnapshot`, `ContextSignalStoreAdapter`, `ContextSignalStoreReadResult`, `ContextRelevanceScorer`, `ContextRelevanceReport`, `ContextEvaluationReader`, `ContextEvaluationScenario`, `ContextEvaluationScenarioReport`, `ContextEvaluationThresholds`, and `ContextEvaluationCorpusReport`
 - Context packing and feedback primitives: `packContextCandidates`, `recordContextUsageServing`, `recordContextUsageTouch`, `recordContextUsageTouches`, and `readContextUsageAffinity`
 - Typed annotation and relationship primitives on `PmClient`: `comments`, `notes`, `learnings`, `files`, `filesDiscover`, `docs`, `deps`, `graph`, and `append`
 - Workspace graph-query runner: `runGraph` (with `GraphCommandOptions`, `GraphResult`, and per-subcommand envelopes) resolves the workspace relationship graph through the shared fingerprint-keyed cache and dispatches bounded `ancestors`/`descendants`/`predecessors`/`successors`/`paths`/`impact`/`analyze`/`audit`/`communities`/`redundancy`/`dominators`/`slack`/`centrality`/`articulation`/`plan` queries with counts-first cost, truncation, and cache metadata; the `pm graph` CLI command and `pm_graph` MCP tool are thin adapters over it.
@@ -1167,6 +1168,8 @@ compact rounded report metrics for stable machine output.
 
 Tracked by [pm-4k6b](../.agents/pm/features/pm-4k6b.toon),
 [pm-h3no](../.agents/pm/tasks/pm-h3no.toon),
+[pm-3hps](../.agents/pm/tasks/pm-3hps.toon),
+[pm-801d](../.agents/pm/features/pm-801d.toon),
 [pm-atfm](../.agents/pm/features/pm-atfm.toon), and
 [pm-qyc6](../.agents/pm/issues/pm-qyc6.toon).
 
@@ -1181,6 +1184,57 @@ register the governed `context_relevance` service override. A malformed or
 throwing override degrades to the deterministic default and emits an
 `extension_context_relevance_invalid_result` warning instead of breaking the
 read path.
+
+For persistent derived signals, use `ContextSignalStore` with a caller-owned
+`ContextSignalStoreAdapter`, or use `JsonFileContextSignalStoreAdapter` for a
+same-directory atomic JSON snapshot. Each snapshot carries both a
+`format_version` and `signal_set_version`, the authoritative history or index
+`source_cursor`, the stable caller clock, and whether its items came from the
+`derived_index` or `scan_fallback` path. Item rows are deterministic and sorted;
+the snapshot never replaces item or history data.
+
+`readOrRebuild(items, options)` reuses a snapshot only when the cursor and
+complete item-id set match. Missing, stale, version-incompatible, or corrupt
+state is rebuilt from the authoritative items and atomically replaced. The
+result reports `cache_status` and non-fatal `context_signal_store_stale`,
+`context_signal_store_invalid`, or `context_signal_store_write_failed`
+warnings. A write failure still serves the in-memory rebuilt candidates because
+the snapshot is derived, never authoritative. Optional maps for activity density,
+graph proximity, claim/focus, knowledge density, author affinity, usage
+affinity, and semantic similarity let an index or application-specific host
+supply richer signals without changing the canonical scorer contract.
+
+```ts
+import {
+  ContextSignalStore,
+  JsonFileContextSignalStoreAdapter,
+  readSettings,
+  resolvePmRoot,
+  resolveRuntimeStatusRegistry,
+  scoreContextCandidates,
+} from "@unbrained/pm-cli/sdk";
+
+const pmRoot = resolvePmRoot(process.cwd());
+const statusRegistry = resolveRuntimeStatusRegistry(
+  (await readSettings(pmRoot)).schema,
+);
+const store = new ContextSignalStore(
+  new JsonFileContextSignalStoreAdapter(
+    ".agents/pm/runtime/context-signals.json",
+  ),
+);
+const signalRead = await store.readOrRebuild(itemsFromDerivedIndex, {
+  statusRegistry,
+  now: "2026-07-21T12:00:00.000Z",
+  source: "derived_index",
+  sourceCursor: historyCursor,
+  activityDensity,
+  graphProximity,
+  semanticSimilarity,
+});
+
+const report = await scoreContextCandidates(signalRead.candidates);
+```
 
 Use `--explain-ranking --json` on `pm context` or `pm next` to include the model,
 available signals, baseline rank, final rank, score, and per-signal

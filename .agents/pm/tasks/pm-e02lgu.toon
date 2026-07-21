@@ -1,0 +1,23 @@
+id: pm-e02lgu
+title: "Quota-aware branch protection: external AI review limits must never block merges"
+description: "Keep deterministic repository-owned quality and security gates required, but remove quota-limited external AI review contexts from branch protection whenever their free quota is exhausted or the service is unavailable. PR review bots remain advisory and must still be triggered, reviewed, reacted to, and documented when available."
+type: Task
+status: open
+priority: 1
+tags[4]: "area:ci","area:github",quota-safety,review-automation
+created_at: "2026-07-21T18:06:39.089Z"
+updated_at: "2026-07-21T18:09:46.098Z"
+author: codex-derived-context-20260721
+estimated_minutes: 45
+acceptance_criteria: "Live main protection does not require Greptile, CodeRabbit, Gemini, Sourcery, or other quota-limited AI review contexts; deterministic build, coverage, compatibility, smoke, security, platform, Codecov, and CodeFactor checks remain required; PR #633 auto-merges without an admin bypass; the exact before/after required-check inventory and quota evidence are recorded."
+parent: pm-92if
+risk: medium
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-0fxa,related,"2026-07-21T18:09:42.707Z",null,null
+  pm-bkcv,related,"2026-07-21T18:09:42.707Z",null,null
+  pm-wo8,related,"2026-07-21T18:09:42.707Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-21T18:06:39.089Z",codex-derived-context-20260721,"Duplicate check: searched all statuses for quota-limited review required branch protection, Greptile Review branch protection, and unavailable quota required checks. Existing pm-92if owns quality policy and historical pm-bkcv/pm-0fxa own earlier Greptile/review tooling, but no active item owns fail-open branch protection when a paid/free review quota is exhausted; this is the canonical policy item."
+  "2026-07-21T18:09:44.027Z",codex-derived-context-20260721,"Live GitHub evidence 2026-07-21: Greptile CLI returned free_reviews_limit_reached; main branch protection required Greptile Review despite no status context, blocking otherwise-green PR #633. Removed only Greptile Review via the required-status-context API. The 18 deterministic requirements remain strict: build foundation, three runtime smokes, coverage/typecheck/static/compat/smoke gates, Windows regression, docs, CodeQL analysis, Trivy, ShellCheck, PSScriptAnalyzer, actionlint, Codecov patch, and CodeFactor. CodeRabbit/Gemini/Sourcery were already advisory."
+body: ""

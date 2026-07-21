@@ -253,6 +253,27 @@ describe("scripts/release/compatibility-check", () => {
     expect(runCommand).toHaveBeenCalled();
   });
 
+  it("accepts canonical compact create envelopes for task and issue seeds", async () => {
+    const { stdoutSpy } = await runCompatibilityScenario(["--json"], {
+      legacyOverride: (cmd, pmArgs, state) => {
+        if (cmd !== "create") {
+          return null;
+        }
+        const type = pmArgs[pmArgs.indexOf("--type") + 1];
+        return jsonResult({
+          id: type === "Issue" ? state.issueId : state.taskId,
+          status: "open",
+          changed_field_count: 1,
+        });
+      },
+    });
+    expect(JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0] ?? "{}"))).toMatchObject({
+      ok: true,
+      task_id: "pm-compat-task",
+      issue_id: "pm-compat-issue",
+    });
+  });
+
   it("prints a text summary when --json is omitted", async () => {
     const { logs } = await runCompatibilityScenario([]);
     expect(logs.join("\n")).toContain("Compatibility gate passed:");
@@ -396,6 +417,16 @@ describe("scripts/release/compatibility-check", () => {
       },
     });
     expect(String(failure ?? "")).toContain("did not return a valid issue id");
+  });
+
+  it("rejects whitespace-only compact mutation ids", async () => {
+    const { failure } = await runCompatibilityScenario(["--json"], {
+      legacyOverride: (cmd, pmArgs) =>
+        cmd === "create" && pmArgs[pmArgs.indexOf("--type") + 1] === "Task"
+          ? jsonResult({ id: "   " })
+          : null,
+    });
+    expect(String(failure ?? "")).toContain("did not return a valid task id");
   });
 
   it("writes an empty body when the legacy task snapshot body is not a string", async () => {

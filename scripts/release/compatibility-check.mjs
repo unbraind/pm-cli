@@ -28,6 +28,14 @@ function runJsonCommand(command, args, env, context, cwd = repoRoot) {
   return parseJson(result.stdout, context);
 }
 
+function resolveMutationResultId(result, itemKind) {
+  const id = typeof result?.id === "string" ? result.id : result?.item?.id;
+  if (typeof id !== "string" || id.trim().length === 0) {
+    fail(`Legacy create did not return a valid ${itemKind} id.`);
+  }
+  return id;
+}
+
 function resolvePublishedVersion(explicitVersion) {
   if (explicitVersion) {
     return explicitVersion;
@@ -90,10 +98,7 @@ async function seedLegacyData(baseVersion, tempRoot, env, author) {
     "--message",
     "create compatibility seed task",
   );
-  const taskId = taskCreate?.item?.id;
-  if (typeof taskId !== "string" || taskId.length === 0) {
-    fail("Legacy create did not return a valid task id.");
-  }
+  const taskId = resolveMutationResultId(taskCreate, "task");
 
   const issueCreate = legacy(
     "create",
@@ -116,10 +121,7 @@ async function seedLegacyData(baseVersion, tempRoot, env, author) {
     "--message",
     "create compatibility issue seed",
   );
-  const issueId = issueCreate?.item?.id;
-  if (typeof issueId !== "string" || issueId.length === 0) {
-    fail("Legacy create did not return a valid issue id.");
-  }
+  const issueId = resolveMutationResultId(issueCreate, "issue");
 
   await mkdir(path.join(projectRoot, "docs"), { recursive: true });
   await writeFile(path.join(projectRoot, "README.md"), "# Compatibility Fixture\n", "utf8");
