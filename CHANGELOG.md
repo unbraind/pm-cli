@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Sentry PM-CLI-2D: storage-integrity history scan reads .jsonl directories as files ([pm-o1c53b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o1c53b.toon))
 - GH-576: unknown-command help probes return structured non-zero errors ([pm-bu1m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bu1m.toon))
 - GH-551: dependency seeds accept global source_kind and preserve cross-workspace IDs ([pm-topu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-topu.toon))
 - GH-595: list JSON always emits total/has_more/truncated/next_cursor and omits unset filters ([pm-wrss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wrss.toon))

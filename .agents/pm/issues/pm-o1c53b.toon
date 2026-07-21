@@ -1,0 +1,45 @@
+id: pm-o1c53b
+title: "Sentry PM-CLI-2D: storage-integrity history scan reads .jsonl directories as files"
+description: "A production Sentry event from pm merge reconcile shows scanHistoryStreams throwing EISDIR when the history directory contains an entry named with a .jsonl suffix that is itself a directory. Harden the SDK storage-integrity primitive so hostile, malformed, or concurrently changing directory entries become structured integrity findings instead of crashing validation."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:history","area:sdk","area:validation",observability,sentry,storage-integrity
+created_at: "2026-07-21T11:15:57.325Z"
+updated_at: "2026-07-21T11:43:59.681Z"
+closed_at: "2026-07-21T11:43:58.833Z"
+author: codex-root
+acceptance_criteria: A .jsonl-named directory cannot crash scanStorageIntegrity; the malformed entry is reported with a stable tracker-relative path and actionable detail; normal history streams remain unchanged; focused and full 100% coverage gates pass; the live Sentry issue is resolved only after exact-head proof.
+parent: pm-o2kc
+severity: high
+environment: production
+repro_steps: "Create a directory at .agents/pm/history/example.jsonl, then run pm validate --check-storage-integrity or pm merge reconcile."
+resolution: "Converted unreadable history, settings, and schema candidates into deterministic storage-integrity findings with safe errno codes so validation primitives and merge reconciliation cannot crash on directory-shaped or raced entries."
+expected_result: Storage-integrity validation completes deterministically and reports the non-regular history entry as an integrity finding without throwing.
+actual_result: "History .jsonl, settings.json, and schema .json read failures now produce tracker-relative integrity rows with errno codes; scanned counts, full suite, and temporary-project SDK acceptance pass."
+affected_version: 2026.7.20
+fixed_version: next
+component: sdk/governance/storage-integrity
+regression: true
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-7o0s,related,"2026-07-21T11:15:57.325Z",null,null
+  pm-mfkv92,discovered_from,"2026-07-21T11:15:57.325Z",null,null
+  pm-p5u6,related,"2026-07-21T11:15:57.325Z",null,null
+comments[7]{created_at,author,text}:
+  "2026-07-21T11:15:57.325Z",codex-root,"text=Duplicate check: searched all tracker statuses for PM-CLI-2D, EISDIR, scanHistoryStreams, illegal directory reads, and storage-integrity directory entries. No canonical item covers this exact failure; pm-mfkv92 is the merge-reconcile origin, pm-7o0s is prior disappearing-stream resilience, and pm-p5u6 owns release observability. Live evidence: Sentry PM-CLI-2D event 0705cf2439944c5f88ee0c2068c4add5 at 2026-07-21T07:29:28Z."
+  "2026-07-21T11:16:35.285Z",codex-root,"Investigation: the merged main implementation still enumerates history and schema directories as bare names and unconditionally readFile()s any .jsonl/.json suffix. A directory or raced-away entry therefore escapes as EISDIR/ENOENT instead of producing a validation row. TDD scope covers both structurally identical scanner paths."
+  "2026-07-21T11:24:32.968Z",codex-root,"TDD and acceptance evidence: the focused regression failed before implementation with EISDIR at scanHistoryStreams, then passed after unreadable history/schema candidates became structured findings. Full suite: 332 files, 6053 tests, exact 100% coverage (40694 statements, 28623 branches, 8264 functions, 39588 lines). ESLint, typecheck, jscpd zero clones, static/docstring/package/token-budget gates, and pm-changelog check all pass. A fresh temporary tracker with history/pm-directory.jsonl as a directory returned a storage_integrity error row and pm merge reconcile --dry-run completed without throwing."
+  "2026-07-21T11:30:53.942Z",codex-root,"Greptile review 57c68db0-e734-477f-8608-b1af270c0fd5 blocked merge at 3/5: settings.json still propagates EISDIR, read failures lose the safe errno code, and history_streams_scanned semantics lack an explicit regression assertion. Reopened to address all three findings."
+  "2026-07-21T11:37:42.688Z",codex-root,"Greptile remediation complete: settings.json EISDIR now becomes an unparseable_config_files row, history/schema read findings preserve the safe errno code without exposing absolute paths, and history_streams_scanned explicitly counts all nine candidate streams. Focused TDD, direct built-SDK malformed-settings acceptance, strict quality gates, and the full 332-file/6053-test suite pass at 100% (40700 statements, 28623 branches, 8265 functions, 39594 lines)."
+  "2026-07-21T11:42:58.285Z",codex-root,Greptile re-review bdb92569-39d6-441f-af91-131367882baa rated the fix 5/5 and safe to merge with no review comments. Applying its sole non-blocking completeness note by asserting config_files_scanned alongside history_streams_scanned.
+  "2026-07-21T11:43:57.877Z",codex-root,"Final completeness assertion passes: expanded malformed fixture counts nine history candidates and three configuration candidates while reporting every directory-shaped read failure. Focused suite and ESLint remain green; source implementation is unchanged from the exact 100% full-suite head reviewed 5/5 by Greptile."
+files[2]{path,scope,note}:
+  src/sdk/governance/storage-integrity.ts,project,Reject non-regular and unreadable history or schema entries as structured integrity findings
+  tests/unit/sdk/storage-integrity.spec.ts,project,Regression coverage for jsonl/json directory entries and read failures
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/storage-integrity.spec.ts,project,240,Storage integrity malformed-entry regression
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrukgblr-71heaj,test,passed,"2026-07-21T11:24:23.912Z","2026-07-21T11:24:32.319Z","2026-07-21T11:24:32.319Z",1,0,0
+  test-local-mrukx8w6-6x0c9y,test,passed,"2026-07-21T11:37:35.154Z","2026-07-21T11:37:41.958Z","2026-07-21T11:37:41.958Z",1,0,0
+close_reason: "Completed all blocking and non-blocking Greptile feedback with explicit history/config scan-count contracts, safe errno findings, TDD, exact 100% coverage, and acceptance evidence."
+body: ""
