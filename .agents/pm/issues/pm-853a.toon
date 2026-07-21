@@ -1,12 +1,12 @@
 id: pm-853a
 title: "Extension flag value-arity decided by three divergent predicates in cli/extension-command-help.ts - help, parse, and summary surfaces can disagree"
-description: ""
+description: "Unify extension-flag value-arity derivation across parsing, help, summaries, and recovery so one declared contract produces identical behavior on every surface."
 type: Issue
 status: open
 priority: 2
 tags: []
 created_at: "2026-07-19T04:07:03.496Z"
-updated_at: "2026-07-19T04:07:03.496Z"
+updated_at: "2026-07-21T15:55:00.840Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "One shared value-arity predicate derived from the declared flag contract (long/short/value_name/value_type/type/required/list) exported from extension-command-help.ts; extensionFlagTakesValueForInvocation, formatDynamicExtensionParseOptionFlags, and buildDynamicExtensionHelpOptionSummary all consume it (summary currently ignores value_type entirely - takes_value is value_name-only); Parity spec asserts boolean, value-name-only, value-type-only, and required flags render and parse identically across help block, commander option registration, help-option summaries, and recovery hints"

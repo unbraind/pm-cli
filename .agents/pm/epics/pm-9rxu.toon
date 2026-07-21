@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:cli","area:storage",initiative,performance,scale
 created_at: "2026-07-06T21:24:01.069Z"
-updated_at: "2026-07-19T04:08:07.479Z"
+updated_at: "2026-07-21T15:56:02.805Z"
 author: maintainer-agent
 estimated_minutes: 4800
 acceptance_criteria: "Benchmark harness proves: context/next/list/search/get p95 < 1s and default output < 5k tokens on a synthetic 1M-item workspace; 1000-agent parallel claim/update stress runs with zero corruption, zero history drift, bounded retry latency; all changes behind format_version gating with green migration tests; zero feature or behavior regression at small scale"
@@ -17,11 +17,12 @@ why_now: "Read paths are O(workspace) directory scans and outputs are unbounded;
 parent: pm-o2kc
 risk: high
 confidence: medium
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-06T22:31:28.593Z",codex-agent,"Long-term planning evidence 2026-07-06/07 codex-agent: the scale-out initiative directly covers the user's 100k-1M item / thousands-agent target. Keep the delivery order measurement-first: pm-mi2x benchmark harness, ADR pm-bl8x, derived read index pm-801d, bounded cursor pagination pm-dfg0, storage fan-out, claim/lock throughput pm-lvyd, history/git growth policy, and then federation story pm-is1a. Implementation should land in SDK primitives first so list/search/context/next/get and CLI/MCP inherit the same bounded-output and concurrency guarantees."
   "2026-07-12T15:59:51.742Z",maintainer-agent,"Local final-gate evidence for performance tranche commit 4dd7eb5f: build, typecheck, docs/skills, static quality, token budget, 277 test files / 5587 tests, coverage 100% statements/branches/functions/lines, version policy, secret scan, npx packed smoke, 88-command package-first dogfood, npm pack, compatibility, and live Sentry/telemetry all passed locally. pnpm lint also passed with zero ESLint warnings and zero jscpd clones. The local Greptile wrapper was rerun after commit and timed out after 600000ms with a documented skip and no findings. No GitHub Actions runner was used."
   "2026-07-13T21:41:32.549Z",codex-root,"Scale review 2026-07-13: the shipped 100k-item baseline and cursor/benchmark foundations remain the evidence base. pm-801d is now actionable because pm-bl8x and pm-mi2x are closed; it should precede pm-3hps, whose remaining effective blocker is pm-801d. Preserve dual targets: small repositories must remain near-instant and understandable, while million-item and multi-agent workloads require bounded scans, resumable cursors, incremental indexes, deterministic ranking, backpressure, observability, and benchmarked token budgets."
   "2026-07-13T22:09:19.232Z",codex-root,"Scale relationship organization 2026-07-13: million-item agent story pm-g2zz now explicitly depends on derived read index pm-801d and thousand-agent claim throughput pm-lvyd. Existing thematic relations preserve its context-engine and evaluation lineage without adding order edges that current issue pm-6irg would misclassify into cycles. Graph analytics pm-7ob5 and conformance pm-m2il reuse the scale harness pm-mi2x and require deterministic bounded-memory, latency, token, incremental-update, and one-million-item evidence."
+  "2026-07-21T15:56:02.802Z",codex-tracker-governance,"Scale strategy refresh 2026-07-21: the live corpus is 1,901 items and 31,782 pre-mutation history entries, so repository health at this size is evidence, not proof of the 100k-1M target. The existing sequence remains correct: benchmark and workload generators first, persistent derived read index second, cursor and feature-store reads third, adaptive context packing and memory tiers fourth, then thousand-agent claim/merge/federation stress. Acceptance must remain bounded by latency, memory, tokens, deterministic continuation, merge correctness, and small-project parity rather than raw throughput alone."
 notes[10]:
   - created_at: "2026-07-11T10:27:22.420Z"
     author: maintainer-agent
