@@ -20,6 +20,7 @@
 
 ### Other
 
+- GitHub analyzer follow-up: GH-628 unnecessary spread, GH-629 duplicate blocks, and GH-630 unsafe optional chaining ([pm-aw59hb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-aw59hb.toon))
 - GH-582: runRegisteredListCommand flagged Complex Method by CodeFactor — extract option-assembly helpers in register-list-query.ts ([pm-zwya](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-zwya.toon))
 
 ## 2026.7.21 - 2026-07-21

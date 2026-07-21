@@ -2,12 +2,11 @@ id: pm-801d
 title: "Persistent derived read index: serve list/context/next/get-by-filter from an O(result) index instead of scanning all item files"
 description: "Core scale-out child: today every read enumerates .agents/pm/<type>/*.toon. Lands as SDK primitives (pm-usfg alignment) so CLI/MCP inherit. Duplicate check: semantic-index/ledger items (vector refresh ledger) cover embeddings only, not metadata reads."
 type: Feature
-status: in_progress
+status: open
 priority: 2
 tags[4]: "area:sdk","area:storage",performance,scale
 created_at: "2026-07-06T21:24:54.440Z"
-updated_at: "2026-07-21T19:26:17.621Z"
-assignee: codex-root
+updated_at: "2026-07-21T20:01:41.700Z"
 author: maintainer-agent
 estimated_minutes: 900
 acceptance_criteria: "Read commands consult a rebuildable, gitignored derived index (format per ADR pm-bl8x) maintained transactionally with item writes; index is never authoritative — pm can always rebuild it from .toon files and detects staleness automatically; benchmark shows list/context/next p95 < 1s at 1M items; falls back to full scan transparently when index is absent; zero behavior change to outputs"
