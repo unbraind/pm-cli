@@ -162,7 +162,7 @@ export function buildContextSignalSnapshot(
   items: readonly ItemMetadata[],
   options: BuildContextSignalSnapshotOptions,
 ): ContextSignalSnapshot {
-  if (options.sourceCursor.trim().length === 0) {
+  if (typeof options.sourceCursor !== "string" || options.sourceCursor.trim().length === 0) {
     throw new TypeError("Context signal source cursor must be non-empty");
   }
   if (!Number.isFinite(Date.parse(options.now))) {

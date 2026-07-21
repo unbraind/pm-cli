@@ -97,6 +97,12 @@ describe("context signal feature store", () => {
     })).toThrow("source cursor");
     expect(() => buildContextSignalSnapshot([], {
       statusRegistry,
+      now,
+      source: "scan_fallback",
+      sourceCursor: null as unknown as string,
+    })).toThrow("source cursor");
+    expect(() => buildContextSignalSnapshot([], {
+      statusRegistry,
       now: "invalid",
       source: "scan_fallback",
       sourceCursor: "cursor",
