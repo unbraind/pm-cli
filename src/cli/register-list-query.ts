@@ -253,13 +253,13 @@ async function runRegisteredListCommand(params: {
   applyDefaultBriefListMode(listOptions, params.defaultBrief);
   if (params.excludeTerminal) listOptions.excludeTerminal = true;
   listOptions.dependencyBlocked = params.dependencyBlocked;
+  const output = resolveRegisteredListOutputContext(
+    params.options,
+    globalOptions,
+  );
   const result = await runList(
     params.dependencyBlocked ? undefined : params.status,
     listOptions,
-    globalOptions,
-  );
-  const output = resolveRegisteredListOutputContext(
-    params.options,
     globalOptions,
   );
   renderRegisteredListResult(params.name, result, output);

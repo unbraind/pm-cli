@@ -6,8 +6,8 @@ status: closed
 priority: 3
 tags[3]: codefactor,gh-582,quality
 created_at: "2026-07-18T05:45:02.428Z"
-updated_at: "2026-07-21T09:15:23.599Z"
-closed_at: "2026-07-21T09:15:22.799Z"
+updated_at: "2026-07-21T09:36:05.661Z"
+closed_at: "2026-07-21T09:36:04.923Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: "src/cli/register-list-query.ts runRegisteredListCommand (L181-241) split via mechanical extraction so CodeFactor's Complex Method finding clears; cyclomatic and cognitive complexity both stay <=16 (twin-gate policy pm-2gvp); no behavior change, list-* specs green; GH-582 closed"
@@ -21,17 +21,19 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-2gvp,related,"2026-07-18T05:45:02.428Z",null,null
   pm-j8vq,related,"2026-07-18T05:45:02.428Z",null,null
   pm-pfqi,related,"2026-07-18T05:45:02.428Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-21T07:33:05.193Z",codex-root-20260721,"Evidence: runRegisteredListCommand now delegates non-trivial output-mode validation and rendering to documented helpers; list registration and list command suites pass with no suppression added."
   "2026-07-21T09:10:32.464Z",codex-root-20260721,"Hosted review remediation: csv/table list rendering now records the structured active command result before writing tabular output, preserving extension afterCommand visibility across every output mode. The registration suite asserts the active result."
   "2026-07-21T09:15:18.080Z",codex-root-20260721,"Exact remediation-head proof: all 332 test files and 6053 tests pass at 100/100/100/100 coverage; tabular outputs preserve afterCommand structured-result visibility without restoring the original complex method."
+  "2026-07-21T09:35:53.676Z",codex-root-20260721,"Final pre-push Greptile remediation: list rendering compatibility is now validated before runList executes, so invalid stream/format combinations fail without performing a wasted workspace query. Both invalid combinations assert zero runList calls."
 files[2]{path,scope,note}:
   src/cli/register-list-query.ts,project,Extracted rendering-mode resolution and result rendering
   tests/unit/cli/register-list-query.spec.ts,project,List registration behavior regression suite
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/cli/register-list-query.spec.ts tests/unit/commands/list-command.spec.ts,project,600,List registration and command regression coverage
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mruc8n1a-gz3x5j,test,passed,"2026-07-21T07:34:28.281Z","2026-07-21T07:34:36.958Z","2026-07-21T07:34:36.958Z",1,0,0
   test-local-mrufpf7a-9raihh,test,passed,"2026-07-21T09:11:28.481Z","2026-07-21T09:11:38.806Z","2026-07-21T09:11:38.806Z",1,0,0
-close_reason: Completed list registration complexity extraction and extension-visible tabular result propagation with exact full-suite coverage.
+  test-local-mrugktt6-inskae,test,passed,"2026-07-21T09:35:54.224Z","2026-07-21T09:36:04.074Z","2026-07-21T09:36:04.074Z",1,0,0
+close_reason: "Completed list registration refactor, extension-visible tabular results, and pre-query output validation with focused regression proof."
 body: "CodeFactor auto-issue GH-582 (2026-07-18, commit 6b8ee9e4 = PR#580 merge) flags src/cli/register-list-query.ts runRegisteredListCommand L181-241 as Complex Method. The method PASSES the repo twin gates (cyclomatic<=16 + sonarjs/cognitive-complexity<=16 enforced since pm-2gvp/GH-518) and holds NO entry in eslint-suppressions.json — CodeFactor's internal Complex-Method radar sits below our 16/16 policy threshold. Grade hygiene (pm-92if A+ goal) still wants it cleared: mechanically extract the status/brief/dependency-blocked option-assembly branches into named helpers; do NOT add a suppression (suppressions are the pm-j8vq grandfathered baseline, frozen for burn-down). Distinct from GH-583 (cli-bootstrap.ts), which IS suppression-backed and maps to pm-j8vq — never merge the two dispositions."

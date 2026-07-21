@@ -174,12 +174,14 @@ describe("register-list-query list output formats", () => {
 
   it("rejects --stream without an effective json output mode", async () => {
     await expect(runRaw("list", "--stream")).rejects.toThrow(/--stream requires --json/);
+    expect(vi.mocked(runList)).not.toHaveBeenCalled();
   });
 
   it("rejects combining --format csv with --stream", async () => {
     await expect(runRaw("list", "--json", "--format", "csv", "--stream")).rejects.toThrow(
       /--format csv\|table cannot be combined with --stream/,
     );
+    expect(vi.mocked(runList)).not.toHaveBeenCalled();
   });
 });
 
