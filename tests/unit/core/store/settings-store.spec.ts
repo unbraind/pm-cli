@@ -116,9 +116,11 @@ describe("core/store/settings", () => {
       const unreadable = await readSettingsWithMetadata(pmRoot);
       expect(unreadable.settings).toEqual(SETTINGS_DEFAULTS);
       expect(unreadable.warnings).toEqual(["settings_read_fs_error"]);
+      expect(getSettingsReadCacheEntry(pmRoot)).toBeUndefined();
       expect((await readSettingsWithMetadata(pmRoot)).warnings).toEqual([
         "settings_read_fs_error",
       ]);
+      expect(getSettingsReadCacheEntry(pmRoot)).toBeUndefined();
 
       await fs.rmdir(settingsPath);
       await writeLegacySettings(pmRoot, { author_default: "recovered" });

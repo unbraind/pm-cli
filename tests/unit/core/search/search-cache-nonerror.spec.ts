@@ -67,14 +67,16 @@ describe("core/search/cache non-error warning formatting", () => {
 
   it("keeps the background worker non-fatal when settings metadata throws", async () => {
     const { runSemanticRefreshWorker } = await import("../../../../src/core/search/background-refresh.js");
+    const scheduleRetry = vi.fn();
     const result = await runSemanticRefreshWorker("/tmp/pm-background-settings-error", async () => {
       throw new Error("refresh must not run");
-    });
+    }, scheduleRetry);
     expect(result).toEqual({
       processed: [],
       rounds: 0,
       warnings: ["search_background_refresh_settings_read_failed:boom"],
     });
+    expect(scheduleRetry).toHaveBeenCalledWith("/tmp/pm-background-settings-error");
   });
 
   it("preserves filesystem warning provenance for mutation and background refresh", async () => {
@@ -82,6 +84,7 @@ describe("core/search/cache non-error warning formatting", () => {
     readSettingsWarnings.current = ["settings_read_fs_error"];
     const { refreshSearchArtifactsForMutation } = await import("../../../../src/core/search/cache.js");
     const { runSemanticRefreshWorker } = await import("../../../../src/core/search/background-refresh.js");
+    const scheduleRetry = vi.fn();
 
     await expect(
       refreshSearchArtifactsForMutation("/tmp/pm-cache-settings-warning", ["pm-warning"]),
@@ -96,7 +99,7 @@ describe("core/search/cache non-error warning formatting", () => {
     await expect(
       runSemanticRefreshWorker("/tmp/pm-background-settings-warning", async () => {
         throw new Error("refresh must not run");
-      }),
+      }, scheduleRetry),
     ).resolves.toEqual({
       processed: [],
       rounds: 0,
@@ -104,5 +107,6 @@ describe("core/search/cache non-error warning formatting", () => {
         "search_background_refresh_settings_read_failed:settings_read_fs_error",
       ],
     });
+    expect(scheduleRetry).toHaveBeenCalledWith("/tmp/pm-background-settings-warning");
   });
 });

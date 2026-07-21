@@ -1634,17 +1634,9 @@ export async function readSettingsWithMetadata(
   try {
     raw = await readFileIfExists(settingsPath);
   } catch {
-    const fallback = buildFallbackSettingsReadResult(
+    return buildFallbackSettingsReadResult(
       "settings_read_fs_error",
     );
-    await cacheSettingsReadResultIfStable(
-      pmRoot,
-      [settingsPath],
-      fallback,
-      settingsOnlySignatures,
-      [settingsPath],
-    );
-    return fallback;
   }
   if (raw === null) {
     const fallback = buildFallbackSettingsReadResult();

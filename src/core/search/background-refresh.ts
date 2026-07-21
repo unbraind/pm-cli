@@ -30,6 +30,8 @@ const PENDING_QUEUE_GATE_STALE_MS = 30_000;
 
 const SEARCH_REFRESH_INLINE_ENV = "PM_SEARCH_REFRESH_INLINE";
 const SEARCH_REFRESH_CHILD_ENV = "PM_SEARCH_REFRESH_CHILD";
+/** Delay before a settings-failed worker dispatches one replacement child, preventing a tight retry loop while preserving eventual queue recovery. */
+export const SEARCH_REFRESH_RETRY_DELAY_MS = 30_000;
 
 function parseBooleanTrueLike(value: string | undefined): boolean {
   if (typeof value !== "string") {
@@ -230,6 +232,10 @@ function dispatchRefreshChild(pmRoot: string): void {
   }
 }
 
+function scheduleDelayedRefreshRetry(pmRoot: string): void {
+  setTimeout(() => dispatchRefreshChild(pmRoot), SEARCH_REFRESH_RETRY_DELAY_MS);
+}
+
 /** Enqueue mutated ids and dispatch a detached worker child to refresh semantic embeddings without blocking the mutation. The reindex lock the worker acquires serializes concurrent refreshes, so the spawn itself stays unconditional and cheap; a worker that loses the lock exits and its ids are drained by the holder. */
 export async function scheduleBackgroundSemanticRefresh(
   pmRoot: string,
@@ -258,6 +264,7 @@ type SemanticRefreshFn = (
 export async function runSemanticRefreshWorker(
   pmRoot: string,
   refresh: SemanticRefreshFn,
+  scheduleRetry: (root: string) => void = scheduleDelayedRefreshRetry,
 ): Promise<SemanticRefreshWorkerResult> {
   const warnings: string[] = [];
   const processed: string[] = [];
@@ -272,6 +279,7 @@ export async function runSemanticRefreshWorker(
       warning.startsWith("settings_read_"),
     );
     if (readFailure) {
+      scheduleRetry(pmRoot);
       return {
         processed,
         rounds: 0,
@@ -284,6 +292,7 @@ export async function runSemanticRefreshWorker(
       settingsRead.settings,
     ).settings;
   } catch (error: unknown) {
+    scheduleRetry(pmRoot);
     return {
       processed,
       rounds: 0,
@@ -313,6 +322,7 @@ export async function runSemanticRefreshWorker(
 
   let rounds = 0;
   let failed = false;
+  let retryPending = false;
   try {
     for (;;) {
       const ids = await drainPendingRefreshIds(pmRoot);
@@ -322,8 +332,20 @@ export async function runSemanticRefreshWorker(
       rounds += 1;
       try {
         const result = await refresh(pmRoot, ids);
-        processed.push(...result.refreshed);
         warnings.push(...result.warnings);
+        if (
+          result.warnings.some((warning) =>
+            warning.startsWith(
+              "search_semantic_refresh_skipped:settings_read_failed:",
+            ),
+          )
+        ) {
+          await enqueuePendingRefreshIds(pmRoot, ids);
+          failed = true;
+          retryPending = true;
+          break;
+        }
+        processed.push(...result.refreshed);
       } catch (error: unknown) {
         warnings.push(
           `search_background_refresh_failed:${toErrorMessage(error)}`,
@@ -336,6 +358,10 @@ export async function runSemanticRefreshWorker(
     }
   } finally {
     await release?.();
+  }
+
+  if (retryPending) {
+    scheduleRetry(pmRoot);
   }
 
   // Close the race where a sibling enqueued ids between our last empty drain and
