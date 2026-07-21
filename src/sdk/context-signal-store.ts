@@ -267,7 +267,11 @@ export class ContextSignalStore {
         warnings.push("context_signal_store_stale");
       }
       resolvedSnapshot = buildContextSignalSnapshot(items, options);
-      await this.adapter.write(resolvedSnapshot);
+      try {
+        await this.adapter.write(resolvedSnapshot);
+      } catch {
+        warnings.push("context_signal_store_write_failed");
+      }
     }
     const signalsById = new Map(resolvedSnapshot.items.map((item) => [item.id, item.signals]));
     return {

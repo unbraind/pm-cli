@@ -37,6 +37,7 @@ class MemoryAdapter implements ContextSignalStoreAdapter {
   value: unknown | null = null;
   writes = 0;
   throwOnRead = false;
+  throwOnWrite = false;
 
   async read(): Promise<unknown | null> {
     if (this.throwOnRead) {
@@ -46,6 +47,9 @@ class MemoryAdapter implements ContextSignalStoreAdapter {
   }
 
   async write(snapshot: ContextSignalSnapshot): Promise<void> {
+    if (this.throwOnWrite) {
+      throw new Error("read-only adapter");
+    }
     this.writes += 1;
     this.value = structuredClone(snapshot);
   }
@@ -168,6 +172,13 @@ describe("context signal feature store", () => {
     adapter.throwOnRead = true;
     const recovered = await store.readOrRebuild([item("pm-a")], options);
     expect(recovered.warnings).toEqual(["context_signal_store_invalid"]);
+    adapter.throwOnRead = false;
+    adapter.throwOnWrite = true;
+    adapter.value = null;
+    const writeDegraded = await store.readOrRebuild([item("pm-a")], options);
+    expect(writeDegraded.cache_status).toBe("rebuilt");
+    expect(writeDegraded.candidates[0]?.id).toBe("pm-a");
+    expect(writeDegraded.warnings).toEqual(["context_signal_store_write_failed"]);
   });
 
   it("persists snapshots atomically through the JSON file adapter and reports corrupt JSON", async () => {

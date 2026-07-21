@@ -43,7 +43,9 @@ const NO_CONTEXT_AUTHOR = Symbol("no-context-author");
 const NO_ITEM_ASSIGNEE = Symbol("no-item-assignee");
 
 function normalizeContextActor(value: unknown, missingValue: symbol): string | symbol {
-  return typeof value === "string" ? value.trim().toLowerCase() : missingValue;
+  if (typeof value !== "string") return missingValue;
+  const normalized = value.trim().toLowerCase();
+  return normalized.length > 0 ? normalized : missingValue;
 }
 
 /** A project-management object and its derived relevance signals. */

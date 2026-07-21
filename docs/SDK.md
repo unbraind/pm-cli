@@ -1196,8 +1196,10 @@ the snapshot never replaces item or history data.
 `readOrRebuild(items, options)` reuses a snapshot only when the cursor and
 complete item-id set match. Missing, stale, version-incompatible, or corrupt
 state is rebuilt from the authoritative items and atomically replaced. The
-result reports `cache_status` and non-fatal `context_signal_store_stale` or
-`context_signal_store_invalid` warnings. Optional maps for activity density,
+result reports `cache_status` and non-fatal `context_signal_store_stale`,
+`context_signal_store_invalid`, or `context_signal_store_write_failed`
+warnings. A write failure still serves the in-memory rebuilt candidates because
+the snapshot is derived, never authoritative. Optional maps for activity density,
 graph proximity, claim/focus, knowledge density, author affinity, usage
 affinity, and semantic similarity let an index or application-specific host
 supply richer signals without changing the canonical scorer contract.
