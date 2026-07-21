@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:cli",dx,perf,scripts,tech-debt
 created_at: "2026-07-06T09:04:36.860Z"
-updated_at: "2026-07-21T10:31:05.390Z"
+updated_at: "2026-07-21T10:52:31.160Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: compile-cache dir bounded (stale entries pruned or non-current versions dropped); every mkdtemp-using script cleans its sandbox via try/finally + signal handlers; aborted smoke runs leave no >100MB residue in /tmp
@@ -15,7 +15,7 @@ risk: low
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-j8vq,related,"2026-07-21T07:33:00.706Z",codex-root-20260721,null
-comments[14]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-07-16T15:14:51.889Z",codex-gpt5-root,"PR #573 CI evidence: static quality, package boundary, and all token-budget measurements passed, but final rmSync of /tmp/pm-token-budget-AclN4M hit transient ENOTEMPTY. The same gate passed locally before and after the run; this confirms the existing broader temp-lifecycle chore still owns cleanup retry/signal hardening. No script implementation was added in this review slice because the next PR head naturally reruns the full gate and this item's acceptance criteria also require compile-cache plus every mkdtemp caller, not a one-line partial close."
   "2026-07-21T06:54:35.054Z",codex-root-20260721,"Live GitHub evidence 2026-07-21: Auto Release run 29804774154 / GH-626 failed after all coverage measurements when scripts/release/token-budget-gate.mjs final rmSync hit ENOTEMPTY on /tmp/pm-token-budget-fyfySy under Node 24. Reusing this canonical temp-lifecycle item; no duplicate created."
   "2026-07-21T07:33:06.446Z",codex-root-20260721,"Progress evidence: fixed Auto Release GH-626 by routing token-budget cleanup through the shared resilient retry primitive; consolidated external-package and contracts cleanup; added version-scoped compile-cache generation pruning. Broader every-mkdtemp signal cleanup remains, so this item stays open and is released after this PR slice."
@@ -30,6 +30,8 @@ comments[14]{created_at,author,text}:
   "2026-07-21T10:14:17.179Z",codex-root-20260721,"Hosted CodeRabbit remediation: compile-cache validation now accepts leading underscore and hyphen safe tokens, matching resolveCompileCacheGeneration for scoped package names such as @org/package while continuing to reject dot segments and path separators. Focused SDK and scale-workspace suites pass (10 tests)."
   "2026-07-21T10:29:28.119Z",codex-root-20260721,"Exact final-head proof: 332 test files and 6053 tests pass; compile-cache scoped-package generation and Windows-portable cleanup are covered within 100% statements (40688/40688), branches (28623/28623), functions (8264/8264), and lines (39582/39582)."
   "2026-07-21T10:31:05.390Z",codex-root-20260721,"Installed-package acceptance proof: pnpm smoke:npx packed the current tree, installed it into a fresh temporary project, exercised the CLI and all 13 bundled packages, and cleaned the sandbox successfully (version 2026.7.21)."
+  "2026-07-21T10:47:25.985Z",codex-root-20260721,"Final exact-commit Greptile review scored 5/5 with no comments, but noted a soft resolver/validator contract gap for empty or leading-dot inputs. Tightening the public resolver invariant before push."
+  "2026-07-21T10:52:29.795Z",codex-root-20260721,"Greptile contract remediation verified: resolver now trims empty versions to development and rewrites a leading dot, so every generated token is accepted by pruning; scoped, empty, dot-prefixed, and traversal-shaped cases are covered. Full 6053-test suite remains exact 100/100/100/100."
 files[13]{path,scope,note}:
   scripts/contracts-snapshot-cleanup.mjs,project,Contracts cleanup delegates to shared retry policy
   scripts/release/token-budget-gate.mjs,project,Bounded retry cleanup for token-budget sandbox

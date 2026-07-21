@@ -22,10 +22,9 @@ export interface CompileCachePruneResult {
 export function resolveCompileCacheGeneration(
   packageVersion: string | undefined,
 ): string {
-  return (packageVersion ?? "development").replace(
-    /[^a-zA-Z0-9._-]/g,
-    "_",
-  );
+  return (packageVersion?.trim() || "development")
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .replace(/^\./, "_");
 }
 
 /**

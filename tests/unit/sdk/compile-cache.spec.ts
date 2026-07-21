@@ -14,6 +14,9 @@ describe("compile-cache lifecycle", () => {
       "2026.7.21_build_one",
     );
     expect(resolveCompileCacheGeneration("@org/package")).toBe("_org_package");
+    expect(resolveCompileCacheGeneration(".candidate")).toBe("_candidate");
+    expect(resolveCompileCacheGeneration("..")).toBe("_.");
+    expect(resolveCompileCacheGeneration("")).toBe("development");
     expect(resolveCompileCacheGeneration(undefined)).toBe("development");
   });
 
