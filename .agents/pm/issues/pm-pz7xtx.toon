@@ -1,0 +1,39 @@
+id: pm-pz7xtx
+title: "Sentry PM-CLI-2F: classify manifest-proven torn bundle call-time TypeError"
+description: Sentry PM-CLI-2F captured registerOperationCommands is not a function during CLI operation-family bootstrap. The existing bundle-integrity boundary recognizes missing-module and missing-export loader errors but not the equivalent call-time shape caused by a mixed bundle generation. Extend diagnosis only when the manifest proves the generation changed or files are missing/hash-invalid; intact bundles must preserve the original TypeError.
+type: Issue
+status: in_progress
+priority: 1
+tags: []
+created_at: "2026-07-21T20:19:20.366Z"
+updated_at: "2026-07-21T20:31:10.937Z"
+assignee: codex
+author: codex
+acceptance_criteria: TDD covers changed-generation and intact-manifest call-time TypeError paths; focused and full 100/100/100/100 coverage pass; packed installed CLI operation smoke passes; live Sentry/telemetry gate returns zero critical/high blockers after resolution.
+parent: pm-u9d0
+severity: high
+environment: production
+expected_result: Manifest-proven mixed bundle generations produce bundle_integrity_torn_install; intact runtime TypeErrors remain genuine blocking failures.
+actual_result: PM-CLI-2F remained an unresolved high because the call-time 'is not a function' shape bypassed the diagnostic matcher.
+affected_version: 2026.7.21
+component: cli-bundle-bootstrap
+regression: false
+customer_impact: A concurrent/partial install can abort CLI startup without the actionable reinstall diagnostic and blocks the release reliability gate.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-7zs0,related,"2026-07-21T20:19:20.366Z",null,null
+  pm-wfvq,related,"2026-07-21T20:19:20.366Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-21T20:19:20.366Z",codex,"Duplicate check: searched all statuses for Sentry PM-CLI-2F, torn bundle, registerOperationCommands, and call-time TypeError. No exact item exists. Closed pm-wfvq remains the completed canonical manifest-diagnostic implementation; this item records a newly observed error-shape gap and links that lineage plus standing release-health reminder pm-7zs0."
+  "2026-07-21T20:20:40.912Z",codex,"TDD evidence: the new PM-CLI-2F regression failed before implementation because the call-time TypeError returned undefined; after extending the candidate error-shape matcher, all 8 focused tests pass. Classification remains fail-closed because an intact manifest returns undefined and only manifest-proven generation drift or file integrity failure emits bundle_integrity_torn_install."
+  "2026-07-21T20:31:10.937Z",codex,"Verification evidence: pnpm build and the full static quality gate passed; all 334 test files and 6072 tests passed with literal all-source coverage at 100% statements (40971/40971), branches (28813/28813), functions (8317/8317), and lines (39850/39850). A packed tarball installed into /tmp/tmp.GMtlHlGpWu successfully ran init, create, list-open, and health --check-only with one intact item/history stream and zero integrity or lock warnings, directly exercising operation-family registration from the consumer artifact."
+learnings[1]{created_at,author,text}:
+  "2026-07-21T20:31:09.987Z",codex,Bundle-generation races can surface after module loading as call-time TypeErrors when a stale importer receives a changed export shape. Candidate-message matching may include this shape safely only behind the existing atomic manifest proof; message text alone must never classify or suppress it.
+files[2]{path,scope,note}:
+  src/cli/bundle-integrity.ts,project,Manifest-proven call-time torn-generation classification
+  tests/unit/cli/cli-bundle-integrity.spec.ts,project,TDD regression for intact and changed-generation TypeError paths
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,900,Literal all-source 100 percent coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/cli/cli-bundle-integrity.spec.ts,project,240,Focused bundle-integrity regression suite
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrv3z9v9-r5v44k,test,passed,"2026-07-21T20:27:19.268Z","2026-07-21T20:31:09.238Z","2026-07-21T20:31:09.238Z",2,0,0
+body: ""
