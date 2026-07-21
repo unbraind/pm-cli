@@ -75,8 +75,9 @@ export async function runMergeReconcile(
   const mergeChecksGreen = validation.checks.every(
     (check) => check.status === "ok",
   );
+  const ok = repair.totals.failed === 0 && (dryRun || mergeChecksGreen);
   return {
-    ok: repair.totals.failed === 0 && (dryRun || mergeChecksGreen),
+    ok,
     dry_run: dryRun,
     repair,
     validation,
@@ -85,10 +86,15 @@ export async function runMergeReconcile(
           "Review repair.streams, then rerun pm merge reconcile without --dry-run to apply audited repairs.",
           "No Git hook is installed automatically; invoke this command from an explicit post-merge hook only when your repository policy opts in.",
         ]
-      : [
-          "Reconciliation is complete; commit changed history streams with the merge result.",
-          "Rerun pm merge reconcile --dry-run after future tracker-data merges as a non-mutating integrity check.",
-        ],
+      : ok
+        ? [
+            "Reconciliation is complete; commit changed history streams with the merge result.",
+            "Rerun pm merge reconcile --dry-run after future tracker-data merges as a non-mutating integrity check.",
+          ]
+        : [
+            "Reconciliation remains incomplete; inspect repair failures and non-green validation checks before retrying.",
+            "Do not commit repaired history streams as reconciled until pm merge reconcile returns ok=true.",
+          ],
     generated_at: validation.generated_at,
   };
 }

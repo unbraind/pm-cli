@@ -93,7 +93,10 @@ import {
   parseTypeOptionEntries,
 } from "./repeatable-metadata-parsers.js";
 import { assertValidBareDependencyFlagValue } from "../../sdk/dependency-flag-validation.js";
-import { normalizeDependencySeedId } from "../../sdk/dependency-provenance.js";
+import {
+  normalizeDependencySeedId,
+  normalizeDependencySourceKind,
+} from "../../sdk/dependency-provenance.js";
 import { collectNewOrderingCycleWarnings } from "../../sdk/graph/mutation-advisory.js";
 import type {
   Comment,
@@ -816,7 +819,9 @@ function parseDependencyAdditions(
         EXIT_CODE.USAGE,
       );
     }
-    const sourceKind = parseOptionalDependencyString(kv.source_kind);
+    const sourceKind = normalizeDependencySourceKind(
+      parseOptionalDependencyString(kv.source_kind),
+    );
     return {
       id: normalizeDependencySeedId(id, prefix, sourceKind),
       kind: ensureEnum(kind, DEPENDENCY_KIND_VALUES, "dependency kind"),
@@ -867,7 +872,9 @@ function parseDependencyRemovals(
       const kindRaw = normalizeDependencyKindInput(
         parseOptionalDependencyString(kv.kind ?? kv.type),
       );
-      const sourceKind = parseOptionalDependencyString(kv.source_kind);
+      const sourceKind = normalizeDependencySourceKind(
+        parseOptionalDependencyString(kv.source_kind),
+      );
       return {
         id: normalizeDependencySeedId(idRaw, prefix, sourceKind),
         kind: kindRaw
@@ -891,7 +898,8 @@ function parseDependencyRemovals(
 function dependencyKey(
   value: Pick<Dependency, "id" | "kind" | "source_kind">,
 ): string {
-  return `${value.id}::${value.kind}::${value.source_kind ?? ""}`;
+  const sourceKind = value.source_kind?.trim().toLowerCase() ?? "";
+  return `${value.id.trim().toLowerCase()}::${value.kind}::${sourceKind}`;
 }
 
 // pm-kyd6: `--blocked-by` writes the `blocked_by` scalar, but the dependency
@@ -1015,7 +1023,7 @@ function matchesDependencySelector(
   value: Dependency,
   selector: DependencyRemovalSelector,
 ): boolean {
-  if (value.id !== selector.id) {
+  if (value.id.trim().toLowerCase() !== selector.id.trim().toLowerCase()) {
     return false;
   }
   if (selector.kind && value.kind !== selector.kind) {
@@ -1023,7 +1031,8 @@ function matchesDependencySelector(
   }
   if (
     selector.source_kind !== undefined &&
-    (value.source_kind ?? undefined) !== selector.source_kind
+    value.source_kind?.trim().toLowerCase() !==
+      selector.source_kind.trim().toLowerCase()
   ) {
     return false;
   }

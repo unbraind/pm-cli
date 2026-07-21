@@ -82,6 +82,11 @@ describe("merge reconciliation SDK", () => {
       checks: [{ status: "warn" }],
       generated_at: "2026-07-21T00:02:00.000Z",
     });
-    expect((await runMergeReconcile({}, globalOptions)).ok).toBe(false);
+    const failed = await runMergeReconcile({}, globalOptions);
+    expect(failed.ok).toBe(false);
+    expect(failed.guidance).toEqual([
+      expect.stringContaining("remains incomplete"),
+      expect.stringContaining("Do not commit"),
+    ]);
   });
 });

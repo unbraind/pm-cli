@@ -376,10 +376,17 @@ export function assembleWorkspaceRelationshipGraph(
   const dangling = collectDanglingDependencyReferences(safeItems, isTerminal);
   const missingIds = collectMissingDependencyTargetIds(dangling);
   for (const id of missingIds) canonicalIds.set(id.toLowerCase(), id);
-  const externalIds = collectExternalDependencyTargetIds(safeItems).filter(
-    (id) => !canonicalIds.has(id.toLowerCase()),
-  );
-  for (const id of externalIds) canonicalIds.set(id.toLowerCase(), id);
+  const externalIds = collectExternalDependencyTargetIds(safeItems);
+  const usedGraphIds = new Set(canonicalIds.keys());
+  const externalGraphIds = new Map<string, string>();
+  for (const id of externalIds) {
+    let graphId = id;
+    while (usedGraphIds.has(graphId.toLowerCase())) {
+      graphId = `external:${graphId}`;
+    }
+    externalGraphIds.set(id.toLowerCase(), graphId);
+    usedGraphIds.add(graphId.toLowerCase());
+  }
   const graphItems = safeItems.map((item) => {
     const parent = normalizeDependencyGraphTarget(item.parent);
     const blocker = normalizeDependencyGraphTarget(item.blocked_by);
@@ -389,9 +396,12 @@ export function assembleWorkspaceRelationshipGraph(
       const dependency = rawDependency as Partial<Dependency>;
       const target = normalizeDependencyGraphTarget(dependency.id);
       if (!target) return [];
+      const targetId = isExternalDependencySourceKind(dependency.source_kind)
+        ? externalGraphIds.get(target.toLowerCase())!
+        : canonicalIds.get(target.toLowerCase())!;
       return [
         {
-          id: canonicalIds.get(target.toLowerCase())!,
+          id: targetId,
           kind:
             typeof dependency.kind === "string" ? dependency.kind : "related",
         },
@@ -411,7 +421,9 @@ export function assembleWorkspaceRelationshipGraph(
       [
         ...graphItems,
         ...missingIds.map((id) => ({ id })),
-        ...externalIds.map((id) => ({ id })),
+        ...externalIds.map((id) => ({
+          id: externalGraphIds.get(id.toLowerCase())!,
+        })),
       ],
       relationshipRegistry,
     ),
@@ -430,7 +442,7 @@ export function assembleWorkspaceRelationshipGraph(
         status: "missing",
       })),
       ...externalIds.map((id) => ({
-        id,
+        id: externalGraphIds.get(id.toLowerCase())!,
         title: `[external] ${id}`,
         status: "external",
       })),

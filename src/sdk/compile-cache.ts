@@ -7,6 +7,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
+const COMPILE_CACHE_CONCURRENT_GRACE_MS = 5 * 60 * 1000;
+const COMPILE_CACHE_MAX_GENERATIONS = 3;
+
 /** Result of pruning superseded pm compile-cache generations. */
 export interface CompileCachePruneResult {
   /** Generation retained for the current pm build. */
@@ -26,28 +29,65 @@ export function resolveCompileCacheGeneration(
 }
 
 /**
- * Remove every superseded entry from an exclusively pm-owned compile-cache
- * root while retaining the current generation. Callers choose the generation
- * key, normally the installed pm package version, so repeated upgrades never
- * accumulate unbounded Node bytecode caches.
+ * Retain the current and recently active generations in an exclusively
+ * pm-owned compile-cache root, then remove stale entries beyond the bounded
+ * generation budget. A short freshness grace protects concurrently starting
+ * pm versions from deleting one another's active cache directories.
  */
 export function pruneCompileCacheGenerations(
   cacheRoot: string,
   currentGeneration: string,
 ): CompileCachePruneResult {
   const normalizedGeneration = currentGeneration.trim();
-  if (
-    normalizedGeneration.length === 0 ||
-    path.basename(normalizedGeneration) !== normalizedGeneration
-  ) {
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(normalizedGeneration)) {
     throw new TypeError(
-      "Compile-cache generation must be a non-empty path basename.",
+      "Compile-cache generation must be a safe non-empty filename token.",
     );
   }
   fs.mkdirSync(cacheRoot, { recursive: true });
-  const removed = fs
+  const currentPath = path.join(cacheRoot, normalizedGeneration);
+  fs.mkdirSync(currentPath, { recursive: true });
+  const touchedAt = new Date();
+  fs.utimesSync(currentPath, touchedAt, touchedAt);
+  const candidates = fs
     .readdirSync(cacheRoot)
     .filter((name) => name !== normalizedGeneration)
+    .flatMap((name) => {
+      try {
+        return [
+          { name, mtimeMs: fs.statSync(path.join(cacheRoot, name)).mtimeMs },
+        ];
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          "code" in error &&
+          error.code === "ENOENT"
+        ) {
+          return [];
+        }
+        throw error;
+      }
+    })
+    .sort(
+      (left, right) =>
+        right.mtimeMs - left.mtimeMs || left.name.localeCompare(right.name),
+    );
+  const fresh = candidates.filter(
+    (entry) =>
+      touchedAt.getTime() - entry.mtimeMs <
+      COMPILE_CACHE_CONCURRENT_GRACE_MS,
+  );
+  const staleRetention = Math.max(
+    0,
+    COMPILE_CACHE_MAX_GENERATIONS - 1 - fresh.length,
+  );
+  const removed = candidates
+    .filter(
+      (entry) =>
+        touchedAt.getTime() - entry.mtimeMs >= COMPILE_CACHE_CONCURRENT_GRACE_MS,
+    )
+    .slice(staleRetention)
+    .map((entry) => entry.name)
     .sort((left, right) => left.localeCompare(right));
   for (const name of removed) {
     fs.rmSync(path.join(cacheRoot, name), {

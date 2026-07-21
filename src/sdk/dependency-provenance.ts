@@ -16,6 +16,19 @@ export function isExternalDependencySourceKind(
   return sourceKind?.trim().toLowerCase() === EXTERNAL_DEPENDENCY_SOURCE_KIND;
 }
 
+/** Canonicalize external provenance while preserving other named source kinds. */
+export function normalizeDependencySourceKind(
+  sourceKind: string | undefined,
+): string | undefined {
+  const trimmed = sourceKind?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  return isExternalDependencySourceKind(trimmed)
+    ? EXTERNAL_DEPENDENCY_SOURCE_KIND
+    : trimmed;
+}
+
 /**
  * Normalize a dependency seed id without corrupting cross-workspace identity.
  * Local and legacy seeds retain normal workspace-prefix behavior; explicitly

@@ -139,7 +139,10 @@ import type {
 } from "./mutation-command-options.js";
 import { ensureEnumValue } from "./recurrence-parsers.js";
 import { assertValidBareDependencyFlagValue } from "../../sdk/dependency-flag-validation.js";
-import { normalizeDependencySeedId } from "../../sdk/dependency-provenance.js";
+import {
+  normalizeDependencySeedId,
+  normalizeDependencySourceKind,
+} from "../../sdk/dependency-provenance.js";
 import {
   parseEventEntries,
   parseReminderEntries,
@@ -451,7 +454,9 @@ function parseDependencies(
         EXIT_CODE.USAGE,
       );
     }
-    const sourceKind = parseOptionalString(kv.source_kind)?.trim() || undefined;
+    const sourceKind = normalizeDependencySourceKind(
+      parseOptionalString(kv.source_kind),
+    );
     return {
       id: normalizeDependencySeedId(id, prefix, sourceKind),
       kind: ensureEnumValue(kind, DEPENDENCY_KIND_VALUES, "dependency kind"),

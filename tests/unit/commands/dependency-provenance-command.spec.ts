@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isExternalDependencySourceKind,
   normalizeDependencySeedId,
+  normalizeDependencySourceKind,
 } from "../../../src/sdk/dependency-provenance.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -20,6 +21,9 @@ describe("dependency provenance contracts", () => {
   it("preserves explicit external ids while retaining local prefix normalization", () => {
     expect(isExternalDependencySourceKind(" GLOBAL ")).toBe(true);
     expect(isExternalDependencySourceKind("imported")).toBe(false);
+    expect(normalizeDependencySourceKind(" GLOBAL ")).toBe("global");
+    expect(normalizeDependencySourceKind(" imported ")).toBe("imported");
+    expect(normalizeDependencySourceKind("   ")).toBeUndefined();
     expect(normalizeDependencySeedId(" foreign-work ", "pm", "global")).toBe(
       "foreign-work",
     );
@@ -43,7 +47,7 @@ describe("dependency provenance contracts", () => {
           "--id",
           "local-consumer",
           "--dep",
-          "id=foreign-alpha,kind=related,source_kind=global",
+          "id=Foreign-Alpha,kind=related,source_kind=GLOBAL",
           "--author",
           "provenance-spec",
           "--message",
@@ -70,6 +74,25 @@ describe("dependency provenance contracts", () => {
         }),
       ]);
 
+      const duplicate = context.runCli([
+        "update",
+        id!,
+        "--dep",
+        "id=foreign-alpha,kind=related,source_kind=global",
+        "--author",
+        "provenance-spec",
+        "--message",
+        "Verify case-insensitive external relationship identity",
+        "--json",
+      ]);
+      expect(duplicate.code).toBe(0);
+      const afterDuplicate = context.runCli(["get", id!, "--full", "--json"], {
+        expectJson: true,
+      });
+      expect(
+        (afterDuplicate.json as FullItemPayload).item.dependencies,
+      ).toHaveLength(1);
+
       const graph = context.runCli(["graph", "audit", "--json"], {
         expectJson: true,
       });
@@ -83,7 +106,7 @@ describe("dependency provenance contracts", () => {
         "update",
         id!,
         "--dep-remove",
-        "id=foreign-alpha,kind=related,source_kind=global",
+        "id=FOREIGN-ALPHA,kind=related,source_kind=GlObAl",
         "--author",
         "provenance-spec",
         "--message",

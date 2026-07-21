@@ -41,7 +41,7 @@ describe("external dependency graph assembly", () => {
     expect(assembled.graph.hasNode("Foreign-Z")).toBe(true);
   });
 
-  it("gives local and missing identities precedence over external placeholders", () => {
+  it("keeps colliding local, missing, and external identities distinct", () => {
     const items = [
       {
         id: "pm-local",
@@ -64,13 +64,19 @@ describe("external dependency graph assembly", () => {
     expect(
       assembled.details.filter((detail) => detail.id === "pm-existing"),
     ).toHaveLength(1);
-    expect(
-      assembled.details.filter(
-        (detail) => detail.id.toLowerCase() === "shared-target",
-      ),
-    ).toEqual([
-      expect.objectContaining({ id: "shared-target", status: "missing" }),
-    ]);
+    expect(assembled.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "external:pm-existing",
+          status: "external",
+        }),
+        expect.objectContaining({ id: "shared-target", status: "missing" }),
+        expect.objectContaining({
+          id: "external:SHARED-TARGET",
+          status: "external",
+        }),
+      ]),
+    );
     expect(new Set(assembled.graph.nodes()).size).toBe(
       assembled.graph.nodes().length,
     );

@@ -6,8 +6,8 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:history","area:merge",gh-issue,multi-agent
 created_at: "2026-07-20T09:12:15.195Z"
-updated_at: "2026-07-21T08:16:46.825Z"
-closed_at: "2026-07-21T08:16:46.052Z"
+updated_at: "2026-07-21T09:15:21.822Z"
+closed_at: "2026-07-21T09:15:21.026Z"
 author: codex-20260720
 acceptance_criteria: "An opt-in post-merge hook or one-command reconcile path detects merged history drift, previews the affected streams, performs audited field-aware repair, and leaves pm history --verify plus pm validate green; default git hooks remain non-surprising; docs and sandboxed merge acceptance tests cover enable, skip, failure, and recovery paths."
 parent: pm-o2kc
@@ -21,12 +21,14 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-iwsj,related,"2026-07-20T09:12:15.195Z",null,null
   pm-wc1r,related,"2026-07-20T09:12:15.195Z",null,null
   pm-p5u6,related,"2026-07-21T07:32:59.045Z",codex-root-20260721,null
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-20T09:12:15.195Z",codex-20260720,"Duplicate check 2026-07-20: pm search across all statuses for GH-623 and merge history verify red/manual history-repair found no live item; closed pm-g5sx and pm-wc1r provide the shipped merge-driver lineage, while this item captures the newly reported opt-in post-merge orchestration gap. Source: https://github.com/unbraind/pm-cli/issues/623"
   "2026-07-21T07:33:04.020Z",codex-root-20260721,"Evidence: pm merge reconcile now previews or applies bulk audited repair followed by history-drift and storage-integrity validation. Acceptance covers drift preview, successful repair, clean no-op, invalid positional input, stale-lock repair failure, and an installed-package reconciliation."
   "2026-07-21T07:54:39.838Z",codex-root-20260721,"Final verification: direct SDK, Commander registration, and command-level reconcile suites pass; the repo-wide coverage gate now reports exactly 100% lines/statements/functions/branches (39551/39551, 40658/40658, 8259/8259, 28612/28612)."
   "2026-07-21T08:12:06.896Z",codex-root-20260721,"Greptile remediation: clarified the public MergeReconcileResult.ok contract—dry-run success means the preview completed without errors, not that validation is green; SDK callers must inspect repair and validation checks before applying."
   "2026-07-21T08:16:40.942Z",codex-root-20260721,"Final review-head proof: clarified dry-run semantics pass docstring, focused, and full-suite gates; 6052 tests pass at exact 100% coverage."
+  "2026-07-21T09:10:31.676Z",codex-root-20260721,"Hosted review remediation: failed apply-mode reconciliation now returns explicit incomplete/do-not-commit guidance rather than success guidance. Direct SDK coverage asserts the failure contract."
+  "2026-07-21T09:15:17.459Z",codex-root-20260721,"Exact remediation-head proof: all 332 test files and 6053 tests pass at 100/100/100/100 coverage, including explicit failed-apply guidance and the command/SDK reconciliation contracts."
 files[6]{path,scope,note}:
   src/cli/register-mutation.ts,project,merge reconcile command wiring
   src/sdk/merge/index.ts,project,Merge SDK barrel export
@@ -37,13 +39,14 @@ files[6]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/commands/merge-reconcile-command.spec.ts tests/unit/sdk/merge-safety.spec.ts,project,600,Reconcile orchestration and merge-driver safety
   node scripts/run-tests.mjs test -- tests/unit/sdk/merge-reconcile.spec.ts tests/unit/cli/merge-reconcile-registration.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts,project,600,SDK CLI registration and end-to-end reconcile contract
-test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mruc87sh-etb9ge,test,passed,"2026-07-21T07:34:04.063Z","2026-07-21T07:34:17.201Z","2026-07-21T07:34:17.201Z",1,0,0
   test-local-mrucyesa-h4aaxs,test,passed,"2026-07-21T07:54:18.478Z","2026-07-21T07:54:39.322Z","2026-07-21T07:54:39.322Z",2,0,0
   test-local-mrudm5v5-fa34tu,test,passed,"2026-07-21T08:12:44.928Z","2026-07-21T08:13:07.505Z","2026-07-21T08:13:07.505Z",2,0,0
+  test-local-mrufp6rz-yq6s0a,test,passed,"2026-07-21T09:11:04.318Z","2026-07-21T09:11:27.887Z","2026-07-21T09:11:27.887Z",2,0,0
 docs[3]{path,scope,note}:
   docs/COMMANDS.md,project,merge reconcile CLI contract
   docs/MERGE_SAFETY.md,project,Post-merge operator workflow
   docs/SDK.md,project,runMergeReconcile SDK contract
-close_reason: "Completed after Greptile remediation: public dry-run ok semantics explicitly distinguish preview success from workspace cleanliness; merge and exact 100% coverage gates pass."
+close_reason: Completed public and CLI merge reconciliation with truthful failure guidance and exact full-suite coverage.
 body: ""

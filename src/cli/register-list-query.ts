@@ -42,6 +42,7 @@ import {
   printListJsonStream,
   printResult,
   resolveActivityStreamMode,
+  setActiveCommandResult,
   writeStdout,
 } from "./registration-helpers.js";
 
@@ -221,6 +222,7 @@ function renderRegisteredListResult(
   output: RegisteredListOutputContext,
 ): void {
   if (output.listFormat === "csv" || output.listFormat === "table") {
+    setActiveCommandResult(result);
     const rows = result.items as Array<Record<string, unknown>>;
     const rendered =
       output.listFormat === "csv"
