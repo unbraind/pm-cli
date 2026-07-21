@@ -29,7 +29,10 @@ Hierarchy kinds likewise declare which endpoint is the structural parent. `sourc
 `RelationshipEventStore` is the built-in durable filesystem adapter. It stores validated JSONL at `.agents/pm/relationships/events.jsonl` by default, replays every row through the same registry and cardinality checks on open, and serializes cross-process appends with the tracker lock. Async `currentVersion()`, `snapshot()`, and `page()` reads take the same lock before refreshing, so long-lived readers observe completed appends without torn JSONL tails. Store paths must stay lexically inside a non-symlinked tracker root and cannot traverse symlinked components. Database, replicated-log, and event-bus adapters can persist the same public events and rebuild the same snapshots.
 
 ```ts
-import { RelationshipEventLog, RelationshipEventStore } from "@unbrained/pm-cli/sdk";
+import {
+  RelationshipEventLog,
+  RelationshipEventStore,
+} from "@unbrained/pm-cli/sdk";
 
 const history = new RelationshipEventLog(["design", "build", "ship"]);
 history.append({
@@ -231,6 +234,18 @@ last-write-wins envelopes, corrupt-tolerant decode, never authoritative —
 every entry rebuilds from item storage on fingerprint mismatch, and
 envelopes report the `cache.durable` disposition. Ids resolve
 case-insensitively; `--summary` returns envelopes without row collections.
+
+The graph fingerprint consumes the item-metadata-derived index, whose metadata,
+body, and collection tiers plus collapsed mutation delta publish one effective
+source cursor. Supported item mutations serialize authoritative writes with a
+bounded derived-index projection, so a long-lived SDK host or later CLI process
+observes the committed relationship fields without paying for a full source
+scan or rewriting the whole index. Cursor disagreement, an invalid projection
+path, or any refresh failure invalidates the rebuildable base/delta state; the
+next graph read source-scans and reconstructs both indexes. Package-owned
+storage adapters can preserve this contract with the public
+`acquireItemMetadataDerivedIndexLock` and
+`refreshItemMetadataDerivedIndex` SDK primitives.
 
 Mutation advisories reuse the same cycle semantics incrementally:
 `collectNewOrderingCycleWarnings` builds a lightweight ordering digraph

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: api,"area:graph","area:sdk",performance,relationships,sdk-first
 created_at: "2026-07-13T21:58:11.171Z"
-updated_at: "2026-07-20T07:15:35.353Z"
+updated_at: "2026-07-21T20:01:39.770Z"
 author: codex-root
 estimated_minutes: 720
 acceptance_criteria: "The registry defines built-in and extension-provided kinds with direction, inverse, order-bearing and hierarchy flags, cardinality, payload schema, lifecycle, aliases, and compatibility version; Mutation APIs validate endpoints and invariants then append attributable immutable events without direct state rewrites; Read APIs cover adjacency, predecessors, successors, ancestors, descendants, shortest and constrained paths, transitive closure, reverse impact, and induced bounded subgraphs; Every query supports deterministic ordering, typed filters, field projection, cursor or streaming continuation, cancellation, snapshot selection, and explicit cost or truncation metadata; Indexes are rebuildable from history, incrementally maintained, crash safe, observable, and optional for small projects; Thin CLI and MCP adapters call public SDK APIs without hidden core imports; shell-safe JSON, JSONL, TOON, and counts-first outputs preserve pipeline composability; Contract, property, replay, concurrency, migration, and scale tests cover legacy kinds, custom kinds, cycles, snapshots, and one million items"
@@ -27,7 +27,7 @@ dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-zwpp,blocked_by,"2026-07-13T21:58:11.171Z",null,null
   pm-7n5a,related,"2026-07-17T21:46:55.824Z",null,null
   pm-xtrd,related,"2026-07-18T05:54:10.629Z",null,null
-comments[61]{created_at,author,text}:
+comments[65]{created_at,author,text}:
   "2026-07-13T21:58:11.171Z",codex-root,"Duplicate check 2026-07-13: SDK-first inventory contains generic query and lifecycle promotion slices but no stable typed relationship registry plus bounded graph algorithm API; this is a new promotion slice under pm-96h7 and relates to pm-usfg."
   "2026-07-14T07:46:26.495Z",codex-gpt5-root,"Evidence: delivered the first broad public graph foundation: versioned built-in/custom relationship registry, alias compatibility, immutable in-memory index construction from item metadata, deterministic adjacency/closure/reverse-impact/shortest-path/subgraph queries with cancellation and explicit cost/truncation metadata, SDK barrel/docs, and validate integration. Packed tarball consumer proved a custom company owns graph plus real CLI lifecycle. Full repository run passed 286 files/5664 tests; focused all-source coverage for relationships.ts is 100/100/100/100. Remaining event mutation, durable incremental index, snapshot/streaming, MCP projection, and million-item scale acceptance stay on this feature, so it will return to open rather than be falsely closed."
   "2026-07-14T08:15:26.847Z",codex-root,"PR #554 review evidence: addressed all ten first-round findings across construction complexity/performance, bounded closure/path truncation, malformed/custom lifecycle dependencies, immutable payload schemas, canonical dependency conversion, inverse-kind filters, generated changelog accuracy, and duplicate-edge documentation. Focused relationship coverage is exact 100/100/100/100; full repository run passed 286 files and 5664 tests before the final single branch regression was added. The broader durable event/index acceptance remains open."
@@ -89,6 +89,10 @@ comments[61]{created_at,author,text}:
   "2026-07-20T06:46:50.812Z",codex-gpt5,"PR #622 review follow-up: Gemini's two AuditNodeState findings were rejected after source verification because the interface declares id and nodeStates populates id from detail.id; no runtime defect exists. Gemini/CodeRabbit's shared legacy snapshot concern was accepted for direct public-SDK callers: per-type delta reads now tolerate pre-coverage_by_type baseline/current payloads, with regressions proving zero-based positive and negative typed deltas. Full strict verification: 318 files / 5,996 tests, exact 100% statements (40,194), branches (28,242), functions (8,156), lines (39,129); lint, zero-clone, static complexity, 100% docstrings, package boundary, and token budget pass."
   "2026-07-20T06:59:06.621Z",codex-wide-sdk,"Review-loop evidence: normalized graph item types at the SDK assembly boundary and in cache identity, preventing whitespace-only representation differences from splitting per-type governance or invalidating durable/memoized graph state. Focused graph tests passed (36/36); full repo coverage remains 100/100/100/100 across 5,996 tests."
   "2026-07-20T07:15:33.820Z",maintainer-agent,"Merged delivery evidence: PR #622 merged to main as e98282a1 with the durable cross-process graph index, extension-aware registry/cache semantics, baseline persistence, CLI/MCP/contracts/docs, and compatibility hardening. Exact-head review/check inventory was fully green and post-merge release/telemetry verification passed. This durable-index tranche is shipped; the feature returns open for migration/backfill and million-item conformance work already recorded in its metadata."
+  "2026-07-21T18:22:44.680Z",codex-root,"Implementation start 2026-07-21: advance the canonical relationship SDK with a rebuildable incremental graph/read-index seam shared with pm-801d, preserving source authority, deterministic bounded queries, and thin adapters. All-status lineage review reused pm-ju83; no duplicate was created."
+  "2026-07-21T19:26:18.392Z",codex-root,"Graph/index tranche evidence: relationship graph reads now consume an effective metadata source cursor that includes the collapsed mutation delta, so supported relationship-field changes are visible to later CLI processes and long-lived SDK hosts without whole-store scans. CLI create/copy/restore import the projection contract through src/sdk/item-metadata-index.ts, satisfying the CLI-on-SDK boundary ratchet. GH-628 graph runner allocation cleanup is included. Focused graph/SDK/integration tests (205) and the exact 6071-test 100% coverage gate pass. This rolling relationship feature remains open for its broader 1M/custom-domain acceptance after this shipped tranche."
+  "2026-07-21T19:53:07.376Z",codex-root,"Review-loop follow-up: CodeRabbit correctly identified that the public SDK facade should document its no-op lock and warning-token contracts, and that the real-lock regression test should derive its scale fixture from DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS rather than hardcode 500. Applying both plus the related graph-doc wording correction on the current PR head."
+  "2026-07-21T19:57:48.418Z",codex-root,"Review fixes verified: the SDK now exports and documents DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS plus no-op-lock/warning behavior; the real-lock test derives 501 items from that contract; graph docs use the correct compound modifier. Focused SDK/index tests pass 132/132, pnpm lint passes with exact 100% docstrings and zero clones, typecheck passes, and docs links pass."
 notes[7]{created_at,author,text}:
   "2026-07-14T10:19:35.648Z",codex-gpt5,"Remaining canonical scope after this PR: durable storage adapters, native CLI/MCP graph query integration, migration/backfill, and million-item storage validation; keep feature open."
   "2026-07-17T10:22:56.686Z",maintainer-agent,"Implementation constraints recorded 2026-07-17 (review pass #96), two hard facts for whoever claims this slice. (1) src/sdk/runtime.ts gate headroom is 2 lines (census on pm-yh8r) — this slice's registry/graph-query exports CANNOT go through runtime.ts; ship the runtime partition first/with it, or route the new primitives through a dedicated subpath module (precedent: PR#571-lane sdk/test + sdk/diagnostics folders; sdk/query/ is the natural home). (2) Perf shape to fix while building the query primitives: pm deps --format context today assembles the FULL workspace RelationshipGraph + dangling-reference collection on every call (assembleDepsRelationshipGraph in src/sdk/dependencies.ts calls collectDanglingDependencyReferences + RelationshipGraph.fromItems over ALL items before bounding) — bounded output but unbounded assembly cost, O(all items) per invocation. The adjacency/bounded-subgraph primitives owned here are the natural place to make assembly incremental/indexed so bounded queries stop paying full-workspace cost; pm-m2il's scale matrix (query-budget axis) will measure it, pm-9rxu bl8x cache contract (CACHE_VERSION) is the substrate if an index is persisted."
@@ -101,11 +105,14 @@ learnings[3]{created_at,author,text}:
   "2026-07-14T07:46:27.146Z",codex-gpt5-root,"A storage-independent relationship registry is the semantic boundary: algorithms must consume ordering/hierarchy flags rather than infer meaning from labels, while durable event/index implementations can remain interchangeable."
   "2026-07-14T10:02:20.502Z",codex-gpt5,Optimistic append sequences plus cursor fingerprints bind every page and snapshot to a coherent immutable relationship history; durable adapters can persist the same event contract without coupling graph semantics to storage.
   "2026-07-18T07:17:33.888Z",codex-sdk-vcs-20260718,Extension commands must not recursively load extensions through their injected PmClient. The outer host already owns the active schema/registry context; use PmClient.forActiveExtensionHost so nested native lifecycle actions bypass activation queue reacquisition while retaining active registrations.
-files[61]{path,scope,note}:
+files[68]{path,scope,note}:
   packages/pm-vcs/extensions/vcs/index.ts,project,Relationship event compensation and replay
   scripts/release/sdk-import-boundary-baseline.json,project,CLI to SDK boundary ratchet
   src/cli/commands/completion.ts,project,graph index and audit option completion parity
+  src/cli/commands/copy.ts,project,Copy projection integration
+  src/cli/commands/create.ts,project,Create projection integration
   src/cli/commands/graph.ts,project,thin CLI re-export of the SDK graph runner
+  src/cli/commands/restore.ts,project,Restore and path migration projection integration
   src/cli/main.ts,project,CLI extension command SDK injection
   src/cli/register-list-query.ts,project,pm graph command registration and option mapping
   src/cli/register-mutation.ts,project,thin deps CLI options
@@ -126,6 +133,8 @@ files[61]{path,scope,note}:
   src/core/extensions/loader.ts,project,Relationship-kind registration policy activation and attribution
   src/core/extensions/runtime-registrations.ts,project,Relationship-kind registration policy activation and attribution
   src/core/extensions/version-compat.ts,project,Relationship-kind registration policy activation and attribution
+  src/core/store/item-metadata-cache.ts,project,Shared-cursor derived-index transaction and crash-safe recovery
+  src/core/store/item-store.ts,project,Update move and delete projection integration
   src/mcp/tool-definitions.ts,project,MCP graph-context description
   src/sdk/actionability.ts,project,public edge-aware scheduling primitives
   src/sdk/cli-contracts/enum-contracts.ts,project,public graph subcommand enum contract
@@ -144,6 +153,7 @@ files[61]{path,scope,note}:
   src/sdk/graph/run.ts,project,"workspace pm graph runner: one assembly per invocation dispatching bounded traversal/path/impact/analytics/audit queries"
   src/sdk/graph/traversal.ts,project,public graph assembly traversal and governance primitives
   src/sdk/index.ts,project,public SDK barrel export
+  src/sdk/item-metadata-index.ts,project,Public SDK derived-index transaction primitive
   src/sdk/relationship-analytics.ts,project,Durable stream projection and validated custom relationship ontology
   src/sdk/relationship-context.ts,project,Durable stream projection and validated custom relationship ontology
   src/sdk/relationship-history.ts,project,"append-only relationship event ledger,snapshots,optimistic concurrency,and cursor pages"
@@ -153,6 +163,7 @@ files[61]{path,scope,note}:
   src/sdk/workspace-transaction.ts,project,Crash-recoverable relationship mutation coordination
   tests/fixtures/contracts/full.json,project,generated runtime contract fixture
   tests/unit/cli/register-list-query.spec.ts,project,CLI graph option forwarding regression
+  tests/unit/core/item/item-metadata-derived-index.spec.ts,project,Warm projection lock corruption and fallback acceptance
   tests/unit/packages/vcs-extension.spec.ts,project,Relationship event compensation acceptance
   tests/unit/sdk/extension-relationship-kinds.spec.ts,project,Graph registration stream projection and validation coverage
   tests/unit/sdk/graph/durable-cache.spec.ts,project,durable index unit + runner integration spec
@@ -163,11 +174,14 @@ files[61]{path,scope,note}:
   tests/unit/sdk/relationships.spec.ts,project,Graph registration stream projection and validation coverage
   tests/unit/sdk/runtime-input-graph.spec.ts,project,flat MCP graph option normalization spec
   tests/unit/sdk/workspace-transaction.spec.ts,project,Relationship transaction recovery coverage
-tests[10]:
+tests[11]:
   - command: node scripts/run-tests.mjs coverage
     scope: project
     timeout_seconds: 900
     note: Exact 100 percent repository coverage gate
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/item/item-metadata-derived-index.spec.ts tests/unit/sdk/graph/run.spec.ts
+    scope: project
+    timeout_seconds: 240
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/graph/assembly-governance.spec.ts tests/unit/sdk/graph/traversal.spec.ts tests/unit/commands/deps-command.spec.ts
     scope: project
     timeout_seconds: 300

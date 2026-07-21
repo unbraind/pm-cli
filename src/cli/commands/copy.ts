@@ -40,6 +40,10 @@ import {
   readLocatedItem,
 } from "../../core/store/item-store.js";
 import {
+  acquireItemMetadataDerivedIndexLock,
+  refreshItemMetadataDerivedIndex,
+} from "../../sdk/item-metadata-index.js";
+import {
   getHistoryPath,
   getItemPath,
   getSettingsPath,
@@ -79,10 +83,15 @@ function selectAuthor(
   return trimmed.length > 0 ? trimmed : "unknown";
 }
 
-function buildChangedFields(itemMetadata: ItemMetadata, body: string): string[] {
+function buildChangedFields(
+  itemMetadata: ItemMetadata,
+  body: string,
+): string[] {
   const changed = [
     ...new Set([
-      ...ITEM_METADATA_KEY_ORDER.filter((key) => itemMetadata[key] !== undefined),
+      ...ITEM_METADATA_KEY_ORDER.filter(
+        (key) => itemMetadata[key] !== undefined,
+      ),
       ...Object.keys(itemMetadata).filter(
         (key) => itemMetadata[key] !== undefined,
       ),
@@ -204,29 +213,46 @@ export async function runCopy(
     body: "",
   };
 
-  let hookWarnings: string[] = [];
+  let hookWarnings: string[];
+  let derivedIndexWarnings: string[];
   try {
-    await writeFileAtomic(
-      itemPath,
-      serializeItemDocument(copiedDocument, {
-        format: settings.item_format,
-        schema: settings.schema,
-        extensionFieldNames,
-      }),
+    const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
+      pmRoot,
+      author,
     );
     try {
-      const historyEntry = createHistoryEntry({
-        nowIso: copiedAt,
-        author,
-        op: "create",
-        before: beforeDocument,
-        after: copiedDocument,
-        message: buildCopyMessage(located.id, options.message),
+      await writeFileAtomic(
+        itemPath,
+        serializeItemDocument(copiedDocument, {
+          format: settings.item_format,
+          schema: settings.schema,
+          extensionFieldNames,
+        }),
+      );
+      try {
+        const historyEntry = createHistoryEntry({
+          nowIso: copiedAt,
+          author,
+          op: "create",
+          before: beforeDocument,
+          after: copiedDocument,
+          message: buildCopyMessage(located.id, options.message),
+        });
+        await appendHistoryEntry(historyPath, historyEntry);
+      } catch (error: unknown) {
+        await removeFileIfExists(itemPath);
+        throw error;
+      }
+      derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
+        pmRoot,
+        preferredFormat: settings.item_format,
+        typeToFolder: typeRegistry.type_to_folder,
+        schema: settings.schema,
+        itemPath,
+        document: copiedDocument,
       });
-      await appendHistoryEntry(historyPath, historyEntry);
-    } catch (error: unknown) {
-      await removeFileIfExists(itemPath);
-      throw error;
+    } finally {
+      await releaseDerivedIndexLock();
     }
 
     hookWarnings = [
@@ -270,6 +296,6 @@ export async function runCopy(
     source_id: located.id,
     item: structuredClone(copiedDocument.metadata),
     changed_fields: changedFields,
-    warnings: hookWarnings,
+    warnings: [...derivedIndexWarnings, ...hookWarnings],
   };
 }

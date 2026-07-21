@@ -47,6 +47,10 @@ import {
 } from "../../core/extensions/index.js";
 import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import {
+  acquireItemMetadataDerivedIndexLock,
+  refreshItemMetadataDerivedIndex,
+} from "../../sdk/item-metadata-index.js";
+import {
   getHistoryPath,
   getItemPath,
   getSettingsPath,
@@ -434,29 +438,46 @@ export async function runRestore(
       itemFormat,
       typeRegistry.type_to_folder,
     );
-    await writeFileAtomic(restoredItemPath, serializedRestore);
-    if (existingItemPath && restoredItemPath !== existingItemPath) {
-      await fs.rm(existingItemPath);
-    }
-
-    const historyEntry = createHistoryEntry({
-      nowIso: nowIso(),
+    const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
+      pmRoot,
       author,
-      op: "restore",
-      before: currentState.document,
-      after: restoredDocument,
-      message: options.message,
-    });
-
+    );
+    let derivedIndexWarnings: string[] = [];
     try {
-      await appendHistoryEntry(subject.historyPath, historyEntry);
-    } catch (error: unknown) {
-      await restorePreviousItemAfterHistoryFailure({
-        existingItemPath,
-        resolvedOriginalRaw: currentState.originalRaw,
-        restoredItemPath,
+      await writeFileAtomic(restoredItemPath, serializedRestore);
+      if (existingItemPath && restoredItemPath !== existingItemPath) {
+        await fs.rm(existingItemPath);
+      }
+
+      const historyEntry = createHistoryEntry({
+        nowIso: nowIso(),
+        author,
+        op: "restore",
+        before: currentState.document,
+        after: restoredDocument,
+        message: options.message,
       });
-      throw error;
+      try {
+        await appendHistoryEntry(subject.historyPath, historyEntry);
+      } catch (error: unknown) {
+        await restorePreviousItemAfterHistoryFailure({
+          existingItemPath,
+          resolvedOriginalRaw: currentState.originalRaw,
+          restoredItemPath,
+        });
+        throw error;
+      }
+      derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
+        pmRoot,
+        preferredFormat: settings.item_format,
+        typeToFolder: typeRegistry.type_to_folder,
+        schema: settings.schema,
+        itemPath: restoredItemPath,
+        previousItemPath: existingItemPath ?? undefined,
+        document: restoredDocument,
+      });
+    } finally {
+      await releaseDerivedIndexLock();
     }
     const restoreChangedFields = changedFields(
       currentState.document,
@@ -499,6 +520,7 @@ export async function runRestore(
       warnings: [
         ...subject.historyPolicyWarnings,
         ...ownershipWarnings,
+        ...derivedIndexWarnings,
         ...hookWarnings,
       ],
     };

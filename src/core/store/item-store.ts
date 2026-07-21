@@ -33,9 +33,11 @@ import { acquireLock } from "../lock/lock.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { normalizeItemId, normalizeRawItemId } from "../item/id.js";
 import {
+  acquireItemMetadataDerivedIndexLock,
   listAllDocumentCandidatesCached,
   listAllDocumentsCached,
   listAllDocumentsCachedLight,
+  refreshItemMetadataDerivedIndex,
 } from "./item-metadata-cache.js";
 import {
   getHistoryPath,
@@ -595,31 +597,53 @@ export async function mutateItem(params: {
         serializedAfter,
       );
 
-    if (!skipItemWrite) {
-      await writeFileAtomic(effectiveTargetItemPath, effectiveSerializedAfter);
-    }
-    if (!skipItemWrite && effectiveTargetItemPath !== located.itemPath) {
-      await fs.rm(located.itemPath);
-    }
-    const entry = createHistoryEntry({
-      nowIso: afterDocument.metadata.updated_at,
-      author: params.author,
-      op: params.op,
-      before: beforeDocument,
-      after: afterDocument,
-      message: params.message,
-    });
-
+    const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
+      params.pmRoot,
+      params.author,
+    );
+    let derivedIndexWarnings: string[] = [];
     try {
-      await appendHistoryEntry(historyPath, entry);
-    } catch (error: unknown) {
-      await rollbackMutatedItemWrite({
-        skipItemWrite,
-        effectiveTargetItemPath,
-        originalItemPath: located.itemPath,
-        originalRaw,
+      if (!skipItemWrite) {
+        await writeFileAtomic(
+          effectiveTargetItemPath,
+          effectiveSerializedAfter,
+        );
+      }
+      if (!skipItemWrite && effectiveTargetItemPath !== located.itemPath) {
+        await fs.rm(located.itemPath);
+      }
+      const entry = createHistoryEntry({
+        nowIso: afterDocument.metadata.updated_at,
+        author: params.author,
+        op: params.op,
+        before: beforeDocument,
+        after: afterDocument,
+        message: params.message,
       });
-      throw error;
+      try {
+        await appendHistoryEntry(historyPath, entry);
+      } catch (error: unknown) {
+        await rollbackMutatedItemWrite({
+          skipItemWrite,
+          effectiveTargetItemPath,
+          originalItemPath: located.itemPath,
+          originalRaw,
+        });
+        throw error;
+      }
+      if (!skipItemWrite) {
+        derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
+          pmRoot: params.pmRoot,
+          preferredFormat: params.settings.item_format,
+          typeToFolder,
+          schema: params.settings.schema,
+          itemPath: effectiveTargetItemPath,
+          previousItemPath: located.itemPath,
+          document: afterDocument,
+        });
+      }
+    } finally {
+      await releaseDerivedIndexLock();
     }
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
@@ -670,6 +694,7 @@ export async function mutateItem(params: {
         ...(mutation.warnings ?? []),
         ...historyPolicy.warnings,
         ...serviceWriteOverride.warnings,
+        ...derivedIndexWarnings,
         ...hookWarnings,
       ],
     };
@@ -786,16 +811,35 @@ export async function deleteItem(params: {
       };
     }
 
-    if (!skipDelete) {
-      await fs.rm(effectiveItemPath);
-    }
+    const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
+      params.pmRoot,
+      params.author,
+    );
+    let derivedIndexWarnings: string[] = [];
     try {
-      await appendHistoryEntry(historyPath, historyEntry);
-    } catch (error: unknown) {
       if (!skipDelete) {
-        await writeFileAtomic(effectiveItemPath, originalRaw);
+        await fs.rm(effectiveItemPath);
       }
-      throw error;
+      try {
+        await appendHistoryEntry(historyPath, historyEntry);
+      } catch (error: unknown) {
+        if (!skipDelete) {
+          await writeFileAtomic(effectiveItemPath, originalRaw);
+        }
+        throw error;
+      }
+      if (!skipDelete) {
+        derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
+          pmRoot: params.pmRoot,
+          preferredFormat: params.settings.item_format,
+          typeToFolder: prepared.typeToFolder,
+          schema: params.settings.schema,
+          itemPath: effectiveItemPath,
+          document: null,
+        });
+      }
+    } finally {
+      await releaseDerivedIndexLock();
     }
 
     const hookWarnings = [
@@ -840,6 +884,7 @@ export async function deleteItem(params: {
         ...parseWarnings,
         ...historyPolicy.warnings,
         ...serviceDeleteOverride.warnings,
+        ...derivedIndexWarnings,
         ...hookWarnings,
       ],
     };

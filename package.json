@@ -80,7 +80,7 @@
     "lint:complexity:baseline": "eslint . --suppress-rule complexity --suppress-rule sonarjs/cognitive-complexity",
     "lint:duplicates": "jscpd --config .jscpd.json",
     "lint:codefactor": "pnpm quality:static",
-    "quality:static": "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 151 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs",
+    "quality:static": "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 150 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs",
     "quality:token-budget": "node scripts/release/token-budget-gate.mjs",
     "quality:context-eval": "node scripts/release/context-eval-gate.mjs",
     "quality:docs-skills": "node scripts/release/docs-skills-gate.mjs",
