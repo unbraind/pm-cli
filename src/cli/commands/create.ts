@@ -85,6 +85,10 @@ import {
   listAllItemMetadataLight,
   locateItem,
 } from "../../core/store/item-store.js";
+import {
+  acquireItemMetadataDerivedIndexLock,
+  refreshItemMetadataDerivedIndex,
+} from "../../sdk/item-metadata-index.js";
 import { collectNewOrderingCycleWarnings } from "../../sdk/graph/mutation-advisory.js";
 import {
   getHistoryPath,
@@ -2435,27 +2439,44 @@ async function writeCreatedItem(params: {
     if (existing) {
       throw new PmCliError(`Item "${id}" already exists`, EXIT_CODE.CONFLICT);
     }
-    await writeFileAtomic(
-      itemPath,
-      serializeItemDocument(afterDocument, {
-        format: settings.item_format,
-        schema: settings.schema,
-        extensionFieldNames,
-      }),
+    const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
+      pmRoot,
+      author,
     );
+    let derivedIndexWarnings: string[] = [];
     try {
-      const entry = createHistoryEntry({
-        nowIso: nowValue,
-        author,
-        op: "create",
-        before: beforeDocument,
-        after: afterDocument,
-        message: historyMessage,
+      await writeFileAtomic(
+        itemPath,
+        serializeItemDocument(afterDocument, {
+          format: settings.item_format,
+          schema: settings.schema,
+          extensionFieldNames,
+        }),
+      );
+      try {
+        const entry = createHistoryEntry({
+          nowIso: nowValue,
+          author,
+          op: "create",
+          before: beforeDocument,
+          after: afterDocument,
+          message: historyMessage,
+        });
+        await appendHistoryEntry(historyPath, entry);
+      } catch (error: unknown) {
+        await removeFileIfExists(itemPath);
+        throw error;
+      }
+      derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
+        pmRoot,
+        preferredFormat: settings.item_format,
+        typeToFolder: typeRegistry.type_to_folder,
+        schema: settings.schema,
+        itemPath,
+        document: afterDocument,
       });
-      await appendHistoryEntry(historyPath, entry);
-    } catch (error: unknown) {
-      await removeFileIfExists(itemPath);
-      throw error;
+    } finally {
+      await releaseDerivedIndexLock();
     }
     hookWarnings = [
       ...(graphBeforeCreate
@@ -2465,6 +2486,7 @@ async function writeCreatedItem(params: {
             id,
           )
         : []),
+      ...derivedIndexWarnings,
       ...(await runActiveOnWriteHooks({
         path: itemPath,
         scope: "project",
@@ -3042,10 +3064,7 @@ export async function runCreate(
   return {
     item: outputItem,
     changed_fields: changedFields,
-    warnings: [
-      ...validationWarnings,
-      ...hookWarnings,
-    ],
+    warnings: [...validationWarnings, ...hookWarnings],
     ...(parentSource !== undefined ? { parent_source: parentSource } : {}),
     ...(nextTransition !== undefined
       ? { next_transition: nextTransition }

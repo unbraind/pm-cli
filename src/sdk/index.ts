@@ -356,6 +356,7 @@ export * from "./relationship-history.js";
 export * from "./workspace-transaction.js";
 export * from "./workspace-transaction-gc.js";
 export * from "./item-transaction.js";
+export * from "./item-metadata-index.js";
 export * from "./structured-mutations.js";
 export * from "./runtime-primitives.js";
 export * from "./error-runtime.js";

@@ -4,7 +4,10 @@
  * Parses agent-authored JSON mutation payloads into the public atomic item
  * transaction contract and normalizes full item documents for CLI round trips.
  */
-import { EXIT_CODE } from "../core/shared/constants.js";
+import {
+  EXIT_CODE,
+  ITEM_PROJECT_CONTEXT_KEYS,
+} from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import { CLOSE_FLAG_CONTRACTS } from "./cli-contracts/flag-contracts.js";
@@ -48,29 +51,8 @@ const ITEM_FIELD_KEYS = new Set([
   "definition_of_ready",
   "order",
   "rank",
-  "goal",
-  "objective",
-  "value",
-  "impact",
-  "outcome",
-  "why_now",
   "assignee",
-  "parent",
-  "reviewer",
-  "risk",
-  "confidence",
-  "sprint",
-  "release",
-  "blocked_by",
-  "blocked_reason",
-  "unblock_note",
-  "reporter",
-  "severity",
-  "environment",
-  "repro_steps",
-  "resolution",
-  "expected_result",
-  "actual_result",
+  ...ITEM_PROJECT_CONTEXT_KEYS,
   "affected_version",
   "fixed_version",
   "component",
@@ -388,8 +370,7 @@ function appendFacetOptions(
         ["comments", "notes", "learnings"].includes(sourceKey) &&
         Array.isArray(sourceValue)
         ? sourceValue.filter(
-            (entry) =>
-              !isPlainObject(entry) || entry.created_at === undefined,
+            (entry) => !isPlainObject(entry) || entry.created_at === undefined,
           )
         : sourceValue,
       keys,

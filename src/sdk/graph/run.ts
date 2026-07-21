@@ -1411,14 +1411,12 @@ export async function runGraph(
           invocation.saveBaseline,
         )
       : memo.value;
-  return {
-    ...value,
-    cache: {
-      fingerprint: lookup.fingerprint.slice(0, 12),
-      assembly: lookup.assemblyReused ? "hit" : "miss",
-      result: memo.reused ? "hit" : "miss",
-      durable:
-        durableValue !== undefined ? "hit" : persistEnabled ? "miss" : "off",
-    },
+  value.cache = {
+    fingerprint: lookup.fingerprint.slice(0, 12),
+    assembly: lookup.assemblyReused ? "hit" : "miss",
+    result: memo.reused ? "hit" : "miss",
+    durable:
+      durableValue !== undefined ? "hit" : persistEnabled ? "miss" : "off",
   };
+  return value;
 }

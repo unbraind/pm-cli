@@ -5,7 +5,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import {
   getActiveExtensionRegistrations,
   hasActiveOnReadHooks,
@@ -15,6 +15,7 @@ import { collectRegisteredItemFieldNames } from "../extensions/item-fields.js";
 import { parseItemDocument } from "../item/item-format.js";
 import { evictOldestMemoEntries } from "../shared/memo.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
+import { acquireLock } from "../lock/lock.js";
 import { ITEM_FILE_EXTENSIONS, getItemFormatFromPath } from "./paths.js";
 import type {
   ItemDocument,
@@ -23,11 +24,14 @@ import type {
   RuntimeSchemaSettings,
 } from "../../types/index.js";
 
-const CACHE_VERSION = 7;
-const DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS = 10_000;
+const CACHE_VERSION = 8;
+const DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS = 500;
+const DERIVED_INDEX_LOCK_ID = "metadata-derived-index";
 const CACHE_FILENAME = "metadata-cache.json";
 const BODY_CACHE_FILENAME = "metadata-cache-bodies.json";
 const COLLECTIONS_CACHE_FILENAME = "metadata-cache-collections.json";
+const DELTA_CACHE_FILENAME = "metadata-cache-delta.json";
+const MANIFEST_CACHE_FILENAME = "metadata-cache-manifest.json";
 
 /** Heavy "collection" item-metadata fields. These arrays dominate the on-disk cache (e.g. a single item's comment thread can be hundreds of KB) yet the hot list path (`pm list`, stats, deps, activity, calendar, close) never reads them. They are stored in a separate collections cache that is parsed only when a caller opts in (`includeCollections`), keeping the always-loaded light cache an order of magnitude smaller and its JSON.parse correspondingly cheaper. */
 export const HEAVY_METADATA_KEYS = [
@@ -72,6 +76,7 @@ type DirectorySignatures = Record<string, DirectorySignature>;
 interface CacheEnvelope {
   version: number;
   context_fingerprint: string;
+  source_cursor: string;
   directory_signatures: DirectorySignatures;
   entries: Record<string, CachedEntry>;
 }
@@ -79,13 +84,37 @@ interface CacheEnvelope {
 interface BodyCacheEnvelope {
   version: number;
   context_fingerprint: string;
+  source_cursor: string;
   bodies: Record<string, CachedBody>;
 }
 
 interface CollectionsCacheEnvelope {
   version: number;
   context_fingerprint: string;
+  source_cursor: string;
   collections: Record<string, CachedCollections>;
+}
+
+interface DerivedIndexDeltaChange {
+  entry: CachedEntry | null;
+  body: CachedBody | null;
+  collections: CachedCollections | null;
+}
+
+interface DerivedIndexDeltaEnvelope {
+  version: number;
+  context_fingerprint: string;
+  base_source_cursor: string;
+  source_cursor: string;
+  directory_signatures: DirectorySignatures;
+  changes: Record<string, DerivedIndexDeltaChange>;
+}
+
+interface DerivedIndexManifest {
+  version: number;
+  context_fingerprint: string;
+  source_cursor: string;
+  entry_count: number;
 }
 
 /** Split parsed item-metadata into the light scalar/small fields (everything except the heavy collection arrays) and the heavy collection fields. Only keys that are actually present are moved, so an item without comments stays without comments in both tiers. */
@@ -161,9 +190,23 @@ function getCollectionsCachePath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", COLLECTIONS_CACHE_FILENAME);
 }
 
+function getDeltaCachePath(pmRoot: string): string {
+  return path.join(pmRoot, "runtime", DELTA_CACHE_FILENAME);
+}
+
+function getManifestCachePath(pmRoot: string): string {
+  return path.join(pmRoot, "runtime", MANIFEST_CACHE_FILENAME);
+}
+
 interface MemoizedEnvelope {
   signature: StatSignature;
-  envelope: CacheEnvelope | BodyCacheEnvelope | CollectionsCacheEnvelope | null;
+  envelope:
+    | CacheEnvelope
+    | BodyCacheEnvelope
+    | CollectionsCacheEnvelope
+    | DerivedIndexDeltaEnvelope
+    | DerivedIndexManifest
+    | null;
 }
 
 /**
@@ -181,6 +224,92 @@ interface MemoizedEnvelope {
  */
 const ENVELOPE_MEMO_MAX_ENTRIES = 24;
 const envelopeMemo = new Map<string, MemoizedEnvelope>();
+const projectedBaseCursor = new WeakMap<object, string>();
+
+function baseCursorFor(
+  envelope: CacheEnvelope | BodyCacheEnvelope | CollectionsCacheEnvelope,
+): string {
+  return projectedBaseCursor.get(envelope) ?? envelope.source_cursor;
+}
+
+function applyMetadataDelta(
+  envelope: CacheEnvelope,
+  delta: DerivedIndexDeltaEnvelope,
+): void {
+  const baseCursor = baseCursorFor(envelope);
+  if (
+    delta.base_source_cursor !== baseCursor ||
+    envelope.source_cursor === delta.source_cursor
+  ) {
+    return;
+  }
+  projectedBaseCursor.set(envelope, baseCursor);
+  for (const [relativePath, change] of Object.entries(delta.changes)) {
+    if (change.entry) envelope.entries[relativePath] = change.entry;
+    else delete envelope.entries[relativePath];
+  }
+  envelope.directory_signatures = delta.directory_signatures;
+  envelope.source_cursor = delta.source_cursor;
+}
+
+function applyBodyDelta(
+  envelope: BodyCacheEnvelope | null,
+  delta: DerivedIndexDeltaEnvelope,
+): void {
+  if (!envelope) return;
+  const baseCursor = baseCursorFor(envelope);
+  if (
+    delta.base_source_cursor !== baseCursor ||
+    envelope.source_cursor === delta.source_cursor
+  ) {
+    return;
+  }
+  projectedBaseCursor.set(envelope, baseCursor);
+  for (const [relativePath, change] of Object.entries(delta.changes)) {
+    if (change.body) envelope.bodies[relativePath] = change.body;
+    else delete envelope.bodies[relativePath];
+  }
+  envelope.source_cursor = delta.source_cursor;
+}
+
+function applyCollectionsDelta(
+  envelope: CollectionsCacheEnvelope | null,
+  delta: DerivedIndexDeltaEnvelope,
+): void {
+  if (!envelope) return;
+  const baseCursor = baseCursorFor(envelope);
+  if (
+    delta.base_source_cursor !== baseCursor ||
+    envelope.source_cursor === delta.source_cursor
+  ) {
+    return;
+  }
+  projectedBaseCursor.set(envelope, baseCursor);
+  for (const [relativePath, change] of Object.entries(delta.changes)) {
+    if (change.collections)
+      envelope.collections[relativePath] = change.collections;
+    else delete envelope.collections[relativePath];
+  }
+  envelope.source_cursor = delta.source_cursor;
+}
+
+function applyDerivedIndexDelta(
+  metadata: CacheEnvelope | null,
+  bodies: BodyCacheEnvelope | null,
+  collections: CollectionsCacheEnvelope | null,
+  delta: DerivedIndexDeltaEnvelope | null,
+): void {
+  if (
+    !metadata ||
+    !delta ||
+    metadata.context_fingerprint !== delta.context_fingerprint
+  ) {
+    return;
+  }
+  applyMetadataDelta(metadata, delta);
+  applyBodyDelta(bodies, delta);
+  applyCollectionsDelta(collections, delta);
+}
 
 function memoizeEnvelope(cachePath: string, entry: MemoizedEnvelope): void {
   if (
@@ -243,6 +372,7 @@ async function loadCache(pmRoot: string): Promise<CacheEnvelope | null> {
     const parsed = JSON.parse(raw) as CacheEnvelope;
     if (
       parsed.version !== CACHE_VERSION ||
+      typeof parsed.source_cursor !== "string" ||
       typeof parsed.entries !== "object" ||
       parsed.entries === null
     ) {
@@ -259,6 +389,7 @@ async function loadBodyCache(
     const parsed = JSON.parse(raw) as BodyCacheEnvelope;
     if (
       parsed.version !== CACHE_VERSION ||
+      typeof parsed.source_cursor !== "string" ||
       typeof parsed.bodies !== "object" ||
       parsed.bodies === null
     ) {
@@ -275,6 +406,7 @@ async function loadCollectionsCache(
     const parsed = JSON.parse(raw) as CollectionsCacheEnvelope;
     if (
       parsed.version !== CACHE_VERSION ||
+      typeof parsed.source_cursor !== "string" ||
       typeof parsed.collections !== "object" ||
       parsed.collections === null
     ) {
@@ -284,9 +416,66 @@ async function loadCollectionsCache(
   });
 }
 
+async function loadDerivedIndexDelta(pmRoot: string): Promise<{
+  envelope: DerivedIndexDeltaEnvelope | null;
+  invalid: boolean;
+}> {
+  const deltaPath = getDeltaCachePath(pmRoot);
+  const envelope = await loadEnvelopeMemoized(deltaPath, (raw) => {
+    const parsed = JSON.parse(raw) as DerivedIndexDeltaEnvelope;
+    if (
+      parsed.version !== CACHE_VERSION ||
+      typeof parsed.base_source_cursor !== "string" ||
+      typeof parsed.source_cursor !== "string" ||
+      typeof parsed.changes !== "object" ||
+      parsed.changes === null
+    ) {
+      return null;
+    }
+    return parsed;
+  });
+  if (envelope) return { envelope, invalid: false };
+  try {
+    await fs.stat(deltaPath);
+    return { envelope: null, invalid: true };
+  } catch {
+    return { envelope: null, invalid: false };
+  }
+}
+
+async function loadDerivedIndexManifest(
+  pmRoot: string,
+): Promise<DerivedIndexManifest | null> {
+  const manifestPath = getManifestCachePath(pmRoot);
+  const manifest = await loadEnvelopeMemoized(manifestPath, (raw) => {
+    const parsed = JSON.parse(raw) as DerivedIndexManifest;
+    if (
+      parsed.version !== CACHE_VERSION ||
+      typeof parsed.context_fingerprint !== "string" ||
+      typeof parsed.source_cursor !== "string" ||
+      !Number.isInteger(parsed.entry_count) ||
+      parsed.entry_count < 0
+    ) {
+      return null;
+    }
+    return parsed;
+  });
+  if (manifest) return manifest;
+  try {
+    await fs.stat(manifestPath);
+    await removeDerivedIndexFiles(pmRoot);
+  } catch {}
+  return null;
+}
+
 async function persistCache(
   cachePath: string,
-  envelope: CacheEnvelope | BodyCacheEnvelope | CollectionsCacheEnvelope,
+  envelope:
+    | CacheEnvelope
+    | BodyCacheEnvelope
+    | CollectionsCacheEnvelope
+    | DerivedIndexDeltaEnvelope
+    | DerivedIndexManifest,
 ): Promise<void> {
   await fs.mkdir(path.dirname(cachePath), { recursive: true });
   await writeFileAtomic(cachePath, JSON.stringify(envelope));
@@ -449,10 +638,7 @@ async function readDirectorySignature(
       },
     ];
   } catch {
-    return [
-      folder,
-      { exists: false, mtime_ms: 0, ctime_ms: 0, size: 0 },
-    ];
+    return [folder, { exists: false, mtime_ms: 0, ctime_ms: 0, size: 0 }];
   }
 }
 
@@ -462,7 +648,9 @@ async function readDirectorySignatures(
 ): Promise<DirectorySignatures> {
   return Object.fromEntries(
     await Promise.all(
-      folders.map(async (folder) => await readDirectorySignature(pmRoot, folder)),
+      folders.map(
+        async (folder) => await readDirectorySignature(pmRoot, folder),
+      ),
     ),
   );
 }
@@ -771,6 +959,7 @@ function collectCachedDocumentParseTasks(
 async function persistMetadataCacheIfNeeded(params: {
   pmRoot: string;
   contextFingerprint: string;
+  sourceCursor: string;
   existingCache: CacheEnvelope | null;
   previousEntries: Record<string, CachedEntry>;
   directorySignatures: DirectorySignatures;
@@ -791,17 +980,27 @@ async function persistMetadataCacheIfNeeded(params: {
   ) {
     return;
   }
-  await persistCache(getCachePath(params.pmRoot), {
-    version: CACHE_VERSION,
-    context_fingerprint: params.contextFingerprint,
-    directory_signatures: params.directorySignatures,
-    entries: params.state.newEntries,
-  }).catch(() => {});
+  try {
+    await persistCache(getCachePath(params.pmRoot), {
+      version: CACHE_VERSION,
+      context_fingerprint: params.contextFingerprint,
+      source_cursor: params.sourceCursor,
+      directory_signatures: params.directorySignatures,
+      entries: params.state.newEntries,
+    });
+    await persistCache(getManifestCachePath(params.pmRoot), {
+      version: CACHE_VERSION,
+      context_fingerprint: params.contextFingerprint,
+      source_cursor: params.sourceCursor,
+      entry_count: Object.keys(params.state.newEntries).length,
+    });
+  } catch {}
 }
 
 async function persistBodyCacheIfNeeded(params: {
   pmRoot: string;
   contextFingerprint: string;
+  sourceCursor: string;
   existingBodyCache: BodyCacheEnvelope | null;
   previousBodies: Record<string, CachedBody>;
   state: DocumentCacheMutableState;
@@ -820,6 +1019,7 @@ async function persistBodyCacheIfNeeded(params: {
   await persistCache(getBodyCachePath(params.pmRoot), {
     version: CACHE_VERSION,
     context_fingerprint: params.contextFingerprint,
+    source_cursor: params.sourceCursor,
     bodies: params.state.newBodies,
   }).catch(() => {});
 }
@@ -827,6 +1027,7 @@ async function persistBodyCacheIfNeeded(params: {
 async function persistCollectionsCacheIfNeeded(params: {
   pmRoot: string;
   contextFingerprint: string;
+  sourceCursor: string;
   existingCollectionsCache: CollectionsCacheEnvelope | null;
   previousCollections: Record<string, CachedCollections>;
   state: DocumentCacheMutableState;
@@ -846,8 +1047,183 @@ async function persistCollectionsCacheIfNeeded(params: {
   await persistCache(getCollectionsCachePath(params.pmRoot), {
     version: CACHE_VERSION,
     context_fingerprint: params.contextFingerprint,
+    source_cursor: params.sourceCursor,
     collections: params.state.newCollections,
   }).catch(() => {});
+}
+
+/** Acquire the cross-process derived-index writer lock when an index exists. */
+export async function acquireItemMetadataDerivedIndexLock(
+  pmRoot: string,
+  author: string,
+): Promise<() => Promise<void>> {
+  const cache = await loadDerivedIndexManifest(pmRoot);
+  if (
+    cache === null ||
+    cache.entry_count < DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS
+  ) {
+    return async () => {};
+  }
+  return acquireLock(
+    pmRoot,
+    DERIVED_INDEX_LOCK_ID,
+    30,
+    author,
+    false,
+    false,
+    3_000,
+  );
+}
+
+/** One authoritative item commit projected into the rebuildable index. */
+export interface ItemMetadataDerivedIndexMutation {
+  /** Tracker root containing the derived cache. */
+  pmRoot: string;
+  /** Preferred item format folded into the cache schema fingerprint. */
+  preferredFormat: ItemFormat | undefined;
+  /** Runtime item-type folder mapping. */
+  typeToFolder: Record<string, string>;
+  /** Runtime schema folded into the cache schema fingerprint. */
+  schema: RuntimeSchemaSettings | undefined;
+  /** Committed item path, or deleted item path when document is null. */
+  itemPath: string;
+  /** Previous path removed by a format or type migration. */
+  previousItemPath?: string;
+  /** Committed document, or null for deletion. */
+  document: ItemDocument | null;
+}
+
+function relativeIndexPath(pmRoot: string, itemPath: string): string | null {
+  const relative = path.relative(pmRoot, itemPath);
+  return relative === "" ||
+    relative === ".." ||
+    relative.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relative)
+    ? null
+    : relative;
+}
+
+async function removeDerivedIndexFiles(pmRoot: string): Promise<void> {
+  await Promise.all(
+    [
+      getCachePath(pmRoot),
+      getBodyCachePath(pmRoot),
+      getCollectionsCachePath(pmRoot),
+      getDeltaCachePath(pmRoot),
+      getManifestCachePath(pmRoot),
+    ].map(async (cachePath) => {
+      await fs.rm(cachePath, { force: true });
+      envelopeMemo.delete(cachePath);
+    }),
+  );
+}
+
+async function createDerivedIndexDeltaChange(params: {
+  mutation: ItemMetadataDerivedIndexMutation;
+}): Promise<DerivedIndexDeltaChange> {
+  if (params.mutation.document === null) {
+    return { entry: null, body: null, collections: null };
+  }
+  const stat = await fs.stat(params.mutation.itemPath);
+  const split = splitHeavyMetadata(params.mutation.document.metadata);
+  const signature = {
+    mtime_ms: stat.mtimeMs,
+    ctime_ms: stat.ctimeMs,
+    size: stat.size,
+  };
+  return {
+    entry: {
+      ...signature,
+      metadata: split.light,
+      body_length: params.mutation.document.body.length,
+    },
+    body: { ...signature, body: params.mutation.document.body },
+    collections: {
+      ...signature,
+      collections: split.heavy,
+    },
+  };
+}
+
+function selectDerivedIndexDeltaChanges(
+  delta: DerivedIndexDeltaEnvelope | null,
+  contextFingerprint: string,
+  baseSourceCursor: string,
+): Record<string, DerivedIndexDeltaChange> {
+  return delta?.context_fingerprint === contextFingerprint &&
+    delta.base_source_cursor === baseSourceCursor
+    ? structuredClone(delta.changes)
+    : {};
+}
+
+/**
+ * Project one already-committed authoritative item write into every compatible
+ * derived-index tier. Callers hold {@link acquireItemMetadataDerivedIndexLock}
+ * from before the item write until this function finishes, so independent pm
+ * mutations cannot publish a cursor that omits a concurrent write. One small
+ * atomic delta carries the shared source cursor and all tier projections, so
+ * mutation cost is bounded by changed items instead of total workspace size.
+ * Any refresh failure deletes the rebuildable cache so the next read scans.
+ */
+export async function refreshItemMetadataDerivedIndex(
+  mutation: ItemMetadataDerivedIndexMutation,
+): Promise<string[]> {
+  const relativePath = relativeIndexPath(mutation.pmRoot, mutation.itemPath);
+  const previousRelativePath = mutation.previousItemPath
+    ? relativeIndexPath(mutation.pmRoot, mutation.previousItemPath)
+    : undefined;
+  if (relativePath === null || previousRelativePath === null) {
+    await removeDerivedIndexFiles(mutation.pmRoot);
+    return ["metadata_derived_index_path_invalidated"];
+  }
+  try {
+    const contextFingerprint = computeContextFingerprint(
+      mutation.preferredFormat,
+      mutation.typeToFolder,
+      mutation.schema,
+      resolveActiveExtensionFieldNames(),
+    );
+    const existingCache = await loadDerivedIndexManifest(mutation.pmRoot);
+    if (
+      existingCache === null ||
+      existingCache.context_fingerprint !== contextFingerprint
+    ) {
+      return [];
+    }
+    const baseSourceCursor = existingCache.source_cursor;
+    const delta = await loadDerivedIndexDelta(mutation.pmRoot);
+    if (delta.invalid) {
+      await removeDerivedIndexFiles(mutation.pmRoot);
+      return ["metadata_derived_index_refresh_failed"];
+    }
+    const changes = selectDerivedIndexDeltaChanges(
+      delta.envelope,
+      contextFingerprint,
+      baseSourceCursor,
+    );
+    if (previousRelativePath !== undefined) {
+      changes[previousRelativePath] = {
+        entry: null,
+        body: null,
+        collections: null,
+      };
+    }
+    changes[relativePath] = await createDerivedIndexDeltaChange({ mutation });
+    await persistCache(getDeltaCachePath(mutation.pmRoot), {
+      version: CACHE_VERSION,
+      context_fingerprint: contextFingerprint,
+      base_source_cursor: baseSourceCursor,
+      source_cursor: randomUUID(),
+      directory_signatures: await readDirectorySignatures(mutation.pmRoot, [
+        ...new Set(Object.values(mutation.typeToFolder)),
+      ]),
+      changes,
+    });
+    return [];
+  } catch {
+    await removeDerivedIndexFiles(mutation.pmRoot).catch(() => {});
+    return ["metadata_derived_index_refresh_failed"];
+  }
 }
 
 function sortedCachedDocumentCandidates(
@@ -868,15 +1244,19 @@ export interface ListCacheOptions {
   includeCollections?: boolean;
   /** Force canonical item enumeration and stat validation even when a fresh derived index is available. Validation, repair, migration, and equivalence tests use this correctness path. */
   forceSourceScan?: boolean;
-  /** Minimum item count required before the directory-signature derived-index fast path is used. Defaults to 10,000 so small workspaces preserve per-file external-edit detection; tests and specialized SDK hosts may lower it explicitly. */
+  /** Minimum item count required before the directory-signature derived-index fast path is used. Defaults to 500 so small workspaces preserve per-file external-edit detection; tests and specialized SDK hosts may lower it explicitly. */
   derivedIndexMinimumItems?: number;
 }
 
 function cacheTierMatchesContext(
   envelope: BodyCacheEnvelope | CollectionsCacheEnvelope | null,
   contextFingerprint: string,
+  sourceCursor: string,
 ): boolean {
-  return envelope?.context_fingerprint === contextFingerprint;
+  return (
+    envelope?.context_fingerprint === contextFingerprint &&
+    envelope.source_cursor === sourceCursor
+  );
 }
 
 function hasEveryDerivedIndexPart(
@@ -976,11 +1356,13 @@ function canUseDerivedIndex(params: {
       cacheTierMatchesContext(
         params.existingBodyCache,
         params.contextFingerprint,
+        params.existingCache.source_cursor,
       ),
     !params.includeCollections ||
       cacheTierMatchesContext(
         params.existingCollectionsCache,
         params.contextFingerprint,
+        params.existingCache.source_cursor,
       ),
   ];
   return (
@@ -1023,21 +1405,27 @@ export async function listAllDocumentCandidatesCached(
     extensionFieldNames,
   );
 
+  const delta = await loadDerivedIndexDelta(pmRoot);
+  if (delta.invalid) await removeDerivedIndexFiles(pmRoot);
   const existingCache = await loadCache(pmRoot);
+  const existingBodyCache = includeBody ? await loadBodyCache(pmRoot) : null;
+  const existingCollectionsCache = includeCollections
+    ? await loadCollectionsCache(pmRoot)
+    : null;
+  applyDerivedIndexDelta(
+    existingCache,
+    existingBodyCache,
+    existingCollectionsCache,
+    delta.envelope,
+  );
   const previousEntries = selectPreviousMetadataEntries(
     existingCache,
     contextFingerprint,
   );
-
-  const existingBodyCache = includeBody ? await loadBodyCache(pmRoot) : null;
   const previousBodies = selectPreviousBodyEntries(
     existingBodyCache,
     contextFingerprint,
   );
-
-  const existingCollectionsCache = includeCollections
-    ? await loadCollectionsCache(pmRoot)
-    : null;
   const previousCollections = selectPreviousCollectionEntries(
     existingCollectionsCache,
     contextFingerprint,
@@ -1083,9 +1471,7 @@ export async function listAllDocumentCandidatesCached(
   }
 
   const dirResults = await Promise.all(
-    folders.map((folder) =>
-      readItemDirectoryFiles(pmRoot, folder, warnings),
-    ),
+    folders.map((folder) => readItemDirectoryFiles(pmRoot, folder, warnings)),
   );
 
   const dispatchReadHooks = hasActiveOnReadHooks();
@@ -1117,12 +1503,25 @@ export async function listAllDocumentCandidatesCached(
   )
     ? directorySignaturesAfter
     : {};
+  const metadataChanged =
+    state.misses.metadata ||
+    Object.keys(previousEntries).length !==
+      Object.keys(state.newEntries).length ||
+    !directorySignaturesMatch(
+      existingCache?.directory_signatures,
+      stableDirectorySignatures,
+    );
+  const sourceCursor =
+    metadataChanged || existingCache === null
+      ? randomUUID()
+      : existingCache.source_cursor;
 
   // Rewrite a cache file only when its contents changed: any re-parsed (missing or
   // stale) entry, or a different set of keys (additions/deletions).
   await persistMetadataCacheIfNeeded({
     pmRoot,
     contextFingerprint,
+    sourceCursor,
     existingCache,
     previousEntries,
     directorySignatures: stableDirectorySignatures,
@@ -1133,6 +1532,7 @@ export async function listAllDocumentCandidatesCached(
     await persistBodyCacheIfNeeded({
       pmRoot,
       contextFingerprint,
+      sourceCursor,
       existingBodyCache,
       previousBodies,
       state,
@@ -1143,6 +1543,7 @@ export async function listAllDocumentCandidatesCached(
     await persistCollectionsCacheIfNeeded({
       pmRoot,
       contextFingerprint,
+      sourceCursor,
       existingCollectionsCache,
       previousCollections,
       state,

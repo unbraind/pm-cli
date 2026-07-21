@@ -2,11 +2,12 @@ id: pm-aw59hb
 title: "GitHub analyzer follow-up: GH-628 unnecessary spread, GH-629 duplicate blocks, and GH-630 unsafe optional chaining"
 description: "Current GitHub CodeFactor reports filed 2026-07-21: https://github.com/unbraind/pm-cli/issues/628, https://github.com/unbraind/pm-cli/issues/629, and https://github.com/unbraind/pm-cli/issues/630. Reproduce against current main, remediate the exact findings without suppressions, and close the GitHub issues with focused plus repo-wide quality evidence."
 type: Task
-status: open
+status: in_progress
 priority: 2
 tags[3]: "area:quality",codefactor,"source:github"
 created_at: "2026-07-21T16:52:53.882Z"
-updated_at: "2026-07-21T16:52:53.882Z"
+updated_at: "2026-07-21T19:26:19.237Z"
+assignee: codex-root
 author: codex-derived-context-20260721
 acceptance_criteria: "All three current analyzer findings are reproduced and fixed without suppression; focused tests cover behavioral risk; pnpm lint and full 100/100/100/100 coverage pass; GH-628, GH-629, and GH-630 are closed by the merged fix."
 parent: pm-92if
@@ -14,6 +15,15 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-fmjy,related,"2026-07-21T16:52:53.882Z",codex-derived-context-20260721,null
   pm-m8yl,related,"2026-07-21T16:52:53.882Z",codex-derived-context-20260721,null
   pm-zt1c,related,"2026-07-21T16:52:53.882Z",codex-derived-context-20260721,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-21T16:52:53.882Z",codex-derived-context-20260721,"Duplicate check (all statuses, 2026-07-21): exact searches for GH-628, GH-629, and GH-630 returned no items. Reuses parent pm-92if and relates historical class owners pm-zt1c (spread), pm-fmjy (duplication), and pm-m8yl (unsafe optional chaining) instead of reopening completed work."
+  "2026-07-21T18:22:50.939Z",codex-root,"Implementation start 2026-07-21: reproduce and remediate the three grouped GitHub analyzer reports in the same broad SDK/quality PR; direct tracker-link comments were added to GH-628, GH-629, and GH-630."
+  "2026-07-21T19:26:19.236Z",codex-root,"Implementation evidence: GH-628 replaces the unnecessary graph result spread with direct cache annotation; GH-629 centralizes project-context field keys in ITEM_PROJECT_CONTEXT_KEYS and reuses them in structured mutations; GH-630 adds an explicit committed-result guard before structuredContent access. GitHub issues #628/#629/#630 each received a direct pm-aw59hb link. Typecheck, strict static quality, 100% coverage, and 205 focused SDK/graph/mutation tests pass."
+files[4]{path,scope,note}:
+  src/core/shared/constants.ts,project,GH-629 canonical project context field block
+  src/sdk/graph/run.ts,project,GH-628 remove unnecessary spread
+  src/sdk/structured-mutations.ts,project,GH-629 reuse canonical field block
+  tests/integration/structured-mutation-io.integration.spec.ts,project,GH-630 explicit committed result guard
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/unit/sdk/graph/run.spec.ts,project,240
 body: ""

@@ -239,8 +239,11 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
           mutation_count: 1,
         },
       });
+      if (committed === undefined) {
+        throw new Error("Committed MCP mutation response is required");
+      }
       expect(
-        (committed?.structuredContent as { result: Record<string, unknown> })
+        (committed.structuredContent as { result: Record<string, unknown> })
           .result,
       ).not.toHaveProperty("transactionId");
 

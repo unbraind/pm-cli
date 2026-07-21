@@ -64,6 +64,7 @@ import {
   runRegisteredServiceOverrideForTest as runRegisteredServiceOverrideForTestFromBarrel,
   runRegisteredVectorStoreAdapterForTest as runRegisteredVectorStoreAdapterForTestFromBarrel,
   appendHistoryEntry,
+  acquireItemMetadataDerivedIndexLock,
   createHistoryEntry,
   createPmCliExpectedError,
   clearWorkspaceContractsCache,
@@ -99,6 +100,7 @@ import {
   release,
   graph as graphQuery,
   readSettings,
+  refreshItemMetadataDerivedIndex,
   restore,
   resolvePmRoot,
   runAction,
@@ -969,6 +971,8 @@ describe("public sdk entrypoint", () => {
     expect(typeof readFileIfExists).toBe("function");
     expect(typeof writeFileAtomic).toBe("function");
     expect(typeof appendHistoryEntry).toBe("function");
+    expect(typeof acquireItemMetadataDerivedIndexLock).toBe("function");
+    expect(typeof refreshItemMetadataDerivedIndex).toBe("function");
     expect(typeof createHistoryEntry).toBe("function");
     expect(typeof generateItemId).toBe("function");
     expect(typeof normalizeItemId).toBe("function");

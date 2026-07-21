@@ -38,13 +38,33 @@ pnpm benchmark:scale --items ci --iterations 3 --transport both --check
 
 The JSON report records fixture generation time plus one excluded warmup observation and measured p50/p95/min/max latency, peak RSS on Linux, output bytes, and estimated tokens for `list`, `get`, `next`, `context`, `search`, `create`, and `claim`. The warmup exposes initial index-build cost while regression percentiles measure the continuously warm derived-index contract across real cold CLI processes and in-process SDK calls. Run the committed local regression check with `pnpm benchmark:scale:check`. GitHub-hosted runners do not execute the scale suite, which keeps expensive performance work off Actions and avoids consuming hosted-runner capacity.
 
-The metadata read cache is rebuildable derived state. Large workspaces use its
-directory-validated fast path to avoid per-item stats; validation and recovery
-can force a canonical source scan. Context-signal snapshots follow the same
-rule: they are versioned and cursor-stamped, never authoritative, and rebuild
-from the metadata index or source-scan fallback when missing, stale, or corrupt.
-SDK hosts can persist that layer with `ContextSignalStore` while retaining
-explicit `fresh`/`rebuilt` and `derived_index`/`scan_fallback` diagnostics.
+The metadata read cache is rebuildable derived state. Workspaces with at least
+500 indexed items use its directory-validated fast path to avoid per-item
+stats; validation and recovery can force a canonical source scan. Every
+metadata, body, and collection tier carries one `source_cursor`. A small
+manifest exposes the base cursor and item count without parsing the full index.
+A supported create, update, move, or delete acquires the cross-process
+derived-index writer lock before the authoritative item commit and atomically
+publishes one collapsed delta containing every compatible tier projection,
+directory signatures, and the next cursor before releasing the lock. Mutation
+cost therefore follows changed items rather than total workspace size. A torn,
+corrupt, or base-mismatched delta is rejected and rebuilt from source.
+
+SDK hosts that commit authoritative item documents outside the stock mutation
+commands use `acquireItemMetadataDerivedIndexLock` and
+`refreshItemMetadataDerivedIndex` from `@unbrained/pm-cli/sdk` around the same
+commit boundary. Repeated writes collapse by item path in the delta instead of
+growing an event log; a later source scan compacts the projection into fresh
+base tiers. Projection failure removes the rebuildable tiers, delta, and
+manifest and returns a warning; it never rolls back or outranks the
+authoritative item/history write. Small workspaces without an active index
+receive a no-op release function and retain direct external-edit detection.
+
+Context-signal snapshots follow the same rule: they are versioned and
+cursor-stamped, never authoritative, and rebuild from the metadata index or
+source-scan fallback when missing, stale, or corrupt. SDK hosts can persist
+that layer with `ContextSignalStore` while retaining explicit `fresh`/`rebuilt`
+and `derived_index`/`scan_fallback` diagnostics.
 
 To refresh a baseline after an intentional, measured improvement:
 
