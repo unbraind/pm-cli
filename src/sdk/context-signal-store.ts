@@ -128,7 +128,7 @@ export function parseContextSignalSnapshot(value: unknown): ContextSignalSnapsho
     value.format_version !== CONTEXT_SIGNAL_STORE_FORMAT_VERSION ||
     value.signal_set_version !== CONTEXT_SIGNAL_SET_VERSION ||
     typeof value.source_cursor !== "string" ||
-    value.source_cursor.length === 0 ||
+    value.source_cursor.trim().length === 0 ||
     typeof value.generated_at !== "string" ||
     !Number.isFinite(Date.parse(value.generated_at)) ||
     (value.source !== "derived_index" && value.source !== "scan_fallback") ||
@@ -143,7 +143,7 @@ export function parseContextSignalSnapshot(value: unknown): ContextSignalSnapsho
   const validItems = items as ContextSignalSnapshotItem[];
   if (
     new Set(validItems.map((item) => item.id)).size !== validItems.length ||
-    validItems.some((item) => item.id.length === 0)
+    validItems.some((item) => item.id.trim().length === 0)
   ) {
     return null;
   }
@@ -190,7 +190,7 @@ export class JsonFileContextSignalStoreAdapter implements ContextSignalStoreAdap
 
   /** Create an adapter for an explicit derived-state file path. */
   constructor(filePath: string) {
-    if (filePath.trim().length === 0) {
+    if (typeof filePath !== "string" || filePath.trim().length === 0) {
       throw new TypeError("Context signal store path must be non-empty");
     }
     this.filePath = path.resolve(filePath);

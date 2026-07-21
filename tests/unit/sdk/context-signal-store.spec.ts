@@ -125,10 +125,12 @@ describe("context signal feature store", () => {
       { ...valid, format_version: 99 },
       { ...valid, signal_set_version: 99 },
       { ...valid, source_cursor: "" },
+      { ...valid, source_cursor: " " },
       { ...valid, generated_at: "invalid" },
       { ...valid, source: "unknown" },
       { ...valid, items: {} },
       { ...valid, items: [{ id: "", signals: {} }] },
+      { ...valid, items: [{ id: " ", signals: {} }] },
       { ...valid, items: [{ id: "pm-a", signals: [] }] },
       { ...valid, items: [{ id: "pm-a", signals: { recency: 2 } }] },
       { ...valid, items: [{ id: "pm-a", signals: { unknown: 0.5 } }] },
@@ -186,5 +188,6 @@ describe("context signal feature store", () => {
     await fs.writeFile(filePath, "{broken", "utf8");
     await expect(adapter.read()).rejects.toBeInstanceOf(SyntaxError);
     expect(() => new JsonFileContextSignalStoreAdapter(" ")).toThrow("path must be non-empty");
+    expect(() => new JsonFileContextSignalStoreAdapter(null as unknown as string)).toThrow("path must be non-empty");
   });
 });
