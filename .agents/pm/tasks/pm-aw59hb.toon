@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: "area:quality",codefactor,"source:github"
 created_at: "2026-07-21T16:52:53.882Z"
-updated_at: "2026-07-21T19:38:46.493Z"
+updated_at: "2026-07-21T19:48:53.685Z"
 assignee: codex-root
 author: codex-derived-context-20260721
 acceptance_criteria: "All three current analyzer findings are reproduced and fixed without suppression; focused tests cover behavioral risk; pnpm lint and full 100/100/100/100 coverage pass; GH-628, GH-629, and GH-630 are closed by the merged fix."
@@ -15,11 +15,13 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-fmjy,related,"2026-07-21T16:52:53.882Z",codex-derived-context-20260721,null
   pm-m8yl,related,"2026-07-21T16:52:53.882Z",codex-derived-context-20260721,null
   pm-zt1c,related,"2026-07-21T16:52:53.882Z",codex-derived-context-20260721,null
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-21T16:52:53.882Z",codex-derived-context-20260721,"Duplicate check (all statuses, 2026-07-21): exact searches for GH-628, GH-629, and GH-630 returned no items. Reuses parent pm-92if and relates historical class owners pm-zt1c (spread), pm-fmjy (duplication), and pm-m8yl (unsafe optional chaining) instead of reopening completed work."
   "2026-07-21T18:22:50.939Z",codex-root,"Implementation start 2026-07-21: reproduce and remediate the three grouped GitHub analyzer reports in the same broad SDK/quality PR; direct tracker-link comments were added to GH-628, GH-629, and GH-630."
   "2026-07-21T19:26:19.236Z",codex-root,"Implementation evidence: GH-628 replaces the unnecessary graph result spread with direct cache annotation; GH-629 centralizes project-context field keys in ITEM_PROJECT_CONTEXT_KEYS and reuses them in structured mutations; GH-630 adds an explicit committed-result guard before structuredContent access. GitHub issues #628/#629/#630 each received a direct pm-aw59hb link. Typecheck, strict static quality, 100% coverage, and 205 focused SDK/graph/mutation tests pass."
   "2026-07-21T19:38:46.493Z",codex-root,"Hosted static follow-up: CI exposed four ESLint-only findings not included in the earlier composite command. Removed redundant copy warning initializers, documented the two intentional best-effort cache catches, and pruned the now-obsolete no-useless-assignment suppression. Exact hosted command parity now passes locally: pnpm lint (ESLint, zero jscpd clones, CodeFactor/static/docstrings/package boundary/token budget) plus focused copy/index tests 9/9."
+  "2026-07-21T19:46:07.947Z",codex-root,"Hosted CI finding: coverage shard 4/4 caught release-contract drift after the obsolete ESLint suppression was pruned. The live suppression count is 150 while MAX_ESLINT_SUPPRESSIONS and package-script assertions remained 151. Tightening the pinned baseline to 150 across the gate, package script, and contract tests before the next push."
+  "2026-07-21T19:48:53.685Z",codex-root,"Hosted CI fix verified locally: release automation/readiness/static-quality contracts pass 115/115, pnpm lint passes with zero clones and strict static/docstring/package/token gates, and pnpm typecheck passes. The suppression budget is now pinned to the exact live baseline of 150 so future growth cannot hide behind the stale allowance."
 files[4]{path,scope,note}:
   src/core/shared/constants.ts,project,GH-629 canonical project context field block
   src/sdk/graph/run.ts,project,GH-628 remove unnecessary spread
