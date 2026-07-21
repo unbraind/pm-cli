@@ -1,0 +1,31 @@
+id: pm-bnmlsc
+title: "Sentry PM-CLI-2G: make merge-driver installation permission failures actionable"
+description: "Sentry reports a handled high-severity production failure when pm merge install attempts to configure the repository-local merge driver in a workspace where .git/config cannot be locked. Harden the merge-install boundary so expected read-only or permission-constrained repositories return a deterministic, actionable pm error instead of surfacing a raw child-process failure, while preserving normal field-aware merge-driver installation."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-21T21:51:22.939Z"
+updated_at: "2026-07-21T21:51:22.939Z"
+author: codex-root
+parent: pm-92if
+severity: high
+environment: production CI and permission-constrained Git workspaces
+repro_steps: Run pm merge install in a valid Git worktree where repository-local Git configuration cannot be written.
+expected_result: "The command fails with a stable pm error code and remediation guidance, classifies the expected permission constraint appropriately in telemetry, and leaves Git configuration unchanged."
+actual_result: "The underlying git config command fails with 'could not lock config file .git/config: Permission denied' and produces handled high-severity Sentry issue PM-CLI-2G."
+affected_version: 2026.7.21
+component: merge-install
+customer_impact: Agents in read-only CI or sandboxed worktrees receive a raw infrastructure error and observability records an expected environmental constraint as a high-severity product failure.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-g5sx,related,"2026-07-21T21:51:22.939Z",null,null
+  pm-i4fx,related,"2026-07-21T21:51:22.939Z",null,null
+  pm-iwsj,related,"2026-07-21T21:51:22.939Z",null,null
+  pm-wc1r,related,"2026-07-21T21:51:22.939Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-21T21:51:22.939Z",codex-root,"Duplicate check: searched all statuses for PM-CLI-2G, merge.pm-item-toon, git config, merge install, and permission denied; no item tracked this exact failure. Live Sentry evidence: PM-CLI-2G is new, unresolved, handled, count 2, first seen 2026-07-21T21:37:22.513Z and last seen 2026-07-21T21:37:23.120Z in @unbrained/pm-cli 2026.7.21. Permalink: https://unbrained.sentry.io/issues/135741631/."
+notes[1]{created_at,author,text}:
+  "2026-07-21T21:51:22.939Z",codex-root,"Acceptance scope: cover a real temporary Git repository with a deliberately non-writable repository config boundary; assert deterministic error metadata and remediation text; prove no partial merge-driver configuration; preserve successful installation and idempotency; verify telemetry/Sentry classification for expected permission constraints; update merge-safety documentation."
+learnings[1]{created_at,author,text}:
+  "2026-07-21T21:51:22.939Z",codex-root,Permission-constrained Git metadata is a normal execution environment for CI and review sandboxes. Merge-driver setup should distinguish an expected environmental inability to mutate local Git config from an unexpected application defect.
+body: ""
