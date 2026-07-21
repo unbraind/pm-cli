@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Compatibility gate rejects compact legacy create envelopes after release promotion ([pm-pkdpyz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pkdpyz.toon))
 - Sentry PM-CLI-2E: directory-shaped settings.json crashes CLI bootstrap ([pm-k0nl2w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-k0nl2w.toon))
 - Sentry PM-CLI-2D: storage-integrity history scan reads .jsonl directories as files ([pm-o1c53b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o1c53b.toon))
 - GH-576: unknown-command help probes return structured non-zero errors ([pm-bu1m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bu1m.toon))
