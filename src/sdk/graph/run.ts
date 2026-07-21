@@ -39,6 +39,11 @@ import {
   findRedundantRelationshipEdges,
 } from "./analytics.js";
 import {
+  computeRelationshipCentrality,
+  findRelationshipCutStructure,
+} from "./centrality.js";
+import { analyzeRelationshipSchedule } from "./scheduling.js";
+import {
   assembleWorkspaceRelationshipGraph,
   resolveWorkspaceRelationshipKindRegistry,
   type WorkspaceRelationshipAssembly,
@@ -415,6 +420,108 @@ export interface GraphDominatorsResult {
   cache?: GraphCacheMetadata;
 }
 
+/** One scheduled task row projected by the slack subcommand. */
+export interface GraphScheduleRow {
+  /** Scheduled task id. */
+  id: string;
+  /** Earliest start (longest prerequisite distance). */
+  earliest_start: number;
+  /** Latest start preserving the makespan. */
+  latest_start: number;
+  /** Total float: latest start minus earliest start. */
+  slack: number;
+  /** Whether the task lies on a critical path. */
+  critical: boolean;
+}
+
+/** Result envelope for the critical-path slack subcommand. */
+export interface GraphSlackResult {
+  /** Executed graph subcommand. */
+  subcommand: "slack";
+  /** Whether the order-bearing graph is acyclic. */
+  acyclic: boolean;
+  /** Total makespan in unit task durations. */
+  makespan: number;
+  /** Tasks participating in the order-bearing DAG. */
+  scheduled_count: number;
+  /** Tasks with zero slack. */
+  critical_count: number;
+  /** Edge count of the longest execution path. */
+  critical_path_length: number;
+  /** Genuine ordering cycles excluded from scheduling. */
+  cycle_count: number;
+  /** Whether the row limit omitted scheduled tasks. */
+  truncated: boolean;
+  /** Longest deterministic execution path; absent with summary. */
+  critical_path?: string[];
+  /** Bounded scheduled rows, lowest slack first; absent with summary. */
+  rows?: GraphScheduleRow[];
+  /** Cache observability for this invocation. */
+  cache?: GraphCacheMetadata;
+}
+
+/** One node ranked by structural centrality with directed fan-in/fan-out. */
+export interface GraphCentralityRow {
+  /** Node id. */
+  id: string;
+  /** Undirected unique-neighbor degree. */
+  degree: number;
+  /** Distinct directed predecessors (fan-in). */
+  in_degree: number;
+  /** Distinct directed successors (fan-out). */
+  out_degree: number;
+  /** Shortest-path betweenness centrality. */
+  betweenness: number;
+  /** Wasserman–Faust closeness centrality. */
+  closeness: number;
+}
+
+/** Result envelope for the centrality subcommand. */
+export interface GraphCentralityResult {
+  /** Executed graph subcommand. */
+  subcommand: "centrality";
+  /** Total indexed graph nodes. */
+  node_count: number;
+  /** Simple undirected edge count over selected kinds. */
+  edge_count: number;
+  /** Whether the row limit omitted ranked nodes. */
+  truncated: boolean;
+  /** Query cost metadata. */
+  cost: GraphQueryCost;
+  /** Bounded ranked node rows, highest betweenness first; absent with summary. */
+  rows?: GraphCentralityRow[];
+  /** Cache observability for this invocation. */
+  cache?: GraphCacheMetadata;
+}
+
+/** One bridge edge projected by the articulation subcommand. */
+export interface GraphBridgeRow {
+  /** Lexicographically smaller endpoint. */
+  source: string;
+  /** Lexicographically larger endpoint. */
+  target: string;
+}
+
+/** Result envelope for the articulation subcommand. */
+export interface GraphArticulationResult {
+  /** Executed graph subcommand. */
+  subcommand: "articulation";
+  /** Total articulation points (cut vertices). */
+  articulation_count: number;
+  /** Total bridge edges (cut edges). */
+  bridge_count: number;
+  /** Whether the row limit omitted articulation points or bridges. */
+  truncated: boolean;
+  /** Query cost metadata. */
+  cost: GraphQueryCost;
+  /** Bounded sorted articulation-point ids; absent with summary. */
+  articulation_points?: string[];
+  /** Bounded sorted bridge edges; absent with summary. */
+  bridges?: GraphBridgeRow[];
+  /** Cache observability for this invocation. */
+  cache?: GraphCacheMetadata;
+}
+
 /** Result envelope for the dry-run remediation planning subcommand. */
 export interface GraphPlanResult {
   /** Executed graph subcommand. */
@@ -447,6 +554,9 @@ export type GraphResult =
   | GraphCommunitiesResult
   | GraphRedundancyResult
   | GraphDominatorsResult
+  | GraphSlackResult
+  | GraphCentralityResult
+  | GraphArticulationResult
   | GraphPlanResult
   | GraphIndexResult;
 
@@ -854,6 +964,95 @@ function runGraphDominators(
   };
 }
 
+/** Execute the critical-path slack (float) analysis subcommand. */
+function runGraphSlack(invocation: GraphInvocation): GraphSlackResult {
+  const limit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
+  const analysis = analyzeRelationshipSchedule(invocation.assembly.graph);
+  const criticalCount = analysis.rows.filter((row) => row.critical).length;
+  return {
+    subcommand: "slack",
+    acyclic: analysis.acyclic,
+    makespan: analysis.makespan,
+    scheduled_count: analysis.scheduledCount,
+    critical_count: criticalCount,
+    critical_path_length: analysis.criticalPathLength,
+    cycle_count: analysis.cycles.length,
+    truncated: analysis.rows.length > limit,
+    ...(invocation.summary
+      ? {}
+      : {
+          critical_path: analysis.criticalPath,
+          rows: analysis.rows.slice(0, limit).map((row) => ({
+            id: row.id,
+            earliest_start: row.earliestStart,
+            latest_start: row.latestStart,
+            slack: row.slack,
+            critical: row.critical,
+          })),
+        }),
+  };
+}
+
+/** Execute the structural-centrality ranking subcommand. */
+function runGraphCentrality(
+  invocation: GraphInvocation,
+): GraphCentralityResult {
+  const limit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
+  const result = computeRelationshipCentrality(invocation.assembly.graph, {
+    ...(invocation.kinds === undefined ? {} : { kinds: invocation.kinds }),
+  });
+  const analysis = result.value;
+  return {
+    subcommand: "centrality",
+    node_count: analysis.nodeCount,
+    edge_count: analysis.edgeCount,
+    truncated: analysis.rows.length > limit,
+    cost: {
+      visited_nodes: result.meta.visitedNodes,
+      inspected_edges: result.meta.inspectedEdges,
+    },
+    ...(invocation.summary
+      ? {}
+      : {
+          rows: analysis.rows.slice(0, limit).map((row) => ({
+            id: row.id,
+            degree: row.degree,
+            in_degree: row.inDegree,
+            out_degree: row.outDegree,
+            betweenness: row.betweenness,
+            closeness: row.closeness,
+          })),
+        }),
+  };
+}
+
+/** Execute the articulation-point and bridge (cut-structure) subcommand. */
+function runGraphArticulation(
+  invocation: GraphInvocation,
+): GraphArticulationResult {
+  const limit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
+  const result = findRelationshipCutStructure(invocation.assembly.graph, {
+    ...(invocation.kinds === undefined ? {} : { kinds: invocation.kinds }),
+  });
+  const { articulationPoints, bridges } = result.value;
+  return {
+    subcommand: "articulation",
+    articulation_count: articulationPoints.length,
+    bridge_count: bridges.length,
+    truncated: articulationPoints.length > limit || bridges.length > limit,
+    cost: {
+      visited_nodes: result.meta.visitedNodes,
+      inspected_edges: result.meta.inspectedEdges,
+    },
+    ...(invocation.summary
+      ? {}
+      : {
+          articulation_points: articulationPoints.slice(0, limit),
+          bridges: bridges.slice(0, limit),
+        }),
+  };
+}
+
 /** Execute the dry-run remediation planning subcommand. */
 function runGraphPlan(
   invocation: GraphInvocation,
@@ -940,6 +1139,9 @@ function executeGraphSubcommand(
   if (subcommand === "communities") return runGraphCommunities(invocation);
   if (subcommand === "redundancy") return runGraphRedundancy(invocation);
   if (subcommand === "dominators") return runGraphDominators(root!, invocation);
+  if (subcommand === "slack") return runGraphSlack(invocation);
+  if (subcommand === "centrality") return runGraphCentrality(invocation);
+  if (subcommand === "articulation") return runGraphArticulation(invocation);
   if (subcommand === "paths")
     return runGraphPaths(root!, pathsTarget!, invocation);
   if (subcommand === "impact") return runGraphImpact(root!, invocation);

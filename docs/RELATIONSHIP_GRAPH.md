@@ -184,7 +184,20 @@ dominators over the root's reachable subgraph, ranking structural
 bottlenecks by gated work), and `plan` exposes `planRelationshipRemediation`
 (dry-run remediation proposals derived from audit findings and witnessed
 redundancy rows, each carrying an exact operation, policy code, evidence,
-rationale, and confidence — never auto-applied). The audit gates finding
+rationale, and confidence — never auto-applied). Three planning and structural
+subcommands complete the analytics surface: `slack` exposes
+`analyzeRelationshipSchedule` (Critical Path Method float over the order-bearing
+DAG — earliest/latest start, total slack, and critical-task classification with
+unit task durations, reusing the exact execution forward pass and adding the
+backward latest-start pass; genuine cycles are reported separately, never
+scheduled), `centrality` exposes `computeRelationshipCentrality` (exact Brandes
+shortest-path betweenness, Wasserman–Faust closeness, undirected degree, and
+directed fan-in/fan-out per node over the simple undirected graph), and
+`articulation` exposes `findRelationshipCutStructure` (iterative Tarjan low-link
+search reporting articulation points and bridges — the single points of failure
+whose removal fragments the knowledge graph). All three are deterministic and
+exact on the bounded workspace, carry explicit `cost`/`truncated` metadata, and
+honor `--kind` (centrality/articulation) and `--limit`/`--summary` bounds. The audit gates finding
 severity on lifecycle: contradictions confined to terminal items report as
 informational `legacy_ordering_cycle`/`legacy_duplicate_edge` history debt,
 while `ordering_cycle` errors and `duplicate_edge` findings require at least

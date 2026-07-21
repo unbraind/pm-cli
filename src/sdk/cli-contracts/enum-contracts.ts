@@ -143,6 +143,9 @@ export const GRAPH_SUBCOMMAND_VALUES = [
   "communities",
   "redundancy",
   "dominators",
+  "slack",
+  "centrality",
+  "articulation",
   "plan",
   "index",
 ] as const;
