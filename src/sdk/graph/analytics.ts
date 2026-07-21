@@ -119,29 +119,52 @@ function assertPositiveBound(name: string, value: number): void {
     throw new TypeError(`Invalid ${name} bound: ${String(value)}`);
 }
 
-/** Build the deterministic undirected adjacency restricted to canonicalized kinds. */
-function buildUndirectedAdjacency(
+/**
+ * Invoke `visit` once per canonical-kind-matched edge, skipping self-loops.
+ * Kind filters resolve to canonical spelling and match either the requested
+ * kind or its inverse so directed families are selected by either spelling. The
+ * resolved definition is passed alongside the edge so callers can distinguish
+ * directed and undirected families. This is the single edge-selection primitive
+ * shared by community, centrality, cut-structure, and degree builders.
+ */
+export function forEachMatchedRelationshipEdge(
   graph: RelationshipGraph,
   kinds: readonly string[] | undefined,
-): Map<string, string[]> {
+  visit: (
+    edge: RelationshipEdge,
+    definition: RelationshipKindDefinition,
+  ) => void,
+): void {
   const registry = graph.registry();
   const wanted =
     kinds === undefined
       ? undefined
       : new Set(kinds.map((kind) => registry.require(kind).kind));
-  const adjacency = new Map<string, string[]>();
   for (const edge of graph.edges()) {
     if (edge.source === edge.target) continue;
-    if (wanted !== undefined) {
-      const definition = registry.require(edge.kind);
-      const matches =
+    const definition = registry.require(edge.kind);
+    if (
+      wanted !== undefined &&
+      !(
         wanted.has(definition.kind) ||
-        (definition.inverse !== undefined && wanted.has(definition.inverse));
-      if (!matches) continue;
-    }
+        (definition.inverse !== undefined && wanted.has(definition.inverse))
+      )
+    )
+      continue;
+    visit(edge, definition);
+  }
+}
+
+/** Build the deterministic undirected multiset adjacency restricted to canonicalized kinds. */
+function buildUndirectedAdjacency(
+  graph: RelationshipGraph,
+  kinds: readonly string[] | undefined,
+): Map<string, string[]> {
+  const adjacency = new Map<string, string[]>();
+  forEachMatchedRelationshipEdge(graph, kinds, (edge) => {
     appendAdjacency(adjacency, edge.source, edge.target);
     appendAdjacency(adjacency, edge.target, edge.source);
-  }
+  });
   for (const neighbors of adjacency.values()) neighbors.sort();
   return adjacency;
 }

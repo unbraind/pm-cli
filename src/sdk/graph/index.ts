@@ -11,6 +11,7 @@ export {
   computeRelationshipDominators,
   detectRelationshipCommunities,
   findRedundantRelationshipEdges,
+  forEachMatchedRelationshipEdge,
   type GraphCommunityOptions,
   type GraphDominatorOptions,
   type GraphRedundancyOptions,
@@ -20,6 +21,22 @@ export {
   type RelationshipDominatorAnalysis,
   type RelationshipDominatorRow,
 } from "./analytics.js";
+export {
+  computeRelationshipCentrality,
+  findRelationshipCutStructure,
+  type GraphCentralityOptions,
+  type GraphCutStructureOptions,
+  type RelationshipBridge,
+  type RelationshipCentralityAnalysis,
+  type RelationshipCentralityRow,
+  type RelationshipCutStructure,
+} from "./centrality.js";
+export {
+  analyzeRelationshipSchedule,
+  type GraphScheduleOptions,
+  type RelationshipScheduleAnalysis,
+  type RelationshipScheduleRow,
+} from "./scheduling.js";
 export {
   assembleWorkspaceRelationshipGraph,
   collectDanglingDependencyReferences,
@@ -102,7 +119,11 @@ export {
   parseGraphSubcommand,
   runGraph,
   type GraphAnalyzeResult,
+  type GraphArticulationResult,
   type GraphAuditResult,
+  type GraphBridgeRow,
+  type GraphCentralityResult,
+  type GraphCentralityRow,
   type GraphCommandOptions,
   type GraphCommunitiesResult,
   type GraphCommunityRow,
@@ -120,6 +141,8 @@ export {
   type GraphRedundancyResult,
   type GraphRedundancyRow,
   type GraphResult,
+  type GraphScheduleRow,
+  type GraphSlackResult,
   type GraphSubcommand,
   type GraphTraversalResult,
 } from "./run.js";

@@ -802,7 +802,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(DEPS_FLAGS)})`,
     "      ;;",
     "    graph)",
-    `      COMPREPLY=(${compgen(`ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators plan index ${GRAPH_FLAGS}`)})`,
+    `      COMPREPLY=(${compgen(`ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators slack centrality articulation plan index ${GRAPH_FLAGS}`)})`,
     "      ;;",
     "    test)",
     `      COMPREPLY=(${compgen("--add --add-json --remove --list --run --match --only-index --only-last --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1549,7 +1549,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         graph)
           _arguments \\
-            '1:subcommand:(ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators plan index)' \\
+            '1:subcommand:(ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators slack centrality articulation plan index)' \\
             '--kind[Restrict traversal to registered relationship kinds]:kind' \\
             '--max-depth[Maximum traversal depth]:depth' \\
             '--limit[Maximum returned rows per bounded collection]:number' \\
@@ -2474,7 +2474,7 @@ complete -c pm -n '__fish_seen_subcommand_from deps' -l token-budget -d 'Maximum
 complete -c pm -n '__fish_seen_subcommand_from deps' -l cursor -d 'Continue an equivalent context query' -r
 complete -c pm -n '__fish_seen_subcommand_from deps' -l direction -d 'Context traversal direction' -r -a 'outgoing incoming both'
 complete -c pm -n '__fish_seen_subcommand_from deps' -l kind -d 'Restrict context traversal to relationship kinds' -r
-complete -c pm -n '__fish_seen_subcommand_from graph' -a 'ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators plan index' -d 'Graph query'
+complete -c pm -n '__fish_seen_subcommand_from graph' -a 'ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators slack centrality articulation plan index' -d 'Graph query'
 complete -c pm -n '__fish_seen_subcommand_from graph' -l kind -d 'Restrict traversal to registered relationship kinds' -r
 complete -c pm -n '__fish_seen_subcommand_from graph' -l max-depth -d 'Maximum traversal depth' -r
 complete -c pm -n '__fish_seen_subcommand_from graph' -l limit -d 'Maximum returned rows per bounded collection' -r

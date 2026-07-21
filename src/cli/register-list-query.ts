@@ -1164,7 +1164,7 @@ export function registerListQueryCommands(
       .command("graph")
       .argument(
         "<subcommand>",
-        "Graph query (ancestors, descendants, predecessors, successors, paths, impact, analyze, audit, communities, redundancy, dominators, plan, index)",
+        "Graph query (ancestors, descendants, predecessors, successors, paths, impact, analyze, audit, communities, redundancy, dominators, slack, centrality, articulation, plan, index)",
       )
       .argument("[id]", "Root item id (traversals, paths, impact, and dominators)")
       .argument("[target]", "Target item id (paths only)")

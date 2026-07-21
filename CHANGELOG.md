@@ -4,6 +4,7 @@
 
 ### Added
 
+- Graph planning & structural analytics: critical-path slack, betweenness/closeness centrality, and articulation points/bridges ([pm-efuo34](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-efuo34.toon))
 - CLI+MCP surface for atomic bulk item mutations: JSON mutation batch on stdin over commitItemMutations ([pm-xm7c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-xm7c.toon))
 - GH-438: accept a full item JSON document on stdin for pm create / pm update ([pm-kipd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-kipd.toon))
 - GH-435: lean JSON output mode omitting null/empty fields (~50% token cut for --json) ([pm-cfed](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cfed.toon))

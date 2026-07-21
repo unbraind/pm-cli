@@ -6,13 +6,16 @@ import {
 } from "../../../../src/cli/commands/graph.js";
 import type {
   GraphAnalyzeResult,
+  GraphArticulationResult,
   GraphAuditResult,
+  GraphCentralityResult,
   GraphCommunitiesResult,
   GraphDominatorsResult,
   GraphImpactResult,
   GraphPathsResult,
   GraphPlanResult,
   GraphRedundancyResult,
+  GraphSlackResult,
   GraphTraversalResult,
 } from "../../../../src/sdk/graph/run.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
@@ -708,6 +711,159 @@ describe("runGraph", () => {
     });
   });
 
+  it("schedules the order-bearing chain with critical-path slack", async () => {
+    await withTempPmPath(async (context) => {
+      const { task, follower } = await seedWorkspace(context);
+      const slack = (await runGraph(
+        "slack",
+        undefined,
+        undefined,
+        {},
+        { path: context.pmPath },
+      )) as GraphSlackResult;
+      expect(slack.subcommand).toBe("slack");
+      expect(slack.acyclic).toBe(true);
+      // pm-ghost -> task -> follower is the single ordering chain.
+      expect(slack.scheduled_count).toBe(3);
+      expect(slack.critical_count).toBe(3);
+      expect(slack.makespan).toBe(3);
+      expect(slack.critical_path_length).toBe(2);
+      expect(slack.cycle_count).toBe(0);
+      expect(slack.truncated).toBe(false);
+      expect(slack.critical_path).toEqual(["pm-ghost", task, follower]);
+      expect(slack.rows?.map((row) => row.id)).toEqual([
+        "pm-ghost",
+        task,
+        follower,
+      ]);
+      expect(slack.rows?.every((row) => row.critical)).toBe(true);
+      expect(slack.cache?.result).toBe("miss");
+
+      const summary = (await runGraph(
+        "slack",
+        undefined,
+        undefined,
+        { summary: true, limit: "1" },
+        { path: context.pmPath },
+      )) as GraphSlackResult;
+      expect(summary.rows).toBeUndefined();
+      expect(summary.critical_path).toBeUndefined();
+      expect(summary.truncated).toBe(true);
+      expect(summary.scheduled_count).toBe(3);
+
+      // Slack has no kind filter; --kind is rejected rather than silently dropped.
+      await expect(
+        runGraph(
+          "slack",
+          undefined,
+          undefined,
+          { kind: "blocked_by" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("ranks structural centrality with directed fan-in/out", async () => {
+    await withTempPmPath(async (context) => {
+      const { task } = await seedWorkspace(context);
+      const centrality = (await runGraph(
+        "centrality",
+        undefined,
+        undefined,
+        {},
+        { path: context.pmPath },
+      )) as GraphCentralityResult;
+      expect(centrality.subcommand).toBe("centrality");
+      // epic-feat-task-{follower,ghost} tree over 5 nodes and 4 edges.
+      expect(centrality.node_count).toBe(5);
+      expect(centrality.edge_count).toBe(4);
+      expect(centrality.truncated).toBe(false);
+      expect(centrality.cost.visited_nodes).toBeGreaterThan(0);
+      // task is the most central broker with degree 3.
+      expect(centrality.rows?.[0]?.id).toBe(task);
+      expect(centrality.rows?.[0]?.degree).toBe(3);
+      const taskRow = centrality.rows?.find((row) => row.id === task);
+      expect(taskRow?.betweenness).toBeGreaterThan(0);
+
+      const filtered = (await runGraph(
+        "centrality",
+        undefined,
+        undefined,
+        { kind: "blocked_by" },
+        { path: context.pmPath },
+      )) as GraphCentralityResult;
+      // Only follower-task-ghost edges remain under the ordering filter.
+      expect(filtered.edge_count).toBe(2);
+
+      const summary = (await runGraph(
+        "centrality",
+        undefined,
+        undefined,
+        { summary: true, limit: "1" },
+        { path: context.pmPath },
+      )) as GraphCentralityResult;
+      expect(summary.rows).toBeUndefined();
+      expect(summary.truncated).toBe(true);
+    });
+  });
+
+  it("reports articulation points and bridges of the workspace tree", async () => {
+    await withTempPmPath(async (context) => {
+      const { feat, task } = await seedWorkspace(context);
+      const cuts = (await runGraph(
+        "articulation",
+        undefined,
+        undefined,
+        {},
+        { path: context.pmPath },
+      )) as GraphArticulationResult;
+      expect(cuts.subcommand).toBe("articulation");
+      // Every internal tree node is a cut vertex; every edge is a bridge.
+      expect(cuts.articulation_count).toBe(2);
+      expect(cuts.bridge_count).toBe(4);
+      expect(cuts.articulation_points).toEqual([feat, task].sort());
+      expect(cuts.truncated).toBe(false);
+      expect(cuts.cost.visited_nodes).toBe(5);
+
+      // Filtering to ordering edges leaves follower-task-ghost; task is the cut.
+      const filtered = (await runGraph(
+        "articulation",
+        undefined,
+        undefined,
+        { kind: "blocked_by" },
+        { path: context.pmPath },
+      )) as GraphArticulationResult;
+      expect(filtered.articulation_points).toEqual([task]);
+      expect(filtered.bridge_count).toBe(2);
+
+      const summary = (await runGraph(
+        "articulation",
+        undefined,
+        undefined,
+        { summary: true, limit: "1" },
+        { path: context.pmPath },
+      )) as GraphArticulationResult;
+      expect(summary.articulation_points).toBeUndefined();
+      expect(summary.bridges).toBeUndefined();
+      expect(summary.truncated).toBe(true);
+
+      // Non-summary limit still returns bounded rows and reports truncation.
+      const bounded = (await runGraph(
+        "articulation",
+        undefined,
+        undefined,
+        { limit: "1" },
+        { path: context.pmPath },
+      )) as GraphArticulationResult;
+      expect(bounded.articulation_points).toHaveLength(1);
+      expect(bounded.bridges).toHaveLength(1);
+      expect(bounded.truncated).toBe(true);
+    });
+  });
+
   it("returns zero-valued analytics envelopes for an empty workspace", async () => {
     await withTempPmPath(async (context) => {
       const analyze = (await runGraph(
@@ -729,6 +885,40 @@ describe("runGraph", () => {
       )) as GraphCommunitiesResult;
       expect(communities.community_count).toBe(0);
       expect(communities.largest_community_size).toBe(0);
+
+      const slack = (await runGraph(
+        "slack",
+        undefined,
+        undefined,
+        {},
+        { path: context.pmPath },
+      )) as GraphSlackResult;
+      expect(slack.scheduled_count).toBe(0);
+      expect(slack.makespan).toBe(0);
+      expect(slack.acyclic).toBe(true);
+      expect(slack.truncated).toBe(false);
+
+      const centrality = (await runGraph(
+        "centrality",
+        undefined,
+        undefined,
+        {},
+        { path: context.pmPath },
+      )) as GraphCentralityResult;
+      expect(centrality.node_count).toBe(0);
+      expect(centrality.edge_count).toBe(0);
+      expect(centrality.rows).toEqual([]);
+
+      const articulation = (await runGraph(
+        "articulation",
+        undefined,
+        undefined,
+        {},
+        { path: context.pmPath },
+      )) as GraphArticulationResult;
+      expect(articulation.articulation_count).toBe(0);
+      expect(articulation.bridge_count).toBe(0);
+      expect(articulation.truncated).toBe(false);
     });
   });
 
