@@ -1,0 +1,68 @@
+id: pm-k0nl2w
+title: "Sentry PM-CLI-2E: directory-shaped settings.json crashes CLI bootstrap"
+description: "Harden settings bootstrap so a settings.json path that exists but is not a readable regular file yields deterministic settings diagnostics instead of propagating EISDIR before health, validation, or storage-integrity commands can run."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:config","area:storage",observability,resilience,sentry
+created_at: "2026-07-21T12:25:47.265Z"
+updated_at: "2026-07-21T15:21:22.684Z"
+closed_at: "2026-07-21T13:31:20.685Z"
+author: codex-root
+acceptance_criteria: "Directory-shaped or otherwise unreadable settings.json never crashes readSettingsWithMetadata; callers receive a deterministic warning and fallback settings; normal, missing, invalid-JSON, and invalid-schema behavior remains stable; CLI acceptance, full exact coverage, release gates, and the live Sentry gate pass."
+parent: pm-o2kc
+risk: high
+confidence: high
+severity: high
+environment: production
+repro_steps: "Create .agents/pm/settings.json as a directory and run any pm command that bootstraps settings, such as pm health --check-only."
+resolution: "Separated filesystem diagnostics, bypassed cache for transient read failures, and made semantic background work durable through delayed replacement dispatch plus settings-race re-enqueue."
+expected_result: CLI bootstrap remains available and surfaces a machine-readable settings warning that directs the operator to repair the unreadable settings path.
+actual_result: "Directory-shaped settings.json yields uncached settings_read_fs_error diagnostics and remediation; permission-only recovery is visible on the next read; semantic queue workers retain a bounded delayed runner and re-enqueue IDs across settings races; 6,061 tests pass at exact 100/100/100/100 coverage."
+affected_version: 2026.7.21
+fixed_version: next
+component: core/store/settings
+regression: true
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-f5hy2n,discovered_from,"2026-07-21T12:25:47.265Z",null,null
+  pm-o1c53b,discovered_from,"2026-07-21T12:25:47.265Z",null,null
+  pm-xdn6,related,"2026-07-21T12:25:47.265Z",null,null
+comments[7]{created_at,author,text}:
+  "2026-07-21T12:25:47.265Z",codex-root,"text=Duplicate check: searched all pm statuses for PM-CLI-2E, readFileIfExists EISDIR settings, and settings.json directory. No canonical item covers this bootstrap failure. Fresh Sentry event 31835fc7f0cb4db789e12191560cf5b9 occurred once at 2026-07-21T11:37:08Z in readFileIfExists/readSettingsWithMetadata during malformed-settings acceptance."
+  "2026-07-21T12:54:33.832Z",codex-root,"Evidence: TDD reproduced EISDIR and now proves cached fallback plus recovery; linked search/background tests pass 72/72 and settings tests pass 31/31. Manual acceptance in /tmp/pm-cli-settings-acceptance.oDxVsG completed without a stack trace, emitted settings_read_invalid_json remediation, finished health, and recorded a successful telemetry flush at 2026-07-21T12:29:01.173Z. Full repository verification passes 332 files/6,059 tests at exact 100/100/100/100, plus static quality, 100% docstrings, zero duplication, package boundary, token budget, and secret scanning. Sentry PM-CLI-2E remains intentionally unresolved until merged-commit proof."
+  "2026-07-21T13:02:23.648Z",codex-root,"Pre-push Greptile review 96db75c8-0660-4671-9d3b-f447434636fc rated the diff 4/5 and safe to merge, with two P2 improvements: separate filesystem-read failures from invalid JSON for actionable telemetry, and make success-with-warning search/background behavior explicit in the focused mock contract. Reopened only this actively edited item to implement both before push."
+  "2026-07-21T13:07:29.473Z",codex-root,"Greptile follow-up evidence: both P2 observations addressed. Filesystem failures now use settings_read_fs_error while invalid JSON retains settings_read_invalid_json; remediation maps to pm config list --json; focused warning-return tests assert exact mutation/background propagation. Manual temp health output shows no crash, warning provenance, and remediation_map. Full verification passes 332 files/6,060 tests at exact 100/100/100/100 plus static quality, 100% docstrings, zero duplication, package boundary, token budget, and secret scanning."
+  "2026-07-21T13:24:01.721Z",codex-root,"Hosted PR #632 review found three actionable recovery gaps on exact head 9bbde36d: filesystem fallback cache survives permission-only repair; a worker exiting before queue drain has no bounded replacement; and a settings race after drain can convert retryable work into a normal skip. All bot comments were reacted to and acknowledged inline. Reopened only this actively edited item for a unified cache and queue recovery fix."
+  "2026-07-21T13:31:19.296Z",codex-root,"Hosted review fix evidence: filesystem read fallbacks are no longer cached, so unchanged size/mtime cannot mask chmod or transient I/O recovery. A settings-failed worker schedules one replacement after 30 seconds instead of spinning; a settings_read_failed warning after queue drain re-enqueues all IDs and schedules the same bounded retry. Focused recovery tests pass 109/109. Full repository verification passes 332 files/6,061 tests at exact 100/100/100/100 plus static quality, 100% docstrings, zero duplication, package boundary, token budget, and tracked-secret gates."
+  "2026-07-21T15:21:22.684Z",codex-root,"Pre-push review note: required local Greptile invocation against exact head e404dc54 was attempted with focused recovery/concurrency instructions but the authenticated CLI returned free_reviews_limit_reached. Proceeding with hosted PR review after push; no local finding was suppressed."
+notes[1]{created_at,author,text}:
+  "2026-07-21T12:54:34.487Z",codex-root,"Operational contract: an unreadable settings path must preserve diagnostic availability while search refresh refuses to run with fallback defaults; otherwise a resilience fix can silently change semantic indexing behavior."
+learnings[2]{created_at,author,text}:
+  "2026-07-21T12:54:35.086Z",codex-root,"Fallback settings need provenance, not just values. Consumers that perform external or background work must inspect settings-read warnings so safe CLI recovery does not become unsafe default-driven execution."
+  "2026-07-21T13:31:19.864Z",codex-root,"Never cache an availability failure using content signatures: permissions and transient I/O can recover without mtime or size changes. Durable background queues must preserve both the work and a bounded future runner across every pre-drain and post-drain failure boundary."
+files[14]{path,scope,note}:
+  CHANGELOG.md,project,Generated release narrative for resilient settings bootstrap
+  src/cli/commands/contracts.ts,project,Preserve contracts defaults when unexpected settings dependencies fail
+  src/cli/main.ts,project,Expose deterministic dependency seams for extension bootstrap fallback coverage
+  src/core/diagnostics/remediation.ts,project,Map filesystem settings failures to an actionable repair command
+  src/core/search/background-refresh.ts,project,Prevent background refresh from running on unreadable settings
+  src/core/search/cache.ts,project,Preserve semantic refresh skip semantics under fallback settings
+  src/core/store/settings.ts,project,Convert settings read failures into deterministic fallback diagnostics
+  tests/integration/remediation-registry.spec.ts,project,Registry-wide remediation uniqueness and lookup coverage
+  tests/unit/cli/cli-main-errors.spec.ts,project,Exercise cached-null extension bootstrap recovery branches
+  tests/unit/commands/contracts-command.spec.ts,project,Exercise settings and extension probe fallback contracts
+  tests/unit/core/search/background-refresh.spec.ts,project,Existing background warning contract regression coverage
+  tests/unit/core/search/search-cache-nonerror.spec.ts,project,Cover non-Error settings failures across inline mutation and background refresh
+  tests/unit/core/search/search-cache.spec.ts,project,Existing semantic warning contract regression coverage
+  tests/unit/core/store/settings-store.spec.ts,project,TDD for directory-shaped settings and cache recovery
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/search/search-cache.spec.ts tests/unit/core/search/background-refresh.spec.ts,project,240,Search refresh behavior under unreadable settings
+  node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts,project,240,Settings bootstrap unreadable-path regression
+  node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/core/search/search-cache-nonerror.spec.ts tests/integration/remediation-registry.spec.ts,project,240,Greptile follow-up filesystem warning provenance and remediation coverage
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrunmuzc-u8b5rn,test,passed,"2026-07-21T12:53:13.122Z","2026-07-21T12:53:36.216Z","2026-07-21T12:53:36.216Z",2,0,0
+  test-local-mruo4ovk-f061vs,test,passed,"2026-07-21T13:07:20.029Z","2026-07-21T13:07:28.112Z","2026-07-21T13:07:28.112Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/CONFIGURATION.md,project,"Document distinct filesystem,JSON,and schema settings diagnostics"
+close_reason: "Resolved all hosted review findings: transient settings failures are uncached, queued semantic work retains a delayed runner, drain races re-enqueue IDs, and exact full gates pass."
+body: ""

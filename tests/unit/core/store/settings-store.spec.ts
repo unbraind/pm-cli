@@ -108,6 +108,30 @@ describe("core/store/settings", () => {
     });
   });
 
+  it("falls back and recovers when settings.json cannot be read as a file", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const settingsPath = getSettingsPath(pmRoot);
+      await fs.mkdir(settingsPath, { recursive: true });
+
+      const unreadable = await readSettingsWithMetadata(pmRoot);
+      expect(unreadable.settings).toEqual(SETTINGS_DEFAULTS);
+      expect(unreadable.warnings).toEqual(["settings_read_fs_error"]);
+      expect(getSettingsReadCacheEntry(pmRoot)).toBeUndefined();
+      expect((await readSettingsWithMetadata(pmRoot)).warnings).toEqual([
+        "settings_read_fs_error",
+      ]);
+      expect(getSettingsReadCacheEntry(pmRoot)).toBeUndefined();
+
+      await fs.rmdir(settingsPath);
+      await writeLegacySettings(pmRoot, { author_default: "recovered" });
+
+      const recovered = await readSettingsWithMetadata(pmRoot);
+      expect(recovered.settings.author_default).toBe("recovered");
+      expect(recovered.warnings).not.toContain("settings_read_fs_error");
+      expect((await readSettingsWithMetadata(pmRoot)).warnings).toEqual([]);
+    });
+  });
+
   it("falls back to defaults when settings object fails schema validation", async () => {
     await withTempPmRoot(async (pmRoot) => {
       const settingsPath = getSettingsPath(pmRoot);

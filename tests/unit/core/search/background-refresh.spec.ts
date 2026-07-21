@@ -57,6 +57,7 @@ vi.mock("../../../../src/core/lock/lock.js", async (importOriginal) => {
 // Imported AFTER the mocks are declared so the source binds the mocked symbols.
 const {
   REINDEX_LOCK_ID,
+  SEARCH_REFRESH_RETRY_DELAY_MS,
   shouldRunSearchRefreshInForeground,
   enqueuePendingRefreshIds,
   drainPendingRefreshIds,
@@ -309,15 +310,56 @@ describe("background-refresh", () => {
 
     it("returns a deterministic warning when settings cannot be read", async () => {
       await withTempPmPath(async ({ pmPath }) => {
+        const fakeChild = new EventEmitter() as EventEmitter & { unref: () => void };
+        fakeChild.unref = vi.fn();
+        const spawnSpy = vi.fn(() => fakeChild);
+        spawnImpl.current = spawnSpy as never;
         await enqueuePendingRefreshIds(pmPath, ["pm-settings"]);
         await fs.rm(path.join(pmPath, "settings.json"), { recursive: true, force: true });
         await fs.mkdir(path.join(pmPath, "settings.json"), { recursive: true });
 
-        const result = await runSemanticRefreshWorker(pmPath, async () => {
-          throw new Error("refresh must not run");
+        vi.useFakeTimers();
+        try {
+          const result = await runSemanticRefreshWorker(pmPath, async () => {
+            throw new Error("refresh must not run");
+          });
+          expect(result.rounds).toBe(0);
+          expect(result.warnings[0]).toMatch(/^search_background_refresh_settings_read_failed:/);
+          expect(spawnSpy).not.toHaveBeenCalled();
+          await vi.advanceTimersByTimeAsync(SEARCH_REFRESH_RETRY_DELAY_MS);
+          expect(spawnSpy).toHaveBeenCalledTimes(1);
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+    });
+
+    it("re-enqueues drained ids when settings fail inside the refresh callback", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const scheduleRetry = vi.fn();
+        await enqueuePendingRefreshIds(pmPath, ["pm-settings-race"]);
+
+        const result = await runSemanticRefreshWorker(
+          pmPath,
+          async () => ({
+            refreshed: [],
+            skipped: ["pm-settings-race"],
+            warnings: [
+              "search_semantic_refresh_skipped:settings_read_failed:settings_read_fs_error",
+            ],
+          }),
+          scheduleRetry,
+        );
+
+        expect(result).toEqual({
+          processed: [],
+          rounds: 1,
+          warnings: [
+            "search_semantic_refresh_skipped:settings_read_failed:settings_read_fs_error",
+          ],
         });
-        expect(result.rounds).toBe(0);
-        expect(result.warnings[0]).toMatch(/^search_background_refresh_settings_read_failed:/);
+        expect(scheduleRetry).toHaveBeenCalledWith(pmPath);
+        expect(await drainPendingRefreshIds(pmPath)).toEqual(["pm-settings-race"]);
       });
     });
 

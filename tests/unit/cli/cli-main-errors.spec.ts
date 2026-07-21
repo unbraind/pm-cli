@@ -2068,6 +2068,47 @@ export default {
     }
   });
 
+  it("caches null extension snapshots when settings dependencies fail unexpectedly", async () => {
+    const discoveryRoot = path.join(os.tmpdir(), `pm-runtime-discovery-failure-${process.pid}-${Date.now()}`);
+    const activationRoot = path.join(os.tmpdir(), `pm-runtime-activation-failure-${process.pid}-${Date.now()}`);
+    const rejectSettings = async (): Promise<never> => {
+      throw new Error("settings dependency failed");
+    };
+
+    expect(
+      await _testOnly.loadRuntimeExtensionDiscoverySnapshot(discoveryRoot, rejectSettings),
+    ).toBeNull();
+    expect(await _testOnly.loadRuntimeExtensionDiscoverySnapshot(discoveryRoot)).toBeNull();
+    expect(
+      await _testOnly.loadRuntimeExtensionSnapshot(activationRoot, undefined, rejectSettings),
+    ).toBeNull();
+    expect(await _testOnly.loadRuntimeExtensionSnapshot(activationRoot)).toBeNull();
+    await expect(
+      _testOnly.loadRuntimeExtensionCommandDescriptorsForRecovery(activationRoot),
+    ).resolves.toBeInstanceOf(Map);
+
+    const root = new Command().name("pm");
+    root.option("--pm-path <dir>", "PM path");
+    await expect(
+      _testOnly.registerDynamicExtensionCommandPaths(root, [
+        "--pm-path",
+        discoveryRoot,
+        "missing",
+      ]),
+    ).resolves.toBeUndefined();
+    await expect(
+      _testOnly.prepareExtensionServicesForRunPmCliError({
+        invocationArgv: ["missing"],
+        bootstrapGlobal: parseBootstrapGlobalOptions([
+          "--pm-path",
+          discoveryRoot,
+          "missing",
+        ]),
+        bootstrapPmRoot: discoveryRoot,
+      }),
+    ).resolves.toBeUndefined();
+  });
+
   it("skips runtime extension activation for no-extension and no-op discovery paths", async () => {
     const missingRoot = await mkdtemp(path.join(os.tmpdir(), "pm-runtime-noext-"));
     try {

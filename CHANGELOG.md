@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Sentry PM-CLI-2E: directory-shaped settings.json crashes CLI bootstrap ([pm-k0nl2w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-k0nl2w.toon))
 - Sentry PM-CLI-2D: storage-integrity history scan reads .jsonl directories as files ([pm-o1c53b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o1c53b.toon))
 - GH-576: unknown-command help probes return structured non-zero errors ([pm-bu1m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bu1m.toon))
 - GH-551: dependency seeds accept global source_kind and preserve cross-workspace IDs ([pm-topu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-topu.toon))
@@ -11,6 +12,10 @@
 - GH-623: opt-in post-merge history reconciliation hook and one-command verify repair ([pm-mfkv92](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mfkv92.toon))
 - GH-553/GH-584: CodeFactor unnecessary-spread findings — restructure flagged spread sites (class owner) ([pm-zt1c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zt1c.toon))
 - GH-574: flattened extension alias subcommands still drop option contracts after GH-503/GH-550 fixes (empty --help, valid options rejected as positionals) ([pm-7ufz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7ufz.toon))
+
+### Security
+
+- Dependabot alert \#42: brace-expansion CPU denial of service (GHSA-3jxr-9vmj-r5cp) ([pm-f5hy2n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f5hy2n.toon))
 
 ### Other
 

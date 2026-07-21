@@ -15,7 +15,10 @@ import { resolveItemTypeRegistry } from "../item/type-registry.js";
 import { toErrorMessage } from "../shared/primitives.js";
 import { locateItem, readLocatedItem } from "../store/item-store.js";
 import { getSettingsPath } from "../store/paths.js";
-import { readSettings } from "../store/settings.js";
+import {
+  readSettings,
+  readSettingsWithMetadata,
+} from "../store/settings.js";
 import { executeEmbeddingBatchesWithRetry } from "./embedding-batches.js";
 import {
   buildSemanticCorpusInput,
@@ -338,7 +341,21 @@ async function resolveSemanticRefreshRuntimeContext(
 
   let settings: Awaited<ReturnType<typeof readSettings>>;
   try {
-    settings = options.settings ?? (await readSettings(pmRoot));
+    if (options.settings) {
+      settings = options.settings;
+    } else {
+      const settingsRead = await readSettingsWithMetadata(pmRoot);
+      const readFailure = settingsRead.warnings.find((warning) =>
+        warning.startsWith("settings_read_"),
+      );
+      if (readFailure) {
+        return buildSkippedSemanticRefreshResult(
+          normalizedItemIds,
+          `search_semantic_refresh_skipped:settings_read_failed:${readFailure}`,
+        );
+      }
+      settings = settingsRead.settings;
+    }
   } catch (error: unknown) {
     return buildSkippedSemanticRefreshResult(
       normalizedItemIds,
@@ -752,7 +769,22 @@ export async function refreshSearchArtifactsForMutation(
 
   let settings: Awaited<ReturnType<typeof readSettings>>;
   try {
-    settings = await readSettings(pmRoot);
+    const settingsRead = await readSettingsWithMetadata(pmRoot);
+    const readFailure = settingsRead.warnings.find((warning) =>
+      warning.startsWith("settings_read_"),
+    );
+    if (readFailure) {
+      return {
+        invalidated: invalidation.invalidated,
+        refreshed: [],
+        skipped: normalizedItemIds,
+        warnings: [
+          ...invalidation.warnings,
+          `search_semantic_refresh_skipped:settings_read_failed:${readFailure}`,
+        ],
+      };
+    }
+    settings = settingsRead.settings;
   } catch (error: unknown) {
     return {
       invalidated: invalidation.invalidated,
