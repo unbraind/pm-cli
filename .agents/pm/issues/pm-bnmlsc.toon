@@ -2,11 +2,12 @@ id: pm-bnmlsc
 title: "Sentry PM-CLI-2G: make merge-driver installation permission failures actionable"
 description: "Sentry reports a handled high-severity production failure when pm merge install attempts to configure the repository-local merge driver in a workspace where .git/config cannot be locked. Harden the merge-install boundary so expected read-only or permission-constrained repositories return a deterministic, actionable pm error instead of surfacing a raw child-process failure, while preserving normal field-aware merge-driver installation."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-21T21:51:22.939Z"
-updated_at: "2026-07-21T21:51:22.939Z"
+updated_at: "2026-07-21T22:11:32.531Z"
+closed_at: "2026-07-21T22:11:15.084Z"
 author: codex-root
 parent: pm-92if
 severity: high
@@ -22,10 +23,30 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-i4fx,related,"2026-07-21T21:51:22.939Z",null,null
   pm-iwsj,related,"2026-07-21T21:51:22.939Z",null,null
   pm-wc1r,related,"2026-07-21T21:51:22.939Z",null,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-21T21:51:22.939Z",codex-root,"Duplicate check: searched all statuses for PM-CLI-2G, merge.pm-item-toon, git config, merge install, and permission denied; no item tracked this exact failure. Live Sentry evidence: PM-CLI-2G is new, unresolved, handled, count 2, first seen 2026-07-21T21:37:22.513Z and last seen 2026-07-21T21:37:23.120Z in @unbrained/pm-cli 2026.7.21. Permalink: https://unbrained.sentry.io/issues/135741631/."
+  "2026-07-21T22:11:14.317Z",codex-root,"Evidence: implemented stable PmCliError code merge_git_config_unwritable with runtime telemetry classification and recovery context; reordered fence publication behind successful clone-local Git configuration; documented read-only behavior. Focused merge-safety and telemetry-classification tests pass. Full coverage reports 41028/41028 statements, 28854/28854 branches, 8327/8327 functions, and 39908/39908 lines (100/100/100/100). pnpm lint, typecheck, build, audit, and security scan pass. Packed-package temp consumer proved a real .git/config.lock failure exits 5, emits the stable code and dry-run guidance, leaves .gitattributes absent, succeeds after unlock, validates cleanly, and exports runMergeInstall from the public SDK."
+  "2026-07-21T22:11:32.531Z",codex-root,"Changelog evidence: pnpm changelog:pm:check completed with the latest available pm-changelog package and generated the closed pm-bnmlsc entry from live tracker state."
 notes[1]{created_at,author,text}:
   "2026-07-21T21:51:22.939Z",codex-root,"Acceptance scope: cover a real temporary Git repository with a deliberately non-writable repository config boundary; assert deterministic error metadata and remediation text; prove no partial merge-driver configuration; preserve successful installation and idempotency; verify telemetry/Sentry classification for expected permission constraints; update merge-safety documentation."
 learnings[1]{created_at,author,text}:
   "2026-07-21T21:51:22.939Z",codex-root,Permission-constrained Git metadata is a normal execution environment for CI and review sandboxes. Merge-driver setup should distinguish an expected environmental inability to mutate local Git config from an unexpected application defect.
+files[5]{path,scope,note}:
+  CHANGELOG.md,project,Generated release note for the resolved Sentry issue
+  src/core/shared/constants.ts,project,Stable telemetry category for the expected Git-config boundary
+  src/sdk/merge/install.ts,project,Expected permission error and fence publication ordering
+  tests/unit/core/shared/shared-constants-errors.spec.ts,project,Explicit telemetry classification regression
+  tests/unit/sdk/merge-safety.spec.ts,project,Real Git config lock regression coverage
+tests[6]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,900
+  node scripts/run-tests.mjs test -- tests/unit/core/shared/shared-constants-errors.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts,project,240
+  pnpm build,project,600
+  pnpm lint,project,600
+  pnpm typecheck,project,600
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrv7jv8f-aqrvm7,test,passed,"2026-07-21T22:06:26.344Z","2026-07-21T22:11:08.895Z","2026-07-21T22:11:08.895Z",6,0,0
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Read-only workspace behavior and recovery guidance
+close_reason: "Resolved PM-CLI-2G by making Git-config permission/lock failures expected and actionable before publishing the shared merge fence, with real Git lock, telemetry, packed-consumer, documentation, and full-suite proof."
 body: ""

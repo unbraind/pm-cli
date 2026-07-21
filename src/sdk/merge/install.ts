@@ -407,12 +407,6 @@ export async function runMergeInstall(
     trackerRelativeRoot,
     typeFolders,
   );
-  const gitattributes = await reconcileGitattributesBlock(
-    workspaceRoot,
-    patterns,
-    dryRun,
-  );
-
   const gitConfigEntries: Array<{ key: string; value: string }> = [];
   for (const definition of MERGE_DRIVER_DEFINITIONS) {
     gitConfigEntries.push({
@@ -425,15 +419,43 @@ export async function runMergeInstall(
     });
   }
   if (!dryRun) {
-    for (const entry of gitConfigEntries) {
-      await execFileAsync("git", ["config", entry.key, entry.value], {
-        cwd: workspaceRoot,
-        encoding: "utf8",
-        windowsHide: true,
-        timeout: 10_000,
-      });
+    try {
+      for (const entry of gitConfigEntries) {
+        await execFileAsync(
+          "git",
+          ["config", "--local", entry.key, entry.value],
+          {
+            cwd: workspaceRoot,
+            encoding: "utf8",
+            windowsHide: true,
+            timeout: 10_000,
+          },
+        );
+      }
+    } catch {
+      throw new PmCliError(
+        `Cannot install repository-local merge drivers in ${workspaceRoot}. Ensure the repository Git config is writable and no other Git process holds its lock, then retry.`,
+        EXIT_CODE.DEPENDENCY_FAILED,
+        {
+          code: "merge_git_config_unwritable",
+          why: "pm merge install must persist clone-local driver commands before publishing their shared .gitattributes mappings.",
+          nextSteps: [
+            "Make the repository Git config writable or wait for the process holding its lock to finish.",
+            'Retry "pm merge install"; the operation is idempotent.',
+            'Use "pm merge install --dry-run --json" when the workspace is intentionally read-only.',
+          ],
+        },
+      );
     }
   }
+  // Publish the shared attribute fence only after the clone-local commands are
+  // usable. A read-only or locked Git config therefore cannot leave a newly
+  // activated fence pointing at drivers that this clone has not installed.
+  const gitattributes = await reconcileGitattributesBlock(
+    workspaceRoot,
+    patterns,
+    dryRun,
+  );
 
   return {
     ok: true,

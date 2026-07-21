@@ -166,6 +166,9 @@ describe("shared constants and errors contracts", () => {
     expect(resolveTelemetryErrorCategory("legacy_item_not_found")).toBe("validation");
     expect(resolveTelemetryErrorCategory("schema_validation_failed")).toBe("validation");
     expect(resolveTelemetryErrorCategory("dependency_failed")).toBe("runtime");
+    expect(resolveTelemetryErrorCategory("merge_git_config_unwritable")).toBe(
+      "runtime",
+    );
     expect(resolveTelemetryErrorCategory("network_error")).toBe("runtime");
     expect(resolveTelemetryErrorCategory("command_failed")).toBe("runtime");
     expect(resolveTelemetryErrorCategory("custom_signal")).toBe("unknown");
