@@ -630,6 +630,23 @@ describe("public merge-safety SDK primitives", () => {
         '".agents/pm/tasks/*.toon" merge=pm-item-toon',
       );
 
+      const gitConfigLock = path.join(context.tempRoot, ".git", "config.lock");
+      await writeFile(gitConfigLock, "held by merge-safety test\n", "utf8");
+      await expect(
+        runMergeInstall({}, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        name: "PmCliError",
+        exitCode: 5,
+        context: {
+          code: "merge_git_config_unwritable",
+          nextSteps: expect.arrayContaining([expect.stringMatching(/dry-run/)]),
+        },
+      });
+      await expect(
+        readFile(path.join(context.tempRoot, ".gitattributes"), "utf8"),
+      ).rejects.toMatchObject({ code: "ENOENT" });
+      await rm(gitConfigLock);
+
       const installed = await runMergeInstall({}, { path: context.pmPath });
       expect(installed.git_config).toHaveLength(10);
       expect(
