@@ -1,0 +1,43 @@
+id: pm-pkdpyz
+title: Compatibility gate rejects compact legacy create envelopes after release promotion
+description: "Update previous-version compatibility fixture seeding to accept the canonical compact create response id as well as legacy full item.id, so publishing lean mutation output cannot make the next main CI run fail."
+type: Issue
+status: open
+priority: 1
+tags[5]: "area:ci","area:release",compatibility,regression,token-efficiency
+created_at: "2026-07-21T16:06:13.316Z"
+updated_at: "2026-07-21T16:09:10.545Z"
+author: codex-tracker-governance
+estimated_minutes: 60
+acceptance_criteria: "Fixture ID extraction accepts top-level id and item.id while rejecting malformed envelopes; regression tests cover compact, full, and malformed task and issue create responses; node scripts/release/compatibility-check.mjs --base-version 2026.7.21 --json passes in a clean temporary project; the exact-head Gates (compat) GitHub check is green"
+parent: pm-u9d0
+risk: high
+confidence: high
+reporter: codex-tracker-governance
+severity: high
+environment: GitHub Actions Gates (compat) and local compatibility-check against @unbrained/pm-cli@2026.7.21
+repro_steps: Run node scripts/release/compatibility-check.mjs --base-version 2026.7.21 --json from current main; observe Legacy create did not return a valid task id.
+expected_result: "Compatibility seeding accepts both canonical compact {id,status,changed_field_count} and legacy full {item:{id}} create envelopes, then completes migration validation."
+actual_result: "seedLegacyData reads only taskCreate.item.id and issueCreate.item.id; the published compact envelope supplies top-level id, so the gate exits before migration validation."
+affected_version: 2026.7.21
+component: scripts/release/compatibility-check.mjs
+regression: true
+customer_impact: Blocks the main compatibility gate and weakens release confidence immediately after compact mutation output promotion.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-nilh,discovered_from,"2026-07-21T16:06:13.316Z",codex-tracker-governance,null
+  pm-7zs0,related,"2026-07-21T16:07:02.052Z",codex-tracker-governance,null
+  pm-wo8,related,"2026-07-21T16:07:02.052Z",codex-tracker-governance,null
+comments[2]{created_at,author,text}:
+  "2026-07-21T16:06:13.316Z",codex-tracker-governance,"Duplicate check: searched every status for legacy create valid task id compatibility check and compatibility compact create output changed_field_count; inspected the closed pm-nilh compact-output lineage and its live history plus current and prior exact-head compatibility checks. No focused item tracks this harness regression,so this issue is the canonical implementation record."
+  "2026-07-21T16:09:10.545Z",codex-tracker-governance,"Planning verification: the tracker now contains 1,902 items (220 open, 1,670 closed, 12 canceled). Every open item has a description, acceptance criteria, estimate, risk, confidence, and parent except the intentional root milestone. Open normalization proposes zero changes. Graph audit has 3,282 edges, zero active isolates, zero active degree-one nodes, and only 11 informational historical findings. Parent-scope dedupe has zero clusters; exact and high-confidence fuzzy scans retain only the known canceled probe lineage pm-11ag/pm-lql3/pm-crpv. Integrity and history drift are clean; build passes. The only health baselines remain five actionable unknown-author events and 276 historical terminal resolution records, both already canonically owned."
+notes[1]{created_at,author,text}:
+  "2026-07-21T16:07:03.020Z",codex-tracker-governance,"Implementation sequence: first add a response-envelope ID extractor with explicit compact/full/malformed cases; then use it for both task and issue seeding; next run focused integration contracts and the clean published-version compatibility command; finally require the exact pushed-head GitHub compatibility job before closure."
+learnings[1]{created_at,author,text}:
+  "2026-07-21T16:07:03.827Z",codex-tracker-governance,"Compatibility fixtures are API consumers: when a CLI intentionally makes mutation output leaner, release gates must validate semantic identifiers across every supported response envelope instead of coupling to one presentation shape."
+files[3]{path,scope,note}:
+  scripts/release/compatibility-check.mjs,project,Failing previous-version response parser and primary implementation surface
+  tests/integration/release-readiness-runtime.spec.ts,project,Existing compatibility script contract coverage and likely regression-test surface
+  .github/workflows/ci.yml,project,Exact failing Gates compat workflow invocation
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/release/compatibility-check.mjs --base-version 2026.7.21 --json,project,900,Published-version compatibility reproduction and acceptance gate
+body: "## Evidence and scope\n\nExact-head GitHub run 29846552505, job 88688713860, failed on commit 669055d9757850cdb54da198ab18df75312192d4 with Legacy create did not return a valid task id. The same command fails locally. A clean temporary installation of @unbrained/pm-cli@2026.7.21 returns the intended compact create envelope with top-level id, status, and changed_field_count.\n\n## Root cause\n\nscripts/release/compatibility-check.mjs seedLegacyData currently extracts only taskCreate.item.id and issueCreate.item.id. That assumption became stale when pm-nilh promoted compact mutation responses. The product contract is correct; the compatibility harness must tolerate both historical full envelopes and canonical compact envelopes.\n\n## Delivery boundaries\n\nKeep compact default mutation output unchanged. Centralize or clearly isolate response-ID extraction, add compact/full/malformed regression coverage, prove the published-version compatibility path in a clean temporary project, and require the exact-head compatibility check to pass before close."
