@@ -14,7 +14,10 @@ import {
 } from "../fs/fs-utils.js";
 import { acquireLock } from "../lock/lock.js";
 import { resolvePmPackageRootFromModule } from "../packages/root.js";
-import { readSettings } from "../store/settings.js";
+import {
+  readSettings,
+  readSettingsWithMetadata,
+} from "../store/settings.js";
 import { toErrorMessage } from "../shared/primitives.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "./semantic-defaults.js";
 
@@ -264,8 +267,21 @@ export async function runSemanticRefreshWorker(
 
   let settings: Awaited<ReturnType<typeof readSettings>>;
   try {
+    const settingsRead = await readSettingsWithMetadata(pmRoot);
+    const readFailure = settingsRead.warnings.find((warning) =>
+      warning.startsWith("settings_read_"),
+    );
+    if (readFailure) {
+      return {
+        processed,
+        rounds: 0,
+        warnings: [
+          `search_background_refresh_settings_read_failed:${readFailure}`,
+        ],
+      };
+    }
     settings = resolveSettingsWithSemanticRuntimeDefaults(
-      await readSettings(pmRoot),
+      settingsRead.settings,
     ).settings;
   } catch (error: unknown) {
     return {

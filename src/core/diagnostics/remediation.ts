@@ -39,6 +39,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   },
   // --- pm health: settings (read/parse) ---
   {
+    code: "settings_read_fs_error",
+    command: "pm config list --json",
+    summary:
+      "settings.json could not be read as a regular file and pm fell back to defaults; repair the reported path or permissions, then re-run.",
+  },
+  {
     code: "settings_read_invalid_json",
     command: "pm config list --json",
     summary:

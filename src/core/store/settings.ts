@@ -1630,7 +1630,22 @@ export async function readSettingsWithMetadata(
   const settingsOnlySignatures = await collectSettingsReadCacheSignatures([
     settingsPath,
   ]);
-  const raw = await readFileIfExists(settingsPath);
+  let raw: string | null;
+  try {
+    raw = await readFileIfExists(settingsPath);
+  } catch {
+    const fallback = buildFallbackSettingsReadResult(
+      "settings_read_fs_error",
+    );
+    await cacheSettingsReadResultIfStable(
+      pmRoot,
+      [settingsPath],
+      fallback,
+      settingsOnlySignatures,
+      [settingsPath],
+    );
+    return fallback;
+  }
   if (raw === null) {
     const fallback = buildFallbackSettingsReadResult();
     await cacheSettingsReadResultIfStable(

@@ -131,6 +131,30 @@ describe("content + governance filter contract surface", () => {
 });
 
 describe("contracts command helper coverage", () => {
+  it("falls back when settings dependencies fail unexpectedly", async () => {
+    const rejectSettings = async (): Promise<never> => {
+      throw new Error("settings dependency failed");
+    };
+
+    await expect(
+      _testOnlyContractsCommand.readContractsSettings("/tmp/pm-contracts-settings-failure", rejectSettings),
+    ).resolves.toEqual(expect.objectContaining({ version: 1 }));
+
+    await withTempPmPath(async (context) => {
+      const probe = await _testOnlyContractsCommand.resolveRuntimeExtensionActionProbe(
+        { ...GLOBAL_OPTIONS, path: context.pmPath },
+        rejectSettings,
+      );
+      expect(probe).toMatchObject({
+        disabledReason: "extension_runtime_probe_failed",
+        commandDefinitions: [],
+        flagRegistrations: [],
+        registrations: null,
+      });
+      expect([...probe.handlers]).toEqual([]);
+    });
+  });
+
   it("maps package-owned and prefixed actions back to command paths", () => {
     expect(_testOnlyContractsCommand.packageOwnedActionForCommand("templates show")).toBe("templates-show");
     expect(_testOnlyContractsCommand.packageOwnedActionForCommand("templates list")).toBe("templates-list");

@@ -1208,6 +1208,7 @@ function mergeExtensionContractsByAction(
 
 async function resolveRuntimeExtensionActionProbe(
   global: GlobalOptions,
+  readSettingsFn: typeof readSettings = readSettings,
 ): Promise<RuntimeExtensionActionProbe> {
   const defaultPolicyState = {
     mode: SETTINGS_DEFAULTS.extensions.policy.mode,
@@ -1239,7 +1240,7 @@ async function resolveRuntimeExtensionActionProbe(
   }
 
   try {
-    const settings = await readSettings(pmRoot);
+    const settings = await readSettingsFn(pmRoot);
     const loadResult = await loadExtensions({
       pmRoot,
       settings,
@@ -1803,9 +1804,10 @@ function assertSingleContractsProjection(selection: ContractsSelection): void {
 
 async function readContractsSettings(
   pmRoot: string,
+  readSettingsFn: typeof readSettings = readSettings,
 ): Promise<Awaited<ReturnType<typeof readSettings>>> {
   try {
-    return await readSettings(pmRoot);
+    return await readSettingsFn(pmRoot);
   } catch {
     return structuredClone(SETTINGS_DEFAULTS);
   }
@@ -2517,9 +2519,11 @@ export const _testOnlyContractsCommand = {
   normalizeCommandForRuntimeFieldFlags,
   normalizeCommandPath,
   packageOwnedActionForCommand,
+  readContractsSettings,
   resolveActionCommandPath,
   resolveActionAvailability,
   resolveCoreCommandFlags,
+  resolveRuntimeExtensionActionProbe,
   resolveScopedCommandsFromActionDescriptors,
   splitCommandPathAliases,
   toRuntimeLongFlagToken,

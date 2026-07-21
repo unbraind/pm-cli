@@ -1741,6 +1741,7 @@ function emitExtensionSkippedProfile(
 
 async function loadRuntimeExtensionDiscoverySnapshot(
   pmRoot: string,
+  readSettingsWithMetadataFn: typeof readSettingsWithMetadata = readSettingsWithMetadata,
 ): Promise<RuntimeExtensionDiscoverySnapshot | null> {
   const cacheKey = buildRuntimeExtensionDiscoverySnapshotCacheKey(pmRoot);
   if (runtimeExtensionDiscoverySnapshotCache?.key === cacheKey) {
@@ -1750,7 +1751,7 @@ async function loadRuntimeExtensionDiscoverySnapshot(
   try {
     const startedAt = Date.now();
     const { settings, warnings: settingsReadWarnings } =
-      await readSettingsWithMetadata(pmRoot);
+      await readSettingsWithMetadataFn(pmRoot);
     const discovery = await discoverExtensions({
       pmRoot,
       settings,
@@ -1781,6 +1782,7 @@ async function loadRuntimeExtensionDiscoverySnapshot(
 async function loadRuntimeExtensionSnapshot(
   pmRoot: string,
   probe?: RuntimeExtensionActivationProbe,
+  readSettingsFn: typeof readSettings = readSettings,
 ): Promise<RuntimeExtensionSnapshot | null> {
   const activationScope = probe
     ? buildRuntimeExtensionActivationScope(probe)
@@ -1794,7 +1796,7 @@ async function loadRuntimeExtensionSnapshot(
   }
 
   try {
-    const settings = await readSettings(pmRoot);
+    const settings = await readSettingsFn(pmRoot);
     const loadResult = await loadExtensions({
       pmRoot,
       settings,
