@@ -3,7 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-const TEMP_DIR_CLEANUP_MAX_RETRIES = 5;
+const TEMP_DIR_CLEANUP_MAX_RETRIES = 8;
+const TEMP_DIR_CLEANUP_RETRY_DELAY_MS = 120;
 const TEMP_DIR_CLEANUP_RETRYABLE_CODES = new Set(["EBUSY", "ENOTEMPTY", "EPERM"]);
 
 function isRetryableTempDirCleanupError(error: unknown): boolean {
@@ -17,13 +18,18 @@ function isRetryableTempDirCleanupError(error: unknown): boolean {
 async function cleanupTempDirWithRetries(tempDir: string): Promise<void> {
   for (let attempt = 0; attempt <= TEMP_DIR_CLEANUP_MAX_RETRIES; attempt += 1) {
     try {
-      await rm(tempDir, { recursive: true, force: true });
+      await rm(tempDir, {
+        recursive: true,
+        force: true,
+        maxRetries: TEMP_DIR_CLEANUP_MAX_RETRIES,
+        retryDelay: TEMP_DIR_CLEANUP_RETRY_DELAY_MS,
+      });
       return;
     } catch (error) {
       if (!isRetryableTempDirCleanupError(error) || attempt === TEMP_DIR_CLEANUP_MAX_RETRIES) {
         throw error;
       }
-      await delay(25 * (attempt + 1));
+      await delay(TEMP_DIR_CLEANUP_RETRY_DELAY_MS * (attempt + 1));
     }
   }
 }

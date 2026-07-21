@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, rmSync } from "node:fs";
+import { readdirSync, rmSync } from "node:fs";
 import path from "node:path";
 
 const CLEANUP_RETRYABLE_CODES = new Set(["ENOTEMPTY", "EBUSY", "EPERM", "EACCES"]);
@@ -16,9 +16,7 @@ export function cleanupTempRoot(tempRoot) {
   for (let attempt = 1; attempt <= 8; attempt += 1) {
     try {
       rmSync(tempRoot, { recursive: true, force: true, maxRetries: 8, retryDelay: 120 });
-      if (!existsSync(tempRoot)) {
-        return;
-      }
+      return;
     } catch (error) {
       lastError = error;
       if (!CLEANUP_RETRYABLE_CODES.has(readErrorCode(error))) {
@@ -26,9 +24,6 @@ export function cleanupTempRoot(tempRoot) {
       }
     }
 
-    if (!existsSync(tempRoot)) {
-      return;
-    }
     // Opportunistically remove first-level entries before retrying the root.
     try {
       for (const entry of readdirSync(tempRoot)) {
@@ -40,9 +35,9 @@ export function cleanupTempRoot(tempRoot) {
     sleepSync(attempt * 120);
   }
 
-  if (existsSync(tempRoot)) {
-    throw lastError instanceof Error
-      ? lastError
-      : new Error(`Failed to remove temporary smoke directory: ${tempRoot}`);
-  }
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(
+        `Failed to remove temporary smoke directory: ${tempRoot}: ${String(lastError)}`,
+      );
 }

@@ -140,6 +140,10 @@ import type {
 import { ensureEnumValue } from "./recurrence-parsers.js";
 import { assertValidBareDependencyFlagValue } from "../../sdk/dependency-flag-validation.js";
 import {
+  normalizeDependencySeedId,
+  normalizeDependencySourceKind,
+} from "../../sdk/dependency-provenance.js";
+import {
   parseEventEntries,
   parseReminderEntries,
   parseTypeOptionEntries,
@@ -401,7 +405,14 @@ function parseCreateUnsetTargets(
 }
 
 /** Allowed CSV/markdown keys for the create `--dep` seed (GH-258). */
-const DEP_SEED_KEYS = ["id", "kind", "type", "author", "created_at"] as const;
+const DEP_SEED_KEYS = [
+  "id",
+  "kind",
+  "type",
+  "author",
+  "created_at",
+  "source_kind",
+] as const;
 /** Allowed CSV/markdown keys for create `--file`/`--doc` seeds (GH-258). */
 const LINKED_ARTIFACT_SEED_KEYS = ["path", "scope", "note"] as const;
 
@@ -443,11 +454,15 @@ function parseDependencies(
         EXIT_CODE.USAGE,
       );
     }
+    const sourceKind = normalizeDependencySourceKind(
+      parseOptionalString(kv.source_kind),
+    );
     return {
-      id: normalizeItemId(id, prefix),
+      id: normalizeDependencySeedId(id, prefix, sourceKind),
       kind: ensureEnumValue(kind, DEPENDENCY_KIND_VALUES, "dependency kind"),
       created_at: parseCreatedAt(kv.created_at, nowValue),
       author: parseOptionalString(kv.author),
+      source_kind: sourceKind,
     };
   });
   return { values, explicitEmpty: false };

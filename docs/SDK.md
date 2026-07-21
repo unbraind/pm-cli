@@ -181,7 +181,9 @@ Command/action contract exports:
 - Dependency-governance primitives: `collectDanglingDependencyReferences`, `collectMissingDependencyTargetIds`, and `assembleWorkspaceRelationshipGraph` normalize hierarchy, scalar blockers, and structured dependencies into one graph while partitioning missing targets into actionable active holders, informational terminal-history holders, and the legacy `no-active-blocker` sentinel without mutating stored history.
 - Relationship graph primitives: `RelationshipKindRegistry`, `createRelationshipKindRegistry`, `RelationshipGraph`, `RelationshipEventLog`, `RelationshipEventStore`, `buildRelationshipContext`, `buildDepsRelationshipContext`, `hierarchyAncestors`, `hierarchyDescendants`, `orderingPredecessors`, `orderingSuccessors`, `enumerateRelationshipPaths`, `auditWorkspaceRelationshipGraph`, `isOrderingRelationshipKind`, and `dependencyToRelationship` provide application-defined edge semantics, durable replay, bounded semantic traversal, policy-aware governance, and explainable context queries. `RelationshipEventLog.stream/project` and their durable-store equivalents page immutable prefixes and fold them into deterministic application state with exact version, processed-count, and as-of metadata. See [Relationship graph semantics](RELATIONSHIP_GRAPH.md).
 - Atomic application transactions: `commitWorkspaceTransaction` coordinates ordered, idempotent item and relationship mutations under one workspace writer lock and a durable replay journal. Interrupted work resumes from step inspection; ordinary failures append reverse-order compensations without rewriting immutable histories.
-- Multi-branch merge primitives: `mergeItemDocuments`, `mergeHistoryStreams`, `mergeRelationshipEventStreams`, `mergeJsonDocuments`, `runMergeDriver`, and `runMergeInstall` provide the same field-aware item, hash-chain-preserving history, sequence-renumbering relationship-event, and key-level configuration semantics as `pm merge`; `buildMergeAttributePatterns`, `refreshMergeAttributeFenceIfInstalled`, and `auditMergeAttributeFence` expose the fence coverage contract, the post-schema-mutation refresh, and the validate-side drift audit. See [Multi-Branch Merge Safety](MERGE_SAFETY.md).
+- Multi-branch merge primitives: `mergeItemDocuments`, `mergeHistoryStreams`, `mergeRelationshipEventStreams`, `mergeJsonDocuments`, `runMergeDriver`, `runMergeInstall`, and `runMergeReconcile` provide the same field-aware item, hash-chain-preserving history, sequence-renumbering relationship-event, key-level configuration, and audited post-merge repair-and-verify semantics as `pm merge`; `buildMergeAttributePatterns`, `refreshMergeAttributeFenceIfInstalled`, and `auditMergeAttributeFence` expose the fence coverage contract, the post-schema-mutation refresh, and the validate-side drift audit. See [Multi-Branch Merge Safety](MERGE_SAFETY.md).
+- Dependency provenance primitives: `EXTERNAL_DEPENDENCY_SOURCE_KIND`, `isExternalDependencySourceKind`, and `normalizeDependencySeedId` let custom importers preserve cross-workspace dependency ids explicitly while retaining local prefix normalization for ordinary seeds.
+- Compile-cache lifecycle primitive: `pruneCompileCacheGenerations` bounds pm-owned Node bytecode caches to the current package generation; embedded hosts can apply the same upgrade cleanup without importing the executable entrypoint.
 - Typed mutation inputs (pm-x29o / GH-601): `PmCreateActionOptions`, `PmUpdateActionOptions`, and `PmCloseActionOptions` (`PmClientCloseActionOptions` on the client method) strip the permissive custom-field index signature from the executable command-option contracts, retaining their exact public keys and value types without a second hand-written shape; the free `create`/`update`/`close` functions and `PmClient` methods share those types. `PmUpdateManyActionOptions`, `PmCloseManyActionOptions`, and `OptionsFromContracts` cover flat action-contract composition. Field typos, object values, invalid scalar kinds, and MCP-only aliases on a `PmClient` command-option bag fail `tsc` under strict. Runtime-schema custom fields use the repeatable `field` option and `PmClient.run` remains the wide escape hatch. Projected list rows expose the typed `ListProjectedItemCore` fields (`row.id` is `string | undefined`, never `unknown`).
 - Typed customization primitives on `PmClient`: `init`, `config`, `schema`, `schemaList`, `schemaShow`, `schemaAddType`, `schemaRemoveType`, `schemaAddStatus`, `schemaRemoveStatus`, `schemaAddField`, `schemaRemoveField`, `schemaListFields`, `schemaShowField`, `schemaApplyPreset`, `schemaInferTypes`, `schemaShowStatus`, `profile`, `profileList`, `profileShow`, `profileApply`, and `profileLint`
 - Workspace-scaffold primitives: `ensurePmGitignore` and `getPmGitignoreBlock` let custom tools apply the same idempotent runtime/search cache policy as `pm init` without importing CLI internals.
@@ -1081,11 +1083,23 @@ the SDK search engine directly. Package authors can import these functions and
 their typed result contracts from `@unbrained/pm-cli/sdk` without importing CLI
 implementation modules.
 
-List result rows are modeled by projection: `ListFullResult` contains complete
+List results always expose `total`, `has_more`, `truncated`, and a nullable
+`next_cursor`, whether or not the page was truncated; unset filter echoes are
+omitted. This stable, lean envelope lets agents plan continuation without
+branching on key presence. Result rows are modeled by projection:
+`ListFullResult` contains complete
 `ListedItem` records, tree ordering may enrich them with `ListTreeMetadata`, and
 compact or `fields` projections return `ListProjectedItem` dictionaries. Use
 `full: true` when an integration requires complete item metadata; the overload
 then returns `ListFullResult` without an assertion or cast.
+
+Migration note: before this contract, `total` was present only when pagination
+omitted rows, a completed page omitted `next_cursor`, and verbose results
+emitted unset filter keys with `null` values. Consumers must use `has_more` or
+`next_cursor != null` for continuation, read `total` as the unconditional
+pre-pagination match count, and use key presence for filter diagnostics;
+`"total" in result`, strict `next_cursor !== undefined`, and
+`filters.<key> === null` checks do not express the stable envelope semantics.
 
 ### Execution and diagnostics
 
@@ -2485,6 +2499,11 @@ By default the auto-created command only has a handler. Pass an optional third
 `ImportExportRegistrationOptions` argument to make it a first-class command with a
 description, flags, intent, examples, failure hints, and positional arguments —
 surfaced in `--help` and runtime contracts exactly like `registerCommand`:
+
+When a package also registers a rich canonical nested command such as
+`csv export`, the compatible flattened adapter path (`csv-export export`)
+inherits that canonical description, arguments, and flags. Both help surfaces
+and option parsing therefore stay identical without duplicating metadata.
 
 ```ts
 import { defineExtension } from "@unbrained/pm-cli/sdk";

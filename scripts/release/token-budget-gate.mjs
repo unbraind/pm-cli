@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fail, parseFlags, repoRoot, runCommand } from "./utils.mjs";
+import { cleanupTempRoot } from "../smoke-cleanup.mjs";
 
 const MANIFEST_VERSION = 1;
 const DEFAULT_MANIFEST_PATH = path.join(repoRoot, "scripts", "release", "token-budgets.json");
@@ -168,7 +169,7 @@ function measureCorpus(cliPath) {
       };
     });
   } finally {
-    rmSync(workspaceRoot, { recursive: true, force: true });
+    cleanupTempRoot(workspaceRoot);
   }
 }
 

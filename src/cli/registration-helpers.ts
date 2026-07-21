@@ -43,6 +43,8 @@ import type {
 } from "./commands/index.js";
 import type { runList, runActivity } from "./commands/index.js";
 
+export { setActiveCommandResult };
+
 export { printError, printResult, writeStdout };
 
 /** Let an active package asynchronously augment a completed command result. */

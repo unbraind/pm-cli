@@ -39,3 +39,8 @@ export {
   type MergeInstallOptions,
   type MergeInstallResult,
 } from "./install.js";
+export {
+  runMergeReconcile,
+  type MergeReconcileOptions,
+  type MergeReconcileResult,
+} from "./reconcile.js";

@@ -116,7 +116,7 @@ describe("runCreate", () => {
         ...overrides,
       });
       const cases: Array<[Partial<CreateCommandOptions>, string]> = [
-        [{ dep: ["id=a1b2,kind=related,boguskey=v"] }, '--dep does not recognize key "boguskey". Allowed keys: id, kind, type, author, created_at.'],
+        [{ dep: ["id=a1b2,kind=related,boguskey=v"] }, '--dep does not recognize key "boguskey". Allowed keys: id, kind, type, author, created_at, source_kind.'],
         [{ file: ["path=src/cli.ts,boguskey=v"] }, '--file does not recognize key "boguskey". Allowed keys: path, scope, note.'],
         [{ doc: ["path=README.md,boguskey=v"] }, '--doc does not recognize key "boguskey". Allowed keys: path, scope, note.'],
         [{ reminder: ["at=2026-03-02T09:00:00.000Z,text=hi,boguskey=v"] }, '--reminder does not recognize key "boguskey". Allowed keys: at, date, text, title.'],
@@ -134,7 +134,7 @@ describe("runCreate", () => {
         runCreate(seed({ dep: ["boguskey=v,id=a1b2,kind=related"] }), { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
-        message: '--dep does not recognize key "boguskey". Allowed keys: id, kind, type, author, created_at.',
+        message: '--dep does not recognize key "boguskey". Allowed keys: id, kind, type, author, created_at, source_kind.',
       });
       await expect(
         runCreate(seed({ file: ["boguskey=v,path=src/cli.ts"] }), { path: context.pmPath }),

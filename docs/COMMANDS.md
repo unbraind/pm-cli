@@ -242,12 +242,20 @@ pm eval --fail-under 0.6 --json      # CI gate: exit non-zero when aggregate nDC
 
 ### Full results, totals, and bodies
 
-`pm list*` returns every matched row when neither `--limit` nor `--offset` is set. When a `--limit`/`--offset` _does_ drop rows, the result adds a top-level `total` (the pre-pagination match count) so an agent knows how many remain. Pass `--no-truncate` (alias `--all`) to force the entire matched set and override any `--limit` in one call — the canonical "give me everything" flag for large-corpus audits:
+`pm list*` returns every matched row when neither `--limit` nor `--offset` is set. Every JSON/TOON result has the same pagination envelope: `total` is the pre-pagination match count, `has_more` and `truncated` are booleans, and `next_cursor` is either the continuation token or `null`. The `filters` object omits unset values instead of emitting null placeholders, keeping long-running agent context stable and lean. Pass `--no-truncate` (alias `--all`) to force the entire matched set and override any `--limit` in one call — the canonical "give me everything" flag for large-corpus audits:
 
 ```bash
 pm list-all --no-truncate --brief          # every matched row, ignoring any --limit
-pm list-open --limit 20 --json             # result.total reports the full count when truncated
+pm list-open --limit 20 --json             # stable total/has_more/truncated/next_cursor envelope
 ```
+
+Compatibility note: older responses emitted `total` only when pagination
+omitted rows, omitted `next_cursor` on a completed page, and emitted unset
+verbose filter keys as `null`. Integrations should now read `total` as the
+unconditional pre-pagination match count, branch on `has_more` or
+`next_cursor != null`, and test filter-key presence rather than using
+`"total" in result`, `next_cursor !== undefined`, or
+`filters.<key> === null` guards.
 
 JSON output is compact by default (id/status/type/title) for token efficiency. To pull item bodies in bulk in a single call — instead of one `pm get` per item — add `--include-body`, which expands each row to the full field set plus `body`:
 
@@ -628,7 +636,7 @@ pm deps <id> --format context --direction both --kind blocked_by,parent --token-
 
 Linked files and docs keep reviews reproducible. `deps` is read-only and projects item relationships. `--format context` returns one bounded, explainable relationship packet: a counts-first summary, per-node `role`/`via`/`reasons`, root evidence pointers, enumerated `missing_references` with active-versus-legacy classification, `meta.completeness`, and cursor continuation; `--direction`, repeatable or comma-separated `--kind`, `--max-depth`, `--node-limit`, `--edge-limit`, `--token-budget`, and `--cursor` control the traversal (see [Relationship Graph](RELATIONSHIP_GRAPH.md)). `--edge-limit` caps both returned graph edges and enumerated `missing_references`; `missing_reference_count` retains the total when rows are omitted. The standalone `--note <text>` flag annotates every link added by `--add`/`--add-glob` in the same invocation (a per-entry embedded `note=` wins); `--note` without an add is a usage error.
 
-Structured key/value forms reject unrecognized keys with an `Allowed keys: …` error (matching `test --add`), so a typoed key (`lable=` instead of `label=`) fails fast instead of being silently dropped: `--add`/`--file`/`--doc` accept `path,scope,note`; `--add-glob` accepts `pattern,glob,path,scope,note`; `--remove` accepts `path`; `--migrate` accepts `from,to`; `--dep` accepts `id,kind,type,author,created_at` (plus `source_kind` on update); `--reminder` accepts `at,date,text,title`; `--event` accepts `start,date,end,duration,title,description,location,timezone,all_day` and the `recur_*` recurrence keys. Bare values (`--add src/cli/main.ts`) skip key validation.
+Structured key/value forms reject unrecognized keys with an `Allowed keys: …` error (matching `test --add`), so a typoed key (`lable=` instead of `label=`) fails fast instead of being silently dropped: `--add`/`--file`/`--doc` accept `path,scope,note`; `--add-glob` accepts `pattern,glob,path,scope,note`; `--remove` accepts `path`; `--migrate` accepts `from,to`; create/update `--dep` accepts `id,kind,type,author,created_at,source_kind`; `--reminder` accepts `at,date,text,title`; `--event` accepts `start,date,end,duration,title,description,location,timezone,all_day` and the `recur_*` recurrence keys. Set `source_kind=global` for a dependency owned by another workspace: pm preserves its id verbatim, materializes it as an external graph endpoint, and excludes it from dangling-local-reference findings. Dependencies without that explicit provenance retain normal local `id_prefix` normalization. Bare values (`--add src/cli/main.ts`) skip key validation.
 
 ## Graph Queries
 
@@ -813,6 +821,21 @@ When more than one history stream is drifted, the `history_drift` remediation co
 `pm health` also runs a read-only `locks` check alongside the storage check: it classifies every file in `locks/` with the exact policy `pm gc --scope locks` acts on and reports `active_lock_count`, `stale_lock_count`, `unreadable_lock_count`, and `unparseable_lock_count` (counts appear in all projection modes; nothing is ever removed). It warns with `locks_stale_count:<n>` when stale locks exist (fix: `pm gc --scope locks`) and `locks_unreadable:<n>` when lock files cannot be read (inspect first: `pm gc --scope locks --dry-run`).
 
 ## History and Recovery
+
+After a branch merge that touched tracker history, preview and apply the
+one-command reconciliation gate:
+
+```bash
+pm merge reconcile --dry-run --json
+pm merge reconcile --message "Reconcile branch histories" --json
+```
+
+The command scans every history stream, delegates repairs to the audited
+`history-repair --all` engine, then runs the history-drift and storage-integrity
+validation checks. Dry-run leaves drift intact and reports it in `validation`;
+apply exits nonzero if any stream fails or either invariant stays red. No Git
+hook is installed automatically—teams may call this command from an explicit
+post-merge hook after opting into that policy.
 
 ```bash
 pm history <id> --limit 20

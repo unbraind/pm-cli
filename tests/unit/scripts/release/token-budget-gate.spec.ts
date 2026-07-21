@@ -3,7 +3,10 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../../helpers/scriptModule";
 
-const harness = createScriptHarness(["../../../../scripts/release/utils.mjs"]);
+const harness = createScriptHarness([
+  "../../../../scripts/release/utils.mjs",
+  "../../../../scripts/smoke-cleanup.mjs",
+]);
 
 type TokenBudgetMeasurement = {
   id: string;
@@ -100,12 +103,12 @@ function mockRuntime(options: {
 } = {}): {
   readFileSync: ReturnType<typeof vi.fn>;
   writeFileSync: ReturnType<typeof vi.fn>;
-  rmSync: ReturnType<typeof vi.fn>;
+  cleanupTempRoot: ReturnType<typeof vi.fn>;
   runCommand: ReturnType<typeof vi.fn>;
 } {
   const readFileSync = vi.fn(() => options.manifestText ?? manifestForBudget(10_000));
   const writeFileSync = vi.fn();
-  const rmSync = vi.fn();
+  const cleanupTempRoot = vi.fn();
   vi.doMock("node:fs", async () => {
     const actual = await vi.importActual<typeof fs>("node:fs");
     return {
@@ -113,7 +116,6 @@ function mockRuntime(options: {
       existsSync: (targetPath: string) => (options.exists ? options.exists(targetPath) : true),
       mkdtempSync: () => "/tmp/pm-token-budget-test",
       readFileSync,
-      rmSync,
       writeFileSync,
     };
   });
@@ -133,7 +135,8 @@ function mockRuntime(options: {
       },
     };
   });
-  return { readFileSync, writeFileSync, rmSync, runCommand };
+  vi.doMock("../../../../scripts/smoke-cleanup.mjs", () => ({ cleanupTempRoot }));
+  return { readFileSync, writeFileSync, cleanupTempRoot, runCommand };
 }
 
 describe("scripts/release/token-budget-gate", () => {
@@ -279,7 +282,7 @@ describe("scripts/release/token-budget-gate", () => {
     expect(runtime.writeFileSync).toHaveBeenCalledTimes(1);
     const written = JSON.parse(String(runtime.writeFileSync.mock.calls[0]?.[1])) as TokenBudgetManifest;
     expect(written.budgets.map((entry) => entry.id)).toEqual(CORPUS_IDS);
-    expect(runtime.rmSync).toHaveBeenCalledWith("/tmp/pm-token-budget-test", { recursive: true, force: true });
+    expect(runtime.cleanupTempRoot).toHaveBeenCalledWith("/tmp/pm-token-budget-test");
     expect(log).toHaveBeenCalledWith("Updated token budget manifest: budgets.json");
   });
 

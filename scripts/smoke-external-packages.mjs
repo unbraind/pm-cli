@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { cleanupTempRoot } from "./smoke-cleanup.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "..");
@@ -279,12 +280,10 @@ function smokePackage(packageName, options) {
   } finally {
     if (!options.keepTemp) {
       try {
-        rmSync(tempRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+        cleanupTempRoot(tempRoot);
       } catch (cleanupError) {
         console.error(
-          `Warning: failed to clean up temp directory ${tempRoot}: ${
-            cleanupError instanceof Error ? cleanupError.message : String(cleanupError)
-          }`,
+          `Warning: failed to clean up temp directory ${tempRoot}: ${String(cleanupError)}`,
         );
       }
     }

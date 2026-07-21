@@ -12,9 +12,12 @@ export {
   mergeJsonDocuments,
   runMergeDriver,
   runMergeInstall,
+  runMergeReconcile,
   type MergeDriverArtifact,
   type MergeDriverOptions,
   type MergeDriverResult,
   type MergeInstallOptions,
   type MergeInstallResult,
+  type MergeReconcileOptions,
+  type MergeReconcileResult,
 } from "../../sdk/merge/index.js";

@@ -227,7 +227,7 @@ describe("public SDK history and rich-read primitives", () => {
       });
       expect(rollup.sample).toHaveLength(20);
       expect(rollup.sample.map((row) => row.id)).toEqual(
-        [...rollup.sample.map((row) => row.id)].sort((left, right) =>
+        rollup.sample.map((row) => row.id).sort((left, right) =>
           left.localeCompare(right),
         ),
       );

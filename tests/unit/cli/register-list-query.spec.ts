@@ -47,6 +47,7 @@ import { renderNextMarkdown, resolveNextOutputFormat, runNext } from "../../../s
 import { runList } from "../../../src/cli/commands/list.js";
 import { runGraph } from "../../../src/cli/commands/graph.js";
 import { printActivityJsonStream, printError, printListJsonStream, printResult, writeStdout } from "../../../src/cli/registration-helpers.js";
+import { getActiveCommandResult, setActiveCommandResult } from "../../../src/core/extensions/index.js";
 
 let tmpRoot: string;
 
@@ -88,6 +89,7 @@ afterAll(async () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  setActiveCommandResult(undefined);
   vi.mocked(runGet).mockResolvedValue({ id: "pm-1" } as never);
   vi.mocked(runHistory).mockResolvedValue({ entries: [] } as never);
   vi.mocked(runActivity).mockResolvedValue({ count: 0, activity: [] } as never);
@@ -138,6 +140,7 @@ describe("register-list-query list output formats", () => {
     expect(vi.mocked(printResult)).not.toHaveBeenCalled();
     const written = lastCall<string>(vi.mocked(writeStdout) as never, 0);
     expect(written).toBe("id,status,type,title\npm-1,open,Task,First\npm-2,open,Epic,Second\n");
+    expect(getActiveCommandResult()).toMatchObject({ count: 2 });
   });
 
   it("renders an aligned table for --format table", async () => {
@@ -171,12 +174,14 @@ describe("register-list-query list output formats", () => {
 
   it("rejects --stream without an effective json output mode", async () => {
     await expect(runRaw("list", "--stream")).rejects.toThrow(/--stream requires --json/);
+    expect(vi.mocked(runList)).not.toHaveBeenCalled();
   });
 
   it("rejects combining --format csv with --stream", async () => {
     await expect(runRaw("list", "--json", "--format", "csv", "--stream")).rejects.toThrow(
       /--format csv\|table cannot be combined with --stream/,
     );
+    expect(vi.mocked(runList)).not.toHaveBeenCalled();
   });
 });
 

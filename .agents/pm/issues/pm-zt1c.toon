@@ -2,21 +2,35 @@ id: pm-zt1c
 title: "GH-553/GH-584: CodeFactor unnecessary-spread findings — restructure flagged spread sites (class owner)"
 description: Resolve the remaining CodeFactor unnecessary-spread finding in tests/unit/sdk/history-read-primitives.spec.ts without weakening deterministic ordering coverage.
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: codefactor,gh-553,gh-584
 created_at: "2026-07-14T10:18:54.607Z"
-updated_at: "2026-07-18T05:45:21.232Z"
+updated_at: "2026-07-21T07:39:43.270Z"
+closed_at: "2026-07-21T07:35:45.340Z"
 author: codex-gpt5
 estimated_minutes: 30
 acceptance_criteria: "The redundant spread is removed, the history-read focused suite passes, and CodeFactor reports the finding resolved."
 parent: pm-92if
 risk: low
 confidence: 90
-dependencies[1]{id,kind,created_at,author,source_kind}:
+resolution: Removed the history-test and graph-option unnecessary spreads while preserving deterministic ordering and exact optional typing.
+expected_result: Both CodeFactor unnecessary-spread reports clear without weaker tests or new suppression entries.
+actual_result: Focused graph/history suites and the static CodeFactor-parity gate pass.
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-ofgc,related,"2026-07-14T10:18:54.607Z",codex-gpt5,null
-comments[1]{created_at,author,text}:
+  pm-j8vq,related,"2026-07-21T07:32:59.882Z",codex-root-20260721,null
+comments[2]{created_at,author,text}:
   "2026-07-14T10:18:54.607Z",codex-gpt5,"Duplicate check 2026-07-14: pm search GH-553 --status all returned no item. GH-555 is separately resolved as pm-ofgc because it touches the active relationship test; GH-553 remains open and unclaimed. Source: https://github.com/unbraind/pm-cli/issues/553"
+  "2026-07-21T07:33:04.618Z",codex-root-20260721,"Evidence: removed both CodeFactor unnecessary-spread sites while retaining deterministic ordering and exact-optional graph option typing; focused graph/history suites and static CodeFactor-parity gate pass."
 notes[1]{created_at,author,text}:
   "2026-07-18T05:45:21.231Z",maintainer-agent,"Class broadened 2026-07-18: this item now owns ALL CodeFactor \"unnecessary spread\" findings (GH-553 test-side history read assertion + NEW GH-584 sdk/graph/run.ts:684). The GH-584 site is the exactOptionalPropertyTypes conditional-spread idiom `...(x === undefined ? {} : { kinds: x })` in runGraphCommunities — fix by building the options object without spread (explicit conditional assignment or a small buildOptions helper), preserving exact-optional typing. Sweep the graph run.ts family for sibling instances of the same idiom at fix time. Never file per-site spread point patches — extend this item."
+files[2]{path,scope,note}:
+  src/sdk/graph/run.ts,project,Explicit community option assembly
+  tests/unit/sdk/history-read-primitives.spec.ts,project,Redundant spread removal with deterministic ordering retained
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/graph/run.spec.ts tests/unit/sdk/history-read-primitives.spec.ts,project,600,Graph and history focused suites
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mruc8fyc-k2ye58,test,passed,"2026-07-21T07:34:17.723Z","2026-07-21T07:34:27.780Z","2026-07-21T07:34:27.780Z",1,0,0
+close_reason: "Completed: both unnecessary-spread findings were removed without weakening deterministic coverage; focused and static quality gates passed."
 body: ""

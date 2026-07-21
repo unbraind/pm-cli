@@ -745,8 +745,8 @@ describe("runList", () => {
       );
       expect(fullTreeWithoutDepth.filters).toMatchObject({
         tree: true,
-        tree_depth: null,
       });
+      expect(fullTreeWithoutDepth.filters).not.toHaveProperty("tree_depth");
     });
   });
 
@@ -879,7 +879,7 @@ describe("runList", () => {
       expect(noIds.code).toBe(0);
       expect(
         (noIds.json as { filters: Record<string, unknown> }).filters.ids,
-      ).toBeNull();
+      ).toBeUndefined();
     });
   });
 
@@ -1103,7 +1103,7 @@ describe("runList", () => {
 
       const withoutBody = await runList("open", {}, { path: context.pmPath });
       expect(withoutBody.count).toBe(1);
-      expect(withoutBody.filters.include_body).toBeNull();
+      expect(withoutBody.filters.include_body).toBeUndefined();
       expect(withoutBody.items[0]).not.toHaveProperty("body");
 
       const withBody = await runList(
@@ -1740,7 +1740,7 @@ describe("runList", () => {
       };
       expect(todayPayload.count).toBeGreaterThan(0);
       expect(todayPayload.filters.today).toBe(true);
-      expect(todayPayload.filters.updated_after).toBeNull();
+      expect(todayPayload.filters.updated_after).toBeUndefined();
 
       const recentResult = context.runCli(["list", "--recent", "--json"], {
         expectJson: true,
@@ -1752,7 +1752,7 @@ describe("runList", () => {
       };
       expect(recentWindowPayload.count).toBeGreaterThan(0);
       expect(recentWindowPayload.filters.recent).toBe(true);
-      expect(recentWindowPayload.filters.updated_after).toBeNull();
+      expect(recentWindowPayload.filters.updated_after).toBeUndefined();
 
       const programmaticToday = await runList(
         undefined,
@@ -1847,7 +1847,7 @@ describe("runList", () => {
       expect(createdPastPayload.count).toBe(0);
       expect(createdPastPayload.filters.created_before).toBe("-1h");
 
-      // Date-window filters default to null when absent.
+      // Unset date-window filters are omitted to keep the agent envelope lean.
       const noFilters = context.runCli(["list", "--json"], {
         expectJson: true,
       });
@@ -1855,10 +1855,10 @@ describe("runList", () => {
       const noFiltersPayload = noFilters.json as {
         filters: Record<string, unknown>;
       };
-      expect(noFiltersPayload.filters.updated_after).toBeNull();
-      expect(noFiltersPayload.filters.updated_before).toBeNull();
-      expect(noFiltersPayload.filters.created_after).toBeNull();
-      expect(noFiltersPayload.filters.created_before).toBeNull();
+      expect(noFiltersPayload.filters.updated_after).toBeUndefined();
+      expect(noFiltersPayload.filters.updated_before).toBeUndefined();
+      expect(noFiltersPayload.filters.created_after).toBeUndefined();
+      expect(noFiltersPayload.filters.created_before).toBeUndefined();
 
       // An unparseable date-window value is a USAGE error (non-zero exit + "Invalid").
       const invalid = context.runCli([
@@ -1978,8 +1978,9 @@ describe("runList", () => {
         { path: context.pmPath },
       );
       expect(zero.count).toBe(0);
-      expect(zero.has_more).toBeUndefined();
-      expect(zero.next_cursor).toBeUndefined();
+      expect(zero.has_more).toBe(false);
+      expect(zero.truncated).toBe(false);
+      expect(zero.next_cursor).toBeNull();
 
       const continued = await runList(
         undefined,
@@ -1995,14 +1996,17 @@ describe("runList", () => {
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
 
-      // --no-truncate returns everything and omits total (nothing was dropped).
+      // --no-truncate returns everything in the same stable envelope.
       const full = await runList(
         undefined,
         { noTruncate: true },
         { path: context.pmPath },
       );
       expect(full.count).toBe(4);
-      expect(full.total).toBeUndefined();
+      expect(full.total).toBe(4);
+      expect(full.has_more).toBe(false);
+      expect(full.truncated).toBe(false);
+      expect(full.next_cursor).toBeNull();
 
       // --no-truncate wins even when --limit is also supplied, and echoes the flag.
       const override = await runList(

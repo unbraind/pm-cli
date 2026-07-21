@@ -293,9 +293,11 @@ export type {
   ToolOptionFlagContract,
 } from "./cli-contracts.js";
 export * from "./compose.js";
+export * from "./compile-cache.js";
 export * from "./context-relevance.js";
 export * from "./context-packing.js";
 export * from "./context-usage.js";
+export * from "./dependency-provenance.js";
 export * from "./history-compact.js";
 export * from "./history-read.js";
 export * from "./history-redact.js";

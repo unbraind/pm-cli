@@ -42,6 +42,7 @@ import {
   printListJsonStream,
   printResult,
   resolveActivityStreamMode,
+  setActiveCommandResult,
   writeStdout,
 } from "./registration-helpers.js";
 
@@ -178,6 +179,65 @@ function registerContentAndGovernanceFilters(command: Command): void {
     .option("--filter-release-missing", "Show only items missing release");
 }
 
+interface RegisteredListOutputContext {
+  /** Whether rows are emitted as line-delimited JSON. */
+  streamMode: boolean;
+  /** Explicit list-specific format override, when supplied. */
+  listFormat: ListOutputFormat | undefined;
+  /** Global output settings after applying json/toon list overrides. */
+  effectiveGlobal: ReturnType<typeof getGlobalOptions>;
+}
+
+/** Resolve and validate the mutually exclusive list rendering modes. */
+function resolveRegisteredListOutputContext(
+  options: Record<string, unknown>,
+  globalOptions: ReturnType<typeof getGlobalOptions>,
+): RegisteredListOutputContext {
+  const streamMode = options.stream === true;
+  const listFormat = parseListFormat(options.format);
+  const tabular = listFormat === "csv" || listFormat === "table";
+  const effectiveGlobal =
+    listFormat === "json" || listFormat === "toon"
+      ? resolveReadCommandOutputFormat("List", options.format, globalOptions)
+      : globalOptions;
+  if (streamMode && !effectiveGlobal.json) {
+    throw new PmCliError(
+      "--stream requires --json output mode.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (tabular && streamMode) {
+    throw new PmCliError(
+      "--format csv|table cannot be combined with --stream (line-delimited JSON).",
+      EXIT_CODE.USAGE,
+    );
+  }
+  return { streamMode, listFormat, effectiveGlobal };
+}
+
+/** Render one list result through tabular, stream, or standard output paths. */
+function renderRegisteredListResult(
+  commandName: string,
+  result: Awaited<ReturnType<typeof runList>>,
+  output: RegisteredListOutputContext,
+): void {
+  if (output.listFormat === "csv" || output.listFormat === "table") {
+    setActiveCommandResult(result);
+    const rows = result.items as Array<Record<string, unknown>>;
+    const rendered =
+      output.listFormat === "csv"
+        ? renderRowsAsCsv(rows)
+        : renderRowsAsTable(rows);
+    if (!output.effectiveGlobal.quiet && rendered.length > 0) {
+      writeStdout(`${rendered}\n`);
+    }
+  } else if (output.streamMode) {
+    printListJsonStream(commandName, result, output.effectiveGlobal);
+  } else {
+    printResult(result, output.effectiveGlobal);
+  }
+}
+
 async function runRegisteredListCommand(params: {
   name: string;
   status?: ItemStatus;
@@ -193,46 +253,16 @@ async function runRegisteredListCommand(params: {
   applyDefaultBriefListMode(listOptions, params.defaultBrief);
   if (params.excludeTerminal) listOptions.excludeTerminal = true;
   listOptions.dependencyBlocked = params.dependencyBlocked;
+  const output = resolveRegisteredListOutputContext(
+    params.options,
+    globalOptions,
+  );
   const result = await runList(
     params.dependencyBlocked ? undefined : params.status,
     listOptions,
     globalOptions,
   );
-  const streamMode = params.options.stream === true;
-  const listFormat = parseListFormat(params.options.format);
-  const tabular = listFormat === "csv" || listFormat === "table";
-  const effectiveGlobal =
-    listFormat === "json" || listFormat === "toon"
-      ? resolveReadCommandOutputFormat(
-          "List",
-          params.options.format,
-          globalOptions,
-        )
-      : globalOptions;
-  if (streamMode && !effectiveGlobal.json) {
-    throw new PmCliError(
-      "--stream requires --json output mode.",
-      EXIT_CODE.USAGE,
-    );
-  }
-  if (tabular && streamMode) {
-    throw new PmCliError(
-      "--format csv|table cannot be combined with --stream (line-delimited JSON).",
-      EXIT_CODE.USAGE,
-    );
-  }
-  if (tabular) {
-    const rows = result.items as Array<Record<string, unknown>>;
-    const rendered =
-      listFormat === "csv" ? renderRowsAsCsv(rows) : renderRowsAsTable(rows);
-    if (!effectiveGlobal.quiet && rendered.length > 0) {
-      writeStdout(`${rendered}\n`);
-    }
-  } else if (streamMode) {
-    printListJsonStream(params.name, result, effectiveGlobal);
-  } else {
-    printResult(result, effectiveGlobal);
-  }
+  renderRegisteredListResult(params.name, result, output);
   if (globalOptions.profile) {
     printError(
       `profile:command=${params.name} took_ms=${Date.now() - startedAt}`,

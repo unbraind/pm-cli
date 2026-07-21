@@ -12,6 +12,10 @@ import { fileURLToPath } from "node:url";
 import {
   runCliWithBundleIntegrity,
 } from "./cli/bundle-integrity.js";
+import {
+  pruneCompileCacheGenerations,
+  resolveCompileCacheGeneration,
+} from "./sdk/compile-cache.js";
 
 type NodeModuleWithCompileCache = typeof nodeModule & {
   enableCompileCache?: (cacheDir?: string) => {
@@ -32,10 +36,19 @@ function enableNodeCompileCache(): void {
     typeof process.getuid === "function"
       ? String(process.getuid())
       : os.userInfo().username.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const cacheDir =
-    process.env.PM_CLI_COMPILE_CACHE_DIR ??
-    path.join(os.tmpdir(), `pm-cli-node-compile-cache-${userCacheKey}`);
+  const configuredCacheDir = process.env.PM_CLI_COMPILE_CACHE_DIR;
+  const defaultCacheRoot = path.join(
+    os.tmpdir(),
+    `pm-cli-node-compile-cache-${userCacheKey}`,
+  );
+  const generation = resolveCompileCacheGeneration(
+    readPackageVersionForPath(fileURLToPath(import.meta.url)),
+  );
+  const cacheDir = configuredCacheDir ?? path.join(defaultCacheRoot, generation);
   try {
+    if (configuredCacheDir === undefined) {
+      pruneCompileCacheGenerations(defaultCacheRoot, generation);
+    }
     enableCompileCache(cacheDir);
   } catch {
     // Compile caching is a startup optimization only; never block CLI execution.
