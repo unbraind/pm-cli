@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:cli",dx,perf,scripts,tech-debt
 created_at: "2026-07-06T09:04:36.860Z"
-updated_at: "2026-07-21T09:15:25.001Z"
+updated_at: "2026-07-21T10:31:05.390Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: compile-cache dir bounded (stale entries pruned or non-current versions dropped); every mkdtemp-using script cleans its sandbox via try/finally + signal handlers; aborted smoke runs leave no >100MB residue in /tmp
@@ -15,7 +15,7 @@ risk: low
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-j8vq,related,"2026-07-21T07:33:00.706Z",codex-root-20260721,null
-comments[10]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-07-16T15:14:51.889Z",codex-gpt5-root,"PR #573 CI evidence: static quality, package boundary, and all token-budget measurements passed, but final rmSync of /tmp/pm-token-budget-AclN4M hit transient ENOTEMPTY. The same gate passed locally before and after the run; this confirms the existing broader temp-lifecycle chore still owns cleanup retry/signal hardening. No script implementation was added in this review slice because the next PR head naturally reruns the full gate and this item's acceptance criteria also require compile-cache plus every mkdtemp caller, not a one-line partial close."
   "2026-07-21T06:54:35.054Z",codex-root-20260721,"Live GitHub evidence 2026-07-21: Auto Release run 29804774154 / GH-626 failed after all coverage measurements when scripts/release/token-budget-gate.mjs final rmSync hit ENOTEMPTY on /tmp/pm-token-budget-fyfySy under Node 24. Reusing this canonical temp-lifecycle item; no duplicate created."
   "2026-07-21T07:33:06.446Z",codex-root-20260721,"Progress evidence: fixed Auto Release GH-626 by routing token-budget cleanup through the shared resilient retry primitive; consolidated external-package and contracts cleanup; added version-scoped compile-cache generation pruning. Broader every-mkdtemp signal cleanup remains, so this item stays open and is released after this PR slice."
@@ -26,30 +26,41 @@ comments[10]{created_at,author,text}:
   "2026-07-21T08:16:41.647Z",codex-root-20260721,"Final review-head proof: the allocation simplification and resilient cleanup path pass the complete 6052-test suite at exact 100% coverage."
   "2026-07-21T09:10:30.997Z",codex-root-20260721,"Hosted review remediation: compile-cache generation names now reject unsafe filename tokens and pruning retains a bounded fresh-concurrency grace so two pm versions starting together cannot delete one another. A real filesystem race test removes a candidate between readdir and stat; only ENOENT is ignored and all other failures remain visible."
   "2026-07-21T09:15:16.813Z",codex-root-20260721,"Exact remediation-head proof: all 332 test files and 6053 tests pass at 100/100/100/100 coverage. This PR completes bounded, concurrency-safe compile-cache generations and resilient cleanup surfaces, while the remaining every-mkdtemp signal-handler work stays open in this same canonical item."
-files[11]{path,scope,note}:
+  "2026-07-21T10:13:36.637Z",codex-root-20260721,"Hosted CI remediation: Windows Node 24 exhausted the prior 375 ms helper retry window with EBUSY on the generated workspace. Test sandboxes now apply Node's recursive rm retry contract plus the same eight-attempt 120 ms backoff used by production cleanup."
+  "2026-07-21T10:14:17.179Z",codex-root-20260721,"Hosted CodeRabbit remediation: compile-cache validation now accepts leading underscore and hyphen safe tokens, matching resolveCompileCacheGeneration for scoped package names such as @org/package while continuing to reject dot segments and path separators. Focused SDK and scale-workspace suites pass (10 tests)."
+  "2026-07-21T10:29:28.119Z",codex-root-20260721,"Exact final-head proof: 332 test files and 6053 tests pass; compile-cache scoped-package generation and Windows-portable cleanup are covered within 100% statements (40688/40688), branches (28623/28623), functions (8264/8264), and lines (39582/39582)."
+  "2026-07-21T10:31:05.390Z",codex-root-20260721,"Installed-package acceptance proof: pnpm smoke:npx packed the current tree, installed it into a fresh temporary project, exercised the CLI and all 13 bundled packages, and cleaned the sandbox successfully (version 2026.7.21)."
+files[13]{path,scope,note}:
   scripts/contracts-snapshot-cleanup.mjs,project,Contracts cleanup delegates to shared retry policy
   scripts/release/token-budget-gate.mjs,project,Bounded retry cleanup for token-budget sandbox
   scripts/smoke-cleanup.mjs,project,Shared resilient temporary-root cleanup primitive
   scripts/smoke-external-packages.mjs,project,External package smoke uses resilient cleanup
   src/cli.ts,project,Default compile-cache generation lifecycle
   src/sdk/compile-cache.ts,project,Version-bounded compile-cache generation pruning
+  tests/helpers/temp.ts,project,Cross-platform test sandbox cleanup retries Node recursive removal and outer EBUSY recovery
   tests/unit/scripts/contracts-snapshot.spec.ts,project,Contracts cleanup compatibility coverage
   tests/unit/scripts/release/token-budget-gate.spec.ts,project,Cleanup option regression contract
+  tests/unit/scripts/scale-workspace.spec.ts,project,Hosted Windows scale-entrypoint cleanup regression surface
   tests/unit/scripts/smoke-cleanup.spec.ts,project,Resilient cleanup retry and error propagation coverage
   tests/unit/scripts/smoke-external-packages.spec.ts,project,External package cleanup compatibility coverage
   tests/unit/sdk/compile-cache.spec.ts,project,Compile-cache generation pruning coverage
-tests[2]:
+tests[3]:
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/token-budget-gate.spec.ts
     scope: project
     timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/scale-workspace.spec.ts
+    scope: project
+    timeout_seconds: 600
+    note: Scale entrypoint and Windows-portable cleanup regression
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/compile-cache.spec.ts tests/unit/scripts/smoke-cleanup.spec.ts tests/unit/scripts/contracts-snapshot-cleanup.spec.ts tests/unit/scripts/release/token-budget-gate.spec.ts
     scope: project
     timeout_seconds: 600
     note: Compile-cache and resilient temp cleanup regressions
-test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrucel2t-yocubc,test,passed,"2026-07-21T07:39:03.642Z","2026-07-21T07:39:14.357Z","2026-07-21T07:39:14.357Z",2,0,0
   test-local-mrudmfz9-wongf7,test,passed,"2026-07-21T08:13:08.097Z","2026-07-21T08:13:20.613Z","2026-07-21T08:13:20.613Z",2,0,0
   test-local-mrufoo3r-64bn5w,test,passed,"2026-07-21T09:10:50.975Z","2026-07-21T09:11:03.687Z","2026-07-21T09:11:03.687Z",2,0,0
+  test-local-mrui2tvk-pl4u5o,test,passed,"2026-07-21T10:17:37.295Z","2026-07-21T10:18:03.584Z","2026-07-21T10:18:03.584Z",3,0,0
 docs[1]{path,scope,note}:
   docs/SDK.md,project,Public compile-cache lifecycle primitive
 body: "Proposed work:\n1. src/cli.ts: prune the compile-cache dir opportunistically (e.g. drop entries older than N days, or cap total size; Node exposes no API so a lightweight best-effort sweep of stale subdirs on startup-idle or via pm gc is fine). Alternatively scope the dir per package version and delete non-current versions.\n2. Wire cleanupTempRoot (scripts/smoke-cleanup.mjs) into every mkdtemp-using script (smoke-external-packages, dogfood-package-first, plugin-mcp-smoke-harness, contracts-snapshot, run-tests) via try/finally + process signal handlers so aborted runs do not leak multi-hundred-MB sandboxes.\n3. Consider a pm gc advisory that reports oversized pm-owned temp artifacts.\n\nEvidence: /tmp inventory during 2026-07-06 review: 1.7G compile cache, 882M+662M+441M scaffold-review smokes, 7x ~112M changelog sandboxes; total tmpfs 80% full which exhausted the per-user quota and broke tooling."

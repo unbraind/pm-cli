@@ -39,7 +39,7 @@ export function pruneCompileCacheGenerations(
   currentGeneration: string,
 ): CompileCachePruneResult {
   const normalizedGeneration = currentGeneration.trim();
-  if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(normalizedGeneration)) {
+  if (!/^[a-zA-Z0-9_-][a-zA-Z0-9._-]*$/.test(normalizedGeneration)) {
     throw new TypeError(
       "Compile-cache generation must be a safe non-empty filename token.",
     );

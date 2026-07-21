@@ -1,13 +1,13 @@
 id: pm-bu1m
-title: "GH-576: pm <unknown-command> --help exits 0 with root help instead of unknown-command error — false positive for agent capability probes"
+title: "GH-576: unknown-command help probes return structured non-zero errors"
 description: "pm badcmd fails correctly (non-zero, suggestions), but pm badcmd --help prints ROOT help and exits 0 — the -h/--help interception layer short-circuits unknown-command detection. Probing 'pm <cmd> --help' is the canonical way agents check whether a subcommand exists and learn its contract, so this returns a false positive: the agent concludes the command exists, misreads root help as the command's options, and burns turns on the eventual error. Same interception-layer class as pm-albl (contract layer intercepts -h/--help before variadic-positional handlers); distinct from GH-490/pm-g543 (suggestion ranking). Fix: unknown-command detection must run before (or inside) help interception — pm <unknown> --help should behave like pm <unknown>: non-zero exit, 'Unknown command <name>', did-you-mean suggestions."
 type: Issue
 status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",defect-class
 created_at: "2026-07-17T04:41:29.345Z"
-updated_at: "2026-07-21T07:39:40.713Z"
-closed_at: "2026-07-21T07:35:39.116Z"
+updated_at: "2026-07-21T10:14:21.231Z"
+closed_at: "2026-07-21T10:14:20.372Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: pm <unknown> --help exits non-zero with the unknown-command error and suggestions (parity with pm <unknown>); known-command --help behavior unchanged; regression spec covers both the arbitrary-name and plausible-name (e.g. pm link --help) cases; GH-576 closed with evidence
@@ -23,8 +23,9 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-g543,related,"2026-07-17T04:41:29.345Z",null,null
   pm-gdi7,related,"2026-07-17T04:41:29.345Z",null,null
   pm-7ufz,related,"2026-07-21T07:32:55.791Z",codex-root-20260721,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-21T07:33:02.140Z",codex-root-20260721,"Evidence: current runtime already returned exit 2 for arbitrary and plausible unknown --help paths; added the missing real-runtime regression covering definitely-not-a-command and link so the structured usage contract cannot regress."
+  "2026-07-21T10:13:38.698Z",codex-root-20260721,"Hosted CodeRabbit remediation: canonical title now avoids angle-bracket shell notation so the generated Markdown changelog remains well formed."
 files[2]{path,scope,note}:
   src/cli/commander-usage.ts,project,Existing structured unknown-command implementation proven by regression
   tests/unit/cli/unknown-command-help-runtime.spec.ts,project,Unknown help exit-code regression contract
@@ -32,5 +33,5 @@ tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/cli/unknown-command-help-runtime.spec.ts,project,240,Arbitrary and plausible unknown help paths exit 2
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mruc7cb1-y73mtp,test,passed,"2026-07-21T07:33:29.265Z","2026-07-21T07:33:36.397Z","2026-07-21T07:33:36.397Z",1,0,0
-close_reason: "Completed: unknown-command help exits non-zero with structured diagnostics; arbitrary and plausible-name runtime regressions passed."
+close_reason: Canonical release wording corrected after hosted review; unknown-command help runtime regression evidence remains valid.
 body: ""

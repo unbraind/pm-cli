@@ -13,6 +13,7 @@ describe("compile-cache lifecycle", () => {
     expect(resolveCompileCacheGeneration("2026.7.21+build/one")).toBe(
       "2026.7.21_build_one",
     );
+    expect(resolveCompileCacheGeneration("@org/package")).toBe("_org_package");
     expect(resolveCompileCacheGeneration(undefined)).toBe("development");
   });
 
@@ -42,13 +43,14 @@ describe("compile-cache lifecycle", () => {
         new Date(now - 800_000),
       );
 
-      expect(pruneCompileCacheGenerations(root, "2026.7.21")).toEqual({
-        retained: "2026.7.21",
+      const scopedPackageGeneration = resolveCompileCacheGeneration("@org/package");
+      expect(pruneCompileCacheGenerations(root, scopedPackageGeneration)).toEqual({
+        retained: "_org_package",
         removed: ["stale-middle", "stale-old"],
       });
       expect(
-        pruneCompileCacheGenerations(root, "2026.7.21"),
-      ).toEqual({ retained: "2026.7.21", removed: [] });
+        pruneCompileCacheGenerations(root, scopedPackageGeneration),
+      ).toEqual({ retained: "_org_package", removed: [] });
     } finally {
       await rm(root, { recursive: true, force: true });
     }

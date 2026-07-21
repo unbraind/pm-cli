@@ -52,11 +52,6 @@
       "count": 1
     }
   },
-  "scripts/smoke-cleanup.mjs": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "scripts/smoke-external-packages.mjs": {
     "preserve-caught-error": {
       "count": 1

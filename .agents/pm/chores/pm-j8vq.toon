@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[2]: code-quality,codefactor
 created_at: "2026-07-12T07:36:30.261Z"
-updated_at: "2026-07-21T07:39:46.407Z"
+updated_at: "2026-07-21T10:29:31.587Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "eslint-suppressions.json total reduced from 180 back toward 104 as functions are decomposed; MAX_ESLINT_SUPPRESSIONS lowered in lockstep (never raised); worst offenders first (extension-command-options.ts cog 34, lock-gc.ts 29, checkpoint-gc.ts 28, lock.ts 27, fs-utils.ts 27); each refactor keeps the 100% coverage gate green"
@@ -16,23 +16,32 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-yh8r,related,"2026-07-14T17:05:09.432Z",null,null
   pm-vlnc,related,"2026-07-15T09:27:06.534Z",codex-root,null
-comments[4]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-15T09:27:04.865Z",codex-root,"GitHub report coverage 2026-07-15: GH-569 reports a Complex Method in src/cli/bootstrap-args.ts. All-status exact search found no dedicated duplicate; this canonical complexity-baseline chore owns the report alongside the existing <=16 ratchet. The report is documented but remains open/unclaimed because PR #568 is actively limited to governance SDK review convergence."
   "2026-07-15T18:51:51.689Z",maintainer-agent,"GH-569 (CodeFactor Complex Method, src/cli/bootstrap-args.ts:94-169 parseBootstrapGlobalOptions) mapped here 2026-07-15 — file holds 2 grandfathered sonarjs/cognitive-complexity suppressions in eslint-suppressions.json. Close GH-569 when the bootstrap-args entries are burned down. No standalone item per baseline policy (GH-518/pm-2gvp precedent)."
   "2026-07-21T07:33:05.774Z",codex-root-20260721,"Progress evidence: decomposed both suppressed cli-bootstrap functions below cognitive complexity 16, pruned two suppressions, and ratcheted the repository maximum from 154 to 152. This advances but does not complete the broader 76-suppression burn-down item."
   "2026-07-21T07:39:44.598Z",codex-root-20260721,"Corrective evidence: the linked repo-wide ESLint run caught a new merge-dispatch cognitive score of 17 introduced in this branch. Refactored it immediately into explicit audited subcommand helpers; rerun passed with zero warnings and no suppression added."
-files[6]{path,scope,note}:
+  "2026-07-21T10:13:37.287Z",codex-root-20260721,"Hosted static-gate investigation: pnpm lint:eslint:prune against the exact branch head reports Already up to date, suppression count remains exactly 152, and pnpm lint:eslint passes locally. No artificial suppression or budget mutation made; the next hosted head reruns the gate."
+  "2026-07-21T10:15:34.942Z",codex-root-20260721,"Exact prune result: stale sonarjs/cognitive-complexity entry for scripts/smoke-cleanup.mjs removed; suppression budget lowered in both package.json and static-quality-gate.mts from 152 to 151."
+  "2026-07-21T10:19:07.769Z",codex-root-20260721,"Acceptance correction: linked release-automation contract caught its stale literal 152 after the ratchet; updated it to 151 so package script, gate constant, suppression inventory, and integration contract remain exact."
+  "2026-07-21T10:25:06.160Z",codex-root-20260721,Full coverage preflight exposed the second stale 152 literal in release-readiness packaging parity. Updated to 151; all other 6052 tests passed in that run.
+  "2026-07-21T10:29:28.720Z",codex-root-20260721,"Exact final-head proof: the 151 suppression ratchet, both package-script parity contracts, full ESLint, static quality, and all 6053 tests pass at 100/100/100/100 coverage. Broader suppression burn-down remains open."
+files[8]{path,scope,note}:
   eslint-suppressions.json,project,Two stale cognitive-complexity suppressions removed
   "https://github.com/unbraind/pm-cli/issues/569",global,GH-569 bootstrap-args Complex Method report
   package.json,project,Static quality invocation ratcheted to 152
   scripts/release/static-quality-gate.mts,project,Suppression budget ratcheted from 154 to 152
   src/sdk/cli-bootstrap.ts,project,Bootstrap parser and normalizer decomposition
+  tests/integration/release-automation-contract.spec.ts,project,Exact static quality script ratchet contract
+  tests/integration/release-readiness-runtime.spec.ts,project,Published package and quality gate ratchet contract
   tests/unit/cli/bootstrap-args.spec.ts,project,Bootstrap behavior regression coverage
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/integration/release-automation-contract.spec.ts,project,600,Bootstrap and quality-contract verification
   pnpm exec eslint . --max-warnings=0,project,600,No stale suppressions and complexity gates green
-test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mruc9d3i-w7hiva,test,failed,"2026-07-21T07:34:37.433Z","2026-07-21T07:35:10.735Z","2026-07-21T07:35:10.735Z",1,1,0
   test-local-mrucbi5e-5akit6,test,failed,"2026-07-21T07:36:17.901Z","2026-07-21T07:36:50.594Z","2026-07-21T07:36:50.594Z",1,1,0
   test-local-mrucecg3-gm2nwg,test,passed,"2026-07-21T07:38:30.552Z","2026-07-21T07:39:03.171Z","2026-07-21T07:39:03.171Z",2,0,0
+  test-local-mrui3qaq-a0brl2,test,failed,"2026-07-21T10:18:04.266Z","2026-07-21T10:18:45.602Z","2026-07-21T10:18:45.602Z",1,1,0
+  test-local-mrui5804-kgic7o,test,passed,"2026-07-21T10:19:08.464Z","2026-07-21T10:19:55.204Z","2026-07-21T10:19:55.204Z",2,0,0
 body: "The GH-518/pm-2gvp gate fix added sonarjs/cognitive-complexity <=16 and lowered the cyclomatic ceiling 17->16 (policy: no function over 16 on either metric). 76 pre-existing violations were grandfathered into eslint-suppressions.json (104 -> 180): 62 functions with cognitive complexity >16 and 14 at cyclomatic exactly 17. The ratchet already prevents ANY new violation and any worsening of a suppressed file; this chore owns shrinking the baseline itself.\n\nMethod per slice: pick a file from eslint-suppressions.json, decompose the offending function(s) below both ceilings, run pnpm lint (stale suppressions fail the run) + pnpm lint:eslint:prune, commit the smaller baseline. Never edit suppression counts by hand; never raise MAX_ESLINT_SUPPRESSIONS.\n\nTop offenders by cognitive score (2026-07-12 scan): src/cli/extension-command-options.ts:371 (34) + :206 (23), src/core/lock/lock-gc.ts:246 (29), src/core/checkpoint/checkpoint-gc.ts:135 (28), src/core/lock/lock.ts:520 (27), src/core/fs/fs-utils.ts:42 (27), src/core/store/item-format-migration.ts:60 (26), src/core/extensions/item-fields.ts:289 (24), src/cli/commands/shared-unset-fields.ts:311 (24), src/cli/commands/health.ts:388 (24)."
