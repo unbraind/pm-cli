@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[7]: "area:graph",benchmark,conformance,property-testing,scale,testing,token-efficiency
 created_at: "2026-07-13T22:03:31.210Z"
-updated_at: "2026-07-21T21:15:18.470Z"
+updated_at: "2026-07-21T21:37:37.001Z"
 assignee: codex-relationship-backfill-20260721
 author: codex-root
 estimated_minutes: 600
@@ -27,7 +27,7 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-g2zz,related,"2026-07-13T22:03:31.210Z",null,null
   pm-ju83,blocked_by,"2026-07-13T22:03:31.210Z",null,null
   pm-mi2x,related,"2026-07-13T22:03:31.210Z",null,null
-comments[19]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-07-13T22:03:31.210Z",codex-root,"Duplicate check 2026-07-13: pm-mi2x supplies generic scale fixtures and pm-atfm evaluates context quality,but no item owns typed-graph property,replay,migration,adapter-parity,and reconstruction conformance across those fixtures."
   "2026-07-14T09:43:38.102Z",codex-gpt5,"Implementation start 2026-07-14: add replay, snapshot, adversarial topology, deterministic analytics, and token-bound conformance coverage for the broad graph SDK bundle; all tests remain sandbox-safe."
   "2026-07-14T10:02:22.642Z",codex-gpt5,"TDD evidence: focused relationship suites pass 21 tests. New relationship history, analytics, and context modules plus the precedence additions report literal 100% statements/branches/functions/lines in focused V8 coverage; static quality, docstring, audit-boundary, and token-budget gates pass."
@@ -47,6 +47,7 @@ comments[19]{created_at,author,text}:
   "2026-07-21T20:41:58.989Z",codex-relationship-backfill-20260721,"Implementation start 2026-07-21: actively build batch atomicity, replay equivalence, resumability, custom-kind, concurrency, and scale regressions for the pm-ju83 backfill surface. The task is worked alongside its canonical blocker so this tranche advances both without creating a duplicate item."
   "2026-07-21T20:55:28.919Z",codex-relationship-backfill-20260721,"Conformance progress: focused migration plus existing durable history suites pass 31 tests; the new scale fixture plans and atomically publishes 10,000 edges and replays the exact snapshot without mocks or repository tracker access."
   "2026-07-21T21:15:18.470Z",codex-relationship-backfill-20260721,"Scale/conformance evidence 2026-07-21: the tracker-linked 10,000-edge test passed against real filesystem locking and atomic JSONL publication; full repository coverage passed 6,076 tests with 100% statements, branches, functions, and lines. The packed public SDK consumer separately proved deterministic planning, atomic publication, and idempotent resume through the installed artifact."
+  "2026-07-21T21:37:37.000Z",codex-relationship-backfill-20260721,"PR evidence: conformance, concurrency, failure-atomicity, resume, and real 10,000-edge coverage are under review in https://github.com/unbraind/pm-cli/pull/639."
 notes[1]{created_at,author,text}:
   "2026-07-14T10:19:37.624Z",codex-gpt5,"Remaining canonical scope after this PR: property generators, concurrent durable adapters, migration matrix, and million-item proof; keep chore open."
 files[7]{path,scope,note}:
