@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:config","area:storage",observability,resilience,sentry
 created_at: "2026-07-21T12:25:47.265Z"
-updated_at: "2026-07-21T13:31:21.517Z"
+updated_at: "2026-07-21T15:21:22.684Z"
 closed_at: "2026-07-21T13:31:20.685Z"
 author: codex-root
 acceptance_criteria: "Directory-shaped or otherwise unreadable settings.json never crashes readSettingsWithMetadata; callers receive a deterministic warning and fallback settings; normal, missing, invalid-JSON, and invalid-schema behavior remains stable; CLI acceptance, full exact coverage, release gates, and the live Sentry gate pass."
@@ -27,13 +27,14 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-f5hy2n,discovered_from,"2026-07-21T12:25:47.265Z",null,null
   pm-o1c53b,discovered_from,"2026-07-21T12:25:47.265Z",null,null
   pm-xdn6,related,"2026-07-21T12:25:47.265Z",null,null
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-21T12:25:47.265Z",codex-root,"text=Duplicate check: searched all pm statuses for PM-CLI-2E, readFileIfExists EISDIR settings, and settings.json directory. No canonical item covers this bootstrap failure. Fresh Sentry event 31835fc7f0cb4db789e12191560cf5b9 occurred once at 2026-07-21T11:37:08Z in readFileIfExists/readSettingsWithMetadata during malformed-settings acceptance."
   "2026-07-21T12:54:33.832Z",codex-root,"Evidence: TDD reproduced EISDIR and now proves cached fallback plus recovery; linked search/background tests pass 72/72 and settings tests pass 31/31. Manual acceptance in /tmp/pm-cli-settings-acceptance.oDxVsG completed without a stack trace, emitted settings_read_invalid_json remediation, finished health, and recorded a successful telemetry flush at 2026-07-21T12:29:01.173Z. Full repository verification passes 332 files/6,059 tests at exact 100/100/100/100, plus static quality, 100% docstrings, zero duplication, package boundary, token budget, and secret scanning. Sentry PM-CLI-2E remains intentionally unresolved until merged-commit proof."
   "2026-07-21T13:02:23.648Z",codex-root,"Pre-push Greptile review 96db75c8-0660-4671-9d3b-f447434636fc rated the diff 4/5 and safe to merge, with two P2 improvements: separate filesystem-read failures from invalid JSON for actionable telemetry, and make success-with-warning search/background behavior explicit in the focused mock contract. Reopened only this actively edited item to implement both before push."
   "2026-07-21T13:07:29.473Z",codex-root,"Greptile follow-up evidence: both P2 observations addressed. Filesystem failures now use settings_read_fs_error while invalid JSON retains settings_read_invalid_json; remediation maps to pm config list --json; focused warning-return tests assert exact mutation/background propagation. Manual temp health output shows no crash, warning provenance, and remediation_map. Full verification passes 332 files/6,060 tests at exact 100/100/100/100 plus static quality, 100% docstrings, zero duplication, package boundary, token budget, and secret scanning."
   "2026-07-21T13:24:01.721Z",codex-root,"Hosted PR #632 review found three actionable recovery gaps on exact head 9bbde36d: filesystem fallback cache survives permission-only repair; a worker exiting before queue drain has no bounded replacement; and a settings race after drain can convert retryable work into a normal skip. All bot comments were reacted to and acknowledged inline. Reopened only this actively edited item for a unified cache and queue recovery fix."
   "2026-07-21T13:31:19.296Z",codex-root,"Hosted review fix evidence: filesystem read fallbacks are no longer cached, so unchanged size/mtime cannot mask chmod or transient I/O recovery. A settings-failed worker schedules one replacement after 30 seconds instead of spinning; a settings_read_failed warning after queue drain re-enqueues all IDs and schedules the same bounded retry. Focused recovery tests pass 109/109. Full repository verification passes 332 files/6,061 tests at exact 100/100/100/100 plus static quality, 100% docstrings, zero duplication, package boundary, token budget, and tracked-secret gates."
+  "2026-07-21T15:21:22.684Z",codex-root,"Pre-push review note: required local Greptile invocation against exact head e404dc54 was attempted with focused recovery/concurrency instructions but the authenticated CLI returned free_reviews_limit_reached. Proceeding with hosted PR review after push; no local finding was suppressed."
 notes[1]{created_at,author,text}:
   "2026-07-21T12:54:34.487Z",codex-root,"Operational contract: an unreadable settings path must preserve diagnostic availability while search refresh refuses to run with fallback defaults; otherwise a resilience fix can silently change semantic indexing behavior."
 learnings[2]{created_at,author,text}:
