@@ -39,6 +39,8 @@ export type ContextRelevanceSignals = Partial<
   Record<Exclude<ContextRelevanceSignalName, "structural">, number>
 >;
 
+const NO_CONTEXT_AUTHOR = Symbol("no-context-author");
+
 /** A project-management object and its derived relevance signals. */
 export interface ContextRelevanceCandidate<TItem> {
   /** Stable identifier used to reference this record across commands and storage. */
@@ -131,22 +133,11 @@ export function buildItemContextRelevanceCandidates(
   });
   const recencyRank = new Map(recencyOrder.map((item, index) => [item.id, index]));
   const denominator = Math.max(items.length - 1, 1);
-  const normalizedAuthor = options.author?.trim().toLowerCase();
-  const assignedIds = new Set(
-    normalizedAuthor
-      ? items
-          .filter(
-            (item) =>
-              typeof item.assignee === "string" &&
-              item.assignee.trim().toLowerCase() === normalizedAuthor,
-          )
-          .map((item) => item.id)
-      : [],
-  );
+  const normalizedAuthor = options.author?.trim().toLowerCase() ?? NO_CONTEXT_AUTHOR;
   const inProgressStatus = normalizeStatusInput("in_progress", options.statusRegistry);
   const nowMs = Date.parse(options.now);
   return items.map((item) => {
-    const assigned = assignedIds.has(item.id);
+    const assigned = item.assignee?.trim().toLowerCase() === normalizedAuthor;
     const knowledgeEntries = (item.comments?.length ?? 0) + (item.notes?.length ?? 0) + (item.learnings?.length ?? 0);
     return {
       id: item.id,

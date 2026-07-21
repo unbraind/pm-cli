@@ -251,7 +251,7 @@ export class ContextSignalStore {
     } catch {
       warnings.push("context_signal_store_invalid");
     }
-    const authoritativeIds = [...items.map((item) => item.id)].sort((left, right) => left.localeCompare(right));
+    const authoritativeIds = items.map((item) => item.id).sort((left, right) => left.localeCompare(right));
     const snapshotIds = snapshot?.items.map((item) => item.id) ?? [];
     const fresh =
       snapshot !== null &&
