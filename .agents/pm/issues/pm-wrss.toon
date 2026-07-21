@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,json-envelope,token-efficiency
 created_at: "2026-07-19T03:41:53.393Z"
-updated_at: "2026-07-21T09:26:29.194Z"
+updated_at: "2026-07-21T09:50:07.011Z"
 closed_at: "2026-07-21T09:26:28.273Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -24,12 +24,13 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-nilh,related,"2026-07-19T03:41:53.393Z",null,null
   pm-topu,related,"2026-07-21T07:32:57.375Z",codex-root-20260721,null
   pm-zwya,related,"2026-07-21T07:32:57.375Z",codex-root-20260721,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-21T07:33:02.759Z",codex-root-20260721,"Evidence: every list envelope now carries total/has_more/truncated/next_cursor; unset filter echoes are omitted. Updated measured list-json budget fell from 1307 to 828 bytes (36.6% reduction) while the stable non-truncated keys remained present."
   "2026-07-21T07:45:24.338Z",codex-root-20260721,"Post-close verification correction: updated the lifecycle integration contract to assert that unset include_body is absent rather than serialized as null; the full 76-test CLI integration suite passes."
   "2026-07-21T08:12:05.647Z",codex-root-20260721,"Greptile remediation: GH-595 intentionally requires next_cursor to be present and nullable and unset filters to be absent. Added SDK and CLI migration guidance directing consumers to has_more / next_cursor != null and filter-key presence, eliminating silent undefined/null guard misuse while preserving the accepted stable-envelope contract."
   "2026-07-21T08:16:39.600Z",codex-root-20260721,"Final review-head proof: all 332 files and 6052 tests pass with exact 100% statements/branches/functions/lines; token-budget gate remains green."
   "2026-07-21T09:26:06.296Z",codex-root-20260721,"Final Greptile remediation: the compatibility note now explicitly states that total moved from conditional presence to an unconditional pre-pagination match count; consumers must use has_more/next_cursor for continuation rather than key-presence guards. The canonical title now carries this migration into the generated changelog."
+  "2026-07-21T09:50:07.011Z",codex-root-20260721,"Consumer audit evidence: repository-wide searches found no production, package, script, or test consumer using next_cursor !== undefined, total-key presence, or null filter values as list-envelope signals; the only matches are the new migration warnings in docs/SDK.md and docs/COMMANDS.md. Existing internal pagination consumers branch on has_more or a truthy cursor."
 files[5]{path,scope,note}:
   scripts/release/token-budgets.json,project,Measured list JSON token reduction budget
   src/sdk/query/list.ts,project,Stable lean list result envelope

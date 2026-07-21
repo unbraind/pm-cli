@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: codefactor,gh-582,quality
 created_at: "2026-07-18T05:45:02.428Z"
-updated_at: "2026-07-21T09:36:05.661Z"
+updated_at: "2026-07-21T09:50:07.631Z"
 closed_at: "2026-07-21T09:36:04.923Z"
 author: maintainer-agent
 estimated_minutes: 45
@@ -21,11 +21,12 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-2gvp,related,"2026-07-18T05:45:02.428Z",null,null
   pm-j8vq,related,"2026-07-18T05:45:02.428Z",null,null
   pm-pfqi,related,"2026-07-18T05:45:02.428Z",null,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-21T07:33:05.193Z",codex-root-20260721,"Evidence: runRegisteredListCommand now delegates non-trivial output-mode validation and rendering to documented helpers; list registration and list command suites pass with no suppression added."
   "2026-07-21T09:10:32.464Z",codex-root-20260721,"Hosted review remediation: csv/table list rendering now records the structured active command result before writing tabular output, preserving extension afterCommand visibility across every output mode. The registration suite asserts the active result."
   "2026-07-21T09:15:18.080Z",codex-root-20260721,"Exact remediation-head proof: all 332 test files and 6053 tests pass at 100/100/100/100 coverage; tabular outputs preserve afterCommand structured-result visibility without restoring the original complex method."
   "2026-07-21T09:35:53.676Z",codex-root-20260721,"Final pre-push Greptile remediation: list rendering compatibility is now validated before runList executes, so invalid stream/format combinations fail without performing a wasted workspace query. Both invalid combinations assert zero runList calls."
+  "2026-07-21T09:50:07.631Z",codex-root-20260721,"Final local Greptile result after pre-query validation: no review comments; external-dependency, compile-cache, merge-reconcile, and list-registration implementations were assessed clean. The remaining summary caution was closed by the explicit repository-wide list-envelope consumer audit recorded on pm-wrss."
 files[2]{path,scope,note}:
   src/cli/register-list-query.ts,project,Extracted rendering-mode resolution and result rendering
   tests/unit/cli/register-list-query.spec.ts,project,List registration behavior regression suite
