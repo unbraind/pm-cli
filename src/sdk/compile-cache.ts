@@ -46,8 +46,7 @@ export function pruneCompileCacheGenerations(
   }
   fs.mkdirSync(cacheRoot, { recursive: true });
   const removed = fs
-    .readdirSync(cacheRoot, { withFileTypes: true })
-    .map((entry) => entry.name)
+    .readdirSync(cacheRoot)
     .filter((name) => name !== normalizedGeneration)
     .sort((left, right) => left.localeCompare(right));
   for (const name of removed) {

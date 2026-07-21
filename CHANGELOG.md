@@ -13,10 +13,10 @@
 
 ### Fixed
 
-- GH-553/GH-584: CodeFactor unnecessary-spread findings — restructure flagged spread sites (class owner) ([pm-zt1c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zt1c.toon))
 - GH-623: opt-in post-merge history reconciliation hook and one-command verify repair ([pm-mfkv92](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mfkv92.toon))
 - GH-551: dependency seeds reject source_kind and rewrite cross-workspace IDs ([pm-topu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-topu.toon))
-- GH-595: pm list --json envelope — pagination keys vanish when results fit one page and filters emits ~22 null keys (~44% bloat) ([pm-wrss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wrss.toon))
+- GH-595: stable list JSON envelope uses next_cursor:null and omits unset filter keys ([pm-wrss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wrss.toon))
+- GH-553/GH-584: CodeFactor unnecessary-spread findings — restructure flagged spread sites (class owner) ([pm-zt1c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zt1c.toon))
 - GH-576: pm <unknown-command\> --help exits 0 with root help instead of unknown-command error — false positive for agent capability probes ([pm-bu1m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bu1m.toon))
 - GH-574: flattened extension alias subcommands still drop option contracts after GH-503/GH-550 fixes (empty --help, valid options rejected as positionals) ([pm-7ufz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7ufz.toon))
 

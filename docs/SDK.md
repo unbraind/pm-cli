@@ -1093,6 +1093,12 @@ compact or `fields` projections return `ListProjectedItem` dictionaries. Use
 `full: true` when an integration requires complete item metadata; the overload
 then returns `ListFullResult` without an assertion or cast.
 
+Migration note: before this contract, a completed page omitted `next_cursor`
+and verbose results emitted unset filter keys with `null` values. Consumers
+must use `has_more` or `next_cursor != null` for continuation and key presence
+for filter diagnostics; strict `next_cursor !== undefined` and
+`filters.<key> === null` checks do not express the stable envelope semantics.
+
 ### Execution and diagnostics
 
 Tracked by [pm-oslr](../.agents/pm/features/pm-oslr.toon) and the SDK boundary

@@ -375,8 +375,10 @@ export function assembleWorkspaceRelationshipGraph(
   );
   const dangling = collectDanglingDependencyReferences(safeItems, isTerminal);
   const missingIds = collectMissingDependencyTargetIds(dangling);
-  const externalIds = collectExternalDependencyTargetIds(safeItems);
   for (const id of missingIds) canonicalIds.set(id.toLowerCase(), id);
+  const externalIds = collectExternalDependencyTargetIds(safeItems).filter(
+    (id) => !canonicalIds.has(id.toLowerCase()),
+  );
   for (const id of externalIds) canonicalIds.set(id.toLowerCase(), id);
   const graphItems = safeItems.map((item) => {
     const parent = normalizeDependencyGraphTarget(item.parent);

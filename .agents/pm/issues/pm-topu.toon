@@ -6,8 +6,8 @@ status: closed
 priority: 1
 tags[3]: data-integrity,gh-551,relationships
 created_at: "2026-07-14T10:18:53.997Z"
-updated_at: "2026-07-21T07:54:56.540Z"
-closed_at: "2026-07-21T07:35:42.045Z"
+updated_at: "2026-07-21T08:16:45.216Z"
+closed_at: "2026-07-21T08:16:44.540Z"
 author: codex-gpt5
 estimated_minutes: 180
 acceptance_criteria: "The CLI either accepts and preserves documented source_kind for external dependencies or removes it with a safe replacement; external IDs are never silently rewritten; help, SDK contracts, validation, and integration tests agree."
@@ -21,10 +21,12 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-ju83,related,"2026-07-14T10:18:53.997Z",codex-gpt5,null
   pm-is1a,related,"2026-07-16T05:45:21.008Z",null,null
   pm-mfkv92,related,"2026-07-21T07:32:58.237Z",codex-root-20260721,null
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-14T10:18:53.997Z",codex-gpt5,"Duplicate check 2026-07-14: pm search GH-551 --status all returned no item. This is related to the active relationship registry lineage pm-ju83 but is not implemented in the current in-memory graph primitive bundle. Source: https://github.com/unbraind/pm-cli/issues/551"
   "2026-07-21T07:33:03.401Z",codex-root-20260721,"Evidence: create and update now share public normalizeDependencySeedId semantics; source_kind=global preserves foreign IDs, removes with the same selector, materializes external graph nodes, and yields missing_nodes=0 instead of a dangling local reference."
   "2026-07-21T07:54:56.539Z",codex-root-20260721,"Final verification: public provenance helpers and CLI round-trip suites pass directly from source; repo-wide coverage remains exactly 100/100/100/100 with no ignored external-identity branches."
+  "2026-07-21T08:12:06.270Z",codex-root-20260721,"Greptile remediation: graph assembly now gives real local and missing-local identities precedence over external placeholders, preventing duplicate node IDs and conflicting detail statuses when the same case-insensitive target is referenced with mixed provenance. Added a direct mixed-provenance regression."
+  "2026-07-21T08:16:40.217Z",codex-root-20260721,"Final review-head proof: the mixed-provenance duplicate-node regression passes within the full 6052-test suite at exact 100% coverage."
 files[6]{path,scope,note}:
   src/cli/commands/create.ts,project,Create seed source_kind support
   src/cli/commands/update.ts,project,Update add and remove source_kind support
@@ -35,11 +37,12 @@ files[6]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/commands/dependency-provenance-command.spec.ts,project,240,Create graph update and get round trip
   node scripts/run-tests.mjs test -- tests/unit/sdk/dependency-provenance.spec.ts tests/unit/commands/dependency-provenance-command.spec.ts,project,600,SDK primitive and CLI cross-workspace round trip
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mruc7x83-oac0yb,test,passed,"2026-07-21T07:33:56.274Z","2026-07-21T07:34:03.507Z","2026-07-21T07:34:03.507Z",1,0,0
   test-local-mrucyrl2-pcbn9k,test,passed,"2026-07-21T07:54:41.666Z","2026-07-21T07:54:55.910Z","2026-07-21T07:54:55.910Z",2,0,0
+  test-local-mrudlo22-aqkr5h,test,passed,"2026-07-21T08:12:29.195Z","2026-07-21T08:12:44.426Z","2026-07-21T08:12:44.426Z",2,0,0
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,source_kind global CLI semantics
   docs/SDK.md,project,Dependency provenance SDK primitives
-close_reason: "Completed: dependency seed provenance is explicit and lossless across create, update, graph, and get; external IDs remain unchanged and acceptance tests passed."
+close_reason: "Completed after Greptile remediation: mixed local/external identities cannot duplicate graph nodes or conflicting detail rows; focused and exact 100% coverage gates pass."
 body: ""

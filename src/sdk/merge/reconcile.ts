@@ -28,7 +28,11 @@ export interface MergeReconcileOptions {
 
 /** Structured post-merge reconciliation and verification result. */
 export interface MergeReconcileResult {
-  /** Whether reconciliation completed without repair or verification failures. */
+  /**
+   * Whether reconciliation completed without errors. In dry-run mode this
+   * reports preview success, not workspace cleanliness; inspect `repair` and
+   * `validation.checks` before deciding whether an apply pass is required.
+   */
   ok: boolean;
   /** Whether this invocation only previewed repairs. */
   dry_run: boolean;

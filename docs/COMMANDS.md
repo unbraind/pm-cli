@@ -249,6 +249,11 @@ pm list-all --no-truncate --brief          # every matched row, ignoring any --l
 pm list-open --limit 20 --json             # stable total/has_more/truncated/next_cursor envelope
 ```
 
+Compatibility note: older responses omitted `next_cursor` on a completed page
+and emitted unset verbose filter keys as `null`. Integrations should now branch
+on `has_more` or `next_cursor != null`, and test filter-key presence rather than
+using `next_cursor !== undefined` or `filters.<key> === null` guards.
+
 JSON output is compact by default (id/status/type/title) for token efficiency. To pull item bodies in bulk in a single call — instead of one `pm get` per item — add `--include-body`, which expands each row to the full field set plus `body`:
 
 ```bash

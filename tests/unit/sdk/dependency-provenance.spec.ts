@@ -40,4 +40,39 @@ describe("external dependency graph assembly", () => {
     expect(assembled.dangling.active).toHaveLength(1);
     expect(assembled.graph.hasNode("Foreign-Z")).toBe(true);
   });
+
+  it("gives local and missing identities precedence over external placeholders", () => {
+    const items = [
+      {
+        id: "pm-local",
+        title: "Local consumer",
+        status: "open" as const,
+        dependencies: [
+          { id: "pm-existing", kind: "related", source_kind: "global" },
+          { id: "shared-target", kind: "related" },
+          { id: "SHARED-TARGET", kind: "blocks", source_kind: "global" },
+        ],
+      },
+      {
+        id: "pm-existing",
+        title: "Existing local target",
+        status: "open" as const,
+      },
+    ];
+
+    const assembled = assembleWorkspaceRelationshipGraph(items as never);
+    expect(
+      assembled.details.filter((detail) => detail.id === "pm-existing"),
+    ).toHaveLength(1);
+    expect(
+      assembled.details.filter(
+        (detail) => detail.id.toLowerCase() === "shared-target",
+      ),
+    ).toEqual([
+      expect.objectContaining({ id: "shared-target", status: "missing" }),
+    ]);
+    expect(new Set(assembled.graph.nodes()).size).toBe(
+      assembled.graph.nodes().length,
+    );
+  });
 });
