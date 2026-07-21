@@ -353,6 +353,7 @@ export * from "./output.js";
 export * from "./relationship-analytics.js";
 export * from "./relationship-context.js";
 export * from "./relationship-history.js";
+export * from "./relationship-migration.js";
 export * from "./workspace-transaction.js";
 export * from "./workspace-transaction-gc.js";
 export * from "./item-transaction.js";

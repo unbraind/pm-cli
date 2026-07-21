@@ -1,0 +1,29 @@
+id: pm-qd3woa
+title: "GH-635: plan create cannot forward strict Plan-required metadata"
+description: "pm plan create delegates to strict Plan creation but does not expose the required generic create metadata flags, so the recovery bundle recommends flags the command path rejects."
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli","area:sdk",contracts,github-report,plan
+created_at: "2026-07-21T20:58:16.027Z"
+updated_at: "2026-07-21T20:58:16.027Z"
+author: codex-relationship-backfill-20260721
+acceptance_criteria: Plan creation forwards every applicable type-required create field through the public SDK; recovery suggests only flags accepted by the active command path; strict and progressive profiles have CLI/SDK/MCP parity; regression and contract tests pass
+parent: pm-mpbb
+severity: high
+environment: strict repository-local trackers
+repro_steps: Run pm plan create with Plan-specific fields while strict Plan policy requires generic metadata; retry the emitted --status or related suggestion and observe unknown-option failure.
+expected_result: The plan workflow can satisfy the active Plan type policy or emits an executable recovery path.
+actual_result: Strict creation reports missing generic fields that pm plan create cannot accept.
+affected_version: 2026.7.21
+component: plan-sdk-cli-contract
+regression: false
+customer_impact: Agents cannot use the governed plan workflow in strict projects without dropping to a multi-command workaround.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-3rjo,related,"2026-07-21T20:58:16.027Z",null,null
+  pm-4bzq,related,"2026-07-21T20:58:16.027Z",null,null
+  pm-je50,related,"2026-07-21T20:58:16.027Z",null,null
+  pm-qmjx,related,"2026-07-21T20:58:16.027Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-21T20:58:16.027Z",codex-relationship-backfill-20260721,"Duplicate check 2026-07-21: searched every pm status for GH-635,plan create strict required fields,and recovery-required Plan metadata. No exact owner exists; closed pm-je50 is the shipped plan-SDK lineage,while pm-qmjx/pm-4bzq/pm-3rjo cover adjacent help and recovery behavior."
+body: ""

@@ -1,0 +1,28 @@
+id: pm-ir9vqy
+title: "GH-634: successful global reinstall can remove the pm executable"
+description: "A successful npm global install can be followed by manifest_missing and a missing pm executable while npm still reports @unbrained/pm-cli installed, leaving recovery dependent on another reinstall."
+type: Issue
+status: open
+priority: 1
+tags[6]: "area:install","area:release",bundle-integrity,concurrency,github-report,security
+created_at: "2026-07-21T20:58:17.040Z"
+updated_at: "2026-07-21T21:28:17.309Z"
+author: codex-relationship-backfill-20260721
+acceptance_criteria: "Global install publication keeps executable, bundle, and manifest generation coherent; manifest_missing recovery never removes the only executable; concurrent or interrupted install behavior has real temp-prefix tests; npm/global-prefix diagnostics provide an actionable safe retry"
+parent: pm-ugqx
+severity: critical
+environment: Linux npm global prefix
+repro_steps: "Install @unbrained/pm-cli@2026.7.21 globally, run a repository command, observe bundle_integrity_torn_install manifest_missing, then observe the pm executable missing while npm list still reports the package."
+expected_result: A successful install atomically exposes one coherent executable/bundle/manifest generation.
+actual_result: The package remained registered but the global pm executable disappeared until reinstall.
+affected_version: 2026.7.21
+component: install-bundle-publication
+regression: false
+customer_impact: Every pm workflow is unavailable until the operator discovers and performs another reinstall.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-7zs0,related,"2026-07-21T20:58:17.040Z",null,null
+  pm-pz7xtx,related,"2026-07-21T20:58:17.040Z",null,null
+  pm-wfvq,related,"2026-07-21T20:58:17.040Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-21T20:58:17.040Z",codex-relationship-backfill-20260721,"Duplicate check 2026-07-21: searched all statuses for GH-634,global install executable missing,manifest_missing,and bundle-integrity reinstall. Closed pm-wfvq and pm-pz7xtx own torn-generation diagnosis,but neither covers npm publication removing the executable after a reported successful install; this item records the distinct installer atomicity failure."
+body: ""

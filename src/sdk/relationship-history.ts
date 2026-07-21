@@ -13,6 +13,8 @@ import { constants } from "node:fs";
 import { lstat, mkdir, open, type FileHandle } from "node:fs/promises";
 import path from "node:path";
 import { acquireLock } from "../core/lock/lock.js";
+import { writeFileAtomic } from "../core/fs/fs-utils.js";
+import { stableStringify } from "../core/shared/serialization.js";
 import {
   RelationshipGraph,
   RelationshipKindRegistry,
@@ -118,6 +120,30 @@ export interface RelationshipEventStoreOptions extends RelationshipEventLogOptio
   nodes: Iterable<string>;
   /** Optional JSONL path relative to the tracker root. */
   relativePath?: string;
+}
+
+/** Collision policy applied while publishing a durable event batch. */
+export type RelationshipExistingEventPolicy = "error" | "skip_identical";
+
+/** Controls for one atomic durable relationship-event batch. */
+export interface RelationshipEventBatchOptions {
+  /**
+   * Existing event ids fail by default. Migration resume flows may skip an id
+   * only when every persisted semantic field is identical to the input.
+   */
+  existingEventPolicy?: RelationshipExistingEventPolicy;
+}
+
+/** Result of one validated, atomic durable relationship-event batch. */
+export interface RelationshipEventBatchResult {
+  /** Durable stream version observed while holding the writer lock. */
+  version_before: number;
+  /** Durable stream version after the atomic publication. */
+  version_after: number;
+  /** Immutable sequenced events newly published by this call. */
+  appended: readonly RelationshipEvent[];
+  /** Existing byte-equivalent event ids skipped by resume mode. */
+  skipped_event_ids: readonly string[];
 }
 
 interface RelationshipCardinalityIndexes {
@@ -577,7 +603,7 @@ async function loadRelationshipEventLog(
   target: string,
   nodes: readonly string[],
   registry: RelationshipKindRegistry | undefined,
-): Promise<RelationshipEventLog> {
+): Promise<{ log: RelationshipEventLog; raw: string }> {
   const log = new RelationshipEventLog(nodes, { registry });
   let raw: string;
   let handle: FileHandle | undefined;
@@ -588,7 +614,8 @@ async function loadRelationshipEventLog(
     );
     raw = await handle.readFile("utf8");
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return log;
+    if ((error as NodeJS.ErrnoException).code === "ENOENT")
+      return { log, raw: "" };
     throw error;
   } finally {
     await handle?.close();
@@ -620,7 +647,30 @@ async function loadRelationshipEventLog(
       expectedVersion: log.version,
     });
   }
-  return log;
+  return { log, raw };
+}
+
+/** Return whether an existing immutable event exactly represents one input. */
+function relationshipEventMatchesInput(
+  event: RelationshipEvent,
+  input: RelationshipEventInput,
+  nodes: readonly string[],
+  registry: RelationshipKindRegistry | undefined,
+): boolean {
+  const timestamp = Date.parse(input.timestamp);
+  let edge: RelationshipEdge | undefined;
+  if (input.action !== "remove" && input.edge !== undefined)
+    edge = new RelationshipGraph(nodes, [input.edge], registry).edges()[0];
+  return (
+    event.eventId === input.eventId.trim() &&
+    event.relationshipId === input.relationshipId.trim() &&
+    event.action === input.action &&
+    event.author === input.author.trim() &&
+    Number.isFinite(timestamp) &&
+    event.timestamp === new Date(timestamp).toISOString() &&
+    event.reason === (input.reason?.trim() || undefined) &&
+    stableStringify(event.edge) === stableStringify(edge)
+  );
 }
 
 /**
@@ -660,7 +710,7 @@ export class RelationshipEventStore {
     const release = await acquireRelationshipStoreLock(options.pmRoot);
     try {
       await resolveRelationshipEventStorePath(options.pmRoot, target);
-      const log = await loadRelationshipEventLog(
+      const { log } = await loadRelationshipEventLog(
         target,
         nodes,
         options.registry,
@@ -692,7 +742,7 @@ export class RelationshipEventStore {
         this.#pmRoot,
         this.#path,
       );
-      const refreshed = await loadRelationshipEventLog(
+      const { log: refreshed } = await loadRelationshipEventLog(
         target,
         this.#nodes,
         this.#registry,
@@ -714,6 +764,81 @@ export class RelationshipEventStore {
       }
       this.#log = refreshed;
       return event;
+    } finally {
+      await release();
+    }
+  }
+
+  /**
+   * Validate and publish a relationship-event batch as one durable replacement.
+   * The shared writer lock covers refresh, collision checks, full in-memory
+   * validation, and atomic rename. A validation or filesystem failure therefore
+   * leaves the previous JSONL stream byte-for-byte unchanged. This path is
+   * intended for migrations and bulk imports; latency-sensitive single events
+   * should continue to use {@link append} and its O_APPEND write.
+   */
+  public async appendBatch(
+    inputs: readonly RelationshipEventInput[],
+    options: RelationshipEventBatchOptions = {},
+  ): Promise<RelationshipEventBatchResult> {
+    const release = await acquireRelationshipStoreLock(this.#pmRoot);
+    try {
+      const target = await resolveRelationshipEventStorePath(
+        this.#pmRoot,
+        this.#path,
+      );
+      const { log: refreshed, raw } = await loadRelationshipEventLog(
+        target,
+        this.#nodes,
+        this.#registry,
+      );
+      const versionBefore = refreshed.version;
+      const existing = new Map(
+        refreshed.events().map((event) => [event.eventId, event]),
+      );
+      const appended: RelationshipEvent[] = [];
+      const skippedEventIds: string[] = [];
+      for (const input of inputs) {
+        const eventId = input.eventId.trim();
+        const stored = existing.get(eventId);
+        if (stored !== undefined) {
+          if (
+            options.existingEventPolicy === "skip_identical" &&
+            relationshipEventMatchesInput(
+              stored,
+              input,
+              this.#nodes,
+              this.#registry,
+            )
+          ) {
+            skippedEventIds.push(stored.eventId);
+            continue;
+          }
+          if (options.existingEventPolicy === "skip_identical")
+            throw new TypeError(
+              `Relationship event id collision with different content: ${eventId}`,
+            );
+        }
+        const event = refreshed.append(input);
+        existing.set(event.eventId, event);
+        appended.push(event);
+      }
+      if (appended.length > 0) {
+        const prefix = raw.length === 0 || raw.endsWith("\n") ? raw : `${raw}\n`;
+        await mkdir(path.dirname(target), { recursive: true });
+        await resolveRelationshipEventStorePath(this.#pmRoot, target);
+        await writeFileAtomic(
+          target,
+          `${prefix}${appended.map((event) => JSON.stringify(event)).join("\n")}\n`,
+        );
+      }
+      this.#log = refreshed;
+      return Object.freeze({
+        version_before: versionBefore,
+        version_after: refreshed.version,
+        appended: Object.freeze(appended),
+        skipped_event_ids: Object.freeze(skippedEventIds),
+      });
     } finally {
       await release();
     }
@@ -764,11 +889,13 @@ export class RelationshipEventStore {
         this.#pmRoot,
         this.#path,
       );
-      return await loadRelationshipEventLog(
-        target,
-        this.#nodes,
-        this.#registry,
-      );
+      return (
+        await loadRelationshipEventLog(
+          target,
+          this.#nodes,
+          this.#registry,
+        )
+      ).log;
     } finally {
       await release();
     }
