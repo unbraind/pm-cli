@@ -458,12 +458,11 @@ export function collectExtensionCommandHelpDescriptors(
   );
   for (const commandPath of sortedCommands) {
     const definition =
-      definitionsByCommand.get(commandPath) ??
       resolveFlattenedAliasDescriptor(
         commandPath,
         definitionsByCommand,
         canonicalAliases,
-      );
+      ) ?? definitionsByCommand.get(commandPath);
     const flags =
       flagsByCommand.get(commandPath) ??
       (definition ? flagsByCommand.get(definition.command) : undefined) ??

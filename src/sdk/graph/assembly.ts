@@ -16,6 +16,7 @@ import {
   createRelationshipKindRegistry,
   type RelationshipKindRegistry,
 } from "../relationships.js";
+import { isExternalDependencySourceKind } from "../dependency-provenance.js";
 
 /** Minimal item shape inspected by dependency-reference governance. */
 export interface DependencyReferenceHolder {
@@ -251,6 +252,9 @@ export function collectDanglingDependencyReferences(
         continue;
       }
       const legacyDependency = dependency as Partial<Dependency>;
+      if (isExternalDependencySourceKind(legacyDependency.source_kind)) {
+        continue;
+      }
       addReference(
         item,
         legacyDependency.id,
@@ -288,6 +292,29 @@ export function collectMissingDependencyTargetIds(
     const target = reference.target_id.trim();
     const key = target.toLowerCase();
     if (!targets.has(key)) targets.set(key, target);
+  }
+  return [...targets.values()].sort((left, right) => left.localeCompare(right));
+}
+
+/** Return unique explicitly external dependency targets in deterministic order. */
+export function collectExternalDependencyTargetIds(
+  items: readonly DependencyReferenceHolder[],
+): string[] {
+  const targets = new Map<string, string>();
+  for (const item of items) {
+    for (const dependency of item.dependencies ?? []) {
+      if (
+        typeof dependency !== "object" ||
+        dependency === null ||
+        !isExternalDependencySourceKind(dependency.source_kind)
+      ) {
+        continue;
+      }
+      const id = normalizeDependencyReferenceTarget(dependency.id);
+      if (id && !targets.has(id.toLowerCase())) {
+        targets.set(id.toLowerCase(), id);
+      }
+    }
   }
   return [...targets.values()].sort((left, right) => left.localeCompare(right));
 }
@@ -348,7 +375,9 @@ export function assembleWorkspaceRelationshipGraph(
   );
   const dangling = collectDanglingDependencyReferences(safeItems, isTerminal);
   const missingIds = collectMissingDependencyTargetIds(dangling);
+  const externalIds = collectExternalDependencyTargetIds(safeItems);
   for (const id of missingIds) canonicalIds.set(id.toLowerCase(), id);
+  for (const id of externalIds) canonicalIds.set(id.toLowerCase(), id);
   const graphItems = safeItems.map((item) => {
     const parent = normalizeDependencyGraphTarget(item.parent);
     const blocker = normalizeDependencyGraphTarget(item.blocked_by);
@@ -377,7 +406,11 @@ export function assembleWorkspaceRelationshipGraph(
   });
   return {
     graph: RelationshipGraph.fromItems(
-      [...graphItems, ...missingIds.map((id) => ({ id }))],
+      [
+        ...graphItems,
+        ...missingIds.map((id) => ({ id })),
+        ...externalIds.map((id) => ({ id })),
+      ],
       relationshipRegistry,
     ),
     details: [
@@ -393,6 +426,11 @@ export function assembleWorkspaceRelationshipGraph(
         id,
         title: `[missing] ${id}`,
         status: "missing",
+      })),
+      ...externalIds.map((id) => ({
+        id,
+        title: `[external] ${id}`,
+        status: "external",
       })),
     ],
     missingIdSet: new Set(missingIds.map((id) => id.toLowerCase())),

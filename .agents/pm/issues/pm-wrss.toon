@@ -2,20 +2,44 @@ id: pm-wrss
 title: "GH-595: pm list --json envelope — pagination keys vanish when results fit one page and filters emits ~22 null keys (~44% bloat)"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,json-envelope,token-efficiency
 created_at: "2026-07-19T03:41:53.393Z"
-updated_at: "2026-07-19T03:43:32.617Z"
+updated_at: "2026-07-21T07:45:24.338Z"
+closed_at: "2026-07-21T07:35:40.600Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: Pagination keys (total/has_more/truncated/next_cursor) are stably present on every list --json envelope regardless of truncation; filters object omits null/unset keys (or lean mode does); measured token reduction recorded; contracts and cursor-fingerprint semantics stay consistent with pm-fgih
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
+resolution: Made list pagination keys stable and omitted unset filter echoes from the serialized result envelope.
+expected_result: "Every list JSON result carries total, has_more, truncated, and next_cursor without null-heavy filter bloat."
+actual_result: Stable keys pass runtime ordering coverage and the measured list-json budget dropped from 1307 to 828 bytes.
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-cfed,related,"2026-07-19T03:41:53.393Z",null,null
   pm-fgih,related,"2026-07-19T03:41:53.393Z",null,null
   pm-gdi7,related,"2026-07-19T03:41:53.393Z",null,null
   pm-nilh,related,"2026-07-19T03:41:53.393Z",null,null
+  pm-topu,related,"2026-07-21T07:32:57.375Z",codex-root-20260721,null
+  pm-zwya,related,"2026-07-21T07:32:57.375Z",codex-root-20260721,null
+comments[2]{created_at,author,text}:
+  "2026-07-21T07:33:02.759Z",codex-root-20260721,"Evidence: every list envelope now carries total/has_more/truncated/next_cursor; unset filter echoes are omitted. Updated measured list-json budget fell from 1307 to 828 bytes (36.6% reduction) while the stable non-truncated keys remained present."
+  "2026-07-21T07:45:24.338Z",codex-root-20260721,"Post-close verification correction: updated the lifecycle integration contract to assert that unset include_body is absent rather than serialized as null; the full 76-test CLI integration suite passes."
+files[5]{path,scope,note}:
+  scripts/release/token-budgets.json,project,Measured list JSON token reduction budget
+  src/sdk/query/list.ts,project,Stable lean list result envelope
+  tests/integration/cli.integration.spec.ts,project,Lean filter omission integration expectation
+  tests/integration/release-readiness-runtime.spec.ts,project,Deterministic stable key ordering
+  tests/unit/commands/list-command.spec.ts,project,Envelope and null omission coverage
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/release/token-budget-gate.mjs,project,240,Token budget regression gate
+  node scripts/run-tests.mjs test -- tests/unit/commands/list-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,600,Stable envelope and runtime ordering
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mruc7r9p-pzbmyv,test,passed,"2026-07-21T07:33:36.944Z","2026-07-21T07:33:55.789Z","2026-07-21T07:33:55.789Z",2,0,0
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,Stable pagination and lean filter semantics
+  docs/SDK.md,project,SDK list envelope contract
+close_reason: "Completed: list JSON now has a stable pagination envelope and omits unset filters; measured budget fell from 1307 to 828 bytes and linked gates passed."
 body: "GH-595. pm list --json: (A) total/has_more/truncated/next_cursor present only when truncated — absent exactly when an agent wants total without paginating; (B) filters object emits all ~24 keys with ~22 null (~44% envelope bloat). Fix: stable pagination key-set on every envelope + null-omission (lean semantics live in pm-cfed; cursor fingerprint semantics pm-fgih). PR#605 named this reconciled; item makes it canonical."

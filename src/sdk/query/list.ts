@@ -349,17 +349,16 @@ const HEAVY_PROJECTION_FIELDS: ReadonlySet<string> = new Set<string>(
 interface ListResultBase {
   items: ListResultItem[];
   count: number;
-  // Total rows matched before pagination; only emitted when --limit/--offset
-  // omitted rows, so agents know how many remain (GH-154).
-  total?: number;
+  /** Total rows matched before pagination. Stable on every list envelope. */
+  total: number;
   /** Whether additional rows remain after this page. */
-  has_more?: boolean;
+  has_more: boolean;
   /** Opaque continuation cursor when additional rows remain. */
-  next_cursor?: string;
+  next_cursor: string | null;
   /** Effective page size, including an automatic at-scale bound. */
   applied_limit?: number;
   /** Explicit marker that the response is a bounded page. */
-  truncated?: true;
+  truncated: boolean;
   warnings?: string[];
 }
 
@@ -1417,12 +1416,11 @@ interface ResolvedListStatus {
 interface ListPageResult {
   projected: ListResultItem[];
   totalMatched: number;
-  truncationExtras: { total: number } | Record<string, never>;
   pageExtras: {
-    has_more?: boolean;
-    next_cursor?: string;
+    has_more: boolean;
+    next_cursor: string | null;
     applied_limit?: number;
-    truncated?: true;
+    truncated: boolean;
   };
 }
 
@@ -1461,8 +1459,9 @@ function buildListPageExtras(
 ): ListPageResult["pageExtras"] {
   return {
     ...(limit !== undefined ? { applied_limit: limit } : {}),
-    ...(hasMore ? { has_more: true, truncated: true } : {}),
-    ...(nextCursor ? { next_cursor: nextCursor } : {}),
+    has_more: hasMore,
+    truncated: hasMore,
+    next_cursor: nextCursor ?? null,
   };
 }
 
@@ -1631,10 +1630,6 @@ function pageAndProjectListItems(
   return {
     projected,
     totalMatched,
-    truncationExtras:
-      projected.length < totalMatched || offset > 0
-        ? { total: totalMatched }
-        : {},
     pageExtras: buildListPageExtras(limit, hasMore, nextCursor),
   };
 }
@@ -1684,13 +1679,19 @@ function buildVerboseListFilters(params: {
     sortOrder,
     runtimeFieldFilters,
   } = params;
-  const filters: Record<string, unknown> = { status: filtersStatus };
+  const filters: Record<string, unknown> = {};
+  if (filtersStatus !== null) {
+    filters.status = filtersStatus;
+  }
   if (options.dependencyBlocked === true) {
     filters.blocked_semantics = "status_or_dependency";
   }
   const optionRecord = options as Record<string, unknown>;
   for (const entry of VERBOSE_LIST_VALUE_FILTER_ECHO_ENTRIES) {
-    filters[entry.summaryKey] = optionRecord[entry.optionKey] ?? null;
+    const value = optionRecord[entry.optionKey];
+    if (value !== undefined && value !== null) {
+      filters[entry.summaryKey] = value;
+    }
   }
   for (const entry of VERBOSE_LIST_BOOLEAN_FILTER_ECHO_ENTRIES) {
     if (optionRecord[entry.key] === true) {
@@ -1708,10 +1709,14 @@ function buildVerboseListFilters(params: {
   }
   if (treeEnabled) {
     filters.tree = true;
-    filters.tree_depth = treeDepth ?? null;
+    if (treeDepth !== undefined) {
+      filters.tree_depth = treeDepth;
+    }
   }
-  filters.sort = sortField ?? null;
-  filters.order = sortField ? sortOrder : null;
+  if (sortField !== undefined) {
+    filters.sort = sortField;
+    filters.order = sortOrder;
+  }
   filters.runtime_filters = runtimeFieldFilters;
   return filters;
 }
@@ -1808,7 +1813,7 @@ export async function runList(
     return {
       items: page.projected,
       count: page.projected.length,
-      ...page.truncationExtras,
+      total: page.totalMatched,
       ...page.pageExtras,
       filters: compactFilters,
       ...(warnings.length > 0 ? { warnings } : {}),
@@ -1817,7 +1822,7 @@ export async function runList(
   return {
     items: page.projected,
     count: page.projected.length,
-    ...page.truncationExtras,
+    total: page.totalMatched,
     ...page.pageExtras,
     filters: buildVerboseListFilters({
       filtersStatus: statusSelection.filtersStatus,

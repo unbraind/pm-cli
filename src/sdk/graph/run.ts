@@ -861,9 +861,12 @@ function runGraphCommunities(
   invocation: GraphInvocation,
 ): GraphCommunitiesResult {
   const sampleLimit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
-  const result = detectRelationshipCommunities(invocation.assembly.graph, {
-    ...(invocation.kinds === undefined ? {} : { kinds: invocation.kinds }),
-  });
+  const options: Parameters<typeof detectRelationshipCommunities>[1] = {};
+  if (invocation.kinds !== undefined) options.kinds = invocation.kinds;
+  const result = detectRelationshipCommunities(
+    invocation.assembly.graph,
+    options,
+  );
   const analysis = result.value;
   return {
     subcommand: "communities",

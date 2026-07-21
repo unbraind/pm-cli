@@ -67,11 +67,6 @@
       "count": 1
     }
   },
-  "src/sdk/cli-bootstrap.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 2
-    }
-  },
   "src/cli/commands/calendar.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1

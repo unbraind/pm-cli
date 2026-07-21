@@ -11,6 +11,19 @@
 - GH-437: make lean mutation output the CLI default (parity with MCP compact envelope) ([pm-nilh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-nilh.toon))
 - GH-443: lean error mode — drop constant required/why boilerplate from structured errors ([pm-g9xk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-g9xk.toon))
 
+### Fixed
+
+- GH-553/GH-584: CodeFactor unnecessary-spread findings — restructure flagged spread sites (class owner) ([pm-zt1c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zt1c.toon))
+- GH-623: opt-in post-merge history reconciliation hook and one-command verify repair ([pm-mfkv92](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mfkv92.toon))
+- GH-551: dependency seeds reject source_kind and rewrite cross-workspace IDs ([pm-topu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-topu.toon))
+- GH-595: pm list --json envelope — pagination keys vanish when results fit one page and filters emits ~22 null keys (~44% bloat) ([pm-wrss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wrss.toon))
+- GH-576: pm <unknown-command\> --help exits 0 with root help instead of unknown-command error — false positive for agent capability probes ([pm-bu1m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bu1m.toon))
+- GH-574: flattened extension alias subcommands still drop option contracts after GH-503/GH-550 fixes (empty --help, valid options rejected as positionals) ([pm-7ufz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7ufz.toon))
+
+### Other
+
+- GH-582: runRegisteredListCommand flagged Complex Method by CodeFactor — extract option-assembly helpers in register-list-query.ts ([pm-zwya](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-zwya.toon))
+
 ## 2026.7.20 - 2026-07-20
 
 ### Added

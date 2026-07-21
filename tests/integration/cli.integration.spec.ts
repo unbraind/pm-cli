@@ -4083,10 +4083,10 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const listOpenJson = listOpen.json as {
         count: number;
         items: Array<{ status: string; priority: number }>;
-        filters: { status: string | null; include_body: boolean | null };
+        filters: { status: string; include_body?: boolean };
       };
       expect(listOpenJson.filters.status).toBe("open");
-      expect(listOpenJson.filters.include_body).toBeNull();
+      expect(listOpenJson.filters).not.toHaveProperty("include_body");
       expect(listOpenJson.count).toBe(2);
       expect(listOpenJson.items.map((item) => item.status)).toEqual(["open", "open"]);
       expect(listOpenJson.items.map((item) => item.priority)).toEqual([0, 1]);

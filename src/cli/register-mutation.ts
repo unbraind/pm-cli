@@ -20,6 +20,7 @@ import {
   MERGE_DRIVER_ARTIFACT_VALUES,
   runMergeDriver,
   runMergeInstall,
+  runMergeReconcile,
 } from "./commands/merge.js";
 import { createStdinTokenResolver } from "../sdk/runtime-primitives.js";
 import { itemDocumentToMutationOptions } from "../sdk/structured-mutations.js";
@@ -1165,6 +1166,74 @@ function parseNonNegativeIntFlag(
   return Number.parseInt(raw, 10);
 }
 
+/** Run the audited post-merge reconciliation branch and map failures to CLI exit state. */
+async function runMergeReconcileSubcommand(
+  artifact: string | undefined,
+  options: Record<string, unknown>,
+  globalOptions: GlobalOptions,
+): Promise<void> {
+  if (artifact !== undefined) {
+    throw new PmCliError(
+      "merge reconcile takes no positional arguments.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const result = await runMergeReconcile(
+    {
+      dryRun: options.dryRun === true,
+      force: options.force === true,
+      message:
+        typeof options.message === "string" ? options.message : undefined,
+      author: globalOptions.author,
+    },
+    globalOptions,
+  );
+  printResult(result, globalOptions);
+  if (!result.ok) process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+}
+
+/** Run the field-aware merge-driver branch and map unresolved conflicts to git's expected nonzero exit state. */
+async function runMergeDriverSubcommand(
+  artifact: string | undefined,
+  base: string | undefined,
+  ours: string | undefined,
+  theirs: string | undefined,
+  options: Record<string, unknown>,
+  globalOptions: GlobalOptions,
+): Promise<void> {
+  if (
+    artifact === undefined ||
+    base === undefined ||
+    ours === undefined ||
+    theirs === undefined
+  ) {
+    throw new PmCliError(
+      "merge driver requires <artifact> <base> <ours> <theirs> (git supplies %O %A %B). Example: pm merge driver history %O %A %B",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const result = await runMergeDriver(
+    {
+      artifact,
+      basePath: base,
+      oursPath: ours,
+      theirsPath: theirs,
+      outputPath:
+        typeof options.output === "string" ? options.output : undefined,
+      itemPath:
+        typeof options.itemPath === "string" ? options.itemPath : undefined,
+      prefer: typeof options.prefer === "string" ? options.prefer : undefined,
+    },
+    globalOptions,
+  );
+  printResult(result, globalOptions);
+  if (!result.ok) {
+    // Nonzero exit tells git the path is still conflicted; the merged file
+    // stays parseable with the preferred side's values.
+    process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+  }
+}
+
 async function runMergeAction(
   subcommand: string,
   artifact: string | undefined,
@@ -1177,55 +1246,39 @@ async function runMergeAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const normalized = subcommand.trim().toLowerCase();
-  if (normalized === "install") {
-    if (artifact !== undefined) {
-      throw new PmCliError(
-        "merge install takes no positional arguments.",
-        EXIT_CODE.USAGE,
+  switch (normalized) {
+    case "install": {
+      if (artifact !== undefined) {
+        throw new PmCliError(
+          "merge install takes no positional arguments.",
+          EXIT_CODE.USAGE,
+        );
+      }
+      const result = await runMergeInstall(
+        { dryRun: options.dryRun === true },
+        globalOptions,
       );
+      printResult(result, globalOptions);
+      break;
     }
-    const result = await runMergeInstall(
-      { dryRun: options.dryRun === true },
-      globalOptions,
-    );
-    printResult(result, globalOptions);
-  } else if (normalized === "driver") {
-    if (
-      artifact === undefined ||
-      base === undefined ||
-      ours === undefined ||
-      theirs === undefined
-    ) {
-      throw new PmCliError(
-        "merge driver requires <artifact> <base> <ours> <theirs> (git supplies %O %A %B). Example: pm merge driver history %O %A %B",
-        EXIT_CODE.USAGE,
-      );
-    }
-    const result = await runMergeDriver(
-      {
+    case "reconcile":
+      await runMergeReconcileSubcommand(artifact, options, globalOptions);
+      break;
+    case "driver":
+      await runMergeDriverSubcommand(
         artifact,
-        basePath: base,
-        oursPath: ours,
-        theirsPath: theirs,
-        outputPath:
-          typeof options.output === "string" ? options.output : undefined,
-        itemPath:
-          typeof options.itemPath === "string" ? options.itemPath : undefined,
-        prefer: typeof options.prefer === "string" ? options.prefer : undefined,
-      },
-      globalOptions,
-    );
-    printResult(result, globalOptions);
-    if (!result.ok) {
-      // Nonzero exit tells git the path is still conflicted; the merged file
-      // stays parseable with the preferred side's values.
-      process.exitCode = EXIT_CODE.GENERIC_FAILURE;
-    }
-  } else {
-    throw new PmCliError(
-      `Unknown merge subcommand "${subcommand}". Supported subcommands: install, driver.`,
-      EXIT_CODE.USAGE,
-    );
+        base,
+        ours,
+        theirs,
+        options,
+        globalOptions,
+      );
+      break;
+    default:
+      throw new PmCliError(
+        `Unknown merge subcommand "${subcommand}". Supported subcommands: install, reconcile, driver.`,
+        EXIT_CODE.USAGE,
+      );
   }
   if (globalOptions.profile) {
     printError(`profile:command=merge took_ms=${Date.now() - startedAt}`);
@@ -3033,7 +3086,7 @@ export function registerMutationCommands(program: Command): void {
 
   program
     .command("merge")
-    .argument("<subcommand>", "Merge subcommand: install, driver")
+    .argument("<subcommand>", "Merge subcommand: install, reconcile, driver")
     .argument(
       "[artifact]",
       `driver only: artifact class to merge (${MERGE_DRIVER_ARTIFACT_VALUES.join(", ")})`,
@@ -3043,7 +3096,15 @@ export function registerMutationCommands(program: Command): void {
     .argument("[theirs]", "driver only: other-branch file path (git %B)")
     .option(
       "--dry-run",
-      "install only: preview .gitattributes and git config changes without writing",
+      "install/reconcile: preview changes without writing",
+    )
+    .option(
+      "--message <text>",
+      "reconcile only: audit message recorded on repaired history streams",
+    )
+    .option(
+      "--force",
+      "reconcile only: permit the underlying audited history ownership override",
     )
     .option(
       "--output <path>",
@@ -3058,7 +3119,7 @@ export function registerMutationCommands(program: Command): void {
       "driver only: side that wins unresolvable conflicts (ours|theirs; default ours)",
     )
     .description(
-      "Install or run field-aware Git merge drivers for tracker data.",
+      "Install merge drivers, reconcile post-merge history, or run a field-aware driver.",
     )
     .action(runMergeAction);
 

@@ -2,19 +2,33 @@ id: pm-zwya
 title: "GH-582: runRegisteredListCommand flagged Complex Method by CodeFactor — extract option-assembly helpers in register-list-query.ts"
 description: ""
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[3]: codefactor,gh-582,quality
 created_at: "2026-07-18T05:45:02.428Z"
-updated_at: "2026-07-18T05:45:19.999Z"
+updated_at: "2026-07-21T07:39:43.904Z"
+closed_at: "2026-07-21T07:35:46.851Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: "src/cli/register-list-query.ts runRegisteredListCommand (L181-241) split via mechanical extraction so CodeFactor's Complex Method finding clears; cyclomatic and cognitive complexity both stay <=16 (twin-gate policy pm-2gvp); no behavior change, list-* specs green; GH-582 closed"
 parent: pm-92if
 risk: low
 confidence: high
+resolution: Extracted output-mode validation and result rendering from runRegisteredListCommand into documented helpers.
+expected_result: The reported Complex Method clears while list behavior and the repository complexity policy remain unchanged.
+actual_result: List registration/list command suites and repo-wide ESLint pass with no new suppression.
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-2gvp,related,"2026-07-18T05:45:02.428Z",null,null
   pm-j8vq,related,"2026-07-18T05:45:02.428Z",null,null
   pm-pfqi,related,"2026-07-18T05:45:02.428Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-21T07:33:05.193Z",codex-root-20260721,"Evidence: runRegisteredListCommand now delegates non-trivial output-mode validation and rendering to documented helpers; list registration and list command suites pass with no suppression added."
+files[2]{path,scope,note}:
+  src/cli/register-list-query.ts,project,Extracted rendering-mode resolution and result rendering
+  tests/unit/cli/register-list-query.spec.ts,project,List registration behavior regression suite
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/register-list-query.spec.ts tests/unit/commands/list-command.spec.ts,project,600,List registration and command regression coverage
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mruc8n1a-gz3x5j,test,passed,"2026-07-21T07:34:28.281Z","2026-07-21T07:34:36.958Z","2026-07-21T07:34:36.958Z",1,0,0
+close_reason: "Completed: runRegisteredListCommand was decomposed into documented validation/rendering helpers with unchanged behavior and focused tests passing."
 body: "CodeFactor auto-issue GH-582 (2026-07-18, commit 6b8ee9e4 = PR#580 merge) flags src/cli/register-list-query.ts runRegisteredListCommand L181-241 as Complex Method. The method PASSES the repo twin gates (cyclomatic<=16 + sonarjs/cognitive-complexity<=16 enforced since pm-2gvp/GH-518) and holds NO entry in eslint-suppressions.json — CodeFactor's internal Complex-Method radar sits below our 16/16 policy threshold. Grade hygiene (pm-92if A+ goal) still wants it cleared: mechanically extract the status/brief/dependency-blocked option-assembly branches into named helpers; do NOT add a suppression (suppressions are the pm-j8vq grandfathered baseline, frozen for burn-down). Distinct from GH-583 (cli-bootstrap.ts), which IS suppression-backed and maps to pm-j8vq — never merge the two dispositions."

@@ -93,6 +93,7 @@ import {
   parseTypeOptionEntries,
 } from "./repeatable-metadata-parsers.js";
 import { assertValidBareDependencyFlagValue } from "../../sdk/dependency-flag-validation.js";
+import { normalizeDependencySeedId } from "../../sdk/dependency-provenance.js";
 import { collectNewOrderingCycleWarnings } from "../../sdk/graph/mutation-advisory.js";
 import type {
   Comment,
@@ -817,7 +818,7 @@ function parseDependencyAdditions(
     }
     const sourceKind = parseOptionalDependencyString(kv.source_kind);
     return {
-      id: normalizeItemId(id, prefix),
+      id: normalizeDependencySeedId(id, prefix, sourceKind),
       kind: ensureEnum(kind, DEPENDENCY_KIND_VALUES, "dependency kind"),
       created_at: parseDependencyCreatedAt(kv.created_at, nowIso),
       author: parseOptionalDependencyString(kv.author),
@@ -868,7 +869,7 @@ function parseDependencyRemovals(
       );
       const sourceKind = parseOptionalDependencyString(kv.source_kind);
       return {
-        id: normalizeItemId(idRaw, prefix),
+        id: normalizeDependencySeedId(idRaw, prefix, sourceKind),
         kind: kindRaw
           ? ensureEnum(kindRaw, DEPENDENCY_KIND_VALUES, "dependency kind")
           : undefined,

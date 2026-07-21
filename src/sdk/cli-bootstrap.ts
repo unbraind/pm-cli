@@ -100,65 +100,68 @@ const BOOTSTRAP_BOOLEAN_FLAGS = new Set([
   "--lean",
 ]);
 
+interface BootstrapGlobalParseState {
+  /** Last legacy `--path` value. */
+  legacyPathValue?: string;
+  /** Last preferred `--pm-path` value. */
+  pmPathValue?: string;
+  /** Boolean global flags observed before the command terminator. */
+  booleanFlags: Set<string>;
+  /** Author value, with an empty string marking a missing value. */
+  author?: string;
+}
+
+/** Consume one bootstrap-global token and update the accumulated parse state. */
+function consumeBootstrapGlobalToken(
+  argv: string[],
+  index: number,
+  state: BootstrapGlobalParseState,
+): number {
+  const token = argv[index];
+  if (BOOTSTRAP_BOOLEAN_FLAGS.has(token)) {
+    state.booleanFlags.add(token);
+    return 1;
+  }
+  const parsedPath = parseBootstrapPathToken(token, argv[index + 1]);
+  if (parsedPath) {
+    if (parsedPath.pathValue !== undefined) {
+      if (parsedPath.preferred) state.pmPathValue = parsedPath.pathValue;
+      else state.legacyPathValue = parsedPath.pathValue;
+    }
+    return parsedPath.consumed;
+  }
+  if (token === "--author") {
+    const consumesValue = consumesBootstrapAuthorValue(argv[index + 1]);
+    state.author = consumesValue ? argv[index + 1] : "";
+    return consumesValue ? 2 : 1;
+  }
+  if (token.startsWith("--author=")) {
+    state.author = token.slice("--author=".length);
+  }
+  return 1;
+}
+
 /** Implements parse bootstrap global options for the public runtime surface of this module. */
 export function parseBootstrapGlobalOptions(
   argv: string[],
 ): BootstrapGlobalOptions {
-  let legacyPathValue: string | undefined;
-  let pmPathValue: string | undefined;
-  const booleanFlags = new Set<string>();
-  let author: string | undefined;
+  const state: BootstrapGlobalParseState = { booleanFlags: new Set() };
   let index = 0;
   while (index < argv.length) {
-    const token = argv[index];
-    if (token === "--") {
-      break;
-    }
-    if (BOOTSTRAP_BOOLEAN_FLAGS.has(token)) {
-      booleanFlags.add(token);
-      index += 1;
-      continue;
-    }
-    const parsedPath = parseBootstrapPathToken(token, argv[index + 1]);
-    if (parsedPath) {
-      if (parsedPath.pathValue !== undefined) {
-        if (parsedPath.preferred) {
-          pmPathValue = parsedPath.pathValue;
-        } else {
-          legacyPathValue = parsedPath.pathValue;
-        }
-      }
-      index += parsedPath.consumed;
-      continue;
-    }
-    if (token === "--author") {
-      if (consumesBootstrapAuthorValue(argv[index + 1])) {
-        author = argv[index + 1];
-        index += 2;
-      } else {
-        author = "";
-        index += 1;
-      }
-      continue;
-    }
-    if (token.startsWith("--author=")) {
-      author = token.slice("--author=".length);
-      index += 1;
-      continue;
-    }
-    index += 1;
+    if (argv[index] === "--") break;
+    index += consumeBootstrapGlobalToken(argv, index, state);
   }
   return {
-    path: pmPathValue ?? legacyPathValue,
-    noExtensions: booleanFlags.has("--no-extensions"),
-    noPager: booleanFlags.has("--no-pager"),
-    json: booleanFlags.has("--json"),
-    quiet: booleanFlags.has("--quiet"),
-    lean: booleanFlags.has("--lean"),
-    ...(author === ""
+    path: state.pmPathValue ?? state.legacyPathValue,
+    noExtensions: state.booleanFlags.has("--no-extensions"),
+    noPager: state.booleanFlags.has("--no-pager"),
+    json: state.booleanFlags.has("--json"),
+    quiet: state.booleanFlags.has("--quiet"),
+    lean: state.booleanFlags.has("--lean"),
+    ...(state.author === ""
       ? { authorMissingValue: true }
-      : author !== undefined
-        ? { author }
+      : state.author !== undefined
+        ? { author: state.author }
         : {}),
   };
 }
@@ -1026,33 +1029,19 @@ export function mergeLinkedTestTwoTokenEntries(
   return result;
 }
 
-/** Implements normalize bootstrap invocation for the public runtime surface of this module. */
-export function normalizeBootstrapInvocation(
+/** Normalize option spellings and bare key-value tokens before list coalescing. */
+function normalizeBootstrapTokens(
   argv: string[],
-): BootstrapInvocationNormalizationResult {
-  const trace: BootstrapNormalizationEvent[] = [];
-  const legacyNormalized = normalizeLegacyExtensionActionSyntax(argv);
-  if (
-    legacyNormalized.length !== argv.length ||
-    legacyNormalized.some((token, index) => token !== argv[index])
-  ) {
-    trace.push({
-      from: argv.join(" "),
-      to: [...legacyNormalized],
-      reason: "legacy_extension_action",
-      confidence: "high",
-    });
-  }
-  const aliasNormalized = rewriteCommandAlias(legacyNormalized, trace);
-  const commandName = parseBootstrapCommandName(aliasNormalized);
-  const commandPathName = parseBootstrapCommandPathName(aliasNormalized);
-  const lookup = buildFlagLookup(commandPathName ?? commandName);
+  lookup: FlagLookup,
+  commandName: string | undefined,
+  trace: BootstrapNormalizationEvent[],
+): string[] {
   const normalizedArgv: string[] = [];
-  const pathValueIndices = collectBootstrapPathValueIndices(aliasNormalized);
-  for (let index = 0; index < aliasNormalized.length; index += 1) {
-    const token = aliasNormalized[index];
+  const pathValueIndices = collectBootstrapPathValueIndices(argv);
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index];
     if (token === "--") {
-      normalizedArgv.push(...aliasNormalized.slice(index));
+      normalizedArgv.push(...argv.slice(index));
       break;
     }
     const preserveCurrentToken = pathValueIndices.has(index);
@@ -1064,9 +1053,7 @@ export function normalizeBootstrapInvocation(
         preserveCurrentToken,
       );
       normalizedArgv.push(...normalizedToken.tokens);
-      if (normalizedToken.event) {
-        trace.push(normalizedToken.event);
-      }
+      if (normalizedToken.event) trace.push(normalizedToken.event);
       continue;
     }
     const bareKeyValue = parseBareKeyValueToken(token, preserveCurrentToken);
@@ -1090,6 +1077,36 @@ export function normalizeBootstrapInvocation(
     }
     normalizedArgv.push(token);
   }
+  return normalizedArgv;
+}
+
+/** Implements normalize bootstrap invocation for the public runtime surface of this module. */
+export function normalizeBootstrapInvocation(
+  argv: string[],
+): BootstrapInvocationNormalizationResult {
+  const trace: BootstrapNormalizationEvent[] = [];
+  const legacyNormalized = normalizeLegacyExtensionActionSyntax(argv);
+  if (
+    legacyNormalized.length !== argv.length ||
+    legacyNormalized.some((token, index) => token !== argv[index])
+  ) {
+    trace.push({
+      from: argv.join(" "),
+      to: [...legacyNormalized],
+      reason: "legacy_extension_action",
+      confidence: "high",
+    });
+  }
+  const aliasNormalized = rewriteCommandAlias(legacyNormalized, trace);
+  const commandName = parseBootstrapCommandName(aliasNormalized);
+  const commandPathName = parseBootstrapCommandPathName(aliasNormalized);
+  const lookup = buildFlagLookup(commandPathName ?? commandName);
+  const normalizedArgv = normalizeBootstrapTokens(
+    aliasNormalized,
+    lookup,
+    commandName,
+    trace,
+  );
   const linkedTestNormalized = mergeLinkedTestTwoTokenEntries(
     normalizedArgv,
     commandName,

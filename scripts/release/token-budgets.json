@@ -9,8 +9,8 @@
       "args": [
         "--help"
       ],
-      "max_bytes": 11667,
-      "max_estimated_tokens": 2918
+      "max_bytes": 11688,
+      "max_estimated_tokens": 2923
     },
     {
       "id": "search-help",
@@ -64,8 +64,8 @@
       "args": [
         "list"
       ],
-      "max_bytes": 502,
-      "max_estimated_tokens": 126
+      "max_bytes": 548,
+      "max_estimated_tokens": 138
     },
     {
       "id": "list-json",
@@ -73,14 +73,14 @@
         "list",
         "--json"
       ],
-      "max_bytes": 1307,
-      "max_estimated_tokens": 327
+      "max_bytes": 828,
+      "max_estimated_tokens": 207
     },
     {
       "id": "get-default",
       "args": [
         "get",
-        "pm-2rm6"
+        "pm-0h1e"
       ],
       "max_bytes": 591,
       "max_estimated_tokens": 149
@@ -89,7 +89,7 @@
       "id": "get-json-compact-fields",
       "args": [
         "get",
-        "pm-2rm6",
+        "pm-0h1e",
         "--json",
         "--fields",
         "id,title,status,type,priority,tags,dependencies"

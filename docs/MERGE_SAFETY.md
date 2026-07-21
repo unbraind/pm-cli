@@ -1,6 +1,6 @@
 # Multi-Branch Tracker Merge Safety
 
-Tracked by [pm-wc1r](../.agents/pm/features/pm-wc1r.toon), with the integrity and concurrency fixes [pm-9q2t](../.agents/pm/issues/pm-9q2t.toon), [pm-cxyv](../.agents/pm/issues/pm-cxyv.toon), [pm-gpo7](../.agents/pm/issues/pm-gpo7.toon), [pm-m3nl](../.agents/pm/issues/pm-m3nl.toon), [pm-wwfd](../.agents/pm/issues/pm-wwfd.toon), and [pm-xdn6](../.agents/pm/issues/pm-xdn6.toon). Fence-coverage completeness and drift detection are tracked by [pm-i4fx](../.agents/pm/issues/pm-i4fx.toon); cross-branch id collision safety by [pm-pibw](../.agents/pm/issues/pm-pibw.toon); this repository's own adoption by [pm-iwsj](../.agents/pm/chores/pm-iwsj.toon).
+Tracked by [pm-wc1r](../.agents/pm/features/pm-wc1r.toon), with the integrity and concurrency fixes [pm-9q2t](../.agents/pm/issues/pm-9q2t.toon), [pm-cxyv](../.agents/pm/issues/pm-cxyv.toon), [pm-gpo7](../.agents/pm/issues/pm-gpo7.toon), [pm-m3nl](../.agents/pm/issues/pm-m3nl.toon), [pm-wwfd](../.agents/pm/issues/pm-wwfd.toon), and [pm-xdn6](../.agents/pm/issues/pm-xdn6.toon). Fence-coverage completeness and drift detection are tracked by [pm-i4fx](../.agents/pm/issues/pm-i4fx.toon); cross-branch id collision safety by [pm-pibw](../.agents/pm/issues/pm-pibw.toon); post-merge reconciliation by [pm-mfkv92](../.agents/pm/issues/pm-mfkv92.toon); this repository's own adoption by [pm-iwsj](../.agents/pm/chores/pm-iwsj.toon).
 
 pm stores project context as reviewable repository files. Concurrent agents can therefore use ordinary branches and worktrees, but tracker artifacts need semantic merge behavior: raw line merging cannot preserve TOON collection counts, JSON object structure, or append-only history hash chains.
 
@@ -40,7 +40,7 @@ pm merge install --dry-run --json
 
 When both sides change the same scalar or JSON leaf differently, the driver writes a parseable preferred-side result but exits nonzero. Git keeps the path conflicted so a human or coordinating agent must review the losing value and explicitly `git add` the resolution. Use `--prefer theirs` only when that is the intended resolution policy.
 
-The underlying public SDK exports are `mergeItemDocuments`, `mergeHistoryStreams`, `mergeRelationshipEventStreams`, `mergeJsonDocuments`, `runMergeDriver`, `runMergeInstall`, `refreshMergeAttributeFenceIfInstalled`, `buildMergeAttributePatterns`, and `auditMergeAttributeFence` from `@unbrained/pm-cli/sdk`. Hosts can embed the same semantics without shelling out.
+The underlying public SDK exports are `mergeItemDocuments`, `mergeHistoryStreams`, `mergeRelationshipEventStreams`, `mergeJsonDocuments`, `runMergeDriver`, `runMergeInstall`, `runMergeReconcile`, `refreshMergeAttributeFenceIfInstalled`, `buildMergeAttributePatterns`, and `auditMergeAttributeFence` from `@unbrained/pm-cli/sdk`. Hosts can embed the same semantics without shelling out.
 
 ## Cross-branch id collision safety
 
@@ -54,9 +54,16 @@ Item ids are `<prefix>` plus random base36 characters, and uniqueness is only pr
 After every branch merge that touches `.agents/pm`, run:
 
 ```bash
-pm validate --check-history-drift --strict-exit
-pm history <item-id> --verify --strict-exit
+pm merge reconcile --dry-run --json
+pm merge reconcile --message "Reconcile merged tracker histories" --json
 ```
+
+The preview reports every drifted stream without mutation. The apply pass uses
+the audited bulk history-repair engine and immediately validates history drift
+plus storage integrity; it exits nonzero when a stream cannot be repaired or an
+invariant remains red. Clean workspaces are a successful no-op. Default Git
+hooks remain unchanged: repositories that want automatic enforcement must opt
+in by invoking this command from their own post-merge hook.
 
 The default validation surface includes `storage_integrity`. It fails on unreadable item documents, history conflict markers, malformed history tails, live items whose latest history operation is `delete` (a delete/modify resurrection candidate), and unparseable settings/schema files. This prevents the ordinary tolerant read path from turning corruption into a green gate.
 
@@ -66,7 +73,7 @@ A history union can be structurally valid while replayed history and the chosen 
 pm history <item-id> --verify --strict-exit
 pm history-repair <item-id> --dry-run
 pm history-repair <item-id>
-pm validate --check-history-drift --strict-exit
+pm merge reconcile --dry-run --json
 ```
 
 `history-repair` records the reconciliation patch and surfaces discarded event authors/operations when the on-disk document would otherwise revert effective merged history. Re-apply any intended losing mutation as a normal `pm update` so it remains explicit and auditable.
