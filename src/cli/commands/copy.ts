@@ -213,8 +213,8 @@ export async function runCopy(
     body: "",
   };
 
-  let hookWarnings: string[] = [];
-  let derivedIndexWarnings: string[] = [];
+  let hookWarnings: string[];
+  let derivedIndexWarnings: string[];
   try {
     const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
       pmRoot,

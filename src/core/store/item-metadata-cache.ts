@@ -464,7 +464,9 @@ async function loadDerivedIndexManifest(
   try {
     await fs.stat(manifestPath);
     await removeDerivedIndexFiles(pmRoot);
-  } catch {}
+  } catch {
+    // Missing manifests are the normal pre-index and small-workspace state.
+  }
   return null;
 }
 
@@ -994,7 +996,9 @@ async function persistMetadataCacheIfNeeded(params: {
       source_cursor: params.sourceCursor,
       entry_count: Object.keys(params.state.newEntries).length,
     });
-  } catch {}
+  } catch {
+    // Cache persistence is best-effort; authoritative item reads rebuild it.
+  }
 }
 
 async function persistBodyCacheIfNeeded(params: {

@@ -83,11 +83,6 @@
       "count": 1
     }
   },
-  "src/cli/commands/copy.ts": {
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
   "src/cli/commands/create.ts": {
     "no-useless-assignment": {
       "count": 1
