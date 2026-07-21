@@ -2,25 +2,42 @@ id: pm-3hps
 title: "Context relevance signal feature store: derived recency, graph, claim, risk, deadline, knowledge-density, and semantic-match signals"
 description: Build the SDK-facing derived signal layer that feeds adaptive context ranking without scanning every item file.
 type: Task
-status: open
+status: in_progress
 priority: 1
 tags[4]: "area:sdk",context,relevance,scale
 created_at: "2026-07-06T23:50:39.057Z"
-updated_at: "2026-07-13T17:50:38.082Z"
+updated_at: "2026-07-21T17:15:35.002Z"
+assignee: codex-derived-context-20260721
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "SDK exposes stable signal extraction primitives; signals cover recency/activity density, dependency proximity, claim/focus state, priority/risk/deadline pressure, knowledge density, author affinity, and semantic similarity; feature reads are index-backed via pm-801d; signal snapshots are deterministic for a fixed workspace; missing optional indexes degrade gracefully with explicit metadata."
 parent: pm-4k6b
 risk: medium
 confidence: medium
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-801d,blocked_by,"2026-07-06T23:50:39.057Z",codex-agent,null
   pm-rjqr,blocked_by,"2026-07-06T23:50:39.057Z",codex-agent,null
   pm-h3no,blocked_by,"2026-07-09T11:40:42.363Z",null,null
-comments[1]{created_at,author,text}:
+  pm-ds3b,related,"2026-07-21T16:54:18.468Z",codex-derived-context-20260721,null
+comments[3]{created_at,author,text}:
   "2026-07-06T23:50:39.057Z",codex-agent,"Duplicate check: searched all statuses for context relevance scorer/signal extraction/feature store; only parent pm-4k6b and historical search-ranking work matched, so this is the non-duplicate signal-layer implementation slice."
+  "2026-07-21T16:59:24.487Z",codex-derived-context-20260721,"Implementation tranche 2026-07-21: added public ContextSignalStore and pluggable adapter contracts, a same-directory atomic JSON adapter, format_version + signal_set_version envelopes, caller-supplied authoritative source cursors, deterministic id-sorted rows, strict untrusted snapshot validation, and self-healing missing/stale/corrupt rebuilds. buildItemContextRelevanceCandidates now accepts index-derived activity, graph, claim/focus, knowledge, and author maps while preserving metadata fallbacks plus usage and semantic signals. The store joins persisted signals back to authoritative item objects and explicitly reports fresh/rebuilt plus degradation warnings."
+  "2026-07-21T17:15:35.002Z",codex-derived-context-20260721,"Verification evidence 2026-07-21: strict release gates pass end to end. Full suite: 333 files / 6,067 tests / exact 100% statements (40,824/40,824), branches (28,712/28,712), functions (8,299/8,299), and lines (39,711/39,711). Build, typecheck, docs, docstrings, static quality, package boundary, token gate, version policy, secret scan, 13-package npx smoke, 88-command package-first dogfood, npm pack, published-version compatibility, Sentry, and telemetry all pass. Manual packed consumer independently proved rebuilt->fresh snapshot reuse and compact create output."
 notes[3]{created_at,author,text}:
   "2026-07-07T07:27:25.206Z",maintainer-agent,"Planning pass 2026-07-07: candidate additional derived signal — estimation calibration. estimated_minutes is a required metadata field but nothing compares it against actual duration derived from history streams (claim-to-close spans, cf. pm-pee5 flow metrics). Two uses: (a) ranking — items whose elapsed active time greatly exceeds estimate are aging-WIP risks worth surfacing; (b) planning — a per-author/per-type calibration factor makes future estimates and pm plan step budgeting evidence-based. Derivation belongs in this feature store; presentation belongs in pm-pee5."
   "2026-07-10T10:47:19.567Z",maintainer-agent,"Design constraints 2026-07-10 (planning pass, pre-implementation): the store MUST keep derived state strictly outside the immutable history chain. (a) Authoritative data = item files + history JSONL only; every store artifact is recomputable from them and carries the history cursor (per-stream entry hash/offset) it was folded up to — invalidation is cursor comparison, never mtime. (b) Write path: algorithm (6) write-time fold updates signals incrementally per mutation, O(1) amortized, behind the existing instant-mutation/background-refresh pattern (never blocks the mutating command). (c) Read path: signals serve pm context/next through the pm-h3no scorer contract's canonical signal shape; consumers never read store files directly. (d) Shared substrate with pm-801d: the persistent derived read index and this signal store are the same class of artifact (cursor-stamped derived read-path state); define ONE layout/versioning/invalidation convention (format_version-gated directory, e.g. .pm/derived/, gitignored) so pm-801d can land before or after without a contract change — this addresses the blocked_by edge either way. (e) Degradation: absent or stale store = recompute-on-demand scan fallback (correctness identical, latency worse), so small workspaces pay zero setup and corruption is self-healing (delete = full refold). (f) Signals are versioned: signal_set_version bump forces refold, enabling algorithm evolution without migrations. (g) Concurrency: single-writer fold via the existing lock discipline; readers get last-consistent snapshot (write-temp + atomic rename), no partial reads."
   "2026-07-13T17:50:38.081Z",maintainer-agent,"Fold-state ownership additions from pm-4k6b directed pass 2026-07-13 — three new algorithms land their write-time state in this store (wave 3, same event-sourced fold as algorithm (6), no daemon per ADR pm-i7i4): (20) temporal non-stationarity — change-point run-length state over population statistics (mutation rate, author-set Jaccard, vocabulary drift) + small era table + per-item ring-buffer binned access counts for periodicity; (21) hierarchical shrinkage — one evidence count n + prior pointer per folded statistic, conjugate closed-form blends, prior taxonomy item<-type<-workspace<-shipped defaults; (22) lineage continuity — kind-specific relevance mass transfer on terminal lineage events + identity-collapsed statistics (evidence sums along lineage chains, feeding (21)). Full definitions in the pm-4k6b notes ledger, algorithms (20)-(22)."
+learnings[1]{created_at,author,text}:
+  "2026-07-21T16:59:25.959Z",codex-derived-context-20260721,Derived feature stores should make freshness a caller-verifiable cursor contract and return cache status plus recovery warnings; hiding fallback behind an opaque cache makes correctness and latency impossible for SDK consumers to reason about.
+files[4]{path,scope,note}:
+  src/sdk/context-relevance.ts,project,index-derived signal injection and required built-in candidate contract
+  src/sdk/context-signal-store.ts,project,versioned cursor-stamped rebuildable context signal feature store
+  src/sdk/index.ts,project,public SDK feature-store export
+  tests/unit/sdk/context-signal-store.spec.ts,project,feature-store persistence validation recovery and atomicity coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,360
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-signal-store.spec.ts tests/unit/sdk/context-relevance.spec.ts,project,120
+docs[2]{path,scope,note}:
+  docs/PERFORMANCE.md,project,derived signal snapshot performance and degradation contract
+  docs/SDK.md,project,public feature-store contracts and installed-consumer example
 body: ""

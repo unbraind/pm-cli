@@ -49,6 +49,13 @@ export interface ContextRelevanceCandidate<TItem> {
   signals?: ContextRelevanceSignals;
 }
 
+/** Item candidate whose built-in metadata derivation always supplies signals. */
+export interface ItemContextRelevanceCandidate
+  extends ContextRelevanceCandidate<ItemMetadata> {
+  /** Complete built-in derivation result, with unavailable signals omitted by value. */
+  signals: ContextRelevanceSignals;
+}
+
 /** Inputs that make item-signal derivation deterministic and host-configurable. */
 export interface BuildItemContextRelevanceCandidatesOptions {
   /** Workspace lifecycle registry, including custom in-progress aliases. */
@@ -61,6 +68,16 @@ export interface BuildItemContextRelevanceCandidatesOptions {
   usageAffinity?: Readonly<Record<string, number>>;
   /** Optional caller-derived semantic similarity by item id. */
   semanticSimilarity?: Readonly<Record<string, number>>;
+  /** Optional index-derived activity density by item id. */
+  activityDensity?: Readonly<Record<string, number>>;
+  /** Optional index-derived graph proximity by item id. */
+  graphProximity?: Readonly<Record<string, number>>;
+  /** Optional host-derived claim or focus affinity by item id. */
+  claimFocus?: Readonly<Record<string, number>>;
+  /** Optional index-derived knowledge density by item id. */
+  knowledgeDensity?: Readonly<Record<string, number>>;
+  /** Optional history-derived author affinity by item id. */
+  authorAffinity?: Readonly<Record<string, number>>;
 }
 
 function normalizedPressure(value: unknown, maximum: number): number {
@@ -82,6 +99,14 @@ function riskPressure(risk: ItemMetadata["risk"]): number {
   return normalized === "low" ? 0.1 : 0;
 }
 
+function derivedSignalOrFallback(
+  values: Readonly<Record<string, number>> | undefined,
+  id: string,
+  fallback: number,
+): number {
+  return values?.[id] ?? fallback;
+}
+
 /**
  * Derive the canonical metadata signals consumed by `pm context` and `pm next`.
  * Extensions can pair this with {@link scoreContextCandidatesWithActiveExtensions}
@@ -90,7 +115,7 @@ function riskPressure(risk: ItemMetadata["risk"]): number {
 export function buildItemContextRelevanceCandidates(
   items: readonly ItemMetadata[],
   options: BuildItemContextRelevanceCandidatesOptions,
-): ContextRelevanceCandidate<ItemMetadata>[] {
+): ItemContextRelevanceCandidate[] {
   const sortableTimestamp = (value: unknown): string => {
     if (typeof value !== "string") return "";
     try {
@@ -107,23 +132,35 @@ export function buildItemContextRelevanceCandidates(
   const recencyRank = new Map(recencyOrder.map((item, index) => [item.id, index]));
   const denominator = Math.max(items.length - 1, 1);
   const normalizedAuthor = options.author?.trim().toLowerCase();
+  const assignedIds = new Set(
+    normalizedAuthor
+      ? items
+          .filter(
+            (item) =>
+              typeof item.assignee === "string" &&
+              item.assignee.trim().toLowerCase() === normalizedAuthor,
+          )
+          .map((item) => item.id)
+      : [],
+  );
   const inProgressStatus = normalizeStatusInput("in_progress", options.statusRegistry);
   const nowMs = Date.parse(options.now);
   return items.map((item) => {
-    const assigned = normalizedAuthor !== undefined && typeof item.assignee === "string" && item.assignee.trim().toLowerCase() === normalizedAuthor;
+    const assigned = assignedIds.has(item.id);
     const knowledgeEntries = (item.comments?.length ?? 0) + (item.notes?.length ?? 0) + (item.learnings?.length ?? 0);
     return {
       id: item.id,
       item,
       signals: {
         recency: items.length === 1 ? 1 : 1 - (recencyRank.get(item.id) as number) / denominator,
-        graph_proximity: item.parent ? 0.3 : 0,
-        claim_focus: normalizeStatusForRegistry(item.status, options.statusRegistry) === inProgressStatus ? 1 : assigned ? 0.75 : 0,
+        activity_density: options.activityDensity?.[item.id],
+        graph_proximity: derivedSignalOrFallback(options.graphProximity, item.id, item.parent ? 0.3 : 0),
+        claim_focus: derivedSignalOrFallback(options.claimFocus, item.id, normalizeStatusForRegistry(item.status, options.statusRegistry) === inProgressStatus ? 1 : assigned ? 0.75 : 0),
         priority_pressure: normalizedPressure(item.priority, 4),
         risk_pressure: riskPressure(item.risk),
         deadline_pressure: deadlinePressure(item.deadline, nowMs),
-        knowledge_density: Math.min(knowledgeEntries / 5, 1),
-        author_affinity: assigned ? 1 : 0,
+        knowledge_density: derivedSignalOrFallback(options.knowledgeDensity, item.id, Math.min(knowledgeEntries / 5, 1)),
+        author_affinity: derivedSignalOrFallback(options.authorAffinity, item.id, assigned ? 1 : 0),
         usage_affinity: options.usageAffinity?.[item.id],
         semantic_similarity: options.semanticSimilarity?.[item.id],
       },

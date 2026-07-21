@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: program,scorecard,security,supply-chain
 created_at: "2026-07-14T22:39:59.630Z"
-updated_at: "2026-07-17T13:31:46.710Z"
+updated_at: "2026-07-21T16:53:27.606Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: Every non-10 Scorecard check has a child item; agent-executable children shipped; human/community-gated children have their gate documented; aggregate score re-measured after each child closes (weekly cron or workflow_dispatch) and progress noted here; program closes when the score is 10.0 or every remaining gap is formally accepted with rationale on this item
@@ -15,7 +15,8 @@ risk: medium
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-k7dp,related,"2026-07-14T22:39:59.630Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-14T22:56:40.012Z",codex-root,"Live Scorecard code-scanning reconciliation 2026-07-15: alerts #17-#23 map to existing children pm-003j (3 Token-Permissions instances), pm-0yi7 (Fuzzing), pm-2d7k (Security-Policy), pm-obq2 (Code-Review), and pm-rrt1 (CII-Best-Practices). No duplicate items created; these remain outside the active SDK implementation bundle."
   "2026-07-17T13:31:46.710Z",codex-root,"Live GitHub reconciliation 2026-07-17: no open PRs, Dependabot alerts, or secret-scanning alerts. Scorecard alerts #17-#23 remain exactly mapped to existing children pm-003j (Token-Permissions x3), pm-0yi7 (Fuzzing), pm-2d7k (Security-Policy), pm-obq2 (Code-Review), and pm-rrt1 (CII-Best-Practices); no duplicate item created. Current main head d56632fe has green CI, CodeQL, Security and Script Quality, OSSF Scorecard, and CodSpeed runs."
+  "2026-07-21T16:53:27.606Z",codex-derived-context-20260721,"Live GitHub Scorecard reconciliation 2026-07-21: code scanning has exactly 7 open OSSF Scorecard alerts, still mapped to canonical children pm-003j (Token-Permissions x3), pm-0yi7 (Fuzzing), pm-2d7k (Security-Policy), pm-obq2 (Code-Review), and pm-rrt1 (CII-Best-Practices). Dependabot alerts=0, secret-scanning alerts=0, and pnpm audit vulnerabilities=0 at every severity. No duplicate security item created."
 body: ""
