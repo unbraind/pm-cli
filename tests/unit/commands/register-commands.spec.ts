@@ -454,7 +454,7 @@ describe("list-query command actions", () => {
   it("rejects --stream without --json and streams NDJSON rows with --json", async () => {
     await expect(runCli("list", "--stream")).rejects.toThrow("--stream requires --json");
     await runCliRaw("--json", "list", "--stream");
-    expect(vi.mocked(runList)).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(runList)).toHaveBeenCalledTimes(1);
   });
 
   it("normalizes aggregate options through the real helper", async () => {
