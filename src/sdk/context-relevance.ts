@@ -40,6 +40,11 @@ export type ContextRelevanceSignals = Partial<
 >;
 
 const NO_CONTEXT_AUTHOR = Symbol("no-context-author");
+const NO_ITEM_ASSIGNEE = Symbol("no-item-assignee");
+
+function normalizeContextActor(value: unknown, missingValue: symbol): string | symbol {
+  return typeof value === "string" ? value.trim().toLowerCase() : missingValue;
+}
 
 /** A project-management object and its derived relevance signals. */
 export interface ContextRelevanceCandidate<TItem> {
@@ -133,11 +138,11 @@ export function buildItemContextRelevanceCandidates(
   });
   const recencyRank = new Map(recencyOrder.map((item, index) => [item.id, index]));
   const denominator = Math.max(items.length - 1, 1);
-  const normalizedAuthor = options.author?.trim().toLowerCase() ?? NO_CONTEXT_AUTHOR;
+  const normalizedAuthor = normalizeContextActor(options.author, NO_CONTEXT_AUTHOR);
   const inProgressStatus = normalizeStatusInput("in_progress", options.statusRegistry);
   const nowMs = Date.parse(options.now);
   return items.map((item) => {
-    const assigned = item.assignee?.trim().toLowerCase() === normalizedAuthor;
+    const assigned = normalizeContextActor(item.assignee, NO_ITEM_ASSIGNEE) === normalizedAuthor;
     const knowledgeEntries = (item.comments?.length ?? 0) + (item.notes?.length ?? 0) + (item.learnings?.length ?? 0);
     return {
       id: item.id,
