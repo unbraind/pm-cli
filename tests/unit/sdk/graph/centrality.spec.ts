@@ -168,6 +168,22 @@ describe("findRelationshipCutStructure", () => {
     ]);
   });
 
+  it("orders a bridge whose depth-first parent outranks its child", () => {
+    // a-c-b: DFS roots at a, descends a -> c -> b, so the (c, b) tree edge is
+    // reported with parent c greater than child b, exercising the reverse order.
+    const graph = RelationshipGraph.fromItems([
+      { id: "pm-a", dependencies: [dep("pm-c", "related")] },
+      { id: "pm-c", dependencies: [dep("pm-b", "related")] },
+      { id: "pm-b" },
+    ]);
+    const result = findRelationshipCutStructure(graph);
+    expect(result.value.articulationPoints).toEqual(["pm-c"]);
+    expect(result.value.bridges).toEqual([
+      { source: "pm-a", target: "pm-c" },
+      { source: "pm-b", target: "pm-c" },
+    ]);
+  });
+
   it("reports no cuts inside a fully connected triangle", () => {
     const graph = RelationshipGraph.fromItems([
       {

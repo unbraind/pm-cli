@@ -750,6 +750,19 @@ describe("runGraph", () => {
       expect(summary.critical_path).toBeUndefined();
       expect(summary.truncated).toBe(true);
       expect(summary.scheduled_count).toBe(3);
+
+      // Slack has no kind filter; --kind is rejected rather than silently dropped.
+      await expect(
+        runGraph(
+          "slack",
+          undefined,
+          undefined,
+          { kind: "blocked_by" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 

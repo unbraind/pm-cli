@@ -967,6 +967,8 @@ function runGraphDominators(
 /** Execute the critical-path slack (float) analysis subcommand. */
 function runGraphSlack(invocation: GraphInvocation): GraphSlackResult {
   const limit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
+  // Scheduling spans every ordering kind; --kind is rejected upstream by
+  // assertGraphFlagScope, so no kind filter reaches the analysis here.
   const analysis = analyzeRelationshipSchedule(invocation.assembly.graph);
   const criticalCount = analysis.rows.filter((row) => row.critical).length;
   return {
@@ -1164,6 +1166,14 @@ function assertGraphFlagScope(
   if (subcommand !== "audit" && options.saveBaseline === true)
     throw new PmCliError(
       "--save-baseline applies only to graph audit.",
+      EXIT_CODE.USAGE,
+    );
+  // Slack schedules the whole ordering DAG (reusing the exact execution
+  // analysis, which has no kind filter), so reject --kind instead of silently
+  // ignoring it and letting the cache key diverge on an inert option.
+  if (subcommand === "slack" && options.kind !== undefined)
+    throw new PmCliError(
+      "graph slack analyzes every ordering kind; --kind is not supported.",
       EXIT_CODE.USAGE,
     );
   if (options.rebuild === true && options.clear === true)

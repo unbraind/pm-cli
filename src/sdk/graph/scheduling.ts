@@ -40,7 +40,7 @@ export interface RelationshipScheduleRow {
 
 /** Bounded schedule-analysis controls. */
 export interface GraphScheduleOptions {
-  /** Abort signal checked once before and once after the backward pass. */
+  /** Abort signal checked once at entry, before the forward pass. */
   signal?: AbortSignal;
 }
 
