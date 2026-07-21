@@ -28,10 +28,13 @@ Hierarchy kinds likewise declare which endpoint is the structural parent. `sourc
 
 `RelationshipEventStore` is the built-in durable filesystem adapter. It stores validated JSONL at `.agents/pm/relationships/events.jsonl` by default, replays every row through the same registry and cardinality checks on open, and serializes cross-process appends with the tracker lock. Async `currentVersion()`, `snapshot()`, and `page()` reads take the same lock before refreshing, so long-lived readers observe completed appends without torn JSONL tails. Store paths must stay lexically inside a non-symlinked tracker root and cannot traverse symlinked components. Database, replicated-log, and event-bus adapters can persist the same public events and rebuild the same snapshots.
 
+`appendBatch(inputs)` is the migration/import path. It refreshes under the writer lock, validates every event against one evolving in-memory view, and publishes the complete JSONL replacement with one atomic rename. A validation or write failure leaves the prior stream byte-for-byte unchanged. The ordinary `append(input)` remains the low-latency single-event path and retains its append-only write. `existingEventPolicy: "skip_identical"` makes deterministic migrations resumable across processes: an existing event id is skipped only when its relationship id, action, canonical edge, author, timestamp, and reason are identical; a same-id/different-content collision fails closed.
+
 ```ts
 import {
   RelationshipEventLog,
   RelationshipEventStore,
+  planRelationshipEventBackfill,
 } from "@unbrained/pm-cli/sdk";
 
 const history = new RelationshipEventLog(["design", "build", "ship"]);
@@ -59,6 +62,30 @@ await durable.append({
   edge: { source: "ship", target: "build", kind: "blocked_by" },
   author: "release-agent",
   timestamp: new Date().toISOString(),
+});
+
+const legacyItems = [
+  { id: "design", title: "Design", status: "closed" as const },
+  {
+    id: "build",
+    title: "Build",
+    status: "open" as const,
+    parent: "design",
+    dependencies: [{ id: "design", kind: "blocked_by" }],
+  },
+];
+const migration = planRelationshipEventBackfill(legacyItems, {
+  migrationId: "legacy-items-v1",
+  author: "migration-agent",
+  timestamp: "2026-07-21T20:45:00.000Z",
+});
+const migrationStore = await RelationshipEventStore.open({
+  pmRoot: ".agents/pm",
+  nodes: migration.nodes,
+  relativePath: "relationships/legacy-items-v1.jsonl",
+});
+await migrationStore.appendBatch(migration.events, {
+  existingEventPolicy: "skip_identical",
 });
 ```
 
@@ -257,6 +284,10 @@ longer paying two whole-graph SCC analyses per dependency-bearing mutation.
 ## Compatibility and migration
 
 Aliases normalize at registry boundaries; stored values are not silently rewritten. Imports must carry or select a compatible registry version. Federation merges definitions before edges and rejects identifier or alias collisions. Rollback removes the custom definition and its derived index only after application-owned edges have been exported or superseded; immutable history is retained.
+
+`planRelationshipEventBackfill(items, options)` is the side-effect-free bridge from legacy item `parent`, scalar `blocked_by`, and structured `dependencies` fields to the event platform. It uses the same workspace assembly and registry semantics as graph queries, so custom kinds, aliases, external targets, case normalization, duplicate-row governance, and explicit missing-target placeholders cannot drift between migration and reads. Input order does not affect the SHA-256 plan fingerprint, deterministic event ids, relationship ids, node universe, or event order. The plan reports total normalized edges, raw duplicate dependency groups, dangling internal references, and ids skipped through `existingEventIds` before any write occurs.
+
+For a resumable migration, keep `migrationId`, `author`, and `timestamp` stable, inspect the plan evidence, open the store with `plan.nodes`, and publish with `appendBatch(..., { existingEventPolicy: "skip_identical" })`. Changing semantic input under the same migration id intentionally produces an event-id collision instead of silently rewriting history. A plan is not an authority transfer: legacy item/history files remain authoritative until the application explicitly switches its read adapter and records that cutover.
 
 Validation rejects missing endpoints, disallowed self-edges, cardinality violations at mutation boundaries, ordering-only cycles, and incompatible aliases or versions. Immutable graph snapshots deduplicate canonical edges deterministically, retaining the last supplied edge; mutation boundaries may reject duplicates before snapshot construction. Evidence freshness and application payload schemas are extension policy: the core preserves payloads but does not invent domain meaning.
 

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: "area:graph",benchmark,conformance,property-testing,scale,testing,token-efficiency
 created_at: "2026-07-13T22:03:31.210Z"
-updated_at: "2026-07-14T16:24:58.206Z"
+updated_at: "2026-07-21T21:43:58.004Z"
 author: codex-root
 estimated_minutes: 600
 acceptance_criteria: "Fixtures cover empty and seconds-old scratch projects, representative medium histories, deep and cyclic typed graphs, multi-decade event streams, disconnected archives, and deterministic 10k, 100k, and one-million-item workspaces; Property tests cover registry invariants, inverse and alias rules, append-only mutation, replay equivalence, snapshot isolation, cursor stability, migration, merge or federation, and correction by superseding event; Algorithm tests verify exact results on bounded fixtures and deterministic seeds, error bounds, freshness, provenance, and monotonic resource limits for approximations; Concurrency tests exercise thousands-agent read and write contention, crashes, stale indexes, retries, idempotency, checkpoints, and non-overlapping reconstruction claims; CLI, MCP, SDK, extension, and shell pipeline parity share golden semantics while allowing intentionally different compact projections; Performance gates record p50, p95, and p99 latency, peak memory, incremental update cost, bytes and tokens, truncation quality, and index rebuild time with documented hardware and envelopes; Every test runs in sandboxed PM_PATH and PM_GLOBAL_PATH and never reads or writes the real repository tracker"
@@ -26,7 +26,7 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-g2zz,related,"2026-07-13T22:03:31.210Z",null,null
   pm-ju83,blocked_by,"2026-07-13T22:03:31.210Z",null,null
   pm-mi2x,related,"2026-07-13T22:03:31.210Z",null,null
-comments[16]{created_at,author,text}:
+comments[21]{created_at,author,text}:
   "2026-07-13T22:03:31.210Z",codex-root,"Duplicate check 2026-07-13: pm-mi2x supplies generic scale fixtures and pm-atfm evaluates context quality,but no item owns typed-graph property,replay,migration,adapter-parity,and reconstruction conformance across those fixtures."
   "2026-07-14T09:43:38.102Z",codex-gpt5,"Implementation start 2026-07-14: add replay, snapshot, adversarial topology, deterministic analytics, and token-bound conformance coverage for the broad graph SDK bundle; all tests remain sandbox-safe."
   "2026-07-14T10:02:22.642Z",codex-gpt5,"TDD evidence: focused relationship suites pass 21 tests. New relationship history, analytics, and context modules plus the precedence additions report literal 100% statements/branches/functions/lines in focused V8 coverage; static quality, docstring, audit-boundary, and token-budget gates pass."
@@ -43,18 +43,34 @@ comments[16]{created_at,author,text}:
   "2026-07-14T15:30:09.233Z",codex-gpt5,"PR #559 final verification: initial-open lock fix passes 20 focused tests; full suite passes 287 files/5689 tests at exact 100% statements 36813/36813, branches 26416/26416, functions 7432/7432, and lines 35928/35928; fresh packed consumer passes with zero npm vulnerabilities."
   "2026-07-14T15:54:37.620Z",codex-gpt5,"PR #559 round 5 verification: added generic cursor snapshot-envelope validation plus a real two-store durable continuation regression. Full repository coverage passes 287 files / 5,690 tests at exact 100% statements 36,819/36,819, branches 26,434/26,434, functions 7,432/7,432, and lines 35,934/35,934. Typecheck, ESLint, zero clones, 100% docstrings/static quality, package boundary, and token gates pass."
   "2026-07-14T16:24:55.270Z",codex-gpt5,"PR #559 security regression evidence: added post-open symlink replacement acceptance across all durable public I/O methods. Full repository coverage passes 287 files / 5,691 tests at exact 100% statements 36,830/36,830, branches 26,434/26,434, functions 7,433/7,433, and lines 35,945/35,945; focused tests, typecheck, ESLint, zero clones, docstring/static quality, package boundary, token gates, fresh packed install, and npm audit pass."
+  "2026-07-21T20:41:58.989Z",codex-relationship-backfill-20260721,"Implementation start 2026-07-21: actively build batch atomicity, replay equivalence, resumability, custom-kind, concurrency, and scale regressions for the pm-ju83 backfill surface. The task is worked alongside its canonical blocker so this tranche advances both without creating a duplicate item."
+  "2026-07-21T20:55:28.919Z",codex-relationship-backfill-20260721,"Conformance progress: focused migration plus existing durable history suites pass 31 tests; the new scale fixture plans and atomically publishes 10,000 edges and replays the exact snapshot without mocks or repository tracker access."
+  "2026-07-21T21:15:18.470Z",codex-relationship-backfill-20260721,"Scale/conformance evidence 2026-07-21: the tracker-linked 10,000-edge test passed against real filesystem locking and atomic JSONL publication; full repository coverage passed 6,076 tests with 100% statements, branches, functions, and lines. The packed public SDK consumer separately proved deterministic planning, atomic publication, and idempotent resume through the installed artifact."
+  "2026-07-21T21:37:37.000Z",codex-relationship-backfill-20260721,"PR evidence: conformance, concurrency, failure-atomicity, resume, and real 10,000-edge coverage are under review in https://github.com/unbraind/pm-cli/pull/639."
+  "2026-07-21T21:43:57.440Z",codex-relationship-backfill-20260721,"Exact-head review closeout: PR #639 head a3ffacfb is fully green with no unresolved or actionable review findings. This matrix returns open for its remaining property/federation/million-item envelopes."
 notes[1]{created_at,author,text}:
   "2026-07-14T10:19:37.624Z",codex-gpt5,"Remaining canonical scope after this PR: property generators, concurrent durable adapters, migration matrix, and million-item proof; keep chore open."
-files[6]{path,scope,note}:
+files[7]{path,scope,note}:
   tests/fixtures/contracts/full.json,project,generated CLI MCP SDK contract snapshot
   tests/unit/commands/deps-command.spec.ts,project,CLI SDK bounded-context acceptance
   tests/unit/commands/register-commands.spec.ts,project,CLI option forwarding contract
   tests/unit/sdk/context-relevance.spec.ts,project,public relevance parity and malformed runtime coverage
   tests/unit/sdk/relationship-history-analytics.spec.ts,project,"event replay,analytics,cursor,token,semantic,and adversarial conformance"
+  tests/unit/sdk/relationship-migration.spec.ts,project,Atomicity resumability concurrency and 10k-edge migration acceptance
   tests/unit/sdk/relationships.spec.ts,project,registry precedence and validation conformance
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs coverage,project,900
-  node scripts/run-tests.mjs test -- tests/unit/sdk/relationships.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,project,240
+tests[3]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 900
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/relationship-migration.spec.ts
+    scope: project
+    timeout_seconds: 180
+    note: Deterministic backfill and 10k-edge conformance
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/relationships.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts
+    scope: project
+    timeout_seconds: 240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrv582t4-rytsbv,test,passed,"2026-07-21T21:05:43.634Z","2026-07-21T21:05:59.608Z","2026-07-21T21:05:59.608Z",1,0,0
 docs[1]{path,scope,note}:
   docs/RELATIONSHIP_GRAPH.md,project,"public event,snapshot,analytics,and graph-context contracts"
 body: "## Matrix axes\n\nScale; graph topology; edge-kind family; history age; mutation concurrency; index state; query budget; adapter; serialization; schema version; failure injection; permissions or redaction; exact versus approximate algorithm.\n\n## Required adversarial cases\n\nDense cliques; long chains; wide stars; duplicate aliases; associative cycles; genuine ordering cycles; dangling imported endpoints; self-links; contradictory inverses; high-degree hubs; temporal supersession; checkpoint corruption; concurrent retyping; stale cursors; severe token limits.\n\n## Reporting\n\nDefault CI output is a compact pass or fail envelope with deltas. Full evidence is stored as artifacts or linked results and remains available by case, seed, snapshot, and scale. No benchmark may silently skip or downscale."

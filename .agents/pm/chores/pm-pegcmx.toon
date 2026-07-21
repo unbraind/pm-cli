@@ -1,0 +1,20 @@
+id: pm-pegcmx
+title: "Dependabot update queue 2026-07-21: PRs #618-#621"
+description: "Track the live grouped npm, GitHub Actions, production dependency, and eslint-plugin-unicorn update PRs discovered during the 2026-07-21 GitHub inventory. Each PR must remain independently reviewable and linked here; CI failures are evidence to diagnose, not bypass."
+type: Chore
+status: open
+priority: 2
+tags[4]: "area:ci","area:dependencies",dependabot,github
+created_at: "2026-07-21T21:01:06.562Z"
+updated_at: "2026-07-21T21:01:44.552Z"
+author: codex-relationship-backfill-20260721
+acceptance_criteria: "PRs #618, #619, #620, and #621 each link this canonical pm item; current-head failures are diagnosed in owned follow-up items or fixed before merge; dependency changes pass exact-head security, coverage, compatibility, and release gates."
+parent: pm-u9d0
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-7zs0,related_to,"2026-07-21T21:01:44.301Z",null,null
+  pm-92if,related_to,"2026-07-21T21:01:44.301Z",null,null
+  pm-gkut,related_to,"2026-07-21T21:01:44.301Z",null,null
+  pm-qwoy,related_to,"2026-07-21T21:01:44.301Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-21T21:01:06.562Z",codex-relationship-backfill-20260721,"Duplicate check 2026-07-21: searched all statuses for the exact queue title and PR numbers after reviewing the live GitHub PR inventory. No canonical queue item existed. Live snapshot: #618 dev-dependencies group is green; #619 GitHub Actions has a coverage-shard failure; #620 production dependencies has a coverage-shard failure; #621 eslint-plugin-unicorn 72 is green. This item is documentation-only in the current SDK implementation cycle and therefore remains open and unclaimed."
+body: ""
