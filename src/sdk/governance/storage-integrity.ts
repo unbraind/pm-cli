@@ -216,8 +216,14 @@ interface HistoryStreamAccumulatorInput {
 
 /** Describe a filesystem read failure without exposing the absolute workspace path. */
 function describeFileReadFailure(subject: string, error: unknown): string {
-  const code = (error as NodeJS.ErrnoException).code;
-  return `${subject} could not be read (error code: ${String(code)})`;
+  const code =
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+      ? error.code
+      : "UNKNOWN";
+  return `${subject} could not be read (error code: ${code})`;
 }
 
 async function scanHistoryStreams(

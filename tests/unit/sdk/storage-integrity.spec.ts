@@ -1,7 +1,7 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import fs, { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { normalizeRuntimeSchemaSettings } from "../../../src/core/schema/runtime-schema.js";
 import { scanStorageIntegrity } from "../../../src/sdk/governance/storage-integrity.js";
 
@@ -39,6 +39,36 @@ describe("post-merge storage integrity", () => {
         unparseable_config_files: [],
       });
     } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("sanitizes nonstandard thrown values while reporting unreadable streams", async () => {
+    const pmRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-storage-integrity-unknown-error-"),
+    );
+    try {
+      await mkdir(path.join(pmRoot, "history"));
+      await writeFile(
+        path.join(pmRoot, "history", "pm-unreadable.jsonl"),
+        "{}\n",
+        "utf8",
+      );
+      const readFileSpy = vi.spyOn(fs, "readFile");
+      for (const thrownValue of ["failure", null, {}, { code: 5 }]) {
+        readFileSpy.mockRejectedValueOnce(thrownValue);
+        const result = await scanStorageIntegrity(pmRoot, new Set(), {});
+        expect(result.history_unparseable_streams).toEqual([
+          {
+            id: "pm-unreadable",
+            path: "history/pm-unreadable.jsonl",
+            detail: "history stream could not be read (error code: UNKNOWN)",
+          },
+        ]);
+      }
+      readFileSpy.mockRestore();
+    } finally {
+      vi.restoreAllMocks();
       await rm(pmRoot, { recursive: true, force: true });
     }
   });
