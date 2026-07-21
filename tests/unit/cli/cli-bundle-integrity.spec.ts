@@ -140,6 +140,30 @@ describe("CLI torn-bundle diagnosis", () => {
     ).toMatchObject({ reason: "generation_changed" });
   });
 
+  it("classifies call-time missing functions only when bundle integrity proves a torn generation", async () => {
+    const fixture = await createBundleFixture();
+    const snapshot = readCliBundleManifestSnapshot(fixture.cliPath);
+    const failure = new TypeError(
+      "registerOperationCommands is not a function",
+    );
+    expect(
+      diagnoseCliBundleIntegrityFailure(failure, snapshot, fixture.cliPath),
+    ).toBeUndefined();
+
+    await writeFile(
+      path.join(fixture.bundleRoot, "bundle-manifest.json"),
+      JSON.stringify({ ...fixture.manifest, generation: "generation-b" }),
+      "utf8",
+    );
+    expect(
+      diagnoseCliBundleIntegrityFailure(failure, snapshot, fixture.cliPath),
+    ).toMatchObject({
+      code: "bundle_integrity_torn_install",
+      reason: "generation_changed",
+      cause: "registerOperationCommands is not a function",
+    });
+  });
+
   it("reports missing and hash-invalid files while accepting intact outputs", async () => {
     const fixture = await createBundleFixture();
     const snapshot = readCliBundleManifestSnapshot(fixture.cliPath);

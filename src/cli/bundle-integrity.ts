@@ -140,7 +140,7 @@ export function diagnoseCliBundleIntegrityFailure(
       : "";
   if (
     errorCode !== "ERR_MODULE_NOT_FOUND" &&
-    !/(?:cannot find module|does not provide an export named)/i.test(
+    !/(?:cannot find module|does not provide an export named|[A-Za-z_$][\w$]* is not a function)/i.test(
       error.message,
     )
   ) {
