@@ -13381,37 +13381,6 @@
           "type",
           "status",
           "priority",
-          "createMode",
-          "deadline",
-          "estimatedMinutes",
-          "acceptanceCriteria",
-          "definitionOfReady",
-          "assignee",
-          "reviewer",
-          "risk",
-          "confidence",
-          "sprint",
-          "release",
-          "blockedReason",
-          "unblockNote",
-          "reporter",
-          "severity",
-          "environment",
-          "reproSteps",
-          "resolution",
-          "expectedResult",
-          "actualResult",
-          "affectedVersion",
-          "fixedVersion",
-          "component",
-          "regression",
-          "customerImpact",
-          "comment",
-          "note",
-          "learning",
-          "reminder",
-          "event",
-          "typeOption",
           "message"
         ],
         "title": "pm action \"create\" parameters",
@@ -22635,13 +22604,32 @@
       {
         "additionalProperties": false,
         "properties": {
+          "acceptanceCriteria": {
+            "description": "Acceptance criteria text.",
+            "type": "string"
+          },
           "action": {
             "const": "plan",
             "description": "Tool action to execute."
           },
+          "actualResult": {
+            "description": "Actual Result.",
+            "type": "string"
+          },
+          "affectedVersion": {
+            "description": "Affected Version.",
+            "type": "string"
+          },
           "allowMultipleActive": {
             "description": "Allow Multiple Active.",
             "type": "boolean"
+          },
+          "assignee": {
+            "description": "Assignee identity.",
+            "examples": [
+              "codex-agent"
+            ],
+            "type": "string"
           },
           "author": {
             "description": "Mutation author identity.",
@@ -22652,6 +22640,10 @@
           },
           "blockedBy": {
             "description": "Blocked By.",
+            "type": "string"
+          },
+          "blockedReason": {
+            "description": "Blocked Reason.",
             "type": "string"
           },
           "blocks": {
@@ -22665,6 +22657,52 @@
           "claim": {
             "description": "Claim.",
             "type": "boolean"
+          },
+          "comment": {
+            "description": "Comment.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "component": {
+            "description": "Component.",
+            "type": "string"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Confidence."
+          },
+          "createMode": {
+            "description": "Create required-option policy mode.",
+            "enum": [
+              "strict",
+              "progressive"
+            ],
+            "examples": [
+              "strict",
+              "progressive"
+            ],
+            "type": "string"
+          },
+          "customerImpact": {
+            "description": "Customer Impact.",
+            "type": "string"
+          },
+          "deadline": {
+            "description": "ISO/date timestamp or relative offset (+6h/+1d/+2w/+6m).",
+            "examples": [
+              "2026-04-01T00:00:00.000Z",
+              "+1d"
+            ],
+            "type": "string"
           },
           "decision": {
             "description": "Decision.",
@@ -22680,6 +22718,10 @@
           },
           "decisionText": {
             "description": "Decision Text.",
+            "type": "string"
+          },
+          "definitionOfReady": {
+            "description": "Definition Of Ready.",
             "type": "string"
           },
           "dependsOn": {
@@ -22731,6 +22773,32 @@
               "path=docs/SDK.md,note=public API reference"
             ]
           },
+          "environment": {
+            "description": "Environment.",
+            "type": "string"
+          },
+          "event": {
+            "description": "Repeatable event seed entries start=<iso|relative> with end=<iso|relative> or duration=<relative|30min|PT30M>. Bare `m` remains months for backward compatibility.",
+            "examples": [
+              [
+                "start=2026-07-01T10:00:00Z,duration=2h,title=planning"
+              ],
+              [
+                "start=2026-07-01T10:00:00Z,duration=30min,title=standup"
+              ],
+              [
+                "start=2026-07-01T10:00:00Z,duration=PT30M,title=window"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "expectedResult": {
+            "description": "Expected Result.",
+            "type": "string"
+          },
           "field": {
             "anyOf": [
               {
@@ -22771,12 +22839,20 @@
               "path=src/cli.ts,note=implementation surface"
             ]
           },
+          "fixedVersion": {
+            "description": "Fixed Version.",
+            "type": "string"
+          },
           "force": {
             "description": "Force.",
             "type": "boolean"
           },
           "fromSearch": {
             "description": "From Search.",
+            "type": "string"
+          },
+          "goal": {
+            "description": "Goal.",
             "type": "string"
           },
           "harness": {
@@ -22796,10 +22872,21 @@
             ],
             "type": "string"
           },
+          "impact": {
+            "description": "Impact.",
+            "type": "string"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
+          },
+          "learning": {
+            "description": "Learning.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "link": {
             "description": "Link.",
@@ -22866,6 +22953,39 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "note": {
+            "description": "Note.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "objective": {
+            "description": "Objective.",
+            "type": "string"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Planning order/rank value for create/update, or sort direction (asc|desc) for list-family sorting.",
+            "examples": [
+              0,
+              1,
+              "2",
+              "asc",
+              "desc"
+            ]
+          },
+          "outcome": {
+            "description": "Outcome.",
+            "type": "string"
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -22912,9 +23032,39 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "regression": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Regression."
+          },
           "related": {
             "description": "Related.",
             "type": "string"
+          },
+          "release": {
+            "description": "Release.",
+            "type": "string"
+          },
+          "reminder": {
+            "description": "Repeatable reminder seed entries at=<iso|relative>,text=<text>.",
+            "examples": [
+              [
+                "at=+2d,text=Review PR"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "reorderTo": {
             "anyOf": [
@@ -22931,8 +23081,28 @@
               "2"
             ]
           },
+          "reporter": {
+            "description": "Reporter.",
+            "type": "string"
+          },
+          "reproSteps": {
+            "description": "Repro Steps.",
+            "type": "string"
+          },
+          "resolution": {
+            "description": "Resolution.",
+            "type": "string"
+          },
           "resumeContext": {
             "description": "Resume Context.",
+            "type": "string"
+          },
+          "reviewer": {
+            "description": "Reviewer.",
+            "type": "string"
+          },
+          "risk": {
+            "description": "Risk.",
             "type": "string"
           },
           "scope": {
@@ -22940,6 +23110,22 @@
             "examples": [
               "Release readiness audit",
               "Search package migration"
+            ],
+            "type": "string"
+          },
+          "severity": {
+            "description": "Severity.",
+            "type": "string"
+          },
+          "sprint": {
+            "description": "Sprint.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Item status value. Statuses are project-configurable via .agents/pm/settings.json (schema block); the built-in defaults are draft, open, in_progress, blocked, closed, canceled. Custom statuses defined for the project are accepted — discover the active set with the pm_contracts tool (workspace.statuses) or `pm contracts`. Unknown statuses are rejected at runtime with a did-you-mean hint rather than blocked by a fixed schema enum.",
+            "examples": [
+              "open",
+              "in_progress"
             ],
             "type": "string"
           },
@@ -23078,6 +23264,17 @@
             "description": "Item title text.",
             "type": "string"
           },
+          "typeOption": {
+            "description": "Type Option.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "unblockNote": {
+            "description": "Unblock Note.",
+            "type": "string"
+          },
           "validation": {
             "description": "Validation.",
             "type": "string"
@@ -23092,6 +23289,14 @@
           },
           "validationText": {
             "description": "Validation Text.",
+            "type": "string"
+          },
+          "value": {
+            "description": "Value.",
+            "type": "string"
+          },
+          "whyNow": {
+            "description": "Why Now.",
             "type": "string"
           }
         },

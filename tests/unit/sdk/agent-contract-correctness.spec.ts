@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runPlan } from "../../../src/cli/commands/plan.js";
+import { PM_TOOL_ACTION_PARAMETER_CONTRACTS } from "../../../src/sdk/cli-contracts.js";
 import { _testOnlyTestCommand } from "../../../src/sdk/test/execution.js";
 import { createRelationshipKindRegistry } from "../../../src/sdk/relationships.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -109,6 +110,39 @@ describe("agent contract correctness", () => {
         docs: expect.any(Array),
         tests: expect.any(Array),
       });
+      expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.create.required).toEqual([
+        "title",
+        "description",
+        "type",
+        "status",
+        "priority",
+        "message",
+      ]);
+      expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.plan.optional).toEqual(
+        expect.arrayContaining([
+          "status",
+          "createMode",
+          "deadline",
+          "estimatedMinutes",
+          "acceptanceCriteria",
+          "definitionOfReady",
+          "order",
+          "rank",
+          "goal",
+          "objective",
+          "value",
+          "impact",
+          "outcome",
+          "whyNow",
+          "assignee",
+          "comment",
+          "note",
+          "learning",
+          "reminder",
+          "event",
+          "typeOption",
+        ]),
+      );
     });
   });
 
