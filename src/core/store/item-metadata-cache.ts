@@ -1098,6 +1098,33 @@ export interface ItemMetadataDerivedIndexMutation {
   document: ItemDocument | null;
 }
 
+/** Read-only identity of the effective rebuildable metadata projection. */
+export interface ItemMetadataDerivedIndexState {
+  /** Cursor shared by the base manifest and its collapsed mutation delta. */
+  source_cursor: string;
+  /** Number of authoritative rows recorded when the base manifest was built. */
+  entry_count: number;
+}
+
+/** Read the effective derived-index cursor without exposing cache file layout. */
+export async function readItemMetadataDerivedIndexState(
+  pmRoot: string,
+): Promise<ItemMetadataDerivedIndexState | null> {
+  const manifest = await loadDerivedIndexManifest(pmRoot);
+  if (manifest === null) return null;
+  const delta = await loadDerivedIndexDelta(pmRoot);
+  if (delta.invalid) {
+    await removeDerivedIndexFiles(pmRoot);
+    return null;
+  }
+  const effectiveCursor =
+    delta.envelope?.context_fingerprint === manifest.context_fingerprint &&
+    delta.envelope.base_source_cursor === manifest.source_cursor
+      ? delta.envelope.source_cursor
+      : manifest.source_cursor;
+  return { source_cursor: effectiveCursor, entry_count: manifest.entry_count };
+}
+
 function relativeIndexPath(pmRoot: string, itemPath: string): string | null {
   const relative = path.relative(pmRoot, itemPath);
   return relative === "" ||

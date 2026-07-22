@@ -1,12 +1,19 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildItemContextRelevanceCandidates, runContext } from "../../../src/cli/commands/context.js";
+import {
+  buildItemContextRelevanceCandidates,
+  runContext,
+  toContextRankingSummary,
+} from "../../../src/cli/commands/context.js";
 import { runNext } from "../../../src/cli/commands/next.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import type { ItemMetadata } from "../../../src/types/index.js";
-import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../helpers/withTempPmPath.js";
 
 function relevanceItem(
   id: string,
@@ -25,7 +32,41 @@ function relevanceItem(
   } as ItemMetadata;
 }
 
+function createContextRankingItems(context: TempPmContext): string[] {
+  const createdIds: string[] = [];
+  for (const [title, priority] of [["Baseline", "3"], ["Urgent", "0"]]) {
+    const created = context.runCli(
+      [
+        "create",
+        "--json",
+        "--title",
+        title,
+        "--description",
+        `${title} description`,
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        priority,
+      ],
+      { expectJson: true },
+    );
+    expect(created.code).toBe(0);
+    createdIds.push((created.json as { item: { id: string } }).item.id);
+  }
+  return createdIds;
+}
+
 describe("context relevance command integration", () => {
+  it("keeps feature-store diagnostics optional for SDK summary callers", () => {
+    expect(toContextRankingSummary({
+      model: "default-weighted-v1",
+      available_signals: [],
+      ranked: [],
+    })).not.toHaveProperty("feature_store");
+  });
+
   it("derives normalized metadata signals for diverse project items", () => {
     const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
     const now = "2026-07-10T00:00:00.000Z";
@@ -96,38 +137,25 @@ describe("context relevance command integration", () => {
 
   it("uses one scorer for context and next and emits explanations only on request", async () => {
     await withTempPmPath(async (context) => {
-      const createdIds: string[] = [];
-      for (const [title, priority] of [["Baseline", "3"], ["Urgent", "0"]]) {
-        const created = context.runCli(
-          [
-            "create",
-            "--json",
-            "--title",
-            title,
-            "--description",
-            `${title} description`,
-            "--type",
-            "Task",
-            "--status",
-            "open",
-            "--priority",
-            priority,
-          ],
-          { expectJson: true },
-        );
-        expect(created.code).toBe(0);
-        createdIds.push((created.json as { item: { id: string } }).item.id);
-      }
+      createContextRankingItems(context);
 
       const compact = await runContext({}, { path: context.pmPath });
       const explainedContext = await runContext({ explainRanking: true }, { path: context.pmPath });
       const explainedNext = await runNext({ explainRanking: true }, { path: context.pmPath });
       const contextAlias = context.runCli(["context", "--json", "--explain_ranking"], { expectJson: true });
       const nextAlias = context.runCli(["next", "--json", "--explain_ranking"], { expectJson: true });
+      const budgetAliases = [
+        context.runCli(["context", "--json", "--explain-ranking", "--token_budget", "64"], { expectJson: true }),
+        context.runCli(["next", "--json", "--explain-ranking", "--token_budget", "64"], { expectJson: true }),
+      ];
 
       expect(compact.ranking).toBeUndefined();
       expect(compact.packing).toBeUndefined();
       expect(explainedContext.packing).toMatchObject({ profile: "context", token_budget: 1600, selection_complete: true });
+      expect(explainedContext.ranking?.feature_store).toMatchObject({
+        source: "derived_index",
+        cache_status: "fresh",
+      });
       expect(explainedContext.ranking?.model).toBe("default-weighted-v1");
       expect(explainedContext.ranking?.available_signals).toContain("priority_pressure");
       expect(explainedNext.ranking?.items.map((entry) => entry.id)).toEqual(
@@ -135,11 +163,48 @@ describe("context relevance command integration", () => {
       );
       expect(explainedNext.ranking?.items[0]?.contributions.priority_pressure).toBeGreaterThan(0);
       expect(explainedNext.packing).toMatchObject({ profile: "next", token_budget: 640, selection_complete: true });
+      expect(explainedNext.ranking?.feature_store).toMatchObject({
+        source: "derived_index",
+        cache_status: "rebuilt",
+      });
+      const boundedContext = await runContext({ explainRanking: true, tokenBudget: "64" }, { path: context.pmPath });
+      const boundedNext = await runNext({ explainRanking: true, tokenBudget: "64" }, { path: context.pmPath });
+      expect(boundedContext.packing?.token_budget).toBe(64);
+      expect(boundedNext.packing?.token_budget).toBe(64);
       expect(contextAlias.code).toBe(0);
       expect(contextAlias.json).toMatchObject({ ranking: { model: "default-weighted-v1" } });
       expect(nextAlias.code).toBe(0);
       expect(nextAlias.json).toMatchObject({ ranking: { model: "default-weighted-v1" } });
+      for (const result of budgetAliases) {
+        expect(result.code).toBe(0);
+        expect(result.json).toMatchObject({
+          filters: { token_budget: 64 },
+          packing: { token_budget: 64 },
+        });
+      }
+      await expect(runContext({ tokenBudget: "0" }, { path: context.pmPath })).rejects.toThrow(
+        "--token-budget must be a positive integer",
+      );
+      await expect(runContext({ tokenBudget: "-1" }, { path: context.pmPath })).rejects.toThrow(
+        "--token-budget must be a positive integer",
+      );
+      await expect(runContext({ tokenBudget: "1.5" }, { path: context.pmPath })).rejects.toThrow(
+        "--token-budget must be a positive integer",
+      );
+      await expect(runContext({ tokenBudget: "" }, { path: context.pmPath })).rejects.toThrow(
+        "--token-budget must be a positive integer",
+      );
+      await expect(runNext({ tokenBudget: 1.5 }, { path: context.pmPath })).rejects.toThrow(
+        "--token-budget must be a positive integer",
+      );
 
+    });
+  });
+
+  it("folds usage feedback dynamically and tolerates an absent author", async () => {
+    await withTempPmPath(async (context) => {
+      const createdIds = createContextRankingItems(context);
+      await runContext({}, { path: context.pmPath });
       const read = context.runCli(["get", createdIds[1]!, "--json"], { expectJson: true });
       expect(read.code).toBe(0);
       const touched = context.runCli(["update", createdIds[0]!, "--priority", "2", "--json"], { expectJson: true });

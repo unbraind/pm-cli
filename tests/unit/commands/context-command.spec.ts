@@ -10,6 +10,7 @@ import {
   projectContextFocusRows,
   renderContextMarkdown,
   resolveContextOutputFormat,
+  resolveContextTokenBudget,
   runContext,
   type ContextFocusItem,
   type ContextOptions,
@@ -1449,6 +1450,13 @@ describe("context command module", () => {
       ),
     ).toBe(10);
     expect(contextInternals.resolveContextLimitAtScale(7, 10_000)).toBe(7);
+    const scaledLimit = contextInternals.resolveContextLimitAtScale(
+      Number.MAX_SAFE_INTEGER,
+      10_000,
+    );
+    expect(
+      resolveContextTokenBudget(undefined, Math.max(256, scaledLimit * 160)),
+    ).toBe(1600);
 
     await withTempPmPath(async (context) => {
       for (let index = 0; index < 12; index += 1) {

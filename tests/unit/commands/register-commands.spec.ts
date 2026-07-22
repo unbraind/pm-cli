@@ -467,11 +467,18 @@ describe("list-query command actions", () => {
 
   it("renders context markdown output and falls through to printResult otherwise", async () => {
     vi.mocked(resolveContextOutputFormat).mockReturnValue("markdown" as never);
-    await runCliRaw("context", "--depth", "deep", "--section", "hierarchy", "--section", "progress");
+    await runCliRaw(
+      "context",
+      "--depth", "deep",
+      "--section", "hierarchy",
+      "--section", "progress",
+      "--token-budget", "640",
+    );
     expect(vi.mocked(renderContextMarkdown)).toHaveBeenCalledTimes(1);
     const normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runContext) as never, 0);
     expect(normalized.depth).toBe("deep");
     expect(normalized.section).toEqual(["hierarchy", "progress"]);
+    expect(normalized.tokenBudget).toBe("640");
 
     vi.mocked(resolveContextOutputFormat).mockReturnValue("json" as never);
     await runCli("ctx", "--limit", "3");
@@ -540,6 +547,7 @@ describe("operation command actions", () => {
       "claim", "--next", "--if-available", "--type", "Task", "--tag", "agent",
       "--priority", "1", "--assignee-filter", "unassigned", "--parent", "pm-root",
       "--sprint", "S1", "--release", "R1", "--max-attempts", "4", "--include-decisions",
+      "--token-budget", "720", "--explain-ranking",
     );
     expect(runClaimNext).toHaveBeenCalledWith(
       false,
@@ -554,6 +562,8 @@ describe("operation command actions", () => {
         sprint: "S1",
         release: "R1",
         includeDecisions: true,
+        tokenBudget: "720",
+        explainRanking: true,
       }),
     );
     vi.mocked(runClaimNext).mockResolvedValueOnce({ id: "pm-next-defaults" } as never);
@@ -571,7 +581,17 @@ describe("operation command actions", () => {
         sprint: undefined,
         release: undefined,
         includeDecisions: false,
+        tokenBudget: undefined,
+        explainRanking: false,
       }),
+    );
+    vi.mocked(runClaimNext).mockResolvedValueOnce({ id: "pm-next-aliases" } as never);
+    await runCli("claim", "--next", "--token_budget", "360", "--explain_ranking");
+    expect(runClaimNext).toHaveBeenLastCalledWith(
+      false,
+      expect.any(Object),
+      expect.any(Object),
+      expect.objectContaining({ tokenBudget: "360", explainRanking: true }),
     );
   });
 

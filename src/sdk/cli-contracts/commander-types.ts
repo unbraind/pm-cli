@@ -135,6 +135,7 @@ export const CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasCont
     { target: "fields", keys: ["fields"] },
     { target: "activityLimit", keys: ["activityLimit", "activity_limit"] },
     { target: "staleThreshold", keys: ["staleThreshold", "stale_threshold"] },
+    { target: "tokenBudget", keys: ["tokenBudget", "token_budget"] },
   ];
 
 /** Public contract for next commander string option contracts, shared by SDK and presentation-layer consumers. */
@@ -151,6 +152,7 @@ export const NEXT_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContrac
     { target: "limit", keys: ["limit"] },
     { target: "blockedLimit", keys: ["blockedLimit", "blocked_limit"] },
     { target: "format", keys: ["format"] },
+    { target: "tokenBudget", keys: ["tokenBudget", "token_budget"] },
   ];
 
 /** Public contract for activity commander string option contracts, shared by SDK and presentation-layer consumers. */

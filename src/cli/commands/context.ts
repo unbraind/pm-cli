@@ -44,7 +44,6 @@ import { runList, type ListOptions } from "./list.js";
 import { runActivity, type CompactActivityEntry } from "./activity.js";
 import {
   scoreContextCandidatesWithActiveExtensions,
-  buildItemContextRelevanceCandidates,
   type ContextRelevanceContributions,
   type ContextRelevanceReport,
   type ContextRelevanceSignalName,
@@ -63,6 +62,10 @@ import {
   readContextUsageAffinity,
   recordContextUsageServing,
 } from "../../sdk/context-usage.js";
+import {
+  readWorkspaceContextSignals,
+  type ContextSignalStoreReadResult,
+} from "../../sdk/context-signal-store.js";
 
 // ---------------------------------------------------------------------------
 // Output format
@@ -123,6 +126,8 @@ export interface ContextOptions {
   parent?: string;
   /** Value that configures or reports explain ranking for this contract. */
   explainRanking?: boolean;
+  /** Maximum estimated tokens spent on ranked focus rows. */
+  tokenBudget?: string | number;
   [key: string]: unknown;
 }
 
@@ -374,6 +379,7 @@ export interface ContextResult {
     release: string | null;
     limit: string | null;
     parent: string | null;
+    token_budget: number;
     runtime_filters?: Record<string, unknown>;
   };
   /** Value that configures or reports summary for this contract. */
@@ -451,6 +457,13 @@ export interface ContextRankingSummary {
     score: number;
     contributions: ContextRelevanceContributions;
   }>;
+  /** Rebuildable feature-store freshness and provenance. */
+  feature_store?: {
+    source: "derived_index" | "scan_fallback";
+    cache_status: "fresh" | "rebuilt";
+    source_cursor: string;
+    generated_at: string;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -590,6 +603,19 @@ function parseContextLimit(
     parseIntegerLimit(raw, "--limit") ??
     (depth === "full" ? Number.MAX_SAFE_INTEGER : DEFAULT_CONTEXT_LIMIT)
   );
+}
+
+/** Resolve a positive context-packing budget from CLI or SDK input. */
+export function resolveContextTokenBudget(
+  raw: string | number | undefined,
+  fallback: number,
+): number {
+  if (raw === undefined) return fallback;
+  const parsed = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new PmCliError("--token-budget must be a positive integer", EXIT_CODE.USAGE);
+  }
+  return parsed;
 }
 
 function resolveContextLimitAtScale(limit: number, itemCount: number): number {
@@ -986,6 +1012,7 @@ export function toContextPackingSummary(
 /** Project a full scorer report onto the low-token command explanation shape. */
 export function toContextRankingSummary<TItem>(
   report: ContextRelevanceReport<TItem>,
+  featureStore?: ContextSignalStoreReadResult,
 ): ContextRankingSummary {
   return {
     model: report.model,
@@ -997,6 +1024,16 @@ export function toContextRankingSummary<TItem>(
       score: entry.score,
       contributions: entry.contributions,
     })),
+    ...(featureStore
+      ? {
+          feature_store: {
+            source: featureStore.snapshot.source,
+            cache_status: featureStore.cache_status,
+            source_cursor: featureStore.snapshot.source_cursor,
+            generated_at: featureStore.snapshot.generated_at,
+          },
+        }
+      : {}),
   };
 }
 
@@ -1876,6 +1913,7 @@ interface ContextRuntime {
   staleThresholdDays: number;
   parentScope: string | undefined;
   focusFields: string[] | undefined;
+  tokenBudget: number;
   baseListOptions: Record<string, unknown>;
 }
 
@@ -1896,6 +1934,7 @@ interface ContextFocusGroups {
   blockedFallbackUsed: boolean;
   ranking: ContextRelevanceReport<ItemMetadata>;
   packing: ContextPackingReport<ItemMetadata>;
+  featureStore: ContextSignalStoreReadResult;
   pageExtras: {
     has_more?: boolean;
     next_cursor?: string;
@@ -1920,7 +1959,7 @@ interface ContextOptionalSections {
 async function resolveContextRuntime(
   options: ContextOptions,
   global: GlobalOptions,
-): Promise<ContextRuntime> {
+): Promise<Omit<ContextRuntime, "tokenBudget">> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
   /* c8 ignore start -- settings persistence currently always materializes context defaults */
@@ -1928,12 +1967,13 @@ async function resolveContextRuntime(
   /* c8 ignore stop */
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const depth = parseContextDepth(options.depth, contextSettings);
+  const limit = parseContextLimit(options.limit ?? options.maxItems, depth);
   return {
     settings,
     contextSettings,
     statusRegistry,
     depth,
-    limit: parseContextLimit(options.limit ?? options.maxItems, depth),
+    limit,
     sectionsIncluded: parseContextSections(
       options.section,
       depth,
@@ -1980,7 +2020,7 @@ function buildUnpaginatedContextListOptions(
 async function loadContextCorpus(
   options: ContextOptions,
   global: GlobalOptions,
-  runtime: ContextRuntime,
+  runtime: Omit<ContextRuntime, "tokenBudget">,
 ): Promise<ContextCorpus> {
   const needsAllItems = contextNeedsAllItems(runtime.sectionsIncluded);
   // One full-corpus scan serves every consumer: runList always reads all item
@@ -2044,6 +2084,7 @@ async function resolveContextFocusGroups(
   cursorFingerprint: string,
   useBoundedPage: boolean,
   pmRoot: string,
+  tokenBudget: number,
 ): Promise<ContextFocusGroups> {
   const structural = [...listedItemMetadata].sort((left, right) =>
     compareCriticalItems(left, right, statusRegistry),
@@ -2053,14 +2094,17 @@ async function resolveContextFocusGroups(
     author,
     enabled: process.env.PM_CONTEXT_USAGE_DISABLED !== "1",
   });
+  const featureStore = await readWorkspaceContextSignals(structural, {
+    pmRoot,
+    storeKey: "context",
+    statusRegistry,
+    now,
+    author,
+    usageAffinity: usage.affinity,
+  });
   const ranking = await scoreContextCandidatesWithActiveExtensions(
     "context",
-    buildItemContextRelevanceCandidates(structural, {
-      statusRegistry,
-      now,
-      author,
-      usageAffinity: usage.affinity,
-    }),
+    featureStore.candidates,
   );
   const ranked = ranking.ranked.map((entry) => entry.item);
   const activeStatuses = statusRegistry.active_statuses;
@@ -2099,7 +2143,7 @@ async function resolveContextFocusGroups(
   ]);
   const packing = packRankedContextItems(
     { ...ranking, ranked: ranking.ranked.filter((entry) => packingIds.has(entry.id)) },
-    Math.max(256, limit * 160),
+    tokenBudget,
   );
   const packedItems = packing.included.map((entry) => entry.item);
   const activeItems = packedItems.filter((item) =>
@@ -2140,6 +2184,7 @@ async function resolveContextFocusGroups(
     blockedFallbackUsed,
     ranking,
     packing,
+    featureStore,
     pageExtras: {
       ...(useBoundedPage ? { applied_limit: limit } : {}),
       ...(hasMore ? { has_more: true, truncated: true } : {}),
@@ -2448,11 +2493,16 @@ export async function runContext(
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const resolvedRuntime = await resolveContextRuntime(options, global);
   const corpus = await loadContextCorpus(options, global, resolvedRuntime);
+  const scaledLimit = resolveContextLimitAtScale(
+    resolvedRuntime.limit,
+    corpus.fullCorpus.length,
+  );
   const runtime = {
     ...resolvedRuntime,
-    limit: resolveContextLimitAtScale(
-      resolvedRuntime.limit,
-      corpus.fullCorpus.length,
+    limit: scaledLimit,
+    tokenBudget: resolveContextTokenBudget(
+      options.tokenBudget,
+      Math.max(256, scaledLimit * 160),
     ),
   };
   const author = process.env.PM_AUTHOR ?? runtime.settings.author_default;
@@ -2475,6 +2525,7 @@ export async function runContext(
     buildContextCursorFingerprint(options),
     shouldPageContextFocus(options, corpus.fullCorpus.length),
     pmRoot,
+    runtime.tokenBudget,
   );
   const agendaContext = await buildContextAgenda(
     options,
@@ -2493,6 +2544,7 @@ export async function runContext(
     corpus.listed.warnings,
     agendaContext.agenda.warnings,
     focusGroups.ranking.warnings,
+    [...focusGroups.featureStore.warnings],
   );
   const inProgressCount = countContextStatus(
     focusGroups.activeItems,
@@ -2542,6 +2594,7 @@ export async function runContext(
       release: options.release ?? null,
       limit: options.limit ?? options.maxItems ?? null,
       parent: runtime.parentScope ?? null,
+      token_budget: runtime.tokenBudget,
       /* c8 ignore next -- listed/calendar runtime filters are always materialized by their command handlers */
       runtime_filters: (corpus.listed.filters.runtime_filters ??
         agendaContext.agenda.filters.runtime_filters ??
@@ -2570,7 +2623,7 @@ export async function runContext(
 
   attachOptionalContextSections(result, sections);
   if (options.explainRanking === true) {
-    result.ranking = toContextRankingSummary(focusGroups.ranking);
+    result.ranking = toContextRankingSummary(focusGroups.ranking, focusGroups.featureStore);
     result.packing = toContextPackingSummary(focusGroups.packing);
   }
   applyContextFocusProjection(result, runtime.focusFields);

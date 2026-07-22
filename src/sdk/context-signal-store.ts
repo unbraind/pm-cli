@@ -7,16 +7,16 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import {
   buildItemContextRelevanceCandidates,
-  CONTEXT_RELEVANCE_SIGNAL_NAMES,
   type BuildItemContextRelevanceCandidatesOptions,
   type ContextRelevanceCandidate,
   type ContextRelevanceSignalName,
   type ContextRelevanceSignals,
 } from "./context-relevance.js";
 import type { ItemMetadata } from "../types/index.js";
+import { readItemMetadataDerivedIndexState } from "./item-metadata-index.js";
 
 /** Current serialized feature-store envelope version. */
 export const CONTEXT_SIGNAL_STORE_FORMAT_VERSION = 1;
@@ -24,10 +24,14 @@ export const CONTEXT_SIGNAL_STORE_FORMAT_VERSION = 1;
 /** Current canonical signal-vector version. */
 export const CONTEXT_SIGNAL_SET_VERSION = 1;
 
-const STORED_CONTEXT_SIGNAL_NAMES = CONTEXT_RELEVANCE_SIGNAL_NAMES.slice(1) as readonly Exclude<
-  ContextRelevanceSignalName,
-  "structural"
->[];
+const STORED_CONTEXT_SIGNAL_NAMES = [
+  "recency",
+  "activity_density",
+  "graph_proximity",
+  "priority_pressure",
+  "risk_pressure",
+  "knowledge_density",
+] as const satisfies readonly Exclude<ContextRelevanceSignalName, "structural">[];
 
 /** Authoritative substrate used to derive one snapshot. */
 export type ContextSignalSnapshotSource = "derived_index" | "scan_fallback";
@@ -85,6 +89,19 @@ export interface ContextSignalStoreReadResult {
   warnings: readonly string[];
 }
 
+/** Workspace-bound feature-store options used by CLI, MCP, and SDK readers. */
+export interface ReadWorkspaceContextSignalsOptions
+  extends BuildItemContextRelevanceCandidatesOptions {
+  /** Tracker root containing rebuildable runtime state. */
+  pmRoot: string;
+  /** Explicit cursor for custom SDK hosts; the stock host reads the metadata index. */
+  sourceCursor?: string;
+  /** Explicit source classification paired with sourceCursor. */
+  source?: ContextSignalSnapshotSource;
+  /** Stable projection namespace when one workspace serves distinct candidate corpora. */
+  storeKey?: string;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -104,6 +121,59 @@ function compactSignals(signals: ContextRelevanceSignals): ContextRelevanceSigna
     compact[name] = value;
   }
   return compact;
+}
+
+function normalizedCountsById(
+  items: readonly ItemMetadata[],
+  count: (item: ItemMetadata) => number,
+): Record<string, number> {
+  const counts = items.map((item) => [item.id, count(item)] as const);
+  const maximum = Math.max(0, ...counts.map(([, value]) => value));
+  return Object.fromEntries(
+    counts.map(([id, value]) => [id, maximum === 0 ? 0 : value / maximum]),
+  );
+}
+
+function deriveGraphProximity(items: readonly ItemMetadata[]): Record<string, number> {
+  const degree = new Map(items.map((item) => [item.id, 0]));
+  const increment = (id: string): void => {
+    degree.set(id, (degree.get(id) ?? 0) + 1);
+  };
+  for (const item of items) {
+    if (typeof item.parent === "string" && item.parent.trim()) {
+      increment(item.id);
+      increment(item.parent.trim());
+    }
+    for (const dependency of item.dependencies ?? []) {
+      if (typeof dependency.id !== "string" || !dependency.id.trim()) continue;
+      increment(item.id);
+      increment(dependency.id.trim());
+    }
+  }
+  const maximum = Math.max(0, ...degree.values());
+  return Object.fromEntries(
+    items.map((item) => [item.id, maximum === 0 ? 0 : (degree.get(item.id) as number) / maximum]),
+  );
+}
+
+function stableSnapshotOptions(
+  items: readonly ItemMetadata[],
+  options: BuildContextSignalSnapshotOptions,
+): BuildContextSignalSnapshotOptions {
+  return {
+    ...options,
+    activityDensity:
+      options.activityDensity ??
+      normalizedCountsById(
+        items,
+        (item) =>
+          (item.comments?.length ?? 0) +
+          (item.notes?.length ?? 0) +
+          (item.learnings?.length ?? 0) +
+          (item.test_runs?.length ?? 0),
+      ),
+    graphProximity: options.graphProximity ?? deriveGraphProximity(items),
+  };
 }
 
 function parseSnapshotItem(value: unknown): ContextSignalSnapshotItem | null {
@@ -168,7 +238,10 @@ export function buildContextSignalSnapshot(
   if (!Number.isFinite(Date.parse(options.now))) {
     throw new TypeError("Context signal snapshot clock must be a valid timestamp");
   }
-  const rows = buildItemContextRelevanceCandidates(items, options)
+  if (options.source !== "derived_index" && options.source !== "scan_fallback") {
+    throw new TypeError("Context signal snapshot source must be derived_index or scan_fallback");
+  }
+  const rows = buildItemContextRelevanceCandidates(items, stableSnapshotOptions(items, options))
     .map(({ id, signals }) => ({
       id,
       signals: compactSignals(signals),
@@ -274,11 +347,70 @@ export class ContextSignalStore {
       }
     }
     const signalsById = new Map(resolvedSnapshot.items.map((item) => [item.id, item.signals]));
+    const dynamicCandidates = buildItemContextRelevanceCandidates(items, options);
     return {
       snapshot: resolvedSnapshot,
-      candidates: items.map((item) => ({ id: item.id, item, signals: signalsById.get(item.id) })),
+      candidates: dynamicCandidates.map((candidate) => ({
+        ...candidate,
+        signals: { ...candidate.signals, ...signalsById.get(candidate.id) },
+      })),
       cache_status: fresh ? "fresh" : "rebuilt",
       warnings,
     };
   }
+}
+
+function fallbackWorkspaceCursor(items: readonly ItemMetadata[]): string {
+  const hash = createHash("sha256");
+  for (const item of [...items].sort((left, right) => left.id.localeCompare(right.id))) {
+    hash.update(JSON.stringify([
+      item.id,
+      item.updated_at,
+      item.status,
+      item.parent ?? null,
+      item.priority ?? null,
+      item.risk ?? null,
+      (item.dependencies ?? []).map((dependency) => dependency.id).sort(),
+      item.comments?.length ?? 0,
+      item.notes?.length ?? 0,
+      item.learnings?.length ?? 0,
+      item.test_runs?.length ?? 0,
+    ]));
+  }
+  return `scan:${hash.digest("hex")}`;
+}
+
+/** Read cursor-bound workspace signals with deterministic scan fallback. */
+export async function readWorkspaceContextSignals(
+  items: readonly ItemMetadata[],
+  options: ReadWorkspaceContextSignalsOptions,
+): Promise<ContextSignalStoreReadResult> {
+  const hasSourceCursor = options.sourceCursor !== undefined;
+  const hasSource = options.source !== undefined;
+  if (hasSourceCursor !== hasSource) {
+    throw new TypeError("Context signal source and source cursor must be provided together");
+  }
+  if (
+    options.storeKey !== undefined &&
+    !/^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$/u.test(options.storeKey)
+  ) {
+    throw new TypeError("Context signal store key must be a filesystem-safe identifier");
+  }
+  const indexState = hasSourceCursor
+    ? null
+    : await readItemMetadataDerivedIndexState(options.pmRoot);
+  const sourceCursor = options.sourceCursor ?? indexState?.source_cursor ?? fallbackWorkspaceCursor(items);
+  const source =
+    options.source ??
+    (indexState === null ? "scan_fallback" : "derived_index");
+  const store = new ContextSignalStore(
+    new JsonFileContextSignalStoreAdapter(
+      path.join(
+        options.pmRoot,
+        "runtime",
+        options.storeKey ? `context-signals-${options.storeKey}.json` : "context-signals.json",
+      ),
+    ),
+  );
+  return store.readOrRebuild(items, { ...options, sourceCursor, source });
 }

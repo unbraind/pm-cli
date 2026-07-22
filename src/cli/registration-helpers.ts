@@ -1117,6 +1117,7 @@ export function normalizeContextOptions(
     section: section && section.length > 0 ? section : undefined,
     activityLimit: readContextString("activityLimit"),
     staleThreshold: readContextString("staleThreshold"),
+    tokenBudget: readContextString("tokenBudget"),
   };
   for (const [key, value] of Object.entries(options)) {
     if (Object.hasOwn(normalized, key)) {
@@ -1158,6 +1159,7 @@ export function normalizeNextOptions(
         ? true
         : undefined,
     format: readNextString("format"),
+    tokenBudget: readNextString("tokenBudget"),
   };
   for (const [key, value] of Object.entries(options)) {
     if (Object.hasOwn(normalized, key)) {

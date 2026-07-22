@@ -31,10 +31,10 @@ import type { ItemMetadata, ItemStatus } from "../../types/index.js";
 import { parseIntegerLimit } from "../shared-parsers.js";
 import {
   buildChildrenByParent,
-  buildItemContextRelevanceCandidates,
   collectSubtreeIds,
   compareCriticalItems,
   packRankedContextItems,
+  resolveContextTokenBudget,
   toContextPackingSummary,
   toContextRankingSummary,
   toContextFocusItem,
@@ -49,6 +49,10 @@ import {
   recordContextUsageServing,
 } from "../../sdk/context-usage.js";
 import type { ContextPackingReport } from "../../sdk/context-packing.js";
+import {
+  readWorkspaceContextSignals,
+  type ContextSignalStoreReadResult,
+} from "../../sdk/context-signal-store.js";
 
 /** Supported values accepted by the next output contract. */
 export const NEXT_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;
@@ -86,6 +90,8 @@ export interface NextOptions {
   format?: string;
   /** Value that configures or reports explain ranking for this contract. */
   explainRanking?: boolean;
+  /** Maximum estimated tokens spent on the ranked ready queue. */
+  tokenBudget?: string | number;
   /** Include human-gated Decision items in the claimable ready queue. */
   includeDecisions?: boolean;
   /** Internal caller override used to align claim-next ranking with --author. */
@@ -168,6 +174,7 @@ export interface NextResult {
     blocked_limit: number;
     ready_only: boolean;
     include_decisions: boolean;
+    token_budget: number;
   };
   /** Value that configures or reports suggestions for this contract. */
   suggestions?: string[];
@@ -530,17 +537,22 @@ async function finalizeNextResult(params: {
   pmRoot: string;
   author: string;
   packing: ContextPackingReport<ItemMetadata>;
+  featureStore: ContextSignalStoreReadResult;
 }): Promise<NextResult> {
   const warnings = [
     ...new Set([
       ...(params.candidatesWarnings ?? []),
       ...(params.corpusWarnings ?? []),
       ...(params.readyRanking.warnings ?? []),
+      ...params.featureStore.warnings,
     ]),
   ].sort((left, right) => left.localeCompare(right));
   if (warnings.length > 0) params.result.warnings = warnings;
   if (params.explainRanking) {
-    params.result.ranking = toContextRankingSummary(params.readyRanking);
+    params.result.ranking = toContextRankingSummary(
+      params.readyRanking,
+      params.featureStore,
+    );
     params.result.packing = toContextPackingSummary(params.packing);
   }
 
@@ -595,6 +607,7 @@ async function rankReadyEntriesWithRelevance(
   >;
   completedContainer: boolean;
   packing: ContextPackingReport<ItemMetadata>;
+  featureStore: ContextSignalStoreReadResult;
 }> {
   const concreteReady = rankedReady.filter(
     (entry) => !hasCompletedDescendants(entry.item, childrenByParent),
@@ -606,12 +619,20 @@ async function rankReadyEntriesWithRelevance(
     author: callerAuthor,
     enabled: process.env.PM_CONTEXT_USAGE_DISABLED !== "1",
   });
+  const featureStore = await readWorkspaceContextSignals(
+    structuralReady.map((entry) => entry.item),
+    {
+      pmRoot,
+      storeKey: "next",
+      statusRegistry,
+      now,
+      author: callerAuthor,
+      usageAffinity: usage.affinity,
+    },
+  );
   const ranking = await scoreContextCandidatesWithActiveExtensions(
     "next",
-    buildItemContextRelevanceCandidates(
-      structuralReady.map((entry) => entry.item),
-      { statusRegistry, now, author: callerAuthor, usageAffinity: usage.affinity },
-    ),
+    featureStore.candidates,
   );
   const packing = packRankedContextItems(ranking, tokenBudget, new Set(), "next");
   const readyById = new Map(
@@ -625,6 +646,7 @@ async function rankReadyEntriesWithRelevance(
     ranking,
     completedContainer: concreteReady.length === 0,
     packing,
+    featureStore,
   };
 }
 
@@ -658,6 +680,7 @@ export async function runNext(
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const now = nowIso();
   const limit = parseNextLimit(options.limit, "--limit", DEFAULT_NEXT_LIMIT);
+  const tokenBudget = resolveContextTokenBudget(options.tokenBudget, Math.max(192, limit * 128));
   const blockedLimit = parseNextLimit(
     options.blockedLimit,
     "--blocked-limit",
@@ -713,6 +736,7 @@ export async function runNext(
     ranking: readyRanking,
     completedContainer,
     packing: readyPacking,
+    featureStore,
   } = await rankReadyEntriesWithRelevance(
     rankedReady,
     childrenByParent,
@@ -720,7 +744,7 @@ export async function runNext(
     now,
     callerAuthor,
     pmRoot,
-    Math.max(192, limit * 128),
+    tokenBudget,
   );
 
   const readyRows = projectedReady.map((entry, index) =>
@@ -781,6 +805,7 @@ export async function runNext(
       blocked_limit: blockedLimit,
       ready_only: readyOnly,
       include_decisions: options.includeDecisions === true,
+      token_budget: tokenBudget,
     },
     truncation,
   };
@@ -796,6 +821,7 @@ export async function runNext(
     pmRoot,
     author: callerAuthor,
     packing: readyPacking,
+    featureStore,
   });
 }
 

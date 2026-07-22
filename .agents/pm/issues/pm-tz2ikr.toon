@@ -1,0 +1,18 @@
+id: pm-tz2ikr
+title: "GH-638: delete JSON envelope reports the removed item as open"
+description: "Make the delete mutation result unambiguous for agents by replacing the pre-delete lifecycle status with an explicit deletion outcome or documented dedicated field across CLI, SDK, and MCP projections."
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,github,mutation-output
+created_at: "2026-07-22T05:38:13.216Z"
+updated_at: "2026-07-22T05:38:13.867Z"
+author: codex-root-20260722
+acceptance_criteria: pm delete JSON/SDK/MCP results cannot be interpreted as the deleted item remaining active; the compact mutation envelope stays backward-aware and token-efficient; focused contract and runtime tests cover deletion plus non-delete parity.
+parent: pm-nilh
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-cfed,related,"2026-07-22T05:38:13.216Z",null,null
+  pm-xm7c,related,"2026-07-22T05:38:13.216Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-22T05:38:13.867Z",codex-root-20260722,"Duplicate-check evidence 2026-07-22: searched all statuses for GH-638, delete JSON status, deleted mutation result, and misleading open status. No exact item exists. Reused closed lean-mutation parent pm-nilh and related compact JSON/atomic mutation lineage pm-cfed and pm-xm7c. This item remains open/unclaimed because it is documented GitHub intake, outside the active context-index bundle."
+body: ""

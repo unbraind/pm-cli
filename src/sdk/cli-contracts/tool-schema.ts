@@ -255,6 +255,8 @@ const NEXT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "readyOnly",
   "format",
   "includeDecisions",
+  "tokenBudget",
+  "explainRanking",
 ]);
 
 const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
