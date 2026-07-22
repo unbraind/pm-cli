@@ -4,6 +4,7 @@
 
 ### Added
 
+- SDK relationship registry and graph-query primitives: custom typed edges, adjacency, paths, closures, impact, and bounded subgraphs ([pm-ju83](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ju83.toon))
 - Context relevance signal feature store: derived recency, graph, claim, risk, deadline, knowledge-density, and semantic-match signals ([pm-3hps](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3hps.toon))
 
 ### Fixed

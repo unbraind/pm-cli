@@ -32,6 +32,31 @@ export {
   type RelationshipCutStructure,
 } from "./centrality.js";
 export {
+  createRelationshipGraphSnapshot,
+  federateRelationshipGraphSnapshots,
+  loadRelationshipGraphAdapter,
+  MemoryRelationshipGraphAdapter,
+  parseRelationshipGraphSnapshot,
+  RELATIONSHIP_GRAPH_SNAPSHOT_VERSION,
+  syncRelationshipGraphAdapter,
+  type LoadedRelationshipGraphSnapshot,
+  type RelationshipGraphAdapter,
+  type RelationshipGraphAdapterContext,
+  type RelationshipGraphAdapterReplaceContext,
+  type RelationshipGraphAdapterSyncResult,
+  type RelationshipGraphSnapshot,
+} from "./adapter.js";
+export {
+  assertMemoryRelationshipGraphAdapterConformance,
+  assertRelationshipGraphAdapterConformance,
+  createRelationshipGraphScaleFixture,
+  type RelationshipGraphAdapterConformanceCase,
+  type RelationshipGraphAdapterConformanceReport,
+  type RelationshipGraphScaleFixture,
+  type RelationshipGraphScaleFixtureOptions,
+  type RelationshipGraphScaleTopology,
+} from "./conformance.js";
+export {
   analyzeRelationshipSchedule,
   type GraphScheduleOptions,
   type RelationshipScheduleAnalysis,

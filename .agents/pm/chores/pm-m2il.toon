@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: "area:graph",benchmark,conformance,property-testing,scale,testing,token-efficiency
 created_at: "2026-07-13T22:03:31.210Z"
-updated_at: "2026-07-21T21:43:58.004Z"
+updated_at: "2026-07-22T21:44:00.119Z"
 author: codex-root
 estimated_minutes: 600
 acceptance_criteria: "Fixtures cover empty and seconds-old scratch projects, representative medium histories, deep and cyclic typed graphs, multi-decade event streams, disconnected archives, and deterministic 10k, 100k, and one-million-item workspaces; Property tests cover registry invariants, inverse and alias rules, append-only mutation, replay equivalence, snapshot isolation, cursor stability, migration, merge or federation, and correction by superseding event; Algorithm tests verify exact results on bounded fixtures and deterministic seeds, error bounds, freshness, provenance, and monotonic resource limits for approximations; Concurrency tests exercise thousands-agent read and write contention, crashes, stale indexes, retries, idempotency, checkpoints, and non-overlapping reconstruction claims; CLI, MCP, SDK, extension, and shell pipeline parity share golden semantics while allowing intentionally different compact projections; Performance gates record p50, p95, and p99 latency, peak memory, incremental update cost, bytes and tokens, truncation quality, and index rebuild time with documented hardware and envelopes; Every test runs in sandboxed PM_PATH and PM_GLOBAL_PATH and never reads or writes the real repository tracker"
@@ -26,7 +26,7 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-g2zz,related,"2026-07-13T22:03:31.210Z",null,null
   pm-ju83,blocked_by,"2026-07-13T22:03:31.210Z",null,null
   pm-mi2x,related,"2026-07-13T22:03:31.210Z",null,null
-comments[21]{created_at,author,text}:
+comments[27]{created_at,author,text}:
   "2026-07-13T22:03:31.210Z",codex-root,"Duplicate check 2026-07-13: pm-mi2x supplies generic scale fixtures and pm-atfm evaluates context quality,but no item owns typed-graph property,replay,migration,adapter-parity,and reconstruction conformance across those fixtures."
   "2026-07-14T09:43:38.102Z",codex-gpt5,"Implementation start 2026-07-14: add replay, snapshot, adversarial topology, deterministic analytics, and token-bound conformance coverage for the broad graph SDK bundle; all tests remain sandbox-safe."
   "2026-07-14T10:02:22.642Z",codex-gpt5,"TDD evidence: focused relationship suites pass 21 tests. New relationship history, analytics, and context modules plus the precedence additions report literal 100% statements/branches/functions/lines in focused V8 coverage; static quality, docstring, audit-boundary, and token-budget gates pass."
@@ -48,17 +48,32 @@ comments[21]{created_at,author,text}:
   "2026-07-21T21:15:18.470Z",codex-relationship-backfill-20260721,"Scale/conformance evidence 2026-07-21: the tracker-linked 10,000-edge test passed against real filesystem locking and atomic JSONL publication; full repository coverage passed 6,076 tests with 100% statements, branches, functions, and lines. The packed public SDK consumer separately proved deterministic planning, atomic publication, and idempotent resume through the installed artifact."
   "2026-07-21T21:37:37.000Z",codex-relationship-backfill-20260721,"PR evidence: conformance, concurrency, failure-atomicity, resume, and real 10,000-edge coverage are under review in https://github.com/unbraind/pm-cli/pull/639."
   "2026-07-21T21:43:57.440Z",codex-relationship-backfill-20260721,"Exact-head review closeout: PR #639 head a3ffacfb is fully green with no unresolved or actionable review findings. This matrix returns open for its remaining property/federation/million-item envelopes."
+  "2026-07-22T20:57:34.466Z",codex-graph-platform-20260722,"Implementation start 2026-07-22: actively build reusable adapter conformance, deterministic adversarial/property cases, portable round-trip proof, and an explicit million-node sparse-graph envelope without touching the real tracker."
+  "2026-07-22T21:13:32.019Z",codex-graph-platform-20260722,"Verification note: focused adapter coverage reached exact 100/100/100/100 and the real million-node sparse acceptance passed. The first full-suite aggregate attempt ran concurrently with a duplicate invocation and Vitest reported its coverage/.tmp directory removed after the test files passed; this is an execution collision, not a product failure. Rerunning one isolated full coverage process for authoritative evidence."
+  "2026-07-22T21:20:57.462Z",codex-graph-platform-20260722,"Property/conformance expansion: deterministic 96-case topology sweep proves content fingerprints and canonical nodes/edges are invariant to source iteration order; the million-node executable now has real entrypoint/report tests so the global 100% gate includes it without exclusions."
+  "2026-07-22T21:28:06.054Z",codex-graph-platform-20260722,"Installed-package evidence: a clean temporary npm project installed the packed @unbrained/pm-cli 2026.7.22 artifact, strictly typechecked an external JSON adapter, passed all 7 public conformance cases, federated a custom directed owns ontology, round-tripped the portable snapshot, and reported zero npm vulnerabilities."
+  "2026-07-22T21:38:24.126Z",codex-graph-platform-20260722,"PR evidence: the completed property/federation/million-node matrix tranche is under hosted review in https://github.com/unbraind/pm-cli/pull/648 at commit c98ca0d8."
+  "2026-07-22T21:44:00.119Z",codex-graph-platform-20260722,"Hosted scale/check evidence on PR #648 head 3620b4ea: benchmark, Windows, exact coverage, Codecov patch, security, and all repository-owned gates passed. CodSpeed warns its runtime environments differ and reports only -0.03% to +0.12% movement on untouched benchmarks; no graph benchmark regression or actionable review finding exists."
 notes[1]{created_at,author,text}:
   "2026-07-14T10:19:37.624Z",codex-gpt5,"Remaining canonical scope after this PR: property generators, concurrent durable adapters, migration matrix, and million-item proof; keep chore open."
-files[7]{path,scope,note}:
+learnings[1]{created_at,author,text}:
+  "2026-07-22T21:36:21.530Z",codex-graph-platform-20260722,"Executable benchmark scripts are part of the all-source coverage surface. Export their option resolver, runner, main, and direct-entry guard so tests exercise the real public SDK path; never exclude a new benchmark to preserve 100% thresholds."
+files[10]{path,scope,note}:
+  scripts/benchmarks/graph-adapter-scale.mjs,project,real million-node sparse public SDK acceptance benchmark
   tests/fixtures/contracts/full.json,project,generated CLI MCP SDK contract snapshot
   tests/unit/commands/deps-command.spec.ts,project,CLI SDK bounded-context acceptance
   tests/unit/commands/register-commands.spec.ts,project,CLI option forwarding contract
+  tests/unit/scripts/graph-adapter-scale.spec.ts,project,benchmark entrypoint and report coverage
   tests/unit/sdk/context-relevance.spec.ts,project,public relevance parity and malformed runtime coverage
+  tests/unit/sdk/graph/adapter.spec.ts,project,adapter validation federation CAS conformance and scale regressions
   tests/unit/sdk/relationship-history-analytics.spec.ts,project,"event replay,analytics,cursor,token,semantic,and adversarial conformance"
   tests/unit/sdk/relationship-migration.spec.ts,project,Atomicity resumability concurrency and 10k-edge migration acceptance
   tests/unit/sdk/relationships.spec.ts,project,registry precedence and validation conformance
-tests[3]:
+tests[4]:
+  - command: node --max-old-space-size=4096 scripts/benchmarks/graph-adapter-scale.mjs
+    scope: project
+    timeout_seconds: 300
+    note: million-node sparse graph snapshot and adapter acceptance
   - command: node scripts/run-tests.mjs coverage
     scope: project
     timeout_seconds: 900
