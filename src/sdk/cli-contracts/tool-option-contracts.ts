@@ -400,6 +400,8 @@ export const TOOL_CONTEXT_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "section", flag: "--section", repeatable: true },
   { param: "activityLimit", flag: "--activity-limit" },
   { param: "staleThreshold", flag: "--stale-threshold" },
+  { param: "tokenBudget", flag: "--token-budget" },
+  { param: "explainRanking", flag: "--explain-ranking" },
 ];
 
 /** Public contract for tool deps option contracts, shared by SDK and presentation-layer consumers. */

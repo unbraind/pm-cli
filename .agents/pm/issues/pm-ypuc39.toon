@@ -1,0 +1,19 @@
+id: pm-ypuc39
+title: "GH-641: plan link promotion rejects registered implements relationship kind"
+description: Plan link promotion advertises an implements relationship but rejects that kind at runtime; align plan workflow validation with the canonical extensible relationship registry and preserve SDK/CLI contract parity.
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-22T05:00:13.387Z"
+updated_at: "2026-07-22T05:00:31.317Z"
+author: codex-root-20260722
+parent: pm-96h7
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-je50,related,"2026-07-22T05:00:31.072Z",null,null
+  pm-ju83,blocked_by,"2026-07-22T05:00:31.072Z",null,null
+  pm-qd3woa,related,"2026-07-22T05:00:31.072Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-22T05:00:13.387Z",codex-root-20260722,"Duplicate check 2026-07-22: searched all statuses for GH-641, plan link promotion, advertised implements, relationship kind, and plan workflow validation. Existing closed pm-je50 owns the shipped Plan SDK primitives and open pm-ju83 owns the extensible relationship registry, but no item tracks this concrete regression; this issue is the canonical GH-641 lineage."
+  "2026-07-22T05:00:31.072Z",codex-root-20260722,"GitHub provenance: https://github.com/unbraind/pm-cli/issues/641. Related closed Plan SDK lineage pm-je50, relationship-registry owner pm-ju83, and adjacent strict Plan metadata issue pm-qd3woa define the regression boundary."
+body: ""

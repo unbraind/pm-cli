@@ -1357,6 +1357,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--stale-threshold" },
   { flag: "--explain-ranking" },
   { flag: "--explain_ranking" },
+  { flag: "--token-budget", aliases: ["--token_budget"] },
 ];
 
 /** Public contract for get flag contracts, shared by SDK and presentation-layer consumers. */
@@ -1437,6 +1438,7 @@ export const NEXT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--format" },
   { flag: "--explain-ranking" },
   { flag: "--explain_ranking" },
+  { flag: "--token-budget", aliases: ["--token_budget"] },
 ];
 
 /** Public contract for search flag contracts, shared by SDK and presentation-layer consumers. */

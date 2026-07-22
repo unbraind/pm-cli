@@ -8,6 +8,7 @@ import {
   clearItemMetadataEnvelopeMemo,
   DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS,
   listAllDocumentCandidatesCached,
+  readItemMetadataDerivedIndexState,
   refreshItemMetadataDerivedIndex,
 } from "../../../../src/core/store/item-metadata-cache.js";
 import type { ItemMetadata } from "../../../../src/types.js";
@@ -85,6 +86,8 @@ describe("item metadata derived-index transactions", () => {
         undefined,
         { derivedIndexMinimumItems: 1 },
       );
+      const initialState = await readItemMetadataDerivedIndexState(pmRoot);
+      expect(initialState).toMatchObject({ entry_count: 1 });
 
       const updated: ItemMetadata = {
         ...original,
@@ -123,6 +126,8 @@ describe("item metadata derived-index transactions", () => {
       } finally {
         await release();
       }
+      const updatedState = await readItemMetadataDerivedIndexState(pmRoot);
+      expect(updatedState?.source_cursor).not.toBe(initialState?.source_cursor);
 
       const readdirSpy = vi.spyOn(fs, "readdir");
       const indexed = await listAllDocumentCandidatesCached(
@@ -151,6 +156,12 @@ describe("item metadata derived-index transactions", () => {
         "utf8",
       );
       clearItemMetadataEnvelopeMemo();
+      expect(await readItemMetadataDerivedIndexState(pmRoot)).toBeNull();
+      await fs.writeFile(
+        path.join(pmRoot, "runtime", "metadata-cache-delta.json"),
+        "{}",
+        "utf8",
+      );
       expect(
         await listAllDocumentCandidatesCached(
           pmRoot,

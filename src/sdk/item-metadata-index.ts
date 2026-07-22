@@ -11,6 +11,8 @@
 export {
   acquireItemMetadataDerivedIndexLock,
   DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS,
+  readItemMetadataDerivedIndexState,
   refreshItemMetadataDerivedIndex,
+  type ItemMetadataDerivedIndexState,
   type ItemMetadataDerivedIndexMutation,
 } from "../core/store/item-metadata-cache.js";

@@ -1,7 +1,11 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildItemContextRelevanceCandidates, runContext } from "../../../src/cli/commands/context.js";
+import {
+  buildItemContextRelevanceCandidates,
+  runContext,
+  toContextRankingSummary,
+} from "../../../src/cli/commands/context.js";
 import { runNext } from "../../../src/cli/commands/next.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
@@ -26,6 +30,14 @@ function relevanceItem(
 }
 
 describe("context relevance command integration", () => {
+  it("keeps feature-store diagnostics optional for SDK summary callers", () => {
+    expect(toContextRankingSummary({
+      model: "default-weighted-v1",
+      available_signals: [],
+      ranked: [],
+    })).not.toHaveProperty("feature_store");
+  });
+
   it("derives normalized metadata signals for diverse project items", () => {
     const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
     const now = "2026-07-10T00:00:00.000Z";
@@ -124,10 +136,18 @@ describe("context relevance command integration", () => {
       const explainedNext = await runNext({ explainRanking: true }, { path: context.pmPath });
       const contextAlias = context.runCli(["context", "--json", "--explain_ranking"], { expectJson: true });
       const nextAlias = context.runCli(["next", "--json", "--explain_ranking"], { expectJson: true });
+      const budgetAliases = [
+        context.runCli(["context", "--json", "--explain-ranking", "--token_budget", "64"], { expectJson: true }),
+        context.runCli(["next", "--json", "--explain-ranking", "--token_budget", "64"], { expectJson: true }),
+      ];
 
       expect(compact.ranking).toBeUndefined();
       expect(compact.packing).toBeUndefined();
       expect(explainedContext.packing).toMatchObject({ profile: "context", token_budget: 1600, selection_complete: true });
+      expect(explainedContext.ranking?.feature_store).toMatchObject({
+        source: "derived_index",
+        cache_status: "fresh",
+      });
       expect(explainedContext.ranking?.model).toBe("default-weighted-v1");
       expect(explainedContext.ranking?.available_signals).toContain("priority_pressure");
       expect(explainedNext.ranking?.items.map((entry) => entry.id)).toEqual(
@@ -135,10 +155,31 @@ describe("context relevance command integration", () => {
       );
       expect(explainedNext.ranking?.items[0]?.contributions.priority_pressure).toBeGreaterThan(0);
       expect(explainedNext.packing).toMatchObject({ profile: "next", token_budget: 640, selection_complete: true });
+      expect(explainedNext.ranking?.feature_store).toMatchObject({
+        source: "derived_index",
+        cache_status: "rebuilt",
+      });
+      const boundedContext = await runContext({ explainRanking: true, tokenBudget: "64" }, { path: context.pmPath });
+      const boundedNext = await runNext({ explainRanking: true, tokenBudget: "64" }, { path: context.pmPath });
+      expect(boundedContext.packing?.token_budget).toBe(64);
+      expect(boundedNext.packing?.token_budget).toBe(64);
       expect(contextAlias.code).toBe(0);
       expect(contextAlias.json).toMatchObject({ ranking: { model: "default-weighted-v1" } });
       expect(nextAlias.code).toBe(0);
       expect(nextAlias.json).toMatchObject({ ranking: { model: "default-weighted-v1" } });
+      for (const result of budgetAliases) {
+        expect(result.code).toBe(0);
+        expect(result.json).toMatchObject({
+          filters: { token_budget: 64 },
+          packing: { token_budget: 64 },
+        });
+      }
+      await expect(runContext({ tokenBudget: "0" }, { path: context.pmPath })).rejects.toThrow(
+        "--token-budget must be a positive integer",
+      );
+      await expect(runNext({ tokenBudget: 1.5 }, { path: context.pmPath })).rejects.toThrow(
+        "--token-budget must be a positive integer",
+      );
 
       const read = context.runCli(["get", createdIds[1]!, "--json"], { expectJson: true });
       expect(read.code).toBe(0);

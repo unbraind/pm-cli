@@ -1514,6 +1514,12 @@
             "--explain_ranking"
           ],
           "flag": "--explain-ranking"
+        },
+        {
+          "aliases": [
+            "--token_budget"
+          ],
+          "flag": "--token-budget"
         }
       ],
       "provider": "core"
@@ -1928,6 +1934,12 @@
             "--explain_ranking"
           ],
           "flag": "--explain-ranking"
+        },
+        {
+          "aliases": [
+            "--token_budget"
+          ],
+          "flag": "--token-budget"
         }
       ],
       "provider": "core"
@@ -4602,6 +4614,12 @@
             "--explain_ranking"
           ],
           "flag": "--explain-ranking"
+        },
+        {
+          "aliases": [
+            "--token_budget"
+          ],
+          "flag": "--token-budget"
         }
       ],
       "provider": "core"
@@ -7218,6 +7236,13 @@
           "stale_threshold"
         ],
         "target": "staleThreshold"
+      },
+      {
+        "keys": [
+          "tokenBudget",
+          "token_budget"
+        ],
+        "target": "tokenBudget"
       }
     ],
     "create_repeatable_options": [
@@ -18098,6 +18123,10 @@
             ],
             "type": "string"
           },
+          "explainRanking": {
+            "description": "Explain Ranking.",
+            "type": "boolean"
+          },
           "fields": {
             "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
@@ -18249,6 +18278,22 @@
           "to": {
             "description": "To.",
             "type": "string"
+          },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
           },
           "type": {
             "description": "Item type name from the active runtime type registry.",
@@ -18334,6 +18379,10 @@
             ],
             "type": "string"
           },
+          "explainRanking": {
+            "description": "Explain Ranking.",
+            "type": "boolean"
+          },
           "fields": {
             "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
@@ -18485,6 +18534,22 @@
           "to": {
             "description": "To.",
             "type": "string"
+          },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
           },
           "type": {
             "description": "Item type name from the active runtime type registry.",
@@ -19002,6 +19067,10 @@
               "3"
             ]
           },
+          "explainRanking": {
+            "description": "Explain Ranking.",
+            "type": "boolean"
+          },
           "format": {
             "description": "Format.",
             "type": "string"
@@ -19103,6 +19172,22 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
           },
           "type": {
             "description": "Item type name from the active runtime type registry.",
@@ -25010,6 +25095,10 @@
               "3"
             ]
           },
+          "explainRanking": {
+            "description": "Explain Ranking.",
+            "type": "boolean"
+          },
           "force": {
             "description": "Force.",
             "type": "boolean"
@@ -25148,6 +25237,22 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
           },
           "type": {
             "description": "Item type name from the active runtime type registry.",

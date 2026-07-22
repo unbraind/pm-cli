@@ -467,11 +467,18 @@ describe("list-query command actions", () => {
 
   it("renders context markdown output and falls through to printResult otherwise", async () => {
     vi.mocked(resolveContextOutputFormat).mockReturnValue("markdown" as never);
-    await runCliRaw("context", "--depth", "deep", "--section", "hierarchy", "--section", "progress");
+    await runCliRaw(
+      "context",
+      "--depth", "deep",
+      "--section", "hierarchy",
+      "--section", "progress",
+      "--token-budget", "640",
+    );
     expect(vi.mocked(renderContextMarkdown)).toHaveBeenCalledTimes(1);
     const normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runContext) as never, 0);
     expect(normalized.depth).toBe("deep");
     expect(normalized.section).toEqual(["hierarchy", "progress"]);
+    expect(normalized.tokenBudget).toBe("640");
 
     vi.mocked(resolveContextOutputFormat).mockReturnValue("json" as never);
     await runCli("ctx", "--limit", "3");

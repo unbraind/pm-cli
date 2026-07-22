@@ -62,9 +62,13 @@ receive a no-op release function and retain direct external-edit detection.
 
 Context-signal snapshots follow the same rule: they are versioned and
 cursor-stamped, never authoritative, and rebuild from the metadata index or
-source-scan fallback when missing, stale, or corrupt. SDK hosts can persist
-that layer with `ContextSignalStore` while retaining explicit `fresh`/`rebuilt`
-and `derived_index`/`scan_fallback` diagnostics.
+source-scan fallback when missing, stale, or corrupt. The stock `context` and
+`next` projections use separate snapshot namespaces, persist only
+caller-independent signals, and recompute author, time, semantic, and usage
+overlays on every read. SDK hosts can use `readWorkspaceContextSignals` for the
+same automatic cursor binding or compose `ContextSignalStore` directly, while
+retaining explicit `fresh`/`rebuilt` and `derived_index`/`scan_fallback`
+diagnostics. See [Context relevance and packing](CONTEXT_RELEVANCE.md).
 
 To refresh a baseline after an intentional, measured improvement:
 

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Context relevance signal feature store: derived recency, graph, claim, risk, deadline, knowledge-density, and semantic-match signals ([pm-3hps](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3hps.toon))
+
 ### Fixed
 
 - Sentry PM-CLI-2G: make merge-driver installation permission failures actionable ([pm-bnmlsc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bnmlsc.toon))

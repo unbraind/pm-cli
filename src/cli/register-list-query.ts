@@ -894,6 +894,10 @@ export function registerListQueryCommands(
       .option(
         "--explain-ranking",
         "Include the scorer model, per-signal contributions, and ranked candidate ids",
+      )
+      .option(
+        "--token-budget <n>",
+        "Maximum estimated tokens spent on ranked focus rows",
       );
     // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
     addHiddenOption(
@@ -907,6 +911,7 @@ export function registerListQueryCommands(
       "--explain_ranking",
       "Alias for --explain-ranking",
     );
+    addHiddenOption(contextCommand, "--token_budget <n>", "Alias for --token-budget");
     contextCommand.action(runContextAction);
   }
 
@@ -950,6 +955,10 @@ export function registerListQueryCommands(
       .option(
         "--explain-ranking",
         "Include the scorer model, per-signal contributions, and ranked ready ids",
+      )
+      .option(
+        "--token-budget <n>",
+        "Maximum estimated tokens spent on the ranked ready queue",
       );
     addHiddenOption(
       nextCommand,
@@ -967,6 +976,7 @@ export function registerListQueryCommands(
       "--explain_ranking",
       "Alias for --explain-ranking",
     );
+    addHiddenOption(nextCommand, "--token_budget <n>", "Alias for --token-budget");
     nextCommand.action(runNextAction);
   }
 
