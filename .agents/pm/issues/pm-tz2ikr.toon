@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,github,mutation-output
 created_at: "2026-07-22T05:38:13.216Z"
-updated_at: "2026-07-22T17:02:26.923Z"
+updated_at: "2026-07-22T17:23:24.180Z"
 closed_at: "2026-07-22T17:01:51.304Z"
 author: codex-root-20260722
 acceptance_criteria: pm delete JSON/SDK/MCP results cannot be interpreted as the deleted item remaining active; the compact mutation envelope stays backward-aware and token-efficient; focused contract and runtime tests cover deletion plus non-delete parity.
@@ -17,10 +17,11 @@ actual_result: The result echoed the pre-delete item status and compact projecti
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-cfed,related,"2026-07-22T05:38:13.216Z",null,null
   pm-xm7c,related,"2026-07-22T05:38:13.216Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-22T05:38:13.867Z",codex-root-20260722,"Duplicate-check evidence 2026-07-22: searched all statuses for GH-638, delete JSON status, deleted mutation result, and misleading open status. No exact item exists. Reused closed lean-mutation parent pm-nilh and related compact JSON/atomic mutation lineage pm-cfed and pm-xm7c. This item remains open/unclaimed because it is documented GitHub intake, outside the active context-index bundle."
   "2026-07-22T16:31:13.671Z",codex-root,"Implementation start 2026-07-22: canonical all-status lineage and full metadata reviewed. This item is active in one broad SDK-backed contract correctness PR spanning strict Plan creation, registry-aware Plan relationship promotion, non-interactive linked-test execution, and unambiguous deletion outcomes. GitHub intake, public SDK/CLI/MCP parity, focused regression coverage, isolated installed-package dogfood, and exact 100/100/100/100 verification are in scope."
   "2026-07-22T17:00:30.570Z",codex-root,"Evidence: delete results expose outcome, deleted, and previous_status; compact/id-only projections report deleted or would_delete instead of stale open. Command, projection, deterministic-key-order, and packed CLI proofs pass."
+  "2026-07-22T17:23:24.179Z",codex-root,"Delivery PR: https://github.com/unbraind/pm-cli/pull/644 (exact implementation branch for truthful delete mutation outcomes)."
 files[5]{path,scope,note}:
   src/cli/commands/delete.ts,project,truthful delete result
   src/core/output/mutation-projection.ts,project,compact and id-only delete outcome

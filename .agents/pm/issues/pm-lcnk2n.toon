@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,github,linked-tests
 created_at: "2026-07-22T05:37:02.638Z"
-updated_at: "2026-07-22T17:02:26.175Z"
+updated_at: "2026-07-22T17:23:23.491Z"
 closed_at: "2026-07-22T17:01:49.553Z"
 author: codex-root-20260722
 acceptance_criteria: "Linked non-PM repository commands start without an init prompt under schema, tracker, and auto PM context modes; non-TTY setup failures exit deterministically with structured remediation; regression coverage proves progress starts and the child command runs."
@@ -17,10 +17,11 @@ actual_result: "Sandbox setup called runInit without defaults, allowing TTY runs
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-6e1d,related,"2026-07-22T05:37:02.638Z",null,null
   pm-8izv,related,"2026-07-22T05:37:02.638Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-22T05:37:19.236Z",codex-root-20260722,"Duplicate-check evidence 2026-07-22: searched every pm status for interactive init wizard, linked-test sandbox initialization, tracker context, and adjacent GH-208/GH-463 lineages. No exact item exists; reused closed linked-test sandbox parent pm-52eh and related parity/remediation lineage pm-8izv and pm-6e1d. This item tracks GitHub issue #642 and remains open/unclaimed because it is documented, not part of the active context-index implementation bundle."
   "2026-07-22T16:31:11.692Z",codex-root,"Implementation start 2026-07-22: canonical all-status lineage and full metadata reviewed. This item is active in one broad SDK-backed contract correctness PR spanning strict Plan creation, registry-aware Plan relationship promotion, non-interactive linked-test execution, and unambiguous deletion outcomes. GitHub intake, public SDK/CLI/MCP parity, focused regression coverage, isolated installed-package dogfood, and exact 100/100/100/100 verification are in scope."
   "2026-07-22T17:00:29.817Z",codex-root,"Evidence: all four linked-test sandboxes initialize with explicit defaults=true and agentGuidance=skip. The packed installed CLI ran a linked node --version test to completion without an interactive wizard."
+  "2026-07-22T17:23:23.491Z",codex-root,"Delivery PR: https://github.com/unbraind/pm-cli/pull/644 (exact implementation branch for non-interactive linked-test sandbox initialization)."
 files[2]{path,scope,note}:
   src/sdk/test/execution.ts,project,non-interactive linked-test sandbox init
   tests/unit/sdk/agent-contract-correctness.spec.ts,project,initializer option regression

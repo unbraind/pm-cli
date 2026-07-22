@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",contracts,github-report,plan
 created_at: "2026-07-21T20:58:16.027Z"
-updated_at: "2026-07-22T17:21:38.010Z"
+updated_at: "2026-07-22T17:23:22.180Z"
 closed_at: "2026-07-22T17:01:46.161Z"
 author: codex-relationship-backfill-20260721
 acceptance_criteria: Plan creation forwards every applicable type-required create field through the public SDK; recovery suggests only flags accepted by the active command path; strict and progressive profiles have CLI/SDK/MCP parity; regression and contract tests pass
@@ -26,12 +26,13 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-4bzq,related,"2026-07-21T20:58:16.027Z",null,null
   pm-je50,related,"2026-07-21T20:58:16.027Z",null,null
   pm-qmjx,related,"2026-07-21T20:58:16.027Z",null,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-21T20:58:16.027Z",codex-relationship-backfill-20260721,"Duplicate check 2026-07-21: searched every pm status for GH-635,plan create strict required fields,and recovery-required Plan metadata. No exact owner exists; closed pm-je50 is the shipped plan-SDK lineage,while pm-qmjx/pm-4bzq/pm-3rjo cover adjacent help and recovery behavior."
   "2026-07-22T16:31:07.109Z",codex-root,"Implementation start 2026-07-22: canonical all-status lineage and full metadata reviewed. This item is active in one broad SDK-backed contract correctness PR spanning strict Plan creation, registry-aware Plan relationship promotion, non-interactive linked-test execution, and unambiguous deletion outcomes. GitHub intake, public SDK/CLI/MCP parity, focused regression coverage, isolated installed-package dogfood, and exact 100/100/100/100 verification are in scope."
   "2026-07-22T17:00:28.060Z",codex-root,"Evidence: Plan creation now reuses the shared create metadata contract across Commander, SDK types, MCP schema, help/completion contracts, strict/progressive governance, logs, and linked resources. Focused plan/contract regressions pass; full coverage is 100/100/100/100."
   "2026-07-22T17:00:31.304Z",codex-root,"Manual package proof: packed @unbrained/pm-cli@2026.7.22, installed it into /tmp/tmp.DIKF6fUpDj, created a strict governed Plan with metadata and artifacts, and verified the installed SDK registry. Temporary plan pm-e9re."
   "2026-07-22T17:21:38.010Z",codex-root,"Sentry follow-up: PM-CLI-2H recorded one handled value.trim failure at 2026-07-22T16:41:19Z against the earlier register-mutation-VYQNIL7U bundle during local acceptance. Current bundle register-mutation-EQ5MT3BP normalizes repeatable acceptance criteria before runCreate; fresh isolated CLI reproductions passed both repeated --acceptance-criteria values and mixed --acceptance-criteria/--ac aliases. Full release gates also passed 6,084 tests at exact 100/100/100/100 coverage. The one-event pre-fix issue is resolved as fixed."
+  "2026-07-22T17:23:22.179Z",codex-root,"Delivery PR: https://github.com/unbraind/pm-cli/pull/644 (exact implementation branch for strict Plan create contract parity)."
 files[10]{path,scope,note}:
   eslint-suppressions.json,project,retired obsolete Plan complexity suppression
   package.json,project,pinned stricter static-quality budget
