@@ -1107,6 +1107,18 @@
         },
         {
           "flag": "--include-decisions"
+        },
+        {
+          "aliases": [
+            "--token_budget"
+          ],
+          "flag": "--token-budget"
+        },
+        {
+          "aliases": [
+            "--explain_ranking"
+          ],
+          "flag": "--explain-ranking"
         }
       ],
       "provider": "core"

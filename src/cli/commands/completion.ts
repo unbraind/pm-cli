@@ -1688,6 +1688,8 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--release[Filter --next candidates by release]:release' \\
             '--max-attempts[Bound the --next candidate walk]:max_attempts' \\
             '--include-decisions[Allow human-gated Decision candidates]' \\
+            '--token-budget[Bound ranked candidate tokens]:token_budget' \\
+            '--explain-ranking[Include ranking provenance]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -2580,6 +2582,8 @@ complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-ta
 complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task delete' -l force -d 'Force override'
 complete -c pm -n '__fish_seen_subcommand_from claim' -l if-available -d 'Skip work held by another author'
 complete -c pm -n '__fish_seen_subcommand_from claim' -l next -d 'Atomically claim the next actionable item'
+complete -c pm -n '__fish_seen_subcommand_from claim' -l token-budget -d 'Bound ranked candidate tokens' -r
+complete -c pm -n '__fish_seen_subcommand_from claim' -l explain-ranking -d 'Include ranking provenance'
 complete -c pm -n '__fish_seen_subcommand_from close close-task' -l validate-close -d 'Validate closure metadata mode' -r -a 'off warn strict'
 complete -c pm -n '__fish_seen_subcommand_from close' -l reason -d 'Closure reason' -r
 complete -c pm -n '__fish_seen_subcommand_from close' -l close-reason -d 'Alias for --reason' -r

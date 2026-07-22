@@ -610,11 +610,8 @@ export function resolveContextTokenBudget(
   raw: string | number | undefined,
   fallback: number,
 ): number {
-  const parsed =
-    typeof raw === "number"
-      ? raw
-      : parseIntegerLimit(raw, "--token-budget");
-  if (parsed === undefined) return fallback;
+  if (raw === undefined) return fallback;
+  const parsed = typeof raw === "number" ? raw : Number(raw);
   if (!Number.isInteger(parsed) || parsed < 1) {
     throw new PmCliError("--token-budget must be a positive integer", EXIT_CODE.USAGE);
   }
@@ -1962,7 +1959,7 @@ interface ContextOptionalSections {
 async function resolveContextRuntime(
   options: ContextOptions,
   global: GlobalOptions,
-): Promise<ContextRuntime> {
+): Promise<Omit<ContextRuntime, "tokenBudget">> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
   /* c8 ignore start -- settings persistence currently always materializes context defaults */
@@ -1989,7 +1986,6 @@ async function resolveContextRuntime(
     ),
     parentScope: parseContextParent(options.parent),
     focusFields: parseContextFocusFields(options.fields),
-    tokenBudget: resolveContextTokenBudget(options.tokenBudget, Math.max(256, limit * 160)),
     baseListOptions: stripListProjectionFlags(options),
   };
 }
@@ -2024,7 +2020,7 @@ function buildUnpaginatedContextListOptions(
 async function loadContextCorpus(
   options: ContextOptions,
   global: GlobalOptions,
-  runtime: ContextRuntime,
+  runtime: Omit<ContextRuntime, "tokenBudget">,
 ): Promise<ContextCorpus> {
   const needsAllItems = contextNeedsAllItems(runtime.sectionsIncluded);
   // One full-corpus scan serves every consumer: runList always reads all item
@@ -2497,11 +2493,16 @@ export async function runContext(
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const resolvedRuntime = await resolveContextRuntime(options, global);
   const corpus = await loadContextCorpus(options, global, resolvedRuntime);
+  const scaledLimit = resolveContextLimitAtScale(
+    resolvedRuntime.limit,
+    corpus.fullCorpus.length,
+  );
   const runtime = {
     ...resolvedRuntime,
-    limit: resolveContextLimitAtScale(
-      resolvedRuntime.limit,
-      corpus.fullCorpus.length,
+    limit: scaledLimit,
+    tokenBudget: resolveContextTokenBudget(
+      options.tokenBudget,
+      Math.max(256, scaledLimit * 160),
     ),
   };
   const author = process.env.PM_AUTHOR ?? runtime.settings.author_default;

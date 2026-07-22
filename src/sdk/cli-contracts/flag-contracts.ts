@@ -744,6 +744,8 @@ export const CLAIM_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--release" },
   { flag: "--max-attempts" },
   { flag: "--include-decisions" },
+  { flag: "--token-budget", aliases: ["--token_budget"] },
+  { flag: "--explain-ranking", aliases: ["--explain_ranking"] },
 ];
 
 /** Public contract for restore flag contracts, shared by SDK and presentation-layer consumers. */

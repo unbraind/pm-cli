@@ -185,6 +185,15 @@ describe("context relevance command integration", () => {
       await expect(runContext({ tokenBudget: "0" }, { path: context.pmPath })).rejects.toThrow(
         "--token-budget must be a positive integer",
       );
+      await expect(runContext({ tokenBudget: "-1" }, { path: context.pmPath })).rejects.toThrow(
+        "--token-budget must be a positive integer",
+      );
+      await expect(runContext({ tokenBudget: "1.5" }, { path: context.pmPath })).rejects.toThrow(
+        "--token-budget must be a positive integer",
+      );
+      await expect(runContext({ tokenBudget: "" }, { path: context.pmPath })).rejects.toThrow(
+        "--token-budget must be a positive integer",
+      );
       await expect(runNext({ tokenBudget: 1.5 }, { path: context.pmPath })).rejects.toThrow(
         "--token-budget must be a positive integer",
       );

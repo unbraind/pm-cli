@@ -534,6 +534,13 @@ async function runClaimAction(
             sprint: typeof options.sprint === "string" ? options.sprint : undefined,
             release: typeof options.release === "string" ? options.release : undefined,
             includeDecisions: options.includeDecisions === true,
+            tokenBudget:
+              (options.tokenBudget ?? options.token_budget) as
+                | string
+                | number
+                | undefined,
+            explainRanking:
+              options.explainRanking === true || options.explain_ranking === true,
           },
         )
       : await runClaim(
@@ -1066,12 +1073,30 @@ export function registerOperationCommands(program: Command): void {
       "--include-decisions",
       "Allow --next to claim human-gated Decision items",
     )
+    .option(
+      "--token-budget <n>",
+      "Bound the estimated tokens used to rank --next candidates",
+    )
+    .option(
+      "--explain-ranking",
+      "Include ranking provenance for --next selection",
+    )
     .description("Claim an item for active work.")
     .action(runClaimAction);
   addHiddenOption(
     claimCommand,
     "--assignee <value>",
     "Alias for --author on lifecycle ownership commands",
+  );
+  addHiddenOption(
+    claimCommand,
+    "--token_budget <n>",
+    "Alias for --token-budget",
+  );
+  addHiddenOption(
+    claimCommand,
+    "--explain_ranking",
+    "Alias for --explain-ranking",
   );
 
   const releaseCommand = program
