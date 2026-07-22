@@ -3,10 +3,11 @@
  *
  * Implements the pm event validation messages command surface and its agent-facing runtime behavior.
  */
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { resolveIsoOrRelative } from "../../core/shared/time.js";
-
+import {
+  EXIT_CODE,
+  PmCliError,
+  resolveIsoOrRelative,
+} from "../../sdk/runtime-primitives.js";
 /** Public contract for event end after start message, shared by SDK and presentation-layer consumers. */
 export const EVENT_END_AFTER_START_MESSAGE =
   "--event end must be strictly after start. Equal start/end timestamps are treated as an instant event (end is dropped); an end earlier than start is rejected. Omit end for an instant event or set end later than start.";

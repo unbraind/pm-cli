@@ -3,32 +3,28 @@
  *
  * Implements the pm contracts command surface and its agent-facing runtime behavior.
  */
-import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
 import {
+  EXIT_CODE,
+  SETTINGS_DEFAULTS,
+  type GlobalOptions,
+  PmCliError,
   activateExtensions,
   getActiveExtensionRegistrations,
   loadExtensions,
-} from "../../core/extensions/index.js";
-import type {
-  ExtensionRegistrationRegistry,
-  RegisteredExtensionCommandDefinition,
-  RegisteredExtensionFlagDefinitions,
-} from "../../core/extensions/index.js";
-import { pathExists } from "../../core/fs/fs-utils.js";
-import {
+  type ExtensionRegistrationRegistry,
+  type RegisteredExtensionCommandDefinition,
+  type RegisteredExtensionFlagDefinitions,
+  pathExists,
   commandOptionFlagLabel,
   resolveCommandOptionPolicyState,
   resolveItemTypeRegistry,
-} from "../../core/item/type-registry.js";
-import {
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
   type RuntimeFieldRegistry,
-} from "../../core/schema/runtime-schema.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
 import {
   buildMcpToolContracts,
   type McpToolContract,

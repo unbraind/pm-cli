@@ -3,9 +3,11 @@
  *
  * Implements the pm metadata normalizers command surface and its agent-facing runtime behavior.
  */
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { parseOptionalNumber } from "../../core/item/parse.js";
+import {
+  EXIT_CODE,
+  PmCliError,
+  parseOptionalNumber,
+} from "../../sdk/runtime-primitives.js";
 import { CONFIDENCE_TEXT_VALUES } from "../../types/index.js";
 
 /** Implements normalize risk input for the public runtime surface of this module. */

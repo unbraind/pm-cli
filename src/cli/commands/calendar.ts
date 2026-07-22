@@ -4,39 +4,34 @@
  * Implements the pm calendar command surface and its agent-facing runtime behavior.
  */
 import { encode as encodeToon } from "@toon-format/toon";
-import { pathExists } from "../../core/fs/fs-utils.js";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import {
+  pathExists,
+  getActiveExtensionRegistrations,
   resolveItemTypeRegistry,
   type ItemTypeRegistry,
-} from "../../core/item/type-registry.js";
+  normalizeStatusInput,
+  collectRuntimeFilterValues,
+  matchesRuntimeFilters,
+  resolveRuntimeFieldRegistry,
+  resolveRuntimeStatusRegistry,
+  type RuntimeStatusRegistry,
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+  levenshteinDistanceWithinLimit,
+  compareTimestampStrings,
+  nowIso,
+  resolveIsoOrRelative,
+  listAllItemMetadataLight,
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
 import {
   parseIntegerLimit,
   parsePriority,
   parseType,
 } from "../shared-parsers.js";
-import { normalizeStatusInput } from "../../core/item/status.js";
-import {
-  collectRuntimeFilterValues,
-  matchesRuntimeFilters,
-} from "../../core/schema/runtime-field-filters.js";
-import {
-  resolveRuntimeFieldRegistry,
-  resolveRuntimeStatusRegistry,
-  type RuntimeStatusRegistry,
-} from "../../core/schema/runtime-schema.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { levenshteinDistanceWithinLimit } from "../../core/shared/levenshtein.js";
-import {
-  compareTimestampStrings,
-  nowIso,
-  resolveIsoOrRelative,
-} from "../../core/shared/time.js";
-import { listAllItemMetadataLight } from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
 import type {
   ItemMetadata,
   ItemStatus,

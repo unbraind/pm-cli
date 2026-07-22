@@ -3,19 +3,20 @@
  *
  * Implements the pm claim command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
 import {
+  pathExists,
   resolveRuntimeStatusRegistry,
   statusIsTerminal,
-} from "../../core/schema/runtime-schema.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { toItemRecord } from "../../core/item/item-record.js";
-import { mutateItem } from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
-import { resolveAuthor } from "../../core/shared/author.js";
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+  toItemRecord,
+  mutateItem,
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+  resolveAuthor,
+} from "../../sdk/runtime-primitives.js";
 import { wrapOwnershipConflict } from "../../sdk/annotations.js";
 import { describeItemOwnershipConflict } from "../../sdk/ownership-source.js";
 import { runNext, type NextRecommendation, type NextOptions } from "./next.js";

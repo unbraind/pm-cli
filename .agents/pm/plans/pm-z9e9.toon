@@ -6,9 +6,10 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-10T08:53:16.326Z"
-updated_at: "2026-06-10T14:13:32.258Z"
+updated_at: "2026-07-22T20:18:56.611Z"
 author: maintainer-agent
 parent: pm-mpbb
+release: 2026.6.10
 resolution: "Merged PR #198 to main as df639239 with SDK/CLI mutation, context, aggregate, and linked-test primitives plus review-loop fixes."
 expected_result: "Agent-oriented pm SDK/CLI primitives are available with docs, contracts, tests, manual temp smoke, changelog gate, and GitHub CI/review evidence."
 actual_result: PR #198 merged; CI green; Gemini/CodeRabbit review loop clean or unavailable as documented; implemented child pm items closed/released; GH #191 remains open for the exact unimplemented parser form.
@@ -22,7 +23,7 @@ dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-p9hw,related,"2026-06-10T08:53:16.326Z",null,null
   pm-vcr2,related,"2026-06-10T08:53:16.326Z",null,null
   pm-xnkd,related,"2026-06-10T08:53:16.326Z",null,null
-comments[24]{created_at,author,text}:
+comments[26]{created_at,author,text}:
   "2026-06-10T10:33:45.487Z",codex-impl,"Mutation-surface specialist read-only pass: pm-xnkd close --duplicate-of, pm-p9hw create --parent fail-fast/default escape hatch, and pm-esf6 root --id-only are not implemented in current branch. close.ts/register-mutation.ts have no duplicateOf/--duplicate-of path; create.ts still uses settings.validation.parent_reference with default governance parent_reference=warn and tests assert warning behavior; global contracts/main/MCP/completions expose --no-changed-fields/fullChangedFields only, no --id-only. Expected follow-up surfaces: src/cli/commands/close.ts, src/cli/register-mutation.ts, src/cli/commands/create.ts, src/core/item/parent-reference-policy.ts, src/core/shared/constants.ts, src/cli/main.ts, src/sdk/cli-contracts.ts, src/mcp/server.ts, src/cli/commands/completion.ts, tests/fixtures/contracts/full.json, docs/COMMANDS.md, docs/AGENT_GUIDE.md, and focused unit/integration/MCP regressions."
   "2026-06-10T10:33:54.434Z",codex-impl,"Read-surface inspection: pm-awfr is implemented via DEFAULT_COMPACT_LIST_FIELDS including parent and has unit coverage. pm-ojpq is only partially present: hierarchy/progress completion-style stats exist, but high_level entries lack children_total/children_closed/completion_pct and recently_created/unparented sections are absent from section types, defaults, builders, and renderers. pm-eaer is not implemented: aggregate has no --completion option, no completion counters/pct fields, no registration/contracts/completion/docs/tests. No files edited by specialist."
   "2026-06-10T10:35:03.757Z",codex-impl,"Linked-test specialist read-only pass: pm-vcr2/GH-191 and GH-193 are partially implemented via --add-json parser/wiring, but the GH-191 two-token --add command UX/guidance is not implemented. pm-p86h/GH-194 selectors are partially implemented via src/core/test/run-selectors.ts and runTest selection metadata. Specialist tsc check failed at src/cli/commands/test.ts optional linkedTest.command passed to string-only safety helpers. Remaining gaps noted: selector/add-json tests, background arg propagation for selectors, contracts/completions/docs/full.json refresh."
@@ -47,6 +48,8 @@ comments[24]{created_at,author,text}:
   "2026-06-10T13:59:26.114Z",codex-impl,"Review response: Addressed latest Gemini naming note by renaming the context date-prefix helper to hasNoInvalidDatePrefix, matching that non-date strings pass while impossible date prefixes fail. Verification: pnpm exec tsc --noEmit --pretty false; node scripts/run-tests.mjs test -- tests/unit/context-command.spec.ts (25 tests); pnpm contracts:check; pnpm quality:static; pnpm security:scan; pnpm changelog:pm:check with pm-changelog@2026.6.10 unchanged."
   "2026-06-10T14:05:22.957Z",codex-impl,"Review loop evidence: GitHub checks are green on df704566 including coverage, typecheck, static, compat, smokes, runtime smoke, Docs, CodeQL, and CodeRabbit status. Gemini Code Assist latest review at 2026-06-10T14:02:36Z reports no feedback to address. CodeRabbit latest requested re-review was service-rate-limited, but the CodeRabbit status check is success on the current head and earlier actionable findings were fixed. Codex review remains unavailable because chatgpt-codex-connector reports the account is not connected. Sourcery remains unavailable due weekly diff-character quota."
   "2026-06-10T14:13:31.713Z",codex-impl,"Post-merge evidence: PR #198 merged to main as df639239. Closed implemented child items pm-awfr, pm-eaer, pm-esf6, pm-ojpq, pm-p86h, pm-p9hw, and pm-xnkd; released their specialist claims. Left pm-vcr2/GH-191 open with a note because exact two-token --add command parsing remains separate from the merged --add-json mitigation. GitHub issues manually closed where fully satisfied: #193, #194, #180, #160."
+  "2026-07-22T19:18:05.881Z",codex-sdk-boundary-20260722,"GitHub provenance: added missing direct pm item links to closed GH-193 (robust linked-test command input) and GH-165 (create parent behavior)."
+  "2026-07-22T20:16:35.104Z",codex-sdk-boundary-20260722,"Corrective GitHub provenance mapping for the append-only record: GH-193 -> pm-z9e9 (https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-z9e9.toon); GH-165 -> pm-z9e9 (https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-z9e9.toon). The corresponding GitHub issues contain the same direct tracker URL."
 files[38]{path,scope,note}:
   src/cli/bootstrap-args.ts,project,global id-only bootstrap parsing
   src/cli/commands/aggregate.ts,project,aggregate completion metrics
@@ -86,19 +89,38 @@ files[38]{path,scope,note}:
   tests/unit/settings-store.spec.ts,project,governance default coverage
   tests/unit/test-command.spec.ts,project,linked-test add-json and selector regression coverage
   tests/unit/update-command.spec.ts,project,strict parent update coverage
-tests[9]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/aggregate-command.spec.ts tests/unit/completion-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/close-command.spec.ts tests/unit/context-command.spec.ts tests/unit/output.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/linked-test-parsers.spec.ts tests/unit/test-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/runtime-schema-command-flags.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/registration-helpers.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm contracts:check",null,project,120,tracker,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:docs-links && pnpm security:scan && pnpm audit --audit-level low && pnpm changelog:pm:check && pm health --check-only --summary --json && pm validate --check-resolution --check-history-drift",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mq7xt3cf-56ad8q,test,failed,"2026-06-10T10:39:27.039Z","2026-06-10T10:39:58.767Z","2026-06-10T10:39:58.767Z",null,null,2,1,0,null,null,null
-  test-local-mq7xu8sq-3rxqc8,test,passed,"2026-06-10T10:40:19.969Z","2026-06-10T10:40:52.490Z","2026-06-10T10:40:52.490Z",null,null,3,0,0,null,null,null
+tests[9]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 900
+  - command: node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/aggregate-command.spec.ts tests/unit/completion-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/close-command.spec.ts tests/unit/context-command.spec.ts tests/unit/output.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/linked-test-parsers.spec.ts tests/unit/test-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/runtime-schema-command-flags.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/registration-helpers.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: "pnpm contracts:check"
+    scope: project
+    timeout_seconds: 120
+    pm_context_mode: tracker
+  - command: "pnpm quality:docs-links && pnpm security:scan && pnpm audit --audit-level low && pnpm changelog:pm:check && pm health --check-only --summary --json && pm validate --check-resolution --check-history-drift"
+    scope: project
+    timeout_seconds: 300
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 120
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mq7xt3cf-56ad8q,test,failed,"2026-06-10T10:39:27.039Z","2026-06-10T10:39:58.767Z","2026-06-10T10:39:58.767Z",2,1,0
+  test-local-mq7xu8sq-3rxqc8,test,passed,"2026-06-10T10:40:19.969Z","2026-06-10T10:40:52.490Z","2026-06-10T10:40:52.490Z",3,0,0
 docs[4]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,agent workflow docs
   docs/COMMANDS.md,project,linked-test add-json and selector docs

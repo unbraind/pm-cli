@@ -3,20 +3,20 @@
  *
  * Implements the pm aggregate command surface and its agent-facing runtime behavior.
  */
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { splitCommaList } from "../../core/shared/split-comma-list.js";
-import { nowIso } from "../../core/shared/time.js";
-import { normalizeStatusInput } from "../../core/item/status.js";
-import { parseStatusFilterCsv } from "../../core/item/status-filter.js";
 import {
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+  splitCommaList,
+  nowIso,
+  normalizeStatusInput,
+  parseStatusFilterCsv,
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
   type RuntimeStatusRegistry,
-} from "../../core/schema/runtime-schema.js";
-import { resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
+  resolvePmRoot,
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
 import { type ItemStatus } from "../../types/index.js";
 import { buildListQueryFilters } from "./list-filter-shared.js";
 import { runList } from "./list.js";

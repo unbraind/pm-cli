@@ -4,20 +4,23 @@
  * Provides CLI runtime support for Registration Helpers.
  */
 import { Option, type Command } from "commander";
-import { pathExists } from "../core/fs/fs-utils.js";
-import { normalizeStatusInput } from "../core/item/status.js";
-import { refreshSearchArtifactsForMutation } from "../core/search/cache.js";
-import { shouldRunSearchRefreshInForeground } from "../core/search/background-refresh.js";
-import { EXIT_CODE } from "../core/shared/constants.js";
-import { PmCliError } from "../core/shared/errors.js";
-import { printError, printResult, writeStdout } from "../core/output/output.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
-import { readSettings } from "../core/store/settings.js";
 import {
+  pathExists,
+  normalizeStatusInput,
+  refreshSearchArtifactsForMutation,
+  shouldRunSearchRefreshInForeground,
+  EXIT_CODE,
+  PmCliError,
+  printError,
+  printResult,
+  writeStdout,
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
   runActiveServiceOverride,
   setActiveCommandResult,
-} from "../core/extensions/index.js";
-import type { GlobalOptions } from "../core/shared/command-types.js";
+  type GlobalOptions,
+} from "../sdk/runtime-primitives.js";
 import type { ItemStatus } from "../types/index.js";
 import {
   ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,

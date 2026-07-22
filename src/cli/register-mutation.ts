@@ -4,12 +4,14 @@
  * Provides CLI runtime support for Register Mutation.
  */
 import { Option, type Command } from "commander";
-import type { GlobalOptions } from "../core/shared/command-types.js";
-import { resolveBodyFileContent } from "../core/io/body-file.js";
-import { EXIT_CODE } from "../core/shared/constants.js";
-import { splitCommaList } from "../core/shared/split-comma-list.js";
-import { PmCliError } from "../core/shared/errors.js";
-import { isPureSnakeCaseAlias } from "../core/shared/option-alias-visibility.js";
+import {
+  type GlobalOptions,
+  resolveBodyFileContent,
+  EXIT_CODE,
+  splitCommaList,
+  PmCliError,
+  isPureSnakeCaseAlias,
+} from "../sdk/runtime-primitives.js";
 import {
   CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
   UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,

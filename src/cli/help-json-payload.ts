@@ -9,9 +9,10 @@ import {
   resolveCommandOptionPolicyState,
   resolveItemTypeRegistry,
   resolveTypeDefinition,
-} from "../core/item/type-registry.js";
-import { EXIT_CODE } from "../core/shared/constants.js";
-import { printError, writeStdout } from "../core/output/output.js";
+  EXIT_CODE,
+  printError,
+  writeStdout,
+} from "../sdk/runtime-primitives.js";
 import {
   type HelpOptionSummary,
   type ExtensionCommandHelpDescriptor,

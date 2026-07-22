@@ -6,15 +6,16 @@ status: closed
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-26T22:59:56.418Z"
+updated_at: "2026-07-22T20:18:58.101Z"
 deadline: "2026-06-01T00:00:00.000Z"
 author: codex-audit
 estimated_minutes: 300
 acceptance_criteria: Audit findings are actionable and deduplicated; changed files and verification commands are linked; temporary dogfood project validates core workflows; any discovered bugs with safe fixes are remediated and tested.
 parent: pm-jrjt
+release: 2026.5.27
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[315]{created_at,author,text}:
+comments[316]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -330,6 +331,7 @@ comments[315]{created_at,author,text}:
   "2026-05-26T22:29:39.156Z",codex-active-continuation,"Release/changelog reliability remediation completed in-repo (no upstream pm-changelog patch required):\n- scripts/release/run-release-pipeline.mjs now generates changelog to a temp file first, checks for a non-empty target release section, and only then applies package version bump + CHANGELOG.md write.\n- When no changelog section exists for auto-selected target version (scheduled/no explicit version), pipeline now exits cleanly with skipped=true and reason=empty_generated_changelog_section_for_target_version instead of failing the workflow.\n- Explicit --version runs remain strict: missing section still hard-fails.\n- Added contract coverage assertion in tests/integration/release-automation-contract.spec.ts for the new skip reason + section-check callsite."
   "2026-05-26T22:58:28.957Z",codex-active-continuation,"Merged umbrella evidence: PR #75 (merge commit 90179089125eb9a07fff6419f4a92078f06af67b) consolidated runner migration, startup optimization, release/changelog reliability fixes, security/gh sweep, and temp-dir dogfood validation; CI checks all passed before merge."
   "2026-05-26T22:59:56.418Z",codex-active-continuation,"Observability gate probe after merge:\n- Command: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort\n- Result: exit=1 because Sentry threshold policy (max_high=0) is stricter than current project backlog.\n- Sentry payload confirms live recent data is available: critical=0, high=5, total=5, access_ok=true.\n- Telemetry payload is healthy: finish_error_rate_pct=1.94, failures_without_error_code_rows=0, telemetry.ok=true."
+  "2026-07-22T19:18:06.494Z",codex-sdk-boundary-20260722,"GitHub provenance: added the missing direct pm lineage link to closed GH-169 for the existing create body contract."
 notes[4]{created_at,author,text}:
   "2026-05-17T07:36:59.474Z",codex-agent,"Design note 2026-05-17: unfiltered pm contracts default now intentionally omits three heavy sections (schema oneOf union, command_flags, commander_aliases) and emits explicit omitted_reason markers; --full restores complete schema and alias/flag surfaces for tooling that needs maximal detail."
   "2026-05-17T08:33:25.981Z",codex-agent,"Design note 2026-05-17: default brief projection was intentionally scoped to bare 'pm list' instead of all list-* commands to preserve existing automation contracts while still cutting agent token usage on the highest-frequency exploratory list call."
@@ -454,77 +456,272 @@ files[114]{path,scope,note}:
   tests/unit/shared-constants-errors.spec.ts,project,review regression coverage for status default cloning
   tests/unit/update-command.spec.ts,project,update event date alias regression
   vitest.config.ts,project,coverage include list covers new search corpus helper
-tests[68]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "manual temp-project smoke: init; install local pm-todos; install npm:local pm-beads; package doctor deep; beads import; todos export; health; validate",null,project,300,null,null,null,null,null,null,null,null,null,null,null,manual temp directory runtime-loader smoke
-  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,tracked secret and path leak guardrail
-  node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,isolated temp-project dogfood harness
-  node scripts/gen-package-runtime-loaders.mjs --check,null,project,120,null,null,null,null,null,null,null,null,null,null,null,review fix generator drift check
-  node scripts/release/docs-skills-gate.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/docs-skills-gate.mjs --json,null,project,300,null,null,null,null,null,null,null,null,null,null,null,docs dedupe and guide gate
-  node scripts/release/run-gates.mjs --json --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,final full release gate after review fix
-  node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full release gate with required sentry and telemetry
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 10 --max-high 20 --max-telemetry-error-rate 10,null,project,240,null,null,null,null,null,null,null,null,null,null,null,security/observability subagent required Sentry and telemetry freshness gate
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,full 100 percent coverage gate
-  node scripts/run-tests.mjs coverage -- --testTimeout 120000 --maxWorkers 1,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,stable serial full coverage verification
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'keeps activity readable|supports activity stream',null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused activity regression
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/contracts-command.spec.ts tests/unit/search-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused help/contracts/search runtime parity regression
-  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts --reporter=dot,null,project,900,null,null,null,null,null,null,null,null,null,null,null,release automation + readiness regression
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts tests/unit/update-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/config-positional-value.spec.ts tests/unit/config-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/package-manifest.spec.ts tests/unit/check-secrets.spec.ts --reporter=dot,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused release config and Windows CI regressions
-  node scripts/run-tests.mjs test -- tests/unit/config-positional-value.spec.ts tests/unit/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/package-manifest.spec.ts tests/unit/check-secrets.spec.ts --reporter=dot,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused release config and Windows CI regressions after test split
-  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused package/install contract alias regression
-  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused contracts and runtime flag parity regression
-  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/search-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused contracts/search runtime parity regression
-  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/settings-store.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused canonical extension contract/default regression
-  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/front-matter-cache.spec.ts tests/unit/search-command.spec.ts tests/unit/search-cache.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused contracts and search cache regression
-  node scripts/run-tests.mjs test -- tests/unit/embedding-batches.spec.ts tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/search-command.spec.ts tests/unit/sentry-helpers.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused remediation regressions
-  node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused init/recovery/event regressions
-  node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/contracts-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused get depth regression
-  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/plan-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/integration/claude-plugin-contract.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused Plan/MCP/plugin projection regressions
-  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/integration/cli.integration.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,flaky spec stabilization rerun
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,focused search and indexing regression
-  node scripts/run-tests.mjs test -- tests/unit/semantic-defaults.spec.ts tests/unit/get-append-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  pm health --check-only --brief --check-telemetry --json,null,project,120,null,null,null,null,null,null,null,null,null,null,null,security/observability subagent telemetry health and endpoint probe
-  PM_DOGFOOD_SEMANTIC=1 node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,semantic temporary-project dogfood coverage
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- --testTimeout 120000 --maxWorkers 1,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,serial full 100 percent coverage gate
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/governance-presets.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/help-runtime.spec.ts tests/integration/task-lifecycle-aliases.spec.ts tests/unit/comments-command.spec.ts tests/unit/close-command.spec.ts tests/unit/delete-command.spec.ts tests/unit/restore-command.spec.ts tests/unit/notes-learnings-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/test-command.spec.ts tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/fs-utils.spec.ts tests/unit/search-cache.spec.ts tests/unit/telemetry-runtime.spec.ts tests/unit/telemetry-consent.spec.ts tests/unit/contracts-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extension-command-github.spec.ts tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/sdk-index.spec.ts --reporter=dot,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused migrated helper regression suite
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/check-secrets.spec.ts tests/unit/get-append-command.spec.ts tests/unit/files-docs-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/test-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused PR review regression suite
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/ci-workflow-contract.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused contracts/list/plan/workflow regression suite
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/extension-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/search-cache.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused package docs search contract regression
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/plan-command.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/test-command.spec.ts --reporter=dot,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused plan alias and linked-test parser regression suite
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/plan-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,focused Plan contracts and SDK regression
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused strict-schema recovery regression
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/shared-constants-errors.spec.ts --reporter=dot,null,project,300,null,null,null,null,null,null,null,null,null,null,null,coverage repair for linked-artifacts and settings default clone
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/error-guidance.spec.ts --reporter=dot,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/error-guidance.spec.ts tests/unit/history-activity-command.spec.ts tests/integration/help-runtime.spec.ts --reporter=dot,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/unit/list-command.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/plan-command.spec.ts tests/unit/search-command.spec.ts tests/unit/semantic-defaults.spec.ts tests/unit/health-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused UX/search/health regression suite
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/claude-plugin-contract.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused health brief and help alias compaction regression suite
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/package-import-adapters.spec.ts tests/unit/package-runtime-options.spec.ts tests/unit/shared-constants-errors.spec.ts tests/unit/linked-test-parsers.spec.ts tests/unit/update-command.spec.ts --reporter=dot,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused automated review regression suite
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/plan-command.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/test-command.spec.ts --reporter=dot,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused Plan projection and linked-test parser regression suite
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/registration-helpers.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts --reporter=dot,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused PM-CLI-T and pm-5k2w UX regressions
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/contracts-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,SDK runtime contracts regression
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/contracts-command.spec.ts tests/unit/search-advanced-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused SDK contracts search-advanced regression
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/plan-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,focused SDK and Plan projection regression
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/plan-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,"SDK workspace contracts,Plan fields,search-advanced package regression"
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/extension-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused package docs search UX regressions
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/runtime-schema-command-flags.spec.ts tests/unit/contracts-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused Sentry crash and package contract hint regression suite
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/status-normalization.spec.ts tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/error-guidance.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused dependency/UX/Sentry regression suite
-  pnpm audit --audit-level high,null,project,180,null,null,null,null,null,null,null,null,null,null,null,security sweep in consolidated perf/reliability pass
-  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,null,compile CLI after health/help/dogfood changes
-  "pnpm build && node scripts/run-tests.mjs coverage && pnpm quality:static && node scripts/check-secrets.mjs",null,project,1200,null,null,null,null,null,null,null,null,null,null,null,full remediation verification gate
-  pnpm exec tsc --noEmit -p tsconfig.json,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused typecheck after schema changes
-  pnpm exec vitest run tests/integration/cli.integration.spec.ts -t 'accepts agent-friendly non-interactive init defaults and author',null,project,120,null,null,null,null,null,null,null,null,null,null,null,focused init defaults integration regression
-  "pnpm quality:docs-skills",null,project,300,null,null,null,null,null,null,null,null,null,null,null,docs and skills gate
-  "pnpm quality:docs-skills && pnpm smoke:claude-plugin && pnpm smoke:codex-plugin",null,project,300,null,null,null,null,null,null,null,null,null,null,null,docs and plugin inventory smoke
-  "pnpm quality:static",null,project,300,null,null,null,null,null,null,null,null,null,null,null,static quality gate
-  "pnpm smoke:claude-plugin",null,project,300,null,null,null,null,null,null,null,null,null,null,null,Claude plugin inventory smoke
-  "pnpm smoke:codex-plugin",null,project,300,null,null,null,null,null,null,null,null,null,null,null,Codex plugin MCP smoke
-  "pnpm version:check && pnpm changelog:pm:check && pnpm security:scan && pnpm quality:static && npm pack --dry-run",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-moy9xryz-os0kdg,test,passed,"2026-05-09T11:41:44.207Z","2026-05-09T11:42:08.603Z","2026-05-09T11:42:08.603Z",null,null,1,0,0,null,null,null
+tests[68]:
+  - command: "manual temp-project smoke: init; install local pm-todos; install npm:local pm-beads; package doctor deep; beads import; todos export; health; validate"
+    scope: project
+    timeout_seconds: 300
+    note: manual temp directory runtime-loader smoke
+  - command: node scripts/check-secrets.mjs
+    scope: project
+    timeout_seconds: 120
+    note: tracked secret and path leak guardrail
+  - command: node scripts/dogfood-package-first.mjs
+    scope: project
+    timeout_seconds: 300
+    note: isolated temp-project dogfood harness
+  - command: node scripts/gen-package-runtime-loaders.mjs --check
+    scope: project
+    timeout_seconds: 120
+    note: review fix generator drift check
+  - command: node scripts/release/docs-skills-gate.mjs
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/release/docs-skills-gate.mjs --json
+    scope: project
+    timeout_seconds: 300
+    note: docs dedupe and guide gate
+  - command: node scripts/release/run-gates.mjs --json --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10
+    scope: project
+    timeout_seconds: 1200
+    note: final full release gate after review fix
+  - command: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json
+    scope: project
+    timeout_seconds: 2400
+    note: full release gate with required sentry and telemetry
+  - command: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 10 --max-high 20 --max-telemetry-error-rate 10
+    scope: project
+    timeout_seconds: 240
+    note: security/observability subagent required Sentry and telemetry freshness gate
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1200
+    note: full 100 percent coverage gate
+  - command: node scripts/run-tests.mjs coverage -- --testTimeout 120000 --maxWorkers 1
+    scope: project
+    timeout_seconds: 3600
+    note: stable serial full coverage verification
+  - command: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'keeps activity readable|supports activity stream'
+    scope: project
+    timeout_seconds: 300
+    note: focused activity regression
+  - command: node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/contracts-command.spec.ts tests/unit/search-command.spec.ts
+    scope: project
+    timeout_seconds: 900
+    note: focused help/contracts/search runtime parity regression
+  - command: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 900
+    note: release automation + readiness regression
+  - command: node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/integration/release-automation-contract.spec.ts
+    scope: project
+    timeout_seconds: 900
+  - command: node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts tests/unit/update-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts
+    scope: project
+    timeout_seconds: 900
+  - command: node scripts/run-tests.mjs test -- tests/unit/config-positional-value.spec.ts tests/unit/config-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/package-manifest.spec.ts tests/unit/check-secrets.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 300
+    note: focused release config and Windows CI regressions
+  - command: node scripts/run-tests.mjs test -- tests/unit/config-positional-value.spec.ts tests/unit/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/package-manifest.spec.ts tests/unit/check-secrets.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 300
+    note: focused release config and Windows CI regressions after test split
+  - command: node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: focused package/install contract alias regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: focused contracts and runtime flag parity regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/search-command.spec.ts
+    scope: project
+    timeout_seconds: 900
+    note: focused contracts/search runtime parity regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/settings-store.spec.ts tests/unit/shared-constants-errors.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: focused canonical extension contract/default regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/front-matter-cache.spec.ts tests/unit/search-command.spec.ts tests/unit/search-cache.spec.ts
+    scope: project
+    timeout_seconds: 900
+    note: focused contracts and search cache regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/embedding-batches.spec.ts tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/search-command.spec.ts tests/unit/sentry-helpers.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: focused remediation regressions
+  - command: node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: focused init/recovery/event regressions
+  - command: node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/contracts-command.spec.ts
+    scope: project
+    timeout_seconds: 600
+    note: focused get depth regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts
+    scope: project
+    timeout_seconds: 1200
+  - command: node scripts/run-tests.mjs test -- tests/unit/plan-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/integration/claude-plugin-contract.spec.ts
+    scope: project
+    timeout_seconds: 900
+    note: focused Plan/MCP/plugin projection regressions
+  - command: node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/integration/cli.integration.spec.ts
+    scope: project
+    timeout_seconds: 900
+    note: flaky spec stabilization rerun
+  - command: node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: focused search and indexing regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/semantic-defaults.spec.ts tests/unit/get-append-command.spec.ts tests/integration/cli.integration.spec.ts
+    scope: project
+    timeout_seconds: 600
+  - command: pm health --check-only --brief --check-telemetry --json
+    scope: project
+    timeout_seconds: 120
+    note: security/observability subagent telemetry health and endpoint probe
+  - command: PM_DOGFOOD_SEMANTIC=1 node scripts/dogfood-package-first.mjs
+    scope: project
+    timeout_seconds: 300
+    note: semantic temporary-project dogfood coverage
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 360
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- --testTimeout 120000 --maxWorkers 1
+    scope: project
+    timeout_seconds: 1200
+    note: serial full 100 percent coverage gate
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/governance-presets.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/help-runtime.spec.ts tests/integration/task-lifecycle-aliases.spec.ts tests/unit/comments-command.spec.ts tests/unit/close-command.spec.ts tests/unit/delete-command.spec.ts tests/unit/restore-command.spec.ts tests/unit/notes-learnings-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/test-command.spec.ts tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/fs-utils.spec.ts tests/unit/search-cache.spec.ts tests/unit/telemetry-runtime.spec.ts tests/unit/telemetry-consent.spec.ts tests/unit/contracts-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extension-command-github.spec.ts tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/sdk-index.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 300
+    note: focused migrated helper regression suite
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/check-secrets.spec.ts tests/unit/get-append-command.spec.ts tests/unit/files-docs-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/test-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: focused PR review regression suite
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    timeout_seconds: 900
+    note: focused contracts/list/plan/workflow regression suite
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/extension-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/search-cache.spec.ts
+    scope: project
+    timeout_seconds: 900
+    note: focused package docs search contract regression
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/plan-command.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/test-command.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 300
+    note: focused plan alias and linked-test parser regression suite
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/plan-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: focused Plan contracts and SDK regression
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: focused strict-schema recovery regression
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/shared-constants-errors.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 300
+    note: coverage repair for linked-artifacts and settings default clone
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/error-guidance.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 240
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/error-guidance.spec.ts tests/unit/history-activity-command.spec.ts tests/integration/help-runtime.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 300
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/unit/list-command.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/plan-command.spec.ts tests/unit/search-command.spec.ts tests/unit/semantic-defaults.spec.ts tests/unit/health-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts
+    scope: project
+    timeout_seconds: 900
+    note: focused UX/search/health regression suite
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/claude-plugin-contract.spec.ts
+    scope: project
+    timeout_seconds: 900
+    note: focused health brief and help alias compaction regression suite
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/package-import-adapters.spec.ts tests/unit/package-runtime-options.spec.ts tests/unit/shared-constants-errors.spec.ts tests/unit/linked-test-parsers.spec.ts tests/unit/update-command.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 300
+    note: focused automated review regression suite
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/plan-command.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/test-command.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 300
+    note: focused Plan projection and linked-test parser regression suite
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/registration-helpers.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 900
+    note: focused PM-CLI-T and pm-5k2w UX regressions
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/contracts-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: SDK runtime contracts regression
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/contracts-command.spec.ts tests/unit/search-advanced-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 900
+    note: focused SDK contracts search-advanced regression
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/plan-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: focused SDK and Plan projection regression
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/plan-command.spec.ts tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 900
+    note: "SDK workspace contracts,Plan fields,search-advanced package regression"
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/extension-command.spec.ts tests/integration/help-runtime.spec.ts
+    scope: project
+    timeout_seconds: 900
+    note: focused package docs search UX regressions
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/runtime-schema-command-flags.spec.ts tests/unit/contracts-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: focused Sentry crash and package contract hint regression suite
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/status-normalization.spec.ts tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/error-guidance.spec.ts
+    scope: project
+    timeout_seconds: 600
+    note: focused dependency/UX/Sentry regression suite
+  - command: pnpm audit --audit-level high
+    scope: project
+    timeout_seconds: 180
+    note: security sweep in consolidated perf/reliability pass
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 300
+    note: compile CLI after health/help/dogfood changes
+  - command: "pnpm build && node scripts/run-tests.mjs coverage && pnpm quality:static && node scripts/check-secrets.mjs"
+    scope: project
+    timeout_seconds: 1200
+    note: full remediation verification gate
+  - command: pnpm exec tsc --noEmit -p tsconfig.json
+    scope: project
+    timeout_seconds: 300
+    note: focused typecheck after schema changes
+  - command: pnpm exec vitest run tests/integration/cli.integration.spec.ts -t 'accepts agent-friendly non-interactive init defaults and author'
+    scope: project
+    timeout_seconds: 120
+    note: focused init defaults integration regression
+  - command: "pnpm quality:docs-skills"
+    scope: project
+    timeout_seconds: 300
+    note: docs and skills gate
+  - command: "pnpm quality:docs-skills && pnpm smoke:claude-plugin && pnpm smoke:codex-plugin"
+    scope: project
+    timeout_seconds: 300
+    note: docs and plugin inventory smoke
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 300
+    note: static quality gate
+  - command: "pnpm smoke:claude-plugin"
+    scope: project
+    timeout_seconds: 300
+    note: Claude plugin inventory smoke
+  - command: "pnpm smoke:codex-plugin"
+    scope: project
+    timeout_seconds: 300
+    note: Codex plugin MCP smoke
+  - command: "pnpm version:check && pnpm changelog:pm:check && pnpm security:scan && pnpm quality:static && npm pack --dry-run"
+    scope: project
+    timeout_seconds: 240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-moy9xryz-os0kdg,test,passed,"2026-05-09T11:41:44.207Z","2026-05-09T11:42:08.603Z","2026-05-09T11:42:08.603Z",1,0,0
 docs[16]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,document Plan field projection
   docs/ARCHITECTURE.md,project,search architecture documents calendar-aware corpus

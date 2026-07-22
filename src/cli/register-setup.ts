@@ -6,9 +6,11 @@
 import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { GlobalOptions } from "../core/shared/command-types.js";
-import { EXIT_CODE } from "../core/shared/constants.js";
-import { PmCliError } from "../core/shared/errors.js";
+import {
+  type GlobalOptions,
+  EXIT_CODE,
+  PmCliError,
+} from "../sdk/runtime-primitives.js";
 import {
   collect,
   getGlobalOptions,

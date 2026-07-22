@@ -7,25 +7,18 @@ import {
   pathExists,
   removeFileIfExists,
   writeFileAtomic,
-} from "../../core/fs/fs-utils.js";
-import {
   appendHistoryEntry,
   createHistoryEntry,
-} from "../../core/history/history.js";
-import { generateItemId, normalizeItemId } from "../../core/item/id.js";
-import {
+  generateItemId,
+  normalizeItemId,
   canonicalDocument,
   normalizeItemMetadata,
   serializeItemDocument,
-} from "../../core/item/item-format.js";
-import {
   assertParentReferenceIsNotSelf,
   isPlaceholderReferenceToken,
   normalizeParentReferenceValue,
   validateMissingParentReference,
-} from "../../core/item/parent-reference-policy.js";
-import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-format.js";
-import {
+  validateSprintOrReleaseValue,
   assertNoUnknownCsvKeys,
   createStdinTokenResolver,
   looksLikeGenericKeyValueEntry,
@@ -34,12 +27,10 @@ import {
   parseOptionalNonNegativeInteger,
   parseOptionalNumber,
   parseTags,
-} from "../../core/item/parse.js";
-import { resolvePriority } from "../../core/item/priority.js";
-import { getFocusedItem } from "../../core/session/session-state.js";
-import { normalizeStatusInput } from "../../core/item/status.js";
-import { CREATE_DIRECT_CLOSE_REASON_DEFAULT } from "../../core/shared/constants.js";
-import {
+  resolvePriority,
+  getFocusedItem,
+  normalizeStatusInput,
+  CREATE_DIRECT_CLOSE_REASON_DEFAULT,
   canonicalizeCommandOptionKey,
   commandOptionFlagLabel,
   type ItemTypeRegistry,
@@ -49,54 +40,43 @@ import {
   resolveTypeDefinition,
   resolveTypeName,
   validateTypeOptions,
-} from "../../core/item/type-registry.js";
-import { acquireLock } from "../../core/lock/lock.js";
-import { printError } from "../../core/output/output.js";
-import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
-import { resolveTypeSynonym } from "../../core/item/type-synonyms.js";
-import { collectRuntimeCreateFieldValues } from "../../core/schema/runtime-field-values.js";
-import {
+  acquireLock,
+  printError,
+  buildInvalidTypeError,
+  resolveTypeSynonym,
+  collectRuntimeCreateFieldValues,
   type RuntimeFieldRegistry,
   resolveItemTypesFilePath,
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
   type RuntimeStatusRegistry,
-} from "../../core/schema/runtime-schema.js";
-import {
   EXIT_CODE,
   ITEM_METADATA_KEY_ORDER,
-} from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
-import {
+  type GlobalOptions,
+  PmCliError,
+  nowIso,
+  resolveIsoOrRelative,
   getActiveExtensionRegistrations,
   projectAfterCommandItemSnapshot,
   recordAfterCommandAffectedItem,
   runActiveCommandHandler,
   runActiveOnWriteHooks,
-} from "../../core/extensions/index.js";
-import {
   collectRegisteredItemFieldNames,
   applyRegisteredItemFieldDefaultsAndValidation,
   parseRegisteredItemFieldAssignments,
-} from "../../core/extensions/item-fields.js";
-import {
   listAllItemMetadataLight,
   locateItem,
-} from "../../core/store/item-store.js";
+  getHistoryPath,
+  getItemPath,
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
 import {
   acquireItemMetadataDerivedIndexLock,
   refreshItemMetadataDerivedIndex,
 } from "../../sdk/item-metadata-index.js";
 import { collectNewOrderingCycleWarnings } from "../../sdk/graph/mutation-advisory.js";
-import {
-  getHistoryPath,
-  getItemPath,
-  getSettingsPath,
-  resolvePmRoot,
-} from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
 import {
   normalizeRiskInput,
   normalizeSeverityInput,

@@ -3,12 +3,12 @@
  *
  * Single-sources unset-field metadata shared by create and update command handlers.
  */
-import type {
-  RuntimeFieldCommand,
-  RuntimeFieldRegistry,
-} from "../../core/schema/runtime-schema.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import { PmCliError } from "../../core/shared/errors.js";
+import {
+  type RuntimeFieldCommand,
+  type RuntimeFieldRegistry,
+  EXIT_CODE,
+  PmCliError,
+} from "../../sdk/runtime-primitives.js";
 import { isLegacyNoneToken } from "./legacy-none-tokens.js";
 
 /** Describes one command option that can be removed from item metadata through `--unset`. */

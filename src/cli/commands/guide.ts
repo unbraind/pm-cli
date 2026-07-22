@@ -5,10 +5,12 @@
  */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { resolveConfiguredPmPackageRoot } from "../../core/packages/root.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
+import {
+  resolveConfiguredPmPackageRoot,
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+} from "../../sdk/runtime-primitives.js";
 import {
   listGuideTopicIds,
   listGuideTopics,

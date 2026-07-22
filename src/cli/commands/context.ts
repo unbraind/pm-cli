@@ -3,25 +3,25 @@
  *
  * Implements the pm context command surface and its agent-facing runtime behavior.
  */
-import { SETTINGS_DEFAULTS, EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { compareTimestampStrings, nowIso } from "../../core/shared/time.js";
 import {
+  SETTINGS_DEFAULTS,
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+  compareTimestampStrings,
+  nowIso,
   isTerminalStatus,
   normalizeStatusForRegistry,
   normalizeStatusInput,
-} from "../../core/item/status.js";
+  resolveRuntimeStatusRegistry,
+  type RuntimeStatusRegistry,
+  resolvePmRoot,
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
 import {
   collectDependencyBlockedIds,
   resolveItemBlockers,
 } from "../../sdk/actionability.js";
-import {
-  resolveRuntimeStatusRegistry,
-  type RuntimeStatusRegistry,
-} from "../../core/schema/runtime-schema.js";
-import { resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
 import type {
   ContextDepth,
   ContextSectionName,

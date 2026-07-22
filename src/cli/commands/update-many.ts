@@ -3,49 +3,45 @@
  *
  * Implements the pm update many command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
 import {
+  pathExists,
   createCheckpointId,
   loadMutationCheckpoint,
   restoreCheckpointItems,
   writeMutationCheckpoint,
   type MutationCheckpointItem,
-} from "../../core/checkpoint/mutation-checkpoint.js";
-import { toItemRecord } from "../../core/item/item-record.js";
-import {
+  toItemRecord,
   applyAcceptanceCriteriaMutations,
   applyTagRemovals,
   mergeAdditiveTags,
   parseOptionalNonNegativeInteger,
   parseTags,
   splitAcceptanceCriteria,
-} from "../../core/item/parse.js";
-import { resolvePriority } from "../../core/item/priority.js";
-import { normalizeStatusInput } from "../../core/item/status.js";
-import {
+  resolvePriority,
+  normalizeStatusInput,
   resolveItemTypeRegistry,
   resolveTypeName,
-} from "../../core/item/type-registry.js";
-import { collectRuntimeUpdateFieldValues } from "../../core/schema/runtime-field-values.js";
-import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
-import {
+  collectRuntimeUpdateFieldValues,
+  buildInvalidTypeError,
   resolveItemTypesFilePath,
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
   type RuntimeFieldRegistry,
   type RuntimeStatusRegistry,
-} from "../../core/schema/runtime-schema.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { toErrorMessage } from "../../core/shared/primitives.js";
-import { stableValueEquals } from "../../core/shared/serialization.js";
-import { nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+  toErrorMessage,
+  stableValueEquals,
+  nowIso,
+  resolveIsoOrRelative,
+  getActiveExtensionRegistrations,
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+  resolveAuthor,
+} from "../../sdk/runtime-primitives.js";
 import type { ItemStatus, PmSettings } from "../../types/index.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
-import { resolveAuthor } from "../../core/shared/author.js";
 import { hasListFilters } from "./list-filter-shared.js";
 import {
   runList,

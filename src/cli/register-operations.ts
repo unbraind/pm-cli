@@ -4,12 +4,14 @@
  * Provides CLI runtime support for Register Operations.
  */
 import type { Command } from "commander";
-import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
-import { setActiveCommandResult } from "../core/extensions/index.js";
-import { EXIT_CODE } from "../core/shared/constants.js";
-import { PmCliError } from "../core/shared/errors.js";
-import { resolvePmRoot } from "../core/store/paths.js";
-import { readSettings } from "../core/store/settings.js";
+import {
+  resolveRuntimeStatusRegistry,
+  setActiveCommandResult,
+  EXIT_CODE,
+  PmCliError,
+  resolvePmRoot,
+  readSettings,
+} from "../sdk/runtime-primitives.js";
 import { resolveStartTaskInProgressStatus } from "../sdk/start-task-status.js";
 import { runClaim, runClaimNext, runRelease } from "./commands/claim.js";
 import { runClose } from "./commands/close.js";

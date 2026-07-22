@@ -3,27 +3,28 @@
  *
  * Implements the pm close many command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
 import {
+  pathExists,
   createCheckpointId,
   loadMutationCheckpoint,
   restoreCheckpointItems,
   writeMutationCheckpoint,
   type MutationCheckpointItem,
-} from "../../core/checkpoint/mutation-checkpoint.js";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { isTerminalStatus } from "../../core/item/status.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { toErrorMessage } from "../../core/shared/primitives.js";
-import { resolveAuthor } from "../../core/shared/author.js";
-import { nowIso } from "../../core/shared/time.js";
-import { listAllItemMetadataLight } from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
+  getActiveExtensionRegistrations,
+  isTerminalStatus,
+  resolveItemTypeRegistry,
+  resolveRuntimeStatusRegistry,
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+  toErrorMessage,
+  resolveAuthor,
+  nowIso,
+  listAllItemMetadataLight,
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
 import { runClose, type CloseCommandOptions } from "./close.js";
 import { hasListFilters } from "./list-filter-shared.js";
 import { runList, type ListOptions, type ListedItem } from "./list.js";

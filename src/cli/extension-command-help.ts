@@ -4,11 +4,10 @@
  * Provides CLI runtime support for Extension Command Help.
  */
 import { Command, Option } from "commander";
-import type {
-  RegisteredExtensionCommandDefinition,
-  RegisteredExtensionFlagDefinitions,
-} from "../core/extensions/index.js";
-
+import {
+  type RegisteredExtensionCommandDefinition,
+  type RegisteredExtensionFlagDefinitions,
+} from "../sdk/runtime-primitives.js";
 /** Documents the extension command argument help descriptor payload exchanged by command, SDK, and package integrations. */
 export interface ExtensionCommandArgumentHelpDescriptor {
   /** Value that configures or reports name for this contract. */

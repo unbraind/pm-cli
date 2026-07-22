@@ -76,4 +76,14 @@ These calls use the same schema scaffolding, settings validation, locks, hooks, 
 
 ## Import-boundary guarantee
 
-The CLI modules for config, init, init-agent-guidance, and profile contain compatibility exports only. The static quality gate removes their former private-core import allowances from the committed boundary baseline, so future presentation-layer logic cannot silently grow back into those command paths.
+The CLI and MCP trees have zero direct private-core imports. Shared host services are exposed through the public `runtime-primitives` SDK module, while domain integrations should prefer `PmClient` and typed top-level operations:
+
+```ts
+import {
+  PmClient,
+  resolvePmRoot,
+  resolveRuntimeStatusRegistry,
+} from "@unbrained/pm-cli/sdk";
+```
+
+The static quality gate hard-denies static, type-only, re-exported, and computed dynamic `src/core` edges from every CLI/MCP source. The former allowance baseline was deleted, so a future presentation-layer shortcut cannot be grandfathered or hidden by updating a snapshot.

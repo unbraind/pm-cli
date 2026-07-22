@@ -6,9 +6,10 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli",bulk-ops,living-map,query
 created_at: "2026-06-04T15:24:46.355Z"
-updated_at: "2026-06-04T20:12:37.063Z"
+updated_at: "2026-07-22T20:18:57.334Z"
 author: maintainer-agent
 parent: pm-mpbb
+release: 2026.6.5
 dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-1h99,related,"2026-06-04T15:24:46.355Z",null,null
   pm-9mjw,related,"2026-06-04T15:24:46.355Z",null,null
@@ -18,7 +19,7 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-i17g,related,"2026-06-04T15:24:46.355Z",null,null
   pm-mpbb,parent,"2026-06-04T15:24:46.355Z",null,null
   pm-y138,related,"2026-06-04T15:24:46.355Z",null,null
-comments[26]{created_at,author,text}:
+comments[27]{created_at,author,text}:
   "2026-06-04T16:08:58.985Z",claude-code-agent,"test-author subagent: added 1 list date-window test case covering --updated-after/--updated-before/--created-after/--created-before relative+ISO semantics, raw-input filter echo, null defaults, and invalid-value USAGE error (tests/unit/list-command.spec.ts); 2 search --status test cases covering open/closed alias filtering + raw-input echo + null default and the strict Invalid --status \"opne\" did-you-mean rejection (tests/unit/search-command.spec.ts); 7 close-many test cases via runCli covering missing-filter guard, missing-reason guard (apply+dry-run), non-mutating dry-run plan, apply (open closed + already_terminal skip + rollback checkpoint), --force re-close, rollback restore-to-open, active-child orphan annotation, and --validate-close strict failed row (tests/unit/close-command.spec.ts). All green: list 16 passed, search 39 passed, close 23 passed; combined run 78 passed (3 files). Only the three allowed test files were touched (insertions only)."
   "2026-06-04T16:23:13.331Z",codex-sdk-continuation,"Continuation evidence: branch cli-incremental-context-and-bulk-ops-20260604 is 1 commit ahead of origin/main with no local unstaged diff; gh pr list returned no open PRs; gh issue list returned no open issues; Dependabot alert API returned only fixed alerts #1-#34; npm view pm-changelog version returned 2026.6.4 and project package doctor deep trace is ok with pm-changelog 2026.6.4 active."
   "2026-06-04T16:26:22.710Z",codex-sdk-contract-subagent,"SDK/contract verification subagent evidence: reviewed branch commit 7504da28 for agent context + bulk-ops primitives against SDK/CLI/MCP package-author surfaces. Findings: no bounded SDK/contract bug found. Verified close-many is exported from src/cli/commands/index.ts, registered as core command/action, listed in PM_CORE_COMMAND_NAMES/PM_TOOL_ACTIONS, exposed through pm contracts --command close-many --flags-only --json and pm contracts --action close-many --schema-only --json with filter date-window fields, --ids, reason/resolution/expectedResult/actualResult/validateClose/dryRun/rollback/noCheckpoint parameters. Verified update-many contracts expose date-window filter fields + --ids, list contracts expose updated/created date-window filters, search contracts expose --status, and pm search --status opne returns strict did-you-mean usage guidance. Commands run: pnpm build; pm contracts --command close-many --flags-only --json; pm close-many --help --json; pm contracts --command search --flags-only --json; pm contracts --action close-many --schema-only --json; pm contracts --action update-many --schema-only --json; pm list --help --json; pm search pm-j2ig --status opne --json (expected exit 2); node scripts/run-tests.mjs test -- tests/unit/status-normalization.spec.ts tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/close-command.spec.ts (140 passed); temp-project dist/cli.js smoke covering list --updated-after, search --status open, update-many --ids apply, close-many --ids --dry-run (passed). Note: an attempted temp smoke with pm init --name and pm list --ids correctly failed as unsupported current contracts; reran with pm init and mutation-scoped --ids. Changed files by this subagent: none besides this pm evidence comment."
@@ -45,6 +46,7 @@ comments[26]{created_at,author,text}:
   "2026-06-04T19:41:17.768Z",codex-sdk-continuation,"Review follow-up 10 evidence: addressed current-head Gemini comment on commit 72f0ee7c by counting the edge to a cached ancestor in close-many hierarchyDepth, preserving correct child-before-parent sorting for strict bulk closes. Added regression coverage for a parent/child/grandchild matched close-many strict batch expecting grandchild, child, then parent closure order. Verification passed: node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts (31 tests); pnpm build; node scripts/run-tests.mjs coverage (137 files, 2281 tests, 100% coverage); pnpm changelog:pm:check with pm-changelog 2026.6.4 unchanged at 961 closed items."
   "2026-06-04T19:50:56.758Z",codex-sdk-continuation,"Review follow-up 11 evidence: addressed current-head Gemini comments on commit 83041b05 by making close-many hierarchyDepth skip cache writes when a parent cycle is detected and renaming the MCP-local normalizeOptionsArrays helper to normalizeMcpOptionsArrays so it is unambiguous and cannot be mistaken for a missing registration-helper import. Verification passed: node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts (2 files, 45 tests); pnpm build; node scripts/run-tests.mjs coverage (137 files, 2281 tests, 100% coverage); pnpm changelog:pm:check with pm-changelog 2026.6.4 unchanged at 961 closed items."
   "2026-06-04T20:12:35.273Z",codex-sdk-continuation,"Merge evidence: PR #110 merged into main at 2026-06-04T20:12:16Z as merge commit f7d73559246d16c70fa3c2726a22881689c6feff from reviewed head a8ca3671ba65e2bef344fcffe93affdb2bd3aff9. Final current-head sweep after 20-minute review wait: all GitHub checks passed, CodeRabbit passed, Gemini reported no further feedback, no fresh inline comments after 2026-06-04T19:51:16Z, Sourcery skipped only because of weekly diff-character quota."
+  "2026-07-22T19:18:07.276Z",codex-sdk-boundary-20260722,"GitHub provenance: added the missing direct pm item link to closed GH-159 for explicit list filtering."
 files[21]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,pm-changelog latest install metadata refreshed during changelog verification.
   package.json,project,Dependency verification confirmed commander remains 14.0.3 to preserve advertised Node 20 support.
@@ -67,14 +69,33 @@ files[21]{path,scope,note}:
   tests/unit/close-command.spec.ts,project,"Regression coverage for close-many inactive filters,rollback limit/offset rejection,and child-first strict close."
   tests/unit/list-command.spec.ts,project,Regression coverage for CLI list --ids.
   tests/unit/update-many-command.spec.ts,project,Regression coverage for null rollback filters and malformed checkpoint JSON.
-tests[7]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node dist/cli.js contracts --command list --flags-only --json,null,project,60,null,null,null,null,null,null,null,null,null,null,null,Contract smoke confirming list --ids is exposed.
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Full coverage after second review follow-up.
-  node scripts/run-tests.mjs test,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/list-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/status-normalization.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,"Focused regressions for review comments: close-many filters/rollback ordering,list --ids,update-many rollback nulls,MCP pm_run close-many."
-  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/list-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/status-normalization.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/runtime-schema-command-flags.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,"Third review regressions for blank filters,MCP update-many mapping,list --ids contracts,and runtime update_many fields."
-  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,180,null,null,null,null,null,null,null,null,null,null,null,Verify latest pm-changelog output unchanged after second review follow-up.
+tests[7]:
+  - command: node dist/cli.js contracts --command list --flags-only --json
+    scope: project
+    timeout_seconds: 60
+    note: Contract smoke confirming list --ids is exposed.
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 600
+    note: Full coverage after second review follow-up.
+  - command: node scripts/run-tests.mjs test
+    scope: project
+    timeout_seconds: 600
+  - command: node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/list-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/status-normalization.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: "Focused regressions for review comments: close-many filters/rollback ordering,list --ids,update-many rollback nulls,MCP pm_run close-many."
+  - command: node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/list-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/status-normalization.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/runtime-schema-command-flags.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: "Third review regressions for blank filters,MCP update-many mapping,list --ids contracts,and runtime update_many fields."
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 300
+  - command: "pnpm changelog:pm:check"
+    scope: project
+    timeout_seconds: 180
+    note: Verify latest pm-changelog output unchanged after second review follow-up.
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,"Command reference for new date filters,search status,ids targeting,and close-many."
 close_reason: "Merged PR #110 with agent context and bulk-operation primitives, verified by CI, full local coverage, changelog check, manual temp smoke, release gates, telemetry/Sentry checks, and review-agent follow-up loops."

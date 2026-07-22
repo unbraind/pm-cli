@@ -3,23 +3,20 @@
  *
  * Provides CLI runtime support for Migration Gates.
  */
-import { pathExists } from "../core/fs/fs-utils.js";
 import {
+  pathExists,
   getActiveExtensionRegistrations,
   type PreflightRuntimeDecision,
-} from "../core/extensions/index.js";
-import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
-import { migrateItemFilesToFormat } from "../core/store/item-format-migration.js";
-import { getSettingsPath } from "../core/store/paths.js";
-import {
+  resolveItemTypeRegistry,
+  migrateItemFilesToFormat,
+  getSettingsPath,
   readSettingsWithMetadata,
   writeSettings,
-} from "../core/store/settings.js";
-import { EXIT_CODE } from "../core/shared/constants.js";
-import { PmCliError } from "../core/shared/errors.js";
-import { toNonEmptyStringOrUndefined } from "../core/shared/primitives.js";
-import { printError } from "../core/output/output.js";
-
+  EXIT_CODE,
+  PmCliError,
+  toNonEmptyStringOrUndefined,
+  printError,
+} from "../sdk/runtime-primitives.js";
 /** Documents the mandatory migration blocker payload exchanged by command, SDK, and package integrations. */
 export interface MandatoryMigrationBlocker {
   /** Value that configures or reports layer for this contract. */

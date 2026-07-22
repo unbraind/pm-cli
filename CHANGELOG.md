@@ -13,6 +13,10 @@
 - GH-642: linked-test runner enters interactive init wizard before repository commands ([pm-lcnk2n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lcnk2n.toon))
 - GH-641: plan link promotion rejects registered implements relationship kind ([pm-ypuc39](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ypuc39.toon))
 
+### Other
+
+- Capstone: zero the SDK import-boundary baseline — flip remaining CLI/MCP private-core imports to SDK primitives and harden the ratchet into a hard boundary gate ([pm-9x6e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-9x6e.toon))
+
 ## 2026.7.22 - 2026-07-22
 
 ### Fixed
@@ -947,13 +951,13 @@
 
 ### Added
 
+- Combined PR: duplicate-aware close, parent fail-fast, id-only output, context/aggregate completion stats, robust test add/run ([pm-z9e9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-z9e9.toon))
 - pm close --duplicate-of: structured duplicate tracking with auto-populated closure fields (GH-183, GH-160) ([pm-xnkd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-xnkd.toon))
 - pm test --run selectors: --match / --only-index / --only-last (GH-194) ([pm-p86h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-p86h.toon))
 - pm context: per-epic completion stats + recently_created/unparented sections (GH-187, GH-182) ([pm-ojpq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ojpq.toon))
 - Root --id-only flag: minimal mutation output (id+status) for agent automation loops (GH-195) ([pm-esf6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-esf6.toon))
 - pm aggregate --completion: closed/total ratio and completion_pct per group (GH-185) ([pm-eaer](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-eaer.toon))
 - pm list: include parent in default compact projection when set (GH-180) ([pm-awfr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-awfr.toon))
-- Combined PR: duplicate-aware close, parent fail-fast, id-only output, context/aggregate completion stats, robust test add/run ([pm-z9e9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-z9e9.toon))
 - Embedding provider migration guide + pm reindex --migrate: automated full reindex on model/provider change ([pm-wt0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-wt0g.toon))
 - Settings read cache: memoize readSettingsWithMetadata across the 3-5 reads per command ([pm-2bn5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2bn5.toon))
 - Incremental reindex --mode semantic --stale-only: skip already-up-to-date vectors ([pm-o3nr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-o3nr.toon))
@@ -1157,8 +1161,8 @@
 
 ### Other
 
-- Surface settings_read_invalid_schema warning proactively on affected commands ([pm-7tcw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7tcw.toon))
 - Agent context & bulk-ops primitives: incremental date filters, search --status, --ids targeting, close-many ([pm-j2ig](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-j2ig.toon))
+- Surface settings_read_invalid_schema warning proactively on affected commands ([pm-7tcw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7tcw.toon))
 - After-command hook affected item transition context ([pm-qzv2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qzv2.toon))
 - Sentry gate expected handled CLI classifier refresh ([pm-flbo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-flbo.toon))
 - SDK extension hook context and manifest capability guardrails ([pm-e9ut](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-e9ut.toon))
@@ -1466,6 +1470,7 @@
 
 ### Added
 
+- Comments shorthand compatibility and docs parity ([pm-cvwi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cvwi.toon))
 - Add pm plan list subcommand or did-you-mean to pm list --type Plan ([pm-zpa5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zpa5.toon))
 - pm list should default to --brief (full output via --full) to halve token cost ([pm-b7sd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-b7sd.toon))
 - Add agent-optimized pm plan command with linked dependencies ([pm-v7dj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-v7dj.toon))
@@ -1488,7 +1493,6 @@
 - Add calendar --full-period option and clarify period boundary wording ([pm-euh6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-euh6.toon))
 - Issue2 Feature: Run-level env controls and shared-host-safe flags ([pm-ec5o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ec5o.toon))
 - Extend pm validate with low-signal metadata quality checks ([pm-dw5s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-dw5s.toon))
-- Comments shorthand compatibility and docs parity ([pm-cvwi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cvwi.toon))
 - Add deterministic linked-test replacement mode for update test mutations ([pm-bjpo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-bjpo.toon))
 - Stability regressions and update/file UX guidance hardening ([pm-ap8l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ap8l.toon))
 - Add package-first command aliases and pm install ([pm-9x1c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-9x1c.toon))
@@ -1647,9 +1651,9 @@
 
 ### Fixed
 
+- Expose runtime command-path state in extension explore ([pm-5mua](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5mua.toon))
 - Sync package JS runtimes to public SDK surface ([pm-2t78](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2t78.toon))
 - Hybrid semantic reindex should emit bounded progress and deterministic JSON completion ([pm-6zqq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6zqq.toon))
-- Expose runtime command-path state in extension explore ([pm-5mua](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5mua.toon))
 
 ### Other
 

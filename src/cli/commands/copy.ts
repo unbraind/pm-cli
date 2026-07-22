@@ -7,49 +7,37 @@ import {
   pathExists,
   removeFileIfExists,
   writeFileAtomic,
-} from "../../core/fs/fs-utils.js";
-import {
   appendHistoryEntry,
   createHistoryEntry,
-} from "../../core/history/history.js";
-import { generateItemId } from "../../core/item/id.js";
-import {
+  generateItemId,
   canonicalDocument,
   serializeItemDocument,
-} from "../../core/item/item-format.js";
-import { acquireLock } from "../../core/lock/lock.js";
-import {
+  acquireLock,
   getActiveExtensionRegistrations,
   projectAfterCommandItemSnapshot,
   recordAfterCommandAffectedItem,
   runActiveOnWriteHooks,
-} from "../../core/extensions/index.js";
-import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
-import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
-import {
+  collectRegisteredItemFieldNames,
+  resolveRuntimeStatusRegistry,
   EXIT_CODE,
   ITEM_METADATA_KEY_ORDER,
-} from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { nowIso } from "../../core/shared/time.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import {
+  type GlobalOptions,
+  nowIso,
+  PmCliError,
+  resolveItemTypeRegistry,
   buildItemNotFoundError,
   locateItem,
   readLocatedItem,
-} from "../../core/store/item-store.js";
-import {
-  acquireItemMetadataDerivedIndexLock,
-  refreshItemMetadataDerivedIndex,
-} from "../../sdk/item-metadata-index.js";
-import {
   getHistoryPath,
   getItemPath,
   getSettingsPath,
   resolvePmRoot,
-} from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
+import {
+  acquireItemMetadataDerivedIndexLock,
+  refreshItemMetadataDerivedIndex,
+} from "../../sdk/item-metadata-index.js";
 import type { ItemDocument, ItemMetadata } from "../../types/index.js";
 
 /** Documents the copy options payload exchanged by command, SDK, and package integrations. */

@@ -2,21 +2,21 @@
 
 Tracked work: [pm-lodl](../.agents/pm/tasks/pm-lodl.toon), [pm-8778](../.agents/pm/tasks/pm-8778.toon), [pm-rjqr](../.agents/pm/features/pm-rjqr.toon), [pm-oslr](../.agents/pm/features/pm-oslr.toon), capstone [pm-9x6e](../.agents/pm/tasks/pm-9x6e.toon), parent [pm-usfg](../.agents/pm/epics/pm-usfg.toon).
 
-This inventory is the current SDK-first migration map for the principle `project management = context management`.
-The exact per-source CLI/MCP module inventory is checked in at [`scripts/release/sdk-import-boundary-baseline.json`](../scripts/release/sdk-import-boundary-baseline.json): each `allowed_private_core_imports[]` entry names one command, helper, or MCP source file and the private `src/core` modules it currently imports. The static quality gate reads that file and fails when `src/cli` or `src/mcp` adds a new private `src/core` import, uses a computed dynamic `import()` that cannot be ratcheted, or leaves a stale baseline entry after an import has been removed.
+This inventory records the completed SDK-first migration for the principle `project management = context management`.
+CLI and MCP modules now import shared host services through `src/sdk/runtime-primitives.ts`; direct `src/core` imports, type-only edges, re-exports, and computed dynamic imports are unconditionally rejected by the static quality gate. There is no allowance file or ratchet escape hatch.
 
-## Current Baseline
+## Enforced Boundary
 
 - Boundary scope: `src/cli.ts`, `src/cli/**`, `src/mcp.ts`, and `src/mcp/**`.
-- Current scan size and private-edge counts are derived from [`scripts/release/sdk-import-boundary-baseline.json`](../scripts/release/sdk-import-boundary-baseline.json) and the `pnpm quality:static` ratchet output.
-- Current enforced baseline after the query/execution bundle: 51 CLI/MCP source modules and 412 private-core import edges, down from 62 sources and 538 edges at the start of the bundle.
+- Required private-edge count: zero.
+- The retired ratchet ended at 48 CLI/MCP source modules and 407 private-core import edges before the capstone moved every remaining edge behind the public SDK seam.
 - Type-only imports and re-exports are intentionally counted because they still expose presentation layers to private core contracts.
-- Baseline owner: [pm-8778](../.agents/pm/tasks/pm-8778.toon).
-- Ratchet rule: SDK promotion PRs must shrink the baseline when they move a primitive behind `src/sdk`; no PR may grow it.
+- Gate foundation: [pm-8778](../.agents/pm/tasks/pm-8778.toon); zero-boundary capstone: [pm-9x6e](../.agents/pm/tasks/pm-9x6e.toon).
+- Rule: presentation code adds or extends an SDK primitive first; no CLI/MCP exception can be recorded.
 
-## Checked-In Per-Source Inventory
+## Public Presentation Runtime
 
-Use [`scripts/release/sdk-import-boundary-baseline.json`](../scripts/release/sdk-import-boundary-baseline.json) as the detailed inventory rather than duplicating every edge in Markdown. Command handlers map directly from the `source` field, for example `src/cli/commands/update.ts` inventories the update command's private core modules and `src/mcp/server.ts` inventories MCP server private core imports. Function-level ownership stays in the source modules themselves; this document maps each command family to its SDK promotion owner so the baseline can shrink without stale prose.
+`src/sdk/runtime-primitives.ts` is the curated low-level seam for presentation hosts. It exposes filesystem, schema, history, extension-runtime, telemetry, search, output, and storage services needed to compose the shipped CLI and MCP adapters. External integrations should still prefer typed `PmClient` and top-level SDK operations; runtime primitives exist for embedded hosts that need to build an equivalent presentation layer without private imports.
 
 ## Promotion Partition
 
@@ -47,10 +47,10 @@ Use [`scripts/release/sdk-import-boundary-baseline.json`](../scripts/release/sdk
 | `extension`, `upgrade`, package lifecycle helpers | [pm-ugqx](../.agents/pm/epics/pm-ugqx.toon) | Existing package-author SDK surfaces stay public; package lifecycle can move behind SDK runtime helpers. |
 | `src/mcp/**` | [pm-usfg](../.agents/pm/epics/pm-usfg.toon) | MCP tools should call SDK primitives directly once each family is promoted. |
 
-## Ratchet Workflow
+## Boundary Workflow
 
-1. Promote one primitive family into `src/sdk`.
-2. Move the relevant CLI/MCP handler calls from private `src/core` imports to SDK imports.
-3. Regenerate `scripts/release/sdk-import-boundary-baseline.json` from the current tree.
-4. Run `pnpm quality:static`; the gate must show no new private imports, no unsupported dynamic imports, and no stale baseline entries.
-5. Link the changed source, docs, and tests back to the promotion item with `pm files`, `pm docs`, and `pm test`.
+1. Add or extend a typed primitive under `src/sdk`.
+2. Consume it from CLI/MCP through an SDK module; never deep-import `src/core`.
+3. Run `pnpm quality:static`; the gate must report `actual_edge_count: 0` and no unsupported dynamic imports.
+4. Exercise both the public SDK contract and the presentation adapter in focused tests.
+5. Link source, docs, tests, and evidence to the owning `pm` item.

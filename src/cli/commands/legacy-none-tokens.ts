@@ -3,9 +3,10 @@
  *
  * Implements the pm legacy none tokens command surface and its agent-facing runtime behavior.
  */
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import { PmCliError } from "../../core/shared/errors.js";
-
+import {
+  EXIT_CODE,
+  PmCliError,
+} from "../../sdk/runtime-primitives.js";
 /**
  * Shared legacy "none"/"null" sentinel handling for the create and update
  * commands. These tokens used to mean "clear this field"; they are now

@@ -3,7 +3,9 @@
  *
  * Implements the pm scheduling shortcuts command surface and its agent-facing runtime behavior.
  */
-import type { GlobalOptions } from "../../core/shared/command-types.js";
+import {
+  type GlobalOptions,
+} from "../../sdk/runtime-primitives.js";
 import {
   runCreate,
   type CreateCommandOptions,

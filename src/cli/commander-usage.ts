@@ -4,16 +4,18 @@
  * Provides CLI runtime support for Commander Usage.
  */
 import { Command } from "commander";
-import { pathExists } from "../core/fs/fs-utils.js";
-import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
-import { EXIT_CODE } from "../core/shared/constants.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
-import { readSettings } from "../core/store/settings.js";
-import { BUILTIN_ITEM_TYPE_VALUES } from "../types/index.js";
 import {
+  pathExists,
+  resolveItemTypeRegistry,
+  EXIT_CODE,
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
   getActiveExtensionRegistrations,
   runActiveServiceOverride,
-} from "../core/extensions/index.js";
+  levenshteinDistanceWithinLimit,
+} from "../sdk/runtime-primitives.js";
+import { BUILTIN_ITEM_TYPE_VALUES } from "../types/index.js";
 import {
   PM_CORE_COMMAND_NAMES,
   resolveSubcommandFlagContractsForCommand,
@@ -38,7 +40,6 @@ import {
   normalizeLongFlag,
   renderPmCommand,
 } from "./argv-utils.js";
-import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import type { ExtensionCommandHelpDescriptor } from "./extension-command-help.js";
 import { normalizeExtensionNameForMatch } from "./commands/extension/shared.js";
 

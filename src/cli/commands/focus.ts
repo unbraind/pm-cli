@@ -3,26 +3,24 @@
  *
  * Implements the pm focus command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { normalizeItemId } from "../../core/item/id.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
 import {
+  pathExists,
+  getActiveExtensionRegistrations,
+  normalizeItemId,
+  resolveItemTypeRegistry,
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
   clearFocusedItem,
   getFocusedItem,
   setFocusedItem,
-} from "../../core/session/session-state.js";
-import {
   buildItemNotFoundError,
   locateItem,
   readLocatedItem,
-} from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
-
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
 /** Documents the focus options payload exchanged by command, SDK, and package integrations. */
 export interface FocusOptions {
   /** Value that configures or reports clear for this contract. */

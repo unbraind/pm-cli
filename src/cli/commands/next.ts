@@ -16,17 +16,15 @@ import {
 import {
   resolveRuntimeStatusRegistry,
   type RuntimeStatusRegistry,
-} from "../../core/schema/runtime-schema.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { nowIso } from "../../core/shared/time.js";
-import {
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+  nowIso,
   normalizeStatusInput,
   normalizeStatusForRegistry,
-} from "../../core/item/status.js";
-import { resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
+  resolvePmRoot,
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
 import type { ItemMetadata, ItemStatus } from "../../types/index.js";
 import { parseIntegerLimit } from "../shared-parsers.js";
 import {

@@ -1,0 +1,23 @@
+id: pm-3esl28
+title: "GH-645: standard-depth get/show JSON omits notes without notes_count"
+description: "At the default standard depth, pm get/show --json suppresses notes but exposes no notes_count or omission metadata, so agents can falsely conclude the item has no working context."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"area:cli",gh-issue,json,token-efficiency
+created_at: "2026-07-22T19:01:44.269Z"
+updated_at: "2026-07-22T19:01:57.176Z"
+author: codex-sdk-boundary-20260722
+acceptance_criteria: "Default standard-depth get/show JSON reports notes_count whenever notes are omitted; full/deep projections remain backward compatible and include notes; CLI aliases, SDK result contracts, MCP projections, TOON/JSON docs, and contract fixtures remain coherent; regression tests cover zero, one, and multiple notes plus explicit depth modes"
+parent: pm-mpbb
+reporter: GitHub GH-645
+severity: medium
+expected_result: "Standard-depth structured output makes omitted note context explicit through notes_count and depth/projection metadata, or includes the notes consistently."
+actual_result: Default standard-depth JSON omits notes and exposes neither notes_count nor a signal that note context was projected out.
+affected_version: 2026.7.22
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-srns,related,"2026-07-22T19:01:44.269Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-22T19:01:44.269Z",codex-sdk-boundary-20260722,"Duplicate check 2026-07-22: all-status searches for GH-645,show/get JSON notes_count,standard depth omitted notes,and projection metadata found adjacent output-contract lineage pm-srns and completed JSON work pm-cfed/pm-wrss,but no item owns this exact missing-context signal. Created open and unclaimed; not part of the active SDK boundary PR."
+  "2026-07-22T19:01:57.175Z",codex-sdk-boundary-20260722,"GitHub linkage evidence: posted the canonical pm item link on GH-645 at https://github.com/unbraind/pm-cli/issues/645. Item remains open/unclaimed and outside the active SDK boundary implementation."
+body: ""

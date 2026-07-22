@@ -38,57 +38,44 @@ import {
   type PreflightRuntimeDecision,
   type RegisteredExtensionSchemaMigrationDefinition,
   type ExtensionRendererRegistry,
-} from "../core/extensions/index.js";
-import { pathExists } from "../core/fs/fs-utils.js";
-import {
+  pathExists,
   resolvePmCliVersion,
   resolvePmPackageRootFromModule,
-} from "../core/packages/root.js";
-import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
-import {
+  resolveItemTypeRegistry,
   resolveRuntimeFieldRegistry,
   type RuntimeFieldCommand,
-} from "../core/schema/runtime-schema.js";
-import {
   EXIT_CODE,
   resolveTelemetryErrorCategory,
   type TelemetryErrorCategory,
-} from "../core/shared/constants.js";
-import {
   PmCliError,
   type PmCliErrorContext,
   type PmCliErrorRecoveryPayload,
-} from "../core/shared/errors.js";
-import { asRecordOrNull } from "../core/shared/primitives.js";
-import { printError, printResult } from "../core/output/output.js";
-import { maybeRunFirstUseTelemetryPrompt } from "../core/telemetry/consent.js";
-import {
+  asRecordOrNull,
+  printError,
+  printResult,
+  maybeRunFirstUseTelemetryPrompt,
   emitTelemetryErrorEvent,
   finishTelemetryCommand,
   startTelemetryCommand,
   type ActiveTelemetryCommand,
   type TelemetryCommandOutcome,
-} from "../core/telemetry/runtime.js";
-import {
   deriveTelemetryCommandResolution,
   type TelemetryCommandResolution,
   type TelemetryResolutionStage,
-} from "../core/telemetry/observability.js";
-import {
   sentryCaptureCliError,
   sentryFinishCommandSpan,
   sentryFlush,
   sentryLogCliUsageError,
   sentrySetCommandContext,
   sentryStartCommandSpan,
-} from "../core/sentry/helpers.js";
-import { ensureSentryInit } from "../core/sentry/instrument.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
-import {
+  ensureSentryInit,
+  getSettingsPath,
+  resolvePmRoot,
   readSettings,
   readSettingsWithMetadata,
-} from "../core/store/settings.js";
-import type { GlobalOptions } from "../core/shared/command-types.js";
+  type GlobalOptions,
+  createLazyModule,
+} from "../sdk/runtime-primitives.js";
 import type { PmSettings } from "../types/index.js";
 import { resolveSubcommandFlagContractsForCommand } from "../sdk/cli-contracts.js";
 import { recordContextUsageTouches } from "../sdk/context-usage.js";
@@ -139,7 +126,6 @@ import type { registerSetupCommands as RegisterSetupCommandsFn } from "./registe
 import type { registerListQueryCommands as RegisterListQueryCommandsFn } from "./register-list-query.js";
 import type { registerMutationCommands as RegisterMutationCommandsFn } from "./register-mutation.js";
 import type { registerOperationCommands as RegisterOperationCommandsFn } from "./register-operations.js";
-import { createLazyModule } from "../core/shared/lazy-module.js";
 import {
   type ExtensionCommandHelpDescriptor,
   normalizeExtensionCommandPath,

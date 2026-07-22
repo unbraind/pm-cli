@@ -9,16 +9,35 @@ import {
   pathExists,
   readFileIfExists,
   writeFileAtomic,
-} from "../../core/fs/fs-utils.js";
-import {
   appendHistoryEntry,
   createHistoryEntry,
-} from "../../core/history/history.js";
-import {
   replayToCanonicalItemDocument,
   replayToItemDocument,
   toReplayDocument,
-} from "../../core/history/replay.js";
+  enforceHistoryStreamPolicyForItem,
+  normalizeItemId,
+  normalizeRawItemId,
+  canonicalDocument,
+  serializeItemDocument,
+  resolveItemTypeRegistry,
+  acquireLock,
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+  nowIso,
+  getActiveExtensionRegistrations,
+  projectAfterCommandItemSnapshot,
+  recordAfterCommandAffectedItem,
+  runActiveOnWriteHooks,
+  locateItem,
+  readLocatedItem,
+  getHistoryPath,
+  getItemPath,
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+  resolveAuthor,
+} from "../../sdk/runtime-primitives.js";
 import {
   applyHistoryPatch,
   ensureMaterializedHistoryTarget as ensureMaterializedRestoreTarget,
@@ -27,37 +46,10 @@ import {
   replayHistoryToTarget as replayToTarget,
   resolveHistoryTarget,
 } from "../../sdk/history-read.js";
-import { enforceHistoryStreamPolicyForItem } from "../../core/history/history-stream-policy.js";
-import { normalizeItemId, normalizeRawItemId } from "../../core/item/id.js";
-import {
-  canonicalDocument,
-  serializeItemDocument,
-} from "../../core/item/item-format.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { acquireLock } from "../../core/lock/lock.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { nowIso } from "../../core/shared/time.js";
-import {
-  getActiveExtensionRegistrations,
-  projectAfterCommandItemSnapshot,
-  recordAfterCommandAffectedItem,
-  runActiveOnWriteHooks,
-} from "../../core/extensions/index.js";
-import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import {
   acquireItemMetadataDerivedIndexLock,
   refreshItemMetadataDerivedIndex,
 } from "../../sdk/item-metadata-index.js";
-import {
-  getHistoryPath,
-  getItemPath,
-  getSettingsPath,
-  resolvePmRoot,
-} from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
-import { resolveAuthor } from "../../core/shared/author.js";
 import type {
   HistoryEntry,
   HistoryPatchOp,

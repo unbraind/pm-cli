@@ -4,10 +4,12 @@
  * Implements the pm comments command surface and its agent-facing runtime behavior.
  */
 import { readFile } from "node:fs/promises";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { createStdinTokenResolver } from "../../core/item/parse.js";
+import {
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+  createStdinTokenResolver,
+} from "../../sdk/runtime-primitives.js";
 import type { Comment } from "../../types/index.js";
 import {
   isErrnoError,
