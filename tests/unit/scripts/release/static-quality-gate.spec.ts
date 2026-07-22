@@ -975,14 +975,15 @@ describe("static-quality-gate", () => {
       });
     });
 
-    it("checkSdkImportBoundary cannot be bypassed by missing or malformed legacy allowance files", async () => {
+    it("checkSdkImportBoundary cannot be bypassed by missing or malformed legacy allowance files on native paths", async () => {
       const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-invalid-");
       await mkdir(`${root}/src/cli`, { recursive: true });
       await mkdir(`${root}/src/core`, { recursive: true });
       await writeFile(`${root}/src/cli/main.ts`, 'import "../core/a";\n', "utf8");
       await writeFile(`${root}/src/core/a.ts`, "export const a = true;\n", "utf8");
       mockUtils(root);
-      harness.mockPosixPath();
+      // This fixture walks real temporary files, so retain the host-native path
+      // implementation to exercise Windows drive-letter paths as well as POSIX paths.
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const files = [`${root}/src/cli/main.ts`];
       expect(mod.checkSdkImportBoundary(files, `${root}/missing.json`)).toMatchObject({
