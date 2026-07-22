@@ -6,10 +6,11 @@ status: closed
 priority: 0
 tags[4]: agent-ux,extensions,github,pm-cli
 created_at: "2026-05-12T22:05:12.311Z"
-updated_at: "2026-07-22T19:18:07.912Z"
+updated_at: "2026-07-22T20:18:59.743Z"
 author: codex-audit
 acceptance_criteria: pm extension/package explore reports runtime_active/activation_status plus command paths for enabled extensions; extension-defined paths such as pm-graph export remain invocable; regression tests cover the behavior; GitHub issue #27 is addressed.
 parent: pm-rnpb
+release: 2026.5.14
 resolution: Fixed
 expected_result: extension/package explore exposes runtime status and registered command paths for enabled extensions
 actual_result: "runtime_active/activation_status plus command_paths/action_paths are present, and pm-graph export regression passes"
