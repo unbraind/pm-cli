@@ -6,15 +6,22 @@ status: open
 priority: 2
 tags[3]: agent-story,changelog-exclude,context-management
 created_at: "2026-07-06T23:46:30.772Z"
-updated_at: "2026-07-13T22:05:17.456Z"
+updated_at: "2026-07-22T18:26:38.026Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Continuity scenarios (short/medium/long gap incl. consolidated epochs) are expressible and pass as pm-atfm judgment classes; a returning agent needs exactly one documented context call; token cost is bounded by actionable-now content, not elapsed time; delta-since-cursor is derivable from history/event primitives without manual diffing"
 parent: pm-9rxu
 risk: low
 confidence: high
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-e200,related,"2026-07-06T23:46:41.665Z",null,null
   pm-g2zz,related,"2026-07-06T23:46:41.665Z",null,null
   pm-z436,related,"2026-07-06T23:46:41.665Z",null,null
+  pm-4k6b,related,"2026-07-22T18:25:06.930Z",codex-root,null
+  pm-5qmm,blocked_by,"2026-07-22T18:25:06.930Z",codex-root,null
+  pm-atfm,blocked_by,"2026-07-22T18:25:06.930Z",codex-root,null
+  pm-m08hza,related,"2026-07-22T18:25:06.930Z",codex-root,null
+  pm-vvib,related,"2026-07-22T18:25:06.930Z",codex-root,null
+comments[1]{created_at,author,text}:
+  "2026-07-22T18:26:38.026Z",codex-root,"Relationship rationale: returning-agent continuity requires adaptive ranking, explicit evaluation judgments, closed-epoch memory tiers, immutable event deltas, and an accepted memory architecture. The story remains an outcome contract above those delivery surfaces."
 body: "## Narrative\nAn agent (or a different agent under the same mission) returns to a workspace after a gap — an hour, a week, or a year. Today it must re-derive state: list open items, read bodies, replay comments, and hope its predecessor recorded enough. The continuity experience this story demands: one bounded-token call restores the working set (what was in progress and why), the distilled knowledge relevant to it (learnings/decisions), and a delta of what changed during the gap — regardless of gap length or workspace size.\n\n## Acceptance narrative (end-to-end over the composed context engine)\n- Short gap (same day): pm context reflects the last focus/claim state and recent activity with no configuration.\n- Medium gap (weeks): the working set is re-ranked for what is still live; superseded work is not resurfaced; relevant learnings recorded meanwhile are surfaced.\n- Long gap (a year+, consolidated epochs per pm-5qmm): the gap period contributes rollup summaries, not raw items; token cost stays bounded and proportional to what is actionable now, not to elapsed time.\n- \"While you were away\": the delta view is derivable from history/event primitives (pm-e200 cursor semantics) rather than manual list-diffing.\n- Works identically from CLI, MCP, and SDK; measurable via pm-atfm continuity scenario classes.\n\n## Boundaries\n- Not a session daemon: everything derives from recorded tracker state (ADR pm-i7i4 no-daemon constraint).\n- Complements, not duplicates: pm-g2zz (scale end), pm-z436 (small end) cover workspace size; this story covers the time dimension."

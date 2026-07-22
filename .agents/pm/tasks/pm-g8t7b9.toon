@@ -1,0 +1,40 @@
+id: pm-g8t7b9
+title: "Context algorithm portfolio registry: one canonical owner or explicit disposition for every proposed scoring and memory mechanism"
+description: "Convert the existing adaptive-context and cognitive-memory idea catalogs into a stable, queryable owner matrix so no algorithm remains actionable only inside a long note and no implementation item is duplicated."
+type: Task
+status: open
+priority: 2
+tags[7]: algorithms,"area:context","area:sdk",context-management,governance,roadmap,token-efficiency
+created_at: "2026-07-22T18:25:57.017Z"
+updated_at: "2026-07-22T18:28:19.006Z"
+author: codex-root
+estimated_minutes: 480
+acceptance_criteria: "Inventory every named mechanism in pm-4k6b and pm-vvib by stable descriptive slug rather than audit-run or document numbering; For each mechanism record proposal state, owning canonical item, decision gate, SDK surface, required data sources, scale behavior, privacy and safety risks, evaluation scenarios, and delivery evidence; Create an individual implementation, research, decision, or rejection item only when no canonical owner exists and the applicable ADR permits it; every creation includes an all-status duplicate check; Shared substrate work is linked without pretending one item independently delivers multiple user-visible mechanisms; independent acceptance surfaces receive independent items; Rejected, deferred, superseded, and merged ideas retain rationale and relationships in immutable history; The registry supports bounded token-efficient queries and remains valid from tiny workspaces through million-item multi-decade workspaces; pm-atfm or its successor links a judgment scenario and regression threshold for every mechanism promoted toward delivery"
+goal: project management = context management
+objective: "Make every context algorithm and memory-system idea independently traceable from proposal through decision, delivery, evaluation, and retirement"
+value: "Agents can query a compact portfolio instead of rereading large brainstorming notes, while maintainers retain explicit decision gates and canonical ownership"
+impact: "Prevents hidden scope, duplicate algorithm work, premature implementation of unaccepted research, and loss of rationale as the catalog evolves"
+outcome: "A machine-queryable registry maps every named mechanism to one canonical pm item, decision state, dependencies, scale regime, evaluation scenario, and evidence trail"
+why_now: "The canonical context and cognitive-memory items contain a mature multi-mechanism catalog, but several mechanisms are intentionally note-only pending ADR acceptance or mapped across shared delivery items; explicit portfolio governance is now necessary."
+parent: pm-4k6b
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-3hps,related,"2026-07-22T18:25:57.017Z",codex-root,null
+  pm-55ra,related,"2026-07-22T18:25:57.017Z",codex-root,null
+  pm-801d,related,"2026-07-22T18:25:57.017Z",codex-root,null
+  pm-atfm,related,"2026-07-22T18:25:57.017Z",codex-root,null
+  pm-m08hza,related,"2026-07-22T18:25:57.017Z",codex-root,null
+  pm-uwfs,related,"2026-07-22T18:25:57.017Z",codex-root,null
+  pm-vvib,blocked_by,"2026-07-22T18:25:57.017Z",codex-root,null
+comments[3]{created_at,author,text}:
+  "2026-07-22T18:25:57.017Z",codex-root,"Duplicate check: all-status searches for context algorithm catalog, algorithm owner matrix, memory subsystem registry, delivery wave, and idea disposition found the canonical implementation feature pm-4k6b and proposed ADR pm-vvib, but no item owns the one-to-one proposal-to-item governance required here. This task does not reopen shipped mechanisms or bypass the ADR; it makes their state and ownership queryable."
+  "2026-07-22T18:26:36.697Z",codex-root,"Portfolio boundary: pm-4k6b remains the canonical adaptive-engine feature and pm-vvib remains the proposed cognitive-memory decision. This task owns registry completeness and disposition only. It must not reopen shipped substrate, accept the ADR implicitly, or convert speculative mechanisms into implementation commitments without independent acceptance surfaces and evaluation evidence."
+  "2026-07-22T18:28:19.006Z",codex-root,"Verification evidence 2026-07-22: the new registry task is unique in exact, fuzzy, and parent-scope duplicate scans; it is parented beneath pm-4k6b and decision-gated by pm-vvib. Its linked validation, graph, and duplicate commands were executed directly against the live tracker and passed with only the canonical historical warning baselines. Repository build, generated changelog check, contract snapshot check, static quality, package-boundary, and token-budget gates all passed."
+notes[1]{created_at,author,text}:
+  "2026-07-22T18:25:57.017Z",codex-root,"Promotion rule: preserve research concepts as proposals while their decision is open; after acceptance, give each independently testable behavior its own canonical delivery or research item. Reuse shared substrate items for indexes, signal stores, packers, feedback, graph primitives, and evaluation, but record which behaviors each substrate enables."
+learnings[1]{created_at,author,text}:
+  "2026-07-22T18:25:57.017Z",codex-root,A rich idea catalog is not yet a manageable roadmap. The missing layer is a one-to-one disposition registry that separates independently valuable behavior from shared implementation substrate and preserves explicit decision gates.
+tests[3]{command,scope,timeout_seconds}:
+  pm dedupe-audit --mode title_fuzzy --threshold 0.92 --json,project,240
+  pm graph audit --json,project,240
+  pm validate --check-resolution --check-history-drift --json,project,240
+body: ""

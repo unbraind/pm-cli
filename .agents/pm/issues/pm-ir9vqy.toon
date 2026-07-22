@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags[6]: "area:install","area:release",bundle-integrity,concurrency,github-report,security
 created_at: "2026-07-21T20:58:17.040Z"
-updated_at: "2026-07-21T21:28:17.309Z"
+updated_at: "2026-07-22T18:25:02.558Z"
 author: codex-relationship-backfill-20260721
+estimated_minutes: 240
 acceptance_criteria: "Global install publication keeps executable, bundle, and manifest generation coherent; manifest_missing recovery never removes the only executable; concurrent or interrupted install behavior has real temp-prefix tests; npm/global-prefix diagnostics provide an actionable safe retry"
 parent: pm-ugqx
 severity: critical

@@ -1,0 +1,39 @@
+id: pm-m08hza
+title: "Roadmap horizon and promotion policy: outcome-based portfolio horizons with evidence-gated movement"
+description: "Define one durable portfolio policy for organizing immediate foundations, scale expansion, universal-platform capabilities, and exploratory research without speculative calendar promises or duplicate initiative trees."
+type: Decision
+status: open
+priority: 2
+tags[6]: adr,context-management,evidence-gated,long-term,portfolio-governance,roadmap
+created_at: "2026-07-22T18:24:13.924Z"
+updated_at: "2026-07-22T18:28:18.329Z"
+author: codex-root
+estimated_minutes: 180
+acceptance_criteria: "The policy defines Current, Emerging, Expansion, and Exploratory horizons by evidence and dependency readiness rather than dates; Every horizon entry references an existing canonical item or passes an all-status duplicate check before creation; Promotion requires explicit acceptance evidence, predecessor state, scale or quality proof where applicable, and an append-only decision comment; Demotion, splitting, merging, rejection, and supersedence preserve prior rationale in immutable history; Cross-cutting quality, security, documentation, SDK parity, graph completeness, and token-efficiency gates apply to every horizon; The living milestone can render a bounded horizon summary without replacing detailed item metadata or creating parallel backlogs"
+goal: project management = context management
+objective: "Keep the multi-decade roadmap understandable, adaptable, and traceable while every independently deliverable capability remains a canonical item"
+value: "Agents and maintainers can see what matures next, why it is sequenced there, and what evidence promotes it without reading the full historical corpus"
+impact: "Reduces duplicate roadmap items, premature implementation, hidden prerequisites, and calendar-driven commitments while preserving ambitious future planning"
+outcome: "A living outcome-based horizon map links canonical initiatives, promotion evidence, dependencies, risks, and review triggers from current foundations through long-term universal-platform research"
+why_now: "The ecosystem now spans command simplification, SDK-first architecture, million-item context, graph analytics, immutable history, multi-agent safety, CI, VCS, digital twins, federation, signatures, and policy; the existing initiatives need one explicit promotion model."
+parent: pm-m2u1
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-33cw,related,"2026-07-22T18:24:13.924Z",codex-root,null
+  pm-9rxu,related,"2026-07-22T18:24:13.924Z",codex-root,null
+  pm-doxj,related,"2026-07-22T18:24:13.924Z",codex-root,null
+  pm-n7rr,related,"2026-07-22T18:24:13.924Z",codex-root,null
+  pm-u9d0,related,"2026-07-22T18:24:13.924Z",codex-root,null
+  pm-usfg,related,"2026-07-22T18:24:13.924Z",codex-root,null
+comments[3]{created_at,author,text}:
+  "2026-07-22T18:24:13.924Z",codex-root,"Duplicate check: all-status searches for roadmap horizon, portfolio sequencing, now-next-later, exploratory planning, and promotion policy found the living milestone pm-doxj and initiative-specific notes but no decision governing evidence-based movement across the portfolio. This item defines governance only; it does not duplicate any delivery feature, epic, or prior point-in-time review."
+  "2026-07-22T18:26:36.084Z",codex-root,"Baseline evidence: root help currently exposes 75 top-level names while contracts summary exposes 63 compact command summaries. The established pm-n7rr partition already assigns every spelling to a canonical noun family, hidden alias, internal helper, extension-owned surface, or generated discovery path. Promotion policy therefore treats simplification as delivery against existing canonical items, never as feature removal or a fresh command taxonomy."
+  "2026-07-22T18:28:18.329Z",codex-root,"Verification evidence 2026-07-22: post-organization tracker totals are 1,914 items, 1,922 history streams, and 32,188 events before this evidence comment. Validate is ok with zero history drift; the known terminal-resolution warning remains 277 items under pm-e9zh and the five historical unknown-author events remain under pm-h90s. Graph audit reports 1,917 nodes and 3,366 edges, 223 active nodes, zero active isolates, zero active degree-one nodes, and only the same informational terminal legacy findings. Exact/fuzzy duplicate results remain the known canceled probe cluster and parent-scope duplicate count is zero. All active non-root items have acceptance criteria, estimates, tags, and parents. pnpm build, changelog verification, contracts verification, and the full static quality gate passed, including package boundary and token-budget gates."
+notes[1]{created_at,author,text}:
+  "2026-07-22T18:24:13.924Z",codex-root,"Initial horizon model: Current = command grammar, SDK boundary completion, active graph/context/governance foundations; Emerging = derived index, evaluation, memory tiers, million-item and concurrency proof; Expansion = universal SDK exemplars, cross-workspace federation, signatures, role policy, event coordination; Exploratory = temporal digital twins and accepted cognitive-context subsystems. Quality, security, documentation, immutable proof, and token budgets are continuous constraints rather than a separate terminal phase."
+learnings[1]{created_at,author,text}:
+  "2026-07-22T18:24:13.924Z",codex-root,"Long-range planning stays useful when horizons are promotion states backed by evidence, not promised dates. Canonical work items remain the source of execution truth; the portfolio decision supplies only sequencing and promotion semantics."
+tests[3]{command,scope,timeout_seconds}:
+  pm dedupe-audit --mode parent_scope --json,project,240
+  pm graph audit --json,project,240
+  pm validate --check-resolution --check-history-drift --json,project,240
+body: ""

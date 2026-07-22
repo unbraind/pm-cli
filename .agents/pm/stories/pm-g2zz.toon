@@ -6,14 +6,21 @@ status: open
 priority: 2
 tags[3]: agent-story,changelog-exclude,scale
 created_at: "2026-07-06T21:24:57.706Z"
-updated_at: "2026-07-13T22:05:15.822Z"
+updated_at: "2026-07-22T18:26:38.641Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "On the synthetic 1M-item workspace: a fresh agent session can bootstrap (context -> next -> get -> claim) with every response sub-second and under the documented token budget; truncated views always say how to page deeper; no command requires the agent to adjust flags for workspace size"
 parent: pm-9rxu
 risk: low
 confidence: high
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-801d,blocked_by,"2026-07-13T22:02:33.079Z",null,null
   pm-lvyd,blocked_by,"2026-07-13T22:02:33.079Z",null,null
+  pm-4k6b,related,"2026-07-22T18:25:07.822Z",codex-root,null
+  pm-5qmm,related,"2026-07-22T18:25:07.822Z",codex-root,null
+  pm-m08hza,related,"2026-07-22T18:25:07.822Z",codex-root,null
+  pm-m2il,blocked_by,"2026-07-22T18:25:07.822Z",codex-root,null
+  pm-mi2x,related,"2026-07-22T18:25:07.822Z",codex-root,null
+comments[1]{created_at,author,text}:
+  "2026-07-22T18:26:38.641Z",codex-root,"Relationship rationale: million-item acceptance combines index latency, contention throughput, graph/property conformance, adaptive token packing, memory tiers, and the existing synthetic benchmark. Passing only one dimension cannot close the story."
 body: ""

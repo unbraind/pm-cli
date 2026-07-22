@@ -6,15 +6,22 @@ status: open
 priority: 4
 tags[5]: exploration,history,identity,integrity,long-horizon
 created_at: "2026-07-06T23:35:58.629Z"
-updated_at: "2026-07-13T21:38:19.688Z"
+updated_at: "2026-07-22T18:26:39.932Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "Spike + ADR only at this stage: a written exploration evaluates per-entry signature schemes (author keypairs, git-commit-signing reuse, workspace trust store), key distribution/rotation for thousands of agent principals, verify integration into the existing history --verify path, storage/token overhead per entry, and opt-in configuration; the ADR states an accept/defer decision with scale measurements from the pm-mi2x workspaces; no implementation lands before the ADR is accepted"
 parent: pm-o2kc
 risk: low
 confidence: medium
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-3z0k,related,"2026-07-06T23:35:58.629Z",null,null
   pm-agou,related,"2026-07-06T23:35:58.629Z",null,null
   pm-xc68,related,"2026-07-06T23:35:58.629Z",null,null
+  pm-dj98,related,"2026-07-22T18:25:09.548Z",codex-root,null
+  pm-h90s,blocked_by,"2026-07-22T18:25:09.548Z",codex-root,null
+  pm-is1a,related,"2026-07-22T18:25:09.548Z",codex-root,null
+  pm-m08hza,related,"2026-07-22T18:25:09.548Z",codex-root,null
+  pm-qwoy,related,"2026-07-22T18:25:09.548Z",codex-root,null
+comments[1]{created_at,author,text}:
+  "2026-07-22T18:26:39.931Z",codex-root,"Relationship rationale: per-entry signatures build on attributable authorship, concurrency-safe recording, portable integrity proof, security posture, and federation identity. The item remains spike-plus-ADR only until its acceptance criteria authorize implementation."
 body: "The hash-chained JSONL streams prove sequence integrity (tampering is detectable), and pm-3z0k makes that proof portable for third parties. But the author recorded on every entry is self-asserted: PM_AUTHOR is a plain environment variable, so any writer can record any identity. Integrity and authenticity are different guarantees.\n\nFor the horizon-4 visions this matters: organizations running business workflows on pm SDK primitives (pm-8ngt) with role/policy enforcement (pm-xc68) need 'who approved this transition' to be verifiable, not just recorded. Policy enforcement without author authenticity can be bypassed by claiming another principal's name.\n\nExploration scope (spike + ADR, parked P4 like pm-xc68):\n- Optional per-entry signatures over the entry payload + chain anchor, so a signature also binds to chain position.\n- Key model: per-author keypairs with a workspace trust store; investigate reusing git commit-signing infrastructure since the tracker is git-native.\n- Verification: history --verify gains an authenticity dimension; unsigned entries in an opt-in workspace are flagged, mixed workspaces degrade gracefully.\n- Cost: measure bytes-per-entry and verify-time overhead at pm-mi2x scale before committing.\n- Explicit non-goal: authorization (what a principal MAY do) stays in pm-xc68; this story is only about proving what a principal DID record.\n\nLayering: hash chain = tamper-evidence (shipped), pm-3z0k = portable proof, this = authenticity, pm-xc68 = authorization. Together they complete the recorded-immutable-proof invariant for multi-organization use."

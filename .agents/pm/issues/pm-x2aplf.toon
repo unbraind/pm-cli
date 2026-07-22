@@ -4,9 +4,9 @@ description: "Make config writes sparse and intent-preserving: changing one leaf
 type: Issue
 status: open
 priority: 2
-tags: []
+tags[5]: "area:config","area:storage",concurrency,data-integrity,merge-safety
 created_at: "2026-07-20T02:39:14.788Z"
-updated_at: "2026-07-21T15:54:58.534Z"
+updated_at: "2026-07-22T18:25:04.709Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: Setting one config key persists only that key's change (or a documented normalize step); explicit stored enum values survive unrelated writes; a regression spec round-trips a sparse settings.json through config set and asserts no unrelated key changes
