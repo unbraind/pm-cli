@@ -571,7 +571,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "status",
         "createMode",
         "deadline",
-        "estimatedMinutes",
+        "estimate",
         "acceptanceCriteria",
         "definitionOfReady",
         "order",

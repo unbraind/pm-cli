@@ -91,6 +91,11 @@ describe("agent contract correctness", () => {
             item: {
               acceptance_criteria?: string;
               assignee?: string;
+              status?: string;
+              priority?: number;
+              deadline?: string;
+              estimated_minutes?: number;
+              tags?: string[];
               comments?: unknown[];
               notes?: unknown[];
               learnings?: unknown[];
@@ -103,12 +108,29 @@ describe("agent contract correctness", () => {
       ).toMatchObject({
         acceptance_criteria: "All strict metadata survives",
         assignee: "test-author",
-        comments: expect.any(Array),
-        notes: expect.any(Array),
-        learnings: expect.any(Array),
-        files: expect.any(Array),
-        docs: expect.any(Array),
-        tests: expect.any(Array),
+        status: "open",
+        priority: 1,
+        deadline: "2026-08-01T00:00:00.000Z",
+        estimated_minutes: 60,
+        tags: ["contracts", "sdk"],
+        comments: expect.arrayContaining([
+          expect.objectContaining({ text: "creation evidence" }),
+        ]),
+        notes: expect.arrayContaining([
+          expect.objectContaining({ text: "creation note" }),
+        ]),
+        learnings: expect.arrayContaining([
+          expect.objectContaining({ text: "creation learning" }),
+        ]),
+        files: [{ path: "src/cli/commands/plan.ts", scope: "project" }],
+        docs: [{ path: "docs/SDK.md", scope: "project" }],
+        tests: [
+          {
+            command: "pnpm build",
+            scope: "project",
+            timeout_seconds: 300,
+          },
+        ],
       });
       expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.create.required).toEqual([
         "title",
@@ -123,7 +145,7 @@ describe("agent contract correctness", () => {
           "status",
           "createMode",
           "deadline",
-          "estimatedMinutes",
+          "estimate",
           "acceptanceCriteria",
           "definitionOfReady",
           "order",
@@ -148,20 +170,22 @@ describe("agent contract correctness", () => {
 
   it("persists advertised Plan promotion kinds as semantic dependency edges", async () => {
     await withTempPmPath(async (context) => {
-      const target = context.runCli(
-        [
-          "create",
-          "Task",
-          "Promotion target",
-          "--create-mode",
-          "progressive",
-          "--author",
-          "test-author",
-          "--json",
-        ],
-        { expectJson: true },
-      );
-      const targetId = (target.json as { item: { id: string } }).item.id;
+      const targetIds = ["implements", "verifies", "depends_on"].map((kind) => {
+        const target = context.runCli(
+          [
+            "create",
+            "Task",
+            `Promotion target ${kind}`,
+            "--create-mode",
+            "progressive",
+            "--author",
+            "test-author",
+            "--json",
+          ],
+          { expectJson: true },
+        );
+        return (target.json as { item: { id: string } }).item.id;
+      });
       const created = await runPlan({
         subcommand: "create",
         options: {
@@ -173,22 +197,39 @@ describe("agent contract correctness", () => {
         global: { path: context.pmPath, json: true },
       });
 
-      const linked = await runPlan({
-        subcommand: "link",
-        id: created.plan.id,
-        stepRef: "plan-step-001",
-        options: {
-          link: targetId,
-          linkKind: "implements",
-          promoteToItemDep: true,
-          author: "test-author",
-        },
-        global: { path: context.pmPath, json: true },
-      });
-      expect(linked.plan.linked_items).toContainEqual({
-        id: targetId,
-        kind: "implements",
-      });
+      for (const [index, kind] of (
+        ["implements", "verifies", "depends_on"] as const
+      ).entries()) {
+        await runPlan({
+          subcommand: "link",
+          id: created.plan.id,
+          stepRef: "plan-step-001",
+          options: {
+            link: targetIds[index],
+            linkKind: kind,
+            promoteToItemDep: true,
+            author: "test-author",
+          },
+          global: { path: context.pmPath, json: true },
+        });
+      }
+      const reloaded = context.runCli(
+        ["get", created.plan.id, "--full", "--json"],
+        { expectJson: true },
+      );
+      expect(
+        (
+          reloaded.json as {
+            item: { dependencies?: Array<{ id: string; kind: string }> };
+          }
+        ).item.dependencies,
+      ).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: targetIds[0], kind: "implements" }),
+          expect.objectContaining({ id: targetIds[1], kind: "verifies" }),
+          expect.objectContaining({ id: targetIds[2], kind: "blocked_by" }),
+        ]),
+      );
       expect(
         createRelationshipKindRegistry().require("implements"),
       ).toMatchObject({

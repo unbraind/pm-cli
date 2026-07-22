@@ -36,6 +36,7 @@ const CHANGED_FIELDS_KEY = "changed_fields";
 const CHANGED_FIELD_COUNT_KEY = "changed_field_count";
 const ROWS_KEY = "rows";
 const UPDATE_MANY_MUTATION_MODES = new Set(["apply", "rollback"]);
+const DELETE_OUTCOMES = new Set(["deleted", "would_delete"]);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -103,7 +104,7 @@ function projectIdOnlyResult(result: unknown): unknown | null {
   }
   const id = typeof subject.id === "string" ? subject.id : undefined;
   const status =
-    typeof result.outcome === "string"
+    typeof result.outcome === "string" && DELETE_OUTCOMES.has(result.outcome)
       ? result.outcome
       : typeof subject.status === "string"
         ? subject.status
@@ -129,7 +130,8 @@ function projectCompactMutationEnvelope(result: unknown): unknown | null {
   if (!Array.isArray(changedFields)) return null;
   const compact: Record<string, unknown> = {
     id: result.item.id,
-    ...(typeof result.outcome === "string"
+    ...(typeof result.outcome === "string" &&
+    DELETE_OUTCOMES.has(result.outcome)
       ? { status: result.outcome }
       : typeof result.item.status === "string"
         ? { status: result.item.status }

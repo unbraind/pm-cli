@@ -114,6 +114,23 @@ describe("projectMutationResult", () => {
       previous_status: "open",
       changed_field_count: 1,
     });
+
+    const nonDelete = {
+      item: { id: "pm-a1b2", status: "in_progress" },
+      changed_fields: ["title"],
+      outcome: "success",
+    };
+    expect(projectMutationResult(nonDelete, { compactEnvelope: true })).toEqual(
+      {
+        id: "pm-a1b2",
+        status: "in_progress",
+        changed_field_count: 1,
+      },
+    );
+    expect(projectMutationResult(nonDelete, { idOnly: true })).toEqual({
+      id: "pm-a1b2",
+      status: "in_progress",
+    });
   });
 
   it("compacts mutation envelope and update-many row changed_fields only", () => {

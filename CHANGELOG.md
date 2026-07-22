@@ -8,8 +8,8 @@
 
 ### Fixed
 
-- GH-635: plan create cannot forward strict Plan-required metadata ([pm-qd3woa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qd3woa.toon))
 - GH-638: delete JSON envelope reports the removed item as open ([pm-tz2ikr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tz2ikr.toon))
+- GH-635: plan create cannot forward strict Plan-required metadata ([pm-qd3woa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qd3woa.toon))
 - GH-642: linked-test runner enters interactive init wizard before repository commands ([pm-lcnk2n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lcnk2n.toon))
 - GH-641: plan link promotion rejects registered implements relationship kind ([pm-ypuc39](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ypuc39.toon))
 

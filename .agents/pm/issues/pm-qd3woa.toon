@@ -6,8 +6,8 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",contracts,github-report,plan
 created_at: "2026-07-21T20:58:16.027Z"
-updated_at: "2026-07-22T17:30:12.897Z"
-closed_at: "2026-07-22T17:30:11.967Z"
+updated_at: "2026-07-22T18:05:30.792Z"
+closed_at: "2026-07-22T18:05:30.036Z"
 author: codex-relationship-backfill-20260721
 acceptance_criteria: Plan creation forwards every applicable type-required create field through the public SDK; recovery suggests only flags accepted by the active command path; strict and progressive profiles have CLI/SDK/MCP parity; regression and contract tests pass
 parent: pm-mpbb
@@ -26,7 +26,7 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-4bzq,related,"2026-07-21T20:58:16.027Z",null,null
   pm-je50,related,"2026-07-21T20:58:16.027Z",null,null
   pm-qmjx,related,"2026-07-21T20:58:16.027Z",null,null
-comments[7]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-21T20:58:16.027Z",codex-relationship-backfill-20260721,"Duplicate check 2026-07-21: searched every pm status for GH-635,plan create strict required fields,and recovery-required Plan metadata. No exact owner exists; closed pm-je50 is the shipped plan-SDK lineage,while pm-qmjx/pm-4bzq/pm-3rjo cover adjacent help and recovery behavior."
   "2026-07-22T16:31:07.109Z",codex-root,"Implementation start 2026-07-22: canonical all-status lineage and full metadata reviewed. This item is active in one broad SDK-backed contract correctness PR spanning strict Plan creation, registry-aware Plan relationship promotion, non-interactive linked-test execution, and unambiguous deletion outcomes. GitHub intake, public SDK/CLI/MCP parity, focused regression coverage, isolated installed-package dogfood, and exact 100/100/100/100 verification are in scope."
   "2026-07-22T17:00:28.060Z",codex-root,"Evidence: Plan creation now reuses the shared create metadata contract across Commander, SDK types, MCP schema, help/completion contracts, strict/progressive governance, logs, and linked resources. Focused plan/contract regressions pass; full coverage is 100/100/100/100."
@@ -34,6 +34,8 @@ comments[7]{created_at,author,text}:
   "2026-07-22T17:21:38.010Z",codex-root,"Sentry follow-up: PM-CLI-2H recorded one handled value.trim failure at 2026-07-22T16:41:19Z against the earlier register-mutation-VYQNIL7U bundle during local acceptance. Current bundle register-mutation-EQ5MT3BP normalizes repeatable acceptance criteria before runCreate; fresh isolated CLI reproductions passed both repeated --acceptance-criteria values and mixed --acceptance-criteria/--ac aliases. Full release gates also passed 6,084 tests at exact 100/100/100/100 coverage. The one-event pre-fix issue is resolved as fixed."
   "2026-07-22T17:23:22.179Z",codex-root,"Delivery PR: https://github.com/unbraind/pm-cli/pull/644 (exact implementation branch for strict Plan create contract parity)."
   "2026-07-22T17:30:11.115Z",codex-root,"Exact-head correction evidence: manual diff review found Plan metadata keys had been added to the create required-key contract instead of the Plan optional-key contract. Restored the canonical create required list, added the complete Plan metadata allowlist including planning fields, and added a regression asserting both contracts. Focused CLI/SDK/action-schema tests pass (23/23) and the generated contract snapshot is current."
+  "2026-07-22T17:52:34.877Z",codex-root,"Review follow-up: verified the exact-head MCP Plan schema advertises estimatedMinutes without a resolvable schema property; correcting the canonical tool key to estimate and strengthening persisted metadata/resource/dependency assertions."
+  "2026-07-22T18:05:29.145Z",codex-root,"Exact-head review evidence: corrected the Plan MCP contract to expose canonical estimate, regenerated the strict contract snapshot, asserted persisted status/priority/deadline/estimated_minutes/tags and exact file/doc/test resources, and reloaded storage to verify implements/verifies plus depends_on-to-blocked_by promotion. Focused tests 23/23; full release run 6,084/6,084 at 100/100/100/100."
 files[10]{path,scope,note}:
   eslint-suppressions.json,project,retired obsolete Plan complexity suppression
   package.json,project,pinned stricter static-quality budget
@@ -53,5 +55,5 @@ docs[3]{path,scope,note}:
   CHANGELOG.md,project,generated release changelog
   docs/COMMANDS.md,project,Plan create CLI contract
   docs/SDK.md,project,typed SDK Plan metadata
-close_reason: Exact-head MCP Plan allowlist corrected and regression-covered; focused contract suite passes.
+close_reason: Exact-head Plan MCP schema and persisted-contract review findings resolved; full release verification passed.
 body: ""

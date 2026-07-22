@@ -22777,6 +22777,21 @@
             "description": "Environment.",
             "type": "string"
           },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Estimated effort in minutes.",
+            "examples": [
+              60,
+              "120"
+            ]
+          },
           "event": {
             "description": "Repeatable event seed entries start=<iso|relative> with end=<iso|relative> or duration=<relative|30min|PT30M>. Bare `m` remains months for backward compatibility.",
             "examples": [
