@@ -25,6 +25,7 @@ import {
 import { createStdinTokenResolver } from "../sdk/runtime-primitives.js";
 import { itemDocumentToMutationOptions } from "../sdk/structured-mutations.js";
 import { registerStructuredMutationCommands } from "./register-structured-mutation.js";
+import { PLAN_SUBCOMMANDS, runPlan } from "./commands/plan.js";
 
 // Lowercase set of built-in type names ("epic", "feature", ...) used by the
 // `pm create` positional guard (pm-edge #1, 2026-05-28): if the single
@@ -33,6 +34,49 @@ import { registerStructuredMutationCommands } from "./register-structured-mutati
 const BUILTIN_TYPE_NAME_LOOKUP = new Set<string>(
   BUILTIN_ITEM_TYPE_VALUES.map((value) => value.toLowerCase()),
 );
+
+const PLAN_CREATE_METADATA_OPTION_TARGETS = new Set<string>([
+  "createMode",
+  "status",
+  "deadline",
+  "estimatedMinutes",
+  "acceptanceCriteria",
+  "definitionOfReady",
+  "order",
+  "rank",
+  "goal",
+  "objective",
+  "value",
+  "impact",
+  "outcome",
+  "whyNow",
+  "assignee",
+  "reviewer",
+  "risk",
+  "confidence",
+  "sprint",
+  "release",
+  "blockedReason",
+  "unblockNote",
+  "reporter",
+  "severity",
+  "environment",
+  "reproSteps",
+  "resolution",
+  "expectedResult",
+  "actualResult",
+  "affectedVersion",
+  "fixedVersion",
+  "component",
+  "regression",
+  "customerImpact",
+  "comment",
+  "note",
+  "learning",
+  "reminder",
+  "event",
+  "typeOption",
+]);
 import {
   collect,
   applyActiveCommandResultService,
@@ -793,7 +837,10 @@ function assertExclusiveStructuredStdin(
   const conflictingFlags = STRUCTURED_STDIN_CONFLICT_KEYS.filter((key) => {
     const value = options[key];
     return value === "-" || (Array.isArray(value) && value.includes("-"));
-  }).map((key) => `--${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`);
+  }).map(
+    (key) =>
+      `--${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`,
+  );
   if (conflictingFlags.length > 0) {
     throw new PmCliError(
       `--stdin-json cannot be combined with other stdin consumers: ${conflictingFlags.join(", ")}`,
@@ -1054,7 +1101,11 @@ function normalizePlanAliases(
       planOptions[camel] = planOptions[snake];
     }
   }
-  return planOptions;
+  const normalized = normalizeCreateOptions(planOptions, {
+    requireType: false,
+  }) as Record<string, unknown>;
+  normalized.blockedBy = planOptions.blockedBy;
+  return normalized;
 }
 
 function assertKnownPlanSubcommand(
@@ -1120,7 +1171,6 @@ async function runPlanAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runPlan, PLAN_SUBCOMMANDS } = await import("./commands/plan.js");
   const normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
   assertKnownPlanSubcommand(subcommand, normalizedSubcommand, PLAN_SUBCOMMANDS);
   const planOptions = normalizePlanAliases(options);
@@ -2862,6 +2912,12 @@ export function registerMutationCommands(program: Command): void {
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "Mutation message")
     .option("--force", "Force ownership override");
+  registerCommanderOptionContracts(
+    planCommand,
+    CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS.filter((contract) =>
+      PLAN_CREATE_METADATA_OPTION_TARGETS.has(contract.target),
+    ),
+  );
   // Hidden pure snake_case underscore-duplicate aliases (kept parse-functional,
   // omitted from --help to save agent context).
   addHiddenOptions(
@@ -3094,10 +3150,7 @@ export function registerMutationCommands(program: Command): void {
     .argument("[base]", "driver only: common-ancestor file path (git %O)")
     .argument("[ours]", "driver only: current-branch file path (git %A)")
     .argument("[theirs]", "driver only: other-branch file path (git %B)")
-    .option(
-      "--dry-run",
-      "install/reconcile: preview changes without writing",
-    )
+    .option("--dry-run", "install/reconcile: preview changes without writing")
     .option(
       "--message <text>",
       "reconcile only: audit message recorded on repaired history streams",

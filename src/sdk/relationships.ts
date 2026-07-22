@@ -211,6 +211,28 @@ const BUILTIN_RELATIONSHIP_KINDS: readonly RelationshipKindDefinition[] = [
     allowSelf: false,
   },
   {
+    kind: "implements",
+    direction: "directed",
+    ordering: false,
+    hierarchy: false,
+    outgoing: "many",
+    incoming: "many",
+    lifecycle: "persistent",
+    compatibilityVersion: 1,
+    allowSelf: false,
+  },
+  {
+    kind: "verifies",
+    direction: "directed",
+    ordering: false,
+    hierarchy: false,
+    outgoing: "many",
+    incoming: "many",
+    lifecycle: "persistent",
+    compatibilityVersion: 1,
+    allowSelf: false,
+  },
+  {
     kind: "supersedes",
     direction: "directed",
     ordering: false,
@@ -310,13 +332,15 @@ function assertRelationshipKindSemantics(
   if (![undefined, true, false].includes(definition.hierarchy))
     throw new TypeError(`Invalid relationship hierarchy flag for ${kind}`);
   if (!["one", "many"].includes(definition.outgoing))
-    throw new TypeError(`Invalid outgoing relationship cardinality for ${kind}`);
+    throw new TypeError(
+      `Invalid outgoing relationship cardinality for ${kind}`,
+    );
   if (!["one", "many"].includes(definition.incoming))
-    throw new TypeError(`Invalid incoming relationship cardinality for ${kind}`);
+    throw new TypeError(
+      `Invalid incoming relationship cardinality for ${kind}`,
+    );
   if (
-    !["persistent", "supersedable", "ephemeral"].includes(
-      definition.lifecycle,
-    )
+    !["persistent", "supersedable", "ephemeral"].includes(definition.lifecycle)
   )
     throw new TypeError(`Invalid relationship lifecycle for ${kind}`);
   if (typeof definition.allowSelf !== "boolean")

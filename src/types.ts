@@ -97,8 +97,10 @@ export const DEPENDENCY_KIND_VALUES = [
   "blocked_by",
   "incident_from",
   "epic",
+  "implements",
   "supersedes",
   "task",
+  "verifies",
 ] as const;
 /** Restricts dependency kind values accepted by command, SDK, and storage contracts. */
 export type DependencyKind = (typeof DEPENDENCY_KIND_VALUES)[number];

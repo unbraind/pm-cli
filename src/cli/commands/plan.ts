@@ -49,6 +49,10 @@ import {
   type CreateCommandOptions,
   type CreateResult,
 } from "./create.js";
+import type {
+  MutationMetadataCommandOptions,
+  SharedLinkedResourceOptions,
+} from "./mutation-command-options.js";
 
 /** Public contract for plan subcommands, shared by SDK and presentation-layer consumers. */
 export const PLAN_SUBCOMMANDS = [
@@ -78,7 +82,16 @@ export const PLAN_SHOW_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
 export type PlanShowDepth = (typeof PLAN_SHOW_DEPTH_VALUES)[number];
 
 /** Documents the plan command options payload exchanged by command, SDK, and package integrations. */
-export interface PlanCommandOptions {
+export interface PlanCommandOptions
+  extends
+    Omit<
+      MutationMetadataCommandOptions,
+      "author" | "blockedBy" | "message" | "parent"
+    >,
+    Omit<
+      SharedLinkedResourceOptions,
+      "dep" | "doc" | "field" | "file" | "test"
+    > {
   /** Value that configures or reports title for this contract. */
   title?: string;
   /** Value that configures or reports description for this contract. */
@@ -103,6 +116,10 @@ export interface PlanCommandOptions {
   tags?: string;
   /** Value that configures or reports priority for this contract. */
   priority?: string;
+  /** Lifecycle status used when creating the Plan item. */
+  status?: string;
+  /** Required-option policy used when creating the Plan item. */
+  createMode?: string;
   /** Value that configures or reports body for this contract. */
   body?: string;
   /** Value that configures or reports claim for this contract. */
@@ -994,10 +1011,7 @@ function hasPlanStepDetailOptions(options: PlanCommandOptions): boolean {
     Boolean(options.stepBlockedReason?.trim()) ||
     Boolean(options.stepReplacement?.trim()) ||
     toArray(options.dependsOn).length > 0 ||
-    toArray(options.link).length > 0 ||
-    toSpecArray(options.file).length > 0 ||
-    toSpecArray(options.test).length > 0 ||
-    toSpecArray(options.doc).length > 0
+    toArray(options.link).length > 0
   );
 }
 
@@ -1196,15 +1210,17 @@ async function planCreate(
   const description =
     options.description?.trim() ?? options.scope?.trim() ?? title;
   const createOptions: CreateCommandOptions = {
+    ...options,
     title,
     description,
     type: "Plan",
-    body: options.body,
-    tags: options.tags,
-    priority: options.priority,
-    parent: options.parent,
+    template: undefined,
+    file: toSpecArray(options.file),
+    test: toSpecArray(options.test),
+    doc: toSpecArray(options.doc),
+    field: toSpecArray(options.field),
+    blockedBy: undefined,
     dep: buildPlanCreateDependencies(options),
-    author: options.author,
     message:
       options.message ??
       (fromSearch ? `plan create (search: ${fromSearch})` : `plan create`),
@@ -1742,9 +1758,11 @@ async function planLink(
           `${dep.kind}:${dep.id}`;
         const seenDeps = new Set(deps.map(depKey));
         for (const link of newLinks) {
+          const promotedKind: DependencyKind =
+            link.kind === "depends_on" ? "blocked_by" : link.kind;
           const candidate = {
             id: link.id,
-            kind: link.kind as DependencyKind,
+            kind: promotedKind,
             created_at: nowIso(),
             author: resolveAuthor(options.author, ctx.settings.author_default),
           };

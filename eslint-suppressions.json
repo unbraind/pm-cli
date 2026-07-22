@@ -107,11 +107,6 @@
       "count": 1
     }
   },
-  "src/cli/commands/plan.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/cli/commands/reindex.ts": {
     "no-useless-assignment": {
       "count": 1

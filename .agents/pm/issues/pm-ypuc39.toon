@@ -2,18 +2,39 @@ id: pm-ypuc39
 title: "GH-641: plan link promotion rejects registered implements relationship kind"
 description: Plan link promotion advertises an implements relationship but rejects that kind at runtime; align plan workflow validation with the canonical extensible relationship registry and preserve SDK/CLI contract parity.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-22T05:00:13.387Z"
-updated_at: "2026-07-22T05:00:31.317Z"
+updated_at: "2026-07-22T17:23:22.826Z"
+closed_at: "2026-07-22T17:01:47.907Z"
 author: codex-root-20260722
 parent: pm-96h7
+resolution: Registered implements and verifies as canonical directed dependency kinds and normalized depends_on to blocked_by during promotion.
+expected_result: Advertised Plan link kinds promote without validation loss and retain their semantic graph kind.
+actual_result: Promotion previously cast implements into a dependency kind that storage rejected because the canonical dependency registry omitted it.
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-je50,related,"2026-07-22T05:00:31.072Z",null,null
-  pm-ju83,blocked_by,"2026-07-22T05:00:31.072Z",null,null
   pm-qd3woa,related,"2026-07-22T05:00:31.072Z",null,null
-comments[2]{created_at,author,text}:
+  pm-ju83,related,"2026-07-22T17:00:25.748Z",null,null
+comments[5]{created_at,author,text}:
   "2026-07-22T05:00:13.387Z",codex-root-20260722,"Duplicate check 2026-07-22: searched all statuses for GH-641, plan link promotion, advertised implements, relationship kind, and plan workflow validation. Existing closed pm-je50 owns the shipped Plan SDK primitives and open pm-ju83 owns the extensible relationship registry, but no item tracks this concrete regression; this issue is the canonical GH-641 lineage."
   "2026-07-22T05:00:31.072Z",codex-root-20260722,"GitHub provenance: https://github.com/unbraind/pm-cli/issues/641. Related closed Plan SDK lineage pm-je50, relationship-registry owner pm-ju83, and adjacent strict Plan metadata issue pm-qd3woa define the regression boundary."
+  "2026-07-22T16:31:09.175Z",codex-root,"Implementation start 2026-07-22: canonical all-status lineage and full metadata reviewed. This item is active in one broad SDK-backed contract correctness PR spanning strict Plan creation, registry-aware Plan relationship promotion, non-interactive linked-test execution, and unambiguous deletion outcomes. GitHub intake, public SDK/CLI/MCP parity, focused regression coverage, isolated installed-package dogfood, and exact 100/100/100/100 verification are in scope."
+  "2026-07-22T17:00:28.923Z",codex-root,"Evidence: promoted step links preserve semantic kinds; depends_on canonicalizes to blocked_by, implements/verifies are canonical dependency kinds with directed registry definitions, and SDK/graph regressions pass."
+  "2026-07-22T17:23:22.826Z",codex-root,"Delivery PR: https://github.com/unbraind/pm-cli/pull/644 (exact implementation branch for semantic Plan relationship promotion)."
+files[4]{path,scope,note}:
+  src/cli/commands/plan.ts,project,semantic link promotion
+  src/sdk/relationships.ts,project,built-in graph semantics
+  src/types.ts,project,canonical dependency kinds
+  tests/unit/sdk/agent-contract-correctness.spec.ts,project,promotion regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-contract-correctness.spec.ts tests/unit/sdk/relationships.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrwbwqvd-tkh9fv,test,passed,"2026-07-22T17:00:44.353Z","2026-07-22T17:00:54.409Z","2026-07-22T17:00:54.409Z",1,0,0
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,generated release changelog
+  docs/COMMANDS.md,project,promotion behavior
+  docs/SDK.md,project,relationship SDK semantics
+close_reason: "Completed semantic Plan-link promotion with canonical implements/verifies relationship kinds, depends_on normalization, SDK registry coverage, docs, and installed-package graph proof."
 body: ""

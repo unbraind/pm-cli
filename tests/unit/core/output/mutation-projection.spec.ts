@@ -76,6 +76,63 @@ describe("projectMutationResult", () => {
     );
   });
 
+  it("projects deletion outcomes without echoing the removed item's old lifecycle status", () => {
+    const deleted = {
+      item: { id: "pm-a1b2", status: "open", title: "Removed" },
+      changed_fields: ["deleted"],
+      deleted: true,
+      outcome: "deleted",
+      previous_status: "open",
+      warnings: [],
+    };
+    expect(projectMutationResult(deleted, { compactEnvelope: true })).toEqual({
+      id: "pm-a1b2",
+      status: "deleted",
+      deleted: true,
+      previous_status: "open",
+      changed_field_count: 1,
+    });
+    expect(projectMutationResult(deleted, { idOnly: true })).toEqual({
+      id: "pm-a1b2",
+      status: "deleted",
+      deleted: true,
+    });
+
+    expect(
+      projectMutationResult(
+        {
+          ...deleted,
+          deleted: false,
+          outcome: "would_delete",
+        },
+        { compactEnvelope: true },
+      ),
+    ).toEqual({
+      id: "pm-a1b2",
+      status: "would_delete",
+      deleted: false,
+      previous_status: "open",
+      changed_field_count: 1,
+    });
+
+    const nonDelete = {
+      item: { id: "pm-a1b2", status: "in_progress" },
+      changed_fields: ["title"],
+      outcome: "success",
+    };
+    expect(projectMutationResult(nonDelete, { compactEnvelope: true })).toEqual(
+      {
+        id: "pm-a1b2",
+        status: "in_progress",
+        changed_field_count: 1,
+      },
+    );
+    expect(projectMutationResult(nonDelete, { idOnly: true })).toEqual({
+      id: "pm-a1b2",
+      status: "in_progress",
+    });
+  });
+
   it("compacts mutation envelope and update-many row changed_fields only", () => {
     const result = {
       mode: "apply",

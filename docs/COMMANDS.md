@@ -2,7 +2,7 @@
 
 This is a task-oriented command guide. For exact flags, use runtime help because extensions and settings can change the active surface:
 
-Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon).
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-qd3woa](../.agents/pm/issues/pm-qd3woa.toon), [pm-ypuc39](../.agents/pm/issues/pm-ypuc39.toon), and [pm-tz2ikr](../.agents/pm/issues/pm-tz2ikr.toon).
 
 ```bash
 pm <command> --help
@@ -964,6 +964,8 @@ Profiles are extensible: a package can ship its own archetype with `api.register
 
 `pm plan` is the agent-optimized planning loop built on the first-class `Plan` item type. Plans persist ordered steps, evidence, decisions, discoveries, validation, and resume context. Each mutation appends a history entry; full hash-chain replay is preserved.
 
+Plan creation shares the normal create contract. Governance fields such as `--status`, `--deadline`, `--estimate`, `--acceptance-criteria`, `--assignee`, review/risk fields, comments, notes, learnings, reminders, events, and linked resources are accepted directly and pass through the same strict/progressive schema validation as `pm create`.
+
 ```bash
 pm plan create --title "Refactor lock retry" --scope "Improve retry semantics" --harness claude-code --parent pm-epic1 --related pm-rel1,pm-rel2 --claim
 pm plan create --title "Fix flaky retry test" --step "Read lock.ts" --step "Write the fix" --step "Run the tests"
@@ -1012,7 +1014,10 @@ Invariants:
 - Blocking a step requires `--step-blocked-reason` (or an already-recorded reason).
 - `create` accepts repeated `--step <title>` flags to seed ordered steps in argv order (values are never comma-split). When `--step-title` is also given it becomes the first step. Per-step detail flags (`--step-body`, `--step-status`, `--file`, ...) apply to a single initial step only; combining them with multiple `--step` values is a usage error — create the plan first, then refine steps with `add-step`/`update-step`. On step subcommands a single `--step` value still aliases `--step-title`.
 - `materialize` adds `discovered_from` + `parent` to each new item and an `implements` link back on the source step plus a `child` dependency on the Plan.
+- Promoting a step link preserves its semantic kind. `depends_on` normalizes to the canonical top-level `blocked_by`; `implements` and `verifies` remain first-class directed dependency kinds available to SDK relationship registries and graph consumers.
 - Search keyword corpus includes plan_scope, step titles/bodies, decisions, discoveries, validation, and step linked items.
+
+`pm delete <id> --json` reports an explicit `outcome` (`deleted` or `would_delete`), `deleted` boolean, and `previous_status`. Compact and `--id-only` output use the mutation outcome as `status`, so agents never mistake the deleted item's former lifecycle state for the delete result.
 
 ## Machine Contracts
 
