@@ -4,16 +4,18 @@
  * Implements the pm delete command surface and its agent-facing runtime behavior.
  */
 import path from "node:path";
-import { pathExists } from "../../core/fs/fs-utils.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { toItemRecord } from "../../core/item/item-record.js";
-import { deleteItem } from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
-import { resolveAuthor } from "../../core/shared/author.js";
-
+import {
+  pathExists,
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+  toItemRecord,
+  deleteItem,
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+  resolveAuthor,
+} from "../../sdk/runtime-primitives.js";
 /** Documents the delete command options payload exchanged by command, SDK, and package integrations. */
 export interface DeleteCommandOptions {
   /** Value that configures or reports author for this contract. */

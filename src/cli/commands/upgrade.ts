@@ -13,14 +13,15 @@ import {
   type ManagedExtensionRecord,
   type ManagedExtensionSource,
 } from "./extension.js";
-import { resolveExtensionRoots } from "../../core/extensions/loader.js";
-import { pathExists } from "../../core/fs/fs-utils.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { resolvePmRoot } from "../../core/store/paths.js";
-import { resolvePmCliVersion } from "../../core/packages/root.js";
-
+import {
+  resolveExtensionRoots,
+  pathExists,
+  type GlobalOptions,
+  EXIT_CODE,
+  PmCliError,
+  resolvePmRoot,
+  resolvePmCliVersion,
+} from "../../sdk/runtime-primitives.js";
 const execFileAsync = promisify(execFile);
 const DEFAULT_CLI_PACKAGE = "@unbrained/pm-cli";
 const DEFAULT_TAG = "latest";

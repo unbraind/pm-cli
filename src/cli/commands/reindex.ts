@@ -5,62 +5,50 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import {
+  toNonEmptyStringOrUndefined,
   getActiveExtensionRegistrations,
   runActiveOnIndexHooks,
   runActiveOnWriteHooks,
-} from "../../core/extensions/index.js";
-import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
-import {
+  collectRegisteredItemFieldNames,
   resolveRegisteredSearchProvider,
   resolveRegisteredVectorStoreAdapter,
-} from "../../core/extensions/runtime-registrations.js";
-import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { parseItemDocument } from "../../core/item/item-format.js";
-import { acquireLock } from "../../core/lock/lock.js";
-import {
+  pathExists,
+  writeFileAtomic,
+  resolveItemTypeRegistry,
+  parseItemDocument,
+  acquireLock,
   buildSearchCorpus,
   buildSemanticCorpusInput,
   resolveSearchCorpusFields,
   resolveSemanticCorpusCharacterLimit,
-} from "../../core/search/corpus.js";
-import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
-import {
+  executeEmbeddingBatchesWithRetry,
   readVectorizationStatusLedger,
   writeVectorizationStatusLedger,
-} from "../../core/search/cache.js";
-import { REINDEX_LOCK_ID } from "../../core/search/background-refresh.js";
-import { resolveEmbeddingProviders } from "../../core/search/providers.js";
-import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
-import {
+  REINDEX_LOCK_ID,
+  resolveEmbeddingProviders,
+  resolveSettingsWithSemanticRuntimeDefaults,
   executeVectorDelete,
   executeVectorReset,
   executeVectorUpsert,
   resolveVectorStores,
-} from "../../core/search/vector-stores.js";
-import {
   buildVectorizationEmbeddingIdentity,
   buildVectorizationEmbeddingMetadata,
   hasVectorizationEmbeddingIdentityChanged,
   hasVectorizationVectorDimensionChanged,
   inferConsistentVectorDimension,
-} from "../../core/search/vectorization-metadata.js";
-import type {
-  VectorizationEmbeddingIdentity,
-  VectorizationEmbeddingMetadata,
-} from "../../core/search/vectorization-metadata.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { nowIso } from "../../core/shared/time.js";
-import {
+  type VectorizationEmbeddingIdentity,
+  type VectorizationEmbeddingMetadata,
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+  nowIso,
   listAllDocumentCandidatesCached,
   type CachedDocumentCandidate,
-} from "../../core/store/item-metadata-cache.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
 import type { ItemDocument, PmSettings } from "../../types/index.js";
 
 const MANIFEST_PATH = "index/manifest.json";

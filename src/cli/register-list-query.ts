@@ -4,9 +4,12 @@
  * Provides CLI runtime support for Register List Query.
  */
 import type { Command } from "commander";
-import { EXIT_CODE } from "../core/shared/constants.js";
-import { PmCliError } from "../core/shared/errors.js";
-import { renderRowsAsCsv, renderRowsAsTable } from "../core/output/tabular.js";
+import {
+  EXIT_CODE,
+  PmCliError,
+  renderRowsAsCsv,
+  renderRowsAsTable,
+} from "../sdk/runtime-primitives.js";
 import { runActivity } from "./commands/activity.js";
 import { runAggregate } from "./commands/aggregate.js";
 import {

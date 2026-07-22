@@ -3,34 +3,28 @@
  *
  * Implements the pm get command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { toItemRecord } from "../../core/item/item-record.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
+  pathExists,
+  getActiveExtensionRegistrations,
+  toItemRecord,
+  resolveItemTypeRegistry,
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
-} from "../../core/schema/runtime-schema.js";
-import {
   EXIT_CODE,
   ITEM_METADATA_KEY_ORDER,
   TYPE_TO_FOLDER,
-} from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import {
+  type GlobalOptions,
+  PmCliError,
   buildItemNotFoundError,
   listAllItemMetadataLight,
   locateItem,
   readLocatedItem,
-} from "../../core/store/item-store.js";
-import {
   getHistoryPath,
   getSettingsPath,
   resolvePmRoot,
-} from "../../core/store/paths.js";
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
 import { readHistoryEntries } from "../../sdk/history-read.js";
-import { readSettings } from "../../core/store/settings.js";
 import { recordContextUsageTouches } from "../../sdk/context-usage.js";
 import {
   buildItemChildrenRollup,

@@ -3,10 +3,13 @@
  *
  * Implements the pm repeatable metadata parsers command surface and its agent-facing runtime behavior.
  */
-import { assertNoUnknownCsvKeys, parseCsvKv } from "../../core/item/parse.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { resolveIsoOrRelative } from "../../core/shared/time.js";
+import {
+  assertNoUnknownCsvKeys,
+  parseCsvKv,
+  EXIT_CODE,
+  PmCliError,
+  resolveIsoOrRelative,
+} from "../../sdk/runtime-primitives.js";
 import type { CalendarEvent, Reminder } from "../../types/index.js";
 import { resolveEventEndAt } from "./event-validation-messages.js";
 import {

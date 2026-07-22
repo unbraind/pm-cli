@@ -3,13 +3,12 @@
  *
  * Provides CLI runtime support for Extension Command Options.
  */
-import { EXIT_CODE } from "../core/shared/constants.js";
-import { PmCliError } from "../core/shared/errors.js";
 import {
+  EXIT_CODE,
+  PmCliError,
   flattenFlagListValue,
   resolveFlagValueKind,
-} from "../core/extensions/flag-value-types.js";
-
+} from "../sdk/runtime-primitives.js";
 const UNSAFE_LOOSE_OPTION_KEYS = new Set([
   "__proto__",
   "prototype",

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:comments","area:docs",compatibility,pm-cli
 created_at: "2026-04-01T11:05:50.847Z"
-updated_at: "2026-05-17T08:21:43.747Z"
+updated_at: "2026-07-22T19:18:05.286Z"
 deadline: "2026-05-09T17:05:53.426Z"
 author: codex-agent
 estimated_minutes: 160
@@ -39,7 +39,7 @@ regression: true
 customer_impact: Existing users keep working syntax while agents gain intuitive shorthand
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-v3g3,parent,"2026-04-01T11:05:50.847Z",codex-agent,null
-comments[15]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-04-01T11:05:50.847Z",codex-agent,Feature created after deep duplicate search over open/in-progress/blocked/search surfaces.
   "2026-04-01T11:18:49.987Z",codex-agent,"Feature evidence: targeted and full test suites pass after implementation; manual validation confirms positional comments, --add compatibility, and conflict-path usage error. Full coverage gate remains globally below repository threshold (98.14/96.57/98.37/97.99)."
   "2026-04-01T11:19:16.550Z",codex-agent,"Validation: user-reported form now succeeds (pm comments <id> \"...\" --author) without too-many-arguments error."
@@ -55,6 +55,7 @@ comments[15]{created_at,author,text}:
   "2026-04-27T21:33:16.349Z",codex-agent,"Final handoff 2026-04-27: global gate run after backlog closeout -> pm validate --check-resolution --check-history-drift --json (warn on legacy resolution backlog: 10 items; history drift hash mismatches: pm-r9ei, pm-vhdc), pm normalize --dry-run --json (rule closed_resolution_backfill count=10), pm context --limit 20 (active_items=0)."
   "2026-05-08T22:53:42.687Z",codex-agent,Reusing existing lineage after duplicate check (context/list/search); implementing simplified comments input with stdin/file support and parity updates.
   "2026-05-08T23:07:20.338Z",codex-agent,"Evidence: targeted comments UX regressions passed (217 tests). Full coverage run passed (1216 tests) with 100/100/100/100."
+  "2026-07-22T19:18:05.285Z",codex-sdk-boundary-20260722,"GitHub provenance: added the missing direct pm item link to closed GH-227 for plain-text update note compatibility."
 notes[3]{created_at,author,text}:
   "2026-04-01T11:05:50.847Z",codex-agent,Prior closed parser-hardening work is reused; this feature targets positional shorthand UX gap.
   "2026-04-27T21:23:43.184Z",codex-agent,"Guidance now consistently differentiates plain-text fallback vs explicit structured text forms (text=..., markdown text:, or stdin token -) across main help, README, AGENTS, and PRD."
@@ -80,14 +81,14 @@ files[16]{path,scope,note}:
   tests/unit/contracts-command.spec.ts,project,comments-contract-parity-regressions
   tests/unit/create-command.spec.ts,project,regression coverage for create comment shorthand
   tests/unit/notes-learnings-command.spec.ts,project,notes/learnings fallback regressions for ambiguous CSV-like payload
-tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,18000,null,null,null,null,null,null,null,null,null,null,null,full-coverage-validation
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,comments shorthand + help contract regressions
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,comments-input-ux-parity-suite
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,create-comment-shorthand regression
-  node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,notes/learnings ambiguous add payload fallback regression
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mohpjwyq-m8w4jx,test,passed,"2026-04-27T21:23:54.192Z","2026-04-27T21:27:10.754Z","2026-04-27T21:27:10.754Z",null,null,3,0,0,null,null,null
+tests[5]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,18000,full-coverage-validation
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,3600,comments shorthand + help contract regressions
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,5400,comments-input-ux-parity-suite
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,project,240,create-comment-shorthand regression
+  node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts,project,1200,notes/learnings ambiguous add payload fallback regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mohpjwyq-m8w4jx,test,passed,"2026-04-27T21:23:54.192Z","2026-04-27T21:27:10.754Z","2026-04-27T21:27:10.754Z",3,0,0
 docs[4]{path,scope,note}:
   AGENTS.md,project,agent guidance for comments/notes/learnings structured-vs-plain add semantics
   docs/COMMANDS.md,project,document comments stdin/file usage

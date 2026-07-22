@@ -3,17 +3,19 @@
  *
  * Implements the pm append command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { resolveAuthor } from "../../core/shared/author.js";
-import { toItemRecord } from "../../core/item/item-record.js";
-import { createStdinTokenResolver } from "../../core/item/parse.js";
-import { mutateItem } from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
-
+import {
+  pathExists,
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+  resolveAuthor,
+  toItemRecord,
+  createStdinTokenResolver,
+  mutateItem,
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
 /** Documents the append command options payload exchanged by command, SDK, and package integrations. */
 export interface AppendCommandOptions {
   /** Value that configures or reports body for this contract. */

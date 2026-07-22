@@ -3,27 +3,26 @@
  *
  * Implements the pm close command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
-import { collectBlockedByIds } from "../../sdk/actionability.js";
-import { toItemRecord } from "../../core/item/item-record.js";
-import { isTerminalStatus } from "../../core/item/status.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
+  pathExists,
+  toItemRecord,
+  isTerminalStatus,
+  resolveItemTypeRegistry,
   resolveRuntimeStatusRegistry,
   type RuntimeStatusRegistry,
-} from "../../core/schema/runtime-schema.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import {
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
   buildItemNotFoundError,
   listAllItemMetadataLight,
   locateItem,
   mutateItem,
   readLocatedItem,
-} from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
+import { collectBlockedByIds } from "../../sdk/actionability.js";
 import type { ItemMetadata } from "../../types/index.js";
 
 /** Documents the close command options payload exchanged by command, SDK, and package integrations. */

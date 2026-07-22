@@ -628,8 +628,6 @@ export function checkOrphanSourceModules(files) {
   return violations.sort((left, right) => left.path.localeCompare(right.path));
 }
 
-export const SDK_IMPORT_BOUNDARY_BASELINE = "scripts/release/sdk-import-boundary-baseline.json";
-
 function isSdkBoundarySource(relativePath) {
   return (
     relativePath === "src/cli.ts" ||
@@ -769,96 +767,22 @@ function collectPrivateCoreImportEdgesFromBoundaryFiles(boundarySourceFiles) {
   );
 }
 
-function baselineImportEdgesFromEntries(entries, baselinePath) {
-  if (!Array.isArray(entries)) {
-    throw new Error(`Invalid SDK import-boundary baseline ${baselinePath}: allowed_private_core_imports must be an array.`);
-  }
-  const edges = [];
-  for (const entry of entries) {
-    if (!isRecord(entry) || typeof entry.source !== "string" || !Array.isArray(entry.imports)) {
-      throw new Error(
-        `Invalid SDK import-boundary baseline ${baselinePath}: entries must include source and imports fields.`,
-      );
-    }
-    if (!isSdkBoundarySource(entry.source)) {
-      throw new Error(
-        `Invalid SDK import-boundary baseline ${baselinePath}: source "${entry.source}" is not an SDK boundary source.`,
-      );
-    }
-    for (const importPath of entry.imports) {
-      if (typeof importPath !== "string") {
-        throw new Error(`Invalid SDK import-boundary baseline ${baselinePath}: imports must be strings.`);
-      }
-      if (!importPath.startsWith("src/core/")) {
-        throw new Error(
-          `Invalid SDK import-boundary baseline ${baselinePath}: import "${importPath}" is not a private core import.`,
-        );
-      }
-      edges.push({ source: entry.source, import_path: importPath });
-    }
-  }
-  return edges;
-}
-
-function readSdkImportBoundaryBaseline(baselinePath) {
-  const parsed = JSON.parse(readFileSync(baselinePath, "utf8"));
-  if (!isRecord(parsed)) {
-    throw new Error(`Invalid SDK import-boundary baseline ${baselinePath}: expected an object.`);
-  }
-  if (parsed.version !== 1) {
-    throw new Error(`Invalid SDK import-boundary baseline ${baselinePath}: version must be 1.`);
-  }
-  return baselineImportEdgesFromEntries(parsed.allowed_private_core_imports, baselinePath);
-}
-
+/** Produces a collision-safe identity for one presentation-to-core import edge. */
 function importEdgeKey(edge) {
   return `${edge.source}\u0000${edge.import_path}`;
 }
 
-export function checkSdkImportBoundary(
-  files = collectTypeScriptFiles(),
-  baselinePath = path.join(repoRoot, SDK_IMPORT_BOUNDARY_BASELINE),
-) {
+export function checkSdkImportBoundary(files = collectTypeScriptFiles()) {
   const boundarySourceFiles = collectSdkBoundarySourceFiles(files);
   const actualEdges = collectPrivateCoreImportEdgesFromBoundaryFiles(boundarySourceFiles);
   const unsupportedDynamicImports = collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(boundarySourceFiles);
-  let baselineEdges;
-  try {
-    baselineEdges = readSdkImportBoundaryBaseline(baselinePath);
-  } catch (error) {
-    return {
-      ok: false,
-      scanned_file_count: boundarySourceFiles.length,
-      actual_edge_count: actualEdges.length,
-      baseline_edge_count: null,
-      new_private_core_imports: [],
-      stale_baseline_imports: [],
-      unsupported_dynamic_imports: unsupportedDynamicImports,
-      error: error instanceof Error ? error.message : String(error),
-    };
-  }
-
-  const actualKeys = new Set(actualEdges.map(importEdgeKey));
-  const baselineKeys = new Set(baselineEdges.map(importEdgeKey));
-  const scannedBoundarySources = new Set(boundarySourceFiles.map(relativeToRepo));
-  const newPrivateCoreImports = actualEdges.filter((edge) => !baselineKeys.has(importEdgeKey(edge)));
-  const staleBaselineImports = baselineEdges
-    .filter(
-      (edge) =>
-        (scannedBoundarySources.has(edge.source) || !existsSync(path.join(repoRoot, edge.source))) &&
-        !actualKeys.has(importEdgeKey(edge)),
-    )
-    .sort((left, right) => left.source.localeCompare(right.source) || left.import_path.localeCompare(right.import_path));
   return {
-    ok:
-      newPrivateCoreImports.length === 0 &&
-      staleBaselineImports.length === 0 &&
-      unsupportedDynamicImports.length === 0,
+    ok: actualEdges.length === 0 && unsupportedDynamicImports.length === 0,
     scanned_file_count: boundarySourceFiles.length,
     actual_edge_count: actualEdges.length,
-    baseline_edge_count: baselineEdges.length,
-    new_private_core_imports: newPrivateCoreImports,
-    stale_baseline_imports: staleBaselineImports,
+    baseline_edge_count: 0,
+    new_private_core_imports: actualEdges,
+    stale_baseline_imports: [],
     unsupported_dynamic_imports: unsupportedDynamicImports,
   };
 }
@@ -1250,9 +1174,8 @@ of boilerplate and name-restating docstrings, directory organization density, th
 bulk-suppressions baseline budget, and hard budgets on inline gate-silencing pragmas
 (ESLint disable comments, coverage-ignore pragmas, jscpd ignores). Changed shipped/script files
 also get a CodeFactor-parity complexity check so branch-local issues fail before push. The
-SDK import-boundary ratchet compares src/cli + src/mcp private src/core imports against
-${SDK_IMPORT_BOUNDARY_BASELINE}; new private imports, computed dynamic imports, and stale
-baseline entries all fail.
+SDK import boundary hard-denies every src/cli + src/mcp private src/core import,
+including type-only/re-export edges, and rejects computed dynamic imports.
 `);
 }
 
@@ -1366,7 +1289,6 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
       codefactor_complexity: codeFactorComplexity.violations,
       sdk_import_boundary: {
         new_private_core_imports: sdkImportBoundary.new_private_core_imports,
-        stale_baseline_imports: sdkImportBoundary.stale_baseline_imports,
         unsupported_dynamic_imports: sdkImportBoundary.unsupported_dynamic_imports,
       },
     },
@@ -1448,26 +1370,14 @@ function printQualityFailureSummary(report) {
   } else {
     printViolationCount("codefactor_complexity", report.violations.codefactor_complexity.length);
   }
-  if (report.sdk_import_boundary.error) {
-    console.error(`- sdk_import_boundary scan failed: ${report.sdk_import_boundary.error}`);
-    printViolationCount(
-      "sdk_import_boundary unsupported_dynamic_import",
-      report.violations.sdk_import_boundary.unsupported_dynamic_imports.length,
-    );
-  } else {
-    printViolationCount(
-      "sdk_import_boundary new_private_core_import",
-      report.violations.sdk_import_boundary.new_private_core_imports.length,
-    );
-    printViolationCount(
-      "sdk_import_boundary stale_baseline_import",
-      report.violations.sdk_import_boundary.stale_baseline_imports.length,
-    );
-    printViolationCount(
-      "sdk_import_boundary unsupported_dynamic_import",
-      report.violations.sdk_import_boundary.unsupported_dynamic_imports.length,
-    );
-  }
+  printViolationCount(
+    "sdk_import_boundary private_core_import",
+    report.violations.sdk_import_boundary.new_private_core_imports.length,
+  );
+  printViolationCount(
+    "sdk_import_boundary unsupported_dynamic_import",
+    report.violations.sdk_import_boundary.unsupported_dynamic_imports.length,
+  );
   printEslintSuppressionsFailure(report.eslint_suppressions);
   printInlinePragmaFailures(report.inline_pragmas);
 }

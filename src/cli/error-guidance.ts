@@ -3,10 +3,10 @@
  *
  * Provides CLI runtime support for Error Guidance.
  */
-import type {
-  PmCliErrorContext,
-  PmCliErrorRecoveryPayload,
-} from "../core/shared/errors.js";
+import {
+  type PmCliErrorContext,
+  type PmCliErrorRecoveryPayload,
+} from "../sdk/runtime-primitives.js";
 import { renderPmCommand } from "./argv-utils.js";
 import { discoverNearbyPmRoot } from "../sdk/tracker-root-discovery.js";
 

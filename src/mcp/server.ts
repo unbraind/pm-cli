@@ -7,12 +7,14 @@
 import { realpathSync } from "node:fs";
 import readline from "node:readline";
 import { fileURLToPath } from "node:url";
-import { resolvePmCliVersion } from "../core/packages/root.js";
-import { PmCliError } from "../core/shared/errors.js";
-import { decodeHtmlEntitiesInOptions } from "../core/shared/html-entity-decode.js";
-import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
-import { asRecordClone } from "../core/shared/primitives.js";
-import { createSerialQueue } from "../core/shared/serial-queue.js";
+import {
+  resolvePmCliVersion,
+  PmCliError,
+  decodeHtmlEntitiesInOptions,
+  levenshteinDistanceWithinLimit,
+  asRecordClone,
+  createSerialQueue,
+} from "../sdk/runtime-primitives.js";
 import { pmToolActionNestedOptionKeys } from "../sdk/cli-contracts/tool-schema.js";
 import {
   readRequiredString,

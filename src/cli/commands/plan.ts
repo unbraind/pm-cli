@@ -3,24 +3,23 @@
  *
  * Implements the pm plan command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import {
+  pathExists,
+  getActiveExtensionRegistrations,
   resolveItemTypeRegistry,
   resolveTypeName,
-} from "../../core/item/type-registry.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { splitCommaList } from "../../core/shared/split-comma-list.js";
-import { nowIso } from "../../core/shared/time.js";
-import {
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+  splitCommaList,
+  nowIso,
   locateItem,
   mutateItem,
   readLocatedItem,
-} from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
 import type {
   DependencyKind,
   ItemDocument,

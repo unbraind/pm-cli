@@ -8,21 +8,20 @@ import path from "node:path";
 import {
   getActiveExtensionRegistrations,
   runActiveOnReadHooks,
-} from "../../core/extensions/index.js";
-import { pathExists } from "../../core/fs/fs-utils.js";
-import { enforceHistoryStreamPolicyForItems } from "../../core/history/history-stream-policy.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import {
+  pathExists,
+  enforceHistoryStreamPolicyForItems,
+  resolveItemTypeRegistry,
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
   compareTimestampStrings,
   nowIso,
   resolveIsoOrRelative,
-} from "../../core/shared/time.js";
-import { listAllItemMetadataLight } from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
+  listAllItemMetadataLight,
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
 import { readHistoryEntries } from "./history.js";
 import { parseLimit } from "../shared-parsers.js";
 import type { HistoryEntry } from "../../types/index.js";

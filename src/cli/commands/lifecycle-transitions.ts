@@ -6,8 +6,7 @@
 import {
   normalizeStatusInputWithRegistry,
   type RuntimeStatusRegistry,
-} from "../../core/schema/runtime-schema.js";
-
+} from "../../sdk/runtime-primitives.js";
 /** GH-216: a contextual next-step hint that nudges agents toward the underutilized `in_progress` lifecycle state instead of jumping straight from `open` to `closed`. The suggestion is intentionally non-binding (no governance enforcement) and only surfaces when a richer transition genuinely exists. */
 export interface LifecycleTransitionSuggestion {
   /** Ready-to-run command that advances the item to the suggested status. */

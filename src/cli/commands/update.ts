@@ -3,8 +3,8 @@
  *
  * Implements the pm update command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
 import {
+  pathExists,
   COMMON_MUTATION_COMMAND_OPTION_KEYS,
   canonicalizeCommandOptionKey,
   commandOptionFlagLabel,
@@ -13,17 +13,13 @@ import {
   resolveTypeDefinition,
   resolveTypeName,
   validateTypeOptions,
-} from "../../core/item/type-registry.js";
-import { normalizeItemId } from "../../core/item/id.js";
-import { toItemRecord } from "../../core/item/item-record.js";
-import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
-import {
+  normalizeItemId,
+  toItemRecord,
+  buildInvalidTypeError,
   assertParentReferenceIsNotSelf,
   normalizeParentReferenceValue,
   validateMissingParentReference,
-} from "../../core/item/parent-reference-policy.js";
-import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-format.js";
-import {
+  validateSprintOrReleaseValue,
   applyAcceptanceCriteriaMutations,
   applyTagRemovals,
   assertNoUnknownCsvKeys,
@@ -35,43 +31,36 @@ import {
   parseOptionalNumber,
   parseTags,
   splitAcceptanceCriteria,
-} from "../../core/item/parse.js";
-import { resolvePriority } from "../../core/item/priority.js";
-import { normalizeStatusInput } from "../../core/item/status.js";
-import { collectRuntimeUpdateFieldValues } from "../../core/schema/runtime-field-values.js";
-import {
+  resolvePriority,
+  normalizeStatusInput,
+  collectRuntimeUpdateFieldValues,
   resolveItemTypesFilePath,
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
   type RuntimeFieldRegistry,
   type RuntimeStatusRegistry,
-} from "../../core/schema/runtime-schema.js";
-import {
   describeAllowedTransitions,
   evaluateTransition,
   resolveTypeWorkflows,
   type NormalizedTypeWorkflow,
-} from "../../core/schema/type-workflows.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { stableValueEquals } from "../../core/shared/serialization.js";
-import { resolveIsoOrRelative } from "../../core/shared/time.js";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import {
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
+  stableValueEquals,
+  resolveIsoOrRelative,
+  getActiveExtensionRegistrations,
   collectRegisteredItemFieldNames,
   applyRegisteredItemFieldDefaultsAndValidation,
   parseRegisteredItemFieldAssignments,
-} from "../../core/extensions/item-fields.js";
-import {
   buildItemNotFoundError,
   listAllItemMetadataLight,
   locateItem,
   mutateItem,
   readLocatedItem,
-} from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
 import { runClose } from "./close.js";
 import {
   normalizeRiskInput,

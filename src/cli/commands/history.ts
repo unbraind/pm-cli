@@ -3,40 +3,35 @@
  *
  * Implements the pm history command surface and its agent-facing runtime behavior.
  */
-import { pathExists } from "../../core/fs/fs-utils.js";
 import {
+  pathExists,
   computeHistoryDiff,
   patchPathToChangedField,
   type HistoryDiffValueEntry,
-} from "../../core/history/history-diff.js";
-import { hashDocument, hashEmptyDocument } from "../../core/history/history.js";
-import {
+  hashDocument,
+  hashEmptyDocument,
   normalizeReplayPatchOps,
   verifyHistoryChain,
-} from "../../core/history/replay.js";
-import { enforceHistoryStreamPolicyForItem } from "../../core/history/history-stream-policy.js";
-import { readHistoryEntries } from "../../sdk/history-read.js";
-export { readHistoryEntries } from "../../sdk/history-read.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import {
+  enforceHistoryStreamPolicyForItem,
+  EXIT_CODE,
+  type GlobalOptions,
+  PmCliError,
   getActiveExtensionRegistrations,
-} from "../../core/extensions/index.js";
-import { normalizeItemId } from "../../core/item/id.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
-import {
+  normalizeItemId,
+  resolveItemTypeRegistry,
+  locateItem,
+  readLocatedItem,
   getHistoryPath,
   getSettingsPath,
   resolvePmRoot,
-} from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
+  readSettings,
+} from "../../sdk/runtime-primitives.js";
+import { readHistoryEntries } from "../../sdk/history-read.js";
+export { readHistoryEntries } from "../../sdk/history-read.js";
 import { parseLimit } from "../shared-parsers.js";
 import type { HistoryEntry } from "../../types/index.js";
 
-export { verifyHistoryChain } from "../../core/history/replay.js";
-
+export { verifyHistoryChain };
 /** Documents the history command options payload exchanged by command, SDK, and package integrations. */
 export interface HistoryCommandOptions {
   /** Value that configures or reports limit for this contract. */

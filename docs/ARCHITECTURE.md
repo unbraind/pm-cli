@@ -272,21 +272,17 @@ presentation layers over SDK primitives. The migration is tracked under
 [pm-usfg](../.agents/pm/epics/pm-usfg.toon), with the current map in
 [SDK Primitive Inventory](SDK_PRIMITIVE_INVENTORY.md).
 
-Until all primitive families are promoted, the static quality gate enforces a
-ratchet instead of pretending the boundary is already complete:
+The static quality gate now enforces the completed boundary without an
+allowance file:
 
-- `scripts/release/sdk-import-boundary-baseline.json` records the current
-  `src/cli`/`src/mcp` private `src/core` import edges.
-- The ratchet counts type-only imports and re-exports too. A type-only
+- The hard gate counts type-only imports and re-exports too. A type-only
   `src/core` reference still couples the presentation layer to private core
   contracts, so it must be promoted behind `src/sdk` with the rest of the
   primitive surface.
-- `pnpm quality:static` fails when a PR adds a new private edge or uses a
-  computed dynamic `import()` from a boundary source that the ratchet cannot
-  inventory.
-- The same gate fails when the baseline still contains an edge that no longer
-  exists, forcing each promotion PR to shrink the baseline as it removes direct
-  core imports.
+- `pnpm quality:static` fails on every private edge or computed dynamic
+  `import()` from a boundary source; the required edge count is always zero.
+- Shared presentation-host services live in `src/sdk/runtime-primitives.ts`.
+  Higher-level consumers should prefer typed SDK operations and `PmClient`.
 
 Do not add new CLI/MCP behavior by deep-importing `src/core`. Add or extend an
 SDK primitive first, then consume that SDK surface from the presentation layer.

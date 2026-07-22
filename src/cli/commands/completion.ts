@@ -3,8 +3,10 @@
  *
  * Implements the pm completion command surface and its agent-facing runtime behavior.
  */
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import { PmCliError } from "../../core/shared/errors.js";
+import {
+  EXIT_CODE,
+  PmCliError,
+} from "../../sdk/runtime-primitives.js";
 import { SCAFFOLD_CAPABILITIES } from "./extension/scaffold.js";
 import {
   AGGREGATE_FLAG_CONTRACTS,
