@@ -5462,6 +5462,180 @@
           "flag": "--priority"
         },
         {
+          "flag": "--status",
+          "short": "-s"
+        },
+        {
+          "aliases": [
+            "--create_mode"
+          ],
+          "flag": "--create-mode"
+        },
+        {
+          "flag": "--deadline"
+        },
+        {
+          "aliases": [
+            "--estimated-minutes",
+            "--estimated_minutes"
+          ],
+          "flag": "--estimate"
+        },
+        {
+          "aliases": [
+            "--acceptance_criteria",
+            "--ac"
+          ],
+          "flag": "--acceptance-criteria",
+          "repeatable": true
+        },
+        {
+          "aliases": [
+            "--definition_of_ready"
+          ],
+          "flag": "--definition-of-ready"
+        },
+        {
+          "flag": "--order"
+        },
+        {
+          "flag": "--rank"
+        },
+        {
+          "flag": "--goal"
+        },
+        {
+          "flag": "--objective"
+        },
+        {
+          "flag": "--value"
+        },
+        {
+          "flag": "--impact"
+        },
+        {
+          "flag": "--outcome"
+        },
+        {
+          "aliases": [
+            "--why_now"
+          ],
+          "flag": "--why-now"
+        },
+        {
+          "flag": "--assignee"
+        },
+        {
+          "flag": "--reviewer"
+        },
+        {
+          "flag": "--risk"
+        },
+        {
+          "flag": "--confidence"
+        },
+        {
+          "flag": "--sprint"
+        },
+        {
+          "flag": "--release"
+        },
+        {
+          "aliases": [
+            "--blocked_reason"
+          ],
+          "flag": "--blocked-reason"
+        },
+        {
+          "aliases": [
+            "--unblock_note"
+          ],
+          "flag": "--unblock-note"
+        },
+        {
+          "flag": "--reporter"
+        },
+        {
+          "flag": "--severity"
+        },
+        {
+          "flag": "--environment"
+        },
+        {
+          "aliases": [
+            "--repro_steps"
+          ],
+          "flag": "--repro-steps"
+        },
+        {
+          "flag": "--resolution"
+        },
+        {
+          "aliases": [
+            "--expected_result",
+            "--expected"
+          ],
+          "flag": "--expected-result"
+        },
+        {
+          "aliases": [
+            "--actual_result",
+            "--actual"
+          ],
+          "flag": "--actual-result"
+        },
+        {
+          "aliases": [
+            "--affected_version"
+          ],
+          "flag": "--affected-version"
+        },
+        {
+          "aliases": [
+            "--fixed_version"
+          ],
+          "flag": "--fixed-version"
+        },
+        {
+          "flag": "--component"
+        },
+        {
+          "flag": "--regression"
+        },
+        {
+          "aliases": [
+            "--customer_impact"
+          ],
+          "flag": "--customer-impact"
+        },
+        {
+          "flag": "--comment",
+          "repeatable": true
+        },
+        {
+          "flag": "--note",
+          "repeatable": true
+        },
+        {
+          "flag": "--learning",
+          "repeatable": true
+        },
+        {
+          "flag": "--reminder",
+          "repeatable": true
+        },
+        {
+          "flag": "--event",
+          "repeatable": true
+        },
+        {
+          "aliases": [
+            "--type_option"
+          ],
+          "flag": "--type-option",
+          "repeatable": true
+        },
+        {
           "flag": "--body"
         },
         {
@@ -13207,6 +13381,37 @@
           "type",
           "status",
           "priority",
+          "createMode",
+          "deadline",
+          "estimatedMinutes",
+          "acceptanceCriteria",
+          "definitionOfReady",
+          "assignee",
+          "reviewer",
+          "risk",
+          "confidence",
+          "sprint",
+          "release",
+          "blockedReason",
+          "unblockNote",
+          "reporter",
+          "severity",
+          "environment",
+          "reproSteps",
+          "resolution",
+          "expectedResult",
+          "actualResult",
+          "affectedVersion",
+          "fixedVersion",
+          "component",
+          "regression",
+          "customerImpact",
+          "comment",
+          "note",
+          "learning",
+          "reminder",
+          "event",
+          "typeOption",
           "message"
         ],
         "title": "pm action \"create\" parameters",

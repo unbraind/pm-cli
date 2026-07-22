@@ -623,9 +623,7 @@ const SHELL_COMMAND_FLAG_PATTERNS = new Map<string, RegExp>([
   ...["sh", "bash", "dash", "zsh"].map(
     (executable) => [executable, /^(?:-c|-[a-z]*c[a-z]*)$/u] as const,
   ),
-  ...["cmd", "cmd.exe"].map(
-    (executable) => [executable, /^\/[ck]$/u] as const,
-  ),
+  ...["cmd", "cmd.exe"].map((executable) => [executable, /^\/[ck]$/u] as const),
   ...["powershell", "powershell.exe", "pwsh", "pwsh.exe"].map(
     (executable) => [executable, /^-(?:c|command)$/u] as const,
   ),
@@ -1972,11 +1970,27 @@ function createLinkedTestSandboxLayout(
 
 async function initializeLinkedTestSandboxes(
   layout: LinkedTestSandboxLayout,
+  initialize: (
+    ...args: Parameters<typeof runInit>
+  ) => Promise<unknown> = runInit,
 ): Promise<void> {
-  await runInit(undefined, { path: layout.schemaProjectPmPath });
-  await runInit(undefined, { path: layout.schemaGlobalPmPath });
-  await runInit(undefined, { path: layout.trackerProjectPmPath });
-  await runInit(undefined, { path: layout.trackerGlobalPmPath });
+  const initOptions = { defaults: true, agentGuidance: "skip" } as const;
+  await initialize(
+    undefined,
+    { path: layout.schemaProjectPmPath },
+    initOptions,
+  );
+  await initialize(undefined, { path: layout.schemaGlobalPmPath }, initOptions);
+  await initialize(
+    undefined,
+    { path: layout.trackerProjectPmPath },
+    initOptions,
+  );
+  await initialize(
+    undefined,
+    { path: layout.trackerGlobalPmPath },
+    initOptions,
+  );
 }
 
 async function seedLinkedTestSandboxesFromSource(
@@ -2873,6 +2887,7 @@ export const _testOnlyTestCommand = {
   extractPmInvocationArgsFromSegment,
   firstDirectTestRunnerSubcommand,
   hasLinkedTestAssertions,
+  initializeLinkedTestSandboxes,
   parseAddJsonEntries,
   parseLinkedTestTimeoutSeconds,
   parsePmContextMode,

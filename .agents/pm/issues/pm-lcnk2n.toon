@@ -2,17 +2,33 @@ id: pm-lcnk2n
 title: "GH-642: linked-test runner enters interactive init wizard before repository commands"
 description: Prevent pm test --run sandbox/context preparation from invoking interactive pm init in initialized repositories; fail non-interactively with structured remediation when preparation cannot complete.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: agent-ux,github,linked-tests
 created_at: "2026-07-22T05:37:02.638Z"
-updated_at: "2026-07-22T05:37:19.236Z"
+updated_at: "2026-07-22T17:02:26.175Z"
+closed_at: "2026-07-22T17:01:49.553Z"
 author: codex-root-20260722
 acceptance_criteria: "Linked non-PM repository commands start without an init prompt under schema, tracker, and auto PM context modes; non-TTY setup failures exit deterministically with structured remediation; regression coverage proves progress starts and the child command runs."
 parent: pm-52eh
+resolution: Linked-test sandboxes initialize with explicit non-interactive defaults and skip agent-guidance prompts.
+expected_result: Repository linked tests begin execution without any interactive initialization prompt.
+actual_result: "Sandbox setup called runInit without defaults, allowing TTY runs to enter the wizard before the linked command."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-6e1d,related,"2026-07-22T05:37:02.638Z",null,null
   pm-8izv,related,"2026-07-22T05:37:02.638Z",null,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-22T05:37:19.236Z",codex-root-20260722,"Duplicate-check evidence 2026-07-22: searched every pm status for interactive init wizard, linked-test sandbox initialization, tracker context, and adjacent GH-208/GH-463 lineages. No exact item exists; reused closed linked-test sandbox parent pm-52eh and related parity/remediation lineage pm-8izv and pm-6e1d. This item tracks GitHub issue #642 and remains open/unclaimed because it is documented, not part of the active context-index implementation bundle."
+  "2026-07-22T16:31:11.692Z",codex-root,"Implementation start 2026-07-22: canonical all-status lineage and full metadata reviewed. This item is active in one broad SDK-backed contract correctness PR spanning strict Plan creation, registry-aware Plan relationship promotion, non-interactive linked-test execution, and unambiguous deletion outcomes. GitHub intake, public SDK/CLI/MCP parity, focused regression coverage, isolated installed-package dogfood, and exact 100/100/100/100 verification are in scope."
+  "2026-07-22T17:00:29.817Z",codex-root,"Evidence: all four linked-test sandboxes initialize with explicit defaults=true and agentGuidance=skip. The packed installed CLI ran a linked node --version test to completion without an interactive wizard."
+files[2]{path,scope,note}:
+  src/sdk/test/execution.ts,project,non-interactive linked-test sandbox init
+  tests/unit/sdk/agent-contract-correctness.spec.ts,project,initializer option regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-contract-correctness.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrwbwyv5-es18r8,test,passed,"2026-07-22T17:00:55.104Z","2026-07-22T17:01:04.769Z","2026-07-22T17:01:04.769Z",1,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,generated release changelog
+close_reason: Completed explicit non-interactive initialization for all linked-test sandboxes with focused injection coverage and installed-package linked-test proof.
 body: ""

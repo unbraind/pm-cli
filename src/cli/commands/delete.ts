@@ -34,6 +34,12 @@ export interface DeleteResult {
   changed_fields: string[];
   /** Value that configures or reports dry run for this contract. */
   dry_run: boolean;
+  /** Whether the item was deleted by this invocation. */
+  deleted: boolean;
+  /** Stable mutation outcome used instead of echoing the item's stale lifecycle status. */
+  outcome: "deleted" | "would_delete";
+  /** Lifecycle status the item had immediately before deletion. */
+  previous_status: string;
   /** Filesystem path used for target resolution. */
   target_path?: string;
   /** Value that configures or reports warnings for this contract. */
@@ -74,6 +80,9 @@ export async function runDelete(
     item: toItemRecord(result.item),
     changed_fields: result.changedFields,
     dry_run: options.dryRun === true,
+    deleted: options.dryRun !== true,
+    outcome: options.dryRun === true ? "would_delete" : "deleted",
+    previous_status: result.item.status,
     ...(targetPath ? { target_path: targetPath } : {}),
     warnings: result.warnings,
   };

@@ -230,6 +230,8 @@ the next in-process invocation.
 
 ### Plan workflows
 
+Tracked: [pm-qd3woa](../.agents/pm/issues/pm-qd3woa.toon) and [pm-ypuc39](../.agents/pm/issues/pm-ypuc39.toon).
+
 Custom tools can manage durable plans without shelling out or importing CLI internals. The typed façade uses the same engine and result envelopes as `pm plan` and MCP `pm_plan`:
 
 ```ts
@@ -243,6 +245,9 @@ await pm.schemaAddField("acceptance_owner", {
 });
 const created = await pm.planCreate({
   title: "Ship governed workflow",
+  createMode: "progressive",
+  acceptanceCriteria: "Every materialized task passes its linked tests",
+  comment: ["text=Plan created through the shared mutation contract"],
   step: ["Implement", "Verify"],
 });
 await pm.planUpdateStep(created.plan.id, "plan-step-001", {
@@ -255,7 +260,9 @@ const result = await pm.planMaterialize(created.plan.id, {
 });
 ```
 
-`field` is repeatable and forwards `name=value` pairs through normal schema-aware create validation for every materialized child. Required-on-create fields remain mandatory. Each `materialized` entry includes `id`, `title`, `type`, `parent`, `tags`, and `from_step`, so an agent can confirm the created work without extra `get` calls.
+Plan creation accepts the shared typed mutation metadata and linked-resource fields and forwards them through normal schema-aware create validation. `field` is repeatable and also forwards `name=value` pairs through that validation for every materialized child. Required-on-create fields remain mandatory. Each `materialized` entry includes `id`, `title`, `type`, `parent`, `tags`, and `from_step`, so an agent can confirm the created work without extra `get` calls.
+
+Promoted Plan links retain their graph semantics: `depends_on` canonicalizes to `blocked_by`, while `implements` and `verifies` are built-in directed relationship kinds. Custom graph tools therefore receive the same meaning advertised by `PlanStepLinkKind` instead of a lossy `related` fallback.
 
 ### Immutable history and rich item reads
 
