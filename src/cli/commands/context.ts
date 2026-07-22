@@ -44,7 +44,6 @@ import { runList, type ListOptions } from "./list.js";
 import { runActivity, type CompactActivityEntry } from "./activity.js";
 import {
   scoreContextCandidatesWithActiveExtensions,
-  buildItemContextRelevanceCandidates,
   type ContextRelevanceContributions,
   type ContextRelevanceReport,
   type ContextRelevanceSignalName,

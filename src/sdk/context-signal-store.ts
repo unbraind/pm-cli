@@ -10,7 +10,6 @@ import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import {
   buildItemContextRelevanceCandidates,
-  CONTEXT_RELEVANCE_SIGNAL_NAMES,
   type BuildItemContextRelevanceCandidatesOptions,
   type ContextRelevanceCandidate,
   type ContextRelevanceSignalName,

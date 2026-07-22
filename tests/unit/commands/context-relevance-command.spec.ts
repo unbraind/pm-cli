@@ -10,7 +10,10 @@ import { runNext } from "../../../src/cli/commands/next.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import type { ItemMetadata } from "../../../src/types/index.js";
-import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../helpers/withTempPmPath.js";
 
 function relevanceItem(
   id: string,
@@ -27,6 +30,32 @@ function relevanceItem(
     updated_at: "2026-07-01T00:00:00.000Z",
     ...overrides,
   } as ItemMetadata;
+}
+
+function createContextRankingItems(context: TempPmContext): string[] {
+  const createdIds: string[] = [];
+  for (const [title, priority] of [["Baseline", "3"], ["Urgent", "0"]]) {
+    const created = context.runCli(
+      [
+        "create",
+        "--json",
+        "--title",
+        title,
+        "--description",
+        `${title} description`,
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        priority,
+      ],
+      { expectJson: true },
+    );
+    expect(created.code).toBe(0);
+    createdIds.push((created.json as { item: { id: string } }).item.id);
+  }
+  return createdIds;
 }
 
 describe("context relevance command integration", () => {
@@ -108,28 +137,7 @@ describe("context relevance command integration", () => {
 
   it("uses one scorer for context and next and emits explanations only on request", async () => {
     await withTempPmPath(async (context) => {
-      const createdIds: string[] = [];
-      for (const [title, priority] of [["Baseline", "3"], ["Urgent", "0"]]) {
-        const created = context.runCli(
-          [
-            "create",
-            "--json",
-            "--title",
-            title,
-            "--description",
-            `${title} description`,
-            "--type",
-            "Task",
-            "--status",
-            "open",
-            "--priority",
-            priority,
-          ],
-          { expectJson: true },
-        );
-        expect(created.code).toBe(0);
-        createdIds.push((created.json as { item: { id: string } }).item.id);
-      }
+      createContextRankingItems(context);
 
       const compact = await runContext({}, { path: context.pmPath });
       const explainedContext = await runContext({ explainRanking: true }, { path: context.pmPath });
@@ -181,6 +189,13 @@ describe("context relevance command integration", () => {
         "--token-budget must be a positive integer",
       );
 
+    });
+  });
+
+  it("folds usage feedback dynamically and tolerates an absent author", async () => {
+    await withTempPmPath(async (context) => {
+      const createdIds = createContextRankingItems(context);
+      await runContext({}, { path: context.pmPath });
       const read = context.runCli(["get", createdIds[1]!, "--json"], { expectJson: true });
       expect(read.code).toBe(0);
       const touched = context.runCli(["update", createdIds[0]!, "--priority", "2", "--json"], { expectJson: true });
