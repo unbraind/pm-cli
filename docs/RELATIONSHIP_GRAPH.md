@@ -89,6 +89,85 @@ await migrationStore.appendBatch(migration.events, {
 });
 ```
 
+## Pluggable graph adapters and federation
+
+`RelationshipGraphAdapter` is the storage-neutral projection boundary for graph
+databases, replicated services, and package-owned indexes. It deliberately
+stores a complete `RelationshipGraphSnapshot`, not authoritative item state or
+untyped backend query results. Each snapshot contains the deterministic nodes,
+normalized edges, complete relationship-kind ontology, an ISO projection time,
+and a SHA-256 semantic fingerprint. `parseRelationshipGraphSnapshot` rebuilds
+the registry and `RelationshipGraph`, validates every endpoint and kind, and
+rejects version drift, semantic corruption, or a fingerprint mismatch before a
+backend result can reach an algorithm.
+
+Adapters implement three small operations:
+
+- `read({ workspace, signal })` returns the current portable snapshot or `null`.
+- `replace({ workspace, snapshot, expected_fingerprint, signal })` atomically
+  publishes the complete snapshot and uses the expected fingerprint as a
+  compare-and-swap guard. `null` means the workspace must still be empty.
+- Optional `clear(...)` applies the same compare-and-swap rule.
+
+`syncRelationshipGraphAdapter` validates the input, skips an already-current
+backend, atomically replaces stale state, and reads it back before reporting
+success. This makes a backend that acknowledges a write without exposing it fail
+closed. `loadRelationshipGraphAdapter` always returns the portable snapshot plus
+the executable registry and graph; callers never need backend-specific parsing.
+`federateRelationshipGraphSnapshots` unions compatible node/edge sets and rejects
+same-name relationship kinds with different semantics, preventing two projects
+from silently disagreeing about whether an edge orders or merely relates work.
+
+```ts
+import {
+  MemoryRelationshipGraphAdapter,
+  assertRelationshipGraphAdapterConformance,
+  createRelationshipGraphSnapshot,
+  federateRelationshipGraphSnapshots,
+  syncRelationshipGraphAdapter,
+} from "@unbrained/pm-cli/sdk";
+
+const adapter = new MemoryRelationshipGraphAdapter("company-graph");
+const portable = createRelationshipGraphSnapshot(current.graph, registry);
+await syncRelationshipGraphAdapter(adapter, {
+  workspace: "acme/product-a",
+  snapshot: portable,
+});
+
+// Package tests run this same contract against Neo4j, SQLite, or a service.
+await assertRelationshipGraphAdapterConformance(adapter, {
+  workspace: "isolated-conformance-workspace",
+});
+
+const portfolio = federateRelationshipGraphSnapshots(
+  [productA, productB],
+  { createdAt: new Date().toISOString() },
+);
+```
+
+`createRelationshipGraphScaleFixture` supplies reiterable lazy `nodes` and
+`edges` for chain, star, disconnected, and sparse layouts. A million-node proof
+can therefore declare `nodeCount: 1_000_000` and `edgeStride: 100` without first
+allocating a million item documents or reading a real tracker. Tests choose the
+scale explicitly; the fixture never silently downsizes. The returned
+`node_count` and `edge_count` are exact, so benchmark envelopes can assert what
+was actually exercised.
+
+The repository acceptance command builds, snapshots, synchronizes, reads back,
+and reuses the default million-node/9,999-edge sparse graph through the packed
+public shapes without accessing `.agents/pm`:
+
+```bash
+pnpm build
+node --max-old-space-size=4096 scripts/benchmarks/graph-adapter-scale.mjs
+```
+
+This adapter protocol complements the immutable event boundary. Events remain
+the attributable source used for replay and correction; snapshots are
+replaceable, federatable projections that external query engines can rebuild.
+Backends must not treat a successful snapshot sync as permission to rewrite pm
+items or history.
+
 ## Explainable analytics
 
 `analyzeRelationshipExecution` runs exact deterministic topological layering and longest-path analysis only over kinds registered with `ordering: true`. It reports the ready frontier, prerequisite depth, critical path, and genuine strongly connected ordering cycles separately from associative cycles. `analyzeGraphImpact` returns a bounded affected set with an exact shortest explanation path per returned node. `analyzeKnowledgeGraph` reports weak and strong components, intentional-or-unreviewed isolates, and unique-neighbor hubs without assigning an opaque authority score. `compareRelationshipSnapshots` exposes exact temporal edge additions and removals.
