@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: "area:graph",benchmark,conformance,property-testing,scale,testing,token-efficiency
 created_at: "2026-07-13T22:03:31.210Z"
-updated_at: "2026-07-22T21:38:24.127Z"
+updated_at: "2026-07-22T21:44:00.119Z"
 author: codex-root
 estimated_minutes: 600
 acceptance_criteria: "Fixtures cover empty and seconds-old scratch projects, representative medium histories, deep and cyclic typed graphs, multi-decade event streams, disconnected archives, and deterministic 10k, 100k, and one-million-item workspaces; Property tests cover registry invariants, inverse and alias rules, append-only mutation, replay equivalence, snapshot isolation, cursor stability, migration, merge or federation, and correction by superseding event; Algorithm tests verify exact results on bounded fixtures and deterministic seeds, error bounds, freshness, provenance, and monotonic resource limits for approximations; Concurrency tests exercise thousands-agent read and write contention, crashes, stale indexes, retries, idempotency, checkpoints, and non-overlapping reconstruction claims; CLI, MCP, SDK, extension, and shell pipeline parity share golden semantics while allowing intentionally different compact projections; Performance gates record p50, p95, and p99 latency, peak memory, incremental update cost, bytes and tokens, truncation quality, and index rebuild time with documented hardware and envelopes; Every test runs in sandboxed PM_PATH and PM_GLOBAL_PATH and never reads or writes the real repository tracker"
@@ -26,7 +26,7 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-g2zz,related,"2026-07-13T22:03:31.210Z",null,null
   pm-ju83,blocked_by,"2026-07-13T22:03:31.210Z",null,null
   pm-mi2x,related,"2026-07-13T22:03:31.210Z",null,null
-comments[26]{created_at,author,text}:
+comments[27]{created_at,author,text}:
   "2026-07-13T22:03:31.210Z",codex-root,"Duplicate check 2026-07-13: pm-mi2x supplies generic scale fixtures and pm-atfm evaluates context quality,but no item owns typed-graph property,replay,migration,adapter-parity,and reconstruction conformance across those fixtures."
   "2026-07-14T09:43:38.102Z",codex-gpt5,"Implementation start 2026-07-14: add replay, snapshot, adversarial topology, deterministic analytics, and token-bound conformance coverage for the broad graph SDK bundle; all tests remain sandbox-safe."
   "2026-07-14T10:02:22.642Z",codex-gpt5,"TDD evidence: focused relationship suites pass 21 tests. New relationship history, analytics, and context modules plus the precedence additions report literal 100% statements/branches/functions/lines in focused V8 coverage; static quality, docstring, audit-boundary, and token-budget gates pass."
@@ -53,6 +53,7 @@ comments[26]{created_at,author,text}:
   "2026-07-22T21:20:57.462Z",codex-graph-platform-20260722,"Property/conformance expansion: deterministic 96-case topology sweep proves content fingerprints and canonical nodes/edges are invariant to source iteration order; the million-node executable now has real entrypoint/report tests so the global 100% gate includes it without exclusions."
   "2026-07-22T21:28:06.054Z",codex-graph-platform-20260722,"Installed-package evidence: a clean temporary npm project installed the packed @unbrained/pm-cli 2026.7.22 artifact, strictly typechecked an external JSON adapter, passed all 7 public conformance cases, federated a custom directed owns ontology, round-tripped the portable snapshot, and reported zero npm vulnerabilities."
   "2026-07-22T21:38:24.126Z",codex-graph-platform-20260722,"PR evidence: the completed property/federation/million-node matrix tranche is under hosted review in https://github.com/unbraind/pm-cli/pull/648 at commit c98ca0d8."
+  "2026-07-22T21:44:00.119Z",codex-graph-platform-20260722,"Hosted scale/check evidence on PR #648 head 3620b4ea: benchmark, Windows, exact coverage, Codecov patch, security, and all repository-owned gates passed. CodSpeed warns its runtime environments differ and reports only -0.03% to +0.12% movement on untouched benchmarks; no graph benchmark regression or actionable review finding exists."
 notes[1]{created_at,author,text}:
   "2026-07-14T10:19:37.624Z",codex-gpt5,"Remaining canonical scope after this PR: property generators, concurrent durable adapters, migration matrix, and million-item proof; keep chore open."
 learnings[1]{created_at,author,text}:
