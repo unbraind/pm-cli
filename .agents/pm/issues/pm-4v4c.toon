@@ -2,11 +2,12 @@ id: pm-4v4c
 title: Post-install activation verification can load stale overwritten extension modules
 description: "Reinstalling an already loaded extension overwrites its files and immediately re-activates it in the same Node process. ESM module caching can retain the prior dependency module namespace, so a newly installed entrypoint importing a newly added named export reports a false activation failure even though the published and installed files are correct; a fresh pm process activates successfully. Reproduced with pm-changelog 2026.7.18: install reported MissingTagHistoryError absent, while tarball/installed release-context.js exported it and package doctor in a fresh process showed activation_status ok."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,cache,extensions,install
 created_at: "2026-07-18T12:18:13.064Z"
-updated_at: "2026-07-18T12:18:13.064Z"
+updated_at: "2026-07-23T15:37:27.893Z"
+closed_at: "2026-07-23T15:37:27.183Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: Reinstall/upgrade activation verification loads the just-installed module graph rather than stale ESM cache entries; an extension adding a named dependency export upgrades successfully in one process; unchanged extension install and fresh-process doctor behavior remain covered; diagnostics distinguish package defects from verifier cache state.
@@ -16,6 +17,21 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-8fxc,related,"2026-07-18T12:18:13.064Z",null,null
   pm-x6jf,related,"2026-07-18T12:18:13.064Z",null,null
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-18T12:18:13.064Z",maintainer-agent,"Duplicate check 2026-07-18: all-status AND searches for post-install activation module cache and reinstall overwrite activation stale export found no canonical item. Related closed cache-reset lineage pm-8fxc covers invocation snapshot state, not ESM dependency cache during same-process overwrite; package lifecycle primitive lineage is pm-x6jf. Finding came from required latest pm-changelog generation and was proven not to be a pm-changelog package defect by published tarball hashes/exports plus fresh-process doctor activation."
+  "2026-07-23T14:21:39.953Z",claude-code-agent,"Implementation start 2026-07-23: selected after live 1,922-item all-status inventory, full canonical metadata/history review, and GitHub/release/security reconciliation. This item is actively edited in one coherent SDK/package authoring wave spanning scaffold contracts, flag arity, install validation, activation freshness, schema storage, renderer ownership, and public documentation; no duplicate item was created."
+  "2026-07-23T14:59:20.723Z",claude-code-agent,"Implementation evidence: install verification now supplies a caller-owned temporary snapshot root; discovery copies the complete extension directory and imports from a unique absolute graph, then the installer removes the snapshot after activation. A transitive entry-plus-dependency replacement regression test passed."
+  "2026-07-23T15:30:16.665Z",claude-code-agent,"Verification evidence (2026-07-23): full instrumented repository suite passed 347 files / 6,146 tests with exact 100% statements (41,920/41,920), branches (29,630/29,630), functions (8,532/8,532), and lines (40,744/40,744). pnpm lint passed ESLint, zero jscpd clones, 100% source/export/member docstrings, package-boundary audit, and token-budget gate. pnpm security:scan found no credential-like tracked content; pnpm audit --prod found no known vulnerabilities. Packed artifact proof passed scripts/smoke-npx-from-pack.mjs (version 2026.7.23, 15 packages). A separate fresh /tmp consumer installed the npm tarball, initialized an isolated tracker, generated schema and renderer scaffolds, accepted repeated identical --capability values, rejected conflicting values, installed the scoped renderer, and returned extension doctor ok=true without a global renderer warning."
+  "2026-07-23T15:37:22.351Z",claude-code-agent,"Consolidated release-gate evidence: all owned local gates passed, including exact coverage, version policy/sync, secret scan, packed npx smoke, and 88-command package-first dogfood. The aggregate command stopped only at greptile-review because this branch is intentionally not committed yet (reported: no committed code changes to review against main); review convergence will run after push and is not being misclassified as a code/test failure."
+files[4]{path,scope,note}:
+  src/core/extensions/loader.ts,project,caller-owned fresh module graph snapshots
+  src/core/extensions/module-graph-snapshot.ts,project,fresh complete graph snapshot primitive
+  src/sdk/extension.ts,project,snapshot discovery option contract
+  tests/unit/extensions/extension-loader-fresh-graph.spec.ts,project,transitive ESM replacement regression
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-loader-fresh-graph.spec.ts,project,240
+  "pnpm test:coverage",project,300
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,fresh module graph verification contract
+close_reason: "Post-install activation now snapshots the complete extension directory into a fresh caller-owned module graph, preventing stale transitive ESM reuse; full coverage and reinstall proof pass."
 body: ""

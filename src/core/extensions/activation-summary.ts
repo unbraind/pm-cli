@@ -106,6 +106,12 @@ export interface ExtensionActivationSummary {
   service_overrides: ExtensionServiceName[];
   /** Output formats with a renderer override registered via `registerRenderer`. */
   renderer_overrides: OutputRendererFormat[];
+  /** Host-enforced ownership declared by scoped renderers. Omitted when every renderer is global. */
+  renderer_ownership?: Array<{
+    format: OutputRendererFormat;
+    commands: string[];
+    result_discriminator: boolean;
+  }>;
   /** Count of registered preflight overrides. The surface carries no per-entry identifier, so this is a `number` rather than `string[]` — the only numeric field in the summary. */
   preflight_overrides: number;
 }
@@ -176,6 +182,19 @@ export function describeExtensionActivation(
     registrations.relationship_kinds ?? [],
     (entry) => entry.definitions.map((definition) => definition.kind),
   );
+  const rendererOwnership = renderers.overrides
+    .filter(
+      (entry) =>
+        matches(entry.name) &&
+        ((entry.commands?.length ?? 0) > 0 ||
+          entry.resultDiscriminator !== undefined),
+    )
+    .map((entry) => ({
+      format: entry.format,
+      commands: [...(entry.commands ?? [])],
+      result_discriminator: entry.resultDiscriminator !== undefined,
+    }))
+    .sort((left, right) => left.format.localeCompare(right.format));
   return {
     capabilities: collectUsedExtensionCapabilities(activation, options),
     commands: collect(registrations.commands, (entry) => entry.command),
@@ -214,6 +233,9 @@ export function describeExtensionActivation(
     parser_overrides: collect(parsers.overrides, (entry) => entry.command),
     service_overrides: collect(services.overrides, (entry) => entry.service),
     renderer_overrides: collect(renderers.overrides, (entry) => entry.format),
+    ...(rendererOwnership.length > 0
+      ? { renderer_ownership: rendererOwnership }
+      : {}),
     preflight_overrides: preflight.overrides.filter((entry) =>
       matches(entry.name),
     ).length,

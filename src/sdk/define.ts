@@ -47,6 +47,7 @@ import type {
   ParserOverride,
   PreflightOverride,
   RendererOverride,
+  ScopedRendererOverrideDefinition,
   SchemaFieldDefinition,
   SchemaItemTypeDefinition,
   SchemaMigrationDefinition,
@@ -55,6 +56,59 @@ import type {
   VectorStoreAdapterDefinition,
 } from "../core/extensions/loader.js";
 import type { ProjectProfileDefinition } from "../core/profile/profile-presets.js";
+
+type ExactDefinition<TDefinition, TContract> = TDefinition &
+  Record<Exclude<keyof TDefinition, keyof TContract>, never>;
+
+type FlagAuthoringDefinition = Pick<
+  FlagDefinition,
+  | "long"
+  | "short"
+  | "value_name"
+  | "description"
+  | "required"
+  | "enabled"
+  | "visible"
+  | "value_type"
+  | "type"
+  | "list"
+  | "default"
+>;
+type ItemFieldAuthoringDefinition = Pick<
+  SchemaFieldDefinition,
+  "name" | "type" | "optional" | "default" | "values"
+>;
+type ItemTypeAuthoringDefinition = Pick<
+  SchemaItemTypeDefinition,
+  | "name"
+  | "folder"
+  | "aliases"
+  | "required_create_fields"
+  | "required_create_repeatables"
+  | "command_option_policies"
+  | "options"
+  | "description"
+  | "default_status"
+>;
+type MigrationAuthoringDefinition = Pick<
+  SchemaMigrationDefinition,
+  "id" | "description" | "status" | "mandatory" | "run"
+>;
+type SearchProviderAuthoringDefinition = Pick<
+  SearchProviderDefinition,
+  | "name"
+  | "query"
+  | "queryExpansion"
+  | "query_expansion"
+  | "rerank"
+  | "embedBatch"
+  | "embed_batch"
+  | "embed"
+>;
+type VectorStoreAdapterAuthoringDefinition = Pick<
+  VectorStoreAdapterDefinition,
+  "name" | "query" | "upsert" | "delete"
+>;
 
 /**
  * Type an extension's in-module manifest mirror (the `manifest` export / field).
@@ -112,7 +166,9 @@ export function defineCommand<TDefinition extends CommandDefinition>(
  * per-flag contract checking — `value_type`, `list`, and `default` included —
  * instead of validating a loosely-typed literal array all at once.
  */
-export function defineFlag<TFlag extends FlagDefinition>(flag: TFlag): TFlag {
+export function defineFlag<TFlag extends FlagAuthoringDefinition>(
+  flag: ExactDefinition<TFlag, FlagAuthoringDefinition>,
+): TFlag {
   return flag;
 }
 
@@ -122,8 +178,8 @@ export function defineFlag<TFlag extends FlagDefinition>(flag: TFlag): TFlag {
  * Preserves the literal `name`/`folder`/`aliases` so a project archetype's
  * domain types stay strongly typed where the definition is declared and reused.
  */
-export function defineItemType<TType extends SchemaItemTypeDefinition>(
-  type: TType,
+export function defineItemType<TType extends ItemTypeAuthoringDefinition>(
+  type: ExactDefinition<TType, ItemTypeAuthoringDefinition>,
 ): TType {
   return type;
 }
@@ -135,8 +191,8 @@ export function defineItemType<TType extends SchemaItemTypeDefinition>(
  * keeping the field's extra metadata (the contract carries an index signature)
  * intact.
  */
-export function defineItemField<TField extends SchemaFieldDefinition>(
-  field: TField,
+export function defineItemField<TField extends ItemFieldAuthoringDefinition>(
+  field: ExactDefinition<TField, ItemFieldAuthoringDefinition>,
 ): TField {
   return field;
 }
@@ -148,8 +204,8 @@ export function defineItemField<TField extends SchemaFieldDefinition>(
  * runner's context, so the same definition can be registered and later exercised
  * through `runRegisteredMigrationForTest`.
  */
-export function defineMigration<TMigration extends SchemaMigrationDefinition>(
-  migration: TMigration,
+export function defineMigration<TMigration extends MigrationAuthoringDefinition>(
+  migration: ExactDefinition<TMigration, MigrationAuthoringDefinition>,
 ): TMigration {
   return migration;
 }
@@ -162,8 +218,10 @@ export function defineMigration<TMigration extends SchemaMigrationDefinition>(
  * reusable in `runRegisteredSearchProviderForTest`.
  */
 export function defineSearchProvider<
-  TProvider extends SearchProviderDefinition,
->(provider: TProvider): TProvider {
+  TProvider extends SearchProviderAuthoringDefinition,
+>(
+  provider: ExactDefinition<TProvider, SearchProviderAuthoringDefinition>,
+): TProvider {
   return provider;
 }
 
@@ -175,8 +233,10 @@ export function defineSearchProvider<
  * definition it can drive through `runRegisteredVectorStoreAdapterForTest`.
  */
 export function defineVectorStoreAdapter<
-  TAdapter extends VectorStoreAdapterDefinition,
->(adapter: TAdapter): TAdapter {
+  TAdapter extends VectorStoreAdapterAuthoringDefinition,
+>(
+  adapter: ExactDefinition<TAdapter, VectorStoreAdapterAuthoringDefinition>,
+): TAdapter {
   return adapter;
 }
 
@@ -237,7 +297,18 @@ export function defineServiceOverride(
  */
 export function defineRendererOverride(
   renderer: RendererOverride,
-): RendererOverride {
+): RendererOverride;
+/**
+ * Type a scoped renderer definition while preserving its command/result
+ * ownership literals for declarative composition and static introspection.
+ */
+export function defineRendererOverride<
+  TDefinition extends ScopedRendererOverrideDefinition,
+>(renderer: ExactDefinition<TDefinition, ScopedRendererOverrideDefinition>): TDefinition;
+/** Implement the renderer authoring identity for callback and scoped definitions. */
+export function defineRendererOverride(
+  renderer: RendererOverride | ScopedRendererOverrideDefinition,
+): RendererOverride | ScopedRendererOverrideDefinition {
   return renderer;
 }
 

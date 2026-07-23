@@ -45,6 +45,7 @@ import type {
   ParserOverride,
   PreflightOverride,
   RendererOverride,
+  ScopedRendererOverrideDefinition,
   SchemaFieldDefinition,
   SchemaItemTypeDefinition,
   SchemaMigrationDefinition,
@@ -178,7 +179,12 @@ export interface ExtensionBlueprint {
   /** Parser overrides keyed by command name, registered via `api.registerParser(command, override)`. */
   parsers?: Record<string, ParserOverride>;
   /** Output renderer overrides keyed by format, registered via `api.registerRenderer(format, renderer)`. */
-  renderers?: Partial<Record<OutputRendererFormat, RendererOverride>>;
+  renderers?: Partial<
+    Record<
+      OutputRendererFormat,
+      RendererOverride | ScopedRendererOverrideDefinition
+    >
+  >;
   /** Service overrides keyed by service name, registered via `api.registerService(service, override)`. */
   services?: Partial<Record<ExtensionServiceName, ServiceOverride>>;
   /** Preflight overrides registered via `api.registerPreflight(override)`. */
@@ -257,8 +263,18 @@ function registerBlueprintCommandSurfaces(
   }
   for (const [format, renderer] of Object.entries(
     blueprint.renderers ?? {},
-  ) as Array<[OutputRendererFormat, RendererOverride]>) {
-    api.registerRenderer(format, renderer);
+  ) as Array<
+    [
+      OutputRendererFormat,
+      RendererOverride | ScopedRendererOverrideDefinition,
+    ]
+  >) {
+    if (typeof renderer === "function") {
+      api.registerRenderer(format, renderer);
+    } else {
+      const { run, ...ownership } = renderer;
+      api.registerRenderer(format, run, ownership);
+    }
   }
   for (const [service, override] of Object.entries(
     blueprint.services ?? {},
@@ -876,6 +892,39 @@ function collectBlueprintHookKinds(hooks: ExtensionBlueprintHooks): string[] {
   ).map(([, kind]) => kind);
 }
 
+function collectBlueprintRendererOwnership(
+  renderers: ExtensionBlueprint["renderers"],
+): Pick<ExtensionActivationSummary, "renderer_ownership"> {
+  const ownership = (
+    Object.entries(renderers ?? {}) as Array<
+      [
+        OutputRendererFormat,
+        RendererOverride | ScopedRendererOverrideDefinition,
+      ]
+    >
+  )
+    .filter(
+      ([, renderer]) =>
+        typeof renderer !== "function" &&
+        ((renderer.commands?.length ?? 0) > 0 ||
+          renderer.resultDiscriminator !== undefined),
+    )
+    .map(([format, renderer]) => {
+      const scoped = renderer as ScopedRendererOverrideDefinition;
+      return {
+        format,
+        commands: sortUnique(
+          (scoped.commands ?? []).map((command) =>
+            normalizeCommandName(command),
+          ),
+        ),
+        result_discriminator: scoped.resultDiscriminator !== undefined,
+      };
+    })
+    .sort((left, right) => left.format.localeCompare(right.format));
+  return ownership.length > 0 ? { renderer_ownership: ownership } : {};
+}
+
 function collectBlueprintSurfaceSummary(
   blueprint: ExtensionBlueprint,
   importers: ExtensionBlueprintImporter[],
@@ -894,6 +943,7 @@ function collectBlueprintSurfaceSummary(
   | "parser_overrides"
   | "service_overrides"
   | "renderer_overrides"
+  | "renderer_ownership"
   | "preflight_overrides"
 > {
   return {
@@ -948,6 +998,7 @@ function collectBlueprintSurfaceSummary(
         (format) => String(format).trim().toLowerCase() as OutputRendererFormat,
       ),
     ),
+    ...collectBlueprintRendererOwnership(blueprint.renderers),
     preflight_overrides: (blueprint.preflights ?? []).length,
   };
 }

@@ -2,18 +2,38 @@ id: pm-g072
 title: "Extension install: untrusted manifest dependency specs reach npm install unvalidated (arg injection all-OS; shell command injection on Windows)"
 description: "installNpmPackageRuntimeDependencies() reads the package.json of a freshly npm-pack'd third-party extension (fully attacker-controlled) and builds install specs as `${name}@${version.trim()}` from arbitrary object keys/values in dependencies/optionalDependencies/peerDependencies (runtimeDependencyInstallSpecs, ~L767). These specs are passed to runNpmCommand -> execFile('npm', ['install','--ignore-scripts',...,...specs]). No validation exists: line 409's guard is only on the install-SOURCE spec, not on manifest dependency names/versions.\n\nTwo vectors, both requiring only that a user runs 'pm install <malicious-extension>':\n1. Argument injection (ALL platforms): a dependency KEY beginning with '-'/'--' (e.g. {\"--foo\":\"1\"} -> spec `--foo@1`) is appended after --ignore-scripts and parsed by npm's lenient nopt as an option, letting a manifest inject npm flags into a privileged install and probe for a way to re-enable lifecycle scripts / redirect --registry.\n2. Command injection (WINDOWS): shouldRunNpmCommandInShell() returns true on win32, so execFile runs with shell:true and concatenates argv into a shell command line. An unquoted version value such as '1.0.0 & <cmd>' yields shell command execution during pm install.\n\nThis defeats the deliberate --ignore-scripts hardening the authors added precisely because extension installs are untrusted. Fix = validate names/versions against npm grammar, reject leading-dash names and metachar versions, and insert a '--' end-of-options separator before the spec list (mirrors the passthrough contract pattern shipped in pm-albl). Class-relate to the spawn-shell-true Semgrep batch (pm-ngjd) but note this one is untrusted-INPUT-driven, not a static command string."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: argument-injection,command-injection,extensions,security,windows
 created_at: "2026-07-14T19:07:23.786Z"
-updated_at: "2026-07-14T19:07:23.786Z"
+updated_at: "2026-07-23T15:37:24.909Z"
+closed_at: "2026-07-23T15:37:24.298Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "runtimeDependencyInstallSpecs (src/cli/commands/extension/install-sources.ts) validates each dependency name against the npm package-name grammar and rejects/skips any name beginning with '-' so a manifest key cannot become an npm CLI flag; version values are validated against the npm version/range/dist-tag/url grammar and rejected if they contain shell metacharacters; a '--' end-of-options separator precedes the spec list passed to npm install so no spec can be parsed as a flag on any platform; regression specs cover a leading-dash dependency name, a version containing shell metacharacters, and confirm --ignore-scripts cannot be overridden by manifest input on both the win32 shell:true path and the POSIX execFile path"
 parent: pm-qwoy
 risk: high
 confidence: high
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-6ixn,related,"2026-07-14T19:07:23.786Z",null,null
   pm-ngjd,related,"2026-07-14T19:07:23.786Z",null,null
+  pm-4v4c,related,"2026-07-23T14:58:59.369Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-07-23T14:21:38.052Z",claude-code-agent,"Implementation start 2026-07-23: selected after live 1,922-item all-status inventory, full canonical metadata/history review, and GitHub/release/security reconciliation. This item is actively edited in one coherent SDK/package authoring wave spanning scaffold contracts, flag arity, install validation, activation freshness, schema storage, renderer ownership, and public documentation; no duplicate item was created."
+  "2026-07-23T14:59:19.368Z",claude-code-agent,"Implementation evidence: registry dependency names and versions now pass npm-package-arg validation, reject option-leading and shell-control input, and are installed behind npm's explicit -- option fence. The subprocess seam is injected for deterministic POSIX/Windows shell tests; focused security tests passed."
+  "2026-07-23T15:30:13.062Z",claude-code-agent,"Verification evidence (2026-07-23): full instrumented repository suite passed 347 files / 6,146 tests with exact 100% statements (41,920/41,920), branches (29,630/29,630), functions (8,532/8,532), and lines (40,744/40,744). pnpm lint passed ESLint, zero jscpd clones, 100% source/export/member docstrings, package-boundary audit, and token-budget gate. pnpm security:scan found no credential-like tracked content; pnpm audit --prod found no known vulnerabilities. Packed artifact proof passed scripts/smoke-npx-from-pack.mjs (version 2026.7.23, 15 packages). A separate fresh /tmp consumer installed the npm tarball, initialized an isolated tracker, generated schema and renderer scaffolds, accepted repeated identical --capability values, rejected conflicting values, installed the scoped renderer, and returned extension doctor ok=true without a global renderer warning."
+  "2026-07-23T15:37:20.646Z",claude-code-agent,"Consolidated release-gate evidence: all owned local gates passed, including exact coverage, version policy/sync, secret scan, packed npx smoke, and 88-command package-first dogfood. The aggregate command stopped only at greptile-review because this branch is intentionally not committed yet (reported: no committed code changes to review against main); review convergence will run after push and is not being misclassified as a code/test failure."
+learnings[1]{created_at,author,text}:
+  "2026-07-23T14:59:20.098Z",claude-code-agent,"Treat caller-controlled package specs as structured npm arguments, not shell text: validate with npm's parser and still fence argv with -- because these controls protect different boundaries."
+files[4]{path,scope,note}:
+  package.json,project,npm package argument runtime parser
+  pnpm-lock.yaml,project,locked package argument parser
+  src/sdk/extension/install-sources.ts,project,validated dependency specs and npm option fence
+  tests/unit/extensions/extension-install-security.spec.ts,project,dependency spec injection regression
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-security.spec.ts,project,240
+  "pnpm test:coverage",project,300
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,install trust-boundary behavior
+close_reason: "Validated untrusted runtime dependency names/specs before npm execution, preserved semver ranges, fenced argv with --, and proved Linux/Windows runner boundaries plus full coverage and packed acceptance."
 body: ""

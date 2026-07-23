@@ -477,6 +477,19 @@ export type CommandOverride = (context: CommandOverrideContext) => unknown;
 export type RendererOverride = (
   context: RendererOverrideContext,
 ) => string | null | undefined;
+/** Host-enforced ownership metadata that limits where a renderer override may run. */
+export interface RendererOverrideOwnership {
+  /** Normalized command paths this renderer owns. An unrelated command never reaches the callback. */
+  commands?: string[];
+  /** Optional result predicate evaluated before the renderer callback. A false result preserves native rendering. */
+  resultDiscriminator?: (result: unknown) => boolean;
+}
+/** Declarative renderer definition combining a callback with host-enforced ownership. */
+export interface ScopedRendererOverrideDefinition
+  extends RendererOverrideOwnership {
+  /** Renderer callback invoked only after every declared ownership predicate matches. */
+  run: RendererOverride;
+}
 /** Restricts command handler values accepted by command, SDK, and storage contracts. */
 export type CommandHandler = (context: CommandHandlerContext) => unknown;
 /** Restricts parser override values accepted by command, SDK, and storage contracts. */
@@ -772,6 +785,10 @@ export interface SchemaFieldDefinition {
   type: string;
   /** Value that configures or reports optional for this contract. */
   optional?: boolean;
+  /** Default metadata value applied when the field is absent. */
+  default?: unknown;
+  /** Optional allow-list of accepted metadata values. */
+  values?: unknown[];
   [key: string]: unknown;
 }
 
@@ -811,6 +828,10 @@ export interface SchemaItemTypeDefinition {
   folder?: string;
   /** Value that configures or reports aliases for this contract. */
   aliases?: string[];
+  /** Human-readable description of the contributed item type. */
+  description?: string;
+  /** Initial status assigned when the contributed item type is created. */
+  default_status?: string;
   /** Value that configures or reports required create fields for this contract. */
   required_create_fields?: string[];
   /** Value that configures or reports required create repeatables for this contract. */
@@ -1170,6 +1191,10 @@ export interface RegisteredExtensionRendererOverride {
   format: OutputRendererFormat;
   /** Value that configures or reports run for this contract. */
   run: RendererOverride;
+  /** Normalized command paths owned by this renderer. */
+  commands?: string[];
+  /** Optional result predicate enforced by the host before invoking the renderer. */
+  resultDiscriminator?: (result: unknown) => boolean;
 }
 
 /** Documents the extension command registry payload exchanged by command, SDK, and package integrations. */
@@ -1449,6 +1474,7 @@ export interface ExtensionApi {
   registerRenderer(
     format: OutputRendererFormat,
     renderer: RendererOverride,
+    ownership?: RendererOverrideOwnership,
   ): void;
   /** Value that configures or reports register importer for this contract. */
   registerImporter(
@@ -1616,6 +1642,8 @@ export interface DiscoverExtensionsOptions {
   cache_bust?: boolean;
   /** Optional import-stage filter. Discovery still reports the full effective set, but `loadExtensions` imports only entries accepted by this predicate. */
   extensionFilter?: (extension: EffectiveExtension) => boolean;
+  /** Optional temporary root where each extension is copied before import, giving reinstall verification a fresh absolute module graph rather than cache-busting only the entry module URL. The caller owns cleanup after activation completes. */
+  module_graph_snapshot_root?: string;
 }
 
 /** Documents the activatable extension payload exchanged by command, SDK, and package integrations. */

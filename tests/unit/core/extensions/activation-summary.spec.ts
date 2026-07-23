@@ -207,6 +207,44 @@ describe("describeExtensionActivation", () => {
     expect(summary.preflight_overrides).toBe(0);
   });
 
+  it("sorts scoped renderer ownership and preserves discriminator-only owners", async () => {
+    const activation = await activate([
+      {
+        name: "renderer-owner",
+        capabilities: ["renderers"],
+        activate: (api) => {
+          api.registerRenderer("toon", () => "toon", {
+            commands: ["zeta render"],
+          });
+          api.registerRenderer("json", () => "json", {
+            resultDiscriminator: () => true,
+          });
+        },
+      },
+    ]);
+    const discriminatorOnly = activation.renderers.overrides.find(
+      (entry) => entry.format === "json",
+    );
+    expect(discriminatorOnly).toBeDefined();
+    if (discriminatorOnly) {
+      // Activation payloads persisted before renderer command ownership do not
+      // carry the optional commands field; summary compatibility treats it as empty.
+      delete discriminatorOnly.commands;
+    }
+    expect(describeExtensionActivation(activation).renderer_ownership).toEqual([
+      {
+        format: "json",
+        commands: [],
+        result_discriminator: true,
+      },
+      {
+        format: "toon",
+        commands: ["zeta render"],
+        result_discriminator: false,
+      },
+    ]);
+  });
+
   it("re-exports the same function from both SDK subpaths", () => {
     // The @unbrained/pm-cli/sdk barrel and the /sdk/testing subpath both surface
     // the identical core implementation, not a re-wrapped copy.

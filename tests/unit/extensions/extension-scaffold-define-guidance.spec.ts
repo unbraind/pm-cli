@@ -163,14 +163,13 @@ describe("extension scaffold define builder guidance", () => {
     // A renderer override is global, but the starter still registers the `ping`
     // command, so it declares activation.commands for lazy command dispatch.
     expect(manifest.activation?.commands).toEqual(["starter view kit ping"]);
-    // The override scopes itself to its own command and passes other output
-    // through (returns null) so installing it never disrupts unrelated commands.
+    // Host-enforced ownership prevents unrelated output from reaching the
+    // callback, so installing it never disrupts unrelated commands.
     expect(entry).toContain('api.registerRenderer("toon", (context) => {');
-    expect(entry).toContain('if (context.command !== "starter view kit ping") {');
-    expect(entry).toContain("return null;");
+    expect(entry).toContain('}, { commands: ["starter view kit ping"] });');
     expect(entry).toContain('return "view-kit: " + JSON.stringify(context.result);');
     expect(sampleTest).toContain("  createExtensionTestHarness,");
-    expect(sampleTest).toContain('const override = ext.assertRendererOverride({ format: "toon", extensionName: "view-kit" });');
+    expect(sampleTest).toContain('const override = ext.assertRendererOverride({ name: "toon", extensionName: "view-kit" });');
     expect(sampleTest).toContain("const rendered = await ext.runRendererOverride({");
     expect(sampleTest).toContain("assert.equal(passthrough.overridden, false);");
     expect(sampleTest).toContain("} finally {");
@@ -184,8 +183,9 @@ describe("extension scaffold define builder guidance", () => {
     expect(readme).toContain(
       'import { defineCommand, defineRendererOverride } from "@unbrained/pm-cli/sdk";',
     );
-    expect(readme).toContain("export const toonRenderer = defineRendererOverride((context) => {");
-    expect(readme).toContain('api.registerRenderer("toon", toonRenderer);');
+    expect(readme).toContain("export const toonRenderer = defineRendererOverride({");
+    expect(readme).toContain('commands: ["starter view kit ping"]');
+    expect(readme).toContain('api.registerRenderer("toon", toonRenderer.run, toonRenderer);');
     expect(readme).toContain("## Output Renderer");
     expect(readme).toContain("## Lazy Activation");
   });
@@ -214,7 +214,7 @@ describe("extension scaffold define builder guidance", () => {
     expect(entry).toContain("options.upper = true;");
     expect(entry).toContain("return { options };");
     expect(sampleTest).toContain("  createExtensionTestHarness,");
-    expect(sampleTest).toContain('ext.assertParserOverride({ command: "flag kit ping", extensionName: "flag-kit" });');
+    expect(sampleTest).toContain('ext.assertParserOverride({ name: "flag kit ping", extensionName: "flag-kit" });');
     expect(sampleTest).toContain("const result = await ext.runParserOverride({");
     expect(sampleTest).toContain("assert.deepEqual(result.context.options, { upper: true });");
     // The sample test feeds the rewritten options into the command handler to
@@ -294,7 +294,7 @@ describe("extension scaffold define builder guidance", () => {
     expect(entry).toContain("return context.payload;");
     expect(entry).toContain('return { rendered_by: "svc-kit", payload: context.payload };');
     expect(sampleTest).toContain("  createExtensionTestHarness,");
-    expect(sampleTest).toContain('ext.assertServiceOverride({ service: "output_format", extensionName: "svc-kit" });');
+    expect(sampleTest).toContain('ext.assertServiceOverride({ name: "output_format", extensionName: "svc-kit" });');
     expect(sampleTest).toContain("const handled = await ext.runServiceOverride({");
     expect(sampleTest).toContain("assert.equal(passthrough.handled, false);");
     expect(sampleTest).toContain("} finally {");
@@ -353,6 +353,7 @@ describe("extension scaffold define builder guidance", () => {
     // so index.test.ts can import the sibling ./index.ts entry with its real extension.
     expect(tsconfig.compilerOptions?.noEmit).toBe(true);
     expect(tsconfig.compilerOptions?.allowImportingTsExtensions).toBe(true);
+    expect(tsconfig.compilerOptions?.resolveJsonModule).toBe(true);
     expect(tsconfig.compilerOptions?.outDir).toBeUndefined();
     // Recursive include so subdirectory modules type-check as the package grows.
     expect(tsconfig.include).toEqual(["**/*.ts"]);
@@ -428,16 +429,18 @@ describe("declarative composeExtension package scaffold", () => {
     // The two capstones the declarative loop unlocks: author-time preflight over
     // the exported blueprint, and the ergonomic runtime harness over the module.
     expect(sampleTest).toContain(
-      'import { assertExtensionDeactivated, assertExtensionPreflight, createExtensionTestHarness } from "@unbrained/pm-cli/sdk/testing";',
+      'import { assertExtensionDeactivated, assertExtensionManifestMatchesBlueprint, assertExtensionPreflight, createExtensionTestHarness } from "@unbrained/pm-cli/sdk/testing";',
     );
     expect(sampleTest).toContain('import extension, { blueprint } from "./index.ts";');
+    expect(sampleTest).toContain('import manifest from "./manifest.json" with { type: "json" };');
     expect(sampleTest).toContain("const report = assertExtensionPreflight(blueprint, {");
+    expect(sampleTest).toContain("assertExtensionManifestMatchesBlueprint(manifest, blueprint);");
     // The synthesized manifest + derived capabilities are asserted, proving the
     // blueprint never drifts from manifest.json's capabilities.
     expect(sampleTest).toContain('assert.deepEqual(report.capabilities, ["commands"]);');
     expect(sampleTest).toContain('assert.deepEqual(report.manifest?.capabilities, ["commands"]);');
     expect(sampleTest).toContain("const ext = await createExtensionTestHarness(extension, {");
-    expect(sampleTest).toContain('const registered = ext.assertCommandContract({ command: "kit ping" });');
+    expect(sampleTest).toContain('const registered = ext.assertCommandContract({ name: "kit ping" });');
     expect(sampleTest).toContain('const invocation = await ext.runCommand({ command: "kit ping" });');
     expect(sampleTest).toContain("  let deactivated = false;");
     expect(sampleTest).toContain("  try {");
@@ -557,7 +560,7 @@ describe("declarative composeExtension package scaffold", () => {
       // A profile registration derives the `schema` capability (it is a
       // schema+config bundle), so the sorted set matches the schema starter.
       testMarkers: [
-        'const { profile } = ext.assertProfile({ profile: "kit", extensionName: "kit" });',
+        'const { profile } = ext.assertProfile({ name: "kit", extensionName: "kit" });',
         "assert.equal(profile.types.length, 1);",
       ],
       derivedCapabilities: '["commands","schema"]',
@@ -567,7 +570,10 @@ describe("declarative composeExtension package scaffold", () => {
       capability: "renderers",
       builderImports: ["defineRendererOverride"],
       blueprintFields: ["  renderers: { toon: toonRenderer },"],
-      entrypointMarkers: ["export const toonRenderer = defineRendererOverride((context) => {"],
+      entrypointMarkers: [
+        "export const toonRenderer = defineRendererOverride({",
+        'commands: ["kit ping"]',
+      ],
       testMarkers: ["const rendered = await ext.runRendererOverride({", "assert.equal(rendered.overridden, true);"],
       derivedCapabilities: '["commands","renderers"]',
       surfacePhrase: "starter command and toon renderer override",

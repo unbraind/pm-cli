@@ -48,6 +48,35 @@ type ExtensionSubcommandAction =
 
 type LifecycleCommandVocabulary = "extension" | "package";
 
+/** Normalize the repeatable scaffold capability selector without losing conflicting intent. */
+function resolveScaffoldCapability(
+  options: Record<string, unknown>,
+): string | undefined {
+  const rawCapability = options.capability;
+  const values =
+    typeof rawCapability === "string"
+      ? [rawCapability]
+      : Array.isArray(rawCapability)
+        ? rawCapability.filter(
+            (entry): entry is string => typeof entry === "string",
+          )
+        : [];
+  const capabilities = [
+    ...new Set(
+      values
+        .map((capability) => capability.trim().toLowerCase())
+        .filter((capability) => capability.length > 0),
+    ),
+  ];
+  if (capabilities.length > 1) {
+    throw new PmCliError(
+      `Multiple scaffold capabilities cannot be combined yet: ${capabilities.join(", ")}. Choose one capability per scaffold.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return capabilities[0];
+}
+
 function normalizeExtensionOptions(
   options: Record<string, unknown>,
   forcedAction?: ExtensionSubcommandAction,
@@ -89,7 +118,7 @@ function normalizeExtensionOptions(
     gh: readString("gh"),
     github: readString("github"),
     ref: readString("ref"),
-    capability: readString("capability"),
+    capability: resolveScaffoldCapability(options),
     declarative: readBoolean("declarative"),
     fields: readString("fields"),
     detail: readString("detail"),
@@ -471,6 +500,7 @@ function registerLifecycleCommand(
     .option(
       "--capability <kind>",
       `Capability the --init starter targets (${SCAFFOLD_CAPABILITIES.join("|")}; default commands)`,
+      collect,
     )
     .option(
       "--install",
@@ -586,6 +616,7 @@ function registerLifecycleCommand(
     .option(
       "--capability <kind>",
       `Capability the starter targets (${SCAFFOLD_CAPABILITIES.join("|")}; default commands)`,
+      collect,
     )
     .description(
       vocabulary === "package"
@@ -1026,7 +1057,12 @@ async function runConfigCommandAction(
   }
 }
 
-/** Implements register setup commands for the public runtime surface of this module. */
+/** Internal setup helpers exposed only for deterministic unit coverage. */
+export const _testOnlyRegisterSetup = {
+  normalizeExtensionOptions,
+};
+
+/** Register initialization, configuration, package, and extension setup commands. */
 export function registerSetupCommands(program: Command): void {
   program
     .command("init")

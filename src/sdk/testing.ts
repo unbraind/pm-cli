@@ -393,10 +393,26 @@ export interface ExtensionDeactivationExpectation {
   failed?: number;
 }
 
-/** Documents the registered command contract expectation payload exchanged by command, SDK, and package integrations. */
-export interface RegisteredCommandContractExpectation {
-  /** Value that configures or reports command for this contract. */
-  command: string;
+type NamedRegistrationExpectation<
+  TLegacyKey extends string,
+  TValue,
+  TDetails extends object = Record<never, never>,
+> = TDetails &
+  (
+    | ({ name: TValue } & Partial<Record<TLegacyKey, TValue>>)
+    | ({ name?: TValue } & Record<TLegacyKey, TValue>)
+  );
+
+function registeredExpectationName(
+  expectation: { name?: string },
+  legacyValue: string | undefined,
+): string {
+  return expectation.name ?? legacyValue ?? "";
+}
+
+/** Documents the registered command contract expectation payload exchanged by command, SDK, and package integrations. `name` is canonical; `command` remains a backward-compatible alias. */
+export type RegisteredCommandContractExpectation =
+  NamedRegistrationExpectation<"command", string, {
   /** Value that configures or reports action for this contract. */
   action?: string;
   /** Value that configures or reports extension name for this contract. */
@@ -405,7 +421,7 @@ export interface RegisteredCommandContractExpectation {
   arguments?: string[];
   /** Value that configures or reports flags for this contract. */
   flags?: string[];
-}
+  }>;
 
 /** Documents the registered command contract assertion payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredCommandContractAssertion {
@@ -416,14 +432,16 @@ export interface RegisteredCommandContractAssertion {
 }
 
 /** Documents the registered flags expectation payload exchanged by command, SDK, and package integrations. */
-export interface RegisteredFlagsExpectation {
-  /** Value that configures or reports target command for this contract. */
-  targetCommand: string;
+export type RegisteredFlagsExpectation = NamedRegistrationExpectation<
+  "targetCommand",
+  string,
+  {
   /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
   /** Value that configures or reports flags for this contract. */
   flags?: string[];
-}
+  }
+>;
 
 /** Public hook lifecycle kinds an extension can register through `api.hooks.*`. */
 export type RegisteredHookKind =
@@ -453,46 +471,53 @@ export interface RegisteredHookExpectation {
 }
 
 /** Documents the registered search provider expectation payload exchanged by command, SDK, and package integrations. */
-export interface RegisteredSearchProviderExpectation {
-  /** Value that configures or reports provider for this contract. */
-  provider: string;
+export type RegisteredSearchProviderExpectation = NamedRegistrationExpectation<
+  "provider",
+  string,
+  {
   /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
-}
+  }
+>;
 
 /** Documents the registered vector store adapter expectation payload exchanged by command, SDK, and package integrations. */
-export interface RegisteredVectorStoreAdapterExpectation {
-  /** Value that configures or reports adapter for this contract. */
-  adapter: string;
+export type RegisteredVectorStoreAdapterExpectation =
+  NamedRegistrationExpectation<"adapter", string, {
   /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
-}
+  }>;
 
 /** Documents the registered importer expectation payload exchanged by command, SDK, and package integrations. */
-export interface RegisteredImporterExpectation {
-  /** Value that configures or reports importer for this contract. */
-  importer: string;
+export type RegisteredImporterExpectation = NamedRegistrationExpectation<
+  "importer",
+  string,
+  {
   /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
-}
+  }
+>;
 
 /** Documents the registered exporter expectation payload exchanged by command, SDK, and package integrations. */
-export interface RegisteredExporterExpectation {
-  /** Value that configures or reports exporter for this contract. */
-  exporter: string;
+export type RegisteredExporterExpectation = NamedRegistrationExpectation<
+  "exporter",
+  string,
+  {
   /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
-}
+  }
+>;
 
 /** Documents the registered item field expectation payload exchanged by command, SDK, and package integrations. */
-export interface RegisteredItemFieldExpectation {
-  /** Value that configures or reports field for this contract. */
-  field: string;
+export type RegisteredItemFieldExpectation = NamedRegistrationExpectation<
+  "field",
+  string,
+  {
   /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
   /** Schema type that determines the shape and validation rules for this value. */
   type?: SchemaFieldDefinition["type"];
-}
+  }
+>;
 
 /** Documents the registered item field assertion payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredItemFieldAssertion {
@@ -503,14 +528,16 @@ export interface RegisteredItemFieldAssertion {
 }
 
 /** Documents the registered item type expectation payload exchanged by command, SDK, and package integrations. */
-export interface RegisteredItemTypeExpectation {
-  /** Schema type that determines the shape and validation rules for this value. */
-  itemType: string;
+export type RegisteredItemTypeExpectation = NamedRegistrationExpectation<
+  "itemType",
+  string,
+  {
   /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
   /** Value that configures or reports folder for this contract. */
   folder?: string;
-}
+  }
+>;
 
 /** Documents the registered item type assertion payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredItemTypeAssertion {
@@ -521,20 +548,18 @@ export interface RegisteredItemTypeAssertion {
 }
 
 /** Documents the registered command override expectation payload exchanged by command, SDK, and package integrations. */
-export interface RegisteredCommandOverrideExpectation {
-  /** Value that configures or reports command for this contract. */
-  command: string;
+export type RegisteredCommandOverrideExpectation =
+  NamedRegistrationExpectation<"command", string, {
   /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
-}
+  }>;
 
 /** Documents the registered parser override expectation payload exchanged by command, SDK, and package integrations. */
-export interface RegisteredParserOverrideExpectation {
-  /** Value that configures or reports command for this contract. */
-  command: string;
+export type RegisteredParserOverrideExpectation =
+  NamedRegistrationExpectation<"command", string, {
   /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
-}
+  }>;
 
 /** Documents the registered preflight override expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredPreflightOverrideExpectation {
@@ -543,38 +568,40 @@ export interface RegisteredPreflightOverrideExpectation {
 }
 
 /** Documents the registered renderer override expectation payload exchanged by command, SDK, and package integrations. */
-export interface RegisteredRendererOverrideExpectation {
-  /** Value that configures or reports format for this contract. */
-  format: OutputRendererFormat;
+export type RegisteredRendererOverrideExpectation =
+  NamedRegistrationExpectation<"format", OutputRendererFormat, {
   /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
-}
+  }>;
 
 /** Documents the registered service override expectation payload exchanged by command, SDK, and package integrations. */
-export interface RegisteredServiceOverrideExpectation {
-  /** Value that configures or reports service for this contract. */
-  service: ExtensionServiceName;
+export type RegisteredServiceOverrideExpectation =
+  NamedRegistrationExpectation<"service", ExtensionServiceName, {
   /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
-}
+  }>;
 
 /** Documents the registered migration expectation payload exchanged by command, SDK, and package integrations. */
-export interface RegisteredMigrationExpectation {
-  /** Value that configures or reports migration for this contract. */
-  migration: string;
+export type RegisteredMigrationExpectation = NamedRegistrationExpectation<
+  "migration",
+  string,
+  {
   /** Value that configures or reports extension name for this contract. */
   extensionName?: string;
   /** Value that configures or reports mandatory for this contract. */
   mandatory?: boolean;
-}
+  }
+>;
 
 /** Documents the registered project-profile expectation payload exchanged by command, SDK, and package integrations. */
-export interface RegisteredProfileExpectation {
-  /** Profile name to assert is registered (case-insensitive). */
-  profile: string;
+export type RegisteredProfileExpectation = NamedRegistrationExpectation<
+  "profile",
+  string,
+  {
   /** Restrict the match to a single extension when several are active. */
   extensionName?: string;
-}
+  }
+>;
 
 /** Documents the registered project-profile assertion payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredProfileAssertion {
@@ -1443,7 +1470,9 @@ export function assertRegisteredCommandContract(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredCommandContractExpectation,
 ): RegisteredCommandContractAssertion {
-  const expectedCommand = normalizeSdkCommandName(expectation.command);
+  const expectedCommand = normalizeSdkCommandName(
+    registeredExpectationName(expectation, expectation.command),
+  );
   if (expectedCommand.length === 0) {
     throw new Error("Expected command name must be a non-empty string");
   }
@@ -1526,7 +1555,9 @@ export function assertRegisteredFlags(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredFlagsExpectation,
 ): RegisteredExtensionFlagDefinitions {
-  const expectedCommand = normalizeSdkCommandName(expectation.targetCommand);
+  const expectedCommand = normalizeSdkCommandName(
+    registeredExpectationName(expectation, expectation.targetCommand),
+  );
   if (expectedCommand.length === 0) {
     throw new Error("Expected target command name must be a non-empty string");
   }
@@ -1623,7 +1654,9 @@ export function assertRegisteredSearchProvider(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredSearchProviderExpectation,
 ): RegisteredExtensionSearchProvider {
-  const expectedProvider = normalizeSdkIdentifier(expectation.provider);
+  const expectedProvider = normalizeSdkIdentifier(
+    registeredExpectationName(expectation, expectation.provider),
+  );
   if (expectedProvider.length === 0) {
     throw new Error("Expected search provider name must be a non-empty string");
   }
@@ -1654,7 +1687,9 @@ export function assertRegisteredVectorStoreAdapter(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredVectorStoreAdapterExpectation,
 ): RegisteredExtensionVectorStoreAdapter {
-  const expectedAdapter = normalizeSdkIdentifier(expectation.adapter);
+  const expectedAdapter = normalizeSdkIdentifier(
+    registeredExpectationName(expectation, expectation.adapter),
+  );
   if (expectedAdapter.length === 0) {
     throw new Error(
       "Expected vector store adapter name must be a non-empty string",
@@ -1687,7 +1722,9 @@ export function assertRegisteredImporter(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredImporterExpectation,
 ): RegisteredExtensionImporter {
-  const expectedImporter = normalizeSdkIdentifier(expectation.importer);
+  const expectedImporter = normalizeSdkIdentifier(
+    registeredExpectationName(expectation, expectation.importer),
+  );
   if (expectedImporter.length === 0) {
     throw new Error("Expected importer name must be a non-empty string");
   }
@@ -1717,7 +1754,9 @@ export function assertRegisteredExporter(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredExporterExpectation,
 ): RegisteredExtensionExporter {
-  const expectedExporter = normalizeSdkIdentifier(expectation.exporter);
+  const expectedExporter = normalizeSdkIdentifier(
+    registeredExpectationName(expectation, expectation.exporter),
+  );
   if (expectedExporter.length === 0) {
     throw new Error("Expected exporter name must be a non-empty string");
   }
@@ -1747,7 +1786,9 @@ export function assertRegisteredItemField(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredItemFieldExpectation,
 ): RegisteredItemFieldAssertion {
-  const expectedField = normalizeSdkIdentifier(expectation.field);
+  const expectedField = normalizeSdkIdentifier(
+    registeredExpectationName(expectation, expectation.field),
+  );
   if (expectedField.length === 0) {
     throw new Error("Expected item field name must be a non-empty string");
   }
@@ -1794,7 +1835,9 @@ export function assertRegisteredItemType(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredItemTypeExpectation,
 ): RegisteredItemTypeAssertion {
-  const expectedType = normalizeSdkIdentifier(expectation.itemType);
+  const expectedType = normalizeSdkIdentifier(
+    registeredExpectationName(expectation, expectation.itemType),
+  );
   if (expectedType.length === 0) {
     throw new Error("Expected item type name must be a non-empty string");
   }
@@ -1853,7 +1896,9 @@ export function assertRegisteredProfile(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredProfileExpectation,
 ): RegisteredProfileAssertion {
-  const expectedProfile = normalizeSdkProfileMatchKey(expectation.profile);
+  const expectedProfile = normalizeSdkProfileMatchKey(
+    registeredExpectationName(expectation, expectation.profile),
+  );
   if (expectedProfile.length === 0) {
     throw new Error("Expected profile name must be a non-empty string");
   }
@@ -1895,7 +1940,9 @@ export function assertRegisteredCommandOverride(
   commands: ExtensionCommandRegistry,
   expectation: RegisteredCommandOverrideExpectation,
 ): RegisteredExtensionCommandOverride {
-  const expectedCommand = normalizeSdkCommandName(expectation.command);
+  const expectedCommand = normalizeSdkCommandName(
+    registeredExpectationName(expectation, expectation.command),
+  );
   if (expectedCommand.length === 0) {
     throw new Error("Expected command name must be a non-empty string");
   }
@@ -1933,7 +1980,9 @@ export function assertRegisteredParserOverride(
   parsers: ExtensionParserRegistry,
   expectation: RegisteredParserOverrideExpectation,
 ): RegisteredExtensionParserOverride {
-  const expectedCommand = normalizeSdkCommandName(expectation.command);
+  const expectedCommand = normalizeSdkCommandName(
+    registeredExpectationName(expectation, expectation.command),
+  );
   if (expectedCommand.length === 0) {
     throw new Error("Expected command name must be a non-empty string");
   }
@@ -2002,7 +2051,9 @@ export function assertRegisteredRendererOverride(
   renderers: ExtensionRendererRegistry,
   expectation: RegisteredRendererOverrideExpectation,
 ): RegisteredExtensionRendererOverride {
-  const expectedFormat = normalizeSdkIdentifier(expectation.format);
+  const expectedFormat = normalizeSdkIdentifier(
+    registeredExpectationName(expectation, expectation.format),
+  );
   if (expectedFormat.length === 0) {
     throw new Error("Expected renderer format must be a non-empty string");
   }
@@ -2040,7 +2091,9 @@ export function assertRegisteredServiceOverride(
   services: ExtensionServiceRegistry,
   expectation: RegisteredServiceOverrideExpectation,
 ): RegisteredExtensionServiceOverride {
-  const expectedService = normalizeSdkIdentifier(expectation.service);
+  const expectedService = normalizeSdkIdentifier(
+    registeredExpectationName(expectation, expectation.service),
+  );
   if (expectedService.length === 0) {
     throw new Error("Expected service name must be a non-empty string");
   }
@@ -2077,7 +2130,9 @@ export function assertRegisteredMigration(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredMigrationExpectation,
 ): RegisteredExtensionSchemaMigrationDefinition {
-  const expectedMigration = normalizeSdkIdentifier(expectation.migration);
+  const expectedMigration = normalizeSdkIdentifier(
+    registeredExpectationName(expectation, expectation.migration),
+  );
   if (expectedMigration.length === 0) {
     throw new Error("Expected migration id must be a non-empty string");
   }

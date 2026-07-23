@@ -4,6 +4,7 @@
  * Implements the pm extension command surface and its agent-facing runtime behavior.
  */
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import {
   activateExtensions,
@@ -1356,6 +1357,9 @@ const probeRuntimeCommandPathsForInstall = (
 }> => {
   return extensionRuntimeProbeQueue.enqueue(async () => {
     const originalPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    const moduleGraphSnapshotRoot = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-extension-module-graph-"),
+    );
     process.env.PM_CLI_PACKAGE_ROOT = resolvePmPackageRootFromModule(
       import.meta.url,
       ["../.."],
@@ -1368,6 +1372,7 @@ const probeRuntimeCommandPathsForInstall = (
         noExtensions: global.noExtensions === true,
         reload_token: nextExtensionReloadToken(),
         cache_bust: true,
+        module_graph_snapshot_root: moduleGraphSnapshotRoot,
       });
       const activationResult = await activateExtensions({
         ...loadResult,
@@ -1394,6 +1399,7 @@ const probeRuntimeCommandPathsForInstall = (
         item_type_registrations: activationResult.registrations.item_types,
       };
     } finally {
+      await fs.rm(moduleGraphSnapshotRoot, { recursive: true, force: true });
       if (originalPackageRoot === undefined) {
         delete process.env.PM_CLI_PACKAGE_ROOT;
       } else {
@@ -1598,6 +1604,12 @@ const collectGlobalOutputOverrideDoctorWarnings = (
     );
   }
   for (const entry of activationResult.renderers.overrides) {
+    if (
+      (entry.commands?.length ?? 0) > 0 ||
+      entry.resultDiscriminator !== undefined
+    ) {
+      continue;
+    }
     warnings.push(
       `extension_output_renderer_override_global:${entry.format}:${entry.layer}:${entry.name}`,
     );
@@ -2325,6 +2337,7 @@ const buildInstalledExtensionActivation = (
       registered_commands: commandSummary.command_paths,
       registered_actions: commandSummary.action_paths,
       registered_item_types: installedItemTypes,
+      module_graph_verification: "fresh_snapshot",
       health: healthByActivation[String(activated) as "true" | "false"],
     },
   };

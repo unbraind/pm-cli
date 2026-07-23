@@ -10,14 +10,20 @@
 
 ### Fixed
 
+- Extension flag value-arity decided by three divergent predicates in cli/extension-command-help.ts - help, parse, and summary surfaces can disagree ([pm-853a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-853a.toon))
+- Post-install activation verification can load stale overwritten extension modules ([pm-4v4c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4v4c.toon))
+- Scoped renderer ownership: safe package renderers should not keep isolated package doctor in warning state ([pm-nf7q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nf7q.toon))
 - Relationship timestamp snapshots must honor event time for late and offline arrivals ([pm-j3swnb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-j3swnb.toon))
 
 ### Security
 
+- Extension install: untrusted manifest dependency specs reach npm install unvalidated (arg injection all-OS; shell command injection on Windows) ([pm-g072](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g072.toon))
 - CodeQL alert 30: polynomial ReDoS in shared path normalization primitive ([pm-v3zd3o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v3zd3o.toon))
 
 ### Other
 
+- SDK authoring DX polish: manifest-drift guard in scaffold tests, expectation key naming, repeated --capability, define\* index signatures ([pm-llrp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-llrp.toon))
+- Extension install should scaffold newly required item-type folders (pm health ok:false after installing pm-kanban until pm init) ([pm-l98s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-l98s.toon))
 - Cursor fingerprints: replace per-command presentation-flag deny-lists with contract-declared semantic classification in sdk/pagination ([pm-fgih](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fgih.toon))
 
 ## 2026.7.23 - 2026-07-23

@@ -2,18 +2,34 @@ id: pm-853a
 title: "Extension flag value-arity decided by three divergent predicates in cli/extension-command-help.ts - help, parse, and summary surfaces can disagree"
 description: "Unify extension-flag value-arity derivation across parsing, help, summaries, and recovery so one declared contract produces identical behavior on every surface."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:contracts","area:extensions",consistency
 created_at: "2026-07-19T04:07:03.496Z"
-updated_at: "2026-07-22T18:25:03.907Z"
+updated_at: "2026-07-23T15:37:29.302Z"
+closed_at: "2026-07-23T15:37:28.617Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "One shared value-arity predicate derived from the declared flag contract (long/short/value_name/value_type/type/required/list) exported from extension-command-help.ts; extensionFlagTakesValueForInvocation, formatDynamicExtensionParseOptionFlags, and buildDynamicExtensionHelpOptionSummary all consume it (summary currently ignores value_type entirely - takes_value is value_name-only); Parity spec asserts boolean, value-name-only, value-type-only, and required flags render and parse identically across help block, commander option registration, help-option summaries, and recovery hints"
 parent: pm-mpbb
 risk: medium
 confidence: 90
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-7ufz,related,"2026-07-19T04:07:03.496Z",null,null
   pm-ulqu,related,"2026-07-19T04:07:03.496Z",null,null
+  pm-llrp,related,"2026-07-23T14:59:00.188Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-07-23T14:21:36.245Z",claude-code-agent,"Implementation start 2026-07-23: selected after live 1,922-item all-status inventory, full canonical metadata/history review, and GitHub/release/security reconciliation. This item is actively edited in one coherent SDK/package authoring wave spanning scaffold contracts, flag arity, install validation, activation freshness, schema storage, renderer ownership, and public documentation; no duplicate item was created."
+  "2026-07-23T14:59:18.819Z",claude-code-agent,"Implementation evidence: one resolveExtensionFlagArity contract now drives invocation recovery, Commander registration, help rendering, and structured summaries. Explicit booleans never consume the next argv token; type/value-name/required/list metadata consistently imply a value. Focused extension help and CLI error suites passed."
+  "2026-07-23T15:30:17.902Z",claude-code-agent,"Verification evidence (2026-07-23): full instrumented repository suite passed 347 files / 6,146 tests with exact 100% statements (41,920/41,920), branches (29,630/29,630), functions (8,532/8,532), and lines (40,744/40,744). pnpm lint passed ESLint, zero jscpd clones, 100% source/export/member docstrings, package-boundary audit, and token-budget gate. pnpm security:scan found no credential-like tracked content; pnpm audit --prod found no known vulnerabilities. Packed artifact proof passed scripts/smoke-npx-from-pack.mjs (version 2026.7.23, 15 packages). A separate fresh /tmp consumer installed the npm tarball, initialized an isolated tracker, generated schema and renderer scaffolds, accepted repeated identical --capability values, rejected conflicting values, installed the scoped renderer, and returned extension doctor ok=true without a global renderer warning."
+  "2026-07-23T15:37:22.883Z",claude-code-agent,"Consolidated release-gate evidence: all owned local gates passed, including exact coverage, version policy/sync, secret scan, packed npx smoke, and 88-command package-first dogfood. The aggregate command stopped only at greptile-review because this branch is intentionally not committed yet (reported: no committed code changes to review against main); review convergence will run after push and is not being misclassified as a code/test failure."
+files[2]{path,scope,note}:
+  src/cli/extension-command-help.ts,project,centralized extension flag arity
+  tests/unit/cli/extension-command-help.spec.ts,project,flag arity contract regression
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/extension-command-help.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,240
+  "pnpm test:coverage",project,300
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,flag contract documentation
+close_reason: "Unified extension flag value arity across recovery, Commander registration, structured help, and summaries through one exported resolver with regression coverage."
 body: "Three predicates in src/cli/extension-command-help.ts decide whether an extension flag consumes a value, and they disagree: extensionFlagTakesValueForInvocation (~L131) returns required OR value_name OR value_type!=boolean; formatDynamicExtensionParseOptionFlags (~L550) requires value_type!=boolean AND (value_name OR value_type OR required); buildDynamicExtensionHelpOptionSummary (~L650) sets takes_value/value_required from value_name alone, ignoring value_type. A flag declared with value_type=string but no value_name is a value flag to parse/recovery yet renders takes_value:false in help summaries; a required boolean diverges between the first two. Same drift family as CLOSED pm-9qcr (ext-contract boolean arity) and the pm-ulqu render-from-declared-domain class - fix by unifying on one contract-derived predicate, never per-surface patches."
