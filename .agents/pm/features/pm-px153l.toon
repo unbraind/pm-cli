@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-23T08:23:36.953Z"
-updated_at: "2026-07-23T08:24:26.785Z"
+updated_at: "2026-07-23T08:29:04.040Z"
 closed_at: "2026-07-23T08:23:49.091Z"
 author: claude-code-agent
 acceptance_criteria: "SQLite projection is atomic, cursor-bound, rebuildable, maintained by supported mutations, and falls back to authoritative scans on absence/staleness/corruption; bounded default list results preserve output parity; standard get omits embedded child samples but reports counts/by-status/continuation; explicit/full get retains bounded child samples; 10k CLI/SDK scale budgets and exact 100/100/100/100 coverage pass"
@@ -19,10 +19,11 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-dfg0,related,"2026-07-23T08:23:39.319Z",null,null
   pm-ds3b,related,"2026-07-23T08:23:39.319Z",null,null
   pm-rjqr,related,"2026-07-23T08:23:39.319Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-23T08:23:37.493Z",claude-code-agent,"Duplicate check evidence 2026-07-23: all-status searches for SQLite metadata query index, bounded indexed list, compact get child projection, and child continuation found the canonical broader pm-801d feature plus older generic query/compact-output work, but no completed item representing this specific shipped release boundary. This child records the accepted subset without closing the 1M roadmap feature."
   "2026-07-23T08:23:48.250Z",claude-code-agent,"Completion evidence 2026-07-23: exact coverage passed 100/100/100/100 across 6,120 tests; 10k CLI/SDK scale budgets passed; packed smoke and 88-command dogfood passed; an isolated tarball consumer typechecked public SDK imports and exercised installed init/create/list/context/search with zero audit vulnerabilities. PR #655 hosted coverage, static, platform smoke, security, and benchmark checks are green at c1c3ef03."
   "2026-07-23T08:24:26.785Z",claude-code-agent,"PR evidence: tracked and reviewed in https://github.com/unbraind/pm-cli/pull/655; this completed child is the generated changelog boundary for the indexed-list and compact-get subset while parent pm-801d remains open for 1M p95 and remaining read surfaces."
+  "2026-07-23T08:29:04.040Z",claude-code-agent,"Review feedback evidence 2026-07-23: created this non-duplicate completed child in response to the valid generated-changelog omission; pm-changelog 2026.7.23 now emits the indexed-list and compact-get Unreleased entry without closing parent pm-801d. The inline thread was acknowledged and resolved."
 files[6]{path,scope,note}:
   src/cli/commands/get.ts,project,Compact standard get child projection
   src/core/store/item-metadata-cache.ts,project,Index lifecycle and mutation maintenance

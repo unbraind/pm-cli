@@ -6,18 +6,19 @@ status: closed
 priority: 1
 tags[4]: "area:sdk",codeql,redos,security
 created_at: "2026-07-23T06:36:57.049Z"
-updated_at: "2026-07-23T08:23:36.335Z"
+updated_at: "2026-07-23T08:29:03.430Z"
 closed_at: "2026-07-23T07:56:34.663Z"
 author: claude-code-agent
 acceptance_criteria: CodeQL alert 30 is fixed with a linear-time implementation; adversarial repeated-separator regression test passes; Windows and POSIX path behavior is unchanged; exact 100/100/100/100 coverage and security gates pass
 parent: pm-qwoy
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-8og4,related,"2026-07-23T06:37:15.345Z",claude-code-agent,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-23T06:36:57.049Z",claude-code-agent,"Duplicate check evidence: all-status search for polynomial ReDoS, path normalization, CodeQL 30, and src/core/shared/primitives found only the closed prior alert pm-8og4 in a different linked-command parser; this is a distinct current GitHub report. Source: https://github.com/unbraind/pm-cli/security/code-scanning/30"
   "2026-07-23T07:56:30.961Z",claude-code-agent,"Completion evidence 2026-07-23: trimTrailingSlashes now performs one linear char-code scan with unchanged empty/root/POSIX/Windows behavior; a 100,000-separator adversarial regression test exercises the alert pattern. Secrets/security gates, lint/static quality, exact 100/100/100/100 coverage, installed package smoke, and dogfood pass. Hosted CodeQL exact-head closure will be verified on the PR."
   "2026-07-23T08:06:36.423Z",claude-code-agent,"PR evidence 2026-07-23: the indexed-read, workspace-memory, cursor-contract, compact-get, SDK-documentation, and linear-time security tranche is published for hosted checks and review at https://github.com/unbraind/pm-cli/pull/655 (implementation commit 89e1417f)."
   "2026-07-23T08:23:36.335Z",claude-code-agent,"Hosted verification 2026-07-23: PR #655 exact head c1c3ef03 has a successful CodeQL check with no new alert on the PR analysis. GitHub alert #30 remains open on pre-merge main SHA 221980a7 and is expected to transition after the fixed head merges and default-branch analysis runs; this does not represent an unverified PR head."
+  "2026-07-23T08:29:03.430Z",claude-code-agent,"Review feedback evidence 2026-07-23: two CodeRabbit threads requested retaining an open verification state. Current-head CodeQL had already passed at c1c3ef03, so the item remains closed; replies distinguish the clean PR analysis from alert #30 on pre-merge main and both threads are resolved."
 files[2]{path,scope,note}:
   src/core/shared/primitives.ts,project,Linear trailing slash trimming without polynomial regex
   tests/unit/core/shared/shared-primitives.spec.ts,project,adversarial trailing slash regression coverage
