@@ -540,14 +540,43 @@ export function runCommandOverride(
   }
 }
 
+function rendererOwnsContext(
+  entry: ExtensionRendererRegistry["overrides"][number],
+  command: string,
+  result: unknown,
+): boolean {
+  if (
+    (entry.commands?.length ?? 0) > 0 &&
+    !entry.commands?.includes(command)
+  ) {
+    return false;
+  }
+  if (entry.resultDiscriminator === undefined) {
+    return true;
+  }
+  try {
+    return entry.resultDiscriminator(cloneContextSnapshot(result));
+  } catch {
+    return false;
+  }
+}
+
 /** Implements run renderer override for the public runtime surface of this module. */
 export function runRendererOverride(
   renderers: ExtensionRendererRegistry,
   context: RendererOverrideContext,
 ): RendererOverrideResult {
+  const rendererCommand =
+    typeof context.command === "string"
+      ? normalizeCommandName(context.command)
+      : "";
   const matched = [...renderers.overrides]
     .reverse()
-    .find((entry) => entry.format === context.format);
+    .find(
+      (entry) =>
+        entry.format === context.format &&
+        rendererOwnsContext(entry, rendererCommand, context.result),
+    );
   if (!matched) {
     return {
       overridden: false,
@@ -557,10 +586,6 @@ export function runRendererOverride(
   }
 
   try {
-    const rendererCommand =
-      typeof context.command === "string"
-        ? normalizeCommandName(context.command)
-        : "";
     const rendererArgs = Array.isArray(context.args)
       ? cloneContextSnapshot(context.args)
       : [];

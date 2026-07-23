@@ -7,6 +7,7 @@ import {
   ensureCommandPath,
   findExtensionCommandPathCollision,
   reportExtensionCommandCollision,
+  resolveExtensionFlagArity,
 } from "../../../src/cli/extension-command-help.js";
 
 describe("dynamic extension Commander options", () => {
@@ -43,6 +44,25 @@ describe("dynamic extension Commander options", () => {
 
     expect(parseListValue?.("alpha", "seed")).toEqual(["seed", "alpha"]);
     expect(options.repos).toEqual(["alpha", "beta,gamma", "delta"]);
+  });
+
+  it("uses one value-arity contract for typed, required, and list flags", () => {
+    expect(resolveExtensionFlagArity({ value_type: "boolean", required: true })).toEqual({
+      takesValue: false,
+      valueName: null,
+    });
+    expect(resolveExtensionFlagArity({ type: "number" })).toEqual({
+      takesValue: true,
+      valueName: "value",
+    });
+    expect(resolveExtensionFlagArity({ list: true, value_name: "entry" })).toEqual({
+      takesValue: true,
+      valueName: "entry",
+    });
+    expect(resolveExtensionFlagArity({ required: true })).toEqual({
+      takesValue: true,
+      valueName: "value",
+    });
   });
 
   it("distinguishes core-prefix collisions from extension-owned paths", () => {

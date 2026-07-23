@@ -9,6 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import npa from "npm-package-arg";
 import { collectPackageExtensionDirectories } from "../../core/packages/manifest.js";
 import { resolvePmPackageRootFromModule } from "../../core/packages/root.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
@@ -270,13 +271,14 @@ async function runNpmCommand(
   args: string[],
   cwd?: string,
   execRunner: typeof execFileAsync = execFileAsync,
+  platform: NodeJS.Platform = process.platform,
 ): Promise<string> {
-  const npmCommand = resolveNpmCommandName();
+  const npmCommand = resolveNpmCommandName(platform);
   try {
     const result = await execRunner(npmCommand, args, {
       cwd,
       encoding: "utf8",
-      shell: shouldRunNpmCommandInShell(),
+      shell: shouldRunNpmCommandInShell(platform),
     });
     return (result.stdout ?? "").trim();
   } catch (error: unknown) {
@@ -635,6 +637,7 @@ async function resolveNpmSourceDirectoryWithRunner(
 
 async function installNpmPackageRuntimeDependencies(
   packageRoot: string,
+  npmRunner: typeof runNpmCommand = runNpmCommand,
 ): Promise<void> {
   const packageJsonPath = path.join(packageRoot, "package.json");
   if (!(await pathExists(packageJsonPath))) {
@@ -678,7 +681,7 @@ async function installNpmPackageRuntimeDependencies(
     ]);
 
     if (dependencySpecs.length > 0) {
-      await runNpmCommand(
+      await npmRunner(
         [
           "install",
           "--ignore-scripts",
@@ -687,7 +690,7 @@ async function installNpmPackageRuntimeDependencies(
           "--package-lock=false",
           "--no-save",
           "--omit=peer",
-          ...dependencySpecs,
+          "--",
         ],
         packageRoot,
       );
@@ -768,6 +771,55 @@ function resolveDirectorySymlinkType(
   return platform === "win32" ? "junction" : "dir";
 }
 
+function validateRuntimeDependencySpec(name: string, version: string): string {
+  if (name.startsWith("-")) {
+    throw new PmCliError(
+      `Extension runtime dependency name "${name}" is unsafe because npm could interpret it as a command-line option.`,
+      EXIT_CODE.USAGE,
+      {
+        code: "extension_dependency_name_unsafe",
+        required: "Use a valid npm package name that does not begin with a dash.",
+        why: "Extension manifests are untrusted input and dependency names must never become npm options.",
+      },
+    );
+  }
+  const hasUnsafeControlOrShellCharacter = [...version].some((character) => {
+    const codePoint = character.charCodeAt(0);
+    return (
+      codePoint <= 31 ||
+      codePoint === 127 ||
+      "&|;()`\"'".includes(character)
+    );
+  });
+  if (hasUnsafeControlOrShellCharacter) {
+    throw new PmCliError(
+      `Extension runtime dependency "${name}" has an unsafe version specifier.`,
+      EXIT_CODE.USAGE,
+      {
+        code: "extension_dependency_version_unsafe",
+        required:
+          "Use an npm version, range, dist-tag, URL, or file specifier without shell metacharacters.",
+        why: "npm.cmd requires a command shell on Windows, so untrusted shell metacharacters cannot be forwarded.",
+      },
+    );
+  }
+  try {
+    npa.resolve(name, version);
+  } catch {
+    throw new PmCliError(
+      `Extension runtime dependency "${name}@${version}" is not a valid npm dependency specifier.`,
+      EXIT_CODE.USAGE,
+      {
+        code: "extension_dependency_spec_invalid",
+        required:
+          "Use a valid npm package name and npm-supported version, range, dist-tag, URL, or file specifier.",
+        why: "Only grammar-validated dependency specs may be written to the isolated runtime install manifest.",
+      },
+    );
+  }
+  return `${name}@${version}`;
+}
+
 function runtimeDependencyInstallSpecs(manifest: {
   dependencies?: unknown;
   optionalDependencies?: unknown;
@@ -791,7 +843,11 @@ function runtimeDependencyInstallSpecs(manifest: {
       ) {
         continue;
       }
-      specs.set(name, `${name}@${version.trim()}`);
+      const normalizedVersion = version.trim();
+      specs.set(
+        name,
+        validateRuntimeDependencySpec(name, normalizedVersion),
+      );
     }
   }
   return [...specs.values()];

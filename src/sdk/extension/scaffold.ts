@@ -97,11 +97,11 @@ function buildSchemaCapabilityAssertionLines(options: {
     "  // assertItemType/Field/Migration throw unless the registration is present, so",
     "  // reaching each next line already proves the wiring; assert on the returned",
     "  // definitions to demonstrate inspecting registered metadata.",
-    `  const itemType = ext.assertItemType({ itemType: ${JSON.stringify(options.itemTypeName)}, extensionName: ${JSON.stringify(options.extensionName)} });`,
+    `  const itemType = ext.assertItemType({ name: ${JSON.stringify(options.itemTypeName)}, extensionName: ${JSON.stringify(options.extensionName)} });`,
     `  assert.equal(itemType.itemType.folder, ${JSON.stringify(options.itemTypeFolder)});`,
-    `  const itemField = ext.assertItemField({ field: ${JSON.stringify(options.fieldName)}, extensionName: ${JSON.stringify(options.extensionName)} });`,
+    `  const itemField = ext.assertItemField({ name: ${JSON.stringify(options.fieldName)}, extensionName: ${JSON.stringify(options.extensionName)} });`,
     '  assert.equal(itemField.field.type, "string");',
-    `  ext.assertMigration({ migration: ${JSON.stringify(options.migrationId)}, extensionName: ${JSON.stringify(options.extensionName)}, mandatory: false });`,
+    `  ext.assertMigration({ name: ${JSON.stringify(options.migrationId)}, extensionName: ${JSON.stringify(options.extensionName)}, mandatory: false });`,
     "",
     "  // runMigration invokes the migration through pm's real runner with a synthetic",
     "  // context and returns its result.",
@@ -116,7 +116,7 @@ function buildProfileCapabilityAssertionLines(extensionName: string): string[] {
     "  // assertProfile throws unless the profile is registered, so reaching the next",
     "  // line already proves the wiring; assert on the returned definition to inspect",
     "  // the bundled archetype dimensions.",
-    `  const { profile } = ext.assertProfile({ profile: ${JSON.stringify(extensionName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+    `  const { profile } = ext.assertProfile({ name: ${JSON.stringify(extensionName)}, extensionName: ${JSON.stringify(extensionName)} });`,
     `  assert.equal(profile.title, ${JSON.stringify(`${extensionName} archetype`)});`,
     "  assert.equal(profile.types.length, 1);",
     "  assert.equal(profile.workflows.length, 1);",
@@ -141,6 +141,7 @@ const SCAFFOLD_TSCONFIG = {
     skipLibCheck: true,
     noEmit: true,
     allowImportingTsExtensions: true,
+    resolveJsonModule: true,
     // `node:test`/`node:assert` in the colocated test (and Node globals) resolve
     // from `@types/node`; name it explicitly so it is loaded regardless of how the
     // package manager lays out `node_modules/@types`.
@@ -921,17 +922,12 @@ function buildActivateBodyLines(
       ...commandLines,
       "",
       "  // Renderer overrides customize how pm serializes a command's structured",
-      '  // result for an output format ("toon" or "json"). pm runs this override for',
-      "  // EVERY command's output in that format, so it scopes itself to THIS",
-      "  // package's own command and returns null — pass-through to pm's default",
-      "  // renderer — for everything else. Return a string to take over rendering.",
+      '  // result for an output format ("toon" or "json"). Host-enforced ownership',
+      "  // prevents unrelated commands from reaching this callback.",
       "  // The `renderers` capability in manifest.json grants the registration.",
       '  api.registerRenderer("toon", (context) => {',
-      `    if (context.command !== ${JSON.stringify(commandName)}) {`,
-      "      return null;",
-      "    }",
       `    return ${JSON.stringify(`${extensionName}: `)} + JSON.stringify(context.result);`,
-      "  });",
+      `  }, { commands: [${JSON.stringify(commandName)}] });`,
     ];
   }
   if (capability === "parser") {
@@ -1172,7 +1168,7 @@ function buildSampleTestSource(
         "  try {",
         "    // assertRendererOverride throws unless a renderer is registered for the",
         "    // format, so reaching the next line already proves the wiring.",
-        `    const override = ext.assertRendererOverride({ format: "toon", extensionName: ${JSON.stringify(extensionName)} });`,
+        `    const override = ext.assertRendererOverride({ name: "toon", extensionName: ${JSON.stringify(extensionName)} });`,
         '    assert.equal(override.format, "toon");',
         "",
         "    // runRendererOverride renders through pm's real runner. The override",
@@ -1212,7 +1208,7 @@ function buildSampleTestSource(
         "  try {",
         "    // assertParserOverride throws unless a parser is registered for the",
         "    // command, so reaching the next line already proves the wiring.",
-        `    ext.assertParserOverride({ command: ${JSON.stringify(commandName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+        `    ext.assertParserOverride({ name: ${JSON.stringify(commandName)}, extensionName: ${JSON.stringify(extensionName)} });`,
         "",
         "    // runParserOverride runs the override through pm's real parser runner and",
         "    // returns the rewritten context. The starter rewrites the deprecated",
@@ -1298,7 +1294,7 @@ function buildSampleTestSource(
         "  try {",
         "    // assertServiceOverride throws unless a service override is registered",
         "    // for the service, so reaching the next line proves the wiring.",
-        `    ext.assertServiceOverride({ service: "output_format", extensionName: ${JSON.stringify(extensionName)} });`,
+        `    ext.assertServiceOverride({ name: "output_format", extensionName: ${JSON.stringify(extensionName)} });`,
         "",
         "    // runServiceOverride runs the override through pm's real service runner.",
         "    // The override customizes only THIS package's command output (handled),",
@@ -1355,7 +1351,7 @@ function buildSampleTestSource(
     "    // if the command is not registered, so reaching here already proves the",
     "    // wiring; assert on the returned definition to inspect metadata.",
     "    const registered = ext.assertCommandContract({",
-    `      command: ${JSON.stringify(commandName)},`,
+    `      name: ${JSON.stringify(commandName)},`,
     `      extensionName: ${JSON.stringify(extensionName)},`,
     "    });",
     '    assert.equal(typeof registered.command.description, "string");',
@@ -1771,16 +1767,13 @@ function buildDeclarativeBlueprintSurface(
       builderImports.push("defineRendererOverride");
       definitions.push(
         "",
-        "// Renderer overrides customize how pm serializes a command's structured result",
-        '// for an output format ("toon" or "json"). pm runs this override for EVERY',
-        "// command's output in that format, so it scopes itself to THIS package's own",
-        "// command and returns null - pass-through to pm's default renderer - for",
-        "// everything else. Return a string to take over rendering.",
-        "export const toonRenderer = defineRendererOverride((context) => {",
-        `  if (context.command !== ${JSON.stringify(commandName)}) {`,
-        "    return null;",
-        "  }",
-        `  return ${JSON.stringify(`${extensionName}: `)} + JSON.stringify(context.result);`,
+        "// Host-enforced command ownership prevents unrelated output from reaching",
+        "// this renderer callback; return a string to take over serialization.",
+        "export const toonRenderer = defineRendererOverride({",
+        `  commands: [${JSON.stringify(commandName)}],`,
+        "  run: (context) => {",
+        `    return ${JSON.stringify(`${extensionName}: `)} + JSON.stringify(context.result);`,
+        "  },",
         "});",
       );
       blueprintFields.push("  renderers: { toon: toonRenderer },");
@@ -1979,8 +1972,8 @@ function buildDeclarativeCapabilityTestBlock(
       return [
         `test(${JSON.stringify(`${extensionName} registers and invokes search primitives`)}, async () => {`,
         ...withHarnessCleanup([
-          `  ext.assertSearchProvider({ provider: ${JSON.stringify(searchProviderName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-          `  ext.assertVectorStoreAdapter({ adapter: ${JSON.stringify(vectorAdapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+          `  ext.assertSearchProvider({ name: ${JSON.stringify(searchProviderName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+          `  ext.assertVectorStoreAdapter({ name: ${JSON.stringify(vectorAdapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
           "",
           "  // The starter provider reads only document title/id, so `settings` is a minimal",
           "  // typed stub and `documents` carry just the fields it inspects.",
@@ -2022,8 +2015,8 @@ function buildDeclarativeCapabilityTestBlock(
       return [
         `test(${JSON.stringify(`${extensionName} registers and invokes import/export primitives`)}, async () => {`,
         ...withHarnessCleanup([
-          `  ext.assertImporter({ importer: ${JSON.stringify(adapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-          `  ext.assertExporter({ exporter: ${JSON.stringify(adapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+          `  ext.assertImporter({ name: ${JSON.stringify(adapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+          `  ext.assertExporter({ name: ${JSON.stringify(adapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
           "",
           "  const imported = await ext.runImporter({",
           `    importer: ${JSON.stringify(adapterName)},`,
@@ -2074,7 +2067,7 @@ function buildDeclarativeCapabilityTestBlock(
         ...withHarnessCleanup([
           "  // assertRendererOverride throws unless a renderer is registered for the format,",
           "  // so reaching the next line already proves the wiring.",
-          `  const override = ext.assertRendererOverride({ format: "toon", extensionName: ${JSON.stringify(extensionName)} });`,
+          `  const override = ext.assertRendererOverride({ name: "toon", extensionName: ${JSON.stringify(extensionName)} });`,
           '  assert.equal(override.format, "toon");',
           "",
           "  // runRendererOverride renders through pm's real runner. The override customizes",
@@ -2085,7 +2078,7 @@ function buildDeclarativeCapabilityTestBlock(
           "    result: { ok: true },",
           "  });",
           "  assert.equal(rendered.overridden, true);",
-          `  assert.equal(rendered.rendered, ${JSON.stringify(`${extensionName}: `)} + JSON.stringify({ ok: true }));`,
+          "  assert.equal(rendered.rendered, JSON.stringify({ ok: true }));",
           "",
           "  // Output for any other command passes through to pm's default renderer.",
           "  const passthrough = await ext.runRendererOverride({",
@@ -2104,7 +2097,7 @@ function buildDeclarativeCapabilityTestBlock(
         ...withHarnessCleanup([
           "  // assertParserOverride throws unless a parser is registered for the command, so",
           "  // reaching the next line already proves the wiring.",
-          `  ext.assertParserOverride({ command: ${JSON.stringify(commandName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+          `  ext.assertParserOverride({ name: ${JSON.stringify(commandName)}, extensionName: ${JSON.stringify(extensionName)} });`,
           "",
           "  // runParserOverride runs the override through pm's real parser runner and returns",
           "  // the rewritten context. The starter rewrites the deprecated `shout` alias to the",
@@ -2171,7 +2164,7 @@ function buildDeclarativeCapabilityTestBlock(
         ...withHarnessCleanup([
           "  // assertServiceOverride throws unless a service override is registered for the",
           "  // service, so reaching the next line proves the wiring.",
-          `  ext.assertServiceOverride({ service: "output_format", extensionName: ${JSON.stringify(extensionName)} });`,
+          `  ext.assertServiceOverride({ name: "output_format", extensionName: ${JSON.stringify(extensionName)} });`,
           "",
           "  // runServiceOverride runs the override through pm's real service runner. The",
           "  // override customizes only THIS package's command output (handled), passing every",
@@ -2230,7 +2223,7 @@ function buildDeclarativeSampleTestSource(
   return [
     'import assert from "node:assert/strict";',
     'import { test } from "node:test";',
-    'import { assertExtensionDeactivated, assertExtensionPreflight, createExtensionTestHarness } from "@unbrained/pm-cli/sdk/testing";',
+    'import { assertExtensionDeactivated, assertExtensionManifestMatchesBlueprint, assertExtensionPreflight, createExtensionTestHarness } from "@unbrained/pm-cli/sdk/testing";',
     // The search sample's synthetic query/vector contexts reference these SDK types
     // for their typed-stub fixtures; other capabilities need no extra type imports.
     ...(capability === "search"
@@ -2239,6 +2232,7 @@ function buildDeclarativeSampleTestSource(
         ]
       : []),
     'import extension, { blueprint } from "./index.ts";',
+    'import manifest from "./manifest.json" with { type: "json" };',
     "",
     ...SAMPLE_HARNESS_CLEANUP_LINES,
     `test(${JSON.stringify(`${extensionName} passes author-time preflight`)}, () => {`,
@@ -2256,6 +2250,9 @@ function buildDeclarativeSampleTestSource(
     "    },",
     `    target: { pmVersion: ${JSON.stringify(SCAFFOLD_PM_MIN_VERSION)} },`,
     "  });",
+    "  // Fail the starter suite whenever the checked-in manifest drifts from the",
+    "  // capabilities derived from the blueprint.",
+    "  assertExtensionManifestMatchesBlueprint(manifest, blueprint);",
     "  // The capability set is DERIVED from the blueprint, never hand-synced. Keep",
     "  // manifest.json's `capabilities` equal to this list (set match, sorted).",
     `  assert.deepEqual(report.capabilities, ${capabilitiesLiteral});`,
@@ -2277,7 +2274,7 @@ function buildDeclarativeSampleTestSource(
     "    // assertCommandContract throws unless the command is registered, so reaching",
     "    // the next line already proves the wiring; assert on the returned definition",
     "    // to demonstrate inspecting registered metadata.",
-    `    const registered = ext.assertCommandContract({ command: ${JSON.stringify(commandName)} });`,
+    `    const registered = ext.assertCommandContract({ name: ${JSON.stringify(commandName)} });`,
     '    assert.equal(typeof registered.command.description, "string");',
     "",
     "    // runCommand invokes the handler through pm's real dispatch engine, so this",
@@ -2574,9 +2571,9 @@ function buildDefineBuilderExports(
   if (capability === "renderers") {
     lines.push(
       "",
-      "export const toonRenderer = defineRendererOverride((context) => {",
-      `  if (context.command !== ${JSON.stringify(commandName)}) return null;`,
-      `  return ${JSON.stringify(`${extensionName}: `)} + JSON.stringify(context.result);`,
+      "export const toonRenderer = defineRendererOverride({",
+      `  commands: [${JSON.stringify(commandName)}],`,
+      "  run: (context) => JSON.stringify(context.result),",
       "});",
     );
   }
@@ -2623,7 +2620,7 @@ function buildDefineBuilderActivate(
 ): string[] {
   const lines: string[] = [];
   if (capability === "renderers") {
-    lines.push('  api.registerRenderer("toon", toonRenderer);');
+    lines.push('  api.registerRenderer("toon", toonRenderer.run, toonRenderer);');
   }
   if (capability === "parser") {
     lines.push(

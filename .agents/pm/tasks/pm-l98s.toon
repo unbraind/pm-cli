@@ -2,11 +2,12 @@ id: pm-l98s
 title: "Extension install should scaffold newly required item-type folders (pm health ok:false after installing pm-kanban until pm init)"
 description: "2026-07-04 sandbox review: installing pm-kanban registers the Card type whose cards/ folder does not exist yet, so pm health returns top-level ok:false (warn-severity storage check) until the user re-runs pm init. Remediation hint is correct but install should auto-create type dirs (declarative installs already scaffold folders when activation succeeds — see pm-3wsi)."
 type: Task
-status: open
+status: closed
 priority: 3
 tags[3]: agent-ux,audit-followup,extensions
 created_at: "2026-07-04T08:31:43.047Z"
-updated_at: "2026-07-14T17:05:16.783Z"
+updated_at: "2026-07-23T14:39:28.363Z"
+closed_at: "2026-07-23T14:39:27.643Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Installing an extension that requires new item-type folders scaffolds them automatically so pm health stays ok without a manual pm init.
@@ -15,4 +16,8 @@ risk: low
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-dijg,related,"2026-07-14T17:05:16.756Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-23T14:21:41.873Z",claude-code-agent,"Implementation start 2026-07-23: selected after live 1,922-item all-status inventory, full canonical metadata/history review, and GitHub/release/security reconciliation. This item is actively edited in one coherent SDK/package authoring wave spanning scaffold contracts, flag arity, install validation, activation freshness, schema storage, renderer ownership, and public documentation; no duplicate item was created."
+  "2026-07-23T14:39:26.928Z",claude-code-agent,"Live reconciliation evidence 2026-07-23: current main already implements scaffoldInstalledExtensionItemTypes in src/sdk/extension.ts, invoked after successful runtime activation for project installs, and tests/unit/extensions/extension-command.spec.ts proves installing the kanban schema package creates cards/. git blame/log trace the implementation to ec3f0ee99 / PR #568. Focused extension-command suite passed today (134/134), including the item-folder install acceptance. This item was stale-open, not outstanding implementation."
+close_reason: "Already shipped by PR #568 (ec3f0ee99): successful project package installs scaffold contributed item-type folders; live focused suite passed 134/134 including kanban cards/ acceptance."
 body: "## Context\n2026-07-04 sandbox review: installing pm-kanban registers the Card item type, but its cards/ folder is not created, so pm health returns top-level ok:false (warn-severity storage check) until the user re-runs pm init. The remediation hint is correct but the install should self-heal.\n\n## Approach\nAfter successful package install/activation, scaffold storage folders for every newly registered item type (same code path pm init uses). Declarative installs already do this when activation succeeds — reuse that scaffolding for package installs. Note pm-3wsi covers the adjacent case where FAILED activation skips scaffolding with a misleading report; this item is the success-path gap.\n\n## Definition of done\nFresh sandbox: install pm-kanban → pm health ok:true immediately, cards/ exists; spec asserts type-folder scaffolding for package installs; no regression for extension types with custom directories."

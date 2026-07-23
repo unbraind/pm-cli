@@ -53,6 +53,19 @@ import {
 } from "../../../src/sdk/testing.js";
 
 describe("sdk define builders", () => {
+  it("rejects misspelled authoring keys at the definition boundary", () => {
+    // @ts-expect-error value_typo is not part of the exact flag contract.
+    expect(defineFlag({ long: "--strict", value_typo: "boolean" })).toEqual({
+      long: "--strict",
+      value_typo: "boolean",
+    });
+    // @ts-expect-error foldre is not part of the exact item-type contract.
+    expect(defineItemType({ name: "Incident", foldre: "incidents" })).toEqual({
+      name: "Incident",
+      foldre: "incidents",
+    });
+  });
+
   it("returns every registration definition unchanged (zero-cost identity)", () => {
     // Object-definition builders preserve the exact reference they are handed.
     const command = { name: "demo run", action: "demo-run", run: () => ({ ok: true }) };

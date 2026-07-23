@@ -2,17 +2,43 @@ id: pm-llrp
 title: "SDK authoring DX polish: manifest-drift guard in scaffold tests, expectation key naming, repeated --capability, define* index signatures"
 description: "Bundle of P3 SDK DX findings from the 2026-07-02 review (Lane B, pm-6vy7): (1) generated scaffold test should call assertExtensionManifestMatchesBlueprint so manifest.json drift fails the starter suite; (2) test-expectation key drift across helpers (command/itemType/field/targetCommand/provider) is inconsistent; (3) repeated --capability flags silently last-win instead of erroring or composing; (4) [key: string]: unknown index signatures on define* option types weaken excess-property checking."
 type: Task
-status: open
+status: closed
 priority: 3
 tags[3]: audit-followup,dx,sdk
 created_at: "2026-07-02T21:55:34.594Z"
-updated_at: "2026-07-07T14:17:57.594Z"
+updated_at: "2026-07-23T16:27:57.667Z"
+closed_at: "2026-07-23T16:00:02.485Z"
 author: claude-code-agent
 estimated_minutes: 150
-acceptance_criteria: Scaffold tests include a manifest-drift guard; expectation keys named consistently; --capability is repeatable; define* builders accept index signatures without casts.
+acceptance_criteria: Scaffold tests include a manifest-drift guard; SDK testing expectations use canonical name keys with legacy aliases; repeated identical --capability values are idempotent while conflicting values fail explicitly; exact define* object inputs preserve literal types and reject misspelled or unknown keys.
 parent: pm-ugqx
 risk: low
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-fpod,related,"2026-07-02T21:55:54.067Z",null,null
+  pm-nf7q,related,"2026-07-23T14:58:58.605Z",null,null
+comments[6]{created_at,author,text}:
+  "2026-07-23T14:21:34.484Z",claude-code-agent,"Implementation start 2026-07-23: selected after live 1,922-item all-status inventory, full canonical metadata/history review, and GitHub/release/security reconciliation. This item is actively edited in one coherent SDK/package authoring wave spanning scaffold contracts, flag arity, install validation, activation freshness, schema storage, renderer ownership, and public documentation; no duplicate item was created."
+  "2026-07-23T14:59:22.487Z",claude-code-agent,"Implementation evidence: exact define* object inputs reject misspelled keys; named harness expectations use canonical name with legacy aliases; repeated identical --capability values are idempotent while distinct starter shapes fail explicitly; declarative scaffolds compile JSON imports and guard manifest/blueprint drift. Focused builder, harness, CLI option, and generated-scaffold suites passed."
+  "2026-07-23T15:30:19.088Z",claude-code-agent,"Verification evidence (2026-07-23): full instrumented repository suite passed 347 files / 6,146 tests with exact 100% statements (41,920/41,920), branches (29,630/29,630), functions (8,532/8,532), and lines (40,744/40,744). pnpm lint passed ESLint, zero jscpd clones, 100% source/export/member docstrings, package-boundary audit, and token-budget gate. pnpm security:scan found no credential-like tracked content; pnpm audit --prod found no known vulnerabilities. Packed artifact proof passed scripts/smoke-npx-from-pack.mjs (version 2026.7.23, 15 packages). A separate fresh /tmp consumer installed the npm tarball, initialized an isolated tracker, generated schema and renderer scaffolds, accepted repeated identical --capability values, rejected conflicting values, installed the scoped renderer, and returned extension doctor ok=true without a global renderer warning."
+  "2026-07-23T15:37:23.453Z",claude-code-agent,"Consolidated release-gate evidence: all owned local gates passed, including exact coverage, version policy/sync, secret scan, packed npx smoke, and 88-command package-first dogfood. The aggregate command stopped only at greptile-review because this branch is intentionally not committed yet (reported: no committed code changes to review against main); review convergence will run after push and is not being misclassified as a code/test failure."
+  "2026-07-23T16:00:00.300Z",claude-code-agent,"PR #657 CodeRabbit remediation evidence: canonical acceptance criteria now match the implemented exact define* input contract: literal types are preserved and misspelled/unknown keys fail typecheck. The update was performed through pm so append-only history remains valid; full coverage and lint gates pass."
+  "2026-07-23T16:27:57.666Z",claude-code-agent,"GitHub CI report reconciliation for PR #657: CodSpeed workflow run https://github.com/unbraind/pm-cli/actions/runs/30023244727 attempt 1 was canceled solely by the 20m0s job ceiling while the benchmark command remained active and emitted no assertion/log failure. All-status searches for CodSpeed and benchmark timeout lineage found no duplicate open item; canonical CI lineage is pm-wo8. One failed-job rerun (job 89266499811) passed completely in 4m33s, classifying the first attempt as transient runner infrastructure rather than product or workflow code failure; no new duplicate item created."
+learnings[1]{created_at,author,text}:
+  "2026-07-23T14:59:23.145Z",claude-code-agent,"A repeatable scaffold selector should preserve argv provenance without silently overwriting intent: identical repeats are safe composition, but distinct full-starter templates require an explicit choice until multi-surface scaffold composition is a designed contract."
+files[7]{path,scope,note}:
+  src/cli/register-setup.ts,project,repeatable scaffold capability semantics
+  src/sdk/define.ts,project,exact object builder inputs
+  src/sdk/extension/scaffold.ts,project,manifest drift guard and canonical examples
+  src/sdk/testing.ts,project,canonical named expectations
+  tests/unit/cli/extension-scaffold-capability-option.spec.ts,project,repeatable capability behavior
+  tests/unit/extensions/extension-command.spec.ts,project,Generated scaffold canonical expectation assertions
+  tests/unit/sdk/sdk-testing-expectation-names.spec.ts,project,canonical name and legacy aliases
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-define.spec.ts tests/unit/sdk/sdk-testing-expectation-names.spec.ts tests/unit/cli/extension-scaffold-capability-option.spec.ts tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,240
+  "pnpm test:coverage",project,300
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,scaffold authoring workflow
+  docs/SDK.md,project,SDK authoring ergonomics
+close_reason: Acceptance metadata now matches the shipped exact-key define builder contract and remains synchronized through append-only pm history.
 body: "## Context\nP3 SDK-authoring DX bundle from the 2026-07-02 review (Lane B, pm-6vy7). Four independent paper-cuts, batched because each is small and they all land in the SDK authoring surface:\n\n1. Scaffolded test should call assertExtensionManifestMatchesBlueprint so manifest.json drift fails the starter suite (author-once guarantee).\n2. Test-expectation key naming drifts across helpers (command vs itemType vs field vs targetCommand vs provider) — align on one convention and alias the old keys.\n3. Repeated --capability flags silently last-win; they should compose (collect) or error (note PR#82 lesson: collect-repeatable flags must NOT be list:true).\n4. [key: string]: unknown index signatures on define* option types defeat excess-property checking — replace with exact optional members so typos fail typecheck.\n\n## Definition of done\nEach sub-fix has a spec; scaffold output includes the manifest-drift assertion; contracts:update run if flag semantics change; SDK docs updated for the expectation-key convention."

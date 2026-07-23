@@ -164,19 +164,7 @@ export function extensionFlagTakesValueForInvocation(
   if (!flag) {
     return undefined;
   }
-  const valueName =
-    typeof flag.value_name === "string" && flag.value_name.trim().length > 0;
-  const valueType =
-    typeof flag.value_type === "string"
-      ? flag.value_type
-      : typeof flag.type === "string"
-        ? flag.type
-        : undefined;
-  return (
-    flag.required === true ||
-    valueName ||
-    (valueType !== undefined && valueType !== "boolean")
-  );
+  return resolveExtensionFlagArity(flag).takesValue;
 }
 
 function toNonEmptyFlagString(value: unknown): string | null {
@@ -189,6 +177,29 @@ function toNonEmptyFlagString(value: unknown): string | null {
 
 function toOptionalBoolean(value: unknown): boolean | undefined {
   return typeof value === "boolean" ? value : undefined;
+}
+
+/** Canonical value-arity contract shared by extension invocation recovery, Commander parsing, and structured help. */
+export function resolveExtensionFlagArity(
+  definition: Readonly<Record<string, unknown>>,
+): {
+  takesValue: boolean;
+  valueName: string | null;
+} {
+  const valueType =
+    toNonEmptyFlagString(definition.value_type) ??
+    toNonEmptyFlagString(definition.type);
+  const declaredValueName = toNonEmptyFlagString(definition.value_name);
+  const takesValue =
+    valueType !== "boolean" &&
+    (declaredValueName !== null ||
+      valueType !== null ||
+      toOptionalBoolean(definition.required) === true ||
+      toOptionalBoolean(definition.list) === true);
+  return {
+    takesValue,
+    valueName: takesValue ? (declaredValueName ?? "value") : null,
+  };
 }
 
 function formatDynamicExtensionFlagHelpLine(
@@ -540,8 +551,8 @@ function formatDynamicExtensionOptionFlags(
   if (!optionNames) {
     return null;
   }
-  const optionValueName = toNonEmptyFlagString(definition.value_name);
-  const optionValueSuffix = optionValueName ? ` <${optionValueName}>` : "";
+  const { valueName } = resolveExtensionFlagArity(definition);
+  const optionValueSuffix = valueName ? ` <${valueName}>` : "";
   return `${optionNames.join(", ")}${optionValueSuffix}`;
 }
 
@@ -552,16 +563,8 @@ function formatDynamicExtensionParseOptionFlags(
   if (!optionNames) {
     return null;
   }
-  const valueType =
-    toNonEmptyFlagString(definition.value_type) ??
-    toNonEmptyFlagString(definition.type);
-  const valueName = toNonEmptyFlagString(definition.value_name);
-  const requiresValue =
-    valueType !== "boolean" &&
-    (valueName !== null ||
-      valueType !== null ||
-      toOptionalBoolean(definition.required) === true);
-  const valueSuffix = requiresValue ? ` <${valueName ?? "value"}>` : "";
+  const { valueName } = resolveExtensionFlagArity(definition);
+  const valueSuffix = valueName ? ` <${valueName}>` : "";
   return `${optionNames.join(", ")}${valueSuffix}`;
 }
 
@@ -662,15 +665,15 @@ function buildDynamicExtensionHelpOptionSummary(
     shortName && shortName.startsWith("-") && !shortName.startsWith("--")
       ? shortName
       : null;
-  const valueName = toNonEmptyFlagString(definition.value_name);
+  const { takesValue, valueName } = resolveExtensionFlagArity(definition);
   const required = toOptionalBoolean(definition.required) === true;
   return {
     flags,
     long: normalizedLong,
     short: normalizedShort,
     description: formatDynamicExtensionOptionDescription(definition),
-    takes_value: valueName !== null,
-    value_required: valueName !== null,
+    takes_value: takesValue,
+    value_required: takesValue,
     value_name: valueName,
     variadic: false,
     required,

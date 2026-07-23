@@ -24,6 +24,7 @@ import {
   normalizeItemFieldType,
   suggestKnownItemFieldType,
 } from "./item-field-types.js";
+import { snapshotExtensionModuleGraph } from "./module-graph-snapshot.js";
 import {
   compareComparableVersions,
   evaluatePmMaxVersionBound,
@@ -132,6 +133,7 @@ import {
   type OutputRendererFormat,
   type CommandOverride,
   type RendererOverride,
+  type RendererOverrideOwnership,
   type CommandHandler,
   type ParserOverride,
   type PreflightOverride,
@@ -1171,9 +1173,15 @@ async function resolveExtensionImportHref(
   extension: EffectiveExtension,
   options: DiscoverExtensionsOptions,
 ): Promise<string> {
-  const baseUrl = new URL(pathToFileURL(extension.entry_path).href);
-  const shouldCacheBust =
-    options.cache_bust === true || typeof options.reload_token === "string";
+  let importEntryPath = extension.entry_path;
+  if (options.module_graph_snapshot_root) {
+    importEntryPath = await snapshotExtensionModuleGraph(
+      options.module_graph_snapshot_root,
+      extension,
+    );
+  }
+  const baseUrl = new URL(pathToFileURL(importEntryPath).href);
+  const shouldCacheBust = options.cache_bust === true || typeof options.reload_token === "string";
   if (!shouldCacheBust) {
     return baseUrl.href;
   }
@@ -2668,6 +2676,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
   public registerRenderer(
     format: OutputRendererFormat,
     renderer: RendererOverride,
+    ownership: RendererOverrideOwnership = {},
   ): void {
     assertExtensionCapability(
       this.#loadedExtension,
@@ -2692,11 +2701,35 @@ class ExtensionApiRegistrar implements ExtensionApi {
         `registerRenderer format must be toon|json, received: ${String(format)}`,
       );
     }
+    if (
+      ownership.resultDiscriminator !== undefined &&
+      typeof ownership.resultDiscriminator !== "function"
+    ) {
+      throw new TypeError(
+        "registerRenderer ownership.resultDiscriminator must be a function when provided",
+      );
+    }
+    const commands = [
+      ...new Set(
+        (ownership.commands ?? []).map((command) => {
+          if (typeof command !== "string" || command.trim().length === 0) {
+            throw new TypeError(
+              "registerRenderer ownership.commands must contain non-empty command paths",
+            );
+          }
+          return normalizeCommandName(command);
+        }),
+      ),
+    ];
     this.#rendererRegistry.overrides.push({
       layer: this.#loadedExtension.layer,
       name: this.#loadedExtension.name,
       format: normalizedFormat,
       run: renderer,
+      commands,
+      ...(ownership.resultDiscriminator
+        ? { resultDiscriminator: ownership.resultDiscriminator }
+        : {}),
     });
   }
 

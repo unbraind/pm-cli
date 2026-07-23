@@ -504,7 +504,7 @@ never threads `activation.registrations` vs `activation.commands` vs
 `activation.hooks` (etc.) by hand — picking the wrong one is a common footgun that
 surfaces as a confusing `available: (none)` error. Write
 `const ext = await createExtensionTestHarness(module, { capabilities: ["commands"] })`,
-then `ext.assertCommandContract({ command })`, `await ext.runCommand({ command })`,
+then `ext.assertCommandContract({ name: command })`, `await ext.runCommand({ command })`,
 `ext.activationSummary()`, `ext.renderMarkdown({ title: "My package" })`, and
 `await ext.deactivate()`. `activationSummary()` returns the same
 `ExtensionActivationSummary` as `describeExtensionActivation(ext.activation)`;
@@ -570,7 +570,9 @@ command handlers:
 - `runRegisteredCommandOverrideForTest(activation.commands, context)` returns the
   `CommandOverrideResult` (the transformed command result payload).
 - `runRegisteredRendererOverrideForTest(activation.renderers, context)` returns
-  the `RendererOverrideResult` (the custom string rendered for an output format).
+  the `RendererOverrideResult` (the custom string rendered for an output
+  format); the same command/result ownership metadata enforced by the host
+  determines whether the override is eligible before its callback runs.
 - `runRegisteredServiceOverrideForTest(activation.services, context)` returns the
   `ServiceOverrideResult` (how the override handles an internal service payload).
 
@@ -633,7 +635,9 @@ lifecycle order to mirror `hook_counts`) of every registered surface's
 identifiers — command paths, hook kinds, item-type /
 field names, migration ids, importer / exporter / provider / adapter names,
 overridden service names and renderer formats, flag target-commands, and the
-preflight-override count — plus the `capabilities` those surfaces exercise. Two
+preflight-override count — plus scoped `renderer_ownership` rows (format,
+normalized commands, and whether a result discriminator exists) and the
+`capabilities` those surfaces exercise. Two
 uses:
 
 ```ts
@@ -1116,6 +1120,12 @@ projection of activation, registered commands/actions/item types, target tracker
 root, and health verdict. Treat `ok: false` or `verification.status: "degraded"`
 as an install failure even when files were copied successfully; use
 `activation_diagnostics` and `command_discovery.next_steps` for remediation.
+Registry dependency inputs are parsed through npm's package-spec grammar,
+reject option-leading names and shell syntax, and are passed after an explicit
+`--` fence. Verification imports a temporary snapshot of the complete installed
+extension directory, including transitive ESM files, and reports
+`module_graph_verification: "fresh_snapshot"` so a same-process upgrade cannot
+pass against stale cached dependencies.
 
 Governance and maintenance convenience methods expose the operational floor a
 custom PM host should run before it trusts or publishes tracker state.
@@ -1461,10 +1471,10 @@ const ext = await createExtensionTestHarness(extensionModule, {
 });
 
 ext.assertCommandContract({
-  command: "incident triage",
+  name: "incident triage",
   flags: ["--severity"],
 });
-ext.assertFlags({ targetCommand: "list", flags: ["--incident-filter"] });
+ext.assertFlags({ name: "list", flags: ["--incident-filter"] });
 const { result } = await ext.runCommand({
   command: "incident triage",
   options: { severity: "high" },
@@ -1512,6 +1522,10 @@ renderer/service overrides. The same isolation can be applied to a whole
 subprocess suite by setting `PM_GLOBAL_PATH` to a temporary directory.
 
 Collision warnings are deterministic and include package names plus deactivation guidance.
+Renderer ownership is independently scoped inside that single-winner format:
+declare `commands`, a `resultDiscriminator`, or both so the host can skip the
+callback for unrelated output. Doctor warns only for unscoped legacy renderers;
+collision reporting still applies when packages compete for the same format.
 If extension code calls a `register*` API without declaring the matching
 manifest capability, activation fails with
 `extension_capability_missing:<name>:<capability>` in doctor triage. Run doctor
@@ -1629,6 +1643,11 @@ decision, exercising `assertRegisteredPreflightOverride` and
 command), exercising `assertRegisteredServiceOverride` and
 `runRegisteredServiceOverrideForTest`.
 
+`--capability` is repeatable so layered shell/config invocations compose
+predictably. Repeating one value is idempotent. Supplying two distinct starter
+capabilities fails with a usage error instead of silently choosing the last
+value; select one starter and add further blueprint surfaces after scaffolding.
+
 Every command-bearing variant's generated `manifest.json` also declares
 `activation.commands` — the exact command paths the starter registers — so pm
 activates the package lazily, importing and running `activate` only when an
@@ -1737,7 +1756,25 @@ delivered to the registered positional arguments unchanged.
 Command handlers should normally return structured data and let the host select
 TOON, JSON, service, or registered renderer output. A renderer override returns a
 string when it owns the matching payload and `null` to fall back to native
-rendering. When a command must write directly — for example, a streaming export,
+rendering. Prefer declarative ownership so the host never calls it for unrelated
+output:
+
+```ts
+api.registerRenderer(
+  "toon",
+  (result) => `archive: ${JSON.stringify(result)}`,
+  { commands: ["archive show"] },
+);
+```
+
+`commands` are normalized command paths. `resultDiscriminator` can additionally
+recognize a package-owned result shape; when both are present, both must match.
+`defineRendererOverride` accepts the equivalent
+`{ commands, resultDiscriminator?, run }` object for declarative blueprints.
+Unscoped callbacks remain source-compatible, but `pm package doctor` reports
+them as globally owning the format.
+
+When a command must write directly — for example, a streaming export,
 binary response, or already-rendered protocol — return `suppressHostOutput()` so
 the CLI does not append a second payload:
 
@@ -1851,6 +1888,12 @@ parameter is contextually typed instead of falling back to `any`. The
 [`assertRegistered*`](#testing-helpers) helpers below verify these same
 definitions once registered.
 
+The object builders reject unknown keys at the call site, including
+`defineFlag`, item type/field, migration, search-provider, and vector-adapter
+definitions. This catches misspellings without weakening the runtime registry's
+forward-compatible storage boundary. Schema builders explicitly include their
+supported `default`/`values` and item-type description/default-status fields.
+
 ## Declarative Authoring
 
 Tracked: [pm-iqq0](../.agents/pm/features/pm-iqq0.toon).
@@ -1908,6 +1951,10 @@ deriveExtensionCapabilities(blueprint); // ["commands", "parser", "schema"]
 The blueprint's record-keyed fields (`commandOverrides`, `flags`, `parsers`,
 `renderers`, `services`) map a routing key to its handler, mirroring the
 two-argument `api.register*` overloads; `hooks` groups the five lifecycle kinds.
+Renderer entries may be a legacy callback or a scoped
+`{ commands, resultDiscriminator?, run }` definition. The composed activation
+passes that ownership to the host, and `describeExtensionBlueprint` reports the
+same `renderer_ownership` metadata as the live activation summary.
 The array-valued `relationshipKinds` field registers application-defined graph
 semantics and contributes the `schema` capability just like `itemTypes`,
 `itemFields`, and `profiles`.
@@ -1927,6 +1974,10 @@ capstone and exercises the composed module through `createExtensionTestHarness`.
 is package-mode only (`composeExtension` is a runtime SDK value import, so it belongs
 in package-mode authoring where the SDK is a linked dependency, not the import-free
 extension-only starters).
+The generated test imports `manifest.json` with JSON import attributes and calls
+`assertExtensionManifestMatchesBlueprint`, while its emitted TypeScript config
+enables `resolveJsonModule`; a capability edit therefore cannot leave the
+checked-in manifest stale.
 
 ### Modular blueprints
 
@@ -2089,6 +2140,11 @@ entry, and throws an `Error` that lists what _is_ available when the expectation
 missing. They are exported from both `@unbrained/pm-cli/sdk/testing` and the main
 `@unbrained/pm-cli/sdk` barrel.
 
+Every named assertion accepts the canonical `{ name: ... }` expectation key.
+The historical surface-specific keys (`command`, `targetCommand`, `provider`,
+`adapter`, `importer`, `exporter`, `field`, `itemType`, `migration`, `profile`,
+`format`, `service`) remain supported aliases for existing packages.
+
 Activate an in-memory extension module without private loader imports:
 
 ```ts
@@ -2117,7 +2173,7 @@ const activation = await activateExtensionForTest({
 });
 
 assertRegisteredCommandContract(activation.registrations, {
-  command: "hello",
+  name: "hello",
   action: "hello",
   flags: ["--name"],
 });
@@ -2324,7 +2380,7 @@ Assert a command registration contract:
 import { assertRegisteredCommandContract } from "@unbrained/pm-cli/sdk/testing";
 
 assertRegisteredCommandContract(activation.registrations, {
-  command: "hello",
+  name: "hello",
   action: "hello",
   flags: ["--name"],
 });
@@ -2342,16 +2398,16 @@ import {
   assertRegisteredVectorStoreAdapter,
 } from "@unbrained/pm-cli/sdk/testing";
 
-assertRegisteredImporter(activation.registrations, { importer: "jsonl" });
+assertRegisteredImporter(activation.registrations, { name: "jsonl" });
 assertRegisteredExporter(activation.registrations, {
-  exporter: "jsonl",
+  name: "jsonl",
   extensionName: "my-ext",
 });
 assertRegisteredSearchProvider(activation.registrations, {
-  provider: "semantic-local",
+  name: "semantic-local",
 });
 assertRegisteredVectorStoreAdapter(activation.registrations, {
-  adapter: "pinecone",
+  name: "pinecone",
 });
 ```
 
@@ -2371,12 +2427,12 @@ import {
 } from "@unbrained/pm-cli/sdk/testing";
 
 assertRegisteredItemField(activation.registrations, {
-  field: "severity",
+  name: "severity",
   extensionName: "incident-ext",
   type: "string",
 });
 assertRegisteredItemType(activation.registrations, {
-  itemType: "Incident",
+  name: "Incident",
   folder: "incidents",
 });
 ```
@@ -2409,13 +2465,13 @@ import {
   assertRegisteredRendererOverride,
 } from "@unbrained/pm-cli/sdk/testing";
 
-assertRegisteredCommandOverride(activation.commands, { command: "list" });
+assertRegisteredCommandOverride(activation.commands, { name: "list" });
 assertRegisteredParserOverride(activation.parsers, {
-  command: "list",
+  name: "list",
   extensionName: "my-ext",
 });
 assertRegisteredPreflightOverride(activation.preflight); // preflight overrides are global (no command)
-assertRegisteredRendererOverride(activation.renderers, { format: "toon" });
+assertRegisteredRendererOverride(activation.renderers, { name: "toon" });
 ```
 
 Service overrides from `registerService(service, override)` live on
@@ -2428,7 +2484,7 @@ name (`output_format` | `error_format` | `help_format` | `lock_acquire` |
 import { assertRegisteredServiceOverride } from "@unbrained/pm-cli/sdk/testing";
 
 const service = assertRegisteredServiceOverride(activation.services, {
-  service: "output_format",
+  name: "output_format",
   extensionName: "my-ext",
 });
 // service.run is the registered ServiceOverride handler
@@ -2443,7 +2499,7 @@ unset flag is treated as non-mandatory):
 import { assertRegisteredMigration } from "@unbrained/pm-cli/sdk/testing";
 
 const migration = assertRegisteredMigration(activation.registrations, {
-  migration: "backfill-severity",
+  name: "backfill-severity",
   mandatory: true,
 });
 // migration.definition is the normalized SchemaMigrationDefinition
@@ -2502,7 +2558,7 @@ surface to `schema`. Prove a profile registered with `assertRegisteredProfile`:
 import { assertRegisteredProfile } from "@unbrained/pm-cli/sdk/testing";
 
 const { profile } = assertRegisteredProfile(activation.registrations, {
-  profile: "kanban",
+  name: "kanban",
 });
 // profile is the normalized ProjectProfileDefinition
 ```

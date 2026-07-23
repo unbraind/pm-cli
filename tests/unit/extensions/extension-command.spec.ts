@@ -2787,13 +2787,13 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain("  createExtensionTestHarness,");
       expect(sampleTest).toContain('capabilities: ["commands", "schema"]');
       expect(sampleTest).toContain("const itemType = ext.assertItemType({");
-      expect(sampleTest).toContain('itemType: "starter-schema"');
+      expect(sampleTest).toContain('name: "starter-schema"');
       expect(sampleTest).toContain('assert.equal(itemType.itemType.folder, "starter-schemas");');
       expect(sampleTest).toContain("const itemField = ext.assertItemField({");
-      expect(sampleTest).toContain('field: "starter_schema_note"');
+      expect(sampleTest).toContain('name: "starter_schema_note"');
       expect(sampleTest).toContain('assert.equal(itemField.field.type, "string");');
       expect(sampleTest).toContain("ext.assertMigration({");
-      expect(sampleTest).toContain('migration: "starter-schema-0001-init"');
+      expect(sampleTest).toContain('name: "starter-schema-0001-init"');
       expect(sampleTest).toContain("const migrated = await ext.runMigration({");
       expect(sampleTest).toContain('assert.deepEqual(migrated, { migrated: true, id: "starter-schema-0001-init" });');
       expectBestEffortCleanup(sampleTest);
@@ -2851,7 +2851,7 @@ describe("extension command runtime", () => {
       const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
       expect(sampleTest).toContain('capabilities: ["commands", "schema"]');
       expect(sampleTest).toContain("const { profile } = ext.assertProfile({");
-      expect(sampleTest).toContain('profile: "starter-profile"');
+      expect(sampleTest).toContain('name: "starter-profile"');
       expect(sampleTest).toContain('assert.equal(profile.title, "starter-profile archetype");');
       expect(sampleTest).toContain("assert.equal(profile.types.length, 1);");
       expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");

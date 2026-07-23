@@ -48,7 +48,14 @@ function buildFullBlueprint(observed: { imperative: boolean }): ExtensionBluepri
     commandOverrides: { list: () => undefined },
     flags: { list: [{ long: "--compose-note", value_type: "string", value_name: "text" }] },
     parsers: { "compose demo": () => ({}) },
-    renderers: { toon: () => null },
+    renderers: {
+      toon: {
+        commands: ["demo run"],
+        resultDiscriminator: (result) =>
+          typeof result === "object" && result !== null,
+        run: () => null,
+      },
+    },
     services: { output_format: () => undefined },
     preflights: [() => ({})],
     itemTypes: [{ name: "ComposeIncident", folder: "compose-incidents", aliases: ["compose-incident"] }],
@@ -336,7 +343,14 @@ function buildParityBlueprint(): ExtensionBlueprint {
     commandOverrides: { list: () => undefined },
     flags: { "demo run": [{ long: "--top-note", value_type: "string", value_name: "text" }] },
     parsers: { "demo run": () => ({}) },
-    renderers: { toon: () => null },
+    renderers: {
+      toon: {
+        commands: ["demo run"],
+        resultDiscriminator: (result) =>
+          typeof result === "object" && result !== null,
+        run: () => null,
+      },
+    },
     services: { output_format: () => undefined },
     preflights: [() => ({})],
     itemTypes: [
@@ -426,6 +440,13 @@ describe("sdk describeExtensionBlueprint", () => {
     expect(summary.item_types).toEqual(["DemoIncident", "DemoTask"]);
     expect(summary.migrations).toEqual(["demo-migration"]);
     expect(summary.profiles).toEqual(["demo-archetype"]);
+    expect(summary.renderer_ownership).toEqual([
+      {
+        format: "toon",
+        commands: ["demo run"],
+        result_discriminator: true,
+      },
+    ]);
     expect(summary.hooks).toEqual(["before_command", "after_command", "on_write", "on_read", "on_index"]);
     expect(summary.preflight_overrides).toBe(1);
   });
