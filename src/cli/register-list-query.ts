@@ -10,6 +10,7 @@ import {
   renderRowsAsCsv,
   renderRowsAsTable,
 } from "../sdk/runtime-primitives.js";
+import { serializeNdjsonRows } from "../sdk/output.js";
 import { runActivity } from "./commands/activity.js";
 import { runAggregate } from "./commands/aggregate.js";
 import {
@@ -68,9 +69,9 @@ function shouldRegisterListQueryCommand(
   return commandFilter.has(commandName);
 }
 
-type ReadCommandOutputFormat = "json" | "toon";
+type ReadCommandOutputFormat = "json" | "ndjson" | "toon";
 
-type ListOutputFormat = "csv" | "table" | "json" | "toon";
+type ListOutputFormat = "csv" | "table" | "json" | "ndjson" | "toon";
 
 /** Parses the `pm list --format` value into a supported render mode. csv/table are human export modes; json/toon override the machine output format. Returns undefined when no `--format` was supplied so the global output format applies. */
 function parseListFormat(rawFormat: unknown): ListOutputFormat | undefined {
@@ -79,7 +80,7 @@ function parseListFormat(rawFormat: unknown): ListOutputFormat | undefined {
   }
   if (typeof rawFormat !== "string") {
     throw new PmCliError(
-      "List --format must be one of csv|table|json|toon",
+      "List --format must be one of csv|table|json|ndjson|toon",
       EXIT_CODE.USAGE,
     );
   }
@@ -88,12 +89,13 @@ function parseListFormat(rawFormat: unknown): ListOutputFormat | undefined {
     normalized === "csv" ||
     normalized === "table" ||
     normalized === "json" ||
+    normalized === "ndjson" ||
     normalized === "toon"
   ) {
     return normalized;
   }
   throw new PmCliError(
-    "List --format must be one of csv|table|json|toon",
+    "List --format must be one of csv|table|json|ndjson|toon",
     EXIT_CODE.USAGE,
   );
 }
@@ -102,20 +104,25 @@ function resolveReadCommandOutputFormat(
   commandLabel: string,
   rawFormat: unknown,
   globalOptions: ReturnType<typeof getGlobalOptions>,
+  allowNdjson = false,
 ): ReturnType<typeof getGlobalOptions> {
   if (rawFormat === undefined) {
     return globalOptions;
   }
   if (typeof rawFormat !== "string") {
     throw new PmCliError(
-      `${commandLabel} --format must be one of json|toon`,
+      `${commandLabel} --format must be one of ${allowNdjson ? "json|ndjson|toon" : "json|toon"}`,
       EXIT_CODE.USAGE,
     );
   }
   const normalized = rawFormat.trim().toLowerCase() as ReadCommandOutputFormat;
-  if (normalized !== "json" && normalized !== "toon") {
+  if (
+    normalized !== "json" &&
+    (normalized !== "ndjson" || !allowNdjson) &&
+    normalized !== "toon"
+  ) {
     throw new PmCliError(
-      `${commandLabel} --format must be one of json|toon`,
+      `${commandLabel} --format must be one of ${allowNdjson ? "json|ndjson|toon" : "json|toon"}`,
       EXIT_CODE.USAGE,
     );
   }
@@ -127,7 +134,7 @@ function resolveReadCommandOutputFormat(
   }
   return {
     ...globalOptions,
-    json: normalized === "json",
+    json: normalized === "json" || normalized === "ndjson",
   };
 }
 
@@ -200,8 +207,15 @@ function resolveRegisteredListOutputContext(
   const listFormat = parseListFormat(options.format);
   const tabular = listFormat === "csv" || listFormat === "table";
   const effectiveGlobal =
-    listFormat === "json" || listFormat === "toon"
-      ? resolveReadCommandOutputFormat("List", options.format, globalOptions)
+    listFormat === "json" ||
+    listFormat === "ndjson" ||
+    listFormat === "toon"
+      ? resolveReadCommandOutputFormat(
+          "List",
+          options.format,
+          globalOptions,
+          true,
+        )
       : globalOptions;
   if (streamMode && !effectiveGlobal.json) {
     throw new PmCliError(
@@ -209,9 +223,9 @@ function resolveRegisteredListOutputContext(
       EXIT_CODE.USAGE,
     );
   }
-  if (tabular && streamMode) {
+  if ((tabular || listFormat === "ndjson") && streamMode) {
     throw new PmCliError(
-      "--format csv|table cannot be combined with --stream (line-delimited JSON).",
+      "--format csv|table|ndjson cannot be combined with --stream.",
       EXIT_CODE.USAGE,
     );
   }
@@ -231,6 +245,12 @@ function renderRegisteredListResult(
       output.listFormat === "csv"
         ? renderRowsAsCsv(rows)
         : renderRowsAsTable(rows);
+    if (!output.effectiveGlobal.quiet && rendered.length > 0) {
+      writeStdout(`${rendered}\n`);
+    }
+  } else if (output.listFormat === "ndjson") {
+    setActiveCommandResult(result);
+    const rendered = serializeNdjsonRows(result.items);
     if (!output.effectiveGlobal.quiet && rendered.length > 0) {
       writeStdout(`${rendered}\n`);
     }
@@ -404,7 +424,7 @@ function registerListCommand(
     )
     .option(
       "--format <value>",
-      "Output render mode: csv|table (human export) or json|toon (machine output override)",
+      "Output render mode: csv|table (human export) or json|ndjson|toon (machine output override)",
     )
     .option("--stream", "Emit line-delimited JSON rows (requires --json)");
   registerContentAndGovernanceFilters(command);
@@ -466,6 +486,16 @@ async function runContextAction(
     if (!globalOptions.quiet) {
       writeStdout(`${renderContextMarkdown(result)}\n`);
     }
+  } else if (outputFormat === "ndjson") {
+    setActiveCommandResult(result);
+    const rendered = serializeNdjsonRows([
+      ...result.high_level,
+      ...result.low_level,
+      ...result.blocked_fallback,
+    ]);
+    if (!globalOptions.quiet && rendered.length > 0) {
+      writeStdout(`${rendered}\n`);
+    }
   } else {
     printResult(result, {
       ...globalOptions,
@@ -518,10 +548,25 @@ async function runSearchAction(
     },
     globalOptions,
   );
-  printResult(
-    result,
-    resolveReadCommandOutputFormat("Search", options.format, globalOptions),
+  const outputFormat =
+    typeof options.format === "string"
+      ? options.format.trim().toLowerCase()
+      : undefined;
+  const effectiveGlobal = resolveReadCommandOutputFormat(
+    "Search",
+    options.format,
+    globalOptions,
+    true,
   );
+  if (outputFormat === "ndjson") {
+    setActiveCommandResult(result);
+    const rendered = serializeNdjsonRows(result.items);
+    if (!effectiveGlobal.quiet && rendered.length > 0) {
+      writeStdout(`${rendered}\n`);
+    }
+  } else {
+    printResult(result, effectiveGlobal);
+  }
   if (globalOptions.profile) {
     printError(`profile:command=search took_ms=${Date.now() - startedAt}`);
   }
@@ -872,7 +917,7 @@ export function registerListQueryCommands(
       )
       .option(
         "--format <value>",
-        "Context output format override: markdown|toon|json",
+        "Context output format override: markdown|toon|json|ndjson",
       )
       .option(
         "--depth <value>",
@@ -901,7 +946,8 @@ export function registerListQueryCommands(
       .option(
         "--token-budget <n>",
         "Maximum estimated tokens spent on ranked focus rows",
-      );
+      )
+      .option("--no-tags", "Omit tag arrays from context focus rows");
     // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
     addHiddenOption(
       contextCommand,
@@ -1076,7 +1122,10 @@ export function registerListQueryCommands(
         "--fields <value>",
         "Render custom comma-separated search hit fields (mutually exclusive with --compact/--full; valid: --fields id,title,score; invalid: --full --fields id,title)",
       )
-      .option("--format <value>", "Search output format override: json|toon")
+      .option(
+        "--format <value>",
+        "Search output format override: json|ndjson|toon",
+      )
       .option("--limit <n>", "Limit returned item count")
       .option(
         "--after <cursor>",

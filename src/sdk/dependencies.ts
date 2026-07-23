@@ -57,6 +57,10 @@ export type DepsCollapseMode = (typeof DEPS_COLLAPSE_VALUES)[number];
 export const DEPS_DIRECTION_VALUES = ["outgoing", "incoming", "both"] as const;
 /** Restricts deps traversal-direction values accepted by command, SDK, and storage contracts. */
 export type DepsDirection = (typeof DEPS_DIRECTION_VALUES)[number];
+const DEFAULT_DEPS_TREE_MAX_DEPTH = 32;
+const DEFAULT_DEPS_TREE_NODE_LIMIT = 200;
+const DEFAULT_DEPS_TREE_EDGE_LIMIT = 400;
+const DEFAULT_DEPS_TREE_TOKEN_BUDGET = 16_000;
 
 /** Documents the deps command options payload exchanged by command, SDK, and package integrations. */
 export interface DepsCommandOptions {
@@ -181,6 +185,30 @@ export interface DepsResult {
   missing_reference_count?: number;
   /** Bounded enumeration of dangling references, capped by the context edge limit. */
   missing_references?: DanglingDependencyReference[];
+  /** Explicit bounded-projection metadata when tree or graph rows were omitted. */
+  truncation?: {
+    /** Stable reasons explaining which bounds stopped expansion. */
+    reasons: Array<
+      "max_depth" | "node_limit" | "edge_limit" | "token_budget"
+    >;
+    /** Effective bounds applied to this projection. */
+    limits: {
+      max_depth: number;
+      node_limit: number;
+      edge_limit: number;
+      token_budget: number;
+    };
+    /** Conservative token estimate consumed by emitted tree rows and edges. */
+    estimated_tokens: number;
+    /** Full unique-node census reachable without projection bounds. */
+    total_node_count: number;
+    /** Full unique-edge census reachable without projection bounds. */
+    total_edge_count: number;
+    /** Unique nodes omitted from the returned projection. */
+    omitted_node_count: number;
+    /** Unique edges omitted from the returned projection. */
+    omitted_edge_count: number;
+  };
   /** Value that configures or reports tree for this contract. */
   tree?: DepsTreeNode;
   /** Value that configures or reports graph for this contract. */
@@ -314,6 +342,113 @@ function toIndexedItem(item: ItemMetadata): IndexedItem {
   };
 }
 
+interface DepsTreeBudget {
+  nodeLimit: number;
+  edgeLimit: number;
+  tokenBudget: number;
+  nodes: number;
+  edges: number;
+  estimatedTokens: number;
+  reasons: Set<"max_depth" | "node_limit" | "edge_limit" | "token_budget">;
+}
+
+function estimateTreeNodeTokens(node: DepsTreeNode): number {
+  return Math.max(
+    1,
+    Math.ceil(JSON.stringify({ ...node, dependencies: undefined }).length / 3),
+  );
+}
+
+function appendTreeDependencies(
+  baseNode: DepsTreeNode,
+  item: IndexedItem,
+  index: Map<string, IndexedItem>,
+  nextLineage: Set<string>,
+  maxDepth: number | undefined,
+  collapse: DepsCollapseMode,
+  expanded: Set<string>,
+  budget: DepsTreeBudget,
+  depth: number,
+): void {
+  for (const dependency of item.dependencies) {
+    const edgeTokens = Math.max(
+      1,
+      Math.ceil(
+        JSON.stringify({
+          from: baseNode.id,
+          to: dependency.id,
+          kind: dependency.kind,
+        }).length / 3,
+      ),
+    );
+    if (budget.nodes >= budget.nodeLimit) {
+      baseNode.truncated = true;
+      budget.reasons.add("node_limit");
+      break;
+    }
+    if (budget.edges >= budget.edgeLimit) {
+      baseNode.truncated = true;
+      budget.reasons.add("edge_limit");
+      break;
+    }
+    if (budget.estimatedTokens + edgeTokens >= budget.tokenBudget) {
+      baseNode.truncated = true;
+      budget.reasons.add("token_budget");
+      break;
+    }
+    budget.edges += 1;
+    budget.estimatedTokens += edgeTokens;
+    baseNode.dependencies.push(
+      toTreeNode(
+        dependency.id,
+        index,
+        nextLineage,
+        maxDepth,
+        collapse,
+        expanded,
+        budget,
+        depth + 1,
+        dependency.kind,
+      ),
+    );
+  }
+}
+
+function shouldStopTreeNodeExpansion(
+  node: DepsTreeNode,
+  item: IndexedItem | undefined,
+  lookupId: string,
+  maxDepth: number | undefined,
+  collapse: DepsCollapseMode,
+  expanded: Set<string>,
+  budget: DepsTreeBudget,
+  depth: number,
+): boolean {
+  if (
+    budget.estimatedTokens >= budget.tokenBudget &&
+    item?.dependencies.length
+  ) {
+    node.truncated = true;
+    budget.reasons.add("token_budget");
+    return true;
+  }
+  if (!item || node.cycle) {
+    return true;
+  }
+  if (maxDepth !== undefined && depth >= maxDepth) {
+    if (item.dependencies.length > 0) {
+      node.truncated = true;
+      budget.reasons.add("max_depth");
+    }
+    return true;
+  }
+  if (collapse === "repeated" && expanded.has(lookupId)) {
+    node.collapsed = true;
+    return true;
+  }
+  return false;
+}
+
 function toTreeNode(
   id: string,
   index: Map<string, IndexedItem>,
@@ -321,6 +456,7 @@ function toTreeNode(
   maxDepth: number | undefined,
   collapse: DepsCollapseMode,
   expanded: Set<string>,
+  budget: DepsTreeBudget,
   depth = 0,
   via?: string,
 ): DepsTreeNode {
@@ -336,17 +472,20 @@ function toTreeNode(
     cycle: lineage.has(lookupId),
     dependencies: [],
   };
-  if (!item || baseNode.cycle) {
-    return baseNode;
-  }
-  if (maxDepth !== undefined && depth >= maxDepth) {
-    if (item.dependencies.length > 0) {
-      baseNode.truncated = true;
-    }
-    return baseNode;
-  }
-  if (collapse === "repeated" && expanded.has(lookupId)) {
-    baseNode.collapsed = true;
+  budget.nodes += 1;
+  budget.estimatedTokens += estimateTreeNodeTokens(baseNode);
+  if (
+    shouldStopTreeNodeExpansion(
+      baseNode,
+      item,
+      lookupId,
+      maxDepth,
+      collapse,
+      expanded,
+      budget,
+      depth,
+    )
+  ) {
     return baseNode;
   }
   if (collapse === "repeated") {
@@ -354,17 +493,16 @@ function toTreeNode(
   }
   const nextLineage = new Set(lineage);
   nextLineage.add(lookupId);
-  baseNode.dependencies = item.dependencies.map((dependency) =>
-    toTreeNode(
-      dependency.id,
-      index,
-      nextLineage,
-      maxDepth,
-      collapse,
-      expanded,
-      depth + 1,
-      dependency.kind,
-    ),
+  appendTreeDependencies(
+    baseNode,
+    item!,
+    index,
+    nextLineage,
+    maxDepth,
+    collapse,
+    expanded,
+    budget,
+    depth,
   );
   return baseNode;
 }
@@ -391,7 +529,9 @@ function toGraph(root: DepsTreeNode): DepsGraphResult {
   const nodesById = new Map<string, DepsGraphNode>();
   const edgesByKey = new Map<string, DepsGraphEdge>();
 
-  const visit = (node: DepsTreeNode): void => {
+  const pending = [root];
+  while (pending.length > 0) {
+    const node = pending.pop()!;
     nodesById.set(
       node.id,
       mergeGraphNode(nodesById.get(node.id), {
@@ -425,12 +565,10 @@ function toGraph(root: DepsTreeNode): DepsGraphResult {
       }
       /* c8 ignore stop */
       if (!child.cycle) {
-        visit(child);
+        pending.push(child);
       }
     }
-  };
-
-  visit(root);
+  }
 
   const nodes = [...nodesById.values()].sort((left, right) =>
     left.id.localeCompare(right.id),
@@ -707,6 +845,80 @@ function buildContextDepsResult(params: {
   };
 }
 
+function buildTreeOrGraphDepsResult(
+  id: string,
+  format: Exclude<DepsFormat, "context">,
+  options: DepsCommandOptions,
+  index: Map<string, IndexedItem>,
+  maxDepth: number | undefined,
+  collapse: DepsCollapseMode,
+): DepsResult {
+  const effectiveMaxDepth = maxDepth ?? DEFAULT_DEPS_TREE_MAX_DEPTH;
+  const nodeLimit =
+    parsePositiveInteger(options.nodeLimit, "node-limit") ??
+    DEFAULT_DEPS_TREE_NODE_LIMIT;
+  const edgeLimit =
+    parsePositiveInteger(options.edgeLimit, "edge-limit") ??
+    DEFAULT_DEPS_TREE_EDGE_LIMIT;
+  const tokenBudget =
+    parsePositiveInteger(options.tokenBudget, "token-budget") ??
+    DEFAULT_DEPS_TREE_TOKEN_BUDGET;
+  const budget: DepsTreeBudget = {
+    nodeLimit,
+    edgeLimit,
+    tokenBudget,
+    nodes: 0,
+    edges: 0,
+    estimatedTokens: 0,
+    reasons: new Set(),
+  };
+  const tree = toTreeNode(
+    id,
+    index,
+    new Set<string>(),
+    effectiveMaxDepth,
+    format === "graph" ? "repeated" : collapse,
+    new Set<string>(),
+    budget,
+  );
+  const graph = toGraph(tree);
+  const totals = countDependencyGraph(id, index, undefined);
+  const truncation =
+    budget.reasons.size === 0
+      ? undefined
+      : {
+          reasons: [...budget.reasons].sort(),
+          limits: {
+            max_depth: effectiveMaxDepth,
+            node_limit: nodeLimit,
+            edge_limit: edgeLimit,
+            token_budget: tokenBudget,
+          },
+          estimated_tokens: budget.estimatedTokens,
+          total_node_count: totals.node_count,
+          total_edge_count: totals.edge_count,
+          omitted_node_count: Math.max(
+            0,
+            totals.node_count - graph.nodes.length,
+          ),
+          omitted_edge_count: Math.max(
+            0,
+            totals.edge_count - graph.edges.length,
+          ),
+        };
+  const baseResult = {
+    id,
+    format,
+    node_count: graph.nodes.length,
+    edge_count: graph.edges.length,
+    missing_count: graph.missing_ids.length,
+    ...(truncation ? { truncation } : {}),
+  };
+  return format === "tree"
+    ? { ...baseResult, tree }
+    : { ...baseResult, graph };
+}
+
 /** Implements run deps for the public runtime surface of this module. */
 export async function runDeps(
   id: string,
@@ -804,30 +1016,12 @@ export async function runDeps(
     };
   }
 
-  const tree = toTreeNode(
-    id,
-    index,
-    new Set<string>(),
-    maxDepth,
-    collapse,
-    new Set<string>(),
-  );
-  const graph = toGraph(tree);
-  const baseResult = {
+  return buildTreeOrGraphDepsResult(
     id,
     format,
-    node_count: graph.nodes.length,
-    edge_count: graph.edges.length,
-    missing_count: graph.missing_ids.length,
-  };
-  if (format === "tree") {
-    return {
-      ...baseResult,
-      tree,
-    };
-  }
-  return {
-    ...baseResult,
-    graph,
-  };
+    options,
+    index,
+    maxDepth,
+    collapse,
+  );
 }

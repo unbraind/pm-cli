@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   SUPPRESS_HOST_OUTPUT_MARKER,
   isHostOutputSuppressed,
+  serializeNdjsonRows,
   suppressHostOutput,
   type SuppressedHostOutput,
 } from "../../../src/sdk/index.js";
@@ -34,5 +35,30 @@ describe("SDK host-output control", () => {
 
   it("prevents host rendering while retaining the structured command result", () => {
     expect(formatOutput(suppressHostOutput({ emitted: 3 }), { json: true })).toBe("");
+  });
+
+  it("serializes object rows as NDJSON without a trailing summary or newline", () => {
+    expect(serializeNdjsonRows([{ id: "pm-1" }, { id: "pm-2", ok: true }])).toBe(
+      '{"id":"pm-1"}\n{"id":"pm-2","ok":true}',
+    );
+    expect(serializeNdjsonRows([])).toBe("");
+    expect(() => serializeNdjsonRows([null])).toThrow(
+      "NDJSON row 0 must be a non-null object",
+    );
+    expect(() => serializeNdjsonRows([[]])).toThrow(
+      "NDJSON row 0 must be a non-null object",
+    );
+    expect(() => serializeNdjsonRows([new Date("2026-01-01T00:00:00.000Z")])).toThrow(
+      "NDJSON row 0 must serialize to a non-null object",
+    );
+    expect(() => serializeNdjsonRows([{ toJSON: () => undefined }])).toThrow(
+      "NDJSON row 0 must serialize to a non-null object",
+    );
+    expect(() => serializeNdjsonRows([{ toJSON: () => null }])).toThrow(
+      "NDJSON row 0 must serialize to a non-null object",
+    );
+    expect(() => serializeNdjsonRows([{ toJSON: () => [] }])).toThrow(
+      "NDJSON row 0 must serialize to a non-null object",
+    );
   });
 });

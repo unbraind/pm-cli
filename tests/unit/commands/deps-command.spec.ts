@@ -445,6 +445,89 @@ describe("runDeps", () => {
     });
   });
 
+  it("bounds multiply-linked tree projections with deterministic truncation metadata", async () => {
+    await withTempPmPath(async (context) => {
+      const leaves = Array.from({ length: 5 }, (_, index) =>
+        createTask(context, `deps-bounded-leaf-${index}`),
+      );
+      const rootId = createTask(
+        context,
+        "deps-bounded-root",
+        leaves.map(
+          (leafId) =>
+            `id=${leafId},kind=related,author=test-author,created_at=now`,
+        ),
+      );
+
+      const result = await runDeps(
+        rootId,
+        { format: "tree", nodeLimit: 3, edgeLimit: 10, tokenBudget: 10_000 },
+        { path: context.pmPath },
+      );
+
+      expect(result.tree?.dependencies).toHaveLength(2);
+      expect(result.tree?.truncated).toBe(true);
+      expect(result).toMatchObject({
+        node_count: 3,
+        edge_count: 2,
+        truncation: {
+          reasons: ["node_limit"],
+          limits: {
+            max_depth: 32,
+            node_limit: 3,
+            edge_limit: 10,
+            token_budget: 10_000,
+          },
+          total_node_count: 6,
+          total_edge_count: 5,
+          omitted_node_count: 3,
+          omitted_edge_count: 3,
+        },
+      });
+    });
+  });
+
+  it("reports edge and token budget truncation independently", async () => {
+    await withTempPmPath(async (context) => {
+      const leftId = createTask(context, "deps-edge-left");
+      const rightId = createTask(context, "deps-edge-right");
+      const rootId = createTask(context, "deps-edge-root", [
+        `id=${leftId},kind=related,author=test-author,created_at=now`,
+        `id=${rightId},kind=related,author=test-author,created_at=now`,
+      ]);
+
+      const edgeBounded = await runDeps(
+        rootId,
+        { edgeLimit: 1, nodeLimit: 10, tokenBudget: 10_000 },
+        { path: context.pmPath },
+      );
+      expect(edgeBounded.truncation?.reasons).toEqual(["edge_limit"]);
+      expect(edgeBounded.tree?.dependencies).toHaveLength(1);
+
+      const tokenBounded = await runDeps(
+        rootId,
+        { edgeLimit: 10, nodeLimit: 10, tokenBudget: 1 },
+        { path: context.pmPath },
+      );
+      expect(tokenBounded.truncation?.reasons).toEqual(["token_budget"]);
+      expect(tokenBounded.tree?.dependencies).toEqual([]);
+
+      const rootTokens = tokenBounded.truncation?.estimated_tokens;
+      expect(rootTokens).toBeTypeOf("number");
+      const edgeTokenBounded = await runDeps(
+        rootId,
+        {
+          edgeLimit: 10,
+          nodeLimit: 10,
+          tokenBudget: (rootTokens ?? 0) + 1,
+        },
+        { path: context.pmPath },
+      );
+      expect(edgeTokenBounded.truncation?.reasons).toEqual(["token_budget"]);
+      expect(edgeTokenBounded.tree?.dependencies).toEqual([]);
+    });
+  });
+
   it("returns bounded explainable relationship context through deps", async () => {
     await withTempPmPath(async (context) => {
       const prerequisiteId = createTask(context, "context-prerequisite");

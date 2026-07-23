@@ -402,6 +402,7 @@ export const TOOL_CONTEXT_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "staleThreshold", flag: "--stale-threshold" },
   { param: "tokenBudget", flag: "--token-budget" },
   { param: "explainRanking", flag: "--explain-ranking" },
+  { param: "noTags", flag: "--no-tags" },
 ];
 
 /** Public contract for tool deps option contracts, shared by SDK and presentation-layer consumers. */

@@ -4,6 +4,9 @@
 
 ### Added
 
+- pm validate needs a counts-only projection so agents can read drift numbers without row-array payloads ([pm-a9mc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-a9mc.toon))
+- GH-445: suppress/factor repeated inherited tags in pm context rows (--no-tags + tag folding) ([pm-ishm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ishm.toon))
+- NDJSON output mode: --format ndjson on list/search/context emits one JSON object per line for grep/jq/xargs pipelines ([pm-646c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-646c.toon))
 - Workspace-scoped audit history stream: schema/config/profile/init mutations recorded as append-only hash-chained JSONL ([pm-klo8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-klo8.toon))
 - Schema evolution migrations: lossless, history-recorded bulk migration of existing items when custom types, fields, or statuses are renamed or retired ([pm-dijg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-dijg.toon))
 - Beyond-PM SDK exemplar phase 2: temporal digital-twin graph with entity relationships, event replay, point-in-time state, and invariants ([pm-kr3t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-kr3t.toon))
@@ -12,6 +15,7 @@
 
 ### Fixed
 
+- pm deps tree must remain bounded on cyclic deep relationship graphs ([pm-gygna8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gygna8.toon))
 - GH-449: contracts policy_modes advertises 'enforce' but governance config accepts 'strict' (contract drift) ([pm-kjbh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kjbh.toon))
 - Scoped renderer ownership: safe package renderers should not keep isolated package doctor in warning state ([pm-nf7q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nf7q.toon))
 - Extension flag value-arity decided by three divergent predicates in cli/extension-command-help.ts - help, parse, and summary surfaces can disagree ([pm-853a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-853a.toon))

@@ -10,7 +10,12 @@ import { RelationshipKindRegistry } from "../../../src/sdk/relationships.js";
 import * as updateCommand from "../../../src/cli/commands/update.js";
 import { runHistoryRedact } from "../../../src/cli/commands/history-redact.js";
 import { runInit } from "../../../src/cli/commands/init.js";
-import { _testOnlyValidateCommand as validateInternals, runValidate } from "../../../src/cli/commands/validate.js";
+import {
+  _testOnlyValidateCommand as validateInternals,
+  projectValidateCounts,
+  runValidate,
+  type ValidateResult,
+} from "../../../src/cli/commands/validate.js";
 import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
@@ -33,6 +38,63 @@ import {
 import { createTestItemId } from "../../helpers/itemFactory.js";
 import type { TempPmContext } from "../../helpers/withTempPmPath.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+
+it("projects validation results to scalar counts without diagnostic row arrays", () => {
+  const projected = projectValidateCounts({
+    ok: false,
+    has_warnings: true,
+    checks: [
+      {
+        name: "metadata",
+        status: "warn",
+        details: {
+          count: 2,
+          counts: { missing_author: 2 },
+          missing_author_item_ids: ["pm-1", "pm-2"],
+          nested: { total: 2, rows: [{ id: "pm-1" }] },
+        },
+      },
+    ],
+    warnings: ["validate_metadata_missing_author"],
+    fixes: {
+      mode: "dry_run",
+      auto_fix: true,
+      prune_missing: false,
+      granted_fix_scopes: ["metadata"],
+      planned_count: 1,
+      applied_count: 0,
+      gated_count: 0,
+      failed_count: 0,
+      planned_fixes: [{ id: "pm-1" }],
+      applied_fixes: [],
+      gated_fixes: [],
+      failed_fixes: [],
+    },
+    generated_at: "2026-07-23T00:00:00.000Z",
+  } satisfies ValidateResult);
+
+  expect(projected.checks[0]?.details).toEqual({
+    count: 2,
+    counts: { missing_author: 2 },
+    nested: { total: 2 },
+  });
+  expect(projected.warnings).toEqual(["validate_metadata_missing_author"]);
+  expect(projected.fixes).toMatchObject({
+    planned_count: 1,
+    applied_count: 0,
+  });
+  expect(projected.fixes).not.toHaveProperty("planned_fixes");
+  expect(projected.fixes).not.toHaveProperty("granted_fix_scopes");
+  expect(
+    projectValidateCounts({
+      ok: true,
+      has_warnings: false,
+      checks: [],
+      warnings: [],
+      generated_at: "2026-07-23T00:00:00.000Z",
+    }),
+  ).not.toHaveProperty("fixes");
+});
 
 function createTask(context: TempPmContext, title: string): string {
   return createTestItemId(context, {

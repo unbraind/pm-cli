@@ -167,6 +167,7 @@ Command/action contract exports:
 - `PmClient` / `runAction` (high-level in-process action execution for custom tools, bots, CI, and embedded runtimes)
 - Typed read primitives on `PmClient`: `get` (including `GetOptions.at` point-in-time reads), `list`, `search`, `context`, `next`, `aggregate`, and `stats`; direct `getItemAt` reconstructs a canonical historical document without mutation
 - Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`. Standard and brief `get` projections omit note bodies but expose `item.notes_count`; deep/full reads return the notes themselves, and narrow consumers can request `notes_count` explicitly.
+- Stream projection primitive: `serializeNdjsonRows` frames SDK-owned object rows as newline-delimited JSON without a trailing newline and rejects scalar/array rows, so package transports can match list/search/context CLI semantics without importing presentation code.
 - Context relevance primitives: `buildItemContextRelevanceCandidates`, `buildContextSignalSnapshot`, `ContextSignalStore`, `JsonFileContextSignalStoreAdapter`, `parseContextSignalSnapshot`, `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
 - Context relevance contracts: `ContextRelevanceCandidate`, `ContextRelevanceSignals`, `ContextSignalSnapshot`, `ContextSignalStoreAdapter`, `ContextSignalStoreReadResult`, `ContextRelevanceScorer`, `ContextRelevanceReport`, `ContextEvaluationReader`, `ContextEvaluationScenario`, `ContextEvaluationScenarioReport`, `ContextEvaluationThresholds`, and `ContextEvaluationCorpusReport`
 - Context packing and feedback primitives: `packContextCandidates`, `recordContextUsageServing`, `recordContextUsageTouch`, `recordContextUsageTouches`, and `readContextUsageAffinity`
@@ -200,7 +201,7 @@ Command/action contract exports:
 - Customization primitive option/result contracts: `InitCommandOptions` / `InitResult`, `ConfigCommandOptions` / `ConfigResult`, `SchemaSubcommand` / `SchemaResult` / `SchemaInspectResult`, `SchemaListResult`, `SchemaShowResult`, `SchemaAddTypeResult`, `SchemaRemoveTypeResult`, `SchemaAddStatusResult`, `SchemaRemoveStatusResult`, `SchemaAddFieldResult`, `SchemaRemoveFieldResult`, `SchemaListFieldsResult`, `SchemaShowFieldResult`, `SchemaApplyPresetResult`, `SchemaAddTypeInferResult`, `SchemaShowStatusResult`, `ProfileSubcommand` / `ProfileResult`, `ProfileListResult`, `ProfileShowResult`, `ProfileApplyResult`, `ProfileLintResult`
 - Typed governance and maintenance primitives on `PmClient`: `validate`, `health`, `gc`, `historyRedact`, `historyRepair`, `historyRepairAll`, `historyCompact`, and `historyCompactBulk`
 - Governance and maintenance option/result contracts: `ValidateCommandOptions` / `ValidateResult`, `RunHealthOptions` / `HealthResult`, `GcCommandOptions` / `GcResult`, `HistoryRedactCommandOptions` / `HistoryRedactResult`, `HistoryRepairCommandOptions` / `HistoryRepairResult` / `HistoryRepairAllResult`, and `HistoryCompactCommandOptions` / `HistoryCompactResult` / `HistoryCompactBulkCommandOptions` / `HistoryCompactBulkResult`
-- Direct governance engines: `runValidate`, `runHealth`, and `runGc` are public SDK exports used by the CLI compatibility adapters and by custom policy engines that already own `GlobalOptions`. Their structured results are identical to CLI JSON output; no shell process or private core import is required.
+- Direct governance engines: `runValidate`, `runHealth`, and `runGc` are public SDK exports used by the CLI compatibility adapters and by custom policy engines that already own `GlobalOptions`. `runValidate({ counts: true })` and `projectValidateCounts` preserve statuses, warning codes, and scalar count/total maps while removing diagnostic row arrays. Their structured results are identical to CLI JSON output; no shell process or private core import is required.
 - Execution and diagnostics engines: `runTest`, `runLinkedTests`, `runTestAll`, `runStartBackgroundRun`, `runTestRunsList`, `runTestRunsStatus`, `runTestRunsLogs`, `runTestRunsStop`, `runTestRunsResume`, `runTestRunsWorker`, `runEval`, `runTelemetry`, and `runStats`. Their CLI modules are compatibility re-exports of SDK-owned implementations.
 - Execution and diagnostics contracts: `TestCommandOptions` / `TestResult` / `TestRunResult`, `TestAllCommandOptions` / `TestAllResult`, `StartBackgroundRunCommandOptions` / `StartBackgroundRunResult`, `TestRuns*CommandOptions`, `EvalOptions` / `EvalResult`, `TelemetryCommandOptions` / `TelemetrySubcommand`, and `StatsCommandOptions` / `StatsResult`.
 - Linked-test authoring primitives: `parseLinkedTestJsonEntries`, the `parseLinkedTest*` field parsers, `LINKED_TEST_PM_CONTEXT_MODE_VALUES`, `LINKED_TEST_PROTECTED_ENV_KEYS`, `classifyLinkedTestFailure`, `countFailureCategories`, and `summarizeContextPreflight` let custom hosts validate, execute, classify, and report linked tests without duplicating CLI policy.
@@ -442,8 +443,11 @@ when another agent runs from the repository root. Root-layout trackers use the
 tracker directory itself as their workspace.
 
 `runDeps` also projects missing `parent` and legacy `blocked_by` references as
-typed missing edges, alongside structured dependencies. Tree, graph, and
-summary output therefore share the same relationship-integrity view.
+typed missing edges, alongside structured dependencies. Tree and graph payloads
+apply shared depth/node/edge/token bounds and expose deterministic truncation
+reasons, effective limits, full totals, and omitted counts; summary mode obtains
+the same unique-node/edge census without materializing the tree. All formats
+therefore share the same relationship-integrity view.
 
 `pm validate --check-lifecycle` uses the same classification. Its
 `dependency_references` check warns only when

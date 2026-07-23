@@ -1040,6 +1040,7 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--check-history-drift" },
   { flag: "--check-command-references" },
   { flag: "--check-storage-integrity" },
+  { flag: "--counts" },
 ];
 
 /** Creates flag contracts using the validated operation inputs. */
@@ -1449,6 +1450,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = withCursorSemantics(
     { flag: "--explain-ranking" },
     { flag: "--explain_ranking" },
     { flag: "--token-budget", aliases: ["--token_budget"] },
+    { flag: "--no-tags" },
   ],
   new Set([
     "--limit",
@@ -1460,6 +1462,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = withCursorSemantics(
     "--stale-threshold",
     "--explain-ranking",
     "--explain_ranking",
+    "--no-tags",
   ]),
 );
 

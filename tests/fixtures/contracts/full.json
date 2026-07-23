@@ -1540,6 +1540,10 @@
             "--token_budget"
           ],
           "flag": "--token-budget"
+        },
+        {
+          "cursor_semantics": "presentation",
+          "flag": "--no-tags"
         }
       ],
       "provider": "core"
@@ -1968,6 +1972,10 @@
             "--token_budget"
           ],
           "flag": "--token-budget"
+        },
+        {
+          "cursor_semantics": "presentation",
+          "flag": "--no-tags"
         }
       ],
       "provider": "core"
@@ -7258,6 +7266,9 @@
         },
         {
           "flag": "--check-storage-integrity"
+        },
+        {
+          "flag": "--counts"
         }
       ],
       "provider": "core"
@@ -18484,6 +18495,10 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "noTags": {
+            "description": "No Tags.",
+            "type": "boolean"
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -18738,6 +18753,10 @@
           },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "noTags": {
+            "description": "No Tags.",
             "type": "boolean"
           },
           "parent": {
@@ -25158,6 +25177,10 @@
           },
           "checkStaleBlockers": {
             "description": "Include stale blocker-pattern diagnostics in lifecycle checks.",
+            "type": "boolean"
+          },
+          "counts": {
+            "description": "Counts.",
             "type": "boolean"
           },
           "dependencyCycleSeverity": {

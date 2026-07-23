@@ -2,18 +2,44 @@ id: pm-a9mc
 title: pm validate needs a counts-only projection so agents can read drift numbers without row-array payloads
 description: "Add a counts-only validate projection that preserves diagnostic totals while omitting large per-item row arrays across CLI, MCP, contracts, and docs."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",token-efficiency
 created_at: "2026-07-07T15:13:53.449Z"
-updated_at: "2026-07-16T05:45:16.362Z"
+updated_at: "2026-07-23T22:03:06.213Z"
+closed_at: "2026-07-23T21:19:13.904Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "pm validate --json supports a counts-only mode (flag or details=summary) keeping every *_count/*_total field and dropping per-item row arrays (missing_resolution_rows, missing_linked_path_rows, orphaned_path_rows, duplicate lists); human-readable output gains the same projection; default behavior unchanged (full row worklists remain default); contracts, MCP pm_validate params, completions, and docs updated per the new-flag wiring checklist"
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[2]{id,kind,created_at,author,source_kind}:
+resolution: Implemented and verified
+expected_result: "Validation offers a token-efficient counts projection across CLI, MCP, and public SDK without weakening full-result types."
+actual_result: "Recursive row-array omission preserves scalar totals/count maps, contracts expose --counts, and typed ValidateCountsResult overloads pass packed SDK acceptance."
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-cfed,related,"2026-07-07T15:15:27.561Z",null,null
   pm-nilh,related,"2026-07-16T05:45:16.343Z",null,null
+  pm-gygna8,related,"2026-07-23T21:01:39.666Z",claude-code-agent,null
+comments[5]{created_at,author,text}:
+  "2026-07-23T20:33:27.392Z",claude-code-agent,"Implementation start 2026-07-23: actively deliver the shared bounded/streamable read projection surface across pm-gygna8, pm-a9mc, pm-ishm, and pm-646c. Scope includes public SDK contracts, thin CLI/MCP wiring, deterministic bounds, token-efficient projections, pipeline behavior, docs, contracts, focused regressions, exact coverage, and packed/manual consumer proof. All-status duplicate review reused these canonical items and their closed prerequisites; no parallel implementation item was created."
+  "2026-07-23T21:01:51.057Z",claude-code-agent,"Implementation evidence: validate --counts and projectValidateCounts preserve the gate envelope, warnings, scalar totals, and nested count maps while recursively omitting diagnostic/fix row arrays; focused tests pass."
+  "2026-07-23T21:13:04.735Z",claude-code-agent,"Acceptance evidence: packed tarball installed into /tmp/tmp.2S2yySAQe2/consumer; validate --counts retained scalar/count-map evidence, removed diagnostic arrays recursively, and public SDK projectValidateCounts export passed. Public overloads now distinguish ValidateResult from ValidateCountsResult."
+  "2026-07-23T21:19:08.546Z",claude-code-agent,"Final verification evidence: full sandboxed repository coverage passed 349 files / 6,189 tests at exact Statements 42,435/42,435, Branches 30,059/30,059, Functions 8,645/8,645, Lines 41,245/41,245. Typecheck, ESLint, zero-duplication, static quality, 100% docstrings, package boundary, token budgets, docs/skills, contracts, context evaluation, linked tests, and packed consumer acceptance also passed."
+  "2026-07-23T22:03:06.212Z",claude-code-agent,"Review-round evidence: exported ValidateCountsResult from the primary SDK barrel so the counts:true overload return type is directly importable. Typecheck, SDK index tests, and exact full coverage pass."
+files[6]{path,scope,note}:
+  src/cli/register-operations.ts,project,validate flag adapter
+  src/sdk/cli-contracts/tool-schema.ts,project,MCP validate option parity
+  src/sdk/governance/validate.ts,project,counts-only SDK projection
+  src/sdk/index.ts,project,public SDK export
+  src/sdk/runtime.ts,project,Expose counts-aware public SDK and PmClient overloads without unsafe casts
+  tests/unit/commands/validate-command.spec.ts,project,counts projection tests
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,240,validate counts SDK and CLI acceptance
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mry0eaay-zu4qtv,test,passed,"2026-07-23T21:13:54.385Z","2026-07-23T21:14:09.706Z","2026-07-23T21:14:09.706Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,validate counts usage
+  docs/SDK.md,project,SDK counts projection
+close_reason: "Implemented counts-only validation projection across CLI/MCP/public SDK with accurate typed result overloads, packed acceptance, docs, and exact coverage."
 body: "## Problem\nMaintainer passes read `pm validate --json` on every session purely for the drift COUNTS (missing resolution, close_reason, linked-file drift). Today that read costs the full row arrays: the resolution check emits all 269 missing_resolution_rows and the files check emits up to file_list_summary_limit (40) entries per list even when the caller only needs missing_linked_paths_count / orphaned_paths_count. For agents this is hundreds of wasted tokens per verification read, on one of the most-run diagnostic commands.\n\n## Proposal\nA counts-only projection for validate output: keep check names, statuses, and every *_count / *_total scalar; drop per-item row arrays and classification lists. Spelling candidates (pick one at implementation): `pm validate --counts`, `--details none`, or reuse the lean-output mode of GH-435 (pm-cfed) if that lands first with array-suppression semantics.\n\n## Non-overlap\n- pm-cfed (GH-435) lean JSON drops null/EMPTY fields — these row arrays are non-empty, so it does not cover this.\n- pm-vxxm (GH-442) is contracts --summary, a different command.\n- pm-edge (closed) trimmed validate required_fields to active profiles; row arrays remained.\n- The row worklists themselves are a feature (exact missing-metadata ID worklists, see ADR-era usage on pm-bl8x) — this adds a cheaper projection, it removes nothing.\n\n## Evidence\nSession 2026-07-07: drift verification needed exactly four scalars (269/18/147/125) and paid for ~300 row entries across two reads; the *_count fields already exist, so the projection is pure output filtering."

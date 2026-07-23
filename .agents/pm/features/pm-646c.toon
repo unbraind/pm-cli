@@ -2,17 +2,44 @@ id: pm-646c
 title: "NDJSON output mode: --format ndjson on list/search/context emits one JSON object per line for grep/jq/xargs pipelines"
 description: "Line-oriented output child of the composability story: current json/toon/csv/table formats are document-shaped, so jq streaming and grep-per-item need awkward preprocessing. NDJSON is the standard pipeline interchange. Related: pm-cfed (lean JSON field shape) composes with this; pagination cursor work (pm-dfg0) shares ordering guarantees."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",composability
 created_at: "2026-07-06T21:25:25.697Z"
-updated_at: "2026-07-06T21:26:29.768Z"
+updated_at: "2026-07-23T22:03:06.958Z"
+closed_at: "2026-07-23T21:19:10.451Z"
 author: maintainer-agent
 estimated_minutes: 300
 acceptance_criteria: "list/search/context accept --format ndjson emitting exactly one self-contained JSON object per line (no wrapper, no trailing summary on stdout); works with head/grep/jq -c round-trips and stays EPIPE-clean; field names identical to --json mode; contracts/MCP/completions/docs/completions regenerated; covered by unit + pipeline-style tests"
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+resolution: Implemented and verified
+expected_result: "Line-oriented list, search, and context output is contract-complete, composable, and EPIPE-safe."
+actual_result: Public serializeNdjsonRows and CLI NDJSON adapters emit independently parseable row objects with no wrapper or trailing summary; packed CLI and SDK acceptance passed.
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-m9xv,related,"2026-07-06T21:26:29.755Z",null,null
+  pm-a9mc,related,"2026-07-23T21:01:38.700Z",claude-code-agent,null
+  pm-ishm,related,"2026-07-23T21:01:38.700Z",claude-code-agent,null
+comments[5]{created_at,author,text}:
+  "2026-07-23T20:33:32.220Z",claude-code-agent,"Implementation start 2026-07-23: actively deliver the shared bounded/streamable read projection surface across pm-gygna8, pm-a9mc, pm-ishm, and pm-646c. Scope includes public SDK contracts, thin CLI/MCP wiring, deterministic bounds, token-efficient projections, pipeline behavior, docs, contracts, focused regressions, exact coverage, and packed/manual consumer proof. All-status duplicate review reused these canonical items and their closed prerequisites; no parallel implementation item was created."
+  "2026-07-23T21:01:49.652Z",claude-code-agent,"Implementation evidence: public serializeNdjsonRows plus list/search/context --format ndjson now emit row-only streams; CLI and SDK tests pass and generated contracts are current."
+  "2026-07-23T21:13:05.468Z",claude-code-agent,"Acceptance evidence: packed tarball produced valid wrapper-free NDJSON for list (3 rows), search (2 rows), and context (3 rows); every line parsed independently; installed CLI also exited cleanly through head -n 1 EPIPE."
+  "2026-07-23T21:19:07.192Z",claude-code-agent,"Final verification evidence: full sandboxed repository coverage passed 349 files / 6,189 tests at exact Statements 42,435/42,435, Branches 30,059/30,059, Functions 8,645/8,645, Lines 41,245/41,245. Typecheck, ESLint, zero-duplication, static quality, 100% docstrings, package boundary, token budgets, docs/skills, contracts, context evaluation, linked tests, and packed consumer acceptance also passed."
+  "2026-07-23T22:03:06.957Z",claude-code-agent,"Review-round evidence: hardened serializeNdjsonRows against Date/custom toJSON projections that serialize to string, undefined, null, or arrays; only JSON object rows are emitted. Added regressions and restored exact 100/100/100/100 coverage."
+files[6]{path,scope,note}:
+  src/cli/commands/context.ts,project,context NDJSON format contract
+  src/cli/register-list-query.ts,project,list/search/context NDJSON adapters
+  src/sdk/cli-contracts/flag-contracts.ts,project,runtime flag contracts
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,MCP parameter parity
+  src/sdk/output.ts,project,public NDJSON framing primitive
+  tests/fixtures/contracts/full.json,project,generated contract snapshot
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output.spec.ts tests/unit/cli/register-list-query.spec.ts tests/unit/commands/register-commands.spec.ts,project,240,SDK and CLI NDJSON acceptance
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mry0dn7k-ycrsay,test,passed,"2026-07-23T21:13:26.663Z","2026-07-23T21:13:39.776Z","2026-07-23T21:13:39.776Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,NDJSON CLI semantics
+  docs/SDK.md,project,SDK framing primitive
+close_reason: "Implemented public and CLI NDJSON row streaming for list/search/context with contract parity, EPIPE-safe packed acceptance, documentation, and exact coverage."
 body: ""

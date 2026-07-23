@@ -2,18 +2,39 @@ id: pm-gygna8
 title: pm deps tree must remain bounded on cyclic deep relationship graphs
 description: "During full-lineage orientation, pm deps pm-kr3t --format tree --json expanded until the process exhausted roughly 4 GB of memory. Tree rendering needs cycle-safe visitation, explicit node/depth/token bounds, and a compact truncation diagnostic so graph context remains safe for agents."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-23T11:25:44.855Z"
-updated_at: "2026-07-23T11:26:20.051Z"
+updated_at: "2026-07-23T21:19:31.348Z"
+closed_at: "2026-07-23T21:19:15.548Z"
 author: codex-root
 acceptance_criteria: "Cyclic and multiply-linked graphs terminate without repeated unbounded expansion; Tree output honors explicit node, depth, and token bounds with deterministic truncation metadata; A regression fixture reproduces the deep richly-linked topology without touching the real tracker; CLI and SDK dependency projections retain parity for bounded results"
 parent: pm-x85o
+resolution: Fixed and verified
+expected_result: "Dependency tree and graph projections terminate deterministically on cyclic or deep graphs under explicit, explainable budgets."
+actual_result: Iterative bounded traversal reports depth/node/edge/token truncation with full and omitted totals; cyclic packed acceptance and regression tests passed.
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-4k6b,related,"2026-07-23T11:26:19.352Z",codex-root,null
   pm-9rxu,related,"2026-07-23T11:26:19.352Z",codex-root,null
   pm-ju83,related,"2026-07-23T11:26:19.352Z",codex-root,null
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-23T11:26:20.051Z",codex-root,"Duplicate-check evidence: searched all-status tracker data for 'deps tree OOM memory', 'dependency graph cycle memory exhaustion', and 'deps format tree'. Existing pm-8kch covers missing-reference parity, pm-x85o the original visualization, pm-ju83 graph primitives, pm-9rxu scale, and pm-4k6b bounded context, but none tracks tree-format memory exhaustion. Reproduction observed during pm-kr3t orientation; the process grew to roughly 4 GB before termination. This item remains open and unclaimed because it was documented, not implemented, in the current SDK/digital-twin tranche."
+  "2026-07-23T20:33:24.846Z",claude-code-agent,"Implementation start 2026-07-23: actively deliver the shared bounded/streamable read projection surface across pm-gygna8, pm-a9mc, pm-ishm, and pm-646c. Scope includes public SDK contracts, thin CLI/MCP wiring, deterministic bounds, token-efficient projections, pipeline behavior, docs, contracts, focused regressions, exact coverage, and packed/manual consumer proof. All-status duplicate review reused these canonical items and their closed prerequisites; no parallel implementation item was created."
+  "2026-07-23T21:01:51.712Z",claude-code-agent,"Implementation evidence: tree/graph dependency projections now apply deterministic default or explicit depth/node/edge/token budgets, avoid recursive graph conversion, and report reasons/limits/full totals/omitted counts; cyclic and multiply-linked fixtures pass."
+  "2026-07-23T21:13:06.996Z",claude-code-agent,"Acceptance evidence: packed temporary tracker with a dependency cycle respected node/edge/token bounds and reported node_limit plus total_edge_count=2 and omitted_edge_count=1 without recursive expansion."
+  "2026-07-23T21:19:09.300Z",claude-code-agent,"Final verification evidence: full sandboxed repository coverage passed 349 files / 6,189 tests at exact Statements 42,435/42,435, Branches 30,059/30,059, Functions 8,645/8,645, Lines 41,245/41,245. Typecheck, ESLint, zero-duplication, static quality, 100% docstrings, package boundary, token budgets, docs/skills, contracts, context evaluation, linked tests, and packed consumer acceptance also passed."
+files[3]{path,scope,note}:
+  src/sdk/cli-contracts/flag-contracts.ts,project,shared bound flags
+  src/sdk/dependencies.ts,project,bounded tree and graph traversal
+  tests/unit/commands/deps-command.spec.ts,project,cyclic deep bounded fixtures
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/deps-command.spec.ts,project,240,cyclic deep dependency bound acceptance
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mry0ej04-xil0qs,test,passed,"2026-07-23T21:14:10.292Z","2026-07-23T21:14:20.980Z","2026-07-23T21:14:20.980Z",1,0,0
+docs[3]{path,scope,note}:
+  docs/COMMANDS.md,project,deps truncation metadata
+  docs/RELATIONSHIP_GRAPH.md,project,bounded graph contract
+  docs/SDK.md,project,SDK bounded projection
+close_reason: "Eliminated cyclic/deep dependency projection blowups with iterative bounded traversal, explainable truncation totals, packed cyclic acceptance, docs, and exact coverage."
 body: ""

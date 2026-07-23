@@ -1121,6 +1121,7 @@ export function normalizeContextOptions(
     activityLimit: readContextString("activityLimit"),
     staleThreshold: readContextString("staleThreshold"),
     tokenBudget: readContextString("tokenBudget"),
+    noTags: options.tags === false ? true : undefined,
   };
   for (const [key, value] of Object.entries(options)) {
     if (Object.hasOwn(normalized, key)) {

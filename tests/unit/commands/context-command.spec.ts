@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
   _testOnly as contextInternals,
+  applyContextTagProjection,
   parseContextDepth,
   parseContextFocusFields,
   parseContextSections,
@@ -14,7 +15,56 @@ import {
   runContext,
   type ContextFocusItem,
   type ContextOptions,
+  type ContextResult,
 } from "../../../src/cli/commands/context.js";
+
+it("folds inherited focus tags and supports an explicit no-tags projection", () => {
+  const result = {
+    high_level: [
+      {
+        id: "pm-parent",
+        parent: null,
+        tags: ["area:sdk", "priority:high"],
+      },
+    ],
+    low_level: [
+      {
+        id: "pm-child",
+        parent: "pm-parent",
+        tags: ["priority:high", "area:sdk"],
+      },
+      {
+        id: "pm-grandchild",
+        parent: "pm-child",
+        tags: ["area:sdk", "priority:high"],
+      },
+      {
+        id: "pm-distinct",
+        parent: "pm-parent",
+        tags: ["area:cli"],
+      },
+    ],
+    blocked_fallback: [{ id: "pm-tagless", parent: null }],
+  } as unknown as ContextResult;
+
+  applyContextTagProjection(result, false);
+  expect(result.low_level[0]).toMatchObject({
+    id: "pm-child",
+    tags_inherited: "pm-parent",
+  });
+  expect(result.low_level[0]).not.toHaveProperty("tags");
+  expect(result.low_level[1]).toMatchObject({
+    id: "pm-grandchild",
+    tags_inherited: "pm-child",
+  });
+  expect(result.low_level[1]).not.toHaveProperty("tags");
+  expect(result.low_level[2]?.tags).toEqual(["area:cli"]);
+
+  applyContextTagProjection(result, true);
+  expect(result.high_level[0]).not.toHaveProperty("tags");
+  expect(result.low_level[0]).not.toHaveProperty("tags_inherited");
+  expect(result.low_level[2]).not.toHaveProperty("tags");
+});
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { SETTINGS_DEFAULTS, EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
@@ -708,6 +758,7 @@ describe("context command module", () => {
     expect(resolveContextOutputFormat({ format: "  JSON  " }, { json: false })).toBe("json");
     expect(resolveContextOutputFormat({}, { json: true })).toBe("json");
     expect(resolveContextOutputFormat({ format: "json" }, { json: true })).toBe("json");
+    expect(resolveContextOutputFormat({ format: "ndjson" }, { json: true })).toBe("ndjson");
     expect(() => resolveContextOutputFormat({ format: "toon" }, { json: true })).toThrow(PmCliError);
     expect(() => resolveContextOutputFormat({ format: "xml" }, { json: false })).toThrow(PmCliError);
   });
