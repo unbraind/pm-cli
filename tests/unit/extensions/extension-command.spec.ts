@@ -3420,7 +3420,7 @@ describe("extension command runtime", () => {
       const beforeInstall = await runExtension(undefined, { catalog: true, project: true, vocabulary: "package" }, { path: context.pmPath });
       expect(beforeInstall.action).toBe("catalog");
       expect(beforeInstall.details).toMatchObject({
-        total: 13,
+        total: 15,
         scope: "project",
         installable_resource_kinds: ["extensions"],
         metadata_only_resource_kinds: ["docs", "examples", "assets", "prompts"],
@@ -3469,6 +3469,16 @@ describe("extension command runtime", () => {
             package_name: "@unbrained/pm-command-kit",
             catalog: {
               display_name: "Command Kit Exemplar",
+              category: "sdk",
+            },
+          },
+          {
+            alias: "digital-twin",
+            available: true,
+            installed: false,
+            package_name: "@unbrained/pm-digital-twin",
+            catalog: {
+              display_name: "Digital Twin SDK Exemplar",
               category: "sdk",
             },
           },
@@ -3550,6 +3560,16 @@ describe("extension command runtime", () => {
             catalog: {
               display_name: "Todos Import/Export",
               category: "migration",
+            },
+          },
+          {
+            alias: "twin",
+            available: true,
+            installed: false,
+            package_name: "@unbrained/pm-digital-twin",
+            catalog: {
+              display_name: "Digital Twin SDK Exemplar",
+              category: "sdk",
             },
           },
           {
@@ -3793,7 +3813,7 @@ describe("extension command runtime", () => {
       const wildcardInstall = await runExtension("*", { install: true, project: true }, { path: context.pmPath });
       expect(wildcardInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 13,
+        installed_count: 15,
         packages: [
           {
             alias: "audit",
@@ -3823,6 +3843,11 @@ describe("extension command runtime", () => {
           {
             alias: "command-kit",
             extension: { name: "builtin-command-kit" },
+            activated: true,
+          },
+          {
+            alias: "digital-twin",
+            extension: { name: "builtin-digital-twin-exemplar" },
             activated: true,
           },
           {
@@ -3866,6 +3891,11 @@ describe("extension command runtime", () => {
             activated: true,
           },
           {
+            alias: "twin",
+            extension: { name: "builtin-digital-twin-exemplar" },
+            activated: true,
+          },
+          {
             alias: "vcs",
             extension: { name: "builtin-vcs-exemplar" },
             activated: true,
@@ -3876,7 +3906,7 @@ describe("extension command runtime", () => {
       const allInstall = await runExtension("all", { install: true, project: true }, { path: context.pmPath });
       expect(allInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 13,
+        installed_count: 15,
       });
     });
   });

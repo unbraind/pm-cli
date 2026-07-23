@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: architecture,"area:cli","area:mcp","area:sdk",refactor
 created_at: "2026-07-05T04:51:44.440Z"
-updated_at: "2026-07-21T15:56:02.131Z"
+updated_at: "2026-07-23T11:27:05.068Z"
 author: maintainer-agent
 estimated_minutes: 3600
 acceptance_criteria: "Public SDK exposes item lifecycle, query/read, annotation/link, governance/validation, schema/config/profile, and history primitives with typed results; src/cli.ts, src/cli/**, src/mcp.ts, and src/mcp/** cannot grow private src/core imports beyond the SDK boundary ratchet baseline enforced in CI and must shrink toward SDK-only imports as primitives are promoted; an exemplar consumer builds a minimal custom PM CLI using only @unbrained/pm-cli/sdk; SDK reference docs cover every promoted primitive; zero CLI behavior change (full test suite green)"
@@ -19,7 +19,7 @@ risk: medium
 confidence: medium
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-6abs,related,"2026-07-07T08:57:59.887Z",null,null
-comments[25]{created_at,author,text}:
+comments[27]{created_at,author,text}:
   "2026-07-05T05:51:11.797Z",claude-code-agent,"Progress evidence from child items pm-lodl/pm-8778: SDK-first baseline is now explicit and enforceable. Current private boundary debt is quantified at 857 unique src/core import edges across 91 boundary files (101 scanned) from src/cli.ts, src/cli/**, and src/mcp/**. The static quality gate now prevents growth and stale baseline entries, giving each SDK primitive-promotion lane a measurable ratchet target while preserving the project philosophy 'project management = context management'."
   "2026-07-06T22:31:27.762Z",codex-agent,"Planning evidence 2026-07-06/07 codex-agent: SDK-first coverage remains canonical here, not a new duplicate epic. Domain promotion items cover query/read (pm-rjqr), lifecycle (pm-98cz), annotations/links (pm-zwpp), schema/config/profile/init (pm-3mna), history maintenance (pm-4a7m), plan workflows (pm-je50), execution/diagnostics (pm-oslr), package/extension lifecycle (pm-x6jf), governance/health (pm-oxrw), docs (pm-ds3b), exemplar CLI (pm-cbwg), and boundary capstone (pm-9x6e). Recommended order: finish typed public primitives before command consolidation flips handlers, then make CLI and MCP pure presentation layers over SDK calls; every primitive needs SDK docs, tests, and behavior parity against existing CLI results."
   "2026-07-07T06:50:47.652Z",maintainer-agent,"Promotion-partition progress reconciled against shipped work (PR #477, commit f7e2ac21): pm-rjqr query/read primitives and pm-98cz item-lifecycle primitives are CLOSED with evidence — PmClient + top-level SDK exports now cover list/get/search/context/next/aggregate/stats and create/update/close/claim/release/copy/delete/restore/focus/start-task/pause-task/close-task, including structured create payloads (pm-395t) and published SDK package-coordinate docs (pm-25d0). Remaining open promotion domains: pm-zwpp annotations/links, pm-je50 plan workflow, pm-4a7m history-stream maintenance, pm-3mna schema/config/profile/init, pm-oxrw governance/health/maintenance, pm-oslr execution/diagnostics, pm-x6jf package/extension lifecycle — then capstone pm-9x6e (zero the 91-entry import-boundary baseline) and exemplar pm-cbwg."
@@ -45,6 +45,8 @@ comments[25]{created_at,author,text}:
   "2026-07-13T22:09:18.685Z",codex-root,"SDK-first long-horizon organization 2026-07-13: new pm-ju83 defines public typed-relationship registry and bounded graph-query primitives and is related to this epic; canonical docs task pm-ds3b now depends on it and carries the graph reference/migration scope. Existing beyond-PM story pm-8ngt was reused: pm-xtrd now encodes its documented pm-cbwg and pm-3mna prerequisites, pm-8ngt is blocked by that acceptance vehicle and related to company-policy story pm-xc68, and new child pm-kr3t adds a public-SDK-only temporal digital-twin exemplar. No CLI-private graph implementation is planned."
   "2026-07-15T20:06:34.208Z",codex-audit-20260715,"Review pass 91 boundary evidence: the official package-boundary gate passes on current main. The SDK remains operationally dense at 46 root files plus 24 nested files, so pm-kb5h should execute the topology move while this umbrella preserves thin CLI adapters, SDK-first primitives, and compatibility. No raw import-count claim is treated as a contract baseline."
   "2026-07-21T15:56:02.128Z",codex-tracker-governance,"SDK universality review 2026-07-21: the requested terminal-only customization, VCS/company workflow, and digital-twin horizon is already decomposed rather than missing. Canonical coverage is pm-8ngt for a non-PM system built only from SDK primitives, pm-xtrd for the VCS-style exemplar, pm-kr3t for a temporal digital twin, pm-xc68 for organization policy, pm-4e12 for atomic multi-item and relationship commits, and pm-9x6e plus pm-ds3b for the remaining import-boundary and documentation capstones. New CLI behavior must continue to originate in public SDK primitives; no duplicate platform epic was created."
+  "2026-07-23T11:18:50.330Z",codex-root,"Evidence: full repository coverage passed 6129/6129 tests at 100% statements, 100% branches, 100% functions, and 100% lines. Host-injected ExtensionCommandSdk now supplies missing-item classification, relationship graph materialization, bounded impact analysis, and relationship event batch validation so installed packages need only type imports from the public SDK. pnpm typecheck, pnpm lint, docs/skills, contracts, secrets, package boundary, token budget, and version gates passed."
+  "2026-07-23T11:26:57.768Z",codex-root,"Release-gate evidence: pnpm release:gates passed build, typecheck, docs, strict static quality, package boundary, token budgets, 6129-test 100/100/100/100 coverage, version/security checks, packed npx smoke (15 package aliases), and 88-command package-first dogfood. The only pre-commit stop was greptile-review reporting that no committed diff yet existed; it will be rerun on the implementation commit. This umbrella remains open for future SDK promotions after the current active tranche is released."
 notes[19]{created_at,author,text}:
   "2026-07-05T04:55:45.848Z",maintainer-agent,"Gap analysis 2026-07-05 — src/sdk currently exports extension/package-authoring surfaces only (compose, define, runtime, testing, cli-contracts, profile presets/plan). The PM primitives themselves live in src/core (item, store, search, history, governance, schema, config, session, checkpoint, lock) and src/cli/commands imports them directly; ~60 command modules under src/cli/commands also embed business logic beyond parsing/rendering. Consequence; an SDK-only consumer today cannot create, query, or govern items without shelling out to the CLI."
   "2026-07-05T04:55:46.394Z",maintainer-agent,"Promotion strategy — domain-by-domain (lifecycle, query, annotations, governance, schema/config/profile) with a zero-behavior-change bar per domain; boundary gate (pm-8778) starts as an allowlist ratchet at current import state so it can merge before promotions finish and tighten with each one. Exemplar package (pm-cbwg) is the acceptance proof for the universality story pm-w89s."
@@ -65,15 +67,20 @@ notes[19]{created_at,author,text}:
   "2026-07-16T18:03:25.388Z",maintainer-agent,"Frontier update 2026-07-16 (post-PR#573, pass #93): pm-oslr execution/diagnostics slice SHIPPED+CLOSED — ALL SIX promotion slices (xzhz runtime, rjqr read/query, 98cz lifecycle, je50 plan, zwpp annotations/links, 3mna schema/config/init, oxrw governance/health, 4a7m history + oslr execution/diagnostics) are now public SDK surface. Epic enters its endgame: pm-cbwg exemplar is DEPENDENCY-CLEAR (all five blockers closed) and is the natural next lane; pm-ds3b docs umbrella waits only on pm-ju83 (relationship registry primitives); pm-w89s universality story waits on cbwg. Boundary capstone pm-9x6e remainder is exactly 51 sources / 412 edges after PR#573 (was 62/538). Suppression budget 157."
   "2026-07-17T04:43:08.975Z",maintainer-agent,"Frontier update 2026-07-17 (post-PR#575, pass #94): pm-cbwg SDK-only exemplar + pm-w89s integrator story SHIPPED+CLOSED (docs/examples/sdk-custom-tool, installed-tarball proof) and pm-qfdd reentrant embedded CLI closed in the same lane — the universal-tool story is proven end-to-end on public SDK only. Remaining epic surface: pm-ds3b umbrella (waits only on pm-ju83 graph-query primitives) and capstone pm-9x6e (boundary ratchet now 48 sources / 407 edges after PR#575's bootstrap/worker/telemetry promotions). PR#571 (parallel draft of this territory) closed as superseded by #573+#575."
   "2026-07-18T14:08:39.397Z",codex-ecosystem-planner,"Universal-platform roadmap review 2026-07-18: no missing umbrella exists. CLI/MCP thinning is owned by capstone pm-9x6e and docs pm-ds3b; persistent typed relationships by pm-ju83; atomic multi-item and relationship commits by pm-4e12; VCS proof shipped in pm-xtrd; temporal digital-twin proof continues in pm-kr3t under story pm-8ngt; organization policy roles are pm-xc68; cross-workspace federation is pm-is1a; durable mutation subscription is pm-e200; workspace-scoped immutable audit is pm-klo8; mutation-history completeness gate is pm-9yfo; transaction/merge semantics are pm-g5sx. Long-horizon sequencing: finish ju83 -> ds3b + 9x6e; land 4e12 transaction boundary; prove kr3t digital-twin invariants and point-in-time replay; then federation/policy/event-stream layers can compose without private CLI logic. Every CLI behavior must remain reachable as a typed public SDK primitive before presentation-layer consolidation."
-learnings[1]{created_at,author,text}:
+learnings[2]{created_at,author,text}:
   "2026-07-05T04:55:46.836Z",maintainer-agent,"The CLI-simplification epic pm-n7rr and this epic reinforce each other; consolidated commands should be implemented as thin SDK calls, so the inventory task pm-lodl deliberately feeds both epics and should run before either implementation stream starts."
-files[5]{path,scope,note}:
+  "2026-07-23T11:19:16.370Z",codex-root,"Portable extension commands should receive host-bound SDK value primitives through CommandHandlerContext.sdk. Public package specifiers remain appropriate for types and independently installed dependency-linked packages, but copied first-party extensions must not require workspace package resolution at module evaluation time."
+files[9]{path,scope,note}:
   docs/SDK.md,project,Parent SDK-first reference documentation
+  packages/pm-digital-twin/extensions/digital-twin/index.ts,project,SDK-first capstone package
+  src/core/extensions/extension-types.ts,project,"Host-injected extension SDK graph,validation,and error-classification contract"
+  src/sdk/extension-command-context.ts,project,Portable runtime implementation for public extension SDK services
   src/sdk/index.ts,project,Parent SDK-first barrel expansion
+  src/sdk/relationship-history.ts,project,generic temporal primitive corrected by capstone
   src/sdk/runtime.ts,project,Parent SDK-first primitive runtime expansion
   tests/unit/sdk/sdk-context-primitives.spec.ts,project,Parent SDK-first primitive coverage
   tests/unit/sdk/sdk-index.spec.ts,project,Aligned SDK barrel lifecycle tests with full typed mutation result envelopes
-tests[9]:
+tests[11]:
   - command: node scripts/run-tests.mjs coverage
     scope: project
     timeout_seconds: 420
@@ -99,10 +106,18 @@ tests[9]:
   - command: "pnpm quality:docs-skills"
     scope: project
     timeout_seconds: 180
+  - command: "pnpm release:gates"
+    scope: project
+    timeout_seconds: 2400
+  - command: "pnpm test:coverage"
+    scope: project
+    timeout_seconds: 300
   - command: pnpm typecheck
     scope: project
     timeout_seconds: 240
     pm_context_mode: tracker
-docs[1]{path,scope,note}:
+docs[3]{path,scope,note}:
   CHANGELOG.md,project,Regenerated by pm-changelog 2026.7.8 after SDK tracker evidence changed
+  docs/SDK.md,project,public SDK capstone guidance
+  packages/pm-digital-twin/GAP_REPORT.md,project,SDK epic completion evidence
 body: "## Charter\nMake the SDK the single public API of pm. Ordering: (1) inventory the CLI-to-core call graph, (2) promote primitives domain-by-domain into src/sdk with stable typed signatures, (3) flip CLI handlers to consume the SDK, (4) enforce the boundary with a lint/CI gate so it can never regress, (5) prove universality with an SDK-only exemplar consumer.\n\n## Layering target\n- src/core: private implementation detail (no stability promise)\n- src/sdk: the ONLY public programmatic surface — re-exports/wraps core with typed, documented, semver-meaningful contracts\n- src/cli + src/mcp: presentation layers that import exclusively from src/sdk\n- packages/*: already consume the SDK; gain access to the same primitives the CLI uses\n\n## Non-goals\n- No behavior changes to any command (pure re-layering)\n- No new storage formats\n- Extension/package authoring SDK (compose/define/runtime/testing) stays as-is; this epic adds the missing primitive layer beside it\n\n## Relationship to CLI simplification epic pm-n7rr\npm-n7rr consolidates the command surface; this epic supplies the primitives those consolidated commands call. Inventory (child task) feeds both.\n\n## Promotion index update (review 2026-07-05, second pass)\nGap-check against the full 60+ command surface found three families uncovered by the original five promotion items; filed: pm-4a7m (history-stream maintenance: redact/repair/compact), pm-je50 (plan workflow primitives), pm-oslr (execution & diagnostics: test running + test-run lifecycle, search eval harness, telemetry stats/export). With these, every CLI command family maps to exactly one SDK promotion item; the pm-lodl inventory validates the partition."

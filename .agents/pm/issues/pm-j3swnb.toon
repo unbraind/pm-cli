@@ -1,0 +1,33 @@
+id: pm-j3swnb
+title: Relationship timestamp snapshots must honor event time for late and offline arrivals
+description: "RelationshipEventLog.snapshot({atTimestamp}) currently chooses an append prefix ending at the last event whose timestamp is <= the target. If a later-appended offline event has an older event-time, the prefix can include earlier-appended events whose timestamps are after the requested instant. Point-in-time reconstruction must filter all immutable events by event time while preserving append order among included events."
+type: Issue
+status: closed
+priority: 2
+tags[5]: "area:graph","area:sdk",event-sourcing,offline-first,temporal
+created_at: "2026-07-23T10:17:49.204Z"
+updated_at: "2026-07-23T11:27:44.770Z"
+closed_at: "2026-07-23T11:26:59.113Z"
+author: codex-root
+acceptance_criteria: "Timestamp snapshots exclude every event after the requested event-time regardless of append order; late and offline arrivals remain visible at their actual event-time; version snapshots and current snapshots retain append-sequence semantics; regression tests cover add, supersede, remove, empty, and out-of-order streams; SDK docs state append-time versus event-time semantics"
+parent: pm-usfg
+severity: high
+resolution: "RelationshipEventLog timestamp snapshots now filter every immutable event by event time, preserve append order among included events, and report the highest included append sequence."
+expected_result: "Timestamp snapshots materialize exactly the relationships effective from events at or before the requested instant, including late arrivals and excluding future-dated events."
+actual_result: Late and offline events appear at their true event time; future-dated events are excluded even when appended earlier; current/version snapshots retain append semantics; regression and full coverage gates pass.
+component: src/sdk/relationship-history.ts
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-ju83,related,"2026-07-23T10:17:49.204Z",null,null
+  pm-kr3t,discovered_from,"2026-07-23T10:17:49.204Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-23T10:17:49.204Z",codex-root,"Duplicate check 2026-07-23: all-status searches for relationship snapshot timestamp, offline late event, out-of-order event-time, and point-in-time relationship reads found the closed relationship platform pm-ju83, the active digital-twin exemplar pm-kr3t, and generic event-stream/federation items, but no item tracking this exact append-prefix correctness defect."
+  "2026-07-23T11:18:50.935Z",codex-root,"TDD evidence: the regression appends future event-time data before late/offline historical data, supersedes and removes relationships, and asserts point-in-time snapshots select all events at or before the boundary while retaining the highest included append sequence. Focused tests and the 6129-test 100% coverage suite pass."
+files[2]{path,scope,note}:
+  src/sdk/relationship-history.ts,project,event-time snapshot selection fix
+  tests/unit/sdk/relationship-history-analytics.spec.ts,project,late and offline arrival regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/relationship-history-analytics.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,timestamp versus version snapshot semantics
+close_reason: "Fixed event-time snapshot reconstruction for out-of-order late/offline relationship events; focused regression and full 100% coverage suite pass, and SDK semantics are documented."
+body: ""

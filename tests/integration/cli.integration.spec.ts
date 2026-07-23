@@ -164,7 +164,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         action: "install",
         details: {
           installed_all: true,
-          installed_count: 13,
+          installed_count: 15,
         },
       });
 
@@ -216,7 +216,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           action: "install",
           details: {
             installed_all: true,
-            installed_count: 13,
+            installed_count: 15,
           },
         });
       }
