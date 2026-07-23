@@ -99,6 +99,7 @@ export {
   WORKSPACE_HISTORY_ID,
   writeWorkspaceJsonWithHistory,
   type WorkspaceHistoryChange,
+  type WorkspaceJsonWriteOptions,
 } from "../core/history/workspace-history.js";
 export {
   normalizeReplayPatchOps,

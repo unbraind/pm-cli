@@ -104,20 +104,45 @@ interface DriftScanAccumulator {
 
 async function scanWorkspaceHistory(
   pmRoot: string,
+  previousEntries: Record<string, DriftCacheEntry>,
+  nextEntries: Record<string, DriftCacheEntry>,
+  verifyCacheHitByContent: boolean,
   accumulator: DriftScanAccumulator,
-): Promise<void> {
+): Promise<boolean> {
+  const historyPath = getWorkspaceHistoryPath(pmRoot);
+  let stat: Stats;
   try {
-    const verification = await verifyHistoryStream(
-      getWorkspaceHistoryPath(pmRoot),
-    );
-    if (verification && !verification.chainOk) {
-      accumulator.chainMismatches.push(WORKSPACE_HISTORY_ID);
-    }
+    stat = await fs.stat(historyPath);
   } catch (error: unknown) {
-    if (!isErrno(error, "ENOENT")) {
-      accumulator.unreadableStreams.push(WORKSPACE_HISTORY_ID);
-    }
+    if (isErrno(error, "ENOENT")) return false;
+    accumulator.unreadableStreams.push(WORKSPACE_HISTORY_ID);
+    return false;
   }
+  const missingCount = accumulator.missingStreams.length;
+  const resolved = await resolveStreamVerification({
+    itemId: WORKSPACE_HISTORY_ID,
+    historyPath,
+    stat,
+    cached: previousEntries[WORKSPACE_HISTORY_ID],
+    verifyCacheHitByContent,
+    accumulator,
+  });
+  if (!resolved.verification) {
+    accumulator.missingStreams.splice(missingCount);
+    return resolved.cacheDirty;
+  }
+  if (!resolved.verification.chainOk) {
+    accumulator.chainMismatches.push(WORKSPACE_HISTORY_ID);
+  }
+  nextEntries[WORKSPACE_HISTORY_ID] = {
+    mtime_ms: stat.mtimeMs,
+    ctime_ms: stat.ctimeMs,
+    size: stat.size,
+    content_hash: resolved.verification.contentHash,
+    latest_after_hash: resolved.verification.latestAfterHash,
+    chain_ok: resolved.verification.chainOk,
+  };
+  return resolved.cacheDirty;
 }
 
 function hashContent(raw: string): string {
@@ -338,7 +363,14 @@ export async function scanHistoryDrift(
       accumulator.hashMismatches.push(item.id);
     }
   }
-  await scanWorkspaceHistory(pmRoot, accumulator);
+  const workspaceCacheDirty = await scanWorkspaceHistory(
+    pmRoot,
+    previousEntries,
+    nextEntries,
+    verifyCacheHitByContent,
+    accumulator,
+  );
+  cacheDirty ||= workspaceCacheDirty;
 
   if (
     cacheDirty ||

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:config","area:history","area:storage",audit-trail,pm-cli
 created_at: "2026-07-06T23:08:35.037Z"
-updated_at: "2026-07-23T19:12:28.602Z"
+updated_at: "2026-07-23T19:59:52.214Z"
 closed_at: "2026-07-23T19:10:48.024Z"
 author: maintainer-agent
 estimated_minutes: 300
@@ -20,27 +20,32 @@ actual_result: "Settings, schema, profile, init reruns, templates, and package a
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-bgcu,related,"2026-07-06T23:10:04.566Z",maintainer-agent,null
   pm-e200,related,"2026-07-06T23:10:04.566Z",maintainer-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-23T17:40:01.962Z",claude-code-agent,"Implementation start 2026-07-23: activated because pm-dijg requires its canonical workspace audit dependency. Scope is a reusable HistoryEntry-compatible workspace stream, atomic append under workspace mutation locks, verification coverage, and schema-migration integration; no duplicate item created."
   "2026-07-23T19:00:15.567Z",claude-code-agent,"Implementation evidence: added the append-only hash-chained _workspace HistoryEntry stream, audited singleton writers with rollback, history/activity rendering, drift validation, and coverage for settings/config, schema, profile, init reruns, saved templates, and project package activation/deactivation state changes. Packed-consumer verification observed 8 valid entries and health/validation ok."
   "2026-07-23T19:12:28.602Z",claude-code-agent,"Final local gates: 349 files and 6177 tests passed; statements 42340/42340, branches 29971/29971, functions 8635/8635, lines 41152/41152. Lint, zero clones, 100% source/export/member docstrings, SDK boundary, typecheck, contracts, docs/skills, secrets, version, packed consumer, and git diff checks passed. Repository validation remains ok with only pre-existing legacy resolution/unknown-author warnings outside these items."
-files[12]{path,scope,note}:
+  "2026-07-23T19:59:52.213Z",claude-code-agent,"CodeRabbit review convergence: widened the workspace-history lock to cover read, atomic singleton write, history append, and compensation; routed settings through the same primitive; added competing generic/settings writer regressions; cached workspace drift verification; exported WorkspaceJsonWriteOptions through SDK entrypoints; and covered init lock-hook observability plus inaccessible history roots. Verification: focused 85 tests passed; typecheck, lint, zero clones, package boundary, token budget, and 100% docstrings passed; full coverage passed 349 files / 6180 tests with statements 42352/42352, branches 29971/29971, functions 8636/8636, lines 41163/41163. Item remains closed and unclaimed."
+files[15]{path,scope,note}:
   CHANGELOG.md,project,Package-generated closeout entry
   src/cli/commands/history.ts,project,Workspace audit stream implementation and command coverage
   src/core/history/drift-scan.ts,project,Workspace audit stream implementation and command coverage
   src/core/history/workspace-history.ts,project,Workspace audit stream implementation and command coverage
   src/core/store/settings.ts,project,Workspace audit stream implementation and command coverage
   src/sdk/history-read.ts,project,Workspace audit stream implementation and command coverage
+  src/sdk/index.ts,project,Public SDK export for transactional workspace write options
   src/sdk/init.ts,project,Workspace audit stream implementation and command coverage
   src/sdk/profile.ts,project,Workspace audit stream implementation and command coverage
   src/sdk/runtime-primitives.ts,project,Workspace audit stream implementation and command coverage
   src/sdk/schema.ts,project,Workspace audit stream implementation and command coverage
   src/sdk/templates.ts,project,Workspace audit stream implementation and command coverage
+  tests/unit/commands/init-command.spec.ts,project,Initialization lock-hook contract coverage
+  tests/unit/core/history/drift-scan.spec.ts,project,Workspace drift-cache and inaccessible-stream regression coverage
   tests/unit/core/history/workspace-history.spec.ts,project,Workspace audit stream implementation and command coverage
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs coverage,project,300
   node scripts/run-tests.mjs test -- tests/unit/core/history/workspace-history.spec.ts tests/unit/commands/history-activity-command.spec.ts tests/unit/core/history/drift-scan.spec.ts,project,300
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
   docs/CONFIGURATION.md,project,Workspace history and governance configuration reference
+  docs/SDK.md,project,Race-safe workspace singleton transaction contract
 close_reason: Delivered and verified workspace-scoped hash-chained audit history across required mutation surfaces.
 body: "## Context\nPer-item history streams give items full immutable proof: every item mutation is an append-only, hash-chained JSONL entry, verifiable via pm history --verify and the workspace-wide drift scan, and restorable to any version (shipped: restore-by-timestamp/version pm-9lc, file recovery pm-g6qd). Workspace-level state has none of this: src/cli/commands/schema.ts and config.ts contain zero history integration — a pm schema remove-field or pm config set silently rewrites the document with no permanent record of who changed what, when, from what value.\n\n## Design sketch\n- One workspace stream (e.g. history/_workspace.jsonl) or per-domain streams (settings/schema/profile); decide in implementation — single stream keeps drift-scan integration trivial.\n- Reuse HistoryEntry (op, author, ts, patches, before/after hash chain) and verifyHistoryChain so pm history --verify semantics apply unchanged.\n- Must coordinate with pm-bgcu (lock-free read-modify-write on singleton files): the audit append and the document write should happen under the same lock so the trail cannot diverge from the state.\n- Feeds pm-e200 (mutation event stream): workspace events become emittable for free once they exist in a stream.\n- Later follow-up (not in scope here): restore settings/schema to an earlier version by replay, mirroring item restore.\n\n## Out of scope\n- Item history streams (already complete).\n- Telemetry (separate pipeline).\n- Session-local state (focus/session-state) — ephemeral by design; decide in implementation whether to include or explicitly document as unaudited."

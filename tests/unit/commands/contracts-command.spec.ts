@@ -712,23 +712,46 @@ describe("contracts command runtime", () => {
     expect(PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS).toEqual(KNOWN_EXTENSION_SANDBOX_PROFILES);
   });
 
-  it("keeps advertised governance workflow modes executable by config set", async () => {
+  it("keeps every advertised governance mode executable by config set", async () => {
     await withTempPmPath(async (context) => {
       const contracts = await runContracts(
         {},
         { ...GLOBAL_OPTIONS, path: context.pmPath },
       );
-      for (const mode of
-        contracts.governance_contracts?.workflow_enforcement_modes ?? []) {
-        const result = context.runCli([
-          "config",
-          "project",
-          "set",
-          "governance-workflow-enforcement",
-          mode,
-          "--json",
-        ]);
-        expect(result.code, `${mode}: ${result.stderr}`).toBe(0);
+      const governance = contracts.governance_contracts;
+      expect(governance).toBeDefined();
+      if (!governance) throw new Error("governance contracts are required");
+      const setters = [
+        {
+          key: "governance-ownership-enforcement",
+          values: governance.ownership_enforcement_modes,
+        },
+        {
+          key: "governance-create-mode-default",
+          values: governance.create_modes,
+        },
+        {
+          key: "governance-close-validation-default",
+          values: governance.close_validation_modes,
+        },
+        {
+          key: "governance-workflow-enforcement",
+          values: governance.workflow_enforcement_modes,
+        },
+      ];
+      for (const { key, values } of setters) {
+        expect(values.length, key).toBeGreaterThan(0);
+        for (const mode of values) {
+          const result = context.runCli([
+            "config",
+            "project",
+            "set",
+            key,
+            mode,
+            "--json",
+          ]);
+          expect(result.code, `${key}=${mode}: ${result.stderr}`).toBe(0);
+        }
       }
     });
   });

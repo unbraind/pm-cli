@@ -938,8 +938,12 @@ authoritative scan when the index is absent or stale.
 Workspace singleton mutations are recorded at
 `.agents/pm/history/_workspace.jsonl`. The stream uses the normal
 `HistoryEntry` patch and before/after hash contract, is protected by its own
-writer lock, participates in the history merge driver and drift scan, appears
-in `pm activity`, and can be checked with
+writer lock, and caches unchanged verification results during drift scans. The
+`writeWorkspaceJsonWithHistory` primitive holds that lock across the singleton
+snapshot, atomic write, history append, and any compensating restore, so
+competing SDK writers cannot split persisted state from its audit chain. The
+stream participates in the history merge driver, appears in `pm activity`, and
+can be checked with
 `pm history _workspace --verify`. Package authors that persist their own
 singleton JSON should call `writeWorkspaceJsonWithHistory`; use
 `appendWorkspaceHistoryChange` only when another primitive already owns the

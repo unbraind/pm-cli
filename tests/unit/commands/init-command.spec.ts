@@ -1502,6 +1502,11 @@ describe("runInit", () => {
         subdir ? path.join(tempRoot, subdir) : tempRoot,
       );
       const settingsPath = path.join(tempRoot, "settings.json");
+      const workspaceHistoryLockPath = path.join(
+        tempRoot,
+        "locks",
+        "workspace-history.lock",
+      );
       const expectedSchemaFiles = [
         path.join(tempRoot, "schema", "types.json"),
         path.join(tempRoot, "schema", "statuses.json"),
@@ -1511,6 +1516,8 @@ describe("runInit", () => {
 
       expect(trace).toEqual([
         ...expectedTargets.map((target) => `init:ensure_dir:${target}`),
+        `lock:create:${workspaceHistoryLockPath}`,
+        `lock:release:${workspaceHistoryLockPath}`,
         `settings:write:${settingsPath}`,
         ...expectedSchemaFiles.map(
           (target) => `init:runtime_schema_file:${target}`,

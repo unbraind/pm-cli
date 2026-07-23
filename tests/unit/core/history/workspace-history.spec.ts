@@ -2,7 +2,11 @@ import { appendFile, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { readHistoryEntries } from "../../../../src/core/history/read.js";
-import { verifyHistoryChain } from "../../../../src/core/history/replay.js";
+import {
+  cloneEmptyReplayDocument,
+  tryApplyReplayPatch,
+  verifyHistoryChain,
+} from "../../../../src/core/history/replay.js";
 import {
   appendWorkspaceHistoryChange,
   getWorkspaceHistoryPath,
@@ -153,6 +157,36 @@ describe("workspace history", () => {
         writeWorkspaceJsonWithHistory({ ...common, raw: firstRaw }),
       ).resolves.toBe(false);
 
+      const competingRaw = ['{"enabled":"alpha"}\n', '{"enabled":"beta"}\n'];
+      await expect(
+        Promise.all(
+          competingRaw.map((raw) =>
+            writeWorkspaceJsonWithHistory({ ...common, raw }),
+          ),
+        ),
+      ).resolves.toEqual([true, true]);
+      const concurrentEntries = await readHistoryEntries(
+        getWorkspaceHistoryPath(context.pmPath),
+        WORKSPACE_HISTORY_ID,
+      );
+      expect(concurrentEntries).toHaveLength(3);
+      expect(verifyHistoryChain(concurrentEntries)).toEqual({
+        ok: true,
+        errors: [],
+      });
+      let replay = cloneEmptyReplayDocument();
+      for (const entry of concurrentEntries) {
+        const applied = tryApplyReplayPatch(replay, entry.patch);
+        if (!applied.ok) throw applied.error;
+        replay = applied.document;
+      }
+      expect(JSON.parse(await readFile(filePath, "utf8"))).toEqual(
+        (
+          replay.metadata.documents as Record<string, unknown>
+        )["custom-state.json"],
+      );
+      const beforeFailureRaw = await readFile(filePath, "utf8");
+
       await appendFile(
         getWorkspaceHistoryPath(context.pmPath),
         '{"ts":"broken"}\n',
@@ -163,7 +197,7 @@ describe("workspace history", () => {
           raw: '{"enabled":false}\n',
         }),
       ).rejects.toThrow("Workspace history verification failed");
-      expect(await readFile(filePath, "utf8")).toBe(firstRaw);
+      expect(await readFile(filePath, "utf8")).toBe(beforeFailureRaw);
 
       const newPath = path.join(context.pmPath, "new-state.json");
       await expect(
@@ -176,6 +210,80 @@ describe("workspace history", () => {
       await expect(readFile(newPath, "utf8")).rejects.toMatchObject({
         code: "ENOENT",
       });
+    });
+  });
+
+  it("serializes competing settings snapshots with their audit entries", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      await writeSettings(context.pmPath, {
+        ...settings,
+        author_default: "settings-baseline",
+      });
+      await expect(
+        Promise.all([
+          writeSettings(context.pmPath, {
+            ...settings,
+            author_default: "settings-alpha",
+          }),
+          writeSettings(context.pmPath, {
+            ...settings,
+            author_default: "settings-beta",
+          }),
+        ]),
+      ).resolves.toEqual([undefined, undefined]);
+
+      const persisted = await readSettings(context.pmPath);
+      expect(["settings-alpha", "settings-beta"]).toContain(
+        persisted.author_default,
+      );
+      const entries = await readHistoryEntries(
+        getWorkspaceHistoryPath(context.pmPath),
+        WORKSPACE_HISTORY_ID,
+      );
+      expect(entries).toHaveLength(3);
+      expect(verifyHistoryChain(entries)).toEqual({ ok: true, errors: [] });
+    });
+  });
+
+  it("persists and refreshes workspace stream verification through the drift cache", async () => {
+    await withTempPmPath(async (context) => {
+      await appendWorkspaceHistoryChange({
+        pmRoot: context.pmPath,
+        documentPath: "settings.json",
+        before: { enabled: false },
+        after: { enabled: true },
+        op: "config_set",
+        author: "workspace-history-test",
+        lockTtlSeconds: 30,
+        lockWaitMs: 1000,
+      });
+      expect(
+        await scanHistoryDrift(context.pmPath, [], {
+          cacheHitVerification: "metadata",
+        }),
+      ).toMatchObject({ driftedItems: [] });
+      const cachePath = path.join(
+        context.pmPath,
+        "runtime",
+        "history-drift-cache.json",
+      );
+      const cache = JSON.parse(await readFile(cachePath, "utf8")) as {
+        entries: Record<string, { chain_ok: boolean }>;
+      };
+      expect(cache.entries[WORKSPACE_HISTORY_ID]?.chain_ok).toBe(true);
+
+      await appendFile(
+        getWorkspaceHistoryPath(context.pmPath),
+        '{"ts":"broken"}\n',
+      );
+      expect(
+        (
+          await scanHistoryDrift(context.pmPath, [], {
+            cacheHitVerification: "metadata",
+          })
+        ).unreadableStreams,
+      ).toContain(WORKSPACE_HISTORY_ID);
     });
   });
 

@@ -56,6 +56,28 @@ export interface WorkspaceHistoryChange {
   lockWaitMs: number;
 }
 
+/** Options for one lock-scoped audited workspace singleton write. */
+export interface WorkspaceJsonWriteOptions {
+  /** Tracker root containing the singleton. */
+  pmRoot: string;
+  /** Absolute singleton path. */
+  filePath: string;
+  /** Fully serialized JSON value to persist. */
+  raw: string;
+  /** Stable operation name. */
+  op: string;
+  /** Attributable mutation actor. */
+  author: string;
+  /** Lock time-to-live in seconds. */
+  lockTtlSeconds: number;
+  /** Maximum lock wait in milliseconds. */
+  lockWaitMs: number;
+  /** Optional human-readable rationale. */
+  message?: string;
+  /** Whether creating a previously absent singleton produces a history entry. */
+  recordCreation?: boolean;
+}
+
 interface WorkspaceAuditMetadata extends ItemMetadata {
   documents: Record<string, unknown>;
 }
@@ -92,6 +114,75 @@ function replayWorkspaceEntries(entries: readonly HistoryEntry[]): ItemDocument 
 }
 
 /**
+ * Append one workspace document mutation while the caller holds the dedicated
+ * workspace-history lock.
+ */
+async function appendWorkspaceHistoryChangeLocked(
+  change: WorkspaceHistoryChange,
+): Promise<{ entry: HistoryEntry; historyPath: string }> {
+  const historyPath = getWorkspaceHistoryPath(change.pmRoot);
+  const entries = await readHistoryEntries(
+    historyPath,
+    WORKSPACE_HISTORY_ID,
+  );
+  const verification = verifyHistoryChain(entries);
+  if (!verification.ok) {
+    throw new TypeError(
+      `Workspace history verification failed: ${verification.errors.join(", ")}`,
+    );
+  }
+  const idempotentEntry =
+    change.idempotencyKey === undefined
+      ? undefined
+      : entries.find(
+          (entry) => entry.op === `${change.op}:${change.idempotencyKey}`,
+        );
+  if (idempotentEntry) {
+    return { entry: idempotentEntry, historyPath };
+  }
+  const timestamp = new Date().toISOString();
+  const beforeDocument: ItemDocument =
+    entries.length === 0
+      ? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument)
+      : replayWorkspaceEntries(entries);
+  const priorDocuments =
+    "documents" in beforeDocument.metadata &&
+    typeof beforeDocument.metadata.documents === "object" &&
+    beforeDocument.metadata.documents !== null &&
+    !Array.isArray(beforeDocument.metadata.documents)
+      ? (beforeDocument.metadata.documents as Record<string, unknown>)
+      : {};
+  const recordedBefore = priorDocuments[change.documentPath];
+  if (
+    recordedBefore !== undefined &&
+    stableStringify(recordedBefore) !== stableStringify(change.before)
+  ) {
+    throw new TypeError(
+      `Workspace history state for "${change.documentPath}" changed outside the audited mutation path.`,
+    );
+  }
+  const afterDocument = workspaceDocument(
+    { ...priorDocuments, [change.documentPath]: change.after },
+    entries.length === 0
+      ? timestamp
+      : beforeDocument.metadata.created_at!,
+  );
+  const entry = createHistoryEntry({
+    nowIso: timestamp,
+    author: change.author,
+    op:
+      change.idempotencyKey === undefined
+        ? change.op
+        : `${change.op}:${change.idempotencyKey}`,
+    before: beforeDocument,
+    after: afterDocument,
+    message: change.message,
+  });
+  await appendHistoryEntry(historyPath, entry);
+  return { entry, historyPath };
+}
+
+/**
  * Append one workspace document mutation under the dedicated workspace-history
  * lock. Existing history is verified and replayed before the new entry is
  * derived, so concurrent writers cannot fork the chain.
@@ -99,7 +190,6 @@ function replayWorkspaceEntries(entries: readonly HistoryEntry[]): ItemDocument 
 export async function appendWorkspaceHistoryChange(
   change: WorkspaceHistoryChange,
 ): Promise<{ entry: HistoryEntry; historyPath: string }> {
-  const historyPath = getWorkspaceHistoryPath(change.pmRoot);
   const release = await acquireLock(
     change.pmRoot,
     "workspace-history",
@@ -110,114 +200,60 @@ export async function appendWorkspaceHistoryChange(
     change.lockWaitMs,
   );
   try {
-    const entries = await readHistoryEntries(
-      historyPath,
-      WORKSPACE_HISTORY_ID,
-    );
-    const verification = verifyHistoryChain(entries);
-    if (!verification.ok) {
-      throw new TypeError(
-        `Workspace history verification failed: ${verification.errors.join(", ")}`,
-      );
-    }
-    const idempotentEntry =
-      change.idempotencyKey === undefined
-        ? undefined
-        : entries.find(
-            (entry) =>
-              entry.op === `${change.op}:${change.idempotencyKey}`,
-          );
-    if (idempotentEntry) {
-      return { entry: idempotentEntry, historyPath };
-    }
-    const timestamp = new Date().toISOString();
-    const beforeDocument: ItemDocument =
-      entries.length === 0
-        ? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument)
-        : replayWorkspaceEntries(entries);
-    const priorDocuments =
-      "documents" in beforeDocument.metadata &&
-      typeof beforeDocument.metadata.documents === "object" &&
-      beforeDocument.metadata.documents !== null &&
-      !Array.isArray(beforeDocument.metadata.documents)
-        ? (beforeDocument.metadata.documents as Record<string, unknown>)
-        : {};
-    const recordedBefore = priorDocuments[change.documentPath];
-    if (
-      recordedBefore !== undefined &&
-      stableStringify(recordedBefore) !== stableStringify(change.before)
-    ) {
-      throw new TypeError(
-        `Workspace history state for "${change.documentPath}" changed outside the audited mutation path.`,
-      );
-    }
-    const afterDocument = workspaceDocument(
-      { ...priorDocuments, [change.documentPath]: change.after },
-      entries.length === 0
-        ? timestamp
-        : beforeDocument.metadata.created_at!,
-    );
-    const entry = createHistoryEntry({
-      nowIso: timestamp,
-      author: change.author,
-      op:
-        change.idempotencyKey === undefined
-          ? change.op
-          : `${change.op}:${change.idempotencyKey}`,
-      before: beforeDocument,
-      after: afterDocument,
-      message: change.message,
-    });
-    await appendHistoryEntry(historyPath, entry);
-    return { entry, historyPath };
+    return await appendWorkspaceHistoryChangeLocked(change);
   } finally {
     await release();
   }
 }
 
-/** Write one JSON singleton and append its workspace history entry. */
-export async function writeWorkspaceJsonWithHistory(params: {
-  /** Tracker root containing the singleton. */
-  pmRoot: string;
-  /** Absolute singleton path. */
-  filePath: string;
-  /** Fully serialized JSON value to persist. */
-  raw: string;
-  /** Stable operation name. */
-  op: string;
-  /** Attributable mutation actor. */
-  author: string;
-  /** Lock time-to-live in seconds. */
-  lockTtlSeconds: number;
-  /** Maximum lock wait in milliseconds. */
-  lockWaitMs: number;
-  /** Optional human-readable rationale. */
-  message?: string;
-}): Promise<boolean> {
-  const beforeRaw = await readFileIfExists(params.filePath);
-  if (beforeRaw === params.raw) return false;
-  await writeFileAtomic(params.filePath, params.raw);
+/**
+ * Atomically serialize a JSON singleton snapshot, write, history append, and
+ * compensation under the workspace-history lock.
+ */
+export async function writeWorkspaceJsonWithHistory(
+  params: WorkspaceJsonWriteOptions,
+): Promise<boolean> {
+  const release = await acquireLock(
+    params.pmRoot,
+    "workspace-history",
+    params.lockTtlSeconds,
+    params.author,
+    false,
+    false,
+    params.lockWaitMs,
+  );
   try {
-    await appendWorkspaceHistoryChange({
-      pmRoot: params.pmRoot,
-      documentPath: path
-        .relative(params.pmRoot, params.filePath)
-        .replaceAll("\\", "/"),
-      before: beforeRaw === null ? null : JSON.parse(beforeRaw),
-      after: JSON.parse(params.raw),
-      op: params.op,
-      author: params.author,
-      lockTtlSeconds: params.lockTtlSeconds,
-      lockWaitMs: params.lockWaitMs,
-      message: params.message,
-    });
-  } catch (error: unknown) {
-    if (beforeRaw === null) {
-      await fs.rm(params.filePath, { force: true });
-    } else {
-      await writeFileAtomic(params.filePath, beforeRaw);
+    const beforeRaw = await readFileIfExists(params.filePath);
+    if (beforeRaw === params.raw) return false;
+    const before = beforeRaw === null ? null : JSON.parse(beforeRaw);
+    const after = JSON.parse(params.raw);
+    await writeFileAtomic(params.filePath, params.raw);
+    try {
+      if (beforeRaw !== null || params.recordCreation !== false) {
+        await appendWorkspaceHistoryChangeLocked({
+          pmRoot: params.pmRoot,
+          documentPath: path
+            .relative(params.pmRoot, params.filePath)
+            .replaceAll("\\", "/"),
+          before,
+          after,
+          op: params.op,
+          author: params.author,
+          lockTtlSeconds: params.lockTtlSeconds,
+          lockWaitMs: params.lockWaitMs,
+          message: params.message,
+        });
+      }
+    } catch (error: unknown) {
+      if (beforeRaw === null) {
+        await fs.rm(params.filePath, { force: true });
+      } else {
+        await writeFileAtomic(params.filePath, beforeRaw);
+      }
+      throw error;
     }
-    throw error;
+    return true;
+  } finally {
+    await release();
   }
-  return true;
 }
