@@ -2,11 +2,12 @@ id: pm-5qmm
 title: "Workspace memory tiers: derived rollup summaries of closed-item epochs keep decades-old work queryable in bounded tokens"
 description: Maintain rebuildable epoch and epic rollups so decades of closed work remain queryable and useful to context assembly within fixed token budgets.
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[3]: context,long-horizon,scale
 created_at: "2026-07-06T23:26:29.415Z"
-updated_at: "2026-07-13T21:37:58.882Z"
+updated_at: "2026-07-23T08:06:34.837Z"
+closed_at: "2026-07-23T07:56:31.740Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "Design note settles derived-artifact placement, regeneration triggers, and invalidation (aligned with the semantic-ledger precedent); prototype generates epoch/epic rollup summaries on a pm-mi2x synthetic workspace; pm context and pm search can surface rollup records as compact stand-ins under a token budget with drill-down IDs to full items; source items and their history streams remain byte-untouched (derived-only guarantee proven by test); regeneration is deterministic for a fixed workspace state; small workspaces skip the tier entirely with zero configuration"
@@ -18,4 +19,21 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-801d,related,"2026-07-06T23:26:29.415Z",null,null
   pm-o79o,related,"2026-07-06T23:26:29.415Z",null,null
   pm-pee5,related,"2026-07-06T23:26:29.415Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-23T07:56:29.276Z",claude-code-agent,"Completion evidence 2026-07-23: delivered deterministic cursor-bound epoch, quarter, and nearest-epic workspace-memory rollups as rebuildable SDK artifacts; small workspaces skip at the 10k threshold; context and search surface compact budgeted records with drill-down IDs; malformed/stale artifacts rebuild from source. Tests prove deterministic regeneration, source/history immutability, selection/search projection behavior, skip behavior, and integration. Full release verification passed exact 100/100/100/100 coverage and the installed external-consumer proof."
+  "2026-07-23T08:06:34.837Z",claude-code-agent,"PR evidence 2026-07-23: the indexed-read, workspace-memory, cursor-contract, compact-get, SDK-documentation, and linear-time security tranche is published for hosted checks and review at https://github.com/unbraind/pm-cli/pull/655 (implementation commit 89e1417f)."
+files[6]{path,scope,note}:
+  src/cli/commands/context.ts,project,Token-bounded automatic context memory
+  src/sdk/query/search-contracts.ts,project,extracted SDK search input and tuning contracts
+  src/sdk/query/search.ts,project,Automatic matching historical rollups in search
+  src/sdk/workspace-memory.ts,project,Cursor-bound epoch and epic workspace memory SDK
+  tests/unit/commands/workspace-memory-command-integration.spec.ts,project,context and search memory integration coverage
+  tests/unit/sdk/workspace-memory.spec.ts,project,workspace memory persistence and retrieval coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-memory.spec.ts tests/unit/commands/context-command.spec.ts tests/unit/commands/search-command.spec.ts,project,300
+docs[3]{path,scope,note}:
+  docs/CONTEXT_RELEVANCE.md,project,Historical memory relevance contract
+  docs/PERFORMANCE.md,project,Large-workspace memory threshold and fallback
+  docs/SDK.md,project,workspace memory SDK contract
+close_reason: "Delivered deterministic derived workspace-memory tiers with bounded context/search surfacing, drill-down IDs, invalidation, small-workspace skip, source immutability proof, SDK exports, documentation, and exact coverage."
 body: "At decades scale the overwhelming majority of a workspace is closed history. Today context assembly either ignores it (losing the recorded knowledge: decisions, learnings, why-nows) or pays full per-item cost to include it. There is no middle representation between 'full item' and 'absent'.\n\nProposal (long horizon, after pm-801d and pm-4k6b): a derived rollup layer, SDK-first.\n- Cluster closed items by natural epoch boundaries (release, epic subtree, time window) into compact summary records: scope, outcome, key decisions/learnings, member-ID list for drill-down.\n- Summaries are DERIVED artifacts, regenerated from source items + history — never mutations of tracked items (no changelog drag, no history noise); stored like other derived indexes (semantic ledger precedent).\n- Context assembly (pm-4k6b knowledge-density signal) and search can return a rollup as a cheap stand-in when the budget cannot afford members, with drill-down via existing get/history.\n- Complements pm-o79o, which handles the DISK/git cost of old data; this handles the TOKEN/context cost. Together they define the aging story for million-item, decades-spanning workspaces.\n\nStart with a spike + design note; the clustering fidelity question (mechanical rollup vs. model-assisted summaries via an extension hook) is explicitly part of the spike."

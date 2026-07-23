@@ -8,9 +8,43 @@ import {
   encodeQueryCursor,
   paginateQueryRows,
   resolveQueryCursorStart,
+  selectCursorSemanticOptions,
 } from "../../../src/sdk/pagination.js";
+import {
+  CONTEXT_FLAG_CONTRACTS,
+  LIST_FILTER_FLAG_CONTRACTS,
+  SEARCH_FLAG_CONTRACTS,
+} from "../../../src/sdk/cli-contracts/flag-contracts.js";
 
 describe("SDK query pagination", () => {
+  it("derives semantic cursor identity from compact presentation exceptions", () => {
+    expect(
+      [
+        ...LIST_FILTER_FLAG_CONTRACTS,
+        ...CONTEXT_FLAG_CONTRACTS,
+        ...SEARCH_FLAG_CONTRACTS,
+      ].filter((contract) => contract.cursor_semantics === "presentation")
+        .length,
+    ).toBeGreaterThan(0);
+    expect(
+      selectCursorSemanticOptions(
+        {
+          status: "open",
+          limit: "10",
+          maxItems: "10",
+          tokenBudget: "900",
+          explainRanking: true,
+        },
+        CONTEXT_FLAG_CONTRACTS,
+      ),
+    ).toEqual({ status: "open", tokenBudget: "900" });
+    expect(
+      selectCursorSemanticOptions({ futureFilter: "value" }, [
+        { flag: "--future-filter" },
+      ]),
+    ).toEqual({ futureFilter: "value" });
+  });
+
   it("creates stable fingerprints and resumes after the encoded id", () => {
     const first = createQueryFingerprint("list", {
       status: "open",

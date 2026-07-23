@@ -26,7 +26,11 @@ export function toNonEmptyStringOrUndefined(
 
 /** Implements trim trailing slashes for the public runtime surface of this module. */
 export function trimTrailingSlashes(value: string): string {
-  return value.replaceAll(/\/+$/g, "");
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) {
+    end -= 1;
+  }
+  return end === value.length ? value : value.slice(0, end);
 }
 
 /** Implements check whether finite number array for the public runtime surface of this module. */

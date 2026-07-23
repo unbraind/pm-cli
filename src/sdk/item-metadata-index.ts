@@ -16,3 +16,8 @@ export {
   type ItemMetadataDerivedIndexState,
   type ItemMetadataDerivedIndexMutation,
 } from "../core/store/item-metadata-cache.js";
+export {
+  queryItemMetadataIndex,
+  type ItemMetadataIndexQuery,
+  type ItemMetadataIndexQueryResult,
+} from "../core/store/item-metadata-query-index.js";

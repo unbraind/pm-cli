@@ -50,6 +50,9 @@ Package authors can use the same stages without importing CLI internals:
 - `packRankedContextItems` applies a deterministic estimated-token budget;
 - `readItemMetadataDerivedIndexState` exposes the effective rebuildable cursor
   without exposing runtime file layout.
+- `readWorkspaceMemory`, `selectWorkspaceMemoryRollups`, and
+  `searchWorkspaceMemory` expose the large-workspace historical tier without
+  expanding the complete closed corpus into an agent packet.
 
 `readWorkspaceContextSignals` accepts `storeKey` when one workspace serves
 different candidate corpora. The stock commands use separate `context` and
@@ -69,6 +72,13 @@ The stock activity density normalizes comments, notes, learnings, and test runs.
 Graph proximity normalizes parent and dependency degree. SDK hosts can supply
 their own pre-normalized signal maps when their project model has richer
 activity, graph, semantic, or usage data.
+
+For corpora of at least 10,000 items, `context` automatically allocates a
+bounded fraction of its token budget to recent calendar-epoch and epic-lineage
+rollups. `search` attaches only matching rollups. The projection contains
+bounded item references, completion outcomes, and knowledge-entry counts; it is
+versioned and tied to the same source cursor as the metadata index. Small
+workspaces return no memory block, avoiding derived-state and token overhead.
 
 ## Correctness contract
 

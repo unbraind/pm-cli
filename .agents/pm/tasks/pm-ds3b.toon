@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[2]: "area:docs","area:sdk"
 created_at: "2026-07-05T04:54:31.675Z"
-updated_at: "2026-07-23T06:14:28.323Z"
+updated_at: "2026-07-23T08:06:35.884Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: SDK reference covers all promoted primitives with runnable examples; architecture doc explains core/sdk/cli-mcp layering and the boundary gate; docs gates pass; docstring coverage epic (pm-4ak1) conventions followed
@@ -29,7 +29,7 @@ dependencies[15]{id,kind,created_at,author,source_kind}:
   pm-xm7c,related,"2026-07-20T08:49:51.219Z",null,null
   pm-3hps,related,"2026-07-21T16:54:34.602Z",codex-derived-context-20260721,null
   pm-801d,related,"2026-07-21T16:54:34.602Z",codex-derived-context-20260721,null
-comments[28]{created_at,author,text}:
+comments[30]{created_at,author,text}:
   "2026-07-13T22:03:50.226Z",codex-root,"Scope note 2026-07-13: when pm-ju83 lands, extend this task's SDK reference and migration work with relationship-kind registration, immutable relationship events, bounded adjacency/path/closure/impact queries, cursor and streaming contracts, compact CLI and MCP projections, explain/cost envelopes, legacy-kind migration, and shell pipeline examples. Link implementation docs to pm-96h7 and validate with the existing docs gates."
   "2026-07-17T13:10:37.141Z",codex-root,"Documentation progress: SDK and relationship-graph references now cover public actionability, workspace assembly, semantic traversal, governance findings, layering boundaries, and a non-PM domain reuse pattern. Docs gate passes."
   "2026-07-17T13:47:20.846Z",codex-root,"Verification evidence: linked docs-skills gate passed; SDK and relationship graph docs explain public actionability, assembly, semantic traversal, governance findings, layering, VCS/company reuse, bounds, and migration semantics. Strict 100% docstring coverage, docs links, package tarball, and runnable installed SDK examples pass. This documentation tranche is complete; the task remains open because its acceptance follows every future promoted primitive in pm-usfg/pm-ju83."
@@ -58,19 +58,23 @@ comments[28]{created_at,author,text}:
   "2026-07-23T05:38:25.746Z",claude-code-agent,"PR evidence: this SDK reference tranche is published for hosted review at https://github.com/unbraind/pm-cli/pull/652, initial implementation commit c0358d12."
   "2026-07-23T05:48:22.532Z",claude-code-agent,"Exact-head hosted review evidence: PR #652 head 8f6ba731 has 29 successful / 0 failing checks, full hosted coverage, no inline review threads, and only external reviewer quota-limit notices. Scheduled Auto Release reached the mandatory Sentry gate and correctly blocked on the pre-fix self-edge issue tracked by pm-k9t17l."
   "2026-07-23T06:14:28.323Z",claude-code-agent,"Published SDK reference evidence: GetResult.notes_count, assertRelationshipEdgeAllowed, and HistoryRepairReconciliationReport partitions shipped in v2026.7.23 (release commit 1206c26a). Public package verification passed through npm metadata, npx, bunx, and direct tarball install."
+  "2026-07-23T07:56:30.406Z",claude-code-agent,"Documentation tranche evidence 2026-07-23: SDK/PERFORMANCE/CONTEXT_RELEVANCE/COMMANDS now cover persistent query-index lifecycle and fallback, workspace-memory tiers and drill-down, cursor semantic classification, and compact get child continuations. Docs links, SDK boundary, docstring/export/member coverage, static quality, token budgets, packed smoke, and 88-command dogfood pass. This rolling item remains open because its acceptance covers every promoted primitive across the broader SDK program."
+  "2026-07-23T08:06:35.883Z",claude-code-agent,"PR evidence 2026-07-23: the indexed-read, workspace-memory, cursor-contract, compact-get, SDK-documentation, and linear-time security tranche is published for hosted checks and review at https://github.com/unbraind/pm-cli/pull/655 (implementation commit 89e1417f)."
 notes[1]{created_at,author,text}:
   "2026-07-18T10:06:40.159Z",maintainer-agent,"Documentation-target expansion 2026-07-18 (PR#587): the promoted-primitive set this reference must cover grew by the SDK relationship event platform — registerRelationshipKinds/RelationshipKindRegistry (extension-contributed kinds with direction/inverse/ordering/cardinality/lifecycle/aliases/version), RelationshipEventLog/RelationshipEventStore bounded immutable streams + reducer projections (in-memory and durable, checkpoint boundary semantics), workspace graph assembly merging active package ontologies, and host-bound SDK injection into extension command handlers (context.sdk with caller authorship). PR#587 seeded docs/SDK.md + docs/EXTENSIONS.md deltas and packages/pm-vcs/README.md is the runnable exemplar to cite; this item still owns the consolidated reference + migration notes. Prior-tranche targets unchanged (graph/analytics + governance subpath modules from PR#579/#580/#581)."
 learnings[1]{created_at,author,text}:
   "2026-07-20T09:59:56.134Z",codex-20260720,CLI and MCP adapters should import shared operations through public src/sdk primitives; the static SDK boundary ratchet caught eight would-be private-core edges and the final implementation adds none.
-files[4]{path,scope,note}:
+files[5]{path,scope,note}:
   src/sdk/error-runtime.ts,project,Public error runtime primitives
   src/sdk/index.ts,project,Public SDK exports for structured mutation and runtime primitives
   src/sdk/item-metadata-index.ts,project,Promoted public SDK primitive
   src/sdk/runtime-primitives.ts,project,Public CLI MCP package runtime primitives
-tests[5]{command,scope,timeout_seconds}:
+  src/sdk/workspace-memory.ts,project,New documented public SDK surface
+tests[6]{command,scope,timeout_seconds}:
   node scripts/release/docs-skills-gate.mjs,project,180
   node scripts/run-tests.mjs coverage,project,600
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-skills-gate.spec.ts,project,120
+  "pnpm contracts:check",project,240
   "pnpm quality:docs-skills",project,240
   "pnpm quality:docs-skills && pnpm quality:docs-links",project,180
 test_runs[3]:

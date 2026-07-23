@@ -1,0 +1,43 @@
+id: pm-px153l
+title: Bounded SQLite metadata list reads and compact get child continuations
+description: "Completed delivery tranche under pm-801d: publish a rebuildable SQLite metadata query projection for safe bounded default list reads and reduce standard get child context to counts, status summaries, and continuation metadata while preserving explicit/full child samples and authoritative scan fallback."
+type: Feature
+status: closed
+priority: 1
+tags: []
+created_at: "2026-07-23T08:23:36.953Z"
+updated_at: "2026-07-23T08:29:04.040Z"
+closed_at: "2026-07-23T08:23:49.091Z"
+author: claude-code-agent
+acceptance_criteria: "SQLite projection is atomic, cursor-bound, rebuildable, maintained by supported mutations, and falls back to authoritative scans on absence/staleness/corruption; bounded default list results preserve output parity; standard get omits embedded child samples but reports counts/by-status/continuation; explicit/full get retains bounded child samples; 10k CLI/SDK scale budgets and exact 100/100/100/100 coverage pass"
+parent: pm-801d
+resolution: Implemented and validated the accepted 10k indexed-read and compact-get subset under the still-open 1M feature.
+expected_result: "Safe bounded list reads use a rebuildable projection without changing output semantics, and standard get avoids embedding child samples while retaining drill-down metadata."
+actual_result: "SQLite cursor-bound projection, transactional mutation maintenance, authoritative fallback, indexed default-list pages, compact child counts/statuses/continuations, explicit/full child samples, SDK exports, tests, docs, and scale proof shipped in PR #655."
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-5qmm,related,"2026-07-23T08:23:39.319Z",null,null
+  pm-dfg0,related,"2026-07-23T08:23:39.319Z",null,null
+  pm-ds3b,related,"2026-07-23T08:23:39.319Z",null,null
+  pm-rjqr,related,"2026-07-23T08:23:39.319Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-07-23T08:23:37.493Z",claude-code-agent,"Duplicate check evidence 2026-07-23: all-status searches for SQLite metadata query index, bounded indexed list, compact get child projection, and child continuation found the canonical broader pm-801d feature plus older generic query/compact-output work, but no completed item representing this specific shipped release boundary. This child records the accepted subset without closing the 1M roadmap feature."
+  "2026-07-23T08:23:48.250Z",claude-code-agent,"Completion evidence 2026-07-23: exact coverage passed 100/100/100/100 across 6,120 tests; 10k CLI/SDK scale budgets passed; packed smoke and 88-command dogfood passed; an isolated tarball consumer typechecked public SDK imports and exercised installed init/create/list/context/search with zero audit vulnerabilities. PR #655 hosted coverage, static, platform smoke, security, and benchmark checks are green at c1c3ef03."
+  "2026-07-23T08:24:26.785Z",claude-code-agent,"PR evidence: tracked and reviewed in https://github.com/unbraind/pm-cli/pull/655; this completed child is the generated changelog boundary for the indexed-list and compact-get subset while parent pm-801d remains open for 1M p95 and remaining read surfaces."
+  "2026-07-23T08:29:04.040Z",claude-code-agent,"Review feedback evidence 2026-07-23: created this non-duplicate completed child in response to the valid generated-changelog omission; pm-changelog 2026.7.23 now emits the indexed-list and compact-get Unreleased entry without closing parent pm-801d. The inline thread was acknowledged and resolved."
+files[6]{path,scope,note}:
+  src/cli/commands/get.ts,project,Compact standard get child projection
+  src/core/store/item-metadata-cache.ts,project,Index lifecycle and mutation maintenance
+  src/core/store/item-metadata-query-index.ts,project,Persistent SQLite projection
+  src/sdk/item-children.ts,project,Continuation semantics
+  src/sdk/item-metadata-index.ts,project,Public SDK query projection export
+  src/sdk/query/list.ts,project,Safe bounded indexed list path
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,600
+  node scripts/run-tests.mjs test -- tests/unit/core/item/item-metadata-query-index.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/commands/get-append-command.spec.ts tests/unit/sdk/history-read-primitives.spec.ts,project,240
+  "pnpm benchmark:scale:check",project,600
+docs[3]{path,scope,note}:
+  docs/COMMANDS.md,project,Compact get child behavior
+  docs/PERFORMANCE.md,project,Index lifecycle and fallback contract
+  docs/SDK.md,project,Public query-index surface
+close_reason: "Delivered the rebuildable SQLite metadata query projection, bounded indexed list path, compact standard get child summaries/continuations, scan fallback, SDK exports, documentation, scale proof, and exact coverage."
+body: ""

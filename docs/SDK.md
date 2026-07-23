@@ -67,6 +67,8 @@ Source of truth:
 - [`src/sdk/relationship-history.ts`](../src/sdk/relationship-history.ts)
 - [`src/sdk/relationship-context.ts`](../src/sdk/relationship-context.ts)
 - [`src/sdk/context-signal-store.ts`](../src/sdk/context-signal-store.ts)
+- [`src/sdk/workspace-memory.ts`](../src/sdk/workspace-memory.ts)
+- [`src/sdk/item-metadata-index.ts`](../src/sdk/item-metadata-index.ts)
 - [`src/sdk/governance/validate.ts`](../src/sdk/governance/validate.ts)
 - [`src/sdk/governance/health.ts`](../src/sdk/governance/health.ts)
 - [`src/sdk/governance/gc.ts`](../src/sdk/governance/gc.ts)
@@ -167,6 +169,8 @@ Command/action contract exports:
 - Context relevance primitives: `buildItemContextRelevanceCandidates`, `buildContextSignalSnapshot`, `ContextSignalStore`, `JsonFileContextSignalStoreAdapter`, `parseContextSignalSnapshot`, `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
 - Context relevance contracts: `ContextRelevanceCandidate`, `ContextRelevanceSignals`, `ContextSignalSnapshot`, `ContextSignalStoreAdapter`, `ContextSignalStoreReadResult`, `ContextRelevanceScorer`, `ContextRelevanceReport`, `ContextEvaluationReader`, `ContextEvaluationScenario`, `ContextEvaluationScenarioReport`, `ContextEvaluationThresholds`, and `ContextEvaluationCorpusReport`
 - Context packing and feedback primitives: `packContextCandidates`, `recordContextUsageServing`, `recordContextUsageTouch`, `recordContextUsageTouches`, and `readContextUsageAffinity`
+- Large-workspace memory primitives: `buildWorkspaceMemorySnapshot`, `readWorkspaceMemory`, `selectWorkspaceMemoryRollups`, and `searchWorkspaceMemory` build cursor-bound, rebuildable calendar-epoch and epic-lineage summaries. The stock `context` and `search` results attach matching bounded rollups automatically at 10,000 items; smaller projects skip the artifact entirely.
+- Persistent metadata-query primitives: `queryItemMetadataIndex` with `ItemMetadataIndexQuery` / `ItemMetadataIndexQueryResult` executes bounded status/type/id/parent/assignee/sprint/release/priority windows without materializing the JSON metadata corpus. It returns `null` on absent, stale, or corrupt derived state so custom hosts can fall back to authoritative reads.
 - Typed annotation and relationship primitives on `PmClient`: `comments`, `notes`, `learnings`, `files`, `filesDiscover`, `docs`, `deps`, `graph`, and `append`
 - Workspace graph-query runner: `runGraph` (with `GraphCommandOptions`, `GraphResult`, and per-subcommand envelopes) resolves the workspace relationship graph through the shared fingerprint-keyed cache and dispatches bounded `ancestors`/`descendants`/`predecessors`/`successors`/`paths`/`impact`/`analyze`/`audit`/`communities`/`redundancy`/`dominators`/`slack`/`centrality`/`articulation`/`plan` queries with counts-first cost, truncation, and cache metadata; the `pm graph` CLI command and `pm_graph` MCP tool are thin adapters over it.
 - Structural graph analytics: `detectRelationshipCommunities` (deterministic label-propagation clustering with `maxIterations`/`minSize` bounds and convergence reporting), `findRedundantRelationshipEdges` (transitive-reduction scan that joins each directed ordering or hierarchy kind with its inverse spelling and returns witness paths), and `computeRelationshipDominators` (Cooper–Harvey–Kennedy immediate dominators with per-node gating weights for bottleneck ranking) — all deterministic, cancellable, and cost-metered like every other graph query.
@@ -1105,6 +1109,24 @@ the SDK search engine directly. Package authors can import these functions and
 their typed result contracts from `@unbrained/pm-cli/sdk` without importing CLI
 implementation modules.
 
+The shared query cursor contract treats every published list, context, and
+search flag as query-semantic by default: it changes the matched or ordered
+result and therefore invalidates a cursor. Only page-size and rendering flags
+carry `CliFlagContract.cursor_semantics: "presentation"`, keeping the public
+contract compact and fail-safe for newly added flags. Use
+`selectCursorSemanticOptions` before `createQueryFingerprint` for a
+package-authored query surface. `encodeQueryCursor`, `decodeQueryCursorState`, and
+`paginateQueryRows` remain the transport-neutral continuation primitives.
+
+At the storage boundary, the metadata cache maintains a rebuildable SQLite
+query projection under the same source cursor and cross-process writer lock as
+the JSON metadata/body/collection tiers. Bounded default-order light `list`
+pages consume this index directly. Heavy projections, extension read hooks,
+trees, custom runtime fields, dependency-aware filtering, unsupported filters,
+and stale/missing indexes take the canonical fallback path with identical
+result contracts. Custom hosts may call `queryItemMetadataIndex` directly, but
+must treat `null` as an instruction to rebuild or use authoritative storage.
+
 List results always expose `total`, `has_more`, `truncated`, and a nullable
 `next_cursor`, whether or not the page was truncated; unset filter echoes are
 omitted. This stable, lean envelope lets agents plan continuation without
@@ -1224,6 +1246,15 @@ the snapshot is derived, never authoritative. Optional maps for activity density
 graph proximity, claim/focus, knowledge density, author affinity, usage
 affinity, and semantic similarity let an index or application-specific host
 supply richer signals without changing the canonical scorer contract.
+
+Large workspaces also receive a separate historical-memory tier. It groups
+completed items into deterministic calendar-quarter and nearest-epic rollups,
+retains only bounded item references and outcome strings, and shares the
+metadata source cursor. `readWorkspaceMemory` reports
+`fresh`/`rebuilt`/`skipped`; `selectWorkspaceMemoryRollups` applies an
+approximate token budget for context packets, while `searchWorkspaceMemory`
+matches rollup labels, outcomes, representative ids, and titles. This file is
+derived runtime state: it never replaces closed items or immutable history.
 
 ```ts
 import {

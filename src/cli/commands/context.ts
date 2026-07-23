@@ -53,7 +53,9 @@ import {
   createQueryFingerprint,
   encodeQueryCursor,
   resolveQueryCursorStart,
+  selectCursorSemanticOptions,
 } from "../../sdk/pagination.js";
+import { CONTEXT_FLAG_CONTRACTS } from "../../sdk/cli-contracts/flag-contracts.js";
 import {
   packContextCandidates,
   type ContextPackingReport,
@@ -66,6 +68,11 @@ import {
   readWorkspaceContextSignals,
   type ContextSignalStoreReadResult,
 } from "../../sdk/context-signal-store.js";
+import {
+  readWorkspaceMemory,
+  selectWorkspaceMemory,
+  type WorkspaceMemoryRollup,
+} from "../../sdk/workspace-memory.js";
 
 // ---------------------------------------------------------------------------
 // Output format
@@ -415,6 +422,15 @@ export interface ContextResult {
   staleness?: StaleEntry[];
   /** Value that configures or reports tests for this contract. */
   tests?: TestHealthSummary;
+  /** Cursor-bound historical rollups automatically attached for large workspaces. */
+  workspace_memory?: {
+    /** Persistence freshness for the derived projection. */
+    cache_status: "fresh" | "rebuilt";
+    /** Source cursor shared with the authoritative metadata projection. */
+    source_cursor: string;
+    /** Recent epoch and epic summaries selected within the context token budget. */
+    rollups: WorkspaceMemoryRollup[];
+  };
   /** Value that configures or reports suggestions for this contract. */
   suggestions?: string[];
   /** Focus-row field subset requested via --fields; null/omitted means full rows. */
@@ -613,13 +629,17 @@ export function resolveContextTokenBudget(
   if (raw === undefined) return fallback;
   const parsed = typeof raw === "number" ? raw : Number(raw);
   if (!Number.isInteger(parsed) || parsed < 1) {
-    throw new PmCliError("--token-budget must be a positive integer", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--token-budget must be a positive integer",
+      EXIT_CODE.USAGE,
+    );
   }
   return parsed;
 }
 
 function resolveContextLimitAtScale(limit: number, itemCount: number): number {
-  return itemCount >= CONTEXT_SCALE_THRESHOLD && limit === Number.MAX_SAFE_INTEGER
+  return itemCount >= CONTEXT_SCALE_THRESHOLD &&
+    limit === Number.MAX_SAFE_INTEGER
     ? DEFAULT_CONTEXT_LIMIT
     : limit;
 }
@@ -954,7 +974,6 @@ export function compareCriticalItems(
   const byId = left.id.localeCompare(right.id);
   return byUpdated !== 0 ? byUpdated : byId;
 }
-
 
 function estimateJsonTokens(value: unknown): number {
   return Math.max(
@@ -1366,11 +1385,7 @@ function buildBlockers(
   return blockedItems.slice(0, limit).map((item) => {
     // Prefer a currently open blocker edge. The legacy scalar may still name a
     // resolved predecessor, so it is only a fallback when no open edge exists.
-    const blockers = resolveItemBlockers(
-      item,
-      itemsById,
-      statusRegistry,
-    );
+    const blockers = resolveItemBlockers(item, itemsById, statusRegistry);
     const blockedBy =
       blockers.find((blocker) => !blocker.resolved)?.id ??
       blockers[0]?.id ??
@@ -1390,10 +1405,7 @@ function buildBlockers(
   });
 }
 
-function buildHotFiles(
-  activeItems: ItemMetadata[],
-  limit: number,
-): HotFile[] {
+function buildHotFiles(activeItems: ItemMetadata[], limit: number): HotFile[] {
   const fileMap = new Map<string, Set<string>>();
   for (const item of activeItems) {
     for (const file of item.files ?? []) {
@@ -1883,6 +1895,15 @@ export function renderContextMarkdown(result: ContextResult): string {
   );
   pushBlockedFallbackSection(lines, result, renderFocus);
   pushAgendaSection(lines, result);
+  if (result.workspace_memory) {
+    lines.push("## Workspace memory");
+    for (const rollup of result.workspace_memory.rollups) {
+      lines.push(
+        `- ${rollup.kind}:${rollup.key} — ${rollup.label} (${rollup.item_count} completed, latest ${rollup.last_closed_at})`,
+      );
+    }
+    lines.push("");
+  }
   pushHierarchySection(lines, result);
   pushProgressSection(lines, result);
   pushRecentlyCreatedSection(lines, result, focusFields, renderFocus);
@@ -2142,7 +2163,10 @@ async function resolveContextFocusGroups(
     ...rankedBlockedItems.slice(0, limit).map((item) => item.id),
   ]);
   const packing = packRankedContextItems(
-    { ...ranking, ranked: ranking.ranked.filter((entry) => packingIds.has(entry.id)) },
+    {
+      ...ranking,
+      ranked: ranking.ranked.filter((entry) => packingIds.has(entry.id)),
+    },
     tokenBudget,
   );
   const packedItems = packing.included.map((entry) => entry.item);
@@ -2194,17 +2218,13 @@ async function resolveContextFocusGroups(
 }
 
 function buildContextCursorFingerprint(options: ContextOptions): string {
-  const normalizedOptions: Record<string, unknown> = { ...options };
-  delete normalizedOptions.after;
-  delete normalizedOptions.limit;
-  delete normalizedOptions.maxItems;
-  delete normalizedOptions.format;
-  delete normalizedOptions.fields;
-  delete normalizedOptions.section;
-  delete normalizedOptions.activityLimit;
-  delete normalizedOptions.staleThreshold;
-  delete normalizedOptions.explainRanking;
-  return createQueryFingerprint("context", normalizedOptions);
+  return createQueryFingerprint(
+    "context",
+    selectCursorSemanticOptions(
+      options as Readonly<Record<string, unknown>>,
+      CONTEXT_FLAG_CONTRACTS,
+    ),
+  );
 }
 
 function shouldPageContextFocus(
@@ -2297,8 +2317,15 @@ async function buildOptionalContextSections(params: {
   now: string;
   global: GlobalOptions;
 }): Promise<ContextOptionalSections> {
-  const { runtime, allItems, fullCorpus, blockedIds, focusGroups, now, global } =
-    params;
+  const {
+    runtime,
+    allItems,
+    fullCorpus,
+    blockedIds,
+    focusGroups,
+    now,
+    global,
+  } = params;
   const childrenByParent = buildChildrenByParent(allItems);
   const allNonTerminal = allItems.filter(
     (item) => !isTerminalStatus(item.status, runtime.statusRegistry),
@@ -2540,11 +2567,17 @@ export async function runContext(
       ].map((item) => item.id),
     ),
   );
+  const workspaceMemory = await readWorkspaceMemory(corpus.fullCorpus, {
+    pmRoot,
+    statusRegistry: runtime.statusRegistry,
+    now: agendaContext.agenda.now,
+  });
   const warnings = mergeSortedWarnings(
     corpus.listed.warnings,
     agendaContext.agenda.warnings,
     focusGroups.ranking.warnings,
     [...focusGroups.featureStore.warnings],
+    workspaceMemory.warnings,
   );
   const inProgressCount = countContextStatus(
     focusGroups.activeItems,
@@ -2620,10 +2653,17 @@ export async function runContext(
     },
     ...focusGroups.pageExtras,
   };
+  result.workspace_memory = selectWorkspaceMemory(
+    workspaceMemory,
+    Math.min(800, Math.floor(runtime.tokenBudget * 0.2)),
+  );
 
   attachOptionalContextSections(result, sections);
   if (options.explainRanking === true) {
-    result.ranking = toContextRankingSummary(focusGroups.ranking, focusGroups.featureStore);
+    result.ranking = toContextRankingSummary(
+      focusGroups.ranking,
+      focusGroups.featureStore,
+    );
     result.packing = toContextPackingSummary(focusGroups.packing);
   }
   applyContextFocusProjection(result, runtime.focusFields);
