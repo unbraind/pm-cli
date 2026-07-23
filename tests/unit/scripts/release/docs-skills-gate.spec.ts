@@ -711,7 +711,7 @@ describe("docs-skills-gate", () => {
         checks: { mode: string };
         failures: string[];
       };
-      expect(payload.ok).toBe(true);
+      expect(payload.ok, payload.failures.join("\n")).toBe(true);
       expect(payload.checks.mode).toBe("full");
       expect(payload.failures).toEqual([]);
     });

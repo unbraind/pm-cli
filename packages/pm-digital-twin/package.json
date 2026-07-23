@@ -1,0 +1,58 @@
+{
+  "name": "@unbrained/pm-digital-twin",
+  "version": "2026.7.23",
+  "private": true,
+  "type": "module",
+  "description": "Beyond-PM exemplar: a temporal production-facility digital twin built entirely on public pm SDK and extension primitives.",
+  "homepage": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-digital-twin#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unbraind/pm-cli.git",
+    "directory": "packages/pm-digital-twin"
+  },
+  "bugs": {
+    "url": "https://github.com/unbraind/pm-cli/issues"
+  },
+  "keywords": [
+    "pm-package",
+    "sdk",
+    "digital-twin",
+    "event-sourcing",
+    "temporal-graph",
+    "exemplar"
+  ],
+  "pm": {
+    "aliases": [
+      "digital-twin",
+      "twin"
+    ],
+    "extensions": [
+      "extensions/digital-twin"
+    ],
+    "catalog": {
+      "display_name": "Digital Twin SDK Exemplar",
+      "category": "sdk",
+      "summary": "Temporal facility graph proving event replay, point-in-time state, invariants, federation, checkpoints, and compact exports through public SDK contracts.",
+      "tags": [
+        "sdk",
+        "digital-twin",
+        "event-sourcing",
+        "graph",
+        "offline-first",
+        "exemplar"
+      ],
+      "links": {
+        "docs": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-digital-twin#readme",
+        "repository": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-digital-twin",
+        "report": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-digital-twin/GAP_REPORT.md"
+      }
+    },
+    "docs": [
+      "README.md",
+      "GAP_REPORT.md"
+    ],
+    "examples": [
+      "README.md"
+    ]
+  }
+}

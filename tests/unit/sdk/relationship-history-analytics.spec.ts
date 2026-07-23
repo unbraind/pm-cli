@@ -365,21 +365,21 @@ describe("relationship event history", () => {
     ).toThrow("not active");
   });
 
-  it("uses contiguous sequence prefixes for non-monotonic timestamp snapshots", () => {
+  it("uses event time for non-monotonic timestamp snapshots", () => {
     const log = new RelationshipEventLog(["a", "b", "c"]);
     log.append({
       eventId: "late-add",
-      relationshipId: "relationship",
+      relationshipId: "future-relationship",
       action: "add",
       edge: { source: "a", target: "b", kind: "related" },
       author: "agent",
       timestamp: "2026-07-14T10:00:00.000Z",
     });
     log.append({
-      eventId: "early-supersede",
-      relationshipId: "relationship",
-      action: "supersede",
-      edge: { source: "a", target: "c", kind: "related" },
+      eventId: "offline-add",
+      relationshipId: "offline-relationship",
+      action: "add",
+      edge: { source: "b", target: "c", kind: "related" },
       author: "agent",
       timestamp: "2026-07-14T08:00:00.000Z",
     });
@@ -387,7 +387,37 @@ describe("relationship event history", () => {
       log.snapshot({ atTimestamp: "2026-07-14T09:00:00.000Z" }),
     ).toMatchObject({
       version: 2,
+      asOf: "2026-07-14T08:00:00.000Z",
+      edges: [{ source: "b", target: "c", kind: "related" }],
+    });
+    log.append({
+      eventId: "offline-supersede",
+      relationshipId: "offline-relationship",
+      action: "supersede",
+      edge: { source: "a", target: "c", kind: "related" },
+      author: "offline-agent",
+      timestamp: "2026-07-14T08:30:00.000Z",
+    });
+    log.append({
+      eventId: "future-remove",
+      relationshipId: "offline-relationship",
+      action: "remove",
+      author: "offline-agent",
+      timestamp: "2026-07-14T11:00:00.000Z",
+    });
+    expect(
+      log.snapshot({ atTimestamp: "2026-07-14T09:00:00.000Z" }),
+    ).toMatchObject({
+      version: 3,
+      asOf: "2026-07-14T08:30:00.000Z",
       edges: [{ source: "a", target: "c", kind: "related" }],
+    });
+    expect(log.snapshot({ atVersion: 2 })).toMatchObject({
+      version: 2,
+      edges: [
+        { source: "a", target: "b", kind: "related" },
+        { source: "b", target: "c", kind: "related" },
+      ],
     });
     expect(
       log.snapshot({ atTimestamp: "2026-07-14T07:00:00.000Z" }),
@@ -984,7 +1014,9 @@ describe("bounded relationship context", () => {
     });
     // One traversal call for the root plus one boundary probe: after the first
     // depth-limit node establishes truncation, remaining boundary nodes skip.
-    expect(neighborEdges.mock.calls.filter(([id]) => id !== "root").length).toBe(1);
+    expect(
+      neighborEdges.mock.calls.filter(([id]) => id !== "root").length,
+    ).toBe(1);
     neighborEdges.mockRestore();
   });
 

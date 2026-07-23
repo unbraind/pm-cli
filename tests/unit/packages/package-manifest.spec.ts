@@ -388,6 +388,7 @@ describe("pm package manifest model", () => {
     const beadsRoot = path.join(repoRoot, "packages", "pm-beads");
     const calendarRoot = path.join(repoRoot, "packages", "pm-calendar");
     const commandKitRoot = path.join(repoRoot, "packages", "pm-command-kit");
+    const digitalTwinRoot = path.join(repoRoot, "packages", "pm-digital-twin");
     const governanceAuditRoot = path.join(repoRoot, "packages", "pm-governance-audit");
     const guideShellRoot = path.join(repoRoot, "packages", "pm-guide-shell");
     const kanbanRoot = path.join(repoRoot, "packages", "pm-kanban");
@@ -447,6 +448,26 @@ describe("pm package manifest model", () => {
     await expect(collectPackageExtensionDirectories(commandKitRoot)).resolves.toEqual([
       path.join(commandKitRoot, "extensions", "command-kit"),
     ]);
+
+    await expect(readPmPackageManifest(digitalTwinRoot)).resolves.toMatchObject({
+      source: "pm",
+      package_name: "@unbrained/pm-digital-twin",
+      package_version: rootPackage.version,
+      aliases: ["digital-twin", "twin"],
+      catalog: {
+        display_name: "Digital Twin SDK Exemplar",
+        category: "sdk",
+      },
+      resources: {
+        extensions: ["extensions/digital-twin"],
+      },
+    });
+    await expect(collectPackageExtensionDirectories(digitalTwinRoot)).resolves.toEqual([
+      path.join(digitalTwinRoot, "extensions", "digital-twin"),
+    ]);
+    const digitalTwinManifest = await readPmPackageManifest(digitalTwinRoot);
+    expect(digitalTwinManifest.resources.docs).toEqual(["GAP_REPORT.md", "README.md"]);
+    expect(digitalTwinManifest.resources.examples).toEqual(["README.md"]);
 
     await expect(readPmPackageManifest(governanceAuditRoot)).resolves.toMatchObject({
       source: "pm",
@@ -612,6 +633,12 @@ describe("pm package manifest model", () => {
     await expect(access(path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-command-kit", "extensions", "command-kit", "index.ts"))).resolves
       .toBeUndefined();
+    await expect(
+      access(path.join(repoRoot, "packages", "pm-digital-twin", "extensions", "digital-twin", "index.ts")),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(path.join(repoRoot, "packages", "pm-digital-twin", "extensions", "digital-twin", "domain.ts")),
+    ).resolves.toBeUndefined();
     await expect(
       access(path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "index.ts")),
     ).resolves.toBeUndefined();
@@ -829,6 +856,8 @@ describe("pm package manifest model", () => {
       path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "index.ts"),
       path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.ts"),
       path.join(repoRoot, "packages", "pm-command-kit", "extensions", "command-kit", "index.ts"),
+      path.join(repoRoot, "packages", "pm-digital-twin", "extensions", "digital-twin", "index.ts"),
+      path.join(repoRoot, "packages", "pm-digital-twin", "extensions", "digital-twin", "domain.ts"),
       path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "index.ts"),
       path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "runtime.ts"),
       path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "index.ts"),

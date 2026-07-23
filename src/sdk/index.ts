@@ -972,6 +972,7 @@ export type {
   CommandHandler,
   CommandHandlerContext,
   CommandHandlerResult,
+  ExtensionCommandSdk,
   CommandOverride,
   CommandOverrideContext,
   ExtensionServiceName,

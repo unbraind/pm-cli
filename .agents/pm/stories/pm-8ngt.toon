@@ -2,43 +2,57 @@ id: pm-8ngt
 title: "As a platform developer, I can build a non-PM domain system (e.g. a git-like VCS or a company's business workflows) using only pm SDK primitives"
 description: "Horizon-5 exploration story: prove the pm SDK is a universal event-sourced application platform, not a PM-only toolkit. Inventories the primitive gaps a foreign domain exposes and feeds them back as concrete SDK items. Dedupe-checked 2026-07-06: pm search for VCS/business-logic/beyond-PM coverage found only the vision ADR pm-oxq5 and PM-domain stories pm-w89s/pm-cbwg; no item tracks the beyond-PM ambition."
 type: Story
-status: open
+status: closed
 priority: 4
 tags[5]: extensibility,horizon-5,long-term,sdk,universal-tool
 created_at: "2026-07-06T22:17:47.761Z"
-updated_at: "2026-07-18T16:49:55.405Z"
+updated_at: "2026-07-23T11:59:28.240Z"
+closed_at: "2026-07-23T11:27:01.945Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: Primitive-gap inventory exists for at least one non-PM domain; every gap is filed as an individual dedupe-checked SDK item under pm-usfg or explicitly waived; exemplar spike child demonstrates the story end-to-end
 parent: pm-usfg
 risk: low
 confidence: medium
-resolution: "Story accepted via the pm-xtrd exemplar (PR#587): @unbrained/pm-vcs proves a non-PM domain runs on public SDK primitives alone; primitive-gap inventory complete with every gap shipped, filed (pm-v1yo, pm-um4g, pm-4e12 transaction boundary), or out-of-scope."
-expected_result: "A platform developer can model a foreign domain (VCS changesets/refs) using only public pm SDK primitives, with a gap inventory feeding filed or waived SDK items."
-actual_result: "packages/pm-vcs ships custom types/fields, schema-owned lifecycle, seven domain commands, reviewed-merge hook, event-sourced history with time travel, durable relationship-event projections, and crash-consistent merge reconciliation — zero private core imports, packed-artifact acceptance at 100% coverage; GAP_REPORT.md dispositions all twelve domain needs."
+resolution: "Accepted through two independent public-SDK-only packages: @unbrained/pm-vcs proves transactional event-sourced software-delivery workflows, and @unbrained/pm-digital-twin proves temporal physical-domain state, topology, invariants, and offline reconciliation."
+expected_result: "Independent non-PM exemplars can define custom domain schemas, lifecycle behavior, immutable event history, point-in-time projections, relationship graphs, transactions, validation, and package commands through published SDK and host-injected extension contracts only."
+actual_result: "The VCS exemplar delivers refs, changesets, atomic merge/replay, and projections; the digital-twin exemplar delivers facility/assets, temporal observations, topology/impact, recoverable invariant replay, replica conflict handling, and checkpointed import/export. Both install and run in clean consumers without private CLI imports."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-xc68,related,"2026-07-13T22:02:04.058Z",null,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-18T05:54:11.865Z",codex-sdk-vcs-20260718,"Implementation start 2026-07-18: canonical child pm-xtrd is now active as the acceptance vehicle; pm-ju83 is active only for the durable graph/event primitives the exemplar concretely exercises. No speculative or duplicate SDK item was created."
   "2026-07-18T07:17:36.324Z",codex-sdk-vcs-20260718,"Story tranche evidence 2026-07-18: the VCS acceptance vehicle proves a non-PM domain using only public SDK primitives and includes an itemized GAP_REPORT.md. Every observed primitive need is either complete, explicitly waived as product-specific/bounded, or retained on canonical existing graph/scale lineage; no speculative duplicate SDK items were created. Linked acceptance test passes. The separate temporal digital-twin child pm-kr3t remains open, so this broader story returns to open rather than closing over an active future exemplar."
   "2026-07-18T14:35:44.361Z",codex-root,"Implementation continuation 2026-07-18: replace the VCS exemplar's sole explicit transaction waiver with the canonical pm-4e12 public SDK primitive; temporal digital-twin child pm-kr3t remains outside this lane."
   "2026-07-18T15:19:22.552Z",codex-root,"Active acceptance tranche evidence: the pm-vcs exemplar no longer carries its transaction waiver. A package using only public @unbrained/pm-cli/sdk and extension-host services atomically coordinates a Changeset lifecycle transition with an append-only commits_to relationship, including compensation and crash replay. Packed temp install and full VCS flow passed. The separate temporal/business-workflow child remains outside this PR, so this broad story is not being closed by this tranche."
   "2026-07-18T16:49:49.948Z",codex-root,"PR #605 beyond-PM acceptance review evidence: packed @unbrained/pm-cli plus locally installed pm-vcs completed schema/profile, ref/create/propose/atomic merge/log, public SDK commit+replay, and deep doctor with zero warnings. Compensation restores original refs and preserves concurrent newer state. The temporal digital-twin child remains outside this tranche, so this story returns to open."
+  "2026-07-23T11:18:51.669Z",codex-root,"Phase-two acceptance evidence: @unbrained/pm-digital-twin is a non-project-management facility domain implemented through public SDK contracts, with custom item types/fields, typed relationship ontology, immutable observations, event-time replay, graph invariants, impact paths, offline merge, checkpointed export/import, and a complete clean installed-CLI workflow."
 notes[2]{created_at,author,text}:
   "2026-07-11T10:49:01.607Z",maintainer-agent,"Maintainer re-affirmed 2026-07-11: this story is an explicit product goal (build a git-like VCS or an entire company's business logic on pm SDK primitives alone). Plan of record lives in the SDK-DX map note on epic pm-usfg (2026-07-11) — primitive checklist with owners, and the sequencing rule: the pm-xtrd changeset-exemplar spike runs AFTER the six promotion slices land and is the honest detector of missing primitives; no speculative SDK features ahead of it. Acceptance sketch for this story: the spike's package imports only public SDK entry points (boundary gate pm-8778 proves it), defines its own item types/statuses via the schema primitives, and replays its full event history through the immutable history stream."
   "2026-07-18T10:03:08.216Z",maintainer-agent,"Story acceptance evidence 2026-07-18 (PR#587): exemplar child pm-xtrd CLOSED — @unbrained/pm-vcs models the full changeset/ref domain on public SDK primitives only (custom types+fields, schema-owned lifecycle, seven domain verbs, reviewed-merge hook, event-sourced history with time travel, durable commits_to stream + projections, crash-consistent merge reconciliation). Primitive-gap inventory = packages/pm-vcs/GAP_REPORT.md; every row Complete, explicitly waived (atomic multi-item+relationship transaction boundary — tracked separately under pm-usfg), or out-of-scope (content-addressed storage/tree diff/transport = VCS-product concerns). Gaps surfaced during the lane filed as pm-v1yo (alias collision diagnostics) + pm-um4g (audit unit consistency). All three AC clauses met."
 learnings[1]{created_at,author,text}:
   "2026-07-18T07:17:37.026Z",codex-sdk-vcs-20260718,"Project management = context management generalizes cleanly: custom entities, lifecycle, business rules, point-in-time state, graph semantics, and derived event projections can be composed as package-owned domain context while core supplies governed storage and execution primitives."
-files[4]{path,scope,note}:
+files[7]{path,scope,note}:
+  packages/pm-digital-twin/extensions/digital-twin/domain.ts,project,foreign-domain policy and projection layer
+  packages/pm-digital-twin/extensions/digital-twin/index.ts,project,second deliberately non-PM public SDK exemplar
   packages/pm-vcs/extensions/vcs/index.ts,project,VCS merge acceptance through public SDK transaction primitive
   packages/pm-vcs/GAP_REPORT.md,project,Non-PM domain primitive inventory and explicit waiver record
   packages/pm-vcs/README.md,project,Runnable beyond-PM acceptance workflow
+  tests/unit/packages/digital-twin-extension.spec.ts,project,source and installed acceptance proof
   tests/unit/packages/vcs-extension.spec.ts,project,End-to-end universal SDK story proof
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/packages/vcs-extension.spec.ts,project,240,Non-PM domain acceptance story
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/packages/digital-twin-extension.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/packages/vcs-extension.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: Non-PM domain acceptance story
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrq1a3j2-ljkczf,test,passed,"2026-07-18T07:16:28.981Z","2026-07-18T07:16:44.510Z","2026-07-18T07:16:44.510Z",1,0,0
-docs[2]{path,scope,note}:
+docs[4]{path,scope,note}:
+  packages/pm-digital-twin/GAP_REPORT.md,project,phase-two non-PM acceptance report
+  packages/pm-digital-twin/README.md,project,copyable digital twin workflow
   packages/pm-vcs/GAP_REPORT.md,project,Foreign-domain gap inventory
   packages/pm-vcs/README.md,project,Beyond-PM SDK exemplar guide
+close_reason: "Accepted the universal non-PM domain story with both VCS and temporal digital-twin exemplars using public SDK contracts only; gap reports, clean installed workflows, strict gates, and complete coverage provide end-to-end evidence."
 body: "# Story — Beyond-PM domains on pm SDK primitives\n\nAs a **platform developer**, I can model a **non-PM domain system** — for example a git-like version-control workflow (changesets, refs, merges) or a company's business processes (approvals, invoicing, HR flows) — using **only public pm SDK primitives**, so the SDK proves itself as a universal, event-sourced application platform rather than a PM-only toolkit.\n\n## Why\nThe product vision (ADR pm-oxq5) states the SDK should be extensible enough to build \"an entire SCV like Git or entire companies and their business logic\". Today every SDK story/exemplar (pm-w89s, pm-cbwg) stays inside the PM domain. Nothing exercises — or even inventories — the primitive set a foreign domain needs: fully custom item types and status graphs, domain verbs via extension commands, transactional multi-item mutations, event-sourced history replay as domain state, and hooks as business rules.\n\n## Scope (exploration story, horizon 5)\n- Inventory the primitive gaps: which SDK capabilities does a non-PM domain need that the promoted primitive set (pm-rjqr/pm-98cz/pm-3mna/pm-4a7m et al.) does not yet expose?\n- Feed each gap back as a concrete SDK item under pm-usfg (create-only, dedupe-checked).\n- Acceptance is demonstrated by the exemplar spike child, not by shipping a production VCS.\n\n## Out of scope\nBuilding a real VCS or ERP; performance parity with git; any core storage change (scale work belongs to pm-9rxu).\n\n## Sequencing\nAfter the PM-domain exemplar pm-cbwg proves the custom-PM-tool story, and after the schema/config SDK promotion pm-3mna. Parked at P4 with pm-is1a (federation) in horizon 5."

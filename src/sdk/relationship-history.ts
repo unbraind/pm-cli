@@ -358,7 +358,11 @@ export class RelationshipEventLog {
       throw new TypeError(
         "Relationship event stream fromVersion exceeds the selected prefix",
       );
-    for (let offset = fromVersion - 1; offset < toVersion; offset += batchSize) {
+    for (
+      let offset = fromVersion - 1;
+      offset < toVersion;
+      offset += batchSize
+    ) {
       yield Object.freeze(
         this.#events.slice(offset, Math.min(offset + batchSize, toVersion)),
       );
@@ -385,7 +389,8 @@ export class RelationshipEventLog {
     }
     return Object.freeze({
       state,
-      version: finalEvent?.sequence ?? Math.max(0, (options.fromVersion ?? 1) - 1),
+      version:
+        finalEvent?.sequence ?? Math.max(0, (options.fromVersion ?? 1) - 1),
       processed,
       ...(finalEvent === undefined ? {} : { asOf: finalEvent.timestamp }),
     });
@@ -474,13 +479,9 @@ export class RelationshipEventLog {
       const timestamp = Date.parse(options.atTimestamp);
       if (!Number.isFinite(timestamp))
         throw new TypeError("Relationship snapshot timestamp must be valid");
-      let lastIndex = -1;
-      for (let index = this.#events.length - 1; index >= 0; index -= 1) {
-        if (Date.parse(this.#events[index]!.timestamp) > timestamp) continue;
-        lastIndex = index;
-        break;
-      }
-      included = lastIndex === -1 ? [] : this.#events.slice(0, lastIndex + 1);
+      included = this.#events.filter(
+        (event) => Date.parse(event.timestamp) <= timestamp,
+      );
     } else {
       const version = options.atVersion ?? this.version;
       if (!Number.isInteger(version) || version < 0 || version > this.version)
@@ -496,7 +497,7 @@ export class RelationshipEventLog {
       this.#registry,
     );
     return Object.freeze({
-      version: included.length,
+      version: included.at(-1)?.sequence ?? 0,
       ...(included.at(-1) ? { asOf: included.at(-1)!.timestamp } : {}),
       edges: graph.edges(),
       graph,
@@ -824,7 +825,8 @@ export class RelationshipEventStore {
         appended.push(event);
       }
       if (appended.length > 0) {
-        const prefix = raw.length === 0 || raw.endsWith("\n") ? raw : `${raw}\n`;
+        const prefix =
+          raw.length === 0 || raw.endsWith("\n") ? raw : `${raw}\n`;
         await mkdir(path.dirname(target), { recursive: true });
         await resolveRelationshipEventStorePath(this.#pmRoot, target);
         await writeFileAtomic(
@@ -890,11 +892,7 @@ export class RelationshipEventStore {
         this.#path,
       );
       return (
-        await loadRelationshipEventLog(
-          target,
-          this.#nodes,
-          this.#registry,
-        )
+        await loadRelationshipEventLog(target, this.#nodes, this.#registry)
       ).log;
     } finally {
       await release();

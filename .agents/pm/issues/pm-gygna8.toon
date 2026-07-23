@@ -1,0 +1,19 @@
+id: pm-gygna8
+title: pm deps tree must remain bounded on cyclic deep relationship graphs
+description: "During full-lineage orientation, pm deps pm-kr3t --format tree --json expanded until the process exhausted roughly 4 GB of memory. Tree rendering needs cycle-safe visitation, explicit node/depth/token bounds, and a compact truncation diagnostic so graph context remains safe for agents."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-23T11:25:44.855Z"
+updated_at: "2026-07-23T11:26:20.051Z"
+author: codex-root
+acceptance_criteria: "Cyclic and multiply-linked graphs terminate without repeated unbounded expansion; Tree output honors explicit node, depth, and token bounds with deterministic truncation metadata; A regression fixture reproduces the deep richly-linked topology without touching the real tracker; CLI and SDK dependency projections retain parity for bounded results"
+parent: pm-x85o
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-4k6b,related,"2026-07-23T11:26:19.352Z",codex-root,null
+  pm-9rxu,related,"2026-07-23T11:26:19.352Z",codex-root,null
+  pm-ju83,related,"2026-07-23T11:26:19.352Z",codex-root,null
+comments[1]{created_at,author,text}:
+  "2026-07-23T11:26:20.051Z",codex-root,"Duplicate-check evidence: searched all-status tracker data for 'deps tree OOM memory', 'dependency graph cycle memory exhaustion', and 'deps format tree'. Existing pm-8kch covers missing-reference parity, pm-x85o the original visualization, pm-ju83 graph primitives, pm-9rxu scale, and pm-4k6b bounded context, but none tracks tree-format memory exhaustion. Reproduction observed during pm-kr3t orientation; the process grew to roughly 4 GB before termination. This item remains open and unclaimed because it was documented, not implemented, in the current SDK/digital-twin tranche."
+body: ""

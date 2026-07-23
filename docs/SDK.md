@@ -234,6 +234,35 @@ contracts) when they intentionally expose pm-compatible argv. Every
 extension flags, and runtime schema options from one workspace cannot leak into
 the next in-process invocation.
 
+### Build a non-PM temporal domain
+
+Tracked: [pm-kr3t](../.agents/pm/features/pm-kr3t.toon),
+[pm-8ngt](../.agents/pm/stories/pm-8ngt.toon), and
+[pm-j3swnb](../.agents/pm/issues/pm-j3swnb.toon).
+
+The installable
+[digital-twin exemplar](../packages/pm-digital-twin/README.md) is the
+acceptance reference for a domain that is not project management. It models a
+production facility using public SDK contracts only: custom entity types and
+fields, a project profile, application-defined relationship kinds, durable
+event history, point-in-time projections, graph impact, package-owned
+invariants, crash-consistent multi-step mutations, offline replica merge, and
+tamper-evident bounded export.
+
+Timestamp snapshots select every event whose event time is at or before the
+requested boundary while retaining append order among the selected events.
+This matters for offline systems: a late-arriving historical event becomes
+visible in its historical view without admitting an earlier-appended event from
+the future. Version snapshots and cursors remain append-sequence based.
+
+Use the exemplar when evaluating whether a domain belongs in pm core. Entity
+and policy concepts stay package-owned; stable identity, schema, immutable
+history, graph semantics, attribution, transactions, and bounded context are
+the reusable SDK primitives. Its
+[gap report](../packages/pm-digital-twin/GAP_REPORT.md) maps each domain need to
+the public primitive and canonical pm lineage so future packages can extend the
+platform without duplicating work.
+
 ### Plan workflows
 
 Tracked: [pm-qd3woa](../.agents/pm/issues/pm-qd3woa.toon) and [pm-ypuc39](../.agents/pm/issues/pm-ypuc39.toon).
@@ -1456,6 +1485,7 @@ For provider-safe schemas, use `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`. It is flat 
 | `registerFlags`              | `schema`            |
 | `registerItemFields`         | `schema`            |
 | `registerItemTypes`          | `schema`            |
+| `registerRelationshipKinds`  | `schema`            |
 | `registerMigration`          | `schema`            |
 | `registerProfile`            | `schema`            |
 | `registerImporter`           | `importers`         |

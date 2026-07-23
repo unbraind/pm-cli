@@ -16,12 +16,18 @@ import type {
   ProjectProfileDefinition,
   ProjectProfileRegistrationInput,
 } from "../profile/profile-presets.js";
-import type { RelationshipKindDefinition } from "../../sdk/relationships.js";
+import type {
+  RelationshipEdge,
+  RelationshipGraph,
+  RelationshipKindDefinition,
+  RelationshipQueryOptions,
+} from "../../sdk/relationships.js";
+import type { RelationshipImpactAnalysis } from "../../sdk/relationship-analytics.js";
 import type { PmClient } from "../../sdk/runtime.js";
+import type { GetItemAtResult } from "../../sdk/history-read.js";
 import type {
-  GetItemAtResult,
-} from "../../sdk/history-read.js";
-import type {
+  RelationshipEvent,
+  RelationshipEventInput,
   RelationshipEventStore,
 } from "../../sdk/relationship-history.js";
 import type {
@@ -562,6 +568,8 @@ export interface CommandHandlerContext {
 export interface ExtensionCommandSdk {
   /** Tracker-bound client using the invocation author and workspace. */
   client: PmClient;
+  /** Classify a host-native or structurally compatible missing-item error. */
+  isItemNotFoundError(error: unknown): boolean;
   /** Reconstruct one item at a history version or timestamp. */
   getItemAt(id: string, target: string): Promise<GetItemAtResult>;
   /** Open a durable event store with package-contributed relationship semantics. */
@@ -570,6 +578,24 @@ export interface ExtensionCommandSdk {
     definitions: readonly RelationshipKindDefinition[];
     relativePath?: string;
   }): Promise<RelationshipEventStore>;
+  /** Materialize a validated in-memory graph without resolving the SDK package at runtime. */
+  createRelationshipGraph(options: {
+    nodes: Iterable<string>;
+    edges: Iterable<RelationshipEdge>;
+    definitions: readonly RelationshipKindDefinition[];
+  }): RelationshipGraph;
+  /** Compute bounded exact impact through the host-owned relationship runtime. */
+  analyzeRelationshipImpact(
+    graph: RelationshipGraph,
+    root: string,
+    options?: RelationshipQueryOptions,
+  ): RelationshipImpactAnalysis;
+  /** Validate an immutable relationship event batch without persisting it. */
+  validateRelationshipEvents(options: {
+    nodes: Iterable<string>;
+    definitions: readonly RelationshipKindDefinition[];
+    events: readonly RelationshipEventInput[];
+  }): RelationshipEvent[];
   /** Commit idempotent item and relationship mutations under one durable journal. */
   commitWorkspaceTransaction(
     options: Omit<CommitWorkspaceTransactionOptions, "pmRoot">,
