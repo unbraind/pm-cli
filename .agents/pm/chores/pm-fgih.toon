@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: agent-ux,perf,sdk
 created_at: "2026-07-12T19:24:49.130Z"
-updated_at: "2026-07-23T07:56:33.862Z"
+updated_at: "2026-07-23T08:06:35.342Z"
 closed_at: "2026-07-23T07:56:33.256Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -16,8 +16,9 @@ risk: low
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-dfg0,related,"2026-07-12T19:25:23.313Z",null,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-23T07:56:29.884Z",claude-code-agent,"Completion evidence 2026-07-23: CliFlagContract now declares presentation-only cursor exceptions; the shared SDK selector treats all other flags as semantic by safe default; list/context/search fingerprints use the shared contract path with the three local deny-lists removed. Contract snapshots and regression tests prove existing cursor stability and automatic semantic inclusion for new flags. Full release verification passed exact 100/100/100/100 coverage."
+  "2026-07-23T08:06:35.341Z",claude-code-agent,"PR evidence 2026-07-23: the indexed-read, workspace-memory, cursor-contract, compact-get, SDK-documentation, and linear-time security tranche is published for hosted checks and review at https://github.com/unbraind/pm-cli/pull/655 (implementation commit 89e1417f)."
 files[6]{path,scope,note}:
   src/cli/commands/context.ts,project,Context cursor consumes declared policy
   src/sdk/cli-contracts/flag-contracts.ts,project,Contract-declared semantic versus presentation cursor policy

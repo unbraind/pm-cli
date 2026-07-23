@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: context,long-horizon,scale
 created_at: "2026-07-06T23:26:29.415Z"
-updated_at: "2026-07-23T07:56:32.483Z"
+updated_at: "2026-07-23T08:06:34.837Z"
 closed_at: "2026-07-23T07:56:31.740Z"
 author: maintainer-agent
 estimated_minutes: 720
@@ -19,8 +19,9 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-801d,related,"2026-07-06T23:26:29.415Z",null,null
   pm-o79o,related,"2026-07-06T23:26:29.415Z",null,null
   pm-pee5,related,"2026-07-06T23:26:29.415Z",null,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-23T07:56:29.276Z",claude-code-agent,"Completion evidence 2026-07-23: delivered deterministic cursor-bound epoch, quarter, and nearest-epic workspace-memory rollups as rebuildable SDK artifacts; small workspaces skip at the 10k threshold; context and search surface compact budgeted records with drill-down IDs; malformed/stale artifacts rebuild from source. Tests prove deterministic regeneration, source/history immutability, selection/search projection behavior, skip behavior, and integration. Full release verification passed exact 100/100/100/100 coverage and the installed external-consumer proof."
+  "2026-07-23T08:06:34.837Z",claude-code-agent,"PR evidence 2026-07-23: the indexed-read, workspace-memory, cursor-contract, compact-get, SDK-documentation, and linear-time security tranche is published for hosted checks and review at https://github.com/unbraind/pm-cli/pull/655 (implementation commit 89e1417f)."
 files[6]{path,scope,note}:
   src/cli/commands/context.ts,project,Token-bounded automatic context memory
   src/sdk/query/search-contracts.ts,project,extracted SDK search input and tuning contracts
