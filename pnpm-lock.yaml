@@ -49,7 +49,7 @@ importers:
         version: 10.0.1(eslint@10.7.0(jiti@2.7.0))
       '@sentry/cli':
         specifier: ^3.6.0
-        version: 3.6.0
+        version: 3.6.1
       '@types/npm-package-arg':
         specifier: ^6.1.4
         version: 6.1.4
@@ -64,13 +64,13 @@ importers:
         version: 10.7.0(jiti@2.7.0)
       eslint-plugin-sonarjs:
         specifier: ^4.1.0
-        version: 4.1.0(eslint@10.7.0(jiti@2.7.0))
+        version: 4.2.0(eslint@10.7.0(jiti@2.7.0))
       eslint-plugin-unicorn:
         specifier: ^71.1.0
         version: 71.1.0(eslint@10.7.0(jiti@2.7.0))
       greptile:
         specifier: ^3.1.1
-        version: 3.2.0
+        version: 3.2.2
       jscpd:
         specifier: ^5.0.11
         version: 5.0.12
@@ -548,55 +548,55 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@sentry/cli-darwin@3.6.0':
-    resolution: {integrity: sha512-C2SWHKaEP8NoYkLDr5jwrzklTwlJkzPIx7lu2LZrwBuHG/sNhWdili0ED2mD86b6Q90hlcMtuBm5IHUwcZ6FTQ==}
+  '@sentry/cli-darwin@3.6.1':
+    resolution: {integrity: sha512-hit8SHXYTSZnKvT87/n/5RLwJnl0Nm24dewqEXwMzw7YkDFg7Ptq0bIhvGWINgyuBsmEfXGMnrbBZw5sueBtnQ==}
     engines: {node: '>=18'}
     os: [darwin]
 
-  '@sentry/cli-linux-arm64@3.6.0':
-    resolution: {integrity: sha512-Rc+DB8vuTDpwqY2BxIPnooYk2ZDYQytF+n4nfi6pZZsJtr3SFFe+3wIWVmCVqxiHkaISb33+iJIDxOOqhkSNbQ==}
+  '@sentry/cli-linux-arm64@3.6.1':
+    resolution: {integrity: sha512-+6UpbQo56wW5pf1TTBfNoYzf+WuG7c1fj9DAKchQwUzDN7886OwSYC326rDyh/PaafszYj5gAOElFhymNVA1WA==}
     engines: {node: '>=18'}
     cpu: [arm64]
     os: [linux, freebsd, android]
 
-  '@sentry/cli-linux-arm@3.6.0':
-    resolution: {integrity: sha512-S9xsDZTvybOGbrqqZ7DvF7JCNKp4cakDWJ4LdvQX+z82cHQSoLkYOXkA3EafDfWV9BGIRMIXitMMiSsV2PMU4g==}
+  '@sentry/cli-linux-arm@3.6.1':
+    resolution: {integrity: sha512-FgfKPa4sXianCQxpujNE1JrJYbF6Ug+UPjwdEGAnCZtDeRRQdXbSIih7ikaocg4BcpHxwoRm0BHG1wYeizkCbQ==}
     engines: {node: '>=18'}
     cpu: [arm]
     os: [linux, freebsd, android]
 
-  '@sentry/cli-linux-i686@3.6.0':
-    resolution: {integrity: sha512-PQ7+ctNmWtHgmbKa+rJheHU7D9GHJXafgWYfVW6gt7R0Ag9LxiDVYLGjrL4G/i7AGFNgudXFaLkGKNX7HUjc+g==}
+  '@sentry/cli-linux-i686@3.6.1':
+    resolution: {integrity: sha512-xDzb2knLayJKv6FGggjrfvQiIpA4wvYvxeNV6B3plTlu1Qunkz5889A+Ayrp4wv19bgMVI6wLdKF9U2TpHPTbQ==}
     engines: {node: '>=18'}
     cpu: [x86, ia32]
     os: [linux, freebsd, android]
 
-  '@sentry/cli-linux-x64@3.6.0':
-    resolution: {integrity: sha512-c+7xNg5BAaPE8N2Q6pg3Q/kt97JSaskuQIjRxHaFuDbCkJvww4VozY6mW5NUMJaW48rEs3mahWKamTLqJsO3wQ==}
+  '@sentry/cli-linux-x64@3.6.1':
+    resolution: {integrity: sha512-OJChq61ZoKFLAVC+LPqensvBcoToxnAfAZF19emTLNQNjBbGZBL6G/4P0uK4tlwlhB5wAeobu58xX2kfJEgkjA==}
     engines: {node: '>=18'}
     cpu: [x64]
     os: [linux, freebsd, android]
 
-  '@sentry/cli-win32-arm64@3.6.0':
-    resolution: {integrity: sha512-zhZ7YyGreHSKZ92Mwb9h4cEyL0I/eND7W6XIUXUW0BCCmxFOMc71vlQpUw8gijHIsFDbv8c8a6VOSkeRuwbSwQ==}
+  '@sentry/cli-win32-arm64@3.6.1':
+    resolution: {integrity: sha512-SR4JESQdr1+XmK3kAVa9BAUdOA9QYkreJkWzUlj1oXbTlD5OdRmzc1yMHlkrkbbKSu6vrlqYiEaox3Pgsc08sg==}
     engines: {node: '>=18'}
     cpu: [arm64]
     os: [win32]
 
-  '@sentry/cli-win32-i686@3.6.0':
-    resolution: {integrity: sha512-JaxzVDdyetrPBp8NHh2yNAYdDk79ROXqfAfjQwG5z6V764MMMrf2WrhQ7EwoKXOPtBLm/drbOcYgaxHuDZKGRw==}
+  '@sentry/cli-win32-i686@3.6.1':
+    resolution: {integrity: sha512-EBOR2Yx5nYUcwbGXp5AHuQPjNZ9QLcoKlTKAt9ygQX4SF7S0pwnrAfXktkA4QOZqSXtzlKhrpwwnWNq0zPksNw==}
     engines: {node: '>=18'}
     cpu: [x86, ia32]
     os: [win32]
 
-  '@sentry/cli-win32-x64@3.6.0':
-    resolution: {integrity: sha512-LW0078VlxaUeVMMLA15A1zhkvZ5vby/lwthtBXPoBSDdTcgbTE4D4gQXM9vEapV28SvCO3fVIek3pbtrkaeDMw==}
+  '@sentry/cli-win32-x64@3.6.1':
+    resolution: {integrity: sha512-qQkVQOMoE5U6NtigezFNYSJncP1DOuauvp7JS+1DRpE5pXTKjHkOT6niWceGQc7wH4UGk6iwzOkNzx6klNd4Yw==}
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
 
-  '@sentry/cli@3.6.0':
-    resolution: {integrity: sha512-79XC8o59G/i3VqmnoQD74a/QD/422eQQlUqiPd3sEvcYCxnaZialRVAsxuNEFd6sx4aVGpqt775MMDT9cV/lMg==}
+  '@sentry/cli@3.6.1':
+    resolution: {integrity: sha512-9KGZEe/o+vdHS69JhkNztPysqknnI3W5cceovi2G3yb5z29At6SAbGGOdFe3qxYDfC/c2Uw5MKYfev8K9xFI9Q==}
     engines: {node: '>= 18'}
     hasBin: true
 
@@ -939,8 +939,8 @@ packages:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
 
-  eslint-plugin-sonarjs@4.1.0:
-    resolution: {integrity: sha512-rh+FlVz0yfd2RNIb6WqSkuGh0addX/Qi5scwQ5FphXDFrM6fZKcxP1+attJ78yUKcyYfiu6MTaISPpAFPzqRJw==}
+  eslint-plugin-sonarjs@4.2.0:
+    resolution: {integrity: sha512-bqADfuNtTL7VK6RU29eoiFTtaaBKIpVPuX3bOl+rBpWSBa0zIBVZlqZNZQjfP6s4iXkAJokv5IsD8OsACkwApg==}
     peerDependencies:
       eslint: ^8.0.0 || ^9.0.0 || ^10.0.0
 
@@ -1106,8 +1106,8 @@ packages:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
 
-  greptile@3.2.0:
-    resolution: {integrity: sha512-nDR+nSo+0eeCvfdabKJlxzPMI+8HWUUzbRf5G45EacAr68ptP8YSoipjEEaYALDpFM4kHrWsK7fck1Y3uQ47Fg==}
+  greptile@3.2.2:
+    resolution: {integrity: sha512-TF7+GB1y1IQWEYr5M43mjvHXpxUvFVJwAxmNyKn+kGJBHzFT10sEQ9ZkiUA3IwqLM/UB0i4+8ILECshzFMfJMA==}
     engines: {node: '>=22.0.0'}
     hasBin: true
 
@@ -2048,45 +2048,45 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.62.2':
     optional: true
 
-  '@sentry/cli-darwin@3.6.0':
+  '@sentry/cli-darwin@3.6.1':
     optional: true
 
-  '@sentry/cli-linux-arm64@3.6.0':
+  '@sentry/cli-linux-arm64@3.6.1':
     optional: true
 
-  '@sentry/cli-linux-arm@3.6.0':
+  '@sentry/cli-linux-arm@3.6.1':
     optional: true
 
-  '@sentry/cli-linux-i686@3.6.0':
+  '@sentry/cli-linux-i686@3.6.1':
     optional: true
 
-  '@sentry/cli-linux-x64@3.6.0':
+  '@sentry/cli-linux-x64@3.6.1':
     optional: true
 
-  '@sentry/cli-win32-arm64@3.6.0':
+  '@sentry/cli-win32-arm64@3.6.1':
     optional: true
 
-  '@sentry/cli-win32-i686@3.6.0':
+  '@sentry/cli-win32-i686@3.6.1':
     optional: true
 
-  '@sentry/cli-win32-x64@3.6.0':
+  '@sentry/cli-win32-x64@3.6.1':
     optional: true
 
-  '@sentry/cli@3.6.0':
+  '@sentry/cli@3.6.1':
     dependencies:
       progress: 2.0.3
       proxy-from-env: 1.1.0
       undici: 6.27.0
       which: 2.0.2
     optionalDependencies:
-      '@sentry/cli-darwin': 3.6.0
-      '@sentry/cli-linux-arm': 3.6.0
-      '@sentry/cli-linux-arm64': 3.6.0
-      '@sentry/cli-linux-i686': 3.6.0
-      '@sentry/cli-linux-x64': 3.6.0
-      '@sentry/cli-win32-arm64': 3.6.0
-      '@sentry/cli-win32-i686': 3.6.0
-      '@sentry/cli-win32-x64': 3.6.0
+      '@sentry/cli-darwin': 3.6.1
+      '@sentry/cli-linux-arm': 3.6.1
+      '@sentry/cli-linux-arm64': 3.6.1
+      '@sentry/cli-linux-i686': 3.6.1
+      '@sentry/cli-linux-x64': 3.6.1
+      '@sentry/cli-win32-arm64': 3.6.1
+      '@sentry/cli-win32-i686': 3.6.1
+      '@sentry/cli-win32-x64': 3.6.1
 
   '@sentry/conventions@0.15.1': {}
 
@@ -2480,7 +2480,7 @@ snapshots:
 
   escape-string-regexp@4.0.0: {}
 
-  eslint-plugin-sonarjs@4.1.0(eslint@10.7.0(jiti@2.7.0)):
+  eslint-plugin-sonarjs@4.2.0(eslint@10.7.0(jiti@2.7.0)):
     dependencies:
       '@eslint-community/regexpp': 4.12.2
       builtin-modules: 3.3.0
@@ -2690,7 +2690,7 @@ snapshots:
 
   gopd@1.2.0: {}
 
-  greptile@3.2.0: {}
+  greptile@3.2.2: {}
 
   has-flag@4.0.0: {}
 
