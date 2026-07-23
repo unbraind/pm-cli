@@ -6,7 +6,7 @@ status: closed
 priority: 4
 tags[7]: "area:sdk",digital-twin,exemplar,graph,history,long-term,non-pm
 created_at: "2026-07-13T22:00:59.149Z"
-updated_at: "2026-07-23T11:27:45.317Z"
+updated_at: "2026-07-23T11:51:51.687Z"
 closed_at: "2026-07-23T11:27:00.553Z"
 author: codex-root
 estimated_minutes: 900
@@ -32,12 +32,13 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-m08hza,related,"2026-07-22T18:25:11.286Z",codex-root,null
   pm-m2il,related,"2026-07-22T18:25:11.286Z",codex-root,null
   pm-xc68,related,"2026-07-22T18:25:11.286Z",codex-root,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-13T22:00:59.149Z",codex-root,"Duplicate check 2026-07-13: exhaustive all-status search found the broad beyond-PM story pm-8ngt and VCS exemplar pm-xtrd but no digital-twin exemplar; this is phase 2 beneath that canonical lineage and depends on public graph primitives."
   "2026-07-22T18:26:41.278Z",codex-root,"Relationship rationale: the digital-twin exemplar must prove temporal replay and graph behavior under scale, conformance, and policy constraints, not merely demonstrate a domain schema. The roadmap-policy link keeps it exploratory until promotion evidence exists."
   "2026-07-23T10:13:41.158Z",codex-root,"Implementation start 2026-07-23: building the bounded production-facility digital-twin exemplar as a first-party package using public @unbrained/pm-cli/sdk exports only. Scope covers temporal entity and relationship events, point-in-time replay, invariants, conflicts/corrections, schema evolution, federation/import-export, tests, docs, and packed-consumer proof. All-status duplicate check reused pm-kr3t beneath pm-8ngt; no new item created."
   "2026-07-23T11:18:49.753Z",codex-root,"Evidence: a freshly rebuilt global pm binary initialized an isolated temporary workspace, installed digital-twin, created facility/machine/utility entities with normalized pm-* IDs, added a utility dependency, reconstructed machine state at event time, surfaced utility_not_running, idempotently re-imported four events as skips, and verified a valid checkpoint with a 3-node/1-edge graph. The temporary workspace was moved to trash after verification."
   "2026-07-23T11:19:15.165Z",codex-root,"Evidence correction: the temporary filesystem does not support trash. After the successful proof, the exact isolated path /tmp/tmp.yG3Q12ZmSw was verified and deleted directly; it contained only this run's disposable tracker and global extension state."
+  "2026-07-23T11:51:51.687Z",codex-root,"PR evidence: GitHub PR #656 (https://github.com/unbraind/pm-cli/pull/656) carries the temporal digital-twin package, host-injected SDK graph primitives, timestamp replay correction, documentation, and strict coverage/installed-consumer evidence at reviewed head 898fc04764cbc99d2db361ccdbee47554c10bb8d. First hosted pass: every repository-owned check green; CodeRabbit produced no actionable thread within the review window; Codecov confirmed all modified coverable lines tested; external Gemini/Sourcery/Greptile review availability is limited by sunset or quota and is not a code failure."
 notes[1]{created_at,author,text}:
   "2026-07-23T11:19:15.794Z",codex-root,"The installed-package failure found during full-suite TDD was architectural: value imports from @unbrained/pm-cli/sdk cannot resolve after a bundled extension is copied into an otherwise empty tracker. The durable fix was to expand host-injected ExtensionCommandSdk services and keep package runtime SDK imports type-only."
 files[7]{path,scope,note}:
