@@ -4,6 +4,7 @@
 
 ### Added
 
+- Bounded SQLite metadata list reads and compact get child continuations ([pm-px153l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-px153l.toon))
 - Workspace memory tiers: derived rollup summaries of closed-item epochs keep decades-old work queryable in bounded tokens ([pm-5qmm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-5qmm.toon))
 
 ### Security
