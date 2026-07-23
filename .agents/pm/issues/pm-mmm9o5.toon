@@ -1,0 +1,47 @@
+id: pm-mmm9o5
+title: "GH-646: classify merge reconciliation discards by net outcome"
+description: "The merge-driver union path preserves append-only content and attribution, but history reconciliation reports discarded events, authors, reverted fields, and recovery guidance as though user-visible data were lost."
+type: Issue
+status: closed
+priority: 1
+tags[7]: agent-ux,"area:history","area:merge","area:sdk",gh-issue,multi-agent,token-efficiency
+created_at: "2026-07-23T04:52:48.714Z"
+updated_at: "2026-07-23T05:34:04.479Z"
+closed_at: "2026-07-23T05:34:03.760Z"
+author: claude-code-agent
+acceptance_criteria: "Public reconciliation results classify every candidate event as net-lossy or net-lossless using field semantics and final on-disk state, discarded_authors and recovery guidance include only effective loss, append-only union fields retain attribution and avoid loss warnings, genuinely lossy GH-603 behavior remains loud, CLI SDK and documentation use truthful terminology, real git branch acceptance covers driver union and lossy resolution, focused and full coverage remain 100 percent"
+parent: pm-o2kc
+reporter: GitHub GH-646
+severity: high
+resolution: History reconciliation now partitions all changed fields/events/authors into structurally preserved versus genuinely discarded context; only actual loss emits discard warnings and recovery guidance.
+expected_result: "Append-only unions and deterministic reorderings remain visible without false data-loss alarms, while scalar replacement/removal remains loud."
+actual_result: "SDK/command tests, exact coverage, and an installed two-branch Git merge prove both notes survive with zero false discard warnings/events and strict history validation passes."
+affected_version: 2026.7.22
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-9q2t,related,"2026-07-23T04:52:48.714Z",null,null
+  pm-g5sx,discovered_from,"2026-07-23T04:52:48.714Z",null,null
+  pm-gpo7,related,"2026-07-23T04:52:48.714Z",null,null
+  pm-mfkv92,related,"2026-07-23T04:52:48.714Z",null,null
+  pm-wc1r,related,"2026-07-23T04:52:48.714Z",null,null
+  pm-3esl28,related,"2026-07-23T04:53:28.251Z",null,null
+  pm-ds3b,verifies,"2026-07-23T04:53:28.251Z",null,null
+  pm-k9t17l,related,"2026-07-23T04:53:28.251Z",null,null
+comments[6]{created_at,author,text}:
+  "2026-07-23T04:52:48.714Z",claude-code-agent,"Duplicate check 2026-07-23: all-status searches for GH-646,merge reconcile discarded events/authors,history repair discard union field,and the GH-603/GH-623 lineage found closed canonical merge work pm-g5sx,pm-gpo7,pm-mfkv92,pm-wc1r,and pm-9q2t,but no item owns the complementary false-positive/net-lossless classification defect. Created this canonical leaf without reopening completed merge safety items."
+  "2026-07-23T04:53:30.151Z",claude-code-agent,"GitHub linkage evidence: canonical pm item posted on GH-646 at https://github.com/unbraind/pm-cli/issues/646#issuecomment-5054564363. Active bundle shares the truthful-context lifecycle acceptance surface with pm-3esl28, pm-k9t17l, and rolling SDK reference pm-ds3b."
+  "2026-07-23T05:04:50.147Z",claude-code-agent,"TDD evidence: added failing lossy-versus-union reconciliation cases, then partitioned reconciled fields/events/authors into preserved and discarded results. Discard warnings now remain exclusive to genuine loss; focused command and SDK tests are green."
+  "2026-07-23T05:30:03.247Z",claude-code-agent,"Release-gate checkpoint: build/typecheck/docs/static/docstring/package-boundary/token-budget/exact 100% coverage/version/secrets/packed npx smoke/88-command dogfood passed. Consolidated gate remains red only for live Sentry PM-CLI-2J, which is canonical to pm-k9t17l and must remain unsuppressed until the fix is released."
+  "2026-07-23T05:31:51.281Z",claude-code-agent,"Packed real-Git acceptance passed using installed merge drivers: divergent agent-a/agent-b note appends merged to two notes; merge reconcile dry-run reported zero false discard warnings/events; strict history-drift validation passed. Evidence workspace: /tmp/tmp.9DpM65yUme."
+  "2026-07-23T05:33:59.541Z",claude-code-agent,"Final local evidence: exact full coverage and all repository-owned gates pass; installed two-branch merge validation is green. Live health storage warning belongs to existing open pm-h90s (unknown-author history disposition) and was refreshed there without expanding this PR."
+files[2]{path,scope,note}:
+  src/sdk/history-repair.ts,project,Loss-aware reconciliation classification
+  tests/unit/sdk/history-repair-reconciliation.spec.ts,project,Lossy and union-preserved classification coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/history-repair-reconciliation.spec.ts tests/unit/commands/history-repair-command.spec.ts,project,240,Reconciliation unit and command acceptance
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrx2rgfv-d676hd,test,passed,"2026-07-23T05:32:22.559Z","2026-07-23T05:32:37.243Z","2026-07-23T05:32:37.243Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Truthful post-merge warning semantics
+  docs/SDK.md,project,Structured reconciliation result contract
+close_reason: "Implemented and verified loss-aware reconciliation classification through unit, command, packed, and real two-branch Git acceptance."
+body: ""

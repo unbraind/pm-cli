@@ -458,6 +458,34 @@ export function isOrderingRelationshipKind(
   return registry.resolve(kind)?.ordering === true;
 }
 
+/**
+ * Validate one prospective edge against the resolved relationship ontology.
+ *
+ * Mutation adapters use this before persistence so aliases, extension-defined
+ * kinds, and self-edge policy share the same semantics as graph construction.
+ * The canonical definition is returned for callers that also need normalized
+ * kind metadata.
+ */
+export function assertRelationshipEdgeAllowed(
+  source: string,
+  target: string,
+  kind: string,
+  registry: RelationshipKindRegistry = defaultRegistry,
+): RelationshipKindDefinition {
+  const normalizedSource = normalizeNodeId(source);
+  const normalizedTarget = normalizeNodeId(target);
+  if (!normalizedSource || !normalizedTarget) {
+    throw new TypeError("Relationship endpoint must not be empty");
+  }
+  const definition = registry.require(kind);
+  if (normalizedSource === normalizedTarget && !definition.allowSelf) {
+    throw new TypeError(
+      `Self relationship is not allowed for ${definition.kind}`,
+    );
+  }
+  return definition;
+}
+
 function compareEdges(left: RelationshipEdge, right: RelationshipEdge): number {
   return (
     left.source.localeCompare(right.source) ||
@@ -475,15 +503,16 @@ function normalizeRelationshipEdge(
     typeof candidate.source === "string" ? candidate.source.trim() : "";
   const target =
     typeof candidate.target === "string" ? candidate.target.trim() : "";
-  const definition = registry.require(candidate.kind);
   if (!nodes.has(source) || !nodes.has(target))
     throw new TypeError(
       `Relationship endpoint not found: ${source} -> ${target}`,
     );
-  if (source === target && !definition.allowSelf)
-    throw new TypeError(
-      `Self relationship is not allowed for ${definition.kind}`,
-    );
+  const definition = assertRelationshipEdgeAllowed(
+    source,
+    target,
+    candidate.kind,
+    registry,
+  );
   const edge = Object.freeze({
     ...candidate,
     source,

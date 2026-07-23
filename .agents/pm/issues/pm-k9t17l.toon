@@ -1,0 +1,49 @@
+id: pm-k9t17l
+title: "GH-649: reject self-referential ordering relationships at the SDK mutation boundary"
+description: "A create/update dependency mutation can persist a self blocked_by or inverse ordering edge that graph governance forbids, permanently removing the item from readiness while pm deps fails to identify the one-node cycle."
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:graph","area:sdk",data-integrity,gh-issue,multi-agent
+created_at: "2026-07-23T04:52:33.471Z"
+updated_at: "2026-07-23T05:34:02.852Z"
+closed_at: "2026-07-23T05:34:02.127Z"
+author: claude-code-agent
+acceptance_criteria: "Every shared dependency mutation path rejects self edges when the resolved relationship kind disallows self links, inverse and alias spellings share the rule, custom allowSelf kinds remain writable, reads render legacy self cycles truthfully, no item or history write occurs on rejection, public SDK contracts and docs explain the invariant, focused and full coverage remain 100 percent"
+parent: pm-6x7o
+reporter: GitHub GH-649
+severity: high
+resolution: "Added public assertRelationshipEdgeAllowed and shared pre-persistence dependency enforcement for create/update, with alias-aware custom allowSelf semantics and deterministic usage errors."
+expected_result: Disallowed self dependencies fail before item/history writes while extension-defined allowSelf relationships remain supported.
+actual_result: "CLI zero-write acceptance, public packed SDK import, real installed CLI usage=2 behavior, exact coverage, and full gates confirm the mutation boundary."
+affected_version: 2026.7.22
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-4jqm,related,"2026-07-23T04:52:33.471Z",null,null
+  pm-6irg,related,"2026-07-23T04:52:33.471Z",null,null
+  pm-i6pi,related,"2026-07-23T04:52:33.471Z",null,null
+  pm-ju83,related,"2026-07-23T04:52:33.471Z",null,null
+  pm-3esl28,related,"2026-07-23T04:53:27.272Z",null,null
+  pm-ds3b,verifies,"2026-07-23T04:53:27.272Z",null,null
+  pm-mmm9o5,related,"2026-07-23T04:53:27.272Z",null,null
+comments[6]{created_at,author,text}:
+  "2026-07-23T04:52:33.471Z",claude-code-agent,"Duplicate check 2026-07-23: all-status searches for GH-649,self-referential ordering edge,blocked_by self edge,and dependency cycle write guard found shipped cycle advisory pm-i6pi,governance lineage pm-6x7o/pm-ju83/pm-4jqm,and closed detection work pm-6irg,but no item owns the exact write-time self-edge inconsistency. Created this canonical leaf rather than reopening shipped work."
+  "2026-07-23T04:53:29.272Z",claude-code-agent,"GitHub linkage evidence: canonical pm item posted on GH-649 at https://github.com/unbraind/pm-cli/issues/649#issuecomment-5054564177. Active bundle shares the truthful-context lifecycle acceptance surface with pm-3esl28, pm-mmm9o5, and rolling SDK reference pm-ds3b."
+  "2026-07-23T05:04:49.295Z",claude-code-agent,"TDD evidence: added failing SDK alias/allowSelf policy tests plus CLI create/update zero-write acceptance, then implemented one shared pre-persistence edge validator used by both mutation paths. Focused acceptance is green."
+  "2026-07-23T05:30:02.577Z",claude-code-agent,"Live observability evidence: release gate identified Sentry PM-CLI-2J as the sole blocker. Sanitized issue facts: unresolved/high, handled TypeError from normalizeRelationshipEdge, 3 events, first/last seen 2026-07-22, all on release pm-cli@2026.7.22, no events after 2026-07-22T21:40:25Z. This implementation converts create/update self-edge attempts into deterministic usage errors before persistence; keep the Sentry issue unresolved until the merged release is verified, then resolve and rerun the gate."
+  "2026-07-23T05:31:50.579Z",claude-code-agent,"Packed installed-consumer acceptance passed: public SDK custom allowSelf kind succeeded; CLI self dependency via depends-on exited usage=2 and created neither item nor history state. Real two-branch Git merge also retained both agents' notes. Evidence workspace: /tmp/tmp.9DpM65yUme."
+  "2026-07-23T05:33:58.883Z",claude-code-agent,"Final local evidence: 6,101 tests at exact 100/100/100/100; all static/package/security/dogfood gates pass. Consolidated release gate's only red check is the pre-fix live Sentry issue PM-CLI-2J, deliberately retained until this fix ships."
+files[6]{path,scope,note}:
+  src/cli/commands/create.ts,project,Pre-write create enforcement
+  src/cli/commands/update.ts,project,Pre-write update enforcement
+  src/sdk/dependency-flag-validation.ts,project,Shared dependency mutation validation
+  src/sdk/relationships.ts,project,Reusable relationship edge policy primitive
+  tests/unit/commands/agent-ux-feedback-wave.spec.ts,project,CLI zero-write acceptance
+  tests/unit/sdk/relationships.spec.ts,project,Registry alias and allowSelf coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/relationships.spec.ts tests/unit/commands/agent-ux-feedback-wave.spec.ts,project,240,SDK and CLI relationship integrity acceptance
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrx2r44v-r2wr3n,test,passed,"2026-07-23T05:32:05.763Z","2026-07-23T05:32:21.296Z","2026-07-23T05:32:21.296Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Package-author mutation contract
+close_reason: Implemented and verified alias-aware pre-write self-edge policy with public SDK customization support and zero-write CLI acceptance.
+body: ""

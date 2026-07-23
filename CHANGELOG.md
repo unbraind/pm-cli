@@ -9,6 +9,9 @@
 
 ### Fixed
 
+- GH-646: classify merge reconciliation discards by net outcome ([pm-mmm9o5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mmm9o5.toon))
+- GH-649: reject self-referential ordering relationships at the SDK mutation boundary ([pm-k9t17l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-k9t17l.toon))
+- GH-645: standard-depth get/show JSON omits notes without notes_count ([pm-3esl28](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3esl28.toon))
 - GH-638: delete JSON envelope reports the removed item as open ([pm-tz2ikr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tz2ikr.toon))
 - GH-635: plan create cannot forward strict Plan-required metadata ([pm-qd3woa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qd3woa.toon))
 - GH-642: linked-test runner enters interactive init wizard before repository commands ([pm-lcnk2n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lcnk2n.toon))

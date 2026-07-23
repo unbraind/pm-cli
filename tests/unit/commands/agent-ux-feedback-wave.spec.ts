@@ -84,12 +84,13 @@ describe("agent UX feedback wave", () => {
         expect((listAfter.json as { count: number }).count).toBe(0);
       }
 
-      const next = context.runCli(
-        ["next", "--assignee", "bob", "--json"],
-        { expectJson: true },
-      );
+      const next = context.runCli(["next", "--assignee", "bob", "--json"], {
+        expectJson: true,
+      });
       expect(next.code).toBe(0);
-      expect((next.json as { recommended: { id: string } }).recommended.id).toBe(itemId);
+      expect(
+        (next.json as { recommended: { id: string } }).recommended.id,
+      ).toBe(itemId);
     });
   });
 
@@ -178,19 +179,15 @@ describe("agent UX feedback wave", () => {
         `id=${first},kind=blocked_by`,
       ]);
       const update = context.runCli(
-        [
-          "update",
-          first,
-          "--dep",
-          `id=${second},kind=blocked_by`,
-          "--json",
-        ],
+        ["update", first, "--dep", `id=${second},kind=blocked_by`, "--json"],
         { expectJson: true },
       );
       expect(update.code).toBe(0);
       expect((update.json as { warnings: string[] }).warnings).toEqual(
         expect.arrayContaining([
-          expect.stringMatching(/^ordering_cycle_created:.*run_pm_graph_audit$/),
+          expect.stringMatching(
+            /^ordering_cycle_created:.*run_pm_graph_audit$/,
+          ),
         ]),
       );
 
@@ -205,6 +202,63 @@ describe("agent UX feedback wave", () => {
       expect(result.findings_by_code.ordering_cycle).toBe(1);
       expect(result.affected_subjects_by_code.ordering_cycle).toBe(2);
       expect(result.finding_count).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it("rejects self dependencies before create or update writes any state", async () => {
+    await withTempPmPath(async (context) => {
+      const explicitId = "pm-self-create";
+      const rejectedCreate = context.runCli([
+        "create",
+        "--id",
+        explicitId,
+        "--title",
+        "Rejected self create",
+        "--description",
+        "Must never reach storage",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--dep",
+        `id=${explicitId},kind=depends-on`,
+        "--json",
+      ]);
+      expect(rejectedCreate.code).toBe(EXIT_CODE.USAGE);
+      expect(rejectedCreate.stderr).toContain(
+        "Self relationship is not allowed for blocked_by",
+      );
+      expect(context.runCli(["get", explicitId, "--json"]).code).toBe(
+        EXIT_CODE.NOT_FOUND,
+      );
+
+      const itemId = createTask(context, "Rejected self update");
+      const historyBefore = context.runCli(
+        ["history", itemId, "--full", "--json"],
+        { expectJson: true },
+      );
+      const rejectedUpdate = context.runCli([
+        "update",
+        itemId,
+        "--dep",
+        `id=${itemId},kind=related`,
+        "--json",
+      ]);
+      expect(rejectedUpdate.code).toBe(EXIT_CODE.USAGE);
+      expect(rejectedUpdate.stderr).toContain(
+        "Self relationship is not allowed for related",
+      );
+      const historyAfter = context.runCli(
+        ["history", itemId, "--full", "--json"],
+        { expectJson: true },
+      );
+      expect(
+        (historyAfter.json as { history: unknown[] }).history,
+      ).toHaveLength(
+        (historyBefore.json as { history: unknown[] }).history.length,
+      );
     });
   });
 
@@ -231,7 +285,9 @@ describe("agent UX feedback wave", () => {
 
   it("points unconfigured invocations at a nearby custom tracker", async () => {
     await withTempPmPath(async (context) => {
-      const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-nearby-root-"));
+      const workspace = await mkdtemp(
+        path.join(os.tmpdir(), "pm-nearby-root-"),
+      );
       try {
         const customRoot = path.join(workspace, ".pm");
         const secondCustomRoot = path.join(workspace, ".pm-two");
@@ -243,8 +299,12 @@ describe("agent UX feedback wave", () => {
         await cp(context.pmPath, secondCustomRoot, { recursive: true });
         await cp(context.pmPath, ignoredDependencyRoot, { recursive: true });
         expect(discoverNearbyPmRoot(workspace)).toBe(customRoot);
-        expect(discoverNearbyPmRoot(workspace, customRoot)).toBe(secondCustomRoot);
-        expect(discoverNearbyPmRoot(path.join(workspace, "missing"))).toBeUndefined();
+        expect(discoverNearbyPmRoot(workspace, customRoot)).toBe(
+          secondCustomRoot,
+        );
+        expect(
+          discoverNearbyPmRoot(path.join(workspace, "missing")),
+        ).toBeUndefined();
         const previousCwd = process.cwd();
         process.chdir(workspace);
         try {
